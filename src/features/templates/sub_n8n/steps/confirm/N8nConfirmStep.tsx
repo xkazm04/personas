@@ -183,7 +183,7 @@ export function N8nConfirmStep({
             <div className="mt-3 border-t border-primary/10 pt-3">
               <button
                 onClick={() => setShowPrompt(!showPrompt)}
-                className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors w-full"
+                className="flex items-center gap-2 typo-body text-foreground hover:text-muted-foreground transition-colors w-full rounded-input outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {showPrompt ? (
                   <ChevronDown className="w-3.5 h-3.5" />

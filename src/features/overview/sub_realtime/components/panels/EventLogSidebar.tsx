@@ -1,7 +1,7 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
-import { ChevronRight, AlertCircle, CheckCircle2, Clock, Loader2, ArrowRight, Search } from 'lucide-react';
+import { ChevronRight, ArrowRight, Search } from 'lucide-react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
-import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
+import { EVENT_TYPE_HEX_COLORS, resolveStatusIcon } from '@/features/overview/shared/eventVisuals';
 import { EVENT_TYPE_LABELS, clampLabel } from '../../libs/visualizationHelpers';
 import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -22,14 +22,6 @@ interface LogEntry {
   error: string | null;
   color: string;
 }
-
-const STATUS_ICONS: Record<string, { icon: typeof CheckCircle2; color: string }> = {
-  pending: { icon: Clock, color: 'text-amber-400' },
-  processing: { icon: Loader2, color: 'text-cyan-400' },
-  completed: { icon: CheckCircle2, color: 'text-emerald-400' },
-  processed: { icon: CheckCircle2, color: 'text-emerald-400' },
-  failed: { icon: AlertCircle, color: 'text-red-400' },
-};
 
 function tryParsePayload(raw: string | null | undefined): string | null {
   if (!raw) return null;
@@ -125,7 +117,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
         )}
         {filteredLog.map(entry => {
             const isExpanded = expandedId === entry.id;
-            const statusMeta = STATUS_ICONS[entry.status] ?? STATUS_ICONS.pending!;
+            const statusMeta = resolveStatusIcon(entry.status);
             const Icon = statusMeta.icon;
             const payloadPreview = tryParsePayload(entry.payload);
             return (

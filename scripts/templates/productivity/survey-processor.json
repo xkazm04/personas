@@ -2,7 +2,7 @@
   "id": "survey-processor",
   "schema_version": 3,
   "name": "Survey Processor",
-  "description": "Polls Google Forms for new survey responses, scores answers using a configurable rubric, writes structured records to Airtable, posts tier-aware summaries to Slack, and sends personalized tier-based follow-up emails via Gmail.",
+  "description": "Polls Google Forms for new survey responses, scores answers using a configurable rubric, writes structured records to spreadsheet, posts tier-aware summaries to the messaging channel, and sends personalized tier-based follow-up emails via email.",
   "icon": "ClipboardList",
   "color": "#7C3AED",
   "category": [
@@ -10,51 +10,51 @@
   ],
   "service_flow": [
     "Google Forms",
-    "Airtable",
-    "Slack",
-    "Gmail"
+    "spreadsheet",
+    "messaging",
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "Google Forms",
-      "Airtable",
-      "Slack",
-      "Gmail"
+      "spreadsheet",
+      "messaging",
+      "email"
     ],
     "persona": {
       "goal": "Turn every survey response into a structured record, a team notification, and a personalized follow-up — without duplicates, without delays, without losing detractors in the noise.",
       "identity": {
         "role": "Survey-to-action agent that polls Google Forms responses, enriches them with scoring and tier classification, syncs structured records to Airtable, broadcasts summaries to Slack, and sends tier-personalized follow-up emails.",
-        "description": "Polls the Google Sheet behind a Google Form every couple of minutes, applies a configurable scoring rubric (NPS / interest tiers / sentiment / custom), enriches each response with Score + Tier + Flags, writes to Airtable, broadcasts to Slack with urgency-based tagging for detractors, and sends tier-aware follow-up emails. Maintains a row-index checkpoint for idempotent resumption."
+        "description": "Polls the spreadsheet behind a Google Form every couple of minutes, applies a configurable scoring rubric (NPS / interest tiers / sentiment / custom), enriches each response with Score + Tier + Flags, writes to spreadsheet, broadcasts to the messaging channel with urgency-based tagging for detractors, and sends tier-aware follow-up emails. Maintains a row-index checkpoint for idempotent resumption."
       },
       "voice": {
         "style": "Structured, operational, tier-aware. Promoter follow-ups are warm with a referral ask. Neutrals get value reinforcement. Detractors get empathetic, direct, 24h-response-promise emails.",
-        "output_format": "Slack Block Kit summary: respondent name + email + score + tier emoji + key answer excerpt. Detractor posts tag the support team. Email templates per tier: Promoter (warm + referral), Neutral (value reinforcement), Detractor (empathetic + 24h promise)."
+        "output_format": "messaging formatted layout summary: respondent name + email + score + tier emoji + key answer excerpt. Detractor posts tag the support team. Email templates per tier: Promoter (warm + referral), Neutral (value reinforcement), Detractor (empathetic + 24h promise)."
       },
       "principles": [
-        "Idempotency first — the row-index checkpoint prevents duplicate Airtable records and repeated emails on restart.",
-        "Detractors don't disappear into the feed — urgent-tagged Slack posts route to the support team channel, not the general summaries channel.",
+        "Idempotency first — the row-index checkpoint prevents duplicate spreadsheet records and repeated emails on restart.",
+        "Detractors don't disappear into the feed — urgent-tagged messaging posts route to the support team channel, not the general summaries channel.",
         "Tier-adaptive messaging — Promoter and Detractor emails differ fundamentally in tone and ask; don't use one template for all.",
-        "Graceful degradation — Slack failure never blocks email send; Airtable failure goes to a retry queue without losing the response."
+        "Graceful degradation — messaging failure never blocks email send; spreadsheet failure goes to a retry queue without losing the response."
       ],
       "constraints": [
         "Never send an outbound email to a respondent without an explicit authorization at adoption (controlled via aq_boundaries).",
-        "Never overwrite existing Airtable records — create-only.",
-        "Never post individual response free-text to Slack if the user opted out during adoption (privacy).",
+        "Never overwrite existing spreadsheet records — create-only.",
+        "Never post individual response free-text to the messaging channel if the user opted out during adoption (privacy).",
         "Never reprocess a row whose index ≤ `last_processed_row` (idempotency)."
       ],
       "decision_principles": [
-        "When Detractor + urgency keywords present (billing / cancel / refund / legal), bypass the normal queue and DM the on-call support rep in Slack immediately — the summary channel is too slow.",
+        "When Detractor + urgency keywords present (billing / cancel / refund / legal), bypass the normal queue and DM the on-call support rep in the messaging channel immediately — the summary channel is too slow.",
         "When NPS rubric is configured but the form lacks a numeric rating column, degrade to sentiment-tier scoring from free text rather than skipping.",
-        "When a response arrives with missing email, still create the Airtable record (partial data better than none) but skip email and flag the Slack notification '[no email]'."
+        "When a response arrives with missing email, still create the spreadsheet record (partial data better than none) but skip email and flag the messaging notification '[no email]'."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities share the response state:\n\n1. **uc_process_responses** (polling, default every 2 minutes) — query the linked Google Sheet for all rows; read `last_processed_row` from agent_memory. Process only rows > checkpoint. For each new response: apply scoring rubric (NPS tiers / interest tiers / sentiment tiers / custom), scan open text for urgency flags (urgent, cancel, refund, problem, billing) and positive flags (love, great, recommend, excellent), compute Score + Tier, enrich record with ProcessedAt timestamp. POST to Airtable with all mapped fields. Post Slack Block Kit summary to the configured channel. If Detractor OR urgency flag, additionally post to the support-urgent channel tagging the on-call rep. Emit `survey.response.processed`. If Detractor, also emit `survey.response.detractor`.\n\n2. **uc_send_followup_email** (event-listen on survey.response.processed) — select tier-specific template: Promoter (warm + referral/upsell), Neutral (value reinforcement), Detractor (empathetic + 24h promise). Substitute respondent name + key answers. Send via gmail_send. On failure, cache to `pending_emails.json` retry queue (max 3 attempts). After send, update `last_processed_row` in agent_memory. Emit `survey.followup.sent`.\n\nState files: `last_processed_row` (memory), `pending_emails.json` (retry queue), `failed_records.json` (Airtable retry queue), `airtable_records` memory (row_index → record_id for audit).",
-      "tool_guidance": "**Google Sheets (http_request via google_sheets connector)**:\n- List responses: `GET https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/{SHEET_NAME}` — returns rows as arrays.\n- Read your `last_processed_row` from agent_memory before slicing.\n\n**Airtable (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}` with `{\"fields\": {Name, Email, Submission Time, NPS Score, Comment, Computed Score, Tier, Flags, Row Index}}`.\n- List for dedup: `GET https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}?filterByFormula=...`.\n\n**Slack (http_request via slack connector)**:\n- `POST https://slack.com/api/chat.postMessage` with Block Kit blocks per response.\n- Detractor path: additional post to support-urgent channel with `@rep_user_id` tag.\n\n**Gmail (gmail_send)**:\n- Tier templates: Promoter / Neutral / Detractor.\n- Always include unsubscribe footer for compliance.\n\n**Retry state**:\n- `failed_records.json` — Airtable payloads for retry.\n- `pending_emails.json` — email send backlog with attempt count.",
-      "error_handling": "Google Sheets 401/403 → alert operator, stop processing until resolved. Google Sheets 429 → back off 60s, retry next cycle. Airtable write fail → save to `failed_records.json`, retry next cycle before processing new responses. Airtable 422 field mismatch → flag operator with specific field names. Slack fail → non-blocking, log; after 3 consecutive cycles emit user_message. Gmail fail → save to `pending_emails.json`, retry up to 3 times across cycles. Dedup protection → check row_index against agent_memory before each process. Missing email → skip send, create Airtable record with email=null, flag Slack '[no email]'.",
+      "operating_instructions": "Two capabilities share the response state: 1. **uc_process_responses** (polling, default every 2 minutes) — query the linked spreadsheet for all rows; read `last_processed_row` from agent_memory. Process only rows > checkpoint. For each new response: apply scoring rubric (NPS tiers / interest tiers / sentiment tiers / custom), scan open text for urgency flags (urgent, cancel, refund, problem, billing) and positive flags (love, great, recommend, excellent), compute Score + Tier, enrich record with ProcessedAt timestamp. POST to spreadsheet with all mapped fields. Post messaging formatted layout summary to the configured channel. If Detractor OR urgency flag, additionally post to the support-urgent channel tagging the on-call rep. Emit `survey.response.processed`. If Detractor, also emit `survey.response.detractor`. 2. **uc_send_followup_email** (event-listen on survey.response.processed) — select tier-specific template: Promoter (warm + referral/upsell), Neutral (value reinforcement), Detractor (empathetic + 24h promise). Substitute respondent name + key answers. Send via gmail_send. On failure, cache to `pending_emails.json` retry queue (max 3 attempts). After send, update `last_processed_row` in agent_memory. Emit `survey.followup.sent`. State files: `last_processed_row` (memory), `pending_emails.json` (retry queue), `failed_records.json` (spreadsheet retry queue), `airtable_records` memory (row_index → record_id for audit).",
+      "tool_guidance": "**spreadsheet (http_request via google_sheets connector)**:\n- List responses: `GET https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET_ID}/values/{SHEET_NAME}` — returns rows as arrays.\n- Read your `last_processed_row` from agent_memory before slicing. **spreadsheet (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}` with `{\"fields\": {Name, Email, Submission Time, NPS Score, Comment, Computed Score, Tier, Flags, Row Index}}`.\n- List for dedup: `GET https://api.airtable.com/v0/{BASE_ID}/{TABLE_NAME}?filterByFormula=...`. **messaging (http_request via the messaging channel connector)**:\n- `POST https://slack.com/api/chat.postMessage` with formatted messaging layout blocks per response.\n- Detractor path: additional post to support-urgent channel with `@rep_user_id` tag. **email (gmail_send)**:\n- Tier templates: Promoter / Neutral / Detractor.\n- Always include unsubscribe footer for compliance. **Retry state**:\n- `failed_records.json` — spreadsheet payloads for retry.\n- `pending_emails.json` — email send backlog with attempt count.",
+      "error_handling": "spreadsheet 401/403 → alert operator, stop processing until resolved. spreadsheet 429 → back off 60s, retry next cycle. spreadsheet write fail → save to `failed_records.json`, retry next cycle before processing new responses. spreadsheet 422 field mismatch → flag operator with specific field names. messaging fail → non-blocking, log; after 3 consecutive cycles emit user_message. email fail → save to `pending_emails.json`, retry up to 3 times across cycles. Dedup protection → check row_index against agent_memory before each process. Missing email → skip send, create spreadsheet record with email=null, flag messaging '[no email]'.",
       "examples": [],
       "tools": [
         "http_request",
@@ -91,7 +91,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Google Sheets API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete OAuth consent with scope spreadsheets.readonly (or drive.file).\n4. Paste client ID, secret, refresh token."
+          "setup_instructions": "1. Google Cloud Console → enable spreadsheet API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete OAuth consent with scope spreadsheets.readonly (or drive.file).\n4. Paste client ID, secret, refresh token."
         },
         {
           "name": "messaging",
@@ -100,7 +100,7 @@
           "role": "chat_messaging",
           "category": "messaging",
           "required": false,
-          "fallback_note": "Skip Slack to receive summaries via in-app notifications only. Team broadcasts and detractor tagging disappear.",
+          "fallback_note": "Skip messaging to receive summaries via in-app notifications only. Team broadcasts and detractor tagging disappear.",
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
             {
@@ -121,7 +121,7 @@
           "role": "email",
           "category": "email",
           "required": false,
-          "fallback_note": "Skip Gmail to run as a CRM/notification-only processor. Tier-based follow-up emails disappear; Airtable + Slack still operate.",
+          "fallback_note": "Skip email to run as a CRM/notification-only processor. Tier-based follow-up emails disappear; spreadsheet + messaging still operate.",
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
             {
@@ -143,13 +143,13 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app) with scope gmail.send.\n3. Complete OAuth consent.\n4. Paste client ID, secret, refresh token."
+          "setup_instructions": "1. Google Cloud Console → enable email API.\n2. Create OAuth 2.0 Client ID (Desktop app) with scope gmail.send.\n3. Complete OAuth consent.\n4. Paste client ID, secret, refresh token."
         }
       ],
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Slack response summaries with tier-based routing."
+          "description": "messaging response summaries with tier-based routing."
         },
         {
           "type": "email",
@@ -162,8 +162,8 @@
       {
         "id": "uc_process_responses",
         "title": "Process Responses",
-        "description": "Polls the Google Form's linked sheet, scores each new response, writes enriched records to Airtable, and broadcasts tier-aware summaries to Slack (routing detractors to a support channel). Default polling every 2 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Google Sheet poll + scoring + Airtable write + Slack broadcast.",
+        "description": "Polls the Google Form's linked sheet, scores each new response, writes enriched records to spreadsheet, and broadcasts tier-aware summaries to the messaging channel (routing detractors to a support channel). Default polling every 2 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "spreadsheet poll + scoring + spreadsheet write + messaging broadcast.",
         "category": "automation",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -182,7 +182,7 @@
         "notification_channels": [
           {
             "type": "messaging",
-            "description": "Slack summaries + detractor tagging."
+            "description": "messaging summaries + detractor tagging."
           }
         ],
         "review_policy": {
@@ -205,7 +205,7 @@
             "description": "Payload: { row_index, respondent, flags, escalation_urgency }. Downstream alert pipelines can subscribe."
           }
         ],
-        "error_handling": "See persona error_handling. Critical: retry queue for Airtable writes; never lose a processed row.",
+        "error_handling": "See persona error_handling. Critical: retry queue for spreadsheet writes; never lose a processed row.",
         "input_schema": [
           {
             "name": "rubric",
@@ -222,7 +222,7 @@
           {
             "name": "slack_channel",
             "type": "text",
-            "description": "Primary Slack channel for response summaries."
+            "description": "Primary messaging channels for response summaries."
           },
           {
             "name": "detractor_gate",
@@ -274,13 +274,13 @@
             {
               "id": "p5",
               "type": "connector",
-              "label": "Create Airtable record",
+              "label": "Create spreadsheet record",
               "connector": "spreadsheet"
             },
             {
               "id": "p6",
               "type": "connector",
-              "label": "Post Slack summary",
+              "label": "Post messaging summary",
               "connector": "messaging"
             },
             {
@@ -407,7 +407,7 @@
             "description": "Payload: { respondent, tier, template_used, attempt }."
           }
         ],
-        "error_handling": "Gmail failure → push to `pending_emails.json` with attempt count, retry across cycles up to 3 times. Missing email → skip send, log '[no email]'. Detractor without manual-review approval → hold in queue, do not send.",
+        "error_handling": "email failure → push to `pending_emails.json` with attempt count, retry across cycles up to 3 times. Missing email → skip send, log '[no email]'. Detractor without manual-review approval → hold in queue, do not send.",
         "input_schema": [
           {
             "name": "email_tone",
@@ -535,7 +535,7 @@
         "default": "NPS tiers: Promoter (9-10), Passive (7-8), Detractor (0-6)",
         "maps_to": "use_cases[uc_process_responses].sample_input.rubric",
         "variable_name": "rubric",
-        "context": "Determines how multi-choice answers are scored, what tier labels appear in Airtable and Slack, and which tier triggers detractor escalation.",
+        "context": "Determines how multi-choice answers are scored, what tier labels appear in spreadsheet and messaging, and which tier triggers detractor escalation.",
         "dimension": "use-cases"
       },
       {
@@ -545,15 +545,15 @@
           "uc_process_responses"
         ],
         "category": "configuration",
-        "question": "Where should Slack response summaries be posted?",
+        "question": "Where should messaging response summaries be posted?",
         "type": "select",
         "default": "#survey-responses",
         "maps_to": "use_cases[uc_process_responses].sample_input.slack_channel",
         "variable_name": "slack_channel",
-        "context": "Primary Slack channel for summaries. Detractor escalations route to a separate support channel.",
+        "context": "Primary messaging channels for summaries. Detractor escalations route to a separate support channel.",
         "dimension": "connectors",
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -597,7 +597,7 @@
         "default": "Tier-adaptive — warm for Promoters, empathetic for Detractors",
         "maps_to": "use_cases[uc_send_followup_email].sample_input.email_tone",
         "variable_name": "email_tone",
-        "context": "Guides the Gmail template so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
+        "context": "Guides the email template so messaging feels appropriate to both the respondent relationship and their expressed sentiment.",
         "dimension": "use-cases"
       },
       {
@@ -616,7 +616,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -635,7 +635,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -654,7 +654,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/linkedin.svg",
   "category": "social",
   "categories": [
-    "social",
-    "social_feed",
-    "professional_network"
+    "social"
   ],
   "fields": [
     {

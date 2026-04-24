@@ -5,11 +5,19 @@
   "description": "Continuous database performance monitor that builds adaptive statistical baselines during a silent learning period, then detects anomalies via direction- and correlation-aware thresholds. Severity-tiered alerts: warning context, critical escalation with root cause hypothesis and remediation options.",
   "icon": "Activity",
   "color": "#ef4444",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Database", "Messaging"],
+  "service_flow": [
+    "Database",
+    "Messaging"
+  ],
   "payload": {
-    "service_flow": ["Database", "Messaging"],
+    "service_flow": [
+      "Database",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Replace manual dashboard-watching with an always-on analyst that knows 'normal' and raises the right level of alarm with the right level of detail.",
       "identity": {
@@ -42,11 +50,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, one scheduled loop + one event-chained response:\n\n1. **uc_continuous_monitoring** (every 5 min, default) — connect to the database connector. Query the metrics suite per provider (PostgreSQL: pg_stat_statements, pg_stat_activity, pg_locks, pg_statio_user_tables. MySQL: performance_schema. MongoDB: serverStatus + currentOp). Check mode: if baseline_days not yet met → Mode A (store to `baseline_raw`, compute daily summaries, emit `dbmon.baseline.completed` when done). If baselines exist → Mode B: compute deviation ratios per metric vs. current-hour profile, update rolling windows, apply direction-aware thresholds. For warnings, post a warning alert to messaging with context + investigation hint + emit `dbmon.anomaly.warning`. For critical breaches, jump to uc_anomaly_response via event. Every cycle, append a compact history entry.\n\n2. **uc_anomaly_response** (event-listen on critical breach) — capture full evidence snapshot (active queries, connection states, slow log). Correlate against stored patterns. Apply correlation rules: RT↑ + TP↓ + Locks↑ = lock contention. RT↑ + Connections↑ + Pool HIGH = connection exhaustion. Cache↓ + I/O↑ + RT↑ = memory pressure. All degraded = infrastructure. Compose incident report (metrics breached, trajectory, hypothesis, remediation). Escalate via manual review. Emit `dbmon.anomaly.critical`. Store triage outcome to memory after human response.\n\nMemory categories: `baseline_raw` (raw snapshots), `baseline_computed` (statistical summaries per metric + per hour), `rolling` (sliding-window state), `incident` (anomaly evidence), `triage_history` (human feedback), `false_positive_pattern` (auto-suppression rules).",
-      "tool_guidance": "**Metric collection per provider**:\n- **PostgreSQL**: RT from `pg_stat_statements` (requires extension). Throughput from `pg_stat_statements.calls` delta. Connections: `pg_stat_activity` count vs `max_connections`. Locks: `pg_locks` where not granted. Cache hit: `pg_statio_user_tables` heap_blks_hit / (hit + read). Disk I/O: `pg_stat_database.blks_read`.\n- **MySQL**: `performance_schema.events_statements_summary_global_by_event_name` (avg_timer_wait), `SHOW GLOBAL STATUS LIKE 'Queries'` delta, `Threads_connected` vs `max_connections`, `information_schema.innodb_lock_waits` count, `Innodb_buffer_pool_read_requests` vs `_reads`.\n- **MongoDB**: `db.serverStatus().opcounters` delta, `.connections.current` vs `.available`, `.globalLock.currentQueue`, `db.currentOp({active: true, secs_running: {$gt: 1}})`.\n\n**Statistics**:\n- Mean = sum / count.\n- Sample stddev = sqrt(sum((x-mean)^2) / (count-1)).\n- Deviation ratio = (rolling_avg - hourly_mean) / hourly_stddev.\n- Warning threshold = mean + (warning_multiplier × stddev).\n- Critical threshold = mean + (critical_multiplier × stddev).\n- Low-stddev floor: if stddev < 1% of mean, use 5% deviation from mean instead.\n\n**Correlation rules**:\n- RT↑ + TP↓ + Locks↑ → Lock contention (likely long-running transaction).\n- RT↑ + TP↓ + Connections normal → Slow query introduced (check recent deploys).\n- RT↑ + Connections↑ + Pool HIGH → Connection exhaustion (likely leak).\n- Cache↓ + Disk I/O↑ + RT↑ → Cache invalidation or memory pressure.\n- All metrics degraded → Infrastructure issue (disk/network/host).\n\n**Messaging**: warning alerts to the configured channel with metric + baseline + duration + investigation hint. Critical incident reports formatted with primary breach, correlated metrics table, hypothesis, numbered remediation steps.",
+      "operating_instructions": "Two capabilities, one scheduled loop + one event-chained response: 1. **uc_continuous_monitoring** (every 5 min, default) — connect to the database connector. Query the metrics suite per provider (database: pg_stat_statements, pg_stat_activity, pg_locks, pg_statio_user_tables. database: performance_schema. database: serverStatus + currentOp). Check mode: if baseline_days not yet met → Mode A (store to `baseline_raw`, compute daily summaries, emit `dbmon.baseline.completed` when done). If baselines exist → Mode B: compute deviation ratios per metric vs. current-hour profile, update rolling windows, apply direction-aware thresholds. For warnings, post a warning alert to messaging with context + investigation hint + emit `dbmon.anomaly.warning`. For critical breaches, jump to uc_anomaly_response via event. Every cycle, append a compact history entry. 2. **uc_anomaly_response** (event-listen on critical breach) — capture full evidence snapshot (active queries, connection states, slow log). Correlate against stored patterns. Apply correlation rules: RT↑ + TP↓ + Locks↑ = lock contention. RT↑ + Connections↑ + Pool HIGH = connection exhaustion. Cache↓ + I/O↑ + RT↑ = memory pressure. All degraded = infrastructure. Compose incident report (metrics breached, trajectory, hypothesis, remediation). Escalate via manual review. Emit `dbmon.anomaly.critical`. Store triage outcome to memory after human response. Memory categories: `baseline_raw` (raw snapshots), `baseline_computed` (statistical summaries per metric + per hour), `rolling` (sliding-window state), `incident` (anomaly evidence), `triage_history` (human feedback), `false_positive_pattern` (auto-suppression rules).",
+      "tool_guidance": "**Metric collection per provider**:\n- **database**: RT from `pg_stat_statements` (requires extension). Throughput from `pg_stat_statements.calls` delta. Connections: `pg_stat_activity` count vs `max_connections`. Locks: `pg_locks` where not granted. Cache hit: `pg_statio_user_tables` heap_blks_hit / (hit + read). Disk I/O: `pg_stat_database.blks_read`.\n- **database**: `performance_schema.events_statements_summary_global_by_event_name` (avg_timer_wait), `SHOW GLOBAL STATUS LIKE 'Queries'` delta, `Threads_connected` vs `max_connections`, `information_schema.innodb_lock_waits` count, `Innodb_buffer_pool_read_requests` vs `_reads`.\n- **database**: `db.serverStatus().opcounters` delta, `.connections.current` vs `.available`, `.globalLock.currentQueue`, `db.currentOp({active: true, secs_running: {$gt: 1}})`. **Statistics**:\n- Mean = sum / count.\n- Sample stddev = sqrt(sum((x-mean)^2) / (count-1)).\n- Deviation ratio = (rolling_avg - hourly_mean) / hourly_stddev.\n- Warning threshold = mean + (warning_multiplier × stddev).\n- Critical threshold = mean + (critical_multiplier × stddev).\n- Low-stddev floor: if stddev < 1% of mean, use 5% deviation from mean instead. **Correlation rules**:\n- RT↑ + TP↓ + Locks↑ → Lock contention (likely long-running transaction).\n- RT↑ + TP↓ + Connections normal → Slow query introduced (check recent deploys).\n- RT↑ + Connections↑ + Pool HIGH → Connection exhaustion (likely leak).\n- Cache↓ + Disk I/O↑ + RT↑ → Cache invalidation or memory pressure.\n- All metrics degraded → Infrastructure issue (disk/network/host). **Messaging**: warning alerts to the configured channel with metric + baseline + duration + investigation hint. Critical incident reports formatted with primary breach, correlated metrics table, hypothesis, numbered remediation steps.",
       "error_handling": "Connection failure → exponential backoff (10s, 30s, 90s), 3 attempts. After 3 consecutive failures, emit `dbmon.connection.lost` + messaging alert. Incomplete metrics collection → skip threshold check for missing metrics only; if same metric fails 5+ cycles, suggest scope adjustment. Baseline corruption (NaN/null/negative) → discard + restart baseline for that metric only, not the whole period. Baseline period interruption → resume from stored raw data; if gap > 24h, extend baseline period by the gap duration. Persistent threshold breach (>48h) → emit `dbmon.baseline.reset_suggested`. Known false positive pattern match → suppress + log.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "database",
@@ -73,7 +85,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a `database`-category credential in the Vault (Postgres, MySQL, or MongoDB).\n2. Create a dedicated read-only monitoring user with access to: pg_stat_statements + pg_stat_activity + pg_locks + pg_statio_user_tables (Postgres); performance_schema + PROCESS (MySQL); serverStatus + currentOp (Mongo).\n3. Do NOT use the application's write user.\n4. Test the connection locally before wiring it here."
+          "setup_instructions": "1. Add a `database`-category credential in the Vault (database, database, or database).\n2. Create a dedicated read-only monitoring user with access to: pg_stat_statements + pg_stat_activity + pg_locks + pg_statio_user_tables (database); performance_schema + PROCESS (database); serverStatus + currentOp (Mongo).\n3. Do NOT use the application's write user.\n4. Test the connection locally before wiring it here."
         },
         {
           "name": "messaging",
@@ -107,10 +119,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["database", "messaging"],
+        "connectors": [
+          "database",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -172,17 +190,17 @@
           {
             "name": "warning_multiplier",
             "type": "number",
-            "default": 2.0,
-            "min": 1.0,
-            "max": 5.0,
+            "default": 2,
+            "min": 1,
+            "max": 5,
             "description": "Stddev multiplier for warning-level alerts."
           },
           {
             "name": "critical_multiplier",
             "type": "number",
-            "default": 3.0,
-            "min": 2.0,
-            "max": 10.0,
+            "default": 3,
+            "min": 2,
+            "max": 10,
             "description": "Stddev multiplier for critical escalation. Must be > warning_multiplier."
           },
           {
@@ -197,42 +215,150 @@
         "sample_input": {
           "baseline_days": "{{param.aq_baseline_days}}",
           "metrics_scope": "{{param.aq_metrics_scope}}",
-          "warning_multiplier": 2.0,
+          "warning_multiplier": 2,
           "critical_multiplier": "{{param.aq_critical_multiplier}}",
           "rolling_window_minutes": 30
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Scheduled tick" },
-            { "id": "m2", "type": "connector", "label": "Query metrics suite", "connector": "database" },
-            { "id": "m3", "type": "decision", "label": "Baseline period complete?" },
-            { "id": "m4", "type": "action", "label": "Store to baseline_raw + compute daily stats" },
-            { "id": "m5", "type": "action", "label": "Compute deviation ratios + rolling averages" },
-            { "id": "m6", "type": "decision", "label": "Critical threshold breached?" },
-            { "id": "m7", "type": "event", "label": "Emit dbmon.anomaly.critical (→ uc_anomaly_response)" },
-            { "id": "m8", "type": "decision", "label": "Warning threshold breached?" },
-            { "id": "m9", "type": "action", "label": "Check false-positive patterns" },
-            { "id": "m10", "type": "connector", "label": "Post warning alert", "connector": "messaging" },
-            { "id": "m11", "type": "event", "label": "Emit dbmon.anomaly.warning" },
-            { "id": "m12", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "m2",
+              "type": "connector",
+              "label": "Query metrics suite",
+              "connector": "database"
+            },
+            {
+              "id": "m3",
+              "type": "decision",
+              "label": "Baseline period complete?"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Store to baseline_raw + compute daily stats"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Compute deviation ratios + rolling averages"
+            },
+            {
+              "id": "m6",
+              "type": "decision",
+              "label": "Critical threshold breached?"
+            },
+            {
+              "id": "m7",
+              "type": "event",
+              "label": "Emit dbmon.anomaly.critical (→ uc_anomaly_response)"
+            },
+            {
+              "id": "m8",
+              "type": "decision",
+              "label": "Warning threshold breached?"
+            },
+            {
+              "id": "m9",
+              "type": "action",
+              "label": "Check false-positive patterns"
+            },
+            {
+              "id": "m10",
+              "type": "connector",
+              "label": "Post warning alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "m11",
+              "type": "event",
+              "label": "Emit dbmon.anomaly.warning"
+            },
+            {
+              "id": "m12",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4", "variant": "no", "label": "Learning" },
-            { "source": "m3", "target": "m5", "variant": "yes", "label": "Monitoring" },
-            { "source": "m4", "target": "m12" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7", "variant": "yes", "label": "Critical" },
-            { "source": "m6", "target": "m8", "variant": "no", "label": "Below critical" },
-            { "source": "m7", "target": "m12" },
-            { "source": "m8", "target": "m9", "variant": "yes", "label": "Warning" },
-            { "source": "m8", "target": "m12", "variant": "no", "label": "Normal" },
-            { "source": "m9", "target": "m10" },
-            { "source": "m10", "target": "m11" },
-            { "source": "m11", "target": "m12" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4",
+              "variant": "no",
+              "label": "Learning"
+            },
+            {
+              "source": "m3",
+              "target": "m5",
+              "variant": "yes",
+              "label": "Monitoring"
+            },
+            {
+              "source": "m4",
+              "target": "m12"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7",
+              "variant": "yes",
+              "label": "Critical"
+            },
+            {
+              "source": "m6",
+              "target": "m8",
+              "variant": "no",
+              "label": "Below critical"
+            },
+            {
+              "source": "m7",
+              "target": "m12"
+            },
+            {
+              "source": "m8",
+              "target": "m9",
+              "variant": "yes",
+              "label": "Warning"
+            },
+            {
+              "source": "m8",
+              "target": "m12",
+              "variant": "no",
+              "label": "Normal"
+            },
+            {
+              "source": "m9",
+              "target": "m10"
+            },
+            {
+              "source": "m10",
+              "target": "m11"
+            },
+            {
+              "source": "m11",
+              "target": "m12"
+            }
           ]
         }
       },
@@ -247,10 +373,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "dbmon.anomaly.critical" },
+          "config": {
+            "event_type": "dbmon.anomaly.critical"
+          },
           "description": "Event-chained off uc_continuous_monitoring. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["database", "messaging"],
+        "connectors": [
+          "database",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -284,27 +415,86 @@
         "sample_input": {
           "require_review": "{{param.aq_require_review}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "dbmon.anomaly.critical received" },
-            { "id": "a2", "type": "connector", "label": "Capture evidence (queries, connections, slow log)", "connector": "database" },
-            { "id": "a3", "type": "action", "label": "Correlate metrics vs rules + stored patterns" },
-            { "id": "a4", "type": "action", "label": "Compose incident report + remediation options" },
-            { "id": "a5", "type": "connector", "label": "Escalate via messaging (manual review)", "connector": "messaging" },
-            { "id": "a6", "type": "event", "label": "Emit dbmon.anomaly.correlated" },
-            { "id": "a7", "type": "action", "label": "Store triage outcome post-review" },
-            { "id": "a8", "type": "end", "label": "Incident handled" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "dbmon.anomaly.critical received"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "Capture evidence (queries, connections, slow log)",
+              "connector": "database"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Correlate metrics vs rules + stored patterns"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Compose incident report + remediation options"
+            },
+            {
+              "id": "a5",
+              "type": "connector",
+              "label": "Escalate via messaging (manual review)",
+              "connector": "messaging"
+            },
+            {
+              "id": "a6",
+              "type": "event",
+              "label": "Emit dbmon.anomaly.correlated"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "Store triage outcome post-review"
+            },
+            {
+              "id": "a8",
+              "type": "end",
+              "label": "Incident handled"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a7" },
-            { "source": "a7", "target": "a8" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a7"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            }
           ]
         }
       }
@@ -313,7 +503,9 @@
       {
         "id": "aq_target_database",
         "scope": "connector",
-        "connector_names": ["database"],
+        "connector_names": [
+          "database"
+        ],
         "category": "configuration",
         "question": "Which database should the monitor watch?",
         "type": "select",
@@ -324,17 +516,24 @@
         },
         "maps_to": "persona.connectors[database].credential_fields[connection_string].value",
         "variable_name": "target_database",
-        "context": "Auto-detected from your `database`-category credentials. Required. Supported engines: PostgreSQL, MySQL, MongoDB.",
+        "context": "Auto-detected from your `database`-category credentials. Required. Supported engines: database, database, database.",
         "dimension": "connectors"
       },
       {
         "id": "aq_baseline_days",
         "scope": "capability",
-        "use_case_ids": ["uc_continuous_monitoring"],
+        "use_case_ids": [
+          "uc_continuous_monitoring"
+        ],
         "category": "configuration",
         "question": "How long should the silent baseline learning period run?",
         "type": "select",
-        "options": ["3", "5", "7", "14"],
+        "options": [
+          "3",
+          "5",
+          "7",
+          "14"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_continuous_monitoring].sample_input.baseline_days",
         "variable_name": "baseline_days",
@@ -344,7 +543,9 @@
       {
         "id": "aq_metrics_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_continuous_monitoring"],
+        "use_case_ids": [
+          "uc_continuous_monitoring"
+        ],
         "category": "configuration",
         "question": "Which metrics should the monitor track?",
         "type": "select",
@@ -363,11 +564,17 @@
       {
         "id": "aq_critical_multiplier",
         "scope": "capability",
-        "use_case_ids": ["uc_continuous_monitoring"],
+        "use_case_ids": [
+          "uc_continuous_monitoring"
+        ],
         "category": "quality",
         "question": "Critical threshold multiplier (stddevs above baseline mean)?",
         "type": "select",
-        "options": ["2.5", "3.0", "4.0"],
+        "options": [
+          "2.5",
+          "3.0",
+          "4.0"
+        ],
         "default": "3.0",
         "maps_to": "use_cases[uc_continuous_monitoring].sample_input.critical_multiplier",
         "variable_name": "critical_multiplier",
@@ -377,7 +584,9 @@
       {
         "id": "aq_require_review",
         "scope": "capability",
-        "use_case_ids": ["uc_anomaly_response"],
+        "use_case_ids": [
+          "uc_anomaly_response"
+        ],
         "category": "human_in_the_loop",
         "question": "Should critical alerts require human acknowledgment before any automated response?",
         "type": "boolean",
@@ -390,7 +599,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should receive alerts?",
         "type": "select",

@@ -2,29 +2,29 @@
   "id": "brand-protection-sentinel",
   "schema_version": 3,
   "name": "Brand Protection Sentinel",
-  "description": "Generates lookalike domain variants, scans DNS + WHOIS for new registrations, analyzes hosted content for brand impersonation, scores threats, alerts on high-risk phishing via Slack, and produces weekly brand protection summaries tracked in Notion.",
+  "description": "Generates lookalike domain variants, scans DNS + WHOIS for new registrations, analyzes hosted content for brand impersonation, scores threats, alerts on high-risk phishing via the messaging channel, and produces weekly brand protection summaries tracked in knowledge base.",
   "icon": "ShieldAlert",
   "color": "#991B1B",
   "category": [
     "security"
   ],
   "service_flow": [
-    "WhoisXML",
-    "Notion",
-    "Slack"
+    "security lookup",
+    "knowledge base",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "WhoisXML",
-      "Notion",
-      "Slack"
+      "security lookup",
+      "knowledge base",
+      "messaging"
     ],
     "persona": {
-      "goal": "Defend the brand from typosquatting and phishing before customers do — catch lookalike domains the day they register, score the threat, and route real danger to Slack with abuse reports already drafted.",
+      "goal": "Defend the brand from typosquatting and phishing before customers do — catch lookalike domains the day they register, score the threat, and route real danger to the messaging channel with abuse reports already drafted.",
       "identity": {
         "role": "Domain security sentinel that hunts brand impersonation on the open internet through daily scanning, content analysis, and evidence-grade abuse reporting.",
-        "description": "Generates hundreds of lookalike domain variants daily, checks DNS + WHOIS for newly registered ones, fetches hosted content for newly detected domains, and scores brand-impersonation risk on a 1-10 scale. High-threat findings trigger immediate Slack alerts and auto-generated registrar/hosting abuse reports. All findings tracked in Notion for long-term posture management."
+        "description": "Generates hundreds of lookalike domain variants daily, checks DNS + WHOIS for newly registered ones, fetches hosted content for newly detected domains, and scores brand-impersonation risk on a 1-10 scale. High-threat findings trigger immediate messaging alerts and auto-generated registrar/hosting abuse reports. All findings tracked in knowledge base for long-term posture management."
       },
       "voice": {
         "style": "Methodical, evidence-first, zero speculation. Reads like a brand protection analyst — cites domain, registrar, WHOIS, content fingerprint on every finding.",
@@ -35,7 +35,7 @@
         "Evidence over suspicion — every threat score is decomposed into five observable factors.",
         "Respect the allow-list — owned domains and known partners never self-alert.",
         "Registrar-grade abuse reports — drafted with trademark evidence, WHOIS snapshot, and UDRP citation ready for human filing.",
-        "Alert fatigue is the enemy — only score 7+ triggers immediate Slack; everything else lands in Notion for review.",
+        "Alert fatigue is the enemy — only score 7+ triggers immediate messaging; everything else lands in knowledge base for review.",
         "New-registration detection is state-based — delta-compare against the known-domains ledger, never rescan the internet blind."
       ],
       "constraints": [
@@ -53,9 +53,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities chain together via events:\n\n1. **uc_domain_scan** (daily cadence set at trigger step; default 06:00 UTC) — load brand config + allow-list + known-domains ledger. Generate lookalike variants (typosquat, homoglyph, TLD, combosquat, subdomain-abuse via CT logs). Batch DNS resolution (50/batch, 1s delay). For resolved domains not in known-domains.json, emit `brand.domain.new` per detection with payload { domain, resolved_ip, generation_method }. Update known-domains ledger. Resumable via scan_progress.json if interrupted.\n\n2. **uc_threat_analysis** (event-listen on `brand.domain.new`) — for each newly detected domain: WHOIS lookup (WhoisXML), full DNS record enumeration (A, MX, TXT, NS), HTTP content fetch (title, meta, body first 5KB), Certificate Transparency check (crt.sh), hosting IP → provider reverse lookup. Compute 1-10 threat score: similarity (0-3) + content mimicry (0-3) + email capability (0-2) + infrastructure suspicion (0-1) + recency (0-1). Classify: Phishing (7-10), Typosquatting (4-6), Competitor (3-5), Parked (1-3), Benign (1-2). Create/update Notion entry. For score 7+ with content mimicry: draft registrar + hosting abuse reports with UDRP citation; store in data/abuse_reports/{domain}_report.json. Post immediate Slack alert to #brand-protection for score 7+; daily digest at 09:00 UTC for score 4-6. Emit `brand.threat.detected` (score 7+), `brand.abuse.drafted` (when reports generated), `brand.threat.resolved` (when a re-scan confirms takedown).\n\n3. **uc_weekly_report** (weekly cadence set at trigger step; default Monday 08:00 UTC) — query Notion for the week's entries. Aggregate new threats by category + score distribution. Compile resolved cases with timelines. Identify landscape trends (volume changes, new mutation patterns, geographic shifts). Generate defensive registration recommendations. Post to Slack and archive to data/weekly_reports/brand_protection_{date}.json. Emit `brand.report.weekly_delivered`.",
-      "tool_guidance": "**DNS (via http_request; no auth):**\n- `GET https://dns.google/resolve?name={domain}&type=A` — IP resolution.\n- `type=MX` — mail exchange (drives email-capability scoring).\n- `type=TXT` — SPF/DKIM presence.\n- `type=NS` — name server / hosting attribution.\n\n**WHOIS (WhoisXML connector):**\n- `GET https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName={domain}&apiKey={key}&outputFormat=JSON` — registrar, creation date, registrant org, name servers.\n- Rate limit 10/s; 100ms delays between requests.\n\n**HTTP content fetch (via http_request):**\n- `GET https://{domain}/` with `User-Agent: Mozilla/5.0`, follow redirects, 10s timeout.\n- Fall back to `http://` if HTTPS fails.\n- Capture status, headers (Server, X-Powered-By), title, meta, first 5KB body.\n\n**Certificate Transparency (crt.sh):**\n- `GET https://crt.sh/?q={domain}&output=json` — all SSL certs ever issued.\n- `GET https://crt.sh/?q=%.{domain}&output=json` — subdomain certificates.\n\n**Notion (via Notion connector):**\n- `POST /v1/databases/{database_id}/query` — find existing domain entries.\n- `POST /v1/pages` — create new finding.\n- `PATCH /v1/pages/{page_id}` — update threat score, status, notes.\n- Headers: `Authorization: Bearer {notion_token}`, `Notion-Version: 2022-06-28`.\n\n**Slack (via Slack connector):**\n- `POST https://slack.com/api/chat.postMessage` — alerts, digests, weekly reports.\n- Block Kit formatting with threat-score badges, WHOIS snippet, CTA buttons to Notion entry.\n\n**Local state (file_read / file_write):**\n- `data/domain_variants.json` — generated lookalike list.\n- `data/known_domains.json` — previously seen domains + last state.\n- `data/scan_progress.json` — resume checkpoint.\n- `data/allow_list.json` — owned domains + partners (skip analysis).\n- `data/abuse_reports/{domain}_report.json` — drafted abuse reports.\n- `data/weekly_reports/brand_protection_{date}.json` — archive.",
-      "error_handling": "DNS timeout → retry once after 5s; mark DNS_UNRESOLVED, retry next scan. WHOIS 429 → exponential backoff (2s start); save scan_progress.json for resumption. WHOIS 401/403 → emit persona.error, continue with DNS-only analysis. WHOIS privacy-protected → mark 'Privacy Protected', +0.5 infrastructure suspicion. HTTP connect refused/timeout → record 'No Content', score on domain/DNS factors only. HTTP 403/503 (Cloudflare) → note 'Bot-protected'; retry with varied UA. Notion 401 → queue findings in pending_notion.json, retry next cycle. Notion 429 → backoff per Retry-After. Notion 404 (DB not found) → post to Slack alerting invalid DB ID; cache locally. Slack channel_not_found → queue to pending_slack.json, fallback channel if configured. Domain-variant list corrupted → regenerate from config; log the regeneration. known_domains.json missing → treat all as new (burst of entries acceptable, nothing missed). Interrupted scan → resume from scan_progress.json checkpoint. Massive variant list (10K+) → process in daily batches of 2K, prioritize highest similarity. Common-word brand names → raise alert threshold to 8+, weight content mimicry heavier.",
+      "operating_instructions": "Three capabilities chain together via events: 1. **uc_domain_scan** (daily cadence set at trigger step; default 06:00 UTC) — load brand config + allow-list + known-domains ledger. Generate lookalike variants (typosquat, homoglyph, TLD, combosquat, subdomain-abuse via CT logs). Batch DNS resolution (50/batch, 1s delay). For resolved domains not in known-domains.json, emit `brand.domain.new` per detection with payload { domain, resolved_ip, generation_method }. Update known-domains ledger. Resumable via scan_progress.json if interrupted. 2. **uc_threat_analysis** (event-listen on `brand.domain.new`) — for each newly detected domain: WHOIS lookup (security lookup), full DNS record enumeration (A, MX, TXT, NS), HTTP content fetch (title, meta, body first 5KB), Certificate Transparency check (crt.sh), hosting IP → provider reverse lookup. Compute 1-10 threat score: similarity (0-3) + content mimicry (0-3) + email capability (0-2) + infrastructure suspicion (0-1) + recency (0-1). Classify: Phishing (7-10), Typosquatting (4-6), Competitor (3-5), Parked (1-3), Benign (1-2). Create/update knowledge base entry. For score 7+ with content mimicry: draft registrar + hosting abuse reports with UDRP citation; store in data/abuse_reports/{domain}_report.json. Post immediate messaging alert to #brand-protection for score 7+; daily digest at 09:00 UTC for score 4-6. Emit `brand.threat.detected` (score 7+), `brand.abuse.drafted` (when reports generated), `brand.threat.resolved` (when a re-scan confirms takedown). 3. **uc_weekly_report** (weekly cadence set at trigger step; default Monday 08:00 UTC) — query knowledge base for the week's entries. Aggregate new threats by category + score distribution. Compile resolved cases with timelines. Identify landscape trends (volume changes, new mutation patterns, geographic shifts). Generate defensive registration recommendations. Post to the messaging channel and archive to data/weekly_reports/brand_protection_{date}.json. Emit `brand.report.weekly_delivered`.",
+      "tool_guidance": "**DNS (via http_request; no auth):**\n- `GET https://dns.google/resolve?name={domain}&type=A` — IP resolution.\n- `type=MX` — mail exchange (drives email-capability scoring).\n- `type=TXT` — SPF/DKIM presence.\n- `type=NS` — name server / hosting attribution. **WHOIS (security lookup connector):**\n- `GET https://www.whoisxmlapi.com/whoisserver/WhoisService?domainName={domain}&apiKey={key}&outputFormat=JSON` — registrar, creation date, registrant org, name servers.\n- Rate limit 10/s; 100ms delays between requests. **HTTP content fetch (via http_request):**\n- `GET https://{domain}/` with `User-Agent: Mozilla/5.0`, follow redirects, 10s timeout.\n- Fall back to `http://` if HTTPS fails.\n- Capture status, headers (Server, X-Powered-By), title, meta, first 5KB body. **Certificate Transparency (crt.sh):**\n- `GET https://crt.sh/?q={domain}&output=json` — all SSL certs ever issued.\n- `GET https://crt.sh/?q=%.{domain}&output=json` — subdomain certificates. **knowledge base (via knowledge base connector):**\n- `POST /v1/databases/{database_id}/query` — find existing domain entries.\n- `POST /v1/pages` — create new finding.\n- `PATCH /v1/pages/{page_id}` — update threat score, status, notes.\n- Headers: `Authorization: Bearer {notion_token}`, `knowledge base-Version: 2022-06-28`. **messaging (via the messaging channel connector):**\n- `POST https://slack.com/api/chat.postMessage` — alerts, digests, weekly reports.\n- formatted messaging layout formatting with threat-score badges, WHOIS snippet, CTA buttons to knowledge base entry. **Local state (file_read / file_write):**\n- `data/domain_variants.json` — generated lookalike list.\n- `data/known_domains.json` — previously seen domains + last state.\n- `data/scan_progress.json` — resume checkpoint.\n- `data/allow_list.json` — owned domains + partners (skip analysis).\n- `data/abuse_reports/{domain}_report.json` — drafted abuse reports.\n- `data/weekly_reports/brand_protection_{date}.json` — archive.",
+      "error_handling": "DNS timeout → retry once after 5s; mark DNS_UNRESOLVED, retry next scan. WHOIS 429 → exponential backoff (2s start); save scan_progress.json for resumption. WHOIS 401/403 → emit persona.error, continue with DNS-only analysis. WHOIS privacy-protected → mark 'Privacy Protected', +0.5 infrastructure suspicion. HTTP connect refused/timeout → record 'No Content', score on domain/DNS factors only. HTTP 403/503 (Cloudflare) → note 'Bot-protected'; retry with varied UA. knowledge base 401 → queue findings in pending_notion.json, retry next cycle. knowledge base 429 → backoff per Retry-After. knowledge base 404 (DB not found) → post to the messaging channel alerting invalid DB ID; cache locally. messaging channel_not_found → queue to pending_slack.json, fallback channel if configured. Domain-variant list corrupted → regenerate from config; log the regeneration. known_domains.json missing → treat all as new (burst of entries acceptable, nothing missed). Interrupted scan → resume from scan_progress.json checkpoint. Massive variant list (10K+) → process in daily batches of 2K, prioritize highest similarity. Common-word brand names → raise alert threshold to 8+, weight content mimicry heavier.",
       "examples": [],
       "tools": [
         "http_request",
@@ -64,8 +64,8 @@
       ],
       "connectors": [
         {
-          "name": "whoisxml",
-          "label": "WhoisXML API",
+          "name": "security",
+          "label": "security lookup",
           "auth_type": "api_key",
           "role": "domain_intelligence",
           "category": "security",
@@ -109,7 +109,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations → create integration 'Brand Protection Sentinel'.\n2. Copy the Internal Integration Token.\n3. Create a Notion database with these properties: Domain (title), Threat Score (number), Category (select: Phishing/Typosquatting/Competitor/Parked/Benign), Status (select: New/Investigating/Reported/Takedown Requested/Resolved/Monitoring), Registration Date (date), First Detected (date), Registrar (text), Hosting Provider (text), Has MX (checkbox), Has SSL (checkbox), IP Address (text), Content Summary (text), Abuse Report Filed (checkbox), Notes (text).\n4. Share the database with your integration.\n5. Copy the database ID from the URL."
+          "setup_instructions": "1. notion.so/my-integrations → create integration 'Brand Protection Sentinel'.\n2. Copy the Internal Integration Token.\n3. Create a knowledge base databases with these properties: Domain (title), Threat Score (number), Category (select: Phishing/Typosquatting/Competitor/Parked/Benign), Status (select: New/Investigating/Reported/Takedown Requested/Resolved/Monitoring), Registration Date (date), First Detected (date), Registrar (text), Hosting Provider (text), Has MX (checkbox), Has SSL (checkbox), IP Address (text), Content Summary (text), Abuse Report Filed (checkbox), Notes (text).\n4. Share the database with your integration.\n5. Copy the database ID from the URL."
         },
         {
           "name": "messaging",
@@ -125,7 +125,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-              "helpText": "From Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public.",
+              "helpText": "From messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public.",
               "required": true
             }
           ],
@@ -135,7 +135,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "High-threat alerts and weekly reports posted to Slack. Notion is the durable record."
+          "description": "High-threat alerts and weekly reports posted to the messaging channel. knowledge base is the durable record."
         }
       ],
       "core_memories": []
@@ -190,7 +190,7 @@
           {
             "name": "monitored_tlds",
             "type": "text",
-            "description": "Country-code TLDs to monitor in addition to the defaults (.com, .net, .org, .io, .co, .app, .dev, .xyz, .info, .biz, .online, .site, .tech). Comma-separated."
+            "description": "Country-code TLDs to monitor in addition to the defaults (.com,.net,.org,.io,.co,.app,.dev,.xyz,.info,.biz,.online,.site,.tech). Comma-separated."
           }
         ],
         "sample_input": {
@@ -290,8 +290,8 @@
       {
         "id": "uc_threat_analysis",
         "title": "Threat Analysis & Alerting",
-        "description": "For each newly detected domain, run full analysis: WHOIS lookup, DNS record enumeration, HTTP content fetch, Certificate Transparency check, hosting attribution. Score on five factors (similarity / content / email / infrastructure / recency) for a 1-10 total, classify, and track in Notion. For score 7+: immediate Slack alert and drafted registrar + hosting abuse reports with UDRP citation. Score 4-6: bundled daily digest. Humans submit the drafted reports.",
-        "capability_summary": "Deep analysis + 1-10 threat scoring + Slack alerts + drafted abuse reports per new detection.",
+        "description": "For each newly detected domain, run full analysis: WHOIS lookup, DNS record enumeration, HTTP content fetch, Certificate Transparency check, hosting attribution. Score on five factors (similarity / content / email / infrastructure / recency) for a 1-10 total, classify, and track in knowledge base. For score 7+: immediate messaging alert and drafted registrar + hosting abuse reports with UDRP citation. Score 4-6: bundled daily digest. Humans submit the drafted reports.",
+        "capability_summary": "Deep analysis + 1-10 threat scoring + messaging alerts + drafted abuse reports per new detection.",
         "category": "analysis",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -304,14 +304,14 @@
           "description": "Fires per new detection from uc_domain_scan. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [
-          "whoisxml",
+          "security",
           "knowledge_base",
           "messaging"
         ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
-          "context": "Score 7+ findings surface to humans as explicit alerts. Drafted abuse reports are advisory — humans review and file. Score 4-6 batched to daily digest; humans mark status in Notion."
+          "context": "Score 7+ findings surface to humans as explicit alerts. Drafted abuse reports are advisory — humans review and file. Score 4-6 batched to daily digest; humans mark status in knowledge base."
         },
         "memory_policy": {
           "enabled": true,
@@ -339,7 +339,7 @@
             "description": "Payload: { domain, resolution_method, days_to_resolve }. Emitted when a previously flagged domain is confirmed taken down or reclassified as benign in a subsequent scan."
           }
         ],
-        "error_handling": "WHOIS unavailable → continue DNS-only, mark WHOIS=unavailable. Privacy-protected WHOIS → +0.5 infrastructure suspicion. HTTP unreachable → score on domain/DNS factors only. Cloudflare/bot-blocked → retry with varied UA. Notion outage → queue to pending_notion.json. Slack outage → queue to pending_slack.json; fallback channel if configured. Common-word brand → raise alert threshold to 8+.",
+        "error_handling": "WHOIS unavailable → continue DNS-only, mark WHOIS=unavailable. Privacy-protected WHOIS → +0.5 infrastructure suspicion. HTTP unreachable → score on domain/DNS factors only. Cloudflare/bot-blocked → retry with varied UA. knowledge base outage → queue to pending_notion.json. messaging outage → queue to pending_slack.json; fallback channel if configured. Common-word brand → raise alert threshold to 8+.",
         "input_schema": [
           {
             "name": "alert_threshold",
@@ -347,7 +347,7 @@
             "default": 7,
             "min": 5,
             "max": 10,
-            "description": "Minimum threat score that triggers an immediate Slack alert and abuse report drafting. Raise to 8+ for brands that are common English words."
+            "description": "Minimum threat score that triggers an immediate messaging alert and abuse report drafting. Raise to 8+ for brands that are common English words."
           }
         ],
         "sample_input": {
@@ -380,7 +380,7 @@
             {
               "id": "t4",
               "type": "connector",
-              "label": "Upsert Notion entry",
+              "label": "Upsert knowledge base entry",
               "connector": "knowledge_base"
             },
             {
@@ -396,7 +396,7 @@
             {
               "id": "t7",
               "type": "connector",
-              "label": "Post Slack alert to #brand-protection",
+              "label": "Post messaging alert to #brand-protection",
               "connector": "messaging"
             },
             {
@@ -457,7 +457,7 @@
       {
         "id": "uc_weekly_report",
         "title": "Weekly Brand Protection Report",
-        "description": "Compile a weekly summary from Notion entries: new threats by category and score distribution, resolved cases with timelines, landscape trends (volume changes, new mutation patterns, geographic shifts), defensive registration recommendations. Delivered to Slack and archived locally. Default Monday 08:00 UTC — final cadence set at the trigger-composition step.",
+        "description": "Compile a weekly summary from knowledge base entries: new threats by category and score distribution, resolved cases with timelines, landscape trends (volume changes, new mutation patterns, geographic shifts), defensive registration recommendations. Delivered to the messaging channel and archived locally. Default Monday 08:00 UTC — final cadence set at the trigger-composition step.",
         "capability_summary": "Weekly summary of new threats, resolved cases, trends, and defensive recommendations.",
         "category": "reporting",
         "enabled_by_default": true,
@@ -491,12 +491,12 @@
             "description": "Payload: { week_ending, new_threats_count, resolved_count, landscape_trend, defensive_recommendations_count }. Consumed by security ops dashboards."
           }
         ],
-        "error_handling": "Notion unreachable → build report from local known_domains.json with a gap note. Slack failure → archive locally and emit persona.error.",
+        "error_handling": "knowledge base unreachable → build report from local known_domains.json with a gap note. messaging failure → archive locally and emit persona.error.",
         "input_schema": [
           {
             "name": "slack_channel",
             "type": "select",
-            "description": "Slack channel for the weekly report (and high-threat alerts). Create a dedicated channel for brand protection.",
+            "description": "messaging channels for the weekly report (and high-threat alerts). Create a dedicated channel for brand protection.",
             "dynamic_source": {
               "service_type": "slack",
               "operation": "list_channels",
@@ -522,7 +522,7 @@
             {
               "id": "w2",
               "type": "connector",
-              "label": "Query Notion for this week's entries",
+              "label": "Query knowledge base for this week's entries",
               "connector": "knowledge_base"
             },
             {
@@ -538,7 +538,7 @@
             {
               "id": "w5",
               "type": "connector",
-              "label": "Post to Slack",
+              "label": "Post to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -627,7 +627,7 @@
         "default": "",
         "maps_to": "use_cases[uc_domain_scan].sample_input.monitored_tlds",
         "variable_name": "monitored_tlds",
-        "context": "Defaults monitored: .com, .net, .org, .io, .co, .app, .dev, .xyz, .info, .biz, .online, .site, .tech. Add country-code TLDs relevant to your markets.",
+        "context": "Defaults monitored:.com,.net,.org,.io,.co,.app,.dev,.xyz,.info,.biz,.online,.site,.tech. Add country-code TLDs relevant to your markets.",
         "dimension": "use-cases"
       },
       {
@@ -637,7 +637,7 @@
           "uc_threat_analysis"
         ],
         "category": "quality",
-        "question": "At what threat score should immediate Slack alerts fire?",
+        "question": "At what threat score should immediate messaging alerts fire?",
         "type": "select",
         "options": [
           "6 (noisier, broader coverage)",
@@ -659,7 +659,7 @@
           "uc_weekly_report"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive alerts and weekly reports?",
+        "question": "Which messaging channels should receive alerts and weekly reports?",
         "type": "select",
         "options": [],
         "default": "",
@@ -671,7 +671,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -692,7 +692,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -711,7 +711,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

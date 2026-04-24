@@ -5,11 +5,23 @@
   "description": "Scans web sources and RSS feeds, curates the most relevant articles using editorial intelligence, assembles themed newsletter issues with original commentary, and delivers polished HTML emails to subscribers via SMTP. Learns from editorial feedback to progressively refine source selection, topic weighting, and writing tone.",
   "icon": "Mail",
   "color": "#8b5cf6",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Web Sources", "RSS Feeds", "Editorial Engine", "SMTP Email"],
+  "service_flow": [
+    "Web Sources",
+    "RSS Feeds",
+    "Editorial Engine",
+    "SMTP Email"
+  ],
   "payload": {
-    "service_flow": ["Web Sources", "RSS Feeds", "Editorial Engine", "SMTP Email"],
+    "service_flow": [
+      "Web Sources",
+      "RSS Feeds",
+      "Editorial Engine",
+      "SMTP Email"
+    ],
     "persona": {
       "goal": "Turn scattered blogs, feeds, and noise into a tight, themed newsletter your audience looks forward to — curated, commented, reviewed, delivered.",
       "identity": {
@@ -42,18 +54,22 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability: curate, write, and deliver a reviewed newsletter issue.\n\n**uc_curate_issue** — scheduled cadence (default weekly Monday 08:00 UTC) or manual trigger for a special edition.\n\n1. Fetch all configured sources: RSS/Atom feeds via `GET` with XML accept headers; web pages via HTML fetch + link extraction. Normalize dates to ISO 8601. 15s timeout per source. 1s delay between same-domain requests. Track per-source fetch success/failure in `state/source_health.json`.\n2. Deduplicate against `state/seen_articles.json` (exact URL + >85% fuzzy title match). Filter articles older than `aq_source_scan_depth` days (high-priority sources exempt).\n3. Score each candidate 1-10 on weighted criteria: topic alignment (30%), source authority (20%), freshness (20%), uniqueness (15%), depth (15%).\n4. Select top `aq_max_articles_per_issue` articles. Apply editorial judgement: dedupe overlapping coverage, promote gap-fillers. Group into 2-4 thematic sections.\n5. Write editorial entries in the configured `aq_editorial_tone`: rewritten headline + 2-4 sentence commentary + source attribution per article. Write 1-2 sentence section intros and a 2-3 sentence issue header.\n6. Assemble responsive HTML: header with issue number (from `state/issue_counter.json`) + date + intro; themed sections with article entries; footer with source credits. Archive to `state/drafts/issue_{N}.html`.\n7. Submit for human review with full HTML preview, per-article scores, cut-list, and subscriber count. On reject-with-notes: revise flagged sections, save feedback to memory, resubmit. On approve: proceed.\n8. Send via the email connector to the subscriber list. Subject: `[Newsletter Name] #N — [Top Theme]`. Retry once on 4xx/5xx; save draft and notify if still failing.\n9. Post-send: update `seen_articles.json`, increment `issue_counter.json`, save issue metadata to memory. Emit `newsletter.issue.delivered`.\n10. If a source has failed 3 consecutive cycles, emit `newsletter.source.unhealthy` with URL + failure count — the review context already surfaced it earlier, this event enables proactive source list maintenance.\n\nState lives in `state/seen_articles.json` (dedup index), `state/issue_counter.json`, `state/source_health.json`, `state/drafts/issue_{N}.html`. Always read-then-merge-then-write to avoid data loss.",
-      "tool_guidance": "**RSS / Atom fetching** (http_request):\n- `GET <feed_url>` with `Accept: application/rss+xml, application/atom+xml, application/xml`.\n- Parse `<item>` (RSS 2.0) or `<entry>` (Atom) — extract title, link, pubDate/published, description/summary, author.\n- 15s timeout per source. Skip and log on timeout — never block the pipeline for one slow source.\n- Respect robots.txt. 1s delay between same-domain requests.\n\n**HTML web source scraping**:\n- `GET <page_url>` and extract article links + titles + dates from known page structures.\n- Less reliable than RSS — use feeds when available.\n\n**Email connector** (email_smtp):\n- Assembled HTML sent with `Content-Type: text/html; charset=utf-8`.\n- Include plain-text fallback for non-HTML clients.\n- Max 2 retries on failure with 30s backoff.\n- Track delivery status per recipient if the provider supports it.\n\n**Scoring model**:\n- Topic alignment (30%): embedding similarity to newsletter topic / declared interests.\n- Source authority (20%): historical curation acceptance rate for this source.\n- Freshness (20%): days since publish vs source_scan_depth.\n- Uniqueness (15%): topical overlap with other candidates.\n- Depth (15%): word count + presence of original analysis signals (citations, methodology, case-study language).\n\n**State files**:\n- `state/seen_articles.json` — URL-keyed dedup index with title hash + curated_at + issue_number.\n- `state/issue_counter.json` — `{last_issue, last_sent}`.\n- `state/source_health.json` — per-source consecutive_failures, last_success, total_curated, avg_score.\n- `state/drafts/issue_{N}.html` — archived issues.",
+      "operating_instructions": "One capability: curate, write, and deliver a reviewed newsletter issue. **uc_curate_issue** — scheduled cadence (default weekly Monday 08:00 UTC) or manual trigger for a special edition. 1. Fetch all configured sources: RSS/Atom feeds via `GET` with XML accept headers; web pages via HTML fetch + link extraction. Normalize dates to ISO 8601. 15s timeout per source. 1s delay between same-domain requests. Track per-source fetch success/failure in `state/source_health.json`.\n2. Deduplicate against `state/seen_articles.json` (exact URL + >85% fuzzy title match). Filter articles older than `aq_source_scan_depth` days (high-priority sources exempt).\n3. Score each candidate 1-10 on weighted criteria: topic alignment (30%), source authority (20%), freshness (20%), uniqueness (15%), depth (15%).\n4. Select top `aq_max_articles_per_issue` articles. Apply editorial judgement: dedupe overlapping coverage, promote gap-fillers. Group into 2-4 thematic sections.\n5. Write editorial entries in the configured `aq_editorial_tone`: rewritten headline + 2-4 sentence commentary + source attribution per article. Write 1-2 sentence section intros and a 2-3 sentence issue header.\n6. Assemble responsive HTML: header with issue number (from `state/issue_counter.json`) + date + intro; themed sections with article entries; footer with source credits. Archive to `state/drafts/issue_{N}.html`.\n7. Submit for human review with full HTML preview, per-article scores, cut-list, and subscriber count. On reject-with-notes: revise flagged sections, save feedback to memory, resubmit. On approve: proceed.\n8. Send via the email connector to the subscriber list. Subject: `[Newsletter Name] #N — [Top Theme]`. Retry once on 4xx/5xx; save draft and notify if still failing.\n9. Post-send: update `seen_articles.json`, increment `issue_counter.json`, save issue metadata to memory. Emit `newsletter.issue.delivered`.\n10. If a source has failed 3 consecutive cycles, emit `newsletter.source.unhealthy` with URL + failure count — the review context already surfaced it earlier, this event enables proactive source list maintenance. State lives in `state/seen_articles.json` (dedup index), `state/issue_counter.json`, `state/source_health.json`, `state/drafts/issue_{N}.html`. Always read-then-merge-then-write to avoid data loss.",
+      "tool_guidance": "**RSS / Atom fetching** (http_request):\n- `GET <feed_url>` with `Accept: application/rss+xml, application/atom+xml, application/xml`.\n- Parse `<item>` (RSS 2.0) or `<entry>` (Atom) — extract title, link, pubDate/published, description/summary, author.\n- 15s timeout per source. Skip and log on timeout — never block the pipeline for one slow source.\n- Respect robots.txt. 1s delay between same-domain requests. **HTML web source scraping**:\n- `GET <page_url>` and extract article links + titles + dates from known page structures.\n- Less reliable than RSS — use feeds when available. **Email connector** (email_smtp):\n- Assembled HTML sent with `Content-Type: text/html; charset=utf-8`.\n- Include plain-text fallback for non-HTML clients.\n- Max 2 retries on failure with 30s backoff.\n- Track delivery status per recipient if the provider supports it. **Scoring model**:\n- Topic alignment (30%): embedding similarity to newsletter topic / declared interests.\n- Source authority (20%): historical curation acceptance rate for this source.\n- Freshness (20%): days since publish vs source_scan_depth.\n- Uniqueness (15%): topical overlap with other candidates.\n- Depth (15%): word count + presence of original analysis signals (citations, methodology, case-study language). **State files**:\n- `state/seen_articles.json` — URL-keyed dedup index with title hash + curated_at + issue_number.\n- `state/issue_counter.json` — `{last_issue, last_sent}`.\n- `state/source_health.json` — per-source consecutive_failures, last_success, total_curated, avg_score.\n- `state/drafts/issue_{N}.html` — archived issues.",
       "error_handling": "Individual RSS 4xx/5xx -> skip source, increment consecutive_failures, continue with remaining. Web source layout changed -> log parsing failure, skip, add a knowledge annotation. All sources fail -> abort cycle, user_message, retry next cycle (don't ship empty). Scoring yields <2 articles above threshold -> ship compact issue with short intro; note 'thin week' in review context. Dedup index corrupted -> re-initialize empty; dupes self-correct in one cycle. Reviewer flags off-tone content -> save feedback to memory with high importance, adjust next issue. SMTP auth failure -> retry once after 30s; if still failing, save draft and notify user. Partial delivery (bounces) -> log bounces, complete delivery to rest, include bounce list in post-send memory. Rate limit -> queue and retry after cooldown; never re-send to recipients already delivered. Issue counter corrupted -> scan drafts dir for highest N, reconstruct. Seen-articles >10k entries -> prune entries older than 90 days.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "rss_web_sources",
+          "name": "web_scraping",
           "label": "RSS / Web Sources",
           "auth_type": "none",
           "role": "data_source",
-          "category": "content",
+          "category": "web_scraping",
           "required": true,
           "credential_fields": [
             {
@@ -84,7 +100,7 @@
           "setup_instructions": "1. Collect RSS feed URLs from your preferred content sources. Most blogs have /feed/ or /rss endpoints.\n2. Enter one URL per line.\n3. For sources without RSS, add their main page URL to the web sources field (less reliable).\n4. Optionally mark high-priority sources by name to boost scoring.\n5. Verify feeds by opening them in a browser — you should see XML."
         },
         {
-          "name": "email_smtp",
+          "name": "email",
           "label": "Email / SMTP",
           "auth_type": "smtp_credentials",
           "role": "email",
@@ -120,7 +136,7 @@
               "label": "SMTP Password / App Password",
               "type": "password",
               "placeholder": "your-app-password",
-              "helpText": "Gmail: use an App Password (myaccount.google.com -> Security -> App Passwords). SendGrid: your API key.",
+              "helpText": "email: use an App Password (myaccount.google.com -> Security -> App Passwords). SendGrid: your API key.",
               "required": true
             },
             {
@@ -140,7 +156,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Choose your email provider: Gmail, Outlook, SendGrid, Mailgun, or any SMTP-compatible service.\n2. Gmail: enable 2FA, create an App Password. Use smtp.gmail.com:587.\n3. SendGrid: create an API key. Use smtp.sendgrid.net:587 with username 'apikey'.\n4. Enter SMTP host, port, username, password.\n5. Set a From address verified with your provider.\n6. Add subscriber emails as a comma-separated list."
+          "setup_instructions": "1. Choose your email provider: email, email, SendGrid, Mailgun, or any SMTP-compatible service.\n2. email: enable 2FA, create an App Password. Use smtp.gmail.com:587.\n3. SendGrid: create an API key. Use smtp.sendgrid.net:587 with username 'apikey'.\n4. Enter SMTP host, port, username, password.\n5. Set a From address verified with your provider.\n6. Add subscriber emails as a comma-separated list."
         }
       ],
       "notification_channels_default": [
@@ -173,7 +189,10 @@
           },
           "description": "Default weekly — final cadence set at the trigger-composition step. Scans sources, compiles the issue, submits for review, then delivers on approval."
         },
-        "connectors": ["rss_web_sources", "email_smtp"],
+        "connectors": [
+          "web_scraping",
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -221,7 +240,13 @@
           {
             "name": "editorial_tone",
             "type": "enum",
-            "options": ["analytical", "conversational", "executive", "technical", "casual"],
+            "options": [
+              "analytical",
+              "conversational",
+              "executive",
+              "technical",
+              "casual"
+            ],
             "default": "analytical",
             "description": "Writing voice for headlines, commentary, and section intros."
           }
@@ -231,36 +256,130 @@
           "source_scan_depth": "{{param.aq_source_scan_depth}}",
           "editorial_tone": "{{param.aq_editorial_tone}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Cycle begins (schedule or manual)" },
-            { "id": "c2", "type": "connector", "label": "Fetch RSS feeds + scrape web sources", "connector": "rss_web_sources" },
-            { "id": "c3", "type": "action", "label": "Dedupe + age-filter candidates" },
-            { "id": "c4", "type": "action", "label": "Score + select + group into sections" },
-            { "id": "c5", "type": "action", "label": "Write editorial commentary + assemble HTML" },
-            { "id": "c6", "type": "action", "label": "Human review (full HTML preview)" },
-            { "id": "c7", "type": "decision", "label": "Approved?" },
-            { "id": "c8", "type": "action", "label": "Revise flagged sections" },
-            { "id": "c9", "type": "connector", "label": "Deliver via SMTP", "connector": "email_smtp" },
-            { "id": "c10", "type": "action", "label": "Post-send bookkeeping" },
-            { "id": "c11", "type": "event", "label": "Emit newsletter.issue.delivered" },
-            { "id": "c12", "type": "end", "label": "Issue delivered" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Cycle begins (schedule or manual)"
+            },
+            {
+              "id": "c2",
+              "type": "connector",
+              "label": "Fetch RSS feeds + scrape web sources",
+              "connector": "rss_web_sources"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Dedupe + age-filter candidates"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Score + select + group into sections"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Write editorial commentary + assemble HTML"
+            },
+            {
+              "id": "c6",
+              "type": "action",
+              "label": "Human review (full HTML preview)"
+            },
+            {
+              "id": "c7",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "c8",
+              "type": "action",
+              "label": "Revise flagged sections"
+            },
+            {
+              "id": "c9",
+              "type": "connector",
+              "label": "Deliver via SMTP",
+              "connector": "email_smtp"
+            },
+            {
+              "id": "c10",
+              "type": "action",
+              "label": "Post-send bookkeeping"
+            },
+            {
+              "id": "c11",
+              "type": "event",
+              "label": "Emit newsletter.issue.delivered"
+            },
+            {
+              "id": "c12",
+              "type": "end",
+              "label": "Issue delivered"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c9", "label": "Approve", "variant": "yes" },
-            { "source": "c7", "target": "c8", "label": "Reject", "variant": "no" },
-            { "source": "c8", "target": "c6" },
-            { "source": "c9", "target": "c10" },
-            { "source": "c10", "target": "c11" },
-            { "source": "c11", "target": "c12" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c9",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "c7",
+              "target": "c8",
+              "label": "Reject",
+              "variant": "no"
+            },
+            {
+              "source": "c8",
+              "target": "c6"
+            },
+            {
+              "source": "c9",
+              "target": "c10"
+            },
+            {
+              "source": "c10",
+              "target": "c11"
+            },
+            {
+              "source": "c11",
+              "target": "c12"
+            }
           ]
         }
       }
@@ -269,7 +388,9 @@
       {
         "id": "aq_target_audience",
         "scope": "capability",
-        "use_case_ids": ["uc_curate_issue"],
+        "use_case_ids": [
+          "uc_curate_issue"
+        ],
         "category": "domain",
         "question": "Who is the primary target audience for your newsletter?",
         "type": "select",
@@ -287,7 +408,9 @@
       {
         "id": "aq_editorial_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_curate_issue"],
+        "use_case_ids": [
+          "uc_curate_issue"
+        ],
         "category": "configuration",
         "question": "Editorial tone?",
         "type": "select",
@@ -307,11 +430,19 @@
       {
         "id": "aq_max_articles_per_issue",
         "scope": "capability",
-        "use_case_ids": ["uc_curate_issue"],
+        "use_case_ids": [
+          "uc_curate_issue"
+        ],
         "category": "configuration",
         "question": "Max articles per issue?",
         "type": "select",
-        "options": ["5", "8", "10", "15", "20"],
+        "options": [
+          "5",
+          "8",
+          "10",
+          "15",
+          "20"
+        ],
         "default": "10",
         "maps_to": "use_cases[uc_curate_issue].sample_input.max_articles_per_issue",
         "variable_name": "max_articles_per_issue",
@@ -321,11 +452,18 @@
       {
         "id": "aq_source_scan_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_curate_issue"],
+        "use_case_ids": [
+          "uc_curate_issue"
+        ],
         "category": "configuration",
         "question": "Days back to scan from each source?",
         "type": "select",
-        "options": ["3", "7", "14", "30"],
+        "options": [
+          "3",
+          "7",
+          "14",
+          "30"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_curate_issue].sample_input.source_scan_depth",
         "variable_name": "source_scan_depth",

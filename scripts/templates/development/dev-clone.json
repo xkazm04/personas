@@ -5,11 +5,21 @@
   "description": "Autonomous senior-developer clone that scans the codebase for backlog candidates, holds each for human accept/reject, implements accepted items as focused PRs, reacts to review comments via GitHub webhook, and bundles merged work into human-approved releases. Learns architecture patterns and review preferences from every triage and every comment.",
   "icon": "Bot",
   "color": "#6366F1",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Codebase", "GitHub", "Messages"],
+  "service_flow": [
+    "Codebase",
+    "GitHub",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Codebase", "GitHub", "Messages"],
+    "service_flow": [
+      "Codebase",
+      "GitHub",
+      "Messages"
+    ],
     "persona": {
       "goal": "Extend the lead developer — discover backlog candidates, triage with a human, ship focused PRs, react to review comments, and bundle merged work into approved releases.",
       "identity": {
@@ -47,7 +57,11 @@
       "tool_guidance": "**Codebase connector** (required, read + write access to the registered codebase):\n- `list_projects`, `list_files`, `read_file`, `search_code`, `search_across_projects` — discovery.\n- `get_contexts`, `get_context_detail`, `get_portfolio_health`, `get_risk_matrix`, `get_cross_project_map`, `get_dependency_graph`, `analyze_cross_impact` — architectural intelligence.\n- `create_branch` (name `dev-clone/{slug}`), `apply_diff`, `run_tests`, `get_git_status`, `commit_changes` — implementation.\n- `list_ideas`, `create_idea`, `update_idea_status` — backlog sync if the connector has an idea registry.\n\n**GitHub REST API** (`https://api.github.com`, `Authorization: Bearer {GITHUB_PAT}`):\n- `POST /repos/{owner}/{repo}/pulls` — create PR. Body: `{title, body, head: dev-clone/branch-name, base: main}`.\n- `POST /repos/{owner}/{repo}/issues/{pr_number}/comments` — reply to general PR comment.\n- `POST /repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies` — reply inline on review comment.\n- `GET /repos/{owner}/{repo}/pulls/{pr_number}` — state polling; add `Accept: application/vnd.github.diff` to fetch diff text.\n- `POST /repos/{owner}/{repo}/releases` — create release with tag_name + body.\n- `PUT /repos/{owner}/{repo}/pulls/{pr_number}/merge` — merge (only when autonomy level permits).\n- Rate limit: 5000 req/hr PAT auth; use `If-None-Match` conditional requests where possible.\n\n**Webhook (GitHub PR events)** — configured at adoption via the GitHub connector setup. The webhook fires on issue_comment.created, pull_request_review_comment.created, pull_request.closed, pull_request.merged.\n\n**Local state**:\n- `dev_config.json` — target repos, tech stack context, autonomy level, max concurrent PRs.\n- `build_queue.json` — accepted items awaiting implementation (ordered by priority score).\n- `pr_tracker.json` — open PRs keyed by number with status (open / in_review / merged / closed / aborted).\n- `release_log.json` — released versions with PR groups + outcome notes.\n- `latest_dev_report.json` — fallback when Messages delivery fails.",
       "error_handling": "Codebase connector offline → pause uc_implementation, queue accepted items in `build_queue.json`; uc_backlog_scan also pauses. GitHub 401/403 → pause PR operations, surface credential-refresh Messages alert; uc_backlog_scan continues. GitHub 422 (validation error) → parse reason: branch-exists → suffix counter and retry; PR-already-open → update existing instead of create. GitHub rate-limit → pause until `X-RateLimit-Reset`; codebase-local work continues. Webhook payload malformed → log and skip. Webhook for a PR not created by dev-clone → ignore. Commenter is self / another bot → ignore to avoid feedback loops. apply_diff conflict → regenerate diff from current file state, retry once; if still fails, report conflict via Messages and skip that file. run_tests timeout → report via Messages, abort PR. 3 test-fix iterations exhausted → abort PR, escalate. First run (no memory) → use conservative defaults, read existing code patterns as baseline. `dev_config.json` missing → post setup reminder via Messages, halt. Messages delivery fail → write to `latest_dev_report.json`, retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -151,10 +165,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "0 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 * * * *",
+            "timezone": "local"
+          },
           "description": "Default hourly — final cadence set at the trigger-composition step."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -176,7 +195,11 @@
           {
             "name": "improvement_scope",
             "type": "enum",
-            "options": ["todos_only", "todos_and_tech_debt", "todos_tech_debt_and_risk"],
+            "options": [
+              "todos_only",
+              "todos_and_tech_debt",
+              "todos_tech_debt_and_risk"
+            ],
             "default": "todos_and_tech_debt",
             "description": "Which kinds of findings the scan surfaces. Start narrow; widen after you've triaged a few cycles."
           }
@@ -184,23 +207,66 @@
         "sample_input": {
           "improvement_scope": "{{param.aq_improvement_scope}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Hourly tick" },
-            { "id": "b2", "type": "connector", "label": "search_code TODOs + get_risk_matrix + get_portfolio_health", "connector": "codebase" },
-            { "id": "b3", "type": "action", "label": "Filter by memorized category weights" },
-            { "id": "b4", "type": "action", "label": "Compose candidate records" },
-            { "id": "b5", "type": "event", "label": "Emit dev-clone.backlog.candidate per finding" },
-            { "id": "b6", "type": "end", "label": "Candidates queued for triage" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Hourly tick"
+            },
+            {
+              "id": "b2",
+              "type": "connector",
+              "label": "search_code TODOs + get_risk_matrix + get_portfolio_health",
+              "connector": "codebase"
+            },
+            {
+              "id": "b3",
+              "type": "action",
+              "label": "Filter by memorized category weights"
+            },
+            {
+              "id": "b4",
+              "type": "action",
+              "label": "Compose candidate records"
+            },
+            {
+              "id": "b5",
+              "type": "event",
+              "label": "Emit dev-clone.backlog.candidate per finding"
+            },
+            {
+              "id": "b6",
+              "type": "end",
+              "label": "Candidates queued for triage"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3"
+            },
+            {
+              "source": "b3",
+              "target": "b4"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            }
           ]
         }
       },
@@ -215,7 +281,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "dev-clone.backlog.candidate" },
+          "config": {
+            "event_type": "dev-clone.backlog.candidate"
+          },
           "description": "Fires per candidate emitted by uc_backlog_scan. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [],
@@ -243,23 +311,65 @@
         "error_handling": "Messages delivery failure on triage card → queue the candidate in `pending_triage.json`; retry next cycle. Never auto-reject — unreviewed candidates age in the queue and surface in the next hourly summary.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "dev-clone.backlog.candidate received" },
-            { "id": "t2", "type": "action", "label": "Render triage card via Messages" },
-            { "id": "t3", "type": "decision", "label": "Accept / Reject / Defer?" },
-            { "id": "t4", "type": "event", "label": "Emit dev-clone.backlog.triaged" },
-            { "id": "t5", "type": "action", "label": "Persist decision + reason to memory" },
-            { "id": "t6", "type": "end", "label": "Awaiting next candidate" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "dev-clone.backlog.candidate received"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Render triage card via Messages"
+            },
+            {
+              "id": "t3",
+              "type": "decision",
+              "label": "Accept / Reject / Defer?"
+            },
+            {
+              "id": "t4",
+              "type": "event",
+              "label": "Emit dev-clone.backlog.triaged"
+            },
+            {
+              "id": "t5",
+              "type": "action",
+              "label": "Persist decision + reason to memory"
+            },
+            {
+              "id": "t6",
+              "type": "end",
+              "label": "Awaiting next candidate"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            }
           ]
         }
       },
@@ -274,10 +384,18 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "dev-clone.backlog.triaged", "filter": { "decision": "accepted" } },
+          "config": {
+            "event_type": "dev-clone.backlog.triaged",
+            "filter": {
+              "decision": "accepted"
+            }
+          },
           "description": "Fires on every accepted triage decision. A secondary webhook sub-trigger handles GitHub PR review-comment events to the same capability."
         },
-        "connectors": ["codebase", "github"],
+        "connectors": [
+          "codebase",
+          "github"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -312,47 +430,183 @@
         "error_handling": "Codebase offline → queue accepted items in `build_queue.json`, retry on reconnect; never drop. GitHub 422 branch-exists → suffix counter, retry once. Test fix 3-iteration limit → abort PR, mark candidate with `blocked:tests_failing` in memory, surface via Messages. Architectural concern in review comment → do NOT auto-fix, escalate via Messages and reply on GitHub. Max-concurrent-PRs limit reached → pause new implementations until a PR merges.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "dev-clone.backlog.triaged (accepted)" },
-            { "id": "i2", "type": "connector", "label": "read_file + search_code on affected area", "connector": "codebase" },
-            { "id": "i3", "type": "action", "label": "Plan diff; respect memorized patterns" },
-            { "id": "i4", "type": "connector", "label": "create_branch dev-clone/{slug}", "connector": "codebase" },
-            { "id": "i5", "type": "connector", "label": "apply_diff per file", "connector": "codebase" },
-            { "id": "i6", "type": "connector", "label": "run_tests (3 iter max)", "connector": "codebase" },
-            { "id": "i7", "type": "connector", "label": "commit_changes", "connector": "codebase" },
-            { "id": "i8", "type": "connector", "label": "POST /repos/../pulls (create PR)", "connector": "github" },
-            { "id": "i9", "type": "event", "label": "Emit dev-clone.pr.created" },
-            { "id": "i10", "type": "start", "label": "GitHub webhook: review comment" },
-            { "id": "i11", "type": "decision", "label": "Classify: code-change / question / architectural / approval" },
-            { "id": "i12", "type": "action", "label": "Auto-fix + commit + reply (code-change)" },
-            { "id": "i13", "type": "action", "label": "Inline explanation reply (question)" },
-            { "id": "i14", "type": "action", "label": "Escalate to human (architectural)" },
-            { "id": "i15", "type": "event", "label": "Emit dev-clone.pr.updated" },
-            { "id": "i16", "type": "event", "label": "Emit dev-clone.pr.merged on GitHub merge" },
-            { "id": "i17", "type": "end", "label": "PR lifecycle complete" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "dev-clone.backlog.triaged (accepted)"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "read_file + search_code on affected area",
+              "connector": "codebase"
+            },
+            {
+              "id": "i3",
+              "type": "action",
+              "label": "Plan diff; respect memorized patterns"
+            },
+            {
+              "id": "i4",
+              "type": "connector",
+              "label": "create_branch dev-clone/{slug}",
+              "connector": "codebase"
+            },
+            {
+              "id": "i5",
+              "type": "connector",
+              "label": "apply_diff per file",
+              "connector": "codebase"
+            },
+            {
+              "id": "i6",
+              "type": "connector",
+              "label": "run_tests (3 iter max)",
+              "connector": "codebase"
+            },
+            {
+              "id": "i7",
+              "type": "connector",
+              "label": "commit_changes",
+              "connector": "codebase"
+            },
+            {
+              "id": "i8",
+              "type": "connector",
+              "label": "POST /repos/../pulls (create PR)",
+              "connector": "github"
+            },
+            {
+              "id": "i9",
+              "type": "event",
+              "label": "Emit dev-clone.pr.created"
+            },
+            {
+              "id": "i10",
+              "type": "start",
+              "label": "GitHub webhook: review comment"
+            },
+            {
+              "id": "i11",
+              "type": "decision",
+              "label": "Classify: code-change / question / architectural / approval"
+            },
+            {
+              "id": "i12",
+              "type": "action",
+              "label": "Auto-fix + commit + reply (code-change)"
+            },
+            {
+              "id": "i13",
+              "type": "action",
+              "label": "Inline explanation reply (question)"
+            },
+            {
+              "id": "i14",
+              "type": "action",
+              "label": "Escalate to human (architectural)"
+            },
+            {
+              "id": "i15",
+              "type": "event",
+              "label": "Emit dev-clone.pr.updated"
+            },
+            {
+              "id": "i16",
+              "type": "event",
+              "label": "Emit dev-clone.pr.merged on GitHub merge"
+            },
+            {
+              "id": "i17",
+              "type": "end",
+              "label": "PR lifecycle complete"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" },
-            { "source": "i7", "target": "i8" },
-            { "source": "i8", "target": "i9" },
-            { "source": "i10", "target": "i11" },
-            { "source": "i11", "target": "i12", "label": "code-change", "variant": "yes" },
-            { "source": "i11", "target": "i13", "label": "question" },
-            { "source": "i11", "target": "i14", "label": "architectural" },
-            { "source": "i12", "target": "i15" },
-            { "source": "i13", "target": "i15" },
-            { "source": "i14", "target": "i15" },
-            { "source": "i15", "target": "i16" },
-            { "source": "i16", "target": "i17" },
-            { "source": "i9", "target": "i17" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            },
+            {
+              "source": "i10",
+              "target": "i11"
+            },
+            {
+              "source": "i11",
+              "target": "i12",
+              "label": "code-change",
+              "variant": "yes"
+            },
+            {
+              "source": "i11",
+              "target": "i13",
+              "label": "question"
+            },
+            {
+              "source": "i11",
+              "target": "i14",
+              "label": "architectural"
+            },
+            {
+              "source": "i12",
+              "target": "i15"
+            },
+            {
+              "source": "i13",
+              "target": "i15"
+            },
+            {
+              "source": "i14",
+              "target": "i15"
+            },
+            {
+              "source": "i15",
+              "target": "i16"
+            },
+            {
+              "source": "i16",
+              "target": "i17"
+            },
+            {
+              "source": "i9",
+              "target": "i17"
+            }
           ]
         }
       },
@@ -367,10 +621,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 17 * * 5", "timezone": "local" },
+          "config": {
+            "cron": "0 17 * * 5",
+            "timezone": "local"
+          },
           "description": "Default Friday 5pm local — final cadence set at the trigger-composition step (daily / weekly / bi-weekly / on-demand)."
         },
-        "connectors": ["codebase", "github"],
+        "connectors": [
+          "codebase",
+          "github"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -395,37 +655,138 @@
         "error_handling": "No merged PRs since last release → skip this tick with a terse 'nothing to release' Messages note. Test suite fails on the full run → halt; do not propose the release; escalate via Messages with failure details. GitHub release API fails → retry once; if still failing, surface manual-tag instructions via Messages.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Scheduled release tick or manual invoke" },
-            { "id": "r2", "type": "action", "label": "Enumerate merged PRs since last release" },
-            { "id": "r3", "type": "decision", "label": "Any PRs to release?" },
-            { "id": "r4", "type": "action", "label": "Draft release notes grouped by category" },
-            { "id": "r5", "type": "connector", "label": "run_tests (full suite)", "connector": "codebase" },
-            { "id": "r6", "type": "event", "label": "Emit dev-clone.release.proposed" },
-            { "id": "r7", "type": "action", "label": "Route to human for approval" },
-            { "id": "r8", "type": "decision", "label": "Approved?" },
-            { "id": "r9", "type": "connector", "label": "POST /repos/../releases (tag)", "connector": "github" },
-            { "id": "r10", "type": "event", "label": "Emit dev-clone.release.accepted" },
-            { "id": "r11", "type": "action", "label": "Memorize rejection reason + create follow-up backlog items" },
-            { "id": "r12", "type": "end", "label": "Release cycle complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Scheduled release tick or manual invoke"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Enumerate merged PRs since last release"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Any PRs to release?"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Draft release notes grouped by category"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "run_tests (full suite)",
+              "connector": "codebase"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit dev-clone.release.proposed"
+            },
+            {
+              "id": "r7",
+              "type": "action",
+              "label": "Route to human for approval"
+            },
+            {
+              "id": "r8",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "r9",
+              "type": "connector",
+              "label": "POST /repos/../releases (tag)",
+              "connector": "github"
+            },
+            {
+              "id": "r10",
+              "type": "event",
+              "label": "Emit dev-clone.release.accepted"
+            },
+            {
+              "id": "r11",
+              "type": "action",
+              "label": "Memorize rejection reason + create follow-up backlog items"
+            },
+            {
+              "id": "r12",
+              "type": "end",
+              "label": "Release cycle complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "variant": "yes", "label": "Yes" },
-            { "source": "r3", "target": "r12", "variant": "no", "label": "No PRs" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9", "variant": "yes", "label": "Approve" },
-            { "source": "r8", "target": "r11", "variant": "no", "label": "Reject" },
-            { "source": "r9", "target": "r10" },
-            { "source": "r10", "target": "r12" },
-            { "source": "r11", "target": "r12" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "r3",
+              "target": "r12",
+              "variant": "no",
+              "label": "No PRs"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "r8",
+              "target": "r11",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "r9",
+              "target": "r10"
+            },
+            {
+              "source": "r10",
+              "target": "r12"
+            },
+            {
+              "source": "r11",
+              "target": "r12"
+            }
           ]
         }
       }
@@ -434,7 +795,10 @@
       {
         "id": "aq_source_control",
         "scope": "connector",
-        "connector_names": ["github", "gitlab"],
+        "connector_names": [
+          "github",
+          "gitlab"
+        ],
         "category": "configuration",
         "question": "Which source-control credential should Dev Clone operate with?",
         "type": "select",
@@ -451,7 +815,9 @@
       {
         "id": "aq_codebase",
         "scope": "connector",
-        "connector_names": ["codebase"],
+        "connector_names": [
+          "codebase"
+        ],
         "category": "configuration",
         "question": "Which registered codebase should Dev Clone analyze and modify?",
         "type": "select",
@@ -463,16 +829,20 @@
         "dimension": "connectors",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
-        "option_service_types": ["codebase"],
+        "option_service_types": [
+          "codebase"
+        ],
         "dynamic_source": {
-          "service_type": "codebase",
+          "service_type": "development",
           "operation": "list_codebases"
         }
       },
       {
         "id": "aq_improvement_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_backlog_scan"],
+        "use_case_ids": [
+          "uc_backlog_scan"
+        ],
         "category": "domain",
         "question": "What kinds of findings should the hourly scan surface?",
         "type": "select",

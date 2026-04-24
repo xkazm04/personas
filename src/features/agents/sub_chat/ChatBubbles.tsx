@@ -73,36 +73,45 @@ function Timestamp({ date, className }: { date: string; className?: string }) {
 
 // ── Chat Bubble ──────────────────────────────────────────────────────────
 
-export function ChatBubble({ message }: { message: ChatMessage }) {
+export function ChatBubble({ message, isGroupStart = true }: { message: ChatMessage; isGroupStart?: boolean }) {
   const { t } = useTranslation();
   const isUser = message.role === 'user';
 
   return (
     <div className={`group/msg flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`} data-testid={`chat-bubble-${message.role}`}>
-      {/* Avatar */}
-      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
-        isUser ? 'bg-primary/15' : 'bg-violet-500/12'
-      }`}>
-        {isUser
-          ? <User className="w-4 h-4 text-primary" />
-          : <Bot className="w-4 h-4 text-violet-400" />}
-      </div>
+      {/* Avatar (or spacer for continuation bubbles) */}
+      {isGroupStart ? (
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 ${
+          isUser ? 'bg-primary/15' : 'bg-violet-500/12'
+        }`}>
+          {isUser
+            ? <User className="w-4 h-4 text-primary" />
+            : <Bot className="w-4 h-4 text-violet-400" />}
+        </div>
+      ) : (
+        <div className="flex-shrink-0 w-8" aria-hidden />
+      )}
 
       {/* Content */}
       <div className={`relative group/bubble min-w-0 ${isUser ? 'max-w-[70%]' : 'max-w-[85%]'}`}>
-        {/* Name + timestamp row */}
-        <div className={`flex items-baseline gap-2 mb-0.5 ${isUser ? 'flex-row-reverse' : ''}`}>
-          <span className={`text-[13px] font-semibold ${isUser ? 'text-foreground' : 'text-violet-400/90'}`}>
-            {isUser ? t.agents.chat.you : t.agents.chat.assistant}
-          </span>
-          <Timestamp date={message.createdAt} className={isUser ? 'text-foreground' : 'text-foreground'} />
-        </div>
+        {/* Name row — only on first of group */}
+        {isGroupStart && (
+          <div className={`flex items-baseline gap-2 mb-0.5 ${isUser ? 'flex-row-reverse' : ''}`}>
+            <span className={`text-[13px] font-semibold ${isUser ? 'text-foreground' : 'text-violet-400/90'}`}>
+              {isUser ? t.agents.chat.you : t.agents.chat.assistant}
+            </span>
+          </div>
+        )}
 
         {/* Message body */}
-        <div className={`relative rounded-2xl px-4 py-3 ${
+        <div className={`relative px-4 py-3 ${
+          isGroupStart
+            ? `rounded-2xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'}`
+            : `rounded-xl ${isUser ? 'rounded-tr-md' : 'rounded-tl-md'}`
+        } ${
           isUser
-            ? 'chat-user-bubble rounded-tr-md'
-            : 'bg-secondary/40 border border-primary/[0.07] rounded-tl-md'
+            ? 'chat-user-bubble'
+            : 'bg-secondary/40 border border-primary/[0.07]'
         }`}>
           {isUser ? (
             <p className="text-[15px] leading-relaxed whitespace-pre-wrap break-words">{message.content}</p>
@@ -111,6 +120,14 @@ export function ChatBubble({ message }: { message: ChatMessage }) {
           )}
           {!isUser && <CopyBtn text={message.content} />}
         </div>
+
+        {/* Hover-revealed timestamp on the outer edge of the bubble */}
+        <Timestamp
+          date={message.createdAt}
+          className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover/msg:opacity-100 transition-opacity text-foreground/50 pointer-events-none whitespace-nowrap ${
+            isUser ? 'right-full mr-2' : 'left-full ml-2'
+          }`}
+        />
       </div>
     </div>
   );

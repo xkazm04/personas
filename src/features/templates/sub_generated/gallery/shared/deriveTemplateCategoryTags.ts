@@ -36,17 +36,9 @@ export interface TemplateCategoryPill {
 // from "messaging" (abstract slot → slot name IS the category).
 const KNOWN_CONNECTOR_NAMES = new Set(BUILTIN_CONNECTORS.map((c) => c.name));
 
-// Some catalog keys differ from the multi-tag keys used on connectors.
-// e.g. the catalog uses `project-mgmt` (kebab) while the multi-tag uses
-// `project_management` (snake). Map the connector-tag form to the catalog
-// form so pills render with the right icon/color.
-const TAG_ALIASES: Record<string, string> = {
-  project_management: 'project-mgmt',
-  time_tracking: 'time-tracking',
-};
-
+// Catalog is fully snake_case; no alias translation needed.
 function normalizeTag(tag: string): string {
-  return TAG_ALIASES[tag] ?? tag;
+  return tag;
 }
 
 export function deriveTemplateCategoryTags(

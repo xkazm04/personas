@@ -16,10 +16,22 @@ use r2d2::{CustomizeConnection, Pool};
 use r2d2_sqlite::SqliteConnectionManager;
 use rusqlite::params;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use crate::error::AppError;
 
 pub type DbPool = Pool<SqliteConnectionManager>;
+
+/// Cached filesystem path of the primary `personas.db` file, set once by
+/// [`init_db`]. Engine subprocesses (MCP sidecar, test automation) read this
+/// via [`primary_db_path`] when they need to point a child process at the
+/// same SQLite file without re-deriving `app_data_dir`.
+static PRIMARY_DB_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+/// Return the path to `personas.db` if [`init_db`] has run, else `None`.
+pub fn primary_db_path() -> Option<PathBuf> {
+    PRIMARY_DB_PATH.get().cloned()
+}
 
 /// Separate connection pool for the user-facing database (`personas_data.db`).
 /// This is completely isolated from the internal app database to prevent
@@ -89,6 +101,7 @@ pub fn init_db(
     std::fs::create_dir_all(app_data_dir)?;
     restrict_dir_permissions(app_data_dir);
     let db_path = app_data_dir.join("personas.db");
+    let _ = PRIMARY_DB_PATH.set(db_path.clone());
 
     tracing::info!(path = %db_path.display(), "Initializing database");
 
@@ -237,6 +250,12 @@ pub fn seed_builtin_credentials(conn: &rusqlite::Connection) -> Result<(), AppEr
             "Local Messaging",
             "personas_messages",
             r#"{"is_builtin":true,"description":"Built-in in-app messaging channel. Agents can send notifications and messages without external services."}"#,
+        ),
+        (
+            "builtin-personas-drive",
+            "Local Drive",
+            "local_drive",
+            r#"{"is_builtin":true,"always_active":true,"description":"Managed local filesystem for agent exports. Drive root is resolved at runtime and browsable via the Drive plugin — no credentials required."}"#,
         ),
     ];
 

@@ -4,11 +4,11 @@
   "label": "Obsidian",
   "color": "#7C3AED",
   "icon_url": "/icons/connectors/obsidian.svg",
-  "category": "productivity",
+  "category": "knowledge_base",
   "categories": [
-    "productivity",
     "knowledge_base",
-    "note_taking"
+    "productivity",
+    "desktop"
   ],
   "fields": [
     {

@@ -2,29 +2,29 @@
   "id": "editorial-calendar-manager",
   "schema_version": 3,
   "name": "Editorial Calendar Manager",
-  "description": "Reads the Notion editorial calendar, syncs deadlines and assignments to Airtable for tracking, sends reminder emails to writers approaching deadlines, posts status reports, and flags content gaps in the schedule.",
+  "description": "Reads the knowledge base editorial calendar, syncs deadlines and assignments to spreadsheet for tracking, sends reminder emails to writers approaching deadlines, posts status reports, and flags content gaps in the schedule.",
   "icon": "CalendarDays",
   "color": "#EF4444",
   "category": [
     "legal"
   ],
   "service_flow": [
-    "Notion",
-    "Airtable",
-    "Gmail"
+    "knowledge base",
+    "spreadsheet",
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Notion",
-      "Airtable",
-      "Gmail"
+      "knowledge base",
+      "spreadsheet",
+      "email"
     ],
     "persona": {
       "goal": "Keep the editorial pipeline moving — one synced tracker, timely reminders, and a weekly view that flags gaps before they become missed deadlines.",
       "identity": {
         "role": "Editorial operations coordinator that keeps Notion as the source of truth, Airtable as the structured tracker, and writers on-deadline through learned-cadence Gmail reminders.",
-        "description": "Reads the Notion editorial calendar each run, diffs against the Airtable tracking table, and applies precise creates/updates/cancellations. Sends tiered deadline reminders to writers — earlier for writers the ledger has learned run late. Produces a weekly status report with content gap analysis (empty weeks, underrepresented topics, writer overload, deadline bunching). Never blasts the team with noise; every message earns its place."
+        "description": "Reads the knowledge base editorial calendar each run, diffs against the spreadsheet tracking table, and applies precise creates/updates/cancellations. Sends tiered deadline reminders to writers — earlier for writers the ledger has learned run late. Produces a weekly status report with content gap analysis (empty weeks, underrepresented topics, writer overload, deadline bunching). Never blasts the team with noise; every message earns its place."
       },
       "voice": {
         "style": "Warm but operational. Reads like a managing editor — precise about deadlines, considerate about tone, never bureaucratic.",
@@ -32,30 +32,30 @@
         "tone_adjustments": []
       },
       "principles": [
-        "Notion is the source of truth — Airtable is a tracker, never the authoring surface.",
+        "knowledge base is the source of truth — spreadsheet is a tracker, never the authoring surface.",
         "Every sync action is explained in the log: created / updated / cancelled counts per run.",
         "Reminders adapt to writer patterns — someone who ships on time gets fewer nudges than someone who ships late.",
-        "Cancellations are soft — mark 'Cancelled' in Airtable, never delete. Editorial history stays legible.",
+        "Cancellations are soft — mark 'Cancelled' in spreadsheet, never delete. Editorial history stays legible.",
         "Gap analysis names the week and names the gap — 'Week of April 7: zero scheduled' beats 'schedule looks thin'."
       ],
       "constraints": [
-        "Never delete Airtable records — cancellation is a status change, not a data loss.",
+        "Never delete spreadsheet records — cancellation is a status change, not a data loss.",
         "Never send duplicate reminders for the same (entry, tier) — the state file is load-bearing.",
         "Never fabricate writer email addresses — if an entry lacks an email, flag it in the status report and skip the reminder.",
         "Never send a reminder if the writer already replied acknowledging the deadline — gmail_search catches that before the send."
       ],
       "decision_principles": [
-        "When Notion and Airtable disagree on a field, Notion wins — Airtable is downstream.",
+        "When knowledge base and spreadsheet disagree on a field, knowledge base wins — spreadsheet is downstream.",
         "When a writer has 3+ late-ship observations, send reminders one tier earlier going forward (7→3→1 becomes 10→5→2).",
         "When a week has zero scheduled content, the gap alert goes to the editor immediately — don't wait for Monday's report.",
-        "When the state file is corrupted, rebuild from Airtable rather than replaying sent reminders."
+        "When the state file is corrupted, rebuild from spreadsheet rather than replaying sent reminders."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities cooperate — a sync, a reminder pipeline that consumes the sync's output, and a weekly report:\n\n1. **uc_sync** — query the Notion editorial database (paginated, 100/page). Extract per entry: title, writer name + email, status, deadline, content type, topic, notes, page ID. Diff against Airtable records (match on Notion page ID). Create new, update changed fields, mark removed-from-Notion as 'Cancelled' (never delete). Write a sync log entry with counts. Emit `editorial.sync.completed`.\n\n2. **uc_reminders** (event-listen on editorial.sync.completed) — query Airtable for active (non-published, non-cancelled) entries. For each, compute days-to-deadline and apply the tier schedule (7d / 3d / 1d / overdue by default). Check `editorial_state.json` to prevent duplicate sends per (entry, tier). Look up writer_patterns — if a writer's late-ship count ≥ 3, bump the tier one step earlier. Send via gmail_send with tier-appropriate subject/body. Record each send in state.\n\n3. **uc_weekly_report** (weekly by default) — fetch all Airtable records, compute: published last 7d, in-progress this 7d, overdue items, 30-day gap analysis (empty weeks, underrepresented categories, writer overload with 3+ pieces in 7d, deadline bunching with 3+ on one day), writer workload distribution. Compose an HTML email to the configured recipient list. Emit `editorial.report.delivered`.\n\nState: `editorial_state.json` (sent-reminder ledger keyed by entry+tier, writer_patterns with on-time/late counts per writer, last-sync timestamp). `sync_log.json` (audit trail per sync run).",
-      "tool_guidance": "**Notion** (required):\n- Query database: `POST https://api.notion.com/v1/databases/{database_id}/query` with pagination cursor, header `Notion-Version: 2022-06-28`.\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` when the agent needs to write back.\n- Never mutate Notion without explicit write-back intent — the calendar is the source of truth.\n\n**Airtable** (required):\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableName}` with `filterByFormula` for active/overdue queries.\n- Create: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"fields\": {...}}`.\n- Update: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}`.\n- Batch ops: `{\"records\": [{\"id\": ..., \"fields\": {...}}]}` — max 10 per request.\n\n**Gmail** (required):\n- `gmail_send` for reminders and status reports; HTML body with plain-text fallback; urgency-tiered subject lines.\n- `gmail_search` with `from:{writer_email} subject:\"{article_title}\"` to check for prior replies before nudging again.\n\n**Local state** (`editorial_state.json`, `sync_log.json`):\n- Always read-modify-write atomically; never clobber writer_patterns on a write that only touches the sent-reminder ledger.\n- When the state file is missing or corrupt, rebuild from Airtable — don't replay reminders.\n\n**Pagination**:\n- Both Notion and Airtable cap at 100 records per page. Always follow cursors until exhausted; log truncation if you hit an artificial limit.",
-      "error_handling": "Notion 429 → retry after 1s (up to 3x); if still failing, log partial sync and note in the next status report. Airtable 422 (field validation) → log the offending record, continue with the rest, flag for manual review. Gmail send failure → queue for next cycle; do not record the reminder as sent until confirmed. Missing writer email → sync with 'Incomplete' status, flag in gap analysis, skip the reminder. Timezone ambiguity → always interpret deadlines as end-of-day in the editorial team's configured timezone. Corrupted state file → rebuild from Airtable rather than replay reminders; note the loss of send-history in the next status report.",
+      "operating_instructions": "Three capabilities cooperate — a sync, a reminder pipeline that consumes the sync's output, and a weekly report: 1. **uc_sync** — query the knowledge base editorial database (paginated, 100/page). Extract per entry: title, writer name + email, status, deadline, content type, topic, notes, page ID. Diff against spreadsheet records (match on knowledge base pages ID). Create new, update changed fields, mark removed-from-knowledge base as 'Cancelled' (never delete). Write a sync log entry with counts. Emit `editorial.sync.completed`. 2. **uc_reminders** (event-listen on editorial.sync.completed) — query spreadsheet for active (non-published, non-cancelled) entries. For each, compute days-to-deadline and apply the tier schedule (7d / 3d / 1d / overdue by default). Check `editorial_state.json` to prevent duplicate sends per (entry, tier). Look up writer_patterns — if a writer's late-ship count ≥ 3, bump the tier one step earlier. Send via gmail_send with tier-appropriate subject/body. Record each send in state. 3. **uc_weekly_report** (weekly by default) — fetch all spreadsheet records, compute: published last 7d, in-progress this 7d, overdue items, 30-day gap analysis (empty weeks, underrepresented categories, writer overload with 3+ pieces in 7d, deadline bunching with 3+ on one day), writer workload distribution. Compose an HTML email to the configured recipient list. Emit `editorial.report.delivered`. State: `editorial_state.json` (sent-reminder ledger keyed by entry+tier, writer_patterns with on-time/late counts per writer, last-sync timestamp). `sync_log.json` (audit trail per sync run).",
+      "tool_guidance": "**knowledge base** (required):\n- Query database: `POST https://api.notion.com/v1/databases/{database_id}/query` with pagination cursor, header `knowledge base-Version: 2022-06-28`.\n- Update page: `PATCH https://api.notion.com/v1/pages/{page_id}` when the agent needs to write back.\n- Never mutate knowledge base without explicit write-back intent — the calendar is the source of truth. **spreadsheet** (required):\n- List records: `GET https://api.airtable.com/v0/{baseId}/{tableName}` with `filterByFormula` for active/overdue queries.\n- Create: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"fields\": {...}}`.\n- Update: `PATCH https://api.airtable.com/v0/{baseId}/{tableName}/{recordId}`.\n- Batch ops: `{\"records\": [{\"id\":..., \"fields\": {...}}]}` — max 10 per request. **email** (required):\n- `gmail_send` for reminders and status reports; HTML body with plain-text fallback; urgency-tiered subject lines.\n- `gmail_search` with `from:{writer_email} subject:\"{article_title}\"` to check for prior replies before nudging again. **Local state** (`editorial_state.json`, `sync_log.json`):\n- Always read-modify-write atomically; never clobber writer_patterns on a write that only touches the sent-reminder ledger.\n- When the state file is missing or corrupt, rebuild from spreadsheet — don't replay reminders. **Pagination**:\n- Both knowledge base and spreadsheet cap at 100 records per page. Always follow cursors until exhausted; log truncation if you hit an artificial limit.",
+      "error_handling": "knowledge base 429 → retry after 1s (up to 3x); if still failing, log partial sync and note in the next status report. spreadsheet 422 (field validation) → log the offending record, continue with the rest, flag for manual review. email send failure → queue for next cycle; do not record the reminder as sent until confirmed. Missing writer email → sync with 'Incomplete' status, flag in gap analysis, skip the reminder. Timezone ambiguity → always interpret deadlines as end-of-day in the editorial team's configured timezone. Corrupted state file → rebuild from spreadsheet rather than replay reminders; note the loss of send-history in the next status report.",
       "examples": [],
       "tools": [
         "http_request",
@@ -87,11 +87,11 @@
               "label": "Editorial Calendar Database ID",
               "type": "text",
               "placeholder": "a1b2c3d4e5f6...",
-              "helpText": "Open the calendar database in Notion, click Share -> Copy link. The database ID is the 32-character string in the URL before the ?v= parameter.",
+              "helpText": "Open the calendar database in knowledge base, click Share -> Copy link. The database ID is the 32-character string in the URL before the?v= parameter.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to notion.so/my-integrations and click 'New integration'.\n2. Name it 'Editorial Calendar Manager' and select the workspace containing your editorial calendar.\n3. Under Capabilities, enable 'Read content', 'Update content', and 'Read user information'.\n4. Copy the Internal Integration Token (starts with 'ntn_').\n5. In Notion, open your editorial calendar database, click '...' -> 'Connections' -> add your integration.\n6. Copy the database ID from the database URL."
+          "setup_instructions": "1. Go to notion.so/my-integrations and click 'New integration'.\n2. Name it 'Editorial Calendar Manager' and select the workspace containing your editorial calendar.\n3. Under Capabilities, enable 'Read content', 'Update content', and 'Read user information'.\n4. Copy the Internal Integration Token (starts with 'ntn_').\n5. In knowledge base, open your editorial calendar database, click '...' -> 'Connections' -> add your integration.\n6. Copy the database ID from the database URL."
         },
         {
           "name": "spreadsheet",
@@ -112,10 +112,10 @@
             },
             {
               "key": "base_id",
-              "label": "Airtable Base ID",
+              "label": "spreadsheet Base ID",
               "type": "text",
               "placeholder": "appXXXXXXXXXXXXXX",
-              "helpText": "Found in the Airtable API docs page (airtable.com/developers/web/api/introduction) or in the base URL (starts with 'app').",
+              "helpText": "Found in the spreadsheet API docs page (airtable.com/developers/web/api/introduction) or in the base URL (starts with 'app').",
               "required": true
             },
             {
@@ -123,11 +123,11 @@
               "label": "Tracking Table Name",
               "type": "text",
               "placeholder": "Editorial Tracking",
-              "helpText": "The name of the Airtable table where editorial entries will be synced. Create this table with columns: Title, Writer, Email, Status, Deadline, Content Type, Topic, Notion ID, Notes.",
+              "helpText": "The name of the spreadsheet table where editorial entries will be synced. Create this table with columns: Title, Writer, Email, Status, Deadline, Content Type, Topic, knowledge base ID, Notes.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to airtable.com/create/tokens and click 'Create new token'.\n2. Name it 'Editorial Calendar Manager'.\n3. Add scopes: data.records:read, data.records:write, schema.bases:read.\n4. Under Access, select the specific base for editorial tracking.\n5. Create a table with columns: Title (text), Writer (text), Email (email), Status (single select: Draft, In Review, Scheduled, Published, Cancelled, Incomplete), Deadline (date), Content Type (single select), Topic (text), Notion ID (text), Notes (long text).\n6. Copy the base ID from the URL."
+          "setup_instructions": "1. Go to airtable.com/create/tokens and click 'Create new token'.\n2. Name it 'Editorial Calendar Manager'.\n3. Add scopes: data.records:read, data.records:write, schema.bases:read.\n4. Under Access, select the specific base for editorial tracking.\n5. Create a table with columns: Title (text), Writer (text), Email (email), Status (single select: Draft, In Review, Scheduled, Published, Cancelled, Incomplete), Deadline (date), Content Type (single select), Topic (text), knowledge base ID (text), Notes (long text).\n6. Copy the base ID from the URL."
         },
         {
           "name": "email",
@@ -163,13 +163,13 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the email API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         }
       ],
       "notification_channels_default": [
         {
           "type": "email",
-          "description": "Gmail delivers writer reminders per pending deadline and the weekly status report to the editorial distribution list."
+          "description": "email delivers writer reminders per pending deadline and the weekly status report to the editorial distribution list."
         }
       ],
       "core_memories": []
@@ -177,9 +177,9 @@
     "use_cases": [
       {
         "id": "uc_sync",
-        "title": "Notion to Airtable Sync",
-        "description": "Reads the Notion editorial calendar, diffs against Airtable, and applies creates / updates / cancellations. Cancellations are soft — 'Cancelled' status, never deletion. Default cadence is per cycle; final cadence set at the trigger-composition step.",
-        "capability_summary": "Notion calendar mirrored into Airtable with precise create/update/cancel diff logic.",
+        "title": "knowledge base to spreadsheet Sync",
+        "description": "Reads the knowledge base editorial calendar, diffs against spreadsheet, and applies creates / updates / cancellations. Cancellations are soft — 'Cancelled' status, never deletion. Default cadence is per cycle; final cadence set at the trigger-composition step.",
+        "capability_summary": "knowledge base calendar mirrored into spreadsheet with precise create/update/cancel diff logic.",
         "category": "integration",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -212,7 +212,7 @@
             "description": "Payload: { created, updated, cancelled, total, timestamp }. Consumed by uc_reminders to run the reminder pass against fresh data."
           }
         ],
-        "error_handling": "Notion 429 → retry with 1s backoff up to 3x; on persistent failure, log partial sync and proceed with what was fetched. Airtable 422 → log the failing record, continue with the rest. Missing writer email on a Notion entry → sync with status 'Incomplete' for the gap analysis to flag.",
+        "error_handling": "knowledge base 429 → retry with 1s backoff up to 3x; on persistent failure, log partial sync and proceed with what was fetched. spreadsheet 422 → log the failing record, continue with the rest. Missing writer email on a knowledge base entry → sync with status 'Incomplete' for the gap analysis to flag.",
         "input_schema": [],
         "sample_input": {},
         "tool_hints": [
@@ -231,19 +231,19 @@
             {
               "id": "s2",
               "type": "connector",
-              "label": "Query Notion database (paginated)",
+              "label": "Query knowledge base databases (paginated)",
               "connector": "knowledge_base"
             },
             {
               "id": "s3",
               "type": "connector",
-              "label": "Fetch Airtable records",
+              "label": "Fetch spreadsheet records",
               "connector": "spreadsheet"
             },
             {
               "id": "s4",
               "type": "action",
-              "label": "Diff by Notion page ID"
+              "label": "Diff by knowledge base pages ID"
             },
             {
               "id": "s5",
@@ -302,8 +302,8 @@
       {
         "id": "uc_reminders",
         "title": "Deadline Reminders",
-        "description": "For each active Airtable entry, compute days-to-deadline and send tiered Gmail reminders to the assigned writer. Duplicate-proof via a local state ledger; adaptive — writers flagged as late-shipping get reminded one tier earlier. Tiers default to 7d / 3d / 1d / overdue; configured at the trigger-composition step.",
-        "capability_summary": "Tiered Gmail reminders with duplicate suppression and learned per-writer cadence.",
+        "description": "For each active spreadsheet entry, compute days-to-deadline and send tiered email reminders to the assigned writer. Duplicate-proof via a local state ledger; adaptive — writers flagged as late-shipping get reminded one tier earlier. Tiers default to 7d / 3d / 1d / overdue; configured at the trigger-composition step.",
+        "capability_summary": "Tiered email reminders with duplicate suppression and learned per-writer cadence.",
         "category": "notifications",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -332,7 +332,7 @@
           {
             "event_type": "editorial.sync.completed",
             "direction": "listen",
-            "description": "Upstream sync trigger — reminder pass acts on the freshly-updated Airtable data."
+            "description": "Upstream sync trigger — reminder pass acts on the freshly-updated spreadsheet data."
           },
           {
             "event_type": "editorial.reminder.sent",
@@ -345,7 +345,7 @@
             "description": "Payload: { entry_id, title, writer, days_overdue }. Emitted on the first overdue-tier reminder for escalation-listener personas."
           }
         ],
-        "error_handling": "Gmail send failure → queue for retry next cycle; do not record the reminder as sent until confirmed. Writer email missing → skip, flagged in the weekly report. Bounce detected on a prior send → pause that writer's reminders, flag for human triage.",
+        "error_handling": "email send failure → queue for retry next cycle; do not record the reminder as sent until confirmed. Writer email missing → skip, flagged in the weekly report. Bounce detected on a prior send → pause that writer's reminders, flag for human triage.",
         "input_schema": [
           {
             "name": "tier_schedule",
@@ -491,7 +491,7 @@
             "description": "Payload: { week_of, kind (empty_week|topic_void|writer_overload|deadline_bunching), detail }. Emitted per gap for downstream planning automations."
           }
         ],
-        "error_handling": "Airtable fetch failure → send a partial report with available data and note the gap; never skip the Monday send entirely. Gmail send failure → write the compiled HTML to `latest_report.html` and retry next cycle. Distribution list empty → send to the editor only and note the config issue.",
+        "error_handling": "spreadsheet fetch failure → send a partial report with available data and note the gap; never skip the Monday send entirely. email send failure → write the compiled HTML to `latest_report.html` and retry next cycle. Distribution list empty → send to the editor only and note the config issue.",
         "input_schema": [
           {
             "name": "recipients",
@@ -532,7 +532,7 @@
             {
               "id": "w2",
               "type": "connector",
-              "label": "Fetch Airtable tracker",
+              "label": "Fetch spreadsheet tracker",
               "connector": "spreadsheet"
             },
             {
@@ -699,7 +699,7 @@
           "uc_weekly_report"
         ],
         "category": "domain",
-        "question": "What content types does your Notion editorial calendar track?",
+        "question": "What content types does your knowledge base editorial calendar track?",
         "type": "select",
         "options": [
           "Blog posts only",
@@ -750,7 +750,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -769,7 +769,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -788,7 +788,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

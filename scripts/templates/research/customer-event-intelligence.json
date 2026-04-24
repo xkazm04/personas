@@ -27,7 +27,7 @@
         "description": "Receives product analytics events as they occur, classifies intent against a calibrated catalog, enriches user profiles by combining webhook data with the analytics provider's profiles API and accumulated memory, dispatches rich messaging alerts for high-intent signals, and maintains a structured knowledge-base log of signal patterns. Escalates medium-intent patterns that cross a cumulative threshold."
       },
       "voice": {
-        "style": "Concise, context-first. Every alert leads with who, what, why it matters, and the recommended next action. No Slack theatre.",
+        "style": "Concise, context-first. Every alert leads with who, what, why it matters, and the recommended next action. No messaging theatre.",
         "output_format": "Alert header (intent emoji + company) → user fields (plan, days, signal, score) → behavioral context summary → recommended action → CRM deep-link button.",
         "tone_adjustments": []
       },
@@ -52,8 +52,8 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities work as a chained pipeline:\n\n1. **uc_event_classification** (event-listen on incoming webhooks from the analytics provider) — parse payload: userId/anonymousId, event name, properties, context, timestamp, traits. Validate required fields; malformed → write raw to `/tmp/analytics_errors.json`, exit. Classify against the calibrated catalog: HIGH (Pricing Page Viewed, Upgrade Clicked, Checkout Initiated, Demo Requested, Trial Started, power-feature Feature Activated, Plan Comparison Viewed, Contact Sales Clicked — score 80-99), MEDIUM (Feature Used 3+, API Docs Viewed, Integrations Page Viewed, Admin Settings, Team Invite Sent — score 50-79), STANDARD (general pages, login/logout — <50). For HIGH + MEDIUM: enrich via the analytics provider's profile API (name, email, company, plan, mrr, days_since_signup, seat_count). Load prior signals for this user from agent memory. Assemble a behavioral snapshot. For HIGH: emit `customer.intent.high_signal`; post rich alert to `#sales-signals` via messaging; log to knowledge base (create on first sighting, update on subsequent). For MEDIUM: accumulate into memory; log lightly. Persist updated memory + local userId→KB-pageId cache.\n\n2. **uc_pattern_escalation** (event-listen on `customer.intent.medium_signal_recorded`) — load the user's behavioral history. Compute cumulative pattern score with recency-weighted sum (last 4h × 2, last 24h × 1). If cumulative ≥ threshold OR ≥3 medium signals in 24h AND no escalation alert within the suppression window, enrich via analytics provider + post escalation alert to messaging + emit `customer.intent.pattern_escalated`. Log the escalation to knowledge base with pattern context.\n\nState files: `/tmp/customer_intelligence_cache.json` (userId → KB page_id), `/tmp/analytics_errors.json` (malformed payloads), `/tmp/failed_alert_queue.json` + `/tmp/kb_queue.json` (retry queues flushed at start of each invocation).",
-      "tool_guidance": "**Analytics provider**:\n- Profile enrichment: `GET {provider_base}/profiles/{userId}/traits` with provider-appropriate auth. Returns computed traits (name, email, company, plan, mrr, days_since_signup, seat_count).\n- Rate limit: respect provider's documented per-second cap. Queue excess events.\n\n**Messaging (alerts)**:\n- High-intent alert: rich block layout with header (emoji + company), fields (signal, score, plan, days), behavioral context, recommended action, CRM deep-link button.\n- Pattern escalation: lower-urgency formatting, subject prefix 'Sustained Interest Pattern'.\n- Rate limit: 1 alert/second per channel.\n\n**Knowledge base (signal log)**:\n- Properties: User ID (title), Event Name, Intent Level (High|Medium|Standard), Signal Score, Company, Plan, Days Since Signup, Behavioral Context (JSON), Slack Alert Sent, Enrichment Failed, Follow Up Required, Timestamp.\n- Dedup by (userId, event, hour bucket) via local cache file.\n\n**Memory ledger**:\n- Per-user rolling history: last N events with timestamps, impact scores, feature activations, last-alert timestamp.\n- Pattern escalation suppression window: configurable via `aq_pattern_suppression_hours`.\n\n**Retry queues**:\n- `failed_alert_queue.json` and `kb_queue.json` — appended on failure, flushed at the start of the next invocation before the new event is processed.",
+      "operating_instructions": "Two capabilities work as a chained pipeline: 1. **uc_event_classification** (event-listen on incoming webhooks from the analytics provider) — parse payload: userId/anonymousId, event name, properties, context, timestamp, traits. Validate required fields; malformed → write raw to `/tmp/analytics_errors.json`, exit. Classify against the calibrated catalog: HIGH (Pricing Page Viewed, Upgrade Clicked, Checkout Initiated, Demo Requested, Trial Started, power-feature Feature Activated, Plan Comparison Viewed, Contact Sales Clicked — score 80-99), MEDIUM (Feature Used 3+, API Docs Viewed, Integrations Page Viewed, Admin Settings, Team Invite Sent — score 50-79), STANDARD (general pages, login/logout — <50). For HIGH + MEDIUM: enrich via the analytics provider's profile API (name, email, company, plan, mrr, days_since_signup, seat_count). Load prior signals for this user from agent memory. Assemble a behavioral snapshot. For HIGH: emit `customer.intent.high_signal`; post rich alert to `#sales-signals` via messaging; log to knowledge base (create on first sighting, update on subsequent). For MEDIUM: accumulate into memory; log lightly. Persist updated memory + local userId→KB-pageId cache. 2. **uc_pattern_escalation** (event-listen on `customer.intent.medium_signal_recorded`) — load the user's behavioral history. Compute cumulative pattern score with recency-weighted sum (last 4h × 2, last 24h × 1). If cumulative ≥ threshold OR ≥3 medium signals in 24h AND no escalation alert within the suppression window, enrich via analytics provider + post escalation alert to messaging + emit `customer.intent.pattern_escalated`. Log the escalation to knowledge base with pattern context. State files: `/tmp/customer_intelligence_cache.json` (userId → KB page_id), `/tmp/analytics_errors.json` (malformed payloads), `/tmp/failed_alert_queue.json` + `/tmp/kb_queue.json` (retry queues flushed at start of each invocation).",
+      "tool_guidance": "**Analytics provider**:\n- Profile enrichment: `GET {provider_base}/profiles/{userId}/traits` with provider-appropriate auth. Returns computed traits (name, email, company, plan, mrr, days_since_signup, seat_count).\n- Rate limit: respect provider's documented per-second cap. Queue excess events. **Messaging (alerts)**:\n- High-intent alert: rich block layout with header (emoji + company), fields (signal, score, plan, days), behavioral context, recommended action, CRM deep-link button.\n- Pattern escalation: lower-urgency formatting, subject prefix 'Sustained Interest Pattern'.\n- Rate limit: 1 alert/second per channel. **Knowledge base (signal log)**:\n- Properties: User ID (title), Event Name, Intent Level (High|Medium|Standard), Signal Score, Company, Plan, Days Since Signup, Behavioral Context (JSON), messaging Alert Sent, Enrichment Failed, Follow Up Required, Timestamp.\n- Dedup by (userId, event, hour bucket) via local cache file. **Memory ledger**:\n- Per-user rolling history: last N events with timestamps, impact scores, feature activations, last-alert timestamp.\n- Pattern escalation suppression window: configurable via `aq_pattern_suppression_hours`. **Retry queues**:\n- `failed_alert_queue.json` and `kb_queue.json` — appended on failure, flushed at the start of the next invocation before the new event is processed.",
       "error_handling": "Malformed webhook → write to `/tmp/analytics_errors.json` with timestamp, exit gracefully. Analytics profile 401/403 → continue with webhook data only, set `enrichment_failed: true`. Analytics profile 404/500 → same. Messaging failure → retry once after 1s, else append to `failed_alert_queue.json`. KB failure → append to `kb_queue.json`. Rate limit 429 → respect Retry-After; messaging 1s delay between, KB 350ms delay. Unknown event → default STANDARD, log only, never crash. User in blocklist (`aq_blocklist_segments`) → skip entirely, log the skip reason.",
       "examples": [],
       "tools": [
@@ -87,7 +87,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Add an `analytics`-category credential in the Vault (Segment, PostHog, Amplitude, Mixpanel, or equivalent).\n2. Ensure the token has profile/traits read scope.\n3. Configure the analytics provider to send webhooks to this persona's endpoint (the webhook path is shown after adoption)."
+          "setup_instructions": "1. Add an `analytics`-category credential in the Vault (analytics, analytics, analytics, analytics, or equivalent).\n2. Ensure the token has profile/traits read scope.\n3. Configure the analytics provider to send webhooks to this persona's endpoint (the webhook path is shown after adoption)."
         },
         {
           "name": "messaging",
@@ -122,11 +122,11 @@
               "label": "Signals database ID",
               "type": "text",
               "placeholder": "",
-              "helpText": "ID of the workspace/database receiving signal records. See Notion-Signals-Database schema in setup notes.",
+              "helpText": "ID of the workspace/database receiving signal records. See knowledge base-Signals-Database schema in setup notes.",
               "required": true
             }
           ],
-          "setup_instructions": "Configure a `knowledge_base`-category credential with a signals database containing: User ID (title), Event Name, Intent Level, Signal Score, Company, Plan, Days Since Signup, Behavioral Context, Slack Alert Sent, Enrichment Failed, Follow Up Required, Timestamp."
+          "setup_instructions": "Configure a `knowledge_base`-category credential with a signals database containing: User ID (title), Event Name, Intent Level, Signal Score, Company, Plan, Days Since Signup, Behavioral Context, messaging Alert Sent, Enrichment Failed, Follow Up Required, Timestamp."
         }
       ],
       "notification_channels_default": [
@@ -530,7 +530,7 @@
         },
         "maps_to": "persona.connectors[analytics].credential_fields[provider].value",
         "variable_name": "analytics_provider",
-        "context": "Auto-detected from your `analytics`-category credentials (Segment, PostHog, Amplitude, Mixpanel, etc.). Required — add one first if the list is empty.",
+        "context": "Auto-detected from your `analytics`-category credentials (analytics, analytics, analytics, analytics, etc.). Required — add one first if the list is empty.",
         "dimension": "connectors"
       },
       {
@@ -702,7 +702,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

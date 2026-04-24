@@ -213,6 +213,57 @@ pub fn update_prompt_version_tag(
     })
 }
 
+/// Promote a version to "production" atomically: any existing production version
+/// for the same persona is demoted to "experimental" in the same transaction so
+/// the table can never contain two production rows for one persona.
+pub fn promote_to_production(
+    pool: &DbPool,
+    id: &str,
+) -> Result<PersonaPromptVersion, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::promote_to_production", {
+        let conn = pool.get()?;
+        conn.execute_batch("BEGIN IMMEDIATE")?;
+        let result = (|| -> Result<(), AppError> {
+            let persona_id: String = conn
+                .query_row(
+                    "SELECT persona_id FROM persona_prompt_versions WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {id}")),
+                    other => AppError::Database(other),
+                })?;
+
+            conn.execute(
+                "UPDATE persona_prompt_versions SET tag = 'experimental'
+                 WHERE persona_id = ?1 AND tag = 'production' AND id <> ?2",
+                params![persona_id, id],
+            )?;
+
+            let rows = conn.execute(
+                "UPDATE persona_prompt_versions SET tag = 'production' WHERE id = ?1",
+                params![id],
+            )?;
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("Prompt version {id}")));
+            }
+            Ok(())
+        })();
+
+        match result {
+            Ok(()) => {
+                conn.execute_batch("COMMIT")?;
+                get_prompt_version_by_id(pool, id)
+            }
+            Err(e) => {
+                let _ = conn.execute_batch("ROLLBACK");
+                Err(e)
+            }
+        }
+    })
+}
+
 /// Get the current production version for a persona, if any.
 pub fn get_production_version(
     pool: &DbPool,

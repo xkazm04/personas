@@ -5,11 +5,21 @@
   "description": "Periodically conceives and generates unique art concepts using a connected image-AI provider, saves them to the in-app 2D gallery, and presents each piece for human curation. Learns from approvals and rejections to refine its creative direction over time.",
   "icon": "Brush",
   "color": "#A855F7",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Image AI", "Artist Gallery", "Messages"],
+  "service_flow": [
+    "Image AI",
+    "Artist Gallery",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Image AI", "Artist Gallery", "Messages"],
+    "service_flow": [
+      "Image AI",
+      "Artist Gallery",
+      "Messages"
+    ],
     "persona": {
       "goal": "Build a living, personalized art gallery — one reviewed concept at a time — that evolves with your taste.",
       "identity": {
@@ -42,14 +52,18 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability handles the full loop:\n\n**uc_generate_and_curate** — on schedule (default daily 10:00), check for a pending review (skip cycle if one exists). Load creative memory: approved concepts (with prompt patterns + palettes + styles), rejected concepts (with rejection categories), recent history for dedup. Conceive a unique concept that aligns with the user's configured direction (subject / style / mood / dimensions), synthesizes approval patterns, and avoids rejection patterns. Produce: title, theme, art style, 3-5 hex palette, composition notes, full prompt, negative prompt. Call the image-AI provider, poll until COMPLETE, download the best result. Save to `{artist_folder}/2d/{slug}_{timestamp}.png` and import to the artist gallery with tags [style, theme, mood, 'ai-generated', 'pending-review']. Emit `art.concept.generated`. Create a review item with `gallery_image_ref` in context_data so the review panel renders the image inline. On approval: update tags (remove pending-review, add approved), save to memory (high importance, full prompt + palette + style descriptors), emit `art.concept.approved`. On rejection: parse reviewer notes, categorize (theme/style/color/composition/general), delete gallery asset, delete file on disk, save rejection to memory (medium importance), update exclusion patterns, check for 3+ same-category threshold to elevate to hard exclusion. No event on rejection.\n\nState: `generation_state.json` (cycle counter, pending review pointer, consecutive-failure counter).",
-      "tool_guidance": "**Image AI (`http_request` + `image_ai` connector)** — adapts to the chosen provider:\n\nLeonardo AI (base `https://cloud.leonardo.ai/api/rest/v1`, Bearer auth):\n- `POST /generations` with `{prompt, negative_prompt, width, height, num_images, modelId, alchemy: true, presetStyle: \"DYNAMIC\"}`. Returns `{sdGenerationJob: {generationId}}`.\n- `GET /generations/{id}` — poll every 5s until `status: COMPLETE`.\n- `GET /me` — verify key and check remaining credits.\n- `DELETE /generations/{id}` — cleanup if needed.\n\nOpenAI Images (base `https://api.openai.com/v1`):\n- `POST /images/generations` with `{model, prompt, size, n, quality}`. Returns `data[].url`.\n\n**Artist gallery IPC** (handled by the platform based on the agent's stated intent):\n- `artist_import_asset` — register new image.\n- `artist_delete_asset` — remove on rejection.\n- `artist_update_tags` — tag transitions (pending-review → approved).\n- `artist_list_assets` — avoid filename collisions.\n\n**File I/O**: write downloaded image to `{artist_folder}/2d/{slug}_{timestamp}.png`. Ensure the 2d subfolder exists. Read `generation_state.json` at cycle start, write at cycle end.",
+      "operating_instructions": "One capability handles the full loop: **uc_generate_and_curate** — on schedule (default daily 10:00), check for a pending review (skip cycle if one exists). Load creative memory: approved concepts (with prompt patterns + palettes + styles), rejected concepts (with rejection categories), recent history for dedup. Conceive a unique concept that aligns with the user's configured direction (subject / style / mood / dimensions), synthesizes approval patterns, and avoids rejection patterns. Produce: title, theme, art style, 3-5 hex palette, composition notes, full prompt, negative prompt. Call the image-AI provider, poll until COMPLETE, download the best result. Save to `{artist_folder}/2d/{slug}_{timestamp}.png` and import to the artist gallery with tags [style, theme, mood, 'ai-generated', 'pending-review']. Emit `art.concept.generated`. Create a review item with `gallery_image_ref` in context_data so the review panel renders the image inline. On approval: update tags (remove pending-review, add approved), save to memory (high importance, full prompt + palette + style descriptors), emit `art.concept.approved`. On rejection: parse reviewer notes, categorize (theme/style/color/composition/general), delete gallery asset, delete file on disk, save rejection to memory (medium importance), update exclusion patterns, check for 3+ same-category threshold to elevate to hard exclusion. No event on rejection. State: `generation_state.json` (cycle counter, pending review pointer, consecutive-failure counter).",
+      "tool_guidance": "**Image AI (`http_request` + `image_ai` connector)** — adapts to the chosen provider: image generation AI (base `https://cloud.leonardo.ai/api/rest/v1`, Bearer auth):\n- `POST /generations` with `{prompt, negative_prompt, width, height, num_images, modelId, alchemy: true, presetStyle: \"DYNAMIC\"}`. Returns `{sdGenerationJob: {generationId}}`.\n- `GET /generations/{id}` — poll every 5s until `status: COMPLETE`.\n- `GET /me` — verify key and check remaining credits.\n- `DELETE /generations/{id}` — cleanup if needed. image generation AI (base `https://api.openai.com/v1`):\n- `POST /images/generations` with `{model, prompt, size, n, quality}`. Returns `data[].url`. **Artist gallery IPC** (handled by the platform based on the agent's stated intent):\n- `artist_import_asset` — register new image.\n- `artist_delete_asset` — remove on rejection.\n- `artist_update_tags` — tag transitions (pending-review → approved).\n- `artist_list_assets` — avoid filename collisions. **File I/O**: write downloaded image to `{artist_folder}/2d/{slug}_{timestamp}.png`. Ensure the 2d subfolder exists. Read `generation_state.json` at cycle start, write at cycle end.",
       "error_handling": "Image-AI 401/403 → emit persona.error with credential-refresh CTA; skip cycle. 429 rate-limited → wait for next scheduled run; don't retry aggressively. Generation timeout >2min → cancel, skip cycle. Content-policy rejection → rephrase prompt removing flagged terms, retry once; if still blocked, log concept as 'blocked' in memory and skip. 5xx → skip cycle. File-write fail (disk full / permissions) → emit persona.error; never create a review item for an image that isn't in the gallery. Asset-import fail (duplicate filename) → append random suffix, retry once. Gallery DB locked → wait 5s, retry once, then skip. Delete-on-rejection fails → log error, include path in memory entry for manual cleanup. Memory-save fail → proceed (decision is recorded in review system). Overlapping pending review → skip cycle. 3 consecutive failures → Messages alert summarizing failure types.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "image_ai",
+          "name": "image_generation",
           "label": "Image AI",
           "auth_type": "api_key",
           "role": "image_generation",
@@ -60,9 +74,12 @@
               "key": "provider",
               "label": "Image AI provider",
               "type": "select",
-              "options": ["leonardo", "openai_images"],
+              "options": [
+                "leonardo",
+                "openai_images"
+              ],
               "placeholder": "leonardo",
-              "helpText": "Which image generator to use. Leonardo offers the strongest stylized output; OpenAI Images works well for higher-resolution photoreal.",
+              "helpText": "Which image generator to use. image generation AI offers the strongest stylized output; image generation AI works well for higher-resolution photoreal.",
               "required": true
             },
             {
@@ -78,11 +95,24 @@
               "label": "Model ID (optional)",
               "type": "text",
               "placeholder": "",
-              "helpText": "Override default model. Leonardo: a model UUID. OpenAI: leave blank to use the default image model.",
+              "helpText": "Override default model. image generation AI: a model UUID. OpenAI: leave blank to use the default image model.",
               "required": false
             }
           ],
-          "setup_instructions": "1. Sign up at the chosen provider and generate an API key.\n2. (Optional) pick a model UUID/name tuned for your preferred style.\n3. Leonardo free tier: 150 tokens/day. OpenAI: your standard account credits.\n4. Test key via `GET /me` (Leonardo) or a small test generation (OpenAI)."
+          "setup_instructions": "1. Sign up at the chosen provider and generate an API key.\n2. (Optional) pick a model UUID/name tuned for your preferred style.\n3. image generation AI free tier: 150 tokens/day. OpenAI: your standard account credits.\n4. Test key via `GET /me` (image generation AI) or a small test generation (OpenAI)."
+        },
+        {
+          "name": "storage",
+          "label": "Cloud Storage",
+          "auth_type": "oauth2",
+          "role": "image_archive",
+          "category": "storage",
+          "categories": [
+            "storage"
+          ],
+          "required": false,
+          "credential_fields": [],
+          "setup_instructions": "Attach any storage credential (cloud storage, cloud storage, cloud storage, S3, R2, local drive). Generated images and decision logs are archived here, keyed by brief id + timestamp."
         }
       ],
       "notification_channels_default": [
@@ -105,10 +135,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 10 * * *" },
+          "config": {
+            "cron": "0 10 * * *"
+          },
           "description": "Default daily 10:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["image_ai"],
+        "connectors": [
+          "image_generation"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -140,21 +174,46 @@
           {
             "name": "art_style",
             "type": "enum",
-            "options": ["digital_painting", "watercolor", "oil_painting", "minimalist_vector", "surrealist", "photorealistic", "pixel_art", "ink_illustration", "mixed_media"],
+            "options": [
+              "digital_painting",
+              "watercolor",
+              "oil_painting",
+              "minimalist_vector",
+              "surrealist",
+              "photorealistic",
+              "pixel_art",
+              "ink_illustration",
+              "mixed_media"
+            ],
             "default": "digital_painting",
             "description": "Visual style for generated artwork. Refined over time from feedback."
           },
           {
             "name": "color_mood",
             "type": "enum",
-            "options": ["vibrant_warm", "cool_and_muted", "monochrome", "pastel", "earth_tones", "neon_and_bold", "dark_and_moody", "any"],
+            "options": [
+              "vibrant_warm",
+              "cool_and_muted",
+              "monochrome",
+              "pastel",
+              "earth_tones",
+              "neon_and_bold",
+              "dark_and_moody",
+              "any"
+            ],
             "default": "vibrant_warm",
             "description": "Color mood guidance for the palette."
           },
           {
             "name": "dimensions",
             "type": "enum",
-            "options": ["1024x1024", "1024x768", "1280x720", "768x1024", "512x512"],
+            "options": [
+              "1024x1024",
+              "1024x768",
+              "1280x720",
+              "768x1024",
+              "512x512"
+            ],
             "default": "1024x1024",
             "description": "Image width × height. Larger = more credits."
           },
@@ -183,35 +242,127 @@
           "variations_per_run": 1,
           "concept_history_depth": 50
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "g1", "type": "start", "label": "Schedule tick" },
-            { "id": "g2", "type": "decision", "label": "Pending review exists?" },
-            { "id": "g3", "type": "action", "label": "Load memory + conceive unique concept" },
-            { "id": "g4", "type": "connector", "label": "Generate via image AI", "connector": "image_ai" },
-            { "id": "g5", "type": "action", "label": "Save to gallery + emit generated" },
-            { "id": "g6", "type": "action", "label": "Submit review item with gallery_image_ref" },
-            { "id": "g7", "type": "decision", "label": "Human approves?" },
-            { "id": "g8", "type": "action", "label": "Update tags + save approval memory" },
-            { "id": "g9", "type": "event", "label": "Emit art.concept.approved" },
-            { "id": "g10", "type": "action", "label": "Delete asset + file + save rejection memory" },
-            { "id": "g11", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "g1",
+              "type": "start",
+              "label": "Schedule tick"
+            },
+            {
+              "id": "g2",
+              "type": "decision",
+              "label": "Pending review exists?"
+            },
+            {
+              "id": "g3",
+              "type": "action",
+              "label": "Load memory + conceive unique concept"
+            },
+            {
+              "id": "g4",
+              "type": "connector",
+              "label": "Generate via image AI",
+              "connector": "image_ai"
+            },
+            {
+              "id": "g5",
+              "type": "action",
+              "label": "Save to gallery + emit generated"
+            },
+            {
+              "id": "g6",
+              "type": "action",
+              "label": "Submit review item with gallery_image_ref"
+            },
+            {
+              "id": "g7",
+              "type": "decision",
+              "label": "Human approves?"
+            },
+            {
+              "id": "g8",
+              "type": "action",
+              "label": "Update tags + save approval memory"
+            },
+            {
+              "id": "g9",
+              "type": "event",
+              "label": "Emit art.concept.approved"
+            },
+            {
+              "id": "g10",
+              "type": "action",
+              "label": "Delete asset + file + save rejection memory"
+            },
+            {
+              "id": "g11",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "g1", "target": "g2" },
-            { "source": "g2", "target": "g11", "variant": "yes", "label": "Skip (pending review)" },
-            { "source": "g2", "target": "g3", "variant": "no" },
-            { "source": "g3", "target": "g4" },
-            { "source": "g4", "target": "g5" },
-            { "source": "g5", "target": "g6" },
-            { "source": "g6", "target": "g7" },
-            { "source": "g7", "target": "g8", "variant": "yes", "label": "Approve" },
-            { "source": "g7", "target": "g10", "variant": "no", "label": "Reject" },
-            { "source": "g8", "target": "g9" },
-            { "source": "g9", "target": "g11" },
-            { "source": "g10", "target": "g11" }
+            {
+              "source": "g1",
+              "target": "g2"
+            },
+            {
+              "source": "g2",
+              "target": "g11",
+              "variant": "yes",
+              "label": "Skip (pending review)"
+            },
+            {
+              "source": "g2",
+              "target": "g3",
+              "variant": "no"
+            },
+            {
+              "source": "g3",
+              "target": "g4"
+            },
+            {
+              "source": "g4",
+              "target": "g5"
+            },
+            {
+              "source": "g5",
+              "target": "g6"
+            },
+            {
+              "source": "g6",
+              "target": "g7"
+            },
+            {
+              "source": "g7",
+              "target": "g8",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "g7",
+              "target": "g10",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "g8",
+              "target": "g9"
+            },
+            {
+              "source": "g9",
+              "target": "g11"
+            },
+            {
+              "source": "g10",
+              "target": "g11"
+            }
           ]
         }
       }
@@ -220,7 +371,9 @@
       {
         "id": "aq_art_subject",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_and_curate"],
+        "use_case_ids": [
+          "uc_generate_and_curate"
+        ],
         "category": "domain",
         "question": "What kind of art do you want the agent to generate?",
         "type": "textarea",
@@ -233,7 +386,9 @@
       {
         "id": "aq_art_style",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_and_curate"],
+        "use_case_ids": [
+          "uc_generate_and_curate"
+        ],
         "category": "configuration",
         "question": "What art style do you prefer?",
         "type": "select",
@@ -256,7 +411,9 @@
       {
         "id": "aq_color_mood",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_and_curate"],
+        "use_case_ids": [
+          "uc_generate_and_curate"
+        ],
         "category": "configuration",
         "question": "What color mood do you prefer?",
         "type": "select",
@@ -279,7 +436,9 @@
       {
         "id": "aq_dimensions",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_and_curate"],
+        "use_case_ids": [
+          "uc_generate_and_curate"
+        ],
         "category": "configuration",
         "question": "What image dimensions do you prefer?",
         "type": "select",
@@ -299,7 +458,9 @@
       {
         "id": "aq_image_model",
         "scope": "connector",
-        "connector_names": ["image_ai"],
+        "connector_names": [
+          "image_ai"
+        ],
         "category": "configuration",
         "question": "Which image-AI provider should generate the art?",
         "type": "select",
@@ -310,7 +471,7 @@
         },
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
-        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (Leonardo AI, OpenAI Images, …). Connect a provider first if the list is empty.",
+        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (image generation AI, image generation AI, …). Connect a provider first if the list is empty.",
         "dimension": "connectors"
       }
     ],

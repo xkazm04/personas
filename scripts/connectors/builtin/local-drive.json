@@ -6,8 +6,7 @@
   "icon_url": "/illustrations/logo-v1-geometric-nobg.png",
   "category": "storage",
   "categories": [
-    "storage",
-    "local_storage"
+    "storage"
   ],
   "fields": [],
   "healthcheck_config": null,
@@ -32,10 +31,22 @@
       }
     ],
     "emits": [
-      { "event_type": "drive.document.added",    "description": "A new document arrives in the drive (write, import, or copy)." },
-      { "event_type": "drive.document.edited",   "description": "An existing document's contents are overwritten." },
-      { "event_type": "drive.document.renamed",  "description": "A document or folder is renamed or moved within the drive." },
-      { "event_type": "drive.document.deleted",  "description": "A document or folder is removed from the drive." }
+      {
+        "event_type": "drive.document.added",
+        "description": "A new document arrives in the drive (write, import, or copy)."
+      },
+      {
+        "event_type": "drive.document.edited",
+        "description": "An existing document's contents are overwritten."
+      },
+      {
+        "event_type": "drive.document.renamed",
+        "description": "A document or folder is renamed or moved within the drive."
+      },
+      {
+        "event_type": "drive.document.deleted",
+        "description": "A document or folder is removed from the drive."
+      }
     ]
   }
 }

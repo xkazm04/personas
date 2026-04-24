@@ -4,11 +4,13 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
 import { useSettingsSaveToast } from '@/hooks/utility/interaction/useSettingsSaveToast';
 import { useTranslation } from '@/i18n/useTranslation';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
+import PseudoLocaleToggle from './PseudoLocaleToggle';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS } from '@/lib/constants/uiModes';
 import { ModeComparisonCard } from '@/features/simple-mode';
@@ -112,24 +114,16 @@ function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: 
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
       <div className="flex items-center justify-between">
         <SectionHeading title={labels.theming} icon={<Palette />} />
-        <div className="flex rounded-card border border-primary/15 overflow-hidden">
-          <button
-            onClick={() => setThemeTab('default')}
-            className={`px-3 py-1.5 typo-body font-medium transition-colors ${
-              themeTab === 'default' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
-            }`}
-          >
-            {labels.default_tab}
-          </button>
-          <button
-            onClick={() => setThemeTab('custom')}
-            className={`px-3 py-1.5 typo-body font-medium transition-colors border-l border-primary/15 ${
-              themeTab === 'custom' ? 'bg-primary/10 text-foreground' : 'text-foreground hover:text-foreground/80'
-            }`}
-          >
-            {labels.custom_tab}
-          </button>
-        </div>
+        <SegmentedTabs<'default' | 'custom'>
+          variant="segment"
+          ariaLabel={labels.theming}
+          activeTab={themeTab}
+          onTabChange={setThemeTab}
+          tabs={[
+            { id: 'default', label: labels.default_tab },
+            { id: 'custom', label: labels.custom_tab },
+          ]}
+        />
       </div>
       {themeTab === 'default' ? (
         <div className="space-y-4">
@@ -314,6 +308,7 @@ export default function AppearanceSettings() {
           {import.meta.env.DEV && (
             <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20">
               <TranslationContributor />
+              <PseudoLocaleToggle />
             </div>
           )}
 

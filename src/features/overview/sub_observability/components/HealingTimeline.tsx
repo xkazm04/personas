@@ -1,12 +1,13 @@
 import { useMemo, useState } from 'react';
 import {
-  AlertTriangle, Zap, RefreshCw, CheckCircle, BookOpen,
-  ChevronDown, ChevronRight, Tag, Search, Shield,
+  Zap, RefreshCw, CheckCircle, BookOpen,
+  ChevronDown, ChevronRight, Shield,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
+import { HEALING_EVENT_COLORS, resolveHealingEventVisual } from '@/features/overview/shared/eventVisuals';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface HealingTimelineProps {
@@ -22,24 +23,6 @@ interface ChainGroup {
   trigger: HealingTimelineEvent | undefined;
   outcome: HealingTimelineEvent | undefined;
 }
-
-const EVENT_ICONS: Record<string, typeof AlertTriangle> = {
-  trigger: AlertTriangle,
-  classify: Tag,
-  retry: RefreshCw,
-  ai_heal: Search,
-  outcome: CheckCircle,
-  knowledge: BookOpen,
-};
-
-const EVENT_COLORS: Record<string, { dot: string; line: string; bg: string; text: string }> = {
-  trigger:   healthScale('critical'),
-  classify:  healthScale('warning'),
-  retry:     { dot: 'bg-cyan-400', line: 'bg-cyan-400/30', bg: 'bg-cyan-500/10', text: 'text-cyan-400' },
-  ai_heal:   { dot: 'bg-violet-400', line: 'bg-violet-400/30', bg: 'bg-violet-500/10', text: 'text-violet-400' },
-  outcome:   healthScale('healthy'),
-  knowledge: healthScale('info'),
-};
 
 function getOutcomeColors(status: string | null) {
   const scale = healthScale(outcomeToHealth(status));
@@ -120,11 +103,11 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
             <div className="absolute left-[5px] top-0 bottom-0 w-px bg-primary/10" />
 
             {group.events.map((event) => {
-              const baseColors = event.eventType === 'outcome'
-                ? { ...EVENT_COLORS.outcome, ...getOutcomeColors(event.status) }
-                : EVENT_COLORS[event.eventType] ?? EVENT_COLORS.trigger;
-              const colors = baseColors ?? { dot: '', bg: '', text: '' };
-              const Icon = EVENT_ICONS[event.eventType] ?? AlertTriangle;
+              const visual = resolveHealingEventVisual(event.eventType);
+              const colors = event.eventType === 'outcome'
+                ? { ...HEALING_EVENT_COLORS.outcome, ...getOutcomeColors(event.status) }
+                : visual.colors;
+              const Icon = visual.icon;
 
               return (
                 <div key={event.id} className="relative flex gap-3 pb-3 last:pb-0">

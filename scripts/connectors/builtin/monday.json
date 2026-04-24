@@ -4,9 +4,8 @@
   "label": "Monday.com",
   "color": "#FF3D57",
   "icon_url": "/icons/connectors/monday.svg",
-  "category": "project-mgmt",
+  "category": "project_management",
   "categories": [
-    "project-mgmt",
     "project_management",
     "crm"
   ],

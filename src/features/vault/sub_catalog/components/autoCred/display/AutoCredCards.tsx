@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { ExternalLink, MessageSquare, Hand, Check } from 'lucide-react';
 import type { BrowserLogEntry } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -13,13 +14,15 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
   const [confirmed, setConfirmed] = useState(false);
   const message = entry.message.replace(/^WAITING:\s*/i, '');
 
-  const url = entry.url ?? (() => {
+  const rawUrl = entry.url ?? (() => {
     const match = message.match(/https?:\/\/[^\s)>\]"'`*_]+/);
     return match ? match[0] : null;
   })();
+  const url = sanitizeExternalUrl(rawUrl);
 
   const handleOpenUrl = useCallback(() => {
-    if (url) openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
+    if (!url) return;
+    openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
   }, [url]);
 
   if (confirmed && !isLatest) {

@@ -58,29 +58,47 @@ export default function ReviewResultsModal({ reviewResult, reviewError, onClose 
 
               {reviewResult.details.length > 0 && (
                 <div className="space-y-1.5">
-                  {reviewResult.details.map((d) => (
-                    <div
-                      key={d.id}
-                      className={`flex items-start gap-3 px-3 py-2 rounded-modal border ${
-                        d.action === 'deleted' ? 'bg-red-500/5 border-red-500/15' : 'bg-emerald-500/5 border-emerald-500/15'
-                      }`}
-                    >
-                      <span className={`typo-heading px-1.5 py-0.5 rounded-card flex-shrink-0 mt-0.5 ${
-                        d.score >= 7 ? 'bg-emerald-500/15 text-emerald-400' : d.score >= 4 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400'
-                      }`}>
-                        {d.score}/10
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className={`typo-heading truncate ${d.action === 'deleted' ? 'text-foreground line-through' : 'text-foreground'}`}>
-                          {d.title}
-                        </p>
-                        <p className="typo-body text-foreground mt-0.5">{d.reason}</p>
+                  {reviewResult.details.map((d) => {
+                    const isError = d.action === 'error';
+                    const isDeleted = d.action === 'deleted';
+                    const rowCls = isError
+                      ? 'bg-amber-500/5 border-amber-500/20'
+                      : isDeleted
+                        ? 'bg-red-500/5 border-red-500/15'
+                        : 'bg-emerald-500/5 border-emerald-500/15';
+                    const actionCls = isError
+                      ? 'text-amber-400'
+                      : isDeleted
+                        ? 'text-red-400/70'
+                        : 'text-emerald-400/70';
+                    return (
+                      <div
+                        key={d.id}
+                        className={`flex items-start gap-3 px-3 py-2 rounded-modal border ${rowCls}`}
+                      >
+                        <span className={`typo-heading px-1.5 py-0.5 rounded-card flex-shrink-0 mt-0.5 ${
+                          d.score >= 7 ? 'bg-emerald-500/15 text-emerald-400' : d.score >= 4 ? 'bg-amber-500/15 text-amber-400' : 'bg-red-500/15 text-red-400'
+                        }`}>
+                          {d.score}/10
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className={`typo-heading truncate ${isDeleted ? 'text-foreground line-through' : 'text-foreground'}`}>
+                            {d.title}
+                          </p>
+                          <p className="typo-body text-foreground mt-0.5">{d.reason}</p>
+                          {isError && d.error && (
+                            <p className="typo-body text-amber-400/80 mt-1 flex items-start gap-1.5">
+                              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                              <span className="break-words">{d.error}</span>
+                            </p>
+                          )}
+                        </div>
+                        <span className={`typo-heading flex-shrink-0 ${actionCls}`}>
+                          {d.action}
+                        </span>
                       </div>
-                      <span className={`typo-heading flex-shrink-0 ${d.action === 'deleted' ? 'text-red-400/70' : 'text-emerald-400/70'}`}>
-                        {d.action}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

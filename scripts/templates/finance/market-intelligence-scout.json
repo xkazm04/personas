@@ -12,14 +12,14 @@
   "service_flow": [
     "Kalshi",
     "News API",
-    "Gmail"
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "Kalshi",
       "News API",
-      "Gmail"
+      "email"
     ],
     "persona": {
       "goal": "Surface mispriced or news-correlated prediction markets on Kalshi — confidence-scored, reviewed, and delivered as one actionable daily digest.",
@@ -54,9 +54,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "All three capabilities fire on the same daily tick and their outputs concatenate into one combined intelligence digest:\n\n1. **uc_market_watch** — poll Kalshi markets endpoint. For each new market not in `tracked_markets.json`, record ticker/title/category/pricing and flag extreme initial pricing (YES outside $0.15-$0.85). For each tracked open market, compute probability shift vs last check; flag shifts > threshold within the lookback window. Also compute YES+NO spread; flag deviations > spread threshold. For every flagged market, fetch the orderbook to assess depth. Emit stocks.markets.new and stocks.markets.anomaly events.\n\n2. **uc_news_correlation** — for each flagged market from uc_market_watch, extract keywords from title/event and query News API everything + top-headlines for the past 24h. Score each article: title keyword overlap (0-0.4), timing proximity (+0.2), tier-1 source (+0.1), sentiment alignment (+0.1). Record the top 3 articles per flagged market. Emit stocks.markets.correlated when an article clears 0.6 relevance.\n\n3. **uc_confidence_digest** — compute the composite confidence per flagged market (price 0-0.4 + news 0-0.3 + orderbook 0-0.15 + historical 0-0.15). Apply memory calibration: suppress categories repeatedly marked as noise. Compile the combined digest with New Markets, Price Movements, Spread Anomalies, Top 5 Findings, Category Heatmap, and Learning Summary sections. Deliver via Gmail. Present findings for review; persist accept/reject tags to memory and update confidence_calibration.json.\n\nCombined message composition: all three sections ship as one digest per day. Persona-wide review policy is 'always' for the digest step — every finding category is tagged useful/noise before it persists to memory.",
-      "tool_guidance": "**Kalshi API** (base `https://trading-api.kalshi.com/trade-api/v2`, Bearer auth):\n- `GET /exchange/status` — check trading_active before scans.\n- `GET /markets?status=open&limit=200` — list open markets with pricing; paginate via cursor.\n- `GET /markets/{ticker}` — full detail for flagged markets.\n- `GET /events/{event_ticker}` — parent event + sibling markets for internal consistency checks.\n- `GET /markets/{ticker}/orderbook` — depth assessment on flagged markets.\nRate limit: 10 req/sec. Batch via list endpoints; only fetch orderbook/detail for flagged items.\n\n**News API** (base `https://newsapi.org/v2`, X-Api-Key header):\n- `GET /everything?q={keywords}&sortBy=publishedAt&from={24h_ago}` — full-text search.\n- `GET /top-headlines?category={category}` — breaking stories by category.\nFree tier = 100 req/day. Batch keyword queries when >3 markets share a theme.\n\n**Gmail** (via the builtin Gmail connector) — `gmail_send` with HTML body for the daily digest.\n\n**Local state**:\n- `tracked_markets.json` — ticker, title, category, last known YES/NO, last_checked, status.\n- `daily_findings.json` — accumulator for findings within the current 24h window, flushed after digest.\n- `confidence_calibration.json` — predicted vs actual review outcomes; drives weight adjustment.\n- `data/alerts/{date}_{ticker}.json` — archived high-confidence finding payloads.",
-      "error_handling": "Kalshi 401/403 → auth failure; skip Kalshi-dependent steps, still run news scan against general market headlines and deliver a partial digest with an explicit gap note. 429 → exponential backoff (2s/4s/8s); if still limited, restrict scan to previously-flagged markets. 5xx → retry once after 5s; skip cycle if still failing. Exchange closed → skip cycle; do not emit anomalies on stale pre-close prices. News API 401 → continue with Kalshi-only scoring; news component = 0.00; note the gap in the digest. News API 429 → batch keyword queries into broader searches; fall back to web_search for top findings only. Gmail send failure → queue the digest to `data/pending_digest/{date}.html` and notify via Messages; retry on next cycle. Missing tracked_markets.json → initialize fresh; treat all currently open markets as new; note re-initialization in the digest. Orderbook empty → depth component = 0.00 (thin). Non-English news articles → filter before relevance scoring.",
+      "operating_instructions": "All three capabilities fire on the same daily tick and their outputs concatenate into one combined intelligence digest: 1. **uc_market_watch** — poll Kalshi markets endpoint. For each new market not in `tracked_markets.json`, record ticker/title/category/pricing and flag extreme initial pricing (YES outside $0.15-$0.85). For each tracked open market, compute probability shift vs last check; flag shifts > threshold within the lookback window. Also compute YES+NO spread; flag deviations > spread threshold. For every flagged market, fetch the orderbook to assess depth. Emit stocks.markets.new and stocks.markets.anomaly events. 2. **uc_news_correlation** — for each flagged market from uc_market_watch, extract keywords from title/event and query News API everything + top-headlines for the past 24h. Score each article: title keyword overlap (0-0.4), timing proximity (+0.2), tier-1 source (+0.1), sentiment alignment (+0.1). Record the top 3 articles per flagged market. Emit stocks.markets.correlated when an article clears 0.6 relevance. 3. **uc_confidence_digest** — compute the composite confidence per flagged market (price 0-0.4 + news 0-0.3 + orderbook 0-0.15 + historical 0-0.15). Apply memory calibration: suppress categories repeatedly marked as noise. Compile the combined digest with New Markets, Price Movements, Spread Anomalies, Top 5 Findings, Category Heatmap, and Learning Summary sections. Deliver via email. Present findings for review; persist accept/reject tags to memory and update confidence_calibration.json. Combined message composition: all three sections ship as one digest per day. Persona-wide review policy is 'always' for the digest step — every finding category is tagged useful/noise before it persists to memory.",
+      "tool_guidance": "**Kalshi API** (base `https://trading-api.kalshi.com/trade-api/v2`, Bearer auth):\n- `GET /exchange/status` — check trading_active before scans.\n- `GET /markets?status=open&limit=200` — list open markets with pricing; paginate via cursor.\n- `GET /markets/{ticker}` — full detail for flagged markets.\n- `GET /events/{event_ticker}` — parent event + sibling markets for internal consistency checks.\n- `GET /markets/{ticker}/orderbook` — depth assessment on flagged markets.\nRate limit: 10 req/sec. Batch via list endpoints; only fetch orderbook/detail for flagged items. **News API** (base `https://newsapi.org/v2`, X-Api-Key header):\n- `GET /everything?q={keywords}&sortBy=publishedAt&from={24h_ago}` — full-text search.\n- `GET /top-headlines?category={category}` — breaking stories by category.\nFree tier = 100 req/day. Batch keyword queries when >3 markets share a theme. **email** (via the builtin email connector) — `gmail_send` with HTML body for the daily digest. **Local state**:\n- `tracked_markets.json` — ticker, title, category, last known YES/NO, last_checked, status.\n- `daily_findings.json` — accumulator for findings within the current 24h window, flushed after digest.\n- `confidence_calibration.json` — predicted vs actual review outcomes; drives weight adjustment.\n- `data/alerts/{date}_{ticker}.json` — archived high-confidence finding payloads.",
+      "error_handling": "Kalshi 401/403 → auth failure; skip Kalshi-dependent steps, still run news scan against general market headlines and deliver a partial digest with an explicit gap note. 429 → exponential backoff (2s/4s/8s); if still limited, restrict scan to previously-flagged markets. 5xx → retry once after 5s; skip cycle if still failing. Exchange closed → skip cycle; do not emit anomalies on stale pre-close prices. News API 401 → continue with Kalshi-only scoring; news component = 0.00; note the gap in the digest. News API 429 → batch keyword queries into broader searches; fall back to web_search for top findings only. email send failure → queue the digest to `data/pending_digest/{date}.html` and notify via Messages; retry on next cycle. Missing tracked_markets.json → initialize fresh; treat all currently open markets as new; note re-initialization in the digest. Orderbook empty → depth component = 0.00 (thin). Non-English news articles → filter before relevance scoring.",
       "examples": [],
       "tools": [
         "http_request",
@@ -135,7 +135,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth consent flow with the gmail.send scope. 4. Paste client_id, client_secret, refresh_token above."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable email API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth consent flow with the gmail.send scope. 4. Paste client_id, client_secret, refresh_token above."
         }
       ],
       "notification_channels_default": [
@@ -399,7 +399,7 @@
       {
         "id": "uc_confidence_digest",
         "title": "Confidence Digest",
-        "description": "Scores every flagged market on composite confidence (price, news, orderbook, memory), applies calibration from past reviews, compiles the combined intelligence digest, and delivers via Gmail. Presents findings for review; memory tightens next day's filter. Default daily 07:00 — final cadence set at the trigger-composition step.",
+        "description": "Scores every flagged market on composite confidence (price, news, orderbook, memory), applies calibration from past reviews, compiles the combined intelligence digest, and delivers via email. Presents findings for review; memory tightens next day's filter. Default daily 07:00 — final cadence set at the trigger-composition step.",
         "capability_summary": "Daily composite scoring, digest delivery, and review-driven memory calibration.",
         "category": "reporting",
         "enabled_by_default": true,
@@ -419,7 +419,7 @@
         "notification_channels": [
           {
             "type": "email",
-            "description": "Combined daily intelligence digest via Gmail."
+            "description": "Combined daily intelligence digest via email."
           }
         ],
         "review_policy": {
@@ -442,7 +442,7 @@
             "description": "Payload: finding_id, category, tag (useful|noise). Fires per review decision."
           }
         ],
-        "error_handling": "Gmail send failure → queue digest to `data/pending_digest/{date}.html` and notify via Messages; retry next cycle. Calibration file corrupted → reset to default weights and log. No flagged markets → still ship a 'quiet day' digest so the user knows the scan ran.",
+        "error_handling": "email send failure → queue digest to `data/pending_digest/{date}.html` and notify via Messages; retry next cycle. Calibration file corrupted → reset to default weights and log. No flagged markets → still ship a 'quiet day' digest so the user knows the scan ran.",
         "input_schema": [
           {
             "name": "digest_depth",
@@ -496,7 +496,7 @@
             {
               "id": "d5",
               "type": "connector",
-              "label": "Deliver digest via Gmail",
+              "label": "Deliver digest via email",
               "connector": "email"
             },
             {
@@ -666,7 +666,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

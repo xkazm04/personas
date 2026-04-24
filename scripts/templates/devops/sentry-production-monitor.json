@@ -5,11 +5,22 @@
   "description": "Pulls unresolved Sentry issues daily, reads stack-trace source code across all registered codebases for cross-project root cause analysis, delivers Jira-format reports per issue, and learns from human triage which error patterns are actionable vs noise.",
   "icon": "Bug",
   "color": "#362D59",
-  "category": ["devops", "development"],
-  "service_flow": ["Sentry", "Codebases", "Messages"],
+  "category": [
+    "devops",
+    "development"
+  ],
+  "service_flow": [
+    "Sentry",
+    "Codebases",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Sentry", "Codebases", "Messages"],
+    "service_flow": [
+      "Sentry",
+      "Codebases",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn raw Sentry issues into Jira-ready root-cause reports each morning — every significant error gets structured analysis grounded in the actual codebase, ranked resolutions, and a human triage seat.",
       "identity": {
@@ -46,7 +57,11 @@
       "tool_guidance": "**Sentry connector** (required):\n- `GET https://sentry.io/api/0/projects/{org}/{project}/issues/?query=is:unresolved&sort=freq&statsPeriod={N}h` — list issues. Pagination via `Link` header.\n- `GET https://sentry.io/api/0/issues/{id}/events/latest/` — latest event with `exception.values[].stacktrace.frames[]` for full stack trace (filename, function, lineNo, colNo, context source lines), plus `tags`, `contexts`, `request`.\n- `GET https://sentry.io/api/0/issues/{id}/` — issue metadata and 14-day frequency histogram.\n- `GET https://sentry.io/api/0/issues/{id}/hashes/` — grouping info.\n- Auth `Authorization: Bearer {auth_token}`. Rate limit ~100 req/min PAT; honor `Retry-After` on 429.\n\n**Codebases connector** (optional):\n- `list_projects` — enumerate all registered codebases to match Sentry project slugs against codebase names.\n- `read_file(project_id, path, start_line, end_line)` — read source at stack-trace locations with surrounding context.\n- `search_code(project_id, query)` — search within one codebase.\n- `search_across_projects(query)` — cross-codebase search for function names, error messages, shared identifiers.\n- `analyze_cross_impact(project_id, symbol)` — determine if a failure in one project has ripple effects.\n- `get_dependency_graph()` — understand which projects depend on which libraries.\n- `get_contexts(project_id)` — pre-computed architectural summaries.\n\nAnalysis pattern per issue: top stack frame filename → match to codebase via `list_projects` → `read_file` → `search_across_projects` on the culprit function → classify root cause. If the file isn't in any scoped codebase, fall back to Sentry-data-only report.\n\n**Local state**:\n- `monitor_config.json` — Sentry org, project slugs, codebase scope, environment filter, saved at adoption.\n- `issue_history.json` — 14-day rolling issue index keyed by Sentry `shortId` for trend and dedup.\n- `triage_patterns.json` — per-pattern accept/reject counts, problem type taxonomy learned over time.",
       "error_handling": "Sentry 401/403 → cannot proceed; post re-auth message + emit `persona_error`, halt. Sentry 429 → backoff 3x honoring Retry-After; on persistent limit, truncate to top-N by frequency and note in summary. Sentry 5xx → retry once after 30s; on fail, message platform issue. Empty issue list → send brief all-clear summary. Codebase connector offline → skip root-cause analysis; generate simplified Sentry-data-only reports with note. Stack-trace file not found in any scoped codebase → simplified report with raw trace + 'source unavailable' note. Minified code → include minified location + flag source maps not configured. No stack trace at all → simplified report (description + frequency + impact only). First run (no memory) → no noise filtering; improves with feedback. `monitor_config.json` missing → post setup message, halt. Messaging failure → write all reports to `latest_reports.json`; emit events regardless.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "sentry",
@@ -125,12 +140,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["sentry"],
+        "connectors": [
+          "sentry"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`triage_patterns.json` — per-pattern accept/reject counts. 3+ noise dismissals suppress analysis for that pattern."
@@ -172,23 +195,67 @@
           "lookback_hours": "{{param.aq_lookback_hours}}",
           "environment_filter": "{{param.aq_environment_filter}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Daily tick" },
-            { "id": "s2", "type": "action", "label": "Load triage memory" },
-            { "id": "s3", "type": "connector", "label": "Fetch unresolved issues", "connector": "sentry" },
-            { "id": "s4", "type": "action", "label": "Apply threshold + memory filter" },
-            { "id": "s5", "type": "event", "label": "Emit sentry.issue.qualified per survivor" },
-            { "id": "s6", "type": "end", "label": "Qualified issues queued" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load triage memory"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Fetch unresolved issues",
+              "connector": "sentry"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Apply threshold + memory filter"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit sentry.issue.qualified per survivor"
+            },
+            {
+              "id": "s6",
+              "type": "end",
+              "label": "Qualified issues queued"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            }
           ]
         }
       },
@@ -203,10 +270,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "sentry.issue.qualified" },
+          "config": {
+            "event_type": "sentry.issue.qualified"
+          },
           "description": "Fires whenever uc_issue_scan emits a qualified issue. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["sentry", "codebases"],
+        "connectors": [
+          "sentry",
+          "codebases"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -243,31 +315,89 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["summary", "standard", "deep"],
+            "options": [
+              "summary",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Summary: title + severity + one-line root cause. Standard: full Jira-format. Deep: Standard + full stack trace + dependency analysis."
           }
         ],
-        "sample_input": { "report_depth": "{{param.aq_report_depth}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "report_depth": "{{param.aq_report_depth}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "sentry.issue.qualified received" },
-            { "id": "r2", "type": "connector", "label": "Fetch latest event + stack trace", "connector": "sentry" },
-            { "id": "r3", "type": "connector", "label": "Read source + cross-project search", "connector": "codebases" },
-            { "id": "r4", "type": "action", "label": "Classify root cause + compose Jira report" },
-            { "id": "r5", "type": "action", "label": "Deliver 1 message per issue; route to human triage" },
-            { "id": "r6", "type": "event", "label": "Emit sentry.backlog.item_added / sentry.issue.critical" },
-            { "id": "r7", "type": "end", "label": "Report archived + memory updated" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "sentry.issue.qualified received"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Fetch latest event + stack trace",
+              "connector": "sentry"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "Read source + cross-project search",
+              "connector": "codebases"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Classify root cause + compose Jira report"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Deliver 1 message per issue; route to human triage"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit sentry.backlog.item_added / sentry.issue.critical"
+            },
+            {
+              "id": "r7",
+              "type": "end",
+              "label": "Report archived + memory updated"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            }
           ]
         }
       }
@@ -276,7 +406,9 @@
       {
         "id": "aq_sentry_projects",
         "scope": "capability",
-        "use_case_ids": ["uc_issue_scan"],
+        "use_case_ids": [
+          "uc_issue_scan"
+        ],
         "category": "configuration",
         "question": "Which Sentry projects should be monitored?",
         "type": "select",
@@ -295,13 +427,15 @@
       {
         "id": "aq_codebase_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_root_cause"],
+        "use_case_ids": [
+          "uc_root_cause"
+        ],
         "category": "configuration",
         "question": "Which codebases should be available for root cause analysis?",
         "type": "select",
         "default": "all",
         "dynamic_source": {
-          "service_type": "codebases",
+          "service_type": "development",
           "operation": "list_projects",
           "multi": true,
           "include_all_option": true
@@ -314,7 +448,9 @@
       {
         "id": "aq_environment_filter",
         "scope": "capability",
-        "use_case_ids": ["uc_issue_scan"],
+        "use_case_ids": [
+          "uc_issue_scan"
+        ],
         "category": "configuration",
         "question": "Which environment should be monitored?",
         "type": "select",
@@ -331,11 +467,21 @@
       {
         "id": "aq_severity_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_issue_scan"],
+        "use_case_ids": [
+          "uc_issue_scan"
+        ],
         "category": "quality",
         "question": "Minimum error occurrence count to surface an issue?",
         "type": "select",
-        "options": ["1", "3", "5", "10", "25", "50", "100"],
+        "options": [
+          "1",
+          "3",
+          "5",
+          "10",
+          "25",
+          "50",
+          "100"
+        ],
         "default": "5",
         "maps_to": "use_cases[uc_issue_scan].sample_input.severity_threshold",
         "variable_name": "severity_threshold",
@@ -345,11 +491,20 @@
       {
         "id": "aq_lookback_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_issue_scan"],
+        "use_case_ids": [
+          "uc_issue_scan"
+        ],
         "category": "quality",
         "question": "How many hours back should each scan look?",
         "type": "select",
-        "options": ["6", "12", "24", "48", "72", "168"],
+        "options": [
+          "6",
+          "12",
+          "24",
+          "48",
+          "72",
+          "168"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_issue_scan].sample_input.lookback_hours",
         "variable_name": "lookback_hours",
@@ -359,7 +514,9 @@
       {
         "id": "aq_report_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_root_cause"],
+        "use_case_ids": [
+          "uc_root_cause"
+        ],
         "category": "quality",
         "question": "How detailed should the per-issue reports be?",
         "type": "select",

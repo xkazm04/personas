@@ -8,6 +8,7 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { ConnectorReadinessStatus } from '@/lib/types/designTypes';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { useTranslation } from '@/i18n/useTranslation';
+import { CARD_PADDING } from '@/lib/utils/designTokens';
 
 interface TemplateCardBodyProps {
   connectors: string[];
@@ -35,7 +36,7 @@ export function TemplateCardBody({
   return (
     <>
       {/* Compact Body (mobile) */}
-      <div className="px-4 py-3 md:hidden border-t border-primary/5 space-y-2">
+      <div className={`${CARD_PADDING.dense} md:hidden border-t border-primary/5 space-y-2`}>
         <div className="flex items-center justify-between typo-body">
           <span className="text-foreground">{t.templates.card.use_cases_label}</span>
           <span className="text-foreground">{displayFlows.length}</span>
@@ -51,7 +52,7 @@ export function TemplateCardBody({
       </div>
 
       {/* 3-Column Body */}
-      <div className="hidden md:grid px-4 py-4 md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5">
+      <div className={`hidden md:grid ${CARD_PADDING.standard} md:grid-cols-2 lg:grid-cols-3 3xl:grid-cols-4 gap-4 border-t border-primary/5`}>
         {/* Use Cases */}
         <div className="min-w-0">
           <SectionLabel>{t.templates.card.use_cases_label}</SectionLabel>
@@ -64,7 +65,7 @@ export function TemplateCardBody({
                     e.stopPropagation();
                     onViewFlows();
                   }}
-                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
+                  className="flex items-center gap-2 w-full text-left group/flow hover:text-violet-300 transition-colors rounded-input focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] focus-visible:ring-offset-2 focus-visible:ring-offset-background outline-none"
                 >
                   <CircleDot className="w-3 h-3 text-violet-400/60 flex-shrink-0" />
                   <span className="typo-body text-foreground group-hover/flow:text-violet-300 truncate">

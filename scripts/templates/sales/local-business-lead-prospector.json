@@ -5,11 +5,19 @@
   "description": "Discovers local businesses in a configured niche and location with no website or significantly outdated ones, scores each as a prospect from web presence + review signals, and maintains a persistent pipeline with status tracking and weekly re-scoring.",
   "icon": "MapPin",
   "color": "#DC2626",
-  "category": ["sales"],
-  "service_flow": ["Local Database", "Messages"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Local Database",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Local Database", "Messages"],
+    "service_flow": [
+      "Local Database",
+      "Messages"
+    ],
     "persona": {
       "goal": "Generate a steady pipeline of local-business prospects that genuinely need a website or redesign — discover, score, dedup, and keep status in sync week over week.",
       "identity": {
@@ -49,7 +57,12 @@
       "tool_guidance": "**Desktop Browser**:\n- `browser_navigate` to `https://www.google.com/maps/search/{niche}+near+{location}`. Wait for results panel.\n- `browser_extract` the results list: per-business name, stars, review count, address, website link (or its absence).\n- Scroll results panel to paginate; re-extract after each scroll until max_results or no more loads.\n- Handle consent/popup before searching.\n- Quick website check: `browser_navigate` with 15-second timeout. Score per rubric.\n\n**web_search**:\n- Directory enrichment: `{niche} {location} site:yelp.com`, `... site:angi.com`, `... site:homeadvisor.com`.\n- Verification: `\"{business_name}\" {location}` for ambiguous matches.\n- Cap at 3-5 queries per discovery run.\n\n**Local DB (database_query + personas_database)**:\n- First run: `CREATE TABLE IF NOT EXISTS prospects (id INTEGER PRIMARY KEY, name TEXT, address TEXT, phone TEXT, website_url TEXT, website_score INTEGER, review_count INTEGER, star_rating REAL, prospect_score REAL, tier INTEGER, niche TEXT, location TEXT, discovery_date TEXT, discovery_source TEXT, status TEXT DEFAULT 'new')`.\n- Dedup: `SELECT * FROM prospects WHERE name LIKE '%{name}%' AND address LIKE '%{city}%'`.\n- Insert or update per match.\n- Pipeline summary: `SELECT status, COUNT(*) FROM prospects GROUP BY status`.\n- Re-score targets: `SELECT * FROM prospects WHERE status IN ('new', 'contacted') AND discovery_date < date('now', '-7 days')`.\n\n**Scoring math**:\n- `website_score`: 0 (no site) → 10 (professional).\n- `review_multiplier = min(review_count / 10, 3.0)` (caps at 3x for 30+ reviews).\n- `activity_multiplier`: 1.0 active, 0.7 hours missing, 0.3 permanently closed.\n- `prospect_score = (10 - website_score) × review_multiplier × activity_multiplier`.\n\n**Rate limiting**:\n- Max 3 Maps search sessions/hour.\n- Max 2 website checks/second (sequential, never parallel).\n- Max 5 web_search queries per discovery run.",
       "error_handling": "Google Maps not loading → retry once after 10s, then fall back to web_search directory-only. Maps CAPTCHA / unusual-traffic block → stop Maps, fall back to directories, log block in `search_log.json`, recommend 24-hour wait. Website check timeout → score 2/10 (slow = bad UX), move on without retry. Browser crash mid-batch → save progress every 10 businesses; resume from last checkpoint. Same-day niche+location search → reject with 'Already searched today' message. Duplicate business names → disambiguate by address. Permanently closed listing → record with `status: inactive`, activity_multiplier 0.3. Missing phone → record 'not found', don't skip.",
       "examples": [],
-      "tools": ["web_search", "database_query", "file_read", "file_write"],
+      "tools": [
+        "web_search",
+        "database_query",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "personas_database",
@@ -95,9 +108,14 @@
           "config": {},
           "description": "Default manual / on-demand — final cadence set at the trigger-composition step."
         },
-        "connectors": ["personas_database"],
+        "connectors": [
+          "personas_database"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Scoring calibration baselines per niche (typical web-presence scores for HVAC vs Dental vs Landscaping). Last-search timestamps per niche+location (prevent same-day repeats). Known-business fingerprints for dedup."
@@ -129,21 +147,36 @@
           {
             "name": "search_radius",
             "type": "enum",
-            "options": ["5", "10", "25", "50"],
+            "options": [
+              "5",
+              "10",
+              "25",
+              "50"
+            ],
             "default": "25",
             "description": "Radius in miles from the target location."
           },
           {
             "name": "min_reviews",
             "type": "enum",
-            "options": ["0", "5", "10", "25"],
+            "options": [
+              "0",
+              "5",
+              "10",
+              "25"
+            ],
             "default": "0",
             "description": "Minimum Google review count to qualify as a prospect."
           },
           {
             "name": "max_results",
             "type": "enum",
-            "options": ["25", "50", "100", "200"],
+            "options": [
+              "25",
+              "50",
+              "100",
+              "200"
+            ],
             "default": "50",
             "description": "Max businesses to discover per run."
           }
@@ -155,31 +188,104 @@
           "min_reviews": "{{param.aq_min_reviews}}",
           "max_results": "{{param.aq_max_results}}"
         },
-        "tool_hints": ["web_search", "database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "web_search",
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Discovery triggered" },
-            { "id": "d2", "type": "action", "label": "Google Maps search + scroll + extract" },
-            { "id": "d3", "type": "action", "label": "Directory cross-reference (Yelp / Angi / HomeAdvisor)" },
-            { "id": "d4", "type": "action", "label": "Dedup against existing DB + across sources" },
-            { "id": "d5", "type": "action", "label": "Quick website health checks (15s each)" },
-            { "id": "d6", "type": "action", "label": "Score + tier (Hot / Warm / Cool / Skip)" },
-            { "id": "d7", "type": "connector", "label": "Persist to prospects table", "connector": "personas_database" },
-            { "id": "d8", "type": "action", "label": "Deliver tiered lead list via Messages" },
-            { "id": "d9", "type": "event", "label": "Emit prospects_found + hot_lead_found per Tier 1" },
-            { "id": "d10", "type": "end", "label": "Discovery complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Discovery triggered"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Google Maps search + scroll + extract"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Directory cross-reference (Yelp / Angi / HomeAdvisor)"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Dedup against existing DB + across sources"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Quick website health checks (15s each)"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Score + tier (Hot / Warm / Cool / Skip)"
+            },
+            {
+              "id": "d7",
+              "type": "connector",
+              "label": "Persist to prospects table",
+              "connector": "personas_database"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "Deliver tiered lead list via Messages"
+            },
+            {
+              "id": "d9",
+              "type": "event",
+              "label": "Emit prospects_found + hot_lead_found per Tier 1"
+            },
+            {
+              "id": "d10",
+              "type": "end",
+              "label": "Discovery complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" },
-            { "source": "d9", "target": "d10" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            },
+            {
+              "source": "d9",
+              "target": "d10"
+            }
           ]
         }
       },
@@ -194,12 +300,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["personas_database"],
+        "connectors": [
+          "personas_database"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Conversion-rate trend over time. Historical score deltas (how often prospects self-resolve vs regress)."
@@ -214,28 +328,94 @@
         "error_handling": "Website re-check timeout → retain previous score with `last_check_failed: true` flag. Empty pipeline → deliver terse 'No prospects yet — run uc_discovery' note.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Weekly tick" },
-            { "id": "p2", "type": "connector", "label": "Load prospects grouped by status", "connector": "personas_database" },
-            { "id": "p3", "type": "action", "label": "Compute stats + conversion rate" },
-            { "id": "p4", "type": "action", "label": "Re-score new/contacted older than 7 days" },
-            { "id": "p5", "type": "decision", "label": "Score changes?" },
-            { "id": "p6", "type": "connector", "label": "Update changed records", "connector": "personas_database" },
-            { "id": "p7", "type": "event", "label": "Emit pipeline_updated; deliver summary" },
-            { "id": "p8", "type": "end", "label": "Pipeline reviewed" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Load prospects grouped by status",
+              "connector": "personas_database"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Compute stats + conversion rate"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Re-score new/contacted older than 7 days"
+            },
+            {
+              "id": "p5",
+              "type": "decision",
+              "label": "Score changes?"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Update changed records",
+              "connector": "personas_database"
+            },
+            {
+              "id": "p7",
+              "type": "event",
+              "label": "Emit pipeline_updated; deliver summary"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "Pipeline reviewed"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6", "variant": "yes", "label": "Yes" },
-            { "source": "p5", "target": "p7", "variant": "no", "label": "No changes" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "p5",
+              "target": "p7",
+              "variant": "no",
+              "label": "No changes"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            }
           ]
         }
       }
@@ -244,7 +424,9 @@
       {
         "id": "aq_niche",
         "scope": "capability",
-        "use_case_ids": ["uc_discovery"],
+        "use_case_ids": [
+          "uc_discovery"
+        ],
         "category": "domain",
         "question": "What industry niche should the prospector target?",
         "type": "text",
@@ -259,7 +441,9 @@
       {
         "id": "aq_location",
         "scope": "capability",
-        "use_case_ids": ["uc_discovery"],
+        "use_case_ids": [
+          "uc_discovery"
+        ],
         "category": "domain",
         "question": "What city or region should be searched?",
         "type": "text",
@@ -274,7 +458,9 @@
       {
         "id": "aq_radius",
         "scope": "capability",
-        "use_case_ids": ["uc_discovery"],
+        "use_case_ids": [
+          "uc_discovery"
+        ],
         "category": "quality",
         "question": "How wide should the search radius be?",
         "type": "select",
@@ -293,7 +479,9 @@
       {
         "id": "aq_min_reviews",
         "scope": "capability",
-        "use_case_ids": ["uc_discovery"],
+        "use_case_ids": [
+          "uc_discovery"
+        ],
         "category": "quality",
         "question": "Minimum Google review count to qualify as a prospect?",
         "type": "select",
@@ -312,7 +500,9 @@
       {
         "id": "aq_max_results",
         "scope": "capability",
-        "use_case_ids": ["uc_discovery"],
+        "use_case_ids": [
+          "uc_discovery"
+        ],
         "category": "quality",
         "question": "Maximum businesses to discover per run?",
         "type": "select",

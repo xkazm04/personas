@@ -2,47 +2,47 @@
   "id": "intake-processor",
   "schema_version": 3,
   "name": "Intake Processor",
-  "description": "Monitors Gmail for important emails, posts summaries to relevant Slack channels based on sender/topic, and optionally creates structured Notion database entries for tracking. Learns sender patterns over time via agent memory.",
+  "description": "Monitors email for important emails, posts summaries to relevant messaging channels based on sender/topic, and optionally creates structured knowledge base databases entries for tracking. Learns sender patterns over time via agent memory.",
   "icon": "Inbox",
   "color": "#3B82F6",
   "category": [
     "email"
   ],
   "service_flow": [
-    "Gmail",
-    "Slack",
-    "Notion"
+    "email",
+    "messaging",
+    "knowledge base"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Gmail",
-      "Slack",
-      "Notion"
+      "email",
+      "messaging",
+      "knowledge base"
     ],
     "persona": {
       "goal": "Turn a noisy inbox into routed, tracked intelligence — every important email classified, summarized, and dropped in front of the right team before anyone has to go looking.",
       "identity": {
         "role": "Intake triage agent that replaces rigid email automations with a reasoning-capable classifier, router, and tracker.",
-        "description": "Polls Gmail for unread mail, analyzes sender identity + subject + body + attachments, posts a formatted summary to the correct Slack channel, and — when enabled — writes a structured tracking row into a Notion database. Learns sender patterns (domain-level + per-address) so category accuracy improves every week."
+        "description": "Polls email for unread mail, analyzes sender identity + subject + body + attachments, posts a formatted summary to the correct messaging channels, and — when enabled — writes a structured tracking row into a knowledge base databases. Learns sender patterns (domain-level + per-address) so category accuracy improves every week."
       },
       "voice": {
         "style": "Terse, factual, zero hype. Reads like an ops lead who has seen a million inboxes — a one-line classification, a short summary, a link back to the source. No decorative language.",
-        "output_format": "Slack summaries: urgency emoji + category tag, sender name + email, subject line, 2-3 sentence summary, optional attachment note, Gmail deep-link. Notion rows: structured properties (Title, Sender, Date, Category, Urgency, Slack Channel, Status, Summary, Gmail ID).",
+        "output_format": "messaging summaries: urgency emoji + category tag, sender name + email, subject line, 2-3 sentence summary, optional attachment note, email deep-link. knowledge base rows: structured properties (Title, Sender, Date, Category, Urgency, messaging channels, Status, Summary, email ID).",
         "tone_adjustments": []
       },
       "principles": [
-        "Never post the full email body to Slack — summaries only, source link for the full text.",
+        "Never post the full email body to the messaging channel — summaries only, source link for the full text.",
         "Sender identity is load-bearing — learn patterns and use them before falling back to keyword classification.",
         "Atomic pipeline — an email is marked read only after every enabled step completes.",
         "Confidence belongs on every classification — low-confidence posts get a visible tag, not a silent shrug.",
         "Promotions, social, and no-reply noise are filtered at the query layer — they never enter the pipeline."
       ],
       "constraints": [
-        "Never forward or expose full email bodies to Slack or Notion — summaries only.",
+        "Never forward or expose full email bodies to the messaging channel or knowledge base — summaries only.",
         "Never process more than 20 emails per cycle — rate limits are real and backlog is safer than a throttle.",
         "Never silently drop a failed message — three consecutive failures escalate to the urgent channel for manual review.",
-        "Never auto-post emails from senders the user flagged as private (HR, legal, confidential) — they bypass Slack and Notion."
+        "Never auto-post emails from senders the user flagged as private (HR, legal, confidential) — they bypass messaging and knowledge base."
       ],
       "decision_principles": [
         "When classification confidence is below 60%, route to the fallback channel and tag the post with a low-confidence warning — never guess high-priority routing.",
@@ -53,9 +53,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities run on the same polling tick:\n\n1. **uc_intake_triage** (polling, default every 1 minute) — query Gmail with `is:unread -category:promotions -category:social`. For each matched message, `gmail_read` the full content, load `sender_patterns.json`, classify (sender memory + subject keywords + body urgency + attachment signals), determine the right Slack channel (VIP → #intake-urgent, topic-matched → #intake-{topic}, fallback → #intake-general), post a formatted summary via `chat.postMessage` with Block Kit, update sender memory in `sender_patterns.json`, and mark the email read with `gmail_mark_read` only after every enabled downstream step succeeds. Emit `email.intake.classified` per processed message with the classification result.\n\n2. **uc_notion_tracking** (event-listen on `email.intake.classified`) — create a Notion page in the configured tracking database with Title, Sender, Date Received, Category, Urgency, Slack Channel, Status=New, Summary, and Gmail ID. If the Notion connector is skipped at adoption, this capability is removed and no tracking rows are written. Emit `email.intake.tracked` per row created.\n\nSender learning is not a separate capability — it's a side effect of `uc_intake_triage`. After 10+ emails from a domain, routing preference solidifies into a stable pattern; multi-category senders route to their most frequent channel with a noted variance.",
-      "tool_guidance": "**Gmail tools**:\n- `gmail_search` — primary poll query `is:unread -category:promotions -category:social`. Returns message IDs + basic metadata.\n- `gmail_read` — fetch full message by ID (From, Subject, Date, Body, Attachments).\n- `gmail_mark_read` — call only after every enabled step succeeds. Apply `processed/intake` label: `{addLabelIds:[\"Label_processed\"], removeLabelIds:[\"UNREAD\"]}`.\n\n**Slack via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — body `{channel:\"#intake-{topic}\", blocks:[...]}`. Use Block Kit: section (summary), context (metadata), divider. Urgency emojis 🔴 Critical, 🟡 Normal, 🟢 Low.\n- `POST https://slack.com/api/chat.update` — amend a posted summary when new context arrives.\n- Headers: `Authorization: Bearer xoxb-…` (injected), `Content-Type: application/json`.\n\n**Notion via http_request** (optional):\n- `POST https://api.notion.com/v1/pages` — create tracking row with `{parent:{database_id:…}, properties:{Title, Sender, Date, Category, Urgency, Slack Channel, Status:\"New\", Summary, Gmail ID}}`.\n- `POST https://api.notion.com/v1/databases/{id}/query` — duplicate check before create.\n- Headers: `Authorization: Bearer ntn_…` (injected), `Notion-Version: 2022-06-28`.\n\n**Local state**:\n- `sender_patterns.json` — {email|domain → {category, urgency, count, confidence}}. Read at cycle start, rewritten atomically at end.\n- `processing_errors.json` — timestamped error log keyed by message ID.\n- `failed_posts.json` / `notion_backlog.json` — queues for retry on next cycle when a downstream step fails.\n\n**Classification keyword table**:\n| Category | Keywords | Channel |\n|---|---|---|\n| Urgent | URGENT, ASAP, incident, outage, blocker, P0, P1 | #intake-urgent |\n| Support | bug, issue, ticket, customer, complaint | #intake-support |\n| Sales | proposal, partnership, pricing, demo, trial | #intake-sales |\n| Engineering | deploy, build, CI, PR, release, API, error | #intake-engineering |\n| Finance | invoice, payment, billing, expense, budget | #intake-finance |\n| General | (everything else) | #intake-general |",
-      "error_handling": "Gmail auth expired (401) → skip cycle, post alert to the urgent channel, emit `connector_auth_expired`. Gmail 429 → exponential backoff from 30s, resume next cycle. Gmail 404 on read → skip message, log as potentially deleted. Slack channel_not_found → fall back to the configured fallback channel, log the missing channel name. Slack 429 → queue message in `failed_posts.json`, retry next cycle after `Retry-After`. Message too long → truncate summary to 3000 chars, add `[truncated]` marker + Gmail link. Notion 404 database → log, continue Slack posting, queue entry to `notion_backlog.json`. Notion property mismatch (400) → log full response, retry with Title + Summary only. Any pipeline step failure → do NOT mark email read; retry on next cycle. 3 consecutive failures on the same message → mark read to stop the loop, alert the urgent channel with message ID for manual triage.",
+      "operating_instructions": "Two capabilities run on the same polling tick: 1. **uc_intake_triage** (polling, default every 1 minute) — query email with `is:unread -category:promotions -category:social`. For each matched message, `gmail_read` the full content, load `sender_patterns.json`, classify (sender memory + subject keywords + body urgency + attachment signals), determine the right messaging channels (VIP → #intake-urgent, topic-matched → #intake-{topic}, fallback → #intake-general), post a formatted summary via `chat.postMessage` with formatted messaging layout, update sender memory in `sender_patterns.json`, and mark the email read with `gmail_mark_read` only after every enabled downstream step succeeds. Emit `email.intake.classified` per processed message with the classification result. 2. **uc_notion_tracking** (event-listen on `email.intake.classified`) — create a knowledge base pages in the configured tracking database with Title, Sender, Date Received, Category, Urgency, messaging channels, Status=New, Summary, and email ID. If the knowledge base connector is skipped at adoption, this capability is removed and no tracking rows are written. Emit `email.intake.tracked` per row created. Sender learning is not a separate capability — it's a side effect of `uc_intake_triage`. After 10+ emails from a domain, routing preference solidifies into a stable pattern; multi-category senders route to their most frequent channel with a noted variance.",
+      "tool_guidance": "**email tools**:\n- `gmail_search` — primary poll query `is:unread -category:promotions -category:social`. Returns message IDs + basic metadata.\n- `gmail_read` — fetch full message by ID (From, Subject, Date, Body, Attachments).\n- `gmail_mark_read` — call only after every enabled step succeeds. Apply `processed/intake` label: `{addLabelIds:[\"Label_processed\"], removeLabelIds:[\"UNREAD\"]}`. **messaging via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — body `{channel:\"#intake-{topic}\", blocks:[...]}`. Use formatted messaging layout: section (summary), context (metadata), divider. Urgency emojis 🔴 Critical, 🟡 Normal, 🟢 Low.\n- `POST https://slack.com/api/chat.update` — amend a posted summary when new context arrives.\n- Headers: `Authorization: Bearer xoxb-…` (injected), `Content-Type: application/json`. **knowledge base via http_request** (optional):\n- `POST https://api.notion.com/v1/pages` — create tracking row with `{parent:{database_id:…}, properties:{Title, Sender, Date, Category, Urgency, messaging channels, Status:\"New\", Summary, email ID}}`.\n- `POST https://api.notion.com/v1/databases/{id}/query` — duplicate check before create.\n- Headers: `Authorization: Bearer ntn_…` (injected), `knowledge base-Version: 2022-06-28`. **Local state**:\n- `sender_patterns.json` — {email|domain → {category, urgency, count, confidence}}. Read at cycle start, rewritten atomically at end.\n- `processing_errors.json` — timestamped error log keyed by message ID.\n- `failed_posts.json` / `notion_backlog.json` — queues for retry on next cycle when a downstream step fails. **Classification keyword table**:\n| Category | Keywords | Channel |\n|---|---|---|\n| Urgent | URGENT, ASAP, incident, outage, blocker, P0, P1 | #intake-urgent |\n| Support | bug, issue, ticket, customer, complaint | #intake-support |\n| Sales | proposal, partnership, pricing, demo, trial | #intake-sales |\n| Engineering | deploy, build, CI, PR, release, API, error | #intake-engineering |\n| Finance | invoice, payment, billing, expense, budget | #intake-finance |\n| General | (everything else) | #intake-general |",
+      "error_handling": "email auth expired (401) → skip cycle, post alert to the urgent channel, emit `connector_auth_expired`. email 429 → exponential backoff from 30s, resume next cycle. email 404 on read → skip message, log as potentially deleted. messaging channel_not_found → fall back to the configured fallback channel, log the missing channel name. messaging 429 → queue message in `failed_posts.json`, retry next cycle after `Retry-After`. Message too long → truncate summary to 3000 chars, add `[truncated]` marker + email link. knowledge base 404 database → log, continue messaging posting, queue entry to `notion_backlog.json`. knowledge base property mismatch (400) → log full response, retry with Title + Summary only. Any pipeline step failure → do NOT mark email read; retry on next cycle. 3 consecutive failures on the same message → mark read to stop the loop, alert the urgent channel with message ID for manual triage.",
       "examples": [],
       "tools": [
         "gmail_read",
@@ -100,7 +100,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable Gmail API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete the OAuth consent flow for scopes: gmail.readonly, gmail.modify.\n5. Paste all three values here."
+          "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable email API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete the OAuth consent flow for scopes: gmail.readonly, gmail.modify.\n5. Paste all three values here."
         },
         {
           "name": "messaging",
@@ -116,7 +116,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Starts with xoxb-.",
+              "helpText": "From your messaging App -> OAuth & Permissions -> Bot User OAuth Token. Starts with xoxb-.",
               "required": true
             }
           ],
@@ -129,7 +129,7 @@
           "role": "knowledge_base",
           "category": "knowledge_base",
           "required": false,
-          "fallback_note": "Skip Notion to run Gmail-to-Slack only. Emails are still classified and posted to Slack; no tracking database rows are written. Enable Notion later to add structured tracking.",
+          "fallback_note": "Skip knowledge base to run email-to-messaging only. Emails are still classified and posted to the messaging channel; no tracking database rows are written. Enable knowledge base later to add structured tracking.",
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
             {
@@ -145,11 +145,11 @@
               "label": "Tracking Database ID",
               "type": "text",
               "placeholder": "a1b2c3d4e5f6...",
-              "helpText": "The ID of your Notion database for email tracking. Found in the database URL: notion.so/{workspace}/{database_id}?v=...",
+              "helpText": "The ID of your knowledge base databases for email tracking. Found in the database URL: notion.so/{workspace}/{database_id}?v=...",
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations -> create a new integration named 'Intake Processor'.\n2. Copy the Internal Integration Token (starts with ntn_).\n3. Create a Notion database for email tracking with properties:\n   - Title (title) — Email subject\n   - Sender (email) — Sender address\n   - Date Received (date)\n   - Category (select) — Support, Sales, Engineering, Finance, General, Urgent\n   - Urgency (select) — Critical, Normal, Low\n   - Slack Channel (rich_text)\n   - Status (select) — New, In Review, Resolved, Archived\n   - Summary (rich_text)\n   - Gmail ID (rich_text)\n4. Share the database with the integration: '...' -> 'Add connections' -> 'Intake Processor'.\n5. Copy the database ID from the URL."
+          "setup_instructions": "1. notion.so/my-integrations -> create a new integration named 'Intake Processor'.\n2. Copy the Internal Integration Token (starts with ntn_).\n3. Create a knowledge base databases for email tracking with properties: - Title (title) — Email subject - Sender (email) — Sender address - Date Received (date) - Category (select) — Support, Sales, Engineering, Finance, General, Urgent - Urgency (select) — Critical, Normal, Low - messaging channels (rich_text) - Status (select) — New, In Review, Resolved, Archived - Summary (rich_text) - email ID (rich_text)\n4. Share the database with the integration: '...' -> 'Add connections' -> 'Intake Processor'.\n5. Copy the database ID from the URL."
         }
       ],
       "notification_channels_default": [
@@ -163,9 +163,9 @@
     "use_cases": [
       {
         "id": "uc_intake_triage",
-        "title": "Inbox Triage & Slack Routing",
-        "description": "Poll Gmail for unread mail, classify by sender memory + content, and post a formatted summary to the right Slack channel. Updates sender patterns after every processed message. Default polls every 1 minute — final cadence set at the trigger-composition step.",
-        "capability_summary": "Classify each unread email and post a summary to the topic-matched Slack channel.",
+        "title": "Inbox Triage & messaging Routing",
+        "description": "Poll email for unread mail, classify by sender memory + content, and post a formatted summary to the right messaging channels. Updates sender patterns after every processed message. Default polls every 1 minute — final cadence set at the trigger-composition step.",
+        "capability_summary": "Classify each unread email and post a summary to the topic-matched messaging channels.",
         "category": "email_processing",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -185,7 +185,7 @@
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
-          "context": "Emails with classification confidence below 60% or from senders flagged as 'private' are held for human review before Slack posting."
+          "context": "Emails with classification confidence below 60% or from senders flagged as 'private' are held for human review before messaging posting."
         },
         "memory_policy": {
           "enabled": true,
@@ -195,10 +195,10 @@
           {
             "event_type": "email.intake.classified",
             "direction": "emit",
-            "description": "Payload: { message_id, sender, category, urgency, slack_channel, summary, gmail_link, confidence }. Emitted after successful Slack post; consumed by uc_notion_tracking when Notion is enabled."
+            "description": "Payload: { message_id, sender, category, urgency, slack_channel, summary, gmail_link, confidence }. Emitted after successful messaging post; consumed by uc_notion_tracking when knowledge base is enabled."
           }
         ],
-        "error_handling": "Gmail auth expired → skip cycle, alert urgent channel. Slack 429 → queue in failed_posts.json. Low-confidence classification → tag post with ⚠️ Low confidence. Pipeline failure mid-cycle → keep email unread for retry.",
+        "error_handling": "email auth expired → skip cycle, alert urgent channel. messaging 429 → queue in failed_posts.json. Low-confidence classification → tag post with ⚠️ Low confidence. Pipeline failure mid-cycle → keep email unread for retry.",
         "input_schema": [
           {
             "name": "focus_type",
@@ -224,7 +224,7 @@
               "none"
             ],
             "default": "hr_personnel",
-            "description": "Categories that must never be auto-posted to Slack or logged to Notion."
+            "description": "Categories that must never be auto-posted to the messaging channel or logged to knowledge base."
           },
           {
             "name": "urgency_signals",
@@ -253,7 +253,7 @@
               "full_digest"
             ],
             "default": "short_block",
-            "description": "Slack summary verbosity."
+            "description": "messaging summary verbosity."
           },
           {
             "name": "fallback_channel",
@@ -305,7 +305,7 @@
             {
               "id": "t5",
               "type": "connector",
-              "label": "Post to category Slack channel",
+              "label": "Post to category messaging channels",
               "connector": "messaging"
             },
             {
@@ -368,9 +368,9 @@
       },
       {
         "id": "uc_notion_tracking",
-        "title": "Notion Database Tracking",
-        "description": "For each classified email, create a structured row in the configured Notion tracking database. Optional — skipped entirely if the Notion connector is disabled at adoption.",
-        "capability_summary": "Write a structured tracking row to Notion for every classified email.",
+        "title": "knowledge base Databases Tracking",
+        "description": "For each classified email, create a structured row in the configured knowledge base tracking database. Optional — skipped entirely if the knowledge base connector is disabled at adoption.",
+        "capability_summary": "Write a structured tracking row to knowledge base for every classified email.",
         "category": "tracking",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -403,10 +403,10 @@
           {
             "event_type": "email.intake.tracked",
             "direction": "emit",
-            "description": "Payload: { message_id, notion_page_id, database_id }. Emitted after successful Notion row creation."
+            "description": "Payload: { message_id, notion_page_id, database_id }. Emitted after successful knowledge base row creation."
           }
         ],
-        "error_handling": "Notion 404 database → queue entry to notion_backlog.json, retry next cycle. 400 property mismatch → retry with Title + Summary only, log full error. Duplicate detected (via database query) → skip insert, log.",
+        "error_handling": "knowledge base 404 database → queue entry to notion_backlog.json, retry next cycle. 400 property mismatch → retry with Title + Summary only, log full error. Duplicate detected (via database query) → skip insert, log.",
         "input_schema": [
           {
             "name": "status_default",
@@ -442,7 +442,7 @@
             {
               "id": "n3",
               "type": "connector",
-              "label": "Create Notion row",
+              "label": "Create knowledge base row",
               "connector": "knowledge_base"
             },
             {
@@ -508,7 +508,7 @@
           "uc_notion_tracking"
         ],
         "category": "boundaries",
-        "question": "Which email types should NEVER be auto-posted to Slack or logged in Notion?",
+        "question": "Which email types should NEVER be auto-posted to the messaging channel or logged in knowledge base?",
         "type": "select",
         "options": [
           "HR, personnel, and compensation-related emails",
@@ -520,7 +520,7 @@
         "default": "HR, personnel, and compensation-related emails",
         "maps_to": "use_cases[uc_intake_triage].sample_input.confidential_categories",
         "variable_name": "confidential_categories",
-        "context": "Hard guardrail: emails matching these categories bypass the Slack and Notion steps regardless of urgency or sender memory.",
+        "context": "Hard guardrail: emails matching these categories bypass the messaging and knowledge base steps regardless of urgency or sender memory.",
         "dimension": "error-handling"
       },
       {
@@ -566,7 +566,7 @@
           "uc_intake_triage"
         ],
         "category": "connectors",
-        "question": "Which Slack channel should catch unclassified or low-confidence emails?",
+        "question": "Which messaging channels should catch unclassified or low-confidence emails?",
         "type": "select",
         "default": "#intake-general",
         "maps_to": "use_cases[uc_intake_triage].sample_input.fallback_channel",
@@ -590,7 +590,7 @@
           "uc_intake_triage"
         ],
         "category": "quality",
-        "question": "How verbose should Slack summaries be?",
+        "question": "How verbose should messaging summaries be?",
         "type": "select",
         "options": [
           "One-liner: sender, subject, and urgency tag only",
@@ -600,7 +600,7 @@
         "default": "Short block: 2-3 sentence summary + action items",
         "maps_to": "use_cases[uc_intake_triage].sample_input.summary_format",
         "variable_name": "summary_format",
-        "context": "Matches your team's preferred signal-to-noise ratio in Slack.",
+        "context": "Matches your team's preferred signal-to-noise ratio in the messaging channel.",
         "dimension": "use-cases"
       },
       {
@@ -619,7 +619,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -638,7 +638,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -657,7 +657,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

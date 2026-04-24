@@ -2,7 +2,7 @@
   "id": "documentation-freshness-guardian",
   "schema_version": 3,
   "name": "Documentation Freshness Guardian",
-  "description": "Scans Confluence pages for staleness (no edits in N days), checks if referenced APIs or tools still exist, notifies page owners via email, and posts a Slack digest of stale docs. Tracks update promises in memory.",
+  "description": "Scans knowledge base pages for staleness (no edits in N days), checks if referenced APIs or tools still exist, notifies page owners via email, and posts a messaging digest of stale docs. Tracks update promises in memory.",
   "icon": "BookOpen",
   "color": "#10B981",
   "category": [
@@ -10,25 +10,25 @@
   ],
   "is_published": true,
   "service_flow": [
-    "Confluence",
-    "Slack",
-    "Gmail"
+    "knowledge base",
+    "messaging",
+    "email"
   ],
   "payload": {
     "service_flow": [
-      "Confluence",
-      "Slack",
-      "Gmail"
+      "knowledge base",
+      "messaging",
+      "email"
     ],
     "persona": {
-      "goal": "Keep the wiki honest — find pages rotting in Confluence, surface broken references, nudge owners, and follow up on the promises they make.",
+      "goal": "Keep the wiki honest — find pages rotting in knowledge base, surface broken references, nudge owners, and follow up on the promises they make.",
       "identity": {
         "role": "Confluence freshness auditor that treats doc rot as a reliability risk.",
-        "description": "Scans Confluence spaces for staleness, validates external URLs and API references inside flagged pages, groups findings by owner, emails owners with page-level context and broken-link reports, posts a team-visible Slack digest, and tracks owner update promises in memory so broken commitments don't slip."
+        "description": "Scans knowledge base spaces for staleness, validates external URLs and API references inside flagged pages, groups findings by owner, emails owners with page-level context and broken-link reports, posts a team-visible messaging digest, and tracks owner update promises in memory so broken commitments don't slip."
       },
       "voice": {
         "style": "Calm, factual, owner-respectful. Staleness numbers first; escalation tone reserved for Critical.",
-        "output_format": "Owner email: HTML table (page, days stale, tier, broken links, overdue note) + direct Confluence links + action items. Slack digest: Block Kit sections (total scanned, per-tier counts, top spaces, broken links, overdue commitments)."
+        "output_format": "Owner email: HTML table (page, days stale, tier, broken links, overdue note) + direct knowledge base links + action items. messaging digest: formatted messaging layout sections (total scanned, per-tier counts, top spaces, broken links, overdue commitments)."
       },
       "principles": [
         "Own-by-owner — group findings so each person sees only their pages.",
@@ -37,7 +37,7 @@
         "Flag, don't delete — archival decisions are human decisions."
       ],
       "constraints": [
-        "Never archive or delete Confluence pages.",
+        "Never archive or delete knowledge base pages.",
         "Never email recipients outside the org (bounce detection enforces this).",
         "Never send more than one reminder email per owner per week.",
         "Never escalate to a manager without human approval — escalation beyond the owner is a gated action."
@@ -51,9 +51,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities run in sequence each weekly tick:\n\n1. **uc_staleness_scan** (default Wednesday 9am) — list Confluence spaces, paginate pages with version + history metadata, compute days-since-last-edit per page, classify Warning (90–180d) / Stale (180–365d) / Critical (365+d). For flagged pages, fetch body.storage and extract external URLs + API references, then HEAD each URL (5s timeout) and record OK / broken / unreachable / cert-issue. Produce per-owner aggregates. Emit `docs.freshness.scanned` with the full result set. Persist data/freshness_scan_results.json.\n\n2. **uc_owner_notify** (event-listen on docs.freshness.scanned) — load data/owner_commitments.json to find overdue promises. Group findings by owner and, for each, send a personalized Gmail message (tier-appropriate tone, page table, broken links, overdue note + direct Confluence links). Then gmail_search for replies since last run, parse date commitments from reply bodies, store in data/owner_commitments.json. If an email bounces or an owner has ignored 2+ consecutive notifications on a Critical page, emit `docs.freshness.escalation_needed` for manual_review. Emit `docs.freshness.owners_notified` with counts.\n\n3. **uc_slack_digest** (event-listen on docs.freshness.owners_notified) — compose Block Kit digest (total scanned, per-tier counts, top offending spaces, broken link total, overdue commitments, notification failures) and post to the configured Slack channel. Emit `docs.freshness.digest_posted`.\n\nState under data/: freshness_scan_results.json (latest full scan), owner_commitments.json (promise ledger), notification_history.json (per-owner-per-page send history for 'ignored 2+ times' detection), escalation_queue.json (items awaiting manual_review).",
-      "tool_guidance": "### Confluence (http_request + confluence connector)\n- Base: `https://{domain}.atlassian.net/wiki/rest/api`\n- `GET /space?limit=100` — list spaces.\n- `GET /content?spaceKey={key}&type=page&limit=50&expand=version,history.lastUpdated&start={offset}` — paginate pages.\n- `GET /content/{id}?expand=body.storage,version` — fetch body for link extraction.\n- `GET /content/{id}/label` — page labels.\n- Auth: `Authorization: Basic {base64(email:api_token)}`.\n\n### Link validation\n- Plain `http_request` `HEAD {url}` with 5s timeout. 2xx/3xx = OK, 4xx/5xx = broken, timeout = unreachable, SSL error = cert-issue.\n\n### Gmail (gmail_send / gmail_search)\n- `gmail_send` — per-owner HTML email. Subject: `[Doc Freshness] {count} pages need your attention in {space}`.\n- `gmail_search` — `subject:[Doc Freshness] from:{owner_email} newer_than:7d` to pull replies.\n- Bounced detection: check for messages from mailer-daemon or delivery-status notifications referencing the owner address.\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` with Block Kit — weekly digest.\n- `POST /chat.update` — if editing the digest in place.\n- Auth: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/freshness_scan_results.json` — last full scan snapshot.\n- `data/owner_commitments.json` — promise ledger { owner, page_id, promised_by, created_at }.\n- `data/notification_history.json` — per (owner, page_id) send history for non-response detection.\n- `data/escalation_queue.json` — items awaiting manual_review.",
-      "error_handling": "Confluence 401 → skip space, include warning in digest. Confluence 429 → exp backoff; process spaces sequentially. Confluence 5xx → retry 2× (10s/20s), skip on failure with digest note. Gmail send failure → log, surface in digest under 'Notification Failures'. Bounced email → flag page for manual_review via escalation_queue. Slack channel_not_found → try fallback; save digest locally. HEAD timeout → record 'unreachable' not 'broken'. SSL error → 'cert-issue', lower severity. owner_commitments.json corrupt → start fresh, note reset in digest.",
+      "operating_instructions": "Three capabilities run in sequence each weekly tick: 1. **uc_staleness_scan** (default Wednesday 9am) — list knowledge base spaces, paginate pages with version + history metadata, compute days-since-last-edit per page, classify Warning (90–180d) / Stale (180–365d) / Critical (365+d). For flagged pages, fetch body.storage and extract external URLs + API references, then HEAD each URL (5s timeout) and record OK / broken / unreachable / cert-issue. Produce per-owner aggregates. Emit `docs.freshness.scanned` with the full result set. Persist data/freshness_scan_results.json. 2. **uc_owner_notify** (event-listen on docs.freshness.scanned) — load data/owner_commitments.json to find overdue promises. Group findings by owner and, for each, send a personalized email message (tier-appropriate tone, page table, broken links, overdue note + direct knowledge base links). Then gmail_search for replies since last run, parse date commitments from reply bodies, store in data/owner_commitments.json. If an email bounces or an owner has ignored 2+ consecutive notifications on a Critical page, emit `docs.freshness.escalation_needed` for manual_review. Emit `docs.freshness.owners_notified` with counts. 3. **uc_slack_digest** (event-listen on docs.freshness.owners_notified) — compose formatted messaging layout digest (total scanned, per-tier counts, top offending spaces, broken link total, overdue commitments, notification failures) and post to the configured messaging channels. Emit `docs.freshness.digest_posted`. State under data/: freshness_scan_results.json (latest full scan), owner_commitments.json (promise ledger), notification_history.json (per-owner-per-page send history for 'ignored 2+ times' detection), escalation_queue.json (items awaiting manual_review).",
+      "tool_guidance": "### knowledge base (http_request + confluence connector)\n- Base: `https://{domain}.atlassian.net/wiki/rest/api`\n- `GET /space?limit=100` — list spaces.\n- `GET /content?spaceKey={key}&type=page&limit=50&expand=version,history.lastUpdated&start={offset}` — paginate pages.\n- `GET /content/{id}?expand=body.storage,version` — fetch body for link extraction.\n- `GET /content/{id}/label` — page labels.\n- Auth: `Authorization: Basic {base64(email:api_token)}`. ### Link validation\n- Plain `http_request` `HEAD {url}` with 5s timeout. 2xx/3xx = OK, 4xx/5xx = broken, timeout = unreachable, SSL error = cert-issue. ### email (gmail_send / gmail_search)\n- `gmail_send` — per-owner HTML email. Subject: `[Doc Freshness] {count} pages need your attention in {space}`.\n- `gmail_search` — `subject:[Doc Freshness] from:{owner_email} newer_than:7d` to pull replies.\n- Bounced detection: check for messages from mailer-daemon or delivery-status notifications referencing the owner address. ### messaging (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` with formatted messaging layout — weekly digest.\n- `POST /chat.update` — if editing the digest in place.\n- Auth: `Authorization: Bearer {bot_token}`. ### Local state (file_read / file_write)\n- `data/freshness_scan_results.json` — last full scan snapshot.\n- `data/owner_commitments.json` — promise ledger { owner, page_id, promised_by, created_at }.\n- `data/notification_history.json` — per (owner, page_id) send history for non-response detection.\n- `data/escalation_queue.json` — items awaiting manual_review.",
+      "error_handling": "knowledge base 401 → skip space, include warning in digest. knowledge base 429 → exp backoff; process spaces sequentially. knowledge base 5xx → retry 2× (10s/20s), skip on failure with digest note. email send failure → log, surface in digest under 'Notification Failures'. Bounced email → flag page for manual_review via escalation_queue. messaging channel_not_found → try fallback; save digest locally. HEAD timeout → record 'unreachable' not 'broken'. SSL error → 'cert-issue', lower severity. owner_commitments.json corrupt → start fresh, note reset in digest.",
       "examples": [],
       "tools": [
         "http_request",
@@ -97,7 +97,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. id.atlassian.com/manage-profile/security/api-tokens → Create API token.\n2. Label it (e.g., 'Doc Freshness Guardian') and copy immediately.\n3. Enter your Atlassian domain + account email + token above.\n4. The agent uses Basic Auth with email:token for all Confluence REST API calls."
+          "setup_instructions": "1. id.atlassian.com/manage-profile/security/api-tokens → Create API token.\n2. Label it (e.g., 'Doc Freshness Guardian') and copy immediately.\n3. Enter your Atlassian domain + account email + token above.\n4. The agent uses Basic Auth with email:token for all knowledge base REST API calls."
         },
         {
           "name": "email",
@@ -133,7 +133,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop app).\n3. Copy Client ID + Secret.\n4. Complete OAuth consent flow to get a refresh token with gmail.send, gmail.readonly, gmail.modify scopes.\n5. Paste all three values above."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable email API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop app).\n3. Copy Client ID + Secret.\n4. Complete OAuth consent flow to get a refresh token with gmail.send, gmail.readonly, gmail.modify scopes.\n5. Paste all three values above."
         },
         {
           "name": "messaging",
@@ -149,7 +149,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxx...",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token (xoxb-).",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token (xoxb-).",
               "required": true
             }
           ],
@@ -172,7 +172,7 @@
       {
         "id": "uc_staleness_scan",
         "title": "Staleness Scan",
-        "description": "Lists Confluence spaces, paginates pages, classifies staleness by age tier, fetches bodies for flagged pages and validates external links. Emits docs.freshness.scanned with per-page + per-owner aggregates. Default Wednesday 9am — final cadence set at the trigger-composition step.",
+        "description": "Lists knowledge base spaces, paginates pages, classifies staleness by age tier, fetches bodies for flagged pages and validates external links. Emits docs.freshness.scanned with per-page + per-owner aggregates. Default Wednesday 9am — final cadence set at the trigger-composition step.",
         "capability_summary": "Per-space page scan + tier classification + link validation.",
         "category": "development",
         "enabled_by_default": true,
@@ -204,7 +204,7 @@
             "description": "Payload: { total_scanned, tiers: { warning, stale, critical }, broken_links_total, per_owner: { email: [{ page_id, title, space, days_stale, tier, broken_links[] }] } }."
           }
         ],
-        "error_handling": "Confluence 401 → skip space + warn digest. Confluence 429 → exp backoff. Large body → scan first 500KB only. HEAD timeout → 'unreachable'.",
+        "error_handling": "knowledge base 401 → skip space + warn digest. knowledge base 429 → exp backoff. Large body → scan first 500KB only. HEAD timeout → 'unreachable'.",
         "input_schema": [
           {
             "name": "spaces_filter",
@@ -317,7 +317,7 @@
       {
         "id": "uc_owner_notify",
         "title": "Owner Notification + Commitment Tracking",
-        "description": "Consumes the scanned result, sends per-owner Gmail with tier-appropriate tone, pulls replies for date commitments, tracks overdue promises, and flags bounced or repeatedly-ignored Critical pages for manual_review. Emits docs.freshness.owners_notified.",
+        "description": "Consumes the scanned result, sends per-owner email with tier-appropriate tone, pulls replies for date commitments, tracks overdue promises, and flags bounced or repeatedly-ignored Critical pages for manual_review. Emits docs.freshness.owners_notified.",
         "capability_summary": "Per-owner email + commitment ledger + Critical escalation to manual_review.",
         "category": "development",
         "enabled_by_default": true,
@@ -337,7 +337,7 @@
         "notification_channels": [
           {
             "type": "email",
-            "description": "Per-owner HTML email with page list, severity, broken links, overdue notes, Confluence links."
+            "description": "Per-owner HTML email with page list, severity, broken links, overdue notes, knowledge base links."
           }
         ],
         "review_policy": {
@@ -365,7 +365,7 @@
             "description": "Payload: { page_id, tier, reason: 'bounced' | 'ignored_2x' | 'no_owner' }. Feeds manual_review queue."
           }
         ],
-        "error_handling": "Gmail send failure → log in notification_history as 'send_failed'; include in 'Notification Failures' section of digest. Bounced email → emit escalation_needed (reason=bounced). Reply parse failed → ignore this reply, log. owner_commitments.json corrupt → start fresh.",
+        "error_handling": "email send failure → log in notification_history as 'send_failed'; include in 'Notification Failures' section of digest. Bounced email → emit escalation_needed (reason=bounced). Reply parse failed → ignore this reply, log. owner_commitments.json corrupt → start fresh.",
         "input_schema": [
           {
             "name": "follow_up_buffer_days",
@@ -505,8 +505,8 @@
       },
       {
         "id": "uc_slack_digest",
-        "title": "Weekly Slack Digest",
-        "description": "Posts a Block Kit digest to the configured Slack channel summarizing total scanned, per-tier counts, top spaces, broken links, overdue commitments, and notification failures. Emits docs.freshness.digest_posted.",
+        "title": "Weekly messaging Digest",
+        "description": "Posts a formatted messaging layout digest to the configured messaging channels summarizing total scanned, per-tier counts, top spaces, broken links, overdue commitments, and notification failures. Emits docs.freshness.digest_posted.",
         "capability_summary": "Team-visible weekly digest of doc health.",
         "category": "development",
         "enabled_by_default": true,
@@ -548,7 +548,7 @@
             "description": "Payload: { channel, message_ts, overall_counts }."
           }
         ],
-        "error_handling": "Slack channel_not_found → fall back to configured default. Slack invalid_auth → persist digest JSON locally for manual posting.",
+        "error_handling": "messaging channel_not_found → fall back to configured default. messaging invalid_auth → persist digest JSON locally for manual posting.",
         "input_schema": [],
         "sample_input": {},
         "tool_hints": [
@@ -566,12 +566,12 @@
             {
               "id": "d2",
               "type": "action",
-              "label": "Compose Block Kit digest"
+              "label": "Compose formatted messaging layout digest"
             },
             {
               "id": "d3",
               "type": "connector",
-              "label": "Post digest to Slack",
+              "label": "Post digest to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -614,7 +614,7 @@
           "uc_staleness_scan"
         ],
         "category": "domain",
-        "question": "Which Confluence spaces should the guardian monitor?",
+        "question": "Which knowledge base spaces should the guardian monitor?",
         "type": "select",
         "options": [
           "All spaces across the organization",
@@ -698,20 +698,20 @@
           "uc_slack_digest"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives the weekly digest?",
+        "question": "Which messaging channels receives the weekly digest?",
         "type": "select",
         "options": [],
         "default": "#docs-health",
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "digest_channel",
-        "context": "A dedicated docs-health channel avoids alert fatigue. Options come from your Slack credential.",
+        "context": "A dedicated docs-health channel avoids alert fatigue. Options come from your messaging credential.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -770,7 +770,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -789,7 +789,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -808,7 +808,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

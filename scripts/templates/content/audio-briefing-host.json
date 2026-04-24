@@ -5,11 +5,23 @@
   "description": "Turns any source document, meeting transcript, research report, or article into a 5-15 minute conversational audio briefing with two distinct hosts. A scriptwriter persona structures the content as a back-and-forth conversation, a TTS connector synthesizes the voices, and ffmpeg stitches the segments into a single MP3. Learns from user feedback which conversation styles and pacing work best.",
   "icon": "Mic",
   "color": "#8B5CF6",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Input Source", "TTS API", "FFmpeg", "Messages"],
+  "service_flow": [
+    "Input Source",
+    "TTS API",
+    "FFmpeg",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Input Source", "TTS API", "FFmpeg", "Messages"],
+    "service_flow": [
+      "Input Source",
+      "TTS API",
+      "FFmpeg",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn any source document into a polished two-host audio briefing — source-grounded, paced, and under your creative control.",
       "identity": {
@@ -42,27 +54,36 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities ship together:\n\n1. **uc_script_draft** — given a source (pasted text, file path, URL, or upstream agent output), validate length (500-30,000 words; per-section outline for long sources), load memory (approved hooks, rejected phrases, voice pairings, pacing deltas), distill to a structured outline (headline finding, 5-12 key facts with pointers, 0-4 tensions, 2-5 implications flagged as inferences, 1-3 open questions), cast the two hosts based on `briefing_style`, and write the script as structured JSON: `{title, target_duration_minutes, hosts: {A, B}, segments: [{host, text, beat}]}`. Emit `briefing.script_draft` for review. Memory-filter: never use phrases rejected 3+ times, favor approved hook patterns, write to (target - pacing_delta) if memory has one. Human reviews via Messages. Up to 3 rejection rounds.\n\n2. **uc_audio_production** — event-listen on `briefing.script_approved`. Synthesize each segment via TTS (Leonardo / Google Cloud TTS / ElevenLabs / Fish Audio — whichever the user connected). Save to `production/segments/NN_{host}.mp3`. Generate a 300ms silence file once. Build `concat.txt` interleaving segments with silences. Run `ffmpeg -f concat -safe 0 -i concat.txt -c copy briefing.mp3`. Verify actual duration within ±10% of target. Deliver the MP3 via Messages for final review. On approval save hook patterns + voice pairings + pacing deltas to memory and emit `briefing.published`.\n\nState: `briefing_state.json` (topic history, voice pairings, aggregate stats, rejection counters). `production/script.json` (current script). `production/manifest.json` (per-segment metadata). `production/briefing.mp3` (final output).",
-      "tool_guidance": "**TTS via `http_request` + `tts_provider` connector** (user's choice at adoption):\n\nElevenLabs (base `https://api.elevenlabs.io`):\n- `GET /v1/voices` — list voices for first-run pairing.\n- `POST /v1/text-to-speech/{voice_id}` with `{text, model_id: \"eleven_multilingual_v2\", voice_settings: {stability: 0.55, similarity_boost: 0.75, style: 0.3}}`. Headers: `xi-api-key`, `Accept: audio/mpeg`. Returns binary MP3.\n\nGoogle Cloud TTS:\n- `POST https://texttospeech.googleapis.com/v1/text:synthesize` with `{input: {text}, voice: {languageCode, name}, audioConfig: {audioEncoding: MP3}}`. Decode base64 `audioContent`.\n\nFish Audio:\n- `POST https://api.fish.audio/v1/tts` with `{text, reference_id, format: mp3}`.\n\n**FFmpeg** (local binary or `run_command`):\n- Silence: `ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 0.3 silence_300ms.mp3`.\n- Concat: `ffmpeg -f concat -safe 0 -i concat.txt -c copy briefing.mp3`.\n- Duration: `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 briefing.mp3`.\n- Optional intro: `ffmpeg -i intro.mp3 -i briefing.mp3 -filter_complex \"[0:a][1:a]concat=n=2:v=0:a=1\" final.mp3`.\n\n**File I/O**: `briefing_state.json`, `production/script.json`, `production/manifest.json`, `production/segments/*.mp3`, `production/concat.txt`, `production/briefing.mp3`.",
+      "operating_instructions": "Two capabilities ship together: 1. **uc_script_draft** — given a source (pasted text, file path, URL, or upstream agent output), validate length (500-30,000 words; per-section outline for long sources), load memory (approved hooks, rejected phrases, voice pairings, pacing deltas), distill to a structured outline (headline finding, 5-12 key facts with pointers, 0-4 tensions, 2-5 implications flagged as inferences, 1-3 open questions), cast the two hosts based on `briefing_style`, and write the script as structured JSON: `{title, target_duration_minutes, hosts: {A, B}, segments: [{host, text, beat}]}`. Emit `briefing.script_draft` for review. Memory-filter: never use phrases rejected 3+ times, favor approved hook patterns, write to (target - pacing_delta) if memory has one. Human reviews via Messages. Up to 3 rejection rounds. 2. **uc_audio_production** — event-listen on `briefing.script_approved`. Synthesize each segment via TTS (Leonardo / Google Cloud TTS / voice generation AI / Fish Audio — whichever the user connected). Save to `production/segments/NN_{host}.mp3`. Generate a 300ms silence file once. Build `concat.txt` interleaving segments with silences. Run `ffmpeg -f concat -safe 0 -i concat.txt -c copy briefing.mp3`. Verify actual duration within ±10% of target. Deliver the MP3 via Messages for final review. On approval save hook patterns + voice pairings + pacing deltas to memory and emit `briefing.published`. State: `briefing_state.json` (topic history, voice pairings, aggregate stats, rejection counters). `production/script.json` (current script). `production/manifest.json` (per-segment metadata). `production/briefing.mp3` (final output).",
+      "tool_guidance": "**TTS via `http_request` + `tts_provider` connector** (user's choice at adoption): voice generation AI (base `https://api.elevenlabs.io`):\n- `GET /v1/voices` — list voices for first-run pairing.\n- `POST /v1/text-to-speech/{voice_id}` with `{text, model_id: \"eleven_multilingual_v2\", voice_settings: {stability: 0.55, similarity_boost: 0.75, style: 0.3}}`. Headers: `xi-api-key`, `Accept: audio/mpeg`. Returns binary MP3. Google Cloud TTS:\n- `POST https://texttospeech.googleapis.com/v1/text:synthesize` with `{input: {text}, voice: {languageCode, name}, audioConfig: {audioEncoding: MP3}}`. Decode base64 `audioContent`. Fish Audio:\n- `POST https://api.fish.audio/v1/tts` with `{text, reference_id, format: mp3}`. **FFmpeg** (local binary or `run_command`):\n- Silence: `ffmpeg -f lavfi -i anullsrc=r=44100:cl=mono -t 0.3 silence_300ms.mp3`.\n- Concat: `ffmpeg -f concat -safe 0 -i concat.txt -c copy briefing.mp3`.\n- Duration: `ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 briefing.mp3`.\n- Optional intro: `ffmpeg -i intro.mp3 -i briefing.mp3 -filter_complex \"[0:a][1:a]concat=n=2:v=0:a=1\" final.mp3`. **File I/O**: `briefing_state.json`, `production/script.json`, `production/manifest.json`, `production/segments/*.mp3`, `production/concat.txt`, `production/briefing.mp3`.",
       "error_handling": "TTS 401/403 → save script, emit persona.error, halt until credentials refresh. TTS 429 → 60s pause; if character-based limit, offer to shorten. TTS 5xx → retry once after 30s; mark segment failed in manifest and continue. Voice not found → fetch `/v1/voices` and present alternatives. Content-policy rejection → soften wording, retry once; surface to user if still blocked. FFmpeg missing → emit persona.error with install instructions (winget/brew/apt), deliver segments individually. Concat fails (incompatible formats) → re-encode each segment to 44.1kHz mono 128kbps then concat. Final duration >25% off target → note actual duration, let user decide. Source <500 words → ask to proceed. Source >30,000 → per-section outline first. Messages delivery failure → save to `production/script_pending_review.json` or `production/briefing_pending_review.json`.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write", "run_command"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write",
+        "run_command"
+      ],
       "connectors": [
         {
-          "name": "tts_provider",
+          "name": "voice_generation",
           "label": "TTS Provider",
           "auth_type": "api_key",
           "role": "tts",
-          "category": "ai",
+          "category": "voice_generation",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "TTS provider",
               "type": "select",
-              "options": ["elevenlabs", "google_cloud_tts", "fish_audio"],
+              "options": [
+                "elevenlabs",
+                "google_cloud_tts",
+                "fish_audio"
+              ],
               "placeholder": "elevenlabs",
-              "helpText": "Which TTS service to use. ElevenLabs has the strongest voice quality for briefings; Google Cloud TTS is cheapest at scale; Fish Audio offers distinctive reference voices.",
+              "helpText": "Which TTS service to use. voice generation AI has the strongest voice quality for briefings; Google Cloud TTS is cheapest at scale; Fish Audio offers distinctive reference voices.",
               "required": true
             },
             {
@@ -93,7 +114,7 @@
           "setup_instructions": "1. Pick a provider.\n2. Generate an API key in their dashboard.\n3. (Optional) Pre-select two voices — one for each host — by copying their IDs. Otherwise the persona will list available voices on first run.\n4. Free tiers support a handful of briefings per month; paid plans recommended for regular use."
         },
         {
-          "name": "ffmpeg_local",
+          "name": "desktop",
           "label": "Local FFmpeg",
           "auth_type": "local",
           "role": "shell",
@@ -162,7 +183,12 @@
           {
             "name": "briefing_style",
             "type": "enum",
-            "options": ["casual", "formal", "news", "executive"],
+            "options": [
+              "casual",
+              "formal",
+              "news",
+              "executive"
+            ],
             "default": "casual",
             "description": "Picks host roles: casual (curious explainer + sharp questioner), formal (domain expert + skeptical reviewer), news (anchor + reporter), executive (strategic summarizer + operational realist)."
           },
@@ -185,30 +211,101 @@
           "target_duration_minutes": "{{param.aq_target_duration}}",
           "briefing_intent": "{{param.aq_briefing_intent}}"
         },
-        "tool_hints": ["file_read", "file_write", "http_request"],
+        "tool_hints": [
+          "file_read",
+          "file_write",
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Manual: receive source" },
-            { "id": "s2", "type": "action", "label": "Validate length + load memory" },
-            { "id": "s3", "type": "action", "label": "Distill: headline/facts/tensions/implications/open questions" },
-            { "id": "s4", "type": "action", "label": "Cast hosts + pick voices" },
-            { "id": "s5", "type": "action", "label": "Write structured segments (one idea per turn)" },
-            { "id": "s6", "type": "event", "label": "Emit briefing.script_draft (review gate)" },
-            { "id": "s7", "type": "decision", "label": "Approved?" },
-            { "id": "s8", "type": "event", "label": "Emit briefing.script_approved" },
-            { "id": "s9", "type": "end", "label": "Handoff to audio production" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Manual: receive source"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Validate length + load memory"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Distill: headline/facts/tensions/implications/open questions"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Cast hosts + pick voices"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Write structured segments (one idea per turn)"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit briefing.script_draft (review gate)"
+            },
+            {
+              "id": "s7",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "s8",
+              "type": "event",
+              "label": "Emit briefing.script_approved"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Handoff to audio production"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s5", "variant": "no", "label": "Reject (rewrite)" },
-            { "source": "s7", "target": "s8", "variant": "yes", "label": "Approve" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s5",
+              "variant": "no",
+              "label": "Reject (rewrite)"
+            },
+            {
+              "source": "s7",
+              "target": "s8",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -223,10 +320,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "briefing.script_approved" },
+          "config": {
+            "event_type": "briefing.script_approved"
+          },
           "description": "Fires when uc_script_draft emits an approved script. Event trigger — not user-configurable at adoption."
         },
-        "connectors": ["tts_provider", "ffmpeg_local"],
+        "connectors": [
+          "voice_generation",
+          "desktop"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -273,28 +375,95 @@
           "segment_silence_ms": 300,
           "intro_music_path": ""
         },
-        "tool_hints": ["http_request", "file_read", "file_write", "run_command"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write",
+          "run_command"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "briefing.script_approved received" },
-            { "id": "a2", "type": "connector", "label": "TTS synthesize per segment", "connector": "tts_provider" },
-            { "id": "a3", "type": "connector", "label": "ffmpeg concat with silences", "connector": "ffmpeg_local" },
-            { "id": "a4", "type": "action", "label": "Verify duration within ±10%" },
-            { "id": "a5", "type": "event", "label": "Emit briefing.audio_produced (review gate)" },
-            { "id": "a6", "type": "decision", "label": "Approved?" },
-            { "id": "a7", "type": "action", "label": "Save memory + emit briefing.published" },
-            { "id": "a8", "type": "end", "label": "Briefing delivered" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "briefing.script_approved received"
+            },
+            {
+              "id": "a2",
+              "type": "connector",
+              "label": "TTS synthesize per segment",
+              "connector": "tts_provider"
+            },
+            {
+              "id": "a3",
+              "type": "connector",
+              "label": "ffmpeg concat with silences",
+              "connector": "ffmpeg_local"
+            },
+            {
+              "id": "a4",
+              "type": "action",
+              "label": "Verify duration within ±10%"
+            },
+            {
+              "id": "a5",
+              "type": "event",
+              "label": "Emit briefing.audio_produced (review gate)"
+            },
+            {
+              "id": "a6",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "Save memory + emit briefing.published"
+            },
+            {
+              "id": "a8",
+              "type": "end",
+              "label": "Briefing delivered"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a2", "variant": "no", "label": "Re-gen segments" },
-            { "source": "a6", "target": "a7", "variant": "yes", "label": "Approve" },
-            { "source": "a7", "target": "a8" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a2",
+              "variant": "no",
+              "label": "Re-gen segments"
+            },
+            {
+              "source": "a6",
+              "target": "a7",
+              "variant": "yes",
+              "label": "Approve"
+            },
+            {
+              "source": "a7",
+              "target": "a8"
+            }
           ]
         }
       }
@@ -303,7 +472,9 @@
       {
         "id": "aq_briefing_style",
         "scope": "capability",
-        "use_case_ids": ["uc_script_draft"],
+        "use_case_ids": [
+          "uc_script_draft"
+        ],
         "category": "domain",
         "question": "What conversation style fits your briefings?",
         "type": "select",
@@ -322,7 +493,9 @@
       {
         "id": "aq_target_duration",
         "scope": "capability",
-        "use_case_ids": ["uc_script_draft"],
+        "use_case_ids": [
+          "uc_script_draft"
+        ],
         "category": "configuration",
         "question": "What target duration should briefings aim for?",
         "type": "select",
@@ -341,7 +514,9 @@
       {
         "id": "aq_briefing_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_script_draft"],
+        "use_case_ids": [
+          "uc_script_draft"
+        ],
         "category": "domain",
         "question": "Briefing intent — how should the persona handle tone, emphasis, and audience?",
         "type": "textarea",
@@ -354,18 +529,20 @@
       {
         "id": "aq_tts_provider",
         "scope": "connector",
-        "connector_names": ["tts_provider"],
+        "connector_names": [
+          "tts_provider"
+        ],
         "category": "configuration",
         "question": "Which TTS provider should the persona use?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "tts",
+          "service_type": "voice_generation",
           "operation": "list_credentials",
           "source": "vault"
         },
         "maps_to": "persona.connectors[tts_provider].credential_fields[provider].value",
         "variable_name": "tts_provider_pick",
-        "context": "Options are auto-detected from the tts-category credentials in your Vault. ElevenLabs has the strongest voice quality for briefings; Google Cloud TTS is cheapest at scale. Connect a TTS provider first if the list is empty.",
+        "context": "Options are auto-detected from the tts-category credentials in your Vault. voice generation AI has the strongest voice quality for briefings; Google Cloud TTS is cheapest at scale. Connect a TTS provider first if the list is empty.",
         "dimension": "connectors"
       }
     ],

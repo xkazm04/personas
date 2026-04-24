@@ -2,7 +2,7 @@
   "id": "feature-flag-experiment-analyst",
   "schema_version": 3,
   "name": "Feature Flag & Experiment Analyst",
-  "description": "Monitors PostHog feature flag changes and experiment results, posts summaries to Slack product channels, creates Linear follow-up tickets for winning experiment variants, and archives flags that haven't been modified in 30+ days.",
+  "description": "Monitors PostHog feature flag changes and experiment results, posts summaries to the messaging channel product channels, creates Linear follow-up tickets for winning experiment variants, and archives flags that haven't been modified in 30+ days.",
   "icon": "FlaskConical",
   "color": "#10B981",
   "category": [
@@ -11,24 +11,24 @@
   "is_published": true,
   "service_flow": [
     "PostHog",
-    "Slack",
+    "messaging",
     "Linear"
   ],
   "payload": {
     "service_flow": [
       "PostHog",
-      "Slack",
+      "messaging",
       "Linear"
     ],
     "persona": {
       "goal": "Turn experiment results into rollout decisions and feature flag drift into backlog hygiene — detect winners with statistical rigor, ship them to Linear, and quiet the stale flag noise.",
       "identity": {
         "role": "Product-analytics agent that watches PostHog flags and experiments and keeps the product team informed and the backlog actionable.",
-        "description": "Polls PostHog for flag changes and completed experiments, detects statistically significant winners (p > configured threshold), composes Block Kit summaries for Slack, creates priority-mapped Linear tickets for rollout follow-up, and maintains a stale-flag hygiene program (30-day warning, 60-day escalation). Runs silent baseline on first sync to avoid flooding channels."
+        "description": "Polls PostHog for flag changes and completed experiments, detects statistically significant winners (p > configured threshold), composes formatted messaging layout summaries for messaging, creates priority-mapped Linear tickets for rollout follow-up, and maintains a stale-flag hygiene program (30-day warning, 60-day escalation). Runs silent baseline on first sync to avoid flooding channels."
       },
       "voice": {
         "style": "Data-forward product voice — winner + confidence + lift, always with a concrete recommendation (roll out / iterate / investigate).",
-        "output_format": "Slack Block Kit: 🏆 header (experiment name), winning variant, lift %, confidence %, sample size, duration, recommendation, Linear link. Flag changes: 🔄 concise status line. Stale digest: 🧹 categorized list with escalated items marked ⚠️."
+        "output_format": "messaging formatted layout: 🏆 header (experiment name), winning variant, lift %, confidence %, sample size, duration, recommendation, Linear link. Flag changes: 🔄 concise status line. Stale digest: 🧹 categorized list with escalated items marked ⚠️."
       },
       "principles": [
         "Significance before celebration — don't call a winner until the confidence threshold clears.",
@@ -43,7 +43,7 @@
         "Never create a Linear ticket without querying for existing ones first."
       ],
       "decision_principles": [
-        "When an experiment ends without p > threshold, post an 'inconclusive' Slack note (brief) and skip Linear; don't pretend there's a winner.",
+        "When an experiment ends without p > threshold, post an 'inconclusive' messaging note (brief) and skip Linear; don't pretend there's a winner.",
         "When a flag is stale but linked to a running experiment, exclude it from the stale digest — the experiment is what keeps it alive.",
         "When a flag matches the deny-list (infra-*, killswitch-*, sensitive-tagged experiment), never report or suggest archive.",
         "When the winner's lift is > 10% treat as Urgent (P1), 5–10% High (P2), < 5% Normal (P3)."
@@ -51,9 +51,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities share the PostHog surface and state file:\n\n1. **uc_flag_monitoring** (default every 10 min) — GET /api/projects/{pid}/feature_flags/?limit=100 (paginate), diff each flag's active + filters + rollout + deleted against data/posthog_flags_state.json. For each change, post a concise Block Kit line to Slack. First run (state missing) = silent baseline — capture without notifying. Emit `posthog.flags.changed` per tick with { created[], modified[], activated[], deactivated[], deleted[] }.\n\n2. **uc_experiment_analysis** (default daily 9am weekdays) — GET experiments, for each with status=complete or past end_date (and not already in state.reported), GET /experiments/{id}/results/, check variant `probability > threshold` (default 0.95), compose Block Kit summary for winners, respect the `ticket_gate` (auto / approval-first / always-gated) to either auto-create Linear ticket or post a 'Create ticket' button. Priority by lift. On no winner, post brief inconclusive note. Dedup via state.reported + linear ticket id cache. Emit `posthog.experiment.resolved` with { experiment_id, winner?, ticket_id?, action: 'auto_created' | 'approval_posted' | 'inconclusive' }.\n\n3. **uc_stale_flag_digest** (runs in the same daily tick as experiment analysis) — identify active flags with last_modified > configured-stale-days. Exclude running-experiment flags. Exclude deny-list. Split into normal (30–59d) + escalated (60+d previously reported). Post Block Kit digest. Update state.stale_reported. Emit `posthog.flags.stale_reported`.\n\nState under data/posthog_flags_state.json: { last_poll, flags: { key: { active, last_modified, reported_stale, stale_report_date } }, experiments: { id: { status, winner_reported, linear_issue_id, linear_issue_url } } }. Atomic write. On JSON parse error, back up corrupt file as .backup.json, reinitialize, note reset in Slack.",
-      "tool_guidance": "### PostHog (http_request + posthog connector)\n- Base: `https://app.posthog.com/api` (or your self-hosted URL)\n- `GET /api/projects/{project_id}/feature_flags/?limit=100` — list flags (paginate via `next` cursor).\n- `GET /api/projects/{project_id}/feature_flags/{id}/` — single flag detail.\n- `GET /api/projects/{project_id}/experiments/` — list experiments.\n- `GET /api/projects/{project_id}/experiments/{id}/results/` — variant performance + significance.\n- `GET /api/projects/{project_id}/experiments/?status=running` — for running-experiment exclusion in stale digest.\n- Header: `Authorization: Bearer {api_key}`.\n\n### Linear (http_request + linear connector)\n- Endpoint: `POST https://api.linear.app/graphql`.\n- Search: `{ issues(filter: { title: { contains: \"{experiment_name}\" } }) { nodes { id identifier url } } }`\n- Create: `mutation { issueCreate(input: { title, description, teamId, priority }) { success issue { id identifier url } } }` — priority 1 (Urgent) / 2 (High) / 3 (Normal) by lift magnitude.\n- Team resolve (cache): `query { teams { nodes { id key name } } }`.\n- Header: `Authorization: {api_key}`.\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — Block Kit messages.\n- `POST https://slack.com/api/chat.update` — update prior digest.\n- Header: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/posthog_flags_state.json` — single-file persistent state.\n- On corruption: back up as `.backup.json`, reinitialize, note reset in Slack.",
-      "error_handling": "PostHog 401 → skip cycle + Slack warning; halt until credential refresh. PostHog 429 → respect Retry-After. PostHog 5xx → retry 3× exp backoff (5s/15s/45s) → degraded notice. Slack channel_not_found → fall back to default. Linear auth error → skip ticket creation; include 'Linear ticket could not be created' in Slack note. Linear duplicate (search found existing) → skip create, reuse id. State file missing → first-sync mode (no notifications). State file JSON error → back up + reinitialize + Slack note.",
+      "operating_instructions": "Three capabilities share the PostHog surface and state file: 1. **uc_flag_monitoring** (default every 10 min) — GET /api/projects/{pid}/feature_flags/?limit=100 (paginate), diff each flag's active + filters + rollout + deleted against data/posthog_flags_state.json. For each change, post a concise formatted messaging layout line to the messaging channel. First run (state missing) = silent baseline — capture without notifying. Emit `posthog.flags.changed` per tick with { created[], modified[], activated[], deactivated[], deleted[] }. 2. **uc_experiment_analysis** (default daily 9am weekdays) — GET experiments, for each with status=complete or past end_date (and not already in state.reported), GET /experiments/{id}/results/, check variant `probability > threshold` (default 0.95), compose formatted messaging layout summary for winners, respect the `ticket_gate` (auto / approval-first / always-gated) to either auto-create Linear ticket or post a 'Create ticket' button. Priority by lift. On no winner, post brief inconclusive note. Dedup via state.reported + linear ticket id cache. Emit `posthog.experiment.resolved` with { experiment_id, winner?, ticket_id?, action: 'auto_created' | 'approval_posted' | 'inconclusive' }. 3. **uc_stale_flag_digest** (runs in the same daily tick as experiment analysis) — identify active flags with last_modified > configured-stale-days. Exclude running-experiment flags. Exclude deny-list. Split into normal (30–59d) + escalated (60+d previously reported). Post formatted messaging layout digest. Update state.stale_reported. Emit `posthog.flags.stale_reported`. State under data/posthog_flags_state.json: { last_poll, flags: { key: { active, last_modified, reported_stale, stale_report_date } }, experiments: { id: { status, winner_reported, linear_issue_id, linear_issue_url } } }. Atomic write. On JSON parse error, back up corrupt file as.backup.json, reinitialize, note reset in the messaging channel.",
+      "tool_guidance": "### PostHog (http_request + posthog connector)\n- Base: `https://app.posthog.com/api` (or your self-hosted URL)\n- `GET /api/projects/{project_id}/feature_flags/?limit=100` — list flags (paginate via `next` cursor).\n- `GET /api/projects/{project_id}/feature_flags/{id}/` — single flag detail.\n- `GET /api/projects/{project_id}/experiments/` — list experiments.\n- `GET /api/projects/{project_id}/experiments/{id}/results/` — variant performance + significance.\n- `GET /api/projects/{project_id}/experiments/?status=running` — for running-experiment exclusion in stale digest.\n- Header: `Authorization: Bearer {api_key}`. ### Linear (http_request + linear connector)\n- Endpoint: `POST https://api.linear.app/graphql`.\n- Search: `{ issues(filter: { title: { contains: \"{experiment_name}\" } }) { nodes { id identifier url } } }`\n- Create: `mutation { issueCreate(input: { title, description, teamId, priority }) { success issue { id identifier url } } }` — priority 1 (Urgent) / 2 (High) / 3 (Normal) by lift magnitude.\n- Team resolve (cache): `query { teams { nodes { id key name } } }`.\n- Header: `Authorization: {api_key}`. ### messaging (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — formatted messaging layout messages.\n- `POST https://slack.com/api/chat.update` — update prior digest.\n- Header: `Authorization: Bearer {bot_token}`. ### Local state (file_read / file_write)\n- `data/posthog_flags_state.json` — single-file persistent state.\n- On corruption: back up as `.backup.json`, reinitialize, note reset in the messaging channel.",
+      "error_handling": "PostHog 401 → skip cycle + messaging warning; halt until credential refresh. PostHog 429 → respect Retry-After. PostHog 5xx → retry 3× exp backoff (5s/15s/45s) → degraded notice. messaging channel_not_found → fall back to default. Linear auth error → skip ticket creation; include 'Linear ticket could not be created' in the messaging channel note. Linear duplicate (search found existing) → skip create, reuse id. State file missing → first-sync mode (no notifications). State file JSON error → back up + reinitialize + messaging note.",
       "examples": [],
       "tools": [
         "http_request",
@@ -103,7 +103,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-...",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Needs chat:write and channels:read.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Needs chat:write and channels:read.",
               "required": true
             }
           ],
@@ -116,7 +116,7 @@
           "role": "project_tracking",
           "category": "ticketing",
           "required": false,
-          "fallback_note": "Optional. Without Linear, winning-experiment summaries still post to Slack but no rollout ticket is filed. Stale-flag digest and flag-change monitoring work unchanged.",
+          "fallback_note": "Optional. Without Linear, winning-experiment summaries still post to the messaging channel but no rollout ticket is filed. Stale-flag digest and flag-change monitoring work unchanged.",
           "api_base_url": "https://api.linear.app/graphql",
           "credential_fields": [
             {
@@ -142,7 +142,7 @@
       "notification_channels_default": [
         {
           "type": "slack",
-          "description": "Product Slack channel for experiment results, flag change alerts, and stale flag digests."
+          "description": "Product messaging channels for experiment results, flag change alerts, and stale flag digests."
         }
       ],
       "core_memories": []
@@ -151,8 +151,8 @@
       {
         "id": "uc_flag_monitoring",
         "title": "Flag Change Monitoring",
-        "description": "Polls PostHog for flag changes, diffs against cached state, and posts concise Block Kit change notifications to Slack. Silent on first sync. Default every 10 min — final cadence set at the trigger-composition step.",
-        "capability_summary": "Near-real-time flag change detection + Slack notification.",
+        "description": "Polls PostHog for flag changes, diffs against cached state, and posts concise formatted messaging layout change notifications to the messaging channel. Silent on first sync. Default every 10 min — final cadence set at the trigger-composition step.",
+        "capability_summary": "Near-real-time flag change detection + messaging notification.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -189,13 +189,13 @@
             "description": "Payload: { created[], modified[], activated[], deactivated[], deleted[] }."
           }
         ],
-        "error_handling": "State missing → silent baseline. PostHog 401 → Slack warning + halt cycle. PostHog 429 → respect Retry-After.",
+        "error_handling": "State missing → silent baseline. PostHog 401 → messaging warning + halt cycle. PostHog 429 → respect Retry-After.",
         "input_schema": [
           {
             "name": "change_channel",
             "type": "text",
             "default": "#eng-deploys",
-            "description": "Slack channel for flag change notifications (distinct from experiment-results channel)."
+            "description": "messaging channels for flag change notifications (distinct from experiment-results channel)."
           },
           {
             "name": "deny_list_prefixes",
@@ -245,7 +245,7 @@
             {
               "id": "f6",
               "type": "connector",
-              "label": "Post change alerts to Slack",
+              "label": "Post change alerts to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -311,8 +311,8 @@
       {
         "id": "uc_experiment_analysis",
         "title": "Experiment Results Analysis",
-        "description": "Runs daily to detect completed experiments with statistically significant winners, posts a rich Slack summary, and (per ticket-gate) auto-creates or proposes a Linear rollout ticket with priority scaled to lift magnitude. Default weekdays 9am — final cadence set at the trigger-composition step.",
-        "capability_summary": "Winner detection + Slack summary + Linear rollout ticket.",
+        "description": "Runs daily to detect completed experiments with statistically significant winners, posts a rich messaging summary, and (per ticket-gate) auto-creates or proposes a Linear rollout ticket with priority scaled to lift magnitude. Default weekdays 9am — final cadence set at the trigger-composition step.",
+        "capability_summary": "Winner detection + messaging summary + Linear rollout ticket.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -337,7 +337,7 @@
         ],
         "review_policy": {
           "mode": "on_approval",
-          "context": "When ticket_gate = approval-first, winning-experiment Slack posts include a 'Create ticket' prompt and wait for a team member to react before the Linear ticket is filed. ticket_gate = auto skips approval; always-gated requires explicit approval for every ticket."
+          "context": "When ticket_gate = approval-first, winning-experiment messaging posts include a 'Create ticket' prompt and wait for a team member to react before the Linear ticket is filed. ticket_gate = auto skips approval; always-gated requires explicit approval for every ticket."
         },
         "memory_policy": {
           "enabled": true,
@@ -350,7 +350,7 @@
             "description": "Payload: { experiment_id, winner_variant?, lift_percent?, confidence?, ticket_id?, action: 'auto_created' | 'approval_posted' | 'inconclusive' }."
           }
         ],
-        "error_handling": "PostHog 5xx → retry 3× exp backoff. Linear auth error → skip ticket, post Slack with 'Linear unavailable' note. Linear duplicate found → reuse existing id. Post to results channel; on channel_not_found fall back to default.",
+        "error_handling": "PostHog 5xx → retry 3× exp backoff. Linear auth error → skip ticket, post messaging with 'Linear unavailable' note. Linear duplicate found → reuse existing id. Post to results channel; on channel_not_found fall back to default.",
         "input_schema": [
           {
             "name": "confidence_threshold",
@@ -378,7 +378,7 @@
             "name": "results_channel",
             "type": "text",
             "default": "#product-experiments",
-            "description": "Slack channel for experiment result summaries."
+            "description": "messaging channels for experiment result summaries."
           },
           {
             "name": "summary_verbosity",
@@ -389,7 +389,7 @@
               "verbose"
             ],
             "default": "standard",
-            "description": "How much detail to include in the Slack summary."
+            "description": "How much detail to include in the messaging summary."
           },
           {
             "name": "deny_list_tags",
@@ -453,7 +453,7 @@
             {
               "id": "e8",
               "type": "connector",
-              "label": "Post Slack summary",
+              "label": "Post messaging summary",
               "connector": "messaging"
             },
             {
@@ -545,7 +545,7 @@
       {
         "id": "uc_stale_flag_digest",
         "title": "Stale Flag Digest",
-        "description": "Scans active flags against a staleness threshold, excludes running-experiment flags and deny-listed prefixes, splits into normal + escalated tiers, and posts a Slack digest with recommended archival actions. Default weekdays 9am (chained with uc_experiment_analysis).",
+        "description": "Scans active flags against a staleness threshold, excludes running-experiment flags and deny-listed prefixes, splits into normal + escalated tiers, and posts a messaging digest with recommended archival actions. Default weekdays 9am (chained with uc_experiment_analysis).",
         "capability_summary": "Stale-flag digest with 30/60-day tiered escalation and running-experiment exclusion.",
         "category": "development",
         "enabled_by_default": true,
@@ -583,7 +583,7 @@
             "description": "Payload: { normal[], escalated[], excluded_running_experiment[] }."
           }
         ],
-        "error_handling": "No stale flags → skip digest entirely (no noise). Slack post failure → retry 3× exp backoff.",
+        "error_handling": "No stale flags → skip digest entirely (no noise). messaging post failure → retry 3× exp backoff.",
         "input_schema": [
           {
             "name": "stale_threshold_days",
@@ -643,7 +643,7 @@
             {
               "id": "t7",
               "type": "connector",
-              "label": "Post digest to Slack",
+              "label": "Post digest to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -710,20 +710,20 @@
           "uc_experiment_analysis"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive experiment result summaries and stale flag digests?",
+        "question": "Which messaging channels should receive experiment result summaries and stale flag digests?",
         "type": "select",
         "options": [],
         "default": "#product-experiments",
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.results_channel",
         "variable_name": "results_channel",
-        "context": "Options auto-detected from your Slack credential. Pick a channel the bot has been invited to.",
+        "context": "Options auto-detected from your messaging credential. Pick a channel the bot has been invited to.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -734,7 +734,7 @@
           "uc_flag_monitoring"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive flag change alerts?",
+        "question": "Which messaging channels should receive flag change alerts?",
         "type": "select",
         "options": [],
         "default": "#eng-deploys",
@@ -747,7 +747,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -785,7 +785,7 @@
           "Post Slack summary with a 'Create ticket' prompt and wait for approval",
           "Always require explicit approval before any Linear ticket is created"
         ],
-        "default": "Post Slack summary with a 'Create ticket' prompt and wait for approval",
+        "default": "Post messaging summary with a 'Create ticket' prompt and wait for approval",
         "maps_to": "use_cases[uc_experiment_analysis].sample_input.ticket_gate",
         "variable_name": "ticket_gate",
         "context": "Controls whether ticket creation is fully automated or gated on human confirmation to avoid noisy Linear backlogs.",
@@ -798,7 +798,7 @@
           "uc_experiment_analysis"
         ],
         "category": "quality",
-        "question": "How much detail should winning-experiment Slack summaries include?",
+        "question": "How much detail should winning-experiment messaging summaries include?",
         "type": "select",
         "options": [
           "Concise — winner, confidence %, recommended next step only",
@@ -879,7 +879,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {

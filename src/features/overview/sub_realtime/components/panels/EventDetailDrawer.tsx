@@ -1,6 +1,6 @@
-import { X, Clock, CheckCircle2, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
-import { EVENT_TYPE_HEX_COLORS } from '@/hooks/realtime/useRealtimeEvents';
+import { EVENT_TYPE_HEX_COLORS, resolveStatusIcon } from '@/features/overview/shared/eventVisuals';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
@@ -10,14 +10,6 @@ interface Props {
   event: RealtimeEvent;
   onClose: () => void;
 }
-
-const STATUS_ICONS: Record<string, { icon: typeof CheckCircle2; color: string }> = {
-  pending: { icon: Clock, color: 'text-amber-400' },
-  processing: { icon: Loader2, color: 'text-blue-400' },
-  completed: { icon: CheckCircle2, color: 'text-emerald-400' },
-  failed: { icon: AlertCircle, color: 'text-red-400' },
-  skipped: { icon: ChevronDown, color: 'text-foreground' },
-};
 
 function formatPayload(payload: string | null): string {
   if (!payload) return '(empty)';
@@ -31,7 +23,7 @@ function formatPayload(payload: string | null): string {
 export default function EventDetailDrawer({ event, onClose }: Props) {
   const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
-  const statusInfo = STATUS_ICONS[event.status] ?? STATUS_ICONS.pending!;
+  const statusInfo = resolveStatusIcon(event.status);
   const StatusIcon = statusInfo.icon;
   const typeColor = EVENT_TYPE_HEX_COLORS[event.event_type] ?? '#818cf8';
 

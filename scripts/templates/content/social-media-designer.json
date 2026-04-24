@@ -5,11 +5,21 @@
   "description": "Creates branded social media assets (carousels, stories, posts, covers) via the Canva Connect API. Takes a content brief, generates optimized copy, creates designs using your Canva brand kit, produces multiple variations, and presents for human review. Learns design preferences from approval patterns over time.",
   "icon": "Palette",
   "color": "#00C4CC",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Content Brief", "Canva", "Messages"],
+  "service_flow": [
+    "Content Brief",
+    "Canva",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Content Brief", "Canva", "Messages"],
+    "service_flow": [
+      "Content Brief",
+      "Canva",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn a topic brief into polished, brand-consistent social assets — platform-tuned copy, multiple variations, and a learning loop that sharpens your next post.",
       "identity": {
@@ -43,11 +53,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities.\n\n**uc_design_batch** — manual trigger with topic + platform + tone.\n\n1. Load brand context from Canva: `GET /v1/brands` for colors, fonts, logos, brand templates. If no brand kit, use neutral defaults and note in the report.\n2. Load memory: approved design patterns, rejected variation styles, platform-specific preferences, recent topic history (last 10).\n3. Generate platform-optimized copy per slide:\n   - **Instagram Carousel (1080x1080)**: hook slide (8 words max), 1 point per slide (3-5 word header + 15-25 word body), CTA final slide.\n   - **Instagram Story (1080x1920)**: large centered text, max 3 text elements.\n   - **LinkedIn (1200x627)**: professional insight headline + 2-3 sentence body on image.\n   - **X/Twitter (1600x900)**: punchy 6-word headline + 12-word supporting line, high contrast.\n   - **YouTube Thumbnail (1280x720)**: dominant headline, faces/emotion drive clicks.\n   - **Facebook Cover (1640x856)**: one headline with supporting visual.\n   Apply memory-informed filtering: favor approved copy styles, avoid rejected tones per platform.\n4. For each variation (target `aq_variations_count`):\n   - **Option A (preferred)**: search brand templates; if match found, `POST /v1/autofills` to populate with generated copy.\n   - **Option B**: create from scratch via `POST /v1/designs` with the platform preset.\n   Vary across: copy angle (question vs statement vs statistic hook), color emphasis (primary vs accent), layout density (minimal vs information-dense).\n5. Retrieve previews: `GET /v1/designs/{id}` for thumbnails and edit URLs.\n6. Compose and deliver the design report via Messages: brand context + per-variation section (copy, preview, open-in-Canva link) + 2-3 copy alternatives the user can swap in.\n7. Human review: user marks each variation Select / Pass (multiple selections allowed for A/B testing). Optional rejection feedback ('too busy', 'copy too long', 'wrong tone').\n8. Save to memory: selected variations (full copy + layout style + color emphasis + platform + topic category), passed variations (approach + rejection reason). After 3+ passes on a style, deprioritize for that platform. After consistent selections, make it the default first variation.\n9. Update `design_state.json`: add topic to recent history, update approval rate statistics per platform.\n10. Emit `social_designer.batch.created` (platform + topic + variation count) and `social_designer.variation.selected` per selection (design id + edit URL).\n\n**uc_export_designs** — event-listen on `social_designer.variation.selected` or manual trigger after selection.\n\n1. For each selected design, call `POST /v1/designs/{id}/exports` with `{format: {type: 'png', quality: 'high', width, height}}` (PNG for social, PDF for print).\n2. Poll `GET /v1/exports/{id}` every 3s, max 60s.\n3. On success, deliver download links via Messages. On timeout, provide the Canva edit URL as fallback.\n4. Emit `social_designer.export.completed` with the download URLs.\n\nState lives in `design_state.json` (recent topics, approval stats per platform, default variation styles).",
+      "operating_instructions": "Two capabilities.\n\n**uc_design_batch** — manual trigger with topic + platform + tone.\n\n1. Load brand context from Canva: `GET /v1/brands` for colors, fonts, logos, brand templates. If no brand kit, use neutral defaults and note in the report.\n2. Load memory: approved design patterns, rejected variation styles, platform-specific preferences, recent topic history (last 10).\n3. Generate platform-optimized copy per slide:\n - **Instagram Carousel (1080x1080)**: hook slide (8 words max), 1 point per slide (3-5 word header + 15-25 word body), CTA final slide.\n - **Instagram Story (1080x1920)**: large centered text, max 3 text elements.\n - **LinkedIn (1200x627)**: professional insight headline + 2-3 sentence body on image.\n - **X/Twitter (1600x900)**: punchy 6-word headline + 12-word supporting line, high contrast.\n - **YouTube Thumbnail (1280x720)**: dominant headline, faces/emotion drive clicks.\n - **Facebook Cover (1640x856)**: one headline with supporting visual.\n Apply memory-informed filtering: favor approved copy styles, avoid rejected tones per platform.\n4. For each variation (target `aq_variations_count`):\n - **Option A (preferred)**: search brand templates; if match found, `POST /v1/autofills` to populate with generated copy.\n - **Option B**: create from scratch via `POST /v1/designs` with the platform preset.\n Vary across: copy angle (question vs statement vs statistic hook), color emphasis (primary vs accent), layout density (minimal vs information-dense).\n5. Retrieve previews: `GET /v1/designs/{id}` for thumbnails and edit URLs.\n6. Compose and deliver the design report via Messages: brand context + per-variation section (copy, preview, open-in-Canva link) + 2-3 copy alternatives the user can swap in.\n7. Human review: user marks each variation Select / Pass (multiple selections allowed for A/B testing). Optional rejection feedback ('too busy', 'copy too long', 'wrong tone').\n8. Save to memory: selected variations (full copy + layout style + color emphasis + platform + topic category), passed variations (approach + rejection reason). After 3+ passes on a style, deprioritize for that platform. After consistent selections, make it the default first variation.\n9. Update `design_state.json`: add topic to recent history, update approval rate statistics per platform.\n10. Emit `social_designer.batch.created` (platform + topic + variation count) and `social_designer.variation.selected` per selection (design id + edit URL).\n\n**uc_export_designs** — event-listen on `social_designer.variation.selected` or manual trigger after selection.\n\n1. For each selected design, call `POST /v1/designs/{id}/exports` with `{format: {type: 'png', quality: 'high', width, height}}` (PNG for social, PDF for print).\n2. Poll `GET /v1/exports/{id}` every 3s, max 60s.\n3. On success, deliver download links via Messages. On timeout, provide the Canva edit URL as fallback.\n4. Emit `social_designer.export.completed` with the download URLs.\n\nState lives in `design_state.json` (recent topics, approval stats per platform, default variation styles).",
       "tool_guidance": "**Canva Connect API** — base `https://api.canva.com/rest/v1`, auth `Authorization: Bearer {access_token}`:\n\n- `GET /brands` -> `{items: [{id, name, colors, fonts, logos}]}`. Use the first brand's palette as defaults.\n- `GET /brand-templates?query={platform_type}` -> `{items: [{id, title, thumbnail: {url}}]}`.\n- `POST /autofills` body `{brand_template_id, data: {field_name: {type: 'text', text: 'Your headline'}}}` -> `{job: {id, status}}`. Poll `GET /autofills/{jobId}` until `status: 'success'`, returns `{result: {design: {id, urls: {edit_url, view_url}}}}`.\n- `POST /designs` body `{design_type: {type: 'preset', name: 'InstagramPost'}, title}` — presets: `InstagramPost`, `InstagramStory`, `FacebookPost`, `YouTubeThumbnail`, `LinkedInBanner`, `TwitterPost`, `Presentation`. Returns `{design: {id, urls: {edit_url, view_url}}}`.\n- `GET /designs/{id}` -> `{design: {id, title, urls, thumbnail: {url, width, height}}}`.\n- `GET /designs?query={topic}&ownership=owned&sort_by=modified_descending` — search existing designs for dedup.\n- `POST /designs/{id}/exports` body `{format: {type: 'png', quality: 'high', width: 1080, height: 1080}}` -> `{job: {id, status}}`.\n- `GET /exports/{id}` poll until `status: 'success'`, returns `{urls: [...]}`. Poll every 3s, max 60s.\n\n**Rate limits**: ~100 req/min. Pause 1s between design creation calls. Export jobs may take 10-30s.\n\n**State**: `design_state.json` — recent topics (last 10), approval stats per platform, default variation styles.",
       "error_handling": "Canva 401/403 -> report via Messages that the access token needs refreshing, include setup instructions, skip run. Canva 429 -> pause 60s, retry, reduce batch to 1 variation if still limited, note in report. Canva 5xx -> retry once after 10s; if still failing, report and skip. No brand kit -> use Canva defaults, note prominently in report. Autofill fails (incompatible template) -> fall back to from-scratch with platform preset, note the failed template id. `POST /designs` fails for a preset -> try explicit dimensions instead. All design creation fails -> deliver generated copy only via Messages, note that Canva is unavailable. Export timeout (>60s) -> provide the edit URL instead, user can export manually. Export produces corrupt file -> retry once with different quality. Topic too vague -> ask for clarification via Messages before generating. Topic overlaps recent (last 10) -> adjust angle to avoid repetition. Platform not recognized -> default to Instagram post (1080x1080), note assumption. First run (no memory) -> platform best practices as defaults, note preferences will sharpen. `design_state.json` missing -> create empty. Messages failure -> write report to `latest_designs.json` including Canva edit URLs.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "canva",
@@ -93,7 +107,9 @@
           "config": {},
           "description": "Manual — user provides topic + platform + tone. Default manual — final cadence set at the trigger-composition step."
         },
-        "connectors": ["canva"],
+        "connectors": [
+          "canva"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -125,14 +141,27 @@
           {
             "name": "platform",
             "type": "enum",
-            "options": ["instagram_carousel", "instagram_story", "linkedin", "twitter", "youtube_thumbnail", "facebook_cover"],
+            "options": [
+              "instagram_carousel",
+              "instagram_story",
+              "linkedin",
+              "twitter",
+              "youtube_thumbnail",
+              "facebook_cover"
+            ],
             "default": "instagram_carousel",
             "description": "Target platform. Determines dimensions, slide count, and copy conventions."
           },
           {
             "name": "tone",
             "type": "enum",
-            "options": ["professional", "casual", "bold", "playful", "educational"],
+            "options": [
+              "professional",
+              "casual",
+              "bold",
+              "playful",
+              "educational"
+            ],
             "default": "bold",
             "description": "Brand voice for the generated copy."
           },
@@ -166,36 +195,132 @@
           "slide_count": 5,
           "handle": "{{param.aq_social_handle}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Manual: topic + platform + tone" },
-            { "id": "d2", "type": "connector", "label": "Fetch brand kit", "connector": "canva" },
-            { "id": "d3", "type": "action", "label": "Load design memory + generate copy" },
-            { "id": "d4", "type": "decision", "label": "Brand template match?" },
-            { "id": "d5", "type": "connector", "label": "Autofill brand template", "connector": "canva" },
-            { "id": "d6", "type": "connector", "label": "Create from scratch (platform preset)", "connector": "canva" },
-            { "id": "d7", "type": "connector", "label": "Retrieve previews + edit URLs", "connector": "canva" },
-            { "id": "d8", "type": "action", "label": "Compose report + deliver via Messages" },
-            { "id": "d9", "type": "action", "label": "Human review (Select / Pass)" },
-            { "id": "d10", "type": "action", "label": "Save selection patterns to memory" },
-            { "id": "d11", "type": "event", "label": "Emit batch.created + variation.selected" },
-            { "id": "d12", "type": "end", "label": "Batch ready in Canva" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Manual: topic + platform + tone"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Fetch brand kit",
+              "connector": "canva"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Load design memory + generate copy"
+            },
+            {
+              "id": "d4",
+              "type": "decision",
+              "label": "Brand template match?"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Autofill brand template",
+              "connector": "canva"
+            },
+            {
+              "id": "d6",
+              "type": "connector",
+              "label": "Create from scratch (platform preset)",
+              "connector": "canva"
+            },
+            {
+              "id": "d7",
+              "type": "connector",
+              "label": "Retrieve previews + edit URLs",
+              "connector": "canva"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "Compose report + deliver via Messages"
+            },
+            {
+              "id": "d9",
+              "type": "action",
+              "label": "Human review (Select / Pass)"
+            },
+            {
+              "id": "d10",
+              "type": "action",
+              "label": "Save selection patterns to memory"
+            },
+            {
+              "id": "d11",
+              "type": "event",
+              "label": "Emit batch.created + variation.selected"
+            },
+            {
+              "id": "d12",
+              "type": "end",
+              "label": "Batch ready in Canva"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5", "label": "Yes", "variant": "yes" },
-            { "source": "d4", "target": "d6", "label": "No", "variant": "no" },
-            { "source": "d5", "target": "d7" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" },
-            { "source": "d9", "target": "d10" },
-            { "source": "d10", "target": "d11" },
-            { "source": "d11", "target": "d12" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "d4",
+              "target": "d6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "d5",
+              "target": "d7"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            },
+            {
+              "source": "d9",
+              "target": "d10"
+            },
+            {
+              "source": "d10",
+              "target": "d11"
+            },
+            {
+              "source": "d11",
+              "target": "d12"
+            }
           ]
         }
       },
@@ -210,12 +335,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event",
-          "config": { "event_type": "social_designer.variation.selected" },
+          "config": {
+            "event_type": "social_designer.variation.selected"
+          },
           "description": "Default event-listen on variation selection — or manual. Final cadence set at the trigger-composition step."
         },
-        "connectors": ["canva"],
+        "connectors": [
+          "canva"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": false,
           "context": null
@@ -242,7 +374,10 @@
           {
             "name": "format",
             "type": "enum",
-            "options": ["png", "pdf"],
+            "options": [
+              "png",
+              "pdf"
+            ],
             "default": "png",
             "description": "Export format. PNG for social media, PDF for print."
           }
@@ -251,28 +386,92 @@
           "design_ids": "",
           "format": "png"
         },
-        "tool_hints": ["http_request"],
+        "tool_hints": [
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "x1", "type": "start", "label": "Event or manual: design_ids + format" },
-            { "id": "x2", "type": "connector", "label": "Start Canva export job(s)", "connector": "canva" },
-            { "id": "x3", "type": "connector", "label": "Poll export status (3s / max 60s)", "connector": "canva" },
-            { "id": "x4", "type": "decision", "label": "Export succeeded?" },
-            { "id": "x5", "type": "action", "label": "Deliver download links via Messages" },
-            { "id": "x6", "type": "action", "label": "Fallback: provide edit URL" },
-            { "id": "x7", "type": "event", "label": "Emit export.completed" },
-            { "id": "x8", "type": "end", "label": "Exports delivered" }
+            {
+              "id": "x1",
+              "type": "start",
+              "label": "Event or manual: design_ids + format"
+            },
+            {
+              "id": "x2",
+              "type": "connector",
+              "label": "Start Canva export job(s)",
+              "connector": "canva"
+            },
+            {
+              "id": "x3",
+              "type": "connector",
+              "label": "Poll export status (3s / max 60s)",
+              "connector": "canva"
+            },
+            {
+              "id": "x4",
+              "type": "decision",
+              "label": "Export succeeded?"
+            },
+            {
+              "id": "x5",
+              "type": "action",
+              "label": "Deliver download links via Messages"
+            },
+            {
+              "id": "x6",
+              "type": "action",
+              "label": "Fallback: provide edit URL"
+            },
+            {
+              "id": "x7",
+              "type": "event",
+              "label": "Emit export.completed"
+            },
+            {
+              "id": "x8",
+              "type": "end",
+              "label": "Exports delivered"
+            }
           ],
           "edges": [
-            { "source": "x1", "target": "x2" },
-            { "source": "x2", "target": "x3" },
-            { "source": "x3", "target": "x4" },
-            { "source": "x4", "target": "x5", "label": "Yes", "variant": "yes" },
-            { "source": "x4", "target": "x6", "label": "No", "variant": "no" },
-            { "source": "x5", "target": "x7" },
-            { "source": "x6", "target": "x8" },
-            { "source": "x7", "target": "x8" }
+            {
+              "source": "x1",
+              "target": "x2"
+            },
+            {
+              "source": "x2",
+              "target": "x3"
+            },
+            {
+              "source": "x3",
+              "target": "x4"
+            },
+            {
+              "source": "x4",
+              "target": "x5",
+              "label": "Yes",
+              "variant": "yes"
+            },
+            {
+              "source": "x4",
+              "target": "x6",
+              "label": "No",
+              "variant": "no"
+            },
+            {
+              "source": "x5",
+              "target": "x7"
+            },
+            {
+              "source": "x6",
+              "target": "x8"
+            },
+            {
+              "source": "x7",
+              "target": "x8"
+            }
           ]
         }
       }
@@ -281,7 +480,9 @@
       {
         "id": "aq_brand_context",
         "scope": "capability",
-        "use_case_ids": ["uc_design_batch"],
+        "use_case_ids": [
+          "uc_design_batch"
+        ],
         "category": "domain",
         "question": "What is your brand or business, and what do you create content about?",
         "type": "textarea",
@@ -293,7 +494,9 @@
       {
         "id": "aq_primary_platform",
         "scope": "capability",
-        "use_case_ids": ["uc_design_batch"],
+        "use_case_ids": [
+          "uc_design_batch"
+        ],
         "category": "domain",
         "question": "Which platform is your primary focus?",
         "type": "select",
@@ -314,11 +517,19 @@
       {
         "id": "aq_default_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_design_batch"],
+        "use_case_ids": [
+          "uc_design_batch"
+        ],
         "category": "configuration",
         "question": "Default brand voice?",
         "type": "select",
-        "options": ["professional", "casual", "bold", "playful", "educational"],
+        "options": [
+          "professional",
+          "casual",
+          "bold",
+          "playful",
+          "educational"
+        ],
         "default": "bold",
         "maps_to": "use_cases[uc_design_batch].sample_input.tone",
         "variable_name": "default_tone",
@@ -328,11 +539,18 @@
       {
         "id": "aq_variations_count",
         "scope": "capability",
-        "use_case_ids": ["uc_design_batch"],
+        "use_case_ids": [
+          "uc_design_batch"
+        ],
         "category": "configuration",
         "question": "How many design variations do you typically want to choose from?",
         "type": "select",
-        "options": ["2 (quick decision)", "3 (good balance)", "4", "5 (maximum choice)"],
+        "options": [
+          "2 (quick decision)",
+          "3 (good balance)",
+          "4",
+          "5 (maximum choice)"
+        ],
         "default": "3 (good balance)",
         "maps_to": "use_cases[uc_design_batch].sample_input.variations_count",
         "variable_name": "variations_count",
@@ -342,7 +560,9 @@
       {
         "id": "aq_social_handle",
         "scope": "capability",
-        "use_case_ids": ["uc_design_batch"],
+        "use_case_ids": [
+          "uc_design_batch"
+        ],
         "category": "configuration",
         "question": "Your social media handle?",
         "type": "text",

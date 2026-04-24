@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/pubmed.svg",
   "category": "research",
   "categories": [
-    "research",
-    "academic_papers"
+    "research"
   ],
   "fields": [
     {

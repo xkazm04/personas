@@ -4,11 +4,10 @@
   "label": "Firecrawl",
   "color": "#F97316",
   "icon_url": "/icons/connectors/firecrawl.svg",
-  "category": "integration",
+  "category": "web_scraping",
   "categories": [
-    "integration",
     "web_scraping",
-    "data_extraction"
+    "research"
   ],
   "fields": [
     {

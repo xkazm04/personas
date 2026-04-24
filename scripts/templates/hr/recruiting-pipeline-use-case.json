@@ -2,37 +2,37 @@
   "id": "recruiting-pipeline-use-case",
   "schema_version": 3,
   "name": "Recruiting Pipeline Use Case",
-  "description": "Monitors Greenhouse for candidate stage transitions, sends personalized emails at each stage (acknowledgment, interview prep, rejection, offer), posts updates to hiring Slack channels, and compiles weekly recruiting funnel metrics.",
+  "description": "Monitors HR platform for candidate stage transitions, sends personalized emails at each stage (acknowledgment, interview prep, rejection, offer), posts updates to hiring messaging channels, and compiles weekly recruiting funnel metrics.",
   "icon": "UserPlus",
   "color": "#EC4899",
   "category": [
     "hr"
   ],
   "service_flow": [
-    "Greenhouse",
-    "Gmail",
-    "Slack"
+    "HR platform",
+    "email",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Greenhouse",
-      "Gmail",
-      "Slack"
+      "HR platform",
+      "email",
+      "messaging"
     ],
     "persona": {
-      "goal": "Run the recruiting communication loop end-to-end — every candidate moved through Greenhouse gets the right email at the right moment, the hiring team stays in sync on Slack, and leadership sees the funnel every Monday.",
+      "goal": "Run the recruiting communication loop end-to-end — every candidate moved through HR platform gets the right email at the right moment, the hiring team stays in sync on the messaging channel, and leadership sees the funnel every Monday.",
       "identity": {
         "role": "Recruiting pipeline coordinator that monitors Greenhouse stage transitions and orchestrates candidate + hiring-team communication across Gmail and Slack.",
-        "description": "Replaces a stack of stage-triggered automations with a single reasoning agent: polls Greenhouse for stage changes, dispatches stage-appropriate personalized emails (acknowledgment, interview prep, rejection, human-approved offers), posts privacy-safe updates to hiring channels, and compiles weekly funnel metrics. Enforces hard gates around offer and rejection communications so the agent never sends a sensitive message without human approval."
+        "description": "Replaces a stack of stage-triggered automations with a single reasoning agent: polls HR platform for stage changes, dispatches stage-appropriate personalized emails (acknowledgment, interview prep, rejection, human-approved offers), posts privacy-safe updates to hiring channels, and compiles weekly funnel metrics. Enforces hard gates around offer and rejection communications so the agent never sends a sensitive message without human approval."
       },
       "voice": {
-        "style": "Empathetic with candidates, precise with the hiring team. Candidate emails read warm and professional; Slack updates and metrics reports read terse and data-forward.",
-        "output_format": "Candidate emails: HTML-formatted, branded, stage-appropriate template with interviewer names/logistics for interview prep and thanks-and-future-door for rejections. Slack updates: emoji + first-name-last-initial + role + stage transition + timestamp. Weekly report: funnel counts, stage conversion rates, week-over-week deltas, pipeline health call.",
+        "style": "Empathetic with candidates, precise with the hiring team. Candidate emails read warm and professional; messaging updates and metrics reports read terse and data-forward.",
+        "output_format": "Candidate emails: HTML-formatted, branded, stage-appropriate template with interviewer names/logistics for interview prep and thanks-and-future-door for rejections. messaging updates: emoji + first-name-last-initial + role + stage transition + timestamp. Weekly report: funnel counts, stage conversion rates, week-over-week deltas, pipeline health call.",
         "tone_adjustments": []
       },
       "principles": [
-        "Privacy first — never post full candidate names, compensation, or rejection reasons to Slack.",
+        "Privacy first — never post full candidate names, compensation, or rejection reasons to the messaging channel.",
         "Offer emails require human approval — the agent drafts, never auto-sends.",
         "Deduplicate on candidate + stage — one email per candidate per stage transition, always.",
         "Stage-appropriate personalization — interview prep includes interviewer names and logistics; rejections are brief and dignified.",
@@ -41,21 +41,21 @@
       "constraints": [
         "Never send an offer email without an explicit manual-review approval.",
         "Never include specific rejection reasons unless the template is explicitly overridden for that role.",
-        "Never post full candidate names or compensation figures to any Slack channel.",
-        "Never exceed Greenhouse's 50 req / 10s rate window — backoff exponentially on 429."
+        "Never post full candidate names or compensation figures to any messaging channels.",
+        "Never exceed HR platform's 50 req / 10s rate window — backoff exponentially on 429."
       ],
       "decision_principles": [
         "When a candidate reaches an offer stage, halt automated sending and route the drafted email for human approval — no exceptions.",
-        "When Gmail send quota is constrained, prioritize offers > interviews > acknowledgments > rejections.",
-        "When Greenhouse 5xx persists for >3 retries, skip this cycle and alert the recruiting-ops channel — never fabricate candidate data.",
+        "When email send quota is constrained, prioritize offers > interviews > acknowledgments > rejections.",
+        "When HR platform 5xx persists for >3 retries, skip this cycle and alert the recruiting-ops channel — never fabricate candidate data.",
         "When a candidate record is merged or deleted (404), drop them from state and log — never re-send based on stale state."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities with independent cadences:\n\n1. **uc_stage_transitions** (polling, default every 5 minutes) — call `GET /v1/candidates?updated_after={last_poll}` on Greenhouse. For each candidate whose current stage differs from the stored state, classify the transition (application_received, moved_to_interview, interview_scheduled, rejected, offer_extended). Send the stage-appropriate Gmail (acknowledgment / interview prep / rejection). For offer-stage transitions, DO NOT auto-send — emit `hr.recruiting.offer_ready` with the drafted email to trigger `uc_offer_approval`. Post a privacy-safe Slack update to the configured hiring channel (first-name + last-initial + role + stage + timestamp), threading to the candidate's existing conversation when `slack_thread_map` has a ts. Update `recruiting_state.json` atomically. Emit `hr.recruiting.stage_changed` per transition and `hr.recruiting.email_sent` per successful Gmail dispatch.\n\n2. **uc_offer_approval** (event-listen on `hr.recruiting.offer_ready`) — present the drafted offer congratulations email for human review via the manual_review protocol. On approval: `gmail_send` the drafted email + post `✅ Offer sent to [Candidate] for [Role]` to the hiring channel with hiring-manager mention. On rejection: discard, log the reason to `recruiting_state.json`. Emit `hr.recruiting.offer_sent` on approval, `hr.recruiting.offer_cancelled` on rejection.\n\n3. **uc_weekly_funnel_report** (Monday 09:00 local) — pull 7-day candidate activity from Greenhouse. Calculate applications, phone screens, interviews, offers extended, offers accepted, rejections, stage-to-stage conversion rates, average time-in-stage, week-over-week deltas. Load `metrics_history.json` for trend comparison. Generate a formatted report. Post to Slack hiring channel with rich block formatting. Email the same report to the recruiting team distribution list. Append this week's snapshot to `metrics_history.json`. Emit `hr.recruiting.funnel_delivered` with summary metrics.\n\nState lives in `recruiting_state.json` (last_poll_timestamp, candidate_id → current_stage, candidate_id → slack_thread_ts, offer_drafts, sent_stage_dedup set) and `metrics_history.json` (weekly snapshots). Always write atomically: write-to-temp, rename.",
-      "tool_guidance": "**Greenhouse via http_request**:\n- `GET https://harvest.greenhouse.io/v1/candidates?updated_after={ts}&per_page=100` — poll for stage changes. Paginate with `page`.\n- `GET /v1/candidates/{id}` — full candidate details including current stage.\n- `GET /v1/candidates/{id}/activity_feed` — activity history for email context.\n- `GET /v1/jobs/{job_id}` and `/v1/jobs/{job_id}/stages` — job + stage definitions for stage-name mapping and email personalization.\n- `GET /v1/scheduled_interviews?candidate_id={id}` — interview details (date, time, interviewers, format) for prep emails.\n- `GET /v1/offers?candidate_id={id}` — offer context for draft email (NEVER include compensation in the draft).\n- Auth: HTTP Basic with API key as username, empty password. Header `Authorization: Basic {base64(api_key:)}`.\n\n**Gmail tools**:\n- `gmail_send` — dispatch candidate emails. Always set `from` to the configured recruiting alias. Use `html_body` for branded formatting. Use `reply_to` for threaded follow-ups to the same candidate.\n- `gmail_search` — find prior threads with `to:{candidate_email} subject:\"Application\"` for dedup and reply-threading.\n\n**Slack via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — `{channel: \"#hiring-*\", blocks: [...]}`. Use `thread_ts` from state when available to thread replies under the candidate's original message.\n- `GET https://slack.com/api/conversations.history?channel={id}&limit=20` — locate existing threads when `slack_thread_map` is empty.\n- Auth: `Authorization: Bearer xoxb-…`, `Content-Type: application/json`.\n\n**Local state**:\n- `recruiting_state.json` — `{ last_poll_ts, candidate_stage_map: {id → stage}, slack_thread_map: {id → thread_ts}, sent_dedup: {\"{id}|{stage}\": sent_ts}, offer_drafts: {id → {subject, body, role, drafted_at}} }`. Atomic writes only.\n- `metrics_history.json` — array of weekly snapshots `{ week_start, applications, screens, interviews, offers, accepted, rejected, conversion_rates, avg_time_in_stage }`.\n\n**Stage name mapping** — Greenhouse stage names are workspace-specific. The agent infers transition type by stage-name substring matching (application / review / screen / interview / offer / hired / rejected). Authoring the exact mapping belongs in the adoption questionnaire if it matters for routing.",
-      "error_handling": "Greenhouse 401 → emit auth-expired alert to recruiting-ops, skip cycle, do not retry. Greenhouse 429 → exponential backoff (30s / 60s / 120s), track req count per cycle. Greenhouse 404 on candidate → drop from state, log as deleted/merged. Greenhouse 5xx → retry up to 3 times with 10s delay; persistent → skip cycle, alert. Gmail bounce / invalid email → log failed send, annotate candidate record, do NOT retry. Gmail quota pressure → defer acknowledgments and rejections; preserve offer + interview sends. Gmail 401 → emit auth-expired alert. Slack channel_not_found → log warning, continue (email is the primary surface). Slack not_in_channel → DM the configured admin. Slack 429 → queue and drain at 1 msg/sec/channel. State corruption (`recruiting_state.json` unreadable) → reinitialize with `updated_after = now - 24h` to catch up without massive duplication. Duplicate prevention: before any send, check `sent_dedup[{candidate_id}|{stage}]` — skip if present.",
+      "operating_instructions": "Three capabilities with independent cadences: 1. **uc_stage_transitions** (polling, default every 5 minutes) — call `GET /v1/candidates?updated_after={last_poll}` on HR platform. For each candidate whose current stage differs from the stored state, classify the transition (application_received, moved_to_interview, interview_scheduled, rejected, offer_extended). Send the stage-appropriate email (acknowledgment / interview prep / rejection). For offer-stage transitions, DO NOT auto-send — emit `hr.recruiting.offer_ready` with the drafted email to trigger `uc_offer_approval`. Post a privacy-safe messaging update to the configured hiring channel (first-name + last-initial + role + stage + timestamp), threading to the candidate's existing conversation when `slack_thread_map` has a ts. Update `recruiting_state.json` atomically. Emit `hr.recruiting.stage_changed` per transition and `hr.recruiting.email_sent` per successful email dispatch. 2. **uc_offer_approval** (event-listen on `hr.recruiting.offer_ready`) — present the drafted offer congratulations email for human review via the manual_review protocol. On approval: `gmail_send` the drafted email + post `✅ Offer sent to [Candidate] for [Role]` to the hiring channel with hiring-manager mention. On rejection: discard, log the reason to `recruiting_state.json`. Emit `hr.recruiting.offer_sent` on approval, `hr.recruiting.offer_cancelled` on rejection. 3. **uc_weekly_funnel_report** (Monday 09:00 local) — pull 7-day candidate activity from HR platform. Calculate applications, phone screens, interviews, offers extended, offers accepted, rejections, stage-to-stage conversion rates, average time-in-stage, week-over-week deltas. Load `metrics_history.json` for trend comparison. Generate a formatted report. Post to the messaging channel hiring channel with rich block formatting. Email the same report to the recruiting team distribution list. Append this week's snapshot to `metrics_history.json`. Emit `hr.recruiting.funnel_delivered` with summary metrics. State lives in `recruiting_state.json` (last_poll_timestamp, candidate_id → current_stage, candidate_id → slack_thread_ts, offer_drafts, sent_stage_dedup set) and `metrics_history.json` (weekly snapshots). Always write atomically: write-to-temp, rename.",
+      "tool_guidance": "**HR platform via http_request**:\n- `GET https://harvest.greenhouse.io/v1/candidates?updated_after={ts}&per_page=100` — poll for stage changes. Paginate with `page`.\n- `GET /v1/candidates/{id}` — full candidate details including current stage.\n- `GET /v1/candidates/{id}/activity_feed` — activity history for email context.\n- `GET /v1/jobs/{job_id}` and `/v1/jobs/{job_id}/stages` — job + stage definitions for stage-name mapping and email personalization.\n- `GET /v1/scheduled_interviews?candidate_id={id}` — interview details (date, time, interviewers, format) for prep emails.\n- `GET /v1/offers?candidate_id={id}` — offer context for draft email (NEVER include compensation in the draft).\n- Auth: HTTP Basic with API key as username, empty password. Header `Authorization: Basic {base64(api_key:)}`. **email tools**:\n- `gmail_send` — dispatch candidate emails. Always set `from` to the configured recruiting alias. Use `html_body` for branded formatting. Use `reply_to` for threaded follow-ups to the same candidate.\n- `gmail_search` — find prior threads with `to:{candidate_email} subject:\"Application\"` for dedup and reply-threading. **messaging via http_request**:\n- `POST https://slack.com/api/chat.postMessage` — `{channel: \"#hiring-*\", blocks: [...]}`. Use `thread_ts` from state when available to thread replies under the candidate's original message.\n- `GET https://slack.com/api/conversations.history?channel={id}&limit=20` — locate existing threads when `slack_thread_map` is empty.\n- Auth: `Authorization: Bearer xoxb-…`, `Content-Type: application/json`. **Local state**:\n- `recruiting_state.json` — `{ last_poll_ts, candidate_stage_map: {id → stage}, slack_thread_map: {id → thread_ts}, sent_dedup: {\"{id}|{stage}\": sent_ts}, offer_drafts: {id → {subject, body, role, drafted_at}} }`. Atomic writes only.\n- `metrics_history.json` — array of weekly snapshots `{ week_start, applications, screens, interviews, offers, accepted, rejected, conversion_rates, avg_time_in_stage }`. **Stage name mapping** — HR platform stage names are workspace-specific. The agent infers transition type by stage-name substring matching (application / review / screen / interview / offer / hired / rejected). Authoring the exact mapping belongs in the adoption questionnaire if it matters for routing.",
+      "error_handling": "HR platform 401 → emit auth-expired alert to recruiting-ops, skip cycle, do not retry. HR platform 429 → exponential backoff (30s / 60s / 120s), track req count per cycle. HR platform 404 on candidate → drop from state, log as deleted/merged. HR platform 5xx → retry up to 3 times with 10s delay; persistent → skip cycle, alert. email bounce / invalid email → log failed send, annotate candidate record, do NOT retry. email quota pressure → defer acknowledgments and rejections; preserve offer + interview sends. email 401 → emit auth-expired alert. messaging channel_not_found → log warning, continue (email is the primary surface). messaging not_in_channel → DM the configured admin. messaging 429 → queue and drain at 1 msg/sec/channel. State corruption (`recruiting_state.json` unreadable) → reinitialize with `updated_after = now - 24h` to catch up without massive duplication. Duplicate prevention: before any send, check `sent_dedup[{candidate_id}|{stage}]` — skip if present.",
       "examples": [],
       "tools": [
         "http_request",
@@ -66,8 +66,8 @@
       ],
       "connectors": [
         {
-          "name": "greenhouse",
-          "label": "Greenhouse ATS",
+          "name": "hr",
+          "label": "HR platform",
           "auth_type": "api_key",
           "role": "hr_recruiting",
           "category": "hr",
@@ -79,11 +79,11 @@
               "label": "Harvest API Key",
               "type": "password",
               "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "helpText": "Greenhouse -> Configure -> Dev Center -> API Credential Management -> Create New API Key. Select 'Harvest' type with Candidates, Jobs, Scheduled Interviews, and Activity Feed GET permissions.",
+              "helpText": "HR platform -> Configure -> Dev Center -> API Credential Management -> Create New API Key. Select 'Harvest' type with Candidates, Jobs, Scheduled Interviews, and Activity Feed GET permissions.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Log into Greenhouse as an admin.\n2. Configure -> Dev Center -> API Credential Management.\n3. Create New API Key -> type 'Harvest' -> name 'Recruiting Pipeline Agent'.\n4. Grant GET permissions: Candidates, Jobs, Scheduled Interviews, Activity Feed.\n5. Copy the generated API key.\n6. Note: Greenhouse uses HTTP Basic Auth — the API key is the username with an empty password."
+          "setup_instructions": "1. Log into HR platform as an admin.\n2. Configure -> Dev Center -> API Credential Management.\n3. Create New API Key -> type 'Harvest' -> name 'Recruiting Pipeline Agent'.\n4. Grant GET permissions: Candidates, Jobs, Scheduled Interviews, Activity Feed.\n5. Copy the generated API key.\n6. Note: HR platform uses HTTP Basic Auth — the API key is the username with an empty password."
         },
         {
           "name": "email",
@@ -119,7 +119,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable Gmail API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete OAuth consent flow with scopes: gmail.send, gmail.readonly, gmail.modify.\n5. Paste all three values here."
+          "setup_instructions": "1. Google Cloud Console -> APIs & Services -> Library -> enable email API.\n2. Credentials -> Create Credentials -> OAuth 2.0 Client ID (application type: Desktop app).\n3. Copy Client ID and Client Secret.\n4. Complete OAuth consent flow with scopes: gmail.send, gmail.readonly, gmail.modify.\n5. Paste all three values here."
         },
         {
           "name": "messaging",
@@ -135,7 +135,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Slack App -> OAuth & Permissions -> Bot User OAuth Token (starts with xoxb-).",
+              "helpText": "messaging App -> OAuth & Permissions -> Bot User OAuth Token (starts with xoxb-).",
               "required": true
             }
           ],
@@ -158,8 +158,8 @@
       {
         "id": "uc_stage_transitions",
         "title": "Stage Transition Processing",
-        "description": "Poll Greenhouse for candidate stage changes. For each transition, send the stage-appropriate personalized email (acknowledgment, interview prep, rejection) via Gmail and post a privacy-safe update to the hiring Slack channel. Offer-stage transitions are handed to the offer-approval capability instead of auto-sending. Default polls every 5 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Poll Greenhouse, send stage-appropriate candidate email, post Slack update.",
+        "description": "Poll HR platform for candidate stage changes. For each transition, send the stage-appropriate personalized email (acknowledgment, interview prep, rejection) via email and post a privacy-safe update to the hiring messaging channels. Offer-stage transitions are handed to the offer-approval capability instead of auto-sending. Default polls every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Poll HR platform, send stage-appropriate candidate email, post messaging update.",
         "category": "recruiting_ops",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -173,18 +173,18 @@
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "greenhouse",
+          "hr",
           "email",
           "messaging"
         ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
-          "context": "Rejection emails are held for human review when the auto_send_rejection flag is off. Interview prep emails are held when a critical field (interviewer name, date) is missing from Greenhouse."
+          "context": "Rejection emails are held for human review when the auto_send_rejection flag is off. Interview prep emails are held when a critical field (interviewer name, date) is missing from HR platform."
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Candidate stage ledger and send dedup set prevent double-sends across polling cycles. Slack thread map preserves conversation continuity per candidate."
+          "context": "Candidate stage ledger and send dedup set prevent double-sends across polling cycles. messaging threads map preserves conversation continuity per candidate."
         },
         "event_subscriptions": [
           {
@@ -195,7 +195,7 @@
           {
             "event_type": "hr.recruiting.email_sent",
             "direction": "emit",
-            "description": "Payload: { candidate_id, stage, email_type, gmail_message_id }. Emitted after every successful Gmail dispatch (excluding offers, which go via uc_offer_approval)."
+            "description": "Payload: { candidate_id, stage, email_type, gmail_message_id }. Emitted after every successful email dispatch (excluding offers, which go via uc_offer_approval)."
           },
           {
             "event_type": "hr.recruiting.offer_ready",
@@ -203,7 +203,7 @@
             "description": "Payload: { candidate_id, role_title, draft_subject, draft_body }. Emitted instead of sending when a candidate reaches the offer stage — consumed by uc_offer_approval."
           }
         ],
-        "error_handling": "Greenhouse 401 → skip cycle, alert recruiting-ops, do not retry. Greenhouse 429 → exponential backoff. Gmail bounce → log, annotate candidate, do not retry. Slack channel_not_found → log, continue (email remains primary). Duplicate detected via sent_dedup → skip.",
+        "error_handling": "HR platform 401 → skip cycle, alert recruiting-ops, do not retry. HR platform 429 → exponential backoff. email bounce → log, annotate candidate, do not retry. messaging channel_not_found → log, continue (email remains primary). Duplicate detected via sent_dedup → skip.",
         "input_schema": [
           {
             "name": "email_scope",
@@ -226,7 +226,7 @@
               "high_volume"
             ],
             "default": "medium",
-            "description": "Typical monthly hiring volume — affects polling strategy and Slack routing granularity."
+            "description": "Typical monthly hiring volume — affects polling strategy and messaging routing granularity."
           },
           {
             "name": "hard_boundary",
@@ -250,7 +250,7 @@
               "shared_plus_per_role"
             ],
             "default": "shared_recruiting_channel",
-            "description": "How Slack notifications are distributed across channels."
+            "description": "How messaging notifications are distributed across channels."
           },
           {
             "name": "email_tone",
@@ -268,7 +268,7 @@
             "name": "sender_alias",
             "type": "text",
             "default": "recruiting@yourcompany.com",
-            "description": "Gmail sender alias used for every candidate and team communication."
+            "description": "email sender alias used for every candidate and team communication."
           }
         ],
         "sample_input": {
@@ -324,7 +324,7 @@
             {
               "id": "s7",
               "type": "connector",
-              "label": "Post Slack update (threaded)",
+              "label": "Post messaging update (threaded)",
               "connector": "messaging"
             },
             {
@@ -385,7 +385,7 @@
       {
         "id": "uc_offer_approval",
         "title": "Offer Approval & Dispatch",
-        "description": "When a candidate reaches the offer stage, draft the congratulations email and hold it for human review. On approval, dispatch and post a Slack confirmation; on rejection, discard with the reason logged. Never auto-sends.",
+        "description": "When a candidate reaches the offer stage, draft the congratulations email and hold it for human review. On approval, dispatch and post a messaging confirmation; on rejection, discard with the reason logged. Never auto-sends.",
         "capability_summary": "Draft offer email, route for human approval, dispatch on approval.",
         "category": "recruiting_ops",
         "enabled_by_default": true,
@@ -399,14 +399,14 @@
           "description": "Fires when uc_stage_transitions detects an offer-stage move. Not user-configurable — event triggers bypass the cadence picker."
         },
         "connectors": [
-          "greenhouse",
+          "hr",
           "email",
           "messaging"
         ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
-          "context": "Every offer email is presented to a recruiter via the manual_review protocol before Gmail dispatch. On approval: send + notify. On rejection: discard + log reason."
+          "context": "Every offer email is presented to a recruiter via the manual_review protocol before email dispatch. On approval: send + notify. On rejection: discard + log reason."
         },
         "memory_policy": {
           "enabled": true,
@@ -429,7 +429,7 @@
             "description": "Payload: { candidate_id, role_title, rejection_reason }. Emitted when the reviewer rejects the draft."
           }
         ],
-        "error_handling": "Reviewer timeout → reminder to the recruiting-ops channel; never auto-send. Gmail send fail post-approval → queue in offer_drafts, alert recruiter, do NOT mark state transitioned until send succeeds. Greenhouse offer context unavailable → draft with candidate name and role only; flag for reviewer to add details.",
+        "error_handling": "Reviewer timeout → reminder to the recruiting-ops channel; never auto-send. email send fail post-approval → queue in offer_drafts, alert recruiter, do NOT mark state transitioned until send succeeds. HR platform offer context unavailable → draft with candidate name and role only; flag for reviewer to add details.",
         "input_schema": [
           {
             "name": "approval_scope",
@@ -452,7 +452,7 @@
               "never"
             ],
             "default": "offer_only",
-            "description": "Whether the Slack approval message @-mentions the hiring manager."
+            "description": "Whether the messaging approval message @-mentions the hiring manager."
           }
         ],
         "sample_input": {
@@ -555,8 +555,8 @@
       {
         "id": "uc_weekly_funnel_report",
         "title": "Weekly Funnel Report",
-        "description": "Compile 7-day recruiting metrics from Greenhouse — funnel counts, stage conversion rates, time-in-stage, week-over-week deltas. Deliver via Slack + email and archive a snapshot for trend analysis. Default Monday 09:00 local — final cadence set at the trigger-composition step.",
-        "capability_summary": "Weekly Greenhouse funnel metrics: counts, conversions, trends, delivered to hiring team.",
+        "description": "Compile 7-day recruiting metrics from HR platform — funnel counts, stage conversion rates, time-in-stage, week-over-week deltas. Deliver via the messaging channel + email and archive a snapshot for trend analysis. Default Monday 09:00 local — final cadence set at the trigger-composition step.",
+        "capability_summary": "Weekly HR platform funnel metrics: counts, conversions, trends, delivered to hiring team.",
         "category": "reporting",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -570,7 +570,7 @@
           "description": "Default Monday 09:00 local — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "greenhouse",
+          "hr",
           "email",
           "messaging"
         ],
@@ -587,10 +587,10 @@
           {
             "event_type": "hr.recruiting.funnel_delivered",
             "direction": "emit",
-            "description": "Payload: { week_start, applications, screens, interviews, offers, accepted, rejected, pipeline_health }. Emitted after successful Slack + email delivery."
+            "description": "Payload: { week_start, applications, screens, interviews, offers, accepted, rejected, pipeline_health }. Emitted after successful messaging + email delivery."
           }
         ],
-        "error_handling": "Greenhouse API failure → generate partial report from cached snapshots, mark incomplete in the header. Slack post failure → still send email, note Slack delivery failed. Email send failure → still post to Slack, retry email next hour.",
+        "error_handling": "HR platform API failure → generate partial report from cached snapshots, mark incomplete in the header. messaging post failure → still send email, note messaging delivery failed. Email send failure → still post to the messaging channel, retry email next hour.",
         "input_schema": [
           {
             "name": "retention_policy",
@@ -648,7 +648,7 @@
             {
               "id": "w5",
               "type": "connector",
-              "label": "Post to Slack hiring channel",
+              "label": "Post to the messaging channel hiring channel",
               "connector": "messaging"
             },
             {
@@ -749,7 +749,7 @@
         "default": "Medium — 10-50 candidates/month, 5-20 open roles",
         "maps_to": "use_cases[uc_stage_transitions].sample_input.volume_tier",
         "variable_name": "volume_tier",
-        "context": "Affects state management complexity and whether per-role or team-level Slack channels are appropriate.",
+        "context": "Affects state management complexity and whether per-role or team-level messaging channels are appropriate.",
         "dimension": "use-cases"
       },
       {
@@ -801,7 +801,7 @@
           "uc_offer_approval"
         ],
         "category": "configuration",
-        "question": "When should the agent @-mention the hiring manager in Slack?",
+        "question": "When should the agent @-mention the hiring manager in the messaging channel?",
         "type": "select",
         "options": [
           "Always (every stage transition)",
@@ -822,7 +822,7 @@
           "uc_weekly_funnel_report"
         ],
         "category": "connectors",
-        "question": "Which Slack channel layout should receive candidate stage updates and the weekly report?",
+        "question": "Which messaging channels layout should receive candidate stage updates and the weekly report?",
         "type": "select",
         "options": [
           "One shared #recruiting channel for all roles",
@@ -833,7 +833,7 @@
         "default": "One shared #recruiting channel for all roles",
         "maps_to": "use_cases[uc_stage_transitions].sample_input.slack_routing",
         "variable_name": "slack_routing",
-        "context": "Shapes Slack routing and whether the agent needs to map roles → channels.",
+        "context": "Shapes messaging routing and whether the agent needs to map roles → channels.",
         "dimension": "connectors"
       },
       {
@@ -885,7 +885,7 @@
           "uc_stage_transitions"
         ],
         "category": "configuration",
-        "question": "Which Gmail address should send all candidate and hiring team communications?",
+        "question": "Which email address should send all candidate and hiring team communications?",
         "type": "text",
         "default": "recruiting@yourcompany.com",
         "maps_to": "use_cases[uc_stage_transitions].sample_input.sender_alias",
@@ -905,7 +905,7 @@
         "default": "recruiting-team@company.com",
         "maps_to": "use_cases[uc_weekly_funnel_report].sample_input.report_recipients",
         "variable_name": "report_recipients",
-        "context": "Distribution list for the Monday email. The Slack post goes to the hiring channel in parallel.",
+        "context": "Distribution list for the Monday email. The messaging post goes to the hiring channel in parallel.",
         "dimension": "messages"
       },
       {
@@ -924,7 +924,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -943,7 +943,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

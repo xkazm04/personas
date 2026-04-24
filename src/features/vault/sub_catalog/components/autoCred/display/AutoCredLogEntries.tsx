@@ -7,6 +7,7 @@ import { createLogger } from '@/lib/log';
 const logger = createLogger('auto-cred-log-entries');
 import type { BrowserLogEntry } from '../helpers/types';
 import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Re-export cards so existing imports from AutoCredBrowser still work
@@ -44,9 +45,11 @@ export function UrlCard({
   entry: BrowserLogEntry;
   onUrlClick: (url: string) => void;
 }) {
-  const url = entry.url ?? '';
+  const safeUrl = sanitizeExternalUrl(entry.url);
   let hostname = '';
-  try { hostname = new URL(url).hostname; } catch { /* ignore */ }
+  if (safeUrl) {
+    try { hostname = new URL(safeUrl).hostname; } catch { /* ignore */ }
+  }
 
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-card border border-blue-500/20 bg-blue-500/5">
@@ -55,9 +58,9 @@ export function UrlCard({
         <p className="typo-body text-foreground">{entry.message.replace(/^Opening:\s*/, '')}</p>
         {hostname && <p className="typo-body text-foreground truncate">{hostname}</p>}
       </div>
-      {url && (
+      {safeUrl && (
         <button
-          onClick={() => onUrlClick(url)}
+          onClick={() => onUrlClick(safeUrl)}
           className="px-3 py-1 typo-body text-blue-400 hover:text-blue-300 rounded-card border border-blue-500/20 hover:bg-blue-500/10 transition-colors shrink-0"
         >
           Open
@@ -92,21 +95,22 @@ export function RichMessage({
 
   return (
     <>
-      {parts.map((part, i) =>
-        part.isUrl ? (
+      {parts.map((part, i) => {
+        if (!part.isUrl) return <span key={i}>{part.text}</span>;
+        const safe = sanitizeExternalUrl(part.text);
+        if (!safe) return <span key={i}>{part.text}</span>;
+        return (
           <button
             key={i}
-            onClick={() => onUrlClick(part.text)}
+            onClick={() => onUrlClick(safe)}
             className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer transition-colors"
-            title={`Open ${part.text} in browser`}
+            title={`Open ${safe} in browser`}
           >
             {part.text}
             <ExternalLink className="w-2.5 h-2.5 inline-block ml-0.5" />
           </button>
-        ) : (
-          <span key={i}>{part.text}</span>
-        ),
-      )}
+        );
+      })}
     </>
   );
 }

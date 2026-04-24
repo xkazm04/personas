@@ -4,10 +4,10 @@
   "label": "Google Sheets",
   "color": "#34A853",
   "icon_url": "/icons/connectors/google-sheets.svg",
-  "category": "database",
+  "category": "spreadsheet",
   "categories": [
-    "database",
-    "spreadsheet"
+    "spreadsheet",
+    "database"
   ],
   "fields": [],
   "healthcheck_config": {

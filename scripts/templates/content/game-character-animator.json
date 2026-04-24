@@ -5,11 +5,19 @@
   "description": "Turns a single anchor character image into a complete animation set ready for 2D game engines. Uses AI image generation for pose-based animations (walk, run, attack, crouch, death) and procedural pixel-shift for subtle idle breathing. Normalizes every sprite sheet so the character body stays consistent and weapons overflow upward instead of squashing.",
   "icon": "Gamepad2",
   "color": "#A855F7",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Image AI", "Messages"],
+  "service_flow": [
+    "Image AI",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Image AI", "Messages"],
+    "service_flow": [
+      "Image AI",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn one anchor image into a complete game-ready animation set — sprites for motion, video for moments.",
       "identity": {
@@ -41,27 +49,34 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities, all manual-triggered per user request:\n\n1. **uc_generate_sprites** — given the anchor image + animation set (idle, walk, run, attack, crouch, death, hurt, jump), route each animation to its optimal technique. Canvas technique for pose-based animations: wide canvas with anchor on the left, submit to image AI with per-frame beat descriptions, AI fills frames right-of-anchor, strip anchor from output. Programmatic technique for idle (delegate to uc_procedural_idle when it's in the set). Run every canvas output through the normalization pipeline (frame-spacing equalization, body-height normalization, anti-drift correction). Emit `game-artist.animation.generated` per completed animation and `game-artist.sprite_set.complete` with the asset manifest path when all requested animations ship.\n\n2. **uc_procedural_idle** — given an anchor (same character, or a different sprite the user provides independently of uc_generate_sprites), produce a 4-frame breathing idle animation by pixel-shifting the character up 1px, hold, down 1px, hold. No AI calls. Exports a horizontal PNG sprite sheet + manifest entry. Emits `game-artist.idle.rendered`.\n\nBoth capabilities deliver outputs to `assets/sprites/{character_slug}/` with a combined `asset_manifest.json` keyed by animation name, frame count, and recommended FPS. Raw pre-normalization outputs live under `assets/sprites/{character_slug}/raw/` so debugging has an audit trail.\n\n3. **uc_image_to_video** (opt-in) — given the anchor image + a motion prompt, submit to the image-AI provider's video endpoint (Leonardo today; OpenAI when supported). Poll until the render completes. Upload the MP4/WebM to the user's configured storage connector (resolved from `aq_storage_target`). Emit `game-artist.video.generated` with the final storage URI. Every clip is reviewed; user-flagged good/bad feedback updates `video_style_patterns.json` — accepted prompt phrasing is retained, rejected phrasing suppressed for this character in the next round. Never write clips to the local filesystem when a storage target is configured.\n\nState: `data/anchor.json` (anchor path + extracted character features), `data/generations/{animation}_{attempt}.json` (prompt, model, quality notes per attempt), `data/asset_manifest.json` (final manifest for game-engine integration), `data/video_style_patterns.json` (per-character motion-prompt memory for uc_image_to_video).",
-      "tool_guidance": "**Image AI connector (http_request)** — adapts to whichever provider the user chose at adoption:\n\n- **Leonardo AI**: `POST https://cloud.leonardo.ai/api/rest/v1/generations` with `{prompt, width, height, num_images, modelId, init_images: [base64_anchor]}`. Use `init_images` for style-reference consistency. Generate at 4-8x target resolution, downscale for cleaner pixel art.\n- **OpenAI Images**: `POST /v1/images/edits` with the canvas as the base image + animation prompt; or `/v1/images/generations` with detailed canvas description.\n\nCanvas technique prompt structure (4-frame attack example):\n```\nTransparent sprite sheet for a 2D side-view platformer.\nLeftmost character is the reference — match style EXACTLY.\nGenerate N animation frames to the right, equally spaced:\n- Frame 1: ready, hand on sword hilt\n- Frame 2: sword raised above head, slight lean back\n- Frame 3: swinging forward and down, body lunging\n- Frame 4: follow-through, sword extended\nStyle: {art_style}, {frame_size}x{frame_size}, side-view facing right.\nCharacter: {anchor_description}\n```\n\n**Procedural idle (Python/Pillow)** via the execution environment:\n- Frame 0: anchor (original)\n- Frame 1: shift character pixels up 1px\n- Frame 2: anchor (repeat)\n- Frame 3: shift character pixels down 1px\n- Export as horizontal 4-cell PNG.\n\n**Normalization pipeline** (applies to every canvas output):\n1. Detect each frame's bounding box via non-transparent-pixel clustering.\n2. Compute median frame width and height.\n3. Reposition frames so center-to-center spacing is uniform; pad to `frame_size` cells.\n4. Detect each frame's character base-height (feet-to-head, excluding weapons/effects).\n5. If base-heights vary >20% across frames → regenerate. If ≤20% → accept, let weapon/effect overflow extend the frame UPWARD (never compress).\n6. Anti-drift: compare each frame's torso horizontal center; re-center if drift >2px.\n7. Export as PNG with transparency.\n\n**State files**: `data/anchor.json`, `data/generations/{animation}_{attempt}.json`, `data/asset_manifest.json`, `assets/sprites/{character_slug}/{animation}.png`, `assets/sprites/{character_slug}/raw/{animation}_raw.png`.",
+      "operating_instructions": "Three capabilities, all manual-triggered per user request: 1. **uc_generate_sprites** — given the anchor image + animation set (idle, walk, run, attack, crouch, death, hurt, jump), route each animation to its optimal technique. Canvas technique for pose-based animations: wide canvas with anchor on the left, submit to image AI with per-frame beat descriptions, AI fills frames right-of-anchor, strip anchor from output. Programmatic technique for idle (delegate to uc_procedural_idle when it's in the set). Run every canvas output through the normalization pipeline (frame-spacing equalization, body-height normalization, anti-drift correction). Emit `game-artist.animation.generated` per completed animation and `game-artist.sprite_set.complete` with the asset manifest path when all requested animations ship. 2. **uc_procedural_idle** — given an anchor (same character, or a different sprite the user provides independently of uc_generate_sprites), produce a 4-frame breathing idle animation by pixel-shifting the character up 1px, hold, down 1px, hold. No AI calls. Exports a horizontal PNG sprite sheet + manifest entry. Emits `game-artist.idle.rendered`. Both capabilities deliver outputs to `assets/sprites/{character_slug}/` with a combined `asset_manifest.json` keyed by animation name, frame count, and recommended FPS. Raw pre-normalization outputs live under `assets/sprites/{character_slug}/raw/` so debugging has an audit trail. 3. **uc_image_to_video** (opt-in) — given the anchor image + a motion prompt, submit to the image-AI provider's video endpoint (image generation AI today; OpenAI when supported). Poll until the render completes. Upload the MP4/WebM to the user's configured storage connector (resolved from `aq_storage_target`). Emit `game-artist.video.generated` with the final storage URI. Every clip is reviewed; user-flagged good/bad feedback updates `video_style_patterns.json` — accepted prompt phrasing is retained, rejected phrasing suppressed for this character in the next round. Never write clips to the local filesystem when a storage target is configured. State: `data/anchor.json` (anchor path + extracted character features), `data/generations/{animation}_{attempt}.json` (prompt, model, quality notes per attempt), `data/asset_manifest.json` (final manifest for game-engine integration), `data/video_style_patterns.json` (per-character motion-prompt memory for uc_image_to_video).",
+      "tool_guidance": "**Image AI connector (http_request)** — adapts to whichever provider the user chose at adoption: - **image generation AI**: `POST https://cloud.leonardo.ai/api/rest/v1/generations` with `{prompt, width, height, num_images, modelId, init_images: [base64_anchor]}`. Use `init_images` for style-reference consistency. Generate at 4-8x target resolution, downscale for cleaner pixel art.\n- **image generation AI**: `POST /v1/images/edits` with the canvas as the base image + animation prompt; or `/v1/images/generations` with detailed canvas description. Canvas technique prompt structure (4-frame attack example):\n```\nTransparent sprite sheet for a 2D side-view platformer.\nLeftmost character is the reference — match style EXACTLY.\nGenerate N animation frames to the right, equally spaced:\n- Frame 1: ready, hand on sword hilt\n- Frame 2: sword raised above head, slight lean back\n- Frame 3: swinging forward and down, body lunging\n- Frame 4: follow-through, sword extended\nStyle: {art_style}, {frame_size}x{frame_size}, side-view facing right.\nCharacter: {anchor_description}\n``` **Procedural idle (Python/Pillow)** via the execution environment:\n- Frame 0: anchor (original)\n- Frame 1: shift character pixels up 1px\n- Frame 2: anchor (repeat)\n- Frame 3: shift character pixels down 1px\n- Export as horizontal 4-cell PNG. **Normalization pipeline** (applies to every canvas output):\n1. Detect each frame's bounding box via non-transparent-pixel clustering.\n2. Compute median frame width and height.\n3. Reposition frames so center-to-center spacing is uniform; pad to `frame_size` cells.\n4. Detect each frame's character base-height (feet-to-head, excluding weapons/effects).\n5. If base-heights vary >20% across frames → regenerate. If ≤20% → accept, let weapon/effect overflow extend the frame UPWARD (never compress).\n6. Anti-drift: compare each frame's torso horizontal center; re-center if drift >2px.\n7. Export as PNG with transparency. **State files**: `data/anchor.json`, `data/generations/{animation}_{attempt}.json`, `data/asset_manifest.json`, `assets/sprites/{character_slug}/{animation}.png`, `assets/sprites/{character_slug}/raw/{animation}_raw.png`.",
       "error_handling": "Image AI 401/403 → emit persona.error, halt uc_generate_sprites until credential refresh. 429 → 5s inter-generation delays. 5xx → one retry with 30s backoff. Inconsistent character across frames → one retry with tighter 'match reference exactly' prompt; after 2 failures note the issue and keep the best result. Wrong frame count → try splitting overlapping frames; if model consistently under-generates, reduce count and fill with programmatic tween. Walk-cycle failure after 2 attempts → fall back to 2-keyframe (right-forward + left-forward) + programmatic interpolation; memorize 'canvas walk fragile for this model'. Base-height variance >20% → regenerate; do not try to rescue via scaling. Anti-drift over-corrects a frame into unnatural pose → skip drift for that frame, note in manifest. Anchor file missing → halt with clear error. Output directory missing → create on first run.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "image_ai",
+          "name": "image_generation",
           "label": "Image AI",
           "auth_type": "api_key",
           "role": "image_generation",
-          "category": "ai",
+          "category": "image_generation",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "Image AI provider",
               "type": "select",
-              "options": ["leonardo", "openai_images"],
+              "options": [
+                "leonardo",
+                "openai_images"
+              ],
               "placeholder": "leonardo",
-              "helpText": "Which image generation service to use. Leonardo AI is recommended for pixel-art consistency; OpenAI Images works for higher-resolution stylized art.",
+              "helpText": "Which image generation service to use. image generation AI is recommended for pixel-art consistency; image generation AI works for higher-resolution stylized art.",
               "required": true
             },
             {
@@ -69,7 +84,7 @@
               "label": "API Key",
               "type": "password",
               "placeholder": "",
-              "helpText": "API key from the selected provider. Leonardo: Settings → API. OpenAI: your standard OpenAI API key with image-generation access.",
+              "helpText": "API key from the selected provider. image generation AI: Settings → API. OpenAI: your standard OpenAI API key with image-generation access.",
               "required": true
             },
             {
@@ -77,7 +92,7 @@
               "label": "Model ID (optional)",
               "type": "text",
               "placeholder": "",
-              "helpText": "Override default model. Leonardo: model UUID for a preferred pixel-art or stylized model. OpenAI: leave blank for the standard images endpoint.",
+              "helpText": "Override default model. image generation AI: model UUID for a preferred pixel-art or stylized model. OpenAI: leave blank for the standard images endpoint.",
               "required": false
             }
           ],
@@ -127,7 +142,9 @@
           "config": {},
           "description": "Manual — user provides an anchor image + animation list and invokes the capability."
         },
-        "connectors": ["image_ai"],
+        "connectors": [
+          "image_generation"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -159,14 +176,23 @@
           {
             "name": "animation_set",
             "type": "enum",
-            "options": ["basic", "standard", "full"],
+            "options": [
+              "basic",
+              "standard",
+              "full"
+            ],
             "default": "standard",
             "description": "Basic = idle + walk + attack. Standard = + run + crouch + death. Full = + jump + hurt."
           },
           {
             "name": "art_style",
             "type": "enum",
-            "options": ["pixel_art_16bit", "pixel_art_32bit", "hd_sprite", "painterly"],
+            "options": [
+              "pixel_art_16bit",
+              "pixel_art_32bit",
+              "hd_sprite",
+              "painterly"
+            ],
             "default": "pixel_art_16bit",
             "description": "Art style for generation prompts and normalization tolerance."
           },
@@ -185,34 +211,120 @@
           "art_style": "{{param.aq_art_style}}",
           "frame_size": "{{param.aq_frame_size}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Manual: anchor + animation list" },
-            { "id": "s2", "type": "action", "label": "Validate anchor + extract features" },
-            { "id": "s3", "type": "action", "label": "Plan per-animation technique" },
-            { "id": "s4", "type": "connector", "label": "Canvas generate (AI, pose-based)", "connector": "image_ai" },
-            { "id": "s5", "type": "action", "label": "Normalize: spacing → body-height → anti-drift" },
-            { "id": "s6", "type": "action", "label": "Route to user review per animation" },
-            { "id": "s7", "type": "event", "label": "Emit game-artist.animation.generated" },
-            { "id": "s8", "type": "decision", "label": "More animations queued?" },
-            { "id": "s9", "type": "action", "label": "Write asset_manifest.json" },
-            { "id": "s10", "type": "event", "label": "Emit game-artist.sprite_set.complete" },
-            { "id": "s11", "type": "end", "label": "Sprite set ready for game engine" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Manual: anchor + animation list"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Validate anchor + extract features"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Plan per-animation technique"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Canvas generate (AI, pose-based)",
+              "connector": "image_ai"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Normalize: spacing → body-height → anti-drift"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Route to user review per animation"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit game-artist.animation.generated"
+            },
+            {
+              "id": "s8",
+              "type": "decision",
+              "label": "More animations queued?"
+            },
+            {
+              "id": "s9",
+              "type": "action",
+              "label": "Write asset_manifest.json"
+            },
+            {
+              "id": "s10",
+              "type": "event",
+              "label": "Emit game-artist.sprite_set.complete"
+            },
+            {
+              "id": "s11",
+              "type": "end",
+              "label": "Sprite set ready for game engine"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s4", "variant": "yes", "label": "Next" },
-            { "source": "s8", "target": "s9", "variant": "no", "label": "Done" },
-            { "source": "s9", "target": "s10" },
-            { "source": "s10", "target": "s11" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s4",
+              "variant": "yes",
+              "label": "Next"
+            },
+            {
+              "source": "s8",
+              "target": "s9",
+              "variant": "no",
+              "label": "Done"
+            },
+            {
+              "source": "s9",
+              "target": "s10"
+            },
+            {
+              "source": "s10",
+              "target": "s11"
+            }
           ]
         }
       },
@@ -232,8 +344,14 @@
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "game-artist.idle.rendered",
@@ -251,7 +369,12 @@
           {
             "name": "art_style",
             "type": "enum",
-            "options": ["pixel_art_16bit", "pixel_art_32bit", "hd_sprite", "painterly"],
+            "options": [
+              "pixel_art_16bit",
+              "pixel_art_32bit",
+              "hd_sprite",
+              "painterly"
+            ],
             "default": "pixel_art_16bit",
             "description": "Informs the breathing pixel-shift amplitude (retro pixel = 1px, HD = 2-3px)."
           },
@@ -269,36 +392,99 @@
           "art_style": "{{param.aq_art_style}}",
           "frame_size": "{{param.aq_frame_size}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Manual: source sprite path" },
-            { "id": "i2", "type": "action", "label": "Load sprite + detect bounding box" },
-            { "id": "i3", "type": "action", "label": "Frame 0: original" },
-            { "id": "i4", "type": "action", "label": "Frame 1: shift character up 1px" },
-            { "id": "i5", "type": "action", "label": "Frame 2: original (repeat)" },
-            { "id": "i6", "type": "action", "label": "Frame 3: shift character down 1px" },
-            { "id": "i7", "type": "action", "label": "Compose 4-cell horizontal PNG" },
-            { "id": "i8", "type": "event", "label": "Emit game-artist.idle.rendered" },
-            { "id": "i9", "type": "end", "label": "Idle sheet delivered" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Manual: source sprite path"
+            },
+            {
+              "id": "i2",
+              "type": "action",
+              "label": "Load sprite + detect bounding box"
+            },
+            {
+              "id": "i3",
+              "type": "action",
+              "label": "Frame 0: original"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Frame 1: shift character up 1px"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "Frame 2: original (repeat)"
+            },
+            {
+              "id": "i6",
+              "type": "action",
+              "label": "Frame 3: shift character down 1px"
+            },
+            {
+              "id": "i7",
+              "type": "action",
+              "label": "Compose 4-cell horizontal PNG"
+            },
+            {
+              "id": "i8",
+              "type": "event",
+              "label": "Emit game-artist.idle.rendered"
+            },
+            {
+              "id": "i9",
+              "type": "end",
+              "label": "Idle sheet delivered"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" },
-            { "source": "i7", "target": "i8" },
-            { "source": "i8", "target": "i9" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            },
+            {
+              "source": "i8",
+              "target": "i9"
+            }
           ]
         }
       },
       {
         "id": "uc_image_to_video",
         "title": "Image → Animated Short",
-        "description": "Turn one anchor image into a short animated clip (MP4/WebM). Uses Leonardo's video generator today; swaps to OpenAI's video endpoint when the user's chosen image-AI credential supports video. Output is saved to the user's configured storage connector, not the local filesystem, so generated moments stay with the rest of the game's asset pipeline.",
+        "description": "Turn one anchor image into a short animated clip (MP4/WebM). Uses image generation AI's video generator today; swaps to OpenAI's video endpoint when the user's chosen image-AI credential supports video. Output is saved to the user's configured storage connector, not the local filesystem, so generated moments stay with the rest of the game's asset pipeline.",
         "capability_summary": "Anchor image → animated MP4/WebM via image-AI video generator; saved to the user's configured storage target.",
         "category": "content",
         "enabled_by_default": false,
@@ -309,7 +495,10 @@
           "config": {},
           "description": "Manual — user supplies an anchor image and a motion prompt."
         },
-        "connectors": ["image_ai", "storage"],
+        "connectors": [
+          "image_generation",
+          "storage"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -332,7 +521,7 @@
             "description": "Payload: video_id, decision (good|bad), notes?. Emitted on human review — drives the style-memory update."
           }
         ],
-        "error_handling": "Provider lacks video support → emit a persona.error explaining which providers do (Leonardo today). Storage target unreachable → retain the clip in a temp path and surface a re-save CTA; never silently drop an expensive generation. Duration cap exceeded for the plan tier → downgrade to the plan's max duration and note it in the delivery message.",
+        "error_handling": "Provider lacks video support → emit a persona.error explaining which providers do (image generation AI today). Storage target unreachable → retain the clip in a temp path and surface a re-save CTA; never silently drop an expensive generation. Duration cap exceeded for the plan tier → downgrade to the plan's max duration and note it in the delivery message.",
         "input_schema": [
           {
             "name": "source_image_path",
@@ -364,31 +553,104 @@
           "duration_sec": 4,
           "storage_target": "{{param.aq_storage_target}}"
         },
-        "tool_hints": ["file_read", "file_write", "http_request"],
+        "tool_hints": [
+          "file_read",
+          "file_write",
+          "http_request"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "v1", "type": "start", "label": "Manual: anchor image + motion prompt" },
-            { "id": "v2", "type": "action", "label": "Load video_style_patterns memory" },
-            { "id": "v3", "type": "connector", "label": "Submit image + prompt to image-AI video endpoint", "connector": "image_ai" },
-            { "id": "v4", "type": "action", "label": "Poll until render complete" },
-            { "id": "v5", "type": "connector", "label": "Upload MP4/WebM to storage target", "connector": "storage" },
-            { "id": "v6", "type": "event", "label": "Emit game-artist.video.generated" },
-            { "id": "v7", "type": "action", "label": "Route to human review" },
-            { "id": "v8", "type": "event", "label": "Emit game-artist.video.reviewed" },
-            { "id": "v9", "type": "action", "label": "Update video_style_patterns memory" },
-            { "id": "v10", "type": "end", "label": "Clip delivered + feedback absorbed" }
+            {
+              "id": "v1",
+              "type": "start",
+              "label": "Manual: anchor image + motion prompt"
+            },
+            {
+              "id": "v2",
+              "type": "action",
+              "label": "Load video_style_patterns memory"
+            },
+            {
+              "id": "v3",
+              "type": "connector",
+              "label": "Submit image + prompt to image-AI video endpoint",
+              "connector": "image_ai"
+            },
+            {
+              "id": "v4",
+              "type": "action",
+              "label": "Poll until render complete"
+            },
+            {
+              "id": "v5",
+              "type": "connector",
+              "label": "Upload MP4/WebM to storage target",
+              "connector": "storage"
+            },
+            {
+              "id": "v6",
+              "type": "event",
+              "label": "Emit game-artist.video.generated"
+            },
+            {
+              "id": "v7",
+              "type": "action",
+              "label": "Route to human review"
+            },
+            {
+              "id": "v8",
+              "type": "event",
+              "label": "Emit game-artist.video.reviewed"
+            },
+            {
+              "id": "v9",
+              "type": "action",
+              "label": "Update video_style_patterns memory"
+            },
+            {
+              "id": "v10",
+              "type": "end",
+              "label": "Clip delivered + feedback absorbed"
+            }
           ],
           "edges": [
-            { "source": "v1", "target": "v2" },
-            { "source": "v2", "target": "v3" },
-            { "source": "v3", "target": "v4" },
-            { "source": "v4", "target": "v5" },
-            { "source": "v5", "target": "v6" },
-            { "source": "v6", "target": "v7" },
-            { "source": "v7", "target": "v8" },
-            { "source": "v8", "target": "v9" },
-            { "source": "v9", "target": "v10" }
+            {
+              "source": "v1",
+              "target": "v2"
+            },
+            {
+              "source": "v2",
+              "target": "v3"
+            },
+            {
+              "source": "v3",
+              "target": "v4"
+            },
+            {
+              "source": "v4",
+              "target": "v5"
+            },
+            {
+              "source": "v5",
+              "target": "v6"
+            },
+            {
+              "source": "v6",
+              "target": "v7"
+            },
+            {
+              "source": "v7",
+              "target": "v8"
+            },
+            {
+              "source": "v8",
+              "target": "v9"
+            },
+            {
+              "source": "v9",
+              "target": "v10"
+            }
           ]
         }
       }
@@ -397,7 +659,10 @@
       {
         "id": "aq_art_style",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_sprites", "uc_procedural_idle"],
+        "use_case_ids": [
+          "uc_generate_sprites",
+          "uc_procedural_idle"
+        ],
         "category": "domain",
         "question": "What art style should the output match?",
         "type": "select",
@@ -416,11 +681,20 @@
       {
         "id": "aq_frame_size",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_sprites", "uc_procedural_idle"],
+        "use_case_ids": [
+          "uc_generate_sprites",
+          "uc_procedural_idle"
+        ],
         "category": "configuration",
         "question": "Target frame size in pixels (square cells)?",
         "type": "select",
-        "options": ["32", "64", "96", "128", "256"],
+        "options": [
+          "32",
+          "64",
+          "96",
+          "128",
+          "256"
+        ],
         "default": "64",
         "maps_to": null,
         "variable_name": "frame_size",
@@ -430,7 +704,9 @@
       {
         "id": "aq_animation_set",
         "scope": "capability",
-        "use_case_ids": ["uc_generate_sprites"],
+        "use_case_ids": [
+          "uc_generate_sprites"
+        ],
         "category": "domain",
         "question": "Which animations should uc_generate_sprites produce?",
         "type": "select",
@@ -448,7 +724,9 @@
       {
         "id": "aq_image_model",
         "scope": "connector",
-        "connector_names": ["image_ai"],
+        "connector_names": [
+          "image_ai"
+        ],
         "category": "configuration",
         "question": "Which image-AI provider should generate the sprites?",
         "type": "select",
@@ -459,14 +737,18 @@
         },
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
-        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (Leonardo AI, and any other image-AI connectors you've added). If the list is empty, connect an image-AI provider first — Leonardo has the strongest pixel-art reference-image fidelity.",
+        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (image generation AI, and any other image-AI connectors you've added). If the list is empty, connect an image-AI provider first — image generation AI has the strongest pixel-art reference-image fidelity.",
         "dimension": "connectors"
       },
       {
         "id": "aq_storage_target",
         "scope": "connector",
-        "connector_names": ["storage"],
-        "use_case_ids": ["uc_image_to_video"],
+        "connector_names": [
+          "storage"
+        ],
+        "use_case_ids": [
+          "uc_image_to_video"
+        ],
         "category": "configuration",
         "question": "Where should generated videos and sprite sheets be saved?",
         "type": "select",

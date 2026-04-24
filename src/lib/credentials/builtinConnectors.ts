@@ -93,6 +93,7 @@ import ntfy from '../../../scripts/connectors/builtin/ntfy.json';
 import obsidian from '../../../scripts/connectors/builtin/obsidian.json';
 import vectorKnowledgeBase from '../../../scripts/connectors/builtin/vector-knowledge-base.json';
 import localMessaging from '../../../scripts/connectors/builtin/local-messaging.json';
+import localDrive from '../../../scripts/connectors/builtin/local-drive.json';
 import codebase from '../../../scripts/connectors/builtin/codebase.json';
 import codebases from '../../../scripts/connectors/builtin/codebases.json';
 import clockify from '../../../scripts/connectors/builtin/clockify.json';
@@ -195,6 +196,7 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   obsidian,
   vectorKnowledgeBase,
   localMessaging,
+  localDrive,
   codebase,
   codebases,
   clockify,

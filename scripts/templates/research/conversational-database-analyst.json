@@ -5,11 +5,19 @@
   "description": "Natural-language-to-SQL bridge — ask business questions in plain English, get accurate read-only SQL answers with schema introspection, conversation memory, safety validation, and audit logging. Delivered through chat; backed by the user's database credential.",
   "icon": "DatabaseZap",
   "color": "#2563EB",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Database", "Messaging"],
+  "service_flow": [
+    "Database",
+    "Messaging"
+  ],
   "payload": {
-    "service_flow": ["Database", "Messaging"],
+    "service_flow": [
+      "Database",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Let the team ask business questions in plain English and get trustworthy, read-only answers with full audit trail — no BI seat required.",
       "identity": {
@@ -42,11 +50,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities with distinct cadences:\n\n1. **uc_ask_question** (event-listen on incoming chat messages via webhook or polling) — parse the question + user + channel. Load conversation context (`data/conversation_context.json`, sliding window of last 5 interactions per user per channel). Detect follow-up references (pronouns, 'instead', 'also', 'same but'). Resolve against prior context or ask clarifying. Load schema cache (`data/schema_cache.json`); refresh if stale (>24h) via the database connector. Generate SELECT SQL using schema + foreign-key JOINs. Run safety validation — write-ops scan, allowlist check, subquery/CTE recursion, dangerous functions, complexity guard (max 5 JOINs, no unbounded scans on tables >1M rows), 30s timeout. Execute via the DB connector. Format per result size (1-10 rows = table, 11-50 = summary + top/bottom, >50 = statistics). Post via messaging with SQL in collapsible block + execution metadata. Log to `data/query_log.json`. Update conversation context. Emit `analyst.question.answered` or `analyst.question.rejected` per safety result.\n\n2. **uc_schema_refresh** (daily 2am, default) — introspect live schema via the DB connector. Diff against cached schema. On changes: update cache, notify through messaging with a summary, emit `analyst.schema.changed`. On failure: keep existing cache, notify.\n\n3. **uc_weekly_digest** (weekly Monday 9am, default) — read `data/query_log.json` for past 7 days. Cluster similar questions by intent. Compute totals, unique users, avg execution time, rejection rate, most-queried tables. Suggest saved-query or dashboard candidates for recurring patterns. Deliver through messaging. Rotate log monthly if month boundary crossed.\n\nState files: `data/schema_cache.json`, `data/query_log.json`, `data/conversation_context.json`, `data/pending_responses.json` (queued during outages). Atomic read-merge-write always.",
-      "tool_guidance": "**Database connector**:\n- Schema introspection: query `information_schema` via RPC or the provider's REST endpoint. Cache as `{cached_at, tables: [{name, schema, columns, foreign_keys}]}`.\n- Read execution: prefer a user-defined `execute_readonly_query` RPC when available; otherwise use the provider's PostgREST-style endpoint for simple queries.\n- Timeout: 30s statement timeout wrap on every query.\n- Row-count estimate: provider-specific (e.g., `pg_stat_user_tables.n_live_tup`, `Prefer: count=estimated` header) — used for complexity guard.\n\n**Safety validation (mandatory, before every execute)**:\n1. Write-ops scan: regex reject INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE/CREATE/GRANT/REVOKE/EXECUTE/CALL (case-insensitive, skipping SQL comments).\n2. Allowlist: every identifier parsed from FROM/JOIN must be in `allowed_tables`.\n3. Subquery recursion: parse CTEs + nested SELECTs; re-run steps 1+2 on each.\n4. Dangerous functions: block `pg_sleep`, `dblink`, `copy`, `lo_export` (or provider equivalents).\n5. Complexity guard: reject if JOIN count > 5 or estimated rows > 1M without filter.\n6. Wrap in `SET LOCAL statement_timeout = '30s'` or equivalent.\n\n**Messaging**:\n- Post answer with: result (table/summary/statistics per size), SQL in collapsible/code block, `X rows in Yms` metadata.\n- Reply in-thread when possible.\n- Split messages at provider length limits.\n\n**Local state**:\n- `data/schema_cache.json` — full schema with timestamp.\n- `data/query_log.json` — append-only audit trail; rotated monthly.\n- `data/conversation_context.json` — sliding window of last 5 interactions per user per channel.",
+      "operating_instructions": "Three capabilities with distinct cadences: 1. **uc_ask_question** (event-listen on incoming chat messages via webhook or polling) — parse the question + user + channel. Load conversation context (`data/conversation_context.json`, sliding window of last 5 interactions per user per channel). Detect follow-up references (pronouns, 'instead', 'also', 'same but'). Resolve against prior context or ask clarifying. Load schema cache (`data/schema_cache.json`); refresh if stale (>24h) via the database connector. Generate SELECT SQL using schema + foreign-key JOINs. Run safety validation — write-ops scan, allowlist check, subquery/CTE recursion, dangerous functions, complexity guard (max 5 JOINs, no unbounded scans on tables >1M rows), 30s timeout. Execute via the DB connector. Format per result size (1-10 rows = table, 11-50 = summary + top/bottom, >50 = statistics). Post via messaging with SQL in collapsible block + execution metadata. Log to `data/query_log.json`. Update conversation context. Emit `analyst.question.answered` or `analyst.question.rejected` per safety result. 2. **uc_schema_refresh** (daily 2am, default) — introspect live schema via the DB connector. Diff against cached schema. On changes: update cache, notify through messaging with a summary, emit `analyst.schema.changed`. On failure: keep existing cache, notify. 3. **uc_weekly_digest** (weekly Monday 9am, default) — read `data/query_log.json` for past 7 days. Cluster similar questions by intent. Compute totals, unique users, avg execution time, rejection rate, most-queried tables. Suggest saved-query or dashboard candidates for recurring patterns. Deliver through messaging. Rotate log monthly if month boundary crossed. State files: `data/schema_cache.json`, `data/query_log.json`, `data/conversation_context.json`, `data/pending_responses.json` (queued during outages). Atomic read-merge-write always.",
+      "tool_guidance": "**Database connector**:\n- Schema introspection: query `information_schema` via RPC or the provider's REST endpoint. Cache as `{cached_at, tables: [{name, schema, columns, foreign_keys}]}`.\n- Read execution: prefer a user-defined `execute_readonly_query` RPC when available; otherwise use the provider's PostgREST-style endpoint for simple queries.\n- Timeout: 30s statement timeout wrap on every query.\n- Row-count estimate: provider-specific (e.g., `pg_stat_user_tables.n_live_tup`, `Prefer: count=estimated` header) — used for complexity guard. **Safety validation (mandatory, before every execute)**:\n1. Write-ops scan: regex reject INSERT/UPDATE/DELETE/DROP/ALTER/TRUNCATE/CREATE/GRANT/REVOKE/EXECUTE/CALL (case-insensitive, skipping SQL comments).\n2. Allowlist: every identifier parsed from FROM/JOIN must be in `allowed_tables`.\n3. Subquery recursion: parse CTEs + nested SELECTs; re-run steps 1+2 on each.\n4. Dangerous functions: block `pg_sleep`, `dblink`, `copy`, `lo_export` (or provider equivalents).\n5. Complexity guard: reject if JOIN count > 5 or estimated rows > 1M without filter.\n6. Wrap in `SET LOCAL statement_timeout = '30s'` or equivalent. **Messaging**:\n- Post answer with: result (table/summary/statistics per size), SQL in collapsible/code block, `X rows in Yms` metadata.\n- Reply in-thread when possible.\n- Split messages at provider length limits. **Local state**:\n- `data/schema_cache.json` — full schema with timestamp.\n- `data/query_log.json` — append-only audit trail; rotated monthly.\n- `data/conversation_context.json` — sliding window of last 5 interactions per user per channel.",
       "error_handling": "DB timeout (>30s) → cancel + suggest narrowing. Rate limit (429) → back off per Retry-After, emit temporary status message, retry on next cycle. Auth 401/403 → emit user_message about credential refresh, do not retry. SQL syntax error → show the failed SQL + ask to rephrase; never silently retry. Table/column not found → trigger schema refresh, retry once; if still failing, report missing entity. Messaging delivery failure → queue in `data/pending_responses.json`, retry on next incoming event. Ambiguous question → ask clarifying with options. Estimated rows > 10K → refuse, suggest filters. Large result set (>50 rows) → summarize with statistics. Corrupted schema cache → reintrospect immediately. Corrupted conversation context → clear for that user/channel + ask them to restate.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "database",
@@ -69,7 +81,7 @@
               "label": "API key / connection key",
               "type": "password",
               "placeholder": "",
-              "helpText": "Provider-specific key. For Supabase: anon or service key. For Postgres REST providers: equivalent API key with read scope.",
+              "helpText": "Provider-specific key. For Supabase: anon or service key. For database REST providers: equivalent API key with read scope.",
               "required": true
             },
             {
@@ -81,7 +93,7 @@
               "required": false
             }
           ],
-          "setup_instructions": "1. Add a `database`-category credential in the Vault (Supabase, Postgres-REST, or equivalent).\n2. Use a read-only role where supported by your provider.\n3. Set allowed_tables to scope access tightly — the allowlist is enforced at query time.\n4. (Optional) Define a Postgres function `execute_readonly_query(query_text text)` on a read-only role for an additional enforcement layer."
+          "setup_instructions": "1. Add a `database`-category credential in the Vault (Supabase, database-REST, or equivalent).\n2. Use a read-only role where supported by your provider.\n3. Set allowed_tables to scope access tightly — the allowlist is enforced at query time.\n4. (Optional) Define a database function `execute_readonly_query(query_text text)` on a read-only role for an additional enforcement layer."
         },
         {
           "name": "messaging",
@@ -114,10 +126,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "messaging.message.received" },
+          "config": {
+            "event_type": "messaging.message.received"
+          },
           "description": "Event-listen on incoming chat messages from the configured messaging connector. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["database", "messaging"],
+        "connectors": [
+          "database",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -164,34 +181,121 @@
           "target_database": "{{param.aq_target_database}}",
           "allowed_tables": "{{param.aq_allowed_tables}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "q1", "type": "start", "label": "Message received" },
-            { "id": "q2", "type": "action", "label": "Load conversation context + resolve follow-up" },
-            { "id": "q3", "type": "action", "label": "Load schema cache (refresh if stale)" },
-            { "id": "q4", "type": "action", "label": "Generate SELECT SQL" },
-            { "id": "q5", "type": "decision", "label": "Safety validation passed?" },
-            { "id": "q6", "type": "connector", "label": "Execute via database", "connector": "database" },
-            { "id": "q7", "type": "action", "label": "Format result per size" },
-            { "id": "q8", "type": "connector", "label": "Deliver answer via messaging", "connector": "messaging" },
-            { "id": "q9", "type": "action", "label": "Log + update conversation context" },
-            { "id": "q10", "type": "event", "label": "Emit analyst.question.answered or .rejected" },
-            { "id": "q11", "type": "end", "label": "Response delivered" }
+            {
+              "id": "q1",
+              "type": "start",
+              "label": "Message received"
+            },
+            {
+              "id": "q2",
+              "type": "action",
+              "label": "Load conversation context + resolve follow-up"
+            },
+            {
+              "id": "q3",
+              "type": "action",
+              "label": "Load schema cache (refresh if stale)"
+            },
+            {
+              "id": "q4",
+              "type": "action",
+              "label": "Generate SELECT SQL"
+            },
+            {
+              "id": "q5",
+              "type": "decision",
+              "label": "Safety validation passed?"
+            },
+            {
+              "id": "q6",
+              "type": "connector",
+              "label": "Execute via database",
+              "connector": "database"
+            },
+            {
+              "id": "q7",
+              "type": "action",
+              "label": "Format result per size"
+            },
+            {
+              "id": "q8",
+              "type": "connector",
+              "label": "Deliver answer via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "q9",
+              "type": "action",
+              "label": "Log + update conversation context"
+            },
+            {
+              "id": "q10",
+              "type": "event",
+              "label": "Emit analyst.question.answered or.rejected"
+            },
+            {
+              "id": "q11",
+              "type": "end",
+              "label": "Response delivered"
+            }
           ],
           "edges": [
-            { "source": "q1", "target": "q2" },
-            { "source": "q2", "target": "q3" },
-            { "source": "q3", "target": "q4" },
-            { "source": "q4", "target": "q5" },
-            { "source": "q5", "target": "q6", "variant": "yes", "label": "Passed" },
-            { "source": "q5", "target": "q9", "variant": "no", "label": "Rejected" },
-            { "source": "q6", "target": "q7" },
-            { "source": "q7", "target": "q8" },
-            { "source": "q8", "target": "q9" },
-            { "source": "q9", "target": "q10" },
-            { "source": "q10", "target": "q11" }
+            {
+              "source": "q1",
+              "target": "q2"
+            },
+            {
+              "source": "q2",
+              "target": "q3"
+            },
+            {
+              "source": "q3",
+              "target": "q4"
+            },
+            {
+              "source": "q4",
+              "target": "q5"
+            },
+            {
+              "source": "q5",
+              "target": "q6",
+              "variant": "yes",
+              "label": "Passed"
+            },
+            {
+              "source": "q5",
+              "target": "q9",
+              "variant": "no",
+              "label": "Rejected"
+            },
+            {
+              "source": "q6",
+              "target": "q7"
+            },
+            {
+              "source": "q7",
+              "target": "q8"
+            },
+            {
+              "source": "q8",
+              "target": "q9"
+            },
+            {
+              "source": "q9",
+              "target": "q10"
+            },
+            {
+              "source": "q10",
+              "target": "q11"
+            }
           ]
         }
       },
@@ -206,10 +310,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 2 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 2 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 2:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["database", "messaging"],
+        "connectors": [
+          "database",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -229,28 +339,94 @@
         "error_handling": "Introspection failure → keep existing cache, emit user_message with the error.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily tick" },
-            { "id": "r2", "type": "connector", "label": "Introspect live schema", "connector": "database" },
-            { "id": "r3", "type": "action", "label": "Diff vs cache" },
-            { "id": "r4", "type": "decision", "label": "Changes detected?" },
-            { "id": "r5", "type": "action", "label": "Update cache" },
-            { "id": "r6", "type": "connector", "label": "Notify via messaging", "connector": "messaging" },
-            { "id": "r7", "type": "event", "label": "Emit analyst.schema.changed" },
-            { "id": "r8", "type": "end", "label": "Refresh complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Introspect live schema",
+              "connector": "database"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Diff vs cache"
+            },
+            {
+              "id": "r4",
+              "type": "decision",
+              "label": "Changes detected?"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Update cache"
+            },
+            {
+              "id": "r6",
+              "type": "connector",
+              "label": "Notify via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit analyst.schema.changed"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Refresh complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5", "variant": "yes", "label": "Yes" },
-            { "source": "r4", "target": "r8", "variant": "no", "label": "No changes" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "r4",
+              "target": "r8",
+              "variant": "no",
+              "label": "No changes"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -265,10 +441,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -293,25 +474,75 @@
         "error_handling": "Empty week → deliver short 'no activity' note. Corrupted log → archive + fresh start, note the gap in the digest.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Weekly tick" },
-            { "id": "d2", "type": "action", "label": "Load query_log past 7 days" },
-            { "id": "d3", "type": "action", "label": "Cluster patterns + compute stats" },
-            { "id": "d4", "type": "action", "label": "Suggest saved-queries for recurring intents" },
-            { "id": "d5", "type": "connector", "label": "Deliver digest via messaging", "connector": "messaging" },
-            { "id": "d6", "type": "event", "label": "Emit analyst.digest.delivered" },
-            { "id": "d7", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load query_log past 7 days"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Cluster patterns + compute stats"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Suggest saved-queries for recurring intents"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Deliver digest via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit analyst.digest.delivered"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       }
@@ -320,7 +551,9 @@
       {
         "id": "aq_target_database",
         "scope": "connector",
-        "connector_names": ["database"],
+        "connector_names": [
+          "database"
+        ],
         "category": "configuration",
         "question": "Which database should the analyst query against?",
         "type": "select",
@@ -331,13 +564,15 @@
         },
         "maps_to": "use_cases[uc_ask_question].sample_input.target_database",
         "variable_name": "target_database",
-        "context": "Auto-detected from your `database`-category credentials (Supabase, Postgres-REST, etc.). Required — add one first if the list is empty.",
+        "context": "Auto-detected from your `database`-category credentials (Supabase, database-REST, etc.). Required — add one first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_allowed_tables",
         "scope": "capability",
-        "use_case_ids": ["uc_ask_question"],
+        "use_case_ids": [
+          "uc_ask_question"
+        ],
         "category": "boundaries",
         "question": "Which tables should the analyst have access to?",
         "type": "textarea",
@@ -351,7 +586,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should the analyst read questions from and deliver answers to?",
         "type": "select",

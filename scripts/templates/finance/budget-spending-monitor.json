@@ -2,19 +2,27 @@
   "id": "budget-spending-monitor",
   "schema_version": 3,
   "name": "Budget Spending Monitor",
-  "description": "Silent-when-normal cloud cost watchdog. Pulls your weekly billing from Google Cloud, AWS, or Azure, compares against a threshold and last week's baseline, and only messages you when something actually needs attention — threshold breach, service spike, or a brand-new service.",
+  "description": "Silent-when-normal cloud cost watchdog. Pulls your weekly billing from cloud, cloud, or cloud, compares against a threshold and last week's baseline, and only messages you when something actually needs attention — threshold breach, service spike, or a brand-new service.",
   "icon": "DollarSign",
   "color": "#EF4444",
-  "category": ["finance"],
-  "service_flow": ["Cloud Billing API", "Messages"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Cloud Billing API",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Cloud Billing API", "Messages"],
+    "service_flow": [
+      "Cloud Billing API",
+      "Messages"
+    ],
     "persona": {
       "goal": "Catch cloud-cost surprises before they compound — silent on normal weeks, sharp and specific when something changes.",
       "identity": {
         "role": "Cloud-cost watchdog that only speaks when the numbers deviate from normal.",
-        "description": "Weekly pulls billing data from the user's cloud provider (GCP, AWS, Azure, or any billing API supplied via vault credential), computes week-over-week deltas against a rolling baseline, and alerts on threshold breach, >50% service spike, new-service appearance, or 4+-day cost acceleration. Silence is the success state."
+        "description": "Weekly pulls billing data from the user's cloud provider (cloud, cloud, cloud, or any billing API supplied via vault credential), computes week-over-week deltas against a rolling baseline, and alerts on threshold breach, >50% service spike, new-service appearance, or 4+-day cost acceleration. Silence is the success state."
       },
       "voice": {
         "style": "Terse, specific, number-led. No 'just checking in' filler. When there's nothing to report, the agent sends nothing.",
@@ -43,19 +51,25 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Single capability with a paired recovery flow:\n\n1. **uc_weekly_spending_check** — Weekly tick. Step 0 on first run: probe the billing API for available projects/accounts via the credential-injected auth, surface a pending_question so the user picks one, persist to `billing_config.json`. Every subsequent run: fetch last-7-day costs (total + per-service + daily breakdown), load `spending_history.json`, compute WoW deltas, evaluate against the `spending_threshold` parameter and anomaly rules. If ANY anomaly condition is met, render a structured Messages report — otherwise do nothing except update history. Always emit the relevant `budget.*` events when alerting.\n\n2. **uc_api_recovery** — Event-listens for `budget.access.failure`. Classifies the failure (auth / rate-limit / partial / empty) and delivers an appropriately-worded Messages alert with credential troubleshooting steps. Auth failure is itself an alert — the user needs to know they're running blind.\n\nThe persona's sole recurring delivery is uc_weekly_spending_check. uc_api_recovery is an event-driven safety net.",
-      "tool_guidance": "**Provider detection**: inspect the injected credential's `service_type` to determine which billing API to call:\n- `gcp_cloud` → `GET https://cloudbilling.googleapis.com/v1/billingAccounts/{account}/costs?filter.usagePeriod.startDate={s}&filter.usagePeriod.endDate={e}` or query BigQuery billing export for per-service.\n- `aws_cloud` → `POST https://ce.us-east-1.amazonaws.com/` action `GetCostAndUsage`, body `{TimePeriod, Granularity: DAILY, Metrics: [UnblendedCost], GroupBy: [{Type: DIMENSION, Key: SERVICE}]}`.\n- `azure_cloud` → `POST https://management.azure.com/subscriptions/{sub}/providers/Microsoft.CostManagement/query?api-version=2023-11-01`.\n- Any other billing-category credential → the user-configured `api_base_url` + whatever auth scheme the credential specifies.\n\n**Project probe** (first run only): GCP `GET /v1/projects`, AWS Organizations `ListAccounts`, Azure `GET /subscriptions`.\n\n**Local state**: `billing_config.json` (provider, account/project, currency), `spending_history.json` (rolling 8-week per-service data).\n\n**Parameter reference**: `{{param.spending_threshold}}` is the free parameter — adjustable without rebuild. Default $500.",
+      "operating_instructions": "Single capability with a paired recovery flow: 1. **uc_weekly_spending_check** — Weekly tick. Step 0 on first run: probe the billing API for available projects/accounts via the credential-injected auth, surface a pending_question so the user picks one, persist to `billing_config.json`. Every subsequent run: fetch last-7-day costs (total + per-service + daily breakdown), load `spending_history.json`, compute WoW deltas, evaluate against the `spending_threshold` parameter and anomaly rules. If ANY anomaly condition is met, render a structured Messages report — otherwise do nothing except update history. Always emit the relevant `budget.*` events when alerting. 2. **uc_api_recovery** — Event-listens for `budget.access.failure`. Classifies the failure (auth / rate-limit / partial / empty) and delivers an appropriately-worded Messages alert with credential troubleshooting steps. Auth failure is itself an alert — the user needs to know they're running blind. The persona's sole recurring delivery is uc_weekly_spending_check. uc_api_recovery is an event-driven safety net.",
+      "tool_guidance": "**Provider detection**: inspect the injected credential's `service_type` to determine which billing API to call:\n- `gcp_cloud` → `GET https://cloudbilling.googleapis.com/v1/billingAccounts/{account}/costs?filter.usagePeriod.startDate={s}&filter.usagePeriod.endDate={e}` or query BigQuery billing export for per-service.\n- `aws_cloud` → `POST https://ce.us-east-1.amazonaws.com/` action `GetCostAndUsage`, body `{TimePeriod, Granularity: DAILY, Metrics: [UnblendedCost], GroupBy: [{Type: DIMENSION, Key: SERVICE}]}`.\n- `azure_cloud` → `POST https://management.azure.com/subscriptions/{sub}/providers/Microsoft.CostManagement/query?api-version=2023-11-01`.\n- Any other billing-category credential → the user-configured `api_base_url` + whatever auth scheme the credential specifies. **Project probe** (first run only): cloud `GET /v1/projects`, cloud Organizations `ListAccounts`, cloud `GET /subscriptions`. **Local state**: `billing_config.json` (provider, account/project, currency), `spending_history.json` (rolling 8-week per-service data). **Parameter reference**: `{{param.spending_threshold}}` is the free parameter — adjustable without rebuild. Default $500.",
       "error_handling": "Billing API 401/403 → emit `budget.access.failure` with reason=auth; uc_api_recovery sends the re-auth alert. 429 → respect Retry-After (cloud billing APIs rarely rate-limit; retry once after 30s). Partial data → report what was retrieved with a 'services unavailable: X' footer. Empty billing → check if billing export is enabled; emit `budget.access.failure` with reason=empty. Missing `spending_threshold` → default to 500 and note in the alert. First run (no history) → report absolute numbers only; establish baseline; don't treat the absence of history as anomalous. Messages delivery failure during an alert → save full alert payload to `latest_alert.json` and retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "cloud_billing",
+          "name": "cloud",
           "label": "Cloud Billing",
           "auth_type": "oauth2",
           "role": "billing_data",
           "category": "cloud",
-          "categories": ["cloud_billing"],
+          "categories": [
+            "cloud_billing"
+          ],
           "required": true,
           "api_base_url": "https://configured-at-adoption",
           "credential_fields": [
@@ -64,7 +78,7 @@
               "label": "API Token or Service Account Key",
               "type": "password",
               "placeholder": "your-cloud-billing-api-token",
-              "helpText": "API token or service account credentials for your cloud provider's billing API. Google: service account JSON key. AWS: access key ID + secret. Azure: client ID + secret.",
+              "helpText": "API token or service account credentials for your cloud provider's billing API. Google: service account JSON key. cloud: access key ID + secret. cloud: client ID + secret.",
               "required": true
             },
             {
@@ -72,7 +86,7 @@
               "label": "Billing Account / Project ID",
               "type": "text",
               "placeholder": "my-project-123 or 012345678901",
-              "helpText": "Google: project ID or billing account ID. AWS: account ID. Azure: subscription ID.",
+              "helpText": "Google: project ID or billing account ID. cloud: account ID. cloud: subscription ID.",
               "required": true
             },
             {
@@ -84,7 +98,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Choose your cloud provider (Google Cloud, AWS, Azure)\n2. For Google Cloud: create a service account with Billing Viewer role, download the JSON key, and ensure billing export to BigQuery is enabled\n3. For AWS: create an IAM user with ce:GetCostAndUsage permission, generate access keys\n4. For Azure: register an app in Azure AD with Cost Management Reader role on the subscription\n5. Note your billing account/project/subscription ID\n6. The agent will test the connection during adoption"
+          "setup_instructions": "1. Choose your cloud provider (cloud, cloud, cloud)\n2. For cloud: create a service account with Billing Viewer role, download the JSON key, and ensure billing export to BigQuery is enabled\n3. For cloud: create an IAM user with ce:GetCostAndUsage permission, generate access keys\n4. For cloud: register an app in cloud AD with Cost Management Reader role on the subscription\n5. Note your billing account/project/subscription ID\n6. The agent will test the connection during adoption"
         }
       ],
       "notification_channels_default": [
@@ -107,10 +121,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Mondays 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["cloud_billing"],
+        "connectors": [
+          "cloud"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -153,14 +172,25 @@
           {
             "name": "currency",
             "type": "enum",
-            "options": ["USD", "EUR", "GBP", "CAD", "AUD", "Other"],
+            "options": [
+              "USD",
+              "EUR",
+              "GBP",
+              "CAD",
+              "AUD",
+              "Other"
+            ],
             "default": "USD",
             "description": "Display currency for alert formatting. Does not convert — uses the provider's native billing currency."
           },
           {
             "name": "sensitivity",
             "type": "enum",
-            "options": ["conservative", "balanced", "aggressive"],
+            "options": [
+              "conservative",
+              "balanced",
+              "aggressive"
+            ],
             "default": "balanced",
             "description": "Conservative: threshold breach only. Balanced: + >50% service spikes + new-service detection. Aggressive: + >25% spikes + 4-day acceleration."
           }
@@ -170,30 +200,102 @@
           "currency": "{{param.aq_currency}}",
           "sensitivity": "{{param.aq_sensitivity}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Weekly tick" },
-            { "id": "s2", "type": "action", "label": "Load billing_config + history + memory" },
-            { "id": "s3", "type": "connector", "label": "Fetch 7-day costs (total + per-service)", "connector": "cloud_billing" },
-            { "id": "s4", "type": "action", "label": "Compute WoW deltas + acceleration check" },
-            { "id": "s5", "type": "decision", "label": "Any anomaly condition met?" },
-            { "id": "s6", "type": "action", "label": "Render structured Messages report" },
-            { "id": "s7", "type": "event", "label": "Emit budget.threshold.exceeded / service.anomaly / service.new" },
-            { "id": "s8", "type": "action", "label": "Update spending_history + exceedance ledger" },
-            { "id": "s9", "type": "end", "label": "Week check complete (silent if no anomaly)" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load billing_config + history + memory"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Fetch 7-day costs (total + per-service)",
+              "connector": "cloud_billing"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Compute WoW deltas + acceleration check"
+            },
+            {
+              "id": "s5",
+              "type": "decision",
+              "label": "Any anomaly condition met?"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Render structured Messages report"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit budget.threshold.exceeded / service.anomaly / service.new"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Update spending_history + exceedance ledger"
+            },
+            {
+              "id": "s9",
+              "type": "end",
+              "label": "Week check complete (silent if no anomaly)"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6", "variant": "yes", "label": "Anomaly" },
-            { "source": "s5", "target": "s8", "variant": "no", "label": "Normal" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6",
+              "variant": "yes",
+              "label": "Anomaly"
+            },
+            {
+              "source": "s5",
+              "target": "s8",
+              "variant": "no",
+              "label": "Normal"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            }
           ]
         }
       },
@@ -208,7 +310,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "budget.access.failure" },
+          "config": {
+            "event_type": "budget.access.failure"
+          },
           "description": "Event-triggered. Fires only when uc_weekly_spending_check hits an API failure."
         },
         "connectors": [],
@@ -231,21 +335,56 @@
         "error_handling": "If Messages is itself unavailable, write the recovery payload to `pending_recovery.json` and retry on the next weekly tick.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "budget.access.failure received" },
-            { "id": "r2", "type": "action", "label": "Classify reason (auth / rate / partial / empty)" },
-            { "id": "r3", "type": "action", "label": "Compose provider-specific troubleshooting steps" },
-            { "id": "r4", "type": "action", "label": "Deliver via Messages" },
-            { "id": "r5", "type": "end", "label": "Recovery alert delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "budget.access.failure received"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Classify reason (auth / rate / partial / empty)"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Compose provider-specific troubleshooting steps"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Deliver via Messages"
+            },
+            {
+              "id": "r5",
+              "type": "end",
+              "label": "Recovery alert delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            }
           ]
         }
       }
@@ -254,24 +393,28 @@
       {
         "id": "aq_cloud_provider",
         "scope": "connector",
-        "connector_names": ["cloud_billing"],
+        "connector_names": [
+          "cloud_billing"
+        ],
         "category": "configuration",
         "question": "Which cloud billing credential should this persona monitor?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "cloud_billing",
+          "service_type": "cloud",
           "operation": "list_credentials",
           "source": "vault"
         },
         "maps_to": "persona.connectors[cloud_billing]",
         "variable_name": "cloud_provider",
-        "context": "Options come from cloud-billing credentials in your Vault (GCP, AWS, Azure, or another billing-category connector). Add a credential first if the list is empty — the persona needs billing API access to monitor.",
+        "context": "Options come from cloud-billing credentials in your Vault (cloud, cloud, cloud, or another billing-category connector). Add a credential first if the list is empty — the persona needs billing API access to monitor.",
         "dimension": "connectors"
       },
       {
         "id": "aq_spending_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_spending_check"],
+        "use_case_ids": [
+          "uc_weekly_spending_check"
+        ],
         "category": "configuration",
         "question": "What is your weekly spending threshold?",
         "type": "text",
@@ -285,11 +428,20 @@
       {
         "id": "aq_currency",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_spending_check"],
+        "use_case_ids": [
+          "uc_weekly_spending_check"
+        ],
         "category": "configuration",
         "question": "What currency are your billing costs in?",
         "type": "select",
-        "options": ["USD ($)", "EUR (€)", "GBP (£)", "CAD (C$)", "AUD (A$)", "Other"],
+        "options": [
+          "USD ($)",
+          "EUR (€)",
+          "GBP (£)",
+          "CAD (C$)",
+          "AUD (A$)",
+          "Other"
+        ],
         "default": "USD ($)",
         "allow_custom": true,
         "maps_to": "use_cases[uc_weekly_spending_check].sample_input.currency",
@@ -300,7 +452,9 @@
       {
         "id": "aq_sensitivity",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_spending_check"],
+        "use_case_ids": [
+          "uc_weekly_spending_check"
+        ],
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",

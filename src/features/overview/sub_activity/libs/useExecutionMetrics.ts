@@ -10,6 +10,21 @@ import { fmtDate } from './executionMetricsHelpers';
 
 type TimeWindow = 1 | 7 | 30 | 90;
 
+/**
+ * Execution metrics hook for the Activity subtab.
+ *
+ * Same derivation pipeline as the Executions-subtab variant (chart rows,
+ * per-persona cost stacks, anomaly dates, overall success rate, optional
+ * previous-period merge) with the addition of `trends` computed from
+ * {@link computePeriodTrends} for the KPI cards.
+ *
+ * Initial fetch is owned by `useExecutionDashboardPipeline`; the returned
+ * `load()` refetches for the current `fetchDays` window (doubled when
+ * compare mode is enabled) and is intended for manual retry after errors.
+ *
+ * @returns Dashboard state, filter setters, and derived series including
+ *   `trends` (null when compare is disabled or chart data is empty).
+ */
 export function useExecutionMetrics() {
   const { dayRange, setDayRange, customDateRange, setCustomDateRange, effectiveDays, compareEnabled, setCompareEnabled, previousPeriodDays } = useOverviewFilters();
   const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({

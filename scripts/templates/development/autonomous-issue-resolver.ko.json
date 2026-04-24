@@ -39,9 +39,21 @@
           "name": "jira",
           "label": "Jira(Atlassian)",
           "credential_fields": [
-            { "key": "domain", "label": "Atlassian 도메인", "helpText": "Atlassian 도메인. Jira URL이 https://your-company.atlassian.net인 경우 'your-company'를 입력하세요." },
-            { "key": "email", "label": "계정 이메일", "helpText": "Atlassian 계정에 연결된 이메일 주소." },
-            { "key": "api_token", "label": "API 토큰", "helpText": "https://id.atlassian.com/manage-profile/security/api-tokens에서 생성하세요. 이메일과 결합되어 Basic Auth 자격 증명을 형성합니다." }
+            {
+              "key": "domain",
+              "label": "Atlassian 도메인",
+              "helpText": "Atlassian 도메인. Jira URL이 https://your-company.atlassian.net인 경우 'your-company'를 입력하세요."
+            },
+            {
+              "key": "email",
+              "label": "계정 이메일",
+              "helpText": "Atlassian 계정에 연결된 이메일 주소."
+            },
+            {
+              "key": "api_token",
+              "label": "API 토큰",
+              "helpText": "https://id.atlassian.com/manage-profile/security/api-tokens에서 생성하세요. 이메일과 결합되어 Basic Auth 자격 증명을 형성합니다."
+            }
           ],
           "setup_instructions": "1. https://id.atlassian.com/manage-profile/security/api-tokens에 접속.\n2. 'Issue Resolver Bot'이라는 라벨의 토큰을 생성하고 복사(한 번만 표시됨).\n3. Atlassian 도메인(Jira URL의 서브도메인)을 입력.\n4. Atlassian 계정의 이메일을 입력.\n5. 에이전트는 base64(email:api_token)을 사용한 Basic Auth로 인증합니다."
         },
@@ -49,8 +61,16 @@
           "name": "notion",
           "label": "Notion",
           "credential_fields": [
-            { "key": "integration_token", "label": "내부 통합 토큰", "helpText": "https://www.notion.so/my-integrations에서 내부 통합을 생성하고 토큰을 복사한 다음 KB 데이터베이스를 통합과 공유하세요." },
-            { "key": "database_id", "label": "지식베이스 데이터베이스 ID", "helpText": "Notion KB 데이터베이스를 엽니다. 데이터베이스 ID는 URL의 '?' 앞에 있는 32자리 16진수 문자열입니다." }
+            {
+              "key": "integration_token",
+              "label": "내부 통합 토큰",
+              "helpText": "https://www.notion.so/my-integrations에서 내부 통합을 생성하고 토큰을 복사한 다음 KB 데이터베이스를 통합과 공유하세요."
+            },
+            {
+              "key": "database_id",
+              "label": "지식베이스 데이터베이스 ID",
+              "helpText": "Notion KB 데이터베이스를 엽니다. 데이터베이스 ID는 URL의 '?' 앞에 있는 32자리 16진수 문자열입니다."
+            }
           ],
           "setup_instructions": "1. https://www.notion.so/my-integrations에서 'Issue Resolver Bot'이라는 새 통합 생성.\n2. 내부 통합 토큰 복사.\n3. KB 데이터베이스 열기 → '...' 메뉴 → 'Add connections' → 통합 선택.\n4. URL에서 32자리 데이터베이스 ID 복사."
         },
@@ -58,13 +78,20 @@
           "name": "slack",
           "label": "Slack",
           "credential_fields": [
-            { "key": "bot_token", "label": "Bot User OAuth 토큰", "helpText": "Slack 앱 → OAuth & Permissions → Bot User OAuth Token에서. 필요한 스코프: chat:write, users:read, users:read.email." }
+            {
+              "key": "bot_token",
+              "label": "Bot User OAuth 토큰",
+              "helpText": "Slack 앱 → OAuth & Permissions → Bot User OAuth Token에서. 필요한 스코프: chat:write, users:read, users:read.email."
+            }
           ],
           "setup_instructions": "1. api.slack.com/apps에서 앱 생성 또는 선택.\n2. Bot Token Scopes 추가: chat:write, users:read, users:read.email.\n3. 워크스페이스에 설치하고 Bot User OAuth Token 복사.\n4. 알림 및 에스컬레이션 채널에 봇 초대."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "일일 다이제스트, 주간 보고서 및 자동 해결 알림을 위한 Slack 알림 채널." }
+        {
+          "type": "slack",
+          "description": "일일 다이제스트, 주간 보고서 및 자동 해결 알림을 위한 Slack 알림 채널."
+        }
       ]
     },
     "use_cases": [
@@ -73,10 +100,18 @@
         "title": "정체 이슈 분류 및 해결",
         "description": "15분마다 Jira에서 정체 임계값을 초과하여 오픈된 이슈를 폴링합니다. 상태를 분류하고, 보고자 감정을 평가하며, Notion + 로컬 KB에서 매칭 해결책을 검색하고, 높은 신뢰도의 해결책을 게시하며, 분노 + P1/P2 보고자를 엔지니어링 관리자에게 에스컬레이션하고, 버려진 이슈를 자동 종료합니다.",
         "capability_summary": "정체 이슈 분류 + 감정 주도의 자동 해결, 에스컬레이션, 버려진 이슈 정리.",
-        "suggested_trigger": { "description": "15분마다 Jira에서 정체된 미해결 이슈를 조회." },
+        "suggested_trigger": {
+          "description": "15분마다 Jira에서 정체된 미해결 이슈를 조회."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "자동 해결 알림 및 감정 알림을 위한 기본 알림 채널." },
-          { "type": "slack", "description": "즉각적인 엔지니어링 주의가 필요한 분노 + P1/P2 이슈를 위한 에스컬레이션 채널." }
+          {
+            "type": "slack",
+            "description": "자동 해결 알림 및 감정 알림을 위한 기본 알림 채널."
+          },
+          {
+            "type": "slack",
+            "description": "즉각적인 엔지니어링 주의가 필요한 분노 + P1/P2 이슈를 위한 에스컬레이션 채널."
+          }
         ],
         "review_policy": {
           "context": "신뢰도 60-79의 해결책은 사람 검토를 위해 기록되지만 게시되지 않습니다. 분노 + P1/P2 이슈는 자동 해결을 우회하고 온콜 엔지니어링 매니저를 위한 전체 컨텍스트와 함께 manual_review로 직접 라우팅됩니다."
@@ -85,42 +120,151 @@
           "context": "data/solutions_kb.json은 모든 확인된 해결과 함께 성장합니다: 증상 패턴, 해결 단계, 소스 이슈 키, times_confirmed 카운터, 신뢰도 점수. 거부된 해결책은 신뢰도를 감소시킵니다. 보고자 이메일별 감정 이력은 주기를 통해 누적되어 향후 분류를 개선합니다."
         },
         "event_subscriptions": [
-          { "event_type": "issue.auto_resolved", "description": "페이로드: 이슈 키, 해결책 소스(notion 페이지 URL 또는 로컬 KB 항목 ID), 신뢰도 점수, 게시 시 보고자 감정." },
-          { "event_type": "issue.escalated", "description": "페이로드: 이슈 키, 우선순위, 감정 점수, 에스컬레이션 수신자, 전체 컨텍스트 요약." },
-          { "event_type": "issue.auto_closed", "description": "페이로드: 이슈 키, 이유(abandoned / silently_resolved / confirmation_timeout), 비활성 일수." },
-          { "event_type": "persona.error", "description": "Jira 401, 반복된 Slack 실패 또는 손상된 상태 파일에서 발생. 다운스트림 자격 증명 갱신 또는 관리자 알림 워크플로우를 트리거합니다." }
+          {
+            "event_type": "issue.auto_resolved",
+            "description": "페이로드: 이슈 키, 해결책 소스(notion 페이지 URL 또는 로컬 KB 항목 ID), 신뢰도 점수, 게시 시 보고자 감정."
+          },
+          {
+            "event_type": "issue.escalated",
+            "description": "페이로드: 이슈 키, 우선순위, 감정 점수, 에스컬레이션 수신자, 전체 컨텍스트 요약."
+          },
+          {
+            "event_type": "issue.auto_closed",
+            "description": "페이로드: 이슈 키, 이유(abandoned / silently_resolved / confirmation_timeout), 비활성 일수."
+          },
+          {
+            "event_type": "persona.error",
+            "description": "Jira 401, 반복된 Slack 실패 또는 손상된 상태 파일에서 발생. 다운스트림 자격 증명 갱신 또는 관리자 알림 워크플로우를 트리거합니다."
+          }
         ],
         "error_handling": "Jira 429 → Retry-After 준수, 다음 주기에서 재개. Jira 401 → persona.error 발생 및 자격 증명 갱신 시까지 이 역량 중단. Notion 사용 불가 → KB 검색은 건너뛰되 분류 + 감정 + 에스컬레이션 계속. Slack 큐 → data/pending_slack.json은 다음 주기에 재시도. 댓글 게시 실패 → 로그만, 같은 주기 내 재시도 안 함. 첫 주기 → 관찰만.",
         "input_schema": [
-          { "name": "stale_days", "description": "이슈가 정체로 간주되기까지의 비활성 일수." },
-          { "name": "max_issues_per_cycle", "description": "API 속도 제한 준수를 위해 15분 주기당 처리되는 이슈 수의 상한." },
-          { "name": "confidence_threshold", "description": "해결책 자동 게시를 위한 최소 신뢰도." },
-          { "name": "auto_close_enabled", "description": "활성화되면 30일 이상 비활성 이슈는 정중한 종료 댓글을 받고 Closed로 전환됩니다." },
-          { "name": "eng_manager_email", "description": "분노 + P1/P2 에스컬레이션에 대한 Slack DM을 받는 엔지니어링 매니저." },
-          { "name": "escalation_channel", "description": "높은 우선순위 에스컬레이션 게시를 위한 전용 Slack 채널." }
+          {
+            "name": "stale_days",
+            "description": "이슈가 정체로 간주되기까지의 비활성 일수."
+          },
+          {
+            "name": "max_issues_per_cycle",
+            "description": "API 속도 제한 준수를 위해 15분 주기당 처리되는 이슈 수의 상한."
+          },
+          {
+            "name": "confidence_threshold",
+            "description": "해결책 자동 게시를 위한 최소 신뢰도."
+          },
+          {
+            "name": "auto_close_enabled",
+            "description": "활성화되면 30일 이상 비활성 이슈는 정중한 종료 댓글을 받고 Closed로 전환됩니다."
+          },
+          {
+            "name": "eng_manager_email",
+            "description": "분노 + P1/P2 에스컬레이션에 대한 Slack DM을 받는 엔지니어링 매니저."
+          },
+          {
+            "name": "escalation_channel",
+            "description": "높은 우선순위 에스컬레이션 게시를 위한 전용 Slack 채널."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "label": "폴링 틱", "detail": "15분 cron 발동" },
-            { "id": "n2", "label": "정체 이슈 조회", "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)" },
-            { "id": "n3", "label": "상태 파일 로드", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "label": "새롭거나 업데이트?", "detail": "현재 updated 타임스탬프로 이미 처리된 이슈는 건너뜀" },
-            { "id": "n5", "label": "댓글 가져오기", "detail": "분류 + 감정을 위한 전체 스레드" },
-            { "id": "n6", "label": "상태 분류", "detail": "보고자 대기 / 팀 대기 / 차단됨 / 버려짐 / 정체 활성 / 조용히 해결됨" },
-            { "id": "n7", "label": "감정 점수 1-10", "detail": "최근 댓글에 더 많은 가중치; 분노 + 좌절 신호 감지" },
-            { "id": "n8", "label": "Notion KB 검색", "detail": "제목 + 컴포넌트 태그로 KB 데이터베이스 쿼리" },
-            { "id": "n9", "label": "로컬 KB 검색", "detail": "data/solutions_kb.json의 증상 패턴 매칭" },
-            { "id": "n10", "label": "신뢰도 >= 임계값?", "detail": "복합 점수: 키워드 + 컴포넌트 + 에러 메시지 + 과거 성공률" },
-            { "id": "n11", "label": "해결책 댓글 게시", "detail": "번호 매겨진 단계 + 소스 링크가 있는 공감적 ADF 댓글" },
-            { "id": "n12", "label": "14일 확인 추적", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "label": "분노 + P1/P2?", "detail": "감정 >= 8 AND 우선순위가 (P1, P2)에 있음" },
-            { "id": "n14", "label": "엔지니어링 매니저에게 DM", "detail": "이슈 컨텍스트 + 보고자 불만이 포함된 Slack DM" },
-            { "id": "n15", "label": "에스컬레이션 채널 게시", "detail": "P1/분노 이슈의 공개 가시성" },
-            { "id": "n16", "label": "30일 이상 버려짐?", "detail": "auto_close_enabled AND 30일간 보고자 활동 없음" },
-            { "id": "n17", "label": "버려진 이슈 종료", "detail": "정중한 종료 댓글 + Closed로 전환" },
-            { "id": "n18", "label": "라이프사이클 이벤트 발생", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "label": "상태 원자적 쓰기", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "label": "주기 완료" }
+            {
+              "id": "n1",
+              "label": "폴링 틱",
+              "detail": "15분 cron 발동"
+            },
+            {
+              "id": "n2",
+              "label": "정체 이슈 조회",
+              "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)"
+            },
+            {
+              "id": "n3",
+              "label": "상태 파일 로드",
+              "detail": "data/issue_states.json + data/pending_confirmations.json"
+            },
+            {
+              "id": "n4",
+              "label": "새롭거나 업데이트?",
+              "detail": "현재 updated 타임스탬프로 이미 처리된 이슈는 건너뜀"
+            },
+            {
+              "id": "n5",
+              "label": "댓글 가져오기",
+              "detail": "분류 + 감정을 위한 전체 스레드"
+            },
+            {
+              "id": "n6",
+              "label": "상태 분류",
+              "detail": "보고자 대기 / 팀 대기 / 차단됨 / 버려짐 / 정체 활성 / 조용히 해결됨"
+            },
+            {
+              "id": "n7",
+              "label": "감정 점수 1-10",
+              "detail": "최근 댓글에 더 많은 가중치; 분노 + 좌절 신호 감지"
+            },
+            {
+              "id": "n8",
+              "label": "Notion KB 검색",
+              "detail": "제목 + 컴포넌트 태그로 KB 데이터베이스 쿼리"
+            },
+            {
+              "id": "n9",
+              "label": "로컬 KB 검색",
+              "detail": "data/solutions_kb.json의 증상 패턴 매칭"
+            },
+            {
+              "id": "n10",
+              "label": "신뢰도 >= 임계값?",
+              "detail": "복합 점수: 키워드 + 컴포넌트 + 에러 메시지 + 과거 성공률"
+            },
+            {
+              "id": "n11",
+              "label": "해결책 댓글 게시",
+              "detail": "번호 매겨진 단계 + 소스 링크가 있는 공감적 ADF 댓글"
+            },
+            {
+              "id": "n12",
+              "label": "14일 확인 추적",
+              "detail": "data/pending_confirmations.json"
+            },
+            {
+              "id": "n13",
+              "label": "분노 + P1/P2?",
+              "detail": "감정 >= 8 AND 우선순위가 (P1, P2)에 있음"
+            },
+            {
+              "id": "n14",
+              "label": "엔지니어링 매니저에게 DM",
+              "detail": "이슈 컨텍스트 + 보고자 불만이 포함된 Slack DM"
+            },
+            {
+              "id": "n15",
+              "label": "에스컬레이션 채널 게시",
+              "detail": "P1/분노 이슈의 공개 가시성"
+            },
+            {
+              "id": "n16",
+              "label": "30일 이상 버려짐?",
+              "detail": "auto_close_enabled AND 30일간 보고자 활동 없음"
+            },
+            {
+              "id": "n17",
+              "label": "버려진 이슈 종료",
+              "detail": "정중한 종료 댓글 + Closed로 전환"
+            },
+            {
+              "id": "n18",
+              "label": "라이프사이클 이벤트 발생",
+              "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed"
+            },
+            {
+              "id": "n19",
+              "label": "상태 원자적 쓰기",
+              "detail": "issue_states + escalation_log + pending_confirmations"
+            },
+            {
+              "id": "n20",
+              "label": "주기 완료"
+            }
           ]
         }
       },
@@ -129,28 +273,73 @@
         "title": "일일 지원 다이제스트",
         "description": "매일 오전 9시에 지난 24시간의 Slack 요약을 게시합니다: 자동 해결된 이슈, 에스컬레이션된 이슈, 자동 종료된 이슈, 여전히 정체된 이슈 — 각 카테고리의 주목할 만한 티켓 링크와 함께.",
         "capability_summary": "오전 9시 Slack 요약, 자동 해결/에스컬레이션/자동 종료/여전히 정체 건수 및 이슈 링크.",
-        "suggested_trigger": { "description": "매일 오전 9시에 전일 다이제스트를 편집." },
+        "suggested_trigger": {
+          "description": "매일 오전 9시에 전일 다이제스트를 편집."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "일일 다이제스트가 게시되는 기본 알림 채널." }
+          {
+            "type": "slack",
+            "description": "일일 다이제스트가 게시되는 기본 알림 채널."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.digest.posted", "description": "페이로드: 카테고리별 건수, 카테고리별 상위 3개 주목 이슈 링크." }
+          {
+            "event_type": "support.digest.posted",
+            "description": "페이로드: 카테고리별 건수, 카테고리별 상위 3개 주목 이슈 링크."
+          }
         ],
         "error_handling": "상태 파일 누락 → 데이터 갭을 명시한 최소 다이제스트 게시. Slack 게시 실패 → 지수 백오프로 최대 3회 재시도, 그 후 로그 및 건너뜀.",
         "input_schema": [
-          { "name": "digest_channel", "description": "일일 다이제스트를 위한 Slack 채널." },
-          { "name": "top_issues_per_bucket", "description": "카테고리별 링크된 주목 이슈의 최대 수." }
+          {
+            "name": "digest_channel",
+            "description": "일일 다이제스트를 위한 Slack 채널."
+          },
+          {
+            "name": "top_issues_per_bucket",
+            "description": "카테고리별 링크된 주목 이슈의 최대 수."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "label": "오전 9시 스케줄", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "label": "상태 파일 읽기", "detail": "data/issue_states.json, escalation_log.json — 지난 24h 슬라이스" },
-            { "id": "d3", "label": "카테고리별 건수", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "label": "카테고리별 상위 3개 선정", "detail": "우선순위와 감정으로 가중" },
-            { "id": "d5", "label": "다이제스트 포맷", "detail": "이슈 링크가 있는 Slack Block Kit 레이아웃" },
-            { "id": "d6", "label": "다이제스트 게시", "detail": "알림 채널로 POST chat.postMessage" },
-            { "id": "d7", "label": "support.digest.posted 발생", "detail": "다운스트림 관측 가능성" },
-            { "id": "d8", "label": "다이제스트 전달 완료" }
+            {
+              "id": "d1",
+              "label": "오전 9시 스케줄",
+              "detail": "Cron 0 9 * * *"
+            },
+            {
+              "id": "d2",
+              "label": "상태 파일 읽기",
+              "detail": "data/issue_states.json, escalation_log.json — 지난 24h 슬라이스"
+            },
+            {
+              "id": "d3",
+              "label": "카테고리별 건수",
+              "detail": "auto_resolved / escalated / auto_closed / still_stale"
+            },
+            {
+              "id": "d4",
+              "label": "카테고리별 상위 3개 선정",
+              "detail": "우선순위와 감정으로 가중"
+            },
+            {
+              "id": "d5",
+              "label": "다이제스트 포맷",
+              "detail": "이슈 링크가 있는 Slack Block Kit 레이아웃"
+            },
+            {
+              "id": "d6",
+              "label": "다이제스트 게시",
+              "detail": "알림 채널로 POST chat.postMessage"
+            },
+            {
+              "id": "d7",
+              "label": "support.digest.posted 발생",
+              "detail": "다운스트림 관측 가능성"
+            },
+            {
+              "id": "d8",
+              "label": "다이제스트 전달 완료"
+            }
           ]
         }
       },
@@ -159,43 +348,127 @@
         "title": "주간 이슈 건강 보고서",
         "description": "매주 월요일 오전 9시에 포괄적 보고서 생성: 자동 해결률, 평균 해결 시간, KB 증가, 에스컬레이션 결과, 정체 이슈 추세, 이전 보고서와의 주 단위 비교.",
         "capability_summary": "월요일 오전 9시 포괄적 보고서, 해결 지표, KB 증가 및 WoW 추세 분석.",
-        "suggested_trigger": { "description": "매주 월요일 오전 9시에 주간 건강 보고서 발행." },
+        "suggested_trigger": {
+          "description": "매주 월요일 오전 9시에 주간 건강 보고서 발행."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "주간 건강 보고서 게시를 위한 알림 채널." }
+          {
+            "type": "slack",
+            "description": "주간 건강 보고서 게시를 위한 알림 채널."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.weekly_report.published", "description": "페이로드: 지표 요약, WoW 델타, 보고서 파일 경로." }
+          {
+            "event_type": "support.weekly_report.published",
+            "description": "페이로드: 지표 요약, WoW 델타, 보고서 파일 경로."
+          }
         ],
         "error_handling": "상태 파일 불완전 → 갭에 대한 명시적 참고가 있는 부분 보고서 생성. Jira 쿼리 실패 → 상태 파일 건수에만 의존. 아카이브 실패 → 그럼에도 Slack에 게시, 아카이브 오류 로그.",
         "input_schema": [
-          { "name": "report_channel", "description": "주간 보고서를 위한 Slack 채널." },
-          { "name": "archive_directory", "description": "각 보고서 JSON이 아카이브되는 로컬 디렉토리." }
+          {
+            "name": "report_channel",
+            "description": "주간 보고서를 위한 Slack 채널."
+          },
+          {
+            "name": "archive_directory",
+            "description": "각 보고서 JSON이 아카이브되는 로컬 디렉토리."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "label": "월요일 오전 9시 스케줄", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "label": "상태 + 이전 보고서 로드", "detail": "issue_states + solutions_kb + escalation_log + 지난 주 보고서" },
-            { "id": "w3", "label": "현재 정체 건수", "detail": "보고 시점의 실시간 정체 건수 JQL 쿼리" },
-            { "id": "w4", "label": "지표 계산", "detail": "자동 해결률, 평균 TTR, 신규 KB 항목, 에스컬레이션 결과, 감정 분포" },
-            { "id": "w5", "label": "WoW 비교", "detail": "이전 주 지표 대비 델타" },
-            { "id": "w6", "label": "Block Kit 보고서 포맷", "detail": "섹션: 해결, KB 건강, 에스컬레이션, 추세" },
-            { "id": "w7", "label": "보고서 게시", "detail": "알림 채널로 chat.postMessage" },
-            { "id": "w8", "label": "보고서 JSON 아카이브", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "label": "weekly_report.published 발생" },
-            { "id": "w10", "label": "보고서 전달 완료" }
+            {
+              "id": "w1",
+              "label": "월요일 오전 9시 스케줄",
+              "detail": "Cron 0 9 * * 1"
+            },
+            {
+              "id": "w2",
+              "label": "상태 + 이전 보고서 로드",
+              "detail": "issue_states + solutions_kb + escalation_log + 지난 주 보고서"
+            },
+            {
+              "id": "w3",
+              "label": "현재 정체 건수",
+              "detail": "보고 시점의 실시간 정체 건수 JQL 쿼리"
+            },
+            {
+              "id": "w4",
+              "label": "지표 계산",
+              "detail": "자동 해결률, 평균 TTR, 신규 KB 항목, 에스컬레이션 결과, 감정 분포"
+            },
+            {
+              "id": "w5",
+              "label": "WoW 비교",
+              "detail": "이전 주 지표 대비 델타"
+            },
+            {
+              "id": "w6",
+              "label": "Block Kit 보고서 포맷",
+              "detail": "섹션: 해결, KB 건강, 에스컬레이션, 추세"
+            },
+            {
+              "id": "w7",
+              "label": "보고서 게시",
+              "detail": "알림 채널로 chat.postMessage"
+            },
+            {
+              "id": "w8",
+              "label": "보고서 JSON 아카이브",
+              "detail": "data/weekly_reports/issue_health_{date}.json"
+            },
+            {
+              "id": "w9",
+              "label": "weekly_report.published 발생"
+            },
+            {
+              "id": "w10",
+              "label": "보고서 전달 완료"
+            }
           ]
         }
       }
     ],
     "adoption_questions": [
-      { "id": "aq_jira_projects", "question": "이 에이전트가 모니터링해야 할 Jira 프로젝트 키는?", "context": "에이전트는 JQL을 사용하여 이 프로젝트들의 정체 이슈를 폴링합니다. 필요한 경우 여러 키를 쉼표로 구분하세요." },
-      { "id": "aq_stale_days", "question": "며칠 후에 이슈를 정체로 간주해야 하나요?", "context": "이 임계값을 초과하여 업데이트가 없는 오픈 이슈는 자동 해결 또는 에스컬레이션 후보가 됩니다." },
-      { "id": "aq_alert_channel", "question": "일일 다이제스트와 주간 보고서를 위한 Slack 채널은?", "context": "일일 다이제스트, 주간 건강 보고서 및 자동 해결 알림이 모두 여기에 게시됩니다." },
-      { "id": "aq_escalation_channel", "question": "높은 우선순위 에스컬레이션을 위한 Slack 채널은?", "context": "분노 + P1/P2 이슈는 즉각적인 팀 가시성을 위해 여기에 게시됩니다." },
-      { "id": "aq_eng_manager_email", "question": "DM 에스컬레이션을 위한 엔지니어링 매니저 이메일은?", "context": "분노 + P1/P2 이슈는 이 사람에게 직접 Slack DM을 트리거합니다." },
-      { "id": "aq_notion_kb_database_id", "question": "문제 해결 지식베이스를 보유한 Notion 데이터베이스는?", "context": "해결책 매칭에 사용되는 runbook, 문제 해결 가이드 및 FAQ 항목을 포함하는 Notion 데이터베이스." },
-      { "id": "aq_auto_close_enabled", "question": "버려진 이슈를 30일 비활성 후 자동으로 종료해야 하나요?", "context": "활성화되면 보고자 활동이 30일 이상 없는 이슈는 정중한 종료 댓글을 받고 Closed로 전환됩니다." },
-      { "id": "aq_confidence_threshold", "question": "해결책 제안을 자동 게시하기 위한 최소 신뢰도 점수(0-100)는?", "context": "이 임계값 이상의 KB 매치만 해결책 댓글로 게시됩니다. 낮은 임계값은 더 많은 이슈를 해결하지만 저품질 제안의 위험이 있습니다." }
+      {
+        "id": "aq_jira_projects",
+        "question": "이 에이전트가 모니터링해야 할 Jira 프로젝트 키는?",
+        "context": "에이전트는 JQL을 사용하여 이 프로젝트들의 정체 이슈를 폴링합니다. 필요한 경우 여러 키를 쉼표로 구분하세요."
+      },
+      {
+        "id": "aq_stale_days",
+        "question": "며칠 후에 이슈를 정체로 간주해야 하나요?",
+        "context": "이 임계값을 초과하여 업데이트가 없는 오픈 이슈는 자동 해결 또는 에스컬레이션 후보가 됩니다."
+      },
+      {
+        "id": "aq_alert_channel",
+        "question": "일일 다이제스트와 주간 보고서를 위한 Slack 채널은?",
+        "context": "일일 다이제스트, 주간 건강 보고서 및 자동 해결 알림이 모두 여기에 게시됩니다."
+      },
+      {
+        "id": "aq_escalation_channel",
+        "question": "높은 우선순위 에스컬레이션을 위한 Slack 채널은?",
+        "context": "분노 + P1/P2 이슈는 즉각적인 팀 가시성을 위해 여기에 게시됩니다."
+      },
+      {
+        "id": "aq_eng_manager_email",
+        "question": "DM 에스컬레이션을 위한 엔지니어링 매니저 이메일은?",
+        "context": "분노 + P1/P2 이슈는 이 사람에게 직접 Slack DM을 트리거합니다."
+      },
+      {
+        "id": "aq_notion_kb_database_id",
+        "question": "문제 해결 지식베이스를 보유한 Notion 데이터베이스는?",
+        "context": "해결책 매칭에 사용되는 runbook, 문제 해결 가이드 및 FAQ 항목을 포함하는 Notion 데이터베이스."
+      },
+      {
+        "id": "aq_auto_close_enabled",
+        "question": "버려진 이슈를 30일 비활성 후 자동으로 종료해야 하나요?",
+        "context": "활성화되면 보고자 활동이 30일 이상 없는 이슈는 정중한 종료 댓글을 받고 Closed로 전환됩니다."
+      },
+      {
+        "id": "aq_confidence_threshold",
+        "question": "해결책 제안을 자동 게시하기 위한 최소 신뢰도 점수(0-100)는?",
+        "context": "이 임계값 이상의 KB 매치만 해결책 댓글로 게시됩니다. 낮은 임계값은 더 많은 이슈를 해결하지만 저품질 제안의 위험이 있습니다."
+      }
     ]
   }
 }

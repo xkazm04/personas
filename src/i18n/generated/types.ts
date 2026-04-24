@@ -684,6 +684,12 @@ export type Translations = {
       cb_resuming_in: string;
       cb_show_activity: string;
       cb_hide_activity: string;
+      cb_section_global: string;
+      cb_section_providers: string;
+      cb_section_transitions: string;
+      cb_label_state: string;
+      cb_label_failures: string;
+      cb_label_cooldown: string;
       terminal_output_diff: string;
       differences_count: string;
       no_log_data: string;
@@ -10261,6 +10267,7 @@ export type Translations = {
       filter_placeholder: string;
       reset_to_default: string;
       color_hex_placeholder: string;
+      invalid_hex: string;
       attach_file_title: string;
       add_references_title: string;
       no_matches: string;

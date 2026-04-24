@@ -189,9 +189,22 @@ export function ChatTab() {
           {showPresets ? (
             <AdvisoryLaunchpad personaName={selectedPersona.name} onSend={(p) => { void handleSend(p); }} />
           ) : (
-            <div className="max-w-3xl mx-auto px-6 py-4 space-y-5">
-              {messages.map((msg) => <ChatBubble key={msg.id} message={msg} />)}
-              {chatStreaming && <StreamingBubble textLines={streamTextLines} />}
+            <div className="max-w-3xl mx-auto px-6 py-4">
+              {messages.map((msg, i) => {
+                const prev = messages[i - 1];
+                const isGroupStart = !prev || prev.role !== msg.role;
+                const spacing = i === 0 ? '' : isGroupStart ? 'mt-4' : 'mt-1';
+                return (
+                  <div key={msg.id} className={spacing}>
+                    <ChatBubble message={msg} isGroupStart={isGroupStart} />
+                  </div>
+                );
+              })}
+              {chatStreaming && (
+                <div className={messages[messages.length - 1]?.role === 'assistant' ? 'mt-1' : 'mt-4'}>
+                  <StreamingBubble textLines={streamTextLines} />
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
           )}

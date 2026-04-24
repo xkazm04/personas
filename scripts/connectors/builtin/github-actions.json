@@ -4,11 +4,11 @@
   "label": "GitHub Actions",
   "color": "#2088FF",
   "icon_url": "/icons/connectors/github.svg",
-  "category": "automation",
+  "category": "ci_cd",
   "categories": [
-    "automation",
     "ci_cd",
-    "source_control"
+    "automation",
+    "devops"
   ],
   "fields": [
     {

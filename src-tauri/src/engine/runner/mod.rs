@@ -1,36 +1,37 @@
+//! Persona execution runner. See [`README.md`](./README.md) for the module
+//! map, pipeline stages, and invariants. Public entry point is
+//! [`run_execution`]; every other helper is private to the `runner` module
+//! or re-exported `pub(crate)` for a small, named set of callers
+//! (build_session, tool_runner, mcp_tools).
+
+mod env;
+mod globals;
+mod credentials;
+
+// Cross-module re-exports. These paths are what external callers (outside
+// `engine::runner`) see — matches the layout before the submodule split so no
+// caller has to change.
+pub(crate) use env::sanitize_env_name;
+pub(crate) use credentials::{
+    inject_connector_credentials, inject_credential, resolve_credential_env_vars,
+};
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, LazyLock};
+use std::sync::Arc;
 use super::events::emit_to;
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
-use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
-
-/// Per-credential mutex pool to prevent concurrent OAuth token refreshes from
-/// racing. Uses [`KeyedResourcePool`] with RAII handles and automatic pruning
-/// (every 32 acquisitions, threshold 8 entries).
-static CREDENTIAL_REFRESH_LOCKS: LazyLock<KeyedResourcePool<String, Arc<Mutex<()>>>> =
-    LazyLock::new(|| KeyedResourcePool::new(32, 8));
-
-/// Acquire a per-credential refresh lock. The returned [`PoolHandle`] holds a
-/// clone of the `Arc<Mutex<()>>` and decrements the active-user count when
-/// dropped, making the entry eligible for future pruning.
-fn credential_refresh_lock(credential_id: &str) -> PoolHandle<String, Arc<Mutex<()>>> {
-    CREDENTIAL_REFRESH_LOCKS.acquire(credential_id.to_string(), || Arc::new(Mutex::new(())))
-}
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
-use crate::db::repos::resources::{
-    audit_log, connectors as connector_repo, credentials as cred_repo,
-};
-use crate::db::settings_keys;
+use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::DbPool;
 
 use super::failover;
@@ -38,6 +39,9 @@ use super::logger::ExecutionLogger;
 use super::parser;
 use super::prompt;
 use super::provider::{self, PromptDelivery};
+
+use self::credentials::inject_design_context_credentials;
+use self::globals::{default_result, resolve_global_provider_settings};
 
 /// Default per-execution stream timeout when `persona.timeout_ms <= 0`.
 ///
@@ -49,59 +53,6 @@ pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
 
-// =============================================================================
-// Env var sanitization
-// =============================================================================
-
-/// Env var names that must never be overridden by credential/MCP field injection.
-const BLOCKED_ENV_NAMES: &[&str] = &[
-    // OS-level / linker injection
-    "PATH", "LD_PRELOAD", "LD_LIBRARY_PATH",
-    "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH",
-    // System identity & shell
-    "HOME", "SHELL", "USER", "LOGNAME",
-    "SYSTEMROOT", "COMSPEC", "WINDIR",
-    "TEMP", "TMP",
-    // Language runtime code-execution vectors
-    "NODE_OPTIONS",       // --require= arbitrary module loading
-    "NODE_PATH",          // hijack Node module resolution
-    "PYTHONPATH",         // hijack Python imports
-    "PYTHONSTARTUP",      // execute Python script at interpreter start
-    "PERL5OPT",           // inject Perl command-line flags
-    "PERL5LIB",           // hijack Perl module search path
-    "RUBYOPT",            // inject Ruby flags (e.g. -r for require)
-    "RUBYLIB",            // hijack Ruby load path
-    "JAVA_TOOL_OPTIONS",  // JVM agent/flag injection
-    "JAVA_OPTIONS",       // alternative JVM flag injection
-    "_JAVA_OPTIONS",      // alternative JVM flag injection
-    "CLASSPATH",          // hijack Java class loading
-    "DOTNET_STARTUP_HOOKS", // .NET assembly injection at startup
-    "BASH_ENV",           // execute script when bash starts non-interactively
-    "ENV",                // execute script when sh starts
-    "ZDOTDIR",            // redirect zsh config to attacker-controlled dir
-];
-
-/// Sanitize an env var name: strip non-alphanumeric/underscore chars, uppercase,
-/// and check against the denylist. Returns `None` if the name is blocked or empty.
-pub(crate) fn sanitize_env_name(name: &str) -> Option<String> {
-    let sanitized: String = name
-        .to_uppercase()
-        .replace('-', "_")
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
-        .collect();
-
-    if sanitized.is_empty() {
-        return None;
-    }
-
-    if BLOCKED_ENV_NAMES.contains(&sanitized.as_str()) {
-        tracing::warn!(env_var = %sanitized, "Blocked dangerous env var name from credential injection");
-        return None;
-    }
-
-    Some(sanitized)
-}
 
 /// Run a persona execution: spawn Claude CLI, stream output, capture results.
 ///
@@ -685,6 +636,26 @@ pub async fn run_execution(
         Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
     }
 
+    // Snapshot the managed drive before the CLI runs so we can diff post-run
+    // and fire `drive.document.*` events for files the persona produced.
+    // The drive root is only available after at least one `drive_*` command
+    // has initialised it in this process; snapshot is `None` otherwise.
+    let drive_root_for_sync = crate::commands::drive::cached_managed_root();
+    let pre_drive_snapshot = drive_root_for_sync
+        .as_deref()
+        .map(crate::commands::drive::snapshot_drive);
+
+    // Register the personas-mcp stdio server with the Claude CLI so the
+    // persona can call `drive_write_text` / `drive_read_text` / `drive_list`
+    // (plus the existing `personas_*` tools) as first-class MCP tools during
+    // its run. Best-effort — a missing binary or unwritable settings.json
+    // leaves the execution otherwise untouched.
+    match super::cli_mcp_config::install_mcp_sidecar(&exec_dir, drive_root_for_sync.as_deref()) {
+        Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
+        Ok(false) => {}
+        Err(e) => logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}")),
+    }
+
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
     // =========================================================================
@@ -812,6 +783,16 @@ pub async fn run_execution(
             // Inject credential env vars
             for (key, val) in &cred_env_clone {
                 cli_args.env_overrides.push((key.clone(), val.clone()));
+            }
+
+            // Expose the managed drive root so personas that write outputs can
+            // land them in the sandbox directly. Post-execution drive sync
+            // then emits `drive.document.*` events for every produced file.
+            if let Some(ref drive_root) = drive_root_for_sync {
+                cli_args.env_overrides.push((
+                    "PERSONAS_DRIVE_ROOT".to_string(),
+                    drive_root.display().to_string(),
+                ));
             }
 
             // For non-Stdin providers, rebuild args with the prompt embedded
@@ -1684,6 +1665,19 @@ pub async fn run_execution(
     logger.log(&format!("Duration: {duration_ms}ms"));
     logger.log("=== Persona Execution Finished ===");
 
+    // Post-execution drive sync: compare the drive snapshot taken before
+    // spawn to its current state and emit `drive.document.*` events for
+    // every file that changed. Lets personas that write outputs through the
+    // built-in Local Drive surface them on the event bus without needing a
+    // dedicated `drive_write_text` MCP tool registered with the CLI.
+    if let (Some(ref drive_root), Some(before)) = (drive_root_for_sync.as_ref(), pre_drive_snapshot.as_ref()) {
+        let after = crate::commands::drive::snapshot_drive(drive_root);
+        let emitted = crate::commands::drive::diff_and_emit_drive_events(&pool, before, &after);
+        if emitted > 0 {
+            logger.log(&format!("[drive-sync] emitted {emitted} drive.document.* events from post-exec diff"));
+        }
+    }
+
     // Post-mortem: extract execution flows and any protocol messages that were
     // missed during streaming (e.g. because they spanned multiple streaming deltas).
     let execution_flows = parser::extract_execution_flows(&assistant_text)
@@ -1959,509 +1953,6 @@ pub async fn run_execution(
     }
 }
 
-/// Apply a global settings value to a profile field when the field is empty.
-fn apply_global_setting(pool: &DbPool, field: &mut Option<String>, settings_key: &str) {
-    let needs_global = field.as_ref().map_or(true, |v| v.is_empty());
-    if needs_global {
-        if let Ok(Some(value)) = crate::db::repos::core::settings::get(pool, settings_key) {
-            if !value.is_empty() {
-                *field = Some(value);
-            }
-        }
-    }
-}
-
-/// Resolve global provider settings (API keys, base URLs) from the app settings DB
-/// when the per-persona model profile doesn't specify them.
-fn resolve_global_provider_settings(pool: &DbPool, profile: &mut ModelProfile) {
-    match profile.provider.as_deref() {
-        Some(providers::OLLAMA) => {
-            apply_global_setting(pool, &mut profile.auth_token, settings_keys::OLLAMA_API_KEY);
-        }
-        Some(providers::LITELLM) => {
-            apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
-            apply_global_setting(pool, &mut profile.auth_token, settings_keys::LITELLM_MASTER_KEY);
-        }
-        _ => {}
-    }
-}
-
-fn default_result() -> ExecutionResult {
-    ExecutionResult {
-        success: false,
-        output: None,
-        error: None,
-        session_limit_reached: false,
-        log_file_path: None,
-        claude_session_id: None,
-        duration_ms: 0,
-        execution_flows: None,
-        model_used: None,
-        input_tokens: 0,
-        output_tokens: 0,
-        cost_usd: 0.0,
-        tool_steps: None,
-        trace_id: None,
-        execution_config: None,
-        log_truncated: false,
-    }
-}
-
-/// Resolve credentials for a persona's tools and return env var mappings + prompt hints.
-///
-/// Resolution strategy (per tool):
-/// 1. **Primary**: Find connectors whose `services` JSON array lists this tool by name.
-/// 2. **Fallback**: If no connector services match, use `tool.requires_credential_type`
-///    to match against connector names or credential `service_type` values.
-///
-/// Each credential field is mapped to an env var: `{CONNECTOR_NAME_UPPER}_{FIELD_KEY_UPPER}`.
-/// For OAuth credentials with a refresh_token, automatically refreshes the access_token.
-/// Returns `(env_vars, hints, decryption_failures)`. If `decryption_failures`
-/// is non-empty, the caller should abort execution and surface the names.
-pub(crate) async fn resolve_credential_env_vars(
-    pool: &DbPool,
-    tools: &[PersonaToolDefinition],
-    persona_id: &str,
-    persona_name: &str,
-) -> (Vec<(String, String)>, Vec<String>, Vec<String>, Vec<String>) {
-    let mut env_vars: Vec<(String, String)> = Vec::new();
-    let mut hints: Vec<String> = Vec::new();
-    let mut failures: Vec<String> = Vec::new();
-    // Names of connectors that had credentials successfully injected for this
-    // execution. Deduped by connector.name. Used downstream to load
-    // `metadata.llm_usage_hint` for the prompt's Connector Usage Reference
-    // section.
-    let mut injected_connector_names: Vec<String> = Vec::new();
-    let mut seen_connectors: std::collections::HashSet<String> = std::collections::HashSet::new();
-
-    let connectors = match connector_repo::get_all(pool) {
-        Ok(c) => c,
-        Err(e) => {
-            tracing::warn!("Failed to load connectors for credential injection: {}", e);
-            return (env_vars, hints, failures, injected_connector_names);
-        }
-    };
-
-    for tool in tools {
-        // -- Primary: match tool name in connector services --
-        let mut matched_connector = false;
-        for connector in &connectors {
-            let services: Vec<serde_json::Value> =
-                serde_json::from_str(&connector.services).unwrap_or_default();
-            let tool_listed = services.iter().any(|s| {
-                s.get("toolName")
-                    .and_then(|v| v.as_str())
-                    .map(|name| name == tool.name)
-                    .unwrap_or(false)
-            });
-
-            if !tool_listed || !seen_connectors.insert(connector.name.clone()) {
-                continue;
-            }
-
-            match inject_connector_credentials(
-                pool,
-                connector,
-                &mut env_vars,
-                &mut hints,
-                persona_id,
-                persona_name,
-            ).await {
-                Ok(true) => {
-                    matched_connector = true;
-                    injected_connector_names.push(connector.name.clone());
-                }
-                Ok(false) => {}
-                Err(name) => { failures.push(name); }
-            }
-        }
-
-        // -- Fallback: match via requires_credential_type --
-        if !matched_connector {
-            if let Some(ref cred_type) = tool.requires_credential_type {
-                // Try matching connector by name (e.g. "google" -> connector named "google")
-                // or by name prefix/substring for common patterns
-                for connector in &connectors {
-                    if !seen_connectors.insert(connector.name.clone()) {
-                        continue;
-                    }
-
-                    let connector_matches = connector.name == *cred_type
-                        || connector.name.starts_with(cred_type)
-                        || cred_type.starts_with(&connector.name);
-
-                    if !connector_matches {
-                        continue;
-                    }
-
-                    match inject_connector_credentials(
-                        pool,
-                        connector,
-                        &mut env_vars,
-                        &mut hints,
-                        persona_id,
-                        persona_name,
-                    ).await {
-                        Ok(true) => {
-                            matched_connector = true;
-                            injected_connector_names.push(connector.name.clone());
-                            break;
-                        }
-                        Ok(false) => {}
-                        Err(name) => { failures.push(name); }
-                    }
-                }
-
-                // Last resort: query credentials directly by service_type
-                if !matched_connector {
-                    if let Ok(creds) = cred_repo::get_by_service_type(pool, cred_type) {
-                        if let Some(cred) = creds.first() {
-                            if let Err(name) = inject_credential(
-                                pool,
-                                cred,
-                                cred_type,
-                                cred_type,
-                                &mut env_vars,
-                                &mut hints,
-                                persona_id,
-                                persona_name,
-                            ).await {
-                                failures.push(name);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    (env_vars, hints, failures, injected_connector_names)
-}
-
-/// Inject credentials for connectors referenced in the persona's design_context.
-/// This ensures that generic tools (http_request, etc.) have access to all
-/// connector credentials even when tool-name-based matching fails.
-async fn inject_design_context_credentials(
-    pool: &DbPool,
-    persona: &crate::db::models::Persona,
-    env_vars: &mut Vec<(String, String)>,
-    hints: &mut Vec<String>,
-    injected_connector_names: &mut Vec<String>,
-    persona_id: &str,
-    persona_name: &str,
-) {
-    // Extract connector names from design_context JSON
-    let dc = match &persona.design_context {
-        Some(dc) => dc,
-        None => return,
-    };
-    let parsed: serde_json::Value = match serde_json::from_str(dc) {
-        Ok(v) => v,
-        Err(_) => return,
-    };
-
-    // Connector names may be in useCases[].connectors or a top-level connectors/summary field
-    let mut connector_names: Vec<String> = Vec::new();
-
-    // Check useCases[].connectors (common pattern from promote)
-    if let Some(use_cases) = parsed.get("useCases").and_then(|v| v.as_array()) {
-        for uc in use_cases {
-            if let Some(conns) = uc.get("connectors").and_then(|v| v.as_array()) {
-                for c in conns {
-                    if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
-                        connector_names.push(name.to_string());
-                    }
-                }
-            }
-        }
-    }
-
-    // Check summary.connectors (alternate pattern)
-    if let Some(summary) = parsed.get("summary") {
-        if let Some(conns) = summary.get("connectors").and_then(|v| v.as_array()) {
-            for c in conns {
-                if let Some(name) = c.as_str() {
-                    connector_names.push(name.to_string());
-                } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
-                    connector_names.push(name.to_string());
-                }
-            }
-        }
-    }
-
-    // Also check last_design_result for required_connectors/suggested_connectors
-    if let Some(ref ldr) = persona.last_design_result {
-        if let Ok(dr) = serde_json::from_str::<serde_json::Value>(ldr) {
-            for key in &["required_connectors", "suggested_connectors"] {
-                if let Some(conns) = dr.get(key).and_then(|v| v.as_array()) {
-                    for c in conns {
-                        // Handle both string ("gmail") and object ({"name": "gmail"}) formats
-                        if let Some(name) = c.as_str() {
-                            connector_names.push(name.to_string());
-                        } else if let Some(name) = c.get("name").and_then(|v| v.as_str()) {
-                            connector_names.push(name.to_string());
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    if connector_names.is_empty() { return; }
-
-    // Deduplicate and skip connectors already injected
-    let existing_prefixes: std::collections::HashSet<String> = env_vars.iter()
-        .filter_map(|(k, _)| k.split('_').next().map(|p| p.to_lowercase()))
-        .collect();
-
-    let connectors = match connector_repo::get_all(pool) {
-        Ok(c) => c,
-        Err(_) => return,
-    };
-
-    for name in &connector_names {
-        let name_lower = name.to_lowercase();
-        // Skip if we already injected env vars for this connector
-        if existing_prefixes.contains(&name_lower) { continue; }
-
-        // Try to find a matching connector definition
-        if let Some(conn) = connectors.iter().find(|c| c.name.to_lowercase() == name_lower) {
-            if let Ok(true) = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await {
-                injected_connector_names.push(conn.name.clone());
-            }
-        } else {
-            // Direct service_type lookup as fallback
-            if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
-                if let Some(cred) = creds.first() {
-                    if inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await.is_ok() {
-                        injected_connector_names.push(name.clone());
-                    }
-                }
-            }
-        }
-    }
-}
-
-/// Decrypt and inject all fields from a connector's first credential as env vars.
-/// Returns `Ok(true)` if credentials were found and injected, `Ok(false)` if none
-/// found, or `Err(name)` if decryption failed.
-pub(crate) async fn inject_connector_credentials(
-    pool: &DbPool,
-    connector: &crate::db::models::ConnectorDefinition,
-    env_vars: &mut Vec<(String, String)>,
-    hints: &mut Vec<String>,
-    persona_id: &str,
-    persona_name: &str,
-) -> Result<bool, String> {
-    let creds = match cred_repo::get_by_service_type(pool, &connector.name) {
-        Ok(c) => c,
-        Err(_) => return Ok(false),
-    };
-
-    if let Some(cred) = creds.first() {
-        inject_credential(
-            pool,
-            cred,
-            &connector.name,
-            &connector.label,
-            env_vars,
-            hints,
-            persona_id,
-            persona_name,
-        ).await?;
-        Ok(true)
-    } else {
-        Ok(false)
-    }
-}
-
-/// Attempt to refresh an OAuth access_token using a stored refresh_token.
-/// `override_client` can supply (client_id, client_secret) when the credential
-/// itself doesn't store them (e.g. `app_managed` mode).
-/// Returns the new access_token on success, or None on failure.
-async fn try_refresh_oauth_token(
-    fields: &HashMap<String, String>,
-    connector_name: &str,
-    override_client: Option<(&str, &str)>,
-) -> Option<String> {
-    let refresh_token = fields.get("refresh_token").filter(|v| !v.is_empty())?;
-
-    // Resolve client credentials: prefer fields, then override, then fail
-    let (cid, csec) = if let (Some(id), Some(secret)) = (
-        fields.get("client_id").filter(|v| !v.is_empty()),
-        fields.get("client_secret").filter(|v| !v.is_empty()),
-    ) {
-        (id.clone(), secret.clone())
-    } else if let Some((id, secret)) = override_client {
-        (id.to_string(), secret.to_string())
-    } else {
-        tracing::debug!("No client credentials available for OAuth refresh of '{}'", connector_name);
-        return None;
-    };
-    let client_id = &cid;
-    let client_secret = &csec;
-
-    // Determine the token endpoint based on connector type
-    let token_url = match connector_name {
-        n if n.starts_with("google") || n == "gmail" || n == "google_calendar" || n == "google_drive" => {
-            "https://oauth2.googleapis.com/token"
-        }
-        "microsoft" => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-        "slack" => "https://slack.com/api/oauth.v2.access",
-        "github" => "https://github.com/login/oauth/access_token",
-        _ => return None, // Unknown provider -- skip refresh
-    };
-
-    tracing::info!("Refreshing OAuth access token for connector '{}'", connector_name);
-
-    let response = crate::SHARED_HTTP
-        .post(token_url)
-        .header("Accept", "application/json")
-        .form(&[
-            ("client_id", client_id.as_str()),
-            ("client_secret", client_secret.as_str()),
-            ("refresh_token", refresh_token.as_str()),
-            ("grant_type", "refresh_token"),
-        ])
-        .timeout(std::time::Duration::from_secs(10))
-        .send()
-        .await
-        .ok()?;
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        tracing::warn!("OAuth token refresh failed for '{}' ({}): {}", connector_name, status, body);
-        return None;
-    }
-
-    let value: serde_json::Value = response.json().await.ok()?;
-    let new_token = value.get("access_token")?.as_str()?.to_string();
-
-    tracing::info!("Successfully refreshed OAuth access token for '{}'", connector_name);
-    Some(new_token)
-}
-
-/// Decrypt a single credential and inject its fields as env vars.
-/// For OAuth credentials, automatically refreshes expired access tokens.
-/// Returns `Err` with the credential name if decryption fails.
-#[allow(clippy::too_many_arguments)]
-pub(crate) async fn inject_credential(
-    pool: &DbPool,
-    cred: &crate::db::models::PersonaCredential,
-    connector_name: &str,
-    connector_label: &str,
-    env_vars: &mut Vec<(String, String)>,
-    hints: &mut Vec<String>,
-    persona_id: &str,
-    persona_name: &str,
-) -> Result<(), String> {
-    let mut fields: HashMap<String, String> = match cred_repo::get_decrypted_fields(pool, cred) {
-        Ok(f) => f,
-        Err(e) => {
-            tracing::error!("Failed to decrypt credential '{}': {}", cred.name, e);
-            return Err(cred.name.clone());
-        }
-    };
-    let prefix = connector_name.to_uppercase().replace('-', "_");
-
-    // Auto-refresh OAuth token if refresh_token is present.
-    // For app_managed credentials (no client_id in fields), resolve from platform env.
-    // Locked per credential ID to prevent concurrent refreshes from racing.
-    if fields.get("refresh_token").is_some_and(|v| !v.is_empty()) {
-        let refresh_handle = credential_refresh_lock(&cred.id);
-        let _guard = refresh_handle.value.lock().await;
-
-        // Re-read the credential inside the lock to pick up any token refreshed
-        // by a concurrent execution that held the lock before us.
-        if let Ok(re_read_cred) = cred_repo::get_by_id(pool, &cred.id) {
-            if let Ok(fresh_fields) = cred_repo::get_decrypted_fields(pool, &re_read_cred) {
-                fields = fresh_fields;
-            }
-        }
-
-        let override_client = if fields.get("client_id").map_or(true, |v| v.is_empty()) {
-            // Resolve platform-managed client credentials for OAuth connectors
-            let is_google = connector_name.starts_with("google")
-                || connector_name == "gmail"
-                || connector_name == "google_calendar"
-                || connector_name == "google_drive";
-            let is_microsoft = connector_name.starts_with("microsoft")
-                || connector_name == "onedrive"
-                || connector_name == "sharepoint";
-            if is_google {
-                super::google_oauth::resolve_google_desktop_oauth_credentials()
-                    .ok()
-            } else if is_microsoft {
-                super::google_oauth::resolve_microsoft_oauth_credentials()
-                    .ok()
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-        let override_ref = override_client.as_ref().map(|(id, sec)| (id.as_str(), sec.as_str()));
-        if let Some(fresh_token) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
-            fields.insert("access_token".to_string(), fresh_token.clone());
-            // Persist the refreshed token back to field-level storage
-            if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
-                tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
-            }
-        }
-    }
-
-    // Internal metadata fields that shouldn't be exposed as env vars
-    const SKIP_FIELDS: &[&str] = &[
-        "oauth_client_mode", "client_id", "client_secret",
-        "token_type", "expiry_date", "expires_in",
-    ];
-
-    for (field_key, field_val) in &fields {
-        if SKIP_FIELDS.contains(&field_key.as_str()) || field_val.is_empty() {
-            continue;
-        }
-        let raw_key = format!("{}_{}", prefix, field_key);
-        let env_key = match sanitize_env_name(&raw_key) {
-            Some(k) => k,
-            None => continue,
-        };
-        env_vars.push((env_key.clone(), field_val.clone()));
-        hints.push(format!(
-            "`{}` (from {} credential '{}')",
-            env_key, connector_label, cred.name
-        ));
-    }
-
-    // Add well-known aliases for Google connectors so the CLI finds credentials
-    // regardless of whether it looks for GMAIL_ACCESS_TOKEN or GOOGLE_ACCESS_TOKEN.
-    let is_google_family = connector_name.starts_with("google")
-        || connector_name == "gmail"
-        || connector_name == "google_calendar"
-        || connector_name == "google_drive"
-        || connector_name == "google_sheets";
-    if is_google_family && prefix != "GOOGLE" {
-        if let Some(access_token) = fields.get("access_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_ACCESS_TOKEN".to_string(), access_token.clone()));
-        }
-        if let Some(refresh_token) = fields.get("refresh_token").filter(|v| !v.is_empty()) {
-            env_vars.push(("GOOGLE_REFRESH_TOKEN".to_string(), refresh_token.clone()));
-        }
-    }
-
-    let _ = cred_repo::record_usage(pool, &cred.id);
-    let _ = audit_log::insert(
-        pool,
-        &cred.id,
-        &cred.name,
-        "decrypt",
-        Some(persona_id),
-        Some(persona_name),
-        Some(&format!("injected via connector '{connector_label}'")),
-    );
-
-    Ok(())
-}
 
 #[cfg(test)]
 mod tests {

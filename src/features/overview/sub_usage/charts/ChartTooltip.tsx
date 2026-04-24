@@ -1,4 +1,4 @@
-import { metricUnitForKey, type MetricUnit } from '@/features/overview/sub_usage/charts/chartConstants';
+import { metricUnitForKey, type MetricUnit } from '@/features/overview/sub_usage/libs/chartConstants';
 
 interface TooltipPayloadEntry {
   name: string;

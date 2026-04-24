@@ -4,10 +4,10 @@
   "label": "Browser (Chrome/Edge)",
   "color": "#4285F4",
   "icon_url": "/icons/connectors/chrome.svg",
-  "category": "desktop",
+  "category": "browser_automation",
   "categories": [
-    "desktop",
-    "browser_automation"
+    "browser_automation",
+    "desktop"
   ],
   "fields": [
     {

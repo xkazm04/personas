@@ -5,11 +5,21 @@
   "description": "Builds a long-term memory layer for an entire codebase by capturing every Claude Code session via hooks, distilling lessons and decisions into structured wiki articles, and surfacing them automatically on future runs. Inspired by Karpathy-style LLM knowledge bases applied to internal conversations rather than external sources.",
   "icon": "BrainCircuit",
   "color": "#8b5cf6",
-  "category": ["development"],
+  "category": [
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Claude Code CLI", "Personas Memory", "In-App Messaging"],
+  "service_flow": [
+    "Claude Code CLI",
+    "Personas Memory",
+    "In-App Messaging"
+  ],
   "payload": {
-    "service_flow": ["Claude Code CLI", "Personas Memory", "In-App Messaging"],
+    "service_flow": [
+      "Claude Code CLI",
+      "Personas Memory",
+      "In-App Messaging"
+    ],
     "persona": {
       "goal": "Make every Claude Code session compound — capture what was decided, compile it into wiki articles, and surface stale or contradictory memory for human review so next session starts smarter than last.",
       "identity": {
@@ -46,7 +56,10 @@
       "tool_guidance": "### Personas IPC — compile_persona_memories\nCore primitive for the daily flush. Invoke via the runtime IPC layer. Pass `persona_id` and optionally `source_limit` (default 50). The IPC returns `{source_count, created, created_ids, titles}`. It uses the Claude CLI under the hood with a 3-minute timeout and is rate-limited at the engine level — do not wrap in additional throttling.\n\n### Personas IPC — obsidian_brain_lint_vault (optional)\nCall from uc_weekly_health if `vault_path` is configured. Returns a `VaultLintReport` with stale notes, broken wikilinks, orphan pages. Skip silently if unset — this template must not require an Obsidian vault.\n\n### Hooks sidecar — drain_session_queue\n`engine::hooks_sidecar::drain_session_queue` reads and atomically truncates the queue file at `<exec_dir>/.personas/session_queue.jsonl`. Exposed to personas via the runtime context. Requires `PERSONAS_HOOKS_SIDECAR=1` in the user's environment — otherwise the queue is never populated and the capability idles.\n\n### codebase connector (optional)\nCross-reference extracted file paths during session capture. When a transcript mentions `src/foo.ts`, optionally confirm it exists via the codebase connector before storing — prevents capturing references to deleted files. Not required for the template to work.\n\n### Memory tag contract\n- `[raw, session-capture]` — extractions from transcripts. Eligible for the next compile pass.\n- `[compiled, wiki]` — articles produced by compile_persona_memories. Never re-fed into compile.\n- `[flush_event]` — the daily flush's own record. Not a subject for compile.\n\n### Health-check heuristics\n- Stale: compiled article whose source_memory_ids have all been pruned or re-categorized\n- Contradiction: two compiled articles with title Levenshtein < 5 AND disagreeing bodies (keyword-level negation detected)\n- Coverage gap: raw memories ≥ 90 days old with shared tag signature that never entered a compile pass\n\n### Transcript walk algorithm\nPer transcript JSONL file:\n1. For each line, parse as a message\n2. Skip tool-result messages without reasoning\n3. Flag messages containing: \"decided\", \"chose\", \"instead of\", \"because\", \"TODO\", \"follow up\", \"failed\", \"surprised\", file paths (`*.ts`, `*.rs`, etc.)\n4. From flagged messages, extract the minimum context needed for a future agent to reuse the insight\n5. Deduplicate against existing raw memories with the same file+topic signature",
       "error_handling": "Empty session queue → normal idle, exit silently, no user message. Hooks sidecar disabled (env var unset) → drain_session_queue returns empty vec, template stays installed but produces nothing. compile_persona_memories returns `created == 0` → suppress user_message, retry next cycle. Transcript file unreadable → log path, skip that queue entry, continue with the rest. compile_persona_memories CLI timeout (3 min) → log as manual_review item, do NOT retry automatically (cost exposure). Concurrent flush (flush_in_progress marker set and < 3 hours old) → skip this cycle. Corrupted memory row on weekly audit → log, skip, include in health summary. obsidian_brain_lint_vault not configured → skip silently (not an error).",
       "examples": [],
-      "tools": ["file_read", "file_write"],
+      "tools": [
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -89,10 +102,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "persona.execution.completed" },
+          "config": {
+            "event_type": "persona.execution.completed"
+          },
           "description": "Fires after every persona execution. Event-driven — not configurable at the trigger-composition step."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -128,26 +145,82 @@
         "sample_input": {
           "min_extractions_per_session": 0
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "persona.execution.completed" },
-            { "id": "c2", "type": "action", "label": "drain_session_queue (atomic)" },
-            { "id": "c3", "type": "decision", "label": "Queue empty?" },
-            { "id": "c4", "type": "action", "label": "Walk transcripts + extract lessons" },
-            { "id": "c5", "type": "action", "label": "Store raw memories with tags [raw, session-capture]" },
-            { "id": "c6", "type": "event", "label": "Emit memory.codebase.captured" },
-            { "id": "c7", "type": "end", "label": "Capture complete (silent)" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "persona.execution.completed"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "drain_session_queue (atomic)"
+            },
+            {
+              "id": "c3",
+              "type": "decision",
+              "label": "Queue empty?"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Walk transcripts + extract lessons"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Store raw memories with tags [raw, session-capture]"
+            },
+            {
+              "id": "c6",
+              "type": "event",
+              "label": "Emit memory.codebase.captured"
+            },
+            {
+              "id": "c7",
+              "type": "end",
+              "label": "Capture complete (silent)"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c7", "variant": "yes", "label": "Empty" },
-            { "source": "c3", "target": "c4", "variant": "no", "label": "Has entries" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c7",
+              "variant": "yes",
+              "label": "Empty"
+            },
+            {
+              "source": "c3",
+              "target": "c4",
+              "variant": "no",
+              "label": "Has entries"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            }
           ]
         }
       },
@@ -162,7 +235,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 2 * * *" },
+          "config": {
+            "cron": "0 2 * * *"
+          },
           "description": "Default daily 02:00 local — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -205,20 +280,66 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "Scheduled tick" },
-            { "id": "f2", "type": "action", "label": "Check flush_in_progress marker" },
-            { "id": "f3", "type": "action", "label": "Invoke compile_persona_memories IPC" },
-            { "id": "f4", "type": "decision", "label": "Articles created?" },
-            { "id": "f5", "type": "action", "label": "Send user_message + emit memory.codebase.compiled" },
-            { "id": "f6", "type": "end", "label": "Flush complete (silent if 0)" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "f2",
+              "type": "action",
+              "label": "Check flush_in_progress marker"
+            },
+            {
+              "id": "f3",
+              "type": "action",
+              "label": "Invoke compile_persona_memories IPC"
+            },
+            {
+              "id": "f4",
+              "type": "decision",
+              "label": "Articles created?"
+            },
+            {
+              "id": "f5",
+              "type": "action",
+              "label": "Send user_message + emit memory.codebase.compiled"
+            },
+            {
+              "id": "f6",
+              "type": "end",
+              "label": "Flush complete (silent if 0)"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5", "variant": "yes", "label": "Yes" },
-            { "source": "f4", "target": "f6", "variant": "no", "label": "None" },
-            { "source": "f5", "target": "f6" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "f4",
+              "target": "f6",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "f5",
+              "target": "f6"
+            }
           ]
         }
       },
@@ -233,7 +354,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1" },
+          "config": {
+            "cron": "0 9 * * 1"
+          },
           "description": "Default Monday 09:00 local — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -281,22 +404,75 @@
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "h1", "type": "start", "label": "Scheduled tick" },
-            { "id": "h2", "type": "action", "label": "Read full memory list + audit (stale / contradiction / gap)" },
-            { "id": "h3", "type": "action", "label": "Optional obsidian_brain_lint_vault" },
-            { "id": "h4", "type": "decision", "label": "Issues found?" },
-            { "id": "h5", "type": "action", "label": "Emit manual_review per issue" },
-            { "id": "h6", "type": "action", "label": "Send weekly summary + emit memory.codebase.audited" },
-            { "id": "h7", "type": "end", "label": "Audit complete" }
+            {
+              "id": "h1",
+              "type": "start",
+              "label": "Scheduled tick"
+            },
+            {
+              "id": "h2",
+              "type": "action",
+              "label": "Read full memory list + audit (stale / contradiction / gap)"
+            },
+            {
+              "id": "h3",
+              "type": "action",
+              "label": "Optional obsidian_brain_lint_vault"
+            },
+            {
+              "id": "h4",
+              "type": "decision",
+              "label": "Issues found?"
+            },
+            {
+              "id": "h5",
+              "type": "action",
+              "label": "Emit manual_review per issue"
+            },
+            {
+              "id": "h6",
+              "type": "action",
+              "label": "Send weekly summary + emit memory.codebase.audited"
+            },
+            {
+              "id": "h7",
+              "type": "end",
+              "label": "Audit complete"
+            }
           ],
           "edges": [
-            { "source": "h1", "target": "h2" },
-            { "source": "h2", "target": "h3" },
-            { "source": "h3", "target": "h4" },
-            { "source": "h4", "target": "h5", "variant": "yes", "label": "Issues" },
-            { "source": "h4", "target": "h6", "variant": "no", "label": "All clear" },
-            { "source": "h5", "target": "h6" },
-            { "source": "h6", "target": "h7" }
+            {
+              "source": "h1",
+              "target": "h2"
+            },
+            {
+              "source": "h2",
+              "target": "h3"
+            },
+            {
+              "source": "h3",
+              "target": "h4"
+            },
+            {
+              "source": "h4",
+              "target": "h5",
+              "variant": "yes",
+              "label": "Issues"
+            },
+            {
+              "source": "h4",
+              "target": "h6",
+              "variant": "no",
+              "label": "All clear"
+            },
+            {
+              "source": "h5",
+              "target": "h6"
+            },
+            {
+              "source": "h6",
+              "target": "h7"
+            }
           ]
         }
       }
@@ -305,7 +481,9 @@
       {
         "id": "aq_target_codebase",
         "scope": "connector",
-        "connector_names": ["codebase"],
+        "connector_names": [
+          "codebase"
+        ],
         "category": "configuration",
         "question": "Which registered codebase should this persona accumulate memory for?",
         "type": "select",
@@ -317,20 +495,29 @@
         "dimension": "connectors",
         "ui_component": "CodebaseSelector",
         "connector_ref": "codebase",
-        "option_service_types": ["codebase"],
+        "option_service_types": [
+          "codebase"
+        ],
         "dynamic_source": {
-          "service_type": "codebase",
+          "service_type": "development",
           "operation": "list_codebases"
         }
       },
       {
         "id": "aq_compile_source_limit",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_flush"],
+        "use_case_ids": [
+          "uc_daily_flush"
+        ],
         "category": "quality",
         "question": "How many recent memories should each daily compile pass consider?",
         "type": "select",
-        "options": ["25", "50", "100", "200"],
+        "options": [
+          "25",
+          "50",
+          "100",
+          "200"
+        ],
         "default": "50",
         "maps_to": "use_cases[uc_daily_flush].sample_input.compile_source_limit",
         "variable_name": "compile_source_limit",
@@ -340,7 +527,9 @@
       {
         "id": "aq_health_check_enabled",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_health"],
+        "use_case_ids": [
+          "uc_weekly_health"
+        ],
         "category": "boundaries",
         "question": "Enable the weekly memory health check?",
         "type": "boolean",
@@ -353,7 +542,9 @@
       {
         "id": "aq_obsidian_vault_lint",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_health"],
+        "use_case_ids": [
+          "uc_weekly_health"
+        ],
         "category": "quality",
         "question": "Should the weekly audit also lint your Obsidian vault for stale notes and broken wikilinks?",
         "type": "boolean",

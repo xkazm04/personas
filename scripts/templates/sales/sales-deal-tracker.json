@@ -5,11 +5,19 @@
   "description": "Polls the CRM in near-real-time for Opportunity changes — stage transitions, amount shifts, close date slips — sends contextual urgency-graded alerts, captures loss reviews, and delivers a daily pipeline snapshot with velocity metrics and at-risk deal detection.",
   "icon": "Radar",
   "color": "#8B5CF6",
-  "category": ["sales"],
-  "service_flow": ["CRM", "Messaging"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "CRM",
+    "Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["CRM", "Messaging"],
+    "service_flow": [
+      "CRM",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Detect every deal movement the instant it happens — context, urgency, business impact — and compound velocity intelligence across weeks so bottlenecks surface themselves.",
       "identity": {
@@ -45,11 +53,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities run independently:\n\n1. **uc_change_monitor** (polling, default every 3 minutes) — load stored deal states from memory. Query the CRM for Opportunities modified since `last_poll_timestamp`. Compare each returned record against stored state: detect stage changes (direction + stages moved), amount changes (delta + %), close date shifts (days moved), new deals. Classify urgency. Send contextual alert via messaging. Update memory with new states + transition records. Emit `sales.deal.stage_changed` per stage change plus targeted events (`sales.deal.closed_won`, `sales.deal.closed_lost`, `sales.deal.at_risk`, `sales.deal.large_created`). For Closed Lost, route to manual_review with a loss-reason prompt. First run = baseline scan, no alerts.\n\n2. **uc_daily_summary** (scheduled, default 09:00 daily) — query CRM for aggregate pipeline snapshot (stage distribution, totals, weighted values). Compare against yesterday's snapshot from memory. Compute velocity metrics from 90-day transition history (avg days per stage, fastest/slowest, conversion rates). Identify at-risk deals (overdue close, stalled 2× stage average, regressed in last 7 days, close date imminent without recent progress). Build top-N deals to watch. Record pattern insights as memory. Emit `sales.pipeline.summary`.\n\nState: `deal_states.json` (Opportunity snapshot keyed by id), `transition_history.json` (rolling window, default 90 days), `stage_metadata.json` (cached sort order), `poll_state.json` (last_poll_timestamp + API usage counter).",
-      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- Salesforce: `GET /services/data/v59.0/query/?q={SOQL}` with `SELECT Id, Name, StageName, Amount, Probability, CloseDate, OwnerId, Owner.Name, LastModifiedDate, IsClosed, IsWon, ForecastCategory, AccountId, Account.Name FROM Opportunity WHERE LastModifiedDate >= {ts}`. Refresh token via `POST /services/oauth2/token` when needed.\n- HubSpot: `GET /crm/v3/objects/deals?properties=dealname,dealstage,amount,hs_lastmodifieddate&sorts=-hs_lastmodifieddate`.\n- Pipedrive / other: adapt to the provider's 'recently modified deals' endpoint.\n- Aggregate query for daily summary: SOQL/REST equivalent of `SELECT stage, COUNT, SUM(amount) GROUP BY stage`.\n- Stage metadata: fetch once at startup to map stage name → sort order for advance/regress detection.\n- Rate limit: monitor provider-specific headers (Salesforce: `Sforce-Limit-Info`; HubSpot: response `X-HubSpot-RateLimit-Remaining`).\n\n**Messaging connector** (required; service_type: messaging):\n- Immediate alerts via `chat.postMessage` (or provider equivalent) to the configured channel.\n- Daily summary posted as a rich Block Kit message (Slack) or equivalent structured layout.\n- DM escalation for severely stale deals via `users.lookupByEmail` + `chat.postMessage` to user id.\n\n**Local state**:\n- `deal_states.json` — current snapshot keyed by Opportunity id.\n- `transition_history.json` — rolling 90-day window of stage transitions.\n- `stage_metadata.json` — cached sort order per stage.\n- `poll_state.json` — last_poll_timestamp + API usage counter for rate-limit budgeting.",
+      "operating_instructions": "Two capabilities run independently: 1. **uc_change_monitor** (polling, default every 3 minutes) — load stored deal states from memory. Query the CRM for Opportunities modified since `last_poll_timestamp`. Compare each returned record against stored state: detect stage changes (direction + stages moved), amount changes (delta + %), close date shifts (days moved), new deals. Classify urgency. Send contextual alert via messaging. Update memory with new states + transition records. Emit `sales.deal.stage_changed` per stage change plus targeted events (`sales.deal.closed_won`, `sales.deal.closed_lost`, `sales.deal.at_risk`, `sales.deal.large_created`). For Closed Lost, route to manual_review with a loss-reason prompt. First run = baseline scan, no alerts. 2. **uc_daily_summary** (scheduled, default 09:00 daily) — query CRM for aggregate pipeline snapshot (stage distribution, totals, weighted values). Compare against yesterday's snapshot from memory. Compute velocity metrics from 90-day transition history (avg days per stage, fastest/slowest, conversion rates). Identify at-risk deals (overdue close, stalled 2× stage average, regressed in last 7 days, close date imminent without recent progress). Build top-N deals to watch. Record pattern insights as memory. Emit `sales.pipeline.summary`. State: `deal_states.json` (Opportunity snapshot keyed by id), `transition_history.json` (rolling window, default 90 days), `stage_metadata.json` (cached sort order), `poll_state.json` (last_poll_timestamp + API usage counter).",
+      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- CRM: `GET /services/data/v59.0/query/?q={SOQL}` with `SELECT Id, Name, StageName, Amount, Probability, CloseDate, OwnerId, Owner.Name, LastModifiedDate, IsClosed, IsWon, ForecastCategory, AccountId, Account.Name FROM Opportunity WHERE LastModifiedDate >= {ts}`. Refresh token via `POST /services/oauth2/token` when needed.\n- CRM: `GET /crm/v3/objects/deals?properties=dealname,dealstage,amount,hs_lastmodifieddate&sorts=-hs_lastmodifieddate`.\n- CRM / other: adapt to the provider's 'recently modified deals' endpoint.\n- Aggregate query for daily summary: SOQL/REST equivalent of `SELECT stage, COUNT, SUM(amount) GROUP BY stage`.\n- Stage metadata: fetch once at startup to map stage name → sort order for advance/regress detection.\n- Rate limit: monitor provider-specific headers (CRM: `Sforce-Limit-Info`; CRM: response `X-CRM-RateLimit-Remaining`). **Messaging connector** (required; service_type: messaging):\n- Immediate alerts via `chat.postMessage` (or provider equivalent) to the configured channel.\n- Daily summary posted as a rich formatted messaging layout message (messaging) or equivalent structured layout.\n- DM escalation for severely stale deals via `users.lookupByEmail` + `chat.postMessage` to user id. **Local state**:\n- `deal_states.json` — current snapshot keyed by Opportunity id.\n- `transition_history.json` — rolling 90-day window of stage transitions.\n- `stage_metadata.json` — cached sort order per stage.\n- `poll_state.json` — last_poll_timestamp + API usage counter for rate-limit budgeting.",
       "error_handling": "CRM 401 → attempt token refresh; if refresh fails (invalid_grant), pause polling, alert user, emit persona.error. CRM 403 (missing scope) → alert admin, do not retry. Rate limit approaching (>80% daily) → auto-reduce poll to 15 min, alert user; resume at reset. Rate limit exceeded → stop polling for the day, still attempt daily summary from cache. Duplicate detection → suppress same Opportunity + same old→new stage within 10 minutes. Rapid stage changes (multiple hops between polls) → report net result + note intermediate stage. Missing Amount → treat as $0 for threshold filtering, flag in alerts. Unknown stage name → refresh stage metadata; if truly new, integrate into sort order. Network timeout → retry once after 30s; after 3 consecutive failures, alert user. Memory corruption → reinit from full CRM query, suppress alerts for that cycle (treat as first run). First run → baseline scan only, no alerts.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "crm",
@@ -64,7 +76,7 @@
               "label": "Connected App / OAuth Client ID",
               "type": "text",
               "placeholder": "",
-              "helpText": "OAuth client id from your CRM's developer console. Salesforce: Connected App Consumer Key. HubSpot: OAuth app client id.",
+              "helpText": "OAuth client id from your CRM's developer console. CRM: Connected App Consumer Key. CRM: OAuth app client id.",
               "required": true
             },
             {
@@ -80,7 +92,7 @@
               "label": "Instance / Base URL",
               "type": "url",
               "placeholder": "https://yourorg.my.salesforce.com",
-              "helpText": "Base URL for CRM API calls. Salesforce: my.salesforce.com. HubSpot: api.hubapi.com.",
+              "helpText": "Base URL for CRM API calls. CRM: my.salesforce.com. CRM: api.hubapi.com.",
               "required": true
             },
             {
@@ -108,7 +120,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-…",
-              "helpText": "Bot token with chat:write + users:read + users:read.email scopes (Slack) or equivalent for other messaging providers.",
+              "helpText": "Bot token with chat:write + users:read + users:read.email scopes (messaging) or equivalent for other messaging providers.",
               "required": true
             },
             {
@@ -143,10 +155,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/3 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/3 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 3 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "messaging"],
+        "connectors": [
+          "crm",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -206,34 +224,121 @@
           "poll_interval_minutes": "{{param.aq_poll_interval}}",
           "notification_threshold_usd": "{{param.aq_notification_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Poll tick" },
-            { "id": "m2", "type": "action", "label": "Load stored states + last_poll_ts" },
-            { "id": "m3", "type": "connector", "label": "Query modified Opportunities", "connector": "crm" },
-            { "id": "m4", "type": "action", "label": "Detect stage / amount / close-date / new-deal changes" },
-            { "id": "m5", "type": "action", "label": "Classify urgency per change" },
-            { "id": "m6", "type": "connector", "label": "Send contextual alerts", "connector": "messaging" },
-            { "id": "m7", "type": "decision", "label": "Any Closed Lost?" },
-            { "id": "m8", "type": "action", "label": "Manual review: loss reason" },
-            { "id": "m9", "type": "action", "label": "Update states + transition history" },
-            { "id": "m10", "type": "event", "label": "Emit stage_changed + targeted events" },
-            { "id": "m11", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Load stored states + last_poll_ts"
+            },
+            {
+              "id": "m3",
+              "type": "connector",
+              "label": "Query modified Opportunities",
+              "connector": "crm"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Detect stage / amount / close-date / new-deal changes"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Classify urgency per change"
+            },
+            {
+              "id": "m6",
+              "type": "connector",
+              "label": "Send contextual alerts",
+              "connector": "messaging"
+            },
+            {
+              "id": "m7",
+              "type": "decision",
+              "label": "Any Closed Lost?"
+            },
+            {
+              "id": "m8",
+              "type": "action",
+              "label": "Manual review: loss reason"
+            },
+            {
+              "id": "m9",
+              "type": "action",
+              "label": "Update states + transition history"
+            },
+            {
+              "id": "m10",
+              "type": "event",
+              "label": "Emit stage_changed + targeted events"
+            },
+            {
+              "id": "m11",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8", "variant": "yes", "label": "Yes" },
-            { "source": "m7", "target": "m9", "variant": "no", "label": "No" },
-            { "source": "m8", "target": "m9" },
-            { "source": "m9", "target": "m10" },
-            { "source": "m10", "target": "m11" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "m7",
+              "target": "m9",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            },
+            {
+              "source": "m9",
+              "target": "m10"
+            },
+            {
+              "source": "m10",
+              "target": "m11"
+            }
           ]
         }
       },
@@ -248,12 +353,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily at 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "messaging"],
+        "connectors": [
+          "crm",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Daily snapshot for tomorrow's comparison. Pattern insights (bottleneck stages, rep velocity) persisted as knowledge annotations."
@@ -279,25 +393,77 @@
         "sample_input": {
           "max_stage_history_days": "{{param.aq_history_days}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Daily tick" },
-            { "id": "s2", "type": "connector", "label": "Query aggregate pipeline", "connector": "crm" },
-            { "id": "s3", "type": "action", "label": "Compute distribution + movement + velocity + at-risk" },
-            { "id": "s4", "type": "connector", "label": "Send summary message", "connector": "messaging" },
-            { "id": "s5", "type": "action", "label": "Persist snapshot + pattern insights" },
-            { "id": "s6", "type": "event", "label": "Emit sales.pipeline.summary" },
-            { "id": "s7", "type": "end", "label": "Summary delivered" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Query aggregate pipeline",
+              "connector": "crm"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Compute distribution + movement + velocity + at-risk"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Send summary message",
+              "connector": "messaging"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Persist snapshot + pattern insights"
+            },
+            {
+              "id": "s6",
+              "type": "event",
+              "label": "Emit sales.pipeline.summary"
+            },
+            {
+              "id": "s7",
+              "type": "end",
+              "label": "Summary delivered"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            }
           ]
         }
       }
@@ -306,7 +472,9 @@
       {
         "id": "aq_crm_source",
         "scope": "connector",
-        "connector_names": ["crm"],
+        "connector_names": [
+          "crm"
+        ],
         "category": "configuration",
         "question": "Which CRM credential should be monitored?",
         "type": "select",
@@ -317,13 +485,15 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[refresh_token].value",
         "variable_name": "crm_provider",
-        "context": "Options auto-detected from your Vault's crm-category credentials. Salesforce, HubSpot, Pipedrive supported; the agent adapts its queries per provider.",
+        "context": "Options auto-detected from your Vault's crm-category credentials. CRM, CRM, CRM supported; the agent adapts its queries per provider.",
         "dimension": "connectors"
       },
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should receive deal alerts?",
         "type": "select",
@@ -340,11 +510,18 @@
       {
         "id": "aq_poll_interval",
         "scope": "capability",
-        "use_case_ids": ["uc_change_monitor"],
+        "use_case_ids": [
+          "uc_change_monitor"
+        ],
         "category": "configuration",
         "question": "How frequently should the CRM be polled?",
         "type": "select",
-        "options": ["1 minute", "3 minutes", "5 minutes", "15 minutes"],
+        "options": [
+          "1 minute",
+          "3 minutes",
+          "5 minutes",
+          "15 minutes"
+        ],
         "default": "3 minutes",
         "maps_to": "use_cases[uc_change_monitor].sample_input.poll_interval_minutes",
         "variable_name": "poll_interval_minutes",
@@ -354,11 +531,19 @@
       {
         "id": "aq_notification_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_change_monitor"],
+        "use_case_ids": [
+          "uc_change_monitor"
+        ],
         "category": "quality",
         "question": "Minimum deal size for immediate notifications?",
         "type": "select",
-        "options": ["All deals ($0)", "$5,000+", "$10,000+", "$25,000+", "$50,000+"],
+        "options": [
+          "All deals ($0)",
+          "$5,000+",
+          "$10,000+",
+          "$25,000+",
+          "$50,000+"
+        ],
         "default": "All deals ($0)",
         "maps_to": "use_cases[uc_change_monitor].sample_input.notification_threshold_usd",
         "variable_name": "notification_threshold_usd",
@@ -368,11 +553,19 @@
       {
         "id": "aq_history_days",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_summary"],
+        "use_case_ids": [
+          "uc_daily_summary"
+        ],
         "category": "configuration",
         "question": "Stage transition history retention (days)?",
         "type": "select",
-        "options": ["30", "60", "90", "180", "365"],
+        "options": [
+          "30",
+          "60",
+          "90",
+          "180",
+          "365"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_daily_summary].sample_input.max_stage_history_days",
         "variable_name": "max_stage_history_days",

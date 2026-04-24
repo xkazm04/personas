@@ -54,6 +54,12 @@ export default tseslint.config(
               message: "Use invokeWithTimeout from '@/lib/tauriInvoke' instead of raw invoke. It adds timeout protection, IPC metrics, idempotency dedup, and typed CommandName safety.",
             },
           ],
+          patterns: [
+            {
+              group: ["**/sub_usage/charts/chartConstants", "@/features/overview/sub_usage/charts/chartConstants"],
+              message: "Import chart constants from '@/features/overview/sub_usage/libs/chartConstants' — the charts/ copy is stale.",
+            },
+          ],
         },
       ],
       "custom/enforce-base-modal": "warn",

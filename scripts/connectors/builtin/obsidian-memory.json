@@ -4,9 +4,8 @@
   "label": "Obsidian Memory",
   "color": "#7C3AED",
   "icon_url": "/icons/connectors/obsidian.svg",
-  "category": "knowledge",
+  "category": "knowledge_base",
   "categories": [
-    "knowledge",
     "knowledge_base",
     "vector_search"
   ],

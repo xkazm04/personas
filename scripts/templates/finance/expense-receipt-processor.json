@@ -2,33 +2,33 @@
   "id": "expense-receipt-processor",
   "schema_version": 3,
   "name": "Expense Receipt Processor",
-  "description": "Polls Gmail for receipts and invoices, extracts vendor/amount/date/category with AI, logs everything to a Google Sheet, and flags anomalies (duplicates, high-amounts, missing recurring charges) via Slack. Ships a weekly expense summary every Friday.",
+  "description": "Polls email for receipts and invoices, extracts vendor/amount/date/category with AI, logs everything to a spreadsheet, and flags anomalies (duplicates, high-amounts, missing recurring charges) via the messaging channel. Ships a weekly expense summary every Friday.",
   "icon": "Receipt",
   "color": "#14B8A6",
   "category": [
     "finance"
   ],
   "service_flow": [
-    "Gmail",
-    "Google Sheets",
-    "Slack"
+    "email",
+    "spreadsheet",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Gmail",
-      "Google Sheets",
-      "Slack"
+      "email",
+      "spreadsheet",
+      "messaging"
     ],
     "persona": {
       "goal": "Every business receipt lands in the right row of the right sheet — no shoebox, no manual entry, and nothing quietly double-counted.",
       "identity": {
         "role": "Expense bookkeeper that monitors Gmail, extracts structured expense data from receipts and invoices, and keeps a clean Google Sheets ledger.",
-        "description": "Polls the inbox for receipt-shaped emails, runs AI extraction over PDFs/images/HTML bodies, normalizes vendor names, categorizes each expense into one of eight standard buckets, and appends to a Google Sheets expense tracker. Anomaly detection runs in real time (duplicates, high-amounts) and weekly (missing recurring, category spikes, vendor frequency)."
+        "description": "Polls the inbox for receipt-shaped emails, runs AI extraction over PDFs/images/HTML bodies, normalizes vendor names, categorizes each expense into one of eight standard buckets, and appends to a spreadsheet expense tracker. Anomaly detection runs in real time (duplicates, high-amounts) and weekly (missing recurring, category spikes, vendor frequency)."
       },
       "voice": {
         "style": "Bookkeeper-precise. Flags anomalies with calm specificity — amount, vendor, date, confidence. No hyperbole.",
-        "output_format": "Sheets rows use the 13-column schema. Slack alerts use Block Kit with compact sections. Weekly summary leads with total + receipts processed + anomaly count, then category breakdown, top vendors, MTD vs budget, pending actions.",
+        "output_format": "Sheets rows use the 13-column schema. messaging alerts use formatted messaging layout with compact sections. Weekly summary leads with total + receipts processed + anomaly count, then category breakdown, top vendors, MTD vs budget, pending actions.",
         "tone_adjustments": []
       },
       "principles": [
@@ -42,7 +42,7 @@
         "Never write to a Summary tab — that's reserved for user formulas.",
         "Never attempt currency conversion — store the original currency always.",
         "Never silently de-duplicate near-matches — surface both entries and let the human resolve.",
-        "Never block expense logging on a Slack failure — queue the alert locally and log the row anyway."
+        "Never block expense logging on a messaging failure — queue the alert locally and log the row anyway."
       ],
       "decision_principles": [
         "When the extraction is partial (amount but no vendor), still log with confidence=low and note what's missing.",
@@ -53,9 +53,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities with distinct cadences and delivery targets:\n\n1. **uc_receipt_ingest** — poll Gmail every 10 minutes for receipt/invoice-shaped emails. For each match: dedupe against `data/expense_log.json` by message ID, download attachments (PDF/PNG/JPG) or parse inline HTML, extract structured fields (vendor, date, amount, currency, tax, payment method, line items, receipt #), normalize vendor via `vendor_patterns.json`, assign category, dedupe against Sheets by vendor+amount+date (±1d) over last 90 days, and append to the expense tab. Mark processed emails with a Gmail label so the audit trail is visible. Emits `expense.ledger.logged` per successful append.\n\n2. **uc_anomaly_alerts** — real-time companion to uc_receipt_ingest. Listens for `expense.ledger.logged` AND runs a scheduled sweep each tick for missing-recurring / category-spike / vendor-frequency anomalies. Individual Slack alerts for: amount > threshold, potential duplicate detected, missing recurring charge, category spending >2× 4-week average. Uses a dedupe log to avoid repeating the same alert within a week.\n\n3. **uc_weekly_summary** — Friday 5 PM. Compile the week's ledger from Sheets: total, receipts count, category breakdown with WoW, top 5 vendors, MTD vs configured monthly budget with projected month-end, anomalies, pending review items. Post to Slack via Block Kit. Archive to `data/weekly_reports/`. Clear resolved items from `pending_review.json`.",
-      "tool_guidance": "**Gmail** (polling):\n- Search rotation: `subject:(receipt OR invoice OR order confirmation OR payment confirmation OR subscription) has:attachment newer_than:1h`, `from:(noreply OR billing OR invoices OR receipts OR payments OR accounting) has:attachment newer_than:1h`, `subject:(purchase OR transaction OR statement) has:attachment newer_than:1h`.\n- Also check known vendor senders from `vendor_patterns.json` (Stripe, PayPal, Amazon often embed receipts inline).\n- Mark processed with Gmail label `Processed/Expenses`.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS` — append expense row.\n- `GET /{id}/values/{range}` — dedupe check across last 100 rows.\n- `GET /{id}/values/Sheet1!1:1` — verify header; `PUT` to create if absent.\n- 13-column schema: Date | Vendor | Description | Amount | Currency | Category | Tax | Payment Method | Receipt # | Source Email | Confidence | Notes | Processed At.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` for anomaly alerts and weekly summary. Keep messages ≤ 50 blocks; split if needed.\n\n**Local state**: `expense_log.json` (message-ID-keyed master log), `vendor_patterns.json` (normalization + category mappings), `recurring_tracker.json` (expected subscriptions), `pending_review.json` (held items), `weekly_reports/report_{date}.json` (archived summaries), `error_log.json` (failures).\n\n**Categories**: Travel, Meals & Entertainment, Software & SaaS, Office Supplies, Marketing, Professional Services, Utilities, Other.",
-      "error_handling": "Gmail auth 401/403 → emit persona-error; continue Sheets/Slack ops if possible. Gmail 429 → 60s backoff then skip cycle. Sheets 429 → queue in `pending_sheets.json`, retry. Sheets 401 → emit persona-error, keep extracted data queued. Slack unreachable → queue in `pending_slack.json`, never block ingest. Unreadable attachment → log to `error_log.json`, Slack notify for manual entry. Partial extraction → log with confidence=low and descriptive note. Foreign currency → store original; do not convert. Forwarded receipts → use transaction date, not email date. Refunds → log with negative amount, category 'Refund/Credit'.",
+      "operating_instructions": "Three capabilities with distinct cadences and delivery targets: 1. **uc_receipt_ingest** — poll email every 10 minutes for receipt/invoice-shaped emails. For each match: dedupe against `data/expense_log.json` by message ID, download attachments (PDF/PNG/JPG) or parse inline HTML, extract structured fields (vendor, date, amount, currency, tax, payment method, line items, receipt #), normalize vendor via `vendor_patterns.json`, assign category, dedupe against Sheets by vendor+amount+date (±1d) over last 90 days, and append to the expense tab. Mark processed emails with a email tags/folders so the audit trail is visible. Emits `expense.ledger.logged` per successful append. 2. **uc_anomaly_alerts** — real-time companion to uc_receipt_ingest. Listens for `expense.ledger.logged` AND runs a scheduled sweep each tick for missing-recurring / category-spike / vendor-frequency anomalies. Individual messaging alerts for: amount > threshold, potential duplicate detected, missing recurring charge, category spending >2× 4-week average. Uses a dedupe log to avoid repeating the same alert within a week. 3. **uc_weekly_summary** — Friday 5 PM. Compile the week's ledger from Sheets: total, receipts count, category breakdown with WoW, top 5 vendors, MTD vs configured monthly budget with projected month-end, anomalies, pending review items. Post to the messaging channel via formatted messaging layout. Archive to `data/weekly_reports/`. Clear resolved items from `pending_review.json`.",
+      "tool_guidance": "**email** (polling):\n- Search rotation: `subject:(receipt OR invoice OR order confirmation OR payment confirmation OR subscription) has:attachment newer_than:1h`, `from:(noreply OR billing OR invoices OR receipts OR payments OR accounting) has:attachment newer_than:1h`, `subject:(purchase OR transaction OR statement) has:attachment newer_than:1h`.\n- Also check known vendor senders from `vendor_patterns.json` (Stripe, PayPal, Amazon often embed receipts inline).\n- Mark processed with email tags/folders `Processed/Expenses`. **spreadsheet** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS` — append expense row.\n- `GET /{id}/values/{range}` — dedupe check across last 100 rows.\n- `GET /{id}/values/Sheet1!1:1` — verify header; `PUT` to create if absent.\n- 13-column schema: Date | Vendor | Description | Amount | Currency | Category | Tax | Payment Method | Receipt # | Source Email | Confidence | Notes | Processed At. **messaging** (`https://slack.com/api`):\n- `POST chat.postMessage` for anomaly alerts and weekly summary. Keep messages ≤ 50 blocks; split if needed. **Local state**: `expense_log.json` (message-ID-keyed master log), `vendor_patterns.json` (normalization + category mappings), `recurring_tracker.json` (expected subscriptions), `pending_review.json` (held items), `weekly_reports/report_{date}.json` (archived summaries), `error_log.json` (failures). **Categories**: Travel, Meals & Entertainment, Software & SaaS, Office Supplies, Marketing, Professional Services, Utilities, Other.",
+      "error_handling": "email auth 401/403 → emit persona-error; continue Sheets/messaging ops if possible. email 429 → 60s backoff then skip cycle. Sheets 429 → queue in `pending_sheets.json`, retry. Sheets 401 → emit persona-error, keep extracted data queued. messaging unreachable → queue in `pending_slack.json`, never block ingest. Unreadable attachment → log to `error_log.json`, messaging notify for manual entry. Partial extraction → log with confidence=low and descriptive note. Foreign currency → store original; do not convert. Forwarded receipts → use transaction date, not email date. Refunds → log with negative amount, category 'Refund/Credit'.",
       "examples": [],
       "tools": [
         "gmail_search",
@@ -102,7 +102,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the email API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         },
         {
           "name": "spreadsheet",
@@ -141,7 +141,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the spreadsheet API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
           "name": "messaging",
@@ -153,7 +153,7 @@
             "messaging"
           ],
           "required": false,
-          "fallback_note": "Without Slack, anomaly alerts and weekly summaries are written to `data/latest_alerts.json` / `data/weekly_reports/` locally. You can re-enable Slack later and past alerts won't be lost.",
+          "fallback_note": "Without messaging, anomaly alerts and weekly summaries are written to `data/latest_alerts.json` / `data/weekly_reports/` locally. You can re-enable messaging later and past alerts won't be lost.",
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
             {
@@ -161,7 +161,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-              "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: chat:write, users:read, users:read.email",
+              "helpText": "From your messaging App -> OAuth & Permissions -> Bot User OAuth Token. Requires scopes: chat:write, users:read, users:read.email",
               "required": true
             }
           ],
@@ -180,8 +180,8 @@
       {
         "id": "uc_receipt_ingest",
         "title": "Receipt Ingest",
-        "description": "Poll Gmail for receipt-shaped emails, extract structured expense data, normalize vendors, categorize, and append to the Google Sheets ledger. Idempotent by Gmail message ID. Default every 10 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Gmail polling + AI receipt extraction + Sheets ledger appends.",
+        "description": "Poll email for receipt-shaped emails, extract structured expense data, normalize vendors, categorize, and append to the spreadsheet ledger. Idempotent by email message ID. Default every 10 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "email polling + AI receipt extraction + Sheets ledger appends.",
         "category": "operations",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -219,12 +219,12 @@
             "description": "Payload: { message_id, reason (unreadable|partial|auth|unsupported_format), subject }. Emitted when ingest fails; routes to manual review."
           }
         ],
-        "error_handling": "Gmail 401/403 → emit persona-error; stop polling until re-auth. 429 → 60s backoff then skip cycle. Sheets 429 → queue in `pending_sheets.json`. Unreadable attachment → error event; Slack notify via uc_anomaly_alerts. Partial extraction → log confidence=low with notes. Duplicate (same msg-id) → silent skip.",
+        "error_handling": "email 401/403 → emit persona-error; stop polling until re-auth. 429 → 60s backoff then skip cycle. Sheets 429 → queue in `pending_sheets.json`. Unreadable attachment → error event; messaging notify via uc_anomaly_alerts. Partial extraction → log confidence=low with notes. Duplicate (same msg-id) → silent skip.",
         "input_schema": [
           {
             "name": "expense_sheet_id",
             "type": "text",
-            "description": "Google Sheet ID for the expense ledger. Must have a tab with the 13-column schema; agent creates headers if the sheet is empty."
+            "description": "spreadsheet ID for the expense ledger. Must have a tab with the 13-column schema; agent creates headers if the sheet is empty."
           },
           {
             "name": "categories",
@@ -268,7 +268,7 @@
             {
               "id": "i2",
               "type": "connector",
-              "label": "Search Gmail for receipts",
+              "label": "Search email for receipts",
               "connector": "email"
             },
             {
@@ -302,7 +302,7 @@
             {
               "id": "i8",
               "type": "action",
-              "label": "Update vendor_patterns + expense_log + Gmail label"
+              "label": "Update vendor_patterns + expense_log + email tags/folders"
             },
             {
               "id": "i9",
@@ -358,8 +358,8 @@
       {
         "id": "uc_anomaly_alerts",
         "title": "Anomaly Alerts",
-        "description": "Real-time and weekly anomaly detection on the expense ledger — high-amount expenses, potential duplicates, missing recurring charges, category spending spikes, unusual vendor frequency — routed to Slack with Block Kit alerts. Default event-driven (ingest event) + daily sweep for weekly-scope anomalies — final cadence set at the trigger-composition step.",
-        "capability_summary": "Slack alerting on expense anomalies with dedupe against the alert history log.",
+        "description": "Real-time and weekly anomaly detection on the expense ledger — high-amount expenses, potential duplicates, missing recurring charges, category spending spikes, unusual vendor frequency — routed to the messaging channel with formatted messaging layout alerts. Default event-driven (ingest event) + daily sweep for weekly-scope anomalies — final cadence set at the trigger-composition step.",
+        "capability_summary": "messaging alerting on expense anomalies with dedupe against the alert history log.",
         "category": "notifications",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -392,10 +392,10 @@
           {
             "event_type": "expense.anomaly.detected",
             "direction": "emit",
-            "description": "Payload: { type (high_amount|duplicate|missing_recurring|category_spike|vendor_frequency), vendor?, amount?, detail }. Emitted per anomaly routed to Slack."
+            "description": "Payload: { type (high_amount|duplicate|missing_recurring|category_spike|vendor_frequency), vendor?, amount?, detail }. Emitted per anomaly routed to the messaging channel."
           }
         ],
-        "error_handling": "Slack unreachable → queue in `pending_slack.json`. Dedupe log corruption → rebuild from `weekly_reports/` history. Missing recurring tracker → skip recurring-check pass only.",
+        "error_handling": "messaging unreachable → queue in `pending_slack.json`. Dedupe log corruption → rebuild from `weekly_reports/` history. Missing recurring tracker → skip recurring-check pass only.",
         "input_schema": [
           {
             "name": "anomaly_threshold",
@@ -407,7 +407,7 @@
               "1000"
             ],
             "default": "500",
-            "description": "Individual Slack alert fires for any expense at or above this amount."
+            "description": "Individual messaging alert fires for any expense at or above this amount."
           },
           {
             "name": "category_spike_multiplier",
@@ -456,7 +456,7 @@
             {
               "id": "a5",
               "type": "connector",
-              "label": "Post Block Kit alerts to Slack",
+              "label": "Post formatted messaging layout alerts to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -501,8 +501,8 @@
       {
         "id": "uc_weekly_summary",
         "title": "Weekly Summary",
-        "description": "Compile the week's expense ledger into a Slack Block Kit summary: total, receipts count, category breakdown with WoW change, top 5 vendors, MTD vs monthly budget with projected month-end, anomalies, pending review items. Archives the payload locally. Default Fridays 5:00 PM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Friday expense summary to Slack with MTD tracking and pending actions.",
+        "description": "Compile the week's expense ledger into a messaging formatted layout summary: total, receipts count, category breakdown with WoW change, top 5 vendors, MTD vs monthly budget with projected month-end, anomalies, pending review items. Archives the payload locally. Default Fridays 5:00 PM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Friday expense summary to the messaging channel with MTD tracking and pending actions.",
         "category": "reporting",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -532,10 +532,10 @@
           {
             "event_type": "expense.summary.delivered",
             "direction": "emit",
-            "description": "Payload: { week_ending, total, receipts_count, mtd_total, mtd_budget, projected_month_end, anomaly_count }. Emitted on successful Slack post."
+            "description": "Payload: { week_ending, total, receipts_count, mtd_total, mtd_budget, projected_month_end, anomaly_count }. Emitted on successful messaging post."
           }
         ],
-        "error_handling": "Sheets unreachable → build from local `expense_log.json` with freshness warning. Slack post fail → archive anyway; retry post on next cycle. Block limit (50) → split into multiple messages preserving section order.",
+        "error_handling": "Sheets unreachable → build from local `expense_log.json` with freshness warning. messaging post fail → archive anyway; retry post on next cycle. Block limit (50) → split into multiple messages preserving section order.",
         "input_schema": [
           {
             "name": "monthly_budget",
@@ -584,7 +584,7 @@
             {
               "id": "w6",
               "type": "connector",
-              "label": "Post Block Kit summary to Slack",
+              "label": "Post formatted messaging layout summary to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -649,16 +649,16 @@
           "uc_weekly_summary"
         ],
         "category": "configuration",
-        "question": "Which Google Sheet should hold the expense ledger?",
+        "question": "Which spreadsheet should hold the expense ledger?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "google_sheets",
+          "service_type": "spreadsheet",
           "operation": "list_sheets",
           "source": "vault"
         },
         "maps_to": "use_cases[uc_receipt_ingest].sample_input.expense_sheet_id",
         "variable_name": "expense_sheet",
-        "context": "Options come from your connected Google Sheets credential. The agent creates 13-column headers if the sheet is empty and never writes to a Summary tab.",
+        "context": "Options come from your connected spreadsheet credential. The agent creates 13-column headers if the sheet is empty and never writes to a Summary tab.",
         "dimension": "connectors"
       },
       {
@@ -716,7 +716,7 @@
         "default": "500",
         "maps_to": "use_cases[uc_anomaly_alerts].sample_input.anomaly_threshold",
         "variable_name": "anomaly_threshold",
-        "context": "Real-time Slack alert threshold. Below this, expenses are logged silently and appear only in the weekly summary.",
+        "context": "Real-time messaging alert threshold. Below this, expenses are logged silently and appear only in the weekly summary.",
         "dimension": "use-cases"
       },
       {
@@ -771,7 +771,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -790,7 +790,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -809,7 +809,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

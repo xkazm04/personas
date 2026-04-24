@@ -13,18 +13,10 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
-import { BehaviorCoreEditor } from "@/features/agents/components/matrix/BehaviorCoreEditor";
-import { CapabilityRowEditor } from "@/features/agents/components/matrix/CapabilityRowEditor";
-import { CapabilityAddModal } from "@/features/agents/components/matrix/CapabilityAddModal";
-import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
-import { GlyphGrid, GlyphQuestionPanel } from "@/features/shared/glyph";
+import { GlyphQuestionPanel } from "@/features/shared/glyph";
+import { GlyphFullLayout } from "@/features/agents/components/matrix/GlyphFullLayout";
+import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
-  useUseCaseChronology,
-  useUseCaseFlows,
-} from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
-import { MatrixCommandCenter } from "@/features/templates/sub_generated/gallery/matrix/MatrixCommandCenter";
-import {
-  DimensionQuickConfig,
   serializeQuickConfig,
   type QuickConfigState,
 } from "@/features/agents/components/matrix/DimensionQuickConfig";
@@ -35,14 +27,19 @@ import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Layout preference — persists across sessions via localStorage.
-type BuildLayout = "legacy-dimensions" | "v3-capabilities" | "glyph";
+// Only two modes remain: the new flagship "glyph-full" and the legacy
+// 8-dimension matrix. Earlier "v3-capabilities" and "glyph" values are
+// migrated to "glyph-full" on read.
+type BuildLayout = "legacy-dimensions" | "glyph-full";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return raw;
+    if (raw === "legacy-dimensions" || raw === "glyph-full") return raw;
+    // Migrate retired values so users don't land on a stale preference.
+    if (raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
   } catch { /* SSR or disabled localStorage */ }
-  return "v3-capabilities";
+  return "glyph-full";
 }
 function writeLayoutPreference(value: BuildLayout): void {
   try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch { /* best-effort */ }
@@ -375,32 +372,30 @@ export function UnifiedMatrixEntry() {
     writeLayoutPreference(next);
   }, []);
 
-  const hasBehaviorCore = useAgentStore((s) => s.buildBehaviorCore !== null);
-  const capabilityOrder = useAgentStore((s) => s.buildCapabilityOrder);
-  const [showAddCapability, setShowAddCapability] = useState(false);
-
-  // Glyph layout reads the same buildDraft as the adoption flow, so the shared
+  // Glyph Full reads the same buildDraft as the adoption flow, so the shared
   // chronology builder produces the rows without any edit-mode-specific shim.
   const glyphRows = useUseCaseChronology();
-  const glyphFlows = useUseCaseFlows();
 
-  // Glyph mode owns its own DimensionQuickConfig state so we can append the
+  // Glyph Full owns its own DimensionQuickConfig state so we can append the
   // serialized config to intent at launch time — mirrors what PersonaMatrix
   // does internally for its pre-build quick setup.
-  const [glyphQuickConfig, setGlyphQuickConfig] = useState<QuickConfigState>({
+  const [, setGlyphQuickConfig] = useState<QuickConfigState>({
     frequency: null, days: ['mon'], monthDay: 1, time: '09:00',
     selectedConnectors: [], connectorTables: {}, selectedEvents: [],
   });
-  const glyphQuickConfigRef = useRef(glyphQuickConfig);
-  glyphQuickConfigRef.current = glyphQuickConfig;
+  const glyphQuickConfigRef = useRef<QuickConfigState>({
+    frequency: null, days: ['mon'], monthDay: 1, time: '09:00',
+    selectedConnectors: [], connectorTables: {}, selectedEvents: [],
+  });
   const handleLaunchGlyph = useCallback(() => {
     const hint = serializeQuickConfig(glyphQuickConfigRef.current);
     if (hint) setIntentText(intentTextRef.current + hint);
     void handleLaunch();
   }, [handleLaunch, setIntentText]);
-
-  // Pre-build = creation mode before the LLM has produced anything
-  const isPreBuildGlyph = !hasBehaviorCore && !hasDesignResult && !isActivelyBuilding;
+  const handleQuickConfigChange = useCallback((c: QuickConfigState) => {
+    glyphQuickConfigRef.current = c;
+    setGlyphQuickConfig(c);
+  }, []);
 
   // -- Render -------------------------------------------------------------
 
@@ -423,206 +418,68 @@ export function UnifiedMatrixEntry() {
         </div>
       )}
 
-      {/* Layout toggle — always visible so users can preview the Glyph
-          prototype even in pre-build, not only once content exists. */}
+      {/* Layout toggle — two modes only: the flagship Glyph Full and the
+          legacy 8-dimension matrix. */}
       <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
-          <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
-            <button
-              type="button"
-              onClick={() => handleLayoutChange("legacy-dimensions")}
-              className={`rounded-full px-3 py-1 typo-caption transition ${
-                layout === "legacy-dimensions"
-                  ? "bg-primary/20 text-primary"
-                  : "text-foreground/60 hover:text-foreground"
-              }`}
-              title={t.matrix_v3.layout_toggle_tooltip}
-              data-testid="build-layout-toggle-legacy"
-            >
-              {t.matrix_v3.layout_toggle_legacy}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLayoutChange("v3-capabilities")}
-              className={`rounded-full px-3 py-1 typo-caption transition ${
-                layout === "v3-capabilities"
-                  ? "bg-primary/20 text-primary"
-                  : "text-foreground/60 hover:text-foreground"
-              }`}
-              title={t.matrix_v3.layout_toggle_tooltip}
-              data-testid="build-layout-toggle-v3"
-            >
-              {t.matrix_v3.layout_toggle_v3}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleLayoutChange("glyph")}
-              className={`rounded-full px-3 py-1 typo-caption transition ${
-                layout === "glyph"
-                  ? "bg-primary/20 text-primary"
-                  : "text-foreground/60 hover:text-foreground"
-              }`}
-              title="Glyph — sigil-first capability view"
-              data-testid="build-layout-toggle-glyph"
-            >
-              Glyph
-            </button>
-          </div>
+        <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("glyph-full")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "glyph-full"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground/60 hover:text-foreground"
+            }`}
+            title="Glyph Full — sigil-first flagship build surface"
+            data-testid="build-layout-toggle-glyph-full"
+          >
+            Glyph Full
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("legacy-dimensions")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "legacy-dimensions"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground/60 hover:text-foreground"
+            }`}
+            title="8-dimension view — original matrix layout"
+            data-testid="build-layout-toggle-legacy"
+          >
+            8-dimension View
+          </button>
         </div>
+      </div>
 
-      {layout === "glyph" ? (
-        <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1" data-testid="build-layout-glyph">
-          <div className="flex flex-col gap-4 pb-10">
-            {/* Pre-build: quick setup (triggers / connectors / events) */}
-            {isPreBuildGlyph && (
-              <DimensionQuickConfig onChange={setGlyphQuickConfig} />
-            )}
-
-            {/* Command hub — intent input, launch, test lifecycle, CLI output.
-               Reused standalone from PersonaMatrix's 9th cell so the Glyph
-               layout doesn't need the redundant dimension grid around it. */}
-            <div className="rounded-modal border border-primary/25 ring-1 ring-primary/10 bg-foreground/[0.04] backdrop-blur-lg p-4 2xl:p-5">
-              <MatrixCommandCenter
-                designResult={null}
-                isEditMode={true}
-                variant="creation"
-                intentText={intentText}
-                onIntentChange={setIntentText}
-                onLaunch={handleLaunchGlyph}
-                launchDisabled={launchDisabled}
-                isRunning={build.isBuilding}
-                completeness={build.completeness}
-                cliOutputLines={build.outputLines}
-                agentName={agentName}
-                onAgentNameChange={setAgentName}
-                hasDesignResult={hasDesignResult}
-                buildPhase={build.buildPhase}
-                onStartTest={lifecycle.handleStartTest}
-                onApproveTest={() => { void lifecycle.handlePromote(); }}
-                onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-                onRejectTest={lifecycle.handleRejectTest}
-                onRefine={lifecycle.handleRefine}
-                testOutputLines={build.buildTestOutputLines}
-                testPassed={build.buildTestPassed}
-                testError={build.buildTestError}
-                toolTestResults={lifecycle.buildToolTestResults}
-                testSummary={lifecycle.buildTestSummary}
-                buildActivity={build.buildActivity}
-                onApplyEdits={handleApplyEdits}
-                onDiscardEdits={handleDiscardEdits}
-                onViewAgent={handleViewPromotedAgent}
-                isPreBuild={isPreBuildGlyph}
-              />
-            </div>
-
-            {/* Glyph visualization — empty state message fires if no capabilities
-               have been produced yet. Pending Q&A surfaces inline at the top. */}
-            {/* Pending questions are handled by the inline panel above the
-               layout switch so every layout has the same Q&A UX; don't
-               re-render them inside the grid. */}
-            <GlyphGrid
-              rows={glyphRows}
-              flowsById={glyphFlows}
-              templateName={agentName || undefined}
-              emptyLabel={isPreBuildGlyph
-                ? "Describe what you want to build above, then launch. Capabilities will appear here as sigils."
-                : undefined}
-            />
-          </div>
-        </div>
-      ) : layout === "v3-capabilities" && hasBehaviorCore ? (
-        // v3 capability-first layout
-        <div
-          className="flex-1 min-h-0 w-full overflow-y-auto pr-1"
-          data-testid="build-layout-v3"
-        >
-          <div className="flex flex-col gap-5 pb-10">
-            <BehaviorCoreEditor />
-
-            <section
-              className="flex flex-col gap-3 rounded-2xl border border-border/30 bg-secondary/10 p-5"
-              data-testid="capabilities-section"
-            >
-              <header className="flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="typo-heading-sm text-foreground">
-                    {t.matrix_v3.capabilities_section_title}
-                  </h3>
-                  <p className="typo-body-sm text-foreground/50">
-                    {t.matrix_v3.capabilities_section_subtitle}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowAddCapability(true)}
-                  className="rounded-xl bg-primary/20 px-3 py-1.5 typo-body-sm font-medium text-primary hover:bg-primary/30"
-                  data-testid="capabilities-add-button"
-                >
-                  + {t.matrix_v3.capabilities_add_button}
-                </button>
-              </header>
-
-              {capabilityOrder.length === 0 ? (
-                <p
-                  className="typo-body-sm text-foreground/40 py-4"
-                  data-testid="capabilities-empty"
-                >
-                  {t.matrix_v3.capabilities_empty}
-                </p>
-              ) : (
-                <div className="flex flex-col gap-3" data-testid="capabilities-list">
-                  {capabilityOrder.map((id) => (
-                    <CapabilityRowEditor key={id} capabilityId={id} />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <SharedResourcesPanel />
-
-            {/* Keep the existing PersonaMatrix command-hub controls for
-               Test / Approve / Refine / View below the capability list.
-               PersonaMatrix's dimension grid is visually redundant in this
-               mode but its footer controls aren't — render in a collapsed
-               mode so the hub stays usable. */}
-            <div className="opacity-70">
-              <PersonaMatrix
-                designResult={null}
-                variant="creation"
-                hideHeader
-                intentText={intentText}
-                onIntentChange={setIntentText}
-                onLaunch={handleLaunch}
-                launchDisabled={launchDisabled}
-                isRunning={build.isBuilding}
-                completeness={build.completeness}
-                cliOutputLines={build.outputLines}
-                buildLocked={isActivelyBuilding}
-                cellBuildStates={build.cellStates}
-                pendingQuestions={build.pendingQuestions}
-                onAnswerBuildQuestion={build.handleAnswer}
-                agentName={agentName}
-                onAgentNameChange={setAgentName}
-                hasDesignResult={hasDesignResult}
-                buildPhase={build.buildPhase}
-                onStartTest={lifecycle.handleStartTest}
-                onApproveTest={() => { void lifecycle.handlePromote(); }}
-                onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-                onRejectTest={lifecycle.handleRejectTest}
-                onRefine={lifecycle.handleRefine}
-                testOutputLines={build.buildTestOutputLines}
-                testPassed={build.buildTestPassed}
-                testError={build.buildTestError}
-                toolTestResults={lifecycle.buildToolTestResults}
-                testSummary={lifecycle.buildTestSummary}
-                buildActivity={build.buildActivity}
-                onApplyEdits={handleApplyEdits}
-                onDiscardEdits={handleDiscardEdits}
-                onSubmitAllAnswers={build.handleSubmitAnswers}
-                onViewAgent={handleViewPromotedAgent}
-              />
-            </div>
-          </div>
-        </div>
+      {layout === "glyph-full" ? (
+        <GlyphFullLayout
+          intentText={intentText}
+          onIntentChange={setIntentText}
+          onLaunch={handleLaunchGlyph}
+          launchDisabled={launchDisabled}
+          isBuilding={build.isBuilding}
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          cellStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswer={build.handleAnswer}
+          agentName={agentName}
+          onAgentNameChange={setAgentName}
+          hasDesignResult={hasDesignResult}
+          glyphRows={glyphRows}
+          onStartTest={lifecycle.handleStartTest}
+          onPromote={() => { void lifecycle.handlePromote(); }}
+          onPromoteForce={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          cliOutputLines={build.outputLines}
+          onQuickConfigChange={handleQuickConfigChange}
+          onViewAgent={handleViewPromotedAgent}
+          buildError={build.buildError}
+        />
       ) : (
         <div className="flex-1 min-h-0 w-full" data-testid="build-layout-legacy">
           <PersonaMatrix
@@ -662,11 +519,6 @@ export function UnifiedMatrixEntry() {
           />
         </div>
       )}
-
-      <CapabilityAddModal
-        open={showAddCapability}
-        onClose={() => setShowAddCapability(false)}
-      />
 
       {/* Error banner */}
       {(launchError || build.buildError) && (

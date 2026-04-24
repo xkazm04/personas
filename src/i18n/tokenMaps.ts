@@ -6,6 +6,9 @@
  * shown to the user directly. Instead, the frontend resolves each token to a
  * translated label via the maps below.
  *
+ * This is the Layer-1→Layer-4 resolver in the i18n contract. See
+ * `src/i18n/CONTRACT.md` for the four-layer model and invariants.
+ *
  * ## Adding a new token
  *   1. Add the token → i18n key mapping in the relevant `*_TOKENS` record.
  *   2. Add the corresponding English string in `src/i18n/en.ts` under the

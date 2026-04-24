@@ -293,9 +293,34 @@ pub async fn ocr_with_claude(
     // Find Claude Code binary
     use crate::engine::provider::CliProvider;
     let candidates = crate::engine::provider::claude::ClaudeProvider.binary_candidates();
+    #[cfg(any(feature = "desktop", feature = "test-automation"))]
     let binary = candidates.iter()
         .find_map(|name| which::which(name).ok())
         .ok_or_else(|| AppError::Internal("Claude Code CLI not found in PATH".into()))?;
+    // Fallback PATH search when the `which` crate isn't linked (default-feature
+    // builds). Mirrors which::which's behavior: look for each candidate name
+    // in each PATH entry, honoring platform-specific extension suffixes.
+    #[cfg(not(any(feature = "desktop", feature = "test-automation")))]
+    let binary = {
+        let path_var = std::env::var_os("PATH").unwrap_or_default();
+        let exts: &[&str] = if cfg!(target_os = "windows") {
+            &["", ".exe", ".cmd", ".bat"]
+        } else {
+            &[""]
+        };
+        candidates.iter().find_map(|name| {
+            std::env::split_paths(&path_var).find_map(|dir| {
+                for ext in exts {
+                    let candidate = dir.join(format!("{name}{ext}"));
+                    if candidate.is_file() {
+                        return Some(candidate);
+                    }
+                }
+                None
+            })
+        })
+        .ok_or_else(|| AppError::Internal("Claude Code CLI not found in PATH".into()))?
+    };
 
     let start = Instant::now();
 

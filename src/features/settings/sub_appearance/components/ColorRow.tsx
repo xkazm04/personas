@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { X } from 'lucide-react';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
@@ -40,6 +41,8 @@ export function ColorRow({
         }`}
         style={{ backgroundColor: displayValue }}
         title={`Pick ${label}`}
+        aria-expanded={open}
+        aria-haspopup="dialog"
       />
       <span className="typo-caption font-medium text-foreground w-24 flex-shrink-0">{label}</span>
       <span className={`typo-code font-mono flex-1 min-w-0 truncate ${isOverridden ? 'text-foreground' : 'text-foreground'}`}>
@@ -59,17 +62,26 @@ export function ColorRow({
         <span className="text-[10px] text-foreground flex-shrink-0">auto</span>
       )}
 
-      {open && (
-          <div
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 glass-sm rounded-modal shadow-elevation-3 z-50 p-3 min-w-[280px]"
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="dialog"
+            aria-label={`${label} color picker`}
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.96 }}
+            transition={{ duration: 0.12, ease: 'easeOut' }}
+            style={{ transformOrigin: 'top left' }}
+            className="absolute top-full mt-1 left-0 glass-sm rounded-modal shadow-elevation-3 z-50 p-3 min-w-[280px]"
           >
             <ColorPicker
               value={displayValue}
               onChange={(c) => onChange(c)}
               size="sm"
             />
-          </div>
+          </motion.div>
         )}
+      </AnimatePresence>
     </div>
   );
 }

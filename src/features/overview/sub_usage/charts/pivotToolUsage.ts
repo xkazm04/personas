@@ -4,6 +4,21 @@ type ToolUsageOverTimePoint = {
   invocations: number;
 };
 
+/**
+ * Pivots a long-format tool-usage time-series (one row per date × tool)
+ * into wide-format rows keyed by date, suitable for a Recharts stacked
+ * AreaChart. Duplicate rows for the same date/tool pair are summed.
+ *
+ * Note: unlike the `libs/` sibling, this variant does NOT zero-fill
+ * missing (date, tool) cells, so consumers must tolerate `undefined`
+ * values when a tool is absent on a given date.
+ *
+ * @param toolUsageOverTime Long-format rows of `{ date, tool_name, invocations }`.
+ * @returns `{ areaData, allToolNames }` where `areaData` is an
+ *          ascending-date-sorted array of `{ date, [toolName]?: number }`
+ *          rows and `allToolNames` lists every tool seen. Empty input
+ *          returns `{ areaData: [], allToolNames: [] }`.
+ */
 export function pivotToolUsageOverTime(toolUsageOverTime: ToolUsageOverTimePoint[]) {
   if (!toolUsageOverTime.length) {
     return { areaData: [] as Array<{ date: string } & Record<string, number>>, allToolNames: [] as string[] };

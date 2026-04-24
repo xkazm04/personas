@@ -3,7 +3,7 @@ import { AlertCircle, CheckCircle2, Clock, Server, Copy, Check } from 'lucide-re
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
-import { EVENT_STATUS_COLORS, EVENT_TYPE_COLORS, formatRelativeTime } from '@/lib/utils/formatters';
+import { EVENT_STATUS_COLORS, getEventTypeColor, formatRelativeTime } from '@/lib/utils/formatters';
 
 import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import type { PersonaEvent, Persona } from '@/lib/types/types';
@@ -147,7 +147,7 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function EventRow({ event, index, start, size, getPersona, onClick }: EventRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
+  const typeColor = getEventTypeColor(event.event_type).tailwind;
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'
@@ -216,7 +216,7 @@ interface EventGridRowProps {
 
 export function EventGridRow({ event, index, gridCols, getPersona, onClick }: EventGridRowProps) {
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-  const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
+  const typeColor = getEventTypeColor(event.event_type).tailwind;
   const targetPersona = getPersona(event.target_persona_id);
   const borderAccent =
     event.status === 'processing' ? 'border-l-status-processing'

@@ -12,6 +12,7 @@ import {
   Share2,
   ShoppingBag,
   Calendar,
+  CalendarDays,
   FileText,
   Cloud,
   Layout,
@@ -20,6 +21,35 @@ import {
   HardDrive,
   ClipboardList,
   Bell,
+  Table,
+  BookOpen,
+  BookText,
+  Search,
+  Image,
+  Video,
+  Mic,
+  AudioLines,
+  Eye,
+  GitBranch,
+  Workflow,
+  Box,
+  Zap,
+  Terminal,
+  Monitor,
+  Ticket,
+  PieChart,
+  Megaphone,
+  TrendingUp,
+  Timer,
+  Briefcase,
+  Scale,
+  ShieldCheck,
+  Microscope,
+  Cable,
+  Plug,
+  Download,
+  MousePointer2,
+  UserCircle,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -39,8 +69,12 @@ export interface ArchCategory {
 
 const ICON_MAP: Record<string, LucideIcon> = {
   MessageSquare, Database, Users, Kanban, Code2, Activity, BarChart3,
-  Mail, CreditCard, LifeBuoy, Share2, ShoppingBag, Calendar,
+  Mail, CreditCard, LifeBuoy, Share2, ShoppingBag, Calendar, CalendarDays,
   FileText, Cloud, Layout, Bot, Globe, HardDrive, ClipboardList, Bell,
+  Table, BookOpen, BookText, Search, Image, Video, Mic, AudioLines, Eye,
+  GitBranch, Workflow, Box, Zap, Terminal, Monitor, Ticket, PieChart,
+  Megaphone, TrendingUp, Timer, Briefcase, Scale, ShieldCheck, Microscope,
+  Cable, Plug, Download, MousePointer2, UserCircle,
 };
 
 interface CatalogCategoryDef {
@@ -113,7 +147,7 @@ function inferCategory(name: string): ArchCategory {
   if (n.includes('design') || n.includes('figma') || n.includes('sketch'))
     return ARCH_CATEGORIES['design']!;
   if (n.includes('project') || n.includes('task') || n.includes('board') || n.includes('kanban'))
-    return ARCH_CATEGORIES['project-mgmt']!;
+    return ARCH_CATEGORIES['project_management']!;
   // Ultimate fallback: productivity (generic tool)
   return ARCH_CATEGORIES['productivity']!;
 }

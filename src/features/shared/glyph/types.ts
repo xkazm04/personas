@@ -67,6 +67,10 @@ export interface DimMeta {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   colorClass: string;
+  /** Optional bespoke SVG art component — takes precedence over lucide icon.
+   *  Receives box size; should use `currentColor` so the parent's `color`
+   *  style drives the hue. */
+  customArt?: React.ComponentType<{ size: number }>;
 }
 
 export type DimMetaMap = Record<GlyphDimension, DimMeta>;

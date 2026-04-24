@@ -2,7 +2,7 @@
   "id": "router",
   "schema_version": 3,
   "name": "Router",
-  "description": "Universal webhook receiver that replaces Zapier for simple automations. Accepts any webhook payload, classifies the event using signature matching + payload analysis + reasoning, and fan-outs to Slack, Gmail, Notion, and Airtable based on configurable routing rules.",
+  "description": "Universal webhook receiver that replaces Zapier for simple automations. Accepts any webhook payload, classifies the event using signature matching + payload analysis + reasoning, and fan-outs to the messaging channel, email, knowledge base, and spreadsheet based on configurable routing rules.",
   "icon": "Route",
   "color": "#7C3AED",
   "category": [
@@ -10,19 +10,19 @@
   ],
   "service_flow": [
     "Webhook Ingestion",
-    "Slack",
-    "Gmail",
-    "Notion",
-    "Airtable"
+    "messaging",
+    "email",
+    "knowledge base",
+    "spreadsheet"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "Webhook Ingestion",
-      "Slack",
-      "Gmail",
-      "Notion",
-      "Airtable"
+      "messaging",
+      "email",
+      "knowledge base",
+      "spreadsheet"
     ],
     "persona": {
       "goal": "Replace dozens of rigid Zapier zaps with one reasoning agent — accept any webhook, classify it correctly even when unknown, and fan out to the right services based on rules you can edit in natural language.",
@@ -31,8 +31,8 @@
         "description": "Receives webhooks, classifies via three tiers (signature matching → payload analysis → reasoning), loads user-configurable routing rules, formats payload per destination, and fan-outs. Logs every event for traceability, learns source signatures over time, and never drops an event (falls back to local storage if all routes fail)."
       },
       "voice": {
-        "style": "Systems-engineer precision for log messages. Slack outputs use Block Kit with source badge, summary line, key fields, timestamp footer. Low-confidence classifications carry [LOW CONFIDENCE] prefix so humans review.",
-        "output_format": "Slack: Block Kit with source emoji, event type, priority badge (🟢🔴🟡🔵⚡), extracted fields, source link. Email: `[Router] {Source} — {Summary}` subject, HTML table body. Notion: mapped database properties. Airtable: strict field typing + raw payload in long-text for reference."
+        "style": "Systems-engineer precision for log messages. messaging outputs use formatted messaging layout with source badge, summary line, key fields, timestamp footer. Low-confidence classifications carry [LOW CONFIDENCE] prefix so humans review.",
+        "output_format": "messaging: formatted messaging layout with source emoji, event type, priority badge (🟢🔴🟡🔵⚡), extracted fields, source link. Email: `[Router] {Source} — {Summary}` subject, HTML table body. knowledge base: mapped database properties. spreadsheet: strict field typing + raw payload in long-text for reference."
       },
       "principles": [
         "Never lose an event — if all routes fail, fall back to local `failed_events.json`.",
@@ -48,14 +48,14 @@
       ],
       "decision_principles": [
         "When signatures match (Tier 1), skip payload analysis — signature match is high-confidence by construction.",
-        "When no rule matches, apply the catch-all (Slack + local log) rather than silently discarding.",
+        "When no rule matches, apply the catch-all (messaging + local log) rather than silently discarding.",
         "When a user corrects a misroute in chat, update rules before routing the next similar event — don't wait for the next configuration session."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities share routing state:\n\n1. **uc_classify_and_route** (webhook trigger on any incoming POST) — parse payload (JSON / form / XML). Apply three-tier classification: (Tier 1) header signature matching (Stripe-Signature, X-GitHub-Event, X-Shopify-Topic, User-Agent); (Tier 2) payload field analysis (event/type/action fields, known object shapes); (Tier 3) reasoning fallback. Determine source, event type, priority (urgent/normal/low), one-line summary. Check `webhook_log.json` for duplicate webhook ID; skip if seen. Load `routing_rules.json`; find first matching rule or apply default. Transform payload per destination (Slack Block Kit, email HTML, Notion properties, Airtable fields). Fan-out to each route in sequence, logging per-route success/failure. Append to `webhook_log.json`. Emit `webhook.event.routed` (success) or `webhook.event.unclassified` (catch-all applied).\n\n2. **uc_manage_rules** (user message / manual) — parse natural-language rule instructions like 'Route Shopify webhooks to #ecommerce'. Extract source filter, event filter, destinations, format preferences. Load current rules; update matching rule's routes or append new rule. Write `routing_rules.json`. Confirm to user with the diff. Emit `webhook.rules.updated`.\n\nState: `routing_rules.json` (rules array with match/routes structure), `webhook_log.json` (append-only event log), `routing_stats.json` (per-source/per-route success rates), `known_sources.json` (signature cache), `failed_events.json` (last-resort fallback).",
-      "tool_guidance": "**Slack (via slack connector)**:\n- `POST /chat.postMessage` with `{channel, text, blocks}`. Block Kit sections per payload field. `<!channel>` for urgent.\n- `GET /conversations.list` to resolve channel names to IDs.\n\n**Notion (via notion connector)**:\n- `POST https://api.notion.com/v1/pages` with `parent.database_id` and typed properties (title, rich_text, select, multi_select, date, url, email, number).\n- Header `Notion-Version: 2022-06-28`.\n\n**Airtable (via airtable connector)**:\n- `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{records: [{fields: {...}}]}`.\n- Strict type matching; include raw payload in a long-text `Raw Payload` field for reference.\n\n**Gmail (gmail_send)**:\n- Subject: `[Router] {EventType}: {Summary}`. HTML body with data table. Include source + timestamp for traceability.\n\n**Google Sheets (via google_sheets connector, optional)**:\n- `POST /v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED` for append-only event logging.\n\n**Local state**:\n- `routing_rules.json` format: `[{name, match: {source, event_contains, priority?}, routes: [{service, channel?, database?, base?, format?}]}]`.\n- First matching rule wins; multiple routes within a rule all execute (fan-out).",
+      "operating_instructions": "Two capabilities share routing state: 1. **uc_classify_and_route** (webhook trigger on any incoming POST) — parse payload (JSON / form / XML). Apply three-tier classification: (Tier 1) header signature matching (Stripe-Signature, X-GitHub-Event, X-Shopify-Topic, User-Agent); (Tier 2) payload field analysis (event/type/action fields, known object shapes); (Tier 3) reasoning fallback. Determine source, event type, priority (urgent/normal/low), one-line summary. Check `webhook_log.json` for duplicate webhook ID; skip if seen. Load `routing_rules.json`; find first matching rule or apply default. Transform payload per destination (messaging formatted layout, email HTML, knowledge base properties, spreadsheet fields). Fan-out to each route in sequence, logging per-route success/failure. Append to `webhook_log.json`. Emit `webhook.event.routed` (success) or `webhook.event.unclassified` (catch-all applied). 2. **uc_manage_rules** (user message / manual) — parse natural-language rule instructions like 'Route Shopify webhooks to #ecommerce'. Extract source filter, event filter, destinations, format preferences. Load current rules; update matching rule's routes or append new rule. Write `routing_rules.json`. Confirm to user with the diff. Emit `webhook.rules.updated`. State: `routing_rules.json` (rules array with match/routes structure), `webhook_log.json` (append-only event log), `routing_stats.json` (per-source/per-route success rates), `known_sources.json` (signature cache), `failed_events.json` (last-resort fallback).",
+      "tool_guidance": "**messaging (via the messaging channel connector)**:\n- `POST /chat.postMessage` with `{channel, text, blocks}`. formatted messaging layout sections per payload field. `<!channel>` for urgent.\n- `GET /conversations.list` to resolve channel names to IDs. **knowledge base (via notion connector)**:\n- `POST https://api.notion.com/v1/pages` with `parent.database_id` and typed properties (title, rich_text, select, multi_select, date, url, email, number).\n- Header `knowledge base-Version: 2022-06-28`. **spreadsheet (via airtable connector)**:\n- `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{records: [{fields: {...}}]}`.\n- Strict type matching; include raw payload in a long-text `Raw Payload` field for reference. **email (gmail_send)**:\n- Subject: `[Router] {EventType}: {Summary}`. HTML body with data table. Include source + timestamp for traceability. **spreadsheet (via google_sheets connector, optional)**:\n- `POST /v4/spreadsheets/{id}/values/{range}:append?valueInputOption=USER_ENTERED` for append-only event logging. **Local state**:\n- `routing_rules.json` format: `[{name, match: {source, event_contains, priority?}, routes: [{service, channel?, database?, base?, format?}]}]`.\n- First matching rule wins; multiple routes within a rule all execute (fan-out).",
       "error_handling": "HTTP 4xx on route → log with full request/response, skip retry (config issue), continue remaining routes. HTTP 5xx or timeout → retry once after 3s, then log and continue. Connector auth 401/403 → alert #alerts, skip all routes using that connector. Unparseable payload → route raw dump to catch-all as UNCLASSIFIED. Low classification confidence → prefix all routed messages with [LOW CONFIDENCE]. All routes fail → write full event to `failed_events.json`. Duplicate webhook ID → skip silently, log as duplicate. Payload > 1MB → reject with logged warning. Sensitive fields in payload (password/token/secret patterns) → strip before logging or forwarding.",
       "examples": [],
       "tools": [
@@ -92,7 +92,7 @@
           "role": "knowledge_base",
           "category": "knowledge_base",
           "required": false,
-          "fallback_note": "Skip Notion to run as a Slack/email router only. Rules that route to Notion become no-ops.",
+          "fallback_note": "Skip knowledge base to run as a messaging/email router only. Rules that route to knowledge base become no-ops.",
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
             {
@@ -113,7 +113,7 @@
           "role": "knowledge_base",
           "category": "spreadsheet",
           "required": false,
-          "fallback_note": "Skip Airtable to run as a Slack/email/Notion router only. Rules that route to Airtable become no-ops.",
+          "fallback_note": "Skip spreadsheet to run as a messaging/email/knowledge base router only. Rules that route to spreadsheet become no-ops.",
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
             {
@@ -134,7 +134,7 @@
           "role": "email",
           "category": "email",
           "required": false,
-          "fallback_note": "Skip Gmail to run as a Slack/Notion/Airtable router only. Rules that route to email become no-ops.",
+          "fallback_note": "Skip email to run as a messaging/knowledge base/spreadsheet router only. Rules that route to email become no-ops.",
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
             {
@@ -156,13 +156,13 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete consent with scope gmail.send.\n4. Paste client ID, secret, refresh token."
+          "setup_instructions": "1. Google Cloud Console → enable email API.\n2. Create OAuth 2.0 Client ID (Desktop app).\n3. Complete consent with scope gmail.send.\n4. Paste client ID, secret, refresh token."
         }
       ],
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Primary Slack channel for routed events, with per-category routing rules."
+          "description": "Primary messaging channels for routed events, with per-category routing rules."
         },
         {
           "type": "email",
@@ -304,7 +304,7 @@
             {
               "id": "r5",
               "type": "connector",
-              "label": "Fan-out to Slack / Gmail / Notion / Airtable"
+              "label": "Fan-out to the messaging channel / email / knowledge base / spreadsheet"
             },
             {
               "id": "r6",
@@ -573,7 +573,7 @@
           "Email me with the raw payload for inspection",
           "Discard silently (suppress noise from unknown sources)"
         ],
-        "default": "Log to local file and send a Slack alert for manual review",
+        "default": "Log to local file and send a messaging alert for manual review",
         "maps_to": "use_cases[uc_classify_and_route].sample_input.unknown_payload_handling",
         "variable_name": "unknown_payload_handling",
         "context": "Critical for preventing silent data loss when new webhook sources are onboarded.",
@@ -614,7 +614,7 @@
           "Start empty — I'll define rules conversationally after setup",
           "Generate rules automatically based on my connected services"
         ],
-        "default": "Use template defaults (payments → Slack+Airtable, forms → Notion+email, errors → Slack)",
+        "default": "Use template defaults (payments → messaging+spreadsheet, forms → knowledge base+email, errors → messaging)",
         "maps_to": "use_cases[uc_manage_rules].sample_input.rule_initialization",
         "variable_name": "rule_initialization",
         "context": "Determines whether Router has working rules on day one or waits for user configuration.",
@@ -636,7 +636,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -655,7 +655,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -674,7 +674,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -693,7 +693,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

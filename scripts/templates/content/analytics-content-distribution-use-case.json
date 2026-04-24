@@ -2,19 +2,29 @@
   "id": "analytics-content-distribution-use-case",
   "schema_version": 3,
   "name": "Analytics Content Distribution Use Case",
-  "description": "Detects new WordPress posts via the REST API, auto-schedules social media posts to Buffer with platform-optimized captions, checks Google Analytics performance after 48h, and adjusts future posting strategy based on engagement data.",
+  "description": "Detects new CMS posts via the REST API, auto-schedules social media posts to Buffer with platform-optimized captions, checks analytics performance after 48h, and adjusts future posting strategy based on engagement data.",
   "icon": "BarChart3",
   "color": "#F59E0B",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["WordPress", "Buffer", "Google Analytics"],
+  "service_flow": [
+    "CMS",
+    "Buffer",
+    "analytics"
+  ],
   "payload": {
-    "service_flow": ["WordPress", "Buffer", "Google Analytics"],
+    "service_flow": [
+      "CMS",
+      "Buffer",
+      "analytics"
+    ],
     "persona": {
       "goal": "Turn every published blog post into a platform-tuned distribution program that learns which captions, platforms, and timings actually move traffic.",
       "identity": {
         "role": "Content distribution strategist that schedules platform-optimized social posts and refines strategy from real engagement data.",
-        "description": "Polls WordPress for new publishes, crafts platform-specific captions for each post's category and tags, schedules via Buffer, then reviews Google Analytics + Buffer engagement 48 hours later. Recalibrates platform weights, caption styles, and timing based on what actually drove traffic."
+        "description": "Polls CMS for new publishes, crafts platform-specific captions for each post's category and tags, schedules via Buffer, then reviews analytics + Buffer engagement 48 hours later. Recalibrates platform weights, caption styles, and timing based on what actually drove traffic."
       },
       "voice": {
         "style": "Data-first, no marketing fluff. Every recommendation cites a specific metric and its delta.",
@@ -42,23 +52,27 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities work as a pipeline:\n\n1. **uc_detect_and_distribute** — poll WordPress for posts published since the last checkpoint. For each new post, extract title/excerpt/tags/categories/featured image, check the blocklist + blackout hours, consult `state/strategy.json` for category-specific caption style preferences, craft platform-tuned captions (Twitter hook + hashtags, LinkedIn professional framing, Facebook conversational with emoji), and schedule via Buffer. Log every scheduled update in `state/scheduled_posts.json`. Emit `content.distribution.scheduled` per post.\n\n2. **uc_performance_review** — on schedule, find posts published 48+ hours ago with `analyzed: false`. Pull GA pageviews/session duration/bounce rate + Buffer engagement per platform. Compute category-relative engagement. Flag viral spikes (>3x baseline) and underperformers (near-zero engagement). Update `state/strategy.json` rolling baselines. Emit `content.performance.reviewed` per post, `content.performance.viral` for spikes.\n\n3. **uc_weekly_strategy_digest** — on schedule, compile top 3 posts, worst performer, platform rankings, caption-style scores, category trends, and recommended adjustments. Require human sign-off before applying platform-removal changes. Emit `content.strategy.digest`.\n\nState: `state/last_check.json` (polling checkpoint), `state/scheduled_posts.json` (scheduled updates log), `state/performance_log.json` (48h analytics), `state/strategy.json` (platform weights, category baselines, caption-style scores).",
-      "tool_guidance": "**WordPress REST API** (`http_request` + `wordpress` connector, base `https://{site}/wp-json/wp/v2`):\n- New posts: `GET /posts?after={ISO}&status=publish&per_page=20&orderby=date&order=asc`\n- Categories: `GET /categories?post={id}`\n- Tags: `GET /tags?post={id}`\n- Featured image: `GET /media/{id}`\n\n**Buffer API** (`http_request` + `buffer` connector, base `https://api.bufferapp.com/1`):\n- Profiles: `GET /profiles.json`\n- Schedule: `POST /updates/create.json` with `{ profile_ids, text, media: { link, photo }, shorten: true, now: false }`\n- Engagement: `GET /updates/{update_id}/interactions.json`\n- Queue status: `GET /profiles/{profile_id}/updates/pending.json`\n\n**Google Analytics Data API** (`http_request` + `google_analytics` connector, base `https://analyticsdata.googleapis.com`):\n- Report: `POST /v1beta/properties/{property_id}:runReport` with `pagePath` dimension + `screenPageViews`, `averageSessionDuration`, `bounceRate`, `sessions` metrics.\n- Real-time: `POST /v1beta/properties/{property_id}:runRealtimeReport`.\n\n**State file I/O** (`file_read` / `file_write`): all JSON under `state/` — use read-modify-write pattern to avoid data loss. Always validate JSON before writing.",
-      "error_handling": "WordPress 401 → halt, emit persona.error with regenerate-Application-Password instructions. WordPress 404 → site URL changed or REST API disabled; verify connector config. WordPress 429 → 60s backoff. Buffer 403 token invalid → halt, emit re-auth CTA. Buffer 400 queue full → log for retry, alert user about plan limits. Buffer profile disconnected → skip that platform, alert user. Buffer 429 → exponential backoff starting 30s. GA 401/403 → attempt refresh; if fails, alert. GA property not found → log ID, alert. GA empty data → try both with/without trailing slash, else mark as 'no data'. State file corrupt → reinitialize with defaults, log recovery.",
+      "operating_instructions": "Three capabilities work as a pipeline: 1. **uc_detect_and_distribute** — poll CMS for posts published since the last checkpoint. For each new post, extract title/excerpt/tags/categories/featured image, check the blocklist + blackout hours, consult `state/strategy.json` for category-specific caption style preferences, craft platform-tuned captions (Twitter hook + hashtags, LinkedIn professional framing, Facebook conversational with emoji), and schedule via Buffer. Log every scheduled update in `state/scheduled_posts.json`. Emit `content.distribution.scheduled` per post. 2. **uc_performance_review** — on schedule, find posts published 48+ hours ago with `analyzed: false`. Pull GA pageviews/session duration/bounce rate + Buffer engagement per platform. Compute category-relative engagement. Flag viral spikes (>3x baseline) and underperformers (near-zero engagement). Update `state/strategy.json` rolling baselines. Emit `content.performance.reviewed` per post, `content.performance.viral` for spikes. 3. **uc_weekly_strategy_digest** — on schedule, compile top 3 posts, worst performer, platform rankings, caption-style scores, category trends, and recommended adjustments. Require human sign-off before applying platform-removal changes. Emit `content.strategy.digest`. State: `state/last_check.json` (polling checkpoint), `state/scheduled_posts.json` (scheduled updates log), `state/performance_log.json` (48h analytics), `state/strategy.json` (platform weights, category baselines, caption-style scores).",
+      "tool_guidance": "**CMS REST API** (`http_request` + `wordpress` connector, base `https://{site}/wp-json/wp/v2`):\n- New posts: `GET /posts?after={ISO}&status=publish&per_page=20&orderby=date&order=asc`\n- Categories: `GET /categories?post={id}`\n- Tags: `GET /tags?post={id}`\n- Featured image: `GET /media/{id}` **Buffer API** (`http_request` + `buffer` connector, base `https://api.bufferapp.com/1`):\n- Profiles: `GET /profiles.json`\n- Schedule: `POST /updates/create.json` with `{ profile_ids, text, media: { link, photo }, shorten: true, now: false }`\n- Engagement: `GET /updates/{update_id}/interactions.json`\n- Queue status: `GET /profiles/{profile_id}/updates/pending.json` **analytics Data API** (`http_request` + `google_analytics` connector, base `https://analyticsdata.googleapis.com`):\n- Report: `POST /v1beta/properties/{property_id}:runReport` with `pagePath` dimension + `screenPageViews`, `averageSessionDuration`, `bounceRate`, `sessions` metrics.\n- Real-time: `POST /v1beta/properties/{property_id}:runRealtimeReport`. **State file I/O** (`file_read` / `file_write`): all JSON under `state/` — use read-modify-write pattern to avoid data loss. Always validate JSON before writing.",
+      "error_handling": "CMS 401 → halt, emit persona.error with regenerate-Application-Password instructions. CMS 404 → site URL changed or REST API disabled; verify connector config. CMS 429 → 60s backoff. Buffer 403 token invalid → halt, emit re-auth CTA. Buffer 400 queue full → log for retry, alert user about plan limits. Buffer profile disconnected → skip that platform, alert user. Buffer 429 → exponential backoff starting 30s. GA 401/403 → attempt refresh; if fails, alert. GA property not found → log ID, alert. GA empty data → try both with/without trailing slash, else mark as 'no data'. State file corrupt → reinitialize with defaults, log recovery.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "wordpress",
-          "label": "WordPress",
+          "name": "cms",
+          "label": "CMS",
           "auth_type": "api_key",
           "role": "cms",
-          "category": "documentation",
+          "category": "cms",
           "required": true,
           "credential_fields": [
             {
               "key": "site_url",
-              "label": "WordPress Site URL",
+              "label": "CMS Site URL",
               "type": "text",
               "placeholder": "https://yourblog.com",
               "helpText": "Base URL without /wp-json.",
@@ -66,7 +80,7 @@
             },
             {
               "key": "username",
-              "label": "WordPress Username",
+              "label": "CMS Username",
               "type": "text",
               "placeholder": "admin",
               "helpText": "User account with REST API access.",
@@ -103,8 +117,8 @@
           "setup_instructions": "1. buffer.com/developers/apps → log in and Create an App.\n2. Name it 'Personas Agent', redirect URI http://localhost.\n3. Copy the Access Token from the app details.\n4. Ensure at least one social profile (Twitter, LinkedIn, Facebook) is connected in Buffer.\n5. Test: GET https://api.bufferapp.com/1/profiles.json?access_token=YOUR_TOKEN."
         },
         {
-          "name": "google_analytics",
-          "label": "Google Analytics (GA4)",
+          "name": "analytics",
+          "label": "analytics (analytics)",
           "auth_type": "oauth2",
           "role": "analytics",
           "category": "analytics",
@@ -113,7 +127,7 @@
           "credential_fields": [
             {
               "key": "property_id",
-              "label": "GA4 Property ID",
+              "label": "analytics Property ID",
               "type": "text",
               "placeholder": "123456789",
               "helpText": "Admin → Property Settings. Numeric ID, not the G- measurement ID.",
@@ -144,7 +158,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Google Analytics Data API.\n2. Create OAuth 2.0 Client ID (Web app), add https://developers.google.com/oauthplayground as redirect URI.\n3. At the OAuth Playground, use your own credentials and select the analytics.readonly scope.\n4. Authorize and exchange for a refresh token.\n5. Copy the GA4 Property ID from Admin → Property Settings."
+          "setup_instructions": "1. Google Cloud Console → enable analytics Data API.\n2. Create OAuth 2.0 Client ID (Web app), add https://developers.google.com/oauthplayground as redirect URI.\n3. At the OAuth Playground, use your own credentials and select the analytics.readonly scope.\n4. Authorize and exchange for a refresh token.\n5. Copy the analytics Property ID from Admin → Property Settings."
         }
       ],
       "notification_channels_default": [
@@ -159,18 +173,23 @@
       {
         "id": "uc_detect_and_distribute",
         "title": "Detect + Distribute",
-        "description": "Poll WordPress for new posts and schedule platform-tuned captions via Buffer. Skips blocked categories and respects blackout hours. Default polling every 5 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "WordPress publish → platform-tuned captions → Buffer schedule.",
+        "description": "Poll CMS for new posts and schedule platform-tuned captions via Buffer. Skips blocked categories and respects blackout hours. Default polling every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "CMS publish → platform-tuned captions → Buffer schedule.",
         "category": "content",
         "enabled_by_default": true,
         "execution_mode": "e2e",
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *" },
+          "config": {
+            "cron": "*/5 * * * *"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["wordpress", "buffer"],
+        "connectors": [
+          "cms",
+          "buffer"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "conditional",
@@ -187,38 +206,57 @@
             "description": "Payload: { wp_post_id, platforms[], buffer_update_ids[], scheduled_times[], captions[] }."
           }
         ],
-        "error_handling": "WordPress auth fail → halt. Buffer queue full → log for retry, alert. Profile disconnected → skip that platform, alert. Blocked category → silently skip, log in state.",
+        "error_handling": "CMS auth fail → halt. Buffer queue full → log for retry, alert. Profile disconnected → skip that platform, alert. Blocked category → silently skip, log in state.",
         "input_schema": [
           {
             "name": "platforms",
             "type": "enum",
-            "options": ["twitter_linkedin", "twitter_linkedin_facebook", "linkedin_only", "all_connected"],
+            "options": [
+              "twitter_linkedin",
+              "twitter_linkedin_facebook",
+              "linkedin_only",
+              "all_connected"
+            ],
             "default": "twitter_linkedin",
             "description": "Which Buffer-connected platforms receive posts."
           },
           {
             "name": "caption_tone",
             "type": "enum",
-            "options": ["professional", "conversational", "educational", "promotional"],
+            "options": [
+              "professional",
+              "conversational",
+              "educational",
+              "promotional"
+            ],
             "default": "conversational",
             "description": "Baseline caption voice. Adjusted per-platform (e.g., more formal on LinkedIn)."
           },
           {
             "name": "review_mode",
             "type": "enum",
-            "options": ["auto_schedule", "draft_all", "draft_featured"],
+            "options": [
+              "auto_schedule",
+              "draft_all",
+              "draft_featured"
+            ],
             "default": "auto_schedule",
             "description": "Direct schedule or queue as drafts for human review."
           },
           {
             "name": "excluded_categories",
             "type": "text",
-            "description": "Comma-separated WordPress categories or tags that should NEVER distribute."
+            "description": "Comma-separated CMS categories or tags that should NEVER distribute."
           },
           {
             "name": "blackout_policy",
             "type": "enum",
-            "options": ["none", "weekdays_only", "business_hours", "custom"],
+            "options": [
+              "none",
+              "weekdays_only",
+              "business_hours",
+              "custom"
+            ],
             "default": "none",
             "description": "Time-window restrictions on scheduling."
           }
@@ -230,27 +268,86 @@
           "excluded_categories": "{{param.aq_excluded_categories}}",
           "blackout_policy": "{{param.aq_blackout_policy}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Polling tick" },
-            { "id": "d2", "type": "connector", "label": "Fetch new WordPress posts", "connector": "wordpress" },
-            { "id": "d3", "type": "action", "label": "Filter blocklist + blackout hours" },
-            { "id": "d4", "type": "action", "label": "Load strategy memory + craft per-platform captions" },
-            { "id": "d5", "type": "connector", "label": "Schedule via Buffer", "connector": "buffer" },
-            { "id": "d6", "type": "action", "label": "Log scheduled updates + advance checkpoint" },
-            { "id": "d7", "type": "event", "label": "Emit content.distribution.scheduled" },
-            { "id": "d8", "type": "end", "label": "Distribution complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Fetch new CMS posts",
+              "connector": "wordpress"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Filter blocklist + blackout hours"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Load strategy memory + craft per-platform captions"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Schedule via Buffer",
+              "connector": "buffer"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Log scheduled updates + advance checkpoint"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit content.distribution.scheduled"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Distribution complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       },
@@ -265,12 +362,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *" },
+          "config": {
+            "cron": "0 9 * * *"
+          },
           "description": "Default daily 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["google_analytics", "buffer"],
+        "connectors": [
+          "analytics",
+          "buffer"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Rolling 30-day category baselines, platform weights, caption-style CTR scores, declining-category flags."
@@ -292,36 +397,95 @@
           {
             "name": "viral_threshold_multiplier",
             "type": "number",
-            "default": 3.0,
+            "default": 3,
             "min": 1.5,
-            "max": 10.0,
+            "max": 10,
             "description": "Multiple of category baseline that triggers viral flag."
           }
         ],
         "sample_input": {
-          "viral_threshold_multiplier": 3.0
+          "viral_threshold_multiplier": 3
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily tick" },
-            { "id": "r2", "type": "action", "label": "Find posts 48h+ with analyzed=false" },
-            { "id": "r3", "type": "connector", "label": "GA report per post", "connector": "google_analytics" },
-            { "id": "r4", "type": "connector", "label": "Buffer engagement per update", "connector": "buffer" },
-            { "id": "r5", "type": "action", "label": "Compute category-relative score + flag viral/underperformers" },
-            { "id": "r6", "type": "action", "label": "Update strategy.json baselines" },
-            { "id": "r7", "type": "event", "label": "Emit reviewed + viral events" },
-            { "id": "r8", "type": "end", "label": "Review complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Find posts 48h+ with analyzed=false"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "GA report per post",
+              "connector": "google_analytics"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Buffer engagement per update",
+              "connector": "buffer"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Compute category-relative score + flag viral/underperformers"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Update strategy.json baselines"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit reviewed + viral events"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Review complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       },
@@ -336,7 +500,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 10 * * 1" },
+          "config": {
+            "cron": "0 10 * * 1"
+          },
           "description": "Default Monday 10:00 — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -361,7 +527,11 @@
           {
             "name": "strategy_change_policy",
             "type": "enum",
-            "options": ["auto_apply_all", "notify_and_wait", "auto_low_impact_only"],
+            "options": [
+              "auto_apply_all",
+              "notify_and_wait",
+              "auto_low_impact_only"
+            ],
             "default": "notify_and_wait",
             "description": "How aggressively recommendations are applied without human review."
           }
@@ -369,23 +539,65 @@
         "sample_input": {
           "strategy_change_policy": "{{param.aq_strategy_change_policy}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Weekly tick" },
-            { "id": "s2", "type": "action", "label": "Load performance_log for last 7 days" },
-            { "id": "s3", "type": "action", "label": "Rank top/bottom posts + compute platform ranking" },
-            { "id": "s4", "type": "action", "label": "Generate strategy recommendations" },
-            { "id": "s5", "type": "event", "label": "Emit content.strategy.digest" },
-            { "id": "s6", "type": "end", "label": "Digest delivered" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load performance_log for last 7 days"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Rank top/bottom posts + compute platform ranking"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Generate strategy recommendations"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit content.strategy.digest"
+            },
+            {
+              "id": "s6",
+              "type": "end",
+              "label": "Digest delivered"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            }
           ]
         }
       }
@@ -394,7 +606,9 @@
       {
         "id": "aq_platforms",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_distribute"],
+        "use_case_ids": [
+          "uc_detect_and_distribute"
+        ],
         "category": "configuration",
         "question": "Which Buffer-connected platforms should receive auto-scheduled posts?",
         "type": "select",
@@ -413,7 +627,9 @@
       {
         "id": "aq_caption_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_distribute"],
+        "use_case_ids": [
+          "uc_detect_and_distribute"
+        ],
         "category": "quality",
         "question": "What baseline caption tone should the agent use?",
         "type": "select",
@@ -432,7 +648,9 @@
       {
         "id": "aq_review_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_distribute"],
+        "use_case_ids": [
+          "uc_detect_and_distribute"
+        ],
         "category": "human_in_the_loop",
         "question": "Should captions queue to Buffer as drafts for your review, or schedule directly?",
         "type": "select",
@@ -450,9 +668,11 @@
       {
         "id": "aq_excluded_categories",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_distribute"],
+        "use_case_ids": [
+          "uc_detect_and_distribute"
+        ],
         "category": "boundaries",
-        "question": "Which WordPress categories or tags should NEVER be auto-distributed?",
+        "question": "Which CMS categories or tags should NEVER be auto-distributed?",
         "type": "text",
         "default": "",
         "maps_to": "use_cases[uc_detect_and_distribute].sample_input.excluded_categories",
@@ -463,7 +683,9 @@
       {
         "id": "aq_blackout_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_distribute"],
+        "use_case_ids": [
+          "uc_detect_and_distribute"
+        ],
         "category": "boundaries",
         "question": "Should the agent skip scheduling during weekends or outside business hours?",
         "type": "select",
@@ -482,7 +704,9 @@
       {
         "id": "aq_strategy_change_policy",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_strategy_digest"],
+        "use_case_ids": [
+          "uc_weekly_strategy_digest"
+        ],
         "category": "human_in_the_loop",
         "question": "When the weekly digest recommends a strategy change, how should it be applied?",
         "type": "select",

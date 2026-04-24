@@ -39,9 +39,21 @@
           "name": "jira",
           "label": "Jira (Atlassian)",
           "credential_fields": [
-            { "key": "domain", "label": "Domaine Atlassian", "helpText": "Votre domaine Atlassian. Si votre URL Jira est https://your-company.atlassian.net, saisissez 'your-company'." },
-            { "key": "email", "label": "E-mail du compte", "helpText": "L'adresse e-mail associée à votre compte Atlassian." },
-            { "key": "api_token", "label": "Jeton d'API", "helpText": "Générez-le sur https://id.atlassian.com/manage-profile/security/api-tokens. Combiné avec votre e-mail, il forme l'identifiant Basic Auth." }
+            {
+              "key": "domain",
+              "label": "Domaine Atlassian",
+              "helpText": "Votre domaine Atlassian. Si votre URL Jira est https://your-company.atlassian.net, saisissez 'your-company'."
+            },
+            {
+              "key": "email",
+              "label": "E-mail du compte",
+              "helpText": "L'adresse e-mail associée à votre compte Atlassian."
+            },
+            {
+              "key": "api_token",
+              "label": "Jeton d'API",
+              "helpText": "Générez-le sur https://id.atlassian.com/manage-profile/security/api-tokens. Combiné avec votre e-mail, il forme l'identifiant Basic Auth."
+            }
           ],
           "setup_instructions": "1. Allez sur https://id.atlassian.com/manage-profile/security/api-tokens.\n2. Créez un jeton étiqueté 'Issue Resolver Bot' et copiez-le (affiché une seule fois).\n3. Saisissez votre domaine Atlassian (le sous-domaine de votre URL Jira).\n4. Saisissez l'e-mail associé à votre compte Atlassian.\n5. L'agent s'authentifie via Basic Auth avec base64(email:api_token)."
         },
@@ -49,8 +61,16 @@
           "name": "notion",
           "label": "Notion",
           "credential_fields": [
-            { "key": "integration_token", "label": "Jeton d'intégration interne", "helpText": "Créez une intégration interne sur https://www.notion.so/my-integrations, copiez le jeton, puis partagez votre base de connaissances avec l'intégration." },
-            { "key": "database_id", "label": "ID de la base de connaissances", "helpText": "Ouvrez votre base KB Notion. L'ID est la chaîne hexadécimale de 32 caractères dans l'URL avant le '?'." }
+            {
+              "key": "integration_token",
+              "label": "Jeton d'intégration interne",
+              "helpText": "Créez une intégration interne sur https://www.notion.so/my-integrations, copiez le jeton, puis partagez votre base de connaissances avec l'intégration."
+            },
+            {
+              "key": "database_id",
+              "label": "ID de la base de connaissances",
+              "helpText": "Ouvrez votre base KB Notion. L'ID est la chaîne hexadécimale de 32 caractères dans l'URL avant le '?'."
+            }
           ],
           "setup_instructions": "1. Créez une nouvelle intégration sur https://www.notion.so/my-integrations nommée 'Issue Resolver Bot'.\n2. Copiez le jeton d'intégration interne.\n3. Ouvrez votre base KB → menu '...' → 'Add connections' → sélectionnez votre intégration.\n4. Copiez l'ID de 32 caractères depuis l'URL."
         },
@@ -58,13 +78,20 @@
           "name": "slack",
           "label": "Slack",
           "credential_fields": [
-            { "key": "bot_token", "label": "Jeton OAuth Bot User", "helpText": "Depuis votre application Slack → OAuth & Permissions → Bot User OAuth Token. Scopes requis : chat:write, users:read, users:read.email." }
+            {
+              "key": "bot_token",
+              "label": "Jeton OAuth Bot User",
+              "helpText": "Depuis votre application Slack → OAuth & Permissions → Bot User OAuth Token. Scopes requis : chat:write, users:read, users:read.email."
+            }
           ],
           "setup_instructions": "1. Créez ou sélectionnez une application sur api.slack.com/apps.\n2. Ajoutez les Bot Token Scopes : chat:write, users:read, users:read.email.\n3. Installez dans le workspace et copiez le Bot User OAuth Token.\n4. Invitez le bot dans les canaux d'alertes et d'escalation."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "Canal Slack d'alertes pour les digests quotidiens, les rapports hebdomadaires et les notifications d'auto-résolution." }
+        {
+          "type": "slack",
+          "description": "Canal Slack d'alertes pour les digests quotidiens, les rapports hebdomadaires et les notifications d'auto-résolution."
+        }
       ]
     },
     "use_cases": [
@@ -73,10 +100,18 @@
         "title": "Triage et résolution des tickets qui traînent",
         "description": "Interroge Jira toutes les 15 minutes pour les tickets ouverts au-delà du seuil de stagnation. Classe l'état, évalue le sentiment du rapporteur, cherche des solutions correspondantes dans Notion + KB locale, publie les résolutions à haute confiance, escalade les rapporteurs en colère + P1/P2 au management ingénierie et auto-clôture les tickets abandonnés.",
         "capability_summary": "Classification des tickets qui traînent + auto-résolution pilotée par le sentiment, escalation et nettoyage des tickets abandonnés.",
-        "suggested_trigger": { "description": "Toutes les 15 minutes, interroge Jira pour les tickets qui traînent et non résolus." },
+        "suggested_trigger": {
+          "description": "Toutes les 15 minutes, interroge Jira pour les tickets qui traînent et non résolus."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Canal primaire d'alertes pour les notifications d'auto-résolution et les alertes de sentiment." },
-          { "type": "slack", "description": "Canal d'escalation pour les tickets en colère + P1/P2 nécessitant une attention ingénierie immédiate." }
+          {
+            "type": "slack",
+            "description": "Canal primaire d'alertes pour les notifications d'auto-résolution et les alertes de sentiment."
+          },
+          {
+            "type": "slack",
+            "description": "Canal d'escalation pour les tickets en colère + P1/P2 nécessitant une attention ingénierie immédiate."
+          }
         ],
         "review_policy": {
           "context": "Les solutions avec une confiance 60-79 sont journalisées pour revue humaine mais non publiées. Les tickets en colère + P1/P2 contournent l'auto-résolution et sont routés directement vers manual_review avec le contexte complet pour le manager ingénierie de garde."
@@ -85,42 +120,151 @@
           "context": "data/solutions_kb.json grandit à chaque résolution confirmée : schémas de symptômes, étapes de la solution, clé du ticket source, compteur times_confirmed, score de confiance. Les solutions rejetées abaissent la confiance. L'historique de sentiment par e-mail de rapporteur s'accumule sur les cycles pour améliorer les classifications futures."
         },
         "event_subscriptions": [
-          { "event_type": "issue.auto_resolved", "description": "Payload : clé du ticket, source de la solution (URL Notion ou id de l'entrée KB locale), score de confiance, sentiment du rapporteur au moment de la publication." },
-          { "event_type": "issue.escalated", "description": "Payload : clé du ticket, priorité, score de sentiment, destinataire de l'escalation, résumé du contexte complet." },
-          { "event_type": "issue.auto_closed", "description": "Payload : clé du ticket, raison (abandoned / silently_resolved / confirmation_timeout), jours d'inactivité." },
-          { "event_type": "persona.error", "description": "Émis en cas de Jira 401, d'échecs Slack répétés ou de fichiers d'état corrompus. Déclenche les workflows aval de refresh des credentials ou d'alertes admin." }
+          {
+            "event_type": "issue.auto_resolved",
+            "description": "Payload : clé du ticket, source de la solution (URL Notion ou id de l'entrée KB locale), score de confiance, sentiment du rapporteur au moment de la publication."
+          },
+          {
+            "event_type": "issue.escalated",
+            "description": "Payload : clé du ticket, priorité, score de sentiment, destinataire de l'escalation, résumé du contexte complet."
+          },
+          {
+            "event_type": "issue.auto_closed",
+            "description": "Payload : clé du ticket, raison (abandoned / silently_resolved / confirmation_timeout), jours d'inactivité."
+          },
+          {
+            "event_type": "persona.error",
+            "description": "Émis en cas de Jira 401, d'échecs Slack répétés ou de fichiers d'état corrompus. Déclenche les workflows aval de refresh des credentials ou d'alertes admin."
+          }
         ],
         "error_handling": "Jira 429 → respecte Retry-After, reprend au cycle suivant. Jira 401 → émet persona.error et met en pause cette capacité jusqu'au refresh des credentials. Notion indisponible → saute la recherche KB mais continue classification + sentiment + escalation. File Slack → data/pending_slack.json réessaie au cycle suivant. Échec de publication de commentaire → log seulement, pas de retry au même cycle. Premier cycle → observation uniquement.",
         "input_schema": [
-          { "name": "stale_days", "description": "Jours d'inactivité avant qu'un ticket soit considéré comme traînant." },
-          { "name": "max_issues_per_cycle", "description": "Plafond de tickets traités par cycle de 15 minutes pour respecter les rate limits API." },
-          { "name": "confidence_threshold", "description": "Confiance minimale pour auto-publier une solution." },
-          { "name": "auto_close_enabled", "description": "Quand activé, les tickets avec 30+ jours d'inactivité reçoivent un commentaire de clôture poli et passent en Closed." },
-          { "name": "eng_manager_email", "description": "Manager ingénierie qui reçoit les DM Slack pour les escalations en colère + P1/P2." },
-          { "name": "escalation_channel", "description": "Canal Slack dédié aux publications d'escalations haute priorité." }
+          {
+            "name": "stale_days",
+            "description": "Jours d'inactivité avant qu'un ticket soit considéré comme traînant."
+          },
+          {
+            "name": "max_issues_per_cycle",
+            "description": "Plafond de tickets traités par cycle de 15 minutes pour respecter les rate limits API."
+          },
+          {
+            "name": "confidence_threshold",
+            "description": "Confiance minimale pour auto-publier une solution."
+          },
+          {
+            "name": "auto_close_enabled",
+            "description": "Quand activé, les tickets avec 30+ jours d'inactivité reçoivent un commentaire de clôture poli et passent en Closed."
+          },
+          {
+            "name": "eng_manager_email",
+            "description": "Manager ingénierie qui reçoit les DM Slack pour les escalations en colère + P1/P2."
+          },
+          {
+            "name": "escalation_channel",
+            "description": "Canal Slack dédié aux publications d'escalations haute priorité."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "label": "Tick de polling", "detail": "Le cron 15 minutes se déclenche" },
-            { "id": "n2", "label": "Interroge les tickets qui traînent", "detail": "JQL : updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)" },
-            { "id": "n3", "label": "Charge les fichiers d'état", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "label": "Nouveau ou mis à jour ?", "detail": "Saute les tickets déjà traités à leur timestamp updated courant" },
-            { "id": "n5", "label": "Récupère les commentaires", "detail": "Fil complet pour classification + sentiment" },
-            { "id": "n6", "label": "Classe l'état", "detail": "Attente rapporteur / équipe / bloqué / abandonné / en stagnation / silencieusement résolu" },
-            { "id": "n7", "label": "Score de sentiment 1-10", "detail": "Pondère davantage les commentaires récents ; détecte colère + frustration" },
-            { "id": "n8", "label": "Recherche Notion KB", "detail": "Requête base de KB par titre + tags de composant" },
-            { "id": "n9", "label": "Recherche KB locale", "detail": "Rapproche les schémas de symptômes de data/solutions_kb.json" },
-            { "id": "n10", "label": "Confiance >= seuil ?", "detail": "Score composite : mots-clés + composant + message d'erreur + succès historique" },
-            { "id": "n11", "label": "Publie le commentaire de solution", "detail": "Commentaire ADF empathique avec étapes numérotées + lien source" },
-            { "id": "n12", "label": "Suivi confirmation 14 jours", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "label": "En colère + P1/P2 ?", "detail": "Sentiment >= 8 AND priorité dans (P1, P2)" },
-            { "id": "n14", "label": "DM manager ingénierie", "detail": "DM Slack avec contexte ticket + plaintes du rapporteur" },
-            { "id": "n15", "label": "Post canal d'escalation", "detail": "Visibilité publique du ticket P1/en colère" },
-            { "id": "n16", "label": "Abandonné 30+ jours ?", "detail": "auto_close_enabled AND pas d'activité rapporteur en 30 jours" },
-            { "id": "n17", "label": "Clôture le ticket abandonné", "detail": "Commentaire de clôture poli + transition vers Closed" },
-            { "id": "n18", "label": "Émet les événements de cycle", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "label": "Écrit l'état de manière atomique", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "label": "Cycle terminé" }
+            {
+              "id": "n1",
+              "label": "Tick de polling",
+              "detail": "Le cron 15 minutes se déclenche"
+            },
+            {
+              "id": "n2",
+              "label": "Interroge les tickets qui traînent",
+              "detail": "JQL : updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)"
+            },
+            {
+              "id": "n3",
+              "label": "Charge les fichiers d'état",
+              "detail": "data/issue_states.json + data/pending_confirmations.json"
+            },
+            {
+              "id": "n4",
+              "label": "Nouveau ou mis à jour ?",
+              "detail": "Saute les tickets déjà traités à leur timestamp updated courant"
+            },
+            {
+              "id": "n5",
+              "label": "Récupère les commentaires",
+              "detail": "Fil complet pour classification + sentiment"
+            },
+            {
+              "id": "n6",
+              "label": "Classe l'état",
+              "detail": "Attente rapporteur / équipe / bloqué / abandonné / en stagnation / silencieusement résolu"
+            },
+            {
+              "id": "n7",
+              "label": "Score de sentiment 1-10",
+              "detail": "Pondère davantage les commentaires récents ; détecte colère + frustration"
+            },
+            {
+              "id": "n8",
+              "label": "Recherche Notion KB",
+              "detail": "Requête base de KB par titre + tags de composant"
+            },
+            {
+              "id": "n9",
+              "label": "Recherche KB locale",
+              "detail": "Rapproche les schémas de symptômes de data/solutions_kb.json"
+            },
+            {
+              "id": "n10",
+              "label": "Confiance >= seuil ?",
+              "detail": "Score composite : mots-clés + composant + message d'erreur + succès historique"
+            },
+            {
+              "id": "n11",
+              "label": "Publie le commentaire de solution",
+              "detail": "Commentaire ADF empathique avec étapes numérotées + lien source"
+            },
+            {
+              "id": "n12",
+              "label": "Suivi confirmation 14 jours",
+              "detail": "data/pending_confirmations.json"
+            },
+            {
+              "id": "n13",
+              "label": "En colère + P1/P2 ?",
+              "detail": "Sentiment >= 8 AND priorité dans (P1, P2)"
+            },
+            {
+              "id": "n14",
+              "label": "DM manager ingénierie",
+              "detail": "DM Slack avec contexte ticket + plaintes du rapporteur"
+            },
+            {
+              "id": "n15",
+              "label": "Post canal d'escalation",
+              "detail": "Visibilité publique du ticket P1/en colère"
+            },
+            {
+              "id": "n16",
+              "label": "Abandonné 30+ jours ?",
+              "detail": "auto_close_enabled AND pas d'activité rapporteur en 30 jours"
+            },
+            {
+              "id": "n17",
+              "label": "Clôture le ticket abandonné",
+              "detail": "Commentaire de clôture poli + transition vers Closed"
+            },
+            {
+              "id": "n18",
+              "label": "Émet les événements de cycle",
+              "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed"
+            },
+            {
+              "id": "n19",
+              "label": "Écrit l'état de manière atomique",
+              "detail": "issue_states + escalation_log + pending_confirmations"
+            },
+            {
+              "id": "n20",
+              "label": "Cycle terminé"
+            }
           ]
         }
       },
@@ -129,28 +273,73 @@
         "title": "Digest quotidien du support",
         "description": "Chaque matin à 9h, publie dans Slack un résumé des 24 dernières heures : tickets auto-résolus, escaladés, auto-clôturés et encore en stagnation — avec des liens vers les tickets notables de chaque catégorie.",
         "capability_summary": "Résumé Slack à 9h avec les comptes auto-résolus / escaladés / auto-clôturés / encore en stagnation et liens vers les tickets.",
-        "suggested_trigger": { "description": "Chaque jour à 9h, compile le digest de la veille." },
+        "suggested_trigger": {
+          "description": "Chaque jour à 9h, compile le digest de la veille."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Canal primaire d'alertes où le digest quotidien est publié." }
+          {
+            "type": "slack",
+            "description": "Canal primaire d'alertes où le digest quotidien est publié."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.digest.posted", "description": "Payload : comptes par catégorie, liens vers les 3 tickets les plus notables par catégorie." }
+          {
+            "event_type": "support.digest.posted",
+            "description": "Payload : comptes par catégorie, liens vers les 3 tickets les plus notables par catégorie."
+          }
         ],
         "error_handling": "Fichiers d'état manquants → publie un digest minimal indiquant le trou de données. Échec de publication Slack → jusqu'à 3 retries avec backoff exponentiel, puis log et saut.",
         "input_schema": [
-          { "name": "digest_channel", "description": "Canal Slack pour le digest quotidien." },
-          { "name": "top_issues_per_bucket", "description": "Nombre maximum de tickets notables liés par catégorie." }
+          {
+            "name": "digest_channel",
+            "description": "Canal Slack pour le digest quotidien."
+          },
+          {
+            "name": "top_issues_per_bucket",
+            "description": "Nombre maximum de tickets notables liés par catégorie."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "label": "Planning 9h", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "label": "Lit les fichiers d'état", "detail": "data/issue_states.json, escalation_log.json — tranche 24h" },
-            { "id": "d3", "label": "Comptes par catégorie", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "label": "Top 3 par catégorie", "detail": "Pondéré par priorité et sentiment" },
-            { "id": "d5", "label": "Formate le digest", "detail": "Layout Slack Block Kit avec liens vers les tickets" },
-            { "id": "d6", "label": "Publie le digest", "detail": "POST chat.postMessage vers le canal d'alertes" },
-            { "id": "d7", "label": "Émet support.digest.posted", "detail": "Observabilité aval" },
-            { "id": "d8", "label": "Digest livré" }
+            {
+              "id": "d1",
+              "label": "Planning 9h",
+              "detail": "Cron 0 9 * * *"
+            },
+            {
+              "id": "d2",
+              "label": "Lit les fichiers d'état",
+              "detail": "data/issue_states.json, escalation_log.json — tranche 24h"
+            },
+            {
+              "id": "d3",
+              "label": "Comptes par catégorie",
+              "detail": "auto_resolved / escalated / auto_closed / still_stale"
+            },
+            {
+              "id": "d4",
+              "label": "Top 3 par catégorie",
+              "detail": "Pondéré par priorité et sentiment"
+            },
+            {
+              "id": "d5",
+              "label": "Formate le digest",
+              "detail": "Layout Slack Block Kit avec liens vers les tickets"
+            },
+            {
+              "id": "d6",
+              "label": "Publie le digest",
+              "detail": "POST chat.postMessage vers le canal d'alertes"
+            },
+            {
+              "id": "d7",
+              "label": "Émet support.digest.posted",
+              "detail": "Observabilité aval"
+            },
+            {
+              "id": "d8",
+              "label": "Digest livré"
+            }
           ]
         }
       },
@@ -159,43 +348,127 @@
         "title": "Rapport hebdomadaire de santé",
         "description": "Chaque lundi à 9h, génère un rapport complet : taux d'auto-résolution, temps moyen jusqu'à résolution, croissance de la KB, issues d'escalation, tendances des tickets qui traînent et comparaison semaine sur semaine avec le rapport précédent.",
         "capability_summary": "Rapport complet du lundi à 9h avec métriques de résolution, croissance KB et analyse de tendances WoW.",
-        "suggested_trigger": { "description": "Chaque lundi à 9h, publie le rapport hebdomadaire de santé." },
+        "suggested_trigger": {
+          "description": "Chaque lundi à 9h, publie le rapport hebdomadaire de santé."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Canal d'alertes pour la publication du rapport hebdomadaire de santé." }
+          {
+            "type": "slack",
+            "description": "Canal d'alertes pour la publication du rapport hebdomadaire de santé."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.weekly_report.published", "description": "Payload : résumé de métriques, deltas WoW, chemin du fichier de rapport." }
+          {
+            "event_type": "support.weekly_report.published",
+            "description": "Payload : résumé de métriques, deltas WoW, chemin du fichier de rapport."
+          }
         ],
         "error_handling": "Fichiers d'état incomplets → génère un rapport partiel avec des notes explicites sur les trous. Échec de requête Jira → se rabat sur les comptes des fichiers d'état. Échec d'archivage → publie tout de même dans Slack, logue l'erreur d'archivage.",
         "input_schema": [
-          { "name": "report_channel", "description": "Canal Slack pour le rapport hebdomadaire." },
-          { "name": "archive_directory", "description": "Répertoire local où chaque JSON de rapport est archivé." }
+          {
+            "name": "report_channel",
+            "description": "Canal Slack pour le rapport hebdomadaire."
+          },
+          {
+            "name": "archive_directory",
+            "description": "Répertoire local où chaque JSON de rapport est archivé."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "label": "Planning lundi 9h", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "label": "Charge état + rapport précédent", "detail": "issue_states + solutions_kb + escalation_log + rapport de la semaine passée" },
-            { "id": "w3", "label": "Compte actuel de tickets qui traînent", "detail": "Requête JQL pour le compte en direct au moment du rapport" },
-            { "id": "w4", "label": "Calcule les métriques", "detail": "Taux d'auto-résolution, TTR moyen, nouvelles entrées KB, issues d'escalation, distribution du sentiment" },
-            { "id": "w5", "label": "Comparaison WoW", "detail": "Deltas par rapport aux métriques de la semaine précédente" },
-            { "id": "w6", "label": "Formate le rapport Block Kit", "detail": "Sections : résolution, santé KB, escalations, tendances" },
-            { "id": "w7", "label": "Publie le rapport", "detail": "chat.postMessage vers le canal d'alertes" },
-            { "id": "w8", "label": "Archive le JSON du rapport", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "label": "Émet weekly_report.published" },
-            { "id": "w10", "label": "Rapport livré" }
+            {
+              "id": "w1",
+              "label": "Planning lundi 9h",
+              "detail": "Cron 0 9 * * 1"
+            },
+            {
+              "id": "w2",
+              "label": "Charge état + rapport précédent",
+              "detail": "issue_states + solutions_kb + escalation_log + rapport de la semaine passée"
+            },
+            {
+              "id": "w3",
+              "label": "Compte actuel de tickets qui traînent",
+              "detail": "Requête JQL pour le compte en direct au moment du rapport"
+            },
+            {
+              "id": "w4",
+              "label": "Calcule les métriques",
+              "detail": "Taux d'auto-résolution, TTR moyen, nouvelles entrées KB, issues d'escalation, distribution du sentiment"
+            },
+            {
+              "id": "w5",
+              "label": "Comparaison WoW",
+              "detail": "Deltas par rapport aux métriques de la semaine précédente"
+            },
+            {
+              "id": "w6",
+              "label": "Formate le rapport Block Kit",
+              "detail": "Sections : résolution, santé KB, escalations, tendances"
+            },
+            {
+              "id": "w7",
+              "label": "Publie le rapport",
+              "detail": "chat.postMessage vers le canal d'alertes"
+            },
+            {
+              "id": "w8",
+              "label": "Archive le JSON du rapport",
+              "detail": "data/weekly_reports/issue_health_{date}.json"
+            },
+            {
+              "id": "w9",
+              "label": "Émet weekly_report.published"
+            },
+            {
+              "id": "w10",
+              "label": "Rapport livré"
+            }
           ]
         }
       }
     ],
     "adoption_questions": [
-      { "id": "aq_jira_projects", "question": "Quelles clés de projet Jira cet agent doit-il surveiller ?", "context": "L'agent interroge ces projets pour les tickets qui traînent via JQL. Séparez plusieurs clés par des virgules si nécessaire." },
-      { "id": "aq_stale_days", "question": "Après combien de jours un ticket doit-il être considéré comme traînant ?", "context": "Les tickets ouverts sans mise à jour au-delà de ce seuil deviennent candidats à l'auto-résolution ou à l'escalation." },
-      { "id": "aq_alert_channel", "question": "Quel canal Slack pour les digests quotidiens et les rapports hebdomadaires ?", "context": "Les digests quotidiens, rapports hebdomadaires de santé et notifications d'auto-résolution sont publiés ici." },
-      { "id": "aq_escalation_channel", "question": "Quel canal Slack pour les escalations haute priorité ?", "context": "Les tickets en colère + P1/P2 sont publiés ici pour visibilité immédiate de l'équipe." },
-      { "id": "aq_eng_manager_email", "question": "E-mail du manager ingénierie pour les escalations en DM ?", "context": "Les tickets en colère + P1/P2 déclenchent un DM Slack direct à cette personne." },
-      { "id": "aq_notion_kb_database_id", "question": "Quelle base Notion contient la base de connaissances de troubleshooting ?", "context": "Base Notion avec runbooks, guides de troubleshooting et entrées FAQ utilisés pour rapprocher les solutions." },
-      { "id": "aq_auto_close_enabled", "question": "Les tickets abandonnés doivent-ils être auto-clôturés après 30 jours d'inactivité ?", "context": "Quand activé, les tickets sans activité du rapporteur pendant 30+ jours reçoivent un commentaire de clôture poli et passent en Closed." },
-      { "id": "aq_confidence_threshold", "question": "Score de confiance minimum (0-100) pour auto-publier des suggestions de solution ?", "context": "Seuls les matches KB à ce seuil ou au-dessus sont publiés en tant que commentaires de solution. Des seuils plus bas résolvent plus de tickets mais risquent des suggestions de faible qualité." }
+      {
+        "id": "aq_jira_projects",
+        "question": "Quelles clés de projet Jira cet agent doit-il surveiller ?",
+        "context": "L'agent interroge ces projets pour les tickets qui traînent via JQL. Séparez plusieurs clés par des virgules si nécessaire."
+      },
+      {
+        "id": "aq_stale_days",
+        "question": "Après combien de jours un ticket doit-il être considéré comme traînant ?",
+        "context": "Les tickets ouverts sans mise à jour au-delà de ce seuil deviennent candidats à l'auto-résolution ou à l'escalation."
+      },
+      {
+        "id": "aq_alert_channel",
+        "question": "Quel canal Slack pour les digests quotidiens et les rapports hebdomadaires ?",
+        "context": "Les digests quotidiens, rapports hebdomadaires de santé et notifications d'auto-résolution sont publiés ici."
+      },
+      {
+        "id": "aq_escalation_channel",
+        "question": "Quel canal Slack pour les escalations haute priorité ?",
+        "context": "Les tickets en colère + P1/P2 sont publiés ici pour visibilité immédiate de l'équipe."
+      },
+      {
+        "id": "aq_eng_manager_email",
+        "question": "E-mail du manager ingénierie pour les escalations en DM ?",
+        "context": "Les tickets en colère + P1/P2 déclenchent un DM Slack direct à cette personne."
+      },
+      {
+        "id": "aq_notion_kb_database_id",
+        "question": "Quelle base Notion contient la base de connaissances de troubleshooting ?",
+        "context": "Base Notion avec runbooks, guides de troubleshooting et entrées FAQ utilisés pour rapprocher les solutions."
+      },
+      {
+        "id": "aq_auto_close_enabled",
+        "question": "Les tickets abandonnés doivent-ils être auto-clôturés après 30 jours d'inactivité ?",
+        "context": "Quand activé, les tickets sans activité du rapporteur pendant 30+ jours reçoivent un commentaire de clôture poli et passent en Closed."
+      },
+      {
+        "id": "aq_confidence_threshold",
+        "question": "Score de confiance minimum (0-100) pour auto-publier des suggestions de solution ?",
+        "context": "Seuls les matches KB à ce seuil ou au-dessus sont publiés en tant que commentaires de solution. Des seuils plus bas résolvent plus de tickets mais risquent des suggestions de faible qualité."
+      }
     ]
   }
 }

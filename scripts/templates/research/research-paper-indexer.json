@@ -5,11 +5,19 @@
   "description": "Monitors arXiv, PubMed, and Semantic Scholar for papers matching configurable keyword groups. Generates structured Problem-Method-Result summaries, maintains a deduplicated searchable index with cross-references, and produces periodic trend reports across your research domains.",
   "icon": "BookOpen",
   "color": "#3b82f6",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Academic APIs", "Messages"],
+  "service_flow": [
+    "Academic APIs",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Academic APIs", "Messages"],
+    "service_flow": [
+      "Academic APIs",
+      "Messages"
+    ],
     "persona": {
       "goal": "Never miss a paper that matters to your work — systematic coverage across major repositories, faithful summaries, and trend lines that tell you where your field is moving.",
       "identity": {
@@ -43,10 +51,14 @@
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
       "operating_instructions": "Two capabilities, different cadences:\n\n1. **uc_paper_discovery** (daily by default) — read keyword groups from `data/keyword_groups.json`, read scan state from `data/scan_state.json` (per-database last-scan timestamps), read current index from `data/paper_index.json` for dedup. For each keyword group, query each enabled database (arXiv / PubMed / Semantic Scholar) filtered to papers since last scan. Normalize IDs across databases. Deduplicate against the existing index and within the current batch (prefer richest metadata). Apply `min_relevance_score` threshold. Cap at `max_papers_per_scan`. For each surviving candidate: extract metadata (strip LaTeX), generate PMR summary (3 sentences), extract 3-5 quantitative key findings, assign topic + methodology tags, compute relevance score, rate summary_confidence. Write to `paper_index.json`. Build bidirectional cross-references with papers sharing 2+ topic tags. Emit `research.paper.indexed` per paper, `research.scan.completed` at run end. Low-confidence summaries route to manual_review.\n\n2. **uc_trend_analysis** (weekly by default) — dedupe audit (title-Jaccard ≥ 0.85 for preprint→published merges), cross-reference refresh, citation-count refresh from Semantic Scholar where possible. Aggregate topic-tag frequencies across the last 30 days; compare to the prior 30. Identify: rising (>50% increase), declining (>50% decrease), new (absent in prior period), consistent (within 10%). For each rising/new topic, surface the 3 highest-relevance papers driving it. Deliver the weekly trend report via Messages. Emit `research.trends.detected` with topic lists and period. Store snapshot in `data/trend_history.json` for longitudinal analysis.\n\nState: `data/keyword_groups.json` (configured keyword groups with filters), `data/paper_index.json` (normalized schema per paper), `data/scan_state.json` (per-database last-scan timestamps), `data/trend_history.json` (weekly topic snapshots).",
-      "tool_guidance": "**arXiv API** (http_request, no auth required):\n- `GET http://export.arxiv.org/api/query?search_query={query}&start=0&max_results=50&sortBy=submittedDate&sortOrder=descending`.\n- Query syntax: `all:\"transformer architecture\" AND cat:cs.LG`. Add `AND submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` for date range.\n- Response is Atom XML. Parse `<entry>` for `<id>`, `<title>`, `<summary>` (abstract), `<published>`, `<author><name>`, `<arxiv:primary_category>`.\n- 3-second delay between requests (politeness; no formal rate limit).\n- Titles/abstracts may contain LaTeX — strip `$...$` and `\\command{}` before indexing.\n\n**PubMed E-utilities** (http_request, API key optional):\n- Search: `GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&retmax=50&sort=pub_date&mindate={YYYY/MM/DD}&datetype=pdat&retmode=json`.\n- Fetch: `GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmids}&rettype=abstract&retmode=xml`.\n- MeSH terms for precision: `\"machine learning\"[MeSH] AND \"drug discovery\"[Title/Abstract]`.\n- Rate: 3 req/s without key, 10 req/s with key. Always include the key if provided.\n\n**Semantic Scholar Academic Graph** (http_request, API key optional):\n- `GET https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=50&fields=paperId,title,abstract,year,citationCount,authors,venue,externalIds,tldr`.\n- Batch: `POST /graph/v1/paper/batch` with `{\"ids\": [\"DOI:...\", \"ArXiv:...\"]}` for citation-count refresh.\n- Rate: 100 req / 5 min unauthenticated; higher with API key.\n- `tldr` field provides a one-sentence AI summary — use as a cross-check against your generated summary.\n\n**Summarization (PMR framework)**:\n- Sentence 1: problem addressed.\n- Sentence 2: proposed method / approach.\n- Sentence 3: key result / conclusion.\n- Never extrapolate — if the abstract says 'shows promising results', the summary reflects that ambiguity.\n\n**Key findings extraction**:\n- Look for quantitative results (numbers, percentages, comparisons).\n- Look for novel claims (\"first to\", \"outperforms\", \"introduces\").\n- Include limitations authors explicitly acknowledge.\n- Never fabricate specifics.\n\n**Local schema** (`data/paper_index.json`):\n```json\n{\n  \"id\": \"arxiv:2401.12345\",\n  \"title\": \"…\",\n  \"authors\": [\"Name1\", \"Name2\"],\n  \"abstract\": \"…\",\n  \"summary\": \"…\",\n  \"key_findings\": [\"…\"],\n  \"topic_tags\": [\"…\"],\n  \"methodology_tags\": [\"empirical_study\"],\n  \"venue\": \"…\",\n  \"published_date\": \"2026-01-15\",\n  \"external_ids\": {\"arxiv\": \"2401.12345\", \"doi\": \"…\"},\n  \"url\": \"…\",\n  \"citation_count\": 42,\n  \"relevance_score\": 0.87,\n  \"summary_confidence\": \"high\",\n  \"keyword_group\": \"transformer architectures\",\n  \"related_papers\": [\"arxiv:2402.…\"],\n  \"indexed_at\": \"2026-03-15T10:30:00Z\"\n}\n```",
+      "tool_guidance": "**arXiv API** (http_request, no auth required):\n- `GET http://export.arxiv.org/api/query?search_query={query}&start=0&max_results=50&sortBy=submittedDate&sortOrder=descending`.\n- Query syntax: `all:\"transformer architecture\" AND cat:cs.LG`. Add `AND submittedDate:[YYYYMMDD0000 TO YYYYMMDD2359]` for date range.\n- Response is Atom XML. Parse `<entry>` for `<id>`, `<title>`, `<summary>` (abstract), `<published>`, `<author><name>`, `<arxiv:primary_category>`.\n- 3-second delay between requests (politeness; no formal rate limit).\n- Titles/abstracts may contain LaTeX — strip `$...$` and `\\command{}` before indexing.\n\n**PubMed E-utilities** (http_request, API key optional):\n- Search: `GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term={query}&retmax=50&sort=pub_date&mindate={YYYY/MM/DD}&datetype=pdat&retmode=json`.\n- Fetch: `GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id={pmids}&rettype=abstract&retmode=xml`.\n- MeSH terms for precision: `\"machine learning\"[MeSH] AND \"drug discovery\"[Title/Abstract]`.\n- Rate: 3 req/s without key, 10 req/s with key. Always include the key if provided.\n\n**Semantic Scholar Academic Graph** (http_request, API key optional):\n- `GET https://api.semanticscholar.org/graph/v1/paper/search?query={query}&limit=50&fields=paperId,title,abstract,year,citationCount,authors,venue,externalIds,tldr`.\n- Batch: `POST /graph/v1/paper/batch` with `{\"ids\": [\"DOI:...\", \"ArXiv:...\"]}` for citation-count refresh.\n- Rate: 100 req / 5 min unauthenticated; higher with API key.\n- `tldr` field provides a one-sentence AI summary — use as a cross-check against your generated summary.\n\n**Summarization (PMR framework)**:\n- Sentence 1: problem addressed.\n- Sentence 2: proposed method / approach.\n- Sentence 3: key result / conclusion.\n- Never extrapolate — if the abstract says 'shows promising results', the summary reflects that ambiguity.\n\n**Key findings extraction**:\n- Look for quantitative results (numbers, percentages, comparisons).\n- Look for novel claims (\"first to\", \"outperforms\", \"introduces\").\n- Include limitations authors explicitly acknowledge.\n- Never fabricate specifics.\n\n**Local schema** (`data/paper_index.json`):\n```json\n{\n \"id\": \"arxiv:2401.12345\",\n \"title\": \"…\",\n \"authors\": [\"Name1\", \"Name2\"],\n \"abstract\": \"…\",\n \"summary\": \"…\",\n \"key_findings\": [\"…\"],\n \"topic_tags\": [\"…\"],\n \"methodology_tags\": [\"empirical_study\"],\n \"venue\": \"…\",\n \"published_date\": \"2026-01-15\",\n \"external_ids\": {\"arxiv\": \"2401.12345\", \"doi\": \"…\"},\n \"url\": \"…\",\n \"citation_count\": 42,\n \"relevance_score\": 0.87,\n \"summary_confidence\": \"high\",\n \"keyword_group\": \"transformer architectures\",\n \"related_papers\": [\"arxiv:2402.…\"],\n \"indexed_at\": \"2026-03-15T10:30:00Z\"\n}\n```",
       "error_handling": "arXiv 503 → wait 30s, one retry, then skip for the run. PubMed 429 → 10s pause + reduced batch; track hourly quota. Semantic Scholar 429 → queue remaining keyword groups for next cycle. Network timeout / 5xx → exponential backoff (5s, 15s, 45s), max 3 retries. Single-database failure → continue with other databases; never let one failure block the scan. Missing / empty abstract → index with metadata only, summary_confidence `low`, flag for review. Non-English abstract → preserve in index, summary_confidence `low`, flag for review with detected language. Abstract < 50 words → generate best-effort summary, summary_confidence `medium`. Retraction / erratum / corrigendum in title → flag for manual_review, exclude from trend analysis. `paper_index.json` corrupted → try `data/paper_index.backup.json`; if both corrupted, new empty index + critical alert via manual_review (previous data may need recovery from agent_memory). Write failure → cache in `data/pending_papers.json`, retry next cycle.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [],
       "notification_channels_default": [
         {
@@ -68,7 +80,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 6 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 6 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 6:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -103,7 +118,12 @@
           {
             "name": "enabled_databases",
             "type": "enum",
-            "options": ["arxiv_only", "pubmed_only", "arxiv_pubmed", "all"],
+            "options": [
+              "arxiv_only",
+              "pubmed_only",
+              "arxiv_pubmed",
+              "all"
+            ],
             "default": "all",
             "description": "Which academic databases to query. arXiv strong for CS/Physics/Math; PubMed for biomedical; Semantic Scholar for broad coverage + citation data."
           },
@@ -130,34 +150,119 @@
           "min_relevance_score": 0.6,
           "max_papers_per_scan": 50
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Daily tick" },
-            { "id": "p2", "type": "action", "label": "Load keyword groups + scan state + index" },
-            { "id": "p3", "type": "action", "label": "Query arXiv / PubMed / Semantic Scholar per group" },
-            { "id": "p4", "type": "action", "label": "Dedup across DBs + apply relevance threshold + cap" },
-            { "id": "p5", "type": "action", "label": "Extract metadata + generate PMR summary + tag + score" },
-            { "id": "p6", "type": "decision", "label": "Summary confidence high/medium?" },
-            { "id": "p7", "type": "action", "label": "Write to index + build cross-references" },
-            { "id": "p8", "type": "action", "label": "Flag for manual_review (keep in index, excluded from trends)" },
-            { "id": "p9", "type": "event", "label": "Emit research.paper.indexed per paper" },
-            { "id": "p10", "type": "event", "label": "Emit research.scan.completed" },
-            { "id": "p11", "type": "end", "label": "Scan complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Load keyword groups + scan state + index"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Query arXiv / PubMed / Semantic Scholar per group"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Dedup across DBs + apply relevance threshold + cap"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Extract metadata + generate PMR summary + tag + score"
+            },
+            {
+              "id": "p6",
+              "type": "decision",
+              "label": "Summary confidence high/medium?"
+            },
+            {
+              "id": "p7",
+              "type": "action",
+              "label": "Write to index + build cross-references"
+            },
+            {
+              "id": "p8",
+              "type": "action",
+              "label": "Flag for manual_review (keep in index, excluded from trends)"
+            },
+            {
+              "id": "p9",
+              "type": "event",
+              "label": "Emit research.paper.indexed per paper"
+            },
+            {
+              "id": "p10",
+              "type": "event",
+              "label": "Emit research.scan.completed"
+            },
+            {
+              "id": "p11",
+              "type": "end",
+              "label": "Scan complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7", "variant": "yes", "label": "High/Med" },
-            { "source": "p6", "target": "p8", "variant": "no", "label": "Low" },
-            { "source": "p7", "target": "p9" },
-            { "source": "p8", "target": "p9" },
-            { "source": "p9", "target": "p10" },
-            { "source": "p10", "target": "p11" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7",
+              "variant": "yes",
+              "label": "High/Med"
+            },
+            {
+              "source": "p6",
+              "target": "p8",
+              "variant": "no",
+              "label": "Low"
+            },
+            {
+              "source": "p7",
+              "target": "p9"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            },
+            {
+              "source": "p9",
+              "target": "p10"
+            },
+            {
+              "source": "p10",
+              "target": "p11"
+            }
           ]
         }
       },
@@ -172,7 +277,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -220,29 +328,93 @@
           "trend_period_days": 30,
           "rising_threshold_pct": 50
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Weekly tick" },
-            { "id": "t2", "type": "action", "label": "Dedup audit (Jaccard ≥ 0.85 → merge)" },
-            { "id": "t3", "type": "action", "label": "Rebuild cross-references + refresh citations" },
-            { "id": "t4", "type": "action", "label": "Aggregate current 30d + prior 30d topic frequencies" },
-            { "id": "t5", "type": "action", "label": "Classify rising / new / declining / consistent" },
-            { "id": "t6", "type": "action", "label": "Identify representative papers per rising/new topic" },
-            { "id": "t7", "type": "event", "label": "Emit research.trends.detected + research.index.maintained" },
-            { "id": "t8", "type": "action", "label": "Deliver trend report via Messages + snapshot to trend_history" },
-            { "id": "t9", "type": "end", "label": "Weekly trends delivered" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Dedup audit (Jaccard ≥ 0.85 → merge)"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Rebuild cross-references + refresh citations"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Aggregate current 30d + prior 30d topic frequencies"
+            },
+            {
+              "id": "t5",
+              "type": "action",
+              "label": "Classify rising / new / declining / consistent"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Identify representative papers per rising/new topic"
+            },
+            {
+              "id": "t7",
+              "type": "event",
+              "label": "Emit research.trends.detected + research.index.maintained"
+            },
+            {
+              "id": "t8",
+              "type": "action",
+              "label": "Deliver trend report via Messages + snapshot to trend_history"
+            },
+            {
+              "id": "t9",
+              "type": "end",
+              "label": "Weekly trends delivered"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7" },
-            { "source": "t7", "target": "t8" },
-            { "source": "t8", "target": "t9" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            },
+            {
+              "source": "t8",
+              "target": "t9"
+            }
           ]
         }
       }
@@ -251,7 +423,9 @@
       {
         "id": "aq_keyword_groups",
         "scope": "capability",
-        "use_case_ids": ["uc_paper_discovery"],
+        "use_case_ids": [
+          "uc_paper_discovery"
+        ],
         "category": "domain",
         "question": "Which keyword groups define your research coverage?",
         "type": "textarea",
@@ -265,7 +439,9 @@
       {
         "id": "aq_enabled_databases",
         "scope": "capability",
-        "use_case_ids": ["uc_paper_discovery"],
+        "use_case_ids": [
+          "uc_paper_discovery"
+        ],
         "category": "configuration",
         "question": "Which academic databases should be queried?",
         "type": "select",

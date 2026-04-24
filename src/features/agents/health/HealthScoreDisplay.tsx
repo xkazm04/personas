@@ -20,7 +20,7 @@ export function ScoreBadge({ score }: { score: HealthScore }) {
 
   return (
     <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading font-semibold border ${gradeColors[score.grade]}`}>
-      <Activity className="w-4 h-4" />
+      <Activity className="w-4 h-4" aria-hidden="true" />
       <span>{score.value}</span>
       <span className="typo-caption font-normal opacity-70">{gradeLabels[score.grade]}</span>
     </div>
@@ -40,7 +40,7 @@ export function ScoreRing({ score }: { score: HealthScore }) {
 
   return (
     <div className="relative w-24 h-24 flex-shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80" aria-hidden="true" role="presentation">
         <circle cx="40" cy="40" r={radius} fill="none" stroke="currentColor" strokeWidth="4" className="text-primary/10" />
         <circle className="animate-fade-in"
           cx="40" cy="40" r={radius} fill="none" stroke={strokeColor} strokeWidth="4"

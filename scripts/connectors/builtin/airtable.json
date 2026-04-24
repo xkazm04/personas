@@ -4,10 +4,10 @@
   "label": "Airtable",
   "color": "#18BFFF",
   "icon_url": "/icons/connectors/airtable.svg",
-  "category": "database",
+  "category": "spreadsheet",
   "categories": [
-    "database",
     "spreadsheet",
+    "database",
     "project_management"
   ],
   "fields": [

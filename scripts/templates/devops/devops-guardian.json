@@ -5,11 +5,23 @@
   "description": "Unified DevOps monitoring agent that scans application errors, infrastructure metrics, database health, and deployment status from connected monitoring tools, correlates cross-domain signals (deploy-induced regressions, resource bottlenecks), triages incidents for human review, and learns from triage decisions to improve alert quality over time.",
   "icon": "Shield",
   "color": "#EF4444",
-  "category": ["devops"],
-  "service_flow": ["Monitoring", "Database", "Deployment", "Messages"],
+  "category": [
+    "devops"
+  ],
+  "service_flow": [
+    "Monitoring",
+    "Database",
+    "Deployment",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Monitoring", "Database", "Deployment", "Messages"],
+    "service_flow": [
+      "Monitoring",
+      "Database",
+      "Deployment",
+      "Messages"
+    ],
     "persona": {
       "goal": "One daily operations pulse — consolidate errors, infra, database health, and deploys into a prioritized report and catch deploy-induced regressions before the user does.",
       "identity": {
@@ -42,11 +54,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "Four capabilities fire on the same daily tick and concatenate into one combined morning briefing:\n\n1. **uc_error_scan** — query the configured monitoring connector for the last N hours (default 24) of unresolved errors. For each issue, extract title, culprit, error count, user count, first/last seen, environment. Classify severity: Critical (>100 occurrences OR >10% users OR new error type), High (20-100 OR 1-10% OR regression), Medium (5-20 with limited impact), Low (<5, known noise). Apply memory: patterns dismissed 3+ times auto-classify Low. Emit `devops.error.critical` per Critical finding.\n\n2. **uc_infra_scan** — query infrastructure metrics (CPU, memory, error rates, latency percentiles, availability) from the monitoring connector for the same window. Flag sustained CPU >80% for >1hr, p95 latency >2x 7-day baseline, any downtime windows, active alerts. Apply memory-informed thresholds when the user has tuned them via triage.\n\n3. **uc_db_health** — query the configured database connector for connection pool utilization, slow query count, table growth rate, replication lag, dead rows, failed migrations. Compare against `health_history.json` baselines. If DB unreachable → that is itself a Critical incident, not a silent skip.\n\n4. **uc_deploy_correlation** — list deployments in the last N hours via the deployment connector. Cross-reference each deploy's timestamp with error-spike timing from uc_error_scan. A deploy within 2 hours of a >20% error-rate jump is flagged as a regression with commit SHA and author. Emit `devops.deploy.regression` per regression.\n\n**Combined message composition**: the four sections concatenate into one morning briefing with header (overall health: Healthy | Degraded | Critical), executive summary, incident table across all four domains, per-domain sections, cross-domain correlations (deploy→error, slowquery→latency), attention alerts. Medium+ incidents route through human triage (Actionable → backlog event; Noise → memory). Triage decisions persist in `triage_patterns.json`. `health_history.json` updated with today's metrics for next-run baselines.",
-      "tool_guidance": "**Monitoring connector** (required — provider selected via vault-sourced picker):\n- Sentry: `GET https://sentry.io/api/0/projects/{org}/{project}/issues/?query=is:unresolved&sort=freq&statsPeriod={N}h`; `GET /api/0/issues/{id}/events/latest/` for stack traces; `GET /api/0/projects/{org}/{project}/stats/` for project rollups. Auth `Authorization: Bearer {token}`.\n- Datadog: `GET https://api.datadoghq.com/api/v1/monitor` for alerts; `GET /api/v2/events?filter[from]=now-{N}h`; `GET /api/v1/query?query=avg:system.cpu.user{*}` for metrics. Auth via `DD-API-KEY` + `DD-APPLICATION-KEY` headers.\n- BetterStack: `GET https://uptime.betterstack.com/api/v2/monitors` and `GET /api/v2/incidents`. Auth `Authorization: Bearer {token}`.\n\n**Database connector** (required — provider selected via vault-sourced picker):\n- Supabase: `GET https://{ref}.supabase.co/rest/v1/rpc/pg_stat_activity` for connections; `pg_stat_user_tables` for growth. Headers `apikey` + `Authorization: Bearer`.\n- Postgres direct: `SELECT * FROM pg_stat_activity`, `pg_stat_user_tables`, `pg_stat_replication`. Read-only role sufficient.\n- PlanetScale: `GET https://api.planetscale.com/v1/organizations/{org}/databases/{db}/branches/{branch}/schema` for schema drift.\n- MongoDB Atlas: `GET https://cloud.mongodb.com/api/atlas/v2/groups/{gid}/processes/{pid}/measurements` for per-process metrics.\n\n**Deployment connector** (required — provider selected via vault-sourced picker):\n- Vercel: `GET https://api.vercel.com/v6/deployments?limit=20&since={ts}`; `GET /v6/deployments/{id}` for build logs.\n- Netlify: `GET https://api.netlify.com/api/v1/sites/{id}/deploys?per_page=20`.\n- GitHub Actions: `GET https://api.github.com/repos/{owner}/{repo}/actions/runs?created=>={ts}`.\n- GitLab CI: `GET https://gitlab.com/api/v4/projects/{id}/pipelines?updated_after={ts}`.\n\n**Rate-limit strategy**: respect `Retry-After` on 429; max 3 retries with exponential backoff; on persistent 429 use `health_history.json` cached baselines and mark the section as stale.\n\n**Local state**:\n- `guardian_config.json` — connected provider identifiers, projects/sites/databases monitored, user thresholds.\n- `health_history.json` — rolling 14-day metric baselines per metric per entity.\n- `triage_patterns.json` — per-pattern counts of Actionable vs Noise decisions; drives memory-informed classification.\n- `latest_report.json` — fallback snapshot when messaging delivery fails.",
+      "operating_instructions": "Four capabilities fire on the same daily tick and concatenate into one combined morning briefing: 1. **uc_error_scan** — query the configured monitoring connector for the last N hours (default 24) of unresolved errors. For each issue, extract title, culprit, error count, user count, first/last seen, environment. Classify severity: Critical (>100 occurrences OR >10% users OR new error type), High (20-100 OR 1-10% OR regression), Medium (5-20 with limited impact), Low (<5, known noise). Apply memory: patterns dismissed 3+ times auto-classify Low. Emit `devops.error.critical` per Critical finding. 2. **uc_infra_scan** — query infrastructure metrics (CPU, memory, error rates, latency percentiles, availability) from the monitoring connector for the same window. Flag sustained CPU >80% for >1hr, p95 latency >2x 7-day baseline, any downtime windows, active alerts. Apply memory-informed thresholds when the user has tuned them via triage. 3. **uc_db_health** — query the configured database connector for connection pool utilization, slow query count, table growth rate, replication lag, dead rows, failed migrations. Compare against `health_history.json` baselines. If DB unreachable → that is itself a Critical incident, not a silent skip. 4. **uc_deploy_correlation** — list deployments in the last N hours via the deployment connector. Cross-reference each deploy's timestamp with error-spike timing from uc_error_scan. A deploy within 2 hours of a >20% error-rate jump is flagged as a regression with commit SHA and author. Emit `devops.deploy.regression` per regression. **Combined message composition**: the four sections concatenate into one morning briefing with header (overall health: Healthy | Degraded | Critical), executive summary, incident table across all four domains, per-domain sections, cross-domain correlations (deploy→error, slowquery→latency), attention alerts. Medium+ incidents route through human triage (Actionable → backlog event; Noise → memory). Triage decisions persist in `triage_patterns.json`. `health_history.json` updated with today's metrics for next-run baselines.",
+      "tool_guidance": "**Monitoring connector** (required — provider selected via vault-sourced picker):\n- monitoring: `GET https://sentry.io/api/0/projects/{org}/{project}/issues/?query=is:unresolved&sort=freq&statsPeriod={N}h`; `GET /api/0/issues/{id}/events/latest/` for stack traces; `GET /api/0/projects/{org}/{project}/stats/` for project rollups. Auth `Authorization: Bearer {token}`.\n- monitoring: `GET https://api.datadoghq.com/api/v1/monitor` for alerts; `GET /api/v2/events?filter[from]=now-{N}h`; `GET /api/v1/query?query=avg:system.cpu.user{*}` for metrics. Auth via `DD-API-KEY` + `DD-APPLICATION-KEY` headers.\n- monitoring: `GET https://uptime.betterstack.com/api/v2/monitors` and `GET /api/v2/incidents`. Auth `Authorization: Bearer {token}`. **Database connector** (required — provider selected via vault-sourced picker):\n- Supabase: `GET https://{ref}.supabase.co/rest/v1/rpc/pg_stat_activity` for connections; `pg_stat_user_tables` for growth. Headers `apikey` + `Authorization: Bearer`.\n- database direct: `SELECT * FROM pg_stat_activity`, `pg_stat_user_tables`, `pg_stat_replication`. Read-only role sufficient.\n- PlanetScale: `GET https://api.planetscale.com/v1/organizations/{org}/databases/{db}/branches/{branch}/schema` for schema drift.\n- database Atlas: `GET https://cloud.mongodb.com/api/atlas/v2/groups/{gid}/processes/{pid}/measurements` for per-process metrics. **Deployment connector** (required — provider selected via vault-sourced picker):\n- cloud: `GET https://api.vercel.com/v6/deployments?limit=20&since={ts}`; `GET /v6/deployments/{id}` for build logs.\n- cloud: `GET https://api.netlify.com/api/v1/sites/{id}/deploys?per_page=20`.\n- GitHub Actions: `GET https://api.github.com/repos/{owner}/{repo}/actions/runs?created=>={ts}`.\n- GitLab CI: `GET https://gitlab.com/api/v4/projects/{id}/pipelines?updated_after={ts}`. **Rate-limit strategy**: respect `Retry-After` on 429; max 3 retries with exponential backoff; on persistent 429 use `health_history.json` cached baselines and mark the section as stale. **Local state**:\n- `guardian_config.json` — connected provider identifiers, projects/sites/databases monitored, user thresholds.\n- `health_history.json` — rolling 14-day metric baselines per metric per entity.\n- `triage_patterns.json` — per-pattern counts of Actionable vs Noise decisions; drives memory-informed classification.\n- `latest_report.json` — fallback snapshot when messaging delivery fails.",
       "error_handling": "Monitoring auth fail (401/403) → skip errors+infra sections, note in briefing with re-auth CTA; other domains continue. Database unreachable → flag as Critical incident (data blindness is itself a page). Deployment API down → skip deploy correlation; note that regression detection is disabled for this run. Rate limit (429) persistent after retries → fall back to `health_history.json` baselines with staleness label. All providers down → deliver a single-line degraded-health alert + emit `devops.health.degraded`. `guardian_config.json` missing → post setup message, halt. `health_history.json` corrupted → regenerate from current providers; skip baseline comparison for this run. First run (no memory) → apply default thresholds, no noise reduction until first triage round.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "monitoring",
@@ -60,7 +76,13 @@
               "key": "provider",
               "label": "Monitoring provider",
               "type": "select",
-              "options": ["sentry", "datadog", "betterstack", "cloudwatch", "posthog"],
+              "options": [
+                "sentry",
+                "datadog",
+                "betterstack",
+                "cloudwatch",
+                "posthog"
+              ],
               "placeholder": "sentry",
               "helpText": "Which monitoring tool to pull error and infrastructure data from. Selected at adoption via your vault's monitoring credentials.",
               "required": true
@@ -78,11 +100,11 @@
               "label": "Organization / project / account",
               "type": "text",
               "placeholder": "",
-              "helpText": "Sentry org slug, Datadog app key, BetterStack team ID, or equivalent provider-level identifier.",
+              "helpText": "monitoring org slug, monitoring app key, monitoring team ID, or equivalent provider-level identifier.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Add your monitoring provider to the Vault → Catalog (Sentry, Datadog, BetterStack, PostHog, CloudWatch).\n2. DevOps Guardian reads the monitoring-category credential you pick at adoption.\n3. The provider's API-specific calls are wrapped by the persona — you don't configure endpoints manually."
+          "setup_instructions": "1. Add your monitoring provider to the Vault → Catalog (monitoring, monitoring, monitoring, PostHog, CloudWatch).\n2. DevOps Guardian reads the monitoring-category credential you pick at adoption.\n3. The provider's API-specific calls are wrapped by the persona — you don't configure endpoints manually."
         },
         {
           "name": "database",
@@ -97,7 +119,12 @@
               "key": "provider",
               "label": "Database provider",
               "type": "select",
-              "options": ["supabase", "postgres", "planetscale", "mongodb"],
+              "options": [
+                "supabase",
+                "postgres",
+                "planetscale",
+                "mongodb"
+              ],
               "placeholder": "supabase",
               "helpText": "Database platform — the persona adapts its health queries to the provider's shape.",
               "required": true
@@ -107,14 +134,14 @@
               "label": "Connection string or API key",
               "type": "password",
               "placeholder": "",
-              "helpText": "Supabase service key + project URL, Postgres connection string, PlanetScale service token, or MongoDB Atlas API key. Read-only permissions on system tables are sufficient.",
+              "helpText": "Supabase service key + project URL, database connection string, PlanetScale service token, or database Atlas API key. Read-only permissions on system tables are sufficient.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a database credential (Supabase, Postgres, PlanetScale, MongoDB Atlas) to Vault → Catalog.\n2. Ensure the credential has permission to read health tables (pg_stat_activity, pg_stat_user_tables equivalents).\n3. DevOps Guardian picks the database-category credential you select at adoption."
+          "setup_instructions": "1. Add a database credential (Supabase, database, PlanetScale, database Atlas) to Vault → Catalog.\n2. Ensure the credential has permission to read health tables (pg_stat_activity, pg_stat_user_tables equivalents).\n3. DevOps Guardian picks the database-category credential you select at adoption."
         },
         {
-          "name": "deployment",
+          "name": "cloud",
           "label": "Deployment Platform",
           "auth_type": "api_key",
           "role": "deployment",
@@ -126,7 +153,12 @@
               "key": "provider",
               "label": "Deployment platform",
               "type": "select",
-              "options": ["vercel", "netlify", "github_actions", "gitlab_ci"],
+              "options": [
+                "vercel",
+                "netlify",
+                "github_actions",
+                "gitlab_ci"
+              ],
               "placeholder": "vercel",
               "helpText": "Platform that ships your builds — used to list recent deploys and correlate timestamps with error spikes.",
               "required": true
@@ -136,7 +168,7 @@
               "label": "API token",
               "type": "password",
               "placeholder": "",
-              "helpText": "Token with read access to deployments and build logs. GitHub PAT for GitHub Actions; Vercel/Netlify project tokens otherwise.",
+              "helpText": "Token with read access to deployments and build logs. GitHub PAT for GitHub Actions; cloud/cloud project tokens otherwise.",
               "required": true
             },
             {
@@ -144,11 +176,11 @@
               "label": "Project / site / repo",
               "type": "text",
               "placeholder": "",
-              "helpText": "Vercel project ID, Netlify site ID, GitHub owner/repo, or GitLab project ID.",
+              "helpText": "cloud project ID, cloud site ID, GitHub owner/repo, or GitLab project ID.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a deployment credential (Vercel, Netlify, GitHub, GitLab) to Vault → Catalog.\n2. DevOps Guardian uses the cloud-category credential you select at adoption.\n3. Token scopes: read-only on deployments + build logs; no write access needed."
+          "setup_instructions": "1. Add a deployment credential (cloud, cloud, GitHub, GitLab) to Vault → Catalog.\n2. DevOps Guardian uses the cloud-category credential you select at adoption.\n3. Token scopes: read-only on deployments + build logs; no write access needed."
         }
       ],
       "notification_channels_default": [
@@ -171,10 +203,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8 AM — final cadence set at the trigger-composition step (shared composition means all four scans fire together)."
         },
-        "connectors": ["monitoring"],
+        "connectors": [
+          "monitoring"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -214,23 +251,67 @@
           "lookback_hours": "{{param.aq_lookback_hours}}",
           "severity_threshold": "{{param.aq_severity_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "Shared daily tick" },
-            { "id": "e2", "type": "action", "label": "Load triage memory" },
-            { "id": "e3", "type": "connector", "label": "Fetch unresolved issues", "connector": "monitoring" },
-            { "id": "e4", "type": "action", "label": "Classify severity + apply memory" },
-            { "id": "e5", "type": "event", "label": "Emit devops.error.critical per Critical" },
-            { "id": "e6", "type": "end", "label": "Errors section ready for briefing" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "Shared daily tick"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Load triage memory"
+            },
+            {
+              "id": "e3",
+              "type": "connector",
+              "label": "Fetch unresolved issues",
+              "connector": "monitoring"
+            },
+            {
+              "id": "e4",
+              "type": "action",
+              "label": "Classify severity + apply memory"
+            },
+            {
+              "id": "e5",
+              "type": "event",
+              "label": "Emit devops.error.critical per Critical"
+            },
+            {
+              "id": "e6",
+              "type": "end",
+              "label": "Errors section ready for briefing"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5" },
-            { "source": "e5", "target": "e6" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            }
           ]
         }
       },
@@ -245,12 +326,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8 AM — final cadence set at the trigger-composition step (shared with other scans)."
         },
-        "connectors": ["monitoring"],
+        "connectors": [
+          "monitoring"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "on_low_confidence", "context": "Baseline-relative anomalies that aren't obviously above threshold route to review. Clear >2x-baseline cases surface in the briefing without a gate." },
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Baseline-relative anomalies that aren't obviously above threshold route to review. Clear >2x-baseline cases surface in the briefing without a gate."
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`health_history.json` rolling 14-day baselines per metric. Threshold overrides learned from triage (e.g., 'CPU alerts below 90% are noise')."
@@ -273,24 +362,70 @@
             "description": "Scan window for infrastructure metrics."
           }
         ],
-        "sample_input": { "lookback_hours": "{{param.aq_lookback_hours}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "lookback_hours": "{{param.aq_lookback_hours}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "Shared daily tick" },
-            { "id": "i2", "type": "connector", "label": "Fetch infra metrics", "connector": "monitoring" },
-            { "id": "i3", "type": "action", "label": "Compare vs 7-day baseline" },
-            { "id": "i4", "type": "action", "label": "Flag anomalies + apply thresholds memory" },
-            { "id": "i5", "type": "event", "label": "Emit devops.infra.anomaly per flag" },
-            { "id": "i6", "type": "end", "label": "Infra section ready for briefing" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "Shared daily tick"
+            },
+            {
+              "id": "i2",
+              "type": "connector",
+              "label": "Fetch infra metrics",
+              "connector": "monitoring"
+            },
+            {
+              "id": "i3",
+              "type": "action",
+              "label": "Compare vs 7-day baseline"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Flag anomalies + apply thresholds memory"
+            },
+            {
+              "id": "i5",
+              "type": "event",
+              "label": "Emit devops.infra.anomaly per flag"
+            },
+            {
+              "id": "i6",
+              "type": "end",
+              "label": "Infra section ready for briefing"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4" },
-            { "source": "i4", "target": "i5" },
-            { "source": "i5", "target": "i6" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4"
+            },
+            {
+              "source": "i4",
+              "target": "i5"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            }
           ]
         }
       },
@@ -305,12 +440,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8 AM — final cadence set at the trigger-composition step (shared with other scans)."
         },
-        "connectors": ["database"],
+        "connectors": [
+          "database"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "on_low_confidence", "context": "Ambiguous indicators (e.g., bloat 60%) route to review. Clear Critical cases (connection refused) surface in the briefing without gating." },
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Ambiguous indicators (e.g., bloat 60%) route to review. Clear Critical cases (connection refused) surface in the briefing without gating."
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Rolling baselines for per-table growth, slow-query count, and pool utilization — 14-day window in `health_history.json`."
@@ -325,24 +468,75 @@
         "error_handling": "Connection refused → Critical incident, emit unreachable event, surface prominently. Query timeout → log timeout as performance indicator, skip detail queries. Permission denied → flag credential needs elevated read scope; continue with whatever queries succeed.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Shared daily tick" },
-            { "id": "d2", "type": "connector", "label": "Run health queries", "connector": "database" },
-            { "id": "d3", "type": "decision", "label": "DB reachable?" },
-            { "id": "d4", "type": "event", "label": "Emit devops.database.unreachable" },
-            { "id": "d5", "type": "action", "label": "Compare vs baselines, flag anomalies" },
-            { "id": "d6", "type": "end", "label": "Database section ready for briefing" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Shared daily tick"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Run health queries",
+              "connector": "database"
+            },
+            {
+              "id": "d3",
+              "type": "decision",
+              "label": "DB reachable?"
+            },
+            {
+              "id": "d4",
+              "type": "event",
+              "label": "Emit devops.database.unreachable"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Compare vs baselines, flag anomalies"
+            },
+            {
+              "id": "d6",
+              "type": "end",
+              "label": "Database section ready for briefing"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4", "variant": "no", "label": "Unreachable" },
-            { "source": "d3", "target": "d5", "variant": "yes", "label": "Reachable" },
-            { "source": "d4", "target": "d6" },
-            { "source": "d5", "target": "d6" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4",
+              "variant": "no",
+              "label": "Unreachable"
+            },
+            {
+              "source": "d3",
+              "target": "d5",
+              "variant": "yes",
+              "label": "Reachable"
+            },
+            {
+              "source": "d4",
+              "target": "d6"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            }
           ]
         }
       },
@@ -357,13 +551,25 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8 AM — final cadence set at the trigger-composition step (shared with other scans)."
         },
-        "connectors": ["deployment", "monitoring"],
+        "connectors": [
+          "cloud",
+          "monitoring"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "devops.deploy.regression",
@@ -382,25 +588,76 @@
             "description": "How close a deploy must be to an error spike to count as regression-class."
           }
         ],
-        "sample_input": { "correlation_window_hours": "{{param.aq_correlation_window}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "correlation_window_hours": "{{param.aq_correlation_window}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Error scan complete" },
-            { "id": "r2", "type": "connector", "label": "List recent deployments", "connector": "deployment" },
-            { "id": "r3", "type": "action", "label": "Correlate deploy timestamps with error spikes" },
-            { "id": "r4", "type": "decision", "label": "Regression-class correlation?" },
-            { "id": "r5", "type": "event", "label": "Emit devops.deploy.regression" },
-            { "id": "r6", "type": "end", "label": "Correlations ready for briefing" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Error scan complete"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "List recent deployments",
+              "connector": "deployment"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Correlate deploy timestamps with error spikes"
+            },
+            {
+              "id": "r4",
+              "type": "decision",
+              "label": "Regression-class correlation?"
+            },
+            {
+              "id": "r5",
+              "type": "event",
+              "label": "Emit devops.deploy.regression"
+            },
+            {
+              "id": "r6",
+              "type": "end",
+              "label": "Correlations ready for briefing"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5", "variant": "yes" },
-            { "source": "r4", "target": "r6", "variant": "no" },
-            { "source": "r5", "target": "r6" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5",
+              "variant": "yes"
+            },
+            {
+              "source": "r4",
+              "target": "r6",
+              "variant": "no"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            }
           ]
         }
       }
@@ -409,7 +666,9 @@
       {
         "id": "aq_monitoring_provider",
         "scope": "connector",
-        "connector_names": ["monitoring"],
+        "connector_names": [
+          "monitoring"
+        ],
         "category": "configuration",
         "question": "Which monitoring provider should supply errors and infrastructure metrics?",
         "type": "select",
@@ -420,13 +679,15 @@
         },
         "maps_to": "persona.connectors[monitoring].credential_fields[provider].value",
         "variable_name": "monitoring_provider",
-        "context": "Options are auto-detected from your vault's monitoring-category credentials (Sentry, Datadog, BetterStack, PostHog, CloudWatch). Add a monitoring credential first if the list is empty.",
+        "context": "Options are auto-detected from your vault's monitoring-category credentials (monitoring, monitoring, monitoring, PostHog, CloudWatch). Add a monitoring credential first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_database_provider",
         "scope": "connector",
-        "connector_names": ["database"],
+        "connector_names": [
+          "database"
+        ],
         "category": "configuration",
         "question": "Which database should be health-checked?",
         "type": "select",
@@ -437,13 +698,15 @@
         },
         "maps_to": "persona.connectors[database].credential_fields[provider].value",
         "variable_name": "database_provider",
-        "context": "Options come from your vault's database-category credentials (Supabase, Postgres, PlanetScale, MongoDB Atlas). Skip this connector at adoption to run without database monitoring.",
+        "context": "Options come from your vault's database-category credentials (Supabase, database, PlanetScale, database Atlas). Skip this connector at adoption to run without database monitoring.",
         "dimension": "connectors"
       },
       {
         "id": "aq_deployment_provider",
         "scope": "connector",
-        "connector_names": ["deployment"],
+        "connector_names": [
+          "deployment"
+        ],
         "category": "configuration",
         "question": "Which deployment platform should supply deploy history?",
         "type": "select",
@@ -454,17 +717,26 @@
         },
         "maps_to": "persona.connectors[deployment].credential_fields[provider].value",
         "variable_name": "deployment_provider",
-        "context": "Options come from your vault's cloud-category credentials (Vercel, Netlify, GitHub Actions, GitLab CI). Skip this connector to disable deploy-to-error correlation.",
+        "context": "Options come from your vault's cloud-category credentials (cloud, cloud, GitHub Actions, GitLab CI). Skip this connector to disable deploy-to-error correlation.",
         "dimension": "connectors"
       },
       {
         "id": "aq_lookback_hours",
         "scope": "capability",
-        "use_case_ids": ["uc_error_scan", "uc_infra_scan"],
+        "use_case_ids": [
+          "uc_error_scan",
+          "uc_infra_scan"
+        ],
         "category": "quality",
         "question": "How many hours back should each scan look?",
         "type": "select",
-        "options": ["12", "24", "48", "72", "168"],
+        "options": [
+          "12",
+          "24",
+          "48",
+          "72",
+          "168"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_error_scan].sample_input.lookback_hours",
         "variable_name": "lookback_hours",
@@ -474,11 +746,20 @@
       {
         "id": "aq_severity_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_error_scan"],
+        "use_case_ids": [
+          "uc_error_scan"
+        ],
         "category": "quality",
         "question": "What minimum error count should surface an issue?",
         "type": "select",
-        "options": ["1", "3", "5", "10", "25", "100"],
+        "options": [
+          "1",
+          "3",
+          "5",
+          "10",
+          "25",
+          "100"
+        ],
         "default": "5",
         "maps_to": "use_cases[uc_error_scan].sample_input.severity_threshold",
         "variable_name": "severity_threshold",
@@ -488,11 +769,19 @@
       {
         "id": "aq_correlation_window",
         "scope": "capability",
-        "use_case_ids": ["uc_deploy_correlation"],
+        "use_case_ids": [
+          "uc_deploy_correlation"
+        ],
         "category": "quality",
         "question": "How many hours between a deploy and an error spike counts as a regression?",
         "type": "select",
-        "options": ["1", "2", "4", "6", "12"],
+        "options": [
+          "1",
+          "2",
+          "4",
+          "6",
+          "12"
+        ],
         "default": "2",
         "maps_to": "use_cases[uc_deploy_correlation].sample_input.correlation_window_hours",
         "variable_name": "correlation_window_hours",

@@ -4,12 +4,11 @@
   "label": "Apify",
   "color": "#246DFF",
   "icon_url": "/icons/connectors/apify.svg",
-  "category": "automation",
+  "category": "web_scraping",
   "categories": [
+    "web_scraping",
     "automation",
-    "browser_automation",
-    "scraping",
-    "data_extraction"
+    "browser_automation"
   ],
   "fields": [
     {

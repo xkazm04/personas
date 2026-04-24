@@ -4,11 +4,10 @@
   "label": "Metabase",
   "color": "#509EE3",
   "icon_url": "/icons/connectors/metabase.svg",
-  "category": "analytics",
+  "category": "bi",
   "categories": [
-    "analytics",
     "bi",
-    "sql"
+    "analytics"
   ],
   "fields": [
     {

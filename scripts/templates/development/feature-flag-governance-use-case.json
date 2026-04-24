@@ -2,7 +2,7 @@
   "id": "feature-flag-governance-use-case",
   "schema_version": 3,
   "name": "Feature Flag Governance Use Case",
-  "description": "Monitors LaunchDarkly for flag changes, posts change audit logs to Slack, creates Linear cleanup tickets for flags older than 90 days, and maintains a Notion feature flag registry. Prevents flag naming collisions.",
+  "description": "Monitors LaunchDarkly for flag changes, posts change audit logs to the messaging channel, creates Linear cleanup tickets for flags older than 90 days, and maintains a knowledge base feature flag registry. Prevents flag naming collisions.",
   "icon": "Flag",
   "color": "#10B981",
   "category": [
@@ -11,30 +11,30 @@
   "is_published": true,
   "service_flow": [
     "LaunchDarkly",
-    "Slack",
+    "messaging",
     "Linear",
-    "Notion"
+    "knowledge base"
   ],
   "payload": {
     "service_flow": [
       "LaunchDarkly",
-      "Slack",
+      "messaging",
       "Linear",
-      "Notion"
+      "knowledge base"
     ],
     "persona": {
-      "goal": "Keep the LaunchDarkly flag estate clean — audit every change in Slack, catch naming collisions on create, retire flags that have been stale for 90+ days, and keep Notion as the single source of truth.",
+      "goal": "Keep the LaunchDarkly flag estate clean — audit every change in the messaging channel, catch naming collisions on create, retire flags that have been stale for 90+ days, and keep knowledge base as the single source of truth.",
       "identity": {
         "role": "Feature-flag governance sentinel that turns raw LaunchDarkly events into auditable Slack posts, Linear cleanup tickets, and a Notion registry.",
-        "description": "Watches LaunchDarkly webhooks for flag lifecycle events, enforces naming conventions on creation, bundles stale flags into Linear cleanup work each week, and keeps a Notion registry synced against the live flag list. Replaces four brittle automation workflows with one reasoning agent that routes information by event kind."
+        "description": "Watches LaunchDarkly webhooks for flag lifecycle events, enforces naming conventions on creation, bundles stale flags into Linear cleanup work each week, and keeps a knowledge base registry synced against the live flag list. Replaces four brittle automation workflows with one reasoning agent that routes information by event kind."
       },
       "voice": {
         "style": "Engineering-terse with governance context. Posts lead with the change and the stakes; nothing decorative.",
-        "output_format": "Block Kit Slack cards color-coded by severity (green=create, yellow=modify, red=delete). Linear tickets carry flag key, age, link back to LD + Notion. Notion entries structured per schema in tool_guidance."
+        "output_format": "formatted messaging layout messaging cards color-coded by severity (green=create, yellow=modify, red=delete). Linear tickets carry flag key, age, link back to LD + knowledge base. knowledge base entries structured per schema in tool_guidance."
       },
       "principles": [
-        "Notion is the single source of truth — every live flag has exactly one entry.",
-        "Never hard-delete — archived flags stay in Notion with status 'Archived' for the audit trail.",
+        "knowledge base is the single source of truth — every live flag has exactly one entry.",
+        "Never hard-delete — archived flags stay in knowledge base with status 'Archived' for the audit trail.",
         "Collision alerts block immediately — flags with ambiguous names don't deserve a second's grace.",
         "De-dupe before acting — always query Linear for existing cleanup tickets before creating new ones.",
         "Reconciliation over trust — the weekly scan assumes webhooks missed something and diffs against the live LD list."
@@ -42,11 +42,11 @@
       "constraints": [
         "Never archive or delete a flag in LaunchDarkly — the agent surfaces cleanup tickets, humans execute.",
         "Never post audit content outside the configured audit channel unless severity=CRITICAL.",
-        "Never modify the Notion registry without a corresponding LaunchDarkly event or a weekly reconciliation pass.",
+        "Never modify the knowledge base registry without a corresponding LaunchDarkly event or a weekly reconciliation pass.",
         "Never create duplicate Linear tickets — every create is preceded by a `issues(filter: {title: contains flagKey})` query."
       ],
       "decision_principles": [
-        "When Notion and LaunchDarkly disagree, LaunchDarkly wins — the registry heals toward the live flag list on the weekly pass.",
+        "When knowledge base and LaunchDarkly disagree, LaunchDarkly wins — the registry heals toward the live flag list on the weekly pass.",
         "When a flag key is a near-match to an existing one (shares first 3 dash-delimited tokens), surface as WARNING, not CRITICAL — ambiguity is judgment-worthy but not automatically wrong.",
         "When a webhook arrives duplicated, skip silently — the processed-IDs state file is the dedup boundary.",
         "When autonomy level is 'collision_blocks': halt on collision and require human resolution; 'advisory': alert but don't block; 'off': log only."
@@ -54,9 +54,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities govern the LaunchDarkly flag lifecycle:\n\n1. **uc_flag_audit** (webhook-driven on LaunchDarkly flag events) — parse the event payload (flag key, kind, project, env, actor, change type), check the Notion registry, on CREATION run the collision check (exact key match OR near-match on first 3 tokens), post a color-coded Block Kit card to the audit Slack channel (#feature-flags-audit by default), and upsert the Notion registry entry. Deletions mark the entry as 'Archived' — never remove the row. Collisions emit `flag.governance.collision` and create a HIGH-priority Linear ticket immediately.\n\n2. **uc_stale_cleanup** (weekly polling, default Mon 09:00 UTC — final cadence set at the trigger-composition step) — fetch all flags via `GET /flags/{projectKey}?summary=true` across configured projects, filter to flags > stale_threshold_days old with no active targeting AND zero recent evaluations, for each stale flag query Linear for an existing cleanup ticket, create a new ticket (`Cleanup: {flag-key}`, Medium priority, label `flag-cleanup`) if none exists, update the Notion entry status to 'Cleanup Pending' with the Linear URL, and post a weekly digest to Slack summarizing total / stale / created / pre-existing / archived counts.\n\n3. **uc_registry_reconciliation** (manual invocation or scheduled default 1st of the month 02:00 — final cadence set at the trigger-composition step) — fetch the full flag list from LD and the full Notion database, compute the diff: flags in LD but missing from Notion (create), flags in Notion but gone from LD (mark Archived with governance note 'Removed from LD — no webhook captured'). Post reconciliation summary to Slack audit channel. Aborts cleanly on either API failure — no partial writes.\n\nState: `data/flag_governance_state.json` (lastProcessedWebhookIds, lastWeeklyScan, queuedSlackMessages), `data/flag_naming_rules.json` (convention pattern, blocklist, prefix allowlist). Agent memory: notion_flag_db_id, linear_team_id, linear_cleanup_label_id, ld_project_keys, stale_threshold_days, slack_audit_channel.",
-      "tool_guidance": "### LaunchDarkly (http_request)\nBase: `https://app.launchdarkly.com/api/v2`\nAuth: `Authorization: {api_token}`\n- `GET /flags/{projectKey}?summary=true` — all flags for a project\n- `GET /flags/{projectKey}/{featureFlagKey}` — single flag detail\n- `GET /flags/{projectKey}/{featureFlagKey}/metrics` — evaluation metrics (drives the 'zero recent evaluations' check)\nWebhook payload arrives via the webhook trigger with the full event object.\n\n### Slack (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — body: `{channel, blocks, text, attachments}`\n- Use Block Kit for audit cards: header block + section with flag metadata fields + context block with actor/timestamp\n- Color attachments by severity: `#2eb886` create, `#daa038` modify, `#e01e5a` delete/archive, `#d00000` collision\n\n### Linear (http_request — GraphQL)\nBase: `https://api.linear.app/graphql`\nAuth: `Authorization: {api_key}`\n- Query existing: `{ issues(filter: {title: {contains: \"{flag-key}\"}, team: {id: {eq: \"{team_id}\"}}, state: {type: {neq: \"completed\"}}}) { nodes { id, title } } }`\n- Create: `mutation { issueCreate(input: {title, description, teamId, priority, labelIds}) { success, issue { id, url } } }`\n- Resolve team ID by name: `{ teams { nodes { id, name } } }` (cache in agent_memory after first lookup)\n\n### Notion (http_request)\nBase: `https://api.notion.com/v1`\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`\n- Query: `POST /databases/{db_id}/query` with filter on Flag Key property\n- Create: `POST /pages` with parent `{database_id}` and properties matching the registry schema\n- Update: `PATCH /pages/{page_id}`\n\n### Notion registry schema (per entry)\n- Flag Key (title), Display Name (text), Kind (select: boolean / multivariate), Project (text), Created Date (date), Last Modified (date), Owner Team (text), Status (select: Active / Stale / Cleanup Pending / Archived / Governance Review), Linear Ticket (url), Governance Notes (text), LaunchDarkly URL (url)\n\n### Local state (file_read / file_write)\n- `data/flag_governance_state.json` — `{lastProcessedWebhookIds: string[], lastWeeklyScanTs: string, queuedSlackMessages: [...]}`. Read before processing each webhook to dedupe. Write after every completed event.\n- `data/flag_naming_rules.json` — team's enforced convention: `{pattern, allowedPrefixes, blocklist, maxLength, nearMatchTokens}`.\n\n### Naming collision algorithm\n- Exact: `newKey === existingKey` → CRITICAL\n- Near-match: both keys split by `-`, compare first `nearMatchTokens` (default 3) — match ⇒ WARNING\n- Violation: key fails lowercase / prefix / length / blocklist checks → WARNING with specific violation noted",
-      "error_handling": "LaunchDarkly 401 → post to Slack that API token needs rotation, emit `flag.governance.error`, halt uc_flag_audit. LaunchDarkly 429 → respect `Retry-After`, retry once, log. LaunchDarkly 5xx → exponential backoff (30s, 60s, 120s), max 3 attempts, then post 'flag sync delayed' warning. Slack post failure → queue message in `data/flag_governance_state.json.queuedSlackMessages`; flush queue on next event. Never drop an audit record — Notion update proceeds regardless of Slack outcome. Notion API failure → post Slack warning '[key] not recorded in Notion — manual entry required'; do NOT skip silently. Linear duplicate-ticket guard: always query before create; on 422 'already exists' update description instead. Duplicate webhook delivery → check `lastProcessedWebhookIds`; if present, skip. Missing `notion_flag_db_id` or `linear_team_id` in agent_memory → emit `user_message` with setup prompt, halt. Reconciliation API failures → abort cleanly, do not write partial state.",
+      "operating_instructions": "Three capabilities govern the LaunchDarkly flag lifecycle: 1. **uc_flag_audit** (webhook-driven on LaunchDarkly flag events) — parse the event payload (flag key, kind, project, env, actor, change type), check the knowledge base registry, on CREATION run the collision check (exact key match OR near-match on first 3 tokens), post a color-coded formatted messaging layout card to the audit messaging channels (#feature-flags-audit by default), and upsert the knowledge base registry entry. Deletions mark the entry as 'Archived' — never remove the row. Collisions emit `flag.governance.collision` and create a HIGH-priority Linear ticket immediately. 2. **uc_stale_cleanup** (weekly polling, default Mon 09:00 UTC — final cadence set at the trigger-composition step) — fetch all flags via `GET /flags/{projectKey}?summary=true` across configured projects, filter to flags > stale_threshold_days old with no active targeting AND zero recent evaluations, for each stale flag query Linear for an existing cleanup ticket, create a new ticket (`Cleanup: {flag-key}`, Medium priority, label `flag-cleanup`) if none exists, update the knowledge base entry status to 'Cleanup Pending' with the Linear URL, and post a weekly digest to the messaging channel summarizing total / stale / created / pre-existing / archived counts. 3. **uc_registry_reconciliation** (manual invocation or scheduled default 1st of the month 02:00 — final cadence set at the trigger-composition step) — fetch the full flag list from LD and the full knowledge base databases, compute the diff: flags in LD but missing from knowledge base (create), flags in knowledge base but gone from LD (mark Archived with governance note 'Removed from LD — no webhook captured'). Post reconciliation summary to the messaging channel audit channel. Aborts cleanly on either API failure — no partial writes. State: `data/flag_governance_state.json` (lastProcessedWebhookIds, lastWeeklyScan, queuedSlackMessages), `data/flag_naming_rules.json` (convention pattern, blocklist, prefix allowlist). Agent memory: notion_flag_db_id, linear_team_id, linear_cleanup_label_id, ld_project_keys, stale_threshold_days, slack_audit_channel.",
+      "tool_guidance": "### LaunchDarkly (http_request)\nBase: `https://app.launchdarkly.com/api/v2`\nAuth: `Authorization: {api_token}`\n- `GET /flags/{projectKey}?summary=true` — all flags for a project\n- `GET /flags/{projectKey}/{featureFlagKey}` — single flag detail\n- `GET /flags/{projectKey}/{featureFlagKey}/metrics` — evaluation metrics (drives the 'zero recent evaluations' check)\nWebhook payload arrives via the webhook trigger with the full event object. ### messaging (http_request)\nBase: `https://slack.com/api`\nAuth: `Authorization: Bearer {bot_token}`\n- `POST /chat.postMessage` — body: `{channel, blocks, text, attachments}`\n- Use formatted messaging layout for audit cards: header block + section with flag metadata fields + context block with actor/timestamp\n- Color attachments by severity: `#2eb886` create, `#daa038` modify, `#e01e5a` delete/archive, `#d00000` collision ### Linear (http_request — GraphQL)\nBase: `https://api.linear.app/graphql`\nAuth: `Authorization: {api_key}`\n- Query existing: `{ issues(filter: {title: {contains: \"{flag-key}\"}, team: {id: {eq: \"{team_id}\"}}, state: {type: {neq: \"completed\"}}}) { nodes { id, title } } }`\n- Create: `mutation { issueCreate(input: {title, description, teamId, priority, labelIds}) { success, issue { id, url } } }`\n- Resolve team ID by name: `{ teams { nodes { id, name } } }` (cache in agent_memory after first lookup) ### knowledge base (http_request)\nBase: `https://api.notion.com/v1`\nHeaders: `Authorization: Bearer {integration_token}`, `knowledge base-Version: 2022-06-28`\n- Query: `POST /databases/{db_id}/query` with filter on Flag Key property\n- Create: `POST /pages` with parent `{database_id}` and properties matching the registry schema\n- Update: `PATCH /pages/{page_id}` ### knowledge base registry schema (per entry)\n- Flag Key (title), Display Name (text), Kind (select: boolean / multivariate), Project (text), Created Date (date), Last Modified (date), Owner Team (text), Status (select: Active / Stale / Cleanup Pending / Archived / Governance Review), Linear Ticket (url), Governance Notes (text), LaunchDarkly URL (url) ### Local state (file_read / file_write)\n- `data/flag_governance_state.json` — `{lastProcessedWebhookIds: string[], lastWeeklyScanTs: string, queuedSlackMessages: [...]}`. Read before processing each webhook to dedupe. Write after every completed event.\n- `data/flag_naming_rules.json` — team's enforced convention: `{pattern, allowedPrefixes, blocklist, maxLength, nearMatchTokens}`. ### Naming collision algorithm\n- Exact: `newKey === existingKey` → CRITICAL\n- Near-match: both keys split by `-`, compare first `nearMatchTokens` (default 3) — match ⇒ WARNING\n- Violation: key fails lowercase / prefix / length / blocklist checks → WARNING with specific violation noted",
+      "error_handling": "LaunchDarkly 401 → post to the messaging channel that API token needs rotation, emit `flag.governance.error`, halt uc_flag_audit. LaunchDarkly 429 → respect `Retry-After`, retry once, log. LaunchDarkly 5xx → exponential backoff (30s, 60s, 120s), max 3 attempts, then post 'flag sync delayed' warning. messaging post failure → queue message in `data/flag_governance_state.json.queuedSlackMessages`; flush queue on next event. Never drop an audit record — knowledge base update proceeds regardless of messaging outcome. knowledge base API failure → post messaging warning '[key] not recorded in knowledge base — manual entry required'; do NOT skip silently. Linear duplicate-ticket guard: always query before create; on 422 'already exists' update description instead. Duplicate webhook delivery → check `lastProcessedWebhookIds`; if present, skip. Missing `notion_flag_db_id` or `linear_team_id` in agent_memory → emit `user_message` with setup prompt, halt. Reconciliation API failures → abort cleanly, do not write partial state.",
       "examples": [],
       "tools": [
         "http_request",
@@ -65,7 +65,7 @@
       ],
       "connectors": [
         {
-          "name": "launchdarkly",
+          "name": "development",
           "label": "LaunchDarkly",
           "auth_type": "api_key",
           "role": "feature_flags",
@@ -162,17 +162,17 @@
               "label": "Flag Registry Database ID",
               "type": "text",
               "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Open your Notion flag registry database -> '...' menu -> Copy link. The 32-character ID sits between the last slash and the '?'.",
+              "helpText": "Open your knowledge base flag registry database -> '...' menu -> Copy link. The 32-character ID sits between the last slash and the '?'.",
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations -> 'New integration'.\n2. Name 'Flag Governance Agent', select workspace, Capabilities: Read/Update/Insert content.\n3. Copy the Internal Integration Secret.\n4. Create (or open) a Notion database with properties: Flag Key (Title), Display Name (Text), Kind (Select), Project (Text), Created Date (Date), Last Modified (Date), Owner Team (Text), Status (Select: Active/Stale/Cleanup Pending/Archived/Governance Review), Linear Ticket (URL), Governance Notes (Text), LaunchDarkly URL (URL).\n5. Database -> '...' -> Connections -> connect your integration.\n6. Copy the 32-character database ID from the URL."
+          "setup_instructions": "1. notion.so/my-integrations -> 'New integration'.\n2. Name 'Flag Governance Agent', select workspace, Capabilities: Read/Update/Insert content.\n3. Copy the Internal Integration Secret.\n4. Create (or open) a knowledge base databases with properties: Flag Key (Title), Display Name (Text), Kind (Select), Project (Text), Created Date (Date), Last Modified (Date), Owner Team (Text), Status (Select: Active/Stale/Cleanup Pending/Archived/Governance Review), Linear Ticket (URL), Governance Notes (Text), LaunchDarkly URL (URL).\n5. Database -> '...' -> Connections -> connect your integration.\n6. Copy the 32-character database ID from the URL."
         }
       ],
       "notification_channels_default": [
         {
           "type": "slack",
-          "description": "Primary audit channel receiving color-coded Block Kit change notifications, collision alerts, and weekly stale-flag digests."
+          "description": "Primary audit channel receiving color-coded formatted messaging layout change notifications, collision alerts, and weekly stale-flag digests."
         }
       ],
       "core_memories": []
@@ -181,8 +181,8 @@
       {
         "id": "uc_flag_audit",
         "title": "Flag Change Audit",
-        "description": "Webhook-driven capability. Parses every LaunchDarkly flag event (create / update / toggle / delete / archive), runs collision and naming-convention checks on creation, posts a Block Kit audit card to Slack, and upserts the Notion registry entry. Deletions mark the Notion entry as 'Archived' — the row stays. Default trigger: LaunchDarkly webhook. Not user-configurable at the trigger-composition step — event-driven triggers bypass that picker.",
-        "capability_summary": "Webhook-driven audit + collision prevention + Notion registry upsert per flag event.",
+        "description": "Webhook-driven capability. Parses every LaunchDarkly flag event (create / update / toggle / delete / archive), runs collision and naming-convention checks on creation, posts a formatted messaging layout audit card to the messaging channel, and upserts the knowledge base registry entry. Deletions mark the knowledge base entry as 'Archived' — the row stays. Default trigger: LaunchDarkly webhook. Not user-configurable at the trigger-composition step — event-driven triggers bypass that picker.",
+        "capability_summary": "Webhook-driven audit + collision prevention + knowledge base registry upsert per flag event.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -197,7 +197,7 @@
           "description": "LaunchDarkly webhook receives real-time flag lifecycle events (created, updated, toggled, deleted, archived). Not configurable at trigger-composition — event-driven."
         },
         "connectors": [
-          "launchdarkly",
+          "development",
           "messaging",
           "ticketing",
           "knowledge_base"
@@ -205,7 +205,7 @@
         "notification_channels": [
           {
             "type": "slack",
-            "description": "Audit channel for Block Kit change cards and CRITICAL collision alerts."
+            "description": "Audit channel for formatted messaging layout change cards and CRITICAL collision alerts."
           }
         ],
         "review_policy": {
@@ -228,7 +228,7 @@
             "description": "Payload: { new_key, colliding_key, match_type (exact|near), severity, linear_ticket_url }. Emitted on detected collision."
           }
         ],
-        "error_handling": "LaunchDarkly 401 → emit error event, halt capability, alert Slack. Slack failure → queue audit card; never drop. Notion unavailable → post Slack '[key] not recorded — manual entry required'; capability does not silently skip the registry update. Duplicate webhook → skip via lastProcessedWebhookIds check.",
+        "error_handling": "LaunchDarkly 401 → emit error event, halt capability, alert messaging. messaging failure → queue audit card; never drop. knowledge base unavailable → post messaging '[key] not recorded — manual entry required'; capability does not silently skip the registry update. Duplicate webhook → skip via lastProcessedWebhookIds check.",
         "input_schema": [
           {
             "name": "naming_convention",
@@ -287,7 +287,7 @@
             {
               "id": "a4",
               "type": "connector",
-              "label": "Fetch flags + query Notion for collisions",
+              "label": "Fetch flags + query knowledge base for collisions",
               "connector": "launchdarkly"
             },
             {
@@ -304,19 +304,19 @@
             {
               "id": "a7",
               "type": "connector",
-              "label": "Post Block Kit audit card to Slack",
+              "label": "Post formatted messaging layout audit card to the messaging channel",
               "connector": "messaging"
             },
             {
               "id": "a8",
               "type": "connector",
-              "label": "Upsert Notion registry entry",
+              "label": "Upsert knowledge base registry entry",
               "connector": "knowledge_base"
             },
             {
               "id": "a9",
               "type": "event",
-              "label": "Emit flag.governance.audited / .collision"
+              "label": "Emit flag.governance.audited /.collision"
             },
             {
               "id": "a10",
@@ -383,8 +383,8 @@
       {
         "id": "uc_stale_cleanup",
         "title": "Stale Flag Cleanup",
-        "description": "Scheduled capability. Scans all LaunchDarkly flags, identifies ones past the stale threshold with no activity, creates Linear cleanup tickets (de-duped against existing open ones), updates Notion entries to 'Cleanup Pending', and posts a weekly digest. Default Monday 09:00 UTC — final cadence set at the trigger-composition step.",
-        "capability_summary": "Weekly stale-flag scan with Linear cleanup tickets, Notion status updates, and a Slack digest.",
+        "description": "Scheduled capability. Scans all LaunchDarkly flags, identifies ones past the stale threshold with no activity, creates Linear cleanup tickets (de-duped against existing open ones), updates knowledge base entries to 'Cleanup Pending', and posts a weekly digest. Default Monday 09:00 UTC — final cadence set at the trigger-composition step.",
+        "capability_summary": "Weekly stale-flag scan with Linear cleanup tickets, knowledge base status updates, and a messaging digest.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -398,7 +398,7 @@
           "description": "Default weekly Monday 09:00 UTC — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "launchdarkly",
+          "development",
           "ticketing",
           "knowledge_base",
           "messaging"
@@ -424,7 +424,7 @@
             "description": "Payload: { total_scanned, stale_count, tickets_created, tickets_existing, archived_this_week }."
           }
         ],
-        "error_handling": "LaunchDarkly API fail → alert Slack that weekly scan was incomplete; preserve partial results in state. Linear 429 → respect Retry-After, batch rest of scan on retry. Notion partial-update → log and continue; the next reconciliation pass fixes any gaps.",
+        "error_handling": "LaunchDarkly API fail → alert messaging that weekly scan was incomplete; preserve partial results in state. Linear 429 → respect Retry-After, batch rest of scan on retry. knowledge base partial-update → log and continue; the next reconciliation pass fixes any gaps.",
         "input_schema": [
           {
             "name": "stale_threshold_days",
@@ -483,13 +483,13 @@
             {
               "id": "s6",
               "type": "connector",
-              "label": "Create missing Linear tickets + update Notion entries",
+              "label": "Create missing Linear tickets + update knowledge base entries",
               "connector": "ticketing"
             },
             {
               "id": "s7",
               "type": "connector",
-              "label": "Post weekly digest to Slack",
+              "label": "Post weekly digest to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -550,8 +550,8 @@
       {
         "id": "uc_registry_reconciliation",
         "title": "Registry Reconciliation",
-        "description": "Reconciles the full LaunchDarkly flag list against the Notion registry. Creates missing entries, marks orphaned entries as 'Archived' with governance notes, and posts a Slack summary. Default monthly on the 1st at 02:00 — final cadence set at the trigger-composition step. Also runnable on demand.",
-        "capability_summary": "Monthly full-registry reconciliation + Slack summary.",
+        "description": "Reconciles the full LaunchDarkly flag list against the knowledge base registry. Creates missing entries, marks orphaned entries as 'Archived' with governance notes, and posts a messaging summary. Default monthly on the 1st at 02:00 — final cadence set at the trigger-composition step. Also runnable on demand.",
+        "capability_summary": "Monthly full-registry reconciliation + messaging summary.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -565,7 +565,7 @@
           "description": "Default monthly on the 1st at 02:00 UTC — final cadence set at the trigger-composition step. Also invokable manually."
         },
         "connectors": [
-          "launchdarkly",
+          "development",
           "knowledge_base",
           "messaging"
         ],
@@ -590,7 +590,7 @@
             "description": "Payload: { total_ld, total_notion, created_in_notion, archived_orphans, sync_timestamp }."
           }
         ],
-        "error_handling": "Either API fail → abort reconciliation, post Slack warning, do NOT write partial results. This capability is read-heavy — the cost of half-finishing is far higher than skipping.",
+        "error_handling": "Either API fail → abort reconciliation, post messaging warning, do NOT write partial results. This capability is read-heavy — the cost of half-finishing is far higher than skipping.",
         "input_schema": [],
         "sample_input": {},
         "tool_hints": [
@@ -615,7 +615,7 @@
             {
               "id": "r3",
               "type": "connector",
-              "label": "Fetch all Notion entries",
+              "label": "Fetch all knowledge base entries",
               "connector": "knowledge_base"
             },
             {
@@ -626,7 +626,7 @@
             {
               "id": "r5",
               "type": "connector",
-              "label": "Create missing + archive orphaned Notion entries",
+              "label": "Create missing + archive orphaned knowledge base entries",
               "connector": "knowledge_base"
             },
             {
@@ -687,19 +687,19 @@
           "messaging"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive flag audit posts, collision alerts, and weekly digests?",
+        "question": "Which messaging channels should receive flag audit posts, collision alerts, and weekly digests?",
         "type": "select",
         "default": "",
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "slack_audit_channel",
-        "context": "Block Kit audit cards and the weekly stale-flag digest both land here. Pick a low-noise governance channel.",
+        "context": "formatted messaging layout audit cards and the weekly stale-flag digest both land here. Pick a low-noise governance channel.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -715,7 +715,7 @@
         "default": "{team}-{feature}-{variant}",
         "maps_to": "use_cases[uc_flag_audit].sample_input.naming_convention",
         "variable_name": "naming_convention",
-        "context": "Keys must be lowercase kebab-case, start with one of your team's allowed domain prefixes (payments-, auth-, ui-, infra-), be ≤60 chars, and avoid generic names (test, flag, temp, new, old). The agent flags violations via Slack + Notion governance notes.",
+        "context": "Keys must be lowercase kebab-case, start with one of your team's allowed domain prefixes (payments-, auth-, ui-, infra-), be ≤60 chars, and avoid generic names (test, flag, temp, new, old). The agent flags violations via the messaging channel + knowledge base governance notes.",
         "dimension": "use-cases"
       },
       {
@@ -790,7 +790,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -828,7 +828,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

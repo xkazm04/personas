@@ -44,8 +44,9 @@ function ToolRow({ tool }: { tool: ToolReadiness }) {
 }
 
 export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRunPreviewProps) {
-  const { t } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
+  const currencyFmt = new Intl.NumberFormat(language, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
   useClickOutside(panelRef, true, onCancel);
 
   useEffect(() => {
@@ -61,7 +62,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
     <motion.div
       ref={panelRef}
       role="dialog"
-      aria-label={`Pre-run preview for ${personaName}`}
+      aria-label={tx(t.execution.preview_aria_label, { name: personaName })}
       initial={{ opacity: 0, y: 4, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 4, scale: 0.98 }}
@@ -86,7 +87,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
         {check.model && (
           <div className="flex items-center gap-2">
             <Zap className="w-3 h-3 text-violet-400 shrink-0" />
-            <span className="typo-caption text-foreground">Model</span>
+            <span className="typo-caption text-foreground">{t.execution.model}</span>
             <span className="typo-caption font-medium text-foreground ml-auto">{check.model}</span>
           </div>
         )}
@@ -94,7 +95,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
         {/* Trust level */}
         <div className="flex items-center gap-2">
           <Shield className="w-3 h-3 text-blue-400 shrink-0" />
-          <span className="typo-caption text-foreground">Trust</span>
+          <span className="typo-caption text-foreground">{t.execution.trust}</span>
           <span className="typo-caption font-medium text-foreground ml-auto capitalize">{check.trustLevel}</span>
         </div>
 
@@ -103,7 +104,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
           <div className="flex items-center gap-2">
             <DollarSign className="w-3 h-3 text-emerald-400 shrink-0" />
             <span className="typo-caption text-foreground">{t.execution.budget_limit}</span>
-            <span className="typo-caption font-medium text-foreground ml-auto">${check.maxBudgetUsd.toFixed(2)}</span>
+            <span className="typo-caption font-medium text-foreground ml-auto">{currencyFmt.format(check.maxBudgetUsd)}</span>
           </div>
         )}
 
@@ -111,7 +112,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
         {check.timeoutMs > 0 && (
           <div className="flex items-center gap-2">
             <Clock className="w-3 h-3 text-blue-400 shrink-0" />
-            <span className="typo-caption text-foreground">Timeout</span>
+            <span className="typo-caption text-foreground">{t.execution.timeout}</span>
             <span className="typo-caption font-medium text-foreground ml-auto">{Math.round(check.timeoutMs / 1000)}s</span>
           </div>
         )}
@@ -122,11 +123,11 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
             <div className="flex items-center gap-1.5 mb-1">
               <Wrench className="w-3 h-3 text-foreground" />
               <span className="typo-caption text-foreground">
-                {check.toolCount} tool{check.toolCount !== 1 ? 's' : ''}
+                {tx(check.toolCount === 1 ? t.execution.tool_count_one : t.execution.tool_count_other, { count: check.toolCount })}
               </span>
               {check.missingCredentials.length > 0 && (
                 <span className="typo-caption text-amber-400/80 ml-auto">
-                  {check.missingCredentials.length} missing
+                  {tx(t.execution.missing_count, { count: check.missingCredentials.length })}
                 </span>
               )}
             </div>
@@ -158,7 +159,7 @@ export function PreRunPreview({ check, personaName, onConfirm, onCancel }: PreRu
           onClick={onCancel}
           className="typo-caption text-foreground hover:text-foreground px-2 py-1 rounded transition-colors"
         >
-          Cancel
+          {t.common.cancel}
         </button>
         <button
           type="button"

@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/convex.svg",
   "category": "database",
   "categories": [
-    "database",
-    "backend_as_service"
+    "database"
   ],
   "fields": [
     {

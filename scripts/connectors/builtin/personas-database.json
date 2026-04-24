@@ -7,7 +7,7 @@
   "category": "database",
   "categories": [
     "database",
-    "local_storage"
+    "storage"
   ],
   "fields": [],
   "healthcheck_config": null,

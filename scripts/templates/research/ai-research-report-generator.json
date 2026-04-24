@@ -52,8 +52,8 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, each with its own lifecycle:\n\n1. **uc_research_report** (user-invoked: webhook, chat, or manual) — accept a research request with {topic, scope, focus_areas?, audience?}. Generate a research_id (`RR-YYYYMMDD-XXXX` via `data/research_counter.json`). Log intake to `data/research_log.json`. Decompose the topic into 3-10 angles sized to scope. Read attached `research_sources` first — they ground the brief. Then web-search complementary angles (news, industry reports, regulatory, academic). Score each source 1-5 on reliability (authority, reputation, recency, corroboration). Synthesize: consensus (3+ sources), conflicts (show both), gaps (explicit), confidence per conclusion. Produce the report per the voice.output_format. Store in the knowledge_base connector with full properties (title, ID, topic, scope, status, date, sources_count, confidence, tags). Deliver summary + KB link per `aq_delivery_channels`. Update the log to delivered. Emit `research.report.delivered`; on critical degradation emit `research.quality.degraded`.\n\n2. **uc_weekly_history_digest** (weekly Monday 9am, default) — scan `data/research_log.json` for the past 7 days. Count reports by scope, top topics, recurring requesters, quality-score trend, rejection rate. Summarize as a retrospective digest. Deliver through the configured channel. Emit `research.history.digest`.\n\nState files: `data/research_counter.json` (sequential ID), `data/research_log.json` (session history), `data/research_{id}_raw.json` (raw findings), `data/reports/{id}_report.md` (fallback when delivery fails).",
-      "tool_guidance": "**Web search pattern per angle**:\n- Time-qualified: `\"{topic}\" {angle} {year}` / `\"{topic}\" latest news OR announcement`.\n- Rate limit: 1s spacing, 20s timeout, max 50 requests/session.\n- Extract: URL, title, author, publication date, source type, excerpt → reliability score 1-5.\n- Dedup by normalized URL.\n\n**Source reliability rubric**:\n- 5 — primary source (government, company investor material, peer-reviewed).\n- 4 — established outlet with named author + citations.\n- 3 — reputable aggregator / analyst secondary coverage.\n- 2 — blog / newsletter with clear stance.\n- 1 — forum / unsigned / unclear provenance.\n\n**Knowledge base write**:\n- Create page with properties: Title, Research ID, Topic, Scope (quick|standard|deep), Status (in_progress → delivered | failed), Date, Sources Count, Confidence (High|Medium|Low), Requester, Tags, Channel.\n- Append body blocks: executive_summary → key_findings (per angle, heading + paragraph + sources) → detailed_analysis → recommendations → source_appendix → metadata.\n\n**Delivery channels**:\n- Email: HTML executive summary + KB link. Subject `[Research Report] {topic} — {research_id}`.\n- Chat/messaging: 500-char condensed summary + KB link. Split if >4096 chars.\n- In-app: deliver the full report body as a persona message.\n\n**Local state**: atomic read-merge-write for `research_counter.json` / `research_log.json`.",
+      "operating_instructions": "Two capabilities, each with its own lifecycle: 1. **uc_research_report** (user-invoked: webhook, chat, or manual) — accept a research request with {topic, scope, focus_areas?, audience?}. Generate a research_id (`RR-YYYYMMDD-XXXX` via `data/research_counter.json`). Log intake to `data/research_log.json`. Decompose the topic into 3-10 angles sized to scope. Read attached `research_sources` first — they ground the brief. Then web-search complementary angles (news, industry reports, regulatory, academic). Score each source 1-5 on reliability (authority, reputation, recency, corroboration). Synthesize: consensus (3+ sources), conflicts (show both), gaps (explicit), confidence per conclusion. Produce the report per the voice.output_format. Store in the knowledge_base connector with full properties (title, ID, topic, scope, status, date, sources_count, confidence, tags). Deliver summary + KB link per `aq_delivery_channels`. Update the log to delivered. Emit `research.report.delivered`; on critical degradation emit `research.quality.degraded`. 2. **uc_weekly_history_digest** (weekly Monday 9am, default) — scan `data/research_log.json` for the past 7 days. Count reports by scope, top topics, recurring requesters, quality-score trend, rejection rate. Summarize as a retrospective digest. Deliver through the configured channel. Emit `research.history.digest`. State files: `data/research_counter.json` (sequential ID), `data/research_log.json` (session history), `data/research_{id}_raw.json` (raw findings), `data/reports/{id}_report.md` (fallback when delivery fails).",
+      "tool_guidance": "**Web search pattern per angle**:\n- Time-qualified: `\"{topic}\" {angle} {year}` / `\"{topic}\" latest news OR announcement`.\n- Rate limit: 1s spacing, 20s timeout, max 50 requests/session.\n- Extract: URL, title, author, publication date, source type, excerpt → reliability score 1-5.\n- Dedup by normalized URL. **Source reliability rubric**:\n- 5 — primary source (government, company investor material, peer-reviewed).\n- 4 — established outlet with named author + citations.\n- 3 — reputable aggregator / analyst secondary coverage.\n- 2 — blog / newsletter with clear stance.\n- 1 — forum / unsigned / unclear provenance. **Knowledge base write**:\n- Create page with properties: Title, Research ID, Topic, Scope (quick|standard|deep), Status (in_progress → delivered | failed), Date, Sources Count, Confidence (High|Medium|Low), Requester, Tags, Channel.\n- Append body blocks: executive_summary → key_findings (per angle, heading + paragraph + sources) → detailed_analysis → recommendations → source_appendix → metadata. **Delivery channels**:\n- Email: HTML executive summary + KB link. Subject `[Research Report] {topic} — {research_id}`.\n- Chat/messaging: 500-char condensed summary + KB link. Split if >4096 chars.\n- In-app: deliver the full report body as a persona message. **Local state**: atomic read-merge-write for `research_counter.json` / `research_log.json`.",
       "error_handling": "Web search unavailable → proceed with user reference sources only; note the limitation in the exec summary. <3 sources at standard scope → downgrade confidence to Low + add a prominent caveat. Knowledge-base 401/404 → fall back to `data/reports/{id}_report.md` + emit `research.delivery.failed`. Email send fails → keep chat delivery, log the failure, include a retry next run. Corrupted `research_counter.json` → initialize from directory scan. Corrupted `research_log.json` → archive with timestamp suffix, start fresh, emit user_message. Rate-limited search → respect Retry-After; back off once, then proceed with partial coverage labeled.",
       "examples": [],
       "tools": [
@@ -80,7 +80,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a knowledge-base credential in the Vault (Notion, Confluence, or any provider tagged `knowledge_base`).\n2. Ensure the integration has write access to the target workspace/database.\n3. The persona picks your configured credential at adoption."
+          "setup_instructions": "1. Add a knowledge-base credential in the Vault (knowledge base, knowledge base, or any provider tagged `knowledge_base`).\n2. Ensure the integration has write access to the target workspace/database.\n3. The persona picks your configured credential at adoption."
         },
         {
           "name": "email",
@@ -100,7 +100,7 @@
               "required": false
             }
           ],
-          "setup_instructions": "Configure an email credential in the Vault (Gmail / SMTP / any `email`-category connector). The persona routes the report summary through it."
+          "setup_instructions": "Configure an email credential in the Vault (email / SMTP / any `email`-category connector). The persona routes the report summary through it."
         },
         {
           "name": "messaging",
@@ -111,7 +111,7 @@
           "required": false,
           "fallback_note": "Skip messaging to deliver reports only via email + knowledge base.",
           "credential_fields": [],
-          "setup_instructions": "Configure any `messaging`-category credential (Slack, Telegram, Discord, in-app) in the Vault. The persona delivers the condensed summary + KB link through it."
+          "setup_instructions": "Configure any `messaging`-category credential (messaging, messaging, messaging, in-app) in the Vault. The persona delivers the condensed summary + KB link through it."
         }
       ],
       "notification_channels_default": [
@@ -496,7 +496,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[workspace_id].value",
         "variable_name": "knowledge_base_provider",
-        "context": "Auto-detected from your `knowledge_base`-category credentials (Notion, Confluence, etc.). Add one first if the list is empty.",
+        "context": "Auto-detected from your `knowledge_base`-category credentials (knowledge base, knowledge base, etc.). Add one first if the list is empty.",
         "dimension": "connectors"
       },
       {
@@ -515,7 +515,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
-        "context": "Pick from your `messaging`-category credentials (Slack, Telegram, Discord, in-app). Skip if you prefer email-only delivery.",
+        "context": "Pick from your `messaging`-category credentials (messaging, messaging, messaging, in-app). Skip if you prefer email-only delivery.",
         "dimension": "connectors"
       },
       {
@@ -534,7 +534,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

@@ -145,7 +145,25 @@ fn user_safe_dirs() -> &'static [String] {
 /// Returns `None` if the tool is not found or resolves to a directory outside
 /// the allowed locations (tool-specific allowlist + platform-wide safe dirs).
 pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<PathBuf> {
+    // `which` is behind optional features — do a manual PATH walk when it
+    // isn't linked so default-feature builds still compile.
+    #[cfg(any(feature = "desktop", feature = "test-automation"))]
     let resolved = which::which(cmd).ok()?;
+    #[cfg(not(any(feature = "desktop", feature = "test-automation")))]
+    let resolved = {
+        let path_var = std::env::var_os("PATH")?;
+        let exts: &[&str] = if cfg!(target_os = "windows") {
+            &["", ".exe", ".cmd", ".bat"]
+        } else {
+            &[""]
+        };
+        std::env::split_paths(&path_var).find_map(|dir| {
+            exts.iter().find_map(|ext| {
+                let candidate = dir.join(format!("{cmd}{ext}"));
+                candidate.is_file().then_some(candidate)
+            })
+        })?
+    };
 
     // Canonicalize to resolve symlinks and normalise the path
     let canonical = std::fs::canonicalize(&resolved).unwrap_or_else(|_| resolved.clone());

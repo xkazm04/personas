@@ -4,10 +4,10 @@
   "label": "Harvest",
   "color": "#FA5D00",
   "icon_url": "/icons/connectors/harvest.svg",
-  "category": "time-tracking",
+  "category": "time_tracking",
   "categories": [
-    "time-tracking",
-    "time_tracking"
+    "time_tracking",
+    "finance"
   ],
   "fields": [
     {

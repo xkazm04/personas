@@ -5,11 +5,21 @@
   "description": "Monitors CRM deal pipeline for stage transitions, sends personalized stage-specific follow-up emails, posts contextual team messages, flags stale deals through tiered escalation, and compiles a weekly pipeline health report.",
   "icon": "Handshake",
   "color": "#6366F1",
-  "category": ["sales"],
-  "service_flow": ["CRM", "Email", "Messaging"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "CRM",
+    "Email",
+    "Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["CRM", "Email", "Messaging"],
+    "service_flow": [
+      "CRM",
+      "Email",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Never let a deal stage go unacknowledged — automate the stage email sequence, surface pipeline movement to the team, escalate stalls before they become losses, and summarize the week in one report.",
       "identity": {
@@ -18,7 +28,7 @@
       },
       "voice": {
         "style": "Warm-but-direct sales ops. Emails match the user-chosen tone (formal / warm / concise / casual). Team messages are scannable with deal name + amount + stage delta + owner + link.",
-        "output_format": "Stage emails: personalized HTML with contact name + company + deal name + amount + stage-appropriate call to action. Team messages: Block Kit with deal details and CRM link. Weekly report: revenue + win/loss + pipeline value + conversion rates + notable patterns.",
+        "output_format": "Stage emails: personalized HTML with contact name + company + deal name + amount + stage-appropriate call to action. Team messages: formatted messaging layout with deal details and CRM link. Weekly report: revenue + win/loss + pipeline value + conversion rates + notable patterns.",
         "tone_adjustments": []
       },
       "principles": [
@@ -45,11 +55,17 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities chain off CRM polling:\n\n1. **uc_stage_response** (polling, default every 5 minutes) — poll the CRM for recently modified deals. Compare each deal's current stage against `deal_states.json`. For each stage transition: fetch associated contact, `gmail_search` to prevent duplicates, compose the stage-appropriate email via the email connector, post a contextual team message with CRM link, emit `sales.deal.stage_changed` and (for terminal stages) `sales.deal.won` / `sales.deal.lost`. Backward moves → team message only, no email. Skipped stages → final-stage email + team-message note.\n\n2. **uc_stale_watch** (polling, default every 5 minutes; runs alongside stage_response) — fetch all active deals, check last-stage-change age. At 14+ days: post channel alert flagging owner. At 30+ days: additionally DM the deal owner via `users.lookupByEmail` + `chat.postMessage`. Record alert timestamps in `stale_alerts.json` so we only re-alert if stock of stale-ness increases (next tier reached) or the deal finally moves and restalls.\n\n3. **uc_weekly_report** (scheduled, default Monday 08:00) — pull all deals from the CRM grouped by stage. Compute total pipeline value, weighted pipeline value, average deal age, stage conversion rates, deals won/lost this week, new deals added. Format as Block Kit and post to the configured messaging channel. Archive the report locally for trend tracking.\n\nState: `deal_states.json` (last-known stage + last-email-sent stage per deal id), `stale_alerts.json` (deal id → { tier, last_alert_at }), `weekly_reports/{date}.json`, `error_log.json`.",
-      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- HubSpot: `GET /crm/v3/objects/deals?properties=dealname,dealstage,amount,hubspot_owner_id,hs_lastmodifieddate&sorts=-hs_lastmodifieddate&limit=50` for recent mods. `GET /crm/v3/objects/deals/{id}/associations/contacts` + `GET /crm/v3/objects/contacts/{id}?properties=firstname,lastname,email,company` for contact. `GET /crm/v3/pipelines/deals/{id}/stages` for stage metadata.\n- Salesforce / Pipedrive: equivalent 'recently modified deals' + 'deal contacts' endpoints.\n- Multi-pipeline orgs: pipeline id resolved via adoption question (`list_deal_pipelines`).\n\n**Email connector** (required; service_type: email):\n- `gmail_search`: `to:{email} subject:{deal_name}` — pre-flight duplicate check.\n- `gmail_send`: HTML body, threading via `threadId` when prior conversation exists.\n- Equivalent endpoints for other email providers (Outlook 365, custom SMTP).\n\n**Messaging connector** (required; service_type: messaging):\n- `chat.postMessage` to the configured channel with Block Kit for team updates and the weekly report.\n- `users.lookupByEmail` + DM to owner for 30+ day stale escalations.\n\n**Local state**:\n- `deal_states.json` — keyed by deal id: { last_stage, last_modified, last_email_sent_stage }.\n- `stale_alerts.json` — keyed by deal id: { tier (14/30/60), last_alert_at }.\n- `weekly_reports/{date}.json` — archived report snapshots.\n- `error_log.json` — failure audit.",
+      "operating_instructions": "Three capabilities chain off CRM polling: 1. **uc_stage_response** (polling, default every 5 minutes) — poll the CRM for recently modified deals. Compare each deal's current stage against `deal_states.json`. For each stage transition: fetch associated contact, `gmail_search` to prevent duplicates, compose the stage-appropriate email via the email connector, post a contextual team message with CRM link, emit `sales.deal.stage_changed` and (for terminal stages) `sales.deal.won` / `sales.deal.lost`. Backward moves → team message only, no email. Skipped stages → final-stage email + team-message note. 2. **uc_stale_watch** (polling, default every 5 minutes; runs alongside stage_response) — fetch all active deals, check last-stage-change age. At 14+ days: post channel alert flagging owner. At 30+ days: additionally DM the deal owner via `users.lookupByEmail` + `chat.postMessage`. Record alert timestamps in `stale_alerts.json` so we only re-alert if stock of stale-ness increases (next tier reached) or the deal finally moves and restalls. 3. **uc_weekly_report** (scheduled, default Monday 08:00) — pull all deals from the CRM grouped by stage. Compute total pipeline value, weighted pipeline value, average deal age, stage conversion rates, deals won/lost this week, new deals added. Format as formatted messaging layout and post to the configured messaging channel. Archive the report locally for trend tracking. State: `deal_states.json` (last-known stage + last-email-sent stage per deal id), `stale_alerts.json` (deal id → { tier, last_alert_at }), `weekly_reports/{date}.json`, `error_log.json`.",
+      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- CRM: `GET /crm/v3/objects/deals?properties=dealname,dealstage,amount,hubspot_owner_id,hs_lastmodifieddate&sorts=-hs_lastmodifieddate&limit=50` for recent mods. `GET /crm/v3/objects/deals/{id}/associations/contacts` + `GET /crm/v3/objects/contacts/{id}?properties=firstname,lastname,email,company` for contact. `GET /crm/v3/pipelines/deals/{id}/stages` for stage metadata.\n- CRM / CRM: equivalent 'recently modified deals' + 'deal contacts' endpoints.\n- Multi-pipeline orgs: pipeline id resolved via adoption question (`list_deal_pipelines`). **Email connector** (required; service_type: email):\n- `gmail_search`: `to:{email} subject:{deal_name}` — pre-flight duplicate check.\n- `gmail_send`: HTML body, threading via `threadId` when prior conversation exists.\n- Equivalent endpoints for other email providers (email 365, custom SMTP). **Messaging connector** (required; service_type: messaging):\n- `chat.postMessage` to the configured channel with formatted messaging layout for team updates and the weekly report.\n- `users.lookupByEmail` + DM to owner for 30+ day stale escalations. **Local state**:\n- `deal_states.json` — keyed by deal id: { last_stage, last_modified, last_email_sent_stage }.\n- `stale_alerts.json` — keyed by deal id: { tier (14/30/60), last_alert_at }.\n- `weekly_reports/{date}.json` — archived report snapshots.\n- `error_log.json` — failure audit.",
       "error_handling": "CRM 429 → back off per Retry-After, resume next cycle. CRM 401 → emit persona.error + messaging alert, wait for credential refresh. Email send failure → DO NOT auto-retry (duplicate risk); log to `error_log.json`, messaging alert to deal owner. Messaging failure → queue in `pending_messages.json`, retry next cycle; warn after 3 consecutive failures. Missing contact → skip email, still post team message noting 'no contact associated'. Corrupt state file → reinit from CRM, no retroactive emails. Stage skip → final-stage email only. Backward move → team message, no email. Simultaneous changes >5 → batch into one summary message.",
       "examples": [],
-      "tools": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "gmail_send",
+        "gmail_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "crm",
@@ -64,7 +80,7 @@
               "label": "API Access Token",
               "type": "password",
               "placeholder": "",
-              "helpText": "API key or OAuth token for your CRM. HubSpot: Private App Access Token (scopes: crm.objects.deals.read, crm.objects.contacts.read, crm.objects.owners.read). Salesforce / Pipedrive: equivalent read scope token.",
+              "helpText": "API key or OAuth token for your CRM. CRM: Private App Access Token (scopes: crm.objects.deals.read, crm.objects.contacts.read, crm.objects.owners.read). CRM / CRM: equivalent read scope token.",
               "required": true
             },
             {
@@ -76,7 +92,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Create a read-scope API credential in your CRM (HubSpot private app, Salesforce connected app, Pipedrive API token).\n2. Grant deals + contacts + owners read access.\n3. Paste the access token above.\n4. The adoption flow will pick the specific pipeline from the available list."
+          "setup_instructions": "1. Create a read-scope API credential in your CRM (CRM private app, CRM connected app, CRM API token).\n2. Grant deals + contacts + owners read access.\n3. Paste the access token above.\n4. The adoption flow will pick the specific pipeline from the available list."
         },
         {
           "name": "email",
@@ -92,7 +108,7 @@
               "label": "OAuth Client ID",
               "type": "text",
               "placeholder": "",
-              "helpText": "From your email provider's OAuth credentials. Gmail: Google Cloud Console OAuth 2.0 Client ID.",
+              "helpText": "From your email provider's OAuth credentials. email: Google Cloud Console OAuth 2.0 Client ID.",
               "required": true
             },
             {
@@ -128,7 +144,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-…",
-              "helpText": "Bot token with chat:write + users:read + users:read.email scopes (Slack) or equivalent for other providers.",
+              "helpText": "Bot token with chat:write + users:read + users:read.email scopes (messaging) or equivalent for other providers.",
               "required": true
             }
           ],
@@ -155,10 +171,17 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "email", "messaging"],
+        "connectors": [
+          "crm",
+          "email",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -190,14 +213,24 @@
           {
             "name": "review_mode",
             "type": "enum",
-            "options": ["none", "closed_won_only", "closed_won_and_lost", "all"],
+            "options": [
+              "none",
+              "closed_won_only",
+              "closed_won_and_lost",
+              "all"
+            ],
             "default": "closed_won_and_lost",
             "description": "Which stage emails require rep approval before sending."
           },
           {
             "name": "email_tone",
             "type": "enum",
-            "options": ["formal", "warm_consultative", "concise", "casual"],
+            "options": [
+              "formal",
+              "warm_consultative",
+              "concise",
+              "casual"
+            ],
             "default": "warm_consultative",
             "description": "Voice applied to outbound stage emails."
           }
@@ -206,32 +239,117 @@
           "review_mode": "{{param.aq_review_mode}}",
           "email_tone": "{{param.aq_email_tone}}"
         },
-        "tool_hints": ["http_request", "gmail_send", "gmail_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "gmail_send",
+          "gmail_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Poll tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch recent deals", "connector": "crm" },
-            { "id": "s3", "type": "action", "label": "Detect stage transitions" },
-            { "id": "s4", "type": "decision", "label": "Backward move?" },
-            { "id": "s5", "type": "connector", "label": "Team message (no email)", "connector": "messaging" },
-            { "id": "s6", "type": "connector", "label": "Fetch contact + duplicate-check email", "connector": "email" },
-            { "id": "s7", "type": "connector", "label": "Send stage email", "connector": "email" },
-            { "id": "s8", "type": "connector", "label": "Post contextual team message", "connector": "messaging" },
-            { "id": "s9", "type": "event", "label": "Emit stage_changed / won / lost" },
-            { "id": "s10", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch recent deals",
+              "connector": "crm"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Detect stage transitions"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Backward move?"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Team message (no email)",
+              "connector": "messaging"
+            },
+            {
+              "id": "s6",
+              "type": "connector",
+              "label": "Fetch contact + duplicate-check email",
+              "connector": "email"
+            },
+            {
+              "id": "s7",
+              "type": "connector",
+              "label": "Send stage email",
+              "connector": "email"
+            },
+            {
+              "id": "s8",
+              "type": "connector",
+              "label": "Post contextual team message",
+              "connector": "messaging"
+            },
+            {
+              "id": "s9",
+              "type": "event",
+              "label": "Emit stage_changed / won / lost"
+            },
+            {
+              "id": "s10",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5", "variant": "yes", "label": "Backward" },
-            { "source": "s4", "target": "s6", "variant": "no", "label": "Forward" },
-            { "source": "s5", "target": "s9" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" },
-            { "source": "s9", "target": "s10" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "variant": "yes",
+              "label": "Backward"
+            },
+            {
+              "source": "s4",
+              "target": "s6",
+              "variant": "no",
+              "label": "Forward"
+            },
+            {
+              "source": "s5",
+              "target": "s9"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            },
+            {
+              "source": "s9",
+              "target": "s10"
+            }
           ]
         }
       },
@@ -246,12 +364,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "polling",
-          "config": { "cron": "*/5 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/5 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 5 minutes (runs alongside stage_response) — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "messaging"],
+        "connectors": [
+          "crm",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`stale_alerts.json` tracks last-alerted tier per deal so we don't re-alert at the same tier."
@@ -268,7 +395,13 @@
           {
             "name": "stale_threshold_days",
             "type": "enum",
-            "options": ["5", "10", "14", "21", "30"],
+            "options": [
+              "5",
+              "10",
+              "14",
+              "21",
+              "30"
+            ],
             "default": "14",
             "description": "Initial stale threshold. Escalation DM fires at 2× this threshold."
           }
@@ -276,33 +409,121 @@
         "sample_input": {
           "stale_threshold_days": "{{param.aq_stale_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Poll tick" },
-            { "id": "w2", "type": "connector", "label": "Fetch active deals", "connector": "crm" },
-            { "id": "w3", "type": "action", "label": "Compute days since last stage move" },
-            { "id": "w4", "type": "decision", "label": "Past threshold + new tier?" },
-            { "id": "w5", "type": "decision", "label": ">= 2× threshold?" },
-            { "id": "w6", "type": "connector", "label": "DM owner", "connector": "messaging" },
-            { "id": "w7", "type": "connector", "label": "Channel alert", "connector": "messaging" },
-            { "id": "w8", "type": "action", "label": "Update stale_alerts tier" },
-            { "id": "w9", "type": "event", "label": "Emit sales.deal.stale" },
-            { "id": "w10", "type": "end", "label": "Watch complete" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Poll tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Fetch active deals",
+              "connector": "crm"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute days since last stage move"
+            },
+            {
+              "id": "w4",
+              "type": "decision",
+              "label": "Past threshold + new tier?"
+            },
+            {
+              "id": "w5",
+              "type": "decision",
+              "label": ">= 2× threshold?"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "DM owner",
+              "connector": "messaging"
+            },
+            {
+              "id": "w7",
+              "type": "connector",
+              "label": "Channel alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "w8",
+              "type": "action",
+              "label": "Update stale_alerts tier"
+            },
+            {
+              "id": "w9",
+              "type": "event",
+              "label": "Emit sales.deal.stale"
+            },
+            {
+              "id": "w10",
+              "type": "end",
+              "label": "Watch complete"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5", "variant": "yes", "label": "Yes" },
-            { "source": "w4", "target": "w10", "variant": "no", "label": "Not yet" },
-            { "source": "w5", "target": "w6", "variant": "yes", "label": "Escalate" },
-            { "source": "w5", "target": "w7", "variant": "no", "label": "Channel only" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" },
-            { "source": "w9", "target": "w10" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "w4",
+              "target": "w10",
+              "variant": "no",
+              "label": "Not yet"
+            },
+            {
+              "source": "w5",
+              "target": "w6",
+              "variant": "yes",
+              "label": "Escalate"
+            },
+            {
+              "source": "w5",
+              "target": "w7",
+              "variant": "no",
+              "label": "Channel only"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            },
+            {
+              "source": "w9",
+              "target": "w10"
+            }
           ]
         }
       },
@@ -317,12 +538,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 08:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["crm", "messaging"],
+        "connectors": [
+          "crm",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Weekly snapshots archived to `weekly_reports/{date}.json` for week-over-week comparison."
@@ -337,25 +567,77 @@
         "error_handling": "CRM unavailable → use cached snapshot from last successful run, flag staleness in the report. Messaging failure → queue, retry. Missing prior week → skip WoW comparison, note absence.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Monday tick" },
-            { "id": "r2", "type": "connector", "label": "Pull all deals", "connector": "crm" },
-            { "id": "r3", "type": "action", "label": "Compute pipeline metrics + WoW" },
-            { "id": "r4", "type": "connector", "label": "Post Block Kit report", "connector": "messaging" },
-            { "id": "r5", "type": "action", "label": "Archive snapshot" },
-            { "id": "r6", "type": "event", "label": "Emit sales.report.weekly" },
-            { "id": "r7", "type": "end", "label": "Report delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Monday tick"
+            },
+            {
+              "id": "r2",
+              "type": "connector",
+              "label": "Pull all deals",
+              "connector": "crm"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Compute pipeline metrics + WoW"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Post formatted messaging layout report",
+              "connector": "messaging"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Archive snapshot"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit sales.report.weekly"
+            },
+            {
+              "id": "r7",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            }
           ]
         }
       }
@@ -364,7 +646,9 @@
       {
         "id": "aq_crm_source",
         "scope": "connector",
-        "connector_names": ["crm"],
+        "connector_names": [
+          "crm"
+        ],
         "category": "configuration",
         "question": "Which CRM credential should be monitored?",
         "type": "select",
@@ -375,13 +659,15 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[access_token].value",
         "variable_name": "crm_provider",
-        "context": "Auto-detected from your Vault's crm-category credentials (HubSpot, Salesforce, Pipedrive).",
+        "context": "Auto-detected from your Vault's crm-category credentials (CRM, CRM, CRM).",
         "dimension": "connectors"
       },
       {
         "id": "aq_email_source",
         "scope": "connector",
-        "connector_names": ["email"],
+        "connector_names": [
+          "email"
+        ],
         "category": "configuration",
         "question": "Which email credential should send outbound stage emails?",
         "type": "select",
@@ -392,13 +678,15 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[refresh_token].value",
         "variable_name": "email_provider",
-        "context": "Auto-detected from your Vault's email-category credentials. Gmail is most common; Outlook 365 also supported.",
+        "context": "Auto-detected from your Vault's email-category credentials. email is most common; email 365 also supported.",
         "dimension": "connectors"
       },
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should receive deal updates and the weekly report?",
         "type": "select",
@@ -409,13 +697,15 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[bot_token].value",
         "variable_name": "messaging_provider",
-        "context": "Auto-detected from your Vault's messaging-category credentials (Slack, Teams, Discord).",
+        "context": "Auto-detected from your Vault's messaging-category credentials (messaging, messaging, messaging).",
         "dimension": "connectors"
       },
       {
         "id": "aq_review_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_response"],
+        "use_case_ids": [
+          "uc_stage_response"
+        ],
         "category": "human_in_the_loop",
         "question": "Which stage emails should be queued for rep review before sending?",
         "type": "select",
@@ -434,7 +724,9 @@
       {
         "id": "aq_email_tone",
         "scope": "capability",
-        "use_case_ids": ["uc_stage_response"],
+        "use_case_ids": [
+          "uc_stage_response"
+        ],
         "category": "quality",
         "question": "What tone should outbound stage emails use?",
         "type": "select",
@@ -453,11 +745,19 @@
       {
         "id": "aq_stale_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_stale_watch"],
+        "use_case_ids": [
+          "uc_stale_watch"
+        ],
         "category": "configuration",
         "question": "Initial stale-deal threshold (days)?",
         "type": "select",
-        "options": ["5 (aggressive)", "10", "14 (standard)", "21", "30 (relaxed)"],
+        "options": [
+          "5 (aggressive)",
+          "10",
+          "14 (standard)",
+          "21",
+          "30 (relaxed)"
+        ],
         "default": "14 (standard)",
         "maps_to": "use_cases[uc_stale_watch].sample_input.stale_threshold_days",
         "variable_name": "stale_threshold_days",

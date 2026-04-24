@@ -15,7 +15,7 @@
 import { useState, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Loader2, Play, Sparkles, ChevronDown, ChevronUp, HelpCircle, Send, MessageCircle, Trash2,
+  Loader2, Play, Sparkles, ChevronDown, ChevronUp, Send, MessageCircle, Trash2,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { BuildPhase, BuildQuestion, ToolTestResult } from '@/lib/types/buildTypes';
@@ -24,6 +24,7 @@ import {
   TestResultsPanel,
   PromotionSuccessIndicator,
 } from '../../gallery/matrix/MatrixCommandCenterParts';
+import { GlyphQuestionPanel } from '@/features/shared/glyph';
 
 export interface ChronologyCommandHubProps {
   buildPhase?: BuildPhase;
@@ -77,97 +78,11 @@ function phaseLabelKey(phase: BuildPhase | undefined): PhaseLabelKey {
 }
 
 /* ── Pending questions inline panel ────────────────────────────────────
- * The backend may surface one or more refinement questions mid-build.
- * This panel lets the user answer each inline without leaving the
- * chronology view.
+ * Delegates to GlyphQuestionPanel (same component the build-from-scratch
+ * Matrix/Glyph layouts use) so the adoption flow answers questions with
+ * identical testids, styling, and vault-connector-picker routing — Matrix
+ * and Glyph prototypes stay 1:1 for Q&A until one replaces the other.
  */
-function PendingQuestionsPanel({
-  questions, onAnswer, onSubmit,
-}: {
-  questions: BuildQuestion[];
-  onAnswer: (cellKey: string, answer: string) => void;
-  onSubmit?: () => void;
-}) {
-  const { t } = useTranslation();
-  const [draft, setDraft] = useState<Record<string, string>>({});
-
-  return (
-    <div className="flex flex-col gap-3 p-4 rounded-modal bg-primary/5 border border-primary/20 shadow-elevation-1">
-      <div className="flex items-center gap-2">
-        <div className="relative w-7 h-7 flex items-center justify-center">
-          <span className="absolute inset-0 rounded-full border-2 border-primary/25" />
-          <span className="absolute inset-[3px] rounded-full bg-gradient-to-br from-primary/20 via-primary/10 to-accent/10" />
-          <HelpCircle className="w-3.5 h-3.5 text-primary relative z-10" />
-        </div>
-        <span className="typo-heading font-bold uppercase tracking-[0.12em] text-foreground">
-          {t.templates.chronology.hub_pending_questions.replace('{count}', String(questions.length))}
-        </span>
-      </div>
-      <div className="flex flex-col gap-3">
-        {questions.map((q) => {
-          const current = draft[q.cellKey] ?? '';
-          return (
-            <div key={q.cellKey} className="flex flex-col gap-1.5">
-              <span className="typo-body text-foreground leading-snug">{q.question}</span>
-              {q.options && q.options.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {q.options.map((opt) => (
-                    <button
-                      key={opt}
-                      type="button"
-                      onClick={() => onAnswer(q.cellKey, opt)}
-                      className="px-3 py-1.5 rounded-modal border border-card-border bg-card-bg typo-body text-foreground hover:bg-primary/10 hover:border-primary/30 shadow-elevation-1 transition-colors cursor-pointer"
-                    >
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={current}
-                    onChange={(e) => setDraft((p) => ({ ...p, [q.cellKey]: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && current.trim()) {
-                        onAnswer(q.cellKey, current.trim());
-                        setDraft((p) => { const n = { ...p }; delete n[q.cellKey]; return n; });
-                      }
-                    }}
-                    placeholder={t.templates.chronology.hub_answer_placeholder}
-                    className="flex-1 px-3 py-2 rounded-modal border border-card-border bg-card-bg typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 shadow-elevation-1"
-                  />
-                  <button
-                    type="button"
-                    disabled={!current.trim()}
-                    onClick={() => {
-                      if (current.trim()) {
-                        onAnswer(q.cellKey, current.trim());
-                        setDraft((p) => { const n = { ...p }; delete n[q.cellKey]; return n; });
-                      }
-                    }}
-                    className="p-2 rounded-modal text-primary hover:bg-primary/10 disabled:text-foreground/25 disabled:hover:bg-transparent shadow-elevation-1 cursor-pointer"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {onSubmit && (
-        <button
-          type="button"
-          onClick={onSubmit}
-          className="self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
-        >
-          {t.templates.chronology.hub_submit_answer}
-        </button>
-      )}
-    </div>
-  );
-}
 
 /* ── Draft ready refine panel ────────────────────────────────────────
  * Shown when the adoption draft is seeded and ready for testing but the
@@ -362,6 +277,7 @@ function HubTopBar({
 /* ── Main ──────────────────────────────────────────────────────────── */
 
 function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
+  const { t } = useTranslation();
   const {
     buildPhase, completeness, isRunning, buildActivity,
     pendingQuestions = [], onAnswerBuildQuestion, onSubmitAllAnswers,
@@ -413,11 +329,21 @@ function ChronologyCommandHubImpl(props: ChronologyCommandHubProps) {
                 style={{ background: 'linear-gradient(90deg, transparent 0%, color-mix(in srgb, var(--primary) 30%, transparent) 50%, transparent 100%)' }}
               />
               {pendingQuestions.length > 0 && onAnswerBuildQuestion && (
-                <PendingQuestionsPanel
-                  questions={pendingQuestions}
-                  onAnswer={onAnswerBuildQuestion}
-                  onSubmit={onSubmitAllAnswers}
-                />
+                <div data-testid="build-inline-questions">
+                  <GlyphQuestionPanel
+                    questions={pendingQuestions}
+                    onAnswer={onAnswerBuildQuestion}
+                  />
+                  {onSubmitAllAnswers && (
+                    <button
+                      type="button"
+                      onClick={onSubmitAllAnswers}
+                      className="mt-2 self-end px-4 py-2 rounded-modal bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-body font-semibold text-foreground shadow-elevation-2 cursor-pointer"
+                    >
+                      {t.templates.chronology.hub_submit_answer}
+                    </button>
+                  )}
+                </div>
               )}
 
               {buildPhase === 'draft_ready' && pendingQuestions.length === 0 && onRefine && (

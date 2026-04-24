@@ -2,33 +2,33 @@
   "id": "support-intelligence-use-case",
   "schema_version": 3,
   "name": "Support Intelligence",
-  "description": "Triages Zendesk tickets with sentiment + urgency analysis, searches a Notion knowledge base for known resolutions, routes appropriately across Slack channels, monitors SLA compliance, and enriches the KB as tickets resolve.",
+  "description": "Triages support platform tickets with sentiment + urgency analysis, searches a knowledge base for known resolutions, routes appropriately across messaging channels, monitors SLA compliance, and enriches the KB as tickets resolve.",
   "icon": "BrainCircuit",
   "color": "#14B8A6",
   "category": [
     "support"
   ],
   "service_flow": [
-    "Zendesk",
-    "Slack",
-    "Notion"
+    "support platform",
+    "messaging",
+    "knowledge base"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Zendesk",
-      "Slack",
-      "Notion"
+      "support platform",
+      "messaging",
+      "knowledge base"
     ],
     "persona": {
-      "goal": "Turn Zendesk triage from a bottleneck into a reflex — classify fast, match to KB, route precisely, and make the KB smarter every time a ticket closes.",
+      "goal": "Turn support platform triage from a bottleneck into a reflex — classify fast, match to KB, route precisely, and make the KB smarter every time a ticket closes.",
       "identity": {
         "role": "Frontline support-operations analyst agent for Zendesk + Notion KB + Slack.",
-        "description": "Polls Zendesk on a tight loop, classifies sentiment + urgency, searches the Notion KB for proven resolutions, routes based on urgency × KB-match, warns on SLA drift, and feeds closed tickets back into the KB so next week's triage is faster."
+        "description": "Polls support platform on a tight loop, classifies sentiment + urgency, searches the knowledge base KB for proven resolutions, routes based on urgency × KB-match, warns on SLA drift, and feeds closed tickets back into the KB so next week's triage is faster."
       },
       "voice": {
         "style": "Analytical and concise. Sentiment badges (🔴🟠🟡🟢) and urgency badges (🚨🔴🟡🟢) carry the signal; no hype.",
-        "output_format": "Slack escalations: Block Kit with sentiment + urgency badges, requester, org, ticket link. Triage summaries: one-liner per ticket. SLA warnings: time remaining + assignee."
+        "output_format": "messaging escalations: formatted messaging layout with sentiment + urgency badges, requester, org, ticket link. Triage summaries: one-liner per ticket. SLA warnings: time remaining + assignee."
       },
       "principles": [
         "Sentiment informs tone; urgency drives routing — never conflate them.",
@@ -53,9 +53,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities share one mission — every Zendesk ticket triaged, routed, and captured in KB:\n\n1. **uc_ticket_triage** (default every 60 seconds — final cadence set at the trigger-composition step) — read triage_state.json for last_poll cursor. Fetch Zendesk tickets with status:new OR status:open updated>{last_poll}. For each ticket: score sentiment (angry/frustrated/neutral/positive), classify urgency (critical/high/medium/low). Search Notion KB by keywords + category. Route per matrix:\n   - Critical/High + no KB match → post Block Kit to escalation_channel (@lead DM on Critical), add Zendesk internal note, emit manual_review.\n   - Critical/High + KB match ≥ confidence_threshold → internal note with suggestion, notify triage_channel for agent review.\n   - Medium/Low + KB match → stage draft reply (if auto_reply_mode allows), tag ticket, summary to triage_channel.\n   - Medium/Low + no KB match → tag needs-triage, post summary to triage_channel.\n   Update processed_ticket_ids and last_poll cursor.\n\n2. **uc_sla_watch** (runs as part of triage cycle — default every 60 seconds) — evaluate SLA status for tracked critical/high tickets. Compare now - created_at against warn_at thresholds (Critical: 30min remaining, High: 1hr remaining). For each crossed threshold (and not previously warned): fetch current assignee, post Block Kit SLA warning to escalation_channel, record sla_warnings_sent[ticket_id][threshold] so we never duplicate. Emit support.intel.sla_warning.\n\n3. **uc_kb_enrich** (event-listen on Zendesk ticket status transitioning to solved/closed) — fetch full ticket + comments. Extract problem / root_cause / resolution_steps. Search Notion for existing entry matching keywords + category. Update (increment Frequency, update Last Used, refine steps) OR create new page (Title, Category, Problem, Root Cause, Resolution Steps, Keywords, Frequency=1, Confidence=0.8). Emit support.intel.kb_updated.\n\nState: ./data/triage_state.json (last_poll, processed_ticket_ids, sla_warnings_sent, pending_slack_queue, pending_kb_writes). Memory: per-account history (for urgency scoring), KB match stats, resolution trends.",
-      "tool_guidance": "### Zendesk (http_request + zendesk connector)\n- Search: `GET /api/v2/search.json?query=type:ticket status:new status:open updated>{iso}` — Basic Auth `email/token:api_token`.\n- Ticket detail: `GET /api/v2/tickets/{id}.json` (and `/comments.json` for KB enrichment).\n- Requester: `GET /api/v2/users/{requester_id}.json`.\n- Internal note: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: false } } }`.\n- Draft reply: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: true }, status: 'pending' } }`.\n- Tags: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { tags: [ 'triaged', 'category-billing' ] } }`.\nBase URL: `https://{subdomain}.zendesk.com/api/v2`.\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` with Block Kit + sentiment/urgency badges.\n- DM: `channel` = user_id for Critical lead alerts.\n- Update: `POST /api/chat.update` for status-change amendments.\nHeaders: `Authorization: Bearer {bot_token}`.\n\n### Notion (http_request + notion connector)\n- Query: `POST /v1/databases/{database_id}/query` with keyword/category filter.\n- Create: `POST /v1/pages`.\n- Update: `PATCH /v1/pages/{page_id}` to increment Frequency, update Last Used.\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`.\n\n### Sentiment rubric\n- Angry: ALL CAPS, !, 'unacceptable', 'terrible', 'lawsuit', profanity.\n- Frustrated: 'again', 'still', 'keeps happening', 'multiple times'.\n- Neutral: factual, questions.\n- Positive: thanks, praise.\n\n### Urgency rubric\n- Critical: outage, security, data loss.\n- High: payment failure, account lockout, SLA-sensitive account.\n- Medium: feature question, how-to.\n- Low: feedback, feature requests.\n\n### SLA defaults\n- Critical: 1h / warn 30min remaining.\n- High: 4h / warn 1h remaining.\n- Medium: 8h / warn 2h remaining.\n- Low: 24h / no warning.\nStart from Zendesk created_at. Wall-clock (not business hours). One warning per crossed threshold.\n\n### State files\n- ./data/triage_state.json — last_poll, processed_ticket_ids, sla_warnings_sent, pending_slack_queue, pending_kb_writes.",
-      "error_handling": "Zendesk 429 → back off per Retry-After, resume next cycle. Zendesk 401/403 → pause polling, emit support.intel.degraded + user_message. Slack 5xx → queue in pending_slack_queue, retry next cycle. Notion 5xx → proceed without KB for triage (mark KB-skipped), queue write in pending_kb_writes for retry. Empty ticket body → classify from subject, tag needs-context, urgency Medium. Duplicate ticket (in processed set) → skip silently. Malformed API response → log raw, skip ticket, continue. First run (empty state) → backfill only last 24h. Write poll cursor to both memory and triage_state.json.",
+      "operating_instructions": "Three capabilities share one mission — every support platform ticket triaged, routed, and captured in KB: 1. **uc_ticket_triage** (default every 60 seconds — final cadence set at the trigger-composition step) — read triage_state.json for last_poll cursor. Fetch support platform tickets with status:new OR status:open updated>{last_poll}. For each ticket: score sentiment (angry/frustrated/neutral/positive), classify urgency (critical/high/medium/low). Search knowledge base KB by keywords + category. Route per matrix: - Critical/High + no KB match → post formatted messaging layout to escalation_channel (@lead DM on Critical), add support platform internal note, emit manual_review. - Critical/High + KB match ≥ confidence_threshold → internal note with suggestion, notify triage_channel for agent review. - Medium/Low + KB match → stage draft reply (if auto_reply_mode allows), tag ticket, summary to triage_channel. - Medium/Low + no KB match → tag needs-triage, post summary to triage_channel. Update processed_ticket_ids and last_poll cursor. 2. **uc_sla_watch** (runs as part of triage cycle — default every 60 seconds) — evaluate SLA status for tracked critical/high tickets. Compare now - created_at against warn_at thresholds (Critical: 30min remaining, High: 1hr remaining). For each crossed threshold (and not previously warned): fetch current assignee, post formatted messaging layout SLA warning to escalation_channel, record sla_warnings_sent[ticket_id][threshold] so we never duplicate. Emit support.intel.sla_warning. 3. **uc_kb_enrich** (event-listen on support platform ticket status transitioning to solved/closed) — fetch full ticket + comments. Extract problem / root_cause / resolution_steps. Search knowledge base for existing entry matching keywords + category. Update (increment Frequency, update Last Used, refine steps) OR create new page (Title, Category, Problem, Root Cause, Resolution Steps, Keywords, Frequency=1, Confidence=0.8). Emit support.intel.kb_updated. State:./data/triage_state.json (last_poll, processed_ticket_ids, sla_warnings_sent, pending_slack_queue, pending_kb_writes). Memory: per-account history (for urgency scoring), KB match stats, resolution trends.",
+      "tool_guidance": "### support platform (http_request + zendesk connector)\n- Search: `GET /api/v2/search.json?query=type:ticket status:new status:open updated>{iso}` — Basic Auth `email/token:api_token`.\n- Ticket detail: `GET /api/v2/tickets/{id}.json` (and `/comments.json` for KB enrichment).\n- Requester: `GET /api/v2/users/{requester_id}.json`.\n- Internal note: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: false } } }`.\n- Draft reply: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { comment: { body, public: true }, status: 'pending' } }`.\n- Tags: `PUT /api/v2/tickets/{id}.json` body `{ ticket: { tags: [ 'triaged', 'category-billing' ] } }`.\nBase URL: `https://{subdomain}.zendesk.com/api/v2`. ### messaging (http_request + slack connector)\n- `POST /api/chat.postMessage` with formatted messaging layout + sentiment/urgency badges.\n- DM: `channel` = user_id for Critical lead alerts.\n- Update: `POST /api/chat.update` for status-change amendments.\nHeaders: `Authorization: Bearer {bot_token}`. ### knowledge base (http_request + notion connector)\n- Query: `POST /v1/databases/{database_id}/query` with keyword/category filter.\n- Create: `POST /v1/pages`.\n- Update: `PATCH /v1/pages/{page_id}` to increment Frequency, update Last Used.\nHeaders: `Authorization: Bearer {integration_token}`, `knowledge base-Version: 2022-06-28`. ### Sentiment rubric\n- Angry: ALL CAPS,!, 'unacceptable', 'terrible', 'lawsuit', profanity.\n- Frustrated: 'again', 'still', 'keeps happening', 'multiple times'.\n- Neutral: factual, questions.\n- Positive: thanks, praise. ### Urgency rubric\n- Critical: outage, security, data loss.\n- High: payment failure, account lockout, SLA-sensitive account.\n- Medium: feature question, how-to.\n- Low: feedback, feature requests. ### SLA defaults\n- Critical: 1h / warn 30min remaining.\n- High: 4h / warn 1h remaining.\n- Medium: 8h / warn 2h remaining.\n- Low: 24h / no warning.\nStart from support platform created_at. Wall-clock (not business hours). One warning per crossed threshold. ### State files\n-./data/triage_state.json — last_poll, processed_ticket_ids, sla_warnings_sent, pending_slack_queue, pending_kb_writes.",
+      "error_handling": "support platform 429 → back off per Retry-After, resume next cycle. support platform 401/403 → pause polling, emit support.intel.degraded + user_message. messaging 5xx → queue in pending_slack_queue, retry next cycle. knowledge base 5xx → proceed without KB for triage (mark KB-skipped), queue write in pending_kb_writes for retry. Empty ticket body → classify from subject, tag needs-context, urgency Medium. Duplicate ticket (in processed set) → skip silently. Malformed API response → log raw, skip ticket, continue. First run (empty state) → backfill only last 24h. Write poll cursor to both memory and triage_state.json.",
       "examples": [],
       "tools": [
         "http_request",
@@ -64,8 +64,8 @@
       ],
       "connectors": [
         {
-          "name": "zendesk",
-          "label": "Zendesk",
+          "name": "support",
+          "label": "support platform",
           "auth_type": "api_key",
           "role": "support_ticketing",
           "category": "support",
@@ -74,7 +74,7 @@
           "credential_fields": [
             {
               "key": "subdomain",
-              "label": "Zendesk Subdomain",
+              "label": "support platform Subdomain",
               "type": "text",
               "placeholder": "yourcompany",
               "helpText": "'yourcompany' part of yourcompany.zendesk.com.",
@@ -93,11 +93,11 @@
               "label": "API Token",
               "type": "password",
               "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Zendesk Admin → Apps and integrations → Zendesk API → Add API Token.",
+              "helpText": "support platform Admin → Apps and integrations → support platform API → Add API Token.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Zendesk Admin Center → Apps and integrations → Zendesk API.\n2. Enable Token Access.\n3. Add API Token, name it 'Support Intelligence Agent', copy immediately.\n4. Enter subdomain, agent email, and token. Auth: {email}/token:{api_token} via Basic Auth."
+          "setup_instructions": "1. support platform Admin Center → Apps and integrations → support platform API.\n2. Enable Token Access.\n3. Add API Token, name it 'Support Intelligence Agent', copy immediately.\n4. Enter subdomain, agent email, and token. Auth: {email}/token:{api_token} via Basic Auth."
         },
         {
           "name": "messaging",
@@ -113,7 +113,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, channels:read.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, channels:read.",
               "required": true
             }
           ],
@@ -126,7 +126,7 @@
           "role": "knowledge_base",
           "category": "knowledge_base",
           "required": false,
-          "fallback_note": "Without Notion, triage proceeds but no KB lookup or KB enrichment — all tickets route to the triage/escalation channels without auto-suggestion.",
+          "fallback_note": "Without knowledge base, triage proceeds but no KB lookup or KB enrichment — all tickets route to the triage/escalation channels without auto-suggestion.",
           "api_base_url": "https://api.notion.com/v1",
           "credential_fields": [
             {
@@ -165,8 +165,8 @@
       {
         "id": "uc_ticket_triage",
         "title": "Ticket Triage & Routing",
-        "description": "Polls Zendesk for new/updated tickets, classifies sentiment + urgency, searches the Notion KB for matching resolutions, and routes per the urgency × KB-match matrix. Default every 60 seconds — final cadence set at the trigger-composition step.",
-        "capability_summary": "Sentiment + urgency triage with KB-backed auto-suggestion and tier-based Slack routing.",
+        "description": "Polls support platform for new/updated tickets, classifies sentiment + urgency, searches the knowledge base KB for matching resolutions, and routes per the urgency × KB-match matrix. Default every 60 seconds — final cadence set at the trigger-composition step.",
+        "capability_summary": "Sentiment + urgency triage with KB-backed auto-suggestion and tier-based messaging routing.",
         "category": "support",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -179,7 +179,7 @@
           "description": "Default every 60 seconds — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "zendesk",
+          "support",
           "messaging",
           "knowledge_base"
         ],
@@ -213,7 +213,7 @@
             "description": "Emitted on Critical/High with no KB match — human review required."
           }
         ],
-        "error_handling": "Zendesk 429/5xx → retry next cycle. Zendesk 401 → emit degraded. Notion unavailable → proceed with KB-skipped label. Slack fail → pending_slack_queue. Malformed ticket → skip + log.",
+        "error_handling": "support platform 429/5xx → retry next cycle. support platform 401 → emit degraded. knowledge base unavailable → proceed with KB-skipped label. messaging fail → pending_slack_queue. Malformed ticket → skip + log.",
         "input_schema": [
           {
             "name": "confidence_threshold",
@@ -238,19 +238,19 @@
             "name": "escalation_channel",
             "type": "text",
             "default": "#support-escalations",
-            "description": "Slack channel for Critical/High routing and SLA warnings."
+            "description": "messaging channels for Critical/High routing and SLA warnings."
           },
           {
             "name": "triage_channel",
             "type": "text",
             "default": "#support-triage",
-            "description": "Slack channel for auto-suggestions and routine ticket summaries."
+            "description": "messaging channels for auto-suggestions and routine ticket summaries."
           },
           {
             "name": "lead_user_id",
             "type": "text",
             "default": "",
-            "description": "Slack user ID for Critical-breach DMs (leave blank to skip)."
+            "description": "messaging user ID for Critical-breach DMs (leave blank to skip)."
           }
         ],
         "sample_input": {
@@ -276,7 +276,7 @@
             {
               "id": "t2",
               "type": "connector",
-              "label": "Fetch new/updated Zendesk tickets",
+              "label": "Fetch new/updated support platform tickets",
               "connector": "zendesk"
             },
             {
@@ -287,7 +287,7 @@
             {
               "id": "t4",
               "type": "connector",
-              "label": "Search Notion KB",
+              "label": "Search knowledge base KB",
               "connector": "knowledge_base"
             },
             {
@@ -298,7 +298,7 @@
             {
               "id": "t6",
               "type": "connector",
-              "label": "Escalate to Slack + internal note (Critical/High, no match)",
+              "label": "Escalate to the messaging channel + internal note (Critical/High, no match)",
               "connector": "messaging"
             },
             {
@@ -379,7 +379,7 @@
           "description": "Default every 60 seconds — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "zendesk",
+          "support",
           "messaging"
         ],
         "notification_channels": [
@@ -403,7 +403,7 @@
             "description": "Payload: { ticket_id, urgency, time_remaining_minutes, assignee }."
           }
         ],
-        "error_handling": "Zendesk GET fail → skip ticket, retry next cycle (warning still valid). Slack fail → pending_slack_queue.",
+        "error_handling": "support platform GET fail → skip ticket, retry next cycle (warning still valid). messaging fail → pending_slack_queue.",
         "input_schema": [
           {
             "name": "sla_critical_minutes",
@@ -456,7 +456,7 @@
             {
               "id": "s5",
               "type": "connector",
-              "label": "Post SLA warning to Slack",
+              "label": "Post SLA warning to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -509,7 +509,7 @@
       {
         "id": "uc_kb_enrich",
         "title": "Knowledge Base Enrichment",
-        "description": "On ticket resolution, extracts problem + root_cause + resolution_steps, updates the matching Notion KB entry (increment Frequency, update Last Used) or creates a new one. Event-listens on Zendesk ticket status transitioning to solved/closed.",
+        "description": "On ticket resolution, extracts problem + root_cause + resolution_steps, updates the matching knowledge base KB entry (increment Frequency, update Last Used) or creates a new one. Event-listens on support platform ticket status transitioning to solved/closed.",
         "capability_summary": "Auto-learns from every solved ticket; grows the KB with every cycle.",
         "category": "support",
         "enabled_by_default": true,
@@ -520,10 +520,10 @@
           "config": {
             "event_type": "zendesk.ticket.resolved"
           },
-          "description": "Fires when a Zendesk ticket transitions to solved/closed. Not user-configurable."
+          "description": "Fires when a support platform ticket transitions to solved/closed. Not user-configurable."
         },
         "connectors": [
-          "zendesk",
+          "support",
           "knowledge_base"
         ],
         "notification_channels": [],
@@ -547,7 +547,7 @@
             "description": "Payload: { notion_page_id, title, action: 'created' | 'updated', frequency }."
           }
         ],
-        "error_handling": "Notion write fail → queue in pending_kb_writes, retry next cycle. If resolution signal is ambiguous (no human resolver comment), skip and log for manual review.",
+        "error_handling": "knowledge base write fail → queue in pending_kb_writes, retry next cycle. If resolution signal is ambiguous (no human resolver comment), skip and log for manual review.",
         "input_schema": [
           {
             "name": "initial_confidence",
@@ -588,7 +588,7 @@
             {
               "id": "k4",
               "type": "connector",
-              "label": "Search Notion for match",
+              "label": "Search knowledge base for match",
               "connector": "knowledge_base"
             },
             {
@@ -726,7 +726,7 @@
           "uc_sla_watch"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives Critical/High escalations and SLA warnings?",
+        "question": "Which messaging channels receives Critical/High escalations and SLA warnings?",
         "type": "select",
         "options": [],
         "default": "",
@@ -739,7 +739,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -751,7 +751,7 @@
           "uc_ticket_triage"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives routine triage summaries and auto-suggestions?",
+        "question": "Which messaging channels receives routine triage summaries and auto-suggestions?",
         "type": "select",
         "options": [],
         "default": "",
@@ -764,7 +764,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -776,7 +776,7 @@
           "uc_ticket_triage"
         ],
         "category": "messages",
-        "question": "Slack user ID for Critical-escalation DMs?",
+        "question": "messaging user ID for Critical-escalation DMs?",
         "type": "text",
         "default": "",
         "maps_to": "use_cases[uc_ticket_triage].sample_input.lead_user_id",
@@ -821,7 +821,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -840,7 +840,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

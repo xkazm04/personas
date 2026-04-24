@@ -5,11 +5,19 @@
   "description": "Analyzes page views, session duration, and bounce rate metrics from a local database to generate weekly trend reports with week-over-week comparisons, content rankings, and anomaly detection. Delivers structured insights via in-app messaging and progressively learns baseline patterns through agent memory.",
   "icon": "TrendingUp",
   "color": "#10b981",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Local Database", "In-App Messaging"],
+  "service_flow": [
+    "Local Database",
+    "In-App Messaging"
+  ],
   "payload": {
-    "service_flow": ["Local Database", "In-App Messaging"],
+    "service_flow": [
+      "Local Database",
+      "In-App Messaging"
+    ],
     "persona": {
       "goal": "Turn raw page metrics into editorial decisions — every week, flag what moved, what broke, and what to ship next.",
       "identity": {
@@ -42,14 +50,18 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities:\n\n1. **uc_weekly_report** — on schedule, load baselines from memory, query the connected DB for the 7-day reporting period and the prior 7 days. Filter content below `min_pageviews_for_inclusion`. Compute WoW deltas for views, avg duration, bounce rate per URL. Classify trend categories: Surging (views >+25% with duration stable/improving), Growing (+5-25%), Stable (±5%), Declining (>10% drop 2+ consecutive weeks), Volatile (alternating >25% swings), New (first week). Rank by composite score: views (40%) + duration (30%) + inverse bounce (20%) + WoW growth (10%), min-max normalized. Produce top-N + bottom-N lists. Run anomaly detection: compare each URL against its 4-week EWMA (α=0.4). Flag when `|current - ewma| / stddev > 2.0`. Classify severity High/Medium/Low. High severity → create manual review. Compose Markdown report (executive summary, site-wide metrics, top/bottom tables, anomalies, trend narrative, recommendations). Deliver via user_message (content_type success, priority normal). Persist updated EWMAs to memory. Emit `reporting.weekly.generated`.\n\n2. **uc_midweek_anomaly_check** — on schedule (Wed/Fri noon), load baselines and query metrics since the last report/alert. Derive expected partial-week trajectory (~43% of weekly by Wednesday, ~71% by Friday). Compare actuals. If any URL deviates beyond `anomaly_threshold_percent`, classify severity, deliver user_message alert (content_type warning, priority high) only when anomalies exist — silent otherwise. High-severity → manual review. Emit `reporting.anomaly.detected` per flagged URL.\n\nState: memory entries tagged `category: baseline` (weekly EWMAs and aggregates) and `category: trend` (multi-week decline/surge tracking). Period markers prevent duplicate emissions on re-runs.",
-      "tool_guidance": "**Database queries** (`database_query` + `metrics_db` connector):\n\nWeekly aggregate by URL:\n```sql\nSELECT page_url,\n       SUM(page_views) AS views,\n       AVG(session_duration_seconds) AS avg_duration,\n       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY session_duration_seconds) AS median_duration,\n       COUNT(CASE WHEN pages_in_session = 1 THEN 1 END) * 100.0 / COUNT(*) AS bounce_rate\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY page_url\nHAVING SUM(page_views) >= {min_pageviews}\nORDER BY views DESC;\n```\n\nDaily site-wide:\n```sql\nSELECT date, SUM(page_views) AS views, AVG(session_duration_seconds) AS avg_duration\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY date ORDER BY date;\n```\n\nCategory breakdown:\n```sql\nSELECT content_category, page_url, SUM(page_views) AS views\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY content_category, page_url\nORDER BY content_category, views DESC;\n```\n\n**Statistical methods**:\n- WoW change: `((current - previous) / previous) * 100`. Previous = 0 → report as 'New Content', never infinity.\n- Rolling baseline: EWMA with α=0.4 over 4 weeks.\n- Anomaly: modified z-score, flag when `|current - ewma_baseline| / ewma_stddev > 2.0`. Fewer than 4 weeks → fall back to percentage threshold.\n\n**Report formatting**: Markdown. Tables with Rank/URL/Views/WoW/Duration/WoW/Bounce/Trend. Arrow indicators (↑/↓/→). Severity badges ([HIGH]/[MEDIUM]/[LOW]) for anomalies. Reporting-period dates at the top.",
+      "operating_instructions": "Two capabilities: 1. **uc_weekly_report** — on schedule, load baselines from memory, query the connected DB for the 7-day reporting period and the prior 7 days. Filter content below `min_pageviews_for_inclusion`. Compute WoW deltas for views, avg duration, bounce rate per URL. Classify trend categories: Surging (views >+25% with duration stable/improving), Growing (+5-25%), Stable (±5%), Declining (>10% drop 2+ consecutive weeks), Volatile (alternating >25% swings), New (first week). Rank by composite score: views (40%) + duration (30%) + inverse bounce (20%) + WoW growth (10%), min-max normalized. Produce top-N + bottom-N lists. Run anomaly detection: compare each URL against its 4-week EWMA (α=0.4). Flag when `|current - ewma| / stddev > 2.0`. Classify severity High/Medium/Low. High severity → create manual review. Compose Markdown report (executive summary, site-wide metrics, top/bottom tables, anomalies, trend narrative, recommendations). Deliver via user_message (content_type success, priority normal). Persist updated EWMAs to memory. Emit `reporting.weekly.generated`. 2. **uc_midweek_anomaly_check** — on schedule (Wed/Fri noon), load baselines and query metrics since the last report/alert. Derive expected partial-week trajectory (~43% of weekly by Wednesday, ~71% by Friday). Compare actuals. If any URL deviates beyond `anomaly_threshold_percent`, classify severity, deliver user_message alert (content_type warning, priority high) only when anomalies exist — silent otherwise. High-severity → manual review. Emit `reporting.anomaly.detected` per flagged URL. State: memory entries tagged `category: baseline` (weekly EWMAs and aggregates) and `category: trend` (multi-week decline/surge tracking). Period markers prevent duplicate emissions on re-runs.",
+      "tool_guidance": "**Database queries** (`database_query` + `metrics_db` connector): Weekly aggregate by URL:\n```sql\nSELECT page_url, SUM(page_views) AS views, AVG(session_duration_seconds) AS avg_duration, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY session_duration_seconds) AS median_duration, COUNT(CASE WHEN pages_in_session = 1 THEN 1 END) * 100.0 / COUNT(*) AS bounce_rate\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY page_url\nHAVING SUM(page_views) >= {min_pageviews}\nORDER BY views DESC;\n``` Daily site-wide:\n```sql\nSELECT date, SUM(page_views) AS views, AVG(session_duration_seconds) AS avg_duration\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY date ORDER BY date;\n``` Category breakdown:\n```sql\nSELECT content_category, page_url, SUM(page_views) AS views\nFROM content_metrics\nWHERE date BETWEEN '{start}' AND '{end}'\nGROUP BY content_category, page_url\nORDER BY content_category, views DESC;\n``` **Statistical methods**:\n- WoW change: `((current - previous) / previous) * 100`. Previous = 0 → report as 'New Content', never infinity.\n- Rolling baseline: EWMA with α=0.4 over 4 weeks.\n- Anomaly: modified z-score, flag when `|current - ewma_baseline| / ewma_stddev > 2.0`. Fewer than 4 weeks → fall back to percentage threshold. **Report formatting**: Markdown. Tables with Rank/URL/Views/WoW/Duration/WoW/Bounce/Trend. Arrow indicators (↑/↓/→). Severity badges ([HIGH]/[MEDIUM]/[LOW]) for anomalies. Reporting-period dates at the top.",
       "error_handling": "DB unavailable → retry 3x with exponential backoff (5s/15s/45s). All fail → user_message content_type error, emit `reporting.run.failed`, do NOT generate partial report. On next success generate a combined report covering the missed period + current, clearly labeled. Incomplete data (<5 of 7 days) → proceed with data-quality warning at top, use per-day averages for WoW. Low-traffic noise: content <200 weekly views requires 50% deviation (double threshold); <100 weekly views excluded from anomaly detection entirely. Missing baselines (first run) → bootstrap from 4 weeks historical, label as Baseline Report. Duplicate run for same period → append '(Re-run)' to title, don't re-emit events.",
       "examples": [],
-      "tools": ["database_query", "file_read", "file_write"],
+      "tools": [
+        "database_query",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "metrics_db",
+          "name": "database",
           "label": "Metrics Database",
           "auth_type": "local",
           "role": "database",
@@ -88,10 +100,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1" },
+          "config": {
+            "cron": "0 9 * * 1"
+          },
           "description": "Default Monday 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["metrics_db"],
+        "connectors": [
+          "database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "conditional",
@@ -155,14 +171,23 @@
           {
             "name": "key_metrics",
             "type": "enum",
-            "options": ["page_views", "session_duration", "bounce_rate", "all"],
+            "options": [
+              "page_views",
+              "session_duration",
+              "bounce_rate",
+              "all"
+            ],
             "default": "all",
             "description": "Which metrics the report emphasizes."
           },
           {
             "name": "anomaly_review_mode",
             "type": "enum",
-            "options": ["flag_in_report_only", "manual_review_on_high_severity", "manual_review_on_any_anomaly"],
+            "options": [
+              "flag_in_report_only",
+              "manual_review_on_high_severity",
+              "manual_review_on_any_anomaly"
+            ],
             "default": "manual_review_on_high_severity",
             "description": "Whether anomalies trigger a manual review request alongside the report."
           }
@@ -175,31 +200,103 @@
           "key_metrics": "{{param.aq_key_metrics}}",
           "anomaly_review_mode": "{{param.aq_anomaly_review_mode}}"
         },
-        "tool_hints": ["database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "action", "label": "Load memory baselines" },
-            { "id": "w3", "type": "connector", "label": "Query current + prior week metrics", "connector": "metrics_db" },
-            { "id": "w4", "type": "action", "label": "Compute WoW + classify trend categories" },
-            { "id": "w5", "type": "action", "label": "Composite-score rank + top/bottom N" },
-            { "id": "w6", "type": "action", "label": "Run z-score anomaly detection" },
-            { "id": "w7", "type": "action", "label": "Compose Markdown report" },
-            { "id": "w8", "type": "event", "label": "Deliver user_message + emit events" },
-            { "id": "w9", "type": "action", "label": "Persist updated EWMAs to memory" },
-            { "id": "w10", "type": "end", "label": "Report delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Load memory baselines"
+            },
+            {
+              "id": "w3",
+              "type": "connector",
+              "label": "Query current + prior week metrics",
+              "connector": "metrics_db"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Compute WoW + classify trend categories"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Composite-score rank + top/bottom N"
+            },
+            {
+              "id": "w6",
+              "type": "action",
+              "label": "Run z-score anomaly detection"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Compose Markdown report"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Deliver user_message + emit events"
+            },
+            {
+              "id": "w9",
+              "type": "action",
+              "label": "Persist updated EWMAs to memory"
+            },
+            {
+              "id": "w10",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" },
-            { "source": "w9", "target": "w10" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            },
+            {
+              "source": "w9",
+              "target": "w10"
+            }
           ]
         }
       },
@@ -214,10 +311,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 12 * * 3,5" },
+          "config": {
+            "cron": "0 12 * * 3,5"
+          },
           "description": "Default Wednesday + Friday 12:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["metrics_db"],
+        "connectors": [
+          "database"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "conditional",
@@ -248,28 +349,91 @@
         "sample_input": {
           "anomaly_threshold_percent": "{{param.aq_anomaly_threshold_percent}}"
         },
-        "tool_hints": ["database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Mid-week tick" },
-            { "id": "m2", "type": "action", "label": "Load baselines + last-alert timestamps" },
-            { "id": "m3", "type": "connector", "label": "Query partial-week metrics", "connector": "metrics_db" },
-            { "id": "m4", "type": "action", "label": "Compare vs expected trajectory" },
-            { "id": "m5", "type": "decision", "label": "Anomalies detected?" },
-            { "id": "m6", "type": "action", "label": "Classify severity; deliver warning + manual review on High" },
-            { "id": "m7", "type": "event", "label": "Emit anomaly.detected" },
-            { "id": "m8", "type": "end", "label": "Check complete (silent)" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Mid-week tick"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Load baselines + last-alert timestamps"
+            },
+            {
+              "id": "m3",
+              "type": "connector",
+              "label": "Query partial-week metrics",
+              "connector": "metrics_db"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Compare vs expected trajectory"
+            },
+            {
+              "id": "m5",
+              "type": "decision",
+              "label": "Anomalies detected?"
+            },
+            {
+              "id": "m6",
+              "type": "action",
+              "label": "Classify severity; deliver warning + manual review on High"
+            },
+            {
+              "id": "m7",
+              "type": "event",
+              "label": "Emit anomaly.detected"
+            },
+            {
+              "id": "m8",
+              "type": "end",
+              "label": "Check complete (silent)"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6", "variant": "yes" },
-            { "source": "m5", "target": "m8", "variant": "no" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6",
+              "variant": "yes"
+            },
+            {
+              "source": "m5",
+              "target": "m8",
+              "variant": "no"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            }
           ]
         }
       }
@@ -278,7 +442,9 @@
       {
         "id": "aq_key_metrics",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "domain",
         "question": "Which metrics matter most for your content performance?",
         "type": "select",
@@ -297,11 +463,18 @@
       {
         "id": "aq_top_n_content",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "configuration",
         "question": "How many URLs should appear in the top/bottom performer lists?",
         "type": "select",
-        "options": ["5", "10", "15", "20"],
+        "options": [
+          "5",
+          "10",
+          "15",
+          "20"
+        ],
         "default": "10",
         "maps_to": "use_cases[uc_weekly_report].sample_input.top_n_content",
         "variable_name": "top_n_content",
@@ -311,11 +484,19 @@
       {
         "id": "aq_min_pageviews_for_inclusion",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "quality",
         "question": "Minimum weekly page views for a URL to appear in rankings/anomaly detection?",
         "type": "select",
-        "options": ["25", "50", "100", "250", "500"],
+        "options": [
+          "25",
+          "50",
+          "100",
+          "250",
+          "500"
+        ],
         "default": "50",
         "maps_to": "use_cases[uc_weekly_report].sample_input.min_pageviews_for_inclusion",
         "variable_name": "min_pageviews_for_inclusion",
@@ -325,7 +506,10 @@
       {
         "id": "aq_anomaly_threshold_percent",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report", "uc_midweek_anomaly_check"],
+        "use_case_ids": [
+          "uc_weekly_report",
+          "uc_midweek_anomaly_check"
+        ],
         "category": "quality",
         "question": "Deviation threshold from baseline that flags an anomaly?",
         "type": "select",
@@ -343,7 +527,9 @@
       {
         "id": "aq_anomaly_review_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "human_in_the_loop",
         "question": "Should anomalies trigger a manual review request alongside the report?",
         "type": "select",

@@ -4,11 +4,11 @@
   "label": "Azure DevOps",
   "color": "#0078D7",
   "icon_url": "/icons/connectors/azure-devops.svg",
-  "category": "devops",
+  "category": "source_control",
   "categories": [
-    "devops",
     "source_control",
-    "ci_cd"
+    "ci_cd",
+    "devops"
   ],
   "fields": [
     {

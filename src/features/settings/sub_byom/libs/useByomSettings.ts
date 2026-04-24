@@ -75,6 +75,10 @@ export function useByomSettings() {
   const [saveGeneration, setSaveGeneration] = useState(0);
   const isDirty = useMemo(() => !policyEqual(policy, savedSnapshotRef.current), [policy, saveGeneration]);
 
+  // Guards handleSave against concurrent invocations (rapid double-clicks).
+  const saveInFlightRef = useRef(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   // Track which tab-specific data has already been fetched to avoid re-fetching on tab switches
   const fetchedTabs = useRef<Set<ByomSection>>(new Set());
 
@@ -83,7 +87,7 @@ export function useByomSettings() {
     getByomPolicy().then((p) => {
       const initial = p ?? defaultPolicy();
       setPolicy(initial);
-      savedSnapshotRef.current = initial;
+      savedSnapshotRef.current = structuredClone(initial);
       setSaveGeneration((g) => g + 1);
       setCorruptPolicyError(null);
       setLoaded(true);
@@ -112,6 +116,7 @@ export function useByomSettings() {
   }, [activeSection]);
 
   const handleSave = useCallback(async () => {
+    if (saveInFlightRef.current) return;
     const errors = validateByomPolicy(policy).filter((w) => w.severity === 'error');
     if (errors.length > 0) {
       useToastStore.getState().addToast(
@@ -120,14 +125,21 @@ export function useByomSettings() {
       );
       return;
     }
+    saveInFlightRef.current = true;
+    setIsSaving(true);
+    const snapshot = structuredClone(policy);
     try {
-      await setByomPolicy(policy);
-      savedSnapshotRef.current = policy;
+      await setByomPolicy(snapshot);
+      // Re-snapshot from the value we actually persisted to avoid dirty-state drift.
+      savedSnapshotRef.current = snapshot;
       setSaveGeneration((g) => g + 1);
       useToastStore.getState().addToast('Policy saved', 'success');
     } catch (e) {
       Sentry.captureException(e);
       useToastStore.getState().addToast(errMsg(e, 'Failed to save policy'), 'error');
+    } finally {
+      saveInFlightRef.current = false;
+      setIsSaving(false);
     }
   }, [policy]);
 
@@ -136,7 +148,7 @@ export function useByomSettings() {
       await deleteByomPolicy();
       const reset = defaultPolicy();
       setPolicy(reset);
-      savedSnapshotRef.current = reset;
+      savedSnapshotRef.current = structuredClone(reset);
       setSaveGeneration((g) => g + 1);
       setCorruptPolicyError(null);
       useToastStore.getState().addToast('Policy reset to defaults', 'success');
@@ -147,7 +159,7 @@ export function useByomSettings() {
   }, []);
 
   const discardChanges = useCallback(() => {
-    setPolicy(savedSnapshotRef.current);
+    setPolicy(structuredClone(savedSnapshotRef.current));
   }, []);
 
   const toggleEnabled = useCallback(() => {
@@ -246,6 +258,7 @@ export function useByomSettings() {
     loaded,
     corruptPolicyError,
     isDirty,
+    isSaving,
     auditLog,
     usageStats,
     usageTimeseries,

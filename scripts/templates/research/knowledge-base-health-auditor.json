@@ -5,11 +5,23 @@
   "description": "Treats your workspace knowledge surface like source code with a periodic test suite. Lints persona memories, vector knowledge bases, and an optional Obsidian vault for staleness, broken wikilinks, contradictions, and orphan pages — every finding routes through manual review so the human owns the prune decision.",
   "icon": "Stethoscope",
   "color": "#10b981",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Personas Memory", "Personas Vector DB", "Obsidian Vault", "Messages"],
+  "service_flow": [
+    "Personas Memory",
+    "Personas Vector DB",
+    "Obsidian Vault",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Personas Memory", "Personas Vector DB", "Obsidian Vault", "Messages"],
+    "service_flow": [
+      "Personas Memory",
+      "Personas Vector DB",
+      "Obsidian Vault",
+      "Messages"
+    ],
     "persona": {
       "goal": "Keep the workspace knowledge surface trustworthy — catch staleness, broken references, contradictions, and orphans before they erode the signal agents depend on.",
       "identity": {
@@ -42,11 +54,13 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, different cadences, distinct outputs:\n\n1. **uc_weekly_health_audit** (weekly by default) — run all three audit modes in sequence:\n   - Memory audit: list_memories per persona, detect staleness, contradictions (same title family, disagreeing bodies), coverage gaps (raw clusters never compiled), importance drift (critical memories unaccessed 30d+).\n   - Vector KB audit: list_execution_knowledge per persona, verify source-file existence via codebase connector when available, flag stale embeddings (source mtime > ingested_at), detect >95% similarity duplicates.\n   - Obsidian vault audit (optional): invoke `obsidian_brain_lint_vault` with `stale_days = stale_threshold_days`; cap findings per category. Skip silently if no vault configured.\n   - Aggregate totals, cap at `max_issues_per_category` per category, queue every finding via manual_review with severity + recommended action, deliver one checklist summary via Messages, persist trend totals via agent_memory, emit `kb.health.audit_completed`.\n\n2. **uc_monthly_deep_audit** (monthly by default, opt-in via `deep_audit_enabled`) — runs everything uc_weekly_health_audit does, plus a cross-article contradiction pass over compiled wiki articles (Levenshtein title distance ≤5, body disagreement detection). Emits `kb.health.contradictions_detected` per confirmed pair. Same delivery shape — but the contradiction section sits at the top of the summary.\n\nState: this persona reads; it does not write application state. Its only persistent output is an agent_memory row per run with the totals for trend-line tracking.",
+      "operating_instructions": "Two capabilities, different cadences, distinct outputs:\n\n1. **uc_weekly_health_audit** (weekly by default) — run all three audit modes in sequence:\n - Memory audit: list_memories per persona, detect staleness, contradictions (same title family, disagreeing bodies), coverage gaps (raw clusters never compiled), importance drift (critical memories unaccessed 30d+).\n - Vector KB audit: list_execution_knowledge per persona, verify source-file existence via codebase connector when available, flag stale embeddings (source mtime > ingested_at), detect >95% similarity duplicates.\n - Obsidian vault audit (optional): invoke `obsidian_brain_lint_vault` with `stale_days = stale_threshold_days`; cap findings per category. Skip silently if no vault configured.\n - Aggregate totals, cap at `max_issues_per_category` per category, queue every finding via manual_review with severity + recommended action, deliver one checklist summary via Messages, persist trend totals via agent_memory, emit `kb.health.audit_completed`.\n\n2. **uc_monthly_deep_audit** (monthly by default, opt-in via `deep_audit_enabled`) — runs everything uc_weekly_health_audit does, plus a cross-article contradiction pass over compiled wiki articles (Levenshtein title distance ≤5, body disagreement detection). Emits `kb.health.contradictions_detected` per confirmed pair. Same delivery shape — but the contradiction section sits at the top of the summary.\n\nState: this persona reads; it does not write application state. Its only persistent output is an agent_memory row per run with the totals for trend-line tracking.",
       "tool_guidance": "**Platform IPCs (read-only)**:\n- `obsidian_brain_lint_vault(vault_path?, stale_days)` — Mode 3 primitive. Returns VaultLintReport with stale_notes, broken_wikilinks, orphans, scanned_count. Skip silently when vault_path is not configured.\n- `list_memories(persona_id)` — walks the SQLite memories table for a persona.\n- `list_execution_knowledge(persona_id)` — walks the vector KB.\n\n**Codebase connector** (optional):\n- `file_exists(path)` — verify source files referenced by ingested KB documents still exist.\n- `get_file_metadata(path)` — fetch mtime to compare against KB `ingested_at`.\n\n**file_read** (fallback only):\n- When a KB document references a path the codebase connector can't resolve (e.g., a path outside any registered project), fall back to direct file_read. Never file_write — this audit is strictly read-only.\n\n**Severity rubric**:\n- `high`: broken wikilinks, missing source files, >95% duplicate embeddings, confirmed contradiction pairs.\n- `medium`: stale memories past threshold with zero access, stale embeddings (source mtime > ingested_at), importance-drifted criticals.\n- `low`: orphan vault pages, raw-cluster coverage gaps, single-occurrence stale notes.",
       "error_handling": "Obsidian vault not configured → Mode 3 skipped silently; note in summary 'vault audit not applicable'. Codebase connector absent → Mode 2 source-file existence checks skipped; embedding age is still checked. IPC `obsidian_brain_lint_vault` returns error → include the error text in the summary and continue with the other layers; never halt the whole run. `list_memories` / `list_execution_knowledge` returns empty for a persona → not an error, skip that persona. Cap exceeded in any category → surface first N by severity × recency; append '(N more suppressed)' line. First run (no trend baseline) → deliver summary without trend deltas; start baseline accumulation.",
       "examples": [],
-      "tools": ["file_read"],
+      "tools": [
+        "file_read"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -89,10 +103,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 0", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 0",
+            "timezone": "local"
+          },
           "description": "Default Sunday 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -130,7 +149,12 @@
           {
             "name": "audit_scope",
             "type": "enum",
-            "options": ["all_layers", "memories_and_kb", "memories_only", "vault_only"],
+            "options": [
+              "all_layers",
+              "memories_and_kb",
+              "memories_only",
+              "vault_only"
+            ],
             "default": "all_layers",
             "description": "Which layers to include. Vault audit is always auto-skipped when no vault is configured, regardless of this setting."
           }
@@ -140,30 +164,99 @@
           "max_issues_per_category": "{{param.aq_max_issues}}",
           "audit_scope": "{{param.aq_audit_scope}}"
         },
-        "tool_hints": ["file_read"],
+        "tool_hints": [
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "action", "label": "Audit memories (staleness, contradictions, gaps, drift)" },
-            { "id": "w3", "type": "action", "label": "Audit vector KBs (file existence, stale embeddings, dup detection)" },
-            { "id": "w4", "type": "decision", "label": "Vault configured?" },
-            { "id": "w5", "type": "action", "label": "Run obsidian_brain_lint_vault" },
-            { "id": "w6", "type": "action", "label": "Cap + queue via manual_review" },
-            { "id": "w7", "type": "action", "label": "Persist trend totals + deliver summary" },
-            { "id": "w8", "type": "event", "label": "Emit kb.health.audit_completed" },
-            { "id": "w9", "type": "end", "label": "Weekly audit delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Audit memories (staleness, contradictions, gaps, drift)"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Audit vector KBs (file existence, stale embeddings, dup detection)"
+            },
+            {
+              "id": "w4",
+              "type": "decision",
+              "label": "Vault configured?"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Run obsidian_brain_lint_vault"
+            },
+            {
+              "id": "w6",
+              "type": "action",
+              "label": "Cap + queue via manual_review"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Persist trend totals + deliver summary"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Emit kb.health.audit_completed"
+            },
+            {
+              "id": "w9",
+              "type": "end",
+              "label": "Weekly audit delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5", "variant": "yes", "label": "Yes" },
-            { "source": "w4", "target": "w6", "variant": "no", "label": "No" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "w4",
+              "target": "w6",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            }
           ]
         }
       },
@@ -178,10 +271,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 1 * *",
+            "timezone": "local"
+          },
           "description": "Default 1st-of-month 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -235,27 +333,82 @@
           "max_issues_per_category": "{{param.aq_max_issues}}",
           "contradiction_title_distance": 5
         },
-        "tool_hints": ["file_read"],
+        "tool_hints": [
+          "file_read"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Monthly tick" },
-            { "id": "d2", "type": "action", "label": "Run weekly audit layers (memories + KB + vault)" },
-            { "id": "d3", "type": "action", "label": "Cluster compiled articles by title family" },
-            { "id": "d4", "type": "action", "label": "Detect body disagreement within clusters" },
-            { "id": "d5", "type": "event", "label": "Emit kb.health.contradictions_detected (if any)" },
-            { "id": "d6", "type": "action", "label": "Queue all findings via manual_review" },
-            { "id": "d7", "type": "event", "label": "Emit kb.health.audit_completed (deep=true)" },
-            { "id": "d8", "type": "end", "label": "Monthly deep audit delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Monthly tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Run weekly audit layers (memories + KB + vault)"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Cluster compiled articles by title family"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Detect body disagreement within clusters"
+            },
+            {
+              "id": "d5",
+              "type": "event",
+              "label": "Emit kb.health.contradictions_detected (if any)"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Queue all findings via manual_review"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit kb.health.audit_completed (deep=true)"
+            },
+            {
+              "id": "d8",
+              "type": "end",
+              "label": "Monthly deep audit delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            }
           ]
         }
       }
@@ -264,7 +417,10 @@
       {
         "id": "aq_audit_scope",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_health_audit", "uc_monthly_deep_audit"],
+        "use_case_ids": [
+          "uc_weekly_health_audit",
+          "uc_monthly_deep_audit"
+        ],
         "category": "configuration",
         "question": "Which knowledge layers should the audit cover?",
         "type": "select",
@@ -283,11 +439,19 @@
       {
         "id": "aq_stale_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_health_audit", "uc_monthly_deep_audit"],
+        "use_case_ids": [
+          "uc_weekly_health_audit",
+          "uc_monthly_deep_audit"
+        ],
         "category": "quality",
         "question": "How aggressive should staleness detection be?",
         "type": "select",
-        "options": ["365", "180", "90", "30"],
+        "options": [
+          "365",
+          "180",
+          "90",
+          "30"
+        ],
         "default": "180",
         "maps_to": null,
         "variable_name": "stale_threshold_days",
@@ -297,11 +461,20 @@
       {
         "id": "aq_max_issues",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_health_audit", "uc_monthly_deep_audit"],
+        "use_case_ids": [
+          "uc_weekly_health_audit",
+          "uc_monthly_deep_audit"
+        ],
         "category": "quality",
         "question": "Maximum findings to queue per category per run?",
         "type": "select",
-        "options": ["10", "25", "50", "100", "200"],
+        "options": [
+          "10",
+          "25",
+          "50",
+          "100",
+          "200"
+        ],
         "default": "25",
         "maps_to": null,
         "variable_name": "max_issues_per_category",

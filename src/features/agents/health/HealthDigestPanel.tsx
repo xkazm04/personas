@@ -16,6 +16,7 @@ import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
+import { formatTimestamp } from '@/lib/utils/formatters';
 
 // -- Score ring (compact) ---------------------------------------------
 
@@ -30,7 +31,7 @@ function CompactScoreRing({ score }: { score: HealthScore }) {
 
   return (
     <div className="relative w-12 h-12 flex-shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40">
+      <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40" aria-hidden="true" role="presentation">
         <circle cx="20" cy="20" r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary/10" />
         <circle className="animate-fade-in"
           cx="20" cy="20" r={radius} fill="none" stroke={strokeColor} strokeWidth="3"
@@ -59,11 +60,22 @@ function PersonaDigestRow({
   const infos = check.result.issues.filter((i: DryRunIssue) => i.severity === 'info').length;
   const totalIssues = errors + warnings + infos;
 
+  const severityClass =
+    check.result.status === 'blocked'
+      ? 'border-l-[3px] border-l-red-500 shadow-elevation-1 bg-red-500/[0.03]'
+      : check.result.status === 'partial'
+      ? 'border-l-2 border-l-amber-500'
+      : 'border-l-2 border-l-transparent';
+  const nameClass =
+    check.result.status === 'blocked'
+      ? 'typo-body font-semibold text-foreground truncate'
+      : 'typo-body font-medium text-foreground truncate';
+
   return (
     <button
       type="button"
       onClick={() => onNavigate(check.personaId)}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group"
+      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group ${severityClass}`}
     >
       {/* Persona icon */}
       <div
@@ -79,7 +91,7 @@ function PersonaDigestRow({
 
       {/* Name + issue counts */}
       <div className="flex-1 min-w-0">
-        <p className="typo-body font-medium text-foreground truncate">{check.personaName}</p>
+        <p className={nameClass}>{check.personaName}</p>
         <div className="flex items-center gap-2 mt-0.5">
           {totalIssues === 0 ? (
             <span className="typo-caption text-emerald-400/70 flex items-center gap-1">
@@ -153,7 +165,7 @@ export function HealthDigestPanel() {
     return (
       <div className="rounded-modal border border-primary/20 bg-secondary/40 p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Activity className="w-5 h-5 text-primary/60" />
+          <Activity className="w-5 h-5 text-primary/60" aria-hidden="true" />
           <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
         <p className="typo-body text-foreground mb-4">
@@ -164,7 +176,7 @@ export function HealthDigestPanel() {
           onClick={handleRunDigest}
           className="inline-flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-modal bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-colors"
         >
-          <Activity className="w-4 h-4" />
+          <Activity className="w-4 h-4" aria-hidden="true" />
           {t.agents.health_digest.run_digest}
         </button>
       </div>
@@ -183,12 +195,22 @@ export function HealthDigestPanel() {
     return bIssues - aIssues;
   });
 
+  const blockedRows = sorted.filter((c) => c.result.status === 'blocked');
+  const attentionRows = sorted.filter((c) => c.result.status === 'partial');
+  const healthyRows = sorted.filter((c) => c.result.status === 'ready');
+  const allGroups: Array<{ key: 'blocked' | 'attention' | 'healthy'; label: string; rows: PersonaHealthCheck[] }> = [
+    { key: 'blocked', label: t.agents.health_digest.group_blocked, rows: blockedRows },
+    { key: 'attention', label: t.agents.health_digest.group_attention, rows: attentionRows },
+    { key: 'healthy', label: t.agents.health_digest.group_healthy, rows: healthyRows },
+  ];
+  const groups = allGroups.filter((g) => g.rows.length > 0);
+
   return (
     <div className="rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Activity className="w-5 h-5 text-primary/60" />
+          <Activity className="w-5 h-5 text-primary/60" aria-hidden="true" />
           <h3 className="typo-heading font-semibold text-foreground">{t.agents.health_digest.title}</h3>
         </div>
         <button
@@ -264,17 +286,31 @@ export function HealthDigestPanel() {
         )}
       </div>
 
-      {/* Per-persona list */}
-      <div className="divide-y divide-primary/5">
-        {sorted.map((check) => (
-          <PersonaDigestRow key={check.personaId} check={check} onNavigate={handleNavigate} />
+      {/* Per-persona list — grouped by severity */}
+      <div>
+        {groups.map((group, groupIdx) => (
+          <div
+            key={group.key}
+            className={groupIdx > 0 ? 'border-t border-border/40' : undefined}
+          >
+            <div className="px-4 pt-3 pb-1">
+              <span className="typo-caption uppercase tracking-wide text-muted-foreground/70 font-medium">
+                {group.label}
+              </span>
+            </div>
+            <div className="divide-y divide-primary/5">
+              {group.rows.map((check) => (
+                <PersonaDigestRow key={check.personaId} check={check} onNavigate={handleNavigate} />
+              ))}
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Timestamp */}
       <div className="px-4 py-2 border-t border-primary/10 bg-primary/[0.02]">
         <p className="typo-caption text-foreground">
-          {tx(t.agents.health_digest.last_run, { time: new Date(digest.generatedAt).toLocaleString() })}
+          {tx(t.agents.health_digest.last_run, { time: formatTimestamp(digest.generatedAt) })}
         </p>
       </div>
     </div>

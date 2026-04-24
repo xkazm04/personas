@@ -2,27 +2,27 @@
   "id": "email-lead-extractor",
   "schema_version": 3,
   "name": "Email Lead Extractor",
-  "description": "Always-on Gmail lead intake. Scans inbound Primary-category email, extracts structured contacts via header + body + signature NLP, scores every candidate on a 4-signal qualification model, and routes On Fire leads through manual review while logging every step to an auditable database.",
+  "description": "Always-on email lead intake. Scans inbound Primary-category email, extracts structured contacts via header + body + signature NLP, scores every candidate on a 4-signal qualification model, and routes On Fire leads through manual review while logging every step to an auditable database.",
   "icon": "Mail",
   "color": "#3b82f6",
   "category": [
     "sales"
   ],
   "service_flow": [
-    "Gmail",
+    "email",
     "Local Database"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Gmail",
+      "email",
       "Local Database"
     ],
     "persona": {
       "goal": "Turn a noisy inbox into a qualified pipeline — never miss a real lead, never contaminate the database, and fast-track On Fire candidates for human review.",
       "identity": {
         "role": "Always-on sales intake agent that converts inbound Gmail into qualified lead records.",
-        "description": "Polls the Gmail Primary category, filters non-lead signals (unsubscribes, auto-replies, newsletters), extracts structured contact data via layered NLP (header + body + signature), scores each candidate on a weighted four-signal model (domain quality, role seniority, intent strength, data completeness), applies tiered qualification (Cold / Warm / Hot / On Fire), and persists records with three-tier deduplication."
+        "description": "Polls the email Primary category, filters non-lead signals (unsubscribes, auto-replies, newsletters), extracts structured contact data via layered NLP (header + body + signature), scores each candidate on a weighted four-signal model (domain quality, role seniority, intent strength, data completeness), applies tiered qualification (Cold / Warm / Hot / On Fire), and persists records with three-tier deduplication."
       },
       "voice": {
         "style": "Operator-grade, data-first, zero hype. Reads like a sales-ops analyst's log — metrics and evidence before commentary.",
@@ -52,9 +52,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities cooperate:\n\n1. **uc_inbox_scan** (polling, default every 5 minutes) — fetch Gmail with `q='newer_than:1d category:primary'` and `maxResults=max_results_per_scan`, dedup against `data/processed_emails.json`, filter non-lead signals (no-reply sender, unsubscribe/OOO keywords, SPAM/TRASH labels). For each remaining email: multi-layer extraction (header → body → signature block), intent signal classification, structured lead record assembly with `extraction_confidence`. Hand off to uc_qualification.\n\n2. **uc_qualification** (event-listen on extractions) — apply the weighted 4-signal scoring model: email domain quality (25%), role seniority (25%), intent strength (30% — subject-line keywords 1.5x weight), data completeness (20%). Contextual adjustments: reply-to-outbound +0.15, multiple contacts from same domain +0.10, off-hours send +0.05. Classify into tiers (On Fire ≥ 0.85 / Hot 0.65-0.84 / Warm 0.40-0.64 / Cold < 0.40). Three-tier dedup: exact email (update + reinforce), fuzzy name+company Levenshtein ≤ 2 (flag as potential duplicate), domain clustering (3+ at the same domain → emit account_cluster_detected). Persist to `data/leads.json`. Emit `sales.lead.created` or `sales.lead.score_changed`.\n\n3. **uc_human_review** (event-listen on On Fire leads + potential duplicates + low-confidence extractions) — route to manual_review with full context (original email snippet, scoring breakdown, duplicate candidates, recommendation). Apply human decisions.\n\nState: `data/leads.json` (master), `data/processed_emails.json` (Message-ID ledger), `data/skipped_emails.json` (audit trail), `data/daily_stats.json` (metrics), `data/domain_blocklist.json` (configurable ignore).",
-      "tool_guidance": "**Gmail API**:\n- `GET /gmail/v1/users/me/messages?q=newer_than:1d+category:primary&maxResults={max_results_per_scan}` — list recent.\n- `GET /gmail/v1/users/me/messages/{id}?format=full` — headers + body parts.\n- Parse `payload.headers`: `From`, `Reply-To`, `Subject`, `Date`, `Message-ID`, `In-Reply-To`.\n- Parse `payload.parts` for `text/plain` and `text/html` MIME.\n- Quota: 10,000 units/day (1 per read). At 5-min interval with 10 max_results, ~21 units/cycle → ~475 cycles/day.\n- Skip messages tagged `SPAM` or `TRASH` even if they match the query.\n\n**Extraction**:\n- Name from `From` header display; handle `Last, First` format, strip titles/suffixes.\n- Domain analysis: strip TLD and common prefixes; corporate vs business provider vs free email.\n- Phone: international `+1-555-123-4567`, parenthetical `(555) 123-4567`, dotted `555.123.4567` — normalize to E.164.\n- Titles: seniority keywords (Director, Manager, VP, Chief, Head of, Lead, Founder, Owner, Partner) + domain terms.\n- Signature detection: delimiters `--` / `___` / `Sent from` / lines of dashes; parse below delimiter for structured lines.\n- Intent keywords: High (pricing, demo, trial, RFP, budget, timeline, decision), Medium (features, comparison, integration, evaluation), Low (general inquiry), Non-lead (unsubscribe, OOO, newsletter confirmation, support ticket).\n\n**Scoring (0.0-1.0)**:\n- Domain: corporate 0.8-1.0, business provider 0.5, free (gmail/yahoo) 0.2, disposable 0.0.\n- Seniority: C-suite/Founder 1.0, VP/Director 0.8, Manager/Head 0.6, IC 0.4, Unknown 0.3.\n- Intent: High 0.9-1.0, Medium 0.5-0.7, Low 0.2-0.4, None 0.1. Subject matches weighted 1.5x.\n- Completeness: all fields 1.0, name+email+company+title 0.8, name+email+company 0.6, name+email 0.3.\n- Weighted sum + contextual adjustments (capped at 1.0).\n\n**Local DB (file_read / file_write)**:\n- Read-modify-write atomic pattern on every update.\n- Daily backup to `data/backups/leads_{YYYY-MM-DD}.json`.\n- Initialize missing files with empty array `[]` or object `{}` on first run.",
-      "error_handling": "Gmail 401/403 → emit `persona.error`, pause polling, wait for credential rotation (never retry). Gmail 429 → skip cycle entirely, resume next interval; do not reduce scan window. Gmail 5xx → retry once after 30s; if still failing, skip the cycle. Empty results → log as successful empty cycle, do not treat as error. Malformed From header → extract what's available, set `extraction_confidence: 0.3`, flag for review, never skip the email. Empty body → header-only extraction with `status: partial_extraction`. Encoding issues → try latin-1 / windows-1252 fallback; flag for review if still unreadable. Exact Message-ID duplicate → silently skip. Fuzzy duplicate → create with `status: pending_dedup_review`, route to manual_review. `leads.json` parse failure → write to `leads_recovery.json`, emit critical error event. Never lose an email — all downstream failures tag the email as processed with `status: extraction_failed` and the reason.",
+      "operating_instructions": "Three capabilities cooperate: 1. **uc_inbox_scan** (polling, default every 5 minutes) — fetch email with `q='newer_than:1d category:primary'` and `maxResults=max_results_per_scan`, dedup against `data/processed_emails.json`, filter non-lead signals (no-reply sender, unsubscribe/OOO keywords, SPAM/TRASH labels). For each remaining email: multi-layer extraction (header → body → signature block), intent signal classification, structured lead record assembly with `extraction_confidence`. Hand off to uc_qualification. 2. **uc_qualification** (event-listen on extractions) — apply the weighted 4-signal scoring model: email domain quality (25%), role seniority (25%), intent strength (30% — subject-line keywords 1.5x weight), data completeness (20%). Contextual adjustments: reply-to-outbound +0.15, multiple contacts from same domain +0.10, off-hours send +0.05. Classify into tiers (On Fire ≥ 0.85 / Hot 0.65-0.84 / Warm 0.40-0.64 / Cold < 0.40). Three-tier dedup: exact email (update + reinforce), fuzzy name+company Levenshtein ≤ 2 (flag as potential duplicate), domain clustering (3+ at the same domain → emit account_cluster_detected). Persist to `data/leads.json`. Emit `sales.lead.created` or `sales.lead.score_changed`. 3. **uc_human_review** (event-listen on On Fire leads + potential duplicates + low-confidence extractions) — route to manual_review with full context (original email snippet, scoring breakdown, duplicate candidates, recommendation). Apply human decisions. State: `data/leads.json` (master), `data/processed_emails.json` (Message-ID ledger), `data/skipped_emails.json` (audit trail), `data/daily_stats.json` (metrics), `data/domain_blocklist.json` (configurable ignore).",
+      "tool_guidance": "**email API**:\n- `GET /gmail/v1/users/me/messages?q=newer_than:1d+category:primary&maxResults={max_results_per_scan}` — list recent.\n- `GET /gmail/v1/users/me/messages/{id}?format=full` — headers + body parts.\n- Parse `payload.headers`: `From`, `Reply-To`, `Subject`, `Date`, `Message-ID`, `In-Reply-To`.\n- Parse `payload.parts` for `text/plain` and `text/html` MIME.\n- Quota: 10,000 units/day (1 per read). At 5-min interval with 10 max_results, ~21 units/cycle → ~475 cycles/day.\n- Skip messages tagged `SPAM` or `TRASH` even if they match the query. **Extraction**:\n- Name from `From` header display; handle `Last, First` format, strip titles/suffixes.\n- Domain analysis: strip TLD and common prefixes; corporate vs business provider vs free email.\n- Phone: international `+1-555-123-4567`, parenthetical `(555) 123-4567`, dotted `555.123.4567` — normalize to E.164.\n- Titles: seniority keywords (Director, Manager, VP, Chief, Head of, Lead, Founder, Owner, Partner) + domain terms.\n- Signature detection: delimiters `--` / `___` / `Sent from` / lines of dashes; parse below delimiter for structured lines.\n- Intent keywords: High (pricing, demo, trial, RFP, budget, timeline, decision), Medium (features, comparison, integration, evaluation), Low (general inquiry), Non-lead (unsubscribe, OOO, newsletter confirmation, support ticket). **Scoring (0.0-1.0)**:\n- Domain: corporate 0.8-1.0, business provider 0.5, free (gmail/yahoo) 0.2, disposable 0.0.\n- Seniority: C-suite/Founder 1.0, VP/Director 0.8, Manager/Head 0.6, IC 0.4, Unknown 0.3.\n- Intent: High 0.9-1.0, Medium 0.5-0.7, Low 0.2-0.4, None 0.1. Subject matches weighted 1.5x.\n- Completeness: all fields 1.0, name+email+company+title 0.8, name+email+company 0.6, name+email 0.3.\n- Weighted sum + contextual adjustments (capped at 1.0). **Local DB (file_read / file_write)**:\n- Read-modify-write atomic pattern on every update.\n- Daily backup to `data/backups/leads_{YYYY-MM-DD}.json`.\n- Initialize missing files with empty array `[]` or object `{}` on first run.",
+      "error_handling": "email 401/403 → emit `persona.error`, pause polling, wait for credential rotation (never retry). email 429 → skip cycle entirely, resume next interval; do not reduce scan window. email 5xx → retry once after 30s; if still failing, skip the cycle. Empty results → log as successful empty cycle, do not treat as error. Malformed From header → extract what's available, set `extraction_confidence: 0.3`, flag for review, never skip the email. Empty body → header-only extraction with `status: partial_extraction`. Encoding issues → try latin-1 / windows-1252 fallback; flag for review if still unreadable. Exact Message-ID duplicate → silently skip. Fuzzy duplicate → create with `status: pending_dedup_review`, route to manual_review. `leads.json` parse failure → write to `leads_recovery.json`, emit critical error event. Never lose an email — all downstream failures tag the email as processed with `status: extraction_failed` and the reason.",
       "examples": [],
       "tools": [
         "http_request",
@@ -96,7 +96,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API.\n2. Credentials → Create OAuth 2.0 Client ID (type: Desktop app).\n3. Complete the OAuth consent screen with scope `https://www.googleapis.com/auth/gmail.readonly`.\n4. Run the OAuth flow to obtain a refresh token.\n5. The agent needs only read access — it never sends, modifies, or deletes email."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable email API.\n2. Credentials → Create OAuth 2.0 Client ID (type: Desktop app).\n3. Complete the OAuth consent screen with scope `https://www.googleapis.com/auth/gmail.readonly`.\n4. Run the OAuth flow to obtain a refresh token.\n5. The agent needs only read access — it never sends, modifies, or deletes email."
         },
         {
           "name": "messaging",
@@ -124,7 +124,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Select a messaging credential from the vault (Slack, Teams, etc.) with chat-write scope on the alerts channel.\n2. Invite the bot to the channel.\n3. Paste the channel identifier."
+          "setup_instructions": "1. Select a messaging credential from the vault (messaging, messaging, etc.) with chat-write scope on the alerts channel.\n2. Invite the bot to the channel.\n3. Paste the channel identifier."
         }
       ],
       "notification_channels_default": [
@@ -139,8 +139,8 @@
       {
         "id": "uc_inbox_scan",
         "title": "Inbox Scan & Extraction",
-        "description": "Short-interval Gmail polling loop. Filters non-lead signals, performs multi-layer extraction (header / body / signature), assembles structured lead records with confidence scores, and hands off to the qualification capability. Default every 5 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Continuous Gmail polling with non-lead filtering and NLP extraction.",
+        "description": "Short-interval email polling loop. Filters non-lead signals, performs multi-layer extraction (header / body / signature), assembles structured lead records with confidence scores, and hands off to the qualification capability. Default every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Continuous email polling with non-lead filtering and NLP extraction.",
         "category": "analysis",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -172,7 +172,7 @@
             "description": "Payload: { lead_candidate, extraction_confidence, source_email_id }. Consumed by uc_qualification."
           }
         ],
-        "error_handling": "Gmail 401 → pause, wait for credential refresh. Gmail 429 → skip cycle, resume next interval. Parse failures → partial extraction with confidence 0.3, still hand off. Empty results → log empty cycle, no action.",
+        "error_handling": "email 401 → pause, wait for credential refresh. email 429 → skip cycle, resume next interval. Parse failures → partial extraction with confidence 0.3, still hand off. Empty results → log empty cycle, no action.",
         "input_schema": [
           {
             "name": "max_results_per_scan",
@@ -180,7 +180,7 @@
             "default": 10,
             "min": 1,
             "max": 25,
-            "description": "Max Gmail messages per polling cycle."
+            "description": "Max email messages per polling cycle."
           },
           {
             "name": "lookback_hours",
@@ -188,7 +188,7 @@
             "default": 24,
             "min": 1,
             "max": 168,
-            "description": "Gmail `newer_than` scan window per cycle."
+            "description": "email `newer_than` scan window per cycle."
           },
           {
             "name": "focus_filter",
@@ -224,7 +224,7 @@
             {
               "id": "s2",
               "type": "connector",
-              "label": "List Gmail Primary-category new mail",
+              "label": "List email Primary-category new mail",
               "connector": "email"
             },
             {
@@ -781,7 +781,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -800,7 +800,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

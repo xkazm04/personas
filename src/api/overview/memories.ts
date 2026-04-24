@@ -111,7 +111,8 @@ export interface MemoryReviewDetail {
   title: string;
   score: number;
   reason: string;
-  action: 'kept' | 'deleted';
+  action: 'kept' | 'deleted' | 'error';
+  error?: string;
 }
 
 export interface MemoryReviewResult {

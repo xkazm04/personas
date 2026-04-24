@@ -14,6 +14,7 @@ use crate::error::AppError;
 use crate::utils::sanitization::sanitize_secrets;
 
 use super::connector_strategy;
+#[cfg(feature = "desktop")]
 use super::desktop_discovery;
 
 /// Result of a credential healthcheck.
@@ -202,7 +203,13 @@ fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
         .iter()
         .find(|(name, _)| *name == service_type)?;
 
+    // Without the `desktop` feature the discovery helper isn't compiled; report
+    // installation as unknown so the caller falls back to its other strategies
+    // (CLI probes, HTTP pings). Keeps non-desktop builds linkable.
+    #[cfg(feature = "desktop")]
     let (installed, binary_path) = desktop_discovery::is_desktop_app_installed(connector_name);
+    #[cfg(not(feature = "desktop"))]
+    let (installed, binary_path): (bool, Option<String>) = (false, None);
 
     if installed {
         let path_info = binary_path

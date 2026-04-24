@@ -5,11 +5,21 @@
   "description": "A rigorous editor agent that applies the Stanford 'Writing in the Sciences' methodology to user-submitted drafts. Flags passive voice, dead-weight phrases, weak verbs, dangling modifiers, and academic jargon -- and explains rule-by-rule WHY each change improves the sentence. Returns a side-by-side diff with rule citations and a transparent change log so the author can accept, reject, or counter-edit each suggestion. Learns from accepted/rejected edits to adapt to author voice without breaking the underlying style rules.",
   "icon": "PenLine",
   "color": "#0EA5E9",
-  "category": ["content"],
+  "category": [
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Document Input", "Local Database", "Messages"],
+  "service_flow": [
+    "Document Input",
+    "Local Database",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Document Input", "Local Database", "Messages"],
+    "service_flow": [
+      "Document Input",
+      "Local Database",
+      "Messages"
+    ],
     "persona": {
       "goal": "Make your scientific prose tighter, more active, and more honest — rule by rule, with the reasoning in plain sight.",
       "identity": {
@@ -45,11 +55,14 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability: edit a scientific draft and learn from the author's decisions.\n\n**uc_edit_draft** — manual trigger with a draft (pasted text, file path, or section reference).\n\n1. Detect the document type (abstract / introduction / methods / results / discussion / general). Methods allows some passive voice; abstracts have zero tolerance for filler; results and discussion are strict.\n2. Load author memory: per-rule acceptance rates, domain vocabulary (terms not to flag as jargon), common rejection patterns, learned voice notes. Load `editor_state.json` for aggregate stats.\n3. Pre-scan mechanically: sentences >30 words, passive voice constructions, nominalizations, dead-weight phrases, weak verbs (be/have/make/do/get as main verb), subject-verb distance >8 words. No AI judgement yet — just flag candidates.\n4. Apply the Sainani rules per flagged sentence. For each edit, produce a structured suggestion with: sentence_index, original, suggested, primary_rule, secondary_rules, explanation, words_saved, confidence (high/medium/low). Apply memory-informed filtering: lower confidence on frequently-rejected rules, skip jargon flags on domain vocabulary, favor patterns the author consistently accepts.\n5. Build three outputs:\n   - **Diff view**: side-by-side per sentence with rule citations and one-line explanations.\n   - **Clean rewrite**: full draft with all suggested edits applied — the author can accept in one click.\n   - **Style report**: word counts before/after, edits by rule, top 3 strongest improvements, unflagged-but-suspicious patterns, author-voice notes.\n6. Deliver via Messages. The author responds with: accept all / accept some (sentence indices) / reject all (with reason) / counter-edit (provides own version) / request stricter or looser pass.\n7. Learn from decisions: increment per-rule acceptance counters, record rejections with the specific phrase, learn counter-edit voice deltas, add rejected jargon flags to domain vocabulary, surface voice notes after 20+ edits per rule.\n8. Update `editor_state.json`: total drafts edited, aggregate acceptance rate, words trimmed this draft. Emit `scientific_editor.draft.reviewed` after delivery, `scientific_editor.changes.accepted` after the author responds, `scientific_editor.voice.learned` when a 20+ edit threshold surfaces a new voice insight.\n\nState lives in `editor_state.json` (aggregate stats per author), `author_vocabulary.json` (domain terms not to flag), `author_voice.json` (per-rule acceptance rates, voice notes), `recent_drafts/{NN}_diff.json` (last 10 drafts with suggested edits and acceptance status).",
+      "operating_instructions": "One capability: edit a scientific draft and learn from the author's decisions.\n\n**uc_edit_draft** — manual trigger with a draft (pasted text, file path, or section reference).\n\n1. Detect the document type (abstract / introduction / methods / results / discussion / general). Methods allows some passive voice; abstracts have zero tolerance for filler; results and discussion are strict.\n2. Load author memory: per-rule acceptance rates, domain vocabulary (terms not to flag as jargon), common rejection patterns, learned voice notes. Load `editor_state.json` for aggregate stats.\n3. Pre-scan mechanically: sentences >30 words, passive voice constructions, nominalizations, dead-weight phrases, weak verbs (be/have/make/do/get as main verb), subject-verb distance >8 words. No AI judgement yet — just flag candidates.\n4. Apply the Sainani rules per flagged sentence. For each edit, produce a structured suggestion with: sentence_index, original, suggested, primary_rule, secondary_rules, explanation, words_saved, confidence (high/medium/low). Apply memory-informed filtering: lower confidence on frequently-rejected rules, skip jargon flags on domain vocabulary, favor patterns the author consistently accepts.\n5. Build three outputs:\n - **Diff view**: side-by-side per sentence with rule citations and one-line explanations.\n - **Clean rewrite**: full draft with all suggested edits applied — the author can accept in one click.\n - **Style report**: word counts before/after, edits by rule, top 3 strongest improvements, unflagged-but-suspicious patterns, author-voice notes.\n6. Deliver via Messages. The author responds with: accept all / accept some (sentence indices) / reject all (with reason) / counter-edit (provides own version) / request stricter or looser pass.\n7. Learn from decisions: increment per-rule acceptance counters, record rejections with the specific phrase, learn counter-edit voice deltas, add rejected jargon flags to domain vocabulary, surface voice notes after 20+ edits per rule.\n8. Update `editor_state.json`: total drafts edited, aggregate acceptance rate, words trimmed this draft. Emit `scientific_editor.draft.reviewed` after delivery, `scientific_editor.changes.accepted` after the author responds, `scientific_editor.voice.learned` when a 20+ edit threshold surfaces a new voice insight.\n\nState lives in `editor_state.json` (aggregate stats per author), `author_vocabulary.json` (domain terms not to flag), `author_voice.json` (per-rule acceptance rates, voice notes), `recent_drafts/{NN}_diff.json` (last 10 drafts with suggested edits and acceptance status).",
       "tool_guidance": "**Rule catalog**:\n- R1 — dead-weight phrases (`it should be noted that`, `in order to`, `due to the fact that`, `a number of`, `the fact that`, etc.)\n- R2 — passive to active (be + past participle)\n- R3 — unbury the verb (analysis-of, examination-of, observation-of)\n- R4 — replace weak verbs (be/have/make/do/get as main verb)\n- R5 — one idea per sentence (>30 words with multiple clauses)\n- R6 — concrete subject (starts with `It is` / `There are` / `This shows that`)\n- R7 — no throat-clearing (`In this paper, we will discuss`)\n- R8 — subject-verb distance (verb >8 words after subject)\n- R9 — jargon -> plain language (`utilize`->`use`, `facilitate`->`help`, etc.)\n- R10 — hedging calibration (overstatement: `proves`, `clearly`; underhedging: `may possibly`)\n- R11 — cut redundant pairs (`each and every`, `basic and fundamental`)\n- R12 — break long noun strings (4+ nouns in a row)\n\n**Dead-weight phrase catalog (R1)**:\n`it should be noted that` / `it is important to note that` / `in order to`->`to` / `due to the fact that`->`because` / `in spite of the fact that`->`although` / `a number of`->`several` / `the fact that` (delete) / `in the event that`->`if` / `at this point in time`->`now` / `in close proximity to`->`near` / `prior to`->`before` / `subsequent to`->`after` / `with regard to`->`about` / `for the purpose of`->`to` / `in light of the fact that`->`because` / `the question as to whether`->`whether`.\n\n**Weak verb replacements (R4)**:\n`is suggestive of`->`suggests` / `made the decision to`->`decided to` / `have an effect on`->`affect` / `has the ability to`->`can` / `is in possession of`->`has` / `makes use of`->`uses` / `gives consideration to`->`considers` / `is in need of`->`needs` / `is reflective of`->`reflects` / `is indicative of`->`indicates`.\n\n**Jargon substitutions (R9)** — domain vocabulary takes precedence:\n`utilize`->`use` / `facilitate`->`help` / `approximately`->`about` / `endeavor`->`try` / `commence`->`begin` / `terminate`->`end` / `assist`->`help` / `obtain`->`get` / `sufficient`->`enough` / `numerous`->`many` / `demonstrate`->`show` / `methodology`->`method` / `individuals`->`people`.\n\n**Hedging red flags (R10)**:\nOverstatement: `proves` / `clearly` / `obviously` / `undoubtedly` / `always` / `never` / `the most` / `the best`.\nUnderhedging: `may possibly` / `could potentially` / `might perhaps` / `it is suggested that it is possible that`.\n\n**State files**:\n- `editor_state.json` — per-author: total drafts, acceptance rates by rule, words trimmed, top rejected rules.\n- `author_vocabulary.json` — domain terms not to flag as jargon.\n- `author_voice.json` — per-rule acceptance rates, learned voice notes.\n- `recent_drafts/{NN}_diff.json` — last 10 drafts with edits and outcomes.",
       "error_handling": "Draft <50 words -> apply rules but note more text gives better voice insights. Draft >10k words -> suggest splitting by section; process first 5k. Code blocks -> skip entirely, note skipped sections in style report. LaTeX/math -> preserve exactly inside `$...$` or `\\(...\\)`. Non-English draft -> decline politely (methodology is English-specific). Zero suggestions -> deliver positive style report, do not invent edits. >50 suggestions -> limit to top 50 by (words_saved + confidence), note that stricter mode shows all. Conflicting rules on same sentence -> pick higher-impact as primary. First-run author (no memory) -> default confidence for all rules, note that agent will adapt over 5-10 drafts. author_voice.json corrupted -> rebuild from editor_state.json; if both corrupted, treat as first-run. Ambiguous author response (`accept most`) -> ask for specific sentence indices. Content edit requested -> decline politely, offer to flag under-supported claims instead. Messages failure -> save diff + rewrite to `recent_drafts/NN_pending_review.json`, emit `scientific_editor.review.pending`. Diff too large for one Messages payload -> split by section with labels.",
       "examples": [],
-      "tools": ["file_read", "file_write"],
+      "tools": [
+        "file_read",
+        "file_write"
+      ],
       "connectors": [],
       "notification_channels_default": [
         {
@@ -111,14 +124,25 @@
           {
             "name": "document_type",
             "type": "enum",
-            "options": ["abstract", "introduction", "methods", "results", "discussion", "general"],
+            "options": [
+              "abstract",
+              "introduction",
+              "methods",
+              "results",
+              "discussion",
+              "general"
+            ],
             "default": "general",
             "description": "Document type. Abstracts get strictest rules; methods allow some passive voice."
           },
           {
             "name": "strictness",
             "type": "enum",
-            "options": ["strict", "standard", "lenient"],
+            "options": [
+              "strict",
+              "standard",
+              "lenient"
+            ],
             "default": "standard",
             "description": "Strict flags everything for learning signal; standard is balanced; lenient surfaces only highest-impact edits."
           }
@@ -128,31 +152,101 @@
           "document_type": "general",
           "strictness": "{{param.aq_default_strictness}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "e1", "type": "start", "label": "Manual: draft submitted" },
-            { "id": "e2", "type": "action", "label": "Detect document type + load author memory" },
-            { "id": "e3", "type": "action", "label": "Pre-scan (mechanical flags)" },
-            { "id": "e4", "type": "action", "label": "Apply Sainani rules with memory filtering" },
-            { "id": "e5", "type": "action", "label": "Build diff + rewrite + style report" },
-            { "id": "e6", "type": "action", "label": "Deliver via Messages" },
-            { "id": "e7", "type": "decision", "label": "Author response (accept / reject / counter)" },
-            { "id": "e8", "type": "action", "label": "Update author voice memory" },
-            { "id": "e9", "type": "event", "label": "Emit changes.accepted + voice.learned (if threshold)" },
-            { "id": "e10", "type": "end", "label": "Edit cycle complete" }
+            {
+              "id": "e1",
+              "type": "start",
+              "label": "Manual: draft submitted"
+            },
+            {
+              "id": "e2",
+              "type": "action",
+              "label": "Detect document type + load author memory"
+            },
+            {
+              "id": "e3",
+              "type": "action",
+              "label": "Pre-scan (mechanical flags)"
+            },
+            {
+              "id": "e4",
+              "type": "action",
+              "label": "Apply Sainani rules with memory filtering"
+            },
+            {
+              "id": "e5",
+              "type": "action",
+              "label": "Build diff + rewrite + style report"
+            },
+            {
+              "id": "e6",
+              "type": "action",
+              "label": "Deliver via Messages"
+            },
+            {
+              "id": "e7",
+              "type": "decision",
+              "label": "Author response (accept / reject / counter)"
+            },
+            {
+              "id": "e8",
+              "type": "action",
+              "label": "Update author voice memory"
+            },
+            {
+              "id": "e9",
+              "type": "event",
+              "label": "Emit changes.accepted + voice.learned (if threshold)"
+            },
+            {
+              "id": "e10",
+              "type": "end",
+              "label": "Edit cycle complete"
+            }
           ],
           "edges": [
-            { "source": "e1", "target": "e2" },
-            { "source": "e2", "target": "e3" },
-            { "source": "e3", "target": "e4" },
-            { "source": "e4", "target": "e5" },
-            { "source": "e5", "target": "e6" },
-            { "source": "e6", "target": "e7" },
-            { "source": "e7", "target": "e8" },
-            { "source": "e8", "target": "e9" },
-            { "source": "e9", "target": "e10" }
+            {
+              "source": "e1",
+              "target": "e2"
+            },
+            {
+              "source": "e2",
+              "target": "e3"
+            },
+            {
+              "source": "e3",
+              "target": "e4"
+            },
+            {
+              "source": "e4",
+              "target": "e5"
+            },
+            {
+              "source": "e5",
+              "target": "e6"
+            },
+            {
+              "source": "e6",
+              "target": "e7"
+            },
+            {
+              "source": "e7",
+              "target": "e8"
+            },
+            {
+              "source": "e8",
+              "target": "e9"
+            },
+            {
+              "source": "e9",
+              "target": "e10"
+            }
           ]
         }
       }
@@ -161,7 +255,9 @@
       {
         "id": "aq_default_strictness",
         "scope": "capability",
-        "use_case_ids": ["uc_edit_draft"],
+        "use_case_ids": [
+          "uc_edit_draft"
+        ],
         "category": "configuration",
         "question": "How strict should the editor be by default?",
         "type": "select",
@@ -179,7 +275,9 @@
       {
         "id": "aq_primary_document_types",
         "scope": "capability",
-        "use_case_ids": ["uc_edit_draft"],
+        "use_case_ids": [
+          "uc_edit_draft"
+        ],
         "category": "domain",
         "question": "What kinds of documents will you mostly edit?",
         "type": "select",
@@ -197,7 +295,9 @@
       {
         "id": "aq_jargon_handling",
         "scope": "capability",
-        "use_case_ids": ["uc_edit_draft"],
+        "use_case_ids": [
+          "uc_edit_draft"
+        ],
         "category": "configuration",
         "question": "How should the agent handle domain vocabulary?",
         "type": "select",

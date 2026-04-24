@@ -2,7 +2,7 @@
   "id": "autonomous-issue-resolver",
   "schema_version": 3,
   "name": "Autonomous Issue Resolver",
-  "description": "Keeps the engineering support backlog healthy by actively resolving stale Jira issues. Reads every comment thread, classifies issue state, gauges reporter sentiment, matches symptoms against Notion docs and a local solutions knowledge base, posts confidence-scored resolutions, escalates angry or high-priority reporters to engineering management, and grows the knowledge base with every confirmed fix.",
+  "description": "Keeps the engineering support backlog healthy by actively resolving stale Jira issues. Reads every comment thread, classifies issue state, gauges reporter sentiment, matches symptoms against knowledge base docs and a local solutions knowledge base, posts confidence-scored resolutions, escalates angry or high-priority reporters to engineering management, and grows the knowledge base with every confirmed fix.",
   "icon": "Wrench",
   "color": "#EA580C",
   "category": [
@@ -11,14 +11,14 @@
   "is_published": true,
   "service_flow": [
     "Jira",
-    "Notion",
-    "Slack"
+    "knowledge base",
+    "messaging"
   ],
   "payload": {
     "service_flow": [
       "Jira",
-      "Notion",
-      "Slack"
+      "knowledge base",
+      "messaging"
     ],
     "persona": {
       "goal": "Stop the support backlog from rotting — read every thread, resolve what matches, escalate what's angry + urgent, close what's abandoned, and grow a solutions KB that makes next week faster.",
@@ -41,11 +41,11 @@
       "constraints": [
         "Never post a solution below the configured confidence threshold.",
         "Never auto-close an issue with a pending solution comment inside its 14-day confirmation window.",
-        "Never silently drop an escalation message — queue and retry on Slack failure.",
+        "Never silently drop an escalation message — queue and retry on the messaging channel failure.",
         "Never post duplicate comments — always check issue state before acting."
       ],
       "decision_principles": [
-        "When Notion and local KB disagree, prefer the local KB entry with higher times_confirmed — proven efficacy outranks documentation currency.",
+        "When knowledge base and local KB disagree, prefer the local KB entry with higher times_confirmed — proven efficacy outranks documentation currency.",
         "When sentiment and priority conflict (angry + P4 vs patient + P1), priority wins — anger alone does not buy queue position.",
         "When multiple KB entries match at equal confidence, prefer the most recently confirmed solution.",
         "When reporter and assignee are the same person, damp sentiment escalation — they may be frustrated with themselves."
@@ -53,9 +53,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities share one goal — keep the support backlog healthy:\n\n1. **Stale Issue Triage** (default 15-min polling) — query Jira for issues open beyond the stale threshold, classify state (waiting on reporter / waiting on team / blocked / abandoned / stale-but-active / silently resolved), analyze reporter sentiment 1-10 from comment language, search Notion docs + data/solutions_kb.json for matching solutions, post solutions above the confidence threshold, escalate angry + P1/P2 to engineering manager via Slack DM, auto-close abandoned issues (if enabled). Process up to 20 issues per cycle to respect API rate limits.\n\n2. **Support Digest** (default 9 AM daily) — read state files written by the triage capability; post a Slack summary like \"Yesterday: 3 auto-resolved, 2 escalated, 5 auto-closed, 8 still stale\" with links to notable issues.\n\n3. **Issue Health Report** (default Monday 9 AM) — comprehensive report covering stale issue trends, auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, and week-over-week comparison.\n\nCadences are defaults — final values set at the trigger-composition step. State lives in data/issue_states.json (classifications + sentiment + actions), data/solutions_kb.json (confirmed-solution patterns with confidence scores and times_confirmed), data/pending_confirmations.json (14-day expiry tracking), data/escalation_log.json (escalation audit trail). Write all state atomically at cycle end.",
-      "tool_guidance": "### Jira (http_request + jira connector)\n- `POST /rest/api/3/search` — JQL: `project IN ({projects}) AND status NOT IN (Done, Closed, Resolved) AND updated <= -{stale_days}d ORDER BY priority DESC, updated ASC`\n- `GET /rest/api/3/issue/{key}?expand=changelog,renderedFields` — full issue with history\n- `GET /rest/api/3/issue/{key}/comment?orderBy=-created&maxResults=100` — thread for sentiment\n- `POST /rest/api/3/issue/{key}/comment` — ADF body: `{\"body\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]}}`\n- `GET /rest/api/3/issue/{key}/transitions` then `POST /rest/api/3/issue/{key}/transitions` — close\nHeaders: `Authorization: Basic base64(email:api_token)`\n\n### Notion (http_request + notion connector)\n- `POST /v1/databases/{db_id}/query` — search KB by title/tags\n- `GET /v1/blocks/{page_id}/children?page_size=100` — extract solution content\n- `POST /v1/search` — workspace fallback when db query is empty\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` — channels, DMs, Block Kit reports\n- `GET /api/users.lookupByEmail?email={email}` — resolve manager email to user_id for DM\nHeaders: `Authorization: Bearer {bot_token}`\n\n### Local storage (file_read / file_write)\nState files live under `data/`. Always write complete JSON (never partial appends). Keep backups of solutions_kb.json in data/kb_backups/ on every 10th write.",
-      "error_handling": "Jira 429 → back off per Retry-After, resume next cycle, do not reprocess handled issues. Jira 401 → emit persona.error, await credential refresh. Notion 5xx → skip KB search this cycle; classify + analyze sentiment only; note KB-skipped in issue state. Slack failure → queue messages in data/pending_slack.json and retry next cycle; never drop escalations. Comment post failure → log to data/error_log.json; do not retry same cycle (avoids duplicates). Corrupted state file → reinitialize from Jira query, classify only (no actions). Issue closed externally during processing → skip remaining actions, record external closure. Reporter = assignee → damp sentiment weighting. Issues with 100+ comments → sentiment on last 30, classification on full thread. First-run → classify all stale issues but take no action until the second cycle.",
+      "operating_instructions": "Three capabilities share one goal — keep the support backlog healthy: 1. **Stale Issue Triage** (default 15-min polling) — query Jira for issues open beyond the stale threshold, classify state (waiting on reporter / waiting on team / blocked / abandoned / stale-but-active / silently resolved), analyze reporter sentiment 1-10 from comment language, search knowledge base docs + data/solutions_kb.json for matching solutions, post solutions above the confidence threshold, escalate angry + P1/P2 to engineering manager via direct messages, auto-close abandoned issues (if enabled). Process up to 20 issues per cycle to respect API rate limits. 2. **Support Digest** (default 9 AM daily) — read state files written by the triage capability; post a messaging summary like \"Yesterday: 3 auto-resolved, 2 escalated, 5 auto-closed, 8 still stale\" with links to notable issues. 3. **Issue Health Report** (default Monday 9 AM) — comprehensive report covering stale issue trends, auto-resolution rate, average time-to-resolution, KB growth, escalation outcomes, and week-over-week comparison. Cadences are defaults — final values set at the trigger-composition step. State lives in data/issue_states.json (classifications + sentiment + actions), data/solutions_kb.json (confirmed-solution patterns with confidence scores and times_confirmed), data/pending_confirmations.json (14-day expiry tracking), data/escalation_log.json (escalation audit trail). Write all state atomically at cycle end.",
+      "tool_guidance": "### Jira (http_request + jira connector)\n- `POST /rest/api/3/search` — JQL: `project IN ({projects}) AND status NOT IN (Done, Closed, Resolved) AND updated <= -{stale_days}d ORDER BY priority DESC, updated ASC`\n- `GET /rest/api/3/issue/{key}?expand=changelog,renderedFields` — full issue with history\n- `GET /rest/api/3/issue/{key}/comment?orderBy=-created&maxResults=100` — thread for sentiment\n- `POST /rest/api/3/issue/{key}/comment` — ADF body: `{\"body\":{\"type\":\"doc\",\"version\":1,\"content\":[{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"...\"}]}]}}`\n- `GET /rest/api/3/issue/{key}/transitions` then `POST /rest/api/3/issue/{key}/transitions` — close\nHeaders: `Authorization: Basic base64(email:api_token)` ### knowledge base (http_request + notion connector)\n- `POST /v1/databases/{db_id}/query` — search KB by title/tags\n- `GET /v1/blocks/{page_id}/children?page_size=100` — extract solution content\n- `POST /v1/search` — workspace fallback when db query is empty\nHeaders: `Authorization: Bearer {integration_token}`, `knowledge base-Version: 2022-06-28` ### messaging (http_request + slack connector)\n- `POST /api/chat.postMessage` — channels, DMs, formatted messaging layout reports\n- `GET /api/users.lookupByEmail?email={email}` — resolve manager email to user_id for DM\nHeaders: `Authorization: Bearer {bot_token}` ### Local storage (file_read / file_write)\nState files live under `data/`. Always write complete JSON (never partial appends). Keep backups of solutions_kb.json in data/kb_backups/ on every 10th write.",
+      "error_handling": "Jira 429 → back off per Retry-After, resume next cycle, do not reprocess handled issues. Jira 401 → emit persona.error, await credential refresh. knowledge base 5xx → skip KB search this cycle; classify + analyze sentiment only; note KB-skipped in issue state. messaging failure → queue messages in data/pending_slack.json and retry next cycle; never drop escalations. Comment post failure → log to data/error_log.json; do not retry same cycle (avoids duplicates). Corrupted state file → reinitialize from Jira query, classify only (no actions). Issue closed externally during processing → skip remaining actions, record external closure. Reporter = assignee → damp sentiment weighting. Issues with 100+ comments → sentiment on last 30, classification on full thread. First-run → classify all stale issues but take no action until the second cycle.",
       "examples": [],
       "tools": [
         "http_request",
@@ -106,7 +106,7 @@
           "role": "knowledge_base",
           "category": "knowledge_base",
           "required": false,
-          "fallback_note": "Optional. Without Notion, the persona relies on the local solutions KB only. Auto-resolution still works once the KB has accumulated enough confirmed solutions.",
+          "fallback_note": "Optional. Without knowledge base, the persona relies on the local solutions KB only. Auto-resolution still works once the KB has accumulated enough confirmed solutions.",
           "api_base_url": "https://api.notion.com",
           "credential_fields": [
             {
@@ -122,7 +122,7 @@
               "label": "Knowledge Base Database ID",
               "type": "text",
               "placeholder": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Open your Notion KB database. The database ID is the 32-character hex string in the URL before the '?'.",
+              "helpText": "Open your knowledge base KB database. The database ID is the 32-character hex string in the URL before the '?'.",
               "required": true
             }
           ],
@@ -142,7 +142,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-EXAMPLE_TOKEN_REPLACE_ME",
-              "helpText": "From your Slack App → OAuth & Permissions → Bot User OAuth Token. Requires scopes: chat:write, users:read, users:read.email.",
+              "helpText": "From your messaging App → OAuth & Permissions → Bot User OAuth Token. Requires scopes: chat:write, users:read, users:read.email.",
               "required": true
             }
           ],
@@ -152,7 +152,7 @@
       "notification_channels_default": [
         {
           "type": "slack",
-          "description": "Slack alerts channel for daily digests, weekly reports, and auto-resolution notifications."
+          "description": "messaging alerts channel for daily digests, weekly reports, and auto-resolution notifications."
         }
       ],
       "core_memories": []
@@ -161,7 +161,7 @@
       {
         "id": "uc_stale_triage",
         "title": "Stale Issue Triage & Resolution",
-        "description": "Polls Jira for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches Notion + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering management, and auto-closes abandoned issues. Default 15-min polling — final cadence set at the trigger-composition step.",
+        "description": "Polls Jira for issues open past the stale threshold. Classifies state, gauges reporter sentiment, searches knowledge base + local KB for matching solutions, posts high-confidence resolutions, escalates angry + P1/P2 reporters to engineering management, and auto-closes abandoned issues. Default 15-min polling — final cadence set at the trigger-composition step.",
         "capability_summary": "Stale-issue classification + sentiment-routed auto-resolution, escalation, and abandoned-issue cleanup.",
         "category": "development",
         "enabled_by_default": true,
@@ -201,7 +201,7 @@
           {
             "event_type": "issue.triage.auto_resolved",
             "direction": "emit",
-            "description": "Payload: issue key, solution source (notion page URL or local KB entry id), confidence score, reporter sentiment at time of posting."
+            "description": "Payload: issue key, solution source (knowledge base pages URL or local KB entry id), confidence score, reporter sentiment at time of posting."
           },
           {
             "event_type": "issue.triage.escalated",
@@ -216,10 +216,10 @@
           {
             "event_type": "issue.triage.error",
             "direction": "emit",
-            "description": "Emitted on Jira 401, repeated Slack failures, or corrupted state files. Triggers credential refresh or admin alerts downstream."
+            "description": "Emitted on Jira 401, repeated messaging failures, or corrupted state files. Triggers credential refresh or admin alerts downstream."
           }
         ],
-        "error_handling": "Jira 429 → respect Retry-After, resume next cycle. Jira 401 → emit issue.triage.error and halt this capability until credential refresh. Notion unavailable → skip KB search but continue classification + sentiment + escalation. Slack queue → data/pending_slack.json retries next cycle. Comment post failure → log-only, no same-cycle retry. First cycle → observation only.",
+        "error_handling": "Jira 429 → respect Retry-After, resume next cycle. Jira 401 → emit issue.triage.error and halt this capability until credential refresh. knowledge base unavailable → skip KB search but continue classification + sentiment + escalation. messaging queue → data/pending_slack.json retries next cycle. Comment post failure → log-only, no same-cycle retry. First cycle → observation only.",
         "input_schema": [
           {
             "name": "stale_days",
@@ -255,13 +255,13 @@
             "name": "eng_manager_email",
             "type": "text",
             "default": "eng-manager@company.com",
-            "description": "Engineering manager who receives Slack DMs for angry + P1/P2 escalations."
+            "description": "Engineering manager who receives direct messages for angry + P1/P2 escalations."
           },
           {
             "name": "escalation_channel",
             "type": "text",
             "default": "#engineering-escalations",
-            "description": "Dedicated Slack channel for high-priority escalation posts."
+            "description": "Dedicated messaging channels for high-priority escalation posts."
           }
         ],
         "sample_input": {
@@ -299,7 +299,7 @@
             {
               "id": "n4",
               "type": "connector",
-              "label": "Search Notion KB + local KB",
+              "label": "Search knowledge base KB + local KB",
               "connector": "knowledge_base"
             },
             {
@@ -421,8 +421,8 @@
       {
         "id": "uc_daily_digest",
         "title": "Support Digest",
-        "description": "Posts a Slack summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket. Default daily 9 AM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Slack summary of auto-resolved / escalated / auto-closed / still-stale counts with issue links.",
+        "description": "Posts a messaging summary of the last 24 hours: issues auto-resolved, issues escalated, issues auto-closed, issues still stale — with links to notable tickets in each bucket. Default daily 9 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "messaging summary of auto-resolved / escalated / auto-closed / still-stale counts with issue links.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -458,13 +458,13 @@
             "description": "Payload: counts per bucket, links to top-3 notable issues by bucket."
           }
         ],
-        "error_handling": "State files missing → post minimal digest noting data gap. Slack post failure → retry up to 3 times with exponential backoff, then log and skip.",
+        "error_handling": "State files missing → post minimal digest noting data gap. messaging post failure → retry up to 3 times with exponential backoff, then log and skip.",
         "input_schema": [
           {
             "name": "digest_channel",
             "type": "text",
             "default": "#engineering-alerts",
-            "description": "Slack channel for the daily digest."
+            "description": "messaging channels for the daily digest."
           },
           {
             "name": "top_issues_per_bucket",
@@ -504,12 +504,12 @@
             {
               "id": "d4",
               "type": "action",
-              "label": "Format Block Kit digest"
+              "label": "Format formatted messaging layout digest"
             },
             {
               "id": "d5",
               "type": "connector",
-              "label": "Post digest to Slack",
+              "label": "Post digest to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -592,13 +592,13 @@
             "description": "Payload: metric summary, WoW deltas, report file path."
           }
         ],
-        "error_handling": "State files incomplete → generate partial report with explicit gap notes. Jira query fail → rely on state-file counts only. Archive failure → still post to Slack, log archive error.",
+        "error_handling": "State files incomplete → generate partial report with explicit gap notes. Jira query fail → rely on state-file counts only. Archive failure → still post to the messaging channel, log archive error.",
         "input_schema": [
           {
             "name": "report_channel",
             "type": "text",
             "default": "#engineering-alerts",
-            "description": "Slack channel for the weekly report."
+            "description": "messaging channels for the weekly report."
           },
           {
             "name": "archive_directory",
@@ -643,12 +643,12 @@
             {
               "id": "w5",
               "type": "action",
-              "label": "Format Block Kit report"
+              "label": "Format formatted messaging layout report"
             },
             {
               "id": "w6",
               "type": "connector",
-              "label": "Post report to Slack",
+              "label": "Post report to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -720,12 +720,12 @@
         "variable_name": "jira_projects",
         "context": "The agent polls these projects for stale issues using JQL. Comma-separate multiple keys if needed.",
         "dimension": "connectors",
-        "vault_category": "project-mgmt",
+        "vault_category": "project_management",
         "option_service_types": [
           "jira"
         ],
         "dynamic_source": {
-          "service_type": "jira",
+          "service_type": "ticketing",
           "operation": "list_projects",
           "multi": true
         }
@@ -757,7 +757,7 @@
         "id": "aq_alert_channel",
         "scope": "persona",
         "category": "configuration",
-        "question": "Which Slack channel for daily digests and weekly reports?",
+        "question": "Which messaging channels for daily digests and weekly reports?",
         "type": "select",
         "options": [],
         "default": "#engineering-alerts",
@@ -770,7 +770,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -781,7 +781,7 @@
           "uc_stale_triage"
         ],
         "category": "configuration",
-        "question": "Which Slack channel for high-priority escalations?",
+        "question": "Which messaging channels for high-priority escalations?",
         "type": "select",
         "options": [],
         "default": "#engineering-escalations",
@@ -794,7 +794,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -811,7 +811,7 @@
         "default": "eng-manager@company.com",
         "maps_to": "use_cases[uc_stale_triage].sample_input.eng_manager_email",
         "variable_name": "eng_manager_email",
-        "context": "Angry + P1/P2 issues trigger a direct Slack DM to this person.",
+        "context": "Angry + P1/P2 issues trigger a direct direct messages to this person.",
         "dimension": "messages"
       },
       {
@@ -821,20 +821,20 @@
           "knowledge_base"
         ],
         "category": "configuration",
-        "question": "Which Notion database holds the troubleshooting knowledge base?",
+        "question": "Which knowledge base databases holds the troubleshooting knowledge base?",
         "type": "select",
         "options": [],
         "default": "",
         "maps_to": "persona.connectors[notion].credential_fields[database_id].value",
         "variable_name": "notion_kb_database_id",
-        "context": "The Notion database containing runbooks, troubleshooting guides, and FAQ entries used for solution matching.",
+        "context": "The knowledge base databases containing runbooks, troubleshooting guides, and FAQ entries used for solution matching.",
         "dimension": "connectors",
         "vault_category": "database",
         "option_service_types": [
           "notion"
         ],
         "dynamic_source": {
-          "service_type": "notion",
+          "service_type": "knowledge_base",
           "operation": "list_databases"
         }
       },
@@ -892,7 +892,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -911,7 +911,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

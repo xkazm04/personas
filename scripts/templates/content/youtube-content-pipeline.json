@@ -105,11 +105,11 @@
           "setup_instructions": "apify.com → Settings → Integrations → API tokens → create. Actors used: apify~youtube-scraper, apify~twitter-scraper."
         },
         {
-          "name": "social_feed",
+          "name": "social",
           "label": "Social Feed",
           "auth_type": "api_key",
           "role": "social_media",
-          "category": "social_feed",
+          "category": "social",
           "required": false,
           "fallback_note": "Optional. When absent (or on the free tier), research falls back to Apify Twitter scraper for trending phrasings. Without either, the research step skips X-signal and relies on YouTube + Apify transcripts.",
           "credential_fields": [
@@ -141,7 +141,7 @@
           "setup_instructions": "deepgram.com → Console → API Keys → Create new. Optional but strongly recommended — enables word-level retake detection + verbal-tic removal."
         },
         {
-          "name": "desktop_terminal",
+          "name": "desktop",
           "label": "Terminal",
           "auth_type": "local",
           "role": "shell",
@@ -177,7 +177,7 @@
         "connectors": [
           "youtube_data",
           "apify",
-          "social_feed"
+          "social"
         ],
         "notification_channels": [
           {
@@ -599,7 +599,7 @@
         },
         "connectors": [
           "deepgram",
-          "desktop_terminal"
+          "desktop"
         ],
         "notification_channels": [
           {
@@ -759,7 +759,7 @@
           "description": "Creator triggers after edit complete."
         },
         "connectors": [
-          "desktop_terminal"
+          "desktop"
         ],
         "notification_channels": [
           {
@@ -943,7 +943,7 @@
         "question": "Which social feed should this persona monitor?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "social_feed",
+          "service_type": "social",
           "operation": "list_credentials",
           "source": "vault"
         },

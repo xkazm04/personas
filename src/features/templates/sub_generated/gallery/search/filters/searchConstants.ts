@@ -52,7 +52,7 @@ export const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; la
   monitoring:           { icon: Activity,      color: '#14b8a6', label: 'Monitoring' },
   pipeline:             { icon: GitBranch,     color: '#2563eb', label: 'Pipeline' },
   productivity:         { icon: Zap,           color: '#eab308', label: 'Productivity' },
-  'project-management': { icon: Kanban,        color: '#0ea5e9', label: 'Project Mgmt' },
+  project_management:   { icon: Kanban,        color: '#0ea5e9', label: 'Project Mgmt' },
   quality:              { icon: BadgeCheck,     color: '#22c55e', label: 'Quality' },
   research:             { icon: FlaskConical,  color: '#a855f7', label: 'Research' },
   sales:                { icon: TrendingUp,    color: '#f43f5e', label: 'Sales' },
@@ -75,10 +75,10 @@ export const CATEGORY_META: Record<string, { icon: LucideIcon; color: string; la
  */
 const CATEGORY_ALIASES: Record<string, string> = {
   // Case variants / common mismatches
-  'project_management': 'project-management',
-  'project management': 'project-management',
-  'projectmanagement':  'project-management',
-  'project-mgmt':      'project-management',
+  'project-management': 'project_management',
+  'project management': 'project_management',
+  'projectmanagement':  'project_management',
+  'project-mgmt':       'project_management',
   'e-commerce':         'ecommerce',
   'e_commerce':         'ecommerce',
   'ci-cd':              'devops',
@@ -156,5 +156,5 @@ export const CATEGORY_ROLE_GROUPS: RoleGroup[] = [
   { role: 'business',     icon: Briefcase,    label: 'Business',     description: '', categories: ['sales', 'marketing', 'finance', 'hr', 'legal'] },
   { role: 'research',     icon: FlaskConical, label: 'Research',     description: '', categories: ['research', 'content', 'documentation'] },
   { role: 'customer',     icon: Users,        label: 'Customer',     description: '', categories: ['support', 'email', 'communication'] },
-  { role: 'productivity', icon: Zap,          label: 'Productivity', description: '', categories: ['productivity', 'project-management', 'operations', 'monitoring'] },
+  { role: 'productivity', icon: Zap,          label: 'Productivity', description: '', categories: ['productivity', 'project_management', 'operations', 'monitoring'] },
 ];

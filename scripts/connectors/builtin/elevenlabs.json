@@ -7,8 +7,6 @@
   "category": "ai",
   "categories": [
     "ai",
-    "audio_generation",
-    "tts",
     "voice_generation"
   ],
   "fields": [

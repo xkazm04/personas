@@ -1,8 +1,188 @@
 //! MCP tool definitions and handlers for the Personas MCP server.
 
+use std::path::{Component, Path, PathBuf};
+
 use serde_json::{json, Value};
 
 use super::db::McpDbPool;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Drive tool helpers
+//
+// When the Personas runner spawns a persona-scoped Claude CLI, it exports
+// `PERSONAS_DRIVE_ROOT` into the child environment. The CLI inherits that env
+// when it in turn spawns this MCP server as a stdio sub-subprocess, so the
+// tools below resolve the sandbox root from that single variable — no Tauri
+// handle, no app-state lookup. Path-safety mirrors `commands::drive`
+// (`resolve_safe`): reject absolute paths, `..` traversal, and anything that
+// canonicalises outside the root.
+// ─────────────────────────────────────────────────────────────────────────────
+
+const DRIVE_MAX_READ_BYTES: u64 = 50 * 1024 * 1024;
+const DRIVE_MAX_WRITE_BYTES: usize = 50 * 1024 * 1024;
+
+fn drive_root() -> Result<PathBuf, String> {
+    let raw = std::env::var_os("PERSONAS_DRIVE_ROOT")
+        .map(PathBuf::from)
+        .ok_or_else(|| {
+            "PERSONAS_DRIVE_ROOT is not set — this MCP server was not launched inside a persona \
+             execution. Drive tools are only available during a persona run."
+                .to_string()
+        })?;
+    // Canonicalise so downstream `strip_prefix` comparisons (which get a
+    // canonicalised path from `resolve_drive_path`) succeed. On Windows this
+    // also resolves the `\\?\` extended-length prefix consistently.
+    std::fs::canonicalize(&raw)
+        .map_err(|e| format!("PERSONAS_DRIVE_ROOT canonicalize failed: {e}"))
+}
+
+fn resolve_drive_path(root: &Path, rel: &str) -> Result<PathBuf, String> {
+    let rel = rel.trim_start_matches('/').trim_start_matches('\\');
+    if rel.is_empty() || rel == "." {
+        return Ok(root.to_path_buf());
+    }
+    let candidate = PathBuf::from(rel);
+    if candidate.is_absolute() {
+        return Err("Drive paths must be relative to the managed root".into());
+    }
+    for comp in candidate.components() {
+        match comp {
+            Component::Normal(_) | Component::CurDir => {}
+            Component::ParentDir => {
+                return Err("Drive paths may not contain '..'".into());
+            }
+            Component::RootDir | Component::Prefix(_) => {
+                return Err("Drive paths must be relative".into());
+            }
+        }
+    }
+    let joined = root.join(&candidate);
+    // If the target exists, canonicalise to catch symlink escapes. For writes
+    // (target does not exist), canonicalise the parent and re-append the
+    // basename so `drive_write_text("new/file.txt", ...)` still works.
+    let canonical = if joined.exists() {
+        std::fs::canonicalize(&joined)
+            .map_err(|e| format!("canonicalize failed: {e}"))?
+    } else {
+        let parent = joined
+            .parent()
+            .ok_or_else(|| "Drive path has no parent directory".to_string())?;
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("create_dir_all failed: {e}"))?;
+        let parent_canonical = std::fs::canonicalize(parent)
+            .map_err(|e| format!("canonicalize parent failed: {e}"))?;
+        let basename = joined
+            .file_name()
+            .ok_or_else(|| "Drive path missing basename".to_string())?;
+        parent_canonical.join(basename)
+    };
+    let root_canonical = std::fs::canonicalize(root)
+        .map_err(|e| format!("canonicalize root failed: {e}"))?;
+    if !canonical.starts_with(&root_canonical) {
+        return Err("Resolved path escapes the drive sandbox".into());
+    }
+    Ok(canonical)
+}
+
+fn rel_of(root: &Path, abs: &Path) -> String {
+    abs.strip_prefix(root)
+        .map(|p| p.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| abs.to_string_lossy().to_string())
+}
+
+fn handle_drive_write_text(args: &Value) -> Result<String, String> {
+    let rel_path = args
+        .get("rel_path")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: rel_path".to_string())?;
+    let content = args
+        .get("content")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: content".to_string())?;
+    if content.len() > DRIVE_MAX_WRITE_BYTES {
+        return Err(format!(
+            "Payload too large ({} bytes, cap {})",
+            content.len(),
+            DRIVE_MAX_WRITE_BYTES
+        ));
+    }
+    let root = drive_root()?;
+    let abs = resolve_drive_path(&root, rel_path)?;
+    if let Some(parent) = abs.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create_dir_all failed: {e}"))?;
+    }
+    std::fs::write(&abs, content).map_err(|e| format!("write failed: {e}"))?;
+    let rel = rel_of(&root, &abs);
+    Ok(serde_json::json!({
+        "success": true,
+        "path": rel,
+        "bytes": content.len(),
+    })
+    .to_string())
+}
+
+fn handle_drive_read_text(args: &Value) -> Result<String, String> {
+    let rel_path = args
+        .get("rel_path")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "Missing required argument: rel_path".to_string())?;
+    let root = drive_root()?;
+    let abs = resolve_drive_path(&root, rel_path)?;
+    let meta = std::fs::metadata(&abs).map_err(|e| format!("stat failed: {e}"))?;
+    if meta.len() > DRIVE_MAX_READ_BYTES {
+        return Err(format!(
+            "File too large to read in full ({} bytes, cap {})",
+            meta.len(),
+            DRIVE_MAX_READ_BYTES
+        ));
+    }
+    let bytes = std::fs::read(&abs).map_err(|e| format!("read failed: {e}"))?;
+    let text = String::from_utf8(bytes)
+        .map_err(|e| format!("File is not valid UTF-8: {e}"))?;
+    Ok(text)
+}
+
+fn handle_drive_list(args: &Value) -> Result<String, String> {
+    let rel_path = args.get("rel_path").and_then(|v| v.as_str()).unwrap_or("");
+    let root = drive_root()?;
+    let dir = resolve_drive_path(&root, rel_path)?;
+    if !dir.is_dir() {
+        return Err(format!("Not a directory: {rel_path}"));
+    }
+    let mut entries = Vec::new();
+    for entry in std::fs::read_dir(&dir).map_err(|e| format!("read_dir failed: {e}"))? {
+        let entry = entry.map_err(|e| format!("read_dir entry failed: {e}"))?;
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+            continue;
+        }
+        let ft = entry
+            .file_type()
+            .map_err(|e| format!("file_type failed: {e}"))?;
+        let kind = if ft.is_dir() { "folder" } else { "file" };
+        let size = entry.metadata().ok().map(|m| m.len()).unwrap_or(0);
+        entries.push(json!({
+            "name": name,
+            "path": rel_of(&root, &entry.path()),
+            "kind": kind,
+            "size": size,
+        }));
+    }
+    entries.sort_by(|a, b| {
+        let ka = a.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+        let kb = b.get("kind").and_then(|v| v.as_str()).unwrap_or("");
+        match (ka, kb) {
+            ("folder", "file") => std::cmp::Ordering::Less,
+            ("file", "folder") => std::cmp::Ordering::Greater,
+            _ => {
+                let na = a.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                let nb = b.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                na.to_lowercase().cmp(&nb.to_lowercase())
+            }
+        }
+    });
+    serde_json::to_string_pretty(&entries).map_err(|e| format!("Serialize error: {e}"))
+}
 
 /// Return the list of available MCP tools with their schemas.
 pub fn list_tools() -> Vec<Value> {
@@ -107,6 +287,39 @@ pub fn list_tools() -> Vec<Value> {
                 }
             }
         }),
+        json!({
+            "name": "drive_write_text",
+            "description": "Write a UTF-8 text file into the persona's local drive (paths relative to the managed root). The drive location is resolved from PERSONAS_DRIVE_ROOT. Creates parent directories as needed. Returns the written path.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rel_path": { "type": "string", "description": "Path relative to the drive root (no '..' traversal; no absolute paths)" },
+                    "content": { "type": "string", "description": "UTF-8 text content to write" }
+                },
+                "required": ["rel_path", "content"]
+            }
+        }),
+        json!({
+            "name": "drive_read_text",
+            "description": "Read a UTF-8 text file from the persona's local drive. Paths relative to the managed root. Fails if the file is not valid UTF-8 or exceeds the 50MB cap.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rel_path": { "type": "string", "description": "Path relative to the drive root" }
+                },
+                "required": ["rel_path"]
+            }
+        }),
+        json!({
+            "name": "drive_list",
+            "description": "List entries (files and folders) under a relative path in the persona's local drive. Returns JSON array of {name, path, kind, size} objects sorted folders-first.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "rel_path": { "type": "string", "description": "Folder path relative to drive root (empty string for root)" }
+                }
+            }
+        }),
     ]
 }
 
@@ -122,6 +335,9 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "personas_annotate" => handle_annotate(args, pool),
         "personas_health" => handle_health(args, pool),
         "personas_list_templates" => handle_list_templates(args, pool),
+        "drive_write_text" => handle_drive_write_text(args),
+        "drive_read_text" => handle_drive_read_text(args),
+        "drive_list" => handle_drive_list(args),
         _ => Err(format!("Unknown tool: {name}")),
     };
 

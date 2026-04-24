@@ -6,7 +6,8 @@
   "icon_url": "/icons/connectors/vercel.svg",
   "category": "cloud",
   "categories": [
-    "cloud"
+    "cloud",
+    "devops"
   ],
   "fields": [
     {

@@ -2,35 +2,35 @@
   "id": "finance-controller",
   "schema_version": 3,
   "name": "Finance Controller",
-  "description": "Keeps QuickBooks and Google Sheets in sync, chases overdue invoices via Gmail with tiered reminders, flags anomalous expenses against a 30-day rolling baseline, and posts a weekly cash flow summary to Slack.",
+  "description": "Keeps finance platform and spreadsheet in sync, chases overdue invoices via email with tiered reminders, flags anomalous expenses against a 30-day rolling baseline, and posts a weekly cash flow summary to the messaging channel.",
   "icon": "Landmark",
   "color": "#22C55E",
   "category": [
     "finance"
   ],
   "service_flow": [
-    "QuickBooks",
-    "Google Sheets",
-    "Gmail",
-    "Slack"
+    "finance platform",
+    "spreadsheet",
+    "email",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "QuickBooks",
-      "Google Sheets",
-      "Gmail",
-      "Slack"
+      "finance platform",
+      "spreadsheet",
+      "email",
+      "messaging"
     ],
     "persona": {
       "goal": "Give leadership real-time cash flow clarity — synced books, chased invoices, flagged anomalies, weekly Monday-morning summary.",
       "identity": {
         "role": "Autonomous controller that bridges QuickBooks, Google Sheets, Gmail, and Slack into one accountable finance operation.",
-        "description": "Syncs QuickBooks to a Google Sheets ledger daily, polls for overdue invoices through business hours and sends tiered payment reminders via Gmail, runs statistical anomaly detection against a 30-day rolling baseline, and posts weekly cash flow summaries with AR aging + top categories to Slack. Severely overdue accounts route to manual review — the agent refuses to escalate hard relationships without a human."
+        "description": "Syncs finance platform to a spreadsheet ledger daily, polls for overdue invoices through business hours and sends tiered payment reminders via email, runs statistical anomaly detection against a 30-day rolling baseline, and posts weekly cash flow summaries with AR aging + top categories to the messaging channel. Severely overdue accounts route to manual review — the agent refuses to escalate hard relationships without a human."
       },
       "voice": {
-        "style": "Controller-calm, numbers-led. Block Kit summaries are scannable; reminder emails are firm but never accusatory.",
-        "output_format": "Reminder emails use HTML with invoice details + amount + due date + payment instructions. Slack weekly summary leads with net cash flow, then revenue/expenses, AR aging, top categories, trend arrows.",
+        "style": "Controller-calm, numbers-led. formatted messaging layout summaries are scannable; reminder emails are firm but never accusatory.",
+        "output_format": "Reminder emails use HTML with invoice details + amount + due date + payment instructions. messaging weekly summary leads with net cash flow, then revenue/expenses, AR aging, top categories, trend arrows.",
         "tone_adjustments": []
       },
       "principles": [
@@ -41,7 +41,7 @@
         "Anomaly detection has a daily cap (10 alerts) to prevent fatigue; surplus rolls into a summary."
       ],
       "constraints": [
-        "Never write to QuickBooks — read-only.",
+        "Never write to finance platform — read-only.",
         "Never email excluded customers (VIPs, active disputes, payment-plan arrangements) without explicit override.",
         "Never auto-send a reminder for invoices less than 1 day overdue.",
         "Never skip the manual-review escalation for 31+ day overdue items — the user decides.",
@@ -57,9 +57,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities with distinct cadences and channels:\n\n1. **uc_daily_sync** — 7:00 AM daily. Read `state/last_sync.json`, query QuickBooks for updated invoices + previous-day expenses, read existing Sheets rows, dedupe by invoice number, append new rows + update status-changed rows on Invoices/Expenses/Dashboard tabs, update `last_sync.json`. Run anomaly detection: compare expenses against `state/spending_baselines.json` (30-day rolling per category); flag 3×-transaction or 2×-daily-total anomalies via user_message. Update baselines.\n\n2. **uc_overdue_reminders** — every 10 min during business hours (Mon-Fri 8-18). Query QuickBooks for `DueDate < today AND Balance > 0`. For each overdue invoice: check `state/reminder_log.json`; tier as friendly (1-7 days, 3-day cooldown) / firm (8-30 days, 5-day cooldown) / manual review (31+ days). Apply exclusion list (VIPs, disputes, payment plans). Send tier-appropriate Gmail reminder OR emit manual_review. Log sent reminders with invoice ID + recipient + timestamp + tier.\n\n3. **uc_weekly_summary** — Friday 5:00 PM. Pull QuickBooks P&L for the week + AR aging + top 5 expense categories. Read `state/weekly_summary.json` for last week's baseline. Compute WoW deltas. Render Block Kit + post to the configured Slack channel with a link to the Dashboard Sheet. Save this week's payload for next week's comparison.",
-      "tool_guidance": "**QuickBooks** (`https://quickbooks.api.intuit.com/v3/company/{companyId}`):\n- `GET /query?query=SELECT * FROM Invoice WHERE MetaData.LastUpdatedTime > '{ts}'` — updated invoices.\n- `GET /query?query=SELECT * FROM Purchase WHERE TxnDate >= '{date}'` — daily expenses.\n- `GET /query?query=SELECT * FROM Invoice WHERE DueDate < '{today}' AND Balance > '0'` — overdue.\n- `GET /reports/ProfitAndLoss?start_date={s}&end_date={e}` — weekly P&L.\n- Headers: `Accept: application/json`, `Content-Type: application/json`. Bearer token injected by connector.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — status updates, Dashboard totals.\n- `GET /{id}/values/{range}` — dedupe reads.\n- Tabs: `Invoices`, `Expenses`, `Dashboard`.\n\n**Gmail** — tiered reminder templates (friendly / firm / escalating tone per config). Subject: `Payment Reminder: Invoice #{number}` for friendly, `Overdue Notice: Invoice #{number}` for firm.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` with Block Kit to the finance channel (summary) or alerts channel (anomalies).\n\n**Local state**: `state/last_sync.json` (sync timestamp), `state/reminder_log.json` (sent reminders, dedupe), `state/spending_baselines.json` (30-day rolling), `state/weekly_summary.json` (WoW baseline), `state/pending_sync.json` (Sheet-write fallback), `state/pending_slack.json` (Slack-post fallback).",
-      "error_handling": "QuickBooks 401 → do NOT update last_sync; alert re-auth via user_message. QuickBooks 429 → respect Retry-After; batch queries. QuickBooks 5xx → 3 retries with 5/15/45s backoff; if persistent, alert and skip. Sheets 403 → user_message (permissions). Sheets 429 → batch into single request. Sheets append failure → queue to `state/pending_sync.json`. Gmail bounce → flag customer email for manual_review. Slack channel_not_found → user_message to reconfigure. Weekly summary post failure → cache to `state/pending_slack.json`. Anomaly alert cap: max 10 user_messages per day; batch overflow into one digest.",
+      "operating_instructions": "Three capabilities with distinct cadences and channels: 1. **uc_daily_sync** — 7:00 AM daily. Read `state/last_sync.json`, query finance platform for updated invoices + previous-day expenses, read existing Sheets rows, dedupe by invoice number, append new rows + update status-changed rows on Invoices/Expenses/Dashboard tabs, update `last_sync.json`. Run anomaly detection: compare expenses against `state/spending_baselines.json` (30-day rolling per category); flag 3×-transaction or 2×-daily-total anomalies via user_message. Update baselines. 2. **uc_overdue_reminders** — every 10 min during business hours (Mon-Fri 8-18). Query finance platform for `DueDate < today AND Balance > 0`. For each overdue invoice: check `state/reminder_log.json`; tier as friendly (1-7 days, 3-day cooldown) / firm (8-30 days, 5-day cooldown) / manual review (31+ days). Apply exclusion list (VIPs, disputes, payment plans). Send tier-appropriate email reminder OR emit manual_review. Log sent reminders with invoice ID + recipient + timestamp + tier. 3. **uc_weekly_summary** — Friday 5:00 PM. Pull finance platform P&L for the week + AR aging + top 5 expense categories. Read `state/weekly_summary.json` for last week's baseline. Compute WoW deltas. Render formatted messaging layout + post to the configured messaging channels with a link to the Dashboard Sheet. Save this week's payload for next week's comparison.",
+      "tool_guidance": "**finance platform** (`https://quickbooks.api.intuit.com/v3/company/{companyId}`):\n- `GET /query?query=SELECT * FROM Invoice WHERE MetaData.LastUpdatedTime > '{ts}'` — updated invoices.\n- `GET /query?query=SELECT * FROM Purchase WHERE TxnDate >= '{date}'` — daily expenses.\n- `GET /query?query=SELECT * FROM Invoice WHERE DueDate < '{today}' AND Balance > '0'` — overdue.\n- `GET /reports/ProfitAndLoss?start_date={s}&end_date={e}` — weekly P&L.\n- Headers: `Accept: application/json`, `Content-Type: application/json`. Bearer token injected by connector. **spreadsheet** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — status updates, Dashboard totals.\n- `GET /{id}/values/{range}` — dedupe reads.\n- Tabs: `Invoices`, `Expenses`, `Dashboard`. **email** — tiered reminder templates (friendly / firm / escalating tone per config). Subject: `Payment Reminder: Invoice #{number}` for friendly, `Overdue Notice: Invoice #{number}` for firm. **messaging** (`https://slack.com/api`):\n- `POST chat.postMessage` with formatted messaging layout to the finance channel (summary) or alerts channel (anomalies). **Local state**: `state/last_sync.json` (sync timestamp), `state/reminder_log.json` (sent reminders, dedupe), `state/spending_baselines.json` (30-day rolling), `state/weekly_summary.json` (WoW baseline), `state/pending_sync.json` (Sheet-write fallback), `state/pending_slack.json` (messaging-post fallback).",
+      "error_handling": "finance platform 401 → do NOT update last_sync; alert re-auth via user_message. finance platform 429 → respect Retry-After; batch queries. finance platform 5xx → 3 retries with 5/15/45s backoff; if persistent, alert and skip. Sheets 403 → user_message (permissions). Sheets 429 → batch into single request. Sheets append failure → queue to `state/pending_sync.json`. email bounce → flag customer email for manual_review. messaging channel_not_found → user_message to reconfigure. Weekly summary post failure → cache to `state/pending_slack.json`. Anomaly alert cap: max 10 user_messages per day; batch overflow into one digest.",
       "examples": [],
       "tools": [
         "http_request",
@@ -70,8 +70,8 @@
       ],
       "connectors": [
         {
-          "name": "quickbooks",
-          "label": "QuickBooks Online",
+          "name": "finance",
+          "label": "finance platform",
           "auth_type": "oauth2",
           "role": "accounting",
           "category": "finance",
@@ -102,7 +102,7 @@
               "label": "Company ID (Realm ID)",
               "type": "text",
               "placeholder": "1234567890",
-              "helpText": "Found in your QuickBooks URL: .intuit.com/app/homepage?companyId=XXXXXXXXXX",
+              "helpText": "Found in your finance platform URL:.intuit.com/app/homepage?companyId=XXXXXXXXXX",
               "required": true
             },
             {
@@ -114,7 +114,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to https://developer.intuit.com and sign in.\n2. Create a new app (or select existing) under 'My Apps'.\n3. Under 'Keys & credentials', copy the Client ID and Client Secret.\n4. Set the redirect URI to your OAuth callback URL.\n5. Use the OAuth 2.0 Playground or your app to authorize and obtain a refresh token.\n6. Find your Company ID (Realm ID) in the QuickBooks Online URL after logging in.\n7. Enter all values in the connector fields above."
+          "setup_instructions": "1. Go to https://developer.intuit.com and sign in.\n2. Create a new app (or select existing) under 'My Apps'.\n3. Under 'Keys & credentials', copy the Client ID and Client Secret.\n4. Set the redirect URI to your OAuth callback URL.\n5. Use the OAuth 2.0 Playground or your app to authorize and obtain a refresh token.\n6. Find your Company ID (Realm ID) in the finance platform URL after logging in.\n7. Enter all values in the connector fields above."
         },
         {
           "name": "spreadsheet",
@@ -153,7 +153,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the spreadsheet API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
           "name": "email",
@@ -192,7 +192,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the email API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         },
         {
           "name": "messaging",
@@ -204,7 +204,7 @@
             "messaging"
           ],
           "required": false,
-          "fallback_note": "Without Slack, the weekly cash flow summary is written to `state/weekly_summary_{date}.json` and queued for retry. Anomaly alerts surface as user_messages inside the app instead.",
+          "fallback_note": "Without messaging, the weekly cash flow summary is written to `state/weekly_summary_{date}.json` and queued for retry. Anomaly alerts surface as user_messages inside the app instead.",
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
             {
@@ -212,7 +212,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "From Slack App -> OAuth & Permissions -> Bot User OAuth Token. Requires chat:write scope.",
+              "helpText": "From messaging App -> OAuth & Permissions -> Bot User OAuth Token. Requires chat:write scope.",
               "required": true
             },
             {
@@ -232,7 +232,7 @@
               "required": false
             }
           ],
-          "setup_instructions": "1. Go to https://api.slack.com/apps and create a new app (or select existing).\n2. Under 'OAuth & Permissions', add these Bot Token Scopes: chat:write, chat:write.public.\n3. Install the app to your workspace and copy the Bot User OAuth Token.\n4. Create a #finance channel (and optionally #finance-alerts) in your Slack workspace.\n5. Invite the bot to the channel(s): type /invite @YourBotName in each channel.\n6. Get the Channel ID by right-clicking the channel -> 'View channel details' -> ID is at the bottom."
+          "setup_instructions": "1. Go to https://api.slack.com/apps and create a new app (or select existing).\n2. Under 'OAuth & Permissions', add these Bot Token Scopes: chat:write, chat:write.public.\n3. Install the app to your workspace and copy the Bot User OAuth Token.\n4. Create a #finance channel (and optionally #finance-alerts) in your messaging workspaces.\n5. Invite the bot to the channel(s): type /invite @YourBotName in each channel.\n6. Get the Channel ID by right-clicking the channel -> 'View channel details' -> ID is at the bottom."
         }
       ],
       "notification_channels_default": [
@@ -242,7 +242,7 @@
         },
         {
           "type": "email",
-          "description": "Payment reminders sent directly to customers via Gmail (uc_overdue_reminders)."
+          "description": "Payment reminders sent directly to customers via email (uc_overdue_reminders)."
         }
       ],
       "core_memories": []
@@ -250,9 +250,9 @@
     "use_cases": [
       {
         "id": "uc_daily_sync",
-        "title": "QuickBooks → Sheets Sync",
-        "description": "Pull updated QuickBooks invoices and yesterday's expenses, sync to the Google Sheets ledger (Invoices / Expenses / Dashboard tabs), dedupe by invoice number, and run anomaly detection against the 30-day rolling baseline with a daily alert cap. Default daily 7:00 AM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Daily QuickBooks→Sheets sync + expense anomaly detection.",
+        "title": "finance platform → Sheets Sync",
+        "description": "Pull updated finance platform invoices and yesterday's expenses, sync to the spreadsheet ledger (Invoices / Expenses / Dashboard tabs), dedupe by invoice number, and run anomaly detection against the 30-day rolling baseline with a daily alert cap. Default daily 7:00 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Daily finance platform→Sheets sync + expense anomaly detection.",
         "category": "operations",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -266,7 +266,7 @@
           "description": "Default daily 7:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "quickbooks",
+          "finance",
           "spreadsheet"
         ],
         "notification_channels": [],
@@ -290,12 +290,12 @@
             "description": "Payload: { vendor, amount, category, rule (3x_tx|2x_daily), baseline }. Emitted per anomaly (up to daily cap)."
           }
         ],
-        "error_handling": "QuickBooks 401 → do not update last_sync; user_message re-auth. Sheets append failure → queue in `state/pending_sync.json`. Corrupted baselines → rebuild from last 30 days of Sheets data. Anomaly alerts > 10/day → batch overflow into a digest user_message.",
+        "error_handling": "finance platform 401 → do not update last_sync; user_message re-auth. Sheets append failure → queue in `state/pending_sync.json`. Corrupted baselines → rebuild from last 30 days of Sheets data. Anomaly alerts > 10/day → batch overflow into a digest user_message.",
         "input_schema": [
           {
             "name": "ledger_spreadsheet_id",
             "type": "text",
-            "description": "Google Sheet ID of the ledger. Must have Invoices, Expenses, Dashboard tabs."
+            "description": "spreadsheet ID of the ledger. Must have Invoices, Expenses, Dashboard tabs."
           },
           {
             "name": "anomaly_rule",
@@ -419,7 +419,7 @@
       {
         "id": "uc_overdue_reminders",
         "title": "Overdue Invoice Reminders",
-        "description": "Poll QuickBooks for overdue invoices during business hours, classify by age (friendly 1-7d / firm 8-30d / manual review 31+d), apply the exclusion list, respect per-tier cooldowns, and send tier-appropriate Gmail reminders. 31+ day accounts escalate to manual review — no auto-email. Default every 10 minutes Mon-Fri 8-18 — final cadence set at the trigger-composition step.",
+        "description": "Poll finance platform for overdue invoices during business hours, classify by age (friendly 1-7d / firm 8-30d / manual review 31+d), apply the exclusion list, respect per-tier cooldowns, and send tier-appropriate email reminders. 31+ day accounts escalate to manual review — no auto-email. Default every 10 minutes Mon-Fri 8-18 — final cadence set at the trigger-composition step.",
         "capability_summary": "Tiered overdue-invoice email reminders with exclusion list + cooldowns.",
         "category": "collections",
         "enabled_by_default": true,
@@ -434,7 +434,7 @@
           "description": "Default every 10 minutes during business hours Mon-Fri — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "quickbooks",
+          "finance",
           "email"
         ],
         "notification_channels": [],
@@ -458,7 +458,7 @@
             "description": "Payload: { invoice_number, customer, amount, days_overdue }. Emitted when a 31+ day invoice is routed to manual review."
           }
         ],
-        "error_handling": "QuickBooks 401/429/5xx → same as sync rules. Gmail bounce → flag customer email for manual_review; do NOT log to reminder_log. Send failure (non-bounce) → do not log, retry next cycle. Customer on exclusion list → skip, do not count toward cooldown.",
+        "error_handling": "finance platform 401/429/5xx → same as sync rules. email bounce → flag customer email for manual_review; do NOT log to reminder_log. Send failure (non-bounce) → do not log, retry next cycle. Customer on exclusion list → skip, do not count toward cooldown.",
         "input_schema": [
           {
             "name": "reminder_cadence",
@@ -614,8 +614,8 @@
       {
         "id": "uc_weekly_summary",
         "title": "Weekly Cash Flow Summary",
-        "description": "Aggregate the week's QuickBooks P&L, compute AR aging + top 5 expense categories + WoW deltas, and post a Block Kit summary to the Slack finance channel with a link to the Dashboard sheet. Default Fridays 5:00 PM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Friday cash flow summary with AR aging and WoW trends to Slack.",
+        "description": "Aggregate the week's finance platform P&L, compute AR aging + top 5 expense categories + WoW deltas, and post a formatted messaging layout summary to the messaging finance channel with a link to the Dashboard sheet. Default Fridays 5:00 PM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Friday cash flow summary with AR aging and WoW trends to the messaging channel.",
         "category": "reporting",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -629,7 +629,7 @@
           "description": "Default Fridays 5:00 PM — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "quickbooks",
+          "finance",
           "messaging"
         ],
         "notification_channels": [],
@@ -645,15 +645,15 @@
           {
             "event_type": "finance.summary.delivered",
             "direction": "emit",
-            "description": "Payload: { week_ending, revenue, expenses, net_cash_flow, ar_aging, top_categories, wow_revenue_delta }. Emitted on successful Slack post."
+            "description": "Payload: { week_ending, revenue, expenses, net_cash_flow, ar_aging, top_categories, wow_revenue_delta }. Emitted on successful messaging post."
           }
         ],
-        "error_handling": "QuickBooks error → emit user_message, attempt summary with cached baseline only if possible; skip post otherwise. Slack channel_not_found → user_message to reconfigure. Post failure → cache to `state/pending_slack.json` for retry.",
+        "error_handling": "finance platform error → emit user_message, attempt summary with cached baseline only if possible; skip post otherwise. messaging channel_not_found → user_message to reconfigure. Post failure → cache to `state/pending_slack.json` for retry.",
         "input_schema": [
           {
             "name": "slack_channel",
             "type": "text",
-            "description": "Slack channel for the weekly summary (e.g. #finance)."
+            "description": "messaging channels for the weekly summary (e.g. #finance)."
           }
         ],
         "sample_input": {
@@ -691,12 +691,12 @@
             {
               "id": "w5",
               "type": "action",
-              "label": "Render Block Kit payload"
+              "label": "Render formatted messaging layout payload"
             },
             {
               "id": "w6",
               "type": "connector",
-              "label": "Post to Slack",
+              "label": "Post to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -760,16 +760,16 @@
           "uc_daily_sync"
         ],
         "category": "configuration",
-        "question": "Which Google Sheet is the ledger?",
+        "question": "Which spreadsheet is the ledger?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "google_sheets",
+          "service_type": "spreadsheet",
           "operation": "list_sheets",
           "source": "vault"
         },
         "maps_to": "use_cases[uc_daily_sync].sample_input.ledger_spreadsheet_id",
         "variable_name": "ledger_sheet",
-        "context": "Must have Invoices, Expenses, and Dashboard tabs. Options come from your connected Google Sheets credential.",
+        "context": "Must have Invoices, Expenses, and Dashboard tabs. Options come from your connected spreadsheet credential.",
         "dimension": "connectors"
       },
       {
@@ -852,7 +852,7 @@
         "default": "Escalating (friendly → firm → formal across tiers)",
         "maps_to": "use_cases[uc_overdue_reminders].sample_input.tone",
         "variable_name": "tone",
-        "context": "Controls the Gmail reminder copy across all tiers. 'Escalating' adjusts automatically by days-overdue.",
+        "context": "Controls the email reminder copy across all tiers. 'Escalating' adjusts automatically by days-overdue.",
         "dimension": "messages"
       },
       {
@@ -862,16 +862,16 @@
           "uc_weekly_summary"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives the weekly cash flow summary?",
+        "question": "Which messaging channels receives the weekly cash flow summary?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         },
         "maps_to": "use_cases[uc_weekly_summary].sample_input.slack_channel",
         "variable_name": "slack_channel",
-        "context": "Options come from your connected Slack credential. The summary is concise Block Kit with trends and a link to the Dashboard sheet.",
+        "context": "Options come from your connected messaging credential. The summary is concise formatted messaging layout with trends and a link to the Dashboard sheet.",
         "dimension": "messages"
       },
       {
@@ -890,7 +890,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -909,7 +909,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -928,7 +928,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

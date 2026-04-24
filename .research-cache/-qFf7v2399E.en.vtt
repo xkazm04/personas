@@ -1,0 +1,1792 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:01.160 --> 00:00:02.990 align:start position:0%
+ 
+So,<00:00:01.360><c> a</c><00:00:01.400><c> few</c><00:00:01.560><c> months</c><00:00:01.800><c> ago,</c><00:00:02.360><c> I</c><00:00:02.480><c> made</c><00:00:02.680><c> a</c><00:00:02.720><c> video</c>
+
+00:00:02.990 --> 00:00:03.000 align:start position:0%
+So, a few months ago, I made a video
+ 
+
+00:00:03.000 --> 00:00:05.190 align:start position:0%
+So, a few months ago, I made a video
+about<00:00:03.280><c> Superpowers,</c><00:00:03.960><c> a</c><00:00:04.080><c> Claude</c><00:00:04.480><c> Code</c><00:00:04.840><c> plugin</c>
+
+00:00:05.190 --> 00:00:05.200 align:start position:0%
+about Superpowers, a Claude Code plugin
+ 
+
+00:00:05.200 --> 00:00:07.670 align:start position:0%
+about Superpowers, a Claude Code plugin
+that,<00:00:05.520><c> in</c><00:00:05.680><c> my</c><00:00:05.920><c> opinion,</c><00:00:06.560><c> does</c><00:00:06.800><c> a</c><00:00:06.880><c> better</c><00:00:07.280><c> job</c>
+
+00:00:07.670 --> 00:00:07.680 align:start position:0%
+that, in my opinion, does a better job
+ 
+
+00:00:07.680 --> 00:00:10.190 align:start position:0%
+that, in my opinion, does a better job
+of<00:00:07.840><c> planning</c><00:00:08.200><c> features</c><00:00:08.960><c> than</c><00:00:09.200><c> the</c><00:00:09.400><c> built-in</c>
+
+00:00:10.190 --> 00:00:10.200 align:start position:0%
+of planning features than the built-in
+ 
+
+00:00:10.200 --> 00:00:11.950 align:start position:0%
+of planning features than the built-in
+plan<00:00:10.520><c> mode.</c><00:00:10.840><c> But,</c><00:00:11.000><c> now</c><00:00:11.200><c> the</c><00:00:11.320><c> team</c><00:00:11.680><c> have</c>
+
+00:00:11.950 --> 00:00:11.960 align:start position:0%
+plan mode. But, now the team have
+ 
+
+00:00:11.960 --> 00:00:13.630 align:start position:0%
+plan mode. But, now the team have
+released<00:00:12.440><c> Ultra</c><00:00:12.720><c> Plan,</c><00:00:13.160><c> which</c><00:00:13.320><c> works</c><00:00:13.520><c> by</c>
+
+00:00:13.630 --> 00:00:13.640 align:start position:0%
+released Ultra Plan, which works by
+ 
+
+00:00:13.640 --> 00:00:16.350 align:start position:0%
+released Ultra Plan, which works by
+moving<00:00:13.960><c> the</c><00:00:14.080><c> plan</c><00:00:14.520><c> from</c><00:00:14.720><c> the</c><00:00:14.840><c> CLI</c><00:00:15.720><c> to</c><00:00:16.000><c> Claude</c>
+
+00:00:16.350 --> 00:00:16.360 align:start position:0%
+moving the plan from the CLI to Claude
+ 
+
+00:00:16.360 --> 00:00:18.550 align:start position:0%
+moving the plan from the CLI to Claude
+Code<00:00:16.800><c> on</c><00:00:16.960><c> the</c><00:00:17.080><c> web,</c><00:00:17.520><c> which</c><00:00:17.720><c> will</c><00:00:17.880><c> clone</c><00:00:18.320><c> your</c>
+
+00:00:18.550 --> 00:00:18.560 align:start position:0%
+Code on the web, which will clone your
+ 
+
+00:00:18.560 --> 00:00:20.990 align:start position:0%
+Code on the web, which will clone your
+repo<00:00:18.960><c> in</c><00:00:19.080><c> a</c><00:00:19.120><c> cloud</c><00:00:19.640><c> environment</c><00:00:20.320><c> and</c><00:00:20.520><c> write</c><00:00:20.880><c> a</c>
+
+00:00:20.990 --> 00:00:21.000 align:start position:0%
+repo in a cloud environment and write a
+ 
+
+00:00:21.000 --> 00:00:23.350 align:start position:0%
+repo in a cloud environment and write a
+detailed<00:00:21.560><c> plan</c><00:00:22.120><c> for</c><00:00:22.240><c> you</c><00:00:22.320><c> to</c><00:00:22.520><c> implement</c><00:00:23.120><c> in</c>
+
+00:00:23.350 --> 00:00:23.360 align:start position:0%
+detailed plan for you to implement in
+ 
+
+00:00:23.360 --> 00:00:25.310 align:start position:0%
+detailed plan for you to implement in
+the<00:00:23.480><c> cloud</c><00:00:24.040><c> or</c><00:00:24.200><c> back</c><00:00:24.480><c> on</c><00:00:24.560><c> your</c><00:00:24.680><c> machine,</c><00:00:25.160><c> which</c>
+
+00:00:25.310 --> 00:00:25.320 align:start position:0%
+the cloud or back on your machine, which
+ 
+
+00:00:25.320 --> 00:00:27.550 align:start position:0%
+the cloud or back on your machine, which
+is<00:00:25.440><c> all</c><00:00:25.640><c> very</c><00:00:25.960><c> cool.</c><00:00:26.440><c> So,</c><00:00:26.640><c> hit</c><00:00:26.840><c> subscribe</c><00:00:27.440><c> and</c>
+
+00:00:27.550 --> 00:00:27.560 align:start position:0%
+is all very cool. So, hit subscribe and
+ 
+
+00:00:27.560 --> 00:00:29.350 align:start position:0%
+is all very cool. So, hit subscribe and
+let's<00:00:27.800><c> see</c><00:00:28.000><c> if</c><00:00:28.280><c> I</c><00:00:28.400><c> think</c><00:00:28.720><c> this</c><00:00:28.880><c> new</c><00:00:29.040><c> way</c><00:00:29.200><c> of</c>
+
+00:00:29.350 --> 00:00:29.360 align:start position:0%
+let's see if I think this new way of
+ 
+
+00:00:29.360 --> 00:00:30.870 align:start position:0%
+let's see if I think this new way of
+planning<00:00:30.000><c> is</c><00:00:30.160><c> better</c><00:00:30.480><c> than</c><00:00:30.640><c> using</c>
+
+00:00:30.870 --> 00:00:30.880 align:start position:0%
+planning is better than using
+ 
+
+00:00:30.880 --> 00:00:32.910 align:start position:0%
+planning is better than using
+Superpowers<00:00:31.520><c> and</c><00:00:31.960><c> better</c><00:00:32.240><c> than</c><00:00:32.720><c> playing</c>
+
+00:00:32.910 --> 00:00:32.920 align:start position:0%
+Superpowers and better than playing
+ 
+
+00:00:32.920 --> 00:00:37.150 align:start position:0%
+Superpowers and better than playing
+Pokémon.
+
+00:00:37.150 --> 00:00:37.160 align:start position:0%
+ 
+ 
+
+00:00:37.160 --> 00:00:38.750 align:start position:0%
+ 
+Annoyingly,<00:00:37.680><c> at</c><00:00:37.800><c> the</c><00:00:37.920><c> time</c><00:00:38.240><c> of</c><00:00:38.360><c> recording</c>
+
+00:00:38.750 --> 00:00:38.760 align:start position:0%
+Annoyingly, at the time of recording
+ 
+
+00:00:38.760 --> 00:00:40.750 align:start position:0%
+Annoyingly, at the time of recording
+this<00:00:38.960><c> video,</c><00:00:39.320><c> the</c><00:00:39.440><c> Claude</c><00:00:39.800><c> team</c><00:00:40.160><c> have</c><00:00:40.440><c> just</c>
+
+00:00:40.750 --> 00:00:40.760 align:start position:0%
+this video, the Claude team have just
+ 
+
+00:00:40.760 --> 00:00:42.510 align:start position:0%
+this video, the Claude team have just
+released<00:00:41.320><c> Claude</c><00:00:41.600><c> Routines,</c><00:00:42.280><c> and</c><00:00:42.400><c> they've</c>
+
+00:00:42.510 --> 00:00:42.520 align:start position:0%
+released Claude Routines, and they've
+ 
+
+00:00:42.520 --> 00:00:44.670 align:start position:0%
+released Claude Routines, and they've
+also<00:00:42.840><c> redesigned</c><00:00:43.480><c> the</c><00:00:43.680><c> Claude</c><00:00:44.000><c> Code</c><00:00:44.280><c> desktop</c>
+
+00:00:44.670 --> 00:00:44.680 align:start position:0%
+also redesigned the Claude Code desktop
+ 
+
+00:00:44.680 --> 00:00:46.430 align:start position:0%
+also redesigned the Claude Code desktop
+app.<00:00:44.920><c> I</c><00:00:44.960><c> thought,</c><00:00:45.120><c> "Why</c><00:00:45.600><c> do</c><00:00:45.720><c> you</c><00:00:45.880><c> move</c><00:00:46.240><c> so</c>
+
+00:00:46.430 --> 00:00:46.440 align:start position:0%
+app. I thought, "Why do you move so
+ 
+
+00:00:46.440 --> 00:00:48.430 align:start position:0%
+app. I thought, "Why do you move so
+fast?"<00:00:46.880><c> Anyway,</c><00:00:47.400><c> this</c><00:00:47.520><c> video</c><00:00:47.760><c> is</c><00:00:47.880><c> about</c><00:00:48.240><c> the</c>
+
+00:00:48.430 --> 00:00:48.440 align:start position:0%
+fast?" Anyway, this video is about the
+ 
+
+00:00:48.440 --> 00:00:50.070 align:start position:0%
+fast?" Anyway, this video is about the
+Ultra<00:00:48.720><c> Plan</c><00:00:48.960><c> feature,</c><00:00:49.440><c> so</c><00:00:49.720><c> let's</c><00:00:49.960><c> get</c>
+
+00:00:50.070 --> 00:00:50.080 align:start position:0%
+Ultra Plan feature, so let's get
+ 
+
+00:00:50.080 --> 00:00:51.710 align:start position:0%
+Ultra Plan feature, so let's get
+straight<00:00:50.360><c> into</c><00:00:50.520><c> it.</c><00:00:50.640><c> So,</c><00:00:50.720><c> the</c><00:00:50.800><c> focus</c><00:00:51.200><c> of</c><00:00:51.480><c> this</c>
+
+00:00:51.710 --> 00:00:51.720 align:start position:0%
+straight into it. So, the focus of this
+ 
+
+00:00:51.720 --> 00:00:53.990 align:start position:0%
+straight into it. So, the focus of this
+demo<00:00:52.080><c> is</c><00:00:52.320><c> to</c><00:00:52.480><c> write</c><00:00:52.800><c> a</c><00:00:52.880><c> plan</c><00:00:53.480><c> for</c><00:00:53.600><c> this</c>
+
+00:00:53.990 --> 00:00:54.000 align:start position:0%
+demo is to write a plan for this
+ 
+
+00:00:54.000 --> 00:00:56.230 align:start position:0%
+demo is to write a plan for this
+product,<00:00:54.400><c> which</c><00:00:54.560><c> is</c><00:00:54.680><c> a</c><00:00:54.760><c> CLI</c><00:00:55.320><c> tool</c><00:00:55.680><c> I'm</c><00:00:55.880><c> working</c>
+
+00:00:56.230 --> 00:00:56.240 align:start position:0%
+product, which is a CLI tool I'm working
+ 
+
+00:00:56.240 --> 00:00:58.790 align:start position:0%
+product, which is a CLI tool I'm working
+on<00:00:56.680><c> that</c><00:00:56.880><c> does</c><00:00:57.120><c> film</c><00:00:57.480><c> emulation.</c><00:00:58.320><c> I'll</c><00:00:58.480><c> add</c><00:00:58.720><c> a</c>
+
+00:00:58.790 --> 00:00:58.800 align:start position:0%
+on that does film emulation. I'll add a
+ 
+
+00:00:58.800 --> 00:01:00.310 align:start position:0%
+on that does film emulation. I'll add a
+link<00:00:59.080><c> to</c><00:00:59.240><c> it</c><00:00:59.360><c> in</c><00:00:59.480><c> the</c><00:00:59.560><c> description</c><00:01:00.040><c> if</c><00:01:00.160><c> you're</c>
+
+00:01:00.310 --> 00:01:00.320 align:start position:0%
+link to it in the description if you're
+ 
+
+00:01:00.320 --> 00:01:02.990 align:start position:0%
+link to it in the description if you're
+interested,<00:01:01.120><c> but</c><00:01:01.360><c> this</c><00:01:01.640><c> plan</c><00:01:02.000><c> is</c><00:01:02.200><c> to</c><00:01:02.320><c> focus</c><00:01:02.720><c> on</c>
+
+00:01:02.990 --> 00:01:03.000 align:start position:0%
+interested, but this plan is to focus on
+ 
+
+00:01:03.000 --> 00:01:05.150 align:start position:0%
+interested, but this plan is to focus on
+building<00:01:03.480><c> a</c><00:01:03.600><c> release</c><00:01:04.080><c> pipeline.</c><00:01:04.800><c> I'll</c><00:01:04.920><c> start</c>
+
+00:01:05.150 --> 00:01:05.160 align:start position:0%
+building a release pipeline. I'll start
+ 
+
+00:01:05.160 --> 00:01:06.750 align:start position:0%
+building a release pipeline. I'll start
+with<00:01:05.280><c> using</c><00:01:05.600><c> the</c><00:01:05.760><c> new</c><00:01:05.960><c> Ultra</c><00:01:06.200><c> Plan</c><00:01:06.400><c> feature</c>
+
+00:01:06.750 --> 00:01:06.760 align:start position:0%
+with using the new Ultra Plan feature
+ 
+
+00:01:06.760 --> 00:01:08.390 align:start position:0%
+with using the new Ultra Plan feature
+and<00:01:06.880><c> then</c><00:01:07.000><c> compare</c><00:01:07.320><c> the</c><00:01:07.440><c> plan.</c><00:01:07.920><c> So,</c><00:01:08.080><c> in</c><00:01:08.200><c> order</c>
+
+00:01:08.390 --> 00:01:08.400 align:start position:0%
+and then compare the plan. So, in order
+ 
+
+00:01:08.400 --> 00:01:10.030 align:start position:0%
+and then compare the plan. So, in order
+to<00:01:08.520><c> use</c><00:01:08.720><c> Ultra</c><00:01:09.000><c> Plan,</c><00:01:09.360><c> you</c><00:01:09.400><c> need</c><00:01:09.560><c> to</c><00:01:09.640><c> have</c><00:01:09.880><c> at</c>
+
+00:01:10.030 --> 00:01:10.040 align:start position:0%
+to use Ultra Plan, you need to have at
+ 
+
+00:01:10.040 --> 00:01:12.510 align:start position:0%
+to use Ultra Plan, you need to have at
+least<00:01:10.400><c> this</c><00:01:10.760><c> version</c><00:01:11.120><c> of</c><00:01:11.280><c> Claude</c><00:01:11.560><c> Code,</c><00:01:12.120><c> and</c>
+
+00:01:12.510 --> 00:01:12.520 align:start position:0%
+least this version of Claude Code, and
+ 
+
+00:01:12.520 --> 00:01:14.110 align:start position:0%
+least this version of Claude Code, and
+you<00:01:12.640><c> can</c><00:01:12.760><c> use</c><00:01:12.920><c> it</c><00:01:13.080><c> with</c><00:01:13.240><c> the</c><00:01:13.400><c> {slash}</c><00:01:13.800><c> Ultra</c>
+
+00:01:14.110 --> 00:01:14.120 align:start position:0%
+you can use it with the {slash} Ultra
+ 
+
+00:01:14.120 --> 00:01:16.630 align:start position:0%
+you can use it with the {slash} Ultra
+Plan<00:01:14.480><c> command,</c><00:01:15.120><c> or</c><00:01:15.760><c> you</c><00:01:15.880><c> can</c><00:01:16.000><c> just</c><00:01:16.360><c> write</c>
+
+00:01:16.630 --> 00:01:16.640 align:start position:0%
+Plan command, or you can just write
+ 
+
+00:01:16.640 --> 00:01:18.470 align:start position:0%
+Plan command, or you can just write
+Ultra<00:01:16.880><c> Plan,</c><00:01:17.400><c> which</c><00:01:17.560><c> will</c><00:01:17.640><c> give</c><00:01:17.800><c> it</c><00:01:17.960><c> this</c><00:01:18.160><c> nice</c>
+
+00:01:18.470 --> 00:01:18.480 align:start position:0%
+Ultra Plan, which will give it this nice
+ 
+
+00:01:18.480 --> 00:01:21.150 align:start position:0%
+Ultra Plan, which will give it this nice
+rainbow<00:01:18.880><c> effect,</c><00:01:19.520><c> similar</c><00:01:19.880><c> to</c><00:01:20.120><c> Ultra</c><00:01:20.440><c> Think.</c>
+
+00:01:21.150 --> 00:01:21.160 align:start position:0%
+rainbow effect, similar to Ultra Think.
+ 
+
+00:01:21.160 --> 00:01:22.950 align:start position:0%
+rainbow effect, similar to Ultra Think.
+Then,<00:01:21.320><c> I'm</c><00:01:21.360><c> going</c><00:01:21.520><c> to</c><00:01:21.600><c> paste</c><00:01:21.920><c> in</c><00:01:22.080><c> a</c><00:01:22.160><c> prompt</c><00:01:22.720><c> to</c>
+
+00:01:22.950 --> 00:01:22.960 align:start position:0%
+Then, I'm going to paste in a prompt to
+ 
+
+00:01:22.960 --> 00:01:25.070 align:start position:0%
+Then, I'm going to paste in a prompt to
+build<00:01:23.400><c> the</c><00:01:23.520><c> release</c><00:01:23.800><c> pipeline.</c><00:01:24.600><c> I've</c><00:01:24.800><c> also</c>
+
+00:01:25.070 --> 00:01:25.080 align:start position:0%
+build the release pipeline. I've also
+ 
+
+00:01:25.080 --> 00:01:26.950 align:start position:0%
+build the release pipeline. I've also
+told<00:01:25.360><c> it</c><00:01:25.520><c> not</c><00:01:25.880><c> to</c><00:01:26.000><c> use</c><00:01:26.280><c> the</c><00:01:26.400><c> Superpowers</c>
+
+00:01:26.950 --> 00:01:26.960 align:start position:0%
+told it not to use the Superpowers
+ 
+
+00:01:26.960 --> 00:01:28.990 align:start position:0%
+told it not to use the Superpowers
+skill,<00:01:27.480><c> so</c><00:01:27.600><c> that</c><00:01:27.800><c> it</c><00:01:27.880><c> can</c><00:01:28.040><c> focus</c><00:01:28.440><c> on</c><00:01:28.600><c> just</c>
+
+00:01:28.990 --> 00:01:29.000 align:start position:0%
+skill, so that it can focus on just
+ 
+
+00:01:29.000 --> 00:01:31.470 align:start position:0%
+skill, so that it can focus on just
+using<00:01:29.440><c> the</c><00:01:29.680><c> Claude</c><00:01:30.160><c> Ultra</c><00:01:30.480><c> Plan</c><00:01:30.800><c> feature.</c>
+
+00:01:31.470 --> 00:01:31.480 align:start position:0%
+using the Claude Ultra Plan feature.
+ 
+
+00:01:31.480 --> 00:01:33.270 align:start position:0%
+using the Claude Ultra Plan feature.
+But,<00:01:31.680><c> before</c><00:01:32.000><c> I</c><00:01:32.040><c> hit</c><00:01:32.280><c> enter,</c><00:01:32.840><c> let's</c><00:01:33.080><c> take</c><00:01:33.240><c> a</c>
+
+00:01:33.270 --> 00:01:33.280 align:start position:0%
+But, before I hit enter, let's take a
+ 
+
+00:01:33.280 --> 00:01:35.310 align:start position:0%
+But, before I hit enter, let's take a
+look<00:01:33.480><c> at</c><00:01:33.600><c> my</c><00:01:33.760><c> usage</c><00:01:34.160><c> percentage,</c><00:01:35.080><c> which</c><00:01:35.280><c> you</c>
+
+00:01:35.310 --> 00:01:35.320 align:start position:0%
+look at my usage percentage, which you
+ 
+
+00:01:35.320 --> 00:01:37.710 align:start position:0%
+look at my usage percentage, which you
+can<00:01:35.480><c> see</c><00:01:35.760><c> is</c><00:01:35.960><c> set</c><00:01:36.240><c> to</c><00:01:36.360><c> zero</c><00:01:36.960><c> before</c><00:01:37.280><c> Claude</c><00:01:37.520><c> has</c>
+
+00:01:37.710 --> 00:01:37.720 align:start position:0%
+can see is set to zero before Claude has
+ 
+
+00:01:37.720 --> 00:01:39.390 align:start position:0%
+can see is set to zero before Claude has
+done<00:01:38.000><c> any</c><00:01:38.240><c> planning.</c><00:01:38.760><c> So,</c><00:01:38.880><c> now</c><00:01:39.040><c> if</c><00:01:39.160><c> I</c><00:01:39.200><c> hit</c>
+
+00:01:39.390 --> 00:01:39.400 align:start position:0%
+done any planning. So, now if I hit
+ 
+
+00:01:39.400 --> 00:01:41.630 align:start position:0%
+done any planning. So, now if I hit
+enter,<00:01:39.880><c> it</c><00:01:40.000><c> asks</c><00:01:40.360><c> me</c><00:01:40.480><c> if</c><00:01:40.640><c> I</c><00:01:40.720><c> want</c><00:01:41.000><c> to</c><00:01:41.240><c> run</c><00:01:41.480><c> the</c>
+
+00:01:41.630 --> 00:01:41.640 align:start position:0%
+enter, it asks me if I want to run the
+ 
+
+00:01:41.640 --> 00:01:43.390 align:start position:0%
+enter, it asks me if I want to run the
+interactive<00:01:42.120><c> plan</c><00:01:42.400><c> on</c><00:01:42.520><c> the</c><00:01:42.640><c> web,</c><00:01:43.160><c> which</c><00:01:43.320><c> I'm</c>
+
+00:01:43.390 --> 00:01:43.400 align:start position:0%
+interactive plan on the web, which I'm
+ 
+
+00:01:43.400 --> 00:01:45.230 align:start position:0%
+interactive plan on the web, which I'm
+going<00:01:43.560><c> to</c><00:01:43.640><c> say</c><00:01:43.800><c> yes</c><00:01:44.160><c> to,</c><00:01:44.680><c> and</c><00:01:44.800><c> it</c><00:01:44.880><c> looks</c><00:01:45.080><c> like</c>
+
+00:01:45.230 --> 00:01:45.240 align:start position:0%
+going to say yes to, and it looks like
+ 
+
+00:01:45.240 --> 00:01:47.510 align:start position:0%
+going to say yes to, and it looks like
+the<00:01:45.440><c> Ultra</c><00:01:45.720><c> Plan</c><00:01:46.000><c> creation</c><00:01:46.560><c> failed</c><00:01:47.120><c> at</c><00:01:47.200><c> about</c>
+
+00:01:47.510 --> 00:01:47.520 align:start position:0%
+the Ultra Plan creation failed at about
+ 
+
+00:01:47.520 --> 00:01:49.830 align:start position:0%
+the Ultra Plan creation failed at about
+4%<00:01:48.160><c> usage.</c><00:01:48.600><c> So,</c><00:01:48.840><c> I'm</c><00:01:48.960><c> going</c><00:01:49.080><c> to</c><00:01:49.160><c> run</c><00:01:49.400><c> the</c><00:01:49.520><c> exact</c>
+
+00:01:49.830 --> 00:01:49.840 align:start position:0%
+4% usage. So, I'm going to run the exact
+ 
+
+00:01:49.840 --> 00:01:51.870 align:start position:0%
+4% usage. So, I'm going to run the exact
+same<00:01:50.000><c> prompt</c><00:01:50.360><c> in</c><00:01:50.520><c> debug</c><00:01:50.880><c> mode,</c><00:01:51.440><c> which</c><00:01:51.640><c> is</c><00:01:51.720><c> now</c>
+
+00:01:51.870 --> 00:01:51.880 align:start position:0%
+same prompt in debug mode, which is now
+ 
+
+00:01:51.880 --> 00:01:53.550 align:start position:0%
+same prompt in debug mode, which is now
+giving<00:01:52.080><c> me</c><00:01:52.240><c> this</c><00:01:52.440><c> link</c><00:01:52.840><c> to</c><00:01:52.960><c> view</c><00:01:53.120><c> it</c><00:01:53.320><c> in</c><00:01:53.480><c> the</c>
+
+00:01:53.550 --> 00:01:53.560 align:start position:0%
+giving me this link to view it in the
+ 
+
+00:01:53.560 --> 00:01:54.870 align:start position:0%
+giving me this link to view it in the
+browser.<00:01:54.000><c> But,</c><00:01:54.200><c> I'm</c><00:01:54.320><c> actually</c><00:01:54.560><c> going</c><00:01:54.680><c> to</c><00:01:54.720><c> view</c>
+
+00:01:54.870 --> 00:01:54.880 align:start position:0%
+browser. But, I'm actually going to view
+ 
+
+00:01:54.880 --> 00:01:57.070 align:start position:0%
+browser. But, I'm actually going to view
+it<00:01:55.000><c> in</c><00:01:55.120><c> the</c><00:01:55.320><c> newly</c><00:01:55.720><c> redesigned</c><00:01:56.360><c> Claude</c><00:01:56.760><c> Code</c>
+
+00:01:57.070 --> 00:01:57.080 align:start position:0%
+it in the newly redesigned Claude Code
+ 
+
+00:01:57.080 --> 00:01:58.390 align:start position:0%
+it in the newly redesigned Claude Code
+for<00:01:57.160><c> Mac,</c><00:01:57.640><c> and</c><00:01:57.760><c> I'm</c><00:01:57.840><c> going</c><00:01:57.960><c> to</c><00:01:58.000><c> close</c><00:01:58.320><c> the</c>
+
+00:01:58.390 --> 00:01:58.400 align:start position:0%
+for Mac, and I'm going to close the
+ 
+
+00:01:58.400 --> 00:02:00.630 align:start position:0%
+for Mac, and I'm going to close the
+sidebar,<00:01:59.200><c> and</c><00:01:59.320><c> we</c><00:01:59.400><c> can</c><00:01:59.560><c> see</c><00:02:00.040><c> that</c><00:02:00.240><c> it</c><00:02:00.320><c> first</c>
+
+00:02:00.630 --> 00:02:00.640 align:start position:0%
+sidebar, and we can see that it first
+ 
+
+00:02:00.640 --> 00:02:02.790 align:start position:0%
+sidebar, and we can see that it first
+set<00:02:00.840><c> up</c><00:02:00.960><c> a</c><00:02:01.040><c> cloud</c><00:02:01.360><c> container</c><00:02:02.040><c> and</c><00:02:02.200><c> then</c><00:02:02.400><c> clones</c>
+
+00:02:02.790 --> 00:02:02.800 align:start position:0%
+set up a cloud container and then clones
+ 
+
+00:02:02.800 --> 00:02:04.710 align:start position:0%
+set up a cloud container and then clones
+the<00:02:02.920><c> repo.</c><00:02:03.440><c> I</c><00:02:03.520><c> forgot</c><00:02:03.760><c> to</c><00:02:03.840><c> mention,</c><00:02:04.320><c> to</c><00:02:04.480><c> use</c>
+
+00:02:04.710 --> 00:02:04.720 align:start position:0%
+the repo. I forgot to mention, to use
+ 
+
+00:02:04.720 --> 00:02:06.750 align:start position:0%
+the repo. I forgot to mention, to use
+Ultra<00:02:04.920><c> Plan,</c><00:02:05.480><c> your</c><00:02:05.680><c> project's</c><00:02:06.080><c> repo</c><00:02:06.440><c> needs</c><00:02:06.680><c> to</c>
+
+00:02:06.750 --> 00:02:06.760 align:start position:0%
+Ultra Plan, your project's repo needs to
+ 
+
+00:02:06.760 --> 00:02:08.950 align:start position:0%
+Ultra Plan, your project's repo needs to
+be<00:02:06.920><c> on</c><00:02:07.040><c> GitHub,</c><00:02:07.680><c> since</c><00:02:08.039><c> it</c><00:02:08.160><c> creates</c><00:02:08.520><c> a</c><00:02:08.600><c> cloud</c>
+
+00:02:08.950 --> 00:02:08.960 align:start position:0%
+be on GitHub, since it creates a cloud
+ 
+
+00:02:08.960 --> 00:02:11.150 align:start position:0%
+be on GitHub, since it creates a cloud
+session<00:02:09.560><c> and</c><00:02:09.640><c> needs</c><00:02:09.920><c> to</c><00:02:10.039><c> clone</c><00:02:10.440><c> the</c><00:02:10.560><c> repo</c><00:02:11.000><c> to</c>
+
+00:02:11.150 --> 00:02:11.160 align:start position:0%
+session and needs to clone the repo to
+ 
+
+00:02:11.160 --> 00:02:12.710 align:start position:0%
+session and needs to clone the repo to
+understand<00:02:11.720><c> the</c><00:02:11.800><c> code.</c><00:02:12.200><c> So,</c><00:02:12.320><c> once</c><00:02:12.520><c> that's</c>
+
+00:02:12.710 --> 00:02:12.720 align:start position:0%
+understand the code. So, once that's
+ 
+
+00:02:12.720 --> 00:02:14.550 align:start position:0%
+understand the code. So, once that's
+done,<00:02:12.920><c> it</c><00:02:13.040><c> starts</c><00:02:13.440><c> Claude</c><00:02:13.760><c> Code</c><00:02:14.200><c> in</c><00:02:14.480><c> the</c>
+
+00:02:14.550 --> 00:02:14.560 align:start position:0%
+done, it starts Claude Code in the
+ 
+
+00:02:14.560 --> 00:02:16.670 align:start position:0%
+done, it starts Claude Code in the
+cloud,<00:02:15.280><c> runs</c><00:02:15.560><c> the</c><00:02:15.680><c> bash</c><00:02:15.960><c> tool</c><00:02:16.240><c> to</c><00:02:16.440><c> read</c><00:02:16.600><c> the</c>
+
+00:02:16.670 --> 00:02:16.680 align:start position:0%
+cloud, runs the bash tool to read the
+ 
+
+00:02:16.680 --> 00:02:18.830 align:start position:0%
+cloud, runs the bash tool to read the
+context<00:02:17.120><c> of</c><00:02:17.240><c> the</c><00:02:17.320><c> repo,</c><00:02:18.000><c> and</c><00:02:18.120><c> then</c><00:02:18.320><c> runs</c><00:02:18.560><c> a</c><00:02:18.600><c> few</c>
+
+00:02:18.830 --> 00:02:18.840 align:start position:0%
+context of the repo, and then runs a few
+ 
+
+00:02:18.840 --> 00:02:20.510 align:start position:0%
+context of the repo, and then runs a few
+other<00:02:19.000><c> commands.</c><00:02:19.680><c> And</c><00:02:19.800><c> here,</c><00:02:19.960><c> it</c><00:02:20.080><c> asks</c><00:02:20.360><c> a</c><00:02:20.400><c> few</c>
+
+00:02:20.510 --> 00:02:20.520 align:start position:0%
+other commands. And here, it asks a few
+ 
+
+00:02:20.520 --> 00:02:21.950 align:start position:0%
+other commands. And here, it asks a few
+questions<00:02:20.880><c> about</c><00:02:21.080><c> the</c><00:02:21.120><c> plan,</c><00:02:21.640><c> and</c><00:02:21.760><c> after</c>
+
+00:02:21.950 --> 00:02:21.960 align:start position:0%
+questions about the plan, and after
+ 
+
+00:02:21.960 --> 00:02:23.270 align:start position:0%
+questions about the plan, and after
+about<00:02:22.240><c> 2</c><00:02:22.360><c> or</c><00:02:22.440><c> 3</c><00:02:22.600><c> minutes,</c><00:02:22.960><c> I</c><00:02:23.040><c> get</c><00:02:23.240><c> a</c>
+
+00:02:23.270 --> 00:02:23.280 align:start position:0%
+about 2 or 3 minutes, I get a
+ 
+
+00:02:23.280 --> 00:02:25.230 align:start position:0%
+about 2 or 3 minutes, I get a
+notification<00:02:23.960><c> in</c><00:02:24.080><c> the</c><00:02:24.240><c> terminal</c><00:02:24.880><c> telling</c><00:02:25.080><c> me</c>
+
+00:02:25.230 --> 00:02:25.240 align:start position:0%
+notification in the terminal telling me
+ 
+
+00:02:25.240 --> 00:02:26.950 align:start position:0%
+notification in the terminal telling me
+Ultra<00:02:25.520><c> Plan</c><00:02:25.800><c> has</c><00:02:26.000><c> finished</c><00:02:26.400><c> and</c><00:02:26.560><c> it's</c><00:02:26.720><c> ready</c>
+
+00:02:26.950 --> 00:02:26.960 align:start position:0%
+Ultra Plan has finished and it's ready
+ 
+
+00:02:26.960 --> 00:02:28.910 align:start position:0%
+Ultra Plan has finished and it's ready
+for<00:02:27.160><c> review.</c><00:02:27.720><c> So,</c><00:02:27.880><c> here</c><00:02:28.080><c> is</c><00:02:28.160><c> the</c><00:02:28.240><c> plan.</c><00:02:28.800><c> I'm</c>
+
+00:02:28.910 --> 00:02:28.920 align:start position:0%
+for review. So, here is the plan. I'm
+ 
+
+00:02:28.920 --> 00:02:30.270 align:start position:0%
+for review. So, here is the plan. I'm
+actually<00:02:29.120><c> going</c><00:02:29.240><c> to</c><00:02:29.360><c> zoom</c><00:02:29.640><c> out</c><00:02:29.760><c> a</c><00:02:29.840><c> bit</c><00:02:30.040><c> to</c><00:02:30.120><c> make</c>
+
+00:02:30.270 --> 00:02:30.280 align:start position:0%
+actually going to zoom out a bit to make
+ 
+
+00:02:30.280 --> 00:02:32.510 align:start position:0%
+actually going to zoom out a bit to make
+it<00:02:30.360><c> easier</c><00:02:30.600><c> to</c><00:02:30.760><c> read</c><00:02:31.400><c> and</c><00:02:31.720><c> extend</c><00:02:32.280><c> this</c>
+
+00:02:32.510 --> 00:02:32.520 align:start position:0%
+it easier to read and extend this
+ 
+
+00:02:32.520 --> 00:02:34.790 align:start position:0%
+it easier to read and extend this
+sidebar<00:02:33.280><c> before</c><00:02:33.680><c> zooming</c><00:02:34.080><c> in</c><00:02:34.320><c> a</c><00:02:34.400><c> tiny</c><00:02:34.640><c> bit</c>
+
+00:02:34.790 --> 00:02:34.800 align:start position:0%
+sidebar before zooming in a tiny bit
+ 
+
+00:02:34.800 --> 00:02:36.390 align:start position:0%
+sidebar before zooming in a tiny bit
+more.<00:02:35.360><c> So,</c><00:02:35.480><c> first</c><00:02:35.640><c> of</c><00:02:35.720><c> all,</c><00:02:35.840><c> it's</c><00:02:35.960><c> told</c><00:02:36.120><c> me</c><00:02:36.280><c> the</c>
+
+00:02:36.390 --> 00:02:36.400 align:start position:0%
+more. So, first of all, it's told me the
+ 
+
+00:02:36.400 --> 00:02:38.870 align:start position:0%
+more. So, first of all, it's told me the
+repo<00:02:36.680><c> is</c><00:02:36.840><c> empty</c><00:02:37.240><c> with</c><00:02:37.400><c> no</c><00:02:37.520><c> commits</c><00:02:37.920><c> and</c><00:02:38.040><c> no</c>
+
+00:02:38.870 --> 00:02:38.880 align:start position:0%
+repo is empty with no commits and no
+ 
+
+00:02:38.880 --> 00:02:40.470 align:start position:0%
+repo is empty with no commits and no
+which<00:02:39.200><c> is</c><00:02:39.360><c> not</c><00:02:39.560><c> true.</c><00:02:39.960><c> The</c><00:02:40.040><c> repo</c><00:02:40.320><c> is</c>
+
+00:02:40.470 --> 00:02:40.480 align:start position:0%
+which is not true. The repo is
+ 
+
+00:02:40.480 --> 00:02:42.190 align:start position:0%
+which is not true. The repo is
+definitely<00:02:40.800><c> not</c><00:02:40.960><c> empty.</c><00:02:41.520><c> So,</c><00:02:41.680><c> it's</c><00:02:41.840><c> got</c><00:02:42.040><c> the</c>
+
+00:02:42.190 --> 00:02:42.200 align:start position:0%
+definitely not empty. So, it's got the
+ 
+
+00:02:42.200 --> 00:02:44.350 align:start position:0%
+definitely not empty. So, it's got the
+shape<00:02:42.480><c> of</c><00:02:42.600><c> the</c><00:02:42.720><c> chains,</c><00:02:43.160><c> which</c><00:02:43.520><c> looks</c><00:02:43.800><c> good.</c>
+
+00:02:44.350 --> 00:02:44.360 align:start position:0%
+shape of the chains, which looks good.
+ 
+
+00:02:44.360 --> 00:02:46.790 align:start position:0%
+shape of the chains, which looks good.
+It's<00:02:44.560><c> got</c><00:02:44.840><c> the</c><00:02:45.160><c> build</c><00:02:45.520><c> scripts</c><00:02:46.200><c> and</c><00:02:46.440><c> a</c><00:02:46.480><c> minimal</c>
+
+00:02:46.790 --> 00:02:46.800 align:start position:0%
+It's got the build scripts and a minimal
+ 
+
+00:02:46.800 --> 00:02:48.910 align:start position:0%
+It's got the build scripts and a minimal
+CLI<00:02:47.360><c> that</c><00:02:47.520><c> the</c><00:02:47.640><c> pipeline</c><00:02:48.080><c> can</c><00:02:48.240><c> use</c><00:02:48.480><c> for</c><00:02:48.640><c> smoke</c>
+
+00:02:48.910 --> 00:02:48.920 align:start position:0%
+CLI that the pipeline can use for smoke
+ 
+
+00:02:48.920 --> 00:02:51.310 align:start position:0%
+CLI that the pipeline can use for smoke
+test.<00:02:49.440><c> This</c><00:02:49.680><c> looks</c><00:02:49.920><c> very</c><00:02:50.280><c> comprehensive,</c><00:02:51.240><c> and</c>
+
+00:02:51.310 --> 00:02:51.320 align:start position:0%
+test. This looks very comprehensive, and
+ 
+
+00:02:51.320 --> 00:02:52.910 align:start position:0%
+test. This looks very comprehensive, and
+the<00:02:51.400><c> fact</c><00:02:51.600><c> that</c><00:02:51.720><c> it</c><00:02:51.800><c> did</c><00:02:51.960><c> it</c><00:02:52.040><c> in</c><00:02:52.120><c> about</c><00:02:52.480><c> 2</c><00:02:52.600><c> to</c><00:02:52.720><c> 3</c>
+
+00:02:52.910 --> 00:02:52.920 align:start position:0%
+the fact that it did it in about 2 to 3
+ 
+
+00:02:52.920 --> 00:02:54.550 align:start position:0%
+the fact that it did it in about 2 to 3
+minutes<00:02:53.360><c> makes</c><00:02:53.600><c> me</c><00:02:53.720><c> think</c><00:02:53.960><c> that</c><00:02:54.320><c> there</c><00:02:54.480><c> were</c>
+
+00:02:54.550 --> 00:02:54.560 align:start position:0%
+minutes makes me think that there were
+ 
+
+00:02:54.560 --> 00:02:56.350 align:start position:0%
+minutes makes me think that there were
+some<00:02:54.720><c> sub-agents</c><00:02:55.320><c> that</c><00:02:55.440><c> were</c><00:02:55.520><c> being</c><00:02:55.800><c> used</c><00:02:56.240><c> to</c>
+
+00:02:56.350 --> 00:02:56.360 align:start position:0%
+some sub-agents that were being used to
+ 
+
+00:02:56.360 --> 00:02:57.950 align:start position:0%
+some sub-agents that were being used to
+get<00:02:56.520><c> it</c><00:02:56.640><c> done</c><00:02:56.840><c> quickly.</c><00:02:57.360><c> But,</c><00:02:57.480><c> from</c><00:02:57.640><c> here,</c><00:02:57.880><c> I</c>
+
+00:02:57.950 --> 00:02:57.960 align:start position:0%
+get it done quickly. But, from here, I
+ 
+
+00:02:57.960 --> 00:02:59.590 align:start position:0%
+get it done quickly. But, from here, I
+can<00:02:58.080><c> select</c><00:02:58.360><c> parts</c><00:02:58.600><c> of</c><00:02:58.680><c> the</c><00:02:58.800><c> text</c><00:02:59.200><c> and</c><00:02:59.360><c> add</c><00:02:59.560><c> a</c>
+
+00:02:59.590 --> 00:02:59.600 align:start position:0%
+can select parts of the text and add a
+ 
+
+00:02:59.600 --> 00:03:01.430 align:start position:0%
+can select parts of the text and add a
+comment<00:02:59.880><c> if</c><00:02:59.960><c> I</c><00:03:00.000><c> wanted</c><00:03:00.320><c> to.</c><00:03:00.760><c> Like,</c><00:03:00.960><c> over</c><00:03:01.120><c> here,</c>
+
+00:03:01.430 --> 00:03:01.440 align:start position:0%
+comment if I wanted to. Like, over here,
+ 
+
+00:03:01.440 --> 00:03:03.270 align:start position:0%
+comment if I wanted to. Like, over here,
+I<00:03:01.520><c> can</c><00:03:01.720><c> ask</c><00:03:01.960><c> it,</c><00:03:02.480><c> "What</c><00:03:02.680><c> repo</c><00:03:03.040><c> are</c><00:03:03.200><c> you</c>
+
+00:03:03.270 --> 00:03:03.280 align:start position:0%
+I can ask it, "What repo are you
+ 
+
+00:03:03.280 --> 00:03:05.190 align:start position:0%
+I can ask it, "What repo are you
+referring<00:03:03.760><c> to,</c><00:03:04.080><c> and</c><00:03:04.400><c> do</c><00:03:04.520><c> you</c><00:03:04.600><c> have</c><00:03:04.760><c> access</c><00:03:05.080><c> to</c>
+
+00:03:05.190 --> 00:03:05.200 align:start position:0%
+referring to, and do you have access to
+ 
+
+00:03:05.200 --> 00:03:06.830 align:start position:0%
+referring to, and do you have access to
+this?"<00:03:05.560><c> And</c><00:03:05.680><c> from</c><00:03:05.840><c> here,</c><00:03:06.040><c> Claude</c><00:03:06.320><c> can</c><00:03:06.480><c> revise</c>
+
+00:03:06.830 --> 00:03:06.840 align:start position:0%
+this?" And from here, Claude can revise
+ 
+
+00:03:06.840 --> 00:03:08.470 align:start position:0%
+this?" And from here, Claude can revise
+the<00:03:06.920><c> plan.</c><00:03:07.440><c> But,</c><00:03:07.560><c> before</c><00:03:07.840><c> I</c><00:03:07.880><c> go</c><00:03:08.000><c> ahead</c><00:03:08.240><c> and</c><00:03:08.360><c> do</c>
+
+00:03:08.470 --> 00:03:08.480 align:start position:0%
+the plan. But, before I go ahead and do
+ 
+
+00:03:08.480 --> 00:03:10.230 align:start position:0%
+the plan. But, before I go ahead and do
+that,<00:03:08.880><c> let's</c><00:03:09.040><c> take</c><00:03:09.200><c> a</c><00:03:09.240><c> look</c><00:03:09.440><c> at</c><00:03:09.560><c> my</c><00:03:09.680><c> new</c><00:03:09.960><c> token</c>
+
+00:03:10.230 --> 00:03:10.240 align:start position:0%
+that, let's take a look at my new token
+ 
+
+00:03:10.240 --> 00:03:12.150 align:start position:0%
+that, let's take a look at my new token
+percentage,<00:03:10.880><c> which</c><00:03:11.040><c> has</c><00:03:11.160><c> gone</c><00:03:11.320><c> from</c><00:03:11.520><c> 4%</c>
+
+00:03:12.150 --> 00:03:12.160 align:start position:0%
+percentage, which has gone from 4%
+ 
+
+00:03:12.160 --> 00:03:14.070 align:start position:0%
+percentage, which has gone from 4%
+because<00:03:12.480><c> of</c><00:03:12.640><c> the</c><00:03:12.800><c> debugging</c><00:03:13.240><c> issue</c><00:03:13.840><c> all</c><00:03:13.960><c> the</c>
+
+00:03:14.070 --> 00:03:14.080 align:start position:0%
+because of the debugging issue all the
+ 
+
+00:03:14.080 --> 00:03:17.070 align:start position:0%
+because of the debugging issue all the
+way<00:03:14.520><c> to</c><00:03:14.760><c> 19.</c><00:03:15.720><c> So,</c><00:03:15.840><c> 15%</c><00:03:16.480><c> of</c><00:03:16.560><c> my</c><00:03:16.680><c> tokens</c><00:03:16.960><c> were</c>
+
+00:03:17.070 --> 00:03:17.080 align:start position:0%
+way to 19. So, 15% of my tokens were
+ 
+
+00:03:17.080 --> 00:03:19.310 align:start position:0%
+way to 19. So, 15% of my tokens were
+used<00:03:17.480><c> to</c><00:03:17.600><c> come</c><00:03:17.720><c> up</c><00:03:17.880><c> with</c><00:03:18.040><c> this</c><00:03:18.200><c> plan,</c><00:03:18.680><c> which</c>
+
+00:03:19.310 --> 00:03:19.320 align:start position:0%
+used to come up with this plan, which
+ 
+
+00:03:19.320 --> 00:03:21.270 align:start position:0%
+used to come up with this plan, which
+isn't<00:03:19.600><c> too</c><00:03:19.720><c> bad,</c><00:03:20.120><c> I</c><00:03:20.160><c> guess.</c><00:03:20.800><c> Let's</c><00:03:21.000><c> go</c><00:03:21.080><c> ahead</c>
+
+00:03:21.270 --> 00:03:21.280 align:start position:0%
+isn't too bad, I guess. Let's go ahead
+ 
+
+00:03:21.280 --> 00:03:23.030 align:start position:0%
+isn't too bad, I guess. Let's go ahead
+and<00:03:21.400><c> revise</c><00:03:21.720><c> this</c><00:03:21.840><c> plan,</c><00:03:22.400><c> and</c><00:03:22.480><c> now</c><00:03:22.640><c> it</c><00:03:22.720><c> clones</c>
+
+00:03:23.030 --> 00:03:23.040 align:start position:0%
+and revise this plan, and now it clones
+ 
+
+00:03:23.040 --> 00:03:25.230 align:start position:0%
+and revise this plan, and now it clones
+the<00:03:23.160><c> correct</c><00:03:23.720><c> repo.</c><00:03:24.360><c> I</c><00:03:24.440><c> don't</c><00:03:24.560><c> know</c><00:03:24.840><c> why</c><00:03:25.120><c> it</c>
+
+00:03:25.230 --> 00:03:25.240 align:start position:0%
+the correct repo. I don't know why it
+ 
+
+00:03:25.240 --> 00:03:27.310 align:start position:0%
+the correct repo. I don't know why it
+didn't<00:03:25.440><c> do</c><00:03:25.560><c> that</c><00:03:25.760><c> the</c><00:03:25.840><c> first</c><00:03:26.080><c> time.</c><00:03:26.880><c> So,</c><00:03:27.000><c> about</c>
+
+00:03:27.310 --> 00:03:27.320 align:start position:0%
+didn't do that the first time. So, about
+ 
+
+00:03:27.320 --> 00:03:29.230 align:start position:0%
+didn't do that the first time. So, about
+a<00:03:27.360><c> minute</c><00:03:27.600><c> later,</c><00:03:28.240><c> Claude</c><00:03:28.480><c> has</c><00:03:28.640><c> proposed</c><00:03:29.160><c> a</c>
+
+00:03:29.230 --> 00:03:29.240 align:start position:0%
+a minute later, Claude has proposed a
+ 
+
+00:03:29.240 --> 00:03:31.470 align:start position:0%
+a minute later, Claude has proposed a
+new<00:03:29.400><c> plan,</c><00:03:30.120><c> and</c><00:03:30.240><c> if</c><00:03:30.320><c> we</c><00:03:30.440><c> open</c><00:03:30.720><c> that</c><00:03:30.880><c> up</c><00:03:31.280><c> over</c>
+
+00:03:31.470 --> 00:03:31.480 align:start position:0%
+new plan, and if we open that up over
+ 
+
+00:03:31.480 --> 00:03:33.630 align:start position:0%
+new plan, and if we open that up over
+here,<00:03:32.120><c> we</c><00:03:32.240><c> can</c><00:03:32.360><c> see</c><00:03:32.480><c> it</c><00:03:32.600><c> does</c><00:03:32.800><c> a</c><00:03:32.880><c> much</c><00:03:33.320><c> better</c>
+
+00:03:33.630 --> 00:03:33.640 align:start position:0%
+here, we can see it does a much better
+ 
+
+00:03:33.640 --> 00:03:36.070 align:start position:0%
+here, we can see it does a much better
+job<00:03:34.280><c> of</c><00:03:34.560><c> understanding</c><00:03:35.280><c> what</c><00:03:35.560><c> the</c><00:03:35.760><c> project</c>
+
+00:03:36.070 --> 00:03:36.080 align:start position:0%
+job of understanding what the project
+ 
+
+00:03:36.080 --> 00:03:39.430 align:start position:0%
+job of understanding what the project
+contains<00:03:37.000><c> and</c><00:03:37.360><c> has</c><00:03:37.600><c> created</c><00:03:38.200><c> a</c><00:03:38.360><c> flow</c><00:03:38.720><c> diagram,</c>
+
+00:03:39.430 --> 00:03:39.440 align:start position:0%
+contains and has created a flow diagram,
+ 
+
+00:03:39.440 --> 00:03:42.430 align:start position:0%
+contains and has created a flow diagram,
+has<00:03:39.680><c> a</c><00:03:39.720><c> list</c><00:03:40.040><c> of</c><00:03:40.280><c> the</c><00:03:40.480><c> exact</c><00:03:41.080><c> files</c><00:03:41.520><c> to</c><00:03:41.800><c> modify,</c>
+
+00:03:42.430 --> 00:03:42.440 align:start position:0%
+has a list of the exact files to modify,
+ 
+
+00:03:42.440 --> 00:03:44.310 align:start position:0%
+has a list of the exact files to modify,
+and<00:03:42.720><c> improves</c><00:03:43.160><c> the</c><00:03:43.240><c> GitHub</c><00:03:43.600><c> action</c><00:03:44.040><c> for</c>
+
+00:03:44.310 --> 00:03:44.320 align:start position:0%
+and improves the GitHub action for
+ 
+
+00:03:44.320 --> 00:03:46.390 align:start position:0%
+and improves the GitHub action for
+releases.<00:03:44.920><c> Note,</c><00:03:45.240><c> this</c><00:03:45.400><c> whole</c><00:03:45.680><c> process</c><00:03:46.160><c> of</c>
+
+00:03:46.390 --> 00:03:46.400 align:start position:0%
+releases. Note, this whole process of
+ 
+
+00:03:46.400 --> 00:03:48.870 align:start position:0%
+releases. Note, this whole process of
+updating<00:03:46.840><c> the</c><00:03:46.920><c> plan</c><00:03:47.480><c> moved</c><00:03:47.680><c> it</c><00:03:47.920><c> from</c><00:03:48.120><c> 19</c><00:03:48.720><c> to</c>
+
+00:03:48.870 --> 00:03:48.880 align:start position:0%
+updating the plan moved it from 19 to
+ 
+
+00:03:48.880 --> 00:03:52.030 align:start position:0%
+updating the plan moved it from 19 to
+37%<00:03:50.120><c> used,</c><00:03:50.760><c> meaning</c><00:03:51.000><c> this</c><00:03:51.120><c> whole</c><00:03:51.360><c> plan</c><00:03:51.720><c> used</c>
+
+00:03:52.030 --> 00:03:52.040 align:start position:0%
+37% used, meaning this whole plan used
+ 
+
+00:03:52.040 --> 00:03:55.310 align:start position:0%
+37% used, meaning this whole plan used
+around<00:03:52.400><c> 33%</c><00:03:53.240><c> of</c><00:03:53.360><c> my</c><00:03:53.480><c> usage,</c><00:03:54.080><c> which</c><00:03:54.520><c> is</c><00:03:54.760><c> a</c><00:03:54.840><c> lot</c>
+
+00:03:55.310 --> 00:03:55.320 align:start position:0%
+around 33% of my usage, which is a lot
+ 
+
+00:03:55.320 --> 00:03:57.070 align:start position:0%
+around 33% of my usage, which is a lot
+for<00:03:55.480><c> a</c><00:03:55.520><c> plan.</c><00:03:56.160><c> Now,</c><00:03:56.280><c> from</c><00:03:56.440><c> here,</c><00:03:56.640><c> I'm</c><00:03:56.760><c> going</c><00:03:56.960><c> to</c>
+
+00:03:57.070 --> 00:03:57.080 align:start position:0%
+for a plan. Now, from here, I'm going to
+ 
+
+00:03:57.080 --> 00:03:58.950 align:start position:0%
+for a plan. Now, from here, I'm going to
+accept<00:03:57.440><c> the</c><00:03:57.520><c> plan,</c><00:03:57.920><c> which</c><00:03:58.080><c> begins</c><00:03:58.400><c> to</c><00:03:58.520><c> execute</c>
+
+00:03:58.950 --> 00:03:58.960 align:start position:0%
+accept the plan, which begins to execute
+ 
+
+00:03:58.960 --> 00:04:00.670 align:start position:0%
+accept the plan, which begins to execute
+the<00:03:59.040><c> plan</c><00:03:59.360><c> remotely.</c><00:04:00.080><c> Now,</c><00:04:00.280><c> I'm</c><00:04:00.400><c> sure</c><00:04:00.560><c> there's</c>
+
+00:04:00.670 --> 00:04:00.680 align:start position:0%
+the plan remotely. Now, I'm sure there's
+ 
+
+00:04:00.680 --> 00:04:02.670 align:start position:0%
+the plan remotely. Now, I'm sure there's
+a<00:04:00.720><c> way</c><00:04:00.880><c> for</c><00:04:01.000><c> me</c><00:04:01.120><c> to</c><00:04:01.280><c> execute</c><00:04:01.760><c> it</c><00:04:01.920><c> in</c><00:04:02.080><c> the</c><00:04:02.160><c> CLI</c>
+
+00:04:02.670 --> 00:04:02.680 align:start position:0%
+a way for me to execute it in the CLI
+ 
+
+00:04:02.680 --> 00:04:04.950 align:start position:0%
+a way for me to execute it in the CLI
+instead<00:04:03.080><c> of</c><00:04:03.280><c> executing</c><00:04:03.840><c> it</c><00:04:04.120><c> in</c><00:04:04.320><c> the</c><00:04:04.400><c> cloud,</c>
+
+00:04:04.950 --> 00:04:04.960 align:start position:0%
+instead of executing it in the cloud,
+ 
+
+00:04:04.960 --> 00:04:07.070 align:start position:0%
+instead of executing it in the cloud,
+but<00:04:05.400><c> that</c><00:04:05.520><c> option</c><00:04:05.920><c> wasn't</c><00:04:06.200><c> really</c><00:04:06.400><c> obvious.</c>
+
+00:04:07.070 --> 00:04:07.080 align:start position:0%
+but that option wasn't really obvious.
+ 
+
+00:04:07.080 --> 00:04:08.710 align:start position:0%
+but that option wasn't really obvious.
+And<00:04:07.200><c> after</c><00:04:07.400><c> about</c><00:04:07.680><c> 5</c><00:04:07.880><c> minutes,</c><00:04:08.240><c> it's</c><00:04:08.440><c> finished</c>
+
+00:04:08.710 --> 00:04:08.720 align:start position:0%
+And after about 5 minutes, it's finished
+ 
+
+00:04:08.720 --> 00:04:10.350 align:start position:0%
+And after about 5 minutes, it's finished
+the<00:04:08.840><c> implementation,</c><00:04:09.760><c> but</c><00:04:10.000><c> because</c><00:04:10.280><c> there</c>
+
+00:04:10.350 --> 00:04:10.360 align:start position:0%
+the implementation, but because there
+ 
+
+00:04:10.360 --> 00:04:11.870 align:start position:0%
+the implementation, but because there
+are<00:04:10.440><c> no</c><00:04:10.600><c> GitHub</c><00:04:10.960><c> credentials</c><00:04:11.560><c> in</c><00:04:11.680><c> this</c>
+
+00:04:11.870 --> 00:04:11.880 align:start position:0%
+are no GitHub credentials in this
+ 
+
+00:04:11.880 --> 00:04:14.430 align:start position:0%
+are no GitHub credentials in this
+environment,<00:04:12.720><c> I</c><00:04:12.760><c> have</c><00:04:12.960><c> to</c><00:04:13.120><c> manually</c><00:04:13.720><c> create</c><00:04:14.240><c> a</c>
+
+00:04:14.430 --> 00:04:14.440 align:start position:0%
+environment, I have to manually create a
+ 
+
+00:04:14.440 --> 00:04:16.630 align:start position:0%
+environment, I have to manually create a
+new<00:04:14.640><c> branch</c><00:04:14.960><c> and</c><00:04:15.120><c> create</c><00:04:15.400><c> a</c><00:04:15.440><c> PR,</c><00:04:15.920><c> which</c><00:04:16.400><c> isn't</c>
+
+00:04:16.630 --> 00:04:16.640 align:start position:0%
+new branch and create a PR, which isn't
+ 
+
+00:04:16.640 --> 00:04:18.190 align:start position:0%
+new branch and create a PR, which isn't
+too<00:04:16.760><c> bad.</c><00:04:17.280><c> And</c><00:04:17.359><c> I'm</c><00:04:17.440><c> sure</c><00:04:17.680><c> if</c><00:04:17.840><c> I</c><00:04:17.920><c> added</c><00:04:18.160><c> the</c>
+
+00:04:18.190 --> 00:04:18.200 align:start position:0%
+too bad. And I'm sure if I added the
+ 
+
+00:04:18.200 --> 00:04:20.190 align:start position:0%
+too bad. And I'm sure if I added the
+GitHub<00:04:18.519><c> credentials,</c><00:04:19.320><c> if</c><00:04:19.440><c> I</c><00:04:19.480><c> had</c><00:04:19.720><c> a</c><00:04:19.799><c> private</c>
+
+00:04:20.190 --> 00:04:20.200 align:start position:0%
+GitHub credentials, if I had a private
+ 
+
+00:04:20.200 --> 00:04:22.510 align:start position:0%
+GitHub credentials, if I had a private
+repo,<00:04:20.799><c> it'll</c><00:04:21.000><c> be</c><00:04:21.079><c> able</c><00:04:21.280><c> to</c><00:04:21.440><c> pull</c><00:04:21.640><c> it</c><00:04:21.959><c> and</c><00:04:22.360><c> add</c>
+
+00:04:22.510 --> 00:04:22.520 align:start position:0%
+repo, it'll be able to pull it and add
+ 
+
+00:04:22.520 --> 00:04:24.790 align:start position:0%
+repo, it'll be able to pull it and add
+it<00:04:22.720><c> to</c><00:04:22.920><c> the</c><00:04:23.040><c> sandbox</c><00:04:23.560><c> for</c><00:04:23.760><c> creating</c><00:04:24.160><c> a</c><00:04:24.240><c> plan.</c>
+
+00:04:24.790 --> 00:04:24.800 align:start position:0%
+it to the sandbox for creating a plan.
+ 
+
+00:04:24.800 --> 00:04:26.830 align:start position:0%
+it to the sandbox for creating a plan.
+But,<00:04:25.240><c> because</c><00:04:25.520><c> the</c><00:04:25.600><c> scope</c><00:04:25.880><c> of</c><00:04:26.000><c> this</c><00:04:26.120><c> demo</c><00:04:26.680><c> was</c>
+
+00:04:26.830 --> 00:04:26.840 align:start position:0%
+But, because the scope of this demo was
+ 
+
+00:04:26.840 --> 00:04:28.470 align:start position:0%
+But, because the scope of this demo was
+just<00:04:27.160><c> to</c><00:04:27.240><c> review</c><00:04:27.480><c> the</c><00:04:27.600><c> plan,</c><00:04:28.160><c> we're</c><00:04:28.200><c> going</c><00:04:28.360><c> to</c>
+
+00:04:28.470 --> 00:04:28.480 align:start position:0%
+just to review the plan, we're going to
+ 
+
+00:04:28.480 --> 00:04:30.670 align:start position:0%
+just to review the plan, we're going to
+end<00:04:28.640><c> it</c><00:04:28.760><c> here</c><00:04:29.080><c> and</c><00:04:29.320><c> not</c><00:04:29.560><c> look</c><00:04:29.880><c> too</c><00:04:30.040><c> deep</c><00:04:30.360><c> into</c>
+
+00:04:30.670 --> 00:04:30.680 align:start position:0%
+end it here and not look too deep into
+ 
+
+00:04:30.680 --> 00:04:32.830 align:start position:0%
+end it here and not look too deep into
+the<00:04:30.840><c> implementation.</c><00:04:31.720><c> Let's</c><00:04:31.960><c> now</c><00:04:32.280><c> look</c><00:04:32.600><c> at</c>
+
+00:04:32.830 --> 00:04:32.840 align:start position:0%
+the implementation. Let's now look at
+ 
+
+00:04:32.840 --> 00:04:35.230 align:start position:0%
+the implementation. Let's now look at
+the<00:04:33.000><c> same</c><00:04:33.440><c> plan</c><00:04:33.840><c> done</c><00:04:34.160><c> with</c><00:04:34.400><c> Superpowers.</c>
+
+00:04:35.230 --> 00:04:35.240 align:start position:0%
+the same plan done with Superpowers.
+ 
+
+00:04:35.240 --> 00:04:36.670 align:start position:0%
+the same plan done with Superpowers.
+Now,<00:04:35.360><c> in</c><00:04:35.480><c> order</c><00:04:35.680><c> to</c><00:04:35.800><c> save</c><00:04:36.080><c> time,</c><00:04:36.400><c> I've</c><00:04:36.520><c> gone</c>
+
+00:04:36.670 --> 00:04:36.680 align:start position:0%
+Now, in order to save time, I've gone
+ 
+
+00:04:36.680 --> 00:04:39.190 align:start position:0%
+Now, in order to save time, I've gone
+ahead<00:04:37.080><c> and</c><00:04:37.280><c> executed</c><00:04:37.840><c> this</c><00:04:38.160><c> already</c><00:04:38.840><c> inside</c>
+
+00:04:39.190 --> 00:04:39.200 align:start position:0%
+ahead and executed this already inside
+ 
+
+00:04:39.200 --> 00:04:40.870 align:start position:0%
+ahead and executed this already inside
+Claude<00:04:39.440><c> Code,</c><00:04:39.920><c> so</c><00:04:40.080><c> we</c><00:04:40.160><c> can</c><00:04:40.280><c> just</c><00:04:40.480><c> run</c><00:04:40.680><c> through</c>
+
+00:04:40.870 --> 00:04:40.880 align:start position:0%
+Claude Code, so we can just run through
+ 
+
+00:04:40.880 --> 00:04:42.590 align:start position:0%
+Claude Code, so we can just run through
+it.<00:04:41.120><c> And</c><00:04:41.240><c> what</c><00:04:41.400><c> I</c><00:04:41.440><c> like</c><00:04:41.760><c> about</c><00:04:42.040><c> Superpowers</c>
+
+00:04:42.590 --> 00:04:42.600 align:start position:0%
+it. And what I like about Superpowers
+ 
+
+00:04:42.600 --> 00:04:44.630 align:start position:0%
+it. And what I like about Superpowers
+compared<00:04:43.160><c> to</c><00:04:43.360><c> Ultra</c><00:04:43.560><c> Plan</c><00:04:43.840><c> is</c><00:04:44.080><c> the</c><00:04:44.200><c> amount</c><00:04:44.520><c> of</c>
+
+00:04:44.630 --> 00:04:44.640 align:start position:0%
+compared to Ultra Plan is the amount of
+ 
+
+00:04:44.640 --> 00:04:46.790 align:start position:0%
+compared to Ultra Plan is the amount of
+questions<00:04:45.120><c> it</c><00:04:45.240><c> asks.</c><00:04:45.920><c> The</c><00:04:46.040><c> Ultra</c><00:04:46.200><c> Plan</c><00:04:46.480><c> asked</c>
+
+00:04:46.790 --> 00:04:46.800 align:start position:0%
+questions it asks. The Ultra Plan asked
+ 
+
+00:04:46.800 --> 00:04:48.190 align:start position:0%
+questions it asks. The Ultra Plan asked
+three<00:04:47.000><c> questions,</c><00:04:47.680><c> but</c><00:04:47.800><c> you</c><00:04:47.840><c> can</c><00:04:47.960><c> see</c><00:04:48.080><c> here</c>
+
+00:04:48.190 --> 00:04:48.200 align:start position:0%
+three questions, but you can see here
+ 
+
+00:04:48.200 --> 00:04:50.150 align:start position:0%
+three questions, but you can see here
+with<00:04:48.360><c> Superpowers,</c><00:04:48.920><c> we</c><00:04:49.040><c> get</c><00:04:49.360><c> six</c><00:04:49.600><c> questions,</c>
+
+00:04:50.150 --> 00:04:50.160 align:start position:0%
+with Superpowers, we get six questions,
+ 
+
+00:04:50.160 --> 00:04:52.510 align:start position:0%
+with Superpowers, we get six questions,
+so<00:04:50.320><c> double</c><00:04:50.680><c> the</c><00:04:50.800><c> amount,</c><00:04:51.440><c> and</c><00:04:51.920><c> I</c><00:04:52.040><c> believe</c><00:04:52.360><c> from</c>
+
+00:04:52.510 --> 00:04:52.520 align:start position:0%
+so double the amount, and I believe from
+ 
+
+00:04:52.520 --> 00:04:54.790 align:start position:0%
+so double the amount, and I believe from
+this,<00:04:52.800><c> it</c><00:04:52.920><c> gives</c><00:04:53.240><c> a</c><00:04:53.320><c> more</c><00:04:53.720><c> thorough</c><00:04:54.040><c> plan.</c><00:04:54.680><c> And</c>
+
+00:04:54.790 --> 00:04:54.800 align:start position:0%
+this, it gives a more thorough plan. And
+ 
+
+00:04:54.800 --> 00:04:56.350 align:start position:0%
+this, it gives a more thorough plan. And
+because<00:04:55.040><c> this</c><00:04:55.160><c> is</c><00:04:55.280><c> running</c><00:04:55.560><c> locally,</c><00:04:56.280><c> it</c>
+
+00:04:56.350 --> 00:04:56.360 align:start position:0%
+because this is running locally, it
+ 
+
+00:04:56.360 --> 00:04:58.350 align:start position:0%
+because this is running locally, it
+doesn't<00:04:56.600><c> have</c><00:04:56.840><c> to</c><00:04:57.040><c> clone</c><00:04:57.280><c> my</c><00:04:57.440><c> repo</c><00:04:58.040><c> because</c><00:04:58.240><c> it</c>
+
+00:04:58.350 --> 00:04:58.360 align:start position:0%
+doesn't have to clone my repo because it
+ 
+
+00:04:58.360 --> 00:05:00.190 align:start position:0%
+doesn't have to clone my repo because it
+has<00:04:58.560><c> access</c><00:04:58.880><c> to</c><00:04:58.960><c> the</c><00:04:59.040><c> code</c><00:04:59.360><c> directly.</c><00:05:00.040><c> From</c>
+
+00:05:00.190 --> 00:05:00.200 align:start position:0%
+has access to the code directly. From
+ 
+
+00:05:00.200 --> 00:05:01.950 align:start position:0%
+has access to the code directly. From
+here,<00:05:00.400><c> it</c><00:05:00.520><c> drafted</c><00:05:00.960><c> out</c><00:05:01.080><c> the</c><00:05:01.160><c> plan</c><00:05:01.640><c> and</c><00:05:01.760><c> gave</c>
+
+00:05:01.950 --> 00:05:01.960 align:start position:0%
+here, it drafted out the plan and gave
+ 
+
+00:05:01.960 --> 00:05:04.030 align:start position:0%
+here, it drafted out the plan and gave
+me<00:05:02.120><c> the</c><00:05:02.320><c> CI</c><00:05:02.680><c> flow</c><00:05:03.160><c> and</c><00:05:03.360><c> outlines</c><00:05:03.840><c> how</c>
+
+00:05:04.030 --> 00:05:04.040 align:start position:0%
+me the CI flow and outlines how
+ 
+
+00:05:04.040 --> 00:05:06.390 align:start position:0%
+me the CI flow and outlines how
+everything<00:05:04.640><c> will</c><00:05:04.760><c> work.</c><00:05:05.440><c> Now,</c><00:05:05.760><c> Superpowers</c>
+
+00:05:06.390 --> 00:05:06.400 align:start position:0%
+everything will work. Now, Superpowers
+ 
+
+00:05:06.400 --> 00:05:08.590 align:start position:0%
+everything will work. Now, Superpowers
+actually<00:05:06.720><c> has</c><00:05:07.080><c> two</c><00:05:07.400><c> planning</c><00:05:07.760><c> phases,</c><00:05:08.440><c> the</c>
+
+00:05:08.590 --> 00:05:08.600 align:start position:0%
+actually has two planning phases, the
+ 
+
+00:05:08.600 --> 00:05:10.670 align:start position:0%
+actually has two planning phases, the
+design<00:05:09.040><c> plan</c><00:05:09.400><c> that</c><00:05:09.600><c> captures</c><00:05:10.040><c> the</c><00:05:10.240><c> problem</c>
+
+00:05:10.670 --> 00:05:10.680 align:start position:0%
+design plan that captures the problem
+ 
+
+00:05:10.680 --> 00:05:12.190 align:start position:0%
+design plan that captures the problem
+and<00:05:10.880><c> the</c><00:05:10.960><c> requirements,</c><00:05:11.920><c> and</c><00:05:12.080><c> the</c>
+
+00:05:12.190 --> 00:05:12.200 align:start position:0%
+and the requirements, and the
+ 
+
+00:05:12.200 --> 00:05:14.510 align:start position:0%
+and the requirements, and the
+implementation<00:05:12.920><c> plan,</c><00:05:13.560><c> which</c><00:05:13.840><c> breaks</c><00:05:14.200><c> down</c>
+
+00:05:14.510 --> 00:05:14.520 align:start position:0%
+implementation plan, which breaks down
+ 
+
+00:05:14.520 --> 00:05:16.870 align:start position:0%
+implementation plan, which breaks down
+the<00:05:14.600><c> design</c><00:05:15.080><c> into</c><00:05:15.360><c> bite-size</c><00:05:16.000><c> chunks.</c><00:05:16.760><c> So,</c>
+
+00:05:16.870 --> 00:05:16.880 align:start position:0%
+the design into bite-size chunks. So,
+ 
+
+00:05:16.880 --> 00:05:18.910 align:start position:0%
+the design into bite-size chunks. So,
+here<00:05:17.120><c> is</c><00:05:17.320><c> the</c><00:05:17.520><c> final</c><00:05:17.920><c> implementation</c><00:05:18.560><c> plan</c>
+
+00:05:18.910 --> 00:05:18.920 align:start position:0%
+here is the final implementation plan
+ 
+
+00:05:18.920 --> 00:05:20.750 align:start position:0%
+here is the final implementation plan
+from<00:05:19.120><c> Superpowers,</c><00:05:19.920><c> which</c><00:05:20.120><c> has</c><00:05:20.240><c> a</c><00:05:20.320><c> goal,</c>
+
+00:05:20.750 --> 00:05:20.760 align:start position:0%
+from Superpowers, which has a goal,
+ 
+
+00:05:20.760 --> 00:05:22.190 align:start position:0%
+from Superpowers, which has a goal,
+architecture,<00:05:21.240><c> and</c><00:05:21.400><c> tech</c><00:05:21.640><c> stack,</c><00:05:21.960><c> which</c><00:05:22.120><c> I</c>
+
+00:05:22.190 --> 00:05:22.200 align:start position:0%
+architecture, and tech stack, which I
+ 
+
+00:05:22.200 --> 00:05:24.030 align:start position:0%
+architecture, and tech stack, which I
+really<00:05:22.440><c> like,</c><00:05:22.880><c> the</c><00:05:23.040><c> file</c><00:05:23.360><c> structure</c><00:05:23.840><c> for</c><00:05:23.960><c> the</c>
+
+00:05:24.030 --> 00:05:24.040 align:start position:0%
+really like, the file structure for the
+ 
+
+00:05:24.040 --> 00:05:26.030 align:start position:0%
+really like, the file structure for the
+release<00:05:24.280><c> pipeline,</c><00:05:24.920><c> and</c><00:05:25.040><c> the</c><00:05:25.120><c> list</c><00:05:25.400><c> of</c><00:05:25.560><c> tasks</c>
+
+00:05:26.030 --> 00:05:26.040 align:start position:0%
+release pipeline, and the list of tasks
+ 
+
+00:05:26.040 --> 00:05:27.870 align:start position:0%
+release pipeline, and the list of tasks
+that<00:05:26.200><c> need</c><00:05:26.320><c> to</c><00:05:26.400><c> be</c><00:05:26.520><c> implemented,</c><00:05:27.400><c> including</c>
+
+00:05:27.870 --> 00:05:27.880 align:start position:0%
+that need to be implemented, including
+ 
+
+00:05:27.880 --> 00:05:29.750 align:start position:0%
+that need to be implemented, including
+source<00:05:28.200><c> code,</c><00:05:28.760><c> which</c><00:05:28.880><c> is</c><00:05:28.960><c> similar</c><00:05:29.400><c> to</c><00:05:29.560><c> what</c>
+
+00:05:29.750 --> 00:05:29.760 align:start position:0%
+source code, which is similar to what
+ 
+
+00:05:29.760 --> 00:05:31.790 align:start position:0%
+source code, which is similar to what
+Ultra<00:05:30.000><c> Plan</c><00:05:30.200><c> provided,</c><00:05:30.840><c> but</c><00:05:31.160><c> Ultra</c><00:05:31.400><c> Plan</c>
+
+00:05:31.790 --> 00:05:31.800 align:start position:0%
+Ultra Plan provided, but Ultra Plan
+ 
+
+00:05:31.800 --> 00:05:33.870 align:start position:0%
+Ultra Plan provided, but Ultra Plan
+didn't<00:05:32.160><c> provide</c><00:05:32.600><c> test</c><00:05:32.840><c> cases,</c><00:05:33.520><c> which</c><00:05:33.680><c> is</c><00:05:33.760><c> what</c>
+
+00:05:33.870 --> 00:05:33.880 align:start position:0%
+didn't provide test cases, which is what
+ 
+
+00:05:33.880 --> 00:05:35.830 align:start position:0%
+didn't provide test cases, which is what
+Superpowers<00:05:34.440><c> does</c><00:05:34.760><c> really</c><00:05:35.000><c> well.</c><00:05:35.480><c> It</c><00:05:35.600><c> gets</c>
+
+00:05:35.830 --> 00:05:35.840 align:start position:0%
+Superpowers does really well. It gets
+ 
+
+00:05:35.840 --> 00:05:38.030 align:start position:0%
+Superpowers does really well. It gets
+the<00:05:35.920><c> model</c><00:05:36.160><c> to</c><00:05:36.320><c> write</c><00:05:36.600><c> tests</c><00:05:37.040><c> first,</c><00:05:37.680><c> then</c>
+
+00:05:38.030 --> 00:05:38.040 align:start position:0%
+the model to write tests first, then
+ 
+
+00:05:38.040 --> 00:05:39.670 align:start position:0%
+the model to write tests first, then
+write<00:05:38.320><c> the</c><00:05:38.440><c> implementation.</c><00:05:39.400><c> So,</c><00:05:39.480><c> here</c><00:05:39.600><c> we</c>
+
+00:05:39.670 --> 00:05:39.680 align:start position:0%
+write the implementation. So, here we
+ 
+
+00:05:39.680 --> 00:05:41.790 align:start position:0%
+write the implementation. So, here we
+can<00:05:39.760><c> see</c><00:05:39.840><c> the</c><00:05:39.960><c> test</c><00:05:40.480><c> for</c><00:05:40.840><c> the</c><00:05:41.040><c> versioning,</c>
+
+00:05:41.790 --> 00:05:41.800 align:start position:0%
+can see the test for the versioning,
+ 
+
+00:05:41.800 --> 00:05:43.510 align:start position:0%
+can see the test for the versioning,
+then<00:05:42.000><c> you</c><00:05:42.080><c> run</c><00:05:42.240><c> the</c><00:05:42.320><c> test</c><00:05:42.600><c> to</c><00:05:42.680><c> see</c><00:05:42.760><c> if</c><00:05:42.880><c> it</c><00:05:42.960><c> fails</c>
+
+00:05:43.510 --> 00:05:43.520 align:start position:0%
+then you run the test to see if it fails
+ 
+
+00:05:43.520 --> 00:05:45.350 align:start position:0%
+then you run the test to see if it fails
+before<00:05:43.840><c> actually</c><00:05:44.120><c> implementing</c><00:05:44.720><c> the</c><00:05:44.920><c> version</c>
+
+00:05:45.350 --> 00:05:45.360 align:start position:0%
+before actually implementing the version
+ 
+
+00:05:45.360 --> 00:05:47.390 align:start position:0%
+before actually implementing the version
+flag.<00:05:45.960><c> This</c><00:05:46.160><c> process</c><00:05:46.520><c> happens</c><00:05:46.960><c> all</c><00:05:47.160><c> the</c><00:05:47.240><c> way</c>
+
+00:05:47.390 --> 00:05:47.400 align:start position:0%
+flag. This process happens all the way
+ 
+
+00:05:47.400 --> 00:05:50.030 align:start position:0%
+flag. This process happens all the way
+down<00:05:48.000><c> for</c><00:05:48.240><c> every</c><00:05:48.600><c> single</c><00:05:49.040><c> task.</c><00:05:49.880><c> And</c><00:05:50.000><c> the</c>
+
+00:05:50.030 --> 00:05:50.040 align:start position:0%
+down for every single task. And the
+ 
+
+00:05:50.040 --> 00:05:52.870 align:start position:0%
+down for every single task. And the
+whole<00:05:50.200><c> plan</c><00:05:50.440><c> is</c><00:05:50.520><c> about</c><00:05:50.760><c> 833</c><00:05:51.760><c> lines,</c><00:05:52.360><c> compared</c>
+
+00:05:52.870 --> 00:05:52.880 align:start position:0%
+whole plan is about 833 lines, compared
+ 
+
+00:05:52.880 --> 00:05:54.950 align:start position:0%
+whole plan is about 833 lines, compared
+to<00:05:53.120><c> the</c><00:05:53.320><c> plan</c><00:05:53.680><c> from</c><00:05:53.920><c> Ultra</c><00:05:54.200><c> Plan,</c><00:05:54.600><c> which</c><00:05:54.840><c> is</c>
+
+00:05:54.950 --> 00:05:54.960 align:start position:0%
+to the plan from Ultra Plan, which is
+ 
+
+00:05:54.960 --> 00:05:57.630 align:start position:0%
+to the plan from Ultra Plan, which is
+about<00:05:55.280><c> 195.</c><00:05:56.600><c> One</c><00:05:56.760><c> thing</c><00:05:56.920><c> to</c><00:05:57.000><c> note</c><00:05:57.240><c> is</c><00:05:57.360><c> that</c><00:05:57.520><c> the</c>
+
+00:05:57.630 --> 00:05:57.640 align:start position:0%
+about 195. One thing to note is that the
+ 
+
+00:05:57.640 --> 00:05:59.030 align:start position:0%
+about 195. One thing to note is that the
+whole<00:05:57.800><c> session</c><00:05:58.480><c> for</c><00:05:58.560><c> creating</c><00:05:58.960><c> the</c>
+
+00:05:59.030 --> 00:05:59.040 align:start position:0%
+whole session for creating the
+ 
+
+00:05:59.040 --> 00:06:01.270 align:start position:0%
+whole session for creating the
+Superpowers<00:05:59.760><c> design</c><00:06:00.840><c> and</c><00:06:00.880><c> implementation</c>
+
+00:06:01.270 --> 00:06:01.280 align:start position:0%
+Superpowers design and implementation
+ 
+
+00:06:01.280 --> 00:06:04.310 align:start position:0%
+Superpowers design and implementation
+plan<00:06:01.800><c> took</c><00:06:01.960><c> up</c><00:06:02.080><c> about</c><00:06:02.320><c> 75.1k</c><00:06:03.520><c> tokens.</c><00:06:04.240><c> So,</c>
+
+00:06:04.310 --> 00:06:04.320 align:start position:0%
+plan took up about 75.1k tokens. So,
+ 
+
+00:06:04.320 --> 00:06:07.630 align:start position:0%
+plan took up about 75.1k tokens. So,
+that's<00:06:04.560><c> 57</c><00:06:05.320><c> for</c><00:06:05.440><c> the</c><00:06:05.520><c> messaging</c><00:06:06.320><c> and</c><00:06:06.720><c> 1.9</c><00:06:07.520><c> for</c>
+
+00:06:07.630 --> 00:06:07.640 align:start position:0%
+that's 57 for the messaging and 1.9 for
+ 
+
+00:06:07.640 --> 00:06:09.630 align:start position:0%
+that's 57 for the messaging and 1.9 for
+the<00:06:07.720><c> skills,</c><00:06:08.480><c> which</c><00:06:08.640><c> is</c><00:06:08.760><c> what</c><00:06:09.080><c> Superpowers</c>
+
+00:06:09.630 --> 00:06:09.640 align:start position:0%
+the skills, which is what Superpowers
+ 
+
+00:06:09.640 --> 00:06:12.110 align:start position:0%
+the skills, which is what Superpowers
+mainly<00:06:10.040><c> uses.</c><00:06:10.680><c> So,</c><00:06:10.800><c> if</c><00:06:10.920><c> you</c><00:06:11.040><c> believe</c><00:06:11.520><c> the</c><00:06:11.800><c> pro</c>
+
+00:06:12.110 --> 00:06:12.120 align:start position:0%
+mainly uses. So, if you believe the pro
+ 
+
+00:06:12.120 --> 00:06:15.030 align:start position:0%
+mainly uses. So, if you believe the pro
+5-hour<00:06:12.560><c> limit</c><00:06:12.960><c> is</c><00:06:13.040><c> about</c><00:06:13.400><c> 44,000</c><00:06:14.400><c> tokens,</c>
+
+00:06:15.030 --> 00:06:15.040 align:start position:0%
+5-hour limit is about 44,000 tokens,
+ 
+
+00:06:15.040 --> 00:06:17.390 align:start position:0%
+5-hour limit is about 44,000 tokens,
+then<00:06:15.440><c> creating</c><00:06:15.960><c> a</c><00:06:16.040><c> Superpowers</c><00:06:16.640><c> plan</c><00:06:17.000><c> uses</c>
+
+00:06:17.390 --> 00:06:17.400 align:start position:0%
+then creating a Superpowers plan uses
+ 
+
+00:06:17.400 --> 00:06:19.390 align:start position:0%
+then creating a Superpowers plan uses
+much<00:06:17.760><c> more.</c><00:06:18.320><c> Although,</c><00:06:18.600><c> I'm</c><00:06:18.760><c> not</c><00:06:18.920><c> convinced</c>
+
+00:06:19.390 --> 00:06:19.400 align:start position:0%
+much more. Although, I'm not convinced
+ 
+
+00:06:19.400 --> 00:06:22.070 align:start position:0%
+much more. Although, I'm not convinced
+it's<00:06:19.600><c> actually</c><00:06:20.200><c> 44,000</c><00:06:20.960><c> tokens,</c><00:06:21.600><c> and</c><00:06:21.760><c> this</c><00:06:21.960><c> is</c>
+
+00:06:22.070 --> 00:06:22.080 align:start position:0%
+it's actually 44,000 tokens, and this is
+ 
+
+00:06:22.080 --> 00:06:24.350 align:start position:0%
+it's actually 44,000 tokens, and this is
+excluding<00:06:22.680><c> prompt</c><00:06:23.120><c> caching,</c><00:06:23.800><c> which</c><00:06:24.000><c> does</c><00:06:24.280><c> a</c>
+
+00:06:24.350 --> 00:06:24.360 align:start position:0%
+excluding prompt caching, which does a
+ 
+
+00:06:24.360 --> 00:06:26.430 align:start position:0%
+excluding prompt caching, which does a
+lot<00:06:24.640><c> to</c><00:06:24.800><c> reuse</c><00:06:25.160><c> existing</c><00:06:25.640><c> tokens.</c><00:06:26.160><c> Now,</c><00:06:26.320><c> you</c>
+
+00:06:26.430 --> 00:06:26.440 align:start position:0%
+lot to reuse existing tokens. Now, you
+ 
+
+00:06:26.440 --> 00:06:28.190 align:start position:0%
+lot to reuse existing tokens. Now, you
+may<00:06:26.640><c> get</c><00:06:26.800><c> the</c><00:06:26.880><c> impression</c><00:06:27.360><c> from</c><00:06:27.560><c> that</c><00:06:27.760><c> demo</c>
+
+00:06:28.190 --> 00:06:28.200 align:start position:0%
+may get the impression from that demo
+ 
+
+00:06:28.200 --> 00:06:30.110 align:start position:0%
+may get the impression from that demo
+that<00:06:28.320><c> I</c><00:06:28.400><c> prefer</c><00:06:28.840><c> using</c><00:06:29.120><c> Superpowers</c><00:06:29.960><c> than</c>
+
+00:06:30.110 --> 00:06:30.120 align:start position:0%
+that I prefer using Superpowers than
+ 
+
+00:06:30.120 --> 00:06:32.390 align:start position:0%
+that I prefer using Superpowers than
+using<00:06:30.520><c> Ultra</c><00:06:30.800><c> Plan</c><00:06:31.080><c> to</c><00:06:31.240><c> plan</c><00:06:31.480><c> a</c><00:06:31.560><c> feature,</c><00:06:32.120><c> and</c>
+
+00:06:32.390 --> 00:06:32.400 align:start position:0%
+using Ultra Plan to plan a feature, and
+ 
+
+00:06:32.400 --> 00:06:34.190 align:start position:0%
+using Ultra Plan to plan a feature, and
+you're<00:06:32.520><c> not</c><00:06:32.800><c> wrong</c><00:06:33.000><c> there.</c><00:06:33.520><c> But,</c><00:06:33.880><c> there</c><00:06:34.040><c> is</c><00:06:34.120><c> a</c>
+
+00:06:34.190 --> 00:06:34.200 align:start position:0%
+you're not wrong there. But, there is a
+ 
+
+00:06:34.200 --> 00:06:36.070 align:start position:0%
+you're not wrong there. But, there is a
+time<00:06:34.600><c> and</c><00:06:34.800><c> place</c><00:06:35.080><c> for</c><00:06:35.200><c> Ultra</c><00:06:35.440><c> Plan.</c><00:06:36.000><c> For</c>
+
+00:06:36.070 --> 00:06:36.080 align:start position:0%
+time and place for Ultra Plan. For
+ 
+
+00:06:36.080 --> 00:06:37.590 align:start position:0%
+time and place for Ultra Plan. For
+example,<00:06:36.680><c> if</c><00:06:36.800><c> I</c><00:06:36.840><c> know</c><00:06:37.040><c> I'm</c><00:06:37.120><c> going</c><00:06:37.280><c> to</c><00:06:37.360><c> be</c><00:06:37.400><c> away</c>
+
+00:06:37.590 --> 00:06:37.600 align:start position:0%
+example, if I know I'm going to be away
+ 
+
+00:06:37.600 --> 00:06:39.310 align:start position:0%
+example, if I know I'm going to be away
+from<00:06:37.720><c> my</c><00:06:37.840><c> machine</c><00:06:38.280><c> for</c><00:06:38.480><c> long</c><00:06:38.720><c> period</c><00:06:38.960><c> of</c><00:06:39.000><c> time,</c>
+
+00:06:39.310 --> 00:06:39.320 align:start position:0%
+from my machine for long period of time,
+ 
+
+00:06:39.320 --> 00:06:41.590 align:start position:0%
+from my machine for long period of time,
+say<00:06:39.560><c> I'm</c><00:06:39.720><c> commuting</c><00:06:40.360><c> or</c><00:06:40.560><c> I'm</c><00:06:40.680><c> traveling</c><00:06:41.440><c> on</c><00:06:41.560><c> a</c>
+
+00:06:41.590 --> 00:06:41.600 align:start position:0%
+say I'm commuting or I'm traveling on a
+ 
+
+00:06:41.600 --> 00:06:43.990 align:start position:0%
+say I'm commuting or I'm traveling on a
+plane<00:06:42.000><c> or</c><00:06:42.120><c> at</c><00:06:42.240><c> airport</c><00:06:42.720><c> or</c><00:06:42.800><c> wherever,</c><00:06:43.480><c> I</c><00:06:43.640><c> may</c>
+
+00:06:43.990 --> 00:06:44.000 align:start position:0%
+plane or at airport or wherever, I may
+ 
+
+00:06:44.000 --> 00:06:46.070 align:start position:0%
+plane or at airport or wherever, I may
+want<00:06:44.240><c> to</c><00:06:44.360><c> start</c><00:06:44.800><c> a</c><00:06:44.880><c> feature</c><00:06:45.160><c> on</c><00:06:45.280><c> my</c><00:06:45.360><c> laptop,</c>
+
+00:06:46.070 --> 00:06:46.080 align:start position:0%
+want to start a feature on my laptop,
+ 
+
+00:06:46.080 --> 00:06:48.110 align:start position:0%
+want to start a feature on my laptop,
+close<00:06:46.360><c> it,</c><00:06:46.640><c> turn</c><00:06:46.800><c> it</c><00:06:46.920><c> off,</c><00:06:47.440><c> and</c><00:06:47.560><c> continue</c><00:06:47.920><c> it</c>
+
+00:06:48.110 --> 00:06:48.120 align:start position:0%
+close it, turn it off, and continue it
+ 
+
+00:06:48.120 --> 00:06:50.510 align:start position:0%
+close it, turn it off, and continue it
+on<00:06:48.280><c> my</c><00:06:48.480><c> phone,</c><00:06:49.120><c> tablet,</c><00:06:49.720><c> wherever,</c><00:06:50.440><c> and</c>
+
+00:06:50.510 --> 00:06:50.520 align:start position:0%
+on my phone, tablet, wherever, and
+ 
+
+00:06:50.520 --> 00:06:52.550 align:start position:0%
+on my phone, tablet, wherever, and
+benefit<00:06:50.920><c> from</c><00:06:51.040><c> my</c><00:06:51.160><c> code</c><00:06:51.560><c> being</c><00:06:51.760><c> in</c><00:06:51.880><c> the</c><00:06:51.960><c> cloud</c>
+
+00:06:52.550 --> 00:06:52.560 align:start position:0%
+benefit from my code being in the cloud
+ 
+
+00:06:52.560 --> 00:06:54.470 align:start position:0%
+benefit from my code being in the cloud
+and<00:06:52.760><c> creating</c><00:06:53.200><c> PRs</c><00:06:53.680><c> as</c><00:06:53.880><c> long</c><00:06:54.200><c> as</c><00:06:54.360><c> I've</c>
+
+00:06:54.470 --> 00:06:54.480 align:start position:0%
+and creating PRs as long as I've
+ 
+
+00:06:54.480 --> 00:06:56.510 align:start position:0%
+and creating PRs as long as I've
+installed<00:06:55.000><c> the</c><00:06:55.080><c> Claude</c><00:06:55.400><c> app</c><00:06:55.640><c> on</c><00:06:55.800><c> my</c><00:06:56.000><c> repo,</c>
+
+00:06:56.510 --> 00:06:56.520 align:start position:0%
+installed the Claude app on my repo,
+ 
+
+00:06:56.520 --> 00:06:58.390 align:start position:0%
+installed the Claude app on my repo,
+which<00:06:56.960><c> I</c><00:06:57.080><c> forgot</c><00:06:57.360><c> to</c><00:06:57.440><c> do</c><00:06:57.600><c> for</c><00:06:57.720><c> this</c><00:06:57.840><c> demo.</c>
+
+00:06:58.390 --> 00:06:58.400 align:start position:0%
+which I forgot to do for this demo.
+ 
+
+00:06:58.400 --> 00:07:00.790 align:start position:0%
+which I forgot to do for this demo.
+Oops.<00:06:59.160><c> But,</c><00:06:59.720><c> if</c><00:06:59.880><c> I</c><00:06:59.960><c> do</c><00:07:00.240><c> choose</c><00:07:00.520><c> to</c><00:07:00.640><c> work</c>
+
+00:07:00.790 --> 00:07:00.800 align:start position:0%
+Oops. But, if I do choose to work
+ 
+
+00:07:00.800 --> 00:07:02.830 align:start position:0%
+Oops. But, if I do choose to work
+locally,<00:07:01.280><c> which</c><00:07:01.440><c> I'm</c><00:07:01.560><c> doing</c><00:07:01.880><c> 90%</c><00:07:02.520><c> of</c><00:07:02.720><c> the</c>
+
+00:07:02.830 --> 00:07:02.840 align:start position:0%
+locally, which I'm doing 90% of the
+ 
+
+00:07:02.840 --> 00:07:05.470 align:start position:0%
+locally, which I'm doing 90% of the
+time,<00:07:03.520><c> then</c><00:07:03.880><c> I'll</c><00:07:04.080><c> probably</c><00:07:04.440><c> use</c><00:07:04.680><c> Superpowers</c>
+
+00:07:05.470 --> 00:07:05.480 align:start position:0%
+time, then I'll probably use Superpowers
+ 
+
+00:07:05.480 --> 00:07:07.630 align:start position:0%
+time, then I'll probably use Superpowers
+because<00:07:05.880><c> all</c><00:07:06.080><c> my</c><00:07:06.240><c> code</c><00:07:06.600><c> is</c><00:07:06.720><c> there</c><00:07:06.880><c> locally,</c><00:07:07.520><c> my</c>
+
+00:07:07.630 --> 00:07:07.640 align:start position:0%
+because all my code is there locally, my
+ 
+
+00:07:07.640 --> 00:07:10.750 align:start position:0%
+because all my code is there locally, my
+skills,<00:07:08.120><c> my</c><00:07:08.280><c> MCP</c><00:07:08.760><c> tools,</c><00:07:09.440><c> everything,</c><00:07:10.280><c> and</c><00:07:10.680><c> I</c>
+
+00:07:10.750 --> 00:07:10.760 align:start position:0%
+skills, my MCP tools, everything, and I
+ 
+
+00:07:10.760 --> 00:07:13.150 align:start position:0%
+skills, my MCP tools, everything, and I
+can<00:07:10.920><c> get</c><00:07:11.200><c> a</c><00:07:11.280><c> more</c><00:07:11.720><c> thorough</c><00:07:12.000><c> plan.</c><00:07:12.600><c> Now,</c><00:07:12.880><c> this</c>
+
+00:07:13.150 --> 00:07:13.160 align:start position:0%
+can get a more thorough plan. Now, this
+ 
+
+00:07:13.160 --> 00:07:15.550 align:start position:0%
+can get a more thorough plan. Now, this
+isn't<00:07:13.520><c> to</c><00:07:13.640><c> say</c><00:07:14.000><c> a</c><00:07:14.120><c> more</c><00:07:14.360><c> thorough</c><00:07:14.600><c> plan</c><00:07:15.280><c> means</c>
+
+00:07:15.550 --> 00:07:15.560 align:start position:0%
+isn't to say a more thorough plan means
+ 
+
+00:07:15.560 --> 00:07:17.590 align:start position:0%
+isn't to say a more thorough plan means
+a<00:07:15.640><c> better</c><00:07:15.960><c> execution,</c><00:07:16.800><c> it's</c><00:07:17.040><c> just</c><00:07:17.280><c> the</c><00:07:17.360><c> way</c><00:07:17.520><c> I</c>
+
+00:07:17.590 --> 00:07:17.600 align:start position:0%
+a better execution, it's just the way I
+ 
+
+00:07:17.600 --> 00:07:19.590 align:start position:0%
+a better execution, it's just the way I
+prefer<00:07:17.960><c> working</c><00:07:18.600><c> because</c><00:07:18.800><c> I</c><00:07:18.840><c> can</c><00:07:18.960><c> have</c><00:07:19.200><c> a</c><00:07:19.240><c> true</c>
+
+00:07:19.590 --> 00:07:19.600 align:start position:0%
+prefer working because I can have a true
+ 
+
+00:07:19.600 --> 00:07:21.550 align:start position:0%
+prefer working because I can have a true
+dialogue<00:07:20.320><c> with</c><00:07:20.520><c> the</c><00:07:20.600><c> model</c><00:07:21.160><c> when</c><00:07:21.400><c> I'm</c>
+
+00:07:21.550 --> 00:07:21.560 align:start position:0%
+dialogue with the model when I'm
+ 
+
+00:07:21.560 --> 00:07:23.670 align:start position:0%
+dialogue with the model when I'm
+planning<00:07:22.000><c> things</c><00:07:22.360><c> out.</c><00:07:22.720><c> Now,</c><00:07:22.880><c> currently,</c><00:07:23.520><c> the</c>
+
+00:07:23.670 --> 00:07:23.680 align:start position:0%
+planning things out. Now, currently, the
+ 
+
+00:07:23.680 --> 00:07:25.710 align:start position:0%
+planning things out. Now, currently, the
+Ultra<00:07:23.920><c> Plan</c><00:07:24.160><c> feature</c><00:07:24.480><c> is</c><00:07:24.680><c> only</c><00:07:24.960><c> available</c>
+
+00:07:25.710 --> 00:07:25.720 align:start position:0%
+Ultra Plan feature is only available
+ 
+
+00:07:25.720 --> 00:07:27.470 align:start position:0%
+Ultra Plan feature is only available
+through<00:07:25.880><c> the</c><00:07:26.000><c> Claude</c><00:07:26.320><c> Code</c><00:07:26.600><c> CLI,</c><00:07:27.120><c> so</c><00:07:27.360><c> through</c>
+
+00:07:27.470 --> 00:07:27.480 align:start position:0%
+through the Claude Code CLI, so through
+ 
+
+00:07:27.480 --> 00:07:29.390 align:start position:0%
+through the Claude Code CLI, so through
+the<00:07:27.600><c> terminal,</c><00:07:28.080><c> and</c><00:07:28.320><c> works</c><00:07:28.640><c> with</c><00:07:28.800><c> a</c><00:07:28.880><c> pro</c><00:07:29.280><c> or</c>
+
+00:07:29.390 --> 00:07:29.400 align:start position:0%
+the terminal, and works with a pro or
+ 
+
+00:07:29.400 --> 00:07:31.470 align:start position:0%
+the terminal, and works with a pro or
+max<00:07:29.640><c> subscription</c><00:07:30.440><c> since</c><00:07:30.680><c> it</c><00:07:30.800><c> has</c><00:07:31.040><c> the</c><00:07:31.200><c> Claude</c>
+
+00:07:31.470 --> 00:07:31.480 align:start position:0%
+max subscription since it has the Claude
+ 
+
+00:07:31.480 --> 00:07:33.150 align:start position:0%
+max subscription since it has the Claude
+Code<00:07:31.760><c> for</c><00:07:31.920><c> web</c><00:07:32.240><c> link.</c><00:07:32.680><c> But,</c><00:07:32.800><c> maybe</c><00:07:33.000><c> in</c><00:07:33.080><c> the</c>
+
+00:07:33.150 --> 00:07:33.160 align:start position:0%
+Code for web link. But, maybe in the
+ 
+
+00:07:33.160 --> 00:07:35.310 align:start position:0%
+Code for web link. But, maybe in the
+future,<00:07:33.880><c> they'll</c><00:07:34.040><c> roll</c><00:07:34.280><c> it</c><00:07:34.440><c> out</c><00:07:34.800><c> to</c><00:07:35.040><c> different</c>
+
+00:07:35.310 --> 00:07:35.320 align:start position:0%
+future, they'll roll it out to different
+ 
+
+00:07:35.320 --> 00:07:36.830 align:start position:0%
+future, they'll roll it out to different
+subscription<00:07:35.760><c> plans</c><00:07:36.240><c> and</c><00:07:36.600><c> different</c>
+
+00:07:36.830 --> 00:07:36.840 align:start position:0%
+subscription plans and different
+ 
+
+00:07:36.840 --> 00:07:38.590 align:start position:0%
+subscription plans and different
+platforms,<00:07:37.560><c> so</c><00:07:37.640><c> maybe</c><00:07:37.840><c> you</c><00:07:37.960><c> could</c><00:07:38.080><c> kick</c><00:07:38.360><c> off</c>
+
+00:07:38.590 --> 00:07:38.600 align:start position:0%
+platforms, so maybe you could kick off
+ 
+
+00:07:38.600 --> 00:07:40.830 align:start position:0%
+platforms, so maybe you could kick off
+an<00:07:38.720><c> Ultra</c><00:07:38.960><c> Plan</c><00:07:39.200><c> session</c><00:07:39.800><c> from</c><00:07:40.200><c> Claude</c><00:07:40.520><c> Code</c>
+
+00:07:40.830 --> 00:07:40.840 align:start position:0%
+an Ultra Plan session from Claude Code
+ 
+
+00:07:40.840 --> 00:07:43.800 align:start position:0%
+an Ultra Plan session from Claude Code
+web<00:07:41.120><c> itself.</c>
+

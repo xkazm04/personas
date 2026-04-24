@@ -8,6 +8,11 @@
  *
  * To edit an English string: edit `src/i18n/locales/en.json`, then run
  * `node scripts/i18n/gen-types.mjs` (automatic in `npm run prebuild`).
+ *
+ * Before adding a new key: read `src/i18n/CONTRACT.md`. This file is
+ * Layer 4 of a four-layer contract (Rust codes → IPC → React → translators).
+ * If you are about to add English prose for a Rust-side status or error,
+ * the fix is almost always upstream — map the code, don't hardcode a sentence.
  */
 
 import enData from './locales/en.json';

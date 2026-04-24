@@ -39,7 +39,7 @@ export const AGENT_ICONS: AgentIconEntry[] = [
   { id: 'hr',           label: 'HR',            categories: ['hr'],                          suggestedColor: '#4ade80' },
   { id: 'legal',        label: 'Legal',         categories: ['legal'],                       suggestedColor: '#94a3b8' },
   { id: 'notification', label: 'Notification',  categories: ['notification', 'alerts'],      suggestedColor: '#fbbf24' },
-  { id: 'calendar',     label: 'Calendar',      categories: ['project-management', 'scheduling'], suggestedColor: '#2dd4bf' },
+  { id: 'calendar',     label: 'Calendar',      categories: ['project_management', 'scheduling'], suggestedColor: '#2dd4bf' },
   { id: 'search',       label: 'Search',        categories: ['research', 'intelligence'],    suggestedColor: '#818cf8' },
 ];
 

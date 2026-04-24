@@ -4,11 +4,9 @@
   "label": "Linear",
   "color": "#5E6AD2",
   "icon_url": "/icons/connectors/linear.svg",
-  "category": "project-mgmt",
+  "category": "project_management",
   "categories": [
-    "project-mgmt",
     "project_management",
-    "issue_tracker",
     "ticketing"
   ],
   "fields": [

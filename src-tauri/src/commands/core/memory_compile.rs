@@ -24,6 +24,19 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
 
+/// Upper bound on how many raw memories a single compile pass will read.
+/// Guards against unbounded prompts that would blow Tauri IPC, the CLI stdin
+/// pipe, and the model's input token window.
+const MAX_SOURCE_LIMIT: i64 = 200;
+
+/// Default source_limit when the caller omits one.
+const DEFAULT_SOURCE_LIMIT: i64 = 50;
+
+/// Hard cap on prompt byte size sent to the Claude CLI. 512 KB is well under
+/// any plausible stdin/token-window budget while still fitting 200 memories
+/// of typical size.
+const MAX_PROMPT_BYTES: usize = 512 * 1024;
+
 #[derive(Debug, serde::Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -43,7 +56,8 @@ pub struct MemoryCompileResult {
 /// concept and adds cross-references in the body.
 ///
 /// Behavior:
-/// - Reads up to `source_limit` recent memories for the persona (default 50).
+/// - Reads up to `source_limit` recent memories for the persona (default 50,
+///   clamped to `MAX_SOURCE_LIMIT = 200`; negatives/zero are rejected).
 /// - Skips if there are fewer than 3 sources (nothing meaningful to compile).
 /// - Asks the Claude CLI to extract 1-5 concept articles, each with a title,
 ///   summary body, and the IDs of the source memories that informed it.
@@ -58,7 +72,15 @@ pub async fn compile_persona_memories(
 ) -> Result<MemoryCompileResult, AppError> {
     require_auth(&state).await?;
     let db = state.db.clone();
-    let limit = source_limit.unwrap_or(50);
+    let limit = match source_limit {
+        Some(n) if n < 1 => {
+            return Err(AppError::Validation(format!(
+                "source_limit must be >= 1 (got {n})"
+            )));
+        }
+        Some(n) => n.min(MAX_SOURCE_LIMIT),
+        None => DEFAULT_SOURCE_LIMIT,
+    };
 
     // 1. Fetch recent raw memories for this persona.
     let memories = repo::get_all(
@@ -144,6 +166,14 @@ Example:
 Raw memories:
 {memories_json}"#
     );
+
+    if prompt.len() > MAX_PROMPT_BYTES {
+        return Err(AppError::Validation(format!(
+            "Compile prompt is {} bytes, exceeds max of {} bytes. Lower source_limit or trim memory contents.",
+            prompt.len(),
+            MAX_PROMPT_BYTES
+        )));
+    }
 
     // 3. Build CLI args (mirrors review_memories_with_cli).
     let (command, mut args) = if cfg!(windows) {

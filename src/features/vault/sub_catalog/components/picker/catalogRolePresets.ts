@@ -15,6 +15,6 @@ export const ROLE_PRESETS: Record<RolePreset, { label: string; categories: strin
   },
   manager: {
     label: 'Manager',
-    categories: ['project-mgmt', 'finance', 'ecommerce', 'social', 'crm', 'productivity', 'scheduling'],
+    categories: ['project_management', 'finance', 'ecommerce', 'social', 'crm', 'productivity', 'scheduling'],
   },
 };

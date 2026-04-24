@@ -5,11 +5,22 @@
   "description": "Weekly investment research: technical signals on a watchlist, congressional trading disclosures, and under-covered sector gems. Delivers one combined Monday briefing; every recommendation is human-reviewed and reviewed decisions persist as simulated trades.",
   "icon": "TrendingUp",
   "color": "#10B981",
-  "category": ["finance", "research"],
-  "service_flow": ["Alpha Vantage", "Capitol Trades", "Messages"],
+  "category": [
+    "finance",
+    "research"
+  ],
+  "service_flow": [
+    "Alpha Vantage",
+    "Capitol Trades",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Alpha Vantage", "Capitol Trades", "Messages"],
+    "service_flow": [
+      "Alpha Vantage",
+      "Capitol Trades",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn noisy markets into one reviewed Monday briefing — technical signals, political disclosures, and sector gems that compound into a simulated track record.",
       "identity": {
@@ -47,7 +58,12 @@
       "tool_guidance": "**Alpha Vantage endpoints** (base `https://www.alphavantage.co/query`, API key in query string):\n- `TIME_SERIES_WEEKLY_ADJUSTED` — weekly OHLCV + adjusted close.\n- `RSI` with `interval=weekly&time_period=14&series_type=close`.\n- `MACD` with `interval=weekly&series_type=close` (12/26/9 default).\n- `NEWS_SENTIMENT` with `tickers=...&time_from=...&sort=RELEVANCE`.\n- `EARNINGS` for upcoming report dates.\n\nFree tier = 25 req/day. Pace with 1-15s delays.\n\n**Web fallback** (used when Alpha Vantage is absent or rate-limited): site-scoped `web_search` queries on `finance.yahoo.com`, `marketwatch.com`, `tradingview.com` for price/indicator data. News via `news.google.com` site scope.\n\n**Congressional data** (no formal connector — native browsing):\n- `site:capitoltrades.com` queries for disclosures by ticker and by politician.\n- `site:efdsearch.senate.gov` for raw STOCK Act filings.\n- Parse filing date, politician, action (buy/sell), amount range.\n\n**State files**:\n- `watchlist.json` — tickers + user preferences.\n- `signal_history.json` — weekly signal table for trend tracking.\n- `sim_trades.json` — reviewed-decision ledger keyed by ticker + week. Each entry: { ticker, decision, confidence, price_at_decision, running_pnl }.\n- `data/congressional/{YYYY-WW}.json` — matched political trades per week.\n- `data/gems/{YYYY-WW}.json` — gem candidates per week with acceptance.",
       "error_handling": "Alpha Vantage 401/403 → auth failure; drop into web_search for all data this cycle. 429 rate limit → 15s pacing; if still blocked, web_search fallback. 5xx → retry once with 30s backoff, then fallback. Empty response for a specific endpoint → web_search fills the gap; never report 'unavailable' when the web has the answer. Capitol Trades down → scan `efdsearch.senate.gov` directly. Messages delivery failure → write full briefing to `latest_report.md` so no analysis is lost. Empty watchlist → post a setup reminder via Messages, skip the run. Always include the 'past performance does not guarantee future results' disclaimer on any backtest-style metric.",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "alpha_vantage",
@@ -91,10 +107,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
         },
-        "connectors": ["alpha_vantage"],
+        "connectors": [
+          "alpha_vantage"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -131,7 +152,11 @@
           {
             "name": "signal_weighting",
             "type": "enum",
-            "options": ["technical", "news", "balanced"],
+            "options": [
+              "technical",
+              "news",
+              "balanced"
+            ],
             "default": "balanced",
             "description": "How to weight technical indicators vs news sentiment in the composite score."
           }
@@ -140,27 +165,86 @@
           "watchlist": "{{param.aq_tickers}}",
           "signal_weighting": "{{param.aq_signal_weighting}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "s2", "type": "action", "label": "Load watchlist + memory" },
-            { "id": "s3", "type": "connector", "label": "Fetch OHLCV + RSI + MACD + news", "connector": "alpha_vantage" },
-            { "id": "s4", "type": "action", "label": "Compute Buy/Sell/Hold composite" },
-            { "id": "s5", "type": "event", "label": "Emit stocks.signals.*" },
-            { "id": "s6", "type": "action", "label": "Route to human review" },
-            { "id": "s7", "type": "action", "label": "Persist reviewed decisions to sim_trades.json" },
-            { "id": "s8", "type": "end", "label": "Signal section ready for combined briefing" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load watchlist + memory"
+            },
+            {
+              "id": "s3",
+              "type": "connector",
+              "label": "Fetch OHLCV + RSI + MACD + news",
+              "connector": "alpha_vantage"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Compute Buy/Sell/Hold composite"
+            },
+            {
+              "id": "s5",
+              "type": "event",
+              "label": "Emit stocks.signals.*"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Route to human review"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Persist reviewed decisions to sim_trades.json"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Signal section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -175,7 +259,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
         },
         "connectors": [],
@@ -211,27 +298,84 @@
         "sample_input": {
           "sectors": "{{param.aq_sector_interest}}"
         },
-        "tool_hints": ["web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "c2", "type": "action", "label": "Query Capitol Trades + Senate EFD (last 7d)" },
-            { "id": "c3", "type": "action", "label": "Filter by sectors + watchlist" },
-            { "id": "c4", "type": "event", "label": "Emit stocks.congress.disclosure per match" },
-            { "id": "c5", "type": "action", "label": "Detect unusual sector volume" },
-            { "id": "c6", "type": "event", "label": "Emit stocks.congress.sector_shift if triggered" },
-            { "id": "c7", "type": "action", "label": "Route to review; memorize usefulness tags" },
-            { "id": "c8", "type": "end", "label": "Congressional section ready for combined briefing" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Query Capitol Trades + Senate EFD (last 7d)"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Filter by sectors + watchlist"
+            },
+            {
+              "id": "c4",
+              "type": "event",
+              "label": "Emit stocks.congress.disclosure per match"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Detect unusual sector volume"
+            },
+            {
+              "id": "c6",
+              "type": "event",
+              "label": "Emit stocks.congress.sector_shift if triggered"
+            },
+            {
+              "id": "c7",
+              "type": "action",
+              "label": "Route to review; memorize usefulness tags"
+            },
+            {
+              "id": "c8",
+              "type": "end",
+              "label": "Congressional section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c8" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c8"
+            }
           ]
         }
       },
@@ -246,10 +390,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 8:00 AM (overridden by persona-level shared trigger composition)."
         },
-        "connectors": ["alpha_vantage"],
+        "connectors": [
+          "alpha_vantage"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -282,25 +431,77 @@
         "sample_input": {
           "sectors": "{{param.aq_sector_interest}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "g1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "g2", "type": "action", "label": "Build sector candidate pool" },
-            { "id": "g3", "type": "connector", "label": "Fetch technicals + coverage + news", "connector": "alpha_vantage" },
-            { "id": "g4", "type": "action", "label": "Apply threshold filters" },
-            { "id": "g5", "type": "event", "label": "Emit stocks.gems.discovered / filtered_out" },
-            { "id": "g6", "type": "action", "label": "Route to review; adjust thresholds from memory" },
-            { "id": "g7", "type": "end", "label": "Gems section ready for combined briefing" }
+            {
+              "id": "g1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "g2",
+              "type": "action",
+              "label": "Build sector candidate pool"
+            },
+            {
+              "id": "g3",
+              "type": "connector",
+              "label": "Fetch technicals + coverage + news",
+              "connector": "alpha_vantage"
+            },
+            {
+              "id": "g4",
+              "type": "action",
+              "label": "Apply threshold filters"
+            },
+            {
+              "id": "g5",
+              "type": "event",
+              "label": "Emit stocks.gems.discovered / filtered_out"
+            },
+            {
+              "id": "g6",
+              "type": "action",
+              "label": "Route to review; adjust thresholds from memory"
+            },
+            {
+              "id": "g7",
+              "type": "end",
+              "label": "Gems section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "g1", "target": "g2" },
-            { "source": "g2", "target": "g3" },
-            { "source": "g3", "target": "g4" },
-            { "source": "g4", "target": "g5" },
-            { "source": "g5", "target": "g6" },
-            { "source": "g6", "target": "g7" }
+            {
+              "source": "g1",
+              "target": "g2"
+            },
+            {
+              "source": "g2",
+              "target": "g3"
+            },
+            {
+              "source": "g3",
+              "target": "g4"
+            },
+            {
+              "source": "g4",
+              "target": "g5"
+            },
+            {
+              "source": "g5",
+              "target": "g6"
+            },
+            {
+              "source": "g6",
+              "target": "g7"
+            }
           ]
         }
       }
@@ -309,7 +510,9 @@
       {
         "id": "aq_tickers",
         "scope": "capability",
-        "use_case_ids": ["uc_signals"],
+        "use_case_ids": [
+          "uc_signals"
+        ],
         "category": "domain",
         "question": "Which stock tickers should this agent track?",
         "type": "text",
@@ -324,7 +527,9 @@
       {
         "id": "aq_signal_weighting",
         "scope": "capability",
-        "use_case_ids": ["uc_signals"],
+        "use_case_ids": [
+          "uc_signals"
+        ],
         "category": "configuration",
         "question": "How should signals be weighted?",
         "type": "select",
@@ -342,7 +547,10 @@
       {
         "id": "aq_sector_interest",
         "scope": "capability",
-        "use_case_ids": ["uc_congressional_scan", "uc_gems"],
+        "use_case_ids": [
+          "uc_congressional_scan",
+          "uc_gems"
+        ],
         "category": "domain",
         "question": "Which sectors of interest drive the congressional scan and gem discovery?",
         "type": "select",

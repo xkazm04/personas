@@ -4,11 +4,11 @@
   "label": "Local Vector DB",
   "color": "#8B5CF6",
   "icon_url": "/icons/connectors/vector-db.svg",
-  "category": "database",
+  "category": "vector_search",
   "categories": [
-    "database",
     "vector_search",
-    "knowledge_base"
+    "knowledge_base",
+    "database"
   ],
   "fields": [],
   "healthcheck_config": null,

@@ -7,10 +7,10 @@ import {
 } from '@/lib/credentials/builtinConnectors';
 
 describe('builtinConnectors — personas_messages (CONN-01..CONN-03 regression)', () => {
-  it('CONN-03: connectorCategoryTags("personas_messages") includes messaging + in_app_notifications', () => {
+  it('CONN-03: connectorCategoryTags("personas_messages") includes messaging + notifications', () => {
     const tags = connectorCategoryTags('personas_messages');
     expect(tags).toContain('messaging');
-    expect(tags).toContain('in_app_notifications');
+    expect(tags).toContain('notifications');
   });
 
   it('CONN-03: connectorsInCategory("messaging") includes personas_messages', () => {
@@ -35,7 +35,7 @@ describe('builtinConnectors — personas_messages (CONN-01..CONN-03 regression)'
     expect(json.category).toBe('messaging');
     expect(Array.isArray(json.categories)).toBe(true);
     expect(json.categories).toContain('messaging');
-    expect(json.categories).toContain('in_app_notifications');
+    expect(json.categories).toContain('notifications');
     expect(Array.isArray(json.fields)).toBe(true);
     expect(json.fields.length).toBe(0);
   });

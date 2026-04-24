@@ -5,16 +5,26 @@
   "description": "Closed-loop conversion rate optimization agent that pulls landing page analytics, identifies underperforming sections, generates A/B headline and copy variants, deploys experiments via your analytics/experimentation tool, tracks statistical lift, and promotes winners. Every variant goes through human review before deployment. Learns from accepted/rejected variants over time.",
   "icon": "FlaskConical",
   "color": "#10B981",
-  "category": ["marketing"],
+  "category": [
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["Analytics Tool", "Experimentation API", "Messages"],
+  "service_flow": [
+    "Analytics Tool",
+    "Experimentation API",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Analytics Tool", "Experimentation API", "Messages"],
+    "service_flow": [
+      "Analytics Tool",
+      "Experimentation API",
+      "Messages"
+    ],
     "persona": {
       "goal": "Close the loop between measurement and action — deploy reviewed experiments, measure significance properly, and promote winners that actually move the metric.",
       "identity": {
         "role": "Closed-loop conversion rate optimization agent that runs experiments instead of just advising.",
-        "description": "Observes analytics, hypothesizes variants, routes every proposed change through human review, deploys approved experiments to your experimentation backend (Humbalytics or PostHog), tracks statistical significance with sample-size and duration guardrails, and promotes winners. Learns which variant categories the reviewer consistently approves and deprioritizes rejected categories over time."
+        "description": "Observes analytics, hypothesizes variants, routes every proposed change through human review, deploys approved experiments to your experimentation backend (Humbalytics or analytics), tracks statistical significance with sample-size and duration guardrails, and promotes winners. Learns which variant categories the reviewer consistently approves and deprioritizes rejected categories over time."
       },
       "voice": {
         "style": "Hypothesis-first and evidence-led. Every variant states what it expects to improve and by how much. No eyeballed wins.",
@@ -44,14 +54,18 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "Three capabilities fire on one shared weekly tick. Their outputs concatenate into one Monday CRO briefing.\n\n1. **uc_experiment_watch** — read `experiments_state.json`, compute sample size per arm and duration since start for each in-flight experiment. Skip those below `min_sample_size` OR `min_duration_days`. For experiments past both gates, compute a two-proportion z-test. Classify as RUNNING (not significant), WINNER (p < `significance_threshold`, variant beats control), LOSER (p < threshold, variant worse), or INCONCLUSIVE (past 4 weeks, still not significant). Prepare `promote_winner` / `revert_to_control` / `archive_experiment` proposals. Emit `cro.experiment.winner_detected`, `cro.experiment.loser_detected`, `cro.experiment.inconclusive` per classification. Submit every proposal for manual_review before any backend call.\n\n2. **uc_variant_proposals** — from analytics pulled via the experimentation/analytics backend, identify pages whose 7-day conversion rate is > 15% below the 4-week baseline. For each flagged page without an in-flight experiment, generate up to `max_new_variants_per_run` hypotheses. Each hypothesis carries target_element, control copy, variant copy, hypothesis statement, expected_lift (from memory or 'first experiment in this category'), category (headline | cta | hero_copy | section_reorder | social_proof | urgency | benefits), target_metric, and guardrails. Apply memory-informed filtering: skip categories rejected 3+ times unless expected lift > 30%; favor categories accepted 3+ times. Never propose variants for pages on the excluded list. Emit `cro.variant.proposed` per hypothesis. Submit each for manual_review. On approval, deploy to the experimentation backend (new experiment). Emit `cro.experiment.started` on successful deployment.\n\n3. **uc_weekly_report** — compose the combined weekly report: header (week_ending, backend, pages monitored, in-flight count), executive summary (biggest finding), in-flight experiments table, significant results, new variant proposals, inconclusive archives. Delivered regardless of review outcome so the user always has visibility. Emit `cro.report.delivered`.\n\n**Backend adaptation** (from the `aq_cro_backend` picker at adoption):\n- Humbalytics: new experiment `POST /v1/experiments`, promote `POST /v1/experiments/{id}/promote`, revert `POST /v1/experiments/{id}/stop?revert=true`, archive `POST /v1/experiments/{id}/archive`. JS snippet injects variants at runtime — no code deploy.\n- PostHog: new experiment `POST /api/projects/{id}/experiments/`, promote/revert via `POST /api/projects/{id}/experiments/{id}/stop/` with winner rollout. Requires pre-existing feature flag in site code — mark proposals `blocked_missing_flag` if absent.\n\n**State files**: `cro_config.json` (backend, target URLs, guardrails, excluded pages), `experiments_state.json` (in-flight experiments with start_date, control, variant, per-arm counts), `pending_actions.json` (approved actions that failed to execute; retried next run), `performance_log.md` (Obsidian-style longitudinal log: date, action, control, variant, lift, user decision). `variant_patterns.json` (accept/reject counts per category driving memory filtering).\n\n**Statistical significance**: two-proportion z-test. p_c = conversions_control / visitors_control; p_v = conversions_variant / visitors_variant; p_pool = pooled; se = sqrt(p_pool * (1 - p_pool) * (1/v_c + 1/v_v)); z = (p_v - p_c) / se. Convert z to a two-tailed p-value. Significance threshold: p < `significance_threshold` (default 0.05). BOTH `min_sample_size` AND `min_duration_days` must be met regardless of p-value.",
-      "tool_guidance": "**Experimentation backend (http_request)** — the user chose Humbalytics or PostHog at adoption via `aq_cro_backend`. The backend is resolved at runtime from the vault credential.\n\n**Humbalytics**:\n- Base URL: `https://api.humbalytics.com/v1`. Auth: `Authorization: Bearer {api_key}`.\n- `GET /properties/{property_id}/analytics?range=7d&metrics=visitors,pageviews,conversions,bounce_rate`\n- `GET /properties/{property_id}/pages/{url_id}/heatmap` — section-level click density.\n- `POST /v1/experiments` body `{ property_id, page_url, target_selector, control, variant, target_metric, traffic_split }`.\n- `GET /v1/experiments/{id}`, `POST /v1/experiments/{id}/promote`, `POST /v1/experiments/{id}/stop?revert=true`, `POST /v1/experiments/{id}/archive`.\n\n**PostHog**:\n- Base URL: `https://app.posthog.com/api` (or EU host). Auth: `Authorization: Bearer {personal_api_key}`.\n- `POST /projects/{id}/query` — HogQL for web analytics.\n- `POST /projects/{id}/experiments/` — create feature-flag-based experiment.\n- `GET /projects/{id}/experiments/{id}/`, `POST /projects/{id}/experiments/{id}/stop/` (with winner or control rollout).\n- PostHog experiments require the site to already have the target feature flag wired. If missing, mark the proposal `blocked_missing_flag` and instruct the user to add the flag gate first — the persona never creates flag code.\n\n**Local state**: `cro_config.json`, `experiments_state.json`, `pending_actions.json`, `performance_log.md`, `variant_patterns.json`.",
-      "error_handling": "Experimentation backend 401/403 → halt deployment actions, request re-auth via a user_message. 429 → back off 60s, retry once; otherwise defer to `pending_actions.json`. 5xx → retry once after 10s; otherwise defer. PostHog missing flag → mark proposal `blocked_missing_flag`, surface the requirement to the user; never auto-create flags. Analytics fetch failure → skip new-variant generation this run (never propose blind); still check in-flight experiments using last-known state; include an 'analytics unavailable' banner in the report. Zero conversions in one arm → mark experiment RUNNING, do not compute lift. Split imbalance > 20% → mark SUSPICIOUS, do not promote even if significant. Missing `cro_config.json` → post setup prompt listing required config; skip run. Empty target URL list → skip run with friendly note. Messaging failure → write the full report to `latest_cro_report.json`, retry once. User retracts approval → revert the deployment via the backend's revert endpoint; log the undo in `performance_log.md`.",
+      "operating_instructions": "Three capabilities fire on one shared weekly tick. Their outputs concatenate into one Monday CRO briefing. 1. **uc_experiment_watch** — read `experiments_state.json`, compute sample size per arm and duration since start for each in-flight experiment. Skip those below `min_sample_size` OR `min_duration_days`. For experiments past both gates, compute a two-proportion z-test. Classify as RUNNING (not significant), WINNER (p < `significance_threshold`, variant beats control), LOSER (p < threshold, variant worse), or INCONCLUSIVE (past 4 weeks, still not significant). Prepare `promote_winner` / `revert_to_control` / `archive_experiment` proposals. Emit `cro.experiment.winner_detected`, `cro.experiment.loser_detected`, `cro.experiment.inconclusive` per classification. Submit every proposal for manual_review before any backend call. 2. **uc_variant_proposals** — from analytics pulled via the experimentation/analytics backend, identify pages whose 7-day conversion rate is > 15% below the 4-week baseline. For each flagged page without an in-flight experiment, generate up to `max_new_variants_per_run` hypotheses. Each hypothesis carries target_element, control copy, variant copy, hypothesis statement, expected_lift (from memory or 'first experiment in this category'), category (headline | cta | hero_copy | section_reorder | social_proof | urgency | benefits), target_metric, and guardrails. Apply memory-informed filtering: skip categories rejected 3+ times unless expected lift > 30%; favor categories accepted 3+ times. Never propose variants for pages on the excluded list. Emit `cro.variant.proposed` per hypothesis. Submit each for manual_review. On approval, deploy to the experimentation backend (new experiment). Emit `cro.experiment.started` on successful deployment. 3. **uc_weekly_report** — compose the combined weekly report: header (week_ending, backend, pages monitored, in-flight count), executive summary (biggest finding), in-flight experiments table, significant results, new variant proposals, inconclusive archives. Delivered regardless of review outcome so the user always has visibility. Emit `cro.report.delivered`. **Backend adaptation** (from the `aq_cro_backend` picker at adoption):\n- Humbalytics: new experiment `POST /v1/experiments`, promote `POST /v1/experiments/{id}/promote`, revert `POST /v1/experiments/{id}/stop?revert=true`, archive `POST /v1/experiments/{id}/archive`. JS snippet injects variants at runtime — no code deploy.\n- analytics: new experiment `POST /api/projects/{id}/experiments/`, promote/revert via `POST /api/projects/{id}/experiments/{id}/stop/` with winner rollout. Requires pre-existing feature flag in site code — mark proposals `blocked_missing_flag` if absent. **State files**: `cro_config.json` (backend, target URLs, guardrails, excluded pages), `experiments_state.json` (in-flight experiments with start_date, control, variant, per-arm counts), `pending_actions.json` (approved actions that failed to execute; retried next run), `performance_log.md` (Obsidian-style longitudinal log: date, action, control, variant, lift, user decision). `variant_patterns.json` (accept/reject counts per category driving memory filtering). **Statistical significance**: two-proportion z-test. p_c = conversions_control / visitors_control; p_v = conversions_variant / visitors_variant; p_pool = pooled; se = sqrt(p_pool * (1 - p_pool) * (1/v_c + 1/v_v)); z = (p_v - p_c) / se. Convert z to a two-tailed p-value. Significance threshold: p < `significance_threshold` (default 0.05). BOTH `min_sample_size` AND `min_duration_days` must be met regardless of p-value.",
+      "tool_guidance": "**Experimentation backend (http_request)** — the user chose Humbalytics or analytics at adoption via `aq_cro_backend`. The backend is resolved at runtime from the vault credential. **Humbalytics**:\n- Base URL: `https://api.humbalytics.com/v1`. Auth: `Authorization: Bearer {api_key}`.\n- `GET /properties/{property_id}/analytics?range=7d&metrics=visitors,pageviews,conversions,bounce_rate`\n- `GET /properties/{property_id}/pages/{url_id}/heatmap` — section-level click density.\n- `POST /v1/experiments` body `{ property_id, page_url, target_selector, control, variant, target_metric, traffic_split }`.\n- `GET /v1/experiments/{id}`, `POST /v1/experiments/{id}/promote`, `POST /v1/experiments/{id}/stop?revert=true`, `POST /v1/experiments/{id}/archive`. **analytics**:\n- Base URL: `https://app.posthog.com/api` (or EU host). Auth: `Authorization: Bearer {personal_api_key}`.\n- `POST /projects/{id}/query` — HogQL for web analytics.\n- `POST /projects/{id}/experiments/` — create feature-flag-based experiment.\n- `GET /projects/{id}/experiments/{id}/`, `POST /projects/{id}/experiments/{id}/stop/` (with winner or control rollout).\n- analytics experiments require the site to already have the target feature flag wired. If missing, mark the proposal `blocked_missing_flag` and instruct the user to add the flag gate first — the persona never creates flag code. **Local state**: `cro_config.json`, `experiments_state.json`, `pending_actions.json`, `performance_log.md`, `variant_patterns.json`.",
+      "error_handling": "Experimentation backend 401/403 → halt deployment actions, request re-auth via a user_message. 429 → back off 60s, retry once; otherwise defer to `pending_actions.json`. 5xx → retry once after 10s; otherwise defer. analytics missing flag → mark proposal `blocked_missing_flag`, surface the requirement to the user; never auto-create flags. Analytics fetch failure → skip new-variant generation this run (never propose blind); still check in-flight experiments using last-known state; include an 'analytics unavailable' banner in the report. Zero conversions in one arm → mark experiment RUNNING, do not compute lift. Split imbalance > 20% → mark SUSPICIOUS, do not promote even if significant. Missing `cro_config.json` → post setup prompt listing required config; skip run. Empty target URL list → skip run with friendly note. Messaging failure → write the full report to `latest_cro_report.json`, retry once. User retracts approval → revert the deployment via the backend's revert endpoint; log the undo in `performance_log.md`.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "cro_backend",
+          "name": "analytics",
           "label": "Experimentation & Analytics Backend",
           "auth_type": "api_key",
           "role": "experimentation",
@@ -62,9 +76,12 @@
               "key": "provider",
               "label": "Backend",
               "type": "select",
-              "options": ["humbalytics", "posthog"],
+              "options": [
+                "humbalytics",
+                "posthog"
+              ],
               "placeholder": "humbalytics",
-              "helpText": "Resolved at adoption from your Vault. Humbalytics for dynamic content rewrite without code deploy; PostHog for feature-flag-based experiments on sites that already have flag gates wired.",
+              "helpText": "Resolved at adoption from your Vault. Humbalytics for dynamic content rewrite without code deploy; analytics for feature-flag-based experiments on sites that already have flag gates wired.",
               "required": true
             },
             {
@@ -72,7 +89,7 @@
               "label": "API Key",
               "type": "password",
               "placeholder": "hb_… or phx_…",
-              "helpText": "API key from Humbalytics (hb_…) or PostHog personal API key (phx_…).",
+              "helpText": "API key from Humbalytics (hb_…) or analytics personal API key (phx_…).",
               "required": true
             },
             {
@@ -80,7 +97,7 @@
               "label": "Property / Project ID",
               "type": "text",
               "placeholder": "prop_… or project_id",
-              "helpText": "Humbalytics property ID, or PostHog project ID. Scopes analytics queries and experiments to your site.",
+              "helpText": "Humbalytics property ID, or analytics project ID. Scopes analytics queries and experiments to your site.",
               "required": true
             },
             {
@@ -88,11 +105,11 @@
               "label": "API Base URL",
               "type": "url",
               "placeholder": "https://api.humbalytics.com/v1",
-              "helpText": "Base URL for the backend API. Humbalytics cloud, PostHog US, or PostHog EU.",
+              "helpText": "Base URL for the backend API. Humbalytics cloud, analytics US, or analytics EU.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Choose your backend: Humbalytics (preferred — dynamic content rewrite, no code deploy) or PostHog (requires pre-existing feature flag gates).\n2. Humbalytics: sign up at humbalytics.com, add your site, install the JS snippet, create an API key with experiments + read scopes, note your property ID.\n3. PostHog: Settings → Personal API Keys → create a key; note your project ID. Ensure feature flag gates exist for pages you plan to experiment on.\n4. Paste the API key, property/project ID, and base URL. The adoption step validates and lists any in-flight experiments."
+          "setup_instructions": "1. Choose your backend: Humbalytics (preferred — dynamic content rewrite, no code deploy) or analytics (requires pre-existing feature flag gates).\n2. Humbalytics: sign up at humbalytics.com, add your site, install the JS snippet, create an API key with experiments + read scopes, note your property ID.\n3. analytics: Settings → Personal API Keys → create a key; note your project ID. Ensure feature flag gates exist for pages you plan to experiment on.\n4. Paste the API key, property/project ID, and base URL. The adoption step validates and lists any in-flight experiments."
         }
       ],
       "notification_channels_default": [
@@ -115,10 +132,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default weekly Monday 09:00 — final cadence set at the trigger-composition step. Shared across all three capabilities via trigger_composition: shared."
         },
-        "connectors": ["cro_backend"],
+        "connectors": [
+          "analytics"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -187,31 +209,104 @@
           "min_duration_days": "{{param.aq_min_duration_days}}",
           "significance_threshold": 0.05
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick (shared)" },
-            { "id": "w2", "type": "action", "label": "Load experiments_state.json" },
-            { "id": "w3", "type": "connector", "label": "Fetch per-arm counts from backend", "connector": "cro_backend" },
-            { "id": "w4", "type": "action", "label": "Apply sample-size + duration gates" },
-            { "id": "w5", "type": "action", "label": "Compute z-test, classify RUNNING/WINNER/LOSER/INCONCLUSIVE" },
-            { "id": "w6", "type": "action", "label": "Prepare promote / revert / archive proposals" },
-            { "id": "w7", "type": "action", "label": "Submit each for manual_review" },
-            { "id": "w8", "type": "connector", "label": "Execute approved actions on backend", "connector": "cro_backend" },
-            { "id": "w9", "type": "event", "label": "Emit winner_promoted / loser_reverted / inconclusive" },
-            { "id": "w10", "type": "end", "label": "Experiment watch section ready for combined briefing" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick (shared)"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Load experiments_state.json"
+            },
+            {
+              "id": "w3",
+              "type": "connector",
+              "label": "Fetch per-arm counts from backend",
+              "connector": "cro_backend"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Apply sample-size + duration gates"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Compute z-test, classify RUNNING/WINNER/LOSER/INCONCLUSIVE"
+            },
+            {
+              "id": "w6",
+              "type": "action",
+              "label": "Prepare promote / revert / archive proposals"
+            },
+            {
+              "id": "w7",
+              "type": "action",
+              "label": "Submit each for manual_review"
+            },
+            {
+              "id": "w8",
+              "type": "connector",
+              "label": "Execute approved actions on backend",
+              "connector": "cro_backend"
+            },
+            {
+              "id": "w9",
+              "type": "event",
+              "label": "Emit winner_promoted / loser_reverted / inconclusive"
+            },
+            {
+              "id": "w10",
+              "type": "end",
+              "label": "Experiment watch section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" },
-            { "source": "w9", "target": "w10" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            },
+            {
+              "source": "w9",
+              "target": "w10"
+            }
           ]
         }
       },
@@ -226,10 +321,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default weekly Monday 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["cro_backend"],
+        "connectors": [
+          "analytics"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -257,7 +357,7 @@
             "description": "Payload: page_url, current_cr, baseline_cr, magnitude. Emitted when a page's conversion rate drops > 15% below its 4-week baseline."
           }
         ],
-        "error_handling": "Analytics fetch failure → skip proposal generation this run; do NOT propose blind. PostHog missing flag → mark `blocked_missing_flag` and surface the requirement to the user. Excluded page matched → never propose; skip silently. More than max_new_variants_per_run pages flagged → take top N by magnitude of baseline deviation.",
+        "error_handling": "Analytics fetch failure → skip proposal generation this run; do NOT propose blind. analytics missing flag → mark `blocked_missing_flag` and surface the requirement to the user. Excluded page matched → never propose; skip silently. More than max_new_variants_per_run pages flagged → take top N by magnitude of baseline deviation.",
         "input_schema": [
           {
             "name": "max_new_variants_per_run",
@@ -277,31 +377,104 @@
           "max_new_variants_per_run": "{{param.aq_max_variants}}",
           "target_pages": "{{param.aq_target_pages_intent}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "v1", "type": "start", "label": "Weekly tick (shared)" },
-            { "id": "v2", "type": "connector", "label": "Pull 7-day analytics + 4-week baseline", "connector": "cro_backend" },
-            { "id": "v3", "type": "action", "label": "Flag pages > 15% below baseline (within target list)" },
-            { "id": "v4", "type": "action", "label": "Load variant_patterns memory" },
-            { "id": "v5", "type": "action", "label": "Generate hypotheses, apply memory filter, cap at N" },
-            { "id": "v6", "type": "event", "label": "Emit cro.variant.proposed per hypothesis" },
-            { "id": "v7", "type": "action", "label": "Submit each for manual_review" },
-            { "id": "v8", "type": "connector", "label": "Deploy approved variants to backend", "connector": "cro_backend" },
-            { "id": "v9", "type": "event", "label": "Emit cro.experiment.started" },
-            { "id": "v10", "type": "end", "label": "Proposals section ready for combined briefing" }
+            {
+              "id": "v1",
+              "type": "start",
+              "label": "Weekly tick (shared)"
+            },
+            {
+              "id": "v2",
+              "type": "connector",
+              "label": "Pull 7-day analytics + 4-week baseline",
+              "connector": "cro_backend"
+            },
+            {
+              "id": "v3",
+              "type": "action",
+              "label": "Flag pages > 15% below baseline (within target list)"
+            },
+            {
+              "id": "v4",
+              "type": "action",
+              "label": "Load variant_patterns memory"
+            },
+            {
+              "id": "v5",
+              "type": "action",
+              "label": "Generate hypotheses, apply memory filter, cap at N"
+            },
+            {
+              "id": "v6",
+              "type": "event",
+              "label": "Emit cro.variant.proposed per hypothesis"
+            },
+            {
+              "id": "v7",
+              "type": "action",
+              "label": "Submit each for manual_review"
+            },
+            {
+              "id": "v8",
+              "type": "connector",
+              "label": "Deploy approved variants to backend",
+              "connector": "cro_backend"
+            },
+            {
+              "id": "v9",
+              "type": "event",
+              "label": "Emit cro.experiment.started"
+            },
+            {
+              "id": "v10",
+              "type": "end",
+              "label": "Proposals section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "v1", "target": "v2" },
-            { "source": "v2", "target": "v3" },
-            { "source": "v3", "target": "v4" },
-            { "source": "v4", "target": "v5" },
-            { "source": "v5", "target": "v6" },
-            { "source": "v6", "target": "v7" },
-            { "source": "v7", "target": "v8" },
-            { "source": "v8", "target": "v9" },
-            { "source": "v9", "target": "v10" }
+            {
+              "source": "v1",
+              "target": "v2"
+            },
+            {
+              "source": "v2",
+              "target": "v3"
+            },
+            {
+              "source": "v3",
+              "target": "v4"
+            },
+            {
+              "source": "v4",
+              "target": "v5"
+            },
+            {
+              "source": "v5",
+              "target": "v6"
+            },
+            {
+              "source": "v6",
+              "target": "v7"
+            },
+            {
+              "source": "v7",
+              "target": "v8"
+            },
+            {
+              "source": "v8",
+              "target": "v9"
+            },
+            {
+              "source": "v9",
+              "target": "v10"
+            }
           ]
         }
       },
@@ -316,12 +489,18 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default weekly Monday 09:00 — final cadence set at the trigger-composition step."
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`performance_log.md` — Obsidian-style longitudinal log of every experiment outcome for cross-session review. Append-only."
@@ -338,31 +517,86 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["executive", "standard", "deep"],
+            "options": [
+              "executive",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Executive: top-line only. Standard: tables + per-experiment detail. Deep: + per-page variant history."
           }
         ],
-        "sample_input": { "report_depth": "{{param.aq_report_depth}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "report_depth": "{{param.aq_report_depth}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Weekly tick (shared)" },
-            { "id": "r2", "type": "action", "label": "Assemble header + executive summary" },
-            { "id": "r3", "type": "action", "label": "Build in-flight experiments table" },
-            { "id": "r4", "type": "action", "label": "Add significant results + new proposals + inconclusive archives" },
-            { "id": "r5", "type": "action", "label": "Append to performance_log.md" },
-            { "id": "r6", "type": "event", "label": "Emit cro.report.delivered" },
-            { "id": "r7", "type": "end", "label": "Briefing delivered" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Weekly tick (shared)"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Assemble header + executive summary"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Build in-flight experiments table"
+            },
+            {
+              "id": "r4",
+              "type": "action",
+              "label": "Add significant results + new proposals + inconclusive archives"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Append to performance_log.md"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit cro.report.delivered"
+            },
+            {
+              "id": "r7",
+              "type": "end",
+              "label": "Briefing delivered"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            }
           ]
         }
       }
@@ -371,7 +605,9 @@
       {
         "id": "aq_cro_backend",
         "scope": "connector",
-        "connector_names": ["cro_backend"],
+        "connector_names": [
+          "cro_backend"
+        ],
         "category": "configuration",
         "question": "Which experimentation + analytics backend should this persona use?",
         "type": "select",
@@ -382,13 +618,15 @@
         },
         "maps_to": "persona.connectors[cro_backend].credential_fields[provider].value",
         "variable_name": "cro_backend_provider",
-        "context": "Options are auto-detected from the analytics-category credentials you've already connected in the Vault (Humbalytics, PostHog, etc.). Humbalytics is preferred — dynamic content rewrite via its JS snippet, no code deploy needed. PostHog requires pre-existing feature-flag gates in your site code. If the list is empty, add one first.",
+        "context": "Options are auto-detected from the analytics-category credentials you've already connected in the Vault (Humbalytics, analytics, etc.). Humbalytics is preferred — dynamic content rewrite via its JS snippet, no code deploy needed. analytics requires pre-existing feature-flag gates in your site code. If the list is empty, add one first.",
         "dimension": "connectors"
       },
       {
         "id": "aq_target_pages_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_variant_proposals"],
+        "use_case_ids": [
+          "uc_variant_proposals"
+        ],
         "category": "domain",
         "question": "Which pages should the agent be allowed to experiment on, and which must never be touched?",
         "type": "textarea",
@@ -401,11 +639,18 @@
       {
         "id": "aq_min_sample_size",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_watch"],
+        "use_case_ids": [
+          "uc_experiment_watch"
+        ],
         "category": "configuration",
         "question": "Minimum visitors per arm before a winner can be called?",
         "type": "select",
-        "options": ["500", "1000", "2500", "5000"],
+        "options": [
+          "500",
+          "1000",
+          "2500",
+          "5000"
+        ],
         "default": "1000",
         "maps_to": "use_cases[uc_experiment_watch].sample_input.min_sample_size",
         "variable_name": "min_sample_size",
@@ -415,11 +660,17 @@
       {
         "id": "aq_min_duration_days",
         "scope": "capability",
-        "use_case_ids": ["uc_experiment_watch"],
+        "use_case_ids": [
+          "uc_experiment_watch"
+        ],
         "category": "configuration",
         "question": "Minimum experiment duration before a winner can be called?",
         "type": "select",
-        "options": ["3", "7", "14"],
+        "options": [
+          "3",
+          "7",
+          "14"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_experiment_watch].sample_input.min_duration_days",
         "variable_name": "min_duration_days",
@@ -429,11 +680,17 @@
       {
         "id": "aq_max_variants",
         "scope": "capability",
-        "use_case_ids": ["uc_variant_proposals"],
+        "use_case_ids": [
+          "uc_variant_proposals"
+        ],
         "category": "configuration",
         "question": "How many new variant proposals per weekly run?",
         "type": "select",
-        "options": ["1", "3", "5"],
+        "options": [
+          "1",
+          "3",
+          "5"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_variant_proposals].sample_input.max_new_variants_per_run",
         "variable_name": "max_new_variants_per_run",
@@ -443,7 +700,9 @@
       {
         "id": "aq_report_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_report"],
+        "use_case_ids": [
+          "uc_weekly_report"
+        ],
         "category": "quality",
         "question": "How detailed should the combined weekly briefing be?",
         "type": "select",

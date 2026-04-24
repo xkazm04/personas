@@ -1,4 +1,5 @@
-import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
@@ -11,7 +12,13 @@ import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
+import { initPseudoLocale } from '@/i18n/pseudoLocale';
+import { useI18nStore } from '@/stores/i18nStore';
+import { useToastStore } from '@/stores/toastStore';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
+
+initPseudoLocale();
 
 const appLogger = createLogger("App");
 
@@ -107,6 +114,16 @@ export default function App() {
   }, []);
 
   const { t } = useTranslation();
+  const language = useI18nStore((s) => s.language);
+  const { shouldAnimate } = useMotion();
+
+  // Toast a localized confirmation when the language changes (skip initial mount).
+  const prevLanguageRef = useRef(language);
+  useEffect(() => {
+    if (prevLanguageRef.current === language) return;
+    prevLanguageRef.current = language;
+    useToastStore.getState().addToast(t.common.language_changed, 'success', 1600);
+  }, [language, t]);
 
   // Dev-mode mobile preview toggle: Ctrl+Shift+M
   const isMobilePreview = useMobilePreview();
@@ -136,9 +153,18 @@ export default function App() {
           <TitleBar />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} isVersionBump={isVersionBump} />}
           <UpdateBanner />
-          <div className="flex flex-1 overflow-hidden">
-            <PersonasPage />
-          </div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={language}
+              className="flex flex-1 overflow-hidden"
+              initial={shouldAnimate ? { opacity: 0, y: 4 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              exit={shouldAnimate ? { opacity: 0 } : { opacity: 1 }}
+              transition={{ duration: shouldAnimate ? 0.18 : 0, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <PersonasPage />
+            </motion.div>
+          </AnimatePresence>
           {bgReady && (
             <>
               <SilentErrorBoundary name="BackgroundServices">

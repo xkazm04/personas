@@ -4,11 +4,12 @@
   "label": "GitHub",
   "color": "#1F2937",
   "icon_url": "/icons/connectors/github.svg",
-  "category": "devops",
+  "category": "source_control",
   "categories": [
-    "devops",
     "source_control",
-    "development"
+    "development",
+    "ci_cd",
+    "devops"
   ],
   "fields": [
     {

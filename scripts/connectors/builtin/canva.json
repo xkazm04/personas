@@ -6,7 +6,8 @@
   "icon_url": "/icons/connectors/canva.svg",
   "category": "design",
   "categories": [
-    "design"
+    "design",
+    "image_generation"
   ],
   "fields": [
     {

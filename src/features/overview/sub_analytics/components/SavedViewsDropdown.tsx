@@ -3,8 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Bookmark, Check, Plus, Trash2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { listSavedViews, createSavedView, deleteSavedView, type SavedView } from '@/api/overview/savedViews';
-import { log } from '@/lib/log';
-import { errMsg } from '@/stores/storeTypes';
+import { reportSavedViewError } from './savedViewsLogger';
 
 interface SavedViewsDropdownProps {
   currentPersonaId: string | null;
@@ -61,7 +60,7 @@ export function SavedViewsDropdown({
       const data = await listSavedViews();
       setViews(data);
     } catch (e) {
-      log.error('SavedViewsDropdown', 'Failed to load saved views', { error: errMsg(e, 'Failed to load saved views') });
+      reportSavedViewError(t, 'load', e);
     }
   };
 
@@ -100,7 +99,7 @@ export function SavedViewsDropdown({
       setIsSaving(false);
       await loadViews();
     } catch (e) {
-      log.error('SavedViewsDropdown', 'Failed to save view', { operation: 'createSavedView', name: newViewName.trim(), error: errMsg(e, 'Failed to save view') });
+      reportSavedViewError(t, 'save', e, { viewName: newViewName.trim() });
     }
   };
 
@@ -110,7 +109,7 @@ export function SavedViewsDropdown({
       await deleteSavedView(id);
       await loadViews();
     } catch (err) {
-      log.error('SavedViewsDropdown', 'Failed to delete view', { operation: 'deleteSavedView', viewId: id, error: errMsg(err, 'Failed to delete view') });
+      reportSavedViewError(t, 'delete', err, { viewId: id });
     }
   };
 

@@ -28,6 +28,10 @@ export type SpacingToken = keyof typeof SPACING;
 export const CARD_PADDING = {
   compact: 'p-3',
   standard: 'p-4',
+  /** Mobile-compact card body: full horizontal padding with tighter vertical rhythm. */
+  dense: 'px-4 py-3',
+  /** Modal header/tabs/footer bands — wider horizontal padding, standard vertical rhythm. */
+  modalSection: 'px-6 py-4',
 } as const;
 
 /** Vertical gap between sections — within a panel vs between page-level sections. */

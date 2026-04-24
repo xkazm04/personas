@@ -4,12 +4,12 @@
   "label": "Notion",
   "color": "#000000",
   "icon_url": "/icons/connectors/notion.svg",
-  "category": "database",
+  "category": "knowledge_base",
   "categories": [
-    "database",
     "knowledge_base",
+    "database",
     "documentation",
-    "wiki"
+    "productivity"
   ],
   "fields": [
     {

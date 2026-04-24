@@ -5,11 +5,19 @@
   "description": "Weekly AI-domain intelligence digest grounded in the user's own reference sources. Tracks announcements, model releases, policy shifts, and open-source moves — synthesized into one impact-scored briefing with longitudinal trend tracking.",
   "icon": "Sparkles",
   "color": "#8B5CF6",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Web Research", "Messaging"],
+  "service_flow": [
+    "Web Research",
+    "Messaging"
+  ],
   "payload": {
-    "service_flow": ["Web Research", "Messaging"],
+    "service_flow": [
+      "Web Research",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Stay current on what actually matters in AI — a weekly briefing that trades breadth for signal, grounded in your own tracked sources rather than keyword scrapes.",
       "identity": {
@@ -42,11 +50,16 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One primary capability, event-chained learning:\n\n1. **uc_weekly_briefing** (weekly Monday 9am, default) — load `research_index.json` for prior sessions and topic history. Read attached `research_sources` first. Web-search complementary angles across the user's chosen subdomains (see `aq_focus_subdomains`). For each finding: extract (headline, source, publication date, summary, impact badge). Write `research_{{YYYY-MM-DD}}.json` with all findings. Append to `research_index.json`. Compose the briefing per voice.output_format. Cross-reference prior sessions for trend patterns. Emit `research.ai_weekly.delivered` with session stats; emit `research.finding.superseded` per prior claim that this session contradicts or supersedes.\n\n2. **uc_trend_watch** (event-listen on `research.ai_weekly.delivered`, session ≥ 3) — aggregate the last 4 sessions' findings into a trend summary: which categories are accelerating, which are fading, which have stabilized. Deliver as an addendum to the main briefing (message_composition per_use_case → its own short follow-up message).\n\nState files: `research_index.json` (session ledger), `research_{{date}}.json` (per-session findings), `research_preferences.json` (user's impact/signal weighting learned over time).",
-      "tool_guidance": "**Source reading order**:\n1. User reference sources (from `aq_research_sources`) — primary grounding.\n2. Web search per focus subdomain, time-qualified to past 7 days.\n3. Prior session findings for trend cross-reference.\n\n**Impact badge rubric**:\n- Transformative — reshapes an entire domain (new capability class, major regulatory shift).\n- Significant — meaningful industry move (leading lab release, major policy enforcement begins).\n- Incremental — expected progression (point release, minor benchmark improvement).\n- Emerging — early signal, needs more data (research preprint, experimental benchmark).\n\n**Local state**:\n- `research_index.json` — `{ sessions: [{ session_id, date, topic, finding_count, top_impact }] }`. Append-only.\n- `research_{{YYYY-MM-DD}}.json` — per-session findings with full metadata.\n- `research_preferences.json` — learned weights per category (accepted/rejected counts from feedback loop).\n- Always read-merge-write, never overwrite blindly.",
+      "operating_instructions": "One primary capability, event-chained learning: 1. **uc_weekly_briefing** (weekly Monday 9am, default) — load `research_index.json` for prior sessions and topic history. Read attached `research_sources` first. Web-search complementary angles across the user's chosen subdomains (see `aq_focus_subdomains`). For each finding: extract (headline, source, publication date, summary, impact badge). Write `research_{{YYYY-MM-DD}}.json` with all findings. Append to `research_index.json`. Compose the briefing per voice.output_format. Cross-reference prior sessions for trend patterns. Emit `research.ai_weekly.delivered` with session stats; emit `research.finding.superseded` per prior claim that this session contradicts or supersedes. 2. **uc_trend_watch** (event-listen on `research.ai_weekly.delivered`, session ≥ 3) — aggregate the last 4 sessions' findings into a trend summary: which categories are accelerating, which are fading, which have stabilized. Deliver as an addendum to the main briefing (message_composition per_use_case → its own short follow-up message). State files: `research_index.json` (session ledger), `research_{{date}}.json` (per-session findings), `research_preferences.json` (user's impact/signal weighting learned over time).",
+      "tool_guidance": "**Source reading order**:\n1. User reference sources (from `aq_research_sources`) — primary grounding.\n2. Web search per focus subdomain, time-qualified to past 7 days.\n3. Prior session findings for trend cross-reference. **Impact badge rubric**:\n- Transformative — reshapes an entire domain (new capability class, major regulatory shift).\n- Significant — meaningful industry move (leading lab release, major policy enforcement begins).\n- Incremental — expected progression (point release, minor benchmark improvement).\n- Emerging — early signal, needs more data (research preprint, experimental benchmark). **Local state**:\n- `research_index.json` — `{ sessions: [{ session_id, date, topic, finding_count, top_impact }] }`. Append-only.\n- `research_{{YYYY-MM-DD}}.json` — per-session findings with full metadata.\n- `research_preferences.json` — learned weights per category (accepted/rejected counts from feedback loop).\n- Always read-merge-write, never overwrite blindly.",
       "error_handling": "Web search unavailable → use reference sources only + label the gap. Prior session file missing → skip trend detection, note 'trend watch resumes once history is rebuilt'. `research_index.json` corrupted → archive with timestamp, initialize fresh, note in briefing footer. Quiet week (fewer than 3 significant findings) → deliver shortened briefing honestly; do not fabricate. Topic too narrow for the configured angle count → reduce angles naturally.",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "messaging",
@@ -80,10 +93,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -133,7 +151,11 @@
           {
             "name": "highlight_count",
             "type": "enum",
-            "options": ["3-5 items", "5-7 items", "8-12 items"],
+            "options": [
+              "3-5 items",
+              "5-7 items",
+              "8-12 items"
+            ],
             "default": "5-7 items",
             "description": "Top-highlight density in the briefing. Balances signal vs. coverage."
           }
@@ -144,27 +166,86 @@
           "focus_subdomains": "{{param.aq_focus_subdomains}}",
           "highlight_count": "{{param.aq_highlight_count}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "action", "label": "Load research_index + reference sources" },
-            { "id": "w3", "type": "action", "label": "Research per subdomain angle (last 7 days)" },
-            { "id": "w4", "type": "action", "label": "Score impact; flag supersessions vs. prior sessions" },
-            { "id": "w5", "type": "action", "label": "Compose briefing (highlights + full analysis + trend watch if history ≥ 3)" },
-            { "id": "w6", "type": "connector", "label": "Deliver via messaging", "connector": "messaging" },
-            { "id": "w7", "type": "event", "label": "Emit research.ai_weekly.delivered + supersessions" },
-            { "id": "w8", "type": "end", "label": "Briefing delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Load research_index + reference sources"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Research per subdomain angle (last 7 days)"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Score impact; flag supersessions vs. prior sessions"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Compose briefing (highlights + full analysis + trend watch if history ≥ 3)"
+            },
+            {
+              "id": "w6",
+              "type": "connector",
+              "label": "Deliver via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "w7",
+              "type": "event",
+              "label": "Emit research.ai_weekly.delivered + supersessions"
+            },
+            {
+              "id": "w8",
+              "type": "end",
+              "label": "Briefing delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            }
           ]
         }
       },
@@ -179,10 +260,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "research.ai_weekly.delivered" },
+          "config": {
+            "event_type": "research.ai_weekly.delivered"
+          },
           "description": "Event-chained off uc_weekly_briefing. Fires only when session history has ≥ 3 prior entries."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -207,26 +292,83 @@
         "error_handling": "History < 3 sessions → exit early silently; note 'trend watch activates after session 3' in the first eligible briefing only.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "research.ai_weekly.delivered received" },
-            { "id": "t2", "type": "decision", "label": "Session history ≥ 3?" },
-            { "id": "t3", "type": "action", "label": "Aggregate last 4 sessions per category" },
-            { "id": "t4", "type": "action", "label": "Classify trend direction per category" },
-            { "id": "t5", "type": "connector", "label": "Deliver trend addendum", "connector": "messaging" },
-            { "id": "t6", "type": "event", "label": "Emit research.trend.detected per pattern" },
-            { "id": "t7", "type": "end", "label": "Addendum delivered or early exit" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "research.ai_weekly.delivered received"
+            },
+            {
+              "id": "t2",
+              "type": "decision",
+              "label": "Session history ≥ 3?"
+            },
+            {
+              "id": "t3",
+              "type": "action",
+              "label": "Aggregate last 4 sessions per category"
+            },
+            {
+              "id": "t4",
+              "type": "action",
+              "label": "Classify trend direction per category"
+            },
+            {
+              "id": "t5",
+              "type": "connector",
+              "label": "Deliver trend addendum",
+              "connector": "messaging"
+            },
+            {
+              "id": "t6",
+              "type": "event",
+              "label": "Emit research.trend.detected per pattern"
+            },
+            {
+              "id": "t7",
+              "type": "end",
+              "label": "Addendum delivered or early exit"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3", "variant": "yes", "label": "Yes" },
-            { "source": "t2", "target": "t7", "variant": "no", "label": "Too early" },
-            { "source": "t3", "target": "t4" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "t2",
+              "target": "t7",
+              "variant": "no",
+              "label": "Too early"
+            },
+            {
+              "source": "t3",
+              "target": "t4"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            }
           ]
         }
       }
@@ -235,7 +377,9 @@
       {
         "id": "aq_research_sources",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_briefing"],
+        "use_case_ids": [
+          "uc_weekly_briefing"
+        ],
         "category": "domain",
         "question": "Which reference sources should ground the AI briefing?",
         "type": "source_definition",
@@ -248,7 +392,9 @@
       {
         "id": "aq_research_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_briefing"],
+        "use_case_ids": [
+          "uc_weekly_briefing"
+        ],
         "category": "domain",
         "question": "How should the persona interpret the AI landscape for you?",
         "type": "textarea",
@@ -262,7 +408,9 @@
       {
         "id": "aq_focus_subdomains",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_briefing"],
+        "use_case_ids": [
+          "uc_weekly_briefing"
+        ],
         "category": "domain",
         "question": "Which AI subdomain should be the primary focus?",
         "type": "select",
@@ -282,11 +430,17 @@
       {
         "id": "aq_highlight_count",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_briefing"],
+        "use_case_ids": [
+          "uc_weekly_briefing"
+        ],
         "category": "quality",
         "question": "How dense should the weekly highlights list be?",
         "type": "select",
-        "options": ["3-5 items", "5-7 items", "8-12 items"],
+        "options": [
+          "3-5 items",
+          "5-7 items",
+          "8-12 items"
+        ],
         "default": "5-7 items",
         "maps_to": "use_cases[uc_weekly_briefing].sample_input.highlight_count",
         "variable_name": "highlight_count",
@@ -296,7 +450,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should deliver the weekly briefing?",
         "type": "select",

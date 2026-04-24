@@ -6,7 +6,8 @@
   "icon_url": "/icons/connectors/netlify.svg",
   "category": "cloud",
   "categories": [
-    "cloud"
+    "cloud",
+    "devops"
   ],
   "fields": [
     {

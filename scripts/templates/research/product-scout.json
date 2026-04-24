@@ -5,11 +5,21 @@
   "description": "Scans configured email sources for implementation opportunities (new connectors, API version updates, tooling), enriches findings with web research, holds each for human triage, and learns which topic areas actually ship from accept/reject feedback.",
   "icon": "Radar",
   "color": "#0EA5E9",
-  "category": ["research"],
-  "service_flow": ["Email", "Web Research", "Messages"],
+  "category": [
+    "research"
+  ],
+  "service_flow": [
+    "Email",
+    "Web Research",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Email", "Web Research", "Messages"],
+    "service_flow": [
+      "Email",
+      "Web Research",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn the inbox of vendor newsletters and release emails into a clean triage queue of real implementation opportunities — nothing vague, nothing duplicated, nothing the human didn't ask to see.",
       "identity": {
@@ -42,11 +52,16 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities chain together:\n\n1. **uc_scan_and_enrich** (weekly by default) — for each configured email sender, search for unread messages since the last scan. Parse each message for URLs and opportunity keywords. Deduplicate each URL against `seen_urls.json` (keyed by normalized URL). For each new URL: fetch the target page via http_request; extract service description, API capabilities, auth method, integration complexity. If the fetch fails, run one web_search fallback (`\"{service_name}\" API documentation`) and use the top result. Classify into new_connector / api_version / tooling based on the classification rubric. Apply topic preferences from memory to compute relevance (High / Medium / Low). Persist the candidate. Emit `scout.opportunity.discovered` per candidate.\n\n2. **uc_triage** (event-listen on `scout.opportunity.discovered`) — present each discovered candidate to the human via Messages with accept/reject affordance. On accept: update the candidate's status to accepted, emit `scout.opportunity.accepted` with full payload (downstream implementation agents subscribe to this). On reject: prompt for a brief reason, emit `scout.opportunity.rejected`, update topic preferences. Never auto-reject — unreviewed candidates age in the queue and surface in the next weekly run's header.\n\nState: `seen_urls.json` (URL → candidate_id + first_seen_at — dedup), `candidates/{id}.json` (full record per candidate with status, enrichment, classification), `topic_preferences.json` (accept/reject counts per topic area, last 52 weeks).",
-      "tool_guidance": "**Email connector** (shape depends on which email service the user picked at adoption):\n- Gmail: `GET /gmail/v1/users/me/messages?q=from:{sender} newer_than:7d is:unread` then `GET /gmail/v1/users/me/messages/{id}` for full content + headers. After processing, apply a `processed/scout` label via modify and remove `UNREAD`.\n- Microsoft Graph (Outlook): `GET /me/messages?$filter=from/emailAddress/address eq '{sender}' and isRead eq false`.\n- Generic IMAP: configured mailbox + SEARCH FROM {sender} UNSEEN.\n\n**URL extraction + enrichment**:\n- `GET {url}` with `User-Agent: Mozilla/5.0 (compatible; ProductScoutBot/1.0)`, 15s timeout, follow up to 3 redirects.\n- Extract service description from meta description, og:description, or first 2 paragraphs of main content.\n- If fetch returns 4xx/5xx → `web_search` for `\"{service_name}\" API integration documentation`; use the top public result.\n- Skip the candidate if both the primary URL and the web_search fallback yield no usable content.\n\n**Classification rubric**:\n- `new_connector`: service not present in the Personas connector catalog, has API / webhook / SDK, is a launch or new-feature announcement.\n- `api_version`: service already has a connector, mentions version bump, migration guide, or breaking changes.\n- `tooling`: developer tool, framework, library, or infrastructure component (not a service connector) — things that improve internals rather than integrate an external service.\n\n**Topic preference scoring**:\n- `rate = accepted / (accepted + rejected)` per topic.\n- `rate >= 0.7` → High relevance.\n- `rate >= 0.4` → Medium.\n- `rate < 0.4` → Low.\n- New topic (no data) → Medium (neutral).\n\n**Local state**:\n- `seen_urls.json` — dedup index: `{ url: { candidate_id, first_seen_at } }`.\n- `candidates/{id}.json` — full record: title, description, source_url, enrichment, category, status, topic, decided_at.\n- `topic_preferences.json` — `{ topics: { database: { accepted, rejected, rate }, ... }, last_updated }`.",
+      "operating_instructions": "Two capabilities chain together: 1. **uc_scan_and_enrich** (weekly by default) — for each configured email sender, search for unread messages since the last scan. Parse each message for URLs and opportunity keywords. Deduplicate each URL against `seen_urls.json` (keyed by normalized URL). For each new URL: fetch the target page via http_request; extract service description, API capabilities, auth method, integration complexity. If the fetch fails, run one web_search fallback (`\"{service_name}\" API documentation`) and use the top result. Classify into new_connector / api_version / tooling based on the classification rubric. Apply topic preferences from memory to compute relevance (High / Medium / Low). Persist the candidate. Emit `scout.opportunity.discovered` per candidate. 2. **uc_triage** (event-listen on `scout.opportunity.discovered`) — present each discovered candidate to the human via Messages with accept/reject affordance. On accept: update the candidate's status to accepted, emit `scout.opportunity.accepted` with full payload (downstream implementation agents subscribe to this). On reject: prompt for a brief reason, emit `scout.opportunity.rejected`, update topic preferences. Never auto-reject — unreviewed candidates age in the queue and surface in the next weekly run's header. State: `seen_urls.json` (URL → candidate_id + first_seen_at — dedup), `candidates/{id}.json` (full record per candidate with status, enrichment, classification), `topic_preferences.json` (accept/reject counts per topic area, last 52 weeks).",
+      "tool_guidance": "**Email connector** (shape depends on which email service the user picked at adoption):\n- email: `GET /gmail/v1/users/me/messages?q=from:{sender} newer_than:7d is:unread` then `GET /gmail/v1/users/me/messages/{id}` for full content + headers. After processing, apply a `processed/scout` label via modify and remove `UNREAD`.\n- Microsoft Graph (email): `GET /me/messages?$filter=from/emailAddress/address eq '{sender}' and isRead eq false`.\n- Generic IMAP: configured mailbox + SEARCH FROM {sender} UNSEEN. **URL extraction + enrichment**:\n- `GET {url}` with `User-Agent: Mozilla/5.0 (compatible; ProductScoutBot/1.0)`, 15s timeout, follow up to 3 redirects.\n- Extract service description from meta description, og:description, or first 2 paragraphs of main content.\n- If fetch returns 4xx/5xx → `web_search` for `\"{service_name}\" API integration documentation`; use the top public result.\n- Skip the candidate if both the primary URL and the web_search fallback yield no usable content. **Classification rubric**:\n- `new_connector`: service not present in the Personas connector catalog, has API / webhook / SDK, is a launch or new-feature announcement.\n- `api_version`: service already has a connector, mentions version bump, migration guide, or breaking changes.\n- `tooling`: developer tool, framework, library, or infrastructure component (not a service connector) — things that improve internals rather than integrate an external service. **Topic preference scoring**:\n- `rate = accepted / (accepted + rejected)` per topic.\n- `rate >= 0.7` → High relevance.\n- `rate >= 0.4` → Medium.\n- `rate < 0.4` → Low.\n- New topic (no data) → Medium (neutral). **Local state**:\n- `seen_urls.json` — dedup index: `{ url: { candidate_id, first_seen_at } }`.\n- `candidates/{id}.json` — full record: title, description, source_url, enrichment, category, status, topic, decided_at.\n- `topic_preferences.json` — `{ topics: { database: { accepted, rejected, rate },... }, last_updated }`.",
       "error_handling": "Email auth failure (401/403) → emit a Messages alert asking the user to reauthorize; skip this run (no partial pass-through with broken auth). Email rate limit (429) → exponential backoff (30s, 90s, 3min), then skip remaining senders for this run. Zero new emails → exit silently; no 'nothing found' message. URL fetch 403/paywall → single web_search fallback; if still nothing, skip. YouTube transcript unavailable → fallback to video description only; flag reduced context in the card. Messages delivery failure → queue the triage card in `pending_triage.json`, retry next cycle. Per-candidate processing exception → log to `error_log.json`, continue with remaining candidates (never blow up the whole run on one bad URL).",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "email",
@@ -60,9 +75,13 @@
               "key": "provider",
               "label": "Email provider",
               "type": "select",
-              "options": ["gmail", "outlook", "imap"],
+              "options": [
+                "gmail",
+                "outlook",
+                "imap"
+              ],
               "placeholder": "gmail",
-              "helpText": "Which email service to scan. Gmail and Outlook use OAuth2; IMAP accepts generic credentials.",
+              "helpText": "Which email service to scan. email and email use OAuth2; IMAP accepts generic credentials.",
               "required": true
             },
             {
@@ -70,7 +89,7 @@
               "label": "OAuth token / password",
               "type": "password",
               "placeholder": "",
-              "helpText": "Gmail/Outlook: OAuth access token with read + modify scope. IMAP: app password or account password.",
+              "helpText": "email/email: OAuth access token with read + modify scope. IMAP: app password or account password.",
               "required": true
             },
             {
@@ -82,7 +101,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Pick your email provider above.\n2. Gmail: create an OAuth client at Google Cloud Console with gmail.readonly + gmail.modify scopes and complete consent. Outlook: register an Entra app with Mail.Read + Mail.ReadWrite. IMAP: generate an app password at your provider.\n3. Paste the token and list the senders you want scanned.\n4. The persona only reads mail from the listed senders — no broader inbox access."
+          "setup_instructions": "1. Pick your email provider above.\n2. email: create an OAuth client at Google Cloud Console with gmail.readonly + gmail.modify scopes and complete consent. email: register an Entra app with Mail.Read + Mail.ReadWrite. IMAP: generate an app password at your provider.\n3. Paste the token and list the senders you want scanned.\n4. The persona only reads mail from the listed senders — no broader inbox access."
         }
       ],
       "notification_channels_default": [
@@ -105,10 +124,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 15 * * 6", "timezone": "local" },
+          "config": {
+            "cron": "0 15 * * 6",
+            "timezone": "local"
+          },
           "description": "Default Saturday 3:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["email"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -130,7 +154,11 @@
           {
             "name": "enrichment_depth",
             "type": "enum",
-            "options": ["shallow", "medium", "deep"],
+            "options": [
+              "shallow",
+              "medium",
+              "deep"
+            ],
             "default": "medium",
             "description": "Shallow = fetch the linked page only. Medium = + check GitHub repo stars/activity if available. Deep = + check for an existing Personas connector for the service + search for community reviews."
           },
@@ -144,27 +172,86 @@
           "enrichment_depth": "{{param.aq_enrichment_depth}}",
           "senders": "{{param.aq_senders}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Weekly tick" },
-            { "id": "s2", "type": "connector", "label": "Fetch unread mail from configured senders", "connector": "email" },
-            { "id": "s3", "type": "action", "label": "Extract URLs + opportunity keywords" },
-            { "id": "s4", "type": "action", "label": "Dedup against seen_urls.json" },
-            { "id": "s5", "type": "action", "label": "Fetch + enrich each new URL (with web_search fallback)" },
-            { "id": "s6", "type": "action", "label": "Classify + score relevance from memory" },
-            { "id": "s7", "type": "event", "label": "Emit scout.opportunity.discovered per candidate" },
-            { "id": "s8", "type": "end", "label": "Candidates queued for triage" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Fetch unread mail from configured senders",
+              "connector": "email"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Extract URLs + opportunity keywords"
+            },
+            {
+              "id": "s4",
+              "type": "action",
+              "label": "Dedup against seen_urls.json"
+            },
+            {
+              "id": "s5",
+              "type": "action",
+              "label": "Fetch + enrich each new URL (with web_search fallback)"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Classify + score relevance from memory"
+            },
+            {
+              "id": "s7",
+              "type": "event",
+              "label": "Emit scout.opportunity.discovered per candidate"
+            },
+            {
+              "id": "s8",
+              "type": "end",
+              "label": "Candidates queued for triage"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            }
           ]
         }
       },
@@ -179,7 +266,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "scout.opportunity.discovered" },
+          "config": {
+            "event_type": "scout.opportunity.discovered"
+          },
           "description": "Fires whenever uc_scan_and_enrich surfaces a candidate. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [],
@@ -214,7 +303,11 @@
           {
             "name": "card_verbosity",
             "type": "enum",
-            "options": ["minimal", "standard", "full"],
+            "options": [
+              "minimal",
+              "standard",
+              "full"
+            ],
             "default": "standard",
             "description": "Minimal = title + source + category + accept/reject. Standard = + 2-sentence enrichment + estimated effort. Full = + related existing connectors + GitHub / docs links."
           }
@@ -222,26 +315,82 @@
         "sample_input": {
           "card_verbosity": "{{param.aq_card_verbosity}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "scout.opportunity.discovered received" },
-            { "id": "t2", "type": "action", "label": "Render triage card via Messages" },
-            { "id": "t3", "type": "decision", "label": "Human accepts?" },
-            { "id": "t4", "type": "event", "label": "Emit scout.opportunity.accepted" },
-            { "id": "t5", "type": "event", "label": "Emit scout.opportunity.rejected" },
-            { "id": "t6", "type": "action", "label": "Update topic preferences + close candidate" },
-            { "id": "t7", "type": "end", "label": "Awaiting next candidate" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "scout.opportunity.discovered received"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Render triage card via Messages"
+            },
+            {
+              "id": "t3",
+              "type": "decision",
+              "label": "Human accepts?"
+            },
+            {
+              "id": "t4",
+              "type": "event",
+              "label": "Emit scout.opportunity.accepted"
+            },
+            {
+              "id": "t5",
+              "type": "event",
+              "label": "Emit scout.opportunity.rejected"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Update topic preferences + close candidate"
+            },
+            {
+              "id": "t7",
+              "type": "end",
+              "label": "Awaiting next candidate"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4", "variant": "yes", "label": "Accept" },
-            { "source": "t3", "target": "t5", "variant": "no", "label": "Reject" },
-            { "source": "t4", "target": "t6" },
-            { "source": "t5", "target": "t6" },
-            { "source": "t6", "target": "t7" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4",
+              "variant": "yes",
+              "label": "Accept"
+            },
+            {
+              "source": "t3",
+              "target": "t5",
+              "variant": "no",
+              "label": "Reject"
+            },
+            {
+              "source": "t4",
+              "target": "t6"
+            },
+            {
+              "source": "t5",
+              "target": "t6"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            }
           ]
         }
       }
@@ -250,7 +399,9 @@
       {
         "id": "aq_senders",
         "scope": "capability",
-        "use_case_ids": ["uc_scan_and_enrich"],
+        "use_case_ids": [
+          "uc_scan_and_enrich"
+        ],
         "category": "domain",
         "question": "Which email senders should the scout scan?",
         "type": "textarea",
@@ -264,7 +415,9 @@
       {
         "id": "aq_enrichment_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_scan_and_enrich"],
+        "use_case_ids": [
+          "uc_scan_and_enrich"
+        ],
         "category": "quality",
         "question": "How deep should web enrichment go?",
         "type": "select",
@@ -282,7 +435,9 @@
       {
         "id": "aq_card_verbosity",
         "scope": "capability",
-        "use_case_ids": ["uc_triage"],
+        "use_case_ids": [
+          "uc_triage"
+        ],
         "category": "configuration",
         "question": "How detailed should triage cards be?",
         "type": "select",
@@ -300,7 +455,9 @@
       {
         "id": "aq_email_provider",
         "scope": "connector",
-        "connector_names": ["email"],
+        "connector_names": [
+          "email"
+        ],
         "category": "configuration",
         "question": "Which email provider should the scout pull from?",
         "type": "select",
@@ -311,7 +468,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_provider",
-        "context": "Auto-detected from your Vault's email-category credentials (Gmail, Outlook, IMAP). Add one in Vault → Catalog if the list is empty.",
+        "context": "Auto-detected from your Vault's email-category credentials (email, email, IMAP). Add one in Vault → Catalog if the list is empty.",
         "dimension": "connectors"
       }
     ],

@@ -5,11 +5,21 @@
   "description": "Personal business OS that starts each day informed, accountable, and focused. Morning briefing consolidates niche news, goal progress, pending work, and a prioritized action plan into one message. On-demand decision support builds weighted matrices with kill criteria. Weekly Sunday retrospective reviews goals and triages the week's captured ideas.",
   "icon": "Sunrise",
   "color": "#F59E0B",
-  "category": ["productivity"],
+  "category": [
+    "productivity"
+  ],
   "is_published": true,
-  "service_flow": ["Web Research", "Goals & Tasks", "Messages"],
+  "service_flow": [
+    "Web Research",
+    "Goals & Tasks",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Web Research", "Goals & Tasks", "Messages"],
+    "service_flow": [
+      "Web Research",
+      "Goals & Tasks",
+      "Messages"
+    ],
     "persona": {
       "goal": "Start every day informed, accountable, and focused — one briefing that fuses niche intelligence, goal progress, and a prioritized plan that actually moves the needle.",
       "identity": {
@@ -46,7 +56,11 @@
       "tool_guidance": "**Web search for niche research**:\n- Per keyword + time qualifier: `\"{keyword}\" today OR \"this week\" OR latest`.\n- Competitor / tool updates: `\"{competitor}\" announcement OR update OR launch`.\n- Decision research: `\"{option_A}\" vs \"{option_B}\" case study OR outcome OR comparison`.\n- Extract: headline, source domain, publication date, 1-2 sentence summary, relevance score.\n- Rate limit: 1-2s between searches; target <2 minutes total research phase.\n- Dedup against `briefing_state.recent_topics` (last 5 briefings).\n\n**Decision matrix builder**:\n- Criteria (default rows): strategic fit, financial impact, execution risk, time to value, reversibility, team capability.\n- Weight 1-5 (user provides or inferred from profile priorities).\n- Score each option 1-10 per criterion.\n- Weighted total = Σ(weight × score).\n- Highlight the top option + key differentiator (largest weighted-contribution criterion).\n\n**Local state files**:\n- `profile.json` — adoption-interview output: role, business description, niche keywords, working style, top priorities.\n- `goals.json` — array of { id, title, description, deadline ISO, milestones[], status, last_activity }.\n- `briefing_state.json` — last_briefing_date, action_plan[], goal_progress{}, recent_topics[] (last 5), recent_ideas[] (last 5), weekly_metrics.\n- `decisions_log.json` — array of { id, context, options, matrix_scores, chosen_option, risks[], success_metrics[], kill_criteria[], checkpoint_date, outcome }.\n- `captured_ideas.json` — ideas surfaced during morning briefings awaiting triage at weekly review.\n- `latest_briefing.md` — fallback when Messages delivery fails.",
       "error_handling": "Web search unavailable for a keyword → skip it, note in briefing 'Research limited: could not fetch results for {keyword}'. All searches fail → skip research section; deliver goals + pending + actions only. All results stale (>48h) → one-line 'No fresh developments' note; reduce section size. `briefing_state.json` missing → first-run mode, skip pending review, note fresh start. `goals.json` missing → skip goal check-in, prompt user to define goals. `profile.json` missing → halt; route to adoption interview. Memory no data (first run) → no topic filtering; report unfiltered and note preferences will build over runs. Decision context too vague → ask clarifying questions first, do not force matrix. Single option in decision → reframe as 'do X vs do nothing' with opportunity cost. Follow-through rate <40% → suggest reducing action plan to Priority 1 only; note the observation. Messages delivery fail → write to `latest_briefing.md`, retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [],
       "notification_channels_default": [
         {
@@ -68,7 +82,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 7:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -110,36 +127,128 @@
           "briefing_sources": "{{param.aq_briefing_sources}}",
           "briefing_intent": "{{param.aq_briefing_intent}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Daily 7am tick" },
-            { "id": "m2", "type": "action", "label": "Load profile + goals + briefing_state" },
-            { "id": "m3", "type": "action", "label": "Web-search niche keywords (last 24h)" },
-            { "id": "m4", "type": "action", "label": "Rank research findings by goal alignment" },
-            { "id": "m5", "type": "action", "label": "Check goal status + detect transitions" },
-            { "id": "m6", "type": "action", "label": "Review yesterday's action plan for pending items" },
-            { "id": "m7", "type": "action", "label": "Synthesize prioritized action plan (P1/P2/P3, 4-7 items)" },
-            { "id": "m8", "type": "action", "label": "Capture idea candidates to captured_ideas.json" },
-            { "id": "m9", "type": "event", "label": "Emit briefer.morning.delivered" },
-            { "id": "m10", "type": "decision", "label": "Any goal moved to At Risk or Stalled?" },
-            { "id": "m11", "type": "event", "label": "Emit briefer.goal.at_risk per flagged goal" },
-            { "id": "m12", "type": "end", "label": "Briefing delivered" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Daily 7am tick"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Load profile + goals + briefing_state"
+            },
+            {
+              "id": "m3",
+              "type": "action",
+              "label": "Web-search niche keywords (last 24h)"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Rank research findings by goal alignment"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Check goal status + detect transitions"
+            },
+            {
+              "id": "m6",
+              "type": "action",
+              "label": "Review yesterday's action plan for pending items"
+            },
+            {
+              "id": "m7",
+              "type": "action",
+              "label": "Synthesize prioritized action plan (P1/P2/P3, 4-7 items)"
+            },
+            {
+              "id": "m8",
+              "type": "action",
+              "label": "Capture idea candidates to captured_ideas.json"
+            },
+            {
+              "id": "m9",
+              "type": "event",
+              "label": "Emit briefer.morning.delivered"
+            },
+            {
+              "id": "m10",
+              "type": "decision",
+              "label": "Any goal moved to At Risk or Stalled?"
+            },
+            {
+              "id": "m11",
+              "type": "event",
+              "label": "Emit briefer.goal.at_risk per flagged goal"
+            },
+            {
+              "id": "m12",
+              "type": "end",
+              "label": "Briefing delivered"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" },
-            { "source": "m9", "target": "m10" },
-            { "source": "m10", "target": "m11", "variant": "yes", "label": "Yes" },
-            { "source": "m10", "target": "m12", "variant": "no", "label": "No" },
-            { "source": "m11", "target": "m12" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            },
+            {
+              "source": "m9",
+              "target": "m10"
+            },
+            {
+              "source": "m10",
+              "target": "m11",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "m10",
+              "target": "m12",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "m11",
+              "target": "m12"
+            }
           ]
         }
       },
@@ -182,34 +291,114 @@
             "description": "Free-form description of the decision. Ideally 2-4 sentences including the options, constraints, and what's at stake."
           }
         ],
-        "sample_input": { "decision_context": "" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "decision_context": ""
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "User invokes with decision context" },
-            { "id": "d2", "type": "action", "label": "Parse context → identify options" },
-            { "id": "d3", "type": "action", "label": "Ask 5-7 clarifying questions" },
-            { "id": "d4", "type": "action", "label": "Web-search precedent + risk signals per option" },
-            { "id": "d5", "type": "action", "label": "Build weighted matrix (criteria × options)" },
-            { "id": "d6", "type": "action", "label": "Identify top-3 risks per top-2 options + mitigations" },
-            { "id": "d7", "type": "action", "label": "Define 14-day success metrics + kill criteria" },
-            { "id": "d8", "type": "action", "label": "User approves matrix + kill criteria" },
-            { "id": "d9", "type": "action", "label": "Save to decisions_log.json with +14d checkpoint" },
-            { "id": "d10", "type": "event", "label": "Emit briefer.decision.analyzed" },
-            { "id": "d11", "type": "end", "label": "Decision analysis delivered" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "User invokes with decision context"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Parse context → identify options"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Ask 5-7 clarifying questions"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Web-search precedent + risk signals per option"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Build weighted matrix (criteria × options)"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Identify top-3 risks per top-2 options + mitigations"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Define 14-day success metrics + kill criteria"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "User approves matrix + kill criteria"
+            },
+            {
+              "id": "d9",
+              "type": "action",
+              "label": "Save to decisions_log.json with +14d checkpoint"
+            },
+            {
+              "id": "d10",
+              "type": "event",
+              "label": "Emit briefer.decision.analyzed"
+            },
+            {
+              "id": "d11",
+              "type": "end",
+              "label": "Decision analysis delivered"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" },
-            { "source": "d9", "target": "d10" },
-            { "source": "d10", "target": "d11" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            },
+            {
+              "source": "d9",
+              "target": "d10"
+            },
+            {
+              "source": "d10",
+              "target": "d11"
+            }
           ]
         }
       },
@@ -224,7 +413,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 18 * * 0", "timezone": "local" },
+          "config": {
+            "cron": "0 18 * * 0",
+            "timezone": "local"
+          },
           "description": "Default Sunday 6:00 PM — final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -254,35 +446,104 @@
           {
             "name": "content_type",
             "type": "enum",
-            "options": ["work_only", "work_and_personal", "everything_captured"],
+            "options": [
+              "work_only",
+              "work_and_personal",
+              "everything_captured"
+            ],
             "default": "work_and_personal",
             "description": "Scope of ideas to triage — work-only is faster; everything_captured is thorough but longer."
           }
         ],
-        "sample_input": { "content_type": "{{param.aq_content_type}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "content_type": "{{param.aq_content_type}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Sunday 6pm tick" },
-            { "id": "w2", "type": "action", "label": "Load goals + captured_ideas + decisions_log" },
-            { "id": "w3", "type": "action", "label": "Compute weekly goal trends" },
-            { "id": "w4", "type": "action", "label": "Identify decisions at +14d checkpoint" },
-            { "id": "w5", "type": "action", "label": "Present ideas for triage (accept/reject/defer)" },
-            { "id": "w6", "type": "action", "label": "Memorize triage decisions + checkpoint outcomes" },
-            { "id": "w7", "type": "event", "label": "Emit briefer.idea.captured per accepted idea" },
-            { "id": "w8", "type": "event", "label": "Emit briefer.weekly.delivered" },
-            { "id": "w9", "type": "end", "label": "Weekly review delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Sunday 6pm tick"
+            },
+            {
+              "id": "w2",
+              "type": "action",
+              "label": "Load goals + captured_ideas + decisions_log"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Compute weekly goal trends"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Identify decisions at +14d checkpoint"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Present ideas for triage (accept/reject/defer)"
+            },
+            {
+              "id": "w6",
+              "type": "action",
+              "label": "Memorize triage decisions + checkpoint outcomes"
+            },
+            {
+              "id": "w7",
+              "type": "event",
+              "label": "Emit briefer.idea.captured per accepted idea"
+            },
+            {
+              "id": "w8",
+              "type": "event",
+              "label": "Emit briefer.weekly.delivered"
+            },
+            {
+              "id": "w9",
+              "type": "end",
+              "label": "Weekly review delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" },
-            { "source": "w7", "target": "w8" },
-            { "source": "w8", "target": "w9" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            },
+            {
+              "source": "w7",
+              "target": "w8"
+            },
+            {
+              "source": "w8",
+              "target": "w9"
+            }
           ]
         }
       }
@@ -291,7 +552,9 @@
       {
         "id": "aq_briefing_sources",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_briefing"],
+        "use_case_ids": [
+          "uc_morning_briefing"
+        ],
         "category": "domain",
         "question": "Which sources should ground the briefing's research?",
         "type": "source_definition",
@@ -304,7 +567,9 @@
       {
         "id": "aq_briefing_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_briefing"],
+        "use_case_ids": [
+          "uc_morning_briefing"
+        ],
         "category": "domain",
         "question": "What's the long-term goal of this briefing, and how should the persona work with your sources?",
         "type": "textarea",
@@ -318,7 +583,10 @@
       {
         "id": "aq_goals",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_briefing", "uc_weekly_review"],
+        "use_case_ids": [
+          "uc_morning_briefing",
+          "uc_weekly_review"
+        ],
         "category": "domain",
         "question": "What are your current top 3-5 goals with deadlines?",
         "type": "textarea",
@@ -332,7 +600,9 @@
       {
         "id": "aq_content_type",
         "scope": "capability",
-        "use_case_ids": ["uc_weekly_review"],
+        "use_case_ids": [
+          "uc_weekly_review"
+        ],
         "category": "configuration",
         "question": "Which captured ideas should the Sunday review triage?",
         "type": "select",

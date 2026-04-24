@@ -2,7 +2,7 @@
   "id": "ai-document-intelligence-hub",
   "schema_version": 3,
   "name": "AI Document Intelligence Hub",
-  "description": "Monitors Google Drive folders for new and updated documents, uses AI to extract summaries, tags, and metadata, then builds a searchable Notion knowledge base and local index. Responds to natural-language search queries via Telegram and posts weekly knowledge growth reports to Slack.",
+  "description": "Monitors cloud storage folders for new and updated documents, uses AI to extract summaries, tags, and metadata, then builds a searchable knowledge base and local index. Responds to natural-language search queries via the messaging channel and posts weekly knowledge growth reports to the messaging channel.",
   "icon": "Library",
   "color": "#7C3AED",
   "category": [
@@ -11,17 +11,17 @@
   ],
   "is_published": true,
   "service_flow": [
-    "Google Drive",
-    "Notion",
-    "Telegram",
-    "Slack"
+    "cloud storage",
+    "knowledge base",
+    "messaging",
+    "messaging"
   ],
   "payload": {
     "service_flow": [
-      "Google Drive",
-      "Notion",
-      "Telegram",
-      "Slack"
+      "cloud storage",
+      "knowledge base",
+      "messaging",
+      "messaging"
     ],
     "persona": {
       "goal": "Turn every document your team creates into structured, discoverable institutional knowledge — ingested, tagged, searchable, and reported on without manual filing.",
@@ -36,13 +36,13 @@
       },
       "principles": [
         "Source-grounded — every extracted fact traces back to the Drive file.",
-        "Deduplicate before create — one Drive file maps to exactly one Notion page.",
+        "Deduplicate before create — one Drive file maps to exactly one knowledge base pages.",
         "Low confidence is not silent — flag extractions below 0.5 for human review.",
         "Relationships are bidirectional — when doc A cites doc B, both pages get the link.",
         "Machine tokens are never user-facing — categories and statuses render through i18n-friendly labels."
       ],
       "constraints": [
-        "Never overwrite an existing Notion page without diffing properties first.",
+        "Never overwrite an existing knowledge base pages without diffing properties first.",
         "Never ingest files in user-specified excluded folders or marked draft/private.",
         "Never post individual ingest messages during first-run bootstrap — send a single initialization summary.",
         "Never fabricate entity names or action-item assignees — if the source is ambiguous, omit."
@@ -55,9 +55,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities run independently:\n\n1. **uc_ingest_documents** — poll Google Drive on a schedule for files modified since the last checkpoint. For each new or updated file (Google Docs / Slides / Sheets / uploaded PDFs), export text, run AI analysis (executive summary, 3-8 tags, one primary category, entities, action items, document relationships, 0.0-1.0 confidence), deduplicate against the Notion database by Drive file ID, and create-or-update a structured Notion page. Update the local `data/document_index.json` atomically. Emit `knowledge.document.ingested` per processed file. On first run, batch 20 files per cycle and send one summary message instead of per-file notifications.\n\n2. **uc_search_queries** — listen for Telegram messages in the configured chat. Parse `/search`, `/find`, `/recent`, `/stats`, `/categories` commands. Score results by exact title (1.0), tag match (0.8), entity match (0.7), category (0.6), summary (0.5), with a recency boost (0.1-0.3) on the last 90 days. Return top 5 with inline keyboard buttons linking to Drive. Silent on empty input; return 'no matches + try broader terms' on zero hits.\n\n3. **uc_weekly_report** — on schedule, compute week-over-week metrics: docs added, docs updated, total in index, category breakdown, new tags, top contributors, low-confidence flags. Compare against `data/weekly_reports/report_{date}.json` archive. Build Slack Block Kit message with highlights, archive the report, emit `knowledge.report.generated`.\n\nState files: `data/sync_state.json` (per-folder last-modified), `data/document_index.json` (searchable index), `data/weekly_reports/report_{date}.json` (archived reports), `data/processing_log.jsonl` (append-only processing log). Update state atomically after each successful cycle.",
-      "tool_guidance": "**Google Drive API** (`http_request` + `google_drive` connector, base `https://www.googleapis.com`):\n- List modified: `GET /drive/v3/files?q=modifiedTime>'{ts}'+and+trashed=false&fields=files(id,name,mimeType,modifiedTime,owners,webViewLink,size)&orderBy=modifiedTime+desc&pageSize=100`\n- Export Doc/Slides as text: `GET /drive/v3/files/{fileId}/export?mimeType=text/plain`\n- Export Sheets as CSV: `GET /drive/v3/files/{fileId}/export?mimeType=text/csv`\n- Download PDF: `GET /drive/v3/files/{fileId}?alt=media`\n- Truncate extracted text to 15,000 chars before analysis.\n\n**Notion API** (`http_request` + `notion` connector, base `https://api.notion.com`, header `Notion-Version: 2022-06-28`):\n- Dedup query: `POST /v1/databases/{database_id}/query` filtered by Drive File ID property.\n- Create page: `POST /v1/pages` with properties (Title, Source URL, Category, Tags, Author, Last Modified, Summary, Confidence, Status, Drive File ID, Word Count) and body blocks (callout summary, headings, bulleted lists, toggles).\n- Update page: `PATCH /v1/pages/{page_id}`.\n- Append relationship links: `PATCH /v1/blocks/{block_id}/children`.\n\n**Telegram Bot API** (`http_request` + `telegram` connector):\n- Poll: `GET /bot{token}/getUpdates?offset={last_update_id+1}&timeout=30`\n- Reply: `POST /bot{token}/sendMessage` with Markdown + optional inline keyboard for Drive links.\n\n**Slack API** (`http_request` + `slack` connector):\n- Report: `POST /api/chat.postMessage` with Block Kit `blocks` array.\n- Resolve channel: `GET /api/conversations.list?types=public_channel` filter by name.",
-      "error_handling": "Drive 401 → attempt refresh-token; on failure halt uc_ingest_documents and emit persona.error. Drive 403 on a folder → log + skip, continue other folders. Drive 429 → 60s backoff, halve batch size. Drive export 5xx → one retry at 10s; on second failure log for manual review. Notion 400 validation → try simplified page (title + summary + URL only); on second failure save body to `data/pending_notion/` for retry. Notion 429 → queue with 500ms inter-request spacing. Notion 502/503 → exponential backoff (30/60/120s), after 3 failures save locally and retry next cycle. Telegram 400 message-too-long → split into ≤2 messages per response. Telegram 429 → respect retry_after. Slack channel_not_found → resolve by name via conversations.list; if still missing emit persona.error. Corrupted index → rebuild from Notion database query. Non-text PDFs → create minimal page with 'Requires OCR' status. Rapid successive edits → 2-minute debounce.",
+      "operating_instructions": "Three capabilities run independently: 1. **uc_ingest_documents** — poll cloud storage on a schedule for files modified since the last checkpoint. For each new or updated file (Google Docs / Slides / Sheets / uploaded PDFs), export text, run AI analysis (executive summary, 3-8 tags, one primary category, entities, action items, document relationships, 0.0-1.0 confidence), deduplicate against the knowledge base databases by Drive file ID, and create-or-update a structured knowledge base pages. Update the local `data/document_index.json` atomically. Emit `knowledge.document.ingested` per processed file. On first run, batch 20 files per cycle and send one summary message instead of per-file notifications. 2. **uc_search_queries** — listen for messages in the configured chat. Parse `/search`, `/find`, `/recent`, `/stats`, `/categories` commands. Score results by exact title (1.0), tag match (0.8), entity match (0.7), category (0.6), summary (0.5), with a recency boost (0.1-0.3) on the last 90 days. Return top 5 with inline keyboard buttons linking to Drive. Silent on empty input; return 'no matches + try broader terms' on zero hits. 3. **uc_weekly_report** — on schedule, compute week-over-week metrics: docs added, docs updated, total in index, category breakdown, new tags, top contributors, low-confidence flags. Compare against `data/weekly_reports/report_{date}.json` archive. Build messaging formatted layout message with highlights, archive the report, emit `knowledge.report.generated`. State files: `data/sync_state.json` (per-folder last-modified), `data/document_index.json` (searchable index), `data/weekly_reports/report_{date}.json` (archived reports), `data/processing_log.jsonl` (append-only processing log). Update state atomically after each successful cycle.",
+      "tool_guidance": "**cloud storage API** (`http_request` + `google_drive` connector, base `https://www.googleapis.com`):\n- List modified: `GET /drive/v3/files?q=modifiedTime>'{ts}'+and+trashed=false&fields=files(id,name,mimeType,modifiedTime,owners,webViewLink,size)&orderBy=modifiedTime+desc&pageSize=100`\n- Export Doc/Slides as text: `GET /drive/v3/files/{fileId}/export?mimeType=text/plain`\n- Export Sheets as CSV: `GET /drive/v3/files/{fileId}/export?mimeType=text/csv`\n- Download PDF: `GET /drive/v3/files/{fileId}?alt=media`\n- Truncate extracted text to 15,000 chars before analysis. **knowledge base API** (`http_request` + `notion` connector, base `https://api.notion.com`, header `knowledge base-Version: 2022-06-28`):\n- Dedup query: `POST /v1/databases/{database_id}/query` filtered by Drive File ID property.\n- Create page: `POST /v1/pages` with properties (Title, Source URL, Category, Tags, Author, Last Modified, Summary, Confidence, Status, Drive File ID, Word Count) and body blocks (callout summary, headings, bulleted lists, toggles).\n- Update page: `PATCH /v1/pages/{page_id}`.\n- Append relationship links: `PATCH /v1/blocks/{block_id}/children`. **messaging Bot API** (`http_request` + `telegram` connector):\n- Poll: `GET /bot{token}/getUpdates?offset={last_update_id+1}&timeout=30`\n- Reply: `POST /bot{token}/sendMessage` with Markdown + optional inline keyboard for Drive links. **messaging API** (`http_request` + `slack` connector):\n- Report: `POST /api/chat.postMessage` with formatted messaging layout `blocks` array.\n- Resolve channel: `GET /api/conversations.list?types=public_channel` filter by name.",
+      "error_handling": "Drive 401 → attempt refresh-token; on failure halt uc_ingest_documents and emit persona.error. Drive 403 on a folder → log + skip, continue other folders. Drive 429 → 60s backoff, halve batch size. Drive export 5xx → one retry at 10s; on second failure log for manual review. knowledge base 400 validation → try simplified page (title + summary + URL only); on second failure save body to `data/pending_notion/` for retry. knowledge base 429 → queue with 500ms inter-request spacing. knowledge base 502/503 → exponential backoff (30/60/120s), after 3 failures save locally and retry next cycle. messaging 400 message-too-long → split into ≤2 messages per response. messaging 429 → respect retry_after. messaging channel_not_found → resolve by name via conversations.list; if still missing emit persona.error. Corrupted index → rebuild from knowledge base databases query. Non-text PDFs → create minimal page with 'Requires OCR' status. Rapid successive edits → 2-minute debounce.",
       "examples": [],
       "tools": [
         "http_request",
@@ -98,7 +98,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Google Drive API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop or Web app).\n3. Complete consent screen.\n4. Run the OAuth flow requesting `https://www.googleapis.com/auth/drive.readonly` and capture the refresh token.\n5. Note the folder IDs you want monitored (from each folder's URL)."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable cloud storage API.\n2. Credentials → Create OAuth 2.0 Client ID (Desktop or Web app).\n3. Complete consent screen.\n4. Run the OAuth flow requesting `https://www.googleapis.com/auth/drive.readonly` and capture the refresh token.\n5. Note the folder IDs you want monitored (from each folder's URL)."
         },
         {
           "name": "knowledge_base",
@@ -125,7 +125,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations → create internal integration 'Document Intelligence Hub' with Read/Update/Insert capabilities.\n2. Copy the token.\n3. Create a Notion database with the properties listed above.\n4. Share the database with the integration (Connections → add).\n5. Copy the database ID from the URL."
+          "setup_instructions": "1. notion.so/my-integrations → create internal integration 'Document Intelligence Hub' with Read/Update/Insert capabilities.\n2. Copy the token.\n3. Create a knowledge base databases with the properties listed above.\n4. Share the database with the integration (Connections → add).\n5. Copy the database ID from the URL."
         },
         {
           "name": "messaging",
@@ -134,7 +134,7 @@
           "role": "chat_interface",
           "category": "messaging",
           "required": false,
-          "fallback_note": "Required only when uc_search_queries is enabled. Without Telegram, documents are still ingested and weekly reports still ship — only the natural-language search interface is disabled.",
+          "fallback_note": "Required only when uc_search_queries is enabled. Without messaging, documents are still ingested and weekly reports still ship — only the natural-language search interface is disabled.",
           "credential_fields": [
             {
               "key": "bot_token",
@@ -159,7 +159,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Telegram for interactive search, Slack for weekly growth digests, in-app for critical ingestion alerts."
+          "description": "messaging for interactive search, messaging for weekly growth digests, in-app for critical ingestion alerts."
         }
       ],
       "core_memories": []
@@ -168,8 +168,8 @@
       {
         "id": "uc_ingest_documents",
         "title": "Drive Document Ingestion",
-        "description": "Watch Google Drive for new and updated documents. Extract text, run AI analysis (summary, tags, category, entities, action items, relationships, confidence), deduplicate, and create-or-update structured Notion pages. Maintain the local search index. Default every 10 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Drive → Notion knowledge base with full structured metadata and local search index.",
+        "description": "Watch cloud storage for new and updated documents. Extract text, run AI analysis (summary, tags, category, entities, action items, relationships, confidence), deduplicate, and create-or-update structured knowledge base pages. Maintain the local search index. Default every 10 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Drive → knowledge base with full structured metadata and local search index.",
         "category": "content",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -203,10 +203,10 @@
           {
             "event_type": "knowledge.index.rebuilt",
             "direction": "emit",
-            "description": "Emitted when `data/document_index.json` was corrupted and rebuilt from the Notion database."
+            "description": "Emitted when `data/document_index.json` was corrupted and rebuilt from the knowledge base databases."
           }
         ],
-        "error_handling": "Drive 401 → halt until refresh-token succeeds. Drive 403 on a folder → skip that folder, continue others. Drive 429 → 60s backoff, halve batch. Notion 429 → 500ms inter-request spacing. Notion validation error → simplified page; persist body locally if still failing. Non-text PDFs → minimal page with 'Requires OCR' status. Rapid successive edits → 2-minute debounce to the latest version. Corrupted index → rebuild from Notion and emit knowledge.index.rebuilt.",
+        "error_handling": "Drive 401 → halt until refresh-token succeeds. Drive 403 on a folder → skip that folder, continue others. Drive 429 → 60s backoff, halve batch. knowledge base 429 → 500ms inter-request spacing. knowledge base validation error → simplified page; persist body locally if still failing. Non-text PDFs → minimal page with 'Requires OCR' status. Rapid successive edits → 2-minute debounce to the latest version. Corrupted index → rebuild from knowledge base and emit knowledge.index.rebuilt.",
         "input_schema": [
           {
             "name": "monitored_folders",
@@ -285,7 +285,7 @@
             {
               "id": "d6",
               "type": "connector",
-              "label": "Dedup query + create or update Notion page",
+              "label": "Dedup query + create or update knowledge base pages",
               "connector": "knowledge_base"
             },
             {
@@ -343,7 +343,7 @@
       {
         "id": "uc_search_queries",
         "title": "Natural-Language Search",
-        "description": "Listen for Telegram messages. Parse `/search`, `/find`, `/recent`, `/stats`, `/categories` commands. Score against the local index (title, tags, entities, category, summary, with recency boost) and return top 5 with Drive links. Default polling every 2 minutes — final cadence set at the trigger-composition step.",
+        "description": "Listen for messages. Parse `/search`, `/find`, `/recent`, `/stats`, `/categories` commands. Score against the local index (title, tags, entities, category, summary, with recency boost) and return top 5 with Drive links. Default polling every 2 minutes — final cadence set at the trigger-composition step.",
         "capability_summary": "Chat-based semantic search with inline Drive links.",
         "category": "content",
         "enabled_by_default": true,
@@ -375,7 +375,7 @@
             "description": "Payload: { query, result_count, top_result_file_id, response_time_ms }. Emitted per answered query."
           }
         ],
-        "error_handling": "Telegram 401 → halt; emit persona.error. Telegram 400 message-too-long → split into ≤2 messages. Telegram 429 → respect retry_after. Index missing → rebuild from Notion before responding.",
+        "error_handling": "messaging 401 → halt; emit persona.error. messaging 400 message-too-long → split into ≤2 messages. messaging 429 → respect retry_after. Index missing → rebuild from knowledge base before responding.",
         "input_schema": [
           {
             "name": "search_top_n",
@@ -406,7 +406,7 @@
             {
               "id": "s1",
               "type": "start",
-              "label": "Telegram poll"
+              "label": "messaging poll"
             },
             {
               "id": "s2",
@@ -488,8 +488,8 @@
       {
         "id": "uc_weekly_report",
         "title": "Weekly Growth Digest",
-        "description": "Compile weekly knowledge-base metrics — docs added, updated, category breakdown, new tags, top contributors, low-confidence flags, highlighted new documents — and post to Slack. Default Friday 5pm — final cadence set at the trigger-composition step.",
-        "capability_summary": "Weekly Slack digest of corpus growth, contributor activity, and review flags.",
+        "description": "Compile weekly knowledge-base metrics — docs added, updated, category breakdown, new tags, top contributors, low-confidence flags, highlighted new documents — and post to the messaging channel. Default Friday 5pm — final cadence set at the trigger-composition step.",
+        "capability_summary": "Weekly messaging digest of corpus growth, contributor activity, and review flags.",
         "category": "content",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -518,12 +518,12 @@
             "description": "Payload: { period, total_docs, docs_added, docs_updated, category_breakdown, low_confidence_count, top_contributors[] }. Emitted after each weekly digest ships."
           }
         ],
-        "error_handling": "Slack channel_not_found → resolve by name via conversations.list; if still missing, save report locally and emit persona.error. Slack 429 → queue in `data/pending_slack.json`, retry next cycle. Index missing → rebuild from Notion; if that also fails, skip the weekly report with an error note.",
+        "error_handling": "messaging channel_not_found → resolve by name via conversations.list; if still missing, save report locally and emit persona.error. messaging 429 → queue in `data/pending_slack.json`, retry next cycle. Index missing → rebuild from knowledge base; if that also fails, skip the weekly report with an error note.",
         "input_schema": [
           {
             "name": "report_channel",
             "type": "text",
-            "description": "Slack channel ID or name that receives the digest."
+            "description": "messaging channels ID or name that receives the digest."
           },
           {
             "name": "highlight_count",
@@ -564,7 +564,7 @@
             {
               "id": "w4",
               "type": "connector",
-              "label": "Slack Block Kit post",
+              "label": "messaging formatted layout post",
               "connector": "messaging"
             },
             {
@@ -620,7 +620,7 @@
           "uc_ingest_documents"
         ],
         "category": "configuration",
-        "question": "Which Google Drive folders should be monitored?",
+        "question": "Which cloud storage folders should be monitored?",
         "type": "text",
         "default": "",
         "maps_to": "use_cases[uc_ingest_documents].sample_input.monitored_folders",
@@ -690,7 +690,7 @@
           "uc_weekly_report"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives the weekly growth digest?",
+        "question": "Which messaging channels receives the weekly growth digest?",
         "type": "text",
         "default": "#knowledge-base",
         "maps_to": "use_cases[uc_weekly_report].sample_input.report_channel",
@@ -714,7 +714,7 @@
         },
         "maps_to": "persona.connectors[storage].credential_fields[provider].value",
         "variable_name": "storage_credential",
-        "context": "Options are auto-detected from your storage credentials in the Vault (Google Drive, Dropbox, OneDrive, S3, R2, Local Drive, …).",
+        "context": "Options are auto-detected from your storage credentials in the Vault (cloud storage, cloud storage, cloud storage, S3, R2, Local Drive, …).",
         "dimension": "connectors"
       },
       {
@@ -733,7 +733,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -752,7 +752,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

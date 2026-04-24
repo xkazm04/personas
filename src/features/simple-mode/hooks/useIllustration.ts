@@ -108,7 +108,7 @@ const TEMPLATE_CATEGORY_MAP: Record<string, IllustrationCategory> = {
   hr: 'meetings',
   legal: 'writing',
   // Project ops
-  'project-management': 'meetings',
+  project_management: 'meetings',
   productivity: 'general',
 };
 

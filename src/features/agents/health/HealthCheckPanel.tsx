@@ -18,6 +18,7 @@ import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, DryRunResult } from './types';
 import type { UseHealthCheckReturn } from './useHealthCheck';
 import { useTranslation } from '@/i18n/useTranslation';
+import { formatTimestamp } from '@/lib/utils/formatters';
 
 import { ScoreBadge, ScoreRing } from './HealthScoreDisplay';
 import { HealthIssueCard } from './HealthIssueCard';
@@ -45,7 +46,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
         <HealthWatchToggle />
         <div className="text-center py-8">
           {/* Stethoscope-circuit illustration */}
-          <svg width="160" height="100" viewBox="0 0 160 100" fill="none" className="mx-auto mb-4">
+          <svg width="160" height="100" viewBox="0 0 160 100" fill="none" className="mx-auto mb-4" aria-hidden="true" role="presentation">
             <defs>
               <linearGradient id="hc-tube-grad" x1="0" y1="0" x2="1" y2="1">
                 <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.5" />
@@ -77,12 +78,18 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <Button
             type="button" onClick={handleRun} disabled={!selectedPersona}
             disabledReason={t.agents.health_check.select_agent}
+            aria-describedby={!selectedPersona ? 'health-check-run-reason' : undefined}
             variant="primary"
             size="md"
-            icon={<Activity className="w-4 h-4" />}
+            icon={<Activity className="w-4 h-4" aria-hidden="true" />}
           >
             {t.agents.health_check.run_check}
           </Button>
+          {!selectedPersona && (
+            <span id="health-check-run-reason" className="sr-only">
+              {t.agents.health_check.select_agent}
+            </span>
+          )}
         </div>
       </div>
     );
@@ -91,7 +98,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
   if (phase === 'running') {
     return (
       <div className="text-center py-8">
-        <svg width="160" height="100" viewBox="0 0 160 100" fill="none" className="mx-auto mb-3">
+        <svg width="160" height="100" viewBox="0 0 160 100" fill="none" className="mx-auto mb-3" aria-hidden="true" role="presentation">
           <defs>
             <linearGradient id="hc-scan-grad" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="#8b5cf6" />
@@ -155,6 +162,26 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
   return (
     <div className="space-y-4">
+      {isStale && (
+        <div
+          role="alert"
+          className="animate-fade-slide-in flex items-center gap-2 px-3 py-2 rounded-input bg-status-warning/8 border-l-2 border-status-warning"
+        >
+          <Clock className="w-4 h-4 text-status-warning shrink-0" aria-hidden="true" />
+          <span className="typo-caption font-semibold text-status-warning flex-1">
+            {t.agents.health_check.stale_banner_label}
+          </span>
+          <Button
+            type="button"
+            onClick={handleRun}
+            variant="ghost"
+            size="sm"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+          >
+            {t.agents.health_check.run_now}
+          </Button>
+        </div>
+      )}
       <div className="flex items-center gap-4">
         <ScoreRing score={score} />
         <div className="flex-1 min-w-0">
@@ -162,18 +189,17 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
             <ScoreBadge score={score} />
             <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-caption font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
               {dryRun.status === 'ready' ? <CheckCircle2 className="w-3 h-3" /> : dryRun.status === 'blocked' ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-              {dryRun.status.charAt(0).toUpperCase() + dryRun.status.slice(1)}
+              {dryRun.status === 'ready'
+                ? t.agents.health_check.status_ready
+                : dryRun.status === 'blocked'
+                  ? t.agents.health_check.status_blocked
+                  : t.agents.health_check.status_partial}
             </div>
           </div>
           <p className="typo-body text-foreground">
             {remainingIssues > 0 ? tx(remainingIssues === 1 ? t.agents.health_check.issues_found_one : t.agents.health_check.issues_found_other, { count: remainingIssues }) : t.agents.health_check.no_issues}
-            {' \u00b7 '}Checked {new Date(result.checkedAt).toLocaleTimeString()}
-            {isStale && (
-              <span className="inline-flex items-center gap-1 ml-1.5 text-amber-400/90">
-                <Clock className="w-3 h-3" />
-                <span className="typo-caption">{t.agents.health_check.stale}</span>
-              </span>
-            )}
+            {' \u00b7 '}
+            {tx(t.agents.health_check.checked_at, { time: formatTimestamp(result.checkedAt) })}
           </p>
         </div>
         <Button type="button" onClick={handleRun}
@@ -213,7 +239,7 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
 
       {dryRun.issues.length === 0 && dryRun.capabilities.length > 0 && (
         <div className="text-center py-4">
-          <svg width="48" height="56" viewBox="0 0 48 56" fill="none" className="mx-auto mb-2">
+          <svg width="48" height="56" viewBox="0 0 48 56" fill="none" className="mx-auto mb-2" aria-hidden="true" role="presentation">
             <path d="M24 2L4 12v16c0 14 8.5 22 20 26 11.5-4 20-12 20-26V12L24 2z" fill="#10b981" fillOpacity="0.1" stroke="#10b981" strokeWidth="1.5" strokeOpacity="0.4" strokeLinejoin="round" />
             <path d="M16 28l6 6 10-12" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -266,16 +292,17 @@ function HealthWatchToggle() {
         data-testid="health-watch-toggle"
         onClick={toggle}
         disabled={loading || !persona}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
+        aria-pressed={enabled}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
           enabled
             ? 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30'
             : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
         }`}
         title={enabled ? t.agents.settings_status.health_watch_active : t.agents.settings_status.health_watch_enable}
       >
-        <Eye className={`w-3 h-3 ${enabled ? 'text-cyan-400' : ''}`} />
+        <Eye className={`w-3 h-3 ${enabled ? 'text-cyan-400' : ''}`} aria-hidden="true" />
         {t.agents.settings_status.health_watch}
-        <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-cyan-400' : 'bg-muted-foreground/30'}`} />
+        <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-cyan-400' : 'bg-muted-foreground/30'}`} aria-hidden="true" />
       </button>
     </div>
   );

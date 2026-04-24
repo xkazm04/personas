@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/google-gemini.svg",
   "category": "ai",
   "categories": [
-    "ai",
-    "ai_chat",
-    "text_generation"
+    "ai"
   ],
   "fields": [
     {

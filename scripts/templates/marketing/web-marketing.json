@@ -5,11 +5,21 @@
   "description": "Weekly cross-channel marketing intelligence. Pulls paid campaign performance and organic SEO metrics, detects keyword cannibalization between paid and organic, and proposes specific optimizations that persist through human review into a learning memory of what works.",
   "icon": "TrendingUp",
   "color": "#8B5CF6",
-  "category": ["marketing"],
+  "category": [
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["Ad Platform", "Analytics Tool", "Messages"],
+  "service_flow": [
+    "Ad Platform",
+    "Analytics Tool",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Ad Platform", "Analytics Tool", "Messages"],
+    "service_flow": [
+      "Ad Platform",
+      "Analytics Tool",
+      "Messages"
+    ],
     "persona": {
       "goal": "Increase traffic to the app through a sustained loop of paid + organic intelligence, free-source discovery, and reviewed optimization proposals.",
       "identity": {
@@ -42,11 +52,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "combined",
-      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing:\n\n1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining.\n\n2. **uc_optimization_proposals** — from the scan data, generate `proposal_count` specific proposals (if `proposal_count == \"Leave up to LLM\"`, dynamically size 5-8 based on signal density — richer data = more proposals, thin data = fewer; otherwise cast the string to int and honor it exactly) (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week).\n\n3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity.\n\n4. **uc_free_research** (opt-in) — read the codebase connector's README + package metadata to derive what to market (problem, audience, tone). Web-search candidate free-promotion surfaces (forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists). Apply `free_source_patterns.json` memory — suppress categories the user has bad-tagged 3+ times. Emit `marketing.free_source.discovered` per candidate; route to human review; emit `accepted`/`rejected` per decision; update memory. If the codebase connector is not attached, skip this section for the week and note it in the combined briefing.\n\nAll enabled sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
-      "tool_guidance": "**Ad platform endpoints** (shape depends on which connector the user chose at adoption):\n- Google Ads: `POST /v17/customers/{cid}/googleAds:searchStream` with GAQL for campaign + keyword + search-term performance.\n- Meta Ads: `GET /v19.0/act_{aid}/insights?date_preset=last_7d&level=campaign&fields=impressions,clicks,spend,actions,cpc,ctr`.\n- LinkedIn Ads: `GET /rest/adAnalytics?q=analytics&pivot=CAMPAIGN`.\n- Mailchimp: `GET /3.0/reports?count=10&sort_field=send_time`.\n\n**Analytics endpoints**:\n- GA4 Data API: `POST /v1beta/properties/{pid}:runReport` with dateRanges + metrics + dimensions.\n- Search Console: `POST /webmasters/v3/sites/{site}/searchAnalytics/query` with dimensions=[query, page] for ranking data.\n- PostHog: `POST /api/projects/{id}/query` (HogQL).\n- Mixpanel: `POST /api/2.0/insights` or raw export `/api/2.0/export`.\n\n**Rate-limit strategy**: Google Ads 15K ops/day — batch campaigns in one GAQL query. Meta Ads — one call per account with breakdowns. Search Console — 1200 QPM limit; chunk by date if >3 months. GA4 — property-level quota; reduce date range before dimensions.\n\n**Local state**: `marketing_config.json` (connected tools, account/property IDs, site URLs from adoption). `performance_history.json` (rolling 4-week metrics per campaign + per page). `proposal_patterns.json` (accepted/rejected count by category, last 52 weeks). `latest_report.json` (fallback on Messages failure).",
+      "operating_instructions": "Monday 9am weekly cadence. All three capabilities fire on the same tick; outputs concatenate into one combined Monday briefing: 1. **uc_performance_scan** — pull last 7 days of ad-platform metrics (impressions, clicks, CTR, conversions, cost, CPA, ROAS per campaign) and analytics metrics (organic sessions, top landing pages, search performance, Core Web Vitals). Compute WoW deltas vs 4-week rolling baseline in `performance_history.json`. Flag any metric moving >15% paid or >20% organic. Emit `marketing.report.delivered` with the performance summary; emit `marketing.performance.declining` when the overall trend is Declining. 2. **uc_optimization_proposals** — from the scan data, generate `proposal_count` specific proposals (if `proposal_count == \"Leave up to LLM\"`, dynamically size 5-8 based on signal density — richer data = more proposals, thin data = fewer; otherwise cast the string to int and honor it exactly) (budget reallocations, A/B tests, copy changes, targeting tweaks, SEO fixes). Each carries WHAT/WHY/EXPECTED/PRIORITY. Apply memory filtering: categories rejected 3+ times are suppressed unless potential >30%. Present to human; emit `marketing.optimization.proposed` per proposal, `marketing.optimization.accepted` on accept (attached to backlog), `marketing.optimization.rejected` on reject (recorded for next week). 3. **uc_cannibalization_watch** — cross-reference paid keyword bids with organic ranking positions. Any paid keyword where organic ranks top-3 is flagged as cannibalization. Emit `marketing.cannibalization.detected` per finding with calculated savings opportunity. 4. **uc_free_research** (opt-in) — read the codebase connector's README + package metadata to derive what to market (problem, audience, tone). Web-search candidate free-promotion surfaces (forums, subreddits, newsletters, indie-dev communities, Hacker News threads, Product Hunt waitlists). Apply `free_source_patterns.json` memory — suppress categories the user has bad-tagged 3+ times. Emit `marketing.free_source.discovered` per candidate; route to human review; emit `accepted`/`rejected` per decision; update memory. If the codebase connector is not attached, skip this section for the week and note it in the combined briefing. All enabled sections ship as one combined message per week. State lives in `marketing_config.json` (connected tools), `performance_history.json` (4-week baselines), `proposal_patterns.json` (accept/reject ledger per category).",
+      "tool_guidance": "**Ad platform endpoints** (shape depends on which connector the user chose at adoption):\n- ad platform: `POST /v17/customers/{cid}/googleAds:searchStream` with GAQL for campaign + keyword + search-term performance.\n- ad platform: `GET /v19.0/act_{aid}/insights?date_preset=last_7d&level=campaign&fields=impressions,clicks,spend,actions,cpc,ctr`.\n- ad platform: `GET /rest/adAnalytics?q=analytics&pivot=CAMPAIGN`.\n- Mailchimp: `GET /3.0/reports?count=10&sort_field=send_time`. **Analytics endpoints**:\n- analytics Data API: `POST /v1beta/properties/{pid}:runReport` with dateRanges + metrics + dimensions.\n- Search Console: `POST /webmasters/v3/sites/{site}/searchAnalytics/query` with dimensions=[query, page] for ranking data.\n- analytics: `POST /api/projects/{id}/query` (HogQL).\n- analytics: `POST /api/2.0/insights` or raw export `/api/2.0/export`. **Rate-limit strategy**: ad platform 15K ops/day — batch campaigns in one GAQL query. ad platform — one call per account with breakdowns. Search Console — 1200 QPM limit; chunk by date if >3 months. analytics — property-level quota; reduce date range before dimensions. **Local state**: `marketing_config.json` (connected tools, account/property IDs, site URLs from adoption). `performance_history.json` (rolling 4-week metrics per campaign + per page). `proposal_patterns.json` (accepted/rejected count by category, last 52 weeks). `latest_report.json` (fallback on Messages failure).",
       "error_handling": "Ad platform 401/403 → skip paid section; include re-auth CTA in report. 429 → exponential backoff; if still blocked, use `performance_history.json` with staleness label. Analytics quota exceeded → reduce date range or dimension count; cached baselines otherwise. Single-channel-only (paid fails, organic OK, or vice-versa) → deliver partial report with clear 'paid unavailable' / 'organic unavailable' labels. Total data blindness → Messages alert only, no report. Zero conversions in a campaign → skip CPA proposals for it, focus on traffic/engagement metrics. First run (no memory) → use industry benchmarks; note in report that recommendations sharpen with feedback. `marketing_config.json` missing → post setup message, skip run. Messages delivery failure → write full report to `latest_report.json`; retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -69,18 +83,23 @@
           "setup_instructions": "Register the codebase at Settings → Connectors → Codebase → Add. Point it at the app root. The persona reads README.md to understand what to market."
         },
         {
-          "name": "ad_platform",
+          "name": "advertising",
           "label": "Ad Platform",
           "auth_type": "oauth2",
           "role": "advertising",
-          "category": "marketing",
+          "category": "advertising",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "Ad platform",
               "type": "select",
-              "options": ["google_ads", "meta_ads", "linkedin_ads", "mailchimp"],
+              "options": [
+                "google_ads",
+                "meta_ads",
+                "linkedin_ads",
+                "mailchimp"
+              ],
               "placeholder": "google_ads",
               "helpText": "Which ad platform to pull campaign data from. The persona adapts its queries to the chosen provider.",
               "required": true
@@ -98,25 +117,30 @@
               "label": "Account / Customer ID",
               "type": "text",
               "placeholder": "1234567890",
-              "helpText": "Google Ads customer_id, Meta ad account ID, LinkedIn ad account URN, or Mailchimp data center + list ID.",
+              "helpText": "ad platform customer_id, Meta ad account ID, LinkedIn ad account URN, or Mailchimp data center + list ID.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Pick your ad platform above.\n2. Authorize a read-only OAuth token per the platform's developer console (Google Ads: google-ads API; Meta: Marketing API; LinkedIn: Ads API; Mailchimp: API keys section).\n3. Paste the access token and your account identifier.\n4. The persona auto-detects platform-specific endpoints."
+          "setup_instructions": "1. Pick your ad platform above.\n2. Authorize a read-only OAuth token per the platform's developer console (ad platform: google-ads API; Meta: Marketing API; LinkedIn: Ads API; Mailchimp: API keys section).\n3. Paste the access token and your account identifier.\n4. The persona auto-detects platform-specific endpoints."
         },
         {
-          "name": "analytics_tool",
+          "name": "analytics",
           "label": "Analytics / SEO Tool",
           "auth_type": "oauth2",
           "role": "analytics",
-          "category": "marketing",
+          "category": "analytics",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "Analytics tool",
               "type": "select",
-              "options": ["ga4", "search_console", "posthog", "mixpanel"],
+              "options": [
+                "ga4",
+                "search_console",
+                "posthog",
+                "mixpanel"
+              ],
               "placeholder": "ga4",
               "helpText": "Which analytics / SEO tool to pull organic performance from. The persona adapts its queries to the chosen provider.",
               "required": true
@@ -126,7 +150,7 @@
               "label": "API key / OAuth token",
               "type": "password",
               "placeholder": "",
-              "helpText": "GA4 / Search Console → OAuth2 access token. PostHog / Mixpanel → API key from the workspace settings.",
+              "helpText": "analytics / Search Console → OAuth2 access token. analytics / analytics → API key from the workspace settings.",
               "required": true
             },
             {
@@ -134,7 +158,7 @@
               "label": "Property / Project ID",
               "type": "text",
               "placeholder": "properties/123456789",
-              "helpText": "GA4 property resource name, Search Console site URL, PostHog project id, or Mixpanel project token.",
+              "helpText": "analytics property resource name, Search Console site URL, analytics project id, or analytics project token.",
               "required": true
             }
           ],
@@ -161,12 +185,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 9:00 AM (shared across all three capabilities via trigger_composition: shared)."
         },
-        "connectors": ["ad_platform", "analytics_tool"],
+        "connectors": [
+          "advertising",
+          "analytics"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`performance_history.json` — 4-week rolling baselines per campaign and per landing page. Enables WoW comparisons and declining-trend detection."
@@ -188,36 +221,115 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["executive", "standard", "deep"],
+            "options": [
+              "executive",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Executive: top-line only. Standard: tables + WoW deltas + flagged metrics. Deep: +per-keyword + per-page breakdowns."
           }
         ],
-        "sample_input": { "report_depth": "{{param.aq_report_depth}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "report_depth": "{{param.aq_report_depth}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "p2", "type": "connector", "label": "Fetch paid metrics (7d)", "connector": "ad_platform" },
-            { "id": "p3", "type": "connector", "label": "Fetch organic metrics (7d)", "connector": "analytics_tool" },
-            { "id": "p4", "type": "action", "label": "Compute WoW deltas vs 4-week baseline" },
-            { "id": "p5", "type": "action", "label": "Flag >15% paid / >20% organic moves" },
-            { "id": "p6", "type": "event", "label": "Emit marketing.report.delivered" },
-            { "id": "p7", "type": "decision", "label": "Overall trend Declining?" },
-            { "id": "p8", "type": "event", "label": "Emit marketing.performance.declining" },
-            { "id": "p9", "type": "end", "label": "Performance section ready for combined briefing" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Fetch paid metrics (7d)",
+              "connector": "ad_platform"
+            },
+            {
+              "id": "p3",
+              "type": "connector",
+              "label": "Fetch organic metrics (7d)",
+              "connector": "analytics_tool"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Compute WoW deltas vs 4-week baseline"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Flag >15% paid / >20% organic moves"
+            },
+            {
+              "id": "p6",
+              "type": "event",
+              "label": "Emit marketing.report.delivered"
+            },
+            {
+              "id": "p7",
+              "type": "decision",
+              "label": "Overall trend Declining?"
+            },
+            {
+              "id": "p8",
+              "type": "event",
+              "label": "Emit marketing.performance.declining"
+            },
+            {
+              "id": "p9",
+              "type": "end",
+              "label": "Performance section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8", "variant": "yes", "label": "Yes" },
-            { "source": "p7", "target": "p9", "variant": "no", "label": "No" },
-            { "source": "p8", "target": "p9" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "p7",
+              "target": "p9",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            }
           ]
         }
       },
@@ -232,10 +344,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 9:00 AM (shared)."
         },
-        "connectors": ["ad_platform", "analytics_tool"],
+        "connectors": [
+          "advertising",
+          "analytics"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -269,36 +387,115 @@
             "name": "proposal_count",
             "type": "string",
             "default": "Leave up to LLM",
-            "enum": ["Leave up to LLM", "3", "5", "6", "8", "10"],
+            "enum": [
+              "Leave up to LLM",
+              "3",
+              "5",
+              "6",
+              "8",
+              "10"
+            ],
             "description": "Target proposals per week. 'Leave up to LLM' → size to signal density (aim 5-8 when data is rich, fewer when thin). A numeric string pins the count (cast to int at runtime)."
           }
         ],
-        "sample_input": { "proposal_count": "{{param.aq_proposal_count}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "proposal_count": "{{param.aq_proposal_count}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "o1", "type": "start", "label": "Performance scan complete" },
-            { "id": "o2", "type": "action", "label": "Load proposal_patterns memory" },
-            { "id": "o3", "type": "action", "label": "Generate candidate proposals from scan data" },
-            { "id": "o4", "type": "action", "label": "Apply memory filter (category suppression rules)" },
-            { "id": "o5", "type": "action", "label": "Rank by priority, take top N" },
-            { "id": "o6", "type": "event", "label": "Emit marketing.optimization.proposed per proposal" },
-            { "id": "o7", "type": "action", "label": "Route to human review" },
-            { "id": "o8", "type": "event", "label": "Emit accepted / rejected per decision" },
-            { "id": "o9", "type": "action", "label": "Update proposal_patterns memory" },
-            { "id": "o10", "type": "end", "label": "Proposals section ready for combined briefing" }
+            {
+              "id": "o1",
+              "type": "start",
+              "label": "Performance scan complete"
+            },
+            {
+              "id": "o2",
+              "type": "action",
+              "label": "Load proposal_patterns memory"
+            },
+            {
+              "id": "o3",
+              "type": "action",
+              "label": "Generate candidate proposals from scan data"
+            },
+            {
+              "id": "o4",
+              "type": "action",
+              "label": "Apply memory filter (category suppression rules)"
+            },
+            {
+              "id": "o5",
+              "type": "action",
+              "label": "Rank by priority, take top N"
+            },
+            {
+              "id": "o6",
+              "type": "event",
+              "label": "Emit marketing.optimization.proposed per proposal"
+            },
+            {
+              "id": "o7",
+              "type": "action",
+              "label": "Route to human review"
+            },
+            {
+              "id": "o8",
+              "type": "event",
+              "label": "Emit accepted / rejected per decision"
+            },
+            {
+              "id": "o9",
+              "type": "action",
+              "label": "Update proposal_patterns memory"
+            },
+            {
+              "id": "o10",
+              "type": "end",
+              "label": "Proposals section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "o1", "target": "o2" },
-            { "source": "o2", "target": "o3" },
-            { "source": "o3", "target": "o4" },
-            { "source": "o4", "target": "o5" },
-            { "source": "o5", "target": "o6" },
-            { "source": "o6", "target": "o7" },
-            { "source": "o7", "target": "o8" },
-            { "source": "o8", "target": "o9" },
-            { "source": "o9", "target": "o10" }
+            {
+              "source": "o1",
+              "target": "o2"
+            },
+            {
+              "source": "o2",
+              "target": "o3"
+            },
+            {
+              "source": "o3",
+              "target": "o4"
+            },
+            {
+              "source": "o4",
+              "target": "o5"
+            },
+            {
+              "source": "o5",
+              "target": "o6"
+            },
+            {
+              "source": "o6",
+              "target": "o7"
+            },
+            {
+              "source": "o7",
+              "target": "o8"
+            },
+            {
+              "source": "o8",
+              "target": "o9"
+            },
+            {
+              "source": "o9",
+              "target": "o10"
+            }
           ]
         }
       },
@@ -313,16 +510,25 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 9:00 AM (shared)."
         },
-        "connectors": ["ad_platform", "analytics_tool"],
+        "connectors": [
+          "advertising",
+          "analytics"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
           "context": "When organic rank is exactly 3 or paid conversion path can't be cleanly separated from organic, route to human review. Clear top-1 + high-spend cases flagged in report without review gate."
         },
-        "memory_policy": { "enabled": false, "context": null },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "marketing.cannibalization.detected",
@@ -335,34 +541,105 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["executive", "standard", "deep"],
+            "options": [
+              "executive",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Same depth selector as performance scan — keeps the combined briefing consistent."
           }
         ],
-        "sample_input": { "report_depth": "{{param.aq_report_depth}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "report_depth": "{{param.aq_report_depth}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "c2", "type": "connector", "label": "Fetch paid keyword list + CPAs", "connector": "ad_platform" },
-            { "id": "c3", "type": "connector", "label": "Fetch organic rank positions", "connector": "analytics_tool" },
-            { "id": "c4", "type": "action", "label": "Match paid keywords to organic ranks" },
-            { "id": "c5", "type": "decision", "label": "Any organic rank <= 3 with paid spend?" },
-            { "id": "c6", "type": "action", "label": "Calculate savings opportunity" },
-            { "id": "c7", "type": "event", "label": "Emit marketing.cannibalization.detected per finding" },
-            { "id": "c8", "type": "end", "label": "Cannibalization section ready for combined briefing" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "c2",
+              "type": "connector",
+              "label": "Fetch paid keyword list + CPAs",
+              "connector": "ad_platform"
+            },
+            {
+              "id": "c3",
+              "type": "connector",
+              "label": "Fetch organic rank positions",
+              "connector": "analytics_tool"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Match paid keywords to organic ranks"
+            },
+            {
+              "id": "c5",
+              "type": "decision",
+              "label": "Any organic rank <= 3 with paid spend?"
+            },
+            {
+              "id": "c6",
+              "type": "action",
+              "label": "Calculate savings opportunity"
+            },
+            {
+              "id": "c7",
+              "type": "event",
+              "label": "Emit marketing.cannibalization.detected per finding"
+            },
+            {
+              "id": "c8",
+              "type": "end",
+              "label": "Cannibalization section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6", "variant": "yes", "label": "Yes" },
-            { "source": "c5", "target": "c8", "variant": "no", "label": "None" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c8" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "c5",
+              "target": "c8",
+              "variant": "no",
+              "label": "None"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c8"
+            }
           ]
         }
       },
@@ -377,10 +654,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Weekly Monday 9:00 AM (shared)."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -414,38 +696,125 @@
             "name": "discovery_count",
             "type": "string",
             "default": "Leave up to LLM",
-            "enum": ["Leave up to LLM", "3", "5", "8", "12"],
+            "enum": [
+              "Leave up to LLM",
+              "3",
+              "5",
+              "8",
+              "12"
+            ],
             "description": "Target candidate sources per week. 'Leave up to LLM' → size to signal density (more when the codebase reveals a fresh niche, fewer when memory has already mapped the obvious surfaces)."
           }
         ],
-        "sample_input": { "discovery_count": "{{param.aq_proposal_count}}" },
-        "tool_hints": ["file_read", "file_write", "web_search"],
+        "sample_input": {
+          "discovery_count": "{{param.aq_proposal_count}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write",
+          "web_search"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "Monday tick (shared)" },
-            { "id": "f2", "type": "connector", "label": "Read README + package metadata", "connector": "codebase" },
-            { "id": "f3", "type": "action", "label": "Derive what to market (problem, audience, tone)" },
-            { "id": "f4", "type": "action", "label": "Load free_source_patterns memory" },
-            { "id": "f5", "type": "action", "label": "Web-search candidate surfaces (forums, subreddits, newsletters, communities)" },
-            { "id": "f6", "type": "action", "label": "Apply memory filter (suppress bad-tagged categories)" },
-            { "id": "f7", "type": "event", "label": "Emit marketing.free_source.discovered per candidate" },
-            { "id": "f8", "type": "action", "label": "Route to human review" },
-            { "id": "f9", "type": "event", "label": "Emit accepted / rejected per decision" },
-            { "id": "f10", "type": "action", "label": "Update free_source_patterns memory" },
-            { "id": "f11", "type": "end", "label": "Free-research section ready for combined briefing" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "Monday tick (shared)"
+            },
+            {
+              "id": "f2",
+              "type": "connector",
+              "label": "Read README + package metadata",
+              "connector": "codebase"
+            },
+            {
+              "id": "f3",
+              "type": "action",
+              "label": "Derive what to market (problem, audience, tone)"
+            },
+            {
+              "id": "f4",
+              "type": "action",
+              "label": "Load free_source_patterns memory"
+            },
+            {
+              "id": "f5",
+              "type": "action",
+              "label": "Web-search candidate surfaces (forums, subreddits, newsletters, communities)"
+            },
+            {
+              "id": "f6",
+              "type": "action",
+              "label": "Apply memory filter (suppress bad-tagged categories)"
+            },
+            {
+              "id": "f7",
+              "type": "event",
+              "label": "Emit marketing.free_source.discovered per candidate"
+            },
+            {
+              "id": "f8",
+              "type": "action",
+              "label": "Route to human review"
+            },
+            {
+              "id": "f9",
+              "type": "event",
+              "label": "Emit accepted / rejected per decision"
+            },
+            {
+              "id": "f10",
+              "type": "action",
+              "label": "Update free_source_patterns memory"
+            },
+            {
+              "id": "f11",
+              "type": "end",
+              "label": "Free-research section ready for combined briefing"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5" },
-            { "source": "f5", "target": "f6" },
-            { "source": "f6", "target": "f7" },
-            { "source": "f7", "target": "f8" },
-            { "source": "f8", "target": "f9" },
-            { "source": "f9", "target": "f10" },
-            { "source": "f10", "target": "f11" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5"
+            },
+            {
+              "source": "f5",
+              "target": "f6"
+            },
+            {
+              "source": "f6",
+              "target": "f7"
+            },
+            {
+              "source": "f7",
+              "target": "f8"
+            },
+            {
+              "source": "f8",
+              "target": "f9"
+            },
+            {
+              "source": "f9",
+              "target": "f10"
+            },
+            {
+              "source": "f10",
+              "target": "f11"
+            }
           ]
         }
       }
@@ -454,7 +823,9 @@
       {
         "id": "aq_ad_platform",
         "scope": "connector",
-        "connector_names": ["ad_platform"],
+        "connector_names": [
+          "ad_platform"
+        ],
         "category": "configuration",
         "question": "Which ad platform should this persona pull campaign data from?",
         "type": "select",
@@ -465,13 +836,15 @@
         },
         "maps_to": "persona.connectors[ad_platform].credential_fields[provider].value",
         "variable_name": "ad_platform_provider",
-        "context": "Options are auto-detected from the advertising-category credentials you've already connected in the Vault. If the list is empty, add Google Ads, Meta Ads, LinkedIn Ads, or another advertising connector first.",
+        "context": "Options are auto-detected from the advertising-category credentials you've already connected in the Vault. If the list is empty, add ad platform, ad platform, ad platform, or another advertising connector first.",
         "dimension": "connectors"
       },
       {
         "id": "aq_analytics_tool",
         "scope": "connector",
-        "connector_names": ["analytics_tool"],
+        "connector_names": [
+          "analytics_tool"
+        ],
         "category": "configuration",
         "question": "Which analytics tool should supply the organic performance data?",
         "type": "select",
@@ -482,7 +855,7 @@
         },
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
-        "context": "Options are auto-detected from the analytics-category credentials in your Vault (PostHog, Mixpanel, and any other analytics connectors you've added). Add one first if the list is empty.",
+        "context": "Options are auto-detected from the analytics-category credentials in your Vault (analytics, analytics, and any other analytics connectors you've added). Add one first if the list is empty.",
         "dimension": "connectors"
       },
       {
@@ -508,11 +881,20 @@
       {
         "id": "aq_proposal_count",
         "scope": "capability",
-        "use_case_ids": ["uc_optimization_proposals"],
+        "use_case_ids": [
+          "uc_optimization_proposals"
+        ],
         "category": "quality",
         "question": "How many optimization proposals per week?",
         "type": "select",
-        "options": ["Leave up to LLM", "3", "5", "6", "8", "10"],
+        "options": [
+          "Leave up to LLM",
+          "3",
+          "5",
+          "6",
+          "8",
+          "10"
+        ],
         "default": "Leave up to LLM",
         "maps_to": "use_cases[uc_optimization_proposals].sample_input.proposal_count",
         "variable_name": "proposal_count",
@@ -522,7 +904,10 @@
       {
         "id": "aq_report_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_performance_scan", "uc_cannibalization_watch"],
+        "use_case_ids": [
+          "uc_performance_scan",
+          "uc_cannibalization_watch"
+        ],
         "category": "quality",
         "question": "How detailed should the performance + cannibalization sections of the combined briefing be?",
         "type": "select",

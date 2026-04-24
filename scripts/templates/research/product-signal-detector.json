@@ -5,11 +5,21 @@
   "description": "Monitors product analytics for statistically significant signals — funnel breakages, feature adoption spikes, retention shifts — and routes them via insight cards with optional auto-ticketing for critical anomalies. Persistent-warning logic escalates slow-burn regressions.",
   "icon": "Radio",
   "color": "#06B6D4",
-  "category": ["research"],
-  "service_flow": ["Analytics Tool", "Messages", "Ticketing Tool"],
+  "category": [
+    "research"
+  ],
+  "service_flow": [
+    "Analytics Tool",
+    "Messages",
+    "Ticketing Tool"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Analytics Tool", "Messages", "Ticketing Tool"],
+    "service_flow": [
+      "Analytics Tool",
+      "Messages",
+      "Ticketing Tool"
+    ],
     "persona": {
       "goal": "Catch product regressions and adoption spikes the moment they matter — before they hit a dashboard — and keep the signal / noise ratio honest with human-tuned thresholds.",
       "identity": {
@@ -42,14 +52,18 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, different triggers, different consequences:\n\n1. **uc_detect_and_post** (daily + optional mid-day recheck) — load baselines from `baselines.json` and signal history from `signal_history.json`. Query the analytics tool for the past 24h (or since-last-run) across: DAU/WAU, feature adoption, funnel step conversion, retention curves, session duration. Compute percentage deviations from baselines. Classify each metric:\n   - `critical`: >25% negative deviation OR funnel step drop >15pp (absolute percentage points)\n   - `warning`: 10-25% deviation OR adoption spike >3× baseline\n   - `info`: 5-10% deviation\n   - `<5%`: ignored\n   For each Warning+ signal, compose an insight card (severity badge + numbers + interpretation + investigation area) and deliver via Messages. Update baselines with EWMA α=0.1. Update signal_history with today's set (for persistence tracking + recovery detection). Emit `signal.detected` per Warning+ finding with full payload.\n\n2. **uc_ticket_critical** (event-listen on `signal.detected`, filtered to Critical + persistent-Warning) — when a Critical signal fires OR a Warning has been active 3+ consecutive runs, search the ticketing tool for an open issue on the same metric within the last 7 days. If found: comment with updated delta. If not: create a new investigation ticket with full context (baseline, current, deviation, trend, affected-user estimate, suggested investigation). Priority = Urgent for >40% deviation, High for 25-40%. Emits `signal.ticket_opened`.\n\nState: `baselines.json` (EWMA rolling), `signal_history.json` (day-by-day signal set for persistence tracking), `run_log.json` (append-only audit).",
-      "tool_guidance": "**Analytics endpoints** (shape depends on connector picked at adoption):\n- **Amplitude**: `GET /api/2/events/segmentation`, `/api/2/funnels`, `/api/2/retention`. HTTP basic with API key + secret.\n- **Mixpanel**: `GET /api/2.0/segmentation`, `/api/2.0/funnels`, `/api/2.0/insights`. Service account auth.\n- **PostHog**: `POST /api/projects/{id}/query` with HogQL.\n- **GA4**: `POST /v1beta/properties/{pid}:runReport`.\n\nQuery pattern: fetch past 24h at the cadence, plus 14-day trailing window for baseline recomputation. Chunk requests to stay under per-tool rate limits.\n\n**Ticketing endpoints** (uc_ticket_critical):\n- **Linear**: `POST https://api.linear.app/graphql` with GraphQL mutation `issueCreate(input: {title, description, priority, teamId, labelIds})`. Search for duplicates via `issues(filter: {title: {contains: ...}})`.\n- **Jira**: `POST /rest/api/3/issue` with project key + issue type + priority.\n- **GitHub Issues**: `POST /repos/{owner}/{repo}/issues` with title + body + labels.\n\n**Baseline math**:\n- EWMA update: `new_baseline = α × current + (1 − α) × previous_baseline`, α = 0.1.\n- On first run, seed from a 14-day historical pull; if that fails, use the current value (baseline converges over the first 14 runs).\n\n**Severity classification**:\n- `critical`: >25% negative deviation OR funnel step drop >15pp OR retention D7 drop >20%.\n- `warning`: 10-25% deviation OR adoption spike >3× baseline OR DAU drop >15%.\n- `info`: 5-10% deviation (card-less; included in summary header).\n- `<5%`: ignored.\n\n**Local state**:\n- `baselines.json`: per-metric EWMA values + goal targets.\n- `signal_history.json`: day-by-day signal set `{ date: [{ metric, severity, delta }] }` for persistence + recovery tracking.\n- `run_log.json`: append-only per-run summary for audit / debug.",
+      "operating_instructions": "Two capabilities, different triggers, different consequences: 1. **uc_detect_and_post** (daily + optional mid-day recheck) — load baselines from `baselines.json` and signal history from `signal_history.json`. Query the analytics tool for the past 24h (or since-last-run) across: DAU/WAU, feature adoption, funnel step conversion, retention curves, session duration. Compute percentage deviations from baselines. Classify each metric: - `critical`: >25% negative deviation OR funnel step drop >15pp (absolute percentage points) - `warning`: 10-25% deviation OR adoption spike >3× baseline - `info`: 5-10% deviation - `<5%`: ignored For each Warning+ signal, compose an insight card (severity badge + numbers + interpretation + investigation area) and deliver via Messages. Update baselines with EWMA α=0.1. Update signal_history with today's set (for persistence tracking + recovery detection). Emit `signal.detected` per Warning+ finding with full payload. 2. **uc_ticket_critical** (event-listen on `signal.detected`, filtered to Critical + persistent-Warning) — when a Critical signal fires OR a Warning has been active 3+ consecutive runs, search the ticketing tool for an open issue on the same metric within the last 7 days. If found: comment with updated delta. If not: create a new investigation ticket with full context (baseline, current, deviation, trend, affected-user estimate, suggested investigation). Priority = Urgent for >40% deviation, High for 25-40%. Emits `signal.ticket_opened`. State: `baselines.json` (EWMA rolling), `signal_history.json` (day-by-day signal set for persistence tracking), `run_log.json` (append-only audit).",
+      "tool_guidance": "**Analytics endpoints** (shape depends on connector picked at adoption):\n- **analytics**: `GET /api/2/events/segmentation`, `/api/2/funnels`, `/api/2/retention`. HTTP basic with API key + secret.\n- **analytics**: `GET /api/2.0/segmentation`, `/api/2.0/funnels`, `/api/2.0/insights`. Service account auth.\n- **analytics**: `POST /api/projects/{id}/query` with HogQL.\n- **analytics**: `POST /v1beta/properties/{pid}:runReport`. Query pattern: fetch past 24h at the cadence, plus 14-day trailing window for baseline recomputation. Chunk requests to stay under per-tool rate limits. **Ticketing endpoints** (uc_ticket_critical):\n- **Linear**: `POST https://api.linear.app/graphql` with GraphQL mutation `issueCreate(input: {title, description, priority, teamId, labelIds})`. Search for duplicates via `issues(filter: {title: {contains:...}})`.\n- **Jira**: `POST /rest/api/3/issue` with project key + issue type + priority.\n- **GitHub Issues**: `POST /repos/{owner}/{repo}/issues` with title + body + labels. **Baseline math**:\n- EWMA update: `new_baseline = α × current + (1 − α) × previous_baseline`, α = 0.1.\n- On first run, seed from a 14-day historical pull; if that fails, use the current value (baseline converges over the first 14 runs). **Severity classification**:\n- `critical`: >25% negative deviation OR funnel step drop >15pp OR retention D7 drop >20%.\n- `warning`: 10-25% deviation OR adoption spike >3× baseline OR DAU drop >15%.\n- `info`: 5-10% deviation (card-less; included in summary header).\n- `<5%`: ignored. **Local state**:\n- `baselines.json`: per-metric EWMA values + goal targets.\n- `signal_history.json`: day-by-day signal set `{ date: [{ metric, severity, delta }] }` for persistence + recovery tracking.\n- `run_log.json`: append-only per-run summary for audit / debug.",
       "error_handling": "Analytics 401/403 → post a Messages alert 'credentials need refresh', skip the run. Analytics 429 → exponential backoff (15s, 45s, 2min); if still blocked, fall back to cached baselines and label the card 'stale data'. Analytics 5xx → one retry at 30s, then degraded mode. Zero-event on an active metric → flag as data-pipeline issue (separate card), not a product signal; don't auto-ticket. Ticketing 401/403 → note in the card that ticket creation failed; user can reauthorize. Ticketing duplicate → comment on the existing ticket rather than creating a new one. Corrupted baselines.json → regenerate from 14-day historical pull; if that fails, start fresh and note in the next card that the first 14 runs will establish the new baseline. Messages delivery failure → write the card to `latest_card.md`, retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "analytics_tool",
+          "name": "analytics",
           "label": "Analytics Tool",
           "auth_type": "oauth2",
           "role": "product_analytics",
@@ -60,7 +74,12 @@
               "key": "provider",
               "label": "Analytics provider",
               "type": "select",
-              "options": ["amplitude", "mixpanel", "posthog", "ga4"],
+              "options": [
+                "amplitude",
+                "mixpanel",
+                "posthog",
+                "ga4"
+              ],
               "placeholder": "amplitude",
               "helpText": "Which analytics tool supplies the metrics. The persona adapts queries per provider.",
               "required": true
@@ -70,7 +89,7 @@
               "label": "API key / OAuth token",
               "type": "password",
               "placeholder": "",
-              "helpText": "Provider-specific credential. Amplitude: API key + secret (colon-separated). Mixpanel: service account secret. PostHog: personal API key. GA4: OAuth token.",
+              "helpText": "Provider-specific credential. analytics: API key + secret (colon-separated). analytics: service account secret. analytics: personal API key. analytics: OAuth token.",
               "required": true
             },
             {
@@ -78,18 +97,18 @@
               "label": "Project / Property ID",
               "type": "text",
               "placeholder": "",
-              "helpText": "Amplitude project ID, Mixpanel project ID, PostHog project ID, or GA4 property resource name.",
+              "helpText": "analytics project ID, analytics project ID, analytics project ID, or analytics property resource name.",
               "required": true
             }
           ],
           "setup_instructions": "1. Pick an analytics provider.\n2. Generate an API key or OAuth token with read scope on the project.\n3. Paste the token and project/property identifier.\n4. The persona routes queries to the platform-specific API."
         },
         {
-          "name": "ticketing_tool",
+          "name": "ticketing",
           "label": "Ticketing Tool",
           "auth_type": "api_key",
           "role": "issue_tracking",
-          "category": "project_management",
+          "category": "ticketing",
           "required": false,
           "fallback_note": "Skip this to run without auto-ticketing. Critical signals still surface via Messages; you triage and create tickets yourself.",
           "credential_fields": [
@@ -97,7 +116,11 @@
               "key": "provider",
               "label": "Ticketing provider",
               "type": "select",
-              "options": ["linear", "jira", "github_issues"],
+              "options": [
+                "linear",
+                "jira",
+                "github_issues"
+              ],
               "placeholder": "linear",
               "helpText": "Where to auto-create investigation tickets for Critical signals.",
               "required": true
@@ -142,10 +165,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["analytics_tool"],
+        "connectors": [
+          "analytics"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -172,14 +200,22 @@
           {
             "name": "sensitivity",
             "type": "enum",
-            "options": ["conservative", "balanced", "aggressive"],
+            "options": [
+              "conservative",
+              "balanced",
+              "aggressive"
+            ],
             "default": "balanced",
             "description": "Deviation threshold for flagging. Conservative = >25% only. Balanced = >15% (default). Aggressive = >8%."
           },
           {
             "name": "card_verbosity",
             "type": "enum",
-            "options": ["compact", "standard", "verbose"],
+            "options": [
+              "compact",
+              "standard",
+              "verbose"
+            ],
             "default": "standard",
             "description": "Compact = signal name + delta + severity only. Standard = + affected funnel/feature + 1-line hypothesis. Verbose = + baseline values + affected user segments + suggested investigation steps."
           }
@@ -188,29 +224,94 @@
           "sensitivity": "{{param.aq_sensitivity}}",
           "card_verbosity": "{{param.aq_card_verbosity}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Daily tick" },
-            { "id": "d2", "type": "action", "label": "Load baselines + signal_history" },
-            { "id": "d3", "type": "connector", "label": "Fetch last 24h + 14d baseline pull", "connector": "analytics_tool" },
-            { "id": "d4", "type": "action", "label": "Compute deltas + classify severity" },
-            { "id": "d5", "type": "action", "label": "Detect recoveries from signal_history" },
-            { "id": "d6", "type": "action", "label": "Compose + deliver cards via Messages" },
-            { "id": "d7", "type": "event", "label": "Emit signal.detected per flag, signal.recovered per recovery" },
-            { "id": "d8", "type": "action", "label": "Update baselines (EWMA) + signal_history" },
-            { "id": "d9", "type": "end", "label": "Detection cycle complete" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load baselines + signal_history"
+            },
+            {
+              "id": "d3",
+              "type": "connector",
+              "label": "Fetch last 24h + 14d baseline pull",
+              "connector": "analytics_tool"
+            },
+            {
+              "id": "d4",
+              "type": "action",
+              "label": "Compute deltas + classify severity"
+            },
+            {
+              "id": "d5",
+              "type": "action",
+              "label": "Detect recoveries from signal_history"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Compose + deliver cards via Messages"
+            },
+            {
+              "id": "d7",
+              "type": "event",
+              "label": "Emit signal.detected per flag, signal.recovered per recovery"
+            },
+            {
+              "id": "d8",
+              "type": "action",
+              "label": "Update baselines (EWMA) + signal_history"
+            },
+            {
+              "id": "d9",
+              "type": "end",
+              "label": "Detection cycle complete"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d9" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d9"
+            }
           ]
         }
       },
@@ -225,10 +326,14 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "signal.detected" },
+          "config": {
+            "event_type": "signal.detected"
+          },
           "description": "Fires on each Critical signal + on Warnings that have persisted 3+ consecutive runs. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["ticketing_tool"],
+        "connectors": [
+          "ticketing"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -271,29 +376,103 @@
           "warning_persistence_runs": "{{param.aq_warning_persistence}}",
           "approval_required": "{{param.aq_approval_required}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "signal.detected received" },
-            { "id": "c2", "type": "decision", "label": "Critical OR Warning persistent >= N?" },
-            { "id": "c3", "type": "connector", "label": "Search for duplicate ticket (7d window)", "connector": "ticketing_tool" },
-            { "id": "c4", "type": "decision", "label": "Duplicate exists?" },
-            { "id": "c5", "type": "connector", "label": "Comment on existing ticket", "connector": "ticketing_tool" },
-            { "id": "c6", "type": "connector", "label": "Create new ticket (priority from delta)", "connector": "ticketing_tool" },
-            { "id": "c7", "type": "event", "label": "Emit signal.ticket_opened" },
-            { "id": "c8", "type": "end", "label": "Ticket cycle complete" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "signal.detected received"
+            },
+            {
+              "id": "c2",
+              "type": "decision",
+              "label": "Critical OR Warning persistent >= N?"
+            },
+            {
+              "id": "c3",
+              "type": "connector",
+              "label": "Search for duplicate ticket (7d window)",
+              "connector": "ticketing_tool"
+            },
+            {
+              "id": "c4",
+              "type": "decision",
+              "label": "Duplicate exists?"
+            },
+            {
+              "id": "c5",
+              "type": "connector",
+              "label": "Comment on existing ticket",
+              "connector": "ticketing_tool"
+            },
+            {
+              "id": "c6",
+              "type": "connector",
+              "label": "Create new ticket (priority from delta)",
+              "connector": "ticketing_tool"
+            },
+            {
+              "id": "c7",
+              "type": "event",
+              "label": "Emit signal.ticket_opened"
+            },
+            {
+              "id": "c8",
+              "type": "end",
+              "label": "Ticket cycle complete"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3", "variant": "yes", "label": "Yes" },
-            { "source": "c2", "target": "c8", "variant": "no", "label": "Skip" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5", "variant": "yes", "label": "Yes" },
-            { "source": "c4", "target": "c6", "variant": "no", "label": "No" },
-            { "source": "c5", "target": "c7" },
-            { "source": "c6", "target": "c7" },
-            { "source": "c7", "target": "c8" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "c2",
+              "target": "c8",
+              "variant": "no",
+              "label": "Skip"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "c4",
+              "target": "c6",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "c5",
+              "target": "c7"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            },
+            {
+              "source": "c7",
+              "target": "c8"
+            }
           ]
         }
       }
@@ -302,7 +481,9 @@
       {
         "id": "aq_sensitivity",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_post"],
+        "use_case_ids": [
+          "uc_detect_and_post"
+        ],
         "category": "quality",
         "question": "How sensitive should anomaly detection be?",
         "type": "select",
@@ -320,7 +501,9 @@
       {
         "id": "aq_card_verbosity",
         "scope": "capability",
-        "use_case_ids": ["uc_detect_and_post"],
+        "use_case_ids": [
+          "uc_detect_and_post"
+        ],
         "category": "configuration",
         "question": "How detailed should insight cards be?",
         "type": "select",
@@ -338,11 +521,18 @@
       {
         "id": "aq_warning_persistence",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_critical"],
+        "use_case_ids": [
+          "uc_ticket_critical"
+        ],
         "category": "quality",
         "question": "How many consecutive runs should a Warning persist before auto-ticketing?",
         "type": "select",
-        "options": ["2", "3", "5", "7"],
+        "options": [
+          "2",
+          "3",
+          "5",
+          "7"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_ticket_critical].sample_input.warning_persistence_runs",
         "variable_name": "warning_persistence_runs",
@@ -352,7 +542,9 @@
       {
         "id": "aq_approval_required",
         "scope": "capability",
-        "use_case_ids": ["uc_ticket_critical"],
+        "use_case_ids": [
+          "uc_ticket_critical"
+        ],
         "category": "boundaries",
         "question": "Should ticket creation require human approval before firing?",
         "type": "boolean",
@@ -365,7 +557,9 @@
       {
         "id": "aq_analytics_provider",
         "scope": "connector",
-        "connector_names": ["analytics_tool"],
+        "connector_names": [
+          "analytics_tool"
+        ],
         "category": "configuration",
         "question": "Which analytics tool should supply the signals?",
         "type": "select",
@@ -376,13 +570,15 @@
         },
         "maps_to": "persona.connectors[analytics_tool].credential_fields[provider].value",
         "variable_name": "analytics_tool_provider",
-        "context": "Auto-detected from your Vault's analytics-category credentials. Add Amplitude / Mixpanel / PostHog / GA4 in Vault → Catalog first if the list is empty.",
+        "context": "Auto-detected from your Vault's analytics-category credentials. Add analytics / analytics / analytics / analytics in Vault → Catalog first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_ticketing_provider",
         "scope": "connector",
-        "connector_names": ["ticketing_tool"],
+        "connector_names": [
+          "ticketing_tool"
+        ],
         "category": "configuration",
         "question": "Which ticketing tool should receive auto-created investigation tickets?",
         "type": "select",

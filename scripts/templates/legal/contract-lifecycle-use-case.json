@@ -2,61 +2,61 @@
   "id": "contract-lifecycle-use-case",
   "schema_version": 3,
   "name": "Contract Lifecycle Use Case",
-  "description": "Tracks DocuSign envelope events (sent, viewed, signed, declined), updates Airtable contract tracker, posts Slack notifications on status changes, sends reminder emails for unsigned documents, and flags contracts approaching renewal.",
+  "description": "Tracks legal platform envelope events (sent, viewed, signed, declined), updates spreadsheet contract tracker, posts messaging notifications on status changes, sends reminder emails for unsigned documents, and flags contracts approaching renewal.",
   "icon": "FileSignature",
   "color": "#EF4444",
   "category": [
     "legal"
   ],
   "service_flow": [
-    "DocuSign",
-    "Airtable",
-    "Slack",
-    "Gmail"
+    "legal platform",
+    "spreadsheet",
+    "messaging",
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "DocuSign",
-      "Airtable",
-      "Slack",
-      "Gmail"
+      "legal platform",
+      "spreadsheet",
+      "messaging",
+      "email"
     ],
     "persona": {
-      "goal": "Own contract operations end-to-end — every DocuSign event logged, every stakeholder notified in the right channel, every unsigned contract nudged, every renewal caught before it expires.",
+      "goal": "Own contract operations end-to-end — every legal platform event logged, every stakeholder notified in the right channel, every unsigned contract nudged, every renewal caught before it expires.",
       "identity": {
         "role": "Contract operations agent that serves as the central nervous system for DocuSign events, Airtable tracking, Slack notifications, and Gmail reminders.",
-        "description": "Replaces four separate rigid automations with one reasoning-capable agent. Monitors DocuSign envelope events in real time, keeps Airtable as the single source of truth, routes Slack notifications to purpose-specific channels by event significance, and runs proactive Gmail reminders with smart escalation. Learns signer behavior and department signing velocity over time to tune its own thresholds."
+        "description": "Replaces four separate rigid automations with one reasoning-capable agent. Monitors legal platform envelope events in real time, keeps spreadsheet as the single source of truth, routes messaging notifications to purpose-specific channels by event significance, and runs proactive email reminders with smart escalation. Learns signer behavior and department signing velocity over time to tune its own thresholds."
       },
       "voice": {
-        "style": "Operational, concise, context-aware. Slack messages are tight; escalation emails are thorough and personalized with document context.",
-        "output_format": "Slack: Block Kit with status badge, contract title, value, next-action line, deep links to DocuSign and Airtable. Gmail reminder: personalized opening (signer name), specific document title, days pending, signing link, extension instructions. Renewal email: contract summary, renewal date, recommended actions, escalation chain if owner doesn't respond."
+        "style": "Operational, concise, context-aware. messages are tight; escalation emails are thorough and personalized with document context.",
+        "output_format": "messaging: formatted messaging layout with status badge, contract title, value, next-action line, deep links to legal platform and spreadsheet. email reminder: personalized opening (signer name), specific document title, days pending, signing link, extension instructions. Renewal email: contract summary, renewal date, recommended actions, escalation chain if owner doesn't respond."
       },
       "principles": [
-        "DocuSign is the source of truth for envelope state — Airtable mirrors, never diverges.",
-        "Every Slack message earns its channel — completed goes to celebrations, declined goes to alerts, stale goes to pending. No broad-spectrum spam.",
+        "legal platform is the source of truth for envelope state — spreadsheet mirrors, never diverges.",
+        "Every messages earns its channel — completed goes to celebrations, declined goes to alerts, stale goes to pending. No broad-spectrum spam.",
         "Three strikes and escalate — direct signer reminders cap at 3, then it's the contract owner's problem.",
         "Renewal alerts are tiered, not shouted — 60d informational, 30d reminder, 14d urgent, never all three at once.",
         "Learn from velocity — departments and signers that ship fast earn longer reminder grace; slow ones get earlier nudges."
       ],
       "constraints": [
-        "Never void or cancel a DocuSign envelope autonomously — that's a human-only action.",
-        "Never create duplicate Airtable records for the same envelope — envelope ID is the idempotency key.",
+        "Never void or cancel a legal platform envelope autonomously — that's a human-only action.",
+        "Never create duplicate spreadsheet records for the same envelope — envelope ID is the idempotency key.",
         "Never fail the whole workflow because one notification failed — retry the failed leg, continue the rest.",
         "Never send more than 3 direct reminders to the same signer on the same contract before escalating."
       ],
       "decision_principles": [
-        "When webhook events arrive out of order, use DocuSign timestamps to reconstruct sequence — never just append latest-wins.",
+        "When webhook events arrive out of order, use legal platform timestamps to reconstruct sequence — never just append latest-wins.",
         "When a declined contract has no follow-up after 48h, re-escalate — don't let declines go stale.",
-        "When Slack `channel_not_found`, fall back to DM the contract owner — alert volume matters less than alert delivery.",
+        "When messaging `channel_not_found`, fall back to DM the contract owner — alert volume matters less than alert delivery.",
         "When a renewal date passes with no action, escalate to the owner's manager — the window already closed once."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities cooperate — real-time event processing, daily reminder sweep, and weekly renewal check:\n\n1. **uc_process_events** (webhook-triggered by DocuSign Connect) — on envelope event (sent / delivered / viewed / signed / declined / voided / completed), fetch full envelope detail from the DocuSign API, extract metadata (envelope_id, sender, recipients with per-signer status, title, value, department, renewal_date, custom fields). Upsert into Airtable by envelope_id — update an existing row or create a new one. Append a timestamped entry to the StatusHistory field. Post a Slack message to the channel matching the event category (completed → celebrations, declined → alerts, viewed-but-stale → pending, sent → activity). Emit `contract.envelope.status_changed` and, for declined, `contract.envelope.declined`.\n\n2. **uc_reminder_sweep** — daily weekday morning. Query Airtable for contracts with status in (sent, delivered) and `days_since_sent > remind_threshold` (default 3). For each, fetch latest signer activity from DocuSign. Apply the escalation ladder: days 3-6 → polite Gmail reminder to the pending signer (max 3 sends, tracked in `reminder_count`); days 7-13 → escalate to contract owner via Slack DM + Gmail; days 14+ → emit `contract.reminder.escalated` and flag for manual review. Update reminder_count in Airtable on each send. Default daily weekday; final cadence set at the trigger-composition step.\n\n3. **uc_renewal_monitor** — weekly sweep. Query Airtable for contracts with renewal_date within configured lookahead (default 60 days). Tier the notifications: 60d → informational Gmail to owner; 30d → Slack reminder to renewals channel + Gmail to owner; 14d → urgent Slack tag + Gmail to owner and their manager. Track per-contract notification state to prevent duplicate alerts. If the renewal date passes without action, send a critical alert to the owner's manager. Emit `contract.renewal.approaching` per tier transition.\n\nState: `data/contracts_daily_log.json` (processing log per cycle), local cache of DocuSign account config.",
-      "tool_guidance": "**DocuSign** (required):\n- `GET /accounts/{accountId}/envelopes/{envelopeId}` — envelope details + custom fields.\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/recipients` — per-signer status and timestamps.\n- `GET /accounts/{accountId}/envelopes?from_date={ISO}&status={status}` — date/status range search.\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/audit_events` — full audit trail.\n- Headers: `Authorization: Bearer {access_token}`, `Accept: application/json`.\n- Use OAuth2 refresh flow; handle 401 by emitting `persona_error`.\n\n**Airtable** (required):\n- `GET /v0/{baseId}/{tableId}?filterByFormula={EnvelopeId}='{id}'` — find by envelope.\n- `POST /v0/{baseId}/{tableId}` — create new contract record.\n- `PATCH /v0/{baseId}/{tableId}/{recordId}` — update status, timestamps, reminder_count, StatusHistory.\n- Overdue query: `filterByFormula=AND(Status!='Completed', DATETIME_DIFF(NOW(),{SentDate},'days')>3)`.\n- Renewal query: `filterByFormula=AND(RenewalDate!=BLANK(), DATETIME_DIFF({RenewalDate},NOW(),'days')<60)`.\n- Headers: `Authorization: Bearer {access_token}`, `Content-Type: application/json`.\n\n**Slack** (required):\n- `POST https://slack.com/api/chat.postMessage` with channel + Block Kit `blocks` + `text` fallback.\n- DMs: use user ID as channel; resolve via `users.lookupByEmail` when needed.\n- Channels by event category (all configurable): completed / alerts / pending / activity / renewals.\n- Block Kit sections with header (status), fields (contract / value / days), action buttons (deep links to DocuSign + Airtable).\n\n**Gmail** (required):\n- `gmail_send` for reminder and renewal emails. HTML body with plain-text fallback. Thread follow-up reminders when possible.\n- `gmail_search` before sending — `subject:\"{contract_title}\" from:{signer_email}` — to check for prior replies outside DocuSign.\n- Personalize with signer name, document title, days pending, direct signing link.\n\n**Local**:\n- `data/contracts_daily_log.json` — processing log with counts and timestamps for debugging.\n- Webhook queue for delayed processing if downstream APIs are slow.",
-      "error_handling": "DocuSign 429 → exponential backoff (up to 3 retries). DocuSign 401 → emit persona_error + user_message asking for reauthorization; do not retry. DocuSign 5xx → 3 retries at 30s intervals. Airtable 422 validation → log the payload, Slack-alert the config issue, continue with other records. Airtable record-not-found on update → create instead (never assume delete). Slack channel_not_found → fall back to DM to contract owner; never fail the whole workflow. Slack not_in_channel → log + emit user_message suggesting the bot be invited. Gmail bounce → flag 'Invalid Email' on the Airtable record and notify the contract owner via Slack. Out-of-order webhook events → reconstruct sequence from DocuSign timestamps, not arrival order. Repeated integration downtime (>1h) → emit user_message so the user checks connector health.",
+      "operating_instructions": "Three capabilities cooperate — real-time event processing, daily reminder sweep, and weekly renewal check: 1. **uc_process_events** (webhook-triggered by legal platform Connect) — on envelope event (sent / delivered / viewed / signed / declined / voided / completed), fetch full envelope detail from the legal platform API, extract metadata (envelope_id, sender, recipients with per-signer status, title, value, department, renewal_date, custom fields). Upsert into spreadsheet by envelope_id — update an existing row or create a new one. Append a timestamped entry to the StatusHistory field. Post a messages to the channel matching the event category (completed → celebrations, declined → alerts, viewed-but-stale → pending, sent → activity). Emit `contract.envelope.status_changed` and, for declined, `contract.envelope.declined`. 2. **uc_reminder_sweep** — daily weekday morning. Query spreadsheet for contracts with status in (sent, delivered) and `days_since_sent > remind_threshold` (default 3). For each, fetch latest signer activity from legal platform. Apply the escalation ladder: days 3-6 → polite email reminder to the pending signer (max 3 sends, tracked in `reminder_count`); days 7-13 → escalate to contract owner via direct messages + email; days 14+ → emit `contract.reminder.escalated` and flag for manual review. Update reminder_count in spreadsheet on each send. Default daily weekday; final cadence set at the trigger-composition step. 3. **uc_renewal_monitor** — weekly sweep. Query spreadsheet for contracts with renewal_date within configured lookahead (default 60 days). Tier the notifications: 60d → informational email to owner; 30d → messaging reminder to renewals channel + email to owner; 14d → urgent messaging tag + email to owner and their manager. Track per-contract notification state to prevent duplicate alerts. If the renewal date passes without action, send a critical alert to the owner's manager. Emit `contract.renewal.approaching` per tier transition. State: `data/contracts_daily_log.json` (processing log per cycle), local cache of legal platform account config.",
+      "tool_guidance": "**legal platform** (required):\n- `GET /accounts/{accountId}/envelopes/{envelopeId}` — envelope details + custom fields.\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/recipients` — per-signer status and timestamps.\n- `GET /accounts/{accountId}/envelopes?from_date={ISO}&status={status}` — date/status range search.\n- `GET /accounts/{accountId}/envelopes/{envelopeId}/audit_events` — full audit trail.\n- Headers: `Authorization: Bearer {access_token}`, `Accept: application/json`.\n- Use OAuth2 refresh flow; handle 401 by emitting `persona_error`. **spreadsheet** (required):\n- `GET /v0/{baseId}/{tableId}?filterByFormula={EnvelopeId}='{id}'` — find by envelope.\n- `POST /v0/{baseId}/{tableId}` — create new contract record.\n- `PATCH /v0/{baseId}/{tableId}/{recordId}` — update status, timestamps, reminder_count, StatusHistory.\n- Overdue query: `filterByFormula=AND(Status!='Completed', DATETIME_DIFF(NOW(),{SentDate},'days')>3)`.\n- Renewal query: `filterByFormula=AND(RenewalDate!=BLANK(), DATETIME_DIFF({RenewalDate},NOW(),'days')<60)`.\n- Headers: `Authorization: Bearer {access_token}`, `Content-Type: application/json`. **messaging** (required):\n- `POST https://slack.com/api/chat.postMessage` with channel + formatted messaging layout `blocks` + `text` fallback.\n- DMs: use user ID as channel; resolve via `users.lookupByEmail` when needed.\n- Channels by event category (all configurable): completed / alerts / pending / activity / renewals.\n- formatted messaging layout sections with header (status), fields (contract / value / days), action buttons (deep links to legal platform + spreadsheet). **email** (required):\n- `gmail_send` for reminder and renewal emails. HTML body with plain-text fallback. Thread follow-up reminders when possible.\n- `gmail_search` before sending — `subject:\"{contract_title}\" from:{signer_email}` — to check for prior replies outside legal platform.\n- Personalize with signer name, document title, days pending, direct signing link. **Local**:\n- `data/contracts_daily_log.json` — processing log with counts and timestamps for debugging.\n- Webhook queue for delayed processing if downstream APIs are slow.",
+      "error_handling": "legal platform 429 → exponential backoff (up to 3 retries). legal platform 401 → emit persona_error + user_message asking for reauthorization; do not retry. legal platform 5xx → 3 retries at 30s intervals. spreadsheet 422 validation → log the payload, messaging-alert the config issue, continue with other records. spreadsheet record-not-found on update → create instead (never assume delete). messaging channel_not_found → fall back to DM to contract owner; never fail the whole workflow. messaging not_in_channel → log + emit user_message suggesting the bot be invited. email bounce → flag 'Invalid Email' on the spreadsheet record and notify the contract owner via the messaging channel. Out-of-order webhook events → reconstruct sequence from legal platform timestamps, not arrival order. Repeated integration downtime (>1h) → emit user_message so the user checks connector health.",
       "examples": [],
       "tools": [
         "http_request",
@@ -67,8 +67,8 @@
       ],
       "connectors": [
         {
-          "name": "docusign",
-          "label": "DocuSign",
+          "name": "legal",
+          "label": "legal platform",
           "auth_type": "oauth2",
           "role": "e_signature",
           "category": "legal",
@@ -80,7 +80,7 @@
               "label": "Integration Key (Client ID)",
               "type": "text",
               "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "helpText": "Found in DocuSign Admin -> Settings -> Integrations -> API and Keys -> Integration Key",
+              "helpText": "Found in legal platform Admin -> Settings -> Integrations -> API and Keys -> Integration Key",
               "required": true
             },
             {
@@ -88,7 +88,7 @@
               "label": "Client Secret",
               "type": "password",
               "placeholder": "Your DocuSign client secret",
-              "helpText": "Generated alongside the Integration Key in DocuSign Admin -> API and Keys",
+              "helpText": "Generated alongside the Integration Key in legal platform Admin -> API and Keys",
               "required": true
             },
             {
@@ -96,11 +96,11 @@
               "label": "Account ID",
               "type": "text",
               "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "helpText": "Found in DocuSign Admin -> Settings -> Account Information, or in the API Account ID field",
+              "helpText": "Found in legal platform Admin -> Settings -> Account Information, or in the API Account ID field",
               "required": true
             }
           ],
-          "setup_instructions": "1. Log in to DocuSign Admin (admin.docusign.com).\n2. Go to Settings -> Integrations -> API and Keys.\n3. Click 'Add App / Integration Key' to create a new integration.\n4. Copy the Integration Key (Client ID) and generate a Client Secret.\n5. Add the OAuth redirect URI provided by Personas to the integration's settings.\n6. Copy your Account ID from Settings -> Account Information.\n7. Enable DocuSign Connect: Go to Settings -> Connect and create a new configuration.\n8. Set the webhook URL to the Personas webhook endpoint.\n9. Select envelope events: Sent, Delivered, Completed, Declined, Voided.\n10. Enable 'Include Documents' and 'Include Recipients' in the payload settings."
+          "setup_instructions": "1. Log in to legal platform Admin (admin.docusign.com).\n2. Go to Settings -> Integrations -> API and Keys.\n3. Click 'Add App / Integration Key' to create a new integration.\n4. Copy the Integration Key (Client ID) and generate a Client Secret.\n5. Add the OAuth redirect URI provided by Personas to the integration's settings.\n6. Copy your Account ID from Settings -> Account Information.\n7. Enable legal platform Connect: Go to Settings -> Connect and create a new configuration.\n8. Set the webhook URL to the Personas webhook endpoint.\n9. Select envelope events: Sent, Delivered, Completed, Declined, Voided.\n10. Enable 'Include Documents' and 'Include Recipients' in the payload settings."
         },
         {
           "name": "spreadsheet",
@@ -124,7 +124,7 @@
               "label": "Base ID",
               "type": "text",
               "placeholder": "appXXXXXXXXXXXXXX",
-              "helpText": "Found in the Airtable API docs page or in the base URL when viewing the base.",
+              "helpText": "Found in the spreadsheet API docs page or in the base URL when viewing the base.",
               "required": true
             },
             {
@@ -136,7 +136,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to airtable.com/create/tokens to create a Personal Access Token.\n2. Grant the following scopes: data.records:read, data.records:write, schema.bases:read.\n3. Add the specific base that contains your contract tracker to the token's access list.\n4. Create a base (or use existing) with a 'Contracts' table containing these fields:\n   - EnvelopeId (Single line text) -- Primary key from DocuSign\n   - ContractTitle (Single line text)\n   - Status (Single select: Sent, Delivered, Viewed, Signed, Completed, Declined, Voided)\n   - SenderName (Single line text)\n   - SenderEmail (Email)\n   - Recipients (Long text -- JSON array of recipient details)\n   - ContractValue (Currency)\n   - Department (Single select)\n   - SentDate (Date)\n   - CompletedDate (Date)\n   - RenewalDate (Date)\n   - StatusHistory (Long text -- timestamped log)\n   - ReminderCount (Number)\n   - DeclineReason (Single line text)\n   - OwnerEmail (Email)\n5. Copy the Base ID from the API documentation page or the base URL.\n6. Copy the Table ID or use the table name 'Contracts'."
+          "setup_instructions": "1. Go to airtable.com/create/tokens to create a Personal Access Token.\n2. Grant the following scopes: data.records:read, data.records:write, schema.bases:read.\n3. Add the specific base that contains your contract tracker to the token's access list.\n4. Create a base (or use existing) with a 'Contracts' table containing these fields: - EnvelopeId (Single line text) -- Primary key from legal platform - ContractTitle (Single line text) - Status (Single select: Sent, Delivered, Viewed, Signed, Completed, Declined, Voided) - SenderName (Single line text) - SenderEmail (Email) - Recipients (Long text -- JSON array of recipient details) - ContractValue (Currency) - Department (Single select) - SentDate (Date) - CompletedDate (Date) - RenewalDate (Date) - StatusHistory (Long text -- timestamped log) - ReminderCount (Number) - DeclineReason (Single line text) - OwnerEmail (Email)\n5. Copy the Base ID from the API documentation page or the base URL.\n6. Copy the Table ID or use the table name 'Contracts'."
         },
         {
           "name": "messaging",
@@ -152,11 +152,11 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Found in your Slack App settings -> OAuth & Permissions -> Bot User OAuth Token",
+              "helpText": "Found in your messaging App settings -> OAuth & Permissions -> Bot User OAuth Token",
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to api.slack.com/apps and create a new Slack App (or use existing).\n2. Navigate to OAuth & Permissions.\n3. Add the following Bot Token Scopes:\n   - chat:write (send messages)\n   - chat:write.public (post to channels the bot hasn't joined)\n   - users:read (look up user IDs for DMs)\n   - users:read.email (match users by email for contract owner tagging)\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Create the following channels and invite the bot:\n   - #contracts-completed -- Signed/completed contract celebrations\n   - #contracts-alerts -- Declined contracts and urgent issues\n   - #contracts-pending -- Stale unsigned contract nudges\n   - #contracts-activity -- New envelope activity feed\n   - #contracts-renewals -- Upcoming renewal notifications"
+          "setup_instructions": "1. Go to api.slack.com/apps and create a new messaging App (or use existing).\n2. Navigate to OAuth & Permissions.\n3. Add the following Bot Token Scopes: - chat:write (send messages) - chat:write.public (post to channels the bot hasn't joined) - users:read (look up user IDs for DMs) - users:read.email (match users by email for contract owner tagging)\n4. Install the app to your workspace.\n5. Copy the Bot User OAuth Token (starts with xoxb-).\n6. Create the following channels and invite the bot: - #contracts-completed -- Signed/completed contract celebrations - #contracts-alerts -- Declined contracts and urgent issues - #contracts-pending -- Stale unsigned contract nudges - #contracts-activity -- New envelope activity feed - #contracts-renewals -- Upcoming renewal notifications"
         },
         {
           "name": "email",
@@ -192,7 +192,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the email API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         }
       ],
       "notification_channels_default": [
@@ -202,7 +202,7 @@
         },
         {
           "type": "email",
-          "description": "Gmail carries personalized signer reminders and owner-escalation emails with full document context."
+          "description": "email carries personalized signer reminders and owner-escalation emails with full document context."
         }
       ],
       "core_memories": []
@@ -210,9 +210,9 @@
     "use_cases": [
       {
         "id": "uc_process_events",
-        "title": "DocuSign Event Processing",
-        "description": "Real-time webhook handler for DocuSign envelope events. Fetches full envelope context, upserts into Airtable (envelope_id as idempotency key), posts Slack notifications to event-appropriate channels, and tracks signer velocity in memory.",
-        "capability_summary": "Webhook-driven envelope processing with Airtable upsert + routed Slack notifications.",
+        "title": "legal platform Event Processing",
+        "description": "Real-time webhook handler for legal platform envelope events. Fetches full envelope context, upserts into spreadsheet (envelope_id as idempotency key), posts messaging notifications to event-appropriate channels, and tracks signer velocity in memory.",
+        "capability_summary": "Webhook-driven envelope processing with spreadsheet upsert + routed messaging notifications.",
         "category": "integration",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -232,10 +232,10 @@
               "recipient-delivered"
             ]
           },
-          "description": "DocuSign Connect fires webhooks on envelope status changes. Not user-configurable — webhook triggers bypass the composition picker."
+          "description": "legal platform Connect fires webhooks on envelope status changes. Not user-configurable — webhook triggers bypass the composition picker."
         },
         "connectors": [
-          "docusign",
+          "legal",
           "spreadsheet",
           "messaging"
         ],
@@ -246,7 +246,7 @@
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Signer response-time averages per department; signing velocity baselines; signer communication-preference patterns (Slack vs email responders). Feeds uc_reminder_sweep threshold tuning."
+          "context": "Signer response-time averages per department; signing velocity baselines; signer communication-preference patterns (messaging vs email responders). Feeds uc_reminder_sweep threshold tuning."
         },
         "event_subscriptions": [
           {
@@ -260,27 +260,27 @@
             "description": "Payload: { envelope_id, declined_by, reason, contract_title }. Emitted specifically on decline events for escalation-listener personas."
           }
         ],
-        "error_handling": "DocuSign 401 → emit persona_error, halt retries. DocuSign 5xx → 3 retries at 30s. Airtable record not found on update → create instead. Out-of-order events → reconstruct sequence from DocuSign timestamps. Slack channel not found → DM the contract owner. Never fail the whole workflow because one leg (Slack / Airtable) failed — complete what succeeded, queue the rest.",
+        "error_handling": "legal platform 401 → emit persona_error, halt retries. legal platform 5xx → 3 retries at 30s. spreadsheet record not found on update → create instead. Out-of-order events → reconstruct sequence from legal platform timestamps. messaging channels not found → DM the contract owner. Never fail the whole workflow because one leg (messaging / spreadsheet) failed — complete what succeeded, queue the rest.",
         "input_schema": [
           {
             "name": "completed_channel",
             "type": "text",
-            "description": "Slack channel for signed/completed envelope celebrations."
+            "description": "messaging channels for signed/completed envelope celebrations."
           },
           {
             "name": "alerts_channel",
             "type": "text",
-            "description": "Slack channel for declined contracts and urgent issues."
+            "description": "messaging channels for declined contracts and urgent issues."
           },
           {
             "name": "pending_channel",
             "type": "text",
-            "description": "Slack channel for stale unsigned-contract nudges."
+            "description": "messaging channels for stale unsigned-contract nudges."
           },
           {
             "name": "activity_channel",
             "type": "text",
-            "description": "Slack channel for the new-envelope activity feed (low priority)."
+            "description": "messaging channels for the new-envelope activity feed (low priority)."
           }
         ],
         "sample_input": {
@@ -300,7 +300,7 @@
             {
               "id": "e1",
               "type": "start",
-              "label": "DocuSign webhook fires"
+              "label": "legal platform webhook fires"
             },
             {
               "id": "e2",
@@ -311,7 +311,7 @@
             {
               "id": "e3",
               "type": "connector",
-              "label": "Upsert Airtable record (envelope_id)",
+              "label": "Upsert spreadsheet record (envelope_id)",
               "connector": "spreadsheet"
             },
             {
@@ -322,7 +322,7 @@
             {
               "id": "e5",
               "type": "connector",
-              "label": "Route Slack post (completed / alerts / pending / activity)",
+              "label": "Route messaging post (completed / alerts / pending / activity)",
               "connector": "messaging"
             },
             {
@@ -376,7 +376,7 @@
       {
         "id": "uc_reminder_sweep",
         "title": "Unsigned Contract Reminders",
-        "description": "Daily sweep that finds unsigned contracts past the remind threshold and applies the escalation ladder: polite signer reminder (capped at 3) → Slack DM + Gmail to contract owner → manual_review escalation at 14+ days. Default daily weekday morning; final cadence set at the trigger-composition step.",
+        "description": "Daily sweep that finds unsigned contracts past the remind threshold and applies the escalation ladder: polite signer reminder (capped at 3) → direct messages + email to contract owner → manual_review escalation at 14+ days. Default daily weekday morning; final cadence set at the trigger-composition step.",
         "capability_summary": "Tiered unsigned-contract reminders with capped signer sends and owner escalation.",
         "category": "notifications",
         "enabled_by_default": true,
@@ -392,7 +392,7 @@
         },
         "connectors": [
           "spreadsheet",
-          "docusign",
+          "legal",
           "email",
           "messaging"
         ],
@@ -409,7 +409,7 @@
           {
             "event_type": "contract.reminder.sent",
             "direction": "emit",
-            "description": "Payload: { envelope_id, signer_email, reminder_count, tier }. Per successful Gmail send."
+            "description": "Payload: { envelope_id, signer_email, reminder_count, tier }. Per successful email send."
           },
           {
             "event_type": "contract.reminder.escalated",
@@ -417,7 +417,7 @@
             "description": "Payload: { envelope_id, owner_email, days_pending, reason }. Emitted when the escalation ladder moves a contract from signer-reminder tier to owner-notification tier."
           }
         ],
-        "error_handling": "Gmail recipient bounce → flag 'Invalid Email' on Airtable, notify owner via Slack. Signer already responded (gmail_search match) → skip reminder, update Airtable with 'signer_responded_externally'. reminder_count >= 3 → skip direct-signer send, jump to owner-escalation tier.",
+        "error_handling": "email recipient bounce → flag 'Invalid Email' on spreadsheet, notify owner via the messaging channel. Signer already responded (gmail_search match) → skip reminder, update spreadsheet with 'signer_responded_externally'. reminder_count >= 3 → skip direct-signer send, jump to owner-escalation tier.",
         "input_schema": [
           {
             "name": "remind_threshold_days",
@@ -454,13 +454,13 @@
             {
               "id": "r2",
               "type": "connector",
-              "label": "Query overdue contracts (Airtable)",
+              "label": "Query overdue contracts (spreadsheet)",
               "connector": "spreadsheet"
             },
             {
               "id": "r3",
               "type": "connector",
-              "label": "Check latest signer activity (DocuSign)",
+              "label": "Check latest signer activity (legal platform)",
               "connector": "docusign"
             },
             {
@@ -471,19 +471,19 @@
             {
               "id": "r5",
               "type": "connector",
-              "label": "Send polite signer reminder (Gmail)",
+              "label": "Send polite signer reminder (email)",
               "connector": "email"
             },
             {
               "id": "r6",
               "type": "connector",
-              "label": "Escalate to owner (Slack DM + Gmail)",
+              "label": "Escalate to owner (direct messages + email)",
               "connector": "messaging"
             },
             {
               "id": "r7",
               "type": "connector",
-              "label": "Update reminder_count (Airtable)",
+              "label": "Update reminder_count (spreadsheet)",
               "connector": "spreadsheet"
             },
             {
@@ -584,7 +584,7 @@
             "description": "Payload: { envelope_id, renewal_date, owner_email }. Emitted when a renewal date passes without renewal action — triggers owner-manager escalation."
           }
         ],
-        "error_handling": "Owner email missing → fall back to sender_email from the original envelope; flag the config gap. Manager email unknown at 14d escalation → escalate to owner twice (Slack + Gmail) and flag for manual review. Past renewal_date with no action → emit renewal.lapsed; send critical alert.",
+        "error_handling": "Owner email missing → fall back to sender_email from the original envelope; flag the config gap. Manager email unknown at 14d escalation → escalate to owner twice (messaging + email) and flag for manual review. Past renewal_date with no action → emit renewal.lapsed; send critical alert.",
         "input_schema": [
           {
             "name": "renewal_tiers_days",
@@ -594,7 +594,7 @@
           {
             "name": "renewals_channel",
             "type": "text",
-            "description": "Slack channel for renewal alerts."
+            "description": "messaging channels for renewal alerts."
           }
         ],
         "sample_input": {
@@ -634,13 +634,13 @@
             {
               "id": "n5",
               "type": "connector",
-              "label": "Dispatch Slack + Gmail (tiered intensity)",
+              "label": "Dispatch messaging + email (tiered intensity)",
               "connector": "messaging"
             },
             {
               "id": "n6",
               "type": "connector",
-              "label": "Update notification state (Airtable)",
+              "label": "Update notification state (spreadsheet)",
               "connector": "spreadsheet"
             },
             {
@@ -729,7 +729,7 @@
         "default": "Mixed portfolio (all contract types)",
         "maps_to": null,
         "variable_name": "contract_portfolio",
-        "context": "Shapes how the agent labels and routes contract events in Airtable and Slack notifications.",
+        "context": "Shapes how the agent labels and routes contract events in spreadsheet and messaging notifications.",
         "dimension": "use-cases"
       },
       {
@@ -748,7 +748,7 @@
         "default": "Legal / General Counsel",
         "maps_to": null,
         "variable_name": "owning_team",
-        "context": "Determines Slack channel routing, escalation contacts, and tone of reminder communications.",
+        "context": "Determines messaging channels routing, escalation contacts, and tone of reminder communications.",
         "dimension": "use-cases"
       },
       {
@@ -790,7 +790,7 @@
         "default": "7",
         "maps_to": "use_cases[uc_reminder_sweep].sample_input.escalate_threshold_days",
         "variable_name": "reminder_thresholds_escalate",
-        "context": "Escalation threshold — past this point, direct signer reminders stop and the contract owner gets pinged via Slack DM + Gmail.",
+        "context": "Escalation threshold — past this point, direct signer reminders stop and the contract owner gets pinged via direct messages + email.",
         "dimension": "use-cases"
       },
       {
@@ -820,13 +820,13 @@
           "uc_process_events"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive completed / signed contract celebrations?",
+        "question": "Which messaging channels should receive completed / signed contract celebrations?",
         "type": "select",
         "options": [],
         "default": "#contracts-completed",
         "maps_to": "use_cases[uc_process_events].sample_input.completed_channel",
         "variable_name": "completed_channel",
-        "context": "Picker lists channels on your configured Slack workspace.",
+        "context": "Picker lists channels on your configured messaging workspaces.",
         "dimension": "connectors",
         "option_service_types": [
           "slack"
@@ -844,13 +844,13 @@
           "uc_process_events"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive declined-contract and urgent alerts?",
+        "question": "Which messaging channels should receive declined-contract and urgent alerts?",
         "type": "select",
         "options": [],
         "default": "#contracts-alerts",
         "maps_to": "use_cases[uc_process_events].sample_input.alerts_channel",
         "variable_name": "alerts_channel",
-        "context": "Picker lists channels on your configured Slack workspace.",
+        "context": "Picker lists channels on your configured messaging workspaces.",
         "dimension": "connectors",
         "option_service_types": [
           "slack"
@@ -868,13 +868,13 @@
           "uc_process_events"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive stale unsigned-contract nudges?",
+        "question": "Which messaging channels should receive stale unsigned-contract nudges?",
         "type": "select",
         "options": [],
         "default": "#contracts-pending",
         "maps_to": "use_cases[uc_process_events].sample_input.pending_channel",
         "variable_name": "pending_channel",
-        "context": "Picker lists channels on your configured Slack workspace.",
+        "context": "Picker lists channels on your configured messaging workspaces.",
         "dimension": "connectors",
         "option_service_types": [
           "slack"
@@ -892,13 +892,13 @@
           "uc_process_events"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive the new-envelope activity feed?",
+        "question": "Which messaging channels should receive the new-envelope activity feed?",
         "type": "select",
         "options": [],
         "default": "#contracts-activity",
         "maps_to": "use_cases[uc_process_events].sample_input.activity_channel",
         "variable_name": "activity_channel",
-        "context": "Low-priority awareness feed. Picker lists channels on your configured Slack workspace.",
+        "context": "Low-priority awareness feed. Picker lists channels on your configured messaging workspaces.",
         "dimension": "connectors",
         "option_service_types": [
           "slack"
@@ -916,13 +916,13 @@
           "uc_renewal_monitor"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive upcoming renewal notifications?",
+        "question": "Which messaging channels should receive upcoming renewal notifications?",
         "type": "select",
         "options": [],
         "default": "#contracts-renewals",
         "maps_to": "use_cases[uc_renewal_monitor].sample_input.renewals_channel",
         "variable_name": "renewals_channel",
-        "context": "Picker lists channels on your configured Slack workspace.",
+        "context": "Picker lists channels on your configured messaging workspaces.",
         "dimension": "connectors",
         "option_service_types": [
           "slack"
@@ -945,7 +945,7 @@
           "Escalate directly to executives or C-suite",
           "Post contract details in public or company-wide Slack channels"
         ],
-        "default": "Void or cancel a DocuSign envelope",
+        "default": "Void or cancel a legal platform envelope",
         "maps_to": null,
         "variable_name": "boundaries",
         "context": "Hard stops to prevent high-stakes irreversible actions without human oversight.",
@@ -980,7 +980,7 @@
           "uc_process_events"
         ],
         "category": "quality",
-        "question": "How verbose should Slack notifications be when contract status changes?",
+        "question": "How verbose should messaging notifications be when contract status changes?",
         "type": "select",
         "options": [
           "Minimal — only notify on declined or fully completed envelopes",
@@ -991,7 +991,7 @@
         "default": "Standard — status, signer name, and recommended next action",
         "maps_to": null,
         "variable_name": "slack_verbosity",
-        "context": "Shapes Slack message verbosity to keep stakeholders informed without causing channel noise.",
+        "context": "Shapes messages verbosity to keep stakeholders informed without causing channel noise.",
         "dimension": "messages"
       },
       {
@@ -1010,7 +1010,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -1029,7 +1029,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -1048,7 +1048,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

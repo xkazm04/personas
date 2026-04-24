@@ -39,9 +39,21 @@
           "name": "jira",
           "label": "Jira (Atlassian)",
           "credential_fields": [
-            { "key": "domain", "label": "Atlassian-Domain", "helpText": "Ihre Atlassian-Domain. Wenn Ihre Jira-URL https://your-company.atlassian.net lautet, geben Sie 'your-company' ein." },
-            { "key": "email", "label": "Konto-E-Mail", "helpText": "Die mit Ihrem Atlassian-Konto verknüpfte E-Mail-Adresse." },
-            { "key": "api_token", "label": "API-Token", "helpText": "Erzeugen Sie den Token auf https://id.atlassian.com/manage-profile/security/api-tokens. Zusammen mit Ihrer E-Mail bildet er die Basic-Auth-Credential." }
+            {
+              "key": "domain",
+              "label": "Atlassian-Domain",
+              "helpText": "Ihre Atlassian-Domain. Wenn Ihre Jira-URL https://your-company.atlassian.net lautet, geben Sie 'your-company' ein."
+            },
+            {
+              "key": "email",
+              "label": "Konto-E-Mail",
+              "helpText": "Die mit Ihrem Atlassian-Konto verknüpfte E-Mail-Adresse."
+            },
+            {
+              "key": "api_token",
+              "label": "API-Token",
+              "helpText": "Erzeugen Sie den Token auf https://id.atlassian.com/manage-profile/security/api-tokens. Zusammen mit Ihrer E-Mail bildet er die Basic-Auth-Credential."
+            }
           ],
           "setup_instructions": "1. Gehen Sie zu https://id.atlassian.com/manage-profile/security/api-tokens.\n2. Erstellen Sie einen Token mit dem Label 'Issue Resolver Bot' und kopieren Sie ihn (wird nur einmal angezeigt).\n3. Geben Sie Ihre Atlassian-Domain ein (Subdomain aus Ihrer Jira-URL).\n4. Geben Sie die E-Mail Ihres Atlassian-Kontos ein.\n5. Der Agent authentifiziert sich mit Basic Auth via base64(email:api_token)."
         },
@@ -49,8 +61,16 @@
           "name": "notion",
           "label": "Notion",
           "credential_fields": [
-            { "key": "integration_token", "label": "Internal Integration Token", "helpText": "Erstellen Sie eine interne Integration unter https://www.notion.so/my-integrations, kopieren Sie den Token und teilen Sie Ihre KB-Datenbank mit der Integration." },
-            { "key": "database_id", "label": "Wissensdatenbank-Datenbank-ID", "helpText": "Öffnen Sie Ihre Notion-KB-Datenbank. Die Datenbank-ID ist die 32-stellige Hex-Zeichenfolge in der URL vor dem '?'." }
+            {
+              "key": "integration_token",
+              "label": "Internal Integration Token",
+              "helpText": "Erstellen Sie eine interne Integration unter https://www.notion.so/my-integrations, kopieren Sie den Token und teilen Sie Ihre KB-Datenbank mit der Integration."
+            },
+            {
+              "key": "database_id",
+              "label": "Wissensdatenbank-Datenbank-ID",
+              "helpText": "Öffnen Sie Ihre Notion-KB-Datenbank. Die Datenbank-ID ist die 32-stellige Hex-Zeichenfolge in der URL vor dem '?'."
+            }
           ],
           "setup_instructions": "1. Erstellen Sie eine neue Integration unter https://www.notion.so/my-integrations namens 'Issue Resolver Bot'.\n2. Kopieren Sie den Internal Integration Token.\n3. Öffnen Sie Ihre KB-Datenbank → '...'-Menü → 'Add connections' → wählen Sie Ihre Integration.\n4. Kopieren Sie die 32-stellige Datenbank-ID aus der URL."
         },
@@ -58,13 +78,20 @@
           "name": "slack",
           "label": "Slack",
           "credential_fields": [
-            { "key": "bot_token", "label": "Bot User OAuth Token", "helpText": "Aus Ihrer Slack-App → OAuth & Permissions → Bot User OAuth Token. Benötigt Scopes: chat:write, users:read, users:read.email." }
+            {
+              "key": "bot_token",
+              "label": "Bot User OAuth Token",
+              "helpText": "Aus Ihrer Slack-App → OAuth & Permissions → Bot User OAuth Token. Benötigt Scopes: chat:write, users:read, users:read.email."
+            }
           ],
           "setup_instructions": "1. App auf api.slack.com/apps erstellen oder auswählen.\n2. Bot Token Scopes hinzufügen: chat:write, users:read, users:read.email.\n3. In Workspace installieren und Bot User OAuth Token kopieren.\n4. Bot in Alert- und Eskalationskanäle einladen."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "Slack-Alert-Kanal für tägliche Digests, wöchentliche Reports und Auto-Resolution-Benachrichtigungen." }
+        {
+          "type": "slack",
+          "description": "Slack-Alert-Kanal für tägliche Digests, wöchentliche Reports und Auto-Resolution-Benachrichtigungen."
+        }
       ]
     },
     "use_cases": [
@@ -73,10 +100,18 @@
         "title": "Triage & Auflösung veralteter Issues",
         "description": "Pollt Jira alle 15 Minuten nach Issues, die länger als die Stale-Schwelle offen sind. Klassifiziert den Zustand, erfasst die Stimmung des Reporters, sucht passende Lösungen in Notion + lokaler KB, veröffentlicht Lösungen mit hoher Konfidenz, eskaliert verärgerte + P1/P2-Reporter an das Engineering-Management und schließt verwaiste Issues automatisch.",
         "capability_summary": "Klassifikation veralteter Issues + stimmungsgesteuerte Auto-Resolution, Eskalation und Bereinigung verwaister Issues.",
-        "suggested_trigger": { "description": "Alle 15 Minuten Jira nach veralteten, ungelösten Issues abfragen." },
+        "suggested_trigger": {
+          "description": "Alle 15 Minuten Jira nach veralteten, ungelösten Issues abfragen."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Primärer Alert-Kanal für Auto-Resolution-Benachrichtigungen und Stimmungsalerts." },
-          { "type": "slack", "description": "Eskalationskanal für verärgerte + P1/P2-Issues, die sofortige Engineering-Aufmerksamkeit erfordern." }
+          {
+            "type": "slack",
+            "description": "Primärer Alert-Kanal für Auto-Resolution-Benachrichtigungen und Stimmungsalerts."
+          },
+          {
+            "type": "slack",
+            "description": "Eskalationskanal für verärgerte + P1/P2-Issues, die sofortige Engineering-Aufmerksamkeit erfordern."
+          }
         ],
         "review_policy": {
           "context": "Lösungen mit Konfidenzwert 60-79 werden für menschliche Prüfung geloggt, aber nicht gepostet. Verärgerte + P1/P2-Issues umgehen die Auto-Resolution und werden direkt an manual_review mit vollem Kontext für den On-Call-Engineering-Manager weitergeleitet."
@@ -85,42 +120,151 @@
           "context": "data/solutions_kb.json wächst mit jeder bestätigten Auflösung: Symptommuster, Lösungsschritte, Quell-Issue-Key, times_confirmed-Zähler, Konfidenzwert. Abgelehnte Lösungen verringern die Konfidenz. Reporter-Stimmungshistorie pro E-Mail-Adresse akkumuliert über Zyklen hinweg für bessere künftige Klassifikation."
         },
         "event_subscriptions": [
-          { "event_type": "issue.auto_resolved", "description": "Payload: Issue-Key, Lösungsquelle (Notion-Seiten-URL oder lokale KB-Eintrags-ID), Konfidenzwert, Reporter-Stimmung zum Zeitpunkt des Posts." },
-          { "event_type": "issue.escalated", "description": "Payload: Issue-Key, Priorität, Stimmungswert, Eskalationsempfänger, vollständige Kontext-Zusammenfassung." },
-          { "event_type": "issue.auto_closed", "description": "Payload: Issue-Key, Grund (abandoned / silently_resolved / confirmation_timeout), Tage Inaktivität." },
-          { "event_type": "persona.error", "description": "Wird ausgelöst bei Jira 401, wiederholten Slack-Fehlern oder korrupten Zustandsdateien. Triggert Downstream-Credential-Refresh oder Admin-Alerts." }
+          {
+            "event_type": "issue.auto_resolved",
+            "description": "Payload: Issue-Key, Lösungsquelle (Notion-Seiten-URL oder lokale KB-Eintrags-ID), Konfidenzwert, Reporter-Stimmung zum Zeitpunkt des Posts."
+          },
+          {
+            "event_type": "issue.escalated",
+            "description": "Payload: Issue-Key, Priorität, Stimmungswert, Eskalationsempfänger, vollständige Kontext-Zusammenfassung."
+          },
+          {
+            "event_type": "issue.auto_closed",
+            "description": "Payload: Issue-Key, Grund (abandoned / silently_resolved / confirmation_timeout), Tage Inaktivität."
+          },
+          {
+            "event_type": "persona.error",
+            "description": "Wird ausgelöst bei Jira 401, wiederholten Slack-Fehlern oder korrupten Zustandsdateien. Triggert Downstream-Credential-Refresh oder Admin-Alerts."
+          }
         ],
         "error_handling": "Jira 429 → Retry-After respektieren, nächsten Zyklus fortsetzen. Jira 401 → persona.error emittieren und diese Fähigkeit bis zum Credential-Refresh anhalten. Notion nicht verfügbar → KB-Suche überspringen, aber Klassifikation + Stimmung + Eskalation fortsetzen. Slack-Queue → data/pending_slack.json erneut im nächsten Zyklus versuchen. Kommentar-Post-Fehler → nur loggen, kein Retry im selben Zyklus. Erster Zyklus → nur Beobachtung.",
         "input_schema": [
-          { "name": "stale_days", "description": "Tage Inaktivität, bevor ein Issue als veraltet gilt." },
-          { "name": "max_issues_per_cycle", "description": "Obergrenze für pro 15-Minuten-Zyklus verarbeitete Issues zur Einhaltung von API-Rate-Limits." },
-          { "name": "confidence_threshold", "description": "Mindest-Konfidenz für Auto-Posting einer Lösung." },
-          { "name": "auto_close_enabled", "description": "Wenn aktiviert, erhalten Issues mit 30+ Tagen Inaktivität einen höflichen Schließungskommentar und wechseln zu Closed." },
-          { "name": "eng_manager_email", "description": "Engineering-Manager, der Slack-DMs für verärgerte + P1/P2-Eskalationen erhält." },
-          { "name": "escalation_channel", "description": "Dedizierter Slack-Kanal für Posts zu hochprioritären Eskalationen." }
+          {
+            "name": "stale_days",
+            "description": "Tage Inaktivität, bevor ein Issue als veraltet gilt."
+          },
+          {
+            "name": "max_issues_per_cycle",
+            "description": "Obergrenze für pro 15-Minuten-Zyklus verarbeitete Issues zur Einhaltung von API-Rate-Limits."
+          },
+          {
+            "name": "confidence_threshold",
+            "description": "Mindest-Konfidenz für Auto-Posting einer Lösung."
+          },
+          {
+            "name": "auto_close_enabled",
+            "description": "Wenn aktiviert, erhalten Issues mit 30+ Tagen Inaktivität einen höflichen Schließungskommentar und wechseln zu Closed."
+          },
+          {
+            "name": "eng_manager_email",
+            "description": "Engineering-Manager, der Slack-DMs für verärgerte + P1/P2-Eskalationen erhält."
+          },
+          {
+            "name": "escalation_channel",
+            "description": "Dedizierter Slack-Kanal für Posts zu hochprioritären Eskalationen."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "label": "Polling-Tick", "detail": "15-Minuten-Cron feuert" },
-            { "id": "n2", "label": "Veraltete Issues abfragen", "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)" },
-            { "id": "n3", "label": "Zustandsdateien laden", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "label": "Neu oder aktualisiert?", "detail": "Bereits mit aktuellem updated-Timestamp bearbeitete Issues überspringen" },
-            { "id": "n5", "label": "Kommentare abrufen", "detail": "Gesamter Thread für Klassifikation + Stimmung" },
-            { "id": "n6", "label": "Zustand klassifizieren", "detail": "Wartet auf Reporter / Team / blockiert / verwaist / veraltet-aktiv / still gelöst" },
-            { "id": "n7", "label": "Stimmungswert 1-10", "detail": "Neuere Kommentare stärker gewichten; Wut + Frustration erkennen" },
-            { "id": "n8", "label": "Notion-KB durchsuchen", "detail": "KB-Datenbankabfrage nach Titel + Komponenten-Tags" },
-            { "id": "n9", "label": "Lokale KB durchsuchen", "detail": "Symptommuster aus data/solutions_kb.json abgleichen" },
-            { "id": "n10", "label": "Konfidenz >= Schwelle?", "detail": "Kompositwert: Keyword + Komponente + Fehlermeldung + historischer Erfolg" },
-            { "id": "n11", "label": "Lösungskommentar posten", "detail": "Empathischer ADF-Kommentar mit nummerierten Schritten + Quellenlink" },
-            { "id": "n12", "label": "14-Tage-Bestätigung tracken", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "label": "Verärgert + P1/P2?", "detail": "Stimmung >= 8 AND Priorität in (P1, P2)" },
-            { "id": "n14", "label": "DM an Engineering-Manager", "detail": "Slack-DM mit Issue-Kontext + Reporter-Beschwerden" },
-            { "id": "n15", "label": "Post im Eskalationskanal", "detail": "Öffentliche Sichtbarkeit des P1/verärgerten Issues" },
-            { "id": "n16", "label": "Verwaist 30+ Tage?", "detail": "auto_close_enabled AND keine Reporter-Aktivität in 30 Tagen" },
-            { "id": "n17", "label": "Verwaistes Issue schließen", "detail": "Höflicher Schließungskommentar + Transition zu Closed" },
-            { "id": "n18", "label": "Lifecycle-Events emittieren", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "label": "Zustand atomar schreiben", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "label": "Zyklus abgeschlossen" }
+            {
+              "id": "n1",
+              "label": "Polling-Tick",
+              "detail": "15-Minuten-Cron feuert"
+            },
+            {
+              "id": "n2",
+              "label": "Veraltete Issues abfragen",
+              "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)"
+            },
+            {
+              "id": "n3",
+              "label": "Zustandsdateien laden",
+              "detail": "data/issue_states.json + data/pending_confirmations.json"
+            },
+            {
+              "id": "n4",
+              "label": "Neu oder aktualisiert?",
+              "detail": "Bereits mit aktuellem updated-Timestamp bearbeitete Issues überspringen"
+            },
+            {
+              "id": "n5",
+              "label": "Kommentare abrufen",
+              "detail": "Gesamter Thread für Klassifikation + Stimmung"
+            },
+            {
+              "id": "n6",
+              "label": "Zustand klassifizieren",
+              "detail": "Wartet auf Reporter / Team / blockiert / verwaist / veraltet-aktiv / still gelöst"
+            },
+            {
+              "id": "n7",
+              "label": "Stimmungswert 1-10",
+              "detail": "Neuere Kommentare stärker gewichten; Wut + Frustration erkennen"
+            },
+            {
+              "id": "n8",
+              "label": "Notion-KB durchsuchen",
+              "detail": "KB-Datenbankabfrage nach Titel + Komponenten-Tags"
+            },
+            {
+              "id": "n9",
+              "label": "Lokale KB durchsuchen",
+              "detail": "Symptommuster aus data/solutions_kb.json abgleichen"
+            },
+            {
+              "id": "n10",
+              "label": "Konfidenz >= Schwelle?",
+              "detail": "Kompositwert: Keyword + Komponente + Fehlermeldung + historischer Erfolg"
+            },
+            {
+              "id": "n11",
+              "label": "Lösungskommentar posten",
+              "detail": "Empathischer ADF-Kommentar mit nummerierten Schritten + Quellenlink"
+            },
+            {
+              "id": "n12",
+              "label": "14-Tage-Bestätigung tracken",
+              "detail": "data/pending_confirmations.json"
+            },
+            {
+              "id": "n13",
+              "label": "Verärgert + P1/P2?",
+              "detail": "Stimmung >= 8 AND Priorität in (P1, P2)"
+            },
+            {
+              "id": "n14",
+              "label": "DM an Engineering-Manager",
+              "detail": "Slack-DM mit Issue-Kontext + Reporter-Beschwerden"
+            },
+            {
+              "id": "n15",
+              "label": "Post im Eskalationskanal",
+              "detail": "Öffentliche Sichtbarkeit des P1/verärgerten Issues"
+            },
+            {
+              "id": "n16",
+              "label": "Verwaist 30+ Tage?",
+              "detail": "auto_close_enabled AND keine Reporter-Aktivität in 30 Tagen"
+            },
+            {
+              "id": "n17",
+              "label": "Verwaistes Issue schließen",
+              "detail": "Höflicher Schließungskommentar + Transition zu Closed"
+            },
+            {
+              "id": "n18",
+              "label": "Lifecycle-Events emittieren",
+              "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed"
+            },
+            {
+              "id": "n19",
+              "label": "Zustand atomar schreiben",
+              "detail": "issue_states + escalation_log + pending_confirmations"
+            },
+            {
+              "id": "n20",
+              "label": "Zyklus abgeschlossen"
+            }
           ]
         }
       },
@@ -129,28 +273,73 @@
         "title": "Tägliches Support-Digest",
         "description": "Postet jeden Morgen um 9 Uhr eine Slack-Zusammenfassung der letzten 24 Stunden: auto-gelöste, eskalierte, auto-geschlossene und weiterhin veraltete Issues — mit Links zu bemerkenswerten Tickets in jeder Kategorie.",
         "capability_summary": "Slack-Zusammenfassung um 9 Uhr mit Auto-Resolved-/Eskaliert-/Auto-Geschlossen-/Stale-Counts und Issue-Links.",
-        "suggested_trigger": { "description": "Täglich um 9 Uhr das Digest vom Vortag zusammenstellen." },
+        "suggested_trigger": {
+          "description": "Täglich um 9 Uhr das Digest vom Vortag zusammenstellen."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Primärer Alert-Kanal, in dem das tägliche Digest gepostet wird." }
+          {
+            "type": "slack",
+            "description": "Primärer Alert-Kanal, in dem das tägliche Digest gepostet wird."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.digest.posted", "description": "Payload: Counts pro Kategorie, Links zu den Top-3-Issues pro Kategorie." }
+          {
+            "event_type": "support.digest.posted",
+            "description": "Payload: Counts pro Kategorie, Links zu den Top-3-Issues pro Kategorie."
+          }
         ],
         "error_handling": "Zustandsdateien fehlen → minimales Digest mit Hinweis auf Datenlücke posten. Slack-Post-Fehler → bis zu 3 Retries mit exponentiellem Backoff, dann loggen und überspringen.",
         "input_schema": [
-          { "name": "digest_channel", "description": "Slack-Kanal für das tägliche Digest." },
-          { "name": "top_issues_per_bucket", "description": "Maximale Anzahl verlinkter bemerkenswerter Issues pro Kategorie." }
+          {
+            "name": "digest_channel",
+            "description": "Slack-Kanal für das tägliche Digest."
+          },
+          {
+            "name": "top_issues_per_bucket",
+            "description": "Maximale Anzahl verlinkter bemerkenswerter Issues pro Kategorie."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "label": "9-Uhr-Zeitplan", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "label": "Zustandsdateien lesen", "detail": "data/issue_states.json, escalation_log.json — 24h-Ausschnitt" },
-            { "id": "d3", "label": "Kategorien-Counts", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "label": "Top 3 pro Kategorie auswählen", "detail": "Nach Priorität und Stimmung gewichtet" },
-            { "id": "d5", "label": "Digest formatieren", "detail": "Slack-Block-Kit-Layout mit Issue-Links" },
-            { "id": "d6", "label": "Digest posten", "detail": "POST chat.postMessage in Alert-Kanal" },
-            { "id": "d7", "label": "support.digest.posted emittieren", "detail": "Downstream-Observability" },
-            { "id": "d8", "label": "Digest zugestellt" }
+            {
+              "id": "d1",
+              "label": "9-Uhr-Zeitplan",
+              "detail": "Cron 0 9 * * *"
+            },
+            {
+              "id": "d2",
+              "label": "Zustandsdateien lesen",
+              "detail": "data/issue_states.json, escalation_log.json — 24h-Ausschnitt"
+            },
+            {
+              "id": "d3",
+              "label": "Kategorien-Counts",
+              "detail": "auto_resolved / escalated / auto_closed / still_stale"
+            },
+            {
+              "id": "d4",
+              "label": "Top 3 pro Kategorie auswählen",
+              "detail": "Nach Priorität und Stimmung gewichtet"
+            },
+            {
+              "id": "d5",
+              "label": "Digest formatieren",
+              "detail": "Slack-Block-Kit-Layout mit Issue-Links"
+            },
+            {
+              "id": "d6",
+              "label": "Digest posten",
+              "detail": "POST chat.postMessage in Alert-Kanal"
+            },
+            {
+              "id": "d7",
+              "label": "support.digest.posted emittieren",
+              "detail": "Downstream-Observability"
+            },
+            {
+              "id": "d8",
+              "label": "Digest zugestellt"
+            }
           ]
         }
       },
@@ -159,43 +348,127 @@
         "title": "Wöchentlicher Issue-Health-Report",
         "description": "Generiert jeden Montag um 9 Uhr einen umfassenden Report: Auto-Resolution-Rate, durchschnittliche Time-to-Resolution, KB-Wachstum, Eskalationsergebnisse, Trends bei veralteten Issues und Wochenvergleich mit dem Vorgängerreport.",
         "capability_summary": "Umfassender Montags-Report um 9 Uhr mit Auflösungsmetriken, KB-Wachstum und Wochentrendanalyse.",
-        "suggested_trigger": { "description": "Jeden Montag um 9 Uhr den wöchentlichen Health-Report veröffentlichen." },
+        "suggested_trigger": {
+          "description": "Jeden Montag um 9 Uhr den wöchentlichen Health-Report veröffentlichen."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Alert-Kanal für den Post des wöchentlichen Health-Reports." }
+          {
+            "type": "slack",
+            "description": "Alert-Kanal für den Post des wöchentlichen Health-Reports."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.weekly_report.published", "description": "Payload: Metrik-Zusammenfassung, Wochendeltas, Pfad der Report-Datei." }
+          {
+            "event_type": "support.weekly_report.published",
+            "description": "Payload: Metrik-Zusammenfassung, Wochendeltas, Pfad der Report-Datei."
+          }
         ],
         "error_handling": "Unvollständige Zustandsdateien → Teilreport mit expliziten Lückenhinweisen erzeugen. Jira-Abfrage-Fehler → nur auf Zustandsdatei-Counts verlassen. Archivierungs-Fehler → trotzdem in Slack posten, Archiv-Fehler loggen.",
         "input_schema": [
-          { "name": "report_channel", "description": "Slack-Kanal für den wöchentlichen Report." },
-          { "name": "archive_directory", "description": "Lokales Verzeichnis, in dem jedes Report-JSON archiviert wird." }
+          {
+            "name": "report_channel",
+            "description": "Slack-Kanal für den wöchentlichen Report."
+          },
+          {
+            "name": "archive_directory",
+            "description": "Lokales Verzeichnis, in dem jedes Report-JSON archiviert wird."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "label": "Montag 9 Uhr Zeitplan", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "label": "Zustand + Vorbericht laden", "detail": "issue_states + solutions_kb + escalation_log + Vorwochenreport" },
-            { "id": "w3", "label": "Aktuelle Stale-Anzahl", "detail": "JQL-Abfrage für Live-Stale-Anzahl zur Reportzeit" },
-            { "id": "w4", "label": "Metriken berechnen", "detail": "Auto-Resolution-Rate, durchschnittliche TTR, neue KB-Einträge, Eskalationsergebnisse, Stimmungsverteilung" },
-            { "id": "w5", "label": "Wochenvergleich", "detail": "Deltas gegenüber Metriken der Vorwoche" },
-            { "id": "w6", "label": "Block-Kit-Report formatieren", "detail": "Sektionen: Auflösung, KB-Gesundheit, Eskalationen, Trends" },
-            { "id": "w7", "label": "Report posten", "detail": "chat.postMessage in Alert-Kanal" },
-            { "id": "w8", "label": "Report-JSON archivieren", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "label": "weekly_report.published emittieren" },
-            { "id": "w10", "label": "Report zugestellt" }
+            {
+              "id": "w1",
+              "label": "Montag 9 Uhr Zeitplan",
+              "detail": "Cron 0 9 * * 1"
+            },
+            {
+              "id": "w2",
+              "label": "Zustand + Vorbericht laden",
+              "detail": "issue_states + solutions_kb + escalation_log + Vorwochenreport"
+            },
+            {
+              "id": "w3",
+              "label": "Aktuelle Stale-Anzahl",
+              "detail": "JQL-Abfrage für Live-Stale-Anzahl zur Reportzeit"
+            },
+            {
+              "id": "w4",
+              "label": "Metriken berechnen",
+              "detail": "Auto-Resolution-Rate, durchschnittliche TTR, neue KB-Einträge, Eskalationsergebnisse, Stimmungsverteilung"
+            },
+            {
+              "id": "w5",
+              "label": "Wochenvergleich",
+              "detail": "Deltas gegenüber Metriken der Vorwoche"
+            },
+            {
+              "id": "w6",
+              "label": "Block-Kit-Report formatieren",
+              "detail": "Sektionen: Auflösung, KB-Gesundheit, Eskalationen, Trends"
+            },
+            {
+              "id": "w7",
+              "label": "Report posten",
+              "detail": "chat.postMessage in Alert-Kanal"
+            },
+            {
+              "id": "w8",
+              "label": "Report-JSON archivieren",
+              "detail": "data/weekly_reports/issue_health_{date}.json"
+            },
+            {
+              "id": "w9",
+              "label": "weekly_report.published emittieren"
+            },
+            {
+              "id": "w10",
+              "label": "Report zugestellt"
+            }
           ]
         }
       }
     ],
     "adoption_questions": [
-      { "id": "aq_jira_projects", "question": "Welche Jira-Projektkeys soll dieser Agent überwachen?", "context": "Der Agent pollt diese Projekte mittels JQL nach veralteten Issues. Mehrere Keys bei Bedarf kommasepariert angeben." },
-      { "id": "aq_stale_days", "question": "Nach wie vielen Tagen gilt ein Issue als veraltet?", "context": "Issues, die länger als diese Schwelle ohne Update offen sind, werden Kandidaten für Auto-Resolution oder Eskalation." },
-      { "id": "aq_alert_channel", "question": "Welcher Slack-Kanal für tägliche Digests und wöchentliche Reports?", "context": "Tägliche Digests, wöchentliche Health-Reports und Auto-Resolution-Benachrichtigungen werden hier gepostet." },
-      { "id": "aq_escalation_channel", "question": "Welcher Slack-Kanal für hochprioritäre Eskalationen?", "context": "Verärgerte + P1/P2-Issues werden hier für sofortige Team-Sichtbarkeit gepostet." },
-      { "id": "aq_eng_manager_email", "question": "E-Mail des Engineering-Managers für DM-Eskalationen?", "context": "Verärgerte + P1/P2-Issues triggern eine direkte Slack-DM an diese Person." },
-      { "id": "aq_notion_kb_database_id", "question": "Welche Notion-Datenbank enthält die Troubleshooting-Wissensdatenbank?", "context": "Notion-Datenbank mit Runbooks, Troubleshooting-Guides und FAQ-Einträgen, die zum Abgleich von Lösungen verwendet werden." },
-      { "id": "aq_auto_close_enabled", "question": "Sollen verwaiste Issues nach 30 Tagen Inaktivität automatisch geschlossen werden?", "context": "Wenn aktiviert, erhalten Issues ohne Reporter-Aktivität über 30+ Tage einen höflichen Schließungskommentar und wechseln zu Closed." },
-      { "id": "aq_confidence_threshold", "question": "Minimaler Konfidenzwert (0-100) für das Auto-Posten von Lösungsvorschlägen?", "context": "Nur KB-Treffer auf oder über dieser Schwelle werden als Lösungskommentare gepostet. Niedrigere Schwellen lösen mehr Issues, riskieren aber minderwertige Vorschläge." }
+      {
+        "id": "aq_jira_projects",
+        "question": "Welche Jira-Projektkeys soll dieser Agent überwachen?",
+        "context": "Der Agent pollt diese Projekte mittels JQL nach veralteten Issues. Mehrere Keys bei Bedarf kommasepariert angeben."
+      },
+      {
+        "id": "aq_stale_days",
+        "question": "Nach wie vielen Tagen gilt ein Issue als veraltet?",
+        "context": "Issues, die länger als diese Schwelle ohne Update offen sind, werden Kandidaten für Auto-Resolution oder Eskalation."
+      },
+      {
+        "id": "aq_alert_channel",
+        "question": "Welcher Slack-Kanal für tägliche Digests und wöchentliche Reports?",
+        "context": "Tägliche Digests, wöchentliche Health-Reports und Auto-Resolution-Benachrichtigungen werden hier gepostet."
+      },
+      {
+        "id": "aq_escalation_channel",
+        "question": "Welcher Slack-Kanal für hochprioritäre Eskalationen?",
+        "context": "Verärgerte + P1/P2-Issues werden hier für sofortige Team-Sichtbarkeit gepostet."
+      },
+      {
+        "id": "aq_eng_manager_email",
+        "question": "E-Mail des Engineering-Managers für DM-Eskalationen?",
+        "context": "Verärgerte + P1/P2-Issues triggern eine direkte Slack-DM an diese Person."
+      },
+      {
+        "id": "aq_notion_kb_database_id",
+        "question": "Welche Notion-Datenbank enthält die Troubleshooting-Wissensdatenbank?",
+        "context": "Notion-Datenbank mit Runbooks, Troubleshooting-Guides und FAQ-Einträgen, die zum Abgleich von Lösungen verwendet werden."
+      },
+      {
+        "id": "aq_auto_close_enabled",
+        "question": "Sollen verwaiste Issues nach 30 Tagen Inaktivität automatisch geschlossen werden?",
+        "context": "Wenn aktiviert, erhalten Issues ohne Reporter-Aktivität über 30+ Tage einen höflichen Schließungskommentar und wechseln zu Closed."
+      },
+      {
+        "id": "aq_confidence_threshold",
+        "question": "Minimaler Konfidenzwert (0-100) für das Auto-Posten von Lösungsvorschlägen?",
+        "context": "Nur KB-Treffer auf oder über dieser Schwelle werden als Lösungskommentare gepostet. Niedrigere Schwellen lösen mehr Issues, riskieren aber minderwertige Vorschläge."
+      }
     ]
   }
 }

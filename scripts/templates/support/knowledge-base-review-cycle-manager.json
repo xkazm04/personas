@@ -2,23 +2,23 @@
   "id": "knowledge-base-review-cycle-manager",
   "schema_version": 3,
   "name": "Knowledge Base Review Cycle Manager",
-  "description": "Scans a Notion knowledge base for articles due for periodic review, assigns reviewers from a rotation, dispatches Gmail reminders, broadcasts status to Slack, tracks completions, and updates Last Reviewed + Next Due dates in Notion.",
+  "description": "Scans a knowledge base for articles due for periodic review, assigns reviewers from a rotation, dispatches email reminders, broadcasts status to the messaging channel, tracks completions, and updates Last Reviewed + Next Due dates in knowledge base.",
   "icon": "BookOpen",
   "color": "#14B8A6",
   "category": [
     "support"
   ],
   "service_flow": [
-    "Notion",
-    "Slack",
-    "Gmail"
+    "knowledge base",
+    "messaging",
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Notion",
-      "Slack",
-      "Gmail"
+      "knowledge base",
+      "messaging",
+      "email"
     ],
     "persona": {
       "goal": "Keep the knowledge base fresh without meetings — detect every overdue article, assign fairly, nudge reviewers, and close the loop the moment a review completes.",
@@ -27,20 +27,20 @@
         "description": "Runs two passes per weekday: a morning scan that assigns overdue articles to reviewers from a rotation and dispatches personalized reminders, plus an evening pass that processes completions and recalculates next-due dates. State lives locally so rotation fairness survives restarts and duplicate assignments are impossible."
       },
       "voice": {
-        "style": "Operational, precise, friendly-but-brisk. Reminder emails are short and respectful; Slack summaries are numbered and @mention reviewers directly.",
-        "output_format": "Morning Slack: header + new assignments (article → @reviewer) + overdue list + KB link. Evening Slack: completion shoutouts per article with next-due date. Emails: subject + body with article link, deadline, brief criteria.",
+        "style": "Operational, precise, friendly-but-brisk. Reminder emails are short and respectful; messaging summaries are numbered and @mention reviewers directly.",
+        "output_format": "Morning messaging: header + new assignments (article → @reviewer) + overdue list + KB link. Evening messaging: completion shoutouts per article with next-due date. Emails: subject + body with article link, deadline, brief criteria.",
         "tone_adjustments": []
       },
       "principles": [
         "Rotation is fairness — the index persists across runs so nobody gets double-loaded.",
-        "Notion is the source of truth — writes land there first, notifications follow.",
+        "knowledge base is the source of truth — writes land there first, notifications follow.",
         "Never duplicate an assignment — the state file gates every email.",
         "Overdue escalation is staged — gentle at 48h, urgent at 72h, manager at >96h.",
         "Next-due dates recalculate from the actual completion date, not the original due date — no drift."
       ],
       "constraints": [
         "Never email a reviewer twice for the same assignment within the same day.",
-        "Never send notifications if the Notion write failed — stale data poisoning is a red line.",
+        "Never send notifications if the knowledge base write failed — stale data poisoning is a red line.",
         "Never exceed the per-reviewer daily cap.",
         "Never process an article with Review Status = Archived / Deprecated / Draft.",
         "Never advance the rotation index when a Reviewer Override is used for a specific article."
@@ -54,9 +54,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities share one lifecycle:\n\n1. **uc_morning_assign** (default weekdays 9 AM — final cadence set at the trigger-composition step) — query Notion database for pages with Review Due Date ≤ today AND Review Status NOT IN (Reviewed, In Review, Archived, Deprecated, Draft). Load rotation_index from ./kb_review_state.json. For each unassigned article, pick the next reviewer from the roster (stored in agent memory or Notion Reviewer config), increment index, wrap at end. Cap assignments at max_per_reviewer per cycle. If an article has a 'Reviewer Override' property, use that person without advancing the index. Send Gmail reminder per new assignment (subject: 'Knowledge Base Review Request: [Title]'; body: article URL, deadline = today + 3 business days, review criteria checklist). Post a single Slack Block Kit summary with all new assignments and any overdue items. Persist updated state. Emit kb.review.assigned.\n\n2. **uc_evening_complete** (default weekdays 5 PM — final cadence set at the trigger-composition step) — query Notion for pages where Review Status = Reviewed AND last_edited_time > last_run_timestamp. For each: PATCH the page to set Last Reviewed = today, Next Review Due = today + frequency_days (Monthly=30, Quarterly=90, Semi=180, Annually=365, Custom=N from Custom Review Days), Review Status = Current. Post a Slack completion shoutout tagging the reviewer. Update state. Emit kb.review.completed.\n\n3. **uc_overdue_reminder** (runs as part of morning scan — default weekdays 9 AM) — cross-reference Notion In Review status with assignment timestamps in state. Compute hours_overdue per article. 48-72h → gentle Gmail follow-up + Slack nudge with @reviewer. 72-96h → urgent tone + @here in Slack. >96h → Slack DM to configured manager, halt further reminders for that article. Emit kb.review.overdue.\n\nState file ./kb_review_state.json: { rotation_index, assignments: { page_id: { reviewer, assigned_at, reminder_count } }, completed_log, last_run_timestamp }. Always write state after any side effect so resumption is safe.",
-      "tool_guidance": "### Notion (http_request + notion connector)\n- `POST /v1/databases/{database_id}/query` with filter:\n```\n{ \"filter\": { \"and\": [\n  { \"property\": \"Review Due Date\", \"date\": { \"on_or_before\": \"YYYY-MM-DD\" } },\n  { \"property\": \"Review Status\", \"select\": { \"does_not_equal\": \"Reviewed\" } }\n] } }\n```\n- `PATCH /v1/pages/{page_id}` body:\n```\n{ \"properties\": {\n  \"Last Reviewed\": { \"date\": { \"start\": \"YYYY-MM-DD\" } },\n  \"Review Due Date\": { \"date\": { \"start\": \"YYYY-MM-DD\" } },\n  \"Review Status\": { \"select\": { \"name\": \"Current\" } }\n} }\n```\nHeaders: `Authorization: Bearer {integration_token}`, `Notion-Version: 2022-06-28`.\n\n### Slack (http_request + slack connector)\n- `POST /api/chat.postMessage` Block Kit: header, section (new assignments with @reviewer tags), section (overdue), actions (KB link button).\n- Completion shoutouts: mrkdwn with :white_check_mark: and next-due date.\nHeaders: `Authorization: Bearer {bot_token}`.\n\n### Gmail (gmail_send native tool)\n- Reminder: subject 'Knowledge Base Review Request: [Title]'; HTML body includes direct Notion URL, deadline, review criteria, completion instructions.\n- Overdue follow-up: gentler tone, reference original assignment date, link, re-deadline.\n- BCC admin address for audit trail.\n\n### Local state (file_read / file_write)\n- ./kb_review_state.json — rotation_index, assignments map, completed_log, last_run_timestamp. Write after every side effect.\n\n### Review frequency math\nMonthly = +30d, Quarterly = +90d, Semi = +180d, Annually = +365d, Custom = +{Custom Review Days}. Always compute from completion date, not original due date.",
-      "error_handling": "Notion 401 → halt cycle, emit kb.review.error, notify via user_message. Notion 404 (database) → halt cycle, alert with database_id. Notion 429 → exponential backoff (1s → 2s → 4s); after 3 failures skip and log. Notion 400 on PATCH → retry once with cleaned payload; then flag for manual review. Slack channel_not_found → fall back to admin DM. Slack invalid_auth → disable Slack for this run, continue email reminders. Gmail missing reviewer email → skip, post Slack DM to admin, mark 'uncontactable'. Gmail bounce → retry once after 30s; second failure → pending_email for next run. State file missing → initialize fresh (rotation_index=0). State file corrupt → reconstruct from Notion + defaults; alert via user_message. Empty roster → halt and alert. Always complete Notion writes before Slack/Gmail side effects.",
+      "operating_instructions": "Three capabilities share one lifecycle: 1. **uc_morning_assign** (default weekdays 9 AM — final cadence set at the trigger-composition step) — query knowledge base databases for pages with Review Due Date ≤ today AND Review Status NOT IN (Reviewed, In Review, Archived, Deprecated, Draft). Load rotation_index from./kb_review_state.json. For each unassigned article, pick the next reviewer from the roster (stored in agent memory or knowledge base Reviewer config), increment index, wrap at end. Cap assignments at max_per_reviewer per cycle. If an article has a 'Reviewer Override' property, use that person without advancing the index. Send email reminder per new assignment (subject: 'Knowledge Base Review Request: [Title]'; body: article URL, deadline = today + 3 business days, review criteria checklist). Post a single messaging formatted layout summary with all new assignments and any overdue items. Persist updated state. Emit kb.review.assigned. 2. **uc_evening_complete** (default weekdays 5 PM — final cadence set at the trigger-composition step) — query knowledge base for pages where Review Status = Reviewed AND last_edited_time > last_run_timestamp. For each: PATCH the page to set Last Reviewed = today, Next Review Due = today + frequency_days (Monthly=30, Quarterly=90, Semi=180, Annually=365, Custom=N from Custom Review Days), Review Status = Current. Post a messaging completion shoutout tagging the reviewer. Update state. Emit kb.review.completed. 3. **uc_overdue_reminder** (runs as part of morning scan — default weekdays 9 AM) — cross-reference knowledge base In Review status with assignment timestamps in state. Compute hours_overdue per article. 48-72h → gentle email follow-up + messaging nudge with @reviewer. 72-96h → urgent tone + @here in the messaging channel. >96h → direct messages to configured manager, halt further reminders for that article. Emit kb.review.overdue. State file./kb_review_state.json: { rotation_index, assignments: { page_id: { reviewer, assigned_at, reminder_count } }, completed_log, last_run_timestamp }. Always write state after any side effect so resumption is safe.",
+      "tool_guidance": "### knowledge base (http_request + notion connector)\n- `POST /v1/databases/{database_id}/query` with filter:\n```\n{ \"filter\": { \"and\": [ { \"property\": \"Review Due Date\", \"date\": { \"on_or_before\": \"YYYY-MM-DD\" } }, { \"property\": \"Review Status\", \"select\": { \"does_not_equal\": \"Reviewed\" } }\n] } }\n```\n- `PATCH /v1/pages/{page_id}` body:\n```\n{ \"properties\": { \"Last Reviewed\": { \"date\": { \"start\": \"YYYY-MM-DD\" } }, \"Review Due Date\": { \"date\": { \"start\": \"YYYY-MM-DD\" } }, \"Review Status\": { \"select\": { \"name\": \"Current\" } }\n} }\n```\nHeaders: `Authorization: Bearer {integration_token}`, `knowledge base-Version: 2022-06-28`. ### messaging (http_request + slack connector)\n- `POST /api/chat.postMessage` formatted messaging layout: header, section (new assignments with @reviewer tags), section (overdue), actions (KB link button).\n- Completion shoutouts: mrkdwn with:white_check_mark: and next-due date.\nHeaders: `Authorization: Bearer {bot_token}`. ### email (gmail_send native tool)\n- Reminder: subject 'Knowledge Base Review Request: [Title]'; HTML body includes direct knowledge base URL, deadline, review criteria, completion instructions.\n- Overdue follow-up: gentler tone, reference original assignment date, link, re-deadline.\n- BCC admin address for audit trail. ### Local state (file_read / file_write)\n-./kb_review_state.json — rotation_index, assignments map, completed_log, last_run_timestamp. Write after every side effect. ### Review frequency math\nMonthly = +30d, Quarterly = +90d, Semi = +180d, Annually = +365d, Custom = +{Custom Review Days}. Always compute from completion date, not original due date.",
+      "error_handling": "knowledge base 401 → halt cycle, emit kb.review.error, notify via user_message. knowledge base 404 (database) → halt cycle, alert with database_id. knowledge base 429 → exponential backoff (1s → 2s → 4s); after 3 failures skip and log. knowledge base 400 on PATCH → retry once with cleaned payload; then flag for manual review. messaging channel_not_found → fall back to admin DM. messaging invalid_auth → disable messaging for this run, continue email reminders. email missing reviewer email → skip, post direct messages to admin, mark 'uncontactable'. email bounce → retry once after 30s; second failure → pending_email for next run. State file missing → initialize fresh (rotation_index=0). State file corrupt → reconstruct from knowledge base + defaults; alert via user_message. Empty roster → halt and alert. Always complete knowledge base writes before messaging/email side effects.",
       "examples": [],
       "tools": [
         "http_request",
@@ -76,7 +76,7 @@
           "credential_fields": [
             {
               "key": "integration_token",
-              "label": "Notion Integration Token",
+              "label": "knowledge base Integration Token",
               "type": "password",
               "placeholder": "secret_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
               "helpText": "Create an Internal Integration at notion.so/my-integrations. Share your KB database with the integration via '...' → Connections.",
@@ -104,10 +104,10 @@
           "credential_fields": [
             {
               "key": "bot_token",
-              "label": "Slack Bot User OAuth Token",
+              "label": "messaging Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxx",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, users:read.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, users:read.",
               "required": true
             }
           ],
@@ -147,7 +147,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API.\n2. Credentials → Create Credentials → OAuth 2.0 Client ID (Desktop app).\n3. Complete OAuth consent flow with scope gmail.send.\n4. Copy Client ID, Client Secret, and Refresh Token."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable email API.\n2. Credentials → Create Credentials → OAuth 2.0 Client ID (Desktop app).\n3. Complete OAuth consent flow with scope gmail.send.\n4. Copy Client ID, Client Secret, and Refresh Token."
         }
       ],
       "notification_channels_default": [
@@ -162,8 +162,8 @@
       {
         "id": "uc_morning_assign",
         "title": "Morning Assignment Scan",
-        "description": "Scans the Notion KB for articles due for review, picks reviewers from a rotation (respecting caps and Reviewer Override), sends Gmail reminders, and posts a Slack summary. Default weekdays 9 AM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Rotation-based assignment + Gmail reminders + Slack summary for articles due today.",
+        "description": "Scans the knowledge base KB for articles due for review, picks reviewers from a rotation (respecting caps and Reviewer Override), sends email reminders, and posts a messaging summary. Default weekdays 9 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Rotation-based assignment + email reminders + messaging summary for articles due today.",
         "category": "support",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -187,12 +187,12 @@
           },
           {
             "type": "email",
-            "description": "Per-reviewer Gmail with article link, criteria, and deadline."
+            "description": "Per-reviewer email with article link, criteria, and deadline."
           }
         ],
         "review_policy": {
           "mode": "optional",
-          "context": "Optional pre-send confirmation gate — when enabled, the agent posts the draft summary to Slack and waits for a manager thumbs-up before sending emails."
+          "context": "Optional pre-send confirmation gate — when enabled, the agent posts the draft summary to the messaging channel and waits for a manager thumbs-up before sending emails."
         },
         "memory_policy": {
           "enabled": true,
@@ -205,7 +205,7 @@
             "description": "Payload: { assignments: [{ page_id, reviewer, deadline }], rotation_index, timestamp }."
           }
         ],
-        "error_handling": "Notion 401/404/429 → handled per persona error_handling. Gmail bounce → pending_email retry next run. Slack channel_not_found → fall back to admin DM. Empty roster → halt + alert.",
+        "error_handling": "knowledge base 401/404/429 → handled per persona error_handling. email bounce → pending_email retry next run. messaging channel_not_found → fall back to admin DM. Empty roster → halt + alert.",
         "input_schema": [
           {
             "name": "max_per_reviewer",
@@ -227,7 +227,7 @@
             "name": "review_channel",
             "type": "text",
             "default": "#knowledge-base-reviews",
-            "description": "Slack channel where assignment summaries post."
+            "description": "messaging channels where assignment summaries post."
           },
           {
             "name": "email_tone",
@@ -244,7 +244,7 @@
             "name": "require_confirmation",
             "type": "boolean",
             "default": false,
-            "description": "When true, the draft summary posts to Slack and waits for a manager thumbs-up before emails send."
+            "description": "When true, the draft summary posts to the messaging channel and waits for a manager thumbs-up before emails send."
           }
         ],
         "sample_input": {
@@ -271,7 +271,7 @@
             {
               "id": "m2",
               "type": "connector",
-              "label": "Query Notion for due articles",
+              "label": "Query knowledge base for due articles",
               "connector": "knowledge_base"
             },
             {
@@ -282,13 +282,13 @@
             {
               "id": "m4",
               "type": "connector",
-              "label": "Send Gmail reminders",
+              "label": "Send email reminders",
               "connector": "email"
             },
             {
               "id": "m5",
               "type": "connector",
-              "label": "Post Slack assignment summary",
+              "label": "Post messaging assignment summary",
               "connector": "messaging"
             },
             {
@@ -342,8 +342,8 @@
       {
         "id": "uc_evening_complete",
         "title": "Evening Completion Processing",
-        "description": "Detects articles whose Review Status changed to Reviewed since the last run, updates Last Reviewed and Next Due in Notion based on each article's frequency, and posts Slack completion shoutouts. Default weekdays 5 PM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Close-the-loop Notion updates + Slack shoutouts for completed reviews.",
+        "description": "Detects articles whose Review Status changed to Reviewed since the last run, updates Last Reviewed and Next Due in knowledge base based on each article's frequency, and posts messaging completion shoutouts. Default weekdays 5 PM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Close-the-loop knowledge base updates + messaging shoutouts for completed reviews.",
         "category": "support",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -380,7 +380,7 @@
             "description": "Payload: { page_id, title, reviewer, completed_date, next_due_date }."
           }
         ],
-        "error_handling": "Notion PATCH 400 → retry once, then flag pending_update for next run. Notion PATCH 429 → exponential backoff. Slack post fail → log but do not block the Notion write.",
+        "error_handling": "knowledge base PATCH 400 → retry once, then flag pending_update for next run. knowledge base PATCH 429 → exponential backoff. messaging post fail → log but do not block the knowledge base write.",
         "input_schema": [
           {
             "name": "default_frequency",
@@ -414,7 +414,7 @@
             {
               "id": "e2",
               "type": "connector",
-              "label": "Query Notion for newly completed reviews",
+              "label": "Query knowledge base for newly completed reviews",
               "connector": "knowledge_base"
             },
             {
@@ -425,13 +425,13 @@
             {
               "id": "e4",
               "type": "connector",
-              "label": "PATCH Notion (Last Reviewed + Next Due + Current)",
+              "label": "PATCH knowledge base (Last Reviewed + Next Due + Current)",
               "connector": "knowledge_base"
             },
             {
               "id": "e5",
               "type": "connector",
-              "label": "Post Slack completion shoutouts",
+              "label": "Post messaging completion shoutouts",
               "connector": "messaging"
             },
             {
@@ -497,7 +497,7 @@
         "notification_channels": [
           {
             "type": "email",
-            "description": "Follow-up Gmail to the overdue reviewer."
+            "description": "Follow-up email to the overdue reviewer."
           },
           {
             "type": "slack",
@@ -525,7 +525,7 @@
             "name": "manager_slack_id",
             "type": "text",
             "default": "",
-            "description": "Slack user ID for manager-level escalations (e.g., U012AB3CD)."
+            "description": "messaging user ID for manager-level escalations (e.g., U012AB3CD)."
           },
           {
             "name": "gentle_threshold_hours",
@@ -585,13 +585,13 @@
             {
               "id": "o4",
               "type": "connector",
-              "label": "Gentle Gmail + Slack nudge",
+              "label": "Gentle email + messaging nudge",
               "connector": "email"
             },
             {
               "id": "o5",
               "type": "connector",
-              "label": "Urgent Gmail + Slack @here",
+              "label": "Urgent email + messaging @here",
               "connector": "messaging"
             },
             {
@@ -677,7 +677,7 @@
         "default": "quarterly",
         "maps_to": "use_cases[uc_evening_complete].sample_input.default_frequency",
         "variable_name": "default_frequency",
-        "context": "Used as the fallback when calculating next-due dates. Articles with an explicit frequency in Notion override this.",
+        "context": "Used as the fallback when calculating next-due dates. Articles with an explicit frequency in knowledge base override this.",
         "dimension": "use-cases"
       },
       {
@@ -710,20 +710,20 @@
           "uc_overdue_reminder"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives assignment summaries, completion shoutouts, and overdue nudges?",
+        "question": "Which messaging channels receives assignment summaries, completion shoutouts, and overdue nudges?",
         "type": "select",
         "options": [],
         "default": "",
         "maps_to": "use_cases[uc_morning_assign].sample_input.review_channel",
         "variable_name": "review_channel",
-        "context": "All review-cycle Slack posts go here. Make sure the bot is invited to the channel.",
+        "context": "All review-cycle messaging posts go here. Make sure the bot is invited to the channel.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -756,12 +756,12 @@
           "uc_morning_assign"
         ],
         "category": "boundaries",
-        "question": "Should a human thumbs-up in Slack be required before assignment emails go out?",
+        "question": "Should a human thumbs-up in the messaging channel be required before assignment emails go out?",
         "type": "boolean",
         "default": "false",
         "maps_to": "use_cases[uc_morning_assign].sample_input.require_confirmation",
         "variable_name": "require_confirmation",
-        "context": "When true, the agent posts the draft assignment summary to Slack and waits for a manager reaction before sending emails. Adds delay but gives teams with strict comms policies a gate.",
+        "context": "When true, the agent posts the draft assignment summary to the messaging channel and waits for a manager reaction before sending emails. Adds delay but gives teams with strict comms policies a gate.",
         "dimension": "human-review"
       },
       {
@@ -771,12 +771,12 @@
           "uc_overdue_reminder"
         ],
         "category": "boundaries",
-        "question": "Slack user ID for manager-level escalations (e.g., U012AB3CD)?",
+        "question": "messaging user ID for manager-level escalations (e.g., U012AB3CD)?",
         "type": "text",
         "default": "",
         "maps_to": "use_cases[uc_overdue_reminder].sample_input.manager_slack_id",
         "variable_name": "manager_slack_id",
-        "context": "Hit by Slack DM when an overdue review crosses the manager threshold. Further reminders halt after this — autonomous limit reached.",
+        "context": "Hit by direct messages when an overdue review crosses the manager threshold. Further reminders halt after this — autonomous limit reached.",
         "dimension": "messages"
       },
       {
@@ -791,7 +791,7 @@
         "default": "Archived,Deprecated,Draft",
         "maps_to": "persona.constraints",
         "variable_name": "excluded_statuses",
-        "context": "Comma-separated Notion Review Status values to exclude from scanning. Prevents assignments on content that is intentionally not in active rotation.",
+        "context": "Comma-separated knowledge base Review Status values to exclude from scanning. Prevents assignments on content that is intentionally not in active rotation.",
         "dimension": "use-cases"
       },
       {
@@ -810,7 +810,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -829,7 +829,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -848,7 +848,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

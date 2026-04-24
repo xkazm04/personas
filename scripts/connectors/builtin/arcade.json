@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/arcade.svg",
   "category": "integration",
   "categories": [
-    "integration",
-    "mcp_gateway"
+    "integration"
   ],
   "fields": [
     {

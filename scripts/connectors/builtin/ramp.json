@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/ramp.svg",
   "category": "finance",
   "categories": [
-    "finance",
-    "accounting",
-    "expense_management"
+    "finance"
   ],
   "fields": [
     {

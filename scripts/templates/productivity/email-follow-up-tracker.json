@@ -2,21 +2,21 @@
   "id": "email-follow-up-tracker",
   "schema_version": 3,
   "name": "Email Follow-Up Tracker",
-  "description": "Monitors outbound Gmail threads and delivers graduated Slack reminders when replies go overdue. Supports VIP prioritization, automatic resolution on reply detection, on-demand status reports, and memory-driven learning of per-recipient reply patterns.",
+  "description": "Monitors outbound email threads and delivers graduated messaging reminders when replies go overdue. Supports VIP prioritization, automatic resolution on reply detection, on-demand status reports, and memory-driven learning of per-recipient reply patterns.",
   "icon": "Mail",
   "color": "#0ea5e9",
   "category": [
     "productivity"
   ],
   "service_flow": [
-    "Gmail",
-    "Slack"
+    "email",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Gmail",
-      "Slack"
+      "email",
+      "messaging"
     ],
     "persona": {
       "goal": "Make sure no important outbound email slips — track sent threads, nudge with graduated urgency, resolve automatically on reply, and learn each recipient's rhythm over time.",
@@ -48,9 +48,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities share the tracking ledger in agent memory:\n\n1. **uc_scheduled_scan** (schedule, default every 4 hours) — load ledger + VIP list + recipient reply patterns from memory. Fetch sent emails from the configured lookback window via Gmail. Skip threads already resolved. For each tracked thread, fetch metadata and check for a non-user From in any message (reply detected). Resolved threads → move to resolved set, update recipient reply-pattern stats, emit `email.followup.resolved`. Remaining threads → compute hours elapsed, apply VIP priority boost (reduces effective threshold), classify into Tier 1 (New), Tier 2 (Nudge), Tier 3 (Urgent). Compose a single batched Slack Block Kit message per urgency tier, send DMs for Tier 3. Update ledger. Emit `email.followup.reminder_sent`.\n\n2. **uc_ondemand_check** (manual) — same scan logic but generates a **full** status report of all tracked threads (not just overdue) for pre-meeting prep. Delivers via Slack + in-app. Does NOT advance escalation tiers.\n\n3. **uc_reply_resolution** (event-listen on email.followup.resolved OR inline inside uc_scheduled_scan) — when a reply is detected, confirm via brief Slack message (recipient, subject, response hours), update the rolling reply-time average for that recipient, emit `email.followup.resolved` again for downstream subscribers.\n\nState files: `follow_up_ledger.json` (thread IDs + send timestamps + recipients + VIP flags + reminder counts + last reminder timestamps); `recipient_patterns.json` (per-email address rolling reply time); `resolved_threads.json` (within lookback window, to avoid re-tracking).",
-      "tool_guidance": "**Gmail (via gmail connector)**:\n- List sent: `GET /gmail/v1/users/me/messages?q=in:sent after:{YYYY/MM/DD}&maxResults=100` — paginate with `pageToken`.\n- Thread metadata: `GET /gmail/v1/users/me/threads/{threadId}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date` — 1 quota unit per request, sufficient for reply detection.\n- Quota: 250 units/user/s. Batch and stagger.\n\n**Slack (via slack connector)**:\n- Post batch: `POST /chat.postMessage` with Block Kit sections per thread, urgency indicators, VIP stars, action buttons (Snooze / Resolve / View in Gmail).\n- DM for Tier 3: `POST /chat.postMessage` with channel=user DM ID.\n- Update on snooze/resolve: `POST /chat.update` with ts and revised blocks.\n\n**Agent memory**:\n- `follow_up_ledger` (category: tracking) — full per-thread tracking state.\n- `vip_list` (category: contacts) — VIP email addresses and domains.\n- `recipient_patterns` (category: analytics) — rolling reply-time statistics.",
-      "error_handling": "Gmail 401 → pause scanning, alert user to reauthorize, do not send stale reminders from cache. Gmail 403 insufficient scope → surface required scope (`gmail.readonly`) for reauth. Gmail 429 → exponential backoff from 1s. Gmail 5xx → retry 3x with 5s gaps, then skip cycle with Slack notice. Empty sent result → send one-line 'no new threads' update, keep monitoring existing ledger. Slack 401/403 → fall back to in-app user_message. Slack channel_not_found → DM the user. Slack too_many_attachments → split batch by urgency tier. Memory corrupt → reinitialize ledger, re-scan from lookback window, warn that historical escalation tiers were lost. Thread count > max → prune oldest non-VIP resolved first, then oldest non-VIP active; never prune VIP. Self-emails / mailing lists / noreply / drafts → skip during initial scan.",
+      "operating_instructions": "Three capabilities share the tracking ledger in agent memory: 1. **uc_scheduled_scan** (schedule, default every 4 hours) — load ledger + VIP list + recipient reply patterns from memory. Fetch sent emails from the configured lookback window via email. Skip threads already resolved. For each tracked thread, fetch metadata and check for a non-user From in any message (reply detected). Resolved threads → move to resolved set, update recipient reply-pattern stats, emit `email.followup.resolved`. Remaining threads → compute hours elapsed, apply VIP priority boost (reduces effective threshold), classify into Tier 1 (New), Tier 2 (Nudge), Tier 3 (Urgent). Compose a single batched messaging formatted layout message per urgency tier, send DMs for Tier 3. Update ledger. Emit `email.followup.reminder_sent`. 2. **uc_ondemand_check** (manual) — same scan logic but generates a **full** status report of all tracked threads (not just overdue) for pre-meeting prep. Delivers via the messaging channel + in-app. Does NOT advance escalation tiers. 3. **uc_reply_resolution** (event-listen on email.followup.resolved OR inline inside uc_scheduled_scan) — when a reply is detected, confirm via brief messages (recipient, subject, response hours), update the rolling reply-time average for that recipient, emit `email.followup.resolved` again for downstream subscribers. State files: `follow_up_ledger.json` (thread IDs + send timestamps + recipients + VIP flags + reminder counts + last reminder timestamps); `recipient_patterns.json` (per-email address rolling reply time); `resolved_threads.json` (within lookback window, to avoid re-tracking).",
+      "tool_guidance": "**email (via gmail connector)**:\n- List sent: `GET /gmail/v1/users/me/messages?q=in:sent after:{YYYY/MM/DD}&maxResults=100` — paginate with `pageToken`.\n- Thread metadata: `GET /gmail/v1/users/me/threads/{threadId}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date` — 1 quota unit per request, sufficient for reply detection.\n- Quota: 250 units/user/s. Batch and stagger. **messaging (via the messaging channel connector)**:\n- Post batch: `POST /chat.postMessage` with formatted messaging layout sections per thread, urgency indicators, VIP stars, action buttons (Snooze / Resolve / View in email).\n- DM for Tier 3: `POST /chat.postMessage` with channel=user DM ID.\n- Update on snooze/resolve: `POST /chat.update` with ts and revised blocks. **Agent memory**:\n- `follow_up_ledger` (category: tracking) — full per-thread tracking state.\n- `vip_list` (category: contacts) — VIP email addresses and domains.\n- `recipient_patterns` (category: analytics) — rolling reply-time statistics.",
+      "error_handling": "email 401 → pause scanning, alert user to reauthorize, do not send stale reminders from cache. email 403 insufficient scope → surface required scope (`gmail.readonly`) for reauth. email 429 → exponential backoff from 1s. email 5xx → retry 3x with 5s gaps, then skip cycle with messaging notice. Empty sent result → send one-line 'no new threads' update, keep monitoring existing ledger. messaging 401/403 → fall back to in-app user_message. messaging channel_not_found → DM the user. messaging too_many_attachments → split batch by urgency tier. Memory corrupt → reinitialize ledger, re-scan from lookback window, warn that historical escalation tiers were lost. Thread count > max → prune oldest non-VIP resolved first, then oldest non-VIP active; never prune VIP. Self-emails / mailing lists / noreply / drafts → skip during initial scan.",
       "examples": [],
       "tools": [
         "gmail_search",
@@ -91,7 +91,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app). Scope: gmail.readonly.\n3. Complete OAuth consent to obtain refresh token.\n4. The agent only needs read access — it never sends or modifies email."
+          "setup_instructions": "1. Google Cloud Console → enable email API.\n2. Create OAuth 2.0 Client ID (Desktop app). Scope: gmail.readonly.\n3. Complete OAuth consent to obtain refresh token.\n4. The agent only needs read access — it never sends or modifies email."
         },
         {
           "name": "messaging",
@@ -100,7 +100,7 @@
           "role": "notification_delivery",
           "category": "messaging",
           "required": false,
-          "fallback_note": "Skip Slack to receive reminders in-app only. You still get the tracker's output, just without Slack formatting and action buttons.",
+          "fallback_note": "Skip messaging to receive reminders in-app only. You still get the tracker's output, just without messaging formatting and action buttons.",
           "api_base_url": "https://slack.com/api",
           "scopes": [
             "chat:write",
@@ -112,7 +112,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-...",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public.",
               "required": true
             }
           ],
@@ -122,11 +122,11 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Batched reminders and resolution confirmations via Slack (primary)."
+          "description": "Batched reminders and resolution confirmations via the messaging channel (primary)."
         },
         {
           "type": "built-in",
-          "description": "Fallback in-app delivery when Slack is unavailable or skipped."
+          "description": "Fallback in-app delivery when messaging is unavailable or skipped."
         }
       ],
       "core_memories": []
@@ -135,7 +135,7 @@
       {
         "id": "uc_scheduled_scan",
         "title": "Scheduled Scan",
-        "description": "Primary tracking cycle: sweep sent Gmail threads, detect replies, classify overdue threads into graduated urgency tiers with VIP priority, and deliver a batched Slack reminder. Default every 4 hours — final cadence set at the trigger-composition step.",
+        "description": "Primary tracking cycle: sweep sent email threads, detect replies, classify overdue threads into graduated urgency tiers with VIP priority, and deliver a batched messaging reminder. Default every 4 hours — final cadence set at the trigger-composition step.",
         "capability_summary": "Periodic sweep with graduated reminder batching and auto-resolution.",
         "category": "monitoring",
         "enabled_by_default": true,
@@ -155,7 +155,7 @@
         "notification_channels": [
           {
             "type": "messaging",
-            "description": "Batched reminder with Block Kit formatting + action buttons."
+            "description": "Batched reminder with formatted messaging layout formatting + action buttons."
           }
         ],
         "review_policy": {
@@ -183,7 +183,7 @@
             "description": "Payload: { thread_id, recipient, subject, hours_to_reply }. Per auto-resolved thread."
           }
         ],
-        "error_handling": "Gmail 401 → pause scanning and alert. Slack failure → fall back to in-app. Ledger corruption → reset and re-scan, warn about lost escalation history. Thread count overflow → prune non-VIP oldest first.",
+        "error_handling": "email 401 → pause scanning and alert. messaging failure → fall back to in-app. Ledger corruption → reset and re-scan, warn about lost escalation history. Thread count overflow → prune non-VIP oldest first.",
         "input_schema": [
           {
             "name": "follow_up_threshold_hours",
@@ -260,7 +260,7 @@
             {
               "id": "s6",
               "type": "connector",
-              "label": "Send batched Slack reminder",
+              "label": "Send batched messaging reminder",
               "connector": "messaging"
             },
             {
@@ -336,7 +336,7 @@
         "notification_channels": [
           {
             "type": "messaging",
-            "description": "Full report via Slack."
+            "description": "Full report via the messaging channel."
           },
           {
             "type": "built-in",
@@ -352,7 +352,7 @@
           "context": "Reads the same tracking ledger; does NOT write reminder-count increments (informational only)."
         },
         "event_subscriptions": [],
-        "error_handling": "Gmail failure → deliver what we have from the ledger + flag the freshness gap. Slack failure → fall back to in-app only.",
+        "error_handling": "email failure → deliver what we have from the ledger + flag the freshness gap. messaging failure → fall back to in-app only.",
         "input_schema": [
           {
             "name": "include_resolved",
@@ -396,7 +396,7 @@
             {
               "id": "o5",
               "type": "connector",
-              "label": "Deliver via Slack + in-app",
+              "label": "Deliver via the messaging channel + in-app",
               "connector": "messaging"
             },
             {
@@ -470,7 +470,7 @@
         "default": "7 days (recommended)",
         "maps_to": "use_cases[uc_scheduled_scan].sample_input.scan_lookback_days",
         "variable_name": "scan_lookback_days",
-        "context": "Longer windows catch slower-paced correspondence at the cost of more Gmail API usage. Threads older than this drop out of tracking.",
+        "context": "Longer windows catch slower-paced correspondence at the cost of more email API usage. Threads older than this drop out of tracking.",
         "dimension": "use-cases"
       },
       {
@@ -505,7 +505,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -524,7 +524,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

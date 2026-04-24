@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/arxiv.svg",
   "category": "research",
   "categories": [
-    "research",
-    "academic_papers"
+    "research"
   ],
   "fields": [],
   "healthcheck_config": {

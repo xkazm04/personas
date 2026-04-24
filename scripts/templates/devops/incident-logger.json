@@ -5,11 +5,17 @@
   "description": "Single source of truth for every operational incident — intake with severity classification, lifecycle tracking with escalation timers and update cadences, auto-closure for stale low-severity items, and human-approved post-incident reviews with cross-incident pattern detection.",
   "icon": "AlertTriangle",
   "color": "#dc2626",
-  "category": ["devops"],
-  "service_flow": ["Messages"],
+  "category": [
+    "devops"
+  ],
+  "service_flow": [
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Messages"],
+    "service_flow": [
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn scattered incident chatter into a structured, searchable, auditable record — every incident from first report through resolution and retrospective, with escalation timers that don't need a human to run them.",
       "identity": {
@@ -42,12 +48,29 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities chain together via the incident lifecycle:\n\n1. **uc_intake** (manual trigger — operator reports a new incident) — capture title, description, affected systems, reporter, environment, initial observations. Search `agent_memory` (category `incident_log`) for open incidents from the last 2 hours with fuzzy title + systems match; if found, offer merge before creating. Classify severity using the four-level scale:\n   - S1 Critical: service down, data at risk, >25% users, revenue impact, security breach.\n   - S2 High: major feature degraded, 5-25% users, performance >3x baseline, trending toward Critical.\n   - S3 Medium: non-critical impairment, <5% users, workaround available.\n   - S4 Low: cosmetic, minor bugs, informational, self-resolved transients.\n   Generate INC-{YYYY}-{NNN}, compute escalation deadline (S1=30m, S2=2h, S3=8h, S4=48h) and update cadence (S1=15m, S2=1h, S3=4h, S4=daily). Persist as agent_memory category `incident_log`. Route notification by severity: S1 error/high-priority alert + emit `incident.critical.opened`; S2 warning/high-priority alert + emit `incident.high.opened`; S3 info/normal message + daily summary queue; S4 silent log + daily summary.\n\n2. **uc_tracking** (event-listen on `incident.status.updated` + schedule every 15 minutes for escalation sweep) — on status update: validate incident exists and is open, append update to timeline (timestamp, author, content, status transition), update status if changed (open → investigating → mitigated → resolved), reset escalation timer, persist. Broadcast S1/S2 updates. On escalation sweep: scan all open incidents; S1 no update 30m → escalation alert + emit `incident.escalated`; S2 no update 2h → escalation alert; S3 no update 8h → flag stale; S4 no update 48h → auto-close `stale_closed`. On resolved transition: emit `incident.resolved`, request human closure confirmation.\n\n3. **uc_postmortem** (event-listen on `incident.resolved` for S1/S2) — wait 24 hours (configurable) for dust to settle, then compile: incident summary, chronological timeline from update history, impact assessment (systems, user impact, duration, data loss), root cause analysis (code defect / config error / infra failure / dependency outage / capacity / human error / unknown), response evaluation (time to detect/acknowledge/mitigate/resolve), action items with owners, lessons learned. Query memory for same root cause category in last 90 days — if 3+ matches, flag as systemic pattern. Present via manual_review for human approval; on approval persist as agent_memory category `post_mortem`; emit `incident.postmortem.ready`.",
-      "tool_guidance": "**Built-in messaging** (required — the in-app message surface; no external credential):\n- `user_message` protocol for severity-tiered alerts: S1 `content_type: error, priority: high`, S2 `content_type: warning, priority: high`, S3 `content_type: info, priority: normal`, S4 no direct message (daily summary only).\n- Escalation alerts prefix with `[ESCALATED]` and include elapsed time since last update.\n- Repeat S1 alerts every `critical_alert_repeat_interval` minutes until the incident is acknowledged.\n\n**agent_memory** (required):\n- Category `incident_log` — active and closed incident records with full lifecycle data.\n- Category `post_mortem` — completed reviews with action items and root cause tags.\n- Schema: `{ incident_id, title, description, severity: S1|S2|S3|S4, status: open|investigating|mitigated|resolved|stale_closed, reporter, environment, affected_systems: [], timestamps: { reported, detected, acknowledged, mitigated, resolved }, escalation_deadline, timeline: [{ timestamp, author, content, status_change }], resolution_notes, root_cause_category, postmortem_id }`.\n- Query by severity, system, root cause category, or date range for pattern detection.\n\n**emit_event** (required): `incident.critical.opened`, `incident.high.opened`, `incident.status.updated`, `incident.escalated`, `incident.resolved`, `incident.postmortem.ready`. Each carries the incident_id plus category-specific payload.\n\n**Local state**:\n- `pending_incidents.json` — buffer for records whose persistence failed (retry on next successful write).\n- `daily_summary_queue.json` — S3/S4 items waiting for the next daily roll-up.",
+      "operating_instructions": "Three capabilities chain together via the incident lifecycle: 1. **uc_intake** (manual trigger — operator reports a new incident) — capture title, description, affected systems, reporter, environment, initial observations. Search `agent_memory` (category `incident_log`) for open incidents from the last 2 hours with fuzzy title + systems match; if found, offer merge before creating. Classify severity using the four-level scale: - S1 Critical: service down, data at risk, >25% users, revenue impact, security breach. - S2 High: major feature degraded, 5-25% users, performance >3x baseline, trending toward Critical. - S3 Medium: non-critical impairment, <5% users, workaround available. - S4 Low: cosmetic, minor bugs, informational, self-resolved transients. Generate INC-{YYYY}-{NNN}, compute escalation deadline (S1=30m, S2=2h, S3=8h, S4=48h) and update cadence (S1=15m, S2=1h, S3=4h, S4=daily). Persist as agent_memory category `incident_log`. Route notification by severity: S1 error/high-priority alert + emit `incident.critical.opened`; S2 warning/high-priority alert + emit `incident.high.opened`; S3 info/normal message + daily summary queue; S4 silent log + daily summary. 2. **uc_tracking** (event-listen on `incident.status.updated` + schedule every 15 minutes for escalation sweep) — on status update: validate incident exists and is open, append update to timeline (timestamp, author, content, status transition), update status if changed (open → investigating → mitigated → resolved), reset escalation timer, persist. Broadcast S1/S2 updates. On escalation sweep: scan all open incidents; S1 no update 30m → escalation alert + emit `incident.escalated`; S2 no update 2h → escalation alert; S3 no update 8h → flag stale; S4 no update 48h → auto-close `stale_closed`. On resolved transition: emit `incident.resolved`, request human closure confirmation. 3. **uc_postmortem** (event-listen on `incident.resolved` for S1/S2) — wait 24 hours (configurable) for dust to settle, then compile: incident summary, chronological timeline from update history, impact assessment (systems, user impact, duration, data loss), root cause analysis (code defect / config error / infra failure / dependency outage / capacity / human error / unknown), response evaluation (time to detect/acknowledge/mitigate/resolve), action items with owners, lessons learned. Query memory for same root cause category in last 90 days — if 3+ matches, flag as systemic pattern. Present via manual_review for human approval; on approval persist as agent_memory category `post_mortem`; emit `incident.postmortem.ready`.",
+      "tool_guidance": "**Built-in messaging** (required — the in-app message surface; no external credential):\n- `user_message` protocol for severity-tiered alerts: S1 `content_type: error, priority: high`, S2 `content_type: warning, priority: high`, S3 `content_type: info, priority: normal`, S4 no direct message (daily summary only).\n- Escalation alerts prefix with `[ESCALATED]` and include elapsed time since last update.\n- Repeat S1 alerts every `critical_alert_repeat_interval` minutes until the incident is acknowledged. **agent_memory** (required):\n- Category `incident_log` — active and closed incident records with full lifecycle data.\n- Category `post_mortem` — completed reviews with action items and root cause tags.\n- Schema: `{ incident_id, title, description, severity: S1|S2|S3|S4, status: open|investigating|mitigated|resolved|stale_closed, reporter, environment, affected_systems: [], timestamps: { reported, detected, acknowledged, mitigated, resolved }, escalation_deadline, timeline: [{ timestamp, author, content, status_change }], resolution_notes, root_cause_category, postmortem_id }`.\n- Query by severity, system, root cause category, or date range for pattern detection. **emit_event** (required): `incident.critical.opened`, `incident.high.opened`, `incident.status.updated`, `incident.escalated`, `incident.resolved`, `incident.postmortem.ready`. Each carries the incident_id plus category-specific payload. **Local state**:\n- `pending_incidents.json` — buffer for records whose persistence failed (retry on next successful write).\n- `daily_summary_queue.json` — S3/S4 items waiting for the next daily roll-up.",
       "error_handling": "agent_memory write failure → retry 3x with exponential backoff (1s, 3s, 10s); if all fail, buffer to `pending_incidents.json` and post `user_message` warning — never discard. Alert delivery failure on S1/S2 → retry 3x at 5s intervals; emit `incident.alert.failed`; log to timeline. Duplicate intake within 2h match window → offer merge, don't assume. Expired confirmation on closure → re-prompt or revert status. Escalation timer gap after system restart → scan all open S1/S2 on recovery, send belated escalations with delay noted. Corrupted record → flag `needs_repair`, request manual verification, never auto-fill.",
       "examples": [],
-      "tools": ["file_read", "file_write"],
-      "connectors": [],
+      "tools": [
+        "file_read",
+        "file_write"
+      ],
+      "connectors": [
+        {
+          "name": "monitoring",
+          "label": "Monitoring / Alerting Source",
+          "auth_type": "api_key",
+          "role": "incident_source",
+          "category": "monitoring",
+          "categories": [
+            "monitoring"
+          ],
+          "required": false,
+          "credential_fields": [],
+          "setup_instructions": "Optional. Attach any monitoring or alerting service (monitoring, monitoring, monitoring, monitoring, monitoring, custom webhook) so production signals can open incidents automatically. Without a source, intake is manual via the messaging channel."
+        }
+      ],
       "notification_channels_default": [
         {
           "type": "messaging",
@@ -73,7 +96,10 @@
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "on_low_confidence", "context": "Potential duplicate matches route to a manual merge-or-create decision; unambiguous intakes proceed without review." },
+        "review_policy": {
+          "mode": "on_low_confidence",
+          "context": "Potential duplicate matches route to a manual merge-or-create decision; unambiguous intakes proceed without review."
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`incident_log` memory category holds every record. Fuzzy match on title + affected_systems against last 2h of open incidents powers duplicate detection."
@@ -95,34 +121,101 @@
           {
             "name": "severity_scale_label",
             "type": "enum",
-            "options": ["S1-S4", "P1-P4", "Blocker-Minor"],
+            "options": [
+              "S1-S4",
+              "P1-P4",
+              "Blocker-Minor"
+            ],
             "default": "S1-S4",
             "description": "Which labeling convention your team uses. Maps internally to S1-S4 escalation tiers regardless of display."
           }
         ],
-        "sample_input": { "severity_scale_label": "{{param.aq_severity_scale}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "severity_scale_label": "{{param.aq_severity_scale}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "i1", "type": "start", "label": "New incident reported" },
-            { "id": "i2", "type": "action", "label": "Capture details + fuzzy-match duplicates" },
-            { "id": "i3", "type": "decision", "label": "Duplicate found?" },
-            { "id": "i4", "type": "action", "label": "Merge into existing record" },
-            { "id": "i5", "type": "action", "label": "Classify severity + generate INC-ID" },
-            { "id": "i6", "type": "action", "label": "Persist to agent_memory, route notification" },
-            { "id": "i7", "type": "event", "label": "Emit incident.{severity}.opened" },
-            { "id": "i8", "type": "end", "label": "Incident logged + team alerted" }
+            {
+              "id": "i1",
+              "type": "start",
+              "label": "New incident reported"
+            },
+            {
+              "id": "i2",
+              "type": "action",
+              "label": "Capture details + fuzzy-match duplicates"
+            },
+            {
+              "id": "i3",
+              "type": "decision",
+              "label": "Duplicate found?"
+            },
+            {
+              "id": "i4",
+              "type": "action",
+              "label": "Merge into existing record"
+            },
+            {
+              "id": "i5",
+              "type": "action",
+              "label": "Classify severity + generate INC-ID"
+            },
+            {
+              "id": "i6",
+              "type": "action",
+              "label": "Persist to agent_memory, route notification"
+            },
+            {
+              "id": "i7",
+              "type": "event",
+              "label": "Emit incident.{severity}.opened"
+            },
+            {
+              "id": "i8",
+              "type": "end",
+              "label": "Incident logged + team alerted"
+            }
           ],
           "edges": [
-            { "source": "i1", "target": "i2" },
-            { "source": "i2", "target": "i3" },
-            { "source": "i3", "target": "i4", "variant": "yes" },
-            { "source": "i3", "target": "i5", "variant": "no" },
-            { "source": "i4", "target": "i8" },
-            { "source": "i5", "target": "i6" },
-            { "source": "i6", "target": "i7" },
-            { "source": "i7", "target": "i8" }
+            {
+              "source": "i1",
+              "target": "i2"
+            },
+            {
+              "source": "i2",
+              "target": "i3"
+            },
+            {
+              "source": "i3",
+              "target": "i4",
+              "variant": "yes"
+            },
+            {
+              "source": "i3",
+              "target": "i5",
+              "variant": "no"
+            },
+            {
+              "source": "i4",
+              "target": "i8"
+            },
+            {
+              "source": "i5",
+              "target": "i6"
+            },
+            {
+              "source": "i6",
+              "target": "i7"
+            },
+            {
+              "source": "i7",
+              "target": "i8"
+            }
           ]
         }
       },
@@ -137,7 +230,10 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/15 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/15 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 15 minutes for the escalation sweep (also fires on incoming `incident.status.updated` events). Final cadence set at the trigger-composition step."
         },
         "connectors": [],
@@ -183,30 +279,98 @@
             "description": "Minutes of no update before an S1 auto-escalates. Lower = faster response, higher alert fatigue."
           }
         ],
-        "sample_input": { "auto_escalate_s1_minutes": "{{param.aq_auto_escalate_s1}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "auto_escalate_s1_minutes": "{{param.aq_auto_escalate_s1}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "t1", "type": "start", "label": "Status update or 15m sweep" },
-            { "id": "t2", "type": "action", "label": "Load incident + append timeline" },
-            { "id": "t3", "type": "decision", "label": "Escalation deadline passed?" },
-            { "id": "t4", "type": "event", "label": "Emit incident.escalated" },
-            { "id": "t5", "type": "decision", "label": "Status → resolved?" },
-            { "id": "t6", "type": "action", "label": "Request human closure confirmation" },
-            { "id": "t7", "type": "event", "label": "Emit incident.resolved" },
-            { "id": "t8", "type": "end", "label": "Tracking state persisted" }
+            {
+              "id": "t1",
+              "type": "start",
+              "label": "Status update or 15m sweep"
+            },
+            {
+              "id": "t2",
+              "type": "action",
+              "label": "Load incident + append timeline"
+            },
+            {
+              "id": "t3",
+              "type": "decision",
+              "label": "Escalation deadline passed?"
+            },
+            {
+              "id": "t4",
+              "type": "event",
+              "label": "Emit incident.escalated"
+            },
+            {
+              "id": "t5",
+              "type": "decision",
+              "label": "Status → resolved?"
+            },
+            {
+              "id": "t6",
+              "type": "action",
+              "label": "Request human closure confirmation"
+            },
+            {
+              "id": "t7",
+              "type": "event",
+              "label": "Emit incident.resolved"
+            },
+            {
+              "id": "t8",
+              "type": "end",
+              "label": "Tracking state persisted"
+            }
           ],
           "edges": [
-            { "source": "t1", "target": "t2" },
-            { "source": "t2", "target": "t3" },
-            { "source": "t3", "target": "t4", "variant": "yes" },
-            { "source": "t3", "target": "t5", "variant": "no" },
-            { "source": "t4", "target": "t5" },
-            { "source": "t5", "target": "t6", "variant": "yes" },
-            { "source": "t5", "target": "t8", "variant": "no" },
-            { "source": "t6", "target": "t7" },
-            { "source": "t7", "target": "t8" }
+            {
+              "source": "t1",
+              "target": "t2"
+            },
+            {
+              "source": "t2",
+              "target": "t3"
+            },
+            {
+              "source": "t3",
+              "target": "t4",
+              "variant": "yes"
+            },
+            {
+              "source": "t3",
+              "target": "t5",
+              "variant": "no"
+            },
+            {
+              "source": "t4",
+              "target": "t5"
+            },
+            {
+              "source": "t5",
+              "target": "t6",
+              "variant": "yes"
+            },
+            {
+              "source": "t5",
+              "target": "t8",
+              "variant": "no"
+            },
+            {
+              "source": "t6",
+              "target": "t7"
+            },
+            {
+              "source": "t7",
+              "target": "t8"
+            }
           ]
         }
       },
@@ -221,7 +385,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "incident.resolved" },
+          "config": {
+            "event_type": "incident.resolved"
+          },
           "description": "Fires when a resolved incident is S1 or S2. Not user-configurable — event triggers bypass the trigger-composition picker."
         },
         "connectors": [],
@@ -257,26 +423,77 @@
             "description": "How long to wait after resolution before generating the review. Gives responders time to add final notes."
           }
         ],
-        "sample_input": { "postmortem_delay_hours": "{{param.aq_postmortem_delay}}" },
-        "tool_hints": ["file_read", "file_write"],
+        "sample_input": {
+          "postmortem_delay_hours": "{{param.aq_postmortem_delay}}"
+        },
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "incident.resolved (S1/S2)" },
-            { "id": "p2", "type": "action", "label": "Wait postmortem_delay_hours" },
-            { "id": "p3", "type": "action", "label": "Compile timeline + impact + root cause + actions" },
-            { "id": "p4", "type": "action", "label": "Check 90-day history for recurring root-cause" },
-            { "id": "p5", "type": "action", "label": "Present for human approval" },
-            { "id": "p6", "type": "event", "label": "Emit incident.postmortem.ready" },
-            { "id": "p7", "type": "end", "label": "Post-mortem archived" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "incident.resolved (S1/S2)"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Wait postmortem_delay_hours"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Compile timeline + impact + root cause + actions"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Check 90-day history for recurring root-cause"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Present for human approval"
+            },
+            {
+              "id": "p6",
+              "type": "event",
+              "label": "Emit incident.postmortem.ready"
+            },
+            {
+              "id": "p7",
+              "type": "end",
+              "label": "Post-mortem archived"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            }
           ]
         }
       }
@@ -285,7 +502,9 @@
       {
         "id": "aq_severity_scale",
         "scope": "capability",
-        "use_case_ids": ["uc_intake"],
+        "use_case_ids": [
+          "uc_intake"
+        ],
         "category": "configuration",
         "question": "Which severity labels should your team use?",
         "type": "select",
@@ -303,11 +522,19 @@
       {
         "id": "aq_auto_escalate_s1",
         "scope": "capability",
-        "use_case_ids": ["uc_tracking"],
+        "use_case_ids": [
+          "uc_tracking"
+        ],
         "category": "quality",
         "question": "Minutes of no update before a Critical (S1) incident auto-escalates?",
         "type": "select",
-        "options": ["15", "30", "45", "60", "120"],
+        "options": [
+          "15",
+          "30",
+          "45",
+          "60",
+          "120"
+        ],
         "default": "30",
         "maps_to": "use_cases[uc_tracking].sample_input.auto_escalate_s1_minutes",
         "variable_name": "auto_escalate_s1_minutes",
@@ -317,11 +544,20 @@
       {
         "id": "aq_postmortem_delay",
         "scope": "capability",
-        "use_case_ids": ["uc_postmortem"],
+        "use_case_ids": [
+          "uc_postmortem"
+        ],
         "category": "quality",
         "question": "How many hours after resolution should the post-mortem be generated?",
         "type": "select",
-        "options": ["1", "4", "12", "24", "48", "72"],
+        "options": [
+          "1",
+          "4",
+          "12",
+          "24",
+          "48",
+          "72"
+        ],
         "default": "24",
         "maps_to": "use_cases[uc_postmortem].sample_input.postmortem_delay_hours",
         "variable_name": "postmortem_delay_hours",

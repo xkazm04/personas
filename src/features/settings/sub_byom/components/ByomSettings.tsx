@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Network, Shield, Route, ScrollText, KeyRound, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useByomSettings } from '../libs/useByomSettings';
 import type { ByomSection } from '../libs/useByomSettings';
@@ -61,17 +61,21 @@ export default function ByomSettings() {
             )}
             <button
               onClick={bm.handleReset}
-              className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors"
+              disabled={bm.isSaving}
+              className="px-3 py-1.5 typo-body rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {s.reset}
             </button>
             <button
               onClick={bm.handleSave}
-              disabled={bm.hasBlockingErrors}
+              disabled={bm.hasBlockingErrors || bm.isSaving}
+              aria-busy={bm.isSaving}
               title={bm.hasBlockingErrors ? s.fix_errors : undefined}
               className={`px-3 py-1.5 typo-body rounded-modal border transition-colors ${
                 bm.hasBlockingErrors
                   ? 'bg-red-500/15 text-red-400/60 border-red-500/30 cursor-not-allowed'
+                  : bm.isSaving
+                  ? 'bg-primary/20 text-primary/70 border-primary/30 cursor-wait'
                   : bm.isDirty
                   ? 'bg-primary/25 text-primary border-primary/40 hover:bg-primary/35'
                   : 'bg-primary/20 text-primary border-primary/30 hover:bg-primary/30'
@@ -123,31 +127,22 @@ export default function ByomSettings() {
           </div>
 
           {/* Section tabs */}
-          <div className="flex gap-1 p-1 rounded-card bg-secondary/30 border border-primary/10">
-            {SECTION_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => bm.setActiveSection(tab.id)}
-                className={`relative flex-1 flex items-center justify-center gap-1.5 px-3 py-2 typo-body rounded-modal transition-colors ${
-                  bm.activeSection === tab.id
-                    ? 'text-foreground'
-                    : 'text-foreground hover:text-foreground hover:bg-primary/5'
-                }`}
-              >
-                {bm.activeSection === tab.id && (
-                  <motion.div
-                    layoutId="byom-tab-indicator"
-                    className="absolute inset-0 rounded-modal bg-primary/15 border border-primary/20"
-                    transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                  />
-                )}
-                <span className="relative z-10 flex items-center gap-1.5">
+          <SegmentedTabs<ByomSection>
+            ariaLabel={s.title}
+            layoutId="byom-tab-indicator"
+            activeTab={bm.activeSection}
+            onTabChange={bm.setActiveSection}
+            tabs={SECTION_TABS.map<SegmentedTab<ByomSection>>((tab) => ({
+              id: tab.id,
+              label: (
+                <>
                   <tab.icon className="w-3.5 h-3.5" />
                   {s[tab.labelKey]}
-                </span>
-              </button>
-            ))}
-          </div>
+                </>
+              ),
+              ariaLabel: s[tab.labelKey],
+            }))}
+          />
 
           {bm.activeSection === 'policy' && (
             <ByomProviderList

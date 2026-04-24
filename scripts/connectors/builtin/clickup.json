@@ -4,9 +4,8 @@
   "label": "ClickUp",
   "color": "#7B68EE",
   "icon_url": "/icons/connectors/clickup.svg",
-  "category": "project-mgmt",
+  "category": "project_management",
   "categories": [
-    "project-mgmt",
     "project_management",
     "documentation",
     "time_tracking"

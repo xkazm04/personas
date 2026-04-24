@@ -7,7 +7,7 @@
   "category": "messaging",
   "categories": [
     "messaging",
-    "in_app_notifications"
+    "notifications"
   ],
   "fields": [],
   "healthcheck_config": null,

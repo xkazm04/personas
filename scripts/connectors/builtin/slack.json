@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/slack.svg",
   "category": "messaging",
   "categories": [
-    "messaging",
-    "chat",
-    "team_messaging"
+    "messaging"
   ],
   "fields": [
     {

@@ -9,6 +9,25 @@ import { fmtDate } from './executionMetricsHelpers';
 
 type TimeWindow = 1 | 7 | 30 | 90;
 
+/**
+ * Execution dashboard hook for the Executions subtab.
+ *
+ * Reads `executionDashboard` from `useOverviewStore` and derives chart-ready
+ * rows, per-persona cost stacks (top 8 + "Other"), overall success rate,
+ * and cost-anomaly date set. When `compareEnabled`, it merges a previous
+ * period into `comparedChartData` via {@link mergePreviousPeriod}.
+ *
+ * Data fetching is owned by `useExecutionDashboardPipeline` at the
+ * OverviewContent level; the returned `load()` is a manual-retry hook that
+ * refetches for the current `fetchDays` window (doubled when compare is on).
+ *
+ * @returns Dashboard state plus filter setters and the derived series:
+ *   `data`, `loading`, `error`, `load`, `days`, `setDayRange`,
+ *   `customDateRange`, `setCustomDateRange`, `compareEnabled`,
+ *   `setCompareEnabled`, `activeRangeLabel`, `chartData`,
+ *   `comparedChartData`, `personaCostData`, `personaNames`,
+ *   `anomalyDates`, `overallSuccessRatePct`.
+ */
 export function useExecutionMetrics() {
   const { dayRange, setDayRange, customDateRange, setCustomDateRange, effectiveDays, compareEnabled, setCompareEnabled, previousPeriodDays } = useOverviewFilters();
   const { data, loading, error, fetchExecutionDashboard } = useOverviewStore(useShallow((s) => ({

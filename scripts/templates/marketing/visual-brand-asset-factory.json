@@ -5,11 +5,24 @@
   "description": "Generates on-brand visual assets grounded in a structured design.md brief produced once at persona build time. The brief captures empathy, sensory aesthetic language, a four-role color hierarchy, typography, and a physical-metaphor layout direction — stored in the persona's design_files envelope so every generation reads from the same design DNA. Generates via an AI image connector, evaluates with a multimodal AI connector, and presents for human review.",
   "icon": "Palette",
   "color": "#EC4899",
-  "category": ["marketing", "content"],
+  "category": [
+    "marketing",
+    "content"
+  ],
   "is_published": true,
-  "service_flow": ["Codebase", "Image AI", "Multimodal AI", "Messages"],
+  "service_flow": [
+    "Codebase",
+    "Image AI",
+    "Multimodal AI",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Codebase", "Image AI", "Multimodal AI", "Messages"],
+    "service_flow": [
+      "Codebase",
+      "Image AI",
+      "Multimodal AI",
+      "Messages"
+    ],
     "persona": {
       "goal": "Ship visual assets that actually feel like your brand — grounded in a structured design DNA brief, not vague adjectives like 'premium' or 'modern'.",
       "identity": {
@@ -44,11 +57,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, independently toggleable:\n\n1. **uc_brief_generation** (runs once at persona build, re-runnable on demand) — produces the structured `design.md` brief stored at `design_context.design_files['design.md']`. Five required sections: (0.1) Empathy & Audience — concrete archetype, 3-5 emotional anchors, physical-world equivalent. (0.2) Concrete Sensory Aesthetic — 5-8 material/light/historical/texture descriptors, never 'premium/modern/sporty'. (0.3) Four-Role Color Hierarchy — NEUTRAL (canvas, 80-90% of screen), PRIMARY (ink, headings/body), SECONDARY (subdued, supporting), TERTIARY (accent CTA, loudest, used least), each with hex + one-sentence WHY. (0.4) Typography Hierarchy — HEADLINE (brand voice), BODY (reading voice, 16-18px legibility), LABEL (timestamps/tags, often different family), each with rationale. (0.5) Layout Metaphor — one physical-object metaphor mapping to a layout pattern, plus 4-7 do's and 4-7 don'ts. Sourcing modes: auto-from-codebase (LLM reads CSS/Tailwind/theme via codebase connector and translates to sensory language), user-pasted (stored verbatim), on-demand (skip at build; generate later from persona overview). Emit `brand.brief.generated` with the stored path.\n\n2. **uc_asset_generation** (manual on user request, or event-triggered on `brand.brief.generated`) — load `design_context.design_files['design.md']` as source of truth. Refresh codebase context for drift check. Assemble the image prompt FROM the brief: sensory descriptors verbatim + four-role palette with roles + layout metaphor (if layout-bearing asset) + do's in positive prompt + don'ts in negative prompt + asset-specific request (dimensions, aspect ratio). Apply memory-informed adjustments on top of the brief (never override). Call the image generation API; request 2-3 variations. Send to multimodal AI for scoring against brief criteria (brand color alignment, composition, style consistency, technical quality, overall 1-10). Below 7/10: extract specific feedback, refine prompt, regenerate (max 3 cycles). At 7/10 or above, deliver via Messages with preview, prompt, score, cycle count. Submit for manual_review. On approval: save successful prompt phrasing to memory under asset type, emit `brand.asset.generated` + `brand.asset.approved`. On rejection: persist rejection reason by category (color | composition | style | mood) to memory, refine prompt with human feedback, retry (max 3 iterations).\n\n**State files**: `design_context.design_files['design.md']` (the brief; edited in the persona overview), `asset_prompts.json` (memory of approved prompt phrasings per asset type), `rejections.json` (categorized rejection patterns converted to negative-prompt fragments), `latest_asset.json` (fallback when Messages fails).",
-      "tool_guidance": "**Codebase connector** — read CSS, Tailwind config, theme files, component source to extract the product's current visual identity:\n- `read_file` — tailwind.config.js/.ts, src/styles/globals.css, theme.ts, component files\n- `search_code` — color hex values, font-family declarations, CSS custom properties\n- `list_files` — public/ and assets/ dirs for existing brand imagery, logos, icons\n- `get_contexts` / `get_context_detail` — pre-computed architectural summaries for design system areas\n\n**Image AI (http_request)** — adapts to whichever provider the user picked via `aq_image_model` (vault-sourced):\n- **Leonardo AI**: `POST https://cloud.leonardo.ai/api/rest/v1/generations` with `{prompt, negative_prompt, width, height, num_images, modelId}`; auth `Bearer {API_KEY}`. Poll `GET /api/rest/v1/generations/{id}` until status `COMPLETE`.\n- **OpenAI Images (DALL-E)**: `POST https://api.openai.com/v1/images/generations` with `{model: 'dall-e-3', prompt, n, size, quality}`; auth `Bearer {API_KEY}`.\n- **Stability AI**: `POST https://api.stability.ai/v1/generation/{engine}/text-to-image`; auth `Bearer {API_KEY}`.\n\n**Multimodal AI (http_request)** — adapts to whichever vision provider the user picked via `aq_vision_model`:\n- **Gemini Vision**: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent` with image + eval prompt; auth `?key={API_KEY}`.\n- **Claude Vision**: `POST https://api.anthropic.com/v1/messages` with image content block; auth `x-api-key: {API_KEY}`.\n- **GPT-4 Vision**: `POST https://api.openai.com/v1/chat/completions` with `image_url` content; auth `Bearer {API_KEY}`.\n\n**Prompt composition pattern** — pull verbatim from the brief: sensory descriptors (0.2), four hex values with role labels (0.3), layout metaphor if layout-bearing (0.5), do's → positive prompt, don'ts → negative prompt. Then layer memory on top.",
+      "operating_instructions": "Two capabilities, independently toggleable: 1. **uc_brief_generation** (runs once at persona build, re-runnable on demand) — produces the structured `design.md` brief stored at `design_context.design_files['design.md']`. Five required sections: (0.1) Empathy & Audience — concrete archetype, 3-5 emotional anchors, physical-world equivalent. (0.2) Concrete Sensory Aesthetic — 5-8 material/light/historical/texture descriptors, never 'premium/modern/sporty'. (0.3) Four-Role Color Hierarchy — NEUTRAL (canvas, 80-90% of screen), PRIMARY (ink, headings/body), SECONDARY (subdued, supporting), TERTIARY (accent CTA, loudest, used least), each with hex + one-sentence WHY. (0.4) Typography Hierarchy — HEADLINE (brand voice), BODY (reading voice, 16-18px legibility), LABEL (timestamps/tags, often different family), each with rationale. (0.5) Layout Metaphor — one physical-object metaphor mapping to a layout pattern, plus 4-7 do's and 4-7 don'ts. Sourcing modes: auto-from-codebase (LLM reads CSS/Tailwind/theme via codebase connector and translates to sensory language), user-pasted (stored verbatim), on-demand (skip at build; generate later from persona overview). Emit `brand.brief.generated` with the stored path. 2. **uc_asset_generation** (manual on user request, or event-triggered on `brand.brief.generated`) — load `design_context.design_files['design.md']` as source of truth. Refresh codebase context for drift check. Assemble the image prompt FROM the brief: sensory descriptors verbatim + four-role palette with roles + layout metaphor (if layout-bearing asset) + do's in positive prompt + don'ts in negative prompt + asset-specific request (dimensions, aspect ratio). Apply memory-informed adjustments on top of the brief (never override). Call the image generation API; request 2-3 variations. Send to multimodal AI for scoring against brief criteria (brand color alignment, composition, style consistency, technical quality, overall 1-10). Below 7/10: extract specific feedback, refine prompt, regenerate (max 3 cycles). At 7/10 or above, deliver via Messages with preview, prompt, score, cycle count. Submit for manual_review. On approval: save successful prompt phrasing to memory under asset type, emit `brand.asset.generated` + `brand.asset.approved`. On rejection: persist rejection reason by category (color | composition | style | mood) to memory, refine prompt with human feedback, retry (max 3 iterations). **State files**: `design_context.design_files['design.md']` (the brief; edited in the persona overview), `asset_prompts.json` (memory of approved prompt phrasings per asset type), `rejections.json` (categorized rejection patterns converted to negative-prompt fragments), `latest_asset.json` (fallback when Messages fails).",
+      "tool_guidance": "**Codebase connector** — read CSS, Tailwind config, theme files, component source to extract the product's current visual identity:\n- `read_file` — tailwind.config.js/.ts, src/styles/globals.css, theme.ts, component files\n- `search_code` — color hex values, font-family declarations, CSS custom properties\n- `list_files` — public/ and assets/ dirs for existing brand imagery, logos, icons\n- `get_contexts` / `get_context_detail` — pre-computed architectural summaries for design system areas **Image AI (http_request)** — adapts to whichever provider the user picked via `aq_image_model` (vault-sourced):\n- **image generation AI**: `POST https://cloud.leonardo.ai/api/rest/v1/generations` with `{prompt, negative_prompt, width, height, num_images, modelId}`; auth `Bearer {API_KEY}`. Poll `GET /api/rest/v1/generations/{id}` until status `COMPLETE`.\n- **image generation AI (image generation AI)**: `POST https://api.openai.com/v1/images/generations` with `{model: 'dall-e-3', prompt, n, size, quality}`; auth `Bearer {API_KEY}`.\n- **Stability AI**: `POST https://api.stability.ai/v1/generation/{engine}/text-to-image`; auth `Bearer {API_KEY}`. **Multimodal AI (http_request)** — adapts to whichever vision provider the user picked via `aq_vision_model`:\n- **vision AI**: `POST https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent` with image + eval prompt; auth `?key={API_KEY}`.\n- **vision AI**: `POST https://api.anthropic.com/v1/messages` with image content block; auth `x-api-key: {API_KEY}`.\n- **GPT-4 Vision**: `POST https://api.openai.com/v1/chat/completions` with `image_url` content; auth `Bearer {API_KEY}`. **Prompt composition pattern** — pull verbatim from the brief: sensory descriptors (0.2), four hex values with role labels (0.3), layout metaphor if layout-bearing (0.5), do's → positive prompt, don'ts → negative prompt. Then layer memory on top.",
       "error_handling": "Codebase connector finds no CSS/theme files → fall back to asking the user for brand colors and emotional anchors via Messages; skip auto-extraction mode, suggest user-pasted instead. Image AI 401/403 → Messages reports credential issue; halt. Image AI 429 → exponential backoff, retry once. Image AI content policy rejection → rephrase prompt, report blocked terms. Image AI timeout → poll every 5s for up to 2 minutes. Multimodal AI failure → skip auto-evaluation, proceed to human review with note 'vision evaluation unavailable'. Multimodal AI ambiguous score (5-6) → treat as borderline, proceed with note. Quality loop max 3 cycles without reaching threshold → present best-scoring result with note. Human review max 3 iterations without approval → request a reference image. Missing design.md AND no CSS drift → ask user for brand colors and emotional anchors. Brief drift detected (codebase significantly changed) → warn and suggest brief regeneration. Messages failure → save asset details + preview URL to `latest_asset.json`; retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -71,20 +88,24 @@
           "setup_instructions": "Register the codebase at Settings → Connectors → Codebase → Add. Point it at the app root. The persona reads CSS/Tailwind/theme files to ground the design.md brief in the product's actual visual identity."
         },
         {
-          "name": "image_ai",
+          "name": "image_generation",
           "label": "Image Generation AI",
           "auth_type": "api_key",
           "role": "image_generation",
-          "category": "ai",
+          "category": "image_generation",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "Image AI provider",
               "type": "select",
-              "options": ["leonardo", "openai_images", "stability_ai"],
+              "options": [
+                "leonardo",
+                "openai_images",
+                "stability_ai"
+              ],
               "placeholder": "leonardo",
-              "helpText": "Resolved from your Vault at adoption. Leonardo AI for style control and pixel-art fidelity; OpenAI DALL-E 3 for strong prompt following; Stability AI for open-model fine-tuning support.",
+              "helpText": "Resolved from your Vault at adoption. image generation AI for style control and pixel-art fidelity; OpenAI image generation AI for strong prompt following; Stability AI for open-model fine-tuning support.",
               "required": true
             },
             {
@@ -108,18 +129,18 @@
               "label": "Model ID (optional)",
               "type": "text",
               "placeholder": "",
-              "helpText": "Override default model. Leonardo: model UUID for a specific style. OpenAI: leave blank for standard images endpoint.",
+              "helpText": "Override default model. image generation AI: model UUID for a specific style. OpenAI: leave blank for standard images endpoint.",
               "required": false
             }
           ],
-          "setup_instructions": "1. Pick your image generation provider in Vault.\n2. Generate an API key from the provider's dashboard (Leonardo: Settings → API; OpenAI: platform.openai.com/api-keys; Stability: dreamstudio.ai/account).\n3. Paste key + base URL; optionally specify a model ID for a specific style."
+          "setup_instructions": "1. Pick your image generation provider in Vault.\n2. Generate an API key from the provider's dashboard (image generation AI: Settings → API; OpenAI: platform.openai.com/api-keys; Stability: dreamstudio.ai/account).\n3. Paste key + base URL; optionally specify a model ID for a specific style."
         },
         {
-          "name": "multimodal_ai",
+          "name": "vision",
           "label": "Multimodal Vision AI",
           "auth_type": "api_key",
           "role": "image_evaluation",
-          "category": "ai",
+          "category": "vision",
           "required": false,
           "fallback_note": "Optional — when present, generated images are auto-scored against the brief before human review. Skip to go straight from generation to human review without automated scoring.",
           "credential_fields": [
@@ -127,9 +148,13 @@
               "key": "provider",
               "label": "Vision AI provider",
               "type": "select",
-              "options": ["gemini_vision", "claude_vision", "gpt4_vision"],
+              "options": [
+                "gemini_vision",
+                "claude_vision",
+                "gpt4_vision"
+              ],
               "placeholder": "gemini_vision",
-              "helpText": "Resolved from your Vault. Gemini Vision is fast with strong visual understanding; Claude Vision gives detailed analysis; GPT-4 Vision balances speed and quality.",
+              "helpText": "Resolved from your Vault. vision AI is fast with strong visual understanding; vision AI gives detailed analysis; GPT-4 Vision balances speed and quality.",
               "required": true
             },
             {
@@ -175,13 +200,18 @@
           "config": {},
           "description": "Runs once at persona build. Re-runnable manually from the persona overview when brand direction evolves."
         },
-        "connectors": ["codebase"],
+        "connectors": [
+          "codebase"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
           "context": "The generated brief is presented for human review before it's committed to `design_context.design_files['design.md']`. The user can accept, edit in-place, or regenerate with different sourcing mode. Accepted briefs become the source of truth for every asset generation."
         },
-        "memory_policy": { "enabled": false, "context": null },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "brand.brief.generated",
@@ -199,7 +229,11 @@
           {
             "name": "brief_mode",
             "type": "enum",
-            "options": ["auto_from_codebase", "user_pasted", "on_demand"],
+            "options": [
+              "auto_from_codebase",
+              "user_pasted",
+              "on_demand"
+            ],
             "default": "auto_from_codebase",
             "description": "How Step 0 runs at build time. Auto-extract reads the source above; user-pasted accepts a brief verbatim; on-demand defers."
           }
@@ -208,30 +242,101 @@
           "brief_source_intent": "{{param.aq_brief_source_intent}}",
           "brief_mode": "{{param.aq_brief_mode}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Build-time trigger" },
-            { "id": "b2", "type": "decision", "label": "Sourcing mode?" },
-            { "id": "b3", "type": "connector", "label": "auto: read CSS/Tailwind/theme", "connector": "codebase" },
-            { "id": "b4", "type": "action", "label": "pasted: accept verbatim" },
-            { "id": "b5", "type": "action", "label": "Assemble 5-section brief (empathy, sensory, colors, typography, layout)" },
-            { "id": "b6", "type": "action", "label": "Route to human review (accept / edit / regenerate)" },
-            { "id": "b7", "type": "action", "label": "Write to design_context.design_files['design.md']" },
-            { "id": "b8", "type": "event", "label": "Emit brand.brief.generated" },
-            { "id": "b9", "type": "end", "label": "Brief is source of truth for asset generation" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Build-time trigger"
+            },
+            {
+              "id": "b2",
+              "type": "decision",
+              "label": "Sourcing mode?"
+            },
+            {
+              "id": "b3",
+              "type": "connector",
+              "label": "auto: read CSS/Tailwind/theme",
+              "connector": "codebase"
+            },
+            {
+              "id": "b4",
+              "type": "action",
+              "label": "pasted: accept verbatim"
+            },
+            {
+              "id": "b5",
+              "type": "action",
+              "label": "Assemble 5-section brief (empathy, sensory, colors, typography, layout)"
+            },
+            {
+              "id": "b6",
+              "type": "action",
+              "label": "Route to human review (accept / edit / regenerate)"
+            },
+            {
+              "id": "b7",
+              "type": "action",
+              "label": "Write to design_context.design_files['design.md']"
+            },
+            {
+              "id": "b8",
+              "type": "event",
+              "label": "Emit brand.brief.generated"
+            },
+            {
+              "id": "b9",
+              "type": "end",
+              "label": "Brief is source of truth for asset generation"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3", "variant": "yes", "label": "auto" },
-            { "source": "b2", "target": "b4", "variant": "no", "label": "pasted" },
-            { "source": "b3", "target": "b5" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" },
-            { "source": "b6", "target": "b7" },
-            { "source": "b7", "target": "b8" },
-            { "source": "b8", "target": "b9" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3",
+              "variant": "yes",
+              "label": "auto"
+            },
+            {
+              "source": "b2",
+              "target": "b4",
+              "variant": "no",
+              "label": "pasted"
+            },
+            {
+              "source": "b3",
+              "target": "b5"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            },
+            {
+              "source": "b6",
+              "target": "b7"
+            },
+            {
+              "source": "b7",
+              "target": "b8"
+            },
+            {
+              "source": "b8",
+              "target": "b9"
+            }
           ]
         }
       },
@@ -249,7 +354,11 @@
           "config": {},
           "description": "Runs on manual request (user describes the asset: hero image, social card, icon set, background, etc.) or on `brand.brief.generated` to produce a first-round asset after the brief lands."
         },
-        "connectors": ["codebase", "image_ai", "multimodal_ai"],
+        "connectors": [
+          "codebase",
+          "image_generation",
+          "vision"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -291,7 +400,15 @@
           {
             "name": "asset_type",
             "type": "enum",
-            "options": ["hero", "social_card", "icon_set", "background", "illustration", "brand_kit", "mixed"],
+            "options": [
+              "hero",
+              "social_card",
+              "icon_set",
+              "background",
+              "illustration",
+              "brand_kit",
+              "mixed"
+            ],
             "default": "mixed",
             "description": "Shapes memory lookup and per-type prompt templates."
           },
@@ -309,34 +426,121 @@
           "asset_type": "{{param.aq_asset_type}}",
           "quality_threshold": "{{param.aq_quality_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "a1", "type": "start", "label": "Asset request received" },
-            { "id": "a2", "type": "action", "label": "Load design.md brief + memory" },
-            { "id": "a3", "type": "action", "label": "Compose prompt from brief (sensory + palette + layout + do's/don'ts) + memory layer" },
-            { "id": "a4", "type": "connector", "label": "Generate image via AI (2-3 variations)", "connector": "image_ai" },
-            { "id": "a5", "type": "connector", "label": "Evaluate with multimodal AI (score 1-10)", "connector": "multimodal_ai" },
-            { "id": "a6", "type": "decision", "label": "Score >= threshold?" },
-            { "id": "a7", "type": "action", "label": "Refine prompt with vision feedback, regenerate (max 3 cycles)" },
-            { "id": "a8", "type": "action", "label": "Deliver via Messages + submit for manual_review" },
-            { "id": "a9", "type": "event", "label": "Emit brand.asset.approved or brand.asset.rejected" },
-            { "id": "a10", "type": "action", "label": "Update memory (prompt phrasing or rejection pattern)" },
-            { "id": "a11", "type": "end", "label": "Asset cycle complete" }
+            {
+              "id": "a1",
+              "type": "start",
+              "label": "Asset request received"
+            },
+            {
+              "id": "a2",
+              "type": "action",
+              "label": "Load design.md brief + memory"
+            },
+            {
+              "id": "a3",
+              "type": "action",
+              "label": "Compose prompt from brief (sensory + palette + layout + do's/don'ts) + memory layer"
+            },
+            {
+              "id": "a4",
+              "type": "connector",
+              "label": "Generate image via AI (2-3 variations)",
+              "connector": "image_ai"
+            },
+            {
+              "id": "a5",
+              "type": "connector",
+              "label": "Evaluate with multimodal AI (score 1-10)",
+              "connector": "multimodal_ai"
+            },
+            {
+              "id": "a6",
+              "type": "decision",
+              "label": "Score >= threshold?"
+            },
+            {
+              "id": "a7",
+              "type": "action",
+              "label": "Refine prompt with vision feedback, regenerate (max 3 cycles)"
+            },
+            {
+              "id": "a8",
+              "type": "action",
+              "label": "Deliver via Messages + submit for manual_review"
+            },
+            {
+              "id": "a9",
+              "type": "event",
+              "label": "Emit brand.asset.approved or brand.asset.rejected"
+            },
+            {
+              "id": "a10",
+              "type": "action",
+              "label": "Update memory (prompt phrasing or rejection pattern)"
+            },
+            {
+              "id": "a11",
+              "type": "end",
+              "label": "Asset cycle complete"
+            }
           ],
           "edges": [
-            { "source": "a1", "target": "a2" },
-            { "source": "a2", "target": "a3" },
-            { "source": "a3", "target": "a4" },
-            { "source": "a4", "target": "a5" },
-            { "source": "a5", "target": "a6" },
-            { "source": "a6", "target": "a8", "variant": "yes", "label": "Score met" },
-            { "source": "a6", "target": "a7", "variant": "no", "label": "Below" },
-            { "source": "a7", "target": "a4" },
-            { "source": "a8", "target": "a9" },
-            { "source": "a9", "target": "a10" },
-            { "source": "a10", "target": "a11" }
+            {
+              "source": "a1",
+              "target": "a2"
+            },
+            {
+              "source": "a2",
+              "target": "a3"
+            },
+            {
+              "source": "a3",
+              "target": "a4"
+            },
+            {
+              "source": "a4",
+              "target": "a5"
+            },
+            {
+              "source": "a5",
+              "target": "a6"
+            },
+            {
+              "source": "a6",
+              "target": "a8",
+              "variant": "yes",
+              "label": "Score met"
+            },
+            {
+              "source": "a6",
+              "target": "a7",
+              "variant": "no",
+              "label": "Below"
+            },
+            {
+              "source": "a7",
+              "target": "a4"
+            },
+            {
+              "source": "a8",
+              "target": "a9"
+            },
+            {
+              "source": "a9",
+              "target": "a10"
+            },
+            {
+              "source": "a10",
+              "target": "a11"
+            }
           ]
         }
       }
@@ -345,7 +549,9 @@
       {
         "id": "aq_brief_source_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_brief_generation"],
+        "use_case_ids": [
+          "uc_brief_generation"
+        ],
         "category": "domain",
         "question": "Where should the design brief be extracted from?",
         "type": "source_definition",
@@ -358,7 +564,9 @@
       {
         "id": "aq_brief_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_brief_generation"],
+        "use_case_ids": [
+          "uc_brief_generation"
+        ],
         "category": "configuration",
         "question": "How should the design.md brief be produced?",
         "type": "select",
@@ -376,7 +584,9 @@
       {
         "id": "aq_asset_type",
         "scope": "capability",
-        "use_case_ids": ["uc_asset_generation"],
+        "use_case_ids": [
+          "uc_asset_generation"
+        ],
         "category": "domain",
         "question": "What kind of assets will you generate most often?",
         "type": "select",
@@ -397,7 +607,9 @@
       {
         "id": "aq_image_model",
         "scope": "connector",
-        "connector_names": ["image_ai"],
+        "connector_names": [
+          "image_ai"
+        ],
         "category": "credentials",
         "question": "Which image-generation service should produce the assets?",
         "type": "select",
@@ -408,13 +620,15 @@
         },
         "maps_to": "persona.connectors[image_ai].credential_fields[provider].value",
         "variable_name": "image_model",
-        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (Leonardo AI, OpenAI DALL-E, Stability AI, …). Leonardo has the strongest style control; DALL-E 3 has the best prompt following. If the list is empty, connect an image-generation provider first.",
+        "context": "Options are auto-detected from the image_generation-category credentials in your Vault (image generation AI, OpenAI image generation AI, Stability AI, …). image generation AI has the strongest style control; image generation AI has the best prompt following. If the list is empty, connect an image-generation provider first.",
         "dimension": "connectors"
       },
       {
         "id": "aq_vision_model",
         "scope": "connector",
-        "connector_names": ["multimodal_ai"],
+        "connector_names": [
+          "multimodal_ai"
+        ],
         "category": "credentials",
         "question": "Which multimodal AI should evaluate image quality against the brief?",
         "type": "select",
@@ -431,7 +645,9 @@
       {
         "id": "aq_quality_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_asset_generation"],
+        "use_case_ids": [
+          "uc_asset_generation"
+        ],
         "category": "quality",
         "question": "What quality threshold should auto-evaluation require before human review?",
         "type": "select",

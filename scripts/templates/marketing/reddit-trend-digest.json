@@ -2,7 +2,7 @@
   "id": "reddit-trend-digest",
   "schema_version": 3,
   "name": "Social Trend Digest",
-  "description": "Polls one or more social feeds (subreddits, X/Twitter lists, LinkedIn groups, YouTube channels) on a schedule, fetches top posts over a chosen time window, clusters them into themes with sentiment labels, and posts a markdown digest to your messaging channel. Tracks already-seen posts so each digest only surfaces what's new.",
+  "description": "Polls one or more social feeds (subreddits, social platform lists, social platform groups, social platform channels) on a schedule, fetches top posts over a chosen time window, clusters them into themes with sentiment labels, and posts a markdown digest to your messaging channel. Tracks already-seen posts so each digest only surfaces what's new.",
   "icon": "TrendingUp",
   "color": "#FF4500",
   "category": [
@@ -24,11 +24,11 @@
       "goal": "Replace the habit of scrolling social feeds every morning with a focused, themed briefing that surfaces signal, not volume.",
       "identity": {
         "role": "Autonomous social-research agent that clusters posts into themes and ships a single tight digest.",
-        "description": "Watches configured social feeds (subreddits, X/Twitter lists, LinkedIn groups, YouTube channels), scores posts by engagement (weighting comments above upvotes/likes), clusters into thematic groups, picks a representative post per cluster, attaches a sentiment label, and delivers a compact digest. Tracks seen posts for 30 days so repeats never resurface."
+        "description": "Watches configured social feeds (subreddits, social platform lists, social platform groups, social platform channels), scores posts by engagement (weighting comments above upvotes/likes), clusters into thematic groups, picks a representative post per cluster, attaches a sentiment label, and delivers a compact digest. Tracks seen posts for 30 days so repeats never resurface."
       },
       "voice": {
         "style": "Signal over volume, themes over individual posts, freshness over recap. No padding on slow days.",
-        "output_format": "Slack-flavored markdown: `*Theme Name* — _Sentiment_` header, one-line takeaway, blockquoted representative quote, permalink, and meta line (`r/sub — X upvotes — Y comments — u/author`).",
+        "output_format": "messaging-flavored markdown: `*Theme Name* — _Sentiment_` header, one-line takeaway, blockquoted representative quote, permalink, and meta line (`r/sub — X upvotes — Y comments — u/author`).",
         "tone_adjustments": []
       },
       "principles": [
@@ -54,9 +54,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities, independently toggleable:\n\n1. **uc_digest** — the primary scheduled loop. Read `state/seen_posts.json` (30-day rolling dedup index). Determine the time window from `{{param.time_window}}` (hour | day | week | month | year | all). For each subreddit in `{{param.subreddits}}`, call `GET https://oauth.reddit.com/r/{sub}/top?t={window}&limit={{param.posts_per_subreddit}}`. Drop seen IDs, stickied/pinned mod posts, and NSFW (if `include_nsfw=false`). Compute engagement per surviving post: `engagement = score*0.5 + num_comments*1.5 + upvote_ratio*100*0.3`. Cluster top-N by shared topic tokens (title + first 200 chars of selftext + flair) OR matching flair; a cluster needs 2+ posts. Cap at `{{param.max_clusters}}` clusters by highest engagement. For each cluster, pick the representative post (highest engagement with substantive selftext, or most comments if all are link-only). Write theme name (3-6 words), sentiment (Excited | Curious | Concerned | Critical | Mixed | Neutral), one-line takeaway (<25 words), verbatim quote (<200 chars), permalink, meta line. Assemble Slack markdown. POST to Slack via `POST https://slack.com/api/chat.postMessage` with `unfurl_links: false, unfurl_media: false`. On `ok: true`, add ALL surviving post IDs (not just the digest selections) to `state/seen_posts.json`, prune entries older than 30 days. Emit `reddit.digest.delivered`. On `channel_not_found`, write the assembled draft to `state/drafts/digest_{ts}.md`, do NOT update state, surface a user_message warning.\n\n2. **uc_source_health** — maintain `state/source_health.json` per subreddit (`consecutive_failures`, `last_success`, `total_posts_seen`). After 3 consecutive failures on a subreddit, emit `reddit.source.unhealthy` and include a header line in the next digest's output recommending removal from the subreddit list.\n\nBoth capabilities share state but fire independently: uc_digest on the user's chosen cadence; uc_source_health event-chains on any Reddit fetch failure emitted by uc_digest.\n\n**Slack markdown quirks** — single-asterisk `*bold*` (not double), `_italic_`, `<URL|label>` for links, `> quote` for blockquote, backticks for code. NOT GitHub-flavored.",
-      "tool_guidance": "**Reddit OAuth API (connector: reddit)** — base `https://oauth.reddit.com`. `Authorization: Bearer {access_token}` and a unique `User-Agent` are injected by the connector (Reddit blocks default UAs with 429/403).\n\n- `GET /api/v1/me` — identity check / credential validation\n- `GET /r/{sub}/top?t={window}&limit={n}` — top posts; windows: hour, day, week, month, year, all; max `limit=100`\n- `GET /r/{sub}/hot?limit={n}` — fallback when top returns thin results\n- `GET /r/{sub}/new?limit={n}` — for high-velocity subreddits where top lags\n- `GET /r/{sub}/rising` — emerging trends\n- `GET /comments/{article_id}?depth=2&limit=50` — deeper sentiment on cluster's representative post\n- `GET /r/{sub}/about` — subscriber/active-user metadata for the digest header\n- `GET /search?q={query}&restrict_sr=true&sort=top&t={window}` — keyword-filtered digests\n\nRate limit: 60 req/min per OAuth client; standard 5-sub config stays well under. Pagination uses `before`/`after` cursors (not needed for the top-N digest flow).\n\n**Slack Web API (connector: slack)** — base `https://slack.com/api`. `Authorization: Bearer {bot_token}` injected.\n\n- `POST /chat.postMessage` body `{channel, text, unfurl_links: false, unfurl_media: false}`; returns `{ok: true, ts}` or `{ok: false, error}`\n- `POST /chat.update` with `ts` for corrections\n- `GET /conversations.list?types=public_channel,private_channel` — validate target channel\n- `GET /auth.test` — healthcheck\n\n**Local state**:\n- `state/seen_posts.json` — `{<post_id>: {first_seen: ISO8601, subreddit: 'r/...'}}`; 30-day rolling; read-merge-write to avoid concurrent-run data loss\n- `state/drafts/digest_{ts}.md` — fallback archive when Slack delivery fails\n- `state/source_health.json` — per-subreddit failure tracking",
-      "error_handling": "Reddit 429 → back off 60s, retry once; otherwise abort run with user_message. Reddit 401/403 → token expired/revoked, prompt re-authorization, do not update state. Reddit 404 on a subreddit → deleted/banned; drop from this run, increment failure counter, other subs continue. Reddit 5xx → skip just that subreddit, other subs continue. Reddit empty response → treat as zero posts. Slack `channel_not_found` → config error, do NOT retry; write draft to `state/drafts/`, user_message warning, do NOT update state. Slack `not_in_channel` → try `conversations.join` for public channels, else draft + notify. Slack `rate_limited` → honor Retry-After header. Slack 5xx/network → retry once after 10s, then draft fallback. Corrupted state/seen_posts.json → reinitialize empty; some posts may resurface once — self-corrects. max_clusters=0 → treat as 1. Slack channel missing leading `#` → auto-prefix. Empty subreddits param → abort with user_message asking for at least one.",
+      "operating_instructions": "Two capabilities, independently toggleable: 1. **uc_digest** — the primary scheduled loop. Read `state/seen_posts.json` (30-day rolling dedup index). Determine the time window from `{{param.time_window}}` (hour | day | week | month | year | all). For each subreddit in `{{param.subreddits}}`, call `GET https://oauth.reddit.com/r/{sub}/top?t={window}&limit={{param.posts_per_subreddit}}`. Drop seen IDs, stickied/pinned mod posts, and NSFW (if `include_nsfw=false`). Compute engagement per surviving post: `engagement = score*0.5 + num_comments*1.5 + upvote_ratio*100*0.3`. Cluster top-N by shared topic tokens (title + first 200 chars of selftext + flair) OR matching flair; a cluster needs 2+ posts. Cap at `{{param.max_clusters}}` clusters by highest engagement. For each cluster, pick the representative post (highest engagement with substantive selftext, or most comments if all are link-only). Write theme name (3-6 words), sentiment (Excited | Curious | Concerned | Critical | Mixed | Neutral), one-line takeaway (<25 words), verbatim quote (<200 chars), permalink, meta line. Assemble messaging markdown. POST to the messaging channel via `POST https://slack.com/api/chat.postMessage` with `unfurl_links: false, unfurl_media: false`. On `ok: true`, add ALL surviving post IDs (not just the digest selections) to `state/seen_posts.json`, prune entries older than 30 days. Emit `reddit.digest.delivered`. On `channel_not_found`, write the assembled draft to `state/drafts/digest_{ts}.md`, do NOT update state, surface a user_message warning. 2. **uc_source_health** — maintain `state/source_health.json` per subreddit (`consecutive_failures`, `last_success`, `total_posts_seen`). After 3 consecutive failures on a subreddit, emit `reddit.source.unhealthy` and include a header line in the next digest's output recommending removal from the subreddit list. Both capabilities share state but fire independently: uc_digest on the user's chosen cadence; uc_source_health event-chains on any social platform fetch failure emitted by uc_digest. **messaging markdown quirks** — single-asterisk `*bold*` (not double), `_italic_`, `<URL|label>` for links, `> quote` for blockquote, backticks for code. NOT GitHub-flavored.",
+      "tool_guidance": "**social platform OAuth API (connector: reddit)** — base `https://oauth.reddit.com`. `Authorization: Bearer {access_token}` and a unique `User-Agent` are injected by the connector (social platform blocks default UAs with 429/403). - `GET /api/v1/me` — identity check / credential validation\n- `GET /r/{sub}/top?t={window}&limit={n}` — top posts; windows: hour, day, week, month, year, all; max `limit=100`\n- `GET /r/{sub}/hot?limit={n}` — fallback when top returns thin results\n- `GET /r/{sub}/new?limit={n}` — for high-velocity subreddits where top lags\n- `GET /r/{sub}/rising` — emerging trends\n- `GET /comments/{article_id}?depth=2&limit=50` — deeper sentiment on cluster's representative post\n- `GET /r/{sub}/about` — subscriber/active-user metadata for the digest header\n- `GET /search?q={query}&restrict_sr=true&sort=top&t={window}` — keyword-filtered digests Rate limit: 60 req/min per OAuth client; standard 5-sub config stays well under. Pagination uses `before`/`after` cursors (not needed for the top-N digest flow). **messaging Web API (connector: slack)** — base `https://slack.com/api`. `Authorization: Bearer {bot_token}` injected. - `POST /chat.postMessage` body `{channel, text, unfurl_links: false, unfurl_media: false}`; returns `{ok: true, ts}` or `{ok: false, error}`\n- `POST /chat.update` with `ts` for corrections\n- `GET /conversations.list?types=public_channel,private_channel` — validate target channel\n- `GET /auth.test` — healthcheck **Local state**:\n- `state/seen_posts.json` — `{<post_id>: {first_seen: ISO8601, subreddit: 'r/...'}}`; 30-day rolling; read-merge-write to avoid concurrent-run data loss\n- `state/drafts/digest_{ts}.md` — fallback archive when messaging delivery fails\n- `state/source_health.json` — per-subreddit failure tracking",
+      "error_handling": "social platform 429 → back off 60s, retry once; otherwise abort run with user_message. social platform 401/403 → token expired/revoked, prompt re-authorization, do not update state. social platform 404 on a subreddit → deleted/banned; drop from this run, increment failure counter, other subs continue. social platform 5xx → skip just that subreddit, other subs continue. social platform empty response → treat as zero posts. messaging `channel_not_found` → config error, do NOT retry; write draft to `state/drafts/`, user_message warning, do NOT update state. messaging `not_in_channel` → try `conversations.join` for public channels, else draft + notify. messaging `rate_limited` → honor Retry-After header. messaging 5xx/network → retry once after 10s, then draft fallback. Corrupted state/seen_posts.json → reinitialize empty; some posts may resurface once — self-corrects. max_clusters=0 → treat as 1. messaging channels missing leading `#` → auto-prefix. Empty subreddits param → abort with user_message asking for at least one.",
       "examples": [],
       "tools": [
         "http_request",
@@ -65,14 +65,14 @@
       ],
       "connectors": [
         {
-          "name": "social_feed",
+          "name": "social",
           "label": "Social Feed",
           "auth_type": "oauth2",
           "role": "data_source",
-          "category": "social_feed",
+          "category": "social",
           "required": true,
           "credential_fields": [],
-          "setup_instructions": "Connect a social_feed credential in Vault → Catalog (Reddit, X/Twitter, LinkedIn, or YouTube Data). The adoption questionnaire auto-detects your configured provider and the persona adapts its fetch/cluster logic to that platform's conventions."
+          "setup_instructions": "Connect a social_feed credential in Vault → Catalog (social platform, social platform, social platform, or social platform Data). The adoption questionnaire auto-detects your configured provider and the persona adapts its fetch/cluster logic to that platform's conventions."
         },
         {
           "name": "messaging",
@@ -98,7 +98,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "The assembled digest lands in the configured messaging channel as one post. Markdown is rendered for the selected messaging provider (Slack mrkdwn, Discord md, or plain Markdown)."
+          "description": "The assembled digest lands in the configured messaging channel as one post. Markdown is rendered for the selected messaging provider (messaging mrkdwn, messaging md, or plain Markdown)."
         }
       ],
       "core_memories": []
@@ -106,9 +106,9 @@
     "use_cases": [
       {
         "id": "uc_digest",
-        "title": "Reddit Trend Digest",
-        "description": "Fetch top posts from configured subreddits, dedup against a 30-day seen-posts index, cluster into themes with sentiment labels, assemble Slack-flavored markdown, and post to the configured channel. Default daily 09:00 UTC — final cadence set at the trigger-composition step.",
-        "capability_summary": "Scheduled Reddit → themed Slack digest with dedup, clustering, sentiment labeling.",
+        "title": "social platform Trend Digest",
+        "description": "Fetch top posts from configured subreddits, dedup against a 30-day seen-posts index, cluster into themes with sentiment labels, assemble messaging-flavored markdown, and post to the configured channel. Default daily 09:00 UTC — final cadence set at the trigger-composition step.",
+        "capability_summary": "Scheduled social platform → themed messaging digest with dedup, clustering, sentiment labeling.",
         "category": "analysis",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -122,7 +122,7 @@
           "description": "Default daily 09:00 UTC — final cadence set at the trigger-composition step. Align with the team's morning standup for maximum utility."
         },
         "connectors": [
-          "social_feed",
+          "social",
           "messaging"
         ],
         "notification_channels": [],
@@ -147,7 +147,7 @@
             "description": "Payload: subreddits, time_window. Emitted on a zero-cluster run (the one-line 'no new activity' message still ships)."
           }
         ],
-        "error_handling": "Reddit 429 → 60s backoff + 1 retry, else abort. Slack `channel_not_found` → draft locally, warn user, do NOT update state. Slack 5xx → retry once after 10s, then draft fallback. Empty subreddits param → abort with user_message.",
+        "error_handling": "social platform 429 → 60s backoff + 1 retry, else abort. messaging `channel_not_found` → draft locally, warn user, do NOT update state. messaging 5xx → retry once after 10s, then draft fallback. Empty subreddits param → abort with user_message.",
         "input_schema": [
           {
             "name": "subreddits",
@@ -166,7 +166,7 @@
               "all"
             ],
             "default": "day",
-            "description": "Maps directly to Reddit's `t=` query parameter. Match to the digest cadence (daily cron + day window, weekly cron + week window)."
+            "description": "Maps directly to social platform's `t=` query parameter. Match to the digest cadence (daily cron + day window, weekly cron + week window)."
           },
           {
             "name": "posts_per_subreddit",
@@ -187,13 +187,13 @@
           {
             "name": "slack_channel",
             "type": "text",
-            "description": "Target Slack channel (include leading `#`). The bot must already be invited (`/invite @YourBot`)."
+            "description": "Target messaging channels (include leading `#`). The bot must already be invited (`/invite @YourBot`)."
           },
           {
             "name": "include_nsfw",
             "type": "boolean",
             "default": false,
-            "description": "Include posts flagged over_18 by Reddit. Default off."
+            "description": "Include posts flagged over_18 by social platform. Default off."
           },
           {
             "name": "human_review_enabled",
@@ -243,12 +243,12 @@
             {
               "id": "d5",
               "type": "action",
-              "label": "Synthesize themes + sentiment + assemble Slack markdown"
+              "label": "Synthesize themes + sentiment + assemble messaging markdown"
             },
             {
               "id": "d6",
               "type": "connector",
-              "label": "POST to Slack (unfurl disabled)",
+              "label": "POST to the messaging channel (unfurl disabled)",
               "connector": "messaging"
             },
             {
@@ -455,7 +455,7 @@
         "default": "day",
         "maps_to": "use_cases[uc_digest].sample_input.time_window",
         "variable_name": "time_window",
-        "context": "Maps to Reddit's `t=` parameter on /top. Match to your cadence — daily cron pairs with `day`, weekly cron with `week`.",
+        "context": "Maps to social platform's `t=` parameter on /top. Match to your cadence — daily cron pairs with `day`, weekly cron with `week`.",
         "dimension": "use-cases"
       },
       {
@@ -476,7 +476,7 @@
         "default": "25",
         "maps_to": "use_cases[uc_digest].sample_input.posts_per_subreddit",
         "variable_name": "posts_per_subreddit",
-        "context": "Higher values produce richer clusters but use more API budget. 25 is the balanced default; Reddit's rate limit is 60 req/min.",
+        "context": "Higher values produce richer clusters but use more API budget. 25 is the balanced default; social platform's rate limit is 60 req/min.",
         "dimension": "use-cases"
       },
       {
@@ -508,7 +508,7 @@
           "uc_digest"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should the digest land in?",
+        "question": "Which messaging channels should the digest land in?",
         "type": "text",
         "default": "#research-pulse",
         "maps_to": "use_cases[uc_digest].sample_input.slack_channel",
@@ -528,7 +528,7 @@
         "default": false,
         "maps_to": "use_cases[uc_digest].sample_input.include_nsfw",
         "variable_name": "include_nsfw",
-        "context": "Posts flagged over_18 by Reddit. Off by default. Enable only if your watched subreddits genuinely require it and the Slack workspace policy allows it.",
+        "context": "Posts flagged over_18 by social platform. Off by default. Enable only if your watched subreddits genuinely require it and the messaging workspaces policy allows it.",
         "dimension": "use-cases"
       },
       {
@@ -562,12 +562,12 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],
     "persona_meta": {
-      "name": "T: Reddit Trend Digest",
+      "name": "T: social platform Trend Digest",
       "icon": "TrendingUp",
       "color": "#FF4500"
     }

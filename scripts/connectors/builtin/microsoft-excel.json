@@ -4,10 +4,10 @@
   "label": "Microsoft Excel",
   "color": "#217346",
   "icon_url": "/icons/connectors/microsoft-excel.svg",
-  "category": "database",
+  "category": "spreadsheet",
   "categories": [
-    "database",
-    "spreadsheet"
+    "spreadsheet",
+    "database"
   ],
   "fields": [],
   "healthcheck_config": {

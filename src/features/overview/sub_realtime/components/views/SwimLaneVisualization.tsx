@@ -11,6 +11,12 @@ import {
 } from '../../libs/visualizationHelpers';
 import EventLogSidebar from '../panels/EventLogSidebar';
 import { useTranslation } from '@/i18n/useTranslation';
+import {
+  SWIM_LANE_LAYOUT,
+  SWIM_LANE_DERIVED,
+  SWIM_LANE_LIMITS,
+  SWIM_LANE_NODE_SIZING,
+} from './SwimLaneVisualization.constants';
 
 /*
  * Swim Lane visualization -- horizontal left-to-right flow.
@@ -19,14 +25,8 @@ import { useTranslation } from '@/i18n/useTranslation';
  * Philosophy: linear time-flow, easy to trace which source talks to which agent.
  */
 
-/* ---------- Layout ---------- */
-const PAD_X = 8;
-const PAD_Y = 6;
-const LANE_W = 100 - PAD_X * 2;
-const HUB_X = 50;
-const SRC_X = PAD_X + 4;
-const AGT_X = 100 - PAD_X - 4;
-const NODE_R = 2.2;
+const { padX: PAD_X, padY: PAD_Y, hubX: HUB_X, nodeR: NODE_R } = SWIM_LANE_LAYOUT;
+const { laneW: LANE_W, srcX: SRC_X, agtX: AGT_X } = SWIM_LANE_DERIVED;
 
 interface PersonaInfo {
   id: string;
@@ -86,24 +86,24 @@ export default function SwimLaneVisualization({ events, personas, animationMapRe
   const sourceNodes = useMemo(() => {
     const disc = discoveredRef.current;
     if (disc.size === 0) {
-      const raw = DEFAULT_TOOLS.slice(0, 8).map(t => ({ ...t, sizeFactor: 1 }));
+      const raw = DEFAULT_TOOLS.slice(0, SWIM_LANE_LIMITS.fallbackToolCount).map(t => ({ ...t, sizeFactor: 1 }));
       return distributeVertically(raw, PAD_Y + 4, 100 - PAD_Y - 4);
     }
     const now = Date.now();
-    const sources = Array.from(disc.values()).sort((a, b) => b.count - a.count).slice(0, 10);
+    const sources = Array.from(disc.values()).sort((a, b) => b.count - a.count).slice(0, SWIM_LANE_LIMITS.maxSources);
     const maxC = Math.max(1, ...sources.map(s => s.count));
     const raw = sources.map(s => {
       const age = now - s.lastSeen;
-      const sf = 0.3 + 0.7 * (s.count / maxC);
-      return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * 0.5 : sf };
+      const sf = SWIM_LANE_NODE_SIZING.sizeFactorBase + SWIM_LANE_NODE_SIZING.sizeFactorGain * (s.count / maxC);
+      return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * SWIM_LANE_NODE_SIZING.stalenessSizeMultiplier : sf };
     });
     return distributeVertically(raw, PAD_Y + 4, 100 - PAD_Y - 4);
   }, [events.length]);
 
   const agentNodes = useMemo(() => {
     const raw = personas.length > 0
-      ? personas.slice(0, 8).map(p => ({ id: p.id, label: p.name, icon: p.icon, color: p.color ?? '#8b5cf6' }))
-      : DEFAULT_PERSONAS.slice(0, 6);
+      ? personas.slice(0, SWIM_LANE_LIMITS.maxAgents).map(p => ({ id: p.id, label: p.name, icon: p.icon, color: p.color ?? '#8b5cf6' }))
+      : DEFAULT_PERSONAS.slice(0, SWIM_LANE_LIMITS.fallbackAgentCount);
     return distributeVertically(raw, PAD_Y + 4, 100 - PAD_Y - 4);
   }, [personas]);
 

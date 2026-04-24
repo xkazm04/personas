@@ -3740,3 +3740,8 @@ input[type="number"] {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
 }
 
+
+/* Theme-aware image swap used by GlyphFullLayout petal illustrations. */
+.light-only { display: none; }
+[data-theme^="light"] .dark-only { display: none; }
+[data-theme^="light"] .light-only { display: inline-block; }

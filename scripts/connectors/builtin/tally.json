@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/tally.svg",
   "category": "forms",
   "categories": [
-    "forms",
-    "surveys"
+    "forms"
   ],
   "fields": [
     {

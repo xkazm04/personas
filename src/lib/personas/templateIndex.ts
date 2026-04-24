@@ -16,7 +16,20 @@ import tpl_content_newsletter_curator from '../../../scripts/templates/content/n
 import tpl_content_scientific_writing_editor from '../../../scripts/templates/content/scientific-writing-editor.json';
 import tpl_content_social_media_designer from '../../../scripts/templates/content/social-media-designer.json';
 import tpl_content_youtube_content_pipeline from '../../../scripts/templates/content/youtube-content-pipeline.json';
+import tpl_development_autonomous_issue_resolver_ar from '../../../scripts/templates/development/autonomous-issue-resolver.ar.json';
+import tpl_development_autonomous_issue_resolver_bn from '../../../scripts/templates/development/autonomous-issue-resolver.bn.json';
+import tpl_development_autonomous_issue_resolver_cs from '../../../scripts/templates/development/autonomous-issue-resolver.cs.json';
+import tpl_development_autonomous_issue_resolver_de from '../../../scripts/templates/development/autonomous-issue-resolver.de.json';
+import tpl_development_autonomous_issue_resolver_es from '../../../scripts/templates/development/autonomous-issue-resolver.es.json';
+import tpl_development_autonomous_issue_resolver_fr from '../../../scripts/templates/development/autonomous-issue-resolver.fr.json';
+import tpl_development_autonomous_issue_resolver_hi from '../../../scripts/templates/development/autonomous-issue-resolver.hi.json';
+import tpl_development_autonomous_issue_resolver_id from '../../../scripts/templates/development/autonomous-issue-resolver.id.json';
+import tpl_development_autonomous_issue_resolver_ja from '../../../scripts/templates/development/autonomous-issue-resolver.ja.json';
 import tpl_development_autonomous_issue_resolver from '../../../scripts/templates/development/autonomous-issue-resolver.json';
+import tpl_development_autonomous_issue_resolver_ko from '../../../scripts/templates/development/autonomous-issue-resolver.ko.json';
+import tpl_development_autonomous_issue_resolver_ru from '../../../scripts/templates/development/autonomous-issue-resolver.ru.json';
+import tpl_development_autonomous_issue_resolver_vi from '../../../scripts/templates/development/autonomous-issue-resolver.vi.json';
+import tpl_development_autonomous_issue_resolver_zh from '../../../scripts/templates/development/autonomous-issue-resolver.zh.json';
 import tpl_development_build_intelligence_use_case from '../../../scripts/templates/development/build-intelligence-use-case.json';
 import tpl_development_codebase_health_scanner from '../../../scripts/templates/development/codebase-health-scanner.json';
 import tpl_development_design_handoff_coordinator from '../../../scripts/templates/development/design-handoff-coordinator.json';
@@ -75,6 +88,7 @@ import tpl_project_management_deadline_synchronizer from '../../../scripts/templ
 import tpl_project_management_technical_decision_tracker from '../../../scripts/templates/project-management/technical-decision-tracker.json';
 import tpl_research_ai_research_report_generator from '../../../scripts/templates/research/ai-research-report-generator.json';
 import tpl_research_ai_weekly_research from '../../../scripts/templates/research/ai-weekly-research.json';
+import tpl_research_bi_dashboard_digest from '../../../scripts/templates/research/bi-dashboard-digest.json';
 import tpl_research_conversational_database_analyst from '../../../scripts/templates/research/conversational-database-analyst.json';
 import tpl_research_customer_event_intelligence from '../../../scripts/templates/research/customer-event-intelligence.json';
 import tpl_research_database_performance_monitor from '../../../scripts/templates/research/database-performance-monitor.json';
@@ -125,7 +139,20 @@ export const allTemplates: any[] = [
   tpl_content_scientific_writing_editor,
   tpl_content_social_media_designer,
   tpl_content_youtube_content_pipeline,
+  tpl_development_autonomous_issue_resolver_ar,
+  tpl_development_autonomous_issue_resolver_bn,
+  tpl_development_autonomous_issue_resolver_cs,
+  tpl_development_autonomous_issue_resolver_de,
+  tpl_development_autonomous_issue_resolver_es,
+  tpl_development_autonomous_issue_resolver_fr,
+  tpl_development_autonomous_issue_resolver_hi,
+  tpl_development_autonomous_issue_resolver_id,
+  tpl_development_autonomous_issue_resolver_ja,
   tpl_development_autonomous_issue_resolver,
+  tpl_development_autonomous_issue_resolver_ko,
+  tpl_development_autonomous_issue_resolver_ru,
+  tpl_development_autonomous_issue_resolver_vi,
+  tpl_development_autonomous_issue_resolver_zh,
   tpl_development_build_intelligence_use_case,
   tpl_development_codebase_health_scanner,
   tpl_development_design_handoff_coordinator,
@@ -184,6 +211,7 @@ export const allTemplates: any[] = [
   tpl_project_management_technical_decision_tracker,
   tpl_research_ai_research_report_generator,
   tpl_research_ai_weekly_research,
+  tpl_research_bi_dashboard_digest,
   tpl_research_conversational_database_analyst,
   tpl_research_customer_event_intelligence,
   tpl_research_database_performance_monitor,

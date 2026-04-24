@@ -4,11 +4,10 @@
   "label": "Redash",
   "color": "#FF7964",
   "icon_url": "/icons/connectors/redash.svg",
-  "category": "analytics",
+  "category": "bi",
   "categories": [
-    "analytics",
     "bi",
-    "sql"
+    "analytics"
   ],
   "fields": [
     {

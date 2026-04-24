@@ -56,10 +56,10 @@ export default function SLADashboard() {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-              <SlaCard label={t.overview.sla.success_rate} value={formatPercent(data.global.success_rate)} sub={`${data.global.successful}/${data.global.successful + data.global.failed} decided`} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
-              <SlaCard label={t.overview.sla.avg_latency} value={formatDuration(data.global.avg_duration_ms)} sub={`${data.global.active_persona_count} active agents`} color="blue" icon={<Clock className="w-4 h-4" />} />
-              <SlaCard label={t.overview.sla.open_issues} value={String(data.healing_summary.open_issues)} sub={`${data.healing_summary.circuit_breaker_count} circuit breakers`} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
-              <SlaCard label={t.overview.sla.auto_healed} value={String(data.healing_summary.auto_fixed_count)} sub={`${data.healing_summary.knowledge_patterns} known patterns`} color="violet" icon={<Wrench className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.success_rate} value={formatPercent(data.global.success_rate)} sub={tx(t.overview.sla.executions_summary, { successful: data.global.successful, total: data.global.successful + data.global.failed })} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.avg_latency} value={formatDuration(data.global.avg_duration_ms)} sub={tx(t.overview.sla.active_agents, { count: data.global.active_persona_count })} color="blue" icon={<Clock className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.open_issues} value={String(data.healing_summary.open_issues)} sub={tx(t.overview.sla.circuit_breakers, { count: data.healing_summary.circuit_breaker_count })} color={data.healing_summary.open_issues > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} />
+              <SlaCard label={t.overview.sla.auto_healed} value={String(data.healing_summary.auto_fixed_count)} sub={tx(t.overview.sla.known_patterns, { count: data.healing_summary.knowledge_patterns })} color="violet" icon={<Wrench className="w-4 h-4" />} />
             </div>
 
             {data.daily_trend.length > 0 && (

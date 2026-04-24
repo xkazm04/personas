@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/sendgrid.svg",
   "category": "email",
   "categories": [
-    "email",
-    "transactional_email"
+    "email"
   ],
   "fields": [
     {

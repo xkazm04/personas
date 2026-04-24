@@ -116,7 +116,7 @@ export default function GuidedTour() {
       <button
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
         data-testid="tour-panel-minimized"
-        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.border} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
+        className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background/95 backdrop-blur-xl border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
       >
         <MapPin className={`w-4 h-4 ${colors.text}`} />
         <span className="text-[10px] font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
@@ -131,10 +131,10 @@ export default function GuidedTour() {
       className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
       style={{ width: panelWidth }}
     >
-      <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.border} bg-background/95 backdrop-blur-xl shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+      <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background/95 backdrop-blur-xl shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
           <div className="flex items-center gap-2.5">
-            <div className={`w-8 h-8 rounded-modal ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+            <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
               <Sparkles className={`w-4 h-4 ${colors.text}`} />
             </div>
             <div>

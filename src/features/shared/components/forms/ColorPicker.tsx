@@ -1,3 +1,4 @@
+import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -14,6 +15,8 @@ const COLOR_PRESETS = [
   '#a855f7', // purple
 ];
 
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
 const SIZE_STYLES = {
   sm: { swatch: 'w-7 h-7', nativeInput: 'w-7 h-7', gap: 'gap-1.5' },
   md: { swatch: 'w-8 h-8', nativeInput: 'w-8 h-8', gap: 'gap-2' },
@@ -28,6 +31,46 @@ interface ColorPickerProps {
 export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) {
   const { t } = useTranslation();
   const s = SIZE_STYLES[size];
+  const errorId = useId();
+
+  const [hexDraft, setHexDraft] = useState(value ?? '');
+  const [invalid, setInvalid] = useState(false);
+
+  // Sync the draft when the upstream value changes from another source
+  // (preset swatch, native color input, reset button).
+  useEffect(() => {
+    if (!value) return;
+    if (hexDraft.trim().toLowerCase() !== value.toLowerCase()) {
+      setHexDraft(value);
+      setInvalid(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const handleHexInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setHexDraft(raw);
+    const trimmed = raw.trim();
+    if (trimmed === '') {
+      setInvalid(false);
+      return;
+    }
+    if (HEX_RE.test(trimmed)) {
+      setInvalid(false);
+      onChange(trimmed);
+    } else {
+      setInvalid(true);
+    }
+  };
+
+  const handleHexBlur = () => {
+    const trimmed = hexDraft.trim();
+    if (trimmed === '' || !HEX_RE.test(trimmed)) {
+      // Revert to upstream value on invalid blur so state stays consistent
+      setHexDraft(value ?? '');
+      setInvalid(false);
+    }
+  };
 
   return (
     <div className="space-y-2">
@@ -56,16 +99,24 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
       <div className="flex items-center gap-2">
         <input
           type="color"
-          value={value || '#8b5cf6'}
+          value={HEX_RE.test(value) ? value : '#8b5cf6'}
           onChange={(e) => onChange(e.target.value)}
           className={`${s.nativeInput} rounded-lg cursor-pointer border border-primary/15 bg-transparent`}
         />
         <input
           type="text"
-          value={value || ''}
-          onChange={(e) => onChange(e.target.value.trim() || '#8b5cf6')}
+          value={hexDraft}
+          onChange={handleHexInput}
+          onBlur={handleHexBlur}
           placeholder={t.shared.forms_extra.color_hex_placeholder}
-          className="w-28 px-2.5 py-1.5 bg-background/50 border border-primary/15 rounded-xl typo-code text-foreground placeholder-muted-foreground/30 focus-ring transition-all"
+          aria-invalid={invalid || undefined}
+          aria-errormessage={invalid ? errorId : undefined}
+          spellCheck={false}
+          className={`w-28 px-2.5 py-1.5 bg-background/50 border rounded-xl typo-code text-foreground placeholder-muted-foreground/30 focus-ring transition-colors ${
+            invalid
+              ? 'border-status-error/70 ring-1 ring-status-error/30'
+              : 'border-primary/15'
+          }`}
         />
         {value && value !== '#8b5cf6' && (
           <button
@@ -78,6 +129,11 @@ export function ColorPicker({ value, onChange, size = 'md' }: ColorPickerProps) 
           </button>
         )}
       </div>
+      {invalid && (
+        <p id={errorId} role="alert" className="text-[10px] text-status-error/80 font-medium">
+          {t.shared.forms_extra.invalid_hex}
+        </p>
+      )}
     </div>
   );
 }

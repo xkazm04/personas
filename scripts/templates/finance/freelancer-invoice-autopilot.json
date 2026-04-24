@@ -2,14 +2,22 @@
   "id": "freelancer-invoice-autopilot",
   "schema_version": 3,
   "name": "Freelancer Invoice Autopilot",
-  "description": "Pulls monthly billable hours from your time-tracking tool (Toggl / Clockify / Harvest / custom), applies per-client rates, renders polished HTML invoices from a template generated during persona build, and routes them through human review so the agent learns rate overrides and billable/non-billable classifications over time.",
+  "description": "Pulls monthly billable hours from your time-tracking tool (time tracking tool / time tracking tool / time tracking tool / custom), applies per-client rates, renders polished HTML invoices from a template generated during persona build, and routes them through human review so the agent learns rate overrides and billable/non-billable classifications over time.",
   "icon": "FileText",
   "color": "#8B5CF6",
-  "category": ["finance"],
-  "service_flow": ["Time Tracking Tool", "Messages"],
+  "category": [
+    "finance"
+  ],
+  "service_flow": [
+    "Time Tracking Tool",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Time Tracking Tool", "Messages"],
+    "service_flow": [
+      "Time Tracking Tool",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn tracked hours into professional invoices on the 1st of every month — one template, per-client line items, learned rate overrides, zero copy-paste.",
       "identity": {
@@ -43,19 +51,25 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities with a clear ordering:\n\n1. **uc_build_template** — runs once during persona creation. Collects business details from adoption answers (name, address, country, currency, hourly rate, tax rate, payment terms, logo URL). Generates a responsive HTML invoice template with print + screen CSS. Saves to `<persona_dir>/template/invoice.html`. Persists business config to `invoice_config.json`. Tests the time-tracking credential with a small sample query. Emits `invoice.template.built`.\n\n2. **uc_monthly_invoices** — runs on a monthly schedule. Reads `invoice_config.json` and memory (client rate overrides, billable/non-billable project tags, invoice numbering sequence). Queries the time-tracking API for all entries in the previous calendar month, groups by client and project, applies memory filters, computes per-client subtotal/tax/total, generates invoice numbers (e.g. INV-2026-007), renders HTML per client to `<persona_dir>/invoices/INV-{number}.html` (or to the configured storage destination), delivers a Messages summary with per-client breakdown + flagged items + YTD total, routes each invoice for human approve/reject. On rejection: apply corrections, re-render, persist learnings to memory. Emits `invoice.generated` + `invoice.approved` per finalized invoice.",
-      "tool_guidance": "**Provider detection** at runtime (from injected credential's `service_type`):\n- **Toggl Track** (`https://api.track.toggl.com/api/v9`): `GET /me/time_entries?start_date={s}&end_date={e}`, `GET /me/projects`, `GET /me/clients`. Duration is in seconds — convert to hours. Auth: Basic with API token as username + 'api_token' as password.\n- **Clockify** (`https://api.clockify.me/api/v1`): `GET /workspaces/{ws}/user/{user}/time-entries?start={s}&end={e}`, `GET /workspaces/{ws}/projects`, `GET /workspaces/{ws}/clients`. Auth: `X-Api-Key` header.\n- **Harvest** (`https://api.harvestapp.com/v2`): `GET /time_entries?from={s}&to={e}`, `GET /projects`, `GET /clients`. Auth: Bearer + `Harvest-Account-Id` header.\n- **Custom** (any time-tracking credential): use the vault-configured `api_base_url` + credential auth.\n\n**Output destination** (from aq_output_destination): local drive (default), Google Drive, Dropbox, AWS S3, or a custom path. Agent adapts write calls accordingly.\n\n**Local state**: `invoice_config.json` (business details, numbering format), `invoice_history.json` (past invoices + YTD + sequence counter), memory entries for per-client rate overrides and project classifications.",
-      "error_handling": "Time-tracking 401/403 → Messages alert with re-auth instructions; cannot generate invoices without time data. 429 → backoff per provider (Toggl 1 req/s, Clockify 10 req/s). Empty month → Messages summary notes zero entries; skip generation. Missing template → advise rebuild. Missing client on entry → group as 'Uncategorized', flag in summary. Template render error → fall back to minimal table layout; warn in summary. Messages failure → persist summary to `latest_billing_summary.json`.",
+      "operating_instructions": "Two capabilities with a clear ordering: 1. **uc_build_template** — runs once during persona creation. Collects business details from adoption answers (name, address, country, currency, hourly rate, tax rate, payment terms, logo URL). Generates a responsive HTML invoice template with print + screen CSS. Saves to `<persona_dir>/template/invoice.html`. Persists business config to `invoice_config.json`. Tests the time-tracking credential with a small sample query. Emits `invoice.template.built`. 2. **uc_monthly_invoices** — runs on a monthly schedule. Reads `invoice_config.json` and memory (client rate overrides, billable/non-billable project tags, invoice numbering sequence). Queries the time-tracking API for all entries in the previous calendar month, groups by client and project, applies memory filters, computes per-client subtotal/tax/total, generates invoice numbers (e.g. INV-2026-007), renders HTML per client to `<persona_dir>/invoices/INV-{number}.html` (or to the configured storage destination), delivers a Messages summary with per-client breakdown + flagged items + YTD total, routes each invoice for human approve/reject. On rejection: apply corrections, re-render, persist learnings to memory. Emits `invoice.generated` + `invoice.approved` per finalized invoice.",
+      "tool_guidance": "**Provider detection** at runtime (from injected credential's `service_type`):\n- **time tracking tool Track** (`https://api.track.toggl.com/api/v9`): `GET /me/time_entries?start_date={s}&end_date={e}`, `GET /me/projects`, `GET /me/clients`. Duration is in seconds — convert to hours. Auth: Basic with API token as username + 'api_token' as password.\n- **time tracking tool** (`https://api.clockify.me/api/v1`): `GET /workspaces/{ws}/user/{user}/time-entries?start={s}&end={e}`, `GET /workspaces/{ws}/projects`, `GET /workspaces/{ws}/clients`. Auth: `X-Api-Key` header.\n- **time tracking tool** (`https://api.harvestapp.com/v2`): `GET /time_entries?from={s}&to={e}`, `GET /projects`, `GET /clients`. Auth: Bearer + `time tracking tool-Account-Id` header.\n- **Custom** (any time-tracking credential): use the vault-configured `api_base_url` + credential auth. **Output destination** (from aq_output_destination): local drive (default), cloud storage, cloud storage, cloud storage, or a custom path. Agent adapts write calls accordingly. **Local state**: `invoice_config.json` (business details, numbering format), `invoice_history.json` (past invoices + YTD + sequence counter), memory entries for per-client rate overrides and project classifications.",
+      "error_handling": "Time-tracking 401/403 → Messages alert with re-auth instructions; cannot generate invoices without time data. 429 → backoff per provider (time tracking tool 1 req/s, time tracking tool 10 req/s). Empty month → Messages summary notes zero entries; skip generation. Missing template → advise rebuild. Missing client on entry → group as 'Uncategorized', flag in summary. Template render error → fall back to minimal table layout; warn in summary. Messages failure → persist summary to `latest_billing_summary.json`.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "time_tracking",
           "label": "Time Tracking Tool",
           "auth_type": "api_key",
           "role": "time_data",
-          "category": "time-tracking",
-          "categories": ["time_tracking"],
+          "category": "time_tracking",
+          "categories": [
+            "time_tracking"
+          ],
           "required": true,
           "api_base_url": "https://configured-at-adoption",
           "credential_fields": [
@@ -64,7 +78,7 @@
               "label": "API Token",
               "type": "password",
               "placeholder": "your-time-tracking-api-token",
-              "helpText": "API token from your time tracking tool. Toggl: Profile > API Token. Clockify: Profile Settings > API. Harvest: Developers > Personal Access Tokens.",
+              "helpText": "API token from your time tracking tool. time tracking tool: Profile > API Token. time tracking tool: Profile Settings > API. time tracking tool: Developers > Personal Access Tokens.",
               "required": true
             },
             {
@@ -72,7 +86,7 @@
               "label": "Workspace / Account ID",
               "type": "text",
               "placeholder": "your-workspace-id",
-              "helpText": "Workspace ID (Toggl/Clockify) or Account ID (Harvest). Found in your tool's settings or URL.",
+              "helpText": "Workspace ID (time tracking tool/time tracking tool) or Account ID (time tracking tool). Found in your tool's settings or URL.",
               "required": true
             },
             {
@@ -84,15 +98,17 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Choose your time tracking tool (Toggl Track, Clockify, Harvest)\n2. Generate a read-only API token from your profile settings\n3. Note your workspace or account ID\n4. Ensure your time entries have client and project associations for proper invoice grouping\n5. The agent will test the connection and list available projects during adoption"
+          "setup_instructions": "1. Choose your time tracking tool (time tracking tool Track, time tracking tool, time tracking tool)\n2. Generate a read-only API token from your profile settings\n3. Note your workspace or account ID\n4. Ensure your time entries have client and project associations for proper invoice grouping\n5. The agent will test the connection and list available projects during adoption"
         },
         {
-          "name": "invoice_storage",
+          "name": "storage",
           "label": "Invoice Storage",
           "auth_type": "builtin",
           "role": "file_storage",
           "category": "storage",
-          "categories": ["storage"],
+          "categories": [
+            "storage"
+          ],
           "required": false,
           "fallback_note": "When no cloud storage is picked, invoices are written to the managed Local Drive folder inside the Personas app data directory (`<persona_dir>/invoices/`). Pick a cloud credential to route invoices elsewhere.",
           "credential_fields": [
@@ -105,7 +121,7 @@
               "required": false
             }
           ],
-          "setup_instructions": "Pick a storage credential during adoption (Local Drive, Google Drive, Dropbox, AWS S3, or other storage-category credential). Skip to use the default managed Local Drive location."
+          "setup_instructions": "Pick a storage credential during adoption (Local Drive, cloud storage, cloud storage, cloud storage, or other storage-category credential). Skip to use the default managed Local Drive location."
         }
       ],
       "notification_channels_default": [
@@ -128,10 +144,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "build_hook",
-          "config": { "hook": "on_create" },
+          "config": {
+            "hook": "on_create"
+          },
           "description": "Runs once during persona creation. Not user-configurable — build hooks bypass the composition picker."
         },
-        "connectors": ["time_tracking", "invoice_storage"],
+        "connectors": [
+          "time_tracking",
+          "storage"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -163,7 +184,15 @@
           {
             "name": "currency",
             "type": "enum",
-            "options": ["USD", "EUR", "GBP", "CAD", "AUD", "CHF", "Other"],
+            "options": [
+              "USD",
+              "EUR",
+              "GBP",
+              "CAD",
+              "AUD",
+              "CHF",
+              "Other"
+            ],
             "default": "USD",
             "description": "Invoice currency. Sets the symbol and locale formatting."
           },
@@ -175,7 +204,13 @@
           {
             "name": "payment_terms",
             "type": "enum",
-            "options": ["Due on receipt", "Net 15", "Net 30", "Net 45", "Net 60"],
+            "options": [
+              "Due on receipt",
+              "Net 15",
+              "Net 30",
+              "Net 45",
+              "Net 60"
+            ],
             "default": "Net 30",
             "description": "Sets the due date relative to invoice date on every render."
           }
@@ -187,25 +222,76 @@
           "country_and_tax": "{{param.aq_country_tax}}",
           "payment_terms": "{{param.aq_payment_terms}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Persona build hook" },
-            { "id": "b2", "type": "action", "label": "Collect business details from adoption" },
-            { "id": "b3", "type": "action", "label": "Render HTML template (print + screen CSS)" },
-            { "id": "b4", "type": "action", "label": "Write template.html + invoice_config.json" },
-            { "id": "b5", "type": "connector", "label": "Test time-tracking credential", "connector": "time_tracking" },
-            { "id": "b6", "type": "event", "label": "Emit invoice.template.built" },
-            { "id": "b7", "type": "end", "label": "Build complete" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Persona build hook"
+            },
+            {
+              "id": "b2",
+              "type": "action",
+              "label": "Collect business details from adoption"
+            },
+            {
+              "id": "b3",
+              "type": "action",
+              "label": "Render HTML template (print + screen CSS)"
+            },
+            {
+              "id": "b4",
+              "type": "action",
+              "label": "Write template.html + invoice_config.json"
+            },
+            {
+              "id": "b5",
+              "type": "connector",
+              "label": "Test time-tracking credential",
+              "connector": "time_tracking"
+            },
+            {
+              "id": "b6",
+              "type": "event",
+              "label": "Emit invoice.template.built"
+            },
+            {
+              "id": "b7",
+              "type": "end",
+              "label": "Build complete"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" },
-            { "source": "b6", "target": "b7" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3"
+            },
+            {
+              "source": "b3",
+              "target": "b4"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            },
+            {
+              "source": "b6",
+              "target": "b7"
+            }
           ]
         }
       },
@@ -220,10 +306,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 1 * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 1 * *",
+            "timezone": "local"
+          },
           "description": "Default 1st of month at 9:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["time_tracking", "invoice_storage"],
+        "connectors": [
+          "time_tracking",
+          "storage"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -256,31 +348,103 @@
         "sample_input": {
           "output_destination": "{{param.aq_output_destination}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Monthly tick" },
-            { "id": "m2", "type": "action", "label": "Load config + memory (overrides, classifications, sequence)" },
-            { "id": "m3", "type": "connector", "label": "Fetch previous-month time entries", "connector": "time_tracking" },
-            { "id": "m4", "type": "action", "label": "Group by client + project; apply memory filters" },
-            { "id": "m5", "type": "action", "label": "Compute amounts + generate invoice numbers" },
-            { "id": "m6", "type": "action", "label": "Render HTML invoices + write to storage" },
-            { "id": "m7", "type": "action", "label": "Deliver Messages summary (per-client + YTD)" },
-            { "id": "m8", "type": "action", "label": "Route invoices for human review" },
-            { "id": "m9", "type": "action", "label": "Apply corrections + update memory + re-render as needed" },
-            { "id": "m10", "type": "end", "label": "Monthly cycle complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Monthly tick"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Load config + memory (overrides, classifications, sequence)"
+            },
+            {
+              "id": "m3",
+              "type": "connector",
+              "label": "Fetch previous-month time entries",
+              "connector": "time_tracking"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Group by client + project; apply memory filters"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Compute amounts + generate invoice numbers"
+            },
+            {
+              "id": "m6",
+              "type": "action",
+              "label": "Render HTML invoices + write to storage"
+            },
+            {
+              "id": "m7",
+              "type": "action",
+              "label": "Deliver Messages summary (per-client + YTD)"
+            },
+            {
+              "id": "m8",
+              "type": "action",
+              "label": "Route invoices for human review"
+            },
+            {
+              "id": "m9",
+              "type": "action",
+              "label": "Apply corrections + update memory + re-render as needed"
+            },
+            {
+              "id": "m10",
+              "type": "end",
+              "label": "Monthly cycle complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" },
-            { "source": "m9", "target": "m10" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            },
+            {
+              "source": "m9",
+              "target": "m10"
+            }
           ]
         }
       }
@@ -289,7 +453,9 @@
       {
         "id": "aq_time_tracker",
         "scope": "connector",
-        "connector_names": ["time_tracking"],
+        "connector_names": [
+          "time_tracking"
+        ],
         "category": "configuration",
         "question": "Which time-tracking credential should this persona use?",
         "type": "select",
@@ -300,13 +466,15 @@
         },
         "maps_to": "persona.connectors[time_tracking]",
         "variable_name": "time_tracker",
-        "context": "Options come from time-tracking credentials in your Vault (Toggl, Clockify, Harvest, or any time_tracking-category connector). Add one first if the list is empty.",
+        "context": "Options come from time-tracking credentials in your Vault (time tracking tool, time tracking tool, time tracking tool, or any time_tracking-category connector). Add one first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_output_destination",
         "scope": "connector",
-        "connector_names": ["invoice_storage"],
+        "connector_names": [
+          "invoice_storage"
+        ],
         "category": "configuration",
         "question": "Where should generated invoices be saved?",
         "type": "select",
@@ -317,13 +485,15 @@
         },
         "maps_to": "use_cases[uc_monthly_invoices].sample_input.output_destination",
         "variable_name": "output_destination",
-        "context": "Options come from storage-category credentials in your Vault (Local Drive, Google Drive, Dropbox, AWS S3, etc.). Skip to use the managed Local Drive under the Personas app data directory.",
+        "context": "Options come from storage-category credentials in your Vault (Local Drive, cloud storage, cloud storage, cloud storage, etc.). Skip to use the managed Local Drive under the Personas app data directory.",
         "dimension": "connectors"
       },
       {
         "id": "aq_business_details",
         "scope": "capability",
-        "use_case_ids": ["uc_build_template"],
+        "use_case_ids": [
+          "uc_build_template"
+        ],
         "category": "configuration",
         "question": "Business details for the invoice header",
         "type": "textarea",
@@ -337,7 +507,9 @@
       {
         "id": "aq_hourly_rate",
         "scope": "capability",
-        "use_case_ids": ["uc_build_template"],
+        "use_case_ids": [
+          "uc_build_template"
+        ],
         "category": "configuration",
         "question": "What is your default hourly rate?",
         "type": "text",
@@ -351,11 +523,21 @@
       {
         "id": "aq_currency",
         "scope": "capability",
-        "use_case_ids": ["uc_build_template"],
+        "use_case_ids": [
+          "uc_build_template"
+        ],
         "category": "configuration",
         "question": "What currency do you invoice in?",
         "type": "select",
-        "options": ["USD ($)", "EUR (€)", "GBP (£)", "CAD (C$)", "AUD (A$)", "CHF (CHF)", "Other"],
+        "options": [
+          "USD ($)",
+          "EUR (€)",
+          "GBP (£)",
+          "CAD (C$)",
+          "AUD (A$)",
+          "CHF (CHF)",
+          "Other"
+        ],
         "default": "USD ($)",
         "allow_custom": true,
         "maps_to": "use_cases[uc_build_template].sample_input.currency",
@@ -366,11 +548,13 @@
       {
         "id": "aq_country_tax",
         "scope": "capability",
-        "use_case_ids": ["uc_build_template"],
+        "use_case_ids": [
+          "uc_build_template"
+        ],
         "category": "configuration",
         "question": "What is your country and tax rate?",
         "type": "text",
-        "placeholder": "United States, 0%  or  Netherlands, 21% VAT",
+        "placeholder": "United States, 0% or Netherlands, 21% VAT",
         "default": "",
         "maps_to": "use_cases[uc_build_template].sample_input.country_and_tax",
         "variable_name": "country_tax",
@@ -380,7 +564,9 @@
       {
         "id": "aq_payment_terms",
         "scope": "capability",
-        "use_case_ids": ["uc_build_template"],
+        "use_case_ids": [
+          "uc_build_template"
+        ],
         "category": "configuration",
         "question": "What are your payment terms?",
         "type": "select",

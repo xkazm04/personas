@@ -9,8 +9,16 @@
  * ordinal position.  Previous-period values are prefixed with `prev_`.
  *
  * @param points     Full array of time-series points (sorted by date asc).
+ *                   Typically covers `periodDays * 2` entries; when shorter
+ *                   than `periodDays` the entire array is treated as the
+ *                   current half and no `prev_*` keys are emitted.
  * @param periodDays The number of days in the current period (half the total).
  * @param dataKeys   The numeric keys to carry from previous period (e.g. ["cost", "executions"]).
+ *                   Non-numeric values on the previous point are skipped.
+ * @returns New array with length `min(points.length, periodDays)`. Each
+ *          element is the current-period row merged with `prev_<key>`
+ *          fields from the aligned previous-period row (by ordinal index).
+ *          Empty input returns `[]`.
  */
 export function mergePreviousPeriod<T extends Record<string, string | number>>(
   points: T[],

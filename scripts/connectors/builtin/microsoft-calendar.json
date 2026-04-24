@@ -4,10 +4,10 @@
   "label": "Microsoft Outlook Calendar",
   "color": "#0078D4",
   "icon_url": "/icons/connectors/microsoft-calendar.svg",
-  "category": "scheduling",
+  "category": "calendar",
   "categories": [
-    "scheduling",
-    "calendar"
+    "calendar",
+    "scheduling"
   ],
   "fields": [],
   "healthcheck_config": {

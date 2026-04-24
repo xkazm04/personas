@@ -2,7 +2,7 @@
   "id": "dev-lifecycle-manager",
   "schema_version": 3,
   "name": "Dev Lifecycle Manager",
-  "description": "Watches GitHub for new PRs, issues, and releases. Auto-creates/updates linked Jira tickets, posts status updates to Slack dev channels, and flags PRs that exceed size thresholds for manual review.",
+  "description": "Watches source control for new PRs, issues, and releases. Auto-creates/updates linked Jira tickets, posts status updates to the messaging channel dev channels, and flags PRs that exceed size thresholds for manual review.",
   "icon": "GitBranch",
   "color": "#10B981",
   "category": [
@@ -10,25 +10,25 @@
   ],
   "is_published": true,
   "service_flow": [
-    "GitHub",
+    "source control",
     "Jira",
-    "Slack"
+    "messaging"
   ],
   "payload": {
     "service_flow": [
-      "GitHub",
+      "source control",
       "Jira",
-      "Slack"
+      "messaging"
     ],
     "persona": {
-      "goal": "Zero-drift GitHub↔Jira↔Slack — every PR has a ticket, every ticket reflects real code status, and the team knows without drowning in pings.",
+      "goal": "Zero-drift source control↔Jira↔messaging — every PR has a ticket, every ticket reflects real code status, and the team knows without drowning in pings.",
       "identity": {
         "role": "DevOps connective-tissue agent that keeps GitHub activity, Jira tracking, and Slack awareness in sync.",
-        "description": "Polls GitHub for PR / issue / release activity (or consumes webhooks), extracts Jira keys from branch names + PR descriptions, drives Jira transitions that match the PR lifecycle, maps GitHub labels to Jira types + priorities, posts rich Block Kit notifications per event type, and flags oversized PRs for human review. Maintains per-branch dedup state and Slack message threads for update-in-place."
+        "description": "Polls source control for PR / issue / release activity (or consumes webhooks), extracts Jira keys from branch names + PR descriptions, drives Jira transitions that match the PR lifecycle, maps source control labels to Jira types + priorities, posts rich formatted messaging layout notifications per event type, and flags oversized PRs for human review. Maintains per-branch dedup state and messages threads for update-in-place."
       },
       "voice": {
         "style": "DevOps-direct. Status + size + link. Engineers are busy — notifications are scannable in under five seconds.",
-        "output_format": "Slack Block Kit: header (repo/branch/status), context (author, Jira link, size badge), action block for oversized PRs. Jira comments: ADF with PR summary, size classification, review status."
+        "output_format": "messaging formatted layout: header (repo/branch/status), context (author, Jira link, size badge), action block for oversized PRs. Jira comments: ADF with PR summary, size classification, review status."
       },
       "principles": [
         "Every PR has a ticket — create one if none exists; do not leave code untracked.",
@@ -38,7 +38,7 @@
       ],
       "constraints": [
         "Never merge PRs. Never close Jira tickets autonomously beyond the configured gate.",
-        "Never post to Slack when the credential check fails — suppress and alert the owner.",
+        "Never post to the messaging channel when the credential check fails — suppress and alert the owner.",
         "Never overwrite a human-written Jira comment; always append a new one.",
         "Never silently de-dup: if an event is skipped as duplicate, log the reason."
       ],
@@ -51,9 +51,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities cover PR / issue / release:\n\n1. **uc_pr_lifecycle** (default poll every 2 min; GitHub webhook also fires) — list PRs updated since last tick, for each: fetch files, classify size (Small 0–100 / Medium 101–500 / Large 501–1000 / Extra-Large 1000+), extract Jira key from branch or description, create or update Jira ticket (transition to 'In Review', attach remote link), post Block Kit Slack with size badge. For Large/Extra-Large: emit review-gate regardless of autonomy level. On PR merged: transition Jira to Done (if autonomy allows), post thread reply. On review submitted: post review status in thread. Emit `dev.pr.synced` / `dev.pr.oversized` events.\n\n2. **uc_issue_sync** (default poll every 2 min; GitHub webhook also fires) — for each new or updated issue: map GitHub labels to Jira type + priority (bug→Bug/High, enhancement→Story/Medium, security→Bug/Highest, docs→Task/Low), create or update Jira ticket, post Slack notification (urgent/critical labels mention @channel). On closed: transition Jira to Done, thread-reply on Slack. Emit `dev.issue.synced`.\n\n3. **uc_release_management** (default poll every 15 min; GitHub webhook also fires) — for each new release: create or update a Jira version matching the tag, parse release body for PROJ-\\d+ ticket keys, set fixVersion on each referenced ticket, post release announcement to the releases channel with the parsed changelog. Emit `dev.release.published`.\n\nState under data/: github_sync_state.json (per-repo last_pr_updated_at, last_issue_updated_at, last_release_id, processed_{pr,issue}_ids, slack_message_map for thread-in-place), retry_queue.json (failed operations), repo_mappings.json (repo → Jira project key + Slack channel).",
-      "tool_guidance": "### GitHub (http_request + github connector)\n- `GET /repos/{owner}/{repo}/pulls?state=all&sort=updated&per_page=30&since={iso}` — PRs updated since last tick.\n- `GET /repos/{owner}/{repo}/pulls/{n}` — PR details.\n- `GET /repos/{owner}/{repo}/pulls/{n}/files` — changed files + additions + deletions.\n- `GET /repos/{owner}/{repo}/pulls/{n}/reviews` — review state.\n- `GET /repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` — issues feed.\n- `GET /repos/{owner}/{repo}/issues/{n}` — issue details.\n- `GET /repos/{owner}/{repo}/releases?per_page=10` — releases feed.\n- `GET /repos/{owner}/{repo}/releases/{id}` — release detail.\n- Headers: `Accept: application/vnd.github.v3+json`, `Authorization: Bearer {pat}`.\n- Rate limit: 5000 req/hr. Honor `X-RateLimit-Remaining`.\n\n### Jira (http_request + jira connector)\n- Base: `https://{domain}.atlassian.net/rest/api/3`\n- `GET /search?jql=key=\"PROJ-123\"` — find ticket by key.\n- `POST /issue` with `{ fields: { project: { key }, summary, issuetype: { name }, description (ADF), priority: { name } } }` — create.\n- `PUT /issue/{key}` — update fields (fixVersions, priority, labels).\n- `POST /issue/{key}/transitions` with `{ transition: { id } }` — change status.\n- `POST /issue/{key}/remotelink` — attach GitHub PR URL.\n- `POST /issue/{key}/comment` with ADF body — append comment.\n- `POST /version` with `{ name, projectId, released: true }` — create release version.\n- Auth: `Authorization: Basic {base64(email:api_token)}`.\n\n### Slack (http_request + slack connector)\n- `POST /chat.postMessage` — post with Block Kit.\n- `POST /chat.update` — edit existing (for live status pegs).\n- `POST /chat.postMessage` with `thread_ts` — reply in thread.\n- `GET /conversations.list?types=public_channel&limit=100` — resolve channel id.\n- Auth: `Authorization: Bearer {bot_token}`.\n\n### Local state (file_read / file_write)\n- `data/github_sync_state.json` — per-repo last-processed timestamps + Slack message thread map.\n- `data/retry_queue.json` — failed ops queued for next cycle.\n- `data/repo_mappings.json` — repo → Jira project + Slack channel mapping.",
-      "error_handling": "GitHub 403 with `X-RateLimit-Remaining: 0` → pause until `X-RateLimit-Reset`, log warning. GitHub 401 → emit credential alert, halt. GitHub 5xx → retry 3× exp backoff (2s/4s/8s), queue on failure. Jira 401 → emit credential alert. Jira 429 → exp backoff (5s/15s/45s), max 3 retries. Jira missing ticket on branch key → create new, log. Jira state already ahead → comment rather than transition. Slack 429 → respect Retry-After. Slack channel_not_found → fall back to default channel. state file corrupt → reset to empty, rely on processed_{pr,issue}_ids dedup. PR pagination beyond 100 → follow `Link` header. Duplicate PR → link all PRs to the same ticket, note multiple PRs in Slack.",
+      "operating_instructions": "Three capabilities cover PR / issue / release: 1. **uc_pr_lifecycle** (default poll every 2 min; source control webhook also fires) — list PRs updated since last tick, for each: fetch files, classify size (Small 0–100 / Medium 101–500 / Large 501–1000 / Extra-Large 1000+), extract Jira key from branch or description, create or update Jira ticket (transition to 'In Review', attach remote link), post formatted messaging layout messaging with size badge. For Large/Extra-Large: emit review-gate regardless of autonomy level. On PR merged: transition Jira to Done (if autonomy allows), post thread reply. On review submitted: post review status in thread. Emit `dev.pr.synced` / `dev.pr.oversized` events. 2. **uc_issue_sync** (default poll every 2 min; source control webhook also fires) — for each new or updated issue: map source control labels to Jira type + priority (bug→Bug/High, enhancement→Story/Medium, security→Bug/Highest, docs→Task/Low), create or update Jira ticket, post messaging notification (urgent/critical labels mention @channel). On closed: transition Jira to Done, thread-reply on the messaging channel. Emit `dev.issue.synced`. 3. **uc_release_management** (default poll every 15 min; source control webhook also fires) — for each new release: create or update a Jira version matching the tag, parse release body for PROJ-\\d+ ticket keys, set fixVersion on each referenced ticket, post release announcement to the releases channel with the parsed changelog. Emit `dev.release.published`. State under data/: github_sync_state.json (per-repo last_pr_updated_at, last_issue_updated_at, last_release_id, processed_{pr,issue}_ids, slack_message_map for thread-in-place), retry_queue.json (failed operations), repo_mappings.json (repo → Jira project key + messaging channels).",
+      "tool_guidance": "### source control (http_request + github connector)\n- `GET /repos/{owner}/{repo}/pulls?state=all&sort=updated&per_page=30&since={iso}` — PRs updated since last tick.\n- `GET /repos/{owner}/{repo}/pulls/{n}` — PR details.\n- `GET /repos/{owner}/{repo}/pulls/{n}/files` — changed files + additions + deletions.\n- `GET /repos/{owner}/{repo}/pulls/{n}/reviews` — review state.\n- `GET /repos/{owner}/{repo}/issues?state=all&sort=updated&per_page=30` — issues feed.\n- `GET /repos/{owner}/{repo}/issues/{n}` — issue details.\n- `GET /repos/{owner}/{repo}/releases?per_page=10` — releases feed.\n- `GET /repos/{owner}/{repo}/releases/{id}` — release detail.\n- Headers: `Accept: application/vnd.github.v3+json`, `Authorization: Bearer {pat}`.\n- Rate limit: 5000 req/hr. Honor `X-RateLimit-Remaining`. ### Jira (http_request + jira connector)\n- Base: `https://{domain}.atlassian.net/rest/api/3`\n- `GET /search?jql=key=\"PROJ-123\"` — find ticket by key.\n- `POST /issue` with `{ fields: { project: { key }, summary, issuetype: { name }, description (ADF), priority: { name } } }` — create.\n- `PUT /issue/{key}` — update fields (fixVersions, priority, labels).\n- `POST /issue/{key}/transitions` with `{ transition: { id } }` — change status.\n- `POST /issue/{key}/remotelink` — attach source control PR URL.\n- `POST /issue/{key}/comment` with ADF body — append comment.\n- `POST /version` with `{ name, projectId, released: true }` — create release version.\n- Auth: `Authorization: Basic {base64(email:api_token)}`. ### messaging (http_request + slack connector)\n- `POST /chat.postMessage` — post with formatted messaging layout.\n- `POST /chat.update` — edit existing (for live status pegs).\n- `POST /chat.postMessage` with `thread_ts` — reply in thread.\n- `GET /conversations.list?types=public_channel&limit=100` — resolve channel id.\n- Auth: `Authorization: Bearer {bot_token}`. ### Local state (file_read / file_write)\n- `data/github_sync_state.json` — per-repo last-processed timestamps + messages thread map.\n- `data/retry_queue.json` — failed ops queued for next cycle.\n- `data/repo_mappings.json` — repo → Jira project + messaging channels mapping.",
+      "error_handling": "source control 403 with `X-RateLimit-Remaining: 0` → pause until `X-RateLimit-Reset`, log warning. source control 401 → emit credential alert, halt. source control 5xx → retry 3× exp backoff (2s/4s/8s), queue on failure. Jira 401 → emit credential alert. Jira 429 → exp backoff (5s/15s/45s), max 3 retries. Jira missing ticket on branch key → create new, log. Jira state already ahead → comment rather than transition. messaging 429 → respect Retry-After. messaging channel_not_found → fall back to default channel. state file corrupt → reset to empty, rely on processed_{pr,issue}_ids dedup. PR pagination beyond 100 → follow `Link` header. Duplicate PR → link all PRs to the same ticket, note multiple PRs in the messaging channel.",
       "examples": [],
       "tools": [
         "http_request",
@@ -87,7 +87,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.\n2. Name it (e.g., 'Dev Lifecycle Manager').\n3. Scope to the repositories you want monitored.\n4. Grant Contents (Read), Pull requests (Read), Issues (Read), Metadata (Read).\n5. Paste the token + repo list above."
+          "setup_instructions": "1. source control → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token.\n2. Name it (e.g., 'Dev Lifecycle Manager').\n3. Scope to the repositories you want monitored.\n4. Grant Contents (Read), Pull requests (Read), Issues (Read), Metadata (Read).\n5. Paste the token + repo list above."
         },
         {
           "name": "ticketing",
@@ -119,7 +119,7 @@
               "label": "Jira Domain",
               "type": "text",
               "placeholder": "yourcompany",
-              "helpText": "The part before .atlassian.net (e.g., 'acme' for acme.atlassian.net).",
+              "helpText": "The part before.atlassian.net (e.g., 'acme' for acme.atlassian.net).",
               "required": true
             },
             {
@@ -170,8 +170,8 @@
       {
         "id": "uc_pr_lifecycle",
         "title": "Pull Request Lifecycle",
-        "description": "Detects new/updated PRs, classifies size, links to Jira, transitions status, and posts Block Kit notifications. Emits oversized-PR review gates regardless of autonomy level. Default polling every 2 min — final cadence set at the trigger-composition step.",
-        "capability_summary": "PR → Jira sync + Slack notification + oversized PR review gate.",
+        "description": "Detects new/updated PRs, classifies size, links to Jira, transitions status, and posts formatted messaging layout notifications. Emits oversized-PR review gates regardless of autonomy level. Default polling every 2 min — final cadence set at the trigger-composition step.",
+        "capability_summary": "PR → Jira sync + messaging notification + oversized PR review gate.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -181,7 +181,7 @@
           "config": {
             "cron": "*/2 * * * *"
           },
-          "description": "Default every 2 minutes — final cadence set at the trigger-composition step. GitHub webhooks also fire this UC when configured."
+          "description": "Default every 2 minutes — final cadence set at the trigger-composition step. source control webhooks also fire this UC when configured."
         },
         "connectors": [
           "source_control",
@@ -200,7 +200,7 @@
         },
         "memory_policy": {
           "enabled": true,
-          "context": "per-branch PR → Slack-message-ts → Jira-ticket mapping enables update-in-place and prevents duplicate notifications across polling cycles."
+          "context": "per-branch PR → messaging-message-ts → Jira-ticket mapping enables update-in-place and prevents duplicate notifications across polling cycles."
         },
         "event_subscriptions": [
           {
@@ -214,7 +214,7 @@
             "description": "Payload: { repo, pr_number, size_class, author, top_dirs[] }. Feeds review-gate dashboards."
           }
         ],
-        "error_handling": "GitHub rate limit → pause until reset. Jira 401 → credential alert. Jira state ahead → comment only, don't transition. Slack post failure → queue in retry_queue.json.",
+        "error_handling": "source control rate limit → pause until reset. Jira 401 → credential alert. Jira state ahead → comment only, don't transition. messaging post failure → queue in retry_queue.json.",
         "input_schema": [
           {
             "name": "size_thresholds",
@@ -307,7 +307,7 @@
             {
               "id": "n8",
               "type": "connector",
-              "label": "Post Slack (Block Kit + size badge)",
+              "label": "Post messaging (formatted messaging layout + size badge)",
               "connector": "messaging"
             },
             {
@@ -372,8 +372,8 @@
       {
         "id": "uc_issue_sync",
         "title": "Issue Synchronization",
-        "description": "Mirrors GitHub issues to Jira with label→type+priority mapping, posts Slack notifications, and transitions Jira on issue closure. Default polling every 2 min — final cadence set at the trigger-composition step.",
-        "capability_summary": "GitHub issue ↔ Jira ticket sync with label-driven type/priority mapping.",
+        "description": "Mirrors source control issues to Jira with label→type+priority mapping, posts messaging notifications, and transitions Jira on issue closure. Default polling every 2 min — final cadence set at the trigger-composition step.",
+        "capability_summary": "source control issue ↔ Jira ticket sync with label-driven type/priority mapping.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -383,7 +383,7 @@
           "config": {
             "cron": "*/2 * * * *"
           },
-          "description": "Default every 2 minutes — final cadence set at the trigger-composition step. GitHub webhooks also fire this UC when configured."
+          "description": "Default every 2 minutes — final cadence set at the trigger-composition step. source control webhooks also fire this UC when configured."
         },
         "connectors": [
           "source_control",
@@ -402,7 +402,7 @@
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Per-issue processed ids + Slack ts for thread-in-place updates."
+          "context": "Per-issue processed ids + messaging ts for thread-in-place updates."
         },
         "event_subscriptions": [
           {
@@ -411,13 +411,13 @@
             "description": "Payload: { repo, issue_number, jira_key, state }."
           }
         ],
-        "error_handling": "Label not in mapping → add as Jira label verbatim. Urgent label → Slack @channel mention. Jira 429 → exp backoff. Slack message_too_long → truncate, link to GitHub.",
+        "error_handling": "Label not in mapping → add as Jira label verbatim. Urgent label → messaging @channel mention. Jira 429 → exp backoff. messaging message_too_long → truncate, link to source control.",
         "input_schema": [
           {
             "name": "urgent_labels",
             "type": "text",
             "default": "urgent,critical,security",
-            "description": "Comma-separated GitHub labels that trigger a Slack @channel mention."
+            "description": "Comma-separated source control labels that trigger a messaging @channel mention."
           }
         ],
         "sample_input": {
@@ -461,7 +461,7 @@
             {
               "id": "i6",
               "type": "connector",
-              "label": "Post Slack (urgent → @channel)",
+              "label": "Post messaging (urgent → @channel)",
               "connector": "messaging"
             },
             {
@@ -538,8 +538,8 @@
       {
         "id": "uc_release_management",
         "title": "Release Management",
-        "description": "Creates Jira versions from GitHub releases, stamps fixVersion on referenced tickets, and posts a changelog announcement to the releases channel. Default polling every 15 min — final cadence set at the trigger-composition step.",
-        "capability_summary": "GitHub release → Jira version + ticket fixVersion + Slack changelog.",
+        "description": "Creates Jira versions from source control releases, stamps fixVersion on referenced tickets, and posts a changelog announcement to the releases channel. Default polling every 15 min — final cadence set at the trigger-composition step.",
+        "capability_summary": "source control release → Jira version + ticket fixVersion + messaging changelog.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -549,7 +549,7 @@
           "config": {
             "cron": "*/15 * * * *"
           },
-          "description": "Default every 15 minutes — final cadence set at the trigger-composition step. GitHub release webhook also fires this UC when configured."
+          "description": "Default every 15 minutes — final cadence set at the trigger-composition step. source control release webhook also fires this UC when configured."
         },
         "connectors": [
           "source_control",
@@ -577,7 +577,7 @@
             "description": "Payload: { repo, tag, jira_version, ticket_keys[] }. Downstream deploy pipelines subscribe."
           }
         ],
-        "error_handling": "Jira 409 version exists → fetch and update instead of creating. No ticket refs in body → still create version, skip fixVersion step. Slack channel_not_found → fall back to default.",
+        "error_handling": "Jira 409 version exists → fetch and update instead of creating. No ticket refs in body → still create version, skip fixVersion step. messaging channel_not_found → fall back to default.",
         "input_schema": [],
         "sample_input": {},
         "tool_hints": [
@@ -619,7 +619,7 @@
             {
               "id": "r6",
               "type": "connector",
-              "label": "Post release announcement to Slack",
+              "label": "Post release announcement to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -675,20 +675,20 @@
           "uc_issue_sync"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive PR and issue notifications?",
+        "question": "Which messaging channels should receive PR and issue notifications?",
         "type": "select",
         "options": [],
         "default": "#dev",
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "dev_channel",
-        "context": "Options are auto-detected from your Slack credential. The bot must be a member of the chosen channel.",
+        "context": "Options are auto-detected from your messaging credential. The bot must be a member of the chosen channel.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -699,7 +699,7 @@
           "uc_release_management"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive release announcements?",
+        "question": "Which messaging channels should receive release announcements?",
         "type": "select",
         "options": [],
         "default": "#dev-releases",
@@ -712,7 +712,7 @@
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -752,7 +752,7 @@
           "Post alert AND include a 'block merge' context hint in the PR status",
           "Notify only — no blocking, just visibility"
         ],
-        "default": "Post Slack alert and tag a reviewer — Jira continues normally",
+        "default": "Post messaging alert and tag a reviewer — Jira continues normally",
         "maps_to": "use_cases[uc_pr_lifecycle].sample_input.oversized_policy",
         "variable_name": "oversized_policy",
         "context": "Defines the escalation path for oversized PRs so they get human attention without stopping the whole pipeline.",
@@ -786,12 +786,12 @@
           "uc_issue_sync"
         ],
         "category": "configuration",
-        "question": "Which GitHub labels should trigger an urgent Slack @channel mention?",
+        "question": "Which source control labels should trigger an urgent messaging @channel mention?",
         "type": "text",
         "default": "urgent,critical,security",
         "maps_to": "use_cases[uc_issue_sync].sample_input.urgent_labels",
         "variable_name": "urgent_labels",
-        "context": "Comma-separated labels. Matching issues post to Slack with @channel; non-matching post silently.",
+        "context": "Comma-separated labels. Matching issues post to the messaging channel with @channel; non-matching post silently.",
         "dimension": "use-cases"
       },
       {
@@ -828,7 +828,7 @@
         },
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_credential",
-        "context": "Options are auto-detected from your source_control credentials in the Vault (GitHub, GitLab, Azure DevOps, …).",
+        "context": "Options are auto-detected from your source_control credentials in the Vault (source control, source control, source control, …).",
         "dimension": "connectors"
       },
       {
@@ -866,7 +866,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

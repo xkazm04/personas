@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/betterstack.svg",
   "category": "monitoring",
   "categories": [
-    "monitoring",
-    "observability",
-    "uptime"
+    "monitoring"
   ],
   "fields": [
     {

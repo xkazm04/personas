@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/news-api.svg",
   "category": "research",
   "categories": [
-    "research",
-    "news_feed"
+    "research"
   ],
   "fields": [
     {

@@ -5,11 +5,23 @@
   "description": "Monitors user-defined industry sources (RSS feeds, URL lists, watched sites), deduplicates articles, AI-summarizes with importance scoring, logs to a knowledge base, posts breaking news to messaging in real-time, and ships a categorized daily briefing via email.",
   "icon": "Globe",
   "color": "#06B6D4",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Web Research", "Knowledge Base", "Messaging", "Email"],
+  "service_flow": [
+    "Web Research",
+    "Knowledge Base",
+    "Messaging",
+    "Email"
+  ],
   "payload": {
-    "service_flow": ["Web Research", "Knowledge Base", "Messaging", "Email"],
+    "service_flow": [
+      "Web Research",
+      "Knowledge Base",
+      "Messaging",
+      "Email"
+    ],
     "persona": {
       "goal": "One intelligence pipeline for industry tracking — breaking news arrives in chat, the full digest arrives in email, and every article has a cited home in the knowledge base.",
       "identity": {
@@ -42,11 +54,16 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities working as a producer/consumer pair:\n\n1. **uc_polling_ingestion** (every 30 min, default) — read `news_sources` (user-attached RSS feeds or URL list) + web-search complementary topics per `aq_research_intent`. Parse articles (title, link, published date, author, summary, source). Dedup against `state/seen_articles.json` (URL exact + fuzzy title >85% overlap). Filter > 48h unless flagged high-priority. For each new article: AI-summarize 2-3 sentences, extract named entities (companies, people, products, tech), assign importance score 1-5 (authority + relevance + recency + potential impact), tag with category (competitor_move, industry_trend, technology_update, regulatory_change, market_signal). Apply blocklist (`aq_blocklist`). Create a knowledge-base record. For score ≥ `aq_breaking_threshold` AND published <2h ago → post breaking alert via messaging (rate-limited 5/hr) and emit `research.article.breaking`. Update `state/seen_articles.json` + `state/daily_stats.json`. Emit `research.article.new` per stored article.\n\n2. **uc_daily_briefing** (daily 7am, default) — load `state/seen_articles.json` for the last 24h. Group by category, rank within by importance. Compose HTML briefing: executive summary (counts + trending topics), Top Stories (score ≥ 4), per-category sections, Quick Scan for remaining. Include source distribution + any persistent feed failures as a warning section. Send via email connector. Update `state/daily_stats.json` with briefing timestamp. Emit `research.briefing.delivered`.\n\nState files: `state/seen_articles.json` (30-day URL-keyed index, atomic RMW), `state/daily_stats.json` (per-date counters), `state/retry_queue.json` (queued failed operations).",
-      "tool_guidance": "**Source ingestion**:\n- User-attached sources via the `news_sources` source_definition → `research_intent` tells the persona how to weight them.\n- For RSS feeds: `GET {feed_url}` with `Accept: application/rss+xml, application/atom+xml, application/xml`. Parse `<item>` (RSS 2.0) or `<entry>` (Atom).\n- For URL lists: HEAD + GET; parse main content; respect robots.txt.\n- Rate limit: 1s spacing, 15s timeout, up to 50 requests per cycle.\n\n**Importance rubric (1-5)**:\n- 5 — transformative news (major acquisition, regulation passed, landmark product launch).\n- 4 — significant industry move (leading vendor announcement, tier-1 analyst report).\n- 3 — incremental (point release, quarterly update, minor partnership).\n- 2 — context / analysis piece.\n- 1 — roundup / opinion.\n\n**Knowledge-base record** (per article):\n- Properties: Title, Source, URL, Published Date, Category, Importance, Summary, Named Entities, Feed, Slack Alert Sent.\n- Body: full AI summary + named-entity list + cross-links to related articles when themes cluster.\n\n**Messaging (breaking news)**:\n- Block layout: bold title link, source, 1-sentence take, category tag.\n- Rate-limit: max 5 posts/hour. Queue excess for next cycle.\n\n**Email (daily briefing)**:\n- Subject: `[Intel Briefing] YYYY-MM-DD — N Top Stories, M Total`.\n- HTML body with executive summary header, Top Stories, category sections, Quick Scan.\n\n**State**:\n- `state/seen_articles.json` — `{ url_hash: { url, title, seen_at, importance } }`. Prune > 30 days.\n- `state/daily_stats.json` — per-date counts (fetched, new, deduped, knowledge_base_created, breaking_alerts).\n- Always read → merge → write atomically.",
+      "operating_instructions": "Two capabilities working as a producer/consumer pair: 1. **uc_polling_ingestion** (every 30 min, default) — read `news_sources` (user-attached RSS feeds or URL list) + web-search complementary topics per `aq_research_intent`. Parse articles (title, link, published date, author, summary, source). Dedup against `state/seen_articles.json` (URL exact + fuzzy title >85% overlap). Filter > 48h unless flagged high-priority. For each new article: AI-summarize 2-3 sentences, extract named entities (companies, people, products, tech), assign importance score 1-5 (authority + relevance + recency + potential impact), tag with category (competitor_move, industry_trend, technology_update, regulatory_change, market_signal). Apply blocklist (`aq_blocklist`). Create a knowledge-base record. For score ≥ `aq_breaking_threshold` AND published <2h ago → post breaking alert via messaging (rate-limited 5/hr) and emit `research.article.breaking`. Update `state/seen_articles.json` + `state/daily_stats.json`. Emit `research.article.new` per stored article. 2. **uc_daily_briefing** (daily 7am, default) — load `state/seen_articles.json` for the last 24h. Group by category, rank within by importance. Compose HTML briefing: executive summary (counts + trending topics), Top Stories (score ≥ 4), per-category sections, Quick Scan for remaining. Include source distribution + any persistent feed failures as a warning section. Send via email connector. Update `state/daily_stats.json` with briefing timestamp. Emit `research.briefing.delivered`. State files: `state/seen_articles.json` (30-day URL-keyed index, atomic RMW), `state/daily_stats.json` (per-date counters), `state/retry_queue.json` (queued failed operations).",
+      "tool_guidance": "**Source ingestion**:\n- User-attached sources via the `news_sources` source_definition → `research_intent` tells the persona how to weight them.\n- For RSS feeds: `GET {feed_url}` with `Accept: application/rss+xml, application/atom+xml, application/xml`. Parse `<item>` (RSS 2.0) or `<entry>` (Atom).\n- For URL lists: HEAD + GET; parse main content; respect robots.txt.\n- Rate limit: 1s spacing, 15s timeout, up to 50 requests per cycle. **Importance rubric (1-5)**:\n- 5 — transformative news (major acquisition, regulation passed, landmark product launch).\n- 4 — significant industry move (leading vendor announcement, tier-1 analyst report).\n- 3 — incremental (point release, quarterly update, minor partnership).\n- 2 — context / analysis piece.\n- 1 — roundup / opinion. **Knowledge-base record** (per article):\n- Properties: Title, Source, URL, Published Date, Category, Importance, Summary, Named Entities, Feed, messaging Alert Sent.\n- Body: full AI summary + named-entity list + cross-links to related articles when themes cluster. **Messaging (breaking news)**:\n- Block layout: bold title link, source, 1-sentence take, category tag.\n- Rate-limit: max 5 posts/hour. Queue excess for next cycle. **Email (daily briefing)**:\n- Subject: `[Intel Briefing] YYYY-MM-DD — N Top Stories, M Total`.\n- HTML body with executive summary header, Top Stories, category sections, Quick Scan. **State**:\n- `state/seen_articles.json` — `{ url_hash: { url, title, seen_at, importance } }`. Prune > 30 days.\n- `state/daily_stats.json` — per-date counts (fetched, new, deduped, knowledge_base_created, breaking_alerts).\n- Always read → merge → write atomically.",
       "error_handling": "Source fetch HTTP 4xx/5xx → log, skip this cycle, continue other sources. 3+ consecutive failures → include warning in next daily briefing. Malformed XML → lenient parse attempt, skip if totally broken. Redirect 301 → follow, update source config if permanently moved. Knowledge-base 401/429 → queue to retry_queue, emit user_message on auth issues. Messaging 429 → honor Retry-After, queue. Messaging channel_not_found → emit user_message, skip. Email daily-send limit → queue briefing, retry after midnight. Corrupted state → initialize fresh + log warning (some re-processing is acceptable; knowledge-base duplicates can be cleaned). Blocklisted source/entity → skip before summarization (never log a blocked item).",
       "examples": [],
-      "tools": ["http_request", "web_search", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "web_search",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "knowledge_base",
@@ -65,7 +82,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a `knowledge_base`-category credential in the Vault (Notion, Confluence, or equivalent).\n2. Create or select a database with columns: Title, Source, URL, Published Date, Category, Importance, Summary, Named Entities, Feed, Slack Alert Sent.\n3. Ensure the integration has write access to the target database."
+          "setup_instructions": "1. Add a `knowledge_base`-category credential in the Vault (knowledge base, knowledge base, or equivalent).\n2. Create or select a database with columns: Title, Source, URL, Published Date, Category, Importance, Summary, Named Entities, Feed, messaging Alert Sent.\n3. Ensure the integration has write access to the target database."
         },
         {
           "name": "messaging",
@@ -105,7 +122,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "Configure an `email`-category credential (Gmail, SMTP, or equivalent). Scope to send-only where possible."
+          "setup_instructions": "Configure an `email`-category credential (email, SMTP, or equivalent). Scope to send-only where possible."
         }
       ],
       "notification_channels_default": [
@@ -132,10 +149,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/30 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/30 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 30 minutes — final cadence set at the trigger-composition step."
         },
-        "connectors": ["knowledge_base", "messaging"],
+        "connectors": [
+          "knowledge_base",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -172,7 +195,11 @@
           {
             "name": "breaking_threshold",
             "type": "enum",
-            "options": ["3", "4", "5"],
+            "options": [
+              "3",
+              "4",
+              "5"
+            ],
             "default": "4",
             "description": "Minimum importance score to trigger a real-time messaging alert."
           },
@@ -189,7 +216,11 @@
           {
             "name": "summary_style",
             "type": "enum",
-            "options": ["executive_bullets", "analyst_narrative", "headline_plus_takeaway"],
+            "options": [
+              "executive_bullets",
+              "analyst_narrative",
+              "headline_plus_takeaway"
+            ],
             "default": "executive_bullets",
             "description": "Tone and format for AI summaries in knowledge-base records and the daily briefing."
           }
@@ -202,30 +233,104 @@
           "priority_entities": "{{param.aq_priority_entities}}",
           "summary_style": "{{param.aq_summary_style}}"
         },
-        "tool_hints": ["http_request", "web_search", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "web_search",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Polling tick" },
-            { "id": "p2", "type": "action", "label": "Fetch sources + dedup + filter (48h / blocklist)" },
-            { "id": "p3", "type": "action", "label": "AI-summarize + score + extract entities + categorize" },
-            { "id": "p4", "type": "connector", "label": "Create knowledge-base records", "connector": "knowledge_base" },
-            { "id": "p5", "type": "decision", "label": "Breaking? (score ≥ threshold && < 2h)" },
-            { "id": "p6", "type": "connector", "label": "Post alert via messaging (rate-limited)", "connector": "messaging" },
-            { "id": "p7", "type": "action", "label": "Update state/seen_articles + daily_stats" },
-            { "id": "p8", "type": "event", "label": "Emit research.article.new + .breaking" },
-            { "id": "p9", "type": "end", "label": "Cycle complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Polling tick"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Fetch sources + dedup + filter (48h / blocklist)"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "AI-summarize + score + extract entities + categorize"
+            },
+            {
+              "id": "p4",
+              "type": "connector",
+              "label": "Create knowledge-base records",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "p5",
+              "type": "decision",
+              "label": "Breaking? (score ≥ threshold && < 2h)"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Post alert via messaging (rate-limited)",
+              "connector": "messaging"
+            },
+            {
+              "id": "p7",
+              "type": "action",
+              "label": "Update state/seen_articles + daily_stats"
+            },
+            {
+              "id": "p8",
+              "type": "event",
+              "label": "Emit research.article.new +.breaking"
+            },
+            {
+              "id": "p9",
+              "type": "end",
+              "label": "Cycle complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6", "variant": "yes", "label": "Yes" },
-            { "source": "p5", "target": "p7", "variant": "no", "label": "No" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" },
-            { "source": "p8", "target": "p9" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "p5",
+              "target": "p7",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            },
+            {
+              "source": "p8",
+              "target": "p9"
+            }
           ]
         }
       },
@@ -240,10 +345,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 7 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 7 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 7:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["email"],
+        "connectors": [
+          "email"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -265,7 +375,11 @@
           {
             "name": "briefing_review",
             "type": "enum",
-            "options": ["auto_send", "draft_for_review", "auto_send_bcc_me"],
+            "options": [
+              "auto_send",
+              "draft_for_review",
+              "auto_send_bcc_me"
+            ],
             "default": "auto_send",
             "description": "Whether the briefing sends automatically, drafts for approval, or sends with BCC for audit."
           }
@@ -273,27 +387,84 @@
         "sample_input": {
           "briefing_review": "{{param.aq_briefing_review}}"
         },
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "b1", "type": "start", "label": "Daily tick (7am)" },
-            { "id": "b2", "type": "action", "label": "Load articles from past 24h" },
-            { "id": "b3", "type": "action", "label": "Categorize + rank + compose exec summary" },
-            { "id": "b4", "type": "action", "label": "Compile source distribution + feed health warnings" },
-            { "id": "b5", "type": "connector", "label": "Send HTML briefing via email", "connector": "email" },
-            { "id": "b6", "type": "action", "label": "Update daily_stats with briefing_sent" },
-            { "id": "b7", "type": "event", "label": "Emit research.briefing.delivered" },
-            { "id": "b8", "type": "end", "label": "Briefing delivered" }
+            {
+              "id": "b1",
+              "type": "start",
+              "label": "Daily tick (7am)"
+            },
+            {
+              "id": "b2",
+              "type": "action",
+              "label": "Load articles from past 24h"
+            },
+            {
+              "id": "b3",
+              "type": "action",
+              "label": "Categorize + rank + compose exec summary"
+            },
+            {
+              "id": "b4",
+              "type": "action",
+              "label": "Compile source distribution + feed health warnings"
+            },
+            {
+              "id": "b5",
+              "type": "connector",
+              "label": "Send HTML briefing via email",
+              "connector": "email"
+            },
+            {
+              "id": "b6",
+              "type": "action",
+              "label": "Update daily_stats with briefing_sent"
+            },
+            {
+              "id": "b7",
+              "type": "event",
+              "label": "Emit research.briefing.delivered"
+            },
+            {
+              "id": "b8",
+              "type": "end",
+              "label": "Briefing delivered"
+            }
           ],
           "edges": [
-            { "source": "b1", "target": "b2" },
-            { "source": "b2", "target": "b3" },
-            { "source": "b3", "target": "b4" },
-            { "source": "b4", "target": "b5" },
-            { "source": "b5", "target": "b6" },
-            { "source": "b6", "target": "b7" },
-            { "source": "b7", "target": "b8" }
+            {
+              "source": "b1",
+              "target": "b2"
+            },
+            {
+              "source": "b2",
+              "target": "b3"
+            },
+            {
+              "source": "b3",
+              "target": "b4"
+            },
+            {
+              "source": "b4",
+              "target": "b5"
+            },
+            {
+              "source": "b5",
+              "target": "b6"
+            },
+            {
+              "source": "b6",
+              "target": "b7"
+            },
+            {
+              "source": "b7",
+              "target": "b8"
+            }
           ]
         }
       }
@@ -302,7 +473,9 @@
       {
         "id": "aq_news_sources",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "domain",
         "question": "Which sources should the aggregator monitor?",
         "type": "source_definition",
@@ -315,7 +488,9 @@
       {
         "id": "aq_research_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "domain",
         "question": "How should the persona interpret your industry and score articles?",
         "type": "textarea",
@@ -329,11 +504,17 @@
       {
         "id": "aq_breaking_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "quality",
         "question": "What importance score triggers a real-time messaging alert?",
         "type": "select",
-        "options": ["3", "4", "5"],
+        "options": [
+          "3",
+          "4",
+          "5"
+        ],
         "default": "4",
         "maps_to": "use_cases[uc_polling_ingestion].sample_input.breaking_threshold",
         "variable_name": "breaking_threshold",
@@ -343,7 +524,9 @@
       {
         "id": "aq_blocklist",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "boundaries",
         "question": "Topics, sources, or entities the aggregator should NEVER include or alert on?",
         "type": "textarea",
@@ -357,7 +540,9 @@
       {
         "id": "aq_priority_entities",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "memory",
         "question": "Which competitors or entities should boost importance when mentioned?",
         "type": "textarea",
@@ -371,7 +556,9 @@
       {
         "id": "aq_summary_style",
         "scope": "capability",
-        "use_case_ids": ["uc_polling_ingestion"],
+        "use_case_ids": [
+          "uc_polling_ingestion"
+        ],
         "category": "messages",
         "question": "What style should AI summaries use?",
         "type": "select",
@@ -389,7 +576,9 @@
       {
         "id": "aq_briefing_review",
         "scope": "capability",
-        "use_case_ids": ["uc_daily_briefing"],
+        "use_case_ids": [
+          "uc_daily_briefing"
+        ],
         "category": "human_in_the_loop",
         "question": "Should the daily briefing send automatically or wait for review?",
         "type": "select",
@@ -407,7 +596,9 @@
       {
         "id": "aq_knowledge_base",
         "scope": "connector",
-        "connector_names": ["knowledge_base"],
+        "connector_names": [
+          "knowledge_base"
+        ],
         "category": "configuration",
         "question": "Which knowledge-base workspace should store article records?",
         "type": "select",
@@ -424,7 +615,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging channel should receive breaking-news alerts?",
         "type": "select",
@@ -441,7 +634,9 @@
       {
         "id": "aq_email_provider",
         "scope": "connector",
-        "connector_names": ["email"],
+        "connector_names": [
+          "email"
+        ],
         "category": "configuration",
         "question": "Which email credential should deliver the daily briefing?",
         "type": "select",

@@ -6,6 +6,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TimeRange, PlaybackSpeed, TimelineReplayState } from '@/hooks/realtime/useTimelineReplay';
 import { useTranslation } from '@/i18n/useTranslation';
+import { TIMELINE_DENSITY } from './TimelinePlayer.constants';
 
 interface Props extends TimelineReplayState {
   onEnterReplay: (range: TimeRange) => Promise<void>;
@@ -47,9 +48,7 @@ const ReplayEntryBar = memo(function ReplayEntryBar({ loading, onEnterReplay }: 
   );
 });
 
-const DENSITY_BINS = 60;
-const MIN_OPACITY = 0.1;
-const MAX_OPACITY = 0.4;
+const { bins: DENSITY_BINS, minOpacity: MIN_OPACITY, maxOpacity: MAX_OPACITY } = TIMELINE_DENSITY;
 
 const EventDensityMarkers = memo(function EventDensityMarkers({ timestamps, rangeStart, rangeEnd }: { timestamps: number[]; rangeStart: number; rangeEnd: number }) {
   const bins = useMemo(() => {

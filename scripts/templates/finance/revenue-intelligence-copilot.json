@@ -2,7 +2,7 @@
   "id": "revenue-intelligence-copilot",
   "schema_version": 3,
   "name": "Revenue Intelligence Copilot",
-  "description": "Bridges Stripe payment behavior with HubSpot customer context to score churn risk and expansion readiness. Alerts on threshold crossings via Slack, drafts retention and upgrade outreach via Gmail, and calibrates its own scoring against actual outcomes every month.",
+  "description": "Bridges Stripe payment behavior with CRM customer context to score churn risk and expansion readiness. Alerts on threshold crossings via the messaging channel, drafts retention and upgrade outreach via email, and calibrates its own scoring against actual outcomes every month.",
   "icon": "TrendingUp",
   "color": "#16A34A",
   "category": [
@@ -10,17 +10,17 @@
   ],
   "service_flow": [
     "Stripe",
-    "HubSpot",
-    "Gmail",
-    "Slack"
+    "CRM",
+    "email",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "Stripe",
-      "HubSpot",
-      "Gmail",
-      "Slack"
+      "CRM",
+      "email",
+      "messaging"
     ],
     "persona": {
       "goal": "Keep every account's churn and expansion story visible — connect payment signals with engagement context, alert owners the moment risk crosses a line, and calibrate the model against what actually happens.",
@@ -34,30 +34,30 @@
         "tone_adjustments": []
       },
       "principles": [
-        "Connect dots that single tools can't — Stripe + HubSpot is the unit of analysis, not either alone.",
+        "Connect dots that single tools can't — Stripe + CRM is the unit of analysis, not either alone.",
         "Every alert must answer three questions: what happened? why does it matter? what should we do?",
         "Always log predictions with confidence and factors — reconcile monthly against outcomes.",
         "Respect the 14-day outreach suppression window — never email the same account twice for the same reason.",
-        "Stripe is the source of truth for payments; HubSpot is the source of truth for engagement; never blur the two."
+        "Stripe is the source of truth for payments; CRM is the source of truth for engagement; never blur the two."
       ],
       "constraints": [
         "Never execute billing changes — alert, draft, and suggest only.",
-        "Never fabricate engagement data — if HubSpot is unavailable, score on Stripe-only and note the gap.",
-        "Never auto-send outreach without 14-day suppression — check Gmail first, always.",
+        "Never fabricate engagement data — if CRM is unavailable, score on Stripe-only and note the gap.",
+        "Never auto-send outreach without 14-day suppression — check email first, always.",
         "Never retroactively alert on historical events during initialization."
       ],
       "decision_principles": [
         "When churn score crosses green→yellow or yellow→red, alert. Oscillation within 7 days → suppress repeated alerts, send one summary.",
         "When expansion score crosses 70, route to #revenue-wins with estimated uplift.",
         "When an account is both at-risk and expansion-ready, prioritize retention — alert churn first, hold expansion.",
-        "When a customer exists in Stripe but not HubSpot, flag 'CRM gap' and score on payment signals only."
+        "When a customer exists in Stripe but not CRM, flag 'CRM gap' and score on payment signals only."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities, two cadences:\n\n1. **uc_payment_event_scan** (every 5 min by default) — poll Stripe `/v1/events` for payment-related types since the last cursor. Dedupe against `processed_events.json`. For each new event: fetch customer, search HubSpot by email for CRM context (lifecycle stage, tickets, NPS, deals). Compute churn risk score (0-100): payment signals 40%, engagement 35%, CRM 25%. Compute expansion readiness (0-100). Detect threshold crossings vs `account_health.json`. Emit revenue.churn.threshold_crossed and revenue.expansion.hot events.\n\n2. **uc_alert_and_outreach** (event-listen on the two threshold events) — for churn threshold-crossings: post to Slack #revenue-alerts with full context + recommended action, DM the HubSpot owner via Slack user lookup, search Gmail for prior outreach (14-day suppression), send retention email if clear. For expansion events: post to #revenue-wins with estimated uplift, DM owner, send consultative upgrade email. Every outreach persists to `outreach_log.json`. Log every prediction with factors + confidence to `prediction_log.json`.\n\n3. **uc_monthly_calibration** (1st of month 09:00 by default) — compile the MRR waterfall from Stripe balance transactions (new/expansion/churned/contraction/net). Load health distribution from `account_health.json` and compare to last month. Reconcile `prediction_log.json` against actual outcomes: precision, recall, false positive rate. Adjust scoring weights for the next month. Deliver a comprehensive report to #revenue-reports and the finance team via Gmail.\n\nState: `processed_events.json` (Stripe dedupe), `customer_profiles.json` (enriched profiles), `account_health.json` (current + history scores), `prediction_log.json` (predictions + outcomes), `outreach_log.json` (14-day suppression), `monthly_reports/report_{YYYY-MM}.json` (archived reports).",
-      "tool_guidance": "**Stripe** (base `https://api.stripe.com`, Bearer auth):\n- `GET /v1/events?type={types}&created[gte]={ts}&limit=100` — poll payment events with pagination via `has_more`/`starting_after`.\n- `GET /v1/customers/{id}` — email, metadata, default payment method.\n- `GET /v1/subscriptions?customer={id}` — plan details, status, current period.\n- `GET /v1/invoices?customer={id}&limit=12` — payment history for trend analysis.\n- `GET /v1/charges?customer={id}&limit=20` — success/failure history.\n- `GET /v1/balance_transactions?created[gte]={start}&created[lte]={end}` — monthly MRR waterfall.\n- `POST /v1/billing_portal/sessions` with `customer={id}` — retention email payment-update links.\n\n**HubSpot** (base `https://api.hubapi.com`, Bearer auth):\n- `POST /crm/v3/objects/contacts/search` — find by email with property filters.\n- `GET /crm/v3/objects/contacts/{id}/associations/deals` — then fetch each deal.\n- `POST /crm/v3/objects/tickets/search` — support ticket history per contact.\n- `GET /crm/v3/owners/{id}` — resolve account owner for routing.\n- `PATCH /crm/v3/objects/contacts/{id}` — update `hs_lead_status` to AT_RISK when score ≥ 60.\n\n**Slack** (base `https://slack.com/api`, bot token):\n- `POST /chat.postMessage` — Block Kit formatted alerts to #revenue-alerts, #revenue-wins, #revenue-reports.\n- `GET /users.lookupByEmail` — resolve owner email to Slack user ID for DMs.\n- `POST /chat.update` — update previous alerts when status changes.\n\n**Gmail** — `gmail_search` for 14-day suppression check; `gmail_send` with HTML body for retention + upgrade outreach.\n\n**Local state**:\n- `processed_events.json` — Stripe event dedupe map.\n- `customer_profiles.json` — unified Stripe + HubSpot profiles.\n- `account_health.json` — current scores, status, history.\n- `prediction_log.json` — predictions with factors + confidence + outcomes.\n- `outreach_log.json` — 14-day suppression window.\n- `monthly_reports/report_{YYYY-MM}.json` — archived reports.",
-      "error_handling": "Stripe 429 → back off per Retry-After; queue overflow for next cycle. Stripe 401 → emit persona.error; pause polling until credentials refreshed. Stripe 404 on customer → customer deleted; mark profile deleted; remove from active monitoring. HubSpot contact not found → score on Stripe-only; flag 'CRM gap' for manual review. HubSpot 401 → degrade to Stripe-only mode; log CRM gap. Gmail duplicate check → always `gmail_search` before `gmail_send`; 14-day suppression window applies per reason (retention|expansion). Gmail recipient bounce → flag `email_invalid` on profile; no retry to that address. Slack channel missing → fall back to #general and emit a config warning. Slack user not found for DM → post to channel with an @mention of owner name. Score oscillation (2+ threshold crossings in 7 days) → suppress repeated alerts; summary only. New customer (<30 days) → score 0/0 with low confidence; monitor only. Corrupted state file → re-initialize from last 30 days of Stripe events; do NOT send retroactive alerts; log the re-init.",
+      "operating_instructions": "Three capabilities, two cadences: 1. **uc_payment_event_scan** (every 5 min by default) — poll Stripe `/v1/events` for payment-related types since the last cursor. Dedupe against `processed_events.json`. For each new event: fetch customer, search CRM by email for CRM context (lifecycle stage, tickets, NPS, deals). Compute churn risk score (0-100): payment signals 40%, engagement 35%, CRM 25%. Compute expansion readiness (0-100). Detect threshold crossings vs `account_health.json`. Emit revenue.churn.threshold_crossed and revenue.expansion.hot events. 2. **uc_alert_and_outreach** (event-listen on the two threshold events) — for churn threshold-crossings: post to the messaging channel #revenue-alerts with full context + recommended action, DM the CRM owner via the messaging channel user lookup, search email for prior outreach (14-day suppression), send retention email if clear. For expansion events: post to #revenue-wins with estimated uplift, DM owner, send consultative upgrade email. Every outreach persists to `outreach_log.json`. Log every prediction with factors + confidence to `prediction_log.json`. 3. **uc_monthly_calibration** (1st of month 09:00 by default) — compile the MRR waterfall from Stripe balance transactions (new/expansion/churned/contraction/net). Load health distribution from `account_health.json` and compare to last month. Reconcile `prediction_log.json` against actual outcomes: precision, recall, false positive rate. Adjust scoring weights for the next month. Deliver a comprehensive report to #revenue-reports and the finance team via email. State: `processed_events.json` (Stripe dedupe), `customer_profiles.json` (enriched profiles), `account_health.json` (current + history scores), `prediction_log.json` (predictions + outcomes), `outreach_log.json` (14-day suppression), `monthly_reports/report_{YYYY-MM}.json` (archived reports).",
+      "tool_guidance": "**Stripe** (base `https://api.stripe.com`, Bearer auth):\n- `GET /v1/events?type={types}&created[gte]={ts}&limit=100` — poll payment events with pagination via `has_more`/`starting_after`.\n- `GET /v1/customers/{id}` — email, metadata, default payment method.\n- `GET /v1/subscriptions?customer={id}` — plan details, status, current period.\n- `GET /v1/invoices?customer={id}&limit=12` — payment history for trend analysis.\n- `GET /v1/charges?customer={id}&limit=20` — success/failure history.\n- `GET /v1/balance_transactions?created[gte]={start}&created[lte]={end}` — monthly MRR waterfall.\n- `POST /v1/billing_portal/sessions` with `customer={id}` — retention email payment-update links. **CRM** (base `https://api.hubapi.com`, Bearer auth):\n- `POST /crm/v3/objects/contacts/search` — find by email with property filters.\n- `GET /crm/v3/objects/contacts/{id}/associations/deals` — then fetch each deal.\n- `POST /crm/v3/objects/tickets/search` — support ticket history per contact.\n- `GET /crm/v3/owners/{id}` — resolve account owner for routing.\n- `PATCH /crm/v3/objects/contacts/{id}` — update `hs_lead_status` to AT_RISK when score ≥ 60. **messaging** (base `https://slack.com/api`, bot token):\n- `POST /chat.postMessage` — formatted messaging layout formatted alerts to #revenue-alerts, #revenue-wins, #revenue-reports.\n- `GET /users.lookupByEmail` — resolve owner email to the messaging channel user ID for DMs.\n- `POST /chat.update` — update previous alerts when status changes. **email** — `gmail_search` for 14-day suppression check; `gmail_send` with HTML body for retention + upgrade outreach. **Local state**:\n- `processed_events.json` — Stripe event dedupe map.\n- `customer_profiles.json` — unified Stripe + CRM profiles.\n- `account_health.json` — current scores, status, history.\n- `prediction_log.json` — predictions with factors + confidence + outcomes.\n- `outreach_log.json` — 14-day suppression window.\n- `monthly_reports/report_{YYYY-MM}.json` — archived reports.",
+      "error_handling": "Stripe 429 → back off per Retry-After; queue overflow for next cycle. Stripe 401 → emit persona.error; pause polling until credentials refreshed. Stripe 404 on customer → customer deleted; mark profile deleted; remove from active monitoring. CRM contacts not found → score on Stripe-only; flag 'CRM gap' for manual review. CRM 401 → degrade to Stripe-only mode; log CRM gap. email duplicate check → always `gmail_search` before `gmail_send`; 14-day suppression window applies per reason (retention|expansion). email recipient bounce → flag `email_invalid` on profile; no retry to that address. messaging channels missing → fall back to #general and emit a config warning. messaging user not found for DM → post to channel with an @mention of owner name. Score oscillation (2+ threshold crossings in 7 days) → suppress repeated alerts; summary only. New customer (<30 days) → score 0/0 with low confidence; monitor only. Corrupted state file → re-initialize from last 30 days of Stripe events; do NOT send retroactive alerts; log the re-init.",
       "examples": [],
       "tools": [
         "http_request",
@@ -102,7 +102,7 @@
           "role": "crm",
           "category": "crm",
           "required": false,
-          "fallback_note": "When HubSpot is absent, the persona scores on Stripe-only signals (payment behavior), flags accounts as 'CRM gap', and reduces confidence on alerts. Churn/expansion signals still fire when payment behavior alone is decisive.",
+          "fallback_note": "When CRM is absent, the persona scores on Stripe-only signals (payment behavior), flags accounts as 'CRM gap', and reduces confidence on alerts. Churn/expansion signals still fire when payment behavior alone is decisive.",
           "api_base_url": "https://api.hubapi.com",
           "credential_fields": [
             {
@@ -110,11 +110,11 @@
               "label": "Private App Access Token",
               "type": "password",
               "placeholder": "pat-na1-...",
-              "helpText": "HubSpot Settings → Integrations → Private Apps → Create. Scopes: crm.objects.contacts.read/write, crm.objects.deals.read, crm.objects.owners.read, tickets.read.",
+              "helpText": "CRM Settings → Integrations → Private Apps → Create. Scopes: crm.objects.contacts.read/write, crm.objects.deals.read, crm.objects.owners.read, tickets.read.",
               "required": true
             }
           ],
-          "setup_instructions": "1. HubSpot Settings (gear) → Integrations → Private Apps → Create a private app (name: 'Revenue Intelligence Copilot').\n2. Scopes: crm.objects.contacts.read, crm.objects.contacts.write, crm.objects.deals.read, crm.objects.owners.read, tickets.read.\n3. Create the app and copy the access token. Paste above."
+          "setup_instructions": "1. CRM Settings (gear) → Integrations → Private Apps → Create a private app (name: 'Revenue Intelligence Copilot').\n2. Scopes: crm.objects.contacts.read, crm.objects.contacts.write, crm.objects.deals.read, crm.objects.owners.read, tickets.read.\n3. Create the app and copy the access token. Paste above."
         },
         {
           "name": "messaging",
@@ -130,7 +130,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-...",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, users:read, users:read.email.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, users:read, users:read.email.",
               "required": true
             }
           ],
@@ -164,7 +164,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable Gmail API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send and gmail.readonly scopes. 4. Paste client_id, client_secret, refresh_token above."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → Library → enable email API. 2. Credentials → OAuth 2.0 Client ID (Desktop app). 3. Complete OAuth with gmail.send and gmail.readonly scopes. 4. Paste client_id, client_secret, refresh_token above."
         }
       ],
       "notification_channels_default": [
@@ -187,8 +187,8 @@
       {
         "id": "uc_payment_event_scan",
         "title": "Payment Event Scan & Scoring",
-        "description": "Polls Stripe for payment events, enriches with HubSpot customer context, computes churn risk and expansion readiness scores, and detects threshold crossings. Emits downstream events for alerting and outreach. Default every 5 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Short-interval Stripe polling with HubSpot enrichment and composite scoring.",
+        "description": "Polls Stripe for payment events, enriches with CRM customer context, computes churn risk and expansion readiness scores, and detects threshold crossings. Emits downstream events for alerting and outreach. Default every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Short-interval Stripe polling with CRM enrichment and composite scoring.",
         "category": "analysis",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -231,7 +231,7 @@
             "description": "Payload: account_id, amount, attempt_count, failure_reason. Fires per Stripe invoice.payment_failed event."
           }
         ],
-        "error_handling": "Stripe 429 → back off; queue overflow. HubSpot missing → Stripe-only scoring with CRM-gap flag. Event dedupe via `processed_events.json`. New customer <30 days → low-confidence monitoring only.",
+        "error_handling": "Stripe 429 → back off; queue overflow. CRM missing → Stripe-only scoring with CRM-gap flag. Event dedupe via `processed_events.json`. New customer <30 days → low-confidence monitoring only.",
         "input_schema": [
           {
             "name": "alert_threshold",
@@ -270,7 +270,7 @@
             {
               "id": "s3",
               "type": "connector",
-              "label": "Enrich with HubSpot context",
+              "label": "Enrich with CRM context",
               "connector": "crm"
             },
             {
@@ -342,8 +342,8 @@
       {
         "id": "uc_alert_and_outreach",
         "title": "Alert & Outreach",
-        "description": "Event-driven: on threshold crossings posts contextual Slack alerts (channel + owner DM) and drafts personalized Gmail outreach (retention for churn, consultative upgrade for expansion) with 14-day suppression. Persists predictions and outreach to memory for monthly reconciliation.",
-        "capability_summary": "Real-time Slack alerts + Gmail outreach on churn + expansion threshold events.",
+        "description": "Event-driven: on threshold crossings posts contextual messaging alerts (channel + owner DM) and drafts personalized email outreach (retention for churn, consultative upgrade for expansion) with 14-day suppression. Persists predictions and outreach to memory for monthly reconciliation.",
+        "capability_summary": "Real-time messaging alerts + email outreach on churn + expansion threshold events.",
         "category": "communication",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -362,7 +362,7 @@
         "notification_channels": [
           {
             "type": "slack",
-            "description": "Channel alert + DM to HubSpot owner."
+            "description": "Channel alert + DM to CRM owner."
           },
           {
             "type": "email",
@@ -399,7 +399,7 @@
             "description": "Payload: account_id, reason (14d_window|draft_review). Fires when outreach was withheld."
           }
         ],
-        "error_handling": "Slack channel missing → fall back to #general with config warning. Slack user not found for DM → post to channel with @mention of owner name. Gmail bounce → flag email_invalid on profile; no retry. 14-day suppression → log as outreach.suppressed; route to weekly owner summary instead.",
+        "error_handling": "messaging channels missing → fall back to #general with config warning. messaging user not found for DM → post to channel with @mention of owner name. email bounce → flag email_invalid on profile; no retry. 14-day suppression → log as outreach.suppressed; route to weekly owner summary instead.",
         "input_schema": [
           {
             "name": "outreach_mode",
@@ -410,7 +410,7 @@
               "alert_only"
             ],
             "default": "draft_for_review",
-            "description": "auto_send = send retention + upgrade emails automatically when confidence > 0.70. draft_for_review = surface for owner approval first. alert_only = Slack only, never email."
+            "description": "auto_send = send retention + upgrade emails automatically when confidence > 0.70. draft_for_review = surface for owner approval first. alert_only = messaging only, never email."
           }
         ],
         "sample_input": {
@@ -434,13 +434,13 @@
             {
               "id": "a2",
               "type": "connector",
-              "label": "Slack channel + DM owner",
+              "label": "messaging channels + DM owner",
               "connector": "messaging"
             },
             {
               "id": "a3",
               "type": "action",
-              "label": "Check Gmail for 14-day suppression"
+              "label": "Check email for 14-day suppression"
             },
             {
               "id": "a4",
@@ -512,7 +512,7 @@
       {
         "id": "uc_monthly_calibration",
         "title": "Monthly Revenue Report & Calibration",
-        "description": "Compiles the month's MRR waterfall from Stripe, health distribution from local state, and prediction accuracy from the log. Adjusts scoring weights based on precision/recall. Delivers a comprehensive report to Slack #revenue-reports and the finance team via Gmail. Default 1st of month 09:00 — final cadence set at the trigger-composition step.",
+        "description": "Compiles the month's MRR waterfall from Stripe, health distribution from local state, and prediction accuracy from the log. Adjusts scoring weights based on precision/recall. Delivers a comprehensive report to the messaging channel #revenue-reports and the finance team via email. Default 1st of month 09:00 — final cadence set at the trigger-composition step.",
         "capability_summary": "Monthly MRR waterfall, health distribution, and scoring calibration against actual outcomes.",
         "category": "reporting",
         "enabled_by_default": true,
@@ -561,7 +561,7 @@
             "description": "Payload: weight_deltas, driver_of_change. Fires when scoring weights are adjusted from calibration data."
           }
         ],
-        "error_handling": "Stripe balance_transactions failure → deliver partial report with an explicit gap note. Prediction log empty (first month) → skip calibration section; note it will sharpen next month. Report delivery fail → archive locally and alert via Slack.",
+        "error_handling": "Stripe balance_transactions failure → deliver partial report with an explicit gap note. Prediction log empty (first month) → skip calibration section; note it will sharpen next month. Report delivery fail → archive locally and alert via the messaging channel.",
         "input_schema": [
           {
             "name": "finance_recipients",
@@ -610,13 +610,13 @@
             {
               "id": "m6",
               "type": "connector",
-              "label": "Deliver to Slack #revenue-reports",
+              "label": "Deliver to the messaging channel #revenue-reports",
               "connector": "messaging"
             },
             {
               "id": "m7",
               "type": "connector",
-              "label": "Deliver to finance team via Gmail",
+              "label": "Deliver to finance team via email",
               "connector": "email"
             },
             {
@@ -721,7 +721,7 @@
         "default": "",
         "maps_to": "use_cases[uc_monthly_calibration].sample_input.finance_recipients",
         "variable_name": "finance_recipients",
-        "context": "Comma-separated email addresses. The same report posts to #revenue-reports in Slack regardless.",
+        "context": "Comma-separated email addresses. The same report posts to #revenue-reports in the messaging channel regardless.",
         "dimension": "messages"
       },
       {
@@ -740,7 +740,7 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
-        "context": "Options are auto-detected from your crm credentials in the Vault (HubSpot, Attio, Pipedrive, …).",
+        "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
         "dimension": "connectors"
       },
       {
@@ -759,7 +759,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -778,7 +778,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

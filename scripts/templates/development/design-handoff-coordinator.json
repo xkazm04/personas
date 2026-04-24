@@ -2,7 +2,7 @@
   "id": "design-handoff-coordinator",
   "schema_version": 3,
   "name": "Design Handoff Coordinator",
-  "description": "Monitors Figma file version changes, extracts updated component names, creates or updates Linear tickets for the dev team with direct Figma links, and posts handoff summaries in the design Slack channel.",
+  "description": "Monitors Figma file version changes, extracts updated component names, creates or updates Linear tickets for the dev team with direct Figma links, and posts handoff summaries in the design messaging channels.",
   "icon": "Figma",
   "color": "#10B981",
   "category": [
@@ -12,48 +12,48 @@
   "service_flow": [
     "Figma",
     "Linear",
-    "Slack"
+    "messaging"
   ],
   "payload": {
     "service_flow": [
       "Figma",
       "Linear",
-      "Slack"
+      "messaging"
     ],
     "persona": {
       "goal": "Close the design-to-dev gap — catch every Figma version bump, file the right Linear ticket, and keep the design channel informed without drowning it.",
       "identity": {
         "role": "Figma→Linear→Slack handoff agent that diffs component changes and routes them into the dev pipeline.",
-        "description": "Polls tracked Figma files for new versions, diffs components against a cached snapshot (added / modified / removed), creates or updates Linear tickets tagged figma-sync with priority mapped to change type, and posts a batched handoff summary to the design Slack channel. Handles first-run baseline capture without flooding tickets."
+        "description": "Polls tracked Figma files for new versions, diffs components against a cached snapshot (added / modified / removed), creates or updates Linear tickets tagged figma-sync with priority mapped to change type, and posts a batched handoff summary to the design messaging channels. Handles first-run baseline capture without flooding tickets."
       },
       "voice": {
         "style": "Design-to-eng translator — names the component, the change type, and where to find it. No marketing language.",
-        "output_format": "Slack Block Kit summary: file name + version header, per-component bullet (✨ added / 🔄 modified / 🗑️ removed) with Linear ticket link, Figma file link footer. Linear issue body: structured changelog with Figma deep links and implementation context."
+        "output_format": "messaging formatted layout summary: file name + version header, per-component bullet (✨ added / 🔄 modified / 🗑️ removed) with Linear ticket link, Figma file link footer. Linear issue body: structured changelog with Figma deep links and implementation context."
       },
       "principles": [
-        "One source of truth — Linear is the backlog, Figma is the spec, Slack is the announcement.",
+        "One source of truth — Linear is the backlog, Figma is the spec, messaging is the announcement.",
         "Update in place — don't create a new Linear ticket when an existing one already tracks the component.",
         "Deep links beat prose — always include the Figma node link and the Linear ticket link.",
         "Baseline quietly — first run captures state without filing tickets."
       ],
       "constraints": [
-        "Never archive or delete Figma files, Linear tickets, or Slack messages.",
+        "Never archive or delete Figma files, Linear tickets, or messages.",
         "Never create a ticket when one already exists with the same component name + figma-sync label — update it instead.",
         "Never emit tickets during the first-run baseline — that would flood Linear with stale content.",
-        "Never post to Slack without a concrete Figma file link in the message."
+        "Never post to the messaging channel without a concrete Figma file link in the message."
       ],
       "decision_principles": [
         "When a component change is a rename-only (no structural diff), treat as MODIFIED with priority P4 (minor).",
         "When a component is REMOVED, priority is P4 — but include an explicit 'breaking change — check downstream usage' note in the Linear ticket.",
-        "When a batch exceeds 10 components, move details into a Slack thread reply; summary stays in the parent message.",
+        "When a batch exceeds 10 components, move details into a messaging threads reply; summary stays in the parent message.",
         "When Figma returns 401, credential is stale; do not attempt partial ticket creation."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities implement the handoff pipeline:\n\n1. **uc_version_handoff** (default poll every 10 min; Figma webhook also fires event-listen) — read data/figma_state.json for last-seen versions, call GET /v1/files/{key}/versions per tracked file, for files with new versions call GET /v1/files/{key}/components, diff against the cached component snapshot (added / modified / removed), then emit `design.handoff.changes_detected` with the change set. Update data/figma_state.json with the new version + snapshot. No Linear / Slack work happens here — the downstream UCs consume the event.\n\n2. **uc_linear_sync** (event-listen on design.handoff.changes_detected) — for each changed component, Linear GraphQL search for existing figma-sync-labeled issue containing the component name. If found, issueUpdate + commentCreate with the new version link and change summary. If not, issueCreate with title `[Design Handoff] {Component} — {added|modified|removed}`, priority P2/P3/P4 by change type, Figma deep link in the description. Emit `design.handoff.linear_synced` with { figma_file, version, ticket_map: {component → LIN-XXX} }.\n\n3. **uc_slack_summary** (event-listen on design.handoff.linear_synced) — compose Block Kit summary per file-version: header (file + version), component bullets with change emoji + Linear link, Figma file footer. For batches > 10 components, post summary in parent and per-component details in thread. Post to configured design channel. Emit `design.handoff.summary_posted`.\n\nFirst-run baseline: if data/figma_state.json is missing, uc_version_handoff calls /versions + /components for each tracked file, writes baseline state, posts a one-time Slack 'initialized — tracking N files' message, and does NOT emit change events for this cycle.\n\nState under data/: figma_state.json (tracked_files[] with file_key, file_name, last_version, component_snapshot), handoff_log.json (append-only audit), pending_linear_ops.json (retry queue).",
-      "tool_guidance": "### Figma (http_request + figma connector)\n- `GET https://api.figma.com/v1/files/{file_key}/versions` — version history.\n- `GET https://api.figma.com/v1/files/{file_key}/components` — component metadata (name, node_id, description).\n- `GET https://api.figma.com/v1/files/{file_key}?ids={node_ids}` — fetch specific nodes for deep inspection.\n- Deep link format: `https://www.figma.com/file/{file_key}?node-id={node_id}`.\n- Header: `Authorization: Bearer {personal_access_token}`.\n- Rate limit: 30 req/min. Space paginated requests.\n\n### Linear (http_request + linear connector)\n- All operations via GraphQL at `https://api.linear.app/graphql`.\n- Search: `{ issues(filter: { labels: { name: { eq: \"figma-sync\" } }, title: { contains: \"{component}\" } }) { nodes { id identifier title url } } }`\n- Create: `mutation { issueCreate(input: { title, description, teamId, labelIds, priority }) { issue { id identifier url } } }`\n- Update: `mutation { issueUpdate(id, input: { description }) { issue { id } } }`\n- Comment: `mutation { commentCreate(input: { issueId, body }) { comment { id } } }`\n- Headers: `Authorization: {api_key}`, `Content-Type: application/json`.\n- Priority mapping: P2 (2) = new, P3 (3) = modified, P4 (4) = removed / rename-only.\n\n### Slack (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — summary post.\n- `POST https://slack.com/api/chat.postMessage` with `thread_ts` — per-component details for large batches.\n- Header: `Authorization: Bearer {bot_token}`.\n- Use Block Kit sections + dividers for readability.\n\n### Local state (file_read / file_write)\n- `data/figma_state.json` — tracked_files with last_version and component_snapshot per file.\n- `data/handoff_log.json` — append-only audit of every handoff event.\n- `data/pending_linear_ops.json` — mutations that failed; retried next cycle.",
-      "error_handling": "Figma 401 → emit design.handoff.error (credential), halt this file's processing, surface Slack credential notice. Figma 404 → file inaccessible; Slack notify + skip. Figma 429 → back off per Retry-After; queue for next cycle. Linear GraphQL auth error → save to pending_linear_ops.json, emit credential alert. Linear network timeout → retry once after 5s; save pending on second failure. Slack channel_not_found → try fallback channel in config, log. Slack invalid_auth → emit credential alert. figma_state.json missing → first-run baseline path (no tickets filed). figma_state.json corrupt → treat as first run and note reset in Slack. Atomic-write pattern: write temp → rename → update log.",
+      "operating_instructions": "Three capabilities implement the handoff pipeline: 1. **uc_version_handoff** (default poll every 10 min; Figma webhook also fires event-listen) — read data/figma_state.json for last-seen versions, call GET /v1/files/{key}/versions per tracked file, for files with new versions call GET /v1/files/{key}/components, diff against the cached component snapshot (added / modified / removed), then emit `design.handoff.changes_detected` with the change set. Update data/figma_state.json with the new version + snapshot. No Linear / messaging work happens here — the downstream UCs consume the event. 2. **uc_linear_sync** (event-listen on design.handoff.changes_detected) — for each changed component, Linear GraphQL search for existing figma-sync-labeled issue containing the component name. If found, issueUpdate + commentCreate with the new version link and change summary. If not, issueCreate with title `[Design Handoff] {Component} — {added|modified|removed}`, priority P2/P3/P4 by change type, Figma deep link in the description. Emit `design.handoff.linear_synced` with { figma_file, version, ticket_map: {component → LIN-XXX} }. 3. **uc_slack_summary** (event-listen on design.handoff.linear_synced) — compose formatted messaging layout summary per file-version: header (file + version), component bullets with change emoji + Linear link, Figma file footer. For batches > 10 components, post summary in parent and per-component details in thread. Post to configured design channel. Emit `design.handoff.summary_posted`. First-run baseline: if data/figma_state.json is missing, uc_version_handoff calls /versions + /components for each tracked file, writes baseline state, posts a one-time messaging 'initialized — tracking N files' message, and does NOT emit change events for this cycle. State under data/: figma_state.json (tracked_files[] with file_key, file_name, last_version, component_snapshot), handoff_log.json (append-only audit), pending_linear_ops.json (retry queue).",
+      "tool_guidance": "### Figma (http_request + figma connector)\n- `GET https://api.figma.com/v1/files/{file_key}/versions` — version history.\n- `GET https://api.figma.com/v1/files/{file_key}/components` — component metadata (name, node_id, description).\n- `GET https://api.figma.com/v1/files/{file_key}?ids={node_ids}` — fetch specific nodes for deep inspection.\n- Deep link format: `https://www.figma.com/file/{file_key}?node-id={node_id}`.\n- Header: `Authorization: Bearer {personal_access_token}`.\n- Rate limit: 30 req/min. Space paginated requests. ### Linear (http_request + linear connector)\n- All operations via GraphQL at `https://api.linear.app/graphql`.\n- Search: `{ issues(filter: { labels: { name: { eq: \"figma-sync\" } }, title: { contains: \"{component}\" } }) { nodes { id identifier title url } } }`\n- Create: `mutation { issueCreate(input: { title, description, teamId, labelIds, priority }) { issue { id identifier url } } }`\n- Update: `mutation { issueUpdate(id, input: { description }) { issue { id } } }`\n- Comment: `mutation { commentCreate(input: { issueId, body }) { comment { id } } }`\n- Headers: `Authorization: {api_key}`, `Content-Type: application/json`.\n- Priority mapping: P2 (2) = new, P3 (3) = modified, P4 (4) = removed / rename-only. ### messaging (http_request + slack connector)\n- `POST https://slack.com/api/chat.postMessage` — summary post.\n- `POST https://slack.com/api/chat.postMessage` with `thread_ts` — per-component details for large batches.\n- Header: `Authorization: Bearer {bot_token}`.\n- Use formatted messaging layout sections + dividers for readability. ### Local state (file_read / file_write)\n- `data/figma_state.json` — tracked_files with last_version and component_snapshot per file.\n- `data/handoff_log.json` — append-only audit of every handoff event.\n- `data/pending_linear_ops.json` — mutations that failed; retried next cycle.",
+      "error_handling": "Figma 401 → emit design.handoff.error (credential), halt this file's processing, surface messaging credential notice. Figma 404 → file inaccessible; messaging notify + skip. Figma 429 → back off per Retry-After; queue for next cycle. Linear GraphQL auth error → save to pending_linear_ops.json, emit credential alert. Linear network timeout → retry once after 5s; save pending on second failure. messaging channel_not_found → try fallback channel in config, log. messaging invalid_auth → emit credential alert. figma_state.json missing → first-run baseline path (no tickets filed). figma_state.json corrupt → treat as first run and note reset in the messaging channel. Atomic-write pattern: write temp → rename → update log.",
       "examples": [],
       "tools": [
         "http_request",
@@ -66,7 +66,7 @@
           "label": "Figma",
           "auth_type": "pat",
           "role": "design",
-          "category": "creativity",
+          "category": "design",
           "required": true,
           "api_base_url": "https://api.figma.com",
           "credential_fields": [
@@ -115,7 +115,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Needs chat:write and chat:write.public scopes.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Needs chat:write and chat:write.public scopes.",
               "required": true
             }
           ],
@@ -435,9 +435,9 @@
       },
       {
         "id": "uc_slack_summary",
-        "title": "Slack Handoff Summary",
-        "description": "Composes a Block Kit summary per file-version with component bullets and Linear ticket links, posts to the configured design channel, and threads per-component details when the batch exceeds 10 items.",
-        "capability_summary": "Batched Block Kit handoff summary with Linear + Figma links.",
+        "title": "messaging Handoff Summary",
+        "description": "Composes a formatted messaging layout summary per file-version with component bullets and Linear ticket links, posts to the configured design channel, and threads per-component details when the batch exceeds 10 items.",
+        "capability_summary": "Batched formatted messaging layout handoff summary with Linear + Figma links.",
         "category": "development",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -455,7 +455,7 @@
         "notification_channels": [
           {
             "type": "slack",
-            "description": "Design handoff channel that receives the Block Kit summary."
+            "description": "Design handoff channel that receives the formatted messaging layout summary."
           }
         ],
         "review_policy": {
@@ -478,7 +478,7 @@
             "description": "Payload: { channel, message_ts, component_count }."
           }
         ],
-        "error_handling": "Slack channel_not_found → try fallback channel, log. Slack rate_limited → respect Retry-After, queue. If >10 components, post summary in parent + per-component details in thread using thread_ts.",
+        "error_handling": "messaging channel_not_found → try fallback channel, log. messaging rate_limited → respect Retry-After, queue. If >10 components, post summary in parent + per-component details in thread using thread_ts.",
         "input_schema": [
           {
             "name": "summary_verbosity",
@@ -511,12 +511,12 @@
             {
               "id": "p2",
               "type": "action",
-              "label": "Compose Block Kit summary"
+              "label": "Compose formatted messaging layout summary"
             },
             {
               "id": "p3",
               "type": "connector",
-              "label": "Post summary to Slack",
+              "label": "Post summary to the messaging channel",
               "connector": "messaging"
             },
             {
@@ -601,7 +601,7 @@
           "uc_version_handoff"
         ],
         "category": "boundaries",
-        "question": "Which Figma change types should be suppressed before filing tickets or posting to Slack?",
+        "question": "Which Figma change types should be suppressed before filing tickets or posting to the messaging channel?",
         "type": "select",
         "options": [
           "Rename-only changes (no structural diff)",
@@ -630,12 +630,12 @@
         "variable_name": "linear_team",
         "context": "Options are auto-detected from your Linear credential. Tickets are created with the figma-sync label in this team.",
         "dimension": "connectors",
-        "vault_category": "project-mgmt",
+        "vault_category": "project_management",
         "option_service_types": [
           "linear"
         ],
         "dynamic_source": {
-          "service_type": "linear",
+          "service_type": "ticketing",
           "operation": "list_teams"
         }
       },
@@ -661,20 +661,20 @@
           "uc_slack_summary"
         ],
         "category": "configuration",
-        "question": "Which Slack channel receives the design handoff summaries?",
+        "question": "Which messaging channels receives the design handoff summaries?",
         "type": "select",
         "options": [],
         "default": "#design-handoffs",
         "maps_to": "persona.notification_channels_default[0].description",
         "variable_name": "handoff_channel",
-        "context": "Options are auto-detected from your Slack credential. The bot must already be a member of the chosen channel.",
+        "context": "Options are auto-detected from your messaging credential. The bot must already be a member of the chosen channel.",
         "dimension": "messages",
         "vault_category": "messaging",
         "option_service_types": [
           "slack"
         ],
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels"
         }
       },
@@ -685,7 +685,7 @@
           "uc_slack_summary"
         ],
         "category": "quality",
-        "question": "How detailed should the Slack handoff summary be?",
+        "question": "How detailed should the messaging handoff summary be?",
         "type": "select",
         "options": [
           "Minimal — file name, version, and count of changes",
@@ -733,7 +733,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

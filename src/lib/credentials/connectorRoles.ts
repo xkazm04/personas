@@ -164,7 +164,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   email: 'Email / SMS',
   notifications: 'Notifications',
   devops: 'DevOps / CI-CD',
-  'project-mgmt': 'Project Mgmt',
+  project_management: 'Project Mgmt',
   productivity: 'Productivity',
   design: 'Design',
   cloud: 'Cloud',
@@ -181,7 +181,7 @@ const PURPOSE_LABELS: Record<string, string> = {
   scheduling: 'Scheduling',
   forms: 'Forms',
   ai: 'AI',
-  'time-tracking': 'Time Tracking',
+  time_tracking: 'Time Tracking',
 };
 
 /** Convert a purpose key to the i18n key used in `connector_roles`. */
@@ -203,7 +203,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   purposeGroup('email',          ['email_delivery', 'sms']),
   purposeGroup('notifications',  ['notifications']),
   purposeGroup('devops',         ['source_control', 'ci_cd', 'feature_flags', 'auth_identity', 'container_runtime', 'browser_automation']),
-  purposeGroup('project-mgmt',   ['project_tracking']),
+  purposeGroup('project_management', ['project_tracking']),
   purposeGroup('productivity',   ['knowledge_base', 'search_engine', 'video_comms', 'note_taking', 'e_signature']),
   purposeGroup('design',         ['design']),
   purposeGroup('cloud',          ['hosting', 'cloud_infra']),
@@ -218,7 +218,7 @@ export const PURPOSE_GROUPS: PurposeGroup[] = [
   purposeGroup('finance',        ['payment_processing', 'accounting', 'banking_fintech', 'market_data']),
   purposeGroup('ecommerce',      ['e_commerce']),
   purposeGroup('scheduling',     ['scheduling']),
-  purposeGroup('time-tracking',  ['time_tracking']),
+  purposeGroup('time_tracking',  ['time_tracking']),
   purposeGroup('forms',          ['form_survey']),
   purposeGroup('ai',             ['ai_platform']),
 ];

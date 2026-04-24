@@ -2,21 +2,21 @@
   "id": "invoice-tracker",
   "schema_version": 3,
   "name": "Invoice Tracker",
-  "description": "Detects incoming invoices in Gmail, extracts structured fields (vendor, amount, due date, invoice number), maintains a SQLite-backed payment ledger, and proactively alerts you to upcoming and overdue payments. Learns vendor-specific email patterns so extraction sharpens over time.",
+  "description": "Detects incoming invoices in your email inbox, extracts structured fields (vendor, amount, due date, invoice number), maintains a SQLite-backed payment ledger, and proactively alerts you to upcoming and overdue payments. Learns vendor-specific email patterns so extraction sharpens over time.",
   "icon": "Receipt",
   "color": "#10b981",
   "category": [
     "finance"
   ],
   "service_flow": [
-    "Gmail",
+    "Email",
     "Local Database",
     "Messages"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Gmail",
+      "Email",
       "Local Database",
       "Messages"
     ],
@@ -24,7 +24,7 @@
       "goal": "Never miss a bill you owe — watch the inbox, extract the number, track the deadline, nudge before it's late.",
       "identity": {
         "role": "Accounts-payable tracker that turns a noisy inbox into an organized, queryable payment ledger.",
-        "description": "Polls Gmail for invoice-shaped emails, parses structured data from body and attachments, maintains a local SQLite table of every invoice and its payment status, runs a daily due-date sweep, and sends tiered reminders before due dates + aging-bucketed alerts after. Vendor patterns are learned over time: known senders get prioritized scans and faster extraction."
+        "description": "Polls Email for invoice-shaped emails, parses structured data from body and attachments, maintains a local SQLite table of every invoice and its payment status, runs a daily due-date sweep, and sends tiered reminders before due dates + aging-bucketed alerts after. Vendor patterns are learned over time: known senders get prioritized scans and faster extraction."
       },
       "voice": {
         "style": "Accountable and specific. Every alert names the vendor, amount, invoice number, and days-until-due (or overdue).",
@@ -35,7 +35,7 @@
         "Never miss an invoice — a false-positive review flag beats a silent miss.",
         "Conservative extraction over guessing — flag ambiguity, don't paper over it.",
         "Timely reminders save money — alert before the deadline, not after.",
-        "Complete audit trail — every row links back to a Gmail message ID.",
+        "Complete audit trail — every row links back to a Email message ID.",
         "Synthetic IDs when real ones are missing — every invoice enters the pipeline with a deadline."
       ],
       "constraints": [
@@ -54,9 +54,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities with distinct cadences:\n\n1. **uc_invoice_ingest** — poll Gmail on the `scan_interval_hours` parameter. Run multi-strategy searches (subject keywords, known-vendor senders, attachment filenames) over emails newer than last scan timestamp. For each candidate: dedupe against DB by Gmail message ID; extract vendor / invoice_number / amount / currency / invoice_date / due_date via AI over body HTML + PDF/image attachments; assign confidence. If confidence ≥ `extraction_confidence_threshold` AND amount < high-value threshold → insert with status=pending. Otherwise → insert + flag for manual review. Persist vendor patterns to memory. Emit `invoice.ingest.new` per insert.\n\n2. **uc_payment_monitor** — daily 9:00 AM. Step A: sweep pending invoices with `due_date < today` to status=overdue. Step B: query pending invoices with due_date within `reminder_days_before_due` — group by urgency (tomorrow / this week / within window) and send a consolidated Messages reminder. Step C: query overdue invoices, bucket into 1-7 / 8-30 / 30+ day brackets, check last-alert memory against `overdue_alert_frequency_hours`, and if the interval has elapsed, send the aging alert. On the 1st of the month, additionally compile a monthly summary (count processed, paid vs outstanding, vendor breakdown, avg days to payment) and emit `invoice.summary.monthly`.\n\nThe persona uses `personas_database` for SQLite storage (table `invoices` with schema defined in tool_guidance). All extraction-derived events include audit fields for downstream reconciliation.",
-      "tool_guidance": "**Gmail** — multi-strategy search with rotation:\n- Primary (every scan): `subject:(invoice OR \"payment due\" OR statement OR \"amount due\") newer_than:{scan_interval}h`, `from:({known_vendors}) newer_than:{scan_interval}h`, `has:attachment filename:(invoice OR receipt OR bill) newer_than:{scan_interval}h`.\n- Secondary (weekly sweep): `subject:(\"balance due\" OR remittance OR \"pay by\" OR billing) newer_than:7d`, `(\"total due\" OR \"amount owing\") has:attachment newer_than:7d`.\n- Parse order: email body HTML/text → PDF attachments → image attachments (flag for manual review if OCR not available).\n\n**Database** (`personas_database` / SQLite):\n```\nCREATE TABLE invoices (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  vendor TEXT NOT NULL,\n  invoice_number TEXT,\n  amount REAL NOT NULL,\n  currency TEXT DEFAULT 'USD',\n  invoice_date TEXT,\n  due_date TEXT,\n  status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','overdue','disputed','cancelled')),\n  gmail_message_id TEXT UNIQUE,\n  extraction_confidence REAL,\n  created_at TEXT DEFAULT (datetime('now')),\n  updated_at TEXT DEFAULT (datetime('now')),\n  notes TEXT\n);\n```\nCommon queries: insert new, dedupe by vendor+invoice_number, overdue sweep (`UPDATE ... WHERE status='pending' AND due_date < date('now')`), upcoming due within window, overdue listing, monthly aggregates.\n\n**Parameters** (all adjustable without rebuild):\n- `{{param.scan_interval_hours}}` — Gmail poll cadence (default 4).\n- `{{param.overdue_alert_frequency_hours}}` — re-alert interval for overdue items (default 24).\n- `{{param.reminder_days_before_due}}` — lead-time for upcoming reminders (default 3).\n- `{{param.extraction_confidence_threshold}}` — auto-accept floor (default 0.7).\n\n**Memory**: vendor patterns (sender addresses, subject formats, invoice number formats, payment terms); last-scan timestamp; last-alert timestamps per invoice.",
-      "error_handling": "Gmail 401/403 → Messages notify for credential refresh; halt ingest but continue monitoring (DB + alerts don't need Gmail). Gmail 429 → exponential backoff (1/2/4s, max 3 tries); skip cycle on persistent failure. Ambiguous amount (candidates differ > 10%) → flag review with all candidates; never guess. Unparseable date → apply default payment terms as provisional; flag. Missing invoice number → synthetic ID (vendor-initials + date + seq); flag. Unparseable PDF → record with confidence=0.2 and review flag. DB write failure → queue to `pending_writes.json`, alert user. Messages delivery failure → save to `latest_overdue_alert.json`.",
+      "operating_instructions": "Two capabilities with distinct cadences: 1. **uc_invoice_ingest** — poll Email on the `scan_interval_hours` parameter. Run multi-strategy searches (subject keywords, known-vendor senders, attachment filenames) over emails newer than last scan timestamp. For each candidate: dedupe against DB by Email message ID; extract vendor / invoice_number / amount / currency / invoice_date / due_date via AI over body HTML + PDF/image attachments; assign confidence. If confidence ≥ `extraction_confidence_threshold` AND amount < high-value threshold → insert with status=pending. Otherwise → insert + flag for manual review. Persist vendor patterns to memory. Emit `invoice.ingest.new` per insert. 2. **uc_payment_monitor** — daily 9:00 AM. Step A: sweep pending invoices with `due_date < today` to status=overdue. Step B: query pending invoices with due_date within `reminder_days_before_due` — group by urgency (tomorrow / this week / within window) and send a consolidated Messages reminder. Step C: query overdue invoices, bucket into 1-7 / 8-30 / 30+ day brackets, check last-alert memory against `overdue_alert_frequency_hours`, and if the interval has elapsed, send the aging alert. On the 1st of the month, additionally compile a monthly summary (count processed, paid vs outstanding, vendor breakdown, avg days to payment) and emit `invoice.summary.monthly`. The persona uses `personas_database` for SQLite storage (table `invoices` with schema defined in tool_guidance). All extraction-derived events include audit fields for downstream reconciliation.",
+      "tool_guidance": "**Email** — multi-strategy search with rotation:\n- Primary (every scan): `subject:(invoice OR \"payment due\" OR statement OR \"amount due\") newer_than:{scan_interval}h`, `from:({known_vendors}) newer_than:{scan_interval}h`, `has:attachment filename:(invoice OR receipt OR bill) newer_than:{scan_interval}h`.\n- Secondary (weekly sweep): `subject:(\"balance due\" OR remittance OR \"pay by\" OR billing) newer_than:7d`, `(\"total due\" OR \"amount owing\") has:attachment newer_than:7d`.\n- Parse order: email body HTML/text → PDF attachments → image attachments (flag for manual review if OCR not available). **Database** (`personas_database` / SQLite):\n```\nCREATE TABLE invoices ( id INTEGER PRIMARY KEY AUTOINCREMENT, vendor TEXT NOT NULL, invoice_number TEXT, amount REAL NOT NULL, currency TEXT DEFAULT 'USD', invoice_date TEXT, due_date TEXT, status TEXT DEFAULT 'pending' CHECK(status IN ('pending','paid','overdue','disputed','cancelled')), gmail_message_id TEXT UNIQUE, extraction_confidence REAL, created_at TEXT DEFAULT (datetime('now')), updated_at TEXT DEFAULT (datetime('now')), notes TEXT\n);\n```\nCommon queries: insert new, dedupe by vendor+invoice_number, overdue sweep (`UPDATE... WHERE status='pending' AND due_date < date('now')`), upcoming due within window, overdue listing, monthly aggregates. **Parameters** (all adjustable without rebuild):\n- `{{param.scan_interval_hours}}` — Email poll cadence (default 4).\n- `{{param.overdue_alert_frequency_hours}}` — re-alert interval for overdue items (default 24).\n- `{{param.reminder_days_before_due}}` — lead-time for upcoming reminders (default 3).\n- `{{param.extraction_confidence_threshold}}` — auto-accept floor (default 0.7). **Memory**: vendor patterns (sender addresses, subject formats, invoice number formats, payment terms); last-scan timestamp; last-alert timestamps per invoice.",
+      "error_handling": "Email 401/403 → Messages notify for credential refresh; halt ingest but continue monitoring (DB + alerts don't need Email). Email 429 → exponential backoff (1/2/4s, max 3 tries); skip cycle on persistent failure. Ambiguous amount (candidates differ > 10%) → flag review with all candidates; never guess. Unparseable date → apply default payment terms as provisional; flag. Missing invoice number → synthetic ID (vendor-initials + date + seq); flag. Unparseable PDF → record with confidence=0.2 and review flag. DB write failure → queue to `pending_writes.json`, alert user. Messages delivery failure → save to `latest_overdue_alert.json`.",
       "examples": [],
       "tools": [
         "gmail",
@@ -101,7 +101,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console > APIs & Services > Enable Gmail API\n2. Create OAuth 2.0 credentials (Desktop application type)\n3. Complete the OAuth consent flow with scopes: gmail.readonly, gmail.labels\n4. Copy the client ID, client secret, and refresh token into the fields above\n5. The agent will verify the connection by performing a test search during adoption"
+          "setup_instructions": "1. Go to Google Cloud Console > APIs & Services > Enable Email API\n2. Create OAuth 2.0 credentials (Desktop application type)\n3. Complete the OAuth consent flow with scopes: gmail.readonly, gmail.labels\n4. Copy the client ID, client secret, and refresh token into the fields above\n5. The agent will verify the connection by performing a test search during adoption"
         }
       ],
       "notification_channels_default": [
@@ -116,8 +116,8 @@
       {
         "id": "uc_invoice_ingest",
         "title": "Invoice Ingest",
-        "description": "Scan Gmail with multi-strategy queries, extract structured invoice data from body + attachments, dedupe against the SQLite ledger by message ID, insert with `pending` status, and flag low-confidence or high-value extractions for manual review. Idempotent across scans. Default every 4 hours — final cadence set at the trigger-composition step.",
-        "capability_summary": "Multi-strategy Gmail invoice detection + structured extraction into the ledger.",
+        "description": "Scan Email with multi-strategy queries, extract structured invoice data from body + attachments, dedupe against the SQLite ledger by message ID, insert with `pending` status, and flag low-confidence or high-value extractions for manual review. Idempotent across scans. Default every 4 hours — final cadence set at the trigger-composition step.",
+        "capability_summary": "Multi-strategy Email invoice detection + structured extraction into the ledger.",
         "category": "operations",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -154,7 +154,7 @@
             "description": "Payload: { id, vendor, reason (low_confidence|high_value|ambiguous|unparseable), candidate_values }. Emitted when an extraction is held for manual review."
           }
         ],
-        "error_handling": "Gmail 401/403 → halt ingest, Messages notify; uc_payment_monitor continues. 429 → exponential backoff. Unparseable attachment → record with confidence=0.2 + review flag. DB failure → queue writes to `pending_writes.json`. Duplicate (vendor+invoice_number) → silent skip (expected).",
+        "error_handling": "Email 401/403 → halt ingest, Messages notify; uc_payment_monitor continues. 429 → exponential backoff. Unparseable attachment → record with confidence=0.2 + review flag. DB failure → queue writes to `pending_writes.json`. Duplicate (vendor+invoice_number) → silent skip (expected).",
         "input_schema": [
           {
             "name": "arrival_pattern",
@@ -239,7 +239,7 @@
             {
               "id": "i3",
               "type": "connector",
-              "label": "Multi-strategy Gmail search",
+              "label": "Multi-strategy Email search",
               "connector": "email"
             },
             {
@@ -526,8 +526,8 @@
         "question": "How do invoices typically arrive in your inbox?",
         "type": "select",
         "options": [
-          "Email attachments (Gmail)",
-          "Inline email body (Gmail)",
+          "Email attachments (Email)",
+          "Inline email body (Email)",
           "Mix of attachments and inline",
           "Forwarded from another address"
         ],
@@ -665,18 +665,18 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (Email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],
     "suggested_parameters": [
       {
         "key": "scan_interval_hours",
-        "label": "Gmail Scan Interval",
+        "label": "Email Scan Interval",
         "type": "number",
         "default_value": 4,
         "value": 4,
-        "description": "How often (in hours) the agent scans Gmail for new invoices. Lower values catch invoices faster but use more API quota. Adjustable without rebuild.",
+        "description": "How often (in hours) the agent scans Email for new invoices. Lower values catch invoices faster but use more API quota. Adjustable without rebuild.",
         "unit": "hours",
         "min": 1,
         "max": 24

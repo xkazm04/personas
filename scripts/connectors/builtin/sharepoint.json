@@ -4,12 +4,11 @@
   "label": "SharePoint",
   "color": "#038387",
   "icon_url": "/icons/connectors/sharepoint.svg",
-  "category": "productivity",
+  "category": "knowledge_base",
   "categories": [
-    "productivity",
     "knowledge_base",
     "storage",
-    "collaboration"
+    "productivity"
   ],
   "fields": [],
   "healthcheck_config": {

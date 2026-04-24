@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/humbalytics.svg",
   "category": "analytics",
   "categories": [
-    "analytics",
-    "web_analytics",
-    "experimentation"
+    "analytics"
   ],
   "fields": [
     {

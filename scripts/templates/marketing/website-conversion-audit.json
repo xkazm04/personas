@@ -5,11 +5,21 @@
   "description": "On-demand website analysis agent specialized in auditing local service business websites (HVAC, plumbing, landscaping, roofing) for conversion optimization gaps. Scrapes and analyzes the target URL, scores gaps across 8 categories, and produces a prioritized recommendations report. Learns which gap types matter most via Memory.",
   "icon": "Target",
   "color": "#F59E0B",
-  "category": ["marketing"],
+  "category": [
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["Website URL", "AI Analysis", "Messages"],
+  "service_flow": [
+    "Website URL",
+    "AI Analysis",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Website URL", "AI Analysis", "Messages"],
+    "service_flow": [
+      "Website URL",
+      "AI Analysis",
+      "Messages"
+    ],
     "persona": {
       "goal": "Find the gaps actually losing local service businesses leads — buried phone numbers, missing forms, no reviews — and score them by revenue impact, not aesthetic preference.",
       "identity": {
@@ -47,7 +57,11 @@
       "tool_guidance": "**http_request — website fetching** (no external API connectors required; this capability uses built-in fetch only):\n\n- `GET {{param.target_url}}` — homepage with `User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36`. Follow redirects. Capture full HTML + response headers (content-type, x-frame-options, strict-transport-security).\n- `GET {url}/contact` → on 404 try `/contact-us`, `/get-in-touch`, `/request-a-quote`.\n- `GET {url}/about` → on 404 try `/about-us`, `/our-story`, `/our-team`.\n- `GET {url}/reviews` → on 404 try `/testimonials`, `/customer-reviews`.\n- `GET {url}/services` → on 404 try `/our-services`, `/what-we-do`.\n- `GET {url}/robots.txt` — SEO configuration; look for Disallow rules and Sitemap directive.\n- `GET {url}/sitemap.xml` — count URLs to estimate site size.\n\nPause 1-2 seconds between requests to avoid overwhelming small business hosting. On 429 from the target, stop fetching and work with what's already captured.\n\n**8-category signals** —\n- Contact Accessibility: homepage form, header phone, `tel:` link, <5-field form, chat widget, hours, click-to-call\n- Social Proof: homepage reviews (3+), attributed names/dates, star ratings, before/after photos, Google/Yelp widgets, certifications\n- CTA Strength: above-fold CTA, action language, multiple scroll-point CTAs, urgency/incentive language, visual contrast\n- Mobile Experience: viewport meta (`width=device-width`), responsive CSS indicators, 16px+ base font, tap-target spacing, tap-to-call phone\n- Trust Signals: HTTPS, physical address, license/insurance numbers, professional certs (EPA, NATE, BBB), team photos, service area\n- Page Speed: external script count, modern image formats, render-blocking CSS/JS in head, HTML document size, lazy-loading attributes\n- Navigation: clear menu organized by service, pricing visibility, dedicated service pages, flat site structure, breadcrumbs\n- SEO Fundamentals: unique title (<60ch), meta description (<160ch), exactly one H1 with primary keyword, alt text, LocalBusiness schema, robots.txt, sitemap.xml\n\n**Local state**: `audit_config.json`, `audit_history.json`, `latest_audit_report.json`.",
       "error_handling": "Target URL unreachable (timeout, DNS) → retry once after 5s; if still failing, Messages: 'Unable to reach {url}. The site may be down — potential customers also cannot reach it.' Log the failure and emit `audit.critical_gap_found` with reason `site_unreachable`. HTTPS certificate invalid → Critical trust gap; continue on HTTP if accessible. No HTTPS at all → High severity trust gap. Bot-protection challenge (cf-browser-verification, challenge-platform, empty 403) → report: 'Site behind bot protection; manual review recommended for [categories needing HTML analysis]'; score what's available from headers. JS-rendered SPA (empty `<div id='root'>`, large JS bundles, `__NEXT_DATA__`) → note in report: 'Analysis based on server-rendered HTML; forms/reviews/chat loaded via JS may not appear in this audit.' Empty/minimal HTML (<500 chars) → Critical finding: 'Site appears to be a parking page or severely broken.' Subpage 404s → informative, not errors; note each missing page as a gap in the relevant category. Messages failure → write full report to `latest_audit_report.json`; retry once.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [],
       "notification_channels_default": [
         {
@@ -105,21 +119,42 @@
           {
             "name": "business_type",
             "type": "enum",
-            "options": ["hvac", "plumbing", "landscaping", "roofing", "electrical", "auto_repair", "cleaning", "pest_control", "painting", "general_contractor", "other"],
+            "options": [
+              "hvac",
+              "plumbing",
+              "landscaping",
+              "roofing",
+              "electrical",
+              "auto_repair",
+              "cleaning",
+              "pest_control",
+              "painting",
+              "general_contractor",
+              "other"
+            ],
             "default": "hvac",
             "description": "Type of local service business — drives industry-specific benchmarks."
           },
           {
             "name": "audit_depth",
             "type": "enum",
-            "options": ["quick", "standard", "deep"],
+            "options": [
+              "quick",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Quick = homepage only. Standard = homepage + key subpages. Deep = all discoverable pages."
           },
           {
             "name": "min_severity",
             "type": "enum",
-            "options": ["critical", "high", "medium", "low"],
+            "options": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ],
             "default": "low",
             "description": "Only include findings at or above this severity level."
           }
@@ -130,34 +165,119 @@
           "audit_depth": "{{param.aq_audit_depth}}",
           "min_severity": "{{param.aq_min_severity}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Audit triggered (target URL + business type)" },
-            { "id": "s2", "type": "action", "label": "Load audit_config.json + memory" },
-            { "id": "s3", "type": "action", "label": "Fetch homepage + key subpages (browser UA, follow redirects)" },
-            { "id": "s4", "type": "decision", "label": "Site reachable?" },
-            { "id": "s5", "type": "error", "label": "Report downtime as critical finding" },
-            { "id": "s6", "type": "action", "label": "Parse HTML structure + score 8 weighted categories" },
-            { "id": "s7", "type": "action", "label": "Classify gaps (Critical/High/Medium/Low) + apply memory filter" },
-            { "id": "s8", "type": "action", "label": "Compose report + deliver via Messages" },
-            { "id": "s9", "type": "action", "label": "Route findings to human review + save decisions to memory" },
-            { "id": "s10", "type": "event", "label": "Emit audit.completed + audit.critical_gap_found per critical" },
-            { "id": "s11", "type": "end", "label": "Audit complete" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Audit triggered (target URL + business type)"
+            },
+            {
+              "id": "s2",
+              "type": "action",
+              "label": "Load audit_config.json + memory"
+            },
+            {
+              "id": "s3",
+              "type": "action",
+              "label": "Fetch homepage + key subpages (browser UA, follow redirects)"
+            },
+            {
+              "id": "s4",
+              "type": "decision",
+              "label": "Site reachable?"
+            },
+            {
+              "id": "s5",
+              "type": "error",
+              "label": "Report downtime as critical finding"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Parse HTML structure + score 8 weighted categories"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Classify gaps (Critical/High/Medium/Low) + apply memory filter"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Compose report + deliver via Messages"
+            },
+            {
+              "id": "s9",
+              "type": "action",
+              "label": "Route findings to human review + save decisions to memory"
+            },
+            {
+              "id": "s10",
+              "type": "event",
+              "label": "Emit audit.completed + audit.critical_gap_found per critical"
+            },
+            {
+              "id": "s11",
+              "type": "end",
+              "label": "Audit complete"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4" },
-            { "source": "s4", "target": "s6", "variant": "yes", "label": "Yes" },
-            { "source": "s4", "target": "s5", "variant": "no", "label": "No" },
-            { "source": "s5", "target": "s11" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" },
-            { "source": "s9", "target": "s10" },
-            { "source": "s10", "target": "s11" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4"
+            },
+            {
+              "source": "s4",
+              "target": "s6",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "s4",
+              "target": "s5",
+              "variant": "no",
+              "label": "No"
+            },
+            {
+              "source": "s5",
+              "target": "s11"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            },
+            {
+              "source": "s9",
+              "target": "s10"
+            },
+            {
+              "source": "s10",
+              "target": "s11"
+            }
           ]
         }
       },
@@ -177,8 +297,14 @@
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "audit.comparison.delivered",
@@ -194,26 +320,78 @@
             "description": "Comma-separated competitor URLs for side-by-side comparison."
           }
         ],
-        "sample_input": { "competitor_urls": "{{param.aq_competitor_urls_intent}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "competitor_urls": "{{param.aq_competitor_urls_intent}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Competitor URLs configured" },
-            { "id": "c2", "type": "action", "label": "Fetch each competitor homepage" },
-            { "id": "c3", "type": "action", "label": "Score 8 categories on each competitor" },
-            { "id": "c4", "type": "action", "label": "Build side-by-side scorecard + identify advantages/gaps" },
-            { "id": "c5", "type": "action", "label": "Append comparison section to audit report" },
-            { "id": "c6", "type": "event", "label": "Emit audit.comparison.delivered" },
-            { "id": "c7", "type": "end", "label": "Comparison delivered" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Competitor URLs configured"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Fetch each competitor homepage"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "Score 8 categories on each competitor"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Build side-by-side scorecard + identify advantages/gaps"
+            },
+            {
+              "id": "c5",
+              "type": "action",
+              "label": "Append comparison section to audit report"
+            },
+            {
+              "id": "c6",
+              "type": "event",
+              "label": "Emit audit.comparison.delivered"
+            },
+            {
+              "id": "c7",
+              "type": "end",
+              "label": "Comparison delivered"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" },
-            { "source": "c6", "target": "c7" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            },
+            {
+              "source": "c6",
+              "target": "c7"
+            }
           ]
         }
       }
@@ -222,7 +400,9 @@
       {
         "id": "aq_target_url",
         "scope": "capability",
-        "use_case_ids": ["uc_standard_audit"],
+        "use_case_ids": [
+          "uc_standard_audit"
+        ],
         "category": "domain",
         "question": "Which website should this persona audit by default?",
         "type": "text",
@@ -235,7 +415,9 @@
       {
         "id": "aq_business_type",
         "scope": "capability",
-        "use_case_ids": ["uc_standard_audit"],
+        "use_case_ids": [
+          "uc_standard_audit"
+        ],
         "category": "domain",
         "question": "What type of local service business is this?",
         "type": "select",
@@ -261,11 +443,17 @@
       {
         "id": "aq_audit_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_standard_audit"],
+        "use_case_ids": [
+          "uc_standard_audit"
+        ],
         "category": "configuration",
         "question": "How thorough should each audit be?",
         "type": "select",
-        "options": ["quick", "standard", "deep"],
+        "options": [
+          "quick",
+          "standard",
+          "deep"
+        ],
         "default": "standard",
         "maps_to": "use_cases[uc_standard_audit].sample_input.audit_depth",
         "variable_name": "audit_depth",
@@ -275,11 +463,18 @@
       {
         "id": "aq_min_severity",
         "scope": "capability",
-        "use_case_ids": ["uc_standard_audit"],
+        "use_case_ids": [
+          "uc_standard_audit"
+        ],
         "category": "quality",
         "question": "Only include findings at or above this severity?",
         "type": "select",
-        "options": ["critical", "high", "medium", "low"],
+        "options": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
         "default": "low",
         "maps_to": "use_cases[uc_standard_audit].sample_input.min_severity",
         "variable_name": "min_severity",
@@ -289,7 +484,9 @@
       {
         "id": "aq_competitor_urls_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_competitor_compare"],
+        "use_case_ids": [
+          "uc_competitor_compare"
+        ],
         "category": "domain",
         "question": "Which competitor URLs should the side-by-side comparison include?",
         "type": "text",

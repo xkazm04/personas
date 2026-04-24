@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/supabase.svg",
   "category": "database",
   "categories": [
-    "database",
-    "backend_as_service",
-    "auth"
+    "database"
   ],
   "fields": [
     {

@@ -5,11 +5,24 @@
   "description": "Creates short demo recordings and step-by-step visual guides from running web applications by analyzing the codebase to understand features, autonomously navigating the app in a browser, and capturing annotated screenshots or video walkthroughs. Uses a tiered recording system (CDP screenshots -> Windows Game Bar -> Playwright) requiring zero mandatory installs.",
   "icon": "Presentation",
   "color": "#06B6D4",
-  "category": ["content", "development"],
+  "category": [
+    "content",
+    "development"
+  ],
   "is_published": true,
-  "service_flow": ["Codebase", "Desktop Browser", "Desktop Terminal", "Messages"],
+  "service_flow": [
+    "Codebase",
+    "Desktop Browser",
+    "Desktop Terminal",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Codebase", "Desktop Browser", "Desktop Terminal", "Messages"],
+    "service_flow": [
+      "Codebase",
+      "Desktop Browser",
+      "Desktop Terminal",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn a feature description into a polished visual walkthrough — code-read, captured, annotated, reviewed.",
       "identity": {
@@ -41,11 +54,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability: record a demo from a feature prompt.\n\n**uc_record_demo** — manual trigger with a feature description.\n\n1. Load codebase context (`get_project_summary`) + recording memory (past viewport, speed, annotation preferences, documented features, rejection patterns).\n2. Analyze the target feature in the codebase: `search_code` for keywords, `read_file` on routes + components, map entry points and user flow.\n3. Plan the walkthrough — per step: page/URL, interaction, wait condition, capture point, annotation, expected result. Send the plan via Messages before any capture happens.\n4. Detect recording capabilities via the terminal: `where ffmpeg`, `where npx`, `npx playwright --version`. Pick tier based on `aq_recording_mode`:\n   - auto-detect: best available (Playwright > Game Bar > CDP screenshots)\n   - screenshots: force Tier 1 (CDP)\n   - video: Tier 3 -> Tier 2 -> fall back to Tier 1 with a note\n5. Ensure the app is running at the configured URL (start the dev server via terminal if not). Set browser viewport via CDP. Start video recording if Tier 2/3.\n6. Execute each walkthrough step: navigate, wait for settle, perform the interaction, wait the configured delay, capture (screenshot or verify recording alive). On step failure: retry once, capture a diagnostic screenshot, continue.\n7. If commentary is enabled, generate a numbered, timestamped narration script and deliver it via Messages.\n8. Assemble output: screenshots as `step-{N}-{description}.png` + `index.html` + `guide.md`, or the video file + extracted thumbnail. Write `manifest.json` with metadata.\n9. Present for human review. On reject-with-feedback, route to the right re-entry point (re-plan, re-analyze, re-capture). Cap at `aq_max_review_iterations` attempts.\n10. On approval: save preferences to memory, emit `demo.recorder.recorded` + `demo.recorder.approved` (+ `demo.recorder.commentary_generated` when applicable).\n\nState lives in `recording_config.json` (output dir, viewport prefs, recording mode), `capability_cache.json` (detected tools, refreshed on auto-detect), `walkthrough_plan.json` (current plan).",
+      "operating_instructions": "One capability: record a demo from a feature prompt.\n\n**uc_record_demo** — manual trigger with a feature description.\n\n1. Load codebase context (`get_project_summary`) + recording memory (past viewport, speed, annotation preferences, documented features, rejection patterns).\n2. Analyze the target feature in the codebase: `search_code` for keywords, `read_file` on routes + components, map entry points and user flow.\n3. Plan the walkthrough — per step: page/URL, interaction, wait condition, capture point, annotation, expected result. Send the plan via Messages before any capture happens.\n4. Detect recording capabilities via the terminal: `where ffmpeg`, `where npx`, `npx playwright --version`. Pick tier based on `aq_recording_mode`:\n - auto-detect: best available (Playwright > Game Bar > CDP screenshots)\n - screenshots: force Tier 1 (CDP)\n - video: Tier 3 -> Tier 2 -> fall back to Tier 1 with a note\n5. Ensure the app is running at the configured URL (start the dev server via terminal if not). Set browser viewport via CDP. Start video recording if Tier 2/3.\n6. Execute each walkthrough step: navigate, wait for settle, perform the interaction, wait the configured delay, capture (screenshot or verify recording alive). On step failure: retry once, capture a diagnostic screenshot, continue.\n7. If commentary is enabled, generate a numbered, timestamped narration script and deliver it via Messages.\n8. Assemble output: screenshots as `step-{N}-{description}.png` + `index.html` + `guide.md`, or the video file + extracted thumbnail. Write `manifest.json` with metadata.\n9. Present for human review. On reject-with-feedback, route to the right re-entry point (re-plan, re-analyze, re-capture). Cap at `aq_max_review_iterations` attempts.\n10. On approval: save preferences to memory, emit `demo.recorder.recorded` + `demo.recorder.approved` (+ `demo.recorder.commentary_generated` when applicable).\n\nState lives in `recording_config.json` (output dir, viewport prefs, recording mode), `capability_cache.json` (detected tools, refreshed on auto-detect), `walkthrough_plan.json` (current plan).",
       "tool_guidance": "**Codebase connector** (pre-recording analysis):\n- `get_project_summary` — tech stack, dev server command, base URL.\n- `search_code(keywords)` — locate feature implementations by name, route, or component.\n- `read_file(path)` — routes, page components, UI logic, fixtures.\n- `get_contexts()` / `get_context_detail(id)` — module architecture.\n- `list_files(dir)` — locate related assets.\n\n**Desktop Browser (CDP)**:\n- Navigation: `Page.navigate({url})`, `Page.reload`, `Page.getNavigationHistory`.\n- Interaction: `Runtime.evaluate({expression})` (element queries, visibility checks), `Input.dispatchMouseEvent` (click coords), `Input.dispatchKeyEvent` / `Input.insertText`.\n- Capture: `Page.captureScreenshot({format: 'png', quality: 100})`, `Page.startScreencast` / `Page.stopScreencast`.\n- Viewport: `Emulation.setDeviceMetricsOverride({width, height, deviceScaleFactor: 1})`.\n- Wait: `Page.loadEventFired`, `Network.requestWillBeSent`/`loadingFinished`, poll `Runtime.evaluate` until element found.\n\n**Desktop Terminal** (capability detection + dev server + file ops):\n- Detection: `where ffmpeg`, `where npx`, `npx playwright --version`.\n- Dev server: execute the command from `get_project_summary`; health-check via `curl -s -o /dev/null -w '%{http_code}' {app_url}`.\n- Tier 3 recording: generate a Playwright script with `video: { dir: './recordings', size: { width, height } }`, execute via `node record-walkthrough.js`.\n- File ops: `terminal_path_exists`, `mkdir -p`, `terminal_list_dir`, `terminal_write_file`, `terminal_read_file`.\n\n**State files**: `recording_config.json`, `capability_cache.json`, `walkthrough_plan.json`, `manifest.json` per recording.",
       "error_handling": "CDP connection fails -> ask the user via Messages to open Chrome/Edge. Dev server not running -> attempt start via terminal, retry after 10s. Blank/black screenshot -> retry with 2s delay, max 3 attempts. Video recording process dies mid-walkthrough -> switch to screenshot mode for remaining steps, note in manifest. Game Bar disabled by policy -> fall back to CDP screenshots. Playwright video corrupted -> delete and fall back to screenshots. Feature not found in code -> ask user via Messages for a URL or component name. Step element not found -> wait 5s, retry, skip with diagnostic capture if still missing. App crashes mid-walkthrough -> capture error state, stop recording, report via Messages. Output directory missing -> create via terminal. Disk write fails -> surface the path + error. Max review iterations reached -> suggest a detailed walkthrough script or manual recording. Terminal connector unavailable -> Tier 1 only.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "codebase",
@@ -94,7 +111,7 @@
           "setup_instructions": "1. Install Google Chrome or Microsoft Edge.\n2. Leave the browser path blank unless auto-detection fails.\n3. CDP port defaults to 9222 — change only if another tool uses that port.\n4. The browser is controlled via DevTools Protocol during recording."
         },
         {
-          "name": "desktop_terminal",
+          "name": "desktop",
           "label": "Terminal",
           "auth_type": "local",
           "role": "system_automation",
@@ -136,7 +153,11 @@
           "config": {},
           "description": "Manual — user provides a feature prompt describing what to demo. Default manual — final cadence set at the trigger-composition step."
         },
-        "connectors": ["codebase", "desktop_browser", "desktop_terminal"],
+        "connectors": [
+          "codebase",
+          "desktop_browser",
+          "desktop"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -173,14 +194,22 @@
           {
             "name": "recording_mode",
             "type": "enum",
-            "options": ["auto-detect", "screenshots", "video"],
+            "options": [
+              "auto-detect",
+              "screenshots",
+              "video"
+            ],
             "default": "auto-detect",
             "description": "Capture method. Auto-detect picks the best available tier on your system."
           },
           {
             "name": "walkthrough_speed",
             "type": "enum",
-            "options": ["slow", "normal", "fast"],
+            "options": [
+              "slow",
+              "normal",
+              "fast"
+            ],
             "default": "normal",
             "description": "Pacing of interactions. Slower produces clearer captures but takes longer."
           },
@@ -208,34 +237,122 @@
           "viewport_width": 1280,
           "viewport_height": 800
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "Manual: feature prompt" },
-            { "id": "d2", "type": "connector", "label": "Analyze feature in codebase", "connector": "codebase" },
-            { "id": "d3", "type": "action", "label": "Plan walkthrough + send via Messages" },
-            { "id": "d4", "type": "connector", "label": "Detect recording capabilities", "connector": "desktop_terminal" },
-            { "id": "d5", "type": "connector", "label": "Navigate app + capture per step", "connector": "desktop_browser" },
-            { "id": "d6", "type": "action", "label": "Assemble output (screenshots/video + manifest)" },
-            { "id": "d7", "type": "action", "label": "Human review" },
-            { "id": "d8", "type": "decision", "label": "Approved?" },
-            { "id": "d9", "type": "action", "label": "Incorporate rejection feedback" },
-            { "id": "d10", "type": "event", "label": "Emit demo.recorder.recorded + approved" },
-            { "id": "d11", "type": "end", "label": "Guide saved to output directory" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "Manual: feature prompt"
+            },
+            {
+              "id": "d2",
+              "type": "connector",
+              "label": "Analyze feature in codebase",
+              "connector": "codebase"
+            },
+            {
+              "id": "d3",
+              "type": "action",
+              "label": "Plan walkthrough + send via Messages"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Detect recording capabilities",
+              "connector": "desktop_terminal"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Navigate app + capture per step",
+              "connector": "desktop_browser"
+            },
+            {
+              "id": "d6",
+              "type": "action",
+              "label": "Assemble output (screenshots/video + manifest)"
+            },
+            {
+              "id": "d7",
+              "type": "action",
+              "label": "Human review"
+            },
+            {
+              "id": "d8",
+              "type": "decision",
+              "label": "Approved?"
+            },
+            {
+              "id": "d9",
+              "type": "action",
+              "label": "Incorporate rejection feedback"
+            },
+            {
+              "id": "d10",
+              "type": "event",
+              "label": "Emit demo.recorder.recorded + approved"
+            },
+            {
+              "id": "d11",
+              "type": "end",
+              "label": "Guide saved to output directory"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" },
-            { "source": "d7", "target": "d8" },
-            { "source": "d8", "target": "d10", "label": "Approve", "variant": "yes" },
-            { "source": "d8", "target": "d9", "label": "Reject", "variant": "no" },
-            { "source": "d9", "target": "d3" },
-            { "source": "d10", "target": "d11" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            },
+            {
+              "source": "d7",
+              "target": "d8"
+            },
+            {
+              "source": "d8",
+              "target": "d10",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "d8",
+              "target": "d9",
+              "label": "Reject",
+              "variant": "no"
+            },
+            {
+              "source": "d9",
+              "target": "d3"
+            },
+            {
+              "source": "d10",
+              "target": "d11"
+            }
           ]
         }
       }
@@ -244,7 +361,9 @@
       {
         "id": "aq_app_url",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "What URL does the web application run on?",
         "type": "text",
@@ -257,7 +376,9 @@
       {
         "id": "aq_output_dir",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "Where should recordings be saved on your computer?",
         "type": "text",
@@ -270,7 +391,9 @@
       {
         "id": "aq_recording_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "Default recording mode?",
         "type": "select",
@@ -288,11 +411,17 @@
       {
         "id": "aq_walkthrough_speed",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "Default walkthrough speed?",
         "type": "select",
-        "options": ["Slow (clearer captures, slower runs)", "Normal (balanced)", "Fast (quick runs, tighter pacing)"],
+        "options": [
+          "Slow (clearer captures, slower runs)",
+          "Normal (balanced)",
+          "Fast (quick runs, tighter pacing)"
+        ],
         "default": "Normal (balanced)",
         "maps_to": "use_cases[uc_record_demo].sample_input.walkthrough_speed",
         "variable_name": "walkthrough_speed",
@@ -302,7 +431,9 @@
       {
         "id": "aq_commentary",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "Should the recorder generate commentary scripts alongside recordings?",
         "type": "select",
@@ -318,11 +449,17 @@
       {
         "id": "aq_max_review_iterations",
         "scope": "capability",
-        "use_case_ids": ["uc_record_demo"],
+        "use_case_ids": [
+          "uc_record_demo"
+        ],
         "category": "configuration",
         "question": "Max re-recording attempts before escalating?",
         "type": "select",
-        "options": ["3", "5", "8"],
+        "options": [
+          "3",
+          "5",
+          "8"
+        ],
         "default": "5",
         "variable_name": "max_review_iterations",
         "context": "After this many rejected recordings, the recorder escalates with a manual-recording suggestion instead of silently retrying.",

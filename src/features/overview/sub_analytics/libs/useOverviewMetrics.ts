@@ -14,7 +14,21 @@ import { computePeriodTrends } from '@/features/overview/utils/computeTrends';
  * Initial data fetches (observability, tool usage, healing issues) are
  * centralized in useExecutionDashboardPipeline at the OverviewContent
  * level so that subtab switches reuse cached data. This hook only drives
- * the user-toggled auto-refresh polling cycle.
+ * the user-toggled auto-refresh polling cycle (see {@link usePolling}).
+ *
+ * `refreshAllSafe` is re-entrancy safe: concurrent calls coalesce onto
+ * the in-flight promise and a trailing run is queued if invoked again
+ * while a refresh is active.
+ *
+ * @returns
+ *   - `summary` — observability summary (undefined before first fetch).
+ *   - `successRate` — fixed-1 string derived from the summary.
+ *   - `costAnomalies` — anomaly rows from the execution dashboard (`[]` when absent).
+ *   - `trends` — period-over-period KPI trends, or `null` when compare is
+ *     disabled or `executionDashboard.daily_points` is empty.
+ *   - `observabilityError` — last fetch error, if any.
+ *   - `autoRefresh` / `setAutoRefresh` — polling toggle.
+ *   - `refreshAllSafe` — coalesced manual refresh.
  */
 export function useOverviewMetrics() {
   const {

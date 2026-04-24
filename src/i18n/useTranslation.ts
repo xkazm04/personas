@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import enBundle from './locales/en.json';
 import type { Translations } from './generated/types';
+import { buildPseudoBundle, isPseudoActive } from './pseudoLocale';
 
 /**
  * Per-locale JSON modules, discovered by Vite's import.meta.glob.
@@ -123,7 +124,13 @@ export function useTranslation() {
 
   // While the async bundle for a non-English locale loads, render English
   // so the UI doesn't flash empty. Swap in the real bundle once ready.
-  const bundle = cache.get(language) ?? cache.get('en')!;
+  let bundle = cache.get(language) ?? cache.get('en')!;
+
+  // Dev-only pseudo-locale: brackets + accented look-alikes on every
+  // translated string, so any hardcoded English on screen stands out.
+  if (import.meta.env.DEV && isPseudoActive()) {
+    bundle = buildPseudoBundle(cache.get('en')!);
+  }
 
   return {
     /** Full translation tree for the active language. */

@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/semantic-scholar.svg",
   "category": "research",
   "categories": [
-    "research",
-    "academic_papers"
+    "research"
   ],
   "fields": [
     {

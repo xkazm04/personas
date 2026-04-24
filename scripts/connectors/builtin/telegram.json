@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/telegram.svg",
   "category": "messaging",
   "categories": [
-    "messaging",
-    "chat"
+    "messaging"
   ],
   "fields": [
     {

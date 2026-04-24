@@ -16,6 +16,7 @@ import { OuterNodeGroup, InnerNodeGroup } from '../renderers/EventBusNodeRendere
 import { InboundCometTrails, ReturnFlowComets } from '../renderers/EventBusParticleRenderers';
 import { useAnimatedEvents } from '@/hooks/realtime/useAnimatedEvents';
 import { useTranslation } from '@/i18n/useTranslation';
+import { EVENT_BUS_LIMITS, EVENT_BUS_TIMING_MS, EVENT_BUS_NODE_SIZING } from './EventBusVisualization.constants';
 
 export default function EventBusVisualization({ events, personas, animationMapRef, animTick, onSelectEvent }: Props) {
   const { t } = useTranslation();
@@ -39,19 +40,19 @@ export default function EventBusVisualization({ events, personas, animationMapRe
     const disc = discoveredRef.current;
     if (disc.size === 0) return distributeOnRing(DEFAULT_TOOLS, ORBIT_R_OUTER);
     const now = Date.now();
-    const sources = Array.from(disc.values()).sort((a, b) => b.count - a.count).slice(0, 14);
+    const sources = Array.from(disc.values()).sort((a, b) => b.count - a.count).slice(0, EVENT_BUS_LIMITS.maxOuterSources);
     const maxC = Math.max(1, ...sources.map(s => s.count));
     const raw = sources.map(s => {
       const age = now - s.lastSeen;
-      const sf = 0.3 + 0.7 * (s.count / maxC);
-      return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * 0.5 : sf };
+      const sf = EVENT_BUS_NODE_SIZING.sizeFactorBase + EVENT_BUS_NODE_SIZING.sizeFactorGain * (s.count / maxC);
+      return { id: s.id, label: s.label, icon: null, color: colorForSource(s.id), sizeFactor: age > FADE_AFTER_MS ? sf * EVENT_BUS_NODE_SIZING.stalenessSizeMultiplier : sf };
     });
     return distributeOnRing(raw, ORBIT_R_OUTER);
   }, [events.length]);
 
   const innerNodes = useMemo(() => {
     const raw = personas.length > 0
-      ? personas.slice(0, 10).map(p => ({ id: p.id, label: p.name, icon: p.icon, color: p.color ?? '#8b5cf6' }))
+      ? personas.slice(0, EVENT_BUS_LIMITS.maxInnerPersonas).map(p => ({ id: p.id, label: p.name, icon: p.icon, color: p.color ?? '#8b5cf6' }))
       : DEFAULT_PERSONAS;
     return distributeOnRing(raw, ORBIT_R_INNER, Math.PI / Math.max(raw.length, 1));
   }, [personas]);
@@ -96,19 +97,19 @@ export default function EventBusVisualization({ events, personas, animationMapRe
     for (const { event: evt, animationId, phase } of animatedEvents) {
       if (phase !== 'delivering' || spawnedRef.current.has(animationId)) continue;
       spawnedRef.current.add(animationId);
-      if (spawnedRef.current.size > 200) { spawnedRef.current.clear(); clearTimeouts(); }
+      if (spawnedRef.current.size > EVENT_BUS_LIMITS.spawnedSetCeiling) { spawnedRef.current.clear(); clearTimeouts(); }
       const color = EVENT_TYPE_HEX_COLORS[evt.event_type] ?? '#818cf8';
       const tgt = getTgt(evt); const src = getSrc(evt);
       if (!tgt) continue;
       const personaId = evt.target_persona_id ?? innerNodes[evt.id.charCodeAt(0) % innerNodes.length]?.id ?? 'unknown';
-      const durationMs = 1200 + Math.random() * 1800;
+      const durationMs = EVENT_BUS_TIMING_MS.processingMinMs + Math.random() * EVENT_BUS_TIMING_MS.processingJitterMs;
       setProcessingSet(prev => { const next = new Map(prev); next.set(personaId, { color, durationMs, startedAt: Date.now() }); return next; });
       const tid = window.setTimeout(() => {
         timeoutRef.current.delete(animationId);
         setProcessingSet(prev => { const next = new Map(prev); next.delete(personaId); return next; });
         setReturnFlows(prev => {
           const next = [...prev, { id: `ret-${animationId}`, fromX: tgt.x, fromY: tgt.y, toX: src.x, toY: src.y, color, startedAt: Date.now() }];
-          return next.length > 50 ? next.slice(next.length - 50) : next;
+          return next.length > EVENT_BUS_LIMITS.maxReturnFlows ? next.slice(next.length - EVENT_BUS_LIMITS.maxReturnFlows) : next;
         });
       }, durationMs);
       timeoutRef.current.set(animationId, tid);
@@ -122,7 +123,7 @@ export default function EventBusVisualization({ events, personas, animationMapRe
     const t = setInterval(() => {
       const now = Date.now();
       setReturnFlows(prev => { const next = prev.filter(f => now - f.startedAt < RETURN_FLOW_MS); return next.length !== prev.length ? next : prev; });
-    }, 300);
+    }, EVENT_BUS_TIMING_MS.returnFlowSweepIntervalMs);
     return () => clearInterval(t);
   }, [hasReturnFlows]);
 

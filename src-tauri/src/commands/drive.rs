@@ -39,6 +39,178 @@ const DEV_SUBDIR: &str = ".dev-drive";
 /// Cached canonical managed root — resolved lazily on first call.
 static MANAGED_ROOT: OnceLock<PathBuf> = OnceLock::new();
 
+/// Return the cached managed root if [`managed_root`] has already been
+/// resolved (at least one `drive_*` command has run this session). Lets
+/// engine code (which doesn't hold an `AppHandle`) address the drive sandbox
+/// without bootstrapping it from cwd/app_data_dir itself. Returns `None`
+/// before the first call — callers must tolerate a missing drive.
+pub(crate) fn cached_managed_root() -> Option<PathBuf> {
+    MANAGED_ROOT.get().cloned()
+}
+
+/// Publish a `drive.document.*` event directly via the DB pool. Mirrors
+/// [`emit_drive_event`] but without an `AppHandle`, so engine-side callers
+/// (post-execution drive sync in `runner.rs`) can report file changes the
+/// persona produced during a run. Best-effort — returns unit regardless of
+/// DB outcome so a publish failure can't cancel the caller's happy path.
+pub(crate) fn publish_drive_event_from_engine(
+    pool: &crate::db::DbPool,
+    event_type: &str,
+    rel_path: &str,
+    extra: Option<serde_json::Value>,
+) {
+    let name = std::path::Path::new(rel_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let ext = std::path::Path::new(rel_path)
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_ascii_lowercase());
+
+    let mut payload = serde_json::json!({
+        "path": rel_path,
+        "name": name,
+        "extension": ext,
+    });
+    if let (Some(obj), Some(extra)) = (payload.as_object_mut(), extra) {
+        if let Some(extra_obj) = extra.as_object() {
+            for (k, v) in extra_obj {
+                obj.insert(k.clone(), v.clone());
+            }
+        }
+    }
+
+    let input = crate::db::models::CreatePersonaEventInput {
+        event_type: event_type.to_string(),
+        source_type: DRIVE_SOURCE_TYPE.to_string(),
+        project_id: None,
+        source_id: Some(rel_path.to_string()),
+        target_persona_id: None,
+        payload: serde_json::to_string(&payload).ok(),
+        use_case_id: None,
+    };
+
+    if let Err(e) = crate::db::repos::communication::events::publish(pool, input) {
+        tracing::warn!(
+            event_type = %event_type,
+            path = %rel_path,
+            "publish_drive_event_from_engine failed: {}", e
+        );
+    }
+}
+
+/// Snapshot of one file under the managed drive — path relative to root,
+/// last-modified time, and size. Used by the engine runner to detect which
+/// files a persona execution actually produced.
+#[derive(Debug, Clone)]
+pub(crate) struct DriveSnapshotEntry {
+    pub mtime_ms: i64,
+    pub size: u64,
+}
+
+/// Walk the managed drive root and return a map of relative-path → entry.
+/// Returns an empty map on any IO error — callers treat failures as
+/// "no snapshot available" and skip diff emission.
+pub(crate) fn snapshot_drive(root: &Path) -> std::collections::HashMap<String, DriveSnapshotEntry> {
+    let mut out = std::collections::HashMap::new();
+    walk_snapshot(root, root, &mut out);
+    out
+}
+
+fn walk_snapshot(
+    root: &Path,
+    dir: &Path,
+    out: &mut std::collections::HashMap<String, DriveSnapshotEntry>,
+) {
+    let iter = match std::fs::read_dir(dir) {
+        Ok(r) => r,
+        Err(_) => return,
+    };
+    for entry in iter.flatten() {
+        let path = entry.path();
+        let ft = match entry.file_type() {
+            Ok(f) => f,
+            Err(_) => continue,
+        };
+        if ft.is_dir() {
+            walk_snapshot(root, &path, out);
+            continue;
+        }
+        if !ft.is_file() {
+            continue;
+        }
+        let Ok(meta) = entry.metadata() else { continue };
+        let mtime_ms = meta
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_millis() as i64)
+            .unwrap_or(0);
+        let rel = to_relative_display(root, &path);
+        // Skip OS clutter so snapshot diffs don't fire spurious events.
+        let name = std::path::Path::new(&rel)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+        if name == ".DS_Store" || name == "Thumbs.db" || name == "desktop.ini" {
+            continue;
+        }
+        out.insert(
+            rel,
+            DriveSnapshotEntry {
+                mtime_ms,
+                size: meta.len(),
+            },
+        );
+    }
+}
+
+/// Diff two snapshots and emit `drive.document.added` / `drive.document.edited`
+/// / `drive.document.deleted` events for every file that changed. Uses
+/// [`publish_drive_event_from_engine`] so the caller only needs a `DbPool`.
+/// Rename detection is out of scope — a rename will surface as delete+add.
+pub(crate) fn diff_and_emit_drive_events(
+    pool: &crate::db::DbPool,
+    before: &std::collections::HashMap<String, DriveSnapshotEntry>,
+    after: &std::collections::HashMap<String, DriveSnapshotEntry>,
+) -> usize {
+    let mut emitted = 0usize;
+    for (path, after_entry) in after {
+        match before.get(path) {
+            None => {
+                publish_drive_event_from_engine(
+                    pool,
+                    drive_event::ADDED,
+                    path,
+                    Some(serde_json::json!({ "size": after_entry.size })),
+                );
+                emitted += 1;
+            }
+            Some(before_entry)
+                if before_entry.mtime_ms != after_entry.mtime_ms
+                    || before_entry.size != after_entry.size =>
+            {
+                publish_drive_event_from_engine(
+                    pool,
+                    drive_event::EDITED,
+                    path,
+                    Some(serde_json::json!({ "size": after_entry.size })),
+                );
+                emitted += 1;
+            }
+            _ => {}
+        }
+    }
+    for path in before.keys() {
+        if !after.contains_key(path) {
+            publish_drive_event_from_engine(pool, drive_event::DELETED, path, None);
+            emitted += 1;
+        }
+    }
+    emitted
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

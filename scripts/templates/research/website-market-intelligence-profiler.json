@@ -5,11 +5,21 @@
   "description": "Turns a list of website URLs into a structured market intelligence database. Fetches each site, applies multi-dimensional AI classification (industry, audience, business model, value prop, company size, tech signals), writes results back to your source of truth, and delivers a landscape summary with white-space analysis.",
   "icon": "Globe",
   "color": "#0369A1",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Source List", "Web Research", "Messages"],
+  "service_flow": [
+    "Source List",
+    "Web Research",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Source List", "Web Research", "Messages"],
+    "service_flow": [
+      "Source List",
+      "Web Research",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn a URL list into a competitive landscape — classified, cross-referenced, and rich enough to surface white-space opportunities without a single manual site review.",
       "identity": {
@@ -42,25 +52,34 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities chain together:\n\n1. **uc_profile_urls** (manual + scheduled) — read the URL list from the source_list connector (Google Sheets, Postgres, or a local file — shape depends on connector picked at adoption). Load batch state from `data/batch_state.json` and the 30-day classification cache from `data/classification_cache.json`. Build the pending queue: URLs not yet classified or with cleared status. Normalize + deduplicate URLs. Process in batches of 10:\n   - HTTP GET each URL with `User-Agent: Mozilla/5.0 (compatible; MarketIntelBot/1.0)`, 15s timeout, follow up to 3 redirects.\n   - Extract body text (strip nav/ads/sidebars), truncate to 4,000 chars.\n   - Classify across 7 dimensions per the rubric below.\n   - If unreachable, mark 'Unavailable' with specific error reason.\n   - Write classification back to the source list.\n   - 3-second pause between batches.\n   Emit `market.profile.url_classified` per URL, `market.profile.batch_completed` at end of run.\n\n2. **uc_landscape_report** (event-listen on `market.profile.batch_completed`) — read all classified rows from the source list, load prior report from `data/landscape_reports/` for comparison. Compute: industry breakdown (counts + %), audience distribution, business model patterns, company size ratios, tech signal frequencies, white-space opportunities (underrepresented industry × audience × model combinations), common positioning themes. Deliver via Messages with structured sections. Save to `data/landscape_reports/report_{date}.json` for longitudinal comparison. Emit `market.landscape.delivered` with full summary payload.\n\nState: `data/batch_state.json` (URLs processed / pending / failed, last-run timestamp), `data/classification_cache.json` (URL → classification with 30-day TTL), `data/landscape_reports/report_*.json` (historical snapshots).",
-      "tool_guidance": "**Source list** (shape depends on connector picked at adoption):\n- **Google Sheets**: `GET https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}` for read; `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values:batchUpdate` for write. Use `valueInputOption=USER_ENTERED`. Auto-detect URL column by header ('URL', 'Website', 'Domain', 'Link'); add classification columns if not present.\n- **Postgres / DuckDB**: SELECT / UPDATE via the connector's SQL interface. Table schema is user-provided in adoption.\n- **Local file**: read / write a CSV or JSON file under the configured path.\n\n**Website fetching** (http_request):\n- `GET {url}` with `User-Agent: Mozilla/5.0 (compatible; MarketIntelBot/1.0)`, 15s timeout, follow up to 3 redirects.\n- Strip `<nav>`, `<footer>`, `<aside>`, ad-related `<div>` before extracting body text.\n- Truncate extracted text to 4,000 chars (classification doesn't need more).\n- Skip non-HTML resources (PDF / image / video).\n\n**Classification rubric**:\n- **Industry**: SaaS/Software, E-commerce/Retail, Healthcare/Life Sciences, Finance/Fintech, Education/EdTech, Media/Entertainment, Manufacturing/Industrial, Real Estate/PropTech, Professional Services/Consulting, Energy/CleanTech, Logistics/Supply Chain, Government/Public Sector, Nonprofit/Social Impact, Other.\n- **Target Audience**: B2B Enterprise, B2B SMB, B2B Developer, B2C Consumer, B2B2C, Mixed/Marketplace.\n- **Business Model**: Subscription, Marketplace, Freemium, Service/Consulting, E-commerce, Advertising/Media, Usage-Based, Enterprise License, Open Source + Commercial.\n- **Value Proposition**: 15-25 words, outcome-focused.\n- **Key Products/Services**: up to 5 short phrases (3-8 words each).\n- **Company Size**: Startup / Growth / Enterprise, inferred from team page + product count + language signals.\n- **Tech Signals**: named integrations, frameworks, compliance (SOC 2 / HIPAA / GDPR), infrastructure hints (cloud-native / on-premise).\n\n**Landscape report structure**:\n- Industry breakdown with counts and percentages, highlighting dominant + underrepresented.\n- Audience distribution (B2B / B2C / mixed ratios).\n- Business model patterns + unusual combinations.\n- Size distribution.\n- Top 10 tech signals by frequency.\n- White-space opportunities: combinations of (industry × audience × model) present in 0-2 sites.\n- Positioning themes: recurring language patterns in value propositions.\n\n**Local state**:\n- `data/batch_state.json`: `{ processed_urls, pending_urls, failed_urls, last_batch_index, last_run_ts }`.\n- `data/classification_cache.json`: `{ url: { classification, cached_at } }` — 30-day TTL.\n- `data/landscape_reports/report_{YYYY-MM-DD}.json`: full landscape snapshot for longitudinal comparison.",
+      "operating_instructions": "Two capabilities chain together: 1. **uc_profile_urls** (manual + scheduled) — read the URL list from the source_list connector (Google Sheets, Postgres, or a local file — shape depends on connector picked at adoption). Load batch state from `data/batch_state.json` and the 30-day classification cache from `data/classification_cache.json`. Build the pending queue: URLs not yet classified or with cleared status. Normalize + deduplicate URLs. Process in batches of 10: - HTTP GET each URL with `User-Agent: Mozilla/5.0 (compatible; MarketIntelBot/1.0)`, 15s timeout, follow up to 3 redirects. - Extract body text (strip nav/ads/sidebars), truncate to 4,000 chars. - Classify across 7 dimensions per the rubric below. - If unreachable, mark 'Unavailable' with specific error reason. - Write classification back to the source list. - 3-second pause between batches. Emit `market.profile.url_classified` per URL, `market.profile.batch_completed` at end of run. 2. **uc_landscape_report** (event-listen on `market.profile.batch_completed`) — read all classified rows from the source list, load prior report from `data/landscape_reports/` for comparison. Compute: industry breakdown (counts + %), audience distribution, business model patterns, company size ratios, tech signal frequencies, white-space opportunities (underrepresented industry × audience × model combinations), common positioning themes. Deliver via Messages with structured sections. Save to `data/landscape_reports/report_{date}.json` for longitudinal comparison. Emit `market.landscape.delivered` with full summary payload. State: `data/batch_state.json` (URLs processed / pending / failed, last-run timestamp), `data/classification_cache.json` (URL → classification with 30-day TTL), `data/landscape_reports/report_*.json` (historical snapshots).",
+      "tool_guidance": "**Source list** (shape depends on connector picked at adoption):\n- **Google Sheets**: `GET https://sheets.googleapis.com/v4/spreadsheets/{id}/values/{range}` for read; `POST https://sheets.googleapis.com/v4/spreadsheets/{id}/values:batchUpdate` for write. Use `valueInputOption=USER_ENTERED`. Auto-detect URL column by header ('URL', 'Website', 'Domain', 'Link'); add classification columns if not present.\n- **Postgres / DuckDB**: SELECT / UPDATE via the connector's SQL interface. Table schema is user-provided in adoption.\n- **Local file**: read / write a CSV or JSON file under the configured path. **Website fetching** (http_request):\n- `GET {url}` with `User-Agent: Mozilla/5.0 (compatible; MarketIntelBot/1.0)`, 15s timeout, follow up to 3 redirects.\n- Strip `<nav>`, `<footer>`, `<aside>`, ad-related `<div>` before extracting body text.\n- Truncate extracted text to 4,000 chars (classification doesn't need more).\n- Skip non-HTML resources (PDF / image / video). **Classification rubric**:\n- **Industry**: SaaS/Software, E-commerce/Retail, Healthcare/Life Sciences, Finance/Fintech, Education/EdTech, Media/Entertainment, Manufacturing/Industrial, Real Estate/PropTech, Professional Services/Consulting, Energy/CleanTech, Logistics/Supply Chain, Government/Public Sector, Nonprofit/Social Impact, Other.\n- **Target Audience**: B2B Enterprise, B2B SMB, B2B Developer, B2C Consumer, B2B2C, Mixed/Marketplace.\n- **Business Model**: Subscription, Marketplace, Freemium, Service/Consulting, E-commerce, Advertising/Media, Usage-Based, Enterprise License, Open Source + Commercial.\n- **Value Proposition**: 15-25 words, outcome-focused.\n- **Key Products/Services**: up to 5 short phrases (3-8 words each).\n- **Company Size**: Startup / Growth / Enterprise, inferred from team page + product count + language signals.\n- **Tech Signals**: named integrations, frameworks, compliance (SOC 2 / HIPAA / GDPR), infrastructure hints (cloud-native / on-premise). **Landscape report structure**:\n- Industry breakdown with counts and percentages, highlighting dominant + underrepresented.\n- Audience distribution (B2B / B2C / mixed ratios).\n- Business model patterns + unusual combinations.\n- Size distribution.\n- Top 10 tech signals by frequency.\n- White-space opportunities: combinations of (industry × audience × model) present in 0-2 sites.\n- Positioning themes: recurring language patterns in value propositions. **Local state**:\n- `data/batch_state.json`: `{ processed_urls, pending_urls, failed_urls, last_batch_index, last_run_ts }`.\n- `data/classification_cache.json`: `{ url: { classification, cached_at } }` — 30-day TTL.\n- `data/landscape_reports/report_{YYYY-MM-DD}.json`: full landscape snapshot for longitudinal comparison.",
       "error_handling": "Source list rate limit (429) → back off 60s, reduce batch size from 10 to 5. Source list auth 401/403 → alert via Messages, halt (require credential refresh). Website fetch failure → mark 'Unavailable' with specific error (Connection timeout / DNS failure / 403 / SSL error / Too many redirects), do NOT retry in the same run. JS-rendered (<50 chars body) → mark 'Unavailable: JS-rendered content'. Login wall (detected via keyword + low content) → mark 'Unavailable: Login wall detected'. Non-English → classify anyway, tag with detected language. Ambiguous industry → primary + secondary in parens. Parked/expired domain → mark 'Unavailable: Parked domain', skip classification. Duplicate in source list → process first, annotate others. Batch state corrupted → re-initialize by reading source list (any row with populated Status counts as processed). Messages delivery failure → write landscape report to `data/landscape_reports/report_{date}.json` and surface via agent_memory.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "source_list",
+          "name": "research",
           "label": "Source List",
           "auth_type": "oauth2",
           "role": "url_source",
-          "category": "database",
+          "category": "research",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "Source list provider",
               "type": "select",
-              "options": ["google_sheets", "postgres", "duckdb", "local_file"],
+              "options": [
+                "google_sheets",
+                "postgres",
+                "duckdb",
+                "local_file"
+              ],
               "placeholder": "google_sheets",
               "helpText": "Where the URL list lives and where classifications get written. Google Sheets for shared team lists; Postgres/DuckDB for larger databases; local file for quick experiments.",
               "required": true
@@ -105,10 +124,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 6 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 6 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 6:00 AM — final cadence set at the trigger-composition step. Also supports manual invocation at any time."
         },
-        "connectors": ["source_list"],
+        "connectors": [
+          "research"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -150,32 +174,112 @@
           "batch_size": "{{param.aq_batch_size}}",
           "profiling_intent": "{{param.aq_profiling_intent}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "Trigger (manual or scheduled)" },
-            { "id": "p2", "type": "connector", "label": "Read URL list from source", "connector": "source_list" },
-            { "id": "p3", "type": "action", "label": "Load batch state + cache; build pending queue" },
-            { "id": "p4", "type": "action", "label": "Fetch batch of 10 URLs + extract content" },
-            { "id": "p5", "type": "action", "label": "Classify each reachable site (7 dimensions)" },
-            { "id": "p6", "type": "connector", "label": "Write classifications back to source", "connector": "source_list" },
-            { "id": "p7", "type": "event", "label": "Emit market.profile.url_classified per URL" },
-            { "id": "p8", "type": "decision", "label": "More batches pending?" },
-            { "id": "p9", "type": "event", "label": "Emit market.profile.batch_completed" },
-            { "id": "p10", "type": "end", "label": "Profiling run complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "Trigger (manual or scheduled)"
+            },
+            {
+              "id": "p2",
+              "type": "connector",
+              "label": "Read URL list from source",
+              "connector": "source_list"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Load batch state + cache; build pending queue"
+            },
+            {
+              "id": "p4",
+              "type": "action",
+              "label": "Fetch batch of 10 URLs + extract content"
+            },
+            {
+              "id": "p5",
+              "type": "action",
+              "label": "Classify each reachable site (7 dimensions)"
+            },
+            {
+              "id": "p6",
+              "type": "connector",
+              "label": "Write classifications back to source",
+              "connector": "source_list"
+            },
+            {
+              "id": "p7",
+              "type": "event",
+              "label": "Emit market.profile.url_classified per URL"
+            },
+            {
+              "id": "p8",
+              "type": "decision",
+              "label": "More batches pending?"
+            },
+            {
+              "id": "p9",
+              "type": "event",
+              "label": "Emit market.profile.batch_completed"
+            },
+            {
+              "id": "p10",
+              "type": "end",
+              "label": "Profiling run complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" },
-            { "source": "p8", "target": "p4", "variant": "yes", "label": "Next batch" },
-            { "source": "p8", "target": "p9", "variant": "no", "label": "All done" },
-            { "source": "p9", "target": "p10" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            },
+            {
+              "source": "p8",
+              "target": "p4",
+              "variant": "yes",
+              "label": "Next batch"
+            },
+            {
+              "source": "p8",
+              "target": "p9",
+              "variant": "no",
+              "label": "All done"
+            },
+            {
+              "source": "p9",
+              "target": "p10"
+            }
           ]
         }
       },
@@ -190,12 +294,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "market.profile.batch_completed" },
+          "config": {
+            "event_type": "market.profile.batch_completed"
+          },
           "description": "Fires after each profiling run. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["source_list"],
+        "connectors": [
+          "research"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Historical landscape reports in `data/landscape_reports/` enable trend comparison (how did the industry mix shift month-over-month?)."
@@ -224,25 +335,76 @@
         "sample_input": {
           "include_trend_comparison": true
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "l1", "type": "start", "label": "market.profile.batch_completed received" },
-            { "id": "l2", "type": "connector", "label": "Read all classified rows", "connector": "source_list" },
-            { "id": "l3", "type": "action", "label": "Compute breakdowns + white-space + positioning themes" },
-            { "id": "l4", "type": "action", "label": "Compare to prior report (if available)" },
-            { "id": "l5", "type": "action", "label": "Deliver report via Messages + archive" },
-            { "id": "l6", "type": "event", "label": "Emit market.landscape.delivered" },
-            { "id": "l7", "type": "end", "label": "Report delivered" }
+            {
+              "id": "l1",
+              "type": "start",
+              "label": "market.profile.batch_completed received"
+            },
+            {
+              "id": "l2",
+              "type": "connector",
+              "label": "Read all classified rows",
+              "connector": "source_list"
+            },
+            {
+              "id": "l3",
+              "type": "action",
+              "label": "Compute breakdowns + white-space + positioning themes"
+            },
+            {
+              "id": "l4",
+              "type": "action",
+              "label": "Compare to prior report (if available)"
+            },
+            {
+              "id": "l5",
+              "type": "action",
+              "label": "Deliver report via Messages + archive"
+            },
+            {
+              "id": "l6",
+              "type": "event",
+              "label": "Emit market.landscape.delivered"
+            },
+            {
+              "id": "l7",
+              "type": "end",
+              "label": "Report delivered"
+            }
           ],
           "edges": [
-            { "source": "l1", "target": "l2" },
-            { "source": "l2", "target": "l3" },
-            { "source": "l3", "target": "l4" },
-            { "source": "l4", "target": "l5" },
-            { "source": "l5", "target": "l6" },
-            { "source": "l6", "target": "l7" }
+            {
+              "source": "l1",
+              "target": "l2"
+            },
+            {
+              "source": "l2",
+              "target": "l3"
+            },
+            {
+              "source": "l3",
+              "target": "l4"
+            },
+            {
+              "source": "l4",
+              "target": "l5"
+            },
+            {
+              "source": "l5",
+              "target": "l6"
+            },
+            {
+              "source": "l6",
+              "target": "l7"
+            }
           ]
         }
       }
@@ -251,7 +413,9 @@
       {
         "id": "aq_profiling_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_profile_urls"],
+        "use_case_ids": [
+          "uc_profile_urls"
+        ],
         "category": "domain",
         "question": "What signals matter most for your profiling, and what should the Tech Signals dimension prioritize?",
         "type": "textarea",
@@ -265,11 +429,18 @@
       {
         "id": "aq_batch_size",
         "scope": "capability",
-        "use_case_ids": ["uc_profile_urls"],
+        "use_case_ids": [
+          "uc_profile_urls"
+        ],
         "category": "quality",
         "question": "How many URLs should be processed per batch?",
         "type": "select",
-        "options": ["5", "10", "15", "25"],
+        "options": [
+          "5",
+          "10",
+          "15",
+          "25"
+        ],
         "default": "10",
         "maps_to": "use_cases[uc_profile_urls].sample_input.batch_size",
         "variable_name": "batch_size",
@@ -279,7 +450,9 @@
       {
         "id": "aq_source_provider",
         "scope": "connector",
-        "connector_names": ["source_list"],
+        "connector_names": [
+          "source_list"
+        ],
         "category": "configuration",
         "question": "Where should the URL list be read from (and classifications written back to)?",
         "type": "select",

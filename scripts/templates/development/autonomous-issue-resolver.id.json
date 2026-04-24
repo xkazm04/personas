@@ -39,9 +39,21 @@
           "name": "jira",
           "label": "Jira (Atlassian)",
           "credential_fields": [
-            { "key": "domain", "label": "Domain Atlassian", "helpText": "Domain Atlassian Anda. Jika URL Jira Anda https://your-company.atlassian.net, masukkan 'your-company'." },
-            { "key": "email", "label": "Email Akun", "helpText": "Alamat email yang terkait dengan akun Atlassian Anda." },
-            { "key": "api_token", "label": "Token API", "helpText": "Buat di https://id.atlassian.com/manage-profile/security/api-tokens. Dikombinasikan dengan email Anda membentuk kredensial Basic Auth." }
+            {
+              "key": "domain",
+              "label": "Domain Atlassian",
+              "helpText": "Domain Atlassian Anda. Jika URL Jira Anda https://your-company.atlassian.net, masukkan 'your-company'."
+            },
+            {
+              "key": "email",
+              "label": "Email Akun",
+              "helpText": "Alamat email yang terkait dengan akun Atlassian Anda."
+            },
+            {
+              "key": "api_token",
+              "label": "Token API",
+              "helpText": "Buat di https://id.atlassian.com/manage-profile/security/api-tokens. Dikombinasikan dengan email Anda membentuk kredensial Basic Auth."
+            }
           ],
           "setup_instructions": "1. Kunjungi https://id.atlassian.com/manage-profile/security/api-tokens.\n2. Buat token berlabel 'Issue Resolver Bot' dan salin (hanya ditampilkan sekali).\n3. Masukkan domain Atlassian Anda (subdomain dari URL Jira).\n4. Masukkan email untuk akun Atlassian Anda.\n5. Agen mengautentikasi dengan Basic Auth menggunakan base64(email:api_token)."
         },
@@ -49,8 +61,16 @@
           "name": "notion",
           "label": "Notion",
           "credential_fields": [
-            { "key": "integration_token", "label": "Token Integrasi Internal", "helpText": "Buat integrasi internal di https://www.notion.so/my-integrations, salin token, lalu bagikan database KB Anda dengan integrasi." },
-            { "key": "database_id", "label": "ID Database Basis Pengetahuan", "helpText": "Buka database KB Notion Anda. ID database adalah string heksadesimal 32 karakter di URL sebelum '?'." }
+            {
+              "key": "integration_token",
+              "label": "Token Integrasi Internal",
+              "helpText": "Buat integrasi internal di https://www.notion.so/my-integrations, salin token, lalu bagikan database KB Anda dengan integrasi."
+            },
+            {
+              "key": "database_id",
+              "label": "ID Database Basis Pengetahuan",
+              "helpText": "Buka database KB Notion Anda. ID database adalah string heksadesimal 32 karakter di URL sebelum '?'."
+            }
           ],
           "setup_instructions": "1. Buat integrasi baru di https://www.notion.so/my-integrations bernama 'Issue Resolver Bot'.\n2. Salin Token Integrasi Internal.\n3. Buka database KB → menu '...' → 'Add connections' → pilih integrasi Anda.\n4. Salin ID database 32 karakter dari URL."
         },
@@ -58,13 +78,20 @@
           "name": "slack",
           "label": "Slack",
           "credential_fields": [
-            { "key": "bot_token", "label": "Token OAuth Bot User", "helpText": "Dari Aplikasi Slack Anda → OAuth & Permissions → Bot User OAuth Token. Membutuhkan scope: chat:write, users:read, users:read.email." }
+            {
+              "key": "bot_token",
+              "label": "Token OAuth Bot User",
+              "helpText": "Dari Aplikasi Slack Anda → OAuth & Permissions → Bot User OAuth Token. Membutuhkan scope: chat:write, users:read, users:read.email."
+            }
           ],
           "setup_instructions": "1. Buat atau pilih aplikasi di api.slack.com/apps.\n2. Tambahkan Bot Token Scopes: chat:write, users:read, users:read.email.\n3. Instal ke workspace dan salin Bot User OAuth Token.\n4. Undang bot ke channel alert dan eskalasi."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "Channel alert Slack untuk ringkasan harian, laporan mingguan, dan notifikasi resolusi otomatis." }
+        {
+          "type": "slack",
+          "description": "Channel alert Slack untuk ringkasan harian, laporan mingguan, dan notifikasi resolusi otomatis."
+        }
       ]
     },
     "use_cases": [
@@ -73,10 +100,18 @@
         "title": "Triase & Resolusi Issue Stagnan",
         "description": "Polling Jira setiap 15 menit untuk issue yang terbuka melampaui ambang stagnasi. Klasifikasikan status, nilai sentimen pelapor, cari solusi yang cocok di Notion + KB lokal, posting resolusi kepercayaan tinggi, eskalasi pelapor marah + P1/P2 ke manajemen engineering, dan tutup otomatis issue yang ditinggalkan.",
         "capability_summary": "Klasifikasi issue stagnan + resolusi otomatis bergantung sentimen, eskalasi, dan pembersihan issue yang ditinggalkan.",
-        "suggested_trigger": { "description": "Setiap 15 menit, query Jira untuk issue stagnan yang belum terselesaikan." },
+        "suggested_trigger": {
+          "description": "Setiap 15 menit, query Jira untuk issue stagnan yang belum terselesaikan."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Channel alert utama untuk notifikasi resolusi otomatis dan alert sentimen." },
-          { "type": "slack", "description": "Channel eskalasi untuk issue marah + P1/P2 yang butuh perhatian engineering segera." }
+          {
+            "type": "slack",
+            "description": "Channel alert utama untuk notifikasi resolusi otomatis dan alert sentimen."
+          },
+          {
+            "type": "slack",
+            "description": "Channel eskalasi untuk issue marah + P1/P2 yang butuh perhatian engineering segera."
+          }
         ],
         "review_policy": {
           "context": "Solusi dengan kepercayaan 60-79 dicatat untuk review manusia tetapi tidak diposting. Issue marah + P1/P2 mem-bypass resolusi otomatis dan dirutekan langsung ke manual_review dengan konteks lengkap untuk manajer engineering yang on-call."
@@ -85,42 +120,151 @@
           "context": "data/solutions_kb.json tumbuh dengan setiap resolusi yang dikonfirmasi: pola gejala, langkah solusi, kunci issue sumber, counter times_confirmed, skor kepercayaan. Solusi yang ditolak menurunkan kepercayaan. Riwayat sentimen berdasarkan email pelapor terakumulasi lintas siklus untuk meningkatkan klasifikasi di masa depan."
         },
         "event_subscriptions": [
-          { "event_type": "issue.auto_resolved", "description": "Payload: kunci issue, sumber solusi (URL halaman notion atau id entri KB lokal), skor kepercayaan, sentimen pelapor saat posting." },
-          { "event_type": "issue.escalated", "description": "Payload: kunci issue, prioritas, skor sentimen, penerima eskalasi, ringkasan konteks lengkap." },
-          { "event_type": "issue.auto_closed", "description": "Payload: kunci issue, alasan (abandoned / silently_resolved / confirmation_timeout), jumlah hari tidak aktif." },
-          { "event_type": "persona.error", "description": "Dikeluarkan pada Jira 401, kegagalan Slack berulang, atau file state rusak. Memicu workflow refresh kredensial atau alert admin hilir." }
+          {
+            "event_type": "issue.auto_resolved",
+            "description": "Payload: kunci issue, sumber solusi (URL halaman notion atau id entri KB lokal), skor kepercayaan, sentimen pelapor saat posting."
+          },
+          {
+            "event_type": "issue.escalated",
+            "description": "Payload: kunci issue, prioritas, skor sentimen, penerima eskalasi, ringkasan konteks lengkap."
+          },
+          {
+            "event_type": "issue.auto_closed",
+            "description": "Payload: kunci issue, alasan (abandoned / silently_resolved / confirmation_timeout), jumlah hari tidak aktif."
+          },
+          {
+            "event_type": "persona.error",
+            "description": "Dikeluarkan pada Jira 401, kegagalan Slack berulang, atau file state rusak. Memicu workflow refresh kredensial atau alert admin hilir."
+          }
         ],
         "error_handling": "Jira 429 → hormati Retry-After, lanjut siklus berikutnya. Jira 401 → keluarkan persona.error dan jeda kapabilitas ini hingga refresh kredensial. Notion tidak tersedia → lewati pencarian KB tapi lanjutkan klasifikasi + sentimen + eskalasi. Antrean Slack → data/pending_slack.json coba lagi siklus berikutnya. Kegagalan posting komentar → hanya log, tanpa retry siklus yang sama. Siklus pertama → hanya observasi.",
         "input_schema": [
-          { "name": "stale_days", "description": "Hari ketidakaktifan sebelum issue dianggap stagnan." },
-          { "name": "max_issues_per_cycle", "description": "Batas issue yang diproses per siklus 15 menit untuk menghormati batas laju API." },
-          { "name": "confidence_threshold", "description": "Kepercayaan minimum untuk memposting solusi otomatis." },
-          { "name": "auto_close_enabled", "description": "Saat diaktifkan, issue dengan 30+ hari tidak aktif mendapat komentar penutup sopan dan beralih ke Closed." },
-          { "name": "eng_manager_email", "description": "Manajer engineering yang menerima DM Slack untuk eskalasi marah + P1/P2." },
-          { "name": "escalation_channel", "description": "Channel Slack khusus untuk posting eskalasi prioritas tinggi." }
+          {
+            "name": "stale_days",
+            "description": "Hari ketidakaktifan sebelum issue dianggap stagnan."
+          },
+          {
+            "name": "max_issues_per_cycle",
+            "description": "Batas issue yang diproses per siklus 15 menit untuk menghormati batas laju API."
+          },
+          {
+            "name": "confidence_threshold",
+            "description": "Kepercayaan minimum untuk memposting solusi otomatis."
+          },
+          {
+            "name": "auto_close_enabled",
+            "description": "Saat diaktifkan, issue dengan 30+ hari tidak aktif mendapat komentar penutup sopan dan beralih ke Closed."
+          },
+          {
+            "name": "eng_manager_email",
+            "description": "Manajer engineering yang menerima DM Slack untuk eskalasi marah + P1/P2."
+          },
+          {
+            "name": "escalation_channel",
+            "description": "Channel Slack khusus untuk posting eskalasi prioritas tinggi."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "label": "Tick polling", "detail": "Cron 15 menit dipicu" },
-            { "id": "n2", "label": "Query issue stagnan", "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)" },
-            { "id": "n3", "label": "Muat file state", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "label": "Baru atau diperbarui?", "detail": "Lewati issue yang sudah diproses pada timestamp updated saat ini" },
-            { "id": "n5", "label": "Ambil komentar", "detail": "Thread penuh untuk klasifikasi + sentimen" },
-            { "id": "n6", "label": "Klasifikasikan status", "detail": "Menunggu pelapor / tim / terblokir / ditinggalkan / stagnan-aktif / diam-diam terselesaikan" },
-            { "id": "n7", "label": "Skor sentimen 1-10", "detail": "Bobot lebih ke komentar terbaru; deteksi sinyal marah + frustrasi" },
-            { "id": "n8", "label": "Cari di Notion KB", "detail": "Query database KB berdasarkan judul + tag komponen" },
-            { "id": "n9", "label": "Cari di KB lokal", "detail": "Cocokkan pola gejala dari data/solutions_kb.json" },
-            { "id": "n10", "label": "Kepercayaan >= ambang?", "detail": "Skor komposit: kata kunci + komponen + pesan kesalahan + kesuksesan historis" },
-            { "id": "n11", "label": "Posting komentar solusi", "detail": "Komentar ADF empatik dengan langkah bernomor + tautan sumber" },
-            { "id": "n12", "label": "Lacak konfirmasi 14 hari", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "label": "Marah + P1/P2?", "detail": "Sentimen >= 8 AND prioritas di (P1, P2)" },
-            { "id": "n14", "label": "DM manajer engineering", "detail": "DM Slack dengan konteks issue + keluhan pelapor" },
-            { "id": "n15", "label": "Posting channel eskalasi", "detail": "Visibilitas publik issue P1/marah" },
-            { "id": "n16", "label": "Ditinggalkan 30+ hari?", "detail": "auto_close_enabled AND tidak ada aktivitas pelapor dalam 30 hari" },
-            { "id": "n17", "label": "Tutup issue yang ditinggalkan", "detail": "Komentar penutup sopan + transisi ke Closed" },
-            { "id": "n18", "label": "Keluarkan event lifecycle", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "label": "Tulis state atomik", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "label": "Siklus selesai" }
+            {
+              "id": "n1",
+              "label": "Tick polling",
+              "detail": "Cron 15 menit dipicu"
+            },
+            {
+              "id": "n2",
+              "label": "Query issue stagnan",
+              "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)"
+            },
+            {
+              "id": "n3",
+              "label": "Muat file state",
+              "detail": "data/issue_states.json + data/pending_confirmations.json"
+            },
+            {
+              "id": "n4",
+              "label": "Baru atau diperbarui?",
+              "detail": "Lewati issue yang sudah diproses pada timestamp updated saat ini"
+            },
+            {
+              "id": "n5",
+              "label": "Ambil komentar",
+              "detail": "Thread penuh untuk klasifikasi + sentimen"
+            },
+            {
+              "id": "n6",
+              "label": "Klasifikasikan status",
+              "detail": "Menunggu pelapor / tim / terblokir / ditinggalkan / stagnan-aktif / diam-diam terselesaikan"
+            },
+            {
+              "id": "n7",
+              "label": "Skor sentimen 1-10",
+              "detail": "Bobot lebih ke komentar terbaru; deteksi sinyal marah + frustrasi"
+            },
+            {
+              "id": "n8",
+              "label": "Cari di Notion KB",
+              "detail": "Query database KB berdasarkan judul + tag komponen"
+            },
+            {
+              "id": "n9",
+              "label": "Cari di KB lokal",
+              "detail": "Cocokkan pola gejala dari data/solutions_kb.json"
+            },
+            {
+              "id": "n10",
+              "label": "Kepercayaan >= ambang?",
+              "detail": "Skor komposit: kata kunci + komponen + pesan kesalahan + kesuksesan historis"
+            },
+            {
+              "id": "n11",
+              "label": "Posting komentar solusi",
+              "detail": "Komentar ADF empatik dengan langkah bernomor + tautan sumber"
+            },
+            {
+              "id": "n12",
+              "label": "Lacak konfirmasi 14 hari",
+              "detail": "data/pending_confirmations.json"
+            },
+            {
+              "id": "n13",
+              "label": "Marah + P1/P2?",
+              "detail": "Sentimen >= 8 AND prioritas di (P1, P2)"
+            },
+            {
+              "id": "n14",
+              "label": "DM manajer engineering",
+              "detail": "DM Slack dengan konteks issue + keluhan pelapor"
+            },
+            {
+              "id": "n15",
+              "label": "Posting channel eskalasi",
+              "detail": "Visibilitas publik issue P1/marah"
+            },
+            {
+              "id": "n16",
+              "label": "Ditinggalkan 30+ hari?",
+              "detail": "auto_close_enabled AND tidak ada aktivitas pelapor dalam 30 hari"
+            },
+            {
+              "id": "n17",
+              "label": "Tutup issue yang ditinggalkan",
+              "detail": "Komentar penutup sopan + transisi ke Closed"
+            },
+            {
+              "id": "n18",
+              "label": "Keluarkan event lifecycle",
+              "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed"
+            },
+            {
+              "id": "n19",
+              "label": "Tulis state atomik",
+              "detail": "issue_states + escalation_log + pending_confirmations"
+            },
+            {
+              "id": "n20",
+              "label": "Siklus selesai"
+            }
           ]
         }
       },
@@ -129,28 +273,73 @@
         "title": "Ringkasan Dukungan Harian",
         "description": "Setiap pagi pukul 09.00, memposting ringkasan Slack untuk 24 jam terakhir: issue terselesaikan otomatis, dieskalasi, ditutup otomatis, masih stagnan — dengan tautan ke tiket penting di setiap kategori.",
         "capability_summary": "Ringkasan Slack 09.00 dengan hitungan terselesaikan otomatis / dieskalasi / ditutup otomatis / masih stagnan dan tautan issue.",
-        "suggested_trigger": { "description": "Setiap hari pukul 09.00, susun ringkasan hari sebelumnya." },
+        "suggested_trigger": {
+          "description": "Setiap hari pukul 09.00, susun ringkasan hari sebelumnya."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Channel alert utama tempat ringkasan harian diposting." }
+          {
+            "type": "slack",
+            "description": "Channel alert utama tempat ringkasan harian diposting."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.digest.posted", "description": "Payload: hitungan per kategori, tautan ke 3 issue paling penting per kategori." }
+          {
+            "event_type": "support.digest.posted",
+            "description": "Payload: hitungan per kategori, tautan ke 3 issue paling penting per kategori."
+          }
         ],
         "error_handling": "File state hilang → posting ringkasan minimal yang mencatat kekosongan data. Kegagalan posting Slack → coba lagi hingga 3 kali dengan backoff eksponensial, lalu log dan lewati.",
         "input_schema": [
-          { "name": "digest_channel", "description": "Channel Slack untuk ringkasan harian." },
-          { "name": "top_issues_per_bucket", "description": "Jumlah maksimum issue penting yang ditautkan per kategori." }
+          {
+            "name": "digest_channel",
+            "description": "Channel Slack untuk ringkasan harian."
+          },
+          {
+            "name": "top_issues_per_bucket",
+            "description": "Jumlah maksimum issue penting yang ditautkan per kategori."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "label": "Jadwal 09.00", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "label": "Baca file state", "detail": "data/issue_states.json, escalation_log.json — irisan 24 jam terakhir" },
-            { "id": "d3", "label": "Hitungan kategori", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "label": "Pilih 3 teratas per kategori", "detail": "Dibobot dengan prioritas dan sentimen" },
-            { "id": "d5", "label": "Format ringkasan", "detail": "Layout Slack Block Kit dengan tautan issue" },
-            { "id": "d6", "label": "Posting ringkasan", "detail": "POST chat.postMessage ke channel alert" },
-            { "id": "d7", "label": "Keluarkan support.digest.posted", "detail": "Observabilitas hilir" },
-            { "id": "d8", "label": "Ringkasan terkirim" }
+            {
+              "id": "d1",
+              "label": "Jadwal 09.00",
+              "detail": "Cron 0 9 * * *"
+            },
+            {
+              "id": "d2",
+              "label": "Baca file state",
+              "detail": "data/issue_states.json, escalation_log.json — irisan 24 jam terakhir"
+            },
+            {
+              "id": "d3",
+              "label": "Hitungan kategori",
+              "detail": "auto_resolved / escalated / auto_closed / still_stale"
+            },
+            {
+              "id": "d4",
+              "label": "Pilih 3 teratas per kategori",
+              "detail": "Dibobot dengan prioritas dan sentimen"
+            },
+            {
+              "id": "d5",
+              "label": "Format ringkasan",
+              "detail": "Layout Slack Block Kit dengan tautan issue"
+            },
+            {
+              "id": "d6",
+              "label": "Posting ringkasan",
+              "detail": "POST chat.postMessage ke channel alert"
+            },
+            {
+              "id": "d7",
+              "label": "Keluarkan support.digest.posted",
+              "detail": "Observabilitas hilir"
+            },
+            {
+              "id": "d8",
+              "label": "Ringkasan terkirim"
+            }
           ]
         }
       },
@@ -159,43 +348,127 @@
         "title": "Laporan Kesehatan Issue Mingguan",
         "description": "Setiap Senin pukul 09.00, menghasilkan laporan komprehensif: tingkat resolusi otomatis, rata-rata waktu resolusi, pertumbuhan KB, hasil eskalasi, tren issue stagnan, dan perbandingan minggu-ke-minggu dengan laporan sebelumnya.",
         "capability_summary": "Laporan Senin 09.00 komprehensif dengan metrik resolusi, pertumbuhan KB, dan analisis tren WoW.",
-        "suggested_trigger": { "description": "Setiap Senin pukul 09.00, publikasikan laporan kesehatan mingguan." },
+        "suggested_trigger": {
+          "description": "Setiap Senin pukul 09.00, publikasikan laporan kesehatan mingguan."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "Channel alert untuk posting laporan kesehatan mingguan." }
+          {
+            "type": "slack",
+            "description": "Channel alert untuk posting laporan kesehatan mingguan."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.weekly_report.published", "description": "Payload: ringkasan metrik, delta WoW, path file laporan." }
+          {
+            "event_type": "support.weekly_report.published",
+            "description": "Payload: ringkasan metrik, delta WoW, path file laporan."
+          }
         ],
         "error_handling": "File state tidak lengkap → hasilkan laporan parsial dengan catatan eksplisit tentang kekosongan. Query Jira gagal → andalkan hitungan dari file state saja. Kegagalan arsip → tetap posting ke Slack, log kesalahan arsip.",
         "input_schema": [
-          { "name": "report_channel", "description": "Channel Slack untuk laporan mingguan." },
-          { "name": "archive_directory", "description": "Direktori lokal tempat setiap JSON laporan diarsipkan." }
+          {
+            "name": "report_channel",
+            "description": "Channel Slack untuk laporan mingguan."
+          },
+          {
+            "name": "archive_directory",
+            "description": "Direktori lokal tempat setiap JSON laporan diarsipkan."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "label": "Jadwal Senin 09.00", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "label": "Muat state + laporan sebelumnya", "detail": "issue_states + solutions_kb + escalation_log + laporan minggu lalu" },
-            { "id": "w3", "label": "Hitungan stagnan saat ini", "detail": "Query JQL untuk hitungan stagnan aktual saat laporan" },
-            { "id": "w4", "label": "Hitung metrik", "detail": "Tingkat resolusi otomatis, TTR rata-rata, entri KB baru, hasil eskalasi, distribusi sentimen" },
-            { "id": "w5", "label": "Perbandingan WoW", "detail": "Delta terhadap metrik minggu sebelumnya" },
-            { "id": "w6", "label": "Format laporan Block Kit", "detail": "Bagian: resolusi, kesehatan KB, eskalasi, tren" },
-            { "id": "w7", "label": "Posting laporan", "detail": "chat.postMessage ke channel alert" },
-            { "id": "w8", "label": "Arsipkan JSON laporan", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "label": "Keluarkan weekly_report.published" },
-            { "id": "w10", "label": "Laporan terkirim" }
+            {
+              "id": "w1",
+              "label": "Jadwal Senin 09.00",
+              "detail": "Cron 0 9 * * 1"
+            },
+            {
+              "id": "w2",
+              "label": "Muat state + laporan sebelumnya",
+              "detail": "issue_states + solutions_kb + escalation_log + laporan minggu lalu"
+            },
+            {
+              "id": "w3",
+              "label": "Hitungan stagnan saat ini",
+              "detail": "Query JQL untuk hitungan stagnan aktual saat laporan"
+            },
+            {
+              "id": "w4",
+              "label": "Hitung metrik",
+              "detail": "Tingkat resolusi otomatis, TTR rata-rata, entri KB baru, hasil eskalasi, distribusi sentimen"
+            },
+            {
+              "id": "w5",
+              "label": "Perbandingan WoW",
+              "detail": "Delta terhadap metrik minggu sebelumnya"
+            },
+            {
+              "id": "w6",
+              "label": "Format laporan Block Kit",
+              "detail": "Bagian: resolusi, kesehatan KB, eskalasi, tren"
+            },
+            {
+              "id": "w7",
+              "label": "Posting laporan",
+              "detail": "chat.postMessage ke channel alert"
+            },
+            {
+              "id": "w8",
+              "label": "Arsipkan JSON laporan",
+              "detail": "data/weekly_reports/issue_health_{date}.json"
+            },
+            {
+              "id": "w9",
+              "label": "Keluarkan weekly_report.published"
+            },
+            {
+              "id": "w10",
+              "label": "Laporan terkirim"
+            }
           ]
         }
       }
     ],
     "adoption_questions": [
-      { "id": "aq_jira_projects", "question": "Kunci proyek Jira mana yang harus dipantau agen ini?", "context": "Agen melakukan polling ke proyek-proyek ini untuk issue stagnan menggunakan JQL. Pisahkan beberapa kunci dengan koma bila perlu." },
-      { "id": "aq_stale_days", "question": "Setelah berapa hari issue harus dianggap stagnan?", "context": "Issue yang terbuka tanpa pembaruan melampaui ambang ini menjadi kandidat untuk resolusi otomatis atau eskalasi." },
-      { "id": "aq_alert_channel", "question": "Channel Slack mana untuk ringkasan harian dan laporan mingguan?", "context": "Ringkasan harian, laporan kesehatan mingguan, dan notifikasi resolusi otomatis semua diposting di sini." },
-      { "id": "aq_escalation_channel", "question": "Channel Slack mana untuk eskalasi prioritas tinggi?", "context": "Issue marah + P1/P2 diposting di sini untuk visibilitas tim segera." },
-      { "id": "aq_eng_manager_email", "question": "Email manajer engineering untuk eskalasi DM?", "context": "Issue marah + P1/P2 memicu DM Slack langsung ke orang ini." },
-      { "id": "aq_notion_kb_database_id", "question": "Database Notion mana yang menyimpan basis pengetahuan troubleshooting?", "context": "Database Notion berisi runbooks, panduan troubleshooting, dan entri FAQ yang digunakan untuk mencocokkan solusi." },
-      { "id": "aq_auto_close_enabled", "question": "Haruskah issue yang ditinggalkan ditutup otomatis setelah 30 hari tidak aktif?", "context": "Saat diaktifkan, issue tanpa aktivitas pelapor selama 30+ hari mendapat komentar penutup sopan dan beralih ke Closed." },
-      { "id": "aq_confidence_threshold", "question": "Skor kepercayaan minimum (0-100) untuk memposting saran solusi otomatis?", "context": "Hanya kecocokan KB pada atau di atas ambang ini yang diposting sebagai komentar solusi. Ambang lebih rendah menyelesaikan lebih banyak issue tapi berisiko saran berkualitas rendah." }
+      {
+        "id": "aq_jira_projects",
+        "question": "Kunci proyek Jira mana yang harus dipantau agen ini?",
+        "context": "Agen melakukan polling ke proyek-proyek ini untuk issue stagnan menggunakan JQL. Pisahkan beberapa kunci dengan koma bila perlu."
+      },
+      {
+        "id": "aq_stale_days",
+        "question": "Setelah berapa hari issue harus dianggap stagnan?",
+        "context": "Issue yang terbuka tanpa pembaruan melampaui ambang ini menjadi kandidat untuk resolusi otomatis atau eskalasi."
+      },
+      {
+        "id": "aq_alert_channel",
+        "question": "Channel Slack mana untuk ringkasan harian dan laporan mingguan?",
+        "context": "Ringkasan harian, laporan kesehatan mingguan, dan notifikasi resolusi otomatis semua diposting di sini."
+      },
+      {
+        "id": "aq_escalation_channel",
+        "question": "Channel Slack mana untuk eskalasi prioritas tinggi?",
+        "context": "Issue marah + P1/P2 diposting di sini untuk visibilitas tim segera."
+      },
+      {
+        "id": "aq_eng_manager_email",
+        "question": "Email manajer engineering untuk eskalasi DM?",
+        "context": "Issue marah + P1/P2 memicu DM Slack langsung ke orang ini."
+      },
+      {
+        "id": "aq_notion_kb_database_id",
+        "question": "Database Notion mana yang menyimpan basis pengetahuan troubleshooting?",
+        "context": "Database Notion berisi runbooks, panduan troubleshooting, dan entri FAQ yang digunakan untuk mencocokkan solusi."
+      },
+      {
+        "id": "aq_auto_close_enabled",
+        "question": "Haruskah issue yang ditinggalkan ditutup otomatis setelah 30 hari tidak aktif?",
+        "context": "Saat diaktifkan, issue tanpa aktivitas pelapor selama 30+ hari mendapat komentar penutup sopan dan beralih ke Closed."
+      },
+      {
+        "id": "aq_confidence_threshold",
+        "question": "Skor kepercayaan minimum (0-100) untuk memposting saran solusi otomatis?",
+        "context": "Hanya kecocokan KB pada atau di atas ambang ini yang diposting sebagai komentar solusi. Ambang lebih rendah menyelesaikan lebih banyak issue tapi berisiko saran berkualitas rendah."
+      }
     ]
   }
 }

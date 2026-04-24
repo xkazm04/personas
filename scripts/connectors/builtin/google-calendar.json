@@ -4,10 +4,10 @@
   "label": "Google Calendar",
   "color": "#4285F4",
   "icon_url": "/icons/connectors/google-calendar.svg",
-  "category": "scheduling",
+  "category": "calendar",
   "categories": [
-    "scheduling",
-    "calendar"
+    "calendar",
+    "scheduling"
   ],
   "fields": [],
   "healthcheck_config": {

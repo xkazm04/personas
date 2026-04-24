@@ -6,6 +6,7 @@ import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
 import FlowDiagram from './FlowDiagram';
 import NodePopover from './NodePopover';
 import PopoverPositioner from './PopoverPositioner';
+import { CARD_PADDING } from '@/lib/utils/designTokens';
 
 // ============================================================================
 // Main Component
@@ -39,7 +40,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
       maxWidthClass="max-w-7xl"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-secondary/30">
+      <div className={`flex items-center justify-between ${CARD_PADDING.modalSection} border-b border-primary/10 bg-secondary/30`}>
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-modal bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
             <Workflow className="w-5 h-5 text-violet-400" />
@@ -58,7 +59,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
 
       {/* Use Case Tabs */}
       {flows.length > 1 && (
-        <div className="flex items-center gap-2 px-6 py-3 border-b border-primary/10 bg-secondary/20 overflow-x-auto">
+        <div className={`flex items-center gap-2 ${CARD_PADDING.modalSection} border-b border-primary/10 bg-secondary/20 overflow-x-auto`}>
           {flows.map((flow, index) => (
             <button
               key={flow.id}
@@ -123,7 +124,7 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
 
       {/* Footer -- Flow Description */}
       {activeFlow && (
-        <div className="px-6 py-3 border-t border-primary/10 bg-secondary/20">
+        <div className={`${CARD_PADDING.modalSection} border-t border-primary/10 bg-secondary/20`}>
           <p className="typo-body text-foreground">{activeFlow.description}</p>
           <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
             <span>{tx(t.templates.diagrams.nodes_count, { count: activeFlow.nodes.length })}</span>

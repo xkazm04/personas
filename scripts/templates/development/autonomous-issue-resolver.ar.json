@@ -39,9 +39,21 @@
           "name": "jira",
           "label": "Jira (Atlassian)",
           "credential_fields": [
-            { "key": "domain", "label": "نطاق Atlassian", "helpText": "نطاق Atlassian الخاص بك. إذا كان عنوان Jira هو https://your-company.atlassian.net، فأدخل 'your-company'." },
-            { "key": "email", "label": "البريد الإلكتروني للحساب", "helpText": "عنوان البريد الإلكتروني المرتبط بحساب Atlassian الخاص بك." },
-            { "key": "api_token", "label": "رمز API", "helpText": "أنشئه على https://id.atlassian.com/manage-profile/security/api-tokens. مع بريدك الإلكتروني يشكّل اعتماد Basic Auth." }
+            {
+              "key": "domain",
+              "label": "نطاق Atlassian",
+              "helpText": "نطاق Atlassian الخاص بك. إذا كان عنوان Jira هو https://your-company.atlassian.net، فأدخل 'your-company'."
+            },
+            {
+              "key": "email",
+              "label": "البريد الإلكتروني للحساب",
+              "helpText": "عنوان البريد الإلكتروني المرتبط بحساب Atlassian الخاص بك."
+            },
+            {
+              "key": "api_token",
+              "label": "رمز API",
+              "helpText": "أنشئه على https://id.atlassian.com/manage-profile/security/api-tokens. مع بريدك الإلكتروني يشكّل اعتماد Basic Auth."
+            }
           ],
           "setup_instructions": "1. اذهب إلى https://id.atlassian.com/manage-profile/security/api-tokens.\n2. أنشئ رمزًا بتسمية 'Issue Resolver Bot' وانسخه (يُعرض مرة واحدة فقط).\n3. أدخل نطاق Atlassian (النطاق الفرعي من عنوان Jira).\n4. أدخل البريد الإلكتروني المرتبط بحساب Atlassian.\n5. يُصادق الوكيل عبر Basic Auth باستخدام base64(email:api_token)."
         },
@@ -49,8 +61,16 @@
           "name": "notion",
           "label": "Notion",
           "credential_fields": [
-            { "key": "integration_token", "label": "رمز التكامل الداخلي", "helpText": "أنشئ تكاملًا داخليًا على https://www.notion.so/my-integrations، انسخ الرمز، ثم شارك قاعدة معرفتك مع التكامل." },
-            { "key": "database_id", "label": "معرّف قاعدة بيانات المعرفة", "helpText": "افتح قاعدة معرفة Notion الخاصة بك. معرّف قاعدة البيانات هو سلسلة من 32 حرفًا سداسيًا في الـ URL قبل علامة الاستفهام '?'." }
+            {
+              "key": "integration_token",
+              "label": "رمز التكامل الداخلي",
+              "helpText": "أنشئ تكاملًا داخليًا على https://www.notion.so/my-integrations، انسخ الرمز، ثم شارك قاعدة معرفتك مع التكامل."
+            },
+            {
+              "key": "database_id",
+              "label": "معرّف قاعدة بيانات المعرفة",
+              "helpText": "افتح قاعدة معرفة Notion الخاصة بك. معرّف قاعدة البيانات هو سلسلة من 32 حرفًا سداسيًا في الـ URL قبل علامة الاستفهام '?'."
+            }
           ],
           "setup_instructions": "1. أنشئ تكاملًا جديدًا على https://www.notion.so/my-integrations باسم 'Issue Resolver Bot'.\n2. انسخ رمز التكامل الداخلي.\n3. افتح قاعدة معرفتك → قائمة '...' → 'Add connections' → اختر التكامل.\n4. انسخ معرّف قاعدة البيانات من الـ URL (32 حرفًا)."
         },
@@ -58,13 +78,20 @@
           "name": "slack",
           "label": "Slack",
           "credential_fields": [
-            { "key": "bot_token", "label": "رمز Bot User OAuth", "helpText": "من تطبيق Slack الخاص بك → OAuth & Permissions → Bot User OAuth Token. تتطلب scopes: chat:write, users:read, users:read.email." }
+            {
+              "key": "bot_token",
+              "label": "رمز Bot User OAuth",
+              "helpText": "من تطبيق Slack الخاص بك → OAuth & Permissions → Bot User OAuth Token. تتطلب scopes: chat:write, users:read, users:read.email."
+            }
           ],
           "setup_instructions": "1. أنشئ أو اختر تطبيقًا على api.slack.com/apps.\n2. أضف Bot Token Scopes: chat:write, users:read, users:read.email.\n3. ثبّت في مساحة العمل وانسخ Bot User OAuth Token.\n4. ادعُ البوت إلى قنوات التنبيهات والتصعيد."
         }
       ],
       "notification_channels_default": [
-        { "type": "slack", "description": "قناة تنبيهات Slack للملخصات اليومية والتقارير الأسبوعية وإشعارات الحل التلقائي." }
+        {
+          "type": "slack",
+          "description": "قناة تنبيهات Slack للملخصات اليومية والتقارير الأسبوعية وإشعارات الحل التلقائي."
+        }
       ]
     },
     "use_cases": [
@@ -73,10 +100,18 @@
         "title": "فرز وحل المهام الراكدة",
         "description": "يستطلع Jira كل 15 دقيقة بحثًا عن المهام المفتوحة فوق عتبة الركود. يُصنّف الحالة، يُقيّم مشاعر المُبلِّغ، يبحث عن حلول مُطابقة في Notion + قاعدة المعرفة المحلية، ينشر الحلول عالية الثقة، يُصعّد المُبلِّغين غاضب + P1/P2 لإدارة الهندسة، ويُغلق تلقائيًا المهام المهجورة.",
         "capability_summary": "تصنيف المهام الراكدة + حل تلقائي مُوجَّه بالمشاعر، تصعيد وتنظيف المهام المهجورة.",
-        "suggested_trigger": { "description": "كل 15 دقيقة استعلم Jira عن المهام الراكدة وغير المحلولة." },
+        "suggested_trigger": {
+          "description": "كل 15 دقيقة استعلم Jira عن المهام الراكدة وغير المحلولة."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "قناة التنبيهات الرئيسية لإشعارات الحل التلقائي وتنبيهات المشاعر." },
-          { "type": "slack", "description": "قناة التصعيد للمهام غاضب + P1/P2 التي تتطلب اهتمامًا هندسيًا فوريًا." }
+          {
+            "type": "slack",
+            "description": "قناة التنبيهات الرئيسية لإشعارات الحل التلقائي وتنبيهات المشاعر."
+          },
+          {
+            "type": "slack",
+            "description": "قناة التصعيد للمهام غاضب + P1/P2 التي تتطلب اهتمامًا هندسيًا فوريًا."
+          }
         ],
         "review_policy": {
           "context": "تُسجَّل الحلول ذات الثقة 60-79 للمراجعة البشرية ولكن لا تُنشر. تتجاوز مهام غاضب + P1/P2 الحل التلقائي وتُوجَّه مباشرةً إلى manual_review مع سياق كامل لمدير الهندسة المناوب."
@@ -85,42 +120,151 @@
           "context": "ينمو data/solutions_kb.json مع كل حل مؤكد: أنماط الأعراض، خطوات الحل، مفتاح المهمة المصدر، عدّاد times_confirmed، درجة الثقة. تخفّض الحلول المرفوضة الثقة. يتراكم سجل مشاعر المُبلِّغ حسب البريد عبر الدورات لتحسين التصنيف المستقبلي."
         },
         "event_subscriptions": [
-          { "event_type": "issue.auto_resolved", "description": "الحمولة: مفتاح المهمة، مصدر الحل (URL صفحة notion أو معرّف إدخال قاعدة المعرفة المحلية)، درجة الثقة، مشاعر المُبلِّغ وقت النشر." },
-          { "event_type": "issue.escalated", "description": "الحمولة: مفتاح المهمة، الأولوية، درجة المشاعر، مُستلم التصعيد، ملخص السياق الكامل." },
-          { "event_type": "issue.auto_closed", "description": "الحمولة: مفتاح المهمة، السبب (abandoned / silently_resolved / confirmation_timeout)، أيام عدم النشاط." },
-          { "event_type": "persona.error", "description": "يُصدر عند Jira 401، فشل Slack المتكرر، أو ملفات الحالة التالفة. يُشغّل تدفقات تحديث بيانات الاعتماد أو تنبيهات المسؤول أسفل النظام." }
+          {
+            "event_type": "issue.auto_resolved",
+            "description": "الحمولة: مفتاح المهمة، مصدر الحل (URL صفحة notion أو معرّف إدخال قاعدة المعرفة المحلية)، درجة الثقة، مشاعر المُبلِّغ وقت النشر."
+          },
+          {
+            "event_type": "issue.escalated",
+            "description": "الحمولة: مفتاح المهمة، الأولوية، درجة المشاعر، مُستلم التصعيد، ملخص السياق الكامل."
+          },
+          {
+            "event_type": "issue.auto_closed",
+            "description": "الحمولة: مفتاح المهمة، السبب (abandoned / silently_resolved / confirmation_timeout)، أيام عدم النشاط."
+          },
+          {
+            "event_type": "persona.error",
+            "description": "يُصدر عند Jira 401، فشل Slack المتكرر، أو ملفات الحالة التالفة. يُشغّل تدفقات تحديث بيانات الاعتماد أو تنبيهات المسؤول أسفل النظام."
+          }
         ],
         "error_handling": "Jira 429 → احترم Retry-After، استأنف في الدورة التالية. Jira 401 → أصدر persona.error وأوقف هذه القدرة حتى تحديث بيانات الاعتماد. Notion غير متاح → تخطَّ بحث قاعدة المعرفة ولكن تابع التصنيف + المشاعر + التصعيد. قائمة انتظار Slack → data/pending_slack.json يُعاد في الدورة التالية. فشل نشر تعليق → سجل فقط، بدون إعادة في الدورة نفسها. الدورة الأولى → ملاحظة فقط.",
         "input_schema": [
-          { "name": "stale_days", "description": "أيام عدم النشاط قبل اعتبار المهمة راكدة." },
-          { "name": "max_issues_per_cycle", "description": "حد أقصى للمهام المُعالجة لكل دورة 15 دقيقة لاحترام حدود معدل الـ API." },
-          { "name": "confidence_threshold", "description": "الحد الأدنى للثقة لنشر حل تلقائيًا." },
-          { "name": "auto_close_enabled", "description": "عند التمكين، تتلقى المهام ذات 30+ يومًا من عدم النشاط تعليق إغلاق مُهذّب وتنتقل إلى Closed." },
-          { "name": "eng_manager_email", "description": "مدير الهندسة الذي يستقبل رسائل Slack المباشرة لتصعيدات غاضب + P1/P2." },
-          { "name": "escalation_channel", "description": "قناة Slack مخصصة لمنشورات التصعيد عالي الأولوية." }
+          {
+            "name": "stale_days",
+            "description": "أيام عدم النشاط قبل اعتبار المهمة راكدة."
+          },
+          {
+            "name": "max_issues_per_cycle",
+            "description": "حد أقصى للمهام المُعالجة لكل دورة 15 دقيقة لاحترام حدود معدل الـ API."
+          },
+          {
+            "name": "confidence_threshold",
+            "description": "الحد الأدنى للثقة لنشر حل تلقائيًا."
+          },
+          {
+            "name": "auto_close_enabled",
+            "description": "عند التمكين، تتلقى المهام ذات 30+ يومًا من عدم النشاط تعليق إغلاق مُهذّب وتنتقل إلى Closed."
+          },
+          {
+            "name": "eng_manager_email",
+            "description": "مدير الهندسة الذي يستقبل رسائل Slack المباشرة لتصعيدات غاضب + P1/P2."
+          },
+          {
+            "name": "escalation_channel",
+            "description": "قناة Slack مخصصة لمنشورات التصعيد عالي الأولوية."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "label": "نبضة الاقتراع", "detail": "يُطلق cron كل 15 دقيقة" },
-            { "id": "n2", "label": "استعلم عن المهام الراكدة", "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)" },
-            { "id": "n3", "label": "حمّل ملفات الحالة", "detail": "data/issue_states.json + data/pending_confirmations.json" },
-            { "id": "n4", "label": "جديدة أم مُحدَّثة؟", "detail": "تخطَّ المهام المُعالجة بالفعل على طابعها الزمني updated الحالي" },
-            { "id": "n5", "label": "اجلب التعليقات", "detail": "الخيط الكامل للتصنيف + المشاعر" },
-            { "id": "n6", "label": "صنّف الحالة", "detail": "بانتظار المُبلِّغ / الفريق / محجوبة / مهجورة / ركود-نشطة / مُحلَّلة بصمت" },
-            { "id": "n7", "label": "درجة المشاعر 1-10", "detail": "ازن التعليقات الأحدث أكثر؛ اكتشف إشارات الغضب + الإحباط" },
-            { "id": "n8", "label": "ابحث في Notion KB", "detail": "استعلم قاعدة المعرفة حسب العنوان + وسوم المكوّن" },
-            { "id": "n9", "label": "ابحث في قاعدة المعرفة المحلية", "detail": "طابق أنماط الأعراض من data/solutions_kb.json" },
-            { "id": "n10", "label": "الثقة >= العتبة؟", "detail": "درجة مركّبة: كلمات مفتاحية + مكوّن + رسالة خطأ + نجاح تاريخي" },
-            { "id": "n11", "label": "انشر تعليق الحل", "detail": "تعليق ADF متعاطف بخطوات مرقّمة + رابط المصدر" },
-            { "id": "n12", "label": "تتبّع تأكيد 14 يومًا", "detail": "data/pending_confirmations.json" },
-            { "id": "n13", "label": "غاضب + P1/P2؟", "detail": "المشاعر >= 8 AND الأولوية في (P1, P2)" },
-            { "id": "n14", "label": "DM لمدير الهندسة", "detail": "Slack DM بسياق المهمة + شكاوى المُبلِّغ" },
-            { "id": "n15", "label": "منشور قناة التصعيد", "detail": "رؤية عامة لمهمة P1/غاضب" },
-            { "id": "n16", "label": "مهجورة 30+ يومًا؟", "detail": "auto_close_enabled AND لا نشاط للمُبلِّغ في 30 يومًا" },
-            { "id": "n17", "label": "أغلق المهمة المهجورة", "detail": "تعليق إغلاق مُهذّب + انتقال إلى Closed" },
-            { "id": "n18", "label": "أصدر أحداث دورة الحياة", "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed" },
-            { "id": "n19", "label": "اكتب الحالة ذريًا", "detail": "issue_states + escalation_log + pending_confirmations" },
-            { "id": "n20", "label": "اكتملت الدورة" }
+            {
+              "id": "n1",
+              "label": "نبضة الاقتراع",
+              "detail": "يُطلق cron كل 15 دقيقة"
+            },
+            {
+              "id": "n2",
+              "label": "استعلم عن المهام الراكدة",
+              "detail": "JQL: updated <= -{stale_days}d AND status NOT IN (Done, Closed, Resolved)"
+            },
+            {
+              "id": "n3",
+              "label": "حمّل ملفات الحالة",
+              "detail": "data/issue_states.json + data/pending_confirmations.json"
+            },
+            {
+              "id": "n4",
+              "label": "جديدة أم مُحدَّثة؟",
+              "detail": "تخطَّ المهام المُعالجة بالفعل على طابعها الزمني updated الحالي"
+            },
+            {
+              "id": "n5",
+              "label": "اجلب التعليقات",
+              "detail": "الخيط الكامل للتصنيف + المشاعر"
+            },
+            {
+              "id": "n6",
+              "label": "صنّف الحالة",
+              "detail": "بانتظار المُبلِّغ / الفريق / محجوبة / مهجورة / ركود-نشطة / مُحلَّلة بصمت"
+            },
+            {
+              "id": "n7",
+              "label": "درجة المشاعر 1-10",
+              "detail": "ازن التعليقات الأحدث أكثر؛ اكتشف إشارات الغضب + الإحباط"
+            },
+            {
+              "id": "n8",
+              "label": "ابحث في Notion KB",
+              "detail": "استعلم قاعدة المعرفة حسب العنوان + وسوم المكوّن"
+            },
+            {
+              "id": "n9",
+              "label": "ابحث في قاعدة المعرفة المحلية",
+              "detail": "طابق أنماط الأعراض من data/solutions_kb.json"
+            },
+            {
+              "id": "n10",
+              "label": "الثقة >= العتبة؟",
+              "detail": "درجة مركّبة: كلمات مفتاحية + مكوّن + رسالة خطأ + نجاح تاريخي"
+            },
+            {
+              "id": "n11",
+              "label": "انشر تعليق الحل",
+              "detail": "تعليق ADF متعاطف بخطوات مرقّمة + رابط المصدر"
+            },
+            {
+              "id": "n12",
+              "label": "تتبّع تأكيد 14 يومًا",
+              "detail": "data/pending_confirmations.json"
+            },
+            {
+              "id": "n13",
+              "label": "غاضب + P1/P2؟",
+              "detail": "المشاعر >= 8 AND الأولوية في (P1, P2)"
+            },
+            {
+              "id": "n14",
+              "label": "DM لمدير الهندسة",
+              "detail": "Slack DM بسياق المهمة + شكاوى المُبلِّغ"
+            },
+            {
+              "id": "n15",
+              "label": "منشور قناة التصعيد",
+              "detail": "رؤية عامة لمهمة P1/غاضب"
+            },
+            {
+              "id": "n16",
+              "label": "مهجورة 30+ يومًا؟",
+              "detail": "auto_close_enabled AND لا نشاط للمُبلِّغ في 30 يومًا"
+            },
+            {
+              "id": "n17",
+              "label": "أغلق المهمة المهجورة",
+              "detail": "تعليق إغلاق مُهذّب + انتقال إلى Closed"
+            },
+            {
+              "id": "n18",
+              "label": "أصدر أحداث دورة الحياة",
+              "detail": "issue.auto_resolved / issue.escalated / issue.auto_closed"
+            },
+            {
+              "id": "n19",
+              "label": "اكتب الحالة ذريًا",
+              "detail": "issue_states + escalation_log + pending_confirmations"
+            },
+            {
+              "id": "n20",
+              "label": "اكتملت الدورة"
+            }
           ]
         }
       },
@@ -129,28 +273,73 @@
         "title": "الملخص اليومي للدعم",
         "description": "كل صباح في الساعة 9، ينشر ملخص Slack للأربع والعشرين ساعة الماضية: المهام المحلولة تلقائيًا، المُصعَّدة، المُغلقة تلقائيًا، وتلك التي لا تزال راكدة — مع روابط للتذاكر البارزة في كل فئة.",
         "capability_summary": "ملخص Slack في الساعة 9 صباحًا بعدّادات محلول تلقائيًا / مُصعَّد / مُغلق تلقائيًا / لا يزال راكدًا وروابط المهام.",
-        "suggested_trigger": { "description": "يوميًا في الساعة 9 صباحًا، جمّع ملخص اليوم السابق." },
+        "suggested_trigger": {
+          "description": "يوميًا في الساعة 9 صباحًا، جمّع ملخص اليوم السابق."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "قناة التنبيهات الرئيسية حيث يُنشر الملخص اليومي." }
+          {
+            "type": "slack",
+            "description": "قناة التنبيهات الرئيسية حيث يُنشر الملخص اليومي."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.digest.posted", "description": "الحمولة: عدّادات حسب الفئة، روابط لأبرز 3 مهام لكل فئة." }
+          {
+            "event_type": "support.digest.posted",
+            "description": "الحمولة: عدّادات حسب الفئة، روابط لأبرز 3 مهام لكل فئة."
+          }
         ],
         "error_handling": "ملفات الحالة مفقودة → انشر ملخصًا بحدّه الأدنى يوضّح ثغرة البيانات. فشل نشر Slack → أعد حتى 3 مرات بتراجع أسي، ثم سجل وتخطَّ.",
         "input_schema": [
-          { "name": "digest_channel", "description": "قناة Slack للملخص اليومي." },
-          { "name": "top_issues_per_bucket", "description": "العدد الأقصى للمهام البارزة المرتبطة لكل فئة." }
+          {
+            "name": "digest_channel",
+            "description": "قناة Slack للملخص اليومي."
+          },
+          {
+            "name": "top_issues_per_bucket",
+            "description": "العدد الأقصى للمهام البارزة المرتبطة لكل فئة."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "label": "جدول الساعة 9 صباحًا", "detail": "Cron 0 9 * * *" },
-            { "id": "d2", "label": "اقرأ ملفات الحالة", "detail": "data/issue_states.json, escalation_log.json — شريحة آخر 24 ساعة" },
-            { "id": "d3", "label": "عدّادات الفئات", "detail": "auto_resolved / escalated / auto_closed / still_stale" },
-            { "id": "d4", "label": "اختر أفضل 3 لكل فئة", "detail": "موزون بالأولوية والمشاعر" },
-            { "id": "d5", "label": "نسّق الملخص", "detail": "تخطيط Slack Block Kit مع روابط المهام" },
-            { "id": "d6", "label": "انشر الملخص", "detail": "POST chat.postMessage إلى قناة التنبيهات" },
-            { "id": "d7", "label": "أصدر support.digest.posted", "detail": "قابلية المراقبة أسفل النظام" },
-            { "id": "d8", "label": "تم تسليم الملخص" }
+            {
+              "id": "d1",
+              "label": "جدول الساعة 9 صباحًا",
+              "detail": "Cron 0 9 * * *"
+            },
+            {
+              "id": "d2",
+              "label": "اقرأ ملفات الحالة",
+              "detail": "data/issue_states.json, escalation_log.json — شريحة آخر 24 ساعة"
+            },
+            {
+              "id": "d3",
+              "label": "عدّادات الفئات",
+              "detail": "auto_resolved / escalated / auto_closed / still_stale"
+            },
+            {
+              "id": "d4",
+              "label": "اختر أفضل 3 لكل فئة",
+              "detail": "موزون بالأولوية والمشاعر"
+            },
+            {
+              "id": "d5",
+              "label": "نسّق الملخص",
+              "detail": "تخطيط Slack Block Kit مع روابط المهام"
+            },
+            {
+              "id": "d6",
+              "label": "انشر الملخص",
+              "detail": "POST chat.postMessage إلى قناة التنبيهات"
+            },
+            {
+              "id": "d7",
+              "label": "أصدر support.digest.posted",
+              "detail": "قابلية المراقبة أسفل النظام"
+            },
+            {
+              "id": "d8",
+              "label": "تم تسليم الملخص"
+            }
           ]
         }
       },
@@ -159,43 +348,127 @@
         "title": "تقرير صحة المهام الأسبوعي",
         "description": "كل إثنين في الساعة 9 صباحًا، يُنشئ تقريرًا شاملاً: معدل الحل التلقائي، متوسط وقت الحل، نمو قاعدة المعرفة، نتائج التصعيد، اتجاهات المهام الراكدة ومقارنة أسبوعية مع التقرير السابق.",
         "capability_summary": "تقرير شامل يوم الإثنين الساعة 9 صباحًا بمقاييس الحل، نمو قاعدة المعرفة، وتحليل الاتجاهات أسبوعيًا.",
-        "suggested_trigger": { "description": "كل إثنين في الساعة 9 صباحًا، انشر تقرير الصحة الأسبوعي." },
+        "suggested_trigger": {
+          "description": "كل إثنين في الساعة 9 صباحًا، انشر تقرير الصحة الأسبوعي."
+        },
         "notification_channels": [
-          { "type": "slack", "description": "قناة التنبيهات لنشر تقرير الصحة الأسبوعي." }
+          {
+            "type": "slack",
+            "description": "قناة التنبيهات لنشر تقرير الصحة الأسبوعي."
+          }
         ],
         "event_subscriptions": [
-          { "event_type": "support.weekly_report.published", "description": "الحمولة: ملخص المقاييس، فروقات أسبوعية، مسار ملف التقرير." }
+          {
+            "event_type": "support.weekly_report.published",
+            "description": "الحمولة: ملخص المقاييس، فروقات أسبوعية، مسار ملف التقرير."
+          }
         ],
         "error_handling": "ملفات الحالة غير كاملة → أنشئ تقريرًا جزئيًا بملاحظات صريحة عن الثغرات. فشل استعلام Jira → اعتمد فقط على عدّادات ملفات الحالة. فشل الأرشفة → انشر في Slack رغم ذلك، سجل خطأ الأرشفة.",
         "input_schema": [
-          { "name": "report_channel", "description": "قناة Slack للتقرير الأسبوعي." },
-          { "name": "archive_directory", "description": "الدليل المحلي حيث تُؤرشف كل JSON تقرير." }
+          {
+            "name": "report_channel",
+            "description": "قناة Slack للتقرير الأسبوعي."
+          },
+          {
+            "name": "archive_directory",
+            "description": "الدليل المحلي حيث تُؤرشف كل JSON تقرير."
+          }
         ],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "label": "جدول الإثنين 9 صباحًا", "detail": "Cron 0 9 * * 1" },
-            { "id": "w2", "label": "حمّل الحالة + التقرير السابق", "detail": "issue_states + solutions_kb + escalation_log + تقرير الأسبوع السابق" },
-            { "id": "w3", "label": "عدّاد الراكدة الحالي", "detail": "استعلام JQL لعدّاد الراكدة المباشر في وقت التقرير" },
-            { "id": "w4", "label": "احسب المقاييس", "detail": "معدل الحل التلقائي، TTR متوسط، إدخالات KB جديدة، نتائج التصعيد، توزيع المشاعر" },
-            { "id": "w5", "label": "مقارنة أسبوعية", "detail": "فروقات مقارنة بمقاييس الأسبوع السابق" },
-            { "id": "w6", "label": "نسّق تقرير Block Kit", "detail": "الأقسام: الحل، صحة KB، التصعيدات، الاتجاهات" },
-            { "id": "w7", "label": "انشر التقرير", "detail": "chat.postMessage إلى قناة التنبيهات" },
-            { "id": "w8", "label": "أرشف JSON التقرير", "detail": "data/weekly_reports/issue_health_{date}.json" },
-            { "id": "w9", "label": "أصدر weekly_report.published" },
-            { "id": "w10", "label": "تم تسليم التقرير" }
+            {
+              "id": "w1",
+              "label": "جدول الإثنين 9 صباحًا",
+              "detail": "Cron 0 9 * * 1"
+            },
+            {
+              "id": "w2",
+              "label": "حمّل الحالة + التقرير السابق",
+              "detail": "issue_states + solutions_kb + escalation_log + تقرير الأسبوع السابق"
+            },
+            {
+              "id": "w3",
+              "label": "عدّاد الراكدة الحالي",
+              "detail": "استعلام JQL لعدّاد الراكدة المباشر في وقت التقرير"
+            },
+            {
+              "id": "w4",
+              "label": "احسب المقاييس",
+              "detail": "معدل الحل التلقائي، TTR متوسط، إدخالات KB جديدة، نتائج التصعيد، توزيع المشاعر"
+            },
+            {
+              "id": "w5",
+              "label": "مقارنة أسبوعية",
+              "detail": "فروقات مقارنة بمقاييس الأسبوع السابق"
+            },
+            {
+              "id": "w6",
+              "label": "نسّق تقرير Block Kit",
+              "detail": "الأقسام: الحل، صحة KB، التصعيدات، الاتجاهات"
+            },
+            {
+              "id": "w7",
+              "label": "انشر التقرير",
+              "detail": "chat.postMessage إلى قناة التنبيهات"
+            },
+            {
+              "id": "w8",
+              "label": "أرشف JSON التقرير",
+              "detail": "data/weekly_reports/issue_health_{date}.json"
+            },
+            {
+              "id": "w9",
+              "label": "أصدر weekly_report.published"
+            },
+            {
+              "id": "w10",
+              "label": "تم تسليم التقرير"
+            }
           ]
         }
       }
     ],
     "adoption_questions": [
-      { "id": "aq_jira_projects", "question": "ما مفاتيح مشاريع Jira التي يجب أن يراقبها هذا الوكيل؟", "context": "يستطلع الوكيل هذه المشاريع للمهام الراكدة عبر JQL. افصل بين المفاتيح بفاصلة إذا لزم." },
-      { "id": "aq_stale_days", "question": "بعد كم يومًا يجب اعتبار المهمة راكدة؟", "context": "المهام المفتوحة بدون تحديثات بعد هذه العتبة تصبح مرشحة للحل التلقائي أو التصعيد." },
-      { "id": "aq_alert_channel", "question": "أي قناة Slack للملخصات اليومية والتقارير الأسبوعية؟", "context": "تُنشر الملخصات اليومية وتقارير الصحة الأسبوعية وإشعارات الحل التلقائي هنا." },
-      { "id": "aq_escalation_channel", "question": "أي قناة Slack للتصعيدات عالية الأولوية؟", "context": "تُنشر مهام غاضب + P1/P2 هنا للرؤية الفورية للفريق." },
-      { "id": "aq_eng_manager_email", "question": "بريد مدير الهندسة لتصعيدات الرسائل المباشرة؟", "context": "تُشغّل مهام غاضب + P1/P2 رسالة Slack مباشرة لهذا الشخص." },
-      { "id": "aq_notion_kb_database_id", "question": "أي قاعدة بيانات Notion تحتوي على قاعدة معرفة استكشاف الأخطاء؟", "context": "قاعدة بيانات Notion بها runbooks وأدلة استكشاف الأخطاء وإدخالات FAQ تُستخدم لمطابقة الحلول." },
-      { "id": "aq_auto_close_enabled", "question": "هل يجب إغلاق المهام المهجورة تلقائيًا بعد 30 يومًا من عدم النشاط؟", "context": "عند التمكين، المهام بدون نشاط من المُبلِّغ لمدة 30+ يومًا تتلقى تعليق إغلاق مُهذّب وتنتقل إلى Closed." },
-      { "id": "aq_confidence_threshold", "question": "أدنى درجة ثقة (0-100) للنشر التلقائي لاقتراحات الحلول؟", "context": "فقط مطابقات قاعدة المعرفة عند هذه العتبة أو أعلى تُنشر كتعليقات حلول. العتبات الأدنى تحل مهام أكثر لكن تخاطر باقتراحات منخفضة الجودة." }
+      {
+        "id": "aq_jira_projects",
+        "question": "ما مفاتيح مشاريع Jira التي يجب أن يراقبها هذا الوكيل؟",
+        "context": "يستطلع الوكيل هذه المشاريع للمهام الراكدة عبر JQL. افصل بين المفاتيح بفاصلة إذا لزم."
+      },
+      {
+        "id": "aq_stale_days",
+        "question": "بعد كم يومًا يجب اعتبار المهمة راكدة؟",
+        "context": "المهام المفتوحة بدون تحديثات بعد هذه العتبة تصبح مرشحة للحل التلقائي أو التصعيد."
+      },
+      {
+        "id": "aq_alert_channel",
+        "question": "أي قناة Slack للملخصات اليومية والتقارير الأسبوعية؟",
+        "context": "تُنشر الملخصات اليومية وتقارير الصحة الأسبوعية وإشعارات الحل التلقائي هنا."
+      },
+      {
+        "id": "aq_escalation_channel",
+        "question": "أي قناة Slack للتصعيدات عالية الأولوية؟",
+        "context": "تُنشر مهام غاضب + P1/P2 هنا للرؤية الفورية للفريق."
+      },
+      {
+        "id": "aq_eng_manager_email",
+        "question": "بريد مدير الهندسة لتصعيدات الرسائل المباشرة؟",
+        "context": "تُشغّل مهام غاضب + P1/P2 رسالة Slack مباشرة لهذا الشخص."
+      },
+      {
+        "id": "aq_notion_kb_database_id",
+        "question": "أي قاعدة بيانات Notion تحتوي على قاعدة معرفة استكشاف الأخطاء؟",
+        "context": "قاعدة بيانات Notion بها runbooks وأدلة استكشاف الأخطاء وإدخالات FAQ تُستخدم لمطابقة الحلول."
+      },
+      {
+        "id": "aq_auto_close_enabled",
+        "question": "هل يجب إغلاق المهام المهجورة تلقائيًا بعد 30 يومًا من عدم النشاط؟",
+        "context": "عند التمكين، المهام بدون نشاط من المُبلِّغ لمدة 30+ يومًا تتلقى تعليق إغلاق مُهذّب وتنتقل إلى Closed."
+      },
+      {
+        "id": "aq_confidence_threshold",
+        "question": "أدنى درجة ثقة (0-100) للنشر التلقائي لاقتراحات الحلول؟",
+        "context": "فقط مطابقات قاعدة المعرفة عند هذه العتبة أو أعلى تُنشر كتعليقات حلول. العتبات الأدنى تحل مهام أكثر لكن تخاطر باقتراحات منخفضة الجودة."
+      }
     ]
   }
 }

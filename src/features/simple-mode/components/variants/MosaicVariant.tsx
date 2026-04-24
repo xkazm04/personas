@@ -22,7 +22,6 @@
  *   - Broken connection chip: switches to Power mode + credentials page.
  */
 
-import type { ReactNode } from 'react';
 import {
   AlertCircle,
   Check,
@@ -46,6 +45,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 
 import { SimpleEmptyState } from '../SimpleEmptyState';
+import { formatRelativeTime } from '../../utils/formatRelativeTime';
 import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
@@ -170,6 +170,7 @@ export default function MosaicVariant() {
       <div className="flex-1 min-h-0 px-8 pb-4 grid grid-cols-6 grid-rows-3 gap-3 overflow-hidden">
         <HeroTile
           t={t.simple_mode}
+          tFull={t}
           item={hero}
           onAction={onHeroAction}
           onCreateAssistant={startOnboarding}
@@ -286,12 +287,13 @@ function SummaryMetric({
 
 interface HeroTileProps {
   t: TMap;
+  tFull: Translations;
   item: UnifiedInboxItem | null;
   onAction: () => void;
   onCreateAssistant: () => void;
 }
 
-function HeroTile({ t, item, onAction, onCreateAssistant }: HeroTileProps) {
+function HeroTile({ t, tFull, item, onAction, onCreateAssistant }: HeroTileProps) {
   if (item === null) {
     // Populated personas, but no inbox activity — warm welcome instead of
     // silence. Still prompts to create another assistant.
@@ -351,7 +353,7 @@ function HeroTile({ t, item, onAction, onCreateAssistant }: HeroTileProps) {
             >
               {item.personaName}
             </div>
-            <div className="typo-caption text-foreground/60">{formatRelative(item.createdAt)}</div>
+            <div className="typo-caption text-foreground/60">{formatRelativeTime(item.createdAt, tFull)}</div>
           </div>
         </div>
         {item.personaIcon ? (
@@ -580,19 +582,3 @@ function firstGrapheme(s: string): string {
   return arr[0] ?? '';
 }
 
-/**
- * Rough relative time label: "just now" / "Nm ago" / "Nh ago" / "Nd ago".
- * Intentionally simple — Simple mode is a quick-scan surface, not a
- * forensic audit log. Falls back to "—" for invalid timestamps.
- */
-function formatRelative(iso: string): ReactNode {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return '—';
-  const diffMin = Math.max(0, Math.round((Date.now() - t) / 60000));
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.round(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.round(diffHr / 24);
-  return `${diffDay}d ago`;
-}

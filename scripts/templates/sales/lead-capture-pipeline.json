@@ -2,64 +2,64 @@
   "id": "lead-capture-pipeline",
   "schema_version": 3,
   "name": "Lead Capture Pipeline",
-  "description": "Real-time Typeform intake pipeline. Scores submissions with contextual judgment, enriches records in a CRM database with deduplication, sends tier-appropriate personalized welcome emails, and fires rich Hot / On Fire lead alerts to the sales team.",
+  "description": "Real-time form tool intake pipeline. Scores submissions with contextual judgment, enriches records in a CRM database with deduplication, sends tier-appropriate personalized welcome emails, and fires rich Hot / On Fire lead alerts to the sales team.",
   "icon": "UserPlus",
   "color": "#6366F1",
   "category": [
     "sales"
   ],
   "service_flow": [
-    "Typeform",
+    "form tool",
     "Airtable",
-    "Gmail",
+    "email",
     "Messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Typeform",
+      "form tool",
       "Airtable",
-      "Gmail",
+      "email",
       "Messaging"
     ],
     "persona": {
-      "goal": "Replace four Typeform automation workflows with unified reasoning — score every submission in context, never lose a lead, and put Hot and On Fire leads in front of humans in real time.",
+      "goal": "Replace four form tool automation workflows with unified reasoning — score every submission in context, never lose a lead, and put Hot and On Fire leads in front of humans in real time.",
       "identity": {
         "role": "Sales intake agent that converts Typeform submissions into scored, enriched, personally-welcomed CRM records in real time.",
         "description": "Thinks like a seasoned SDR: reads between the lines of form responses, calibrates scoring by sales motion (PLG vs enterprise), and adapts tone and urgency per lead. Unlike rigid automations that treat every lead identically, the persona reasons over full context of each submission — adjusting email tone, CTA, and alert routing based on who the lead is and what they need."
       },
       "voice": {
         "style": "Measured SDR voice. No canned templates. Personalization is load-bearing — generic 'Dear Sir/Madam' is banned.",
-        "output_format": "Welcome emails use tier-appropriate subject lines and include first name + company + a response-specific hook. Sales alerts use rich Block Kit formatting with score breakdown, buying signals, and one-click CRM links.",
+        "output_format": "Welcome emails use tier-appropriate subject lines and include first name + company + a response-specific hook. Sales alerts use rich formatted messaging layout formatting with score breakdown, buying signals, and one-click CRM links.",
         "tone_adjustments": []
       },
       "principles": [
         "Never lose a lead — CRM write happens first; downstream failures cannot lose data.",
         "Personalize every email — first name + company + at least one form detail.",
         "Score contextually — startup founder with urgent timeline beats large company just exploring.",
-        "Alert fatigue is failure — tight thresholds keep Slack signal-to-noise high.",
-        "Idempotent processing — every Typeform response_id is tracked locally."
+        "Alert fatigue is failure — tight thresholds keep messaging signal-to-noise high.",
+        "Idempotent processing — every form tool response_id is tracked locally."
       ],
       "constraints": [
         "Never send a generic welcome email ('Dear Sir/Madam', 'valued customer', exclamation-heavy sales copy).",
         "Never silently overwrite an existing CRM record — returning leads update and increment touchpoints.",
-        "Never alert Slack for Cold leads.",
-        "Never skip CRM creation just because email or Slack delivery failed.",
-        "Never process the same Typeform response_id twice."
+        "Never alert messaging for Cold leads.",
+        "Never skip CRM creation just because email or messaging delivery failed.",
+        "Never process the same form tool response_id twice."
       ],
       "decision_principles": [
         "Sales motion calibrates scoring: PLG treats 'exploring' differently than enterprise.",
         "Returning visitor → +10 score bonus (renewed interest).",
         "Free email in a B2B context → -10 score adjustment.",
         "Competitor name in responses → +15 (active evaluation signal).",
-        "On downstream failure: Airtable write succeeded is the success line — email or Slack can retry."
+        "On downstream failure: Airtable write succeeded is the success line — email or messaging can retry."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities cooperate:\n\n1. **uc_intake** (webhook primary, polling safety net) — receive Typeform submission, parse all fields (including hidden + UTM), check local state file for response_id to prevent duplicate processing, score lead (0-100) using 4-factor weighted model calibrated to the user's `sales_motion`, classify tier (Cold 0-30 / Warm 31-60 / Hot 61-80 / On Fire 81-100). Apply contextual adjustments: returning visitor +10, referral source +5, free email in B2B -10, competitor mention +15. Search CRM for duplicate email: if found, update existing record + increment touchpoints + recalculate score; if new, create record with all fields + score + status + source attribution. Emit `sales.lead.captured`.\n\n2. **uc_welcome** (event-listen on lead.captured) — generate tier-appropriate personalized welcome email: Cold/Warm = resource-focused, low-pressure; Hot = value-prop with soft call CTA; On Fire = personal from assigned rep with direct calendar link. Every email includes first name, company, and ≥ 1 form-response detail. `welcome_email_gate` parameter may hold emails for certain tiers pending human approval before send.\n\n3. **uc_alert** (event-listen on lead.captured where score ≥ alert_threshold) — post rich Block Kit notification to messaging channel: header with tier + score, fields for name/company/role/budget/timeline, context for scoring rationale, section for buying signals, action buttons to CRM. For On Fire: also DM the assigned rep with full context and suggested talk track.\n\nState: `data/processed_responses.json` (Typeform response_id ledger), `data/pending_slack.json` / `pending_gmail.json` (queued on downstream failure), `data/leads_overflow.json` (fallback when CRM plan is capped).",
-      "tool_guidance": "**Typeform**:\n- `GET /forms/{form_id}/responses?since={last_poll_timestamp}&page_size=25` — paginated fetch.\n- `GET /forms/{form_id}` — field definition (map field IDs to labels).\n- Auth: `Authorization: Bearer {pat}`. Rate limit: 2 req/sec.\n\n**Airtable (CRM database)**:\n- `GET /v0/{base_id}/{table_name}?filterByFormula={SEARCH('email',{Email})}` — duplicate lookup.\n- `POST /v0/{base_id}/{table_name}` with `{\"fields\":{…}}` — create.\n- `PATCH /v0/{base_id}/{table_name}/{record_id}` — update existing.\n- Auth: `Authorization: Bearer {pat}`. 422 validation error → retry with core fields only (Name/Email/Score), flag `needs_review`.\n\n**Gmail (send)**:\n- `gmail_send` for all outbound welcome emails with HTML body.\n- For reply threading, set `threadId`.\n- 403 → queue email, retry after re-auth.\n\n**Messaging (Slack Block Kit)**:\n- `POST /api/chat.postMessage` with `{channel, blocks[], text}` for main channel posts.\n- `POST /api/conversations.open` with `{users:\"U_REP_ID\"}` to open DM, then post to returned channel ID.\n- Block structure: header (🔥/🚨 + tier + score/100), section fields (Name/Company/Role/Budget/Timeline), context (scoring rationale), section (buying signals), action buttons (CRM deep link).\n\n**Scoring model (0-100)**: company_size (25%) + budget (30%) + timeline (25%) + role_seniority (20%). Tiers: Cold 0-30, Warm 31-60, Hot 61-80, On Fire 81-100.\n\n**Email subject-line patterns by tier**:\n- Cold: `{FirstName}, here are resources for {interest_area}`.\n- Warm: `{FirstName}, how {similar_company} solved {pain_point}`.\n- Hot: `{FirstName}, let's talk about {company}'s {interest_area} goals`.\n- On Fire: `{FirstName} — {rep_name} here, ready to help {company} with {specific_need}`.\n\n**Local state**: `data/processed_responses.json` (ID ledger keyed by Typeform response_id), `data/pending_*.json` (queued retries), `data/leads_overflow.json` (CRM-capacity fallback).",
-      "error_handling": "Typeform 401 → emit error, flag credential rotation. Typeform 404 → check form_id config, emit configuration_error. Typeform 429 → exponential 2s/4s/8s, queue remaining responses. Airtable 422 → retry with core fields, flag needs_review. Airtable 402 (plan cap) → write to `data/leads_overflow.json`, emit critical alert. Airtable duplicate-detection failure → create anyway (better duplicate than lost lead), tag `needs_dedup`. Gmail 403 → queue email, retry on next cycle. Gmail daily limit → queue, process next cycle — never skip CRM creation. Slack channel_not_found → fall back to admin DM; never silently drop Hot+ notifications. Slack not_in_channel → attempt join, retry. Cardinal rule: Airtable creation is the success line — all other failures degrade gracefully with queued retries.",
+      "operating_instructions": "Three capabilities cooperate: 1. **uc_intake** (webhook primary, polling safety net) — receive form tool submission, parse all fields (including hidden + UTM), check local state file for response_id to prevent duplicate processing, score lead (0-100) using 4-factor weighted model calibrated to the user's `sales_motion`, classify tier (Cold 0-30 / Warm 31-60 / Hot 61-80 / On Fire 81-100). Apply contextual adjustments: returning visitor +10, referral source +5, free email in B2B -10, competitor mention +15. Search CRM for duplicate email: if found, update existing record + increment touchpoints + recalculate score; if new, create record with all fields + score + status + source attribution. Emit `sales.lead.captured`. 2. **uc_welcome** (event-listen on lead.captured) — generate tier-appropriate personalized welcome email: Cold/Warm = resource-focused, low-pressure; Hot = value-prop with soft call CTA; On Fire = personal from assigned rep with direct calendar link. Every email includes first name, company, and ≥ 1 form-response detail. `welcome_email_gate` parameter may hold emails for certain tiers pending human approval before send. 3. **uc_alert** (event-listen on lead.captured where score ≥ alert_threshold) — post rich formatted messaging layout notification to messaging channel: header with tier + score, fields for name/company/role/budget/timeline, context for scoring rationale, section for buying signals, action buttons to CRM. For On Fire: also DM the assigned rep with full context and suggested talk track. State: `data/processed_responses.json` (form tool response_id ledger), `data/pending_slack.json` / `pending_gmail.json` (queued on downstream failure), `data/leads_overflow.json` (fallback when CRM plan is capped).",
+      "tool_guidance": "**form tool**:\n- `GET /forms/{form_id}/responses?since={last_poll_timestamp}&page_size=25` — paginated fetch.\n- `GET /forms/{form_id}` — field definition (map field IDs to labels).\n- Auth: `Authorization: Bearer {pat}`. Rate limit: 2 req/sec. **Airtable (CRM database)**:\n- `GET /v0/{base_id}/{table_name}?filterByFormula={SEARCH('email',{Email})}` — duplicate lookup.\n- `POST /v0/{base_id}/{table_name}` with `{\"fields\":{…}}` — create.\n- `PATCH /v0/{base_id}/{table_name}/{record_id}` — update existing.\n- Auth: `Authorization: Bearer {pat}`. 422 validation error → retry with core fields only (Name/Email/Score), flag `needs_review`. **email (send)**:\n- `gmail_send` for all outbound welcome emails with HTML body.\n- For reply threading, set `threadId`.\n- 403 → queue email, retry after re-auth. **Messaging (messaging formatted layout)**:\n- `POST /api/chat.postMessage` with `{channel, blocks[], text}` for main channel posts.\n- `POST /api/conversations.open` with `{users:\"U_REP_ID\"}` to open DM, then post to returned channel ID.\n- Block structure: header (🔥/🚨 + tier + score/100), section fields (Name/Company/Role/Budget/Timeline), context (scoring rationale), section (buying signals), action buttons (CRM deep link). **Scoring model (0-100)**: company_size (25%) + budget (30%) + timeline (25%) + role_seniority (20%). Tiers: Cold 0-30, Warm 31-60, Hot 61-80, On Fire 81-100. **Email subject-line patterns by tier**:\n- Cold: `{FirstName}, here are resources for {interest_area}`.\n- Warm: `{FirstName}, how {similar_company} solved {pain_point}`.\n- Hot: `{FirstName}, let's talk about {company}'s {interest_area} goals`.\n- On Fire: `{FirstName} — {rep_name} here, ready to help {company} with {specific_need}`. **Local state**: `data/processed_responses.json` (ID ledger keyed by form tool response_id), `data/pending_*.json` (queued retries), `data/leads_overflow.json` (CRM-capacity fallback).",
+      "error_handling": "form tool 401 → emit error, flag credential rotation. form tool 404 → check form_id config, emit configuration_error. form tool 429 → exponential 2s/4s/8s, queue remaining responses. Airtable 422 → retry with core fields, flag needs_review. Airtable 402 (plan cap) → write to `data/leads_overflow.json`, emit critical alert. Airtable duplicate-detection failure → create anyway (better duplicate than lost lead), tag `needs_dedup`. email 403 → queue email, retry on next cycle. email daily limit → queue, process next cycle — never skip CRM creation. messaging channel_not_found → fall back to admin DM; never silently drop Hot+ notifications. messaging not_in_channel → attempt join, retry. Cardinal rule: Airtable creation is the success line — all other failures degrade gracefully with queued retries.",
       "examples": [],
       "tools": [
         "http_request",
@@ -69,8 +69,8 @@
       ],
       "connectors": [
         {
-          "name": "typeform",
-          "label": "Typeform",
+          "name": "forms",
+          "label": "form tool",
           "auth_type": "api_key",
           "role": "form_survey",
           "category": "forms",
@@ -82,7 +82,7 @@
               "label": "Personal Access Token",
               "type": "password",
               "placeholder": "tfp_xxxxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "Typeform → Settings → Personal tokens → Generate a new token with `Read responses` scope.",
+              "helpText": "form tool → Settings → Personal tokens → Generate a new token with `Read responses` scope.",
               "required": true
             },
             {
@@ -90,11 +90,11 @@
               "label": "Form ID",
               "type": "text",
               "placeholder": "abc123XYZ",
-              "helpText": "From the Typeform URL: https://admin.typeform.com/form/{form_id}",
+              "helpText": "From the form tool URL: https://admin.typeform.com/form/{form_id}",
               "required": true
             }
           ],
-          "setup_instructions": "1. Log into Typeform → Settings → Personal tokens → Generate.\n2. Name it (e.g., 'Lead Capture Pipeline'). Scopes: Read responses + Read forms.\n3. Copy the `tfp_`-prefixed token and paste above.\n4. Configure the webhook at Form → Connect → Webhooks to hit your agent's webhook URL."
+          "setup_instructions": "1. Log into form tool → Settings → Personal tokens → Generate.\n2. Name it (e.g., 'Lead Capture Pipeline'). Scopes: Read responses + Read forms.\n3. Copy the `tfp_`-prefixed token and paste above.\n4. Configure the webhook at Form → Connect → Webhooks to hit your agent's webhook URL."
         },
         {
           "name": "crm",
@@ -117,7 +117,7 @@
               "label": "Base / workspace ID",
               "type": "text",
               "placeholder": "appXXXXXXXXXXXXXX",
-              "helpText": "Airtable base ID, HubSpot portal ID, or equivalent workspace identifier.",
+              "helpText": "Airtable base ID, CRM portal ID, or equivalent workspace identifier.",
               "required": true
             },
             {
@@ -165,7 +165,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Gmail API → create OAuth 2.0 Client ID.\n2. Complete consent flow with scopes: gmail.send, gmail.readonly.\n3. Paste Client ID, Secret, and Refresh Token above."
+          "setup_instructions": "1. Google Cloud Console → enable email API → create OAuth 2.0 Client ID.\n2. Complete consent flow with scopes: gmail.send, gmail.readonly.\n3. Paste Client ID, Secret, and Refresh Token above."
         },
         {
           "name": "messaging",
@@ -198,7 +198,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Rich Block Kit alerts for Hot and On Fire leads; On Fire also DMs the assigned rep with suggested talk track."
+          "description": "Rich formatted messaging layout alerts for Hot and On Fire leads; On Fire also DMs the assigned rep with suggested talk track."
         }
       ],
       "core_memories": []
@@ -207,7 +207,7 @@
       {
         "id": "uc_intake",
         "title": "Submission Intake & Scoring",
-        "description": "Receives Typeform submissions (webhook primary, polling safety net). Dedups against `processed_responses.json`, scores 0-100 on the 4-factor model calibrated to `sales_motion`, classifies tier, updates/creates CRM record with touchpoints counter. Default webhook + 2-minute polling safety net — final cadence set at the trigger-composition step.",
+        "description": "Receives form tool submissions (webhook primary, polling safety net). Dedups against `processed_responses.json`, scores 0-100 on the 4-factor model calibrated to `sales_motion`, classifies tier, updates/creates CRM record with touchpoints counter. Default webhook + 2-minute polling safety net — final cadence set at the trigger-composition step.",
         "capability_summary": "Webhook+poll intake with contextual scoring and CRM upsert.",
         "category": "intake",
         "enabled_by_default": true,
@@ -222,7 +222,7 @@
           "description": "Default webhook (immediate) with a 2-minute polling safety net — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "typeform",
+          "forms",
           "crm"
         ],
         "notification_channels": [],
@@ -232,7 +232,7 @@
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Processed-response ledger (`data/processed_responses.json`) keyed by Typeform response_id. Source/score patterns per form source (e.g., 'LinkedIn campaign yields Warm+ 60% of the time')."
+          "context": "Processed-response ledger (`data/processed_responses.json`) keyed by form tool response_id. Source/score patterns per form source (e.g., 'LinkedIn campaign yields Warm+ 60% of the time')."
         },
         "event_subscriptions": [
           {
@@ -246,7 +246,7 @@
             "description": "Payload: { lead_id, old_score, new_score, fields_changed[] }. Emitted when a previously captured lead resubmits."
           }
         ],
-        "error_handling": "Typeform 401 → emit persona_error, flag rotation. Typeform 429 → exponential backoff + queue. Airtable 422 → retry with core fields + needs_review tag. Airtable 402 (plan cap) → write to leads_overflow.json, emit critical alert. Duplicate response_id → silent skip.",
+        "error_handling": "form tool 401 → emit persona_error, flag rotation. form tool 429 → exponential backoff + queue. Airtable 422 → retry with core fields + needs_review tag. Airtable 402 (plan cap) → write to leads_overflow.json, emit critical alert. Duplicate response_id → silent skip.",
         "input_schema": [
           {
             "name": "sales_motion",
@@ -263,7 +263,7 @@
           {
             "name": "target_form_ids",
             "type": "text",
-            "description": "Comma-separated Typeform IDs or names scoped to this pipeline."
+            "description": "Comma-separated form tool IDs or names scoped to this pipeline."
           },
           {
             "name": "personalization_depth",
@@ -299,7 +299,7 @@
             {
               "id": "i2",
               "type": "connector",
-              "label": "Fetch Typeform response + field definition",
+              "label": "Fetch form tool response + field definition",
               "connector": "typeform"
             },
             {
@@ -360,8 +360,8 @@
       {
         "id": "uc_welcome",
         "title": "Personalized Welcome Email",
-        "description": "Event-listen on `sales.lead.captured`. Drafts and sends a tier-appropriate personalized welcome email via Gmail. Cold/Warm = resource-focused low-pressure. Hot = value-prop with soft call CTA. On Fire = personal from assigned rep with direct calendar link. `welcome_email_gate` may hold certain tiers pending human approval before send.",
-        "capability_summary": "Tier-appropriate welcome email generation + Gmail send.",
+        "description": "Event-listen on `sales.lead.captured`. Drafts and sends a tier-appropriate personalized welcome email via email. Cold/Warm = resource-focused low-pressure. Hot = value-prop with soft call CTA. On Fire = personal from assigned rep with direct calendar link. `welcome_email_gate` may hold certain tiers pending human approval before send.",
+        "capability_summary": "Tier-appropriate welcome email generation + email send.",
         "category": "outreach",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -397,7 +397,7 @@
             "description": "Payload: { lead_id, tier, subject_line_used, sent_at }."
           }
         ],
-        "error_handling": "Gmail 403 (OAuth scope insufficient) → queue email, retry after re-auth. Gmail daily limit → queue, process next cycle; tag CRM record `email_pending`.",
+        "error_handling": "email 403 (OAuth scope insufficient) → queue email, retry after re-auth. email daily limit → queue, process next cycle; tag CRM record `email_pending`.",
         "input_schema": [
           {
             "name": "welcome_email_gate",
@@ -457,7 +457,7 @@
             {
               "id": "w5",
               "type": "connector",
-              "label": "Gmail send",
+              "label": "email send",
               "connector": "email"
             },
             {
@@ -510,7 +510,7 @@
       {
         "id": "uc_alert",
         "title": "Sales Alert",
-        "description": "Event-listen on `sales.lead.captured` where score ≥ `alert_threshold`. Posts rich Block Kit notification with score breakdown, buying signals, and CRM deep-link. For On Fire leads, additionally DMs the assigned rep with full context and suggested talk track.",
+        "description": "Event-listen on `sales.lead.captured` where score ≥ `alert_threshold`. Posts rich formatted messaging layout notification with score breakdown, buying signals, and CRM deep-link. For On Fire leads, additionally DMs the assigned rep with full context and suggested talk track.",
         "capability_summary": "Rich Hot+ lead alerts to messaging channel + On Fire rep DMs.",
         "category": "communication",
         "enabled_by_default": true,
@@ -547,7 +547,7 @@
             "description": "Payload: { lead_id, tier, channel, rep_dm_sent }."
           }
         ],
-        "error_handling": "Slack channel_not_found → fall back to admin DM; never silently drop Hot+ alerts. Slack not_in_channel → join attempt, retry post. Slack down → queue in `pending_slack.json`, retry next cycle.",
+        "error_handling": "messaging channel_not_found → fall back to admin DM; never silently drop Hot+ alerts. messaging not_in_channel → join attempt, retry post. messaging down → queue in `pending_slack.json`, retry next cycle.",
         "input_schema": [
           {
             "name": "alert_threshold",
@@ -590,7 +590,7 @@
             {
               "id": "a3",
               "type": "action",
-              "label": "Build Block Kit notification"
+              "label": "Build formatted messaging layout notification"
             },
             {
               "id": "a4",
@@ -698,14 +698,14 @@
           "uc_intake"
         ],
         "category": "domain",
-        "question": "Which Typeform form(s) should this pipeline process? (name or ID, comma-separated)",
+        "question": "Which form tool form(s) should this pipeline process? (name or ID, comma-separated)",
         "type": "text",
         "options": [],
         "default": "",
         "placeholder": "demo-request, contact-us, partner-inquiry",
         "maps_to": "use_cases[uc_intake].sample_input.target_form_ids",
         "variable_name": "target_form_ids",
-        "context": "Scopes the pipeline to the right Typeform sources. Comma-separate if leads flow from multiple entry points.",
+        "context": "Scopes the pipeline to the right form tool sources. Comma-separate if leads flow from multiple entry points.",
         "dimension": "use-cases"
       },
       {
@@ -807,7 +807,7 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
-        "context": "Options are auto-detected from your crm credentials in the Vault (HubSpot, Attio, Pipedrive, …).",
+        "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
         "dimension": "connectors"
       },
       {
@@ -826,7 +826,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -845,7 +845,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

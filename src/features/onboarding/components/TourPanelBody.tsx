@@ -79,7 +79,7 @@ export function TourPanelBody({
                 i < subStepIndex
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : i === subStepIndex
-                    ? `${colors.bg} ${colors.text} font-medium`
+                    ? `${colors.subtle} ${colors.text} font-medium`
                     : 'bg-secondary/20 text-foreground'
               }`}
             >
@@ -130,7 +130,7 @@ export function TourPanelBody({
             <button
               onClick={onNext}
               data-testid="tour-btn-next"
-              className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal ${colors.bg} ${colors.text} border ${colors.border} hover:brightness-125 transition-all`}
+              className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}
             >
               {isStepCompleted ? t.onboarding.continue_button : t.onboarding.tour_skip}
               <ChevronRight className="w-3.5 h-3.5" />
@@ -146,7 +146,7 @@ export function TourPanelBody({
 function GenericStepContent({ step, subStepIndex, colors }: {
   step: { hint: string; subSteps: { id: string; hint: string }[] };
   subStepIndex: number;
-  colors: { bg: string; border: string; text: string };
+  colors: { subtle: string; accent: string; text: string };
 }) {
   const { t } = useTranslation();
   const activeHint = step.subSteps[subStepIndex]?.hint ?? step.hint;
@@ -154,7 +154,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
   return (
     <div className="space-y-4 mt-2" data-testid="tour-generic-content">
       {/* Active hint callout */}
-      <div className={`rounded-modal ${colors.bg} border ${colors.border} p-3`}>
+      <div className={`rounded-modal ${colors.subtle} border ${colors.accent} p-3`}>
         <div className="flex items-start gap-2">
           <ArrowRight className={`w-3.5 h-3.5 ${colors.text} mt-0.5 flex-shrink-0`} />
           <p className={`typo-heading ${colors.text} leading-relaxed`}>{activeHint}</p>
@@ -170,7 +170,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
               key={sub.id}
               className={`flex items-start gap-2.5 p-2.5 rounded-modal border transition-all ${
                 i <= subStepIndex
-                  ? `${colors.bg} ${colors.border}`
+                  ? `${colors.subtle} ${colors.accent}`
                   : 'border-primary/8 bg-secondary/10'
               }`}
             >
@@ -178,7 +178,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
                 <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
               ) : (
                 <div className={`w-3.5 h-3.5 rounded-full border mt-0.5 flex-shrink-0 ${
-                  i === subStepIndex ? `${colors.border} ${colors.bg}` : 'border-primary/15'
+                  i === subStepIndex ? `${colors.accent} ${colors.subtle}` : 'border-primary/15'
                 }`} />
               )}
               <p className={`text-sm leading-relaxed ${i <= subStepIndex ? 'text-foreground' : 'text-foreground'}`}>

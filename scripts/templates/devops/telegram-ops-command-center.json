@@ -5,11 +5,19 @@
   "description": "AI-powered ops control plane in your team's Telegram group — authorized operators send natural language commands (health checks, deployments, rollbacks, broadcasts); destructive actions gate on YES confirmation from the initiating operator; critical events route to a messaging channel with severity color coding; daily ops summary rolls up commands, health, and deploys.",
   "icon": "Terminal",
   "color": "#0891B2",
-  "category": ["devops"],
-  "service_flow": ["Telegram", "Messages"],
+  "category": [
+    "devops"
+  ],
+  "service_flow": [
+    "Telegram",
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Telegram", "Messages"],
+    "service_flow": [
+      "Telegram",
+      "Messages"
+    ],
     "persona": {
       "goal": "Replace scattered ops dashboards and CLI sessions with one conversational Telegram interface — operators describe intent, destructive actions require explicit confirmation, and critical events route to a broader team channel.",
       "identity": {
@@ -46,7 +54,11 @@
       "tool_guidance": "**Telegram connector** (required — Bot API):\n- `POST https://api.telegram.org/bot{token}/sendMessage` with `{chat_id, text, parse_mode: 'MarkdownV2', reply_to_message_id?}`.\n- `POST /bot{token}/editMessageText` — update a status message in-place.\n- `GET /bot{token}/getChatMember?chat_id={gid}&user_id={uid}` — verify membership.\n- Webhook mode: `POST /bot{token}/setWebhook` once at adoption; Telegram delivers `Update` objects with `message.from.id`, `message.chat.id`, `message.text`, `update_id`.\n- MarkdownV2 special chars requiring escape: `_ * [ ] ( ) ~ \\`\\` > # + - = | { } . !`\n- Rate limit: 30 messages/second in group chats; honor `Retry-After`.\n\n**Messaging connector** (optional fallback — route critical alerts to a secondary channel):\n- Typical shape: `POST {provider}/chat.postMessage` with structured blocks + severity color. RED (#DC2626) for down/rollback-fail/critical, YELLOW (#F59E0B) for degraded/timeout, GREEN (#10B981) for recovery. Specific format depends on the secondary channel provider (Slack, Discord, Teams, or built-in Messages).\n- Use threaded replies (`thread_ts` or equivalent) for in-thread status updates on an existing alert.\n\n**Operations API** (required — user-provided):\n- `GET {ops_api_base}/health/{service}` → `{status, latency_ms, error_rate, uptime, last_check}`.\n- `GET {ops_api_base}/health` → array of all services.\n- `GET {ops_api_base}/deployments?from={iso}&to={iso}` → deployment list with version, service, deployer, timestamp, status.\n- `POST {ops_api_base}/deployments/rollback` with `{service, target_version, confirmed_by, reason}` → `{rollback_id, status, eta_seconds}`.\n- `POST {ops_api_base}/services/{name}/restart` with `{reason, initiated_by}`.\n- `POST {ops_api_base}/services/{name}/scale` with `{replicas, initiated_by}`.\n- `GET {ops_api_base}/services/{name}/logs?lines=50` → recent log lines.\n- Auth: `Authorization: Bearer {api_key}` on every request.\n\n**Local state files**:\n- `ops_state.json` — authorized users, pending confirmations, learned aliases, service registry, cached status, processed update_ids (last 1000).\n- `command_log.json` — append-only audit (timestamp, operator, command text, parsed intent, action, result, response_time_ms). Rotate monthly to `command_log_{YYYY-MM}.json`.\n- `daily_reports/report_{YYYY-MM-DD}.json` — archived daily summaries.\n- `pending_slack_alerts.json` — queue for secondary-channel delivery during outages.",
       "error_handling": "Telegram sendMessage failure → retry once after 2s; queue in `pending_messages.json`, deliver on next invocation. Ops API timeout (>10s) → reply 'slow response, retrying', use editMessageText when result arrives. Ops API 401/403 → Telegram notification, emit `persona_error`, do not retry. Ops API 429 → honor Retry-After. Secondary messaging down → queue in `pending_slack_alerts.json`, continue with Telegram response (secondary is secondary). Unauthorized user → polite rejection, never reveal operational details, log attempt. Confirmation spoofing (YES from a different user) → treat as no-op, do not cancel the original pending. Confirmation expired → auto-cancel silently, notify 'timed out, no action taken'. Multiple pending from same user → cancel old, start new flow. Non-text messages (photos, stickers) → reply 'text commands only'. Duplicate update_id → skip. State file corrupted → re-initialize with empty authorized_users (safe default: blocks everyone until admin re-adds).",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "telegram",
@@ -77,7 +89,7 @@
           "setup_instructions": "1. Open Telegram, message @BotFather.\n2. Send /newbot, follow prompts.\n3. Copy the HTTP API token.\n4. Add the bot to your ops group.\n5. Send any message in the group, then visit https://api.telegram.org/bot{token}/getUpdates to find the chat ID.\n6. POST https://api.telegram.org/bot{token}/setWebhook with {\"url\": \"your-webhook-endpoint\"} to enable incoming updates."
         },
         {
-          "name": "secondary_messaging",
+          "name": "messaging",
           "label": "Secondary Alert Channel",
           "auth_type": "oauth2",
           "role": "chat_messaging",
@@ -89,7 +101,12 @@
               "key": "provider",
               "label": "Secondary messaging provider",
               "type": "select",
-              "options": ["slack", "discord", "microsoft_teams", "personas_messages"],
+              "options": [
+                "slack",
+                "discord",
+                "microsoft_teams",
+                "personas_messages"
+              ],
               "placeholder": "slack",
               "helpText": "Where critical ops events broadcast for wider team visibility. Selected at adoption via your vault's messaging credentials.",
               "required": true
@@ -114,7 +131,7 @@
           "setup_instructions": "1. Add a messaging credential (Slack, Discord, Microsoft Teams, or use built-in Messages) to Vault → Catalog.\n2. Ensure the bot can post to the chosen alert channel.\n3. The persona picks the messaging-category credential you select at adoption."
         },
         {
-          "name": "operations_api",
+          "name": "devops",
           "label": "Operations API",
           "auth_type": "api_key",
           "role": "infrastructure",
@@ -161,12 +178,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "webhook",
-          "config": { "source": "telegram", "event": "message" },
+          "config": {
+            "source": "telegram",
+            "event": "message"
+          },
           "description": "Telegram Bot API webhook fires on every incoming message. Not user-configurable — webhook triggers bypass the composition picker."
         },
-        "connectors": ["telegram", "operations_api"],
+        "connectors": [
+          "telegram",
+          "devops"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`learned_aliases` in `ops_state.json` — recurring phrasing patterns map to canonical operations (e.g., 'bounce the cache' → 'restart Redis')."
@@ -191,34 +217,119 @@
             "description": "Comma-separated Telegram user IDs allowed to execute commands. Each member can find their ID via @userinfobot."
           }
         ],
-        "sample_input": { "authorized_users": "{{param.aq_authorized_users}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "authorized_users": "{{param.aq_authorized_users}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "Telegram webhook fires" },
-            { "id": "c2", "type": "action", "label": "Load ops state + check authorization" },
-            { "id": "c3", "type": "decision", "label": "Authorized?" },
-            { "id": "c4", "type": "action", "label": "Parse intent + check for pending confirmation" },
-            { "id": "c5", "type": "decision", "label": "Destructive action?" },
-            { "id": "c6", "type": "connector", "label": "Execute via ops API", "connector": "operations_api" },
-            { "id": "c7", "type": "connector", "label": "Send confirmation prompt + store pending", "connector": "telegram" },
-            { "id": "c8", "type": "event", "label": "Emit ops.command.executed / ops.service.unhealthy" },
-            { "id": "c9", "type": "end", "label": "Command handled + logged" },
-            { "id": "c10", "type": "error", "label": "Reject unauthorized" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "Telegram webhook fires"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Load ops state + check authorization"
+            },
+            {
+              "id": "c3",
+              "type": "decision",
+              "label": "Authorized?"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Parse intent + check for pending confirmation"
+            },
+            {
+              "id": "c5",
+              "type": "decision",
+              "label": "Destructive action?"
+            },
+            {
+              "id": "c6",
+              "type": "connector",
+              "label": "Execute via ops API",
+              "connector": "operations_api"
+            },
+            {
+              "id": "c7",
+              "type": "connector",
+              "label": "Send confirmation prompt + store pending",
+              "connector": "telegram"
+            },
+            {
+              "id": "c8",
+              "type": "event",
+              "label": "Emit ops.command.executed / ops.service.unhealthy"
+            },
+            {
+              "id": "c9",
+              "type": "end",
+              "label": "Command handled + logged"
+            },
+            {
+              "id": "c10",
+              "type": "error",
+              "label": "Reject unauthorized"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4", "variant": "yes" },
-            { "source": "c3", "target": "c10", "variant": "no" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6", "variant": "no" },
-            { "source": "c5", "target": "c7", "variant": "yes" },
-            { "source": "c6", "target": "c8" },
-            { "source": "c7", "target": "c9" },
-            { "source": "c8", "target": "c9" },
-            { "source": "c10", "target": "c9" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4",
+              "variant": "yes"
+            },
+            {
+              "source": "c3",
+              "target": "c10",
+              "variant": "no"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6",
+              "variant": "no"
+            },
+            {
+              "source": "c5",
+              "target": "c7",
+              "variant": "yes"
+            },
+            {
+              "source": "c6",
+              "target": "c8"
+            },
+            {
+              "source": "c7",
+              "target": "c9"
+            },
+            {
+              "source": "c8",
+              "target": "c9"
+            },
+            {
+              "source": "c10",
+              "target": "c9"
+            }
           ]
         }
       },
@@ -233,13 +344,26 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "webhook",
-          "config": { "source": "telegram", "event": "message" },
+          "config": {
+            "source": "telegram",
+            "event": "message"
+          },
           "description": "Fires on the same Telegram webhook as uc_command; routes when message is a YES/CANCEL reply from a user with a pending confirmation."
         },
-        "connectors": ["telegram", "operations_api", "secondary_messaging"],
+        "connectors": [
+          "telegram",
+          "devops",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "always", "context": "Confirmation IS the review step — no additional gate needed." },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "always",
+          "context": "Confirmation IS the review step — no additional gate needed."
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "ops.rollback.executed",
@@ -263,27 +387,86 @@
             "description": "Minutes a pending confirmation stays valid before auto-cancel."
           }
         ],
-        "sample_input": { "confirmation_timeout_minutes": "{{param.aq_confirmation_timeout}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "confirmation_timeout_minutes": "{{param.aq_confirmation_timeout}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "d1", "type": "start", "label": "YES/CANCEL reply received" },
-            { "id": "d2", "type": "action", "label": "Load pending confirmation + check expiry" },
-            { "id": "d3", "type": "decision", "label": "Same user + reply == YES?" },
-            { "id": "d4", "type": "connector", "label": "Execute destructive operation", "connector": "operations_api" },
-            { "id": "d5", "type": "connector", "label": "Broadcast RED alert to secondary channel", "connector": "secondary_messaging" },
-            { "id": "d6", "type": "event", "label": "Emit ops.rollback.executed / ops.destructive.confirmed" },
-            { "id": "d7", "type": "end", "label": "Confirmation handled" }
+            {
+              "id": "d1",
+              "type": "start",
+              "label": "YES/CANCEL reply received"
+            },
+            {
+              "id": "d2",
+              "type": "action",
+              "label": "Load pending confirmation + check expiry"
+            },
+            {
+              "id": "d3",
+              "type": "decision",
+              "label": "Same user + reply == YES?"
+            },
+            {
+              "id": "d4",
+              "type": "connector",
+              "label": "Execute destructive operation",
+              "connector": "operations_api"
+            },
+            {
+              "id": "d5",
+              "type": "connector",
+              "label": "Broadcast RED alert to secondary channel",
+              "connector": "secondary_messaging"
+            },
+            {
+              "id": "d6",
+              "type": "event",
+              "label": "Emit ops.rollback.executed / ops.destructive.confirmed"
+            },
+            {
+              "id": "d7",
+              "type": "end",
+              "label": "Confirmation handled"
+            }
           ],
           "edges": [
-            { "source": "d1", "target": "d2" },
-            { "source": "d2", "target": "d3" },
-            { "source": "d3", "target": "d4", "variant": "yes" },
-            { "source": "d3", "target": "d7", "variant": "no" },
-            { "source": "d4", "target": "d5" },
-            { "source": "d5", "target": "d6" },
-            { "source": "d6", "target": "d7" }
+            {
+              "source": "d1",
+              "target": "d2"
+            },
+            {
+              "source": "d2",
+              "target": "d3"
+            },
+            {
+              "source": "d3",
+              "target": "d4",
+              "variant": "yes"
+            },
+            {
+              "source": "d3",
+              "target": "d7",
+              "variant": "no"
+            },
+            {
+              "source": "d4",
+              "target": "d5"
+            },
+            {
+              "source": "d5",
+              "target": "d6"
+            },
+            {
+              "source": "d6",
+              "target": "d7"
+            }
           ]
         }
       },
@@ -298,13 +481,26 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 9 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["telegram", "operations_api", "secondary_messaging"],
+        "connectors": [
+          "telegram",
+          "devops",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
-        "memory_policy": { "enabled": false, "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
+        "memory_policy": {
+          "enabled": false,
+          "context": null
+        },
         "event_subscriptions": [
           {
             "event_type": "ops.summary.delivered",
@@ -315,27 +511,87 @@
         "error_handling": "Ops API unreachable → partial report from local `command_log.json` with note on stale health data. Secondary channel down → queue + retry; Telegram delivery proceeds. Report generation fails → emit `persona_error`, skip this run.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily 9 AM tick" },
-            { "id": "r2", "type": "action", "label": "Load command log + build metrics" },
-            { "id": "r3", "type": "connector", "label": "Fetch service health + recent deploys", "connector": "operations_api" },
-            { "id": "r4", "type": "connector", "label": "Post report to Telegram", "connector": "telegram" },
-            { "id": "r5", "type": "connector", "label": "Post report to secondary channel", "connector": "secondary_messaging" },
-            { "id": "r6", "type": "action", "label": "Archive to daily_reports/" },
-            { "id": "r7", "type": "event", "label": "Emit ops.summary.delivered" },
-            { "id": "r8", "type": "end", "label": "Summary delivered + archived" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily 9 AM tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Load command log + build metrics"
+            },
+            {
+              "id": "r3",
+              "type": "connector",
+              "label": "Fetch service health + recent deploys",
+              "connector": "operations_api"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Post report to Telegram",
+              "connector": "telegram"
+            },
+            {
+              "id": "r5",
+              "type": "connector",
+              "label": "Post report to secondary channel",
+              "connector": "secondary_messaging"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Archive to daily_reports/"
+            },
+            {
+              "id": "r7",
+              "type": "event",
+              "label": "Emit ops.summary.delivered"
+            },
+            {
+              "id": "r8",
+              "type": "end",
+              "label": "Summary delivered + archived"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            }
           ]
         }
       }
@@ -344,7 +600,10 @@
       {
         "id": "aq_authorized_users",
         "scope": "capability",
-        "use_case_ids": ["uc_command", "uc_confirm"],
+        "use_case_ids": [
+          "uc_command",
+          "uc_confirm"
+        ],
         "category": "configuration",
         "question": "Which Telegram user IDs are authorized to execute ops commands?",
         "type": "text",
@@ -358,7 +617,9 @@
       {
         "id": "aq_secondary_messaging",
         "scope": "connector",
-        "connector_names": ["secondary_messaging"],
+        "connector_names": [
+          "secondary_messaging"
+        ],
         "category": "configuration",
         "question": "Which channel should receive critical operational alerts outside Telegram?",
         "type": "select",
@@ -375,11 +636,19 @@
       {
         "id": "aq_confirmation_timeout",
         "scope": "capability",
-        "use_case_ids": ["uc_confirm"],
+        "use_case_ids": [
+          "uc_confirm"
+        ],
         "category": "quality",
         "question": "How many minutes should a pending destructive-action confirmation stay valid?",
         "type": "select",
-        "options": ["2", "5", "10", "15", "30"],
+        "options": [
+          "2",
+          "5",
+          "10",
+          "15",
+          "30"
+        ],
         "default": "5",
         "maps_to": "use_cases[uc_confirm].sample_input.confirmation_timeout_minutes",
         "variable_name": "confirmation_timeout_minutes",

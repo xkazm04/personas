@@ -4,11 +4,11 @@
   "label": "Docker",
   "color": "#2496ED",
   "icon_url": "/icons/connectors/docker.svg",
-  "category": "devops",
+  "category": "containers",
   "categories": [
-    "devops",
     "containers",
-    "local_runtime"
+    "devops",
+    "desktop"
   ],
   "fields": [
     {

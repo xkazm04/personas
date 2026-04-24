@@ -7,9 +7,8 @@
   "category": "ai",
   "categories": [
     "ai",
-    "speech_to_text",
     "transcription",
-    "audio_intelligence"
+    "voice_generation"
   ],
   "fields": [
     {

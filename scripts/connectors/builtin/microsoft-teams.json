@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/microsoft-teams.svg",
   "category": "messaging",
   "categories": [
-    "messaging",
-    "chat",
-    "microsoft365"
+    "messaging"
   ],
   "fields": [],
   "healthcheck_config": {

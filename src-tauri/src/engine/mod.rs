@@ -40,6 +40,7 @@ pub mod oauth_refresh;
 pub mod oauth_refresh_lock;
 pub mod healing;
 pub mod hooks_sidecar;
+pub mod cli_mcp_config;
 pub mod healing_orchestrator;
 pub mod healing_timeline;
 pub mod ai_healing;

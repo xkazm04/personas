@@ -4,10 +4,11 @@
   "label": "Kubernetes",
   "color": "#326CE5",
   "icon_url": "/icons/connectors/kubernetes.svg",
-  "category": "cloud",
+  "category": "containers",
   "categories": [
+    "containers",
     "cloud",
-    "containers"
+    "devops"
   ],
   "fields": [
     {

@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/google.svg",
   "category": "cloud",
   "categories": [
-    "cloud",
-    "google_workspace"
+    "cloud"
   ],
   "fields": [
     {

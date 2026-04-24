@@ -21,7 +21,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   email: 'Email',
   maintenance: 'Maintenance',
   automation: 'Automation',
-  'project-management': 'PM',
+  project_management: 'PM',
 };
 
 function deriveCategories(catalog: TemplateCatalogEntry[]): string[] {

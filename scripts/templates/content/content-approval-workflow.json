@@ -2,7 +2,7 @@
   "id": "content-approval-workflow",
   "schema_version": 3,
   "name": "Content Approval Workflow",
-  "description": "Monitors a Notion \"Ready for Review\" database view. When items appear, emails the assigned reviewer, posts to a Slack approval channel with action context, and waits for approval. On approval, moves the item to \"Published\" and notifies the author.",
+  "description": "Monitors a knowledge base \"Ready for Review\" database view. When items appear, emails the assigned reviewer, posts to a messaging approval channel with action context, and waits for approval. On approval, moves the item to \"Published\" and notifies the author.",
   "icon": "CheckCircle2",
   "color": "#F59E0B",
   "category": [
@@ -10,51 +10,51 @@
   ],
   "is_published": true,
   "service_flow": [
-    "Notion",
-    "Gmail",
-    "Slack"
+    "knowledge base",
+    "email",
+    "messaging"
   ],
   "payload": {
     "service_flow": [
-      "Notion",
-      "Gmail",
-      "Slack"
+      "knowledge base",
+      "email",
+      "messaging"
     ],
     "persona": {
       "goal": "Keep content moving from draft to published — route every Ready-for-Review item to the right reviewer, gather the decision, and close the loop with the author.",
       "identity": {
         "role": "Content approval coordinator that watches Notion, routes reviews across Gmail + Slack, and enforces the approval gate.",
-        "description": "Replaces four brittle automations with one context-aware agent: polls Notion for Ready-for-Review items, emails the assigned reviewer, posts structured Block Kit approval cards to Slack, gates on human decision, updates Notion status, and notifies the author on decision. Handles edge cases (missing reviewer, stalled SLA, API rate limits) without going silent."
+        "description": "Replaces four brittle automations with one context-aware agent: polls knowledge base for Ready-for-Review items, emails the assigned reviewer, posts structured formatted messaging layout approval cards to the messaging channel, gates on human decision, updates knowledge base status, and notifies the author on decision. Handles edge cases (missing reviewer, stalled SLA, API rate limits) without going silent."
       },
       "voice": {
-        "style": "Operations-tone: concise, professional, always links back to the canonical Notion page.",
-        "output_format": "Reviewer email: [Review Requested] + context + direct link + CTA. Slack card: title header, author/reviewer/summary section, Notion link context, urgency indicator if SLA near. Author resolution: [Published] or [Revision Needed] with reviewer feedback attached.",
+        "style": "Operations-tone: concise, professional, always links back to the canonical knowledge base pages.",
+        "output_format": "Reviewer email: [Review Requested] + context + direct link + CTA. messaging card: title header, author/reviewer/summary section, knowledge base link context, urgency indicator if SLA near. Author resolution: [Published] or [Revision Needed] with reviewer feedback attached.",
         "tone_adjustments": []
       },
       "principles": [
-        "Source of truth lives in Notion — every notification links back, never replaces.",
+        "Source of truth lives in knowledge base — every notification links back, never replaces.",
         "Never silently fail — over-notify beats missed handoffs.",
-        "Thread everything in Slack — decisions attach to the original approval card, not a new message.",
+        "Thread everything in the messaging channel — decisions attach to the original approval card, not a new message.",
         "Respect hard stops — never move content to Published without explicit reviewer decision.",
         "Feedback rides with the verdict — rejection notifications always carry the reviewer's note."
       ],
       "constraints": [
         "Never publish without a human sign-off — approval gate is mandatory.",
         "Never duplicate a notification within the same review cycle — tracked by local state.",
-        "Never include rejection feedback in a public Slack channel if the user-configured delivery is DM-only.",
+        "Never include rejection feedback in a public messaging channels if the user-configured delivery is DM-only.",
         "Never reassign a reviewer automatically — escalation requires a policy the user set up-front."
       ],
       "decision_principles": [
-        "When a reviewer has no email on the Notion page, still post the Slack card (requesting manual assignment) — don't block the pipeline.",
+        "When a reviewer has no email on the knowledge base pages, still post the messaging card (requesting manual assignment) — don't block the pipeline.",
         "When SLA expires without a response, follow the user's escalation policy exactly — don't invent a new one.",
-        "When Notion update fails on approval, alert the operator but don't send the author 'Published' yet — half-complete state is worse than silence."
+        "When knowledge base update fails on approval, alert the operator but don't send the author 'Published' yet — half-complete state is worse than silence."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities handle the approval lifecycle:\n\n1. **uc_review_initiation** — poll Notion for items with Status = 'Ready for Review'. For each new (not-in-state) item: fetch full properties (title, author name/email, reviewer name/email, summary, due date, Notion page URL, tags), email the reviewer ([Review Requested] + content summary + direct link), post a Block Kit card to the approval Slack channel (header + author/reviewer/summary + Notion link + urgency indicator when due within 48h), emit `content.review.requested`, and record pending state in `approval_state.json` with `page_id → { status: pending_review, notified_at, reviewer, slack_ts }`.\n\n2. **uc_approval_resolution** — event-listen on `content.review.requested` (or poll for externally-marked decisions). On approve: PATCH Notion Status → 'Published', email author ([Published] + congratulatory message), post threaded Slack reply confirming, update state to 'approved', emit `content.review.approved`. On reject: PATCH Notion Status → 'Needs Revision', add a comment block with reviewer feedback to the Notion page, email author ([Revision Needed] + reviewer feedback per configured delivery policy), post threaded Slack rejection update, update state to 'rejected', emit `content.review.rejected`.\n\n3. **uc_sla_watch** — on schedule, scan `approval_state.json` for items in pending_review older than the configured SLA. Execute the configured escalation policy (reminder to reviewer / escalate to backup / notify author / flag Blocked in Notion). Emit `content.review.stalled` per escalation.\n\nState: `approval_state.json` maps Notion page IDs to processing state + timestamps + Slack message ts for threading. Read at cycle start, write after each state change.",
-      "tool_guidance": "**Notion API** (`http_request` + `notion` connector, base `https://api.notion.com/v1`, header `Notion-Version: 2022-06-28`):\n- Query ready: `POST /databases/{database_id}/query` with `{filter: {property: 'Status', status: {equals: 'Ready for Review'}}}`.\n- Get page: `GET /pages/{page_id}`.\n- Update status: `PATCH /pages/{page_id}` with `{properties: {Status: {status: {name: 'Published'}}}}`.\n- Add comment: `POST /comments` with `{parent: {page_id}, rich_text: [...]}`.\n\n**Gmail** (`gmail_send` / `gmail_read` native tools): use `gmail_send` for review requests, published confirmations, and revision-needed notices. Use `gmail_read` to pick up reviewer replies containing feedback. Subject conventions: `[Review Requested] {title}`, `[Published] {title}`, `[Revision Needed] {title}`.\n\n**Slack API** (`http_request` + `slack` connector, base `https://slack.com/api`):\n- Post card: `POST /chat.postMessage` with `{channel, blocks: [...]}`.\n- Update card: `POST /chat.update` with the original message ts.\n- Thread reply: reuse the original ts via `thread_ts`.\n- Block Kit: header block (title) + section block (metadata fields) + context block (Notion link, timestamps) + actions block (Approve/Reject buttons).\n\n**State file I/O** (`file_read` / `file_write`): `approval_state.json` with read-modify-write pattern. Never leave the file in a partial state.",
-      "error_handling": "Notion 429 → exponential backoff starting 1s, 3 retries. Notion 404 → alert operator (DB ID or permissions may have changed). Notion 400 validation → log full request body. Missing reviewer email → post Slack warning requesting manual assignment, skip email, still create approval gate. Gmail send failure → retry once, then notify via Slack. Slack channel_not_found → resolve by name via `conversations.list`, else DM operator. Slack 429 → respect Retry-After header. Invalid blocks → fall back to plain text. Corrupted state file → reinitialize empty; may cause one duplicate notification cycle (acceptable). Notion update fails on approval → emit persona.error, do NOT send author 'Published' — half-complete state is worse than silence.",
+      "operating_instructions": "Three capabilities handle the approval lifecycle: 1. **uc_review_initiation** — poll knowledge base for items with Status = 'Ready for Review'. For each new (not-in-state) item: fetch full properties (title, author name/email, reviewer name/email, summary, due date, knowledge base pages URL, tags), email the reviewer ([Review Requested] + content summary + direct link), post a formatted messaging layout card to the approval messaging channels (header + author/reviewer/summary + knowledge base link + urgency indicator when due within 48h), emit `content.review.requested`, and record pending state in `approval_state.json` with `page_id → { status: pending_review, notified_at, reviewer, slack_ts }`. 2. **uc_approval_resolution** — event-listen on `content.review.requested` (or poll for externally-marked decisions). On approve: PATCH knowledge base Status → 'Published', email author ([Published] + congratulatory message), post threaded messaging reply confirming, update state to 'approved', emit `content.review.approved`. On reject: PATCH knowledge base Status → 'Needs Revision', add a comment block with reviewer feedback to the knowledge base pages, email author ([Revision Needed] + reviewer feedback per configured delivery policy), post threaded messaging rejection update, update state to 'rejected', emit `content.review.rejected`. 3. **uc_sla_watch** — on schedule, scan `approval_state.json` for items in pending_review older than the configured SLA. Execute the configured escalation policy (reminder to reviewer / escalate to backup / notify author / flag Blocked in knowledge base). Emit `content.review.stalled` per escalation. State: `approval_state.json` maps knowledge base pages IDs to processing state + timestamps + messages ts for threading. Read at cycle start, write after each state change.",
+      "tool_guidance": "**knowledge base API** (`http_request` + `notion` connector, base `https://api.notion.com/v1`, header `knowledge base-Version: 2022-06-28`):\n- Query ready: `POST /databases/{database_id}/query` with `{filter: {property: 'Status', status: {equals: 'Ready for Review'}}}`.\n- Get page: `GET /pages/{page_id}`.\n- Update status: `PATCH /pages/{page_id}` with `{properties: {Status: {status: {name: 'Published'}}}}`.\n- Add comment: `POST /comments` with `{parent: {page_id}, rich_text: [...]}`. **email** (`gmail_send` / `gmail_read` native tools): use `gmail_send` for review requests, published confirmations, and revision-needed notices. Use `gmail_read` to pick up reviewer replies containing feedback. Subject conventions: `[Review Requested] {title}`, `[Published] {title}`, `[Revision Needed] {title}`. **messaging API** (`http_request` + `slack` connector, base `https://slack.com/api`):\n- Post card: `POST /chat.postMessage` with `{channel, blocks: [...]}`.\n- Update card: `POST /chat.update` with the original message ts.\n- Thread reply: reuse the original ts via `thread_ts`.\n- formatted messaging layout: header block (title) + section block (metadata fields) + context block (knowledge base link, timestamps) + actions block (Approve/Reject buttons). **State file I/O** (`file_read` / `file_write`): `approval_state.json` with read-modify-write pattern. Never leave the file in a partial state.",
+      "error_handling": "knowledge base 429 → exponential backoff starting 1s, 3 retries. knowledge base 404 → alert operator (DB ID or permissions may have changed). knowledge base 400 validation → log full request body. Missing reviewer email → post messaging warning requesting manual assignment, skip email, still create approval gate. email send failure → retry once, then notify via the messaging channel. messaging channel_not_found → resolve by name via `conversations.list`, else DM operator. messaging 429 → respect Retry-After header. Invalid blocks → fall back to plain text. Corrupted state file → reinitialize empty; may cause one duplicate notification cycle (acceptable). knowledge base update fails on approval → emit persona.error, do NOT send author 'Published' — half-complete state is worse than silence.",
       "examples": [],
       "tools": [
         "http_request",
@@ -89,7 +89,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations → create internal integration.\n2. Copy the token (secret_…).\n3. Open the content DB → ... → Connections → add integration.\n4. Copy database ID from the URL.\n5. Ensure Status property includes options: 'Ready for Review', 'Published', 'Needs Revision', 'Blocked'."
+          "setup_instructions": "1. notion.so/my-integrations → create internal integration.\n2. Copy the token (secret_…).\n3. Open the content DB →... → Connections → add integration.\n4. Copy database ID from the URL.\n5. Ensure Status property includes options: 'Ready for Review', 'Published', 'Needs Revision', 'Blocked'."
         },
         {
           "name": "email",
@@ -124,7 +124,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → enable Gmail API.\n2. Credentials → OAuth 2.0 Client ID (Desktop).\n3. Complete consent flow with gmail.send / readonly / modify scopes.\n4. Paste client_id, client_secret, refresh_token."
+          "setup_instructions": "1. Google Cloud Console → enable email API.\n2. Credentials → OAuth 2.0 Client ID (Desktop).\n3. Complete consent flow with gmail.send / readonly / modify scopes.\n4. Paste client_id, client_secret, refresh_token."
         },
         {
           "name": "messaging",
@@ -139,7 +139,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-...",
-              "helpText": "From your Slack App → OAuth & Permissions.",
+              "helpText": "From your messaging App → OAuth & Permissions.",
               "required": true
             },
             {
@@ -170,8 +170,8 @@
       {
         "id": "uc_review_initiation",
         "title": "Review Initiation",
-        "description": "Poll Notion for Ready-for-Review items, email the assigned reviewer, and post a Slack approval card with full context. Records pending state locally. Default every 2 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Notion → reviewer email + Slack approval card.",
+        "description": "Poll knowledge base for Ready-for-Review items, email the assigned reviewer, and post a messaging approval card with full context. Records pending state locally. Default every 2 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "knowledge base → reviewer email + messaging approval card.",
         "category": "content",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -204,7 +204,7 @@
             "description": "Payload: { page_id, title, author, reviewer, summary, due_date, slack_ts }. Consumed by uc_approval_resolution for downstream decision handling."
           }
         ],
-        "error_handling": "Notion 429 → exponential backoff. Notion 404 → operator alert. Missing reviewer email → Slack warning + still post card. Gmail send failure → retry once then Slack-notify. Slack channel_not_found → resolve by name or DM operator.",
+        "error_handling": "knowledge base 429 → exponential backoff. knowledge base 404 → operator alert. Missing reviewer email → messaging warning + still post card. email send failure → retry once then messaging-notify. messaging channel_not_found → resolve by name or DM operator.",
         "input_schema": [
           {
             "name": "content_type",
@@ -240,7 +240,7 @@
               "urgent_action_oriented"
             ],
             "default": "friendly_direct",
-            "description": "Tone for reviewer emails and Slack messages."
+            "description": "Tone for reviewer emails and messages."
           },
           {
             "name": "notion_database_ref",
@@ -248,7 +248,7 @@
             "ui_component": "NotionDatabaseSelector",
             "connector": "notion",
             "required": true,
-            "description": "Which Notion database to poll — resolved at adoption from the user's Notion integration."
+            "description": "Which knowledge base databases to poll — resolved at adoption from the user's knowledge base integration."
           }
         ],
         "sample_input": {
@@ -274,7 +274,7 @@
             {
               "id": "i2",
               "type": "connector",
-              "label": "Query Notion: Status=Ready for Review",
+              "label": "Query knowledge base: Status=Ready for Review",
               "connector": "knowledge_base"
             },
             {
@@ -296,7 +296,7 @@
             {
               "id": "i6",
               "type": "connector",
-              "label": "Post Block Kit approval card",
+              "label": "Post formatted messaging layout approval card",
               "connector": "messaging"
             },
             {
@@ -337,7 +337,7 @@
               "source": "i4",
               "target": "i6",
               "variant": "no",
-              "label": "Slack warning, skip email"
+              "label": "messaging warning, skip email"
             },
             {
               "source": "i5",
@@ -361,8 +361,8 @@
       {
         "id": "uc_approval_resolution",
         "title": "Approval Resolution",
-        "description": "Process reviewer decisions. On approve: Notion → Published, notify author, confirm in Slack. On reject: Notion → Needs Revision with reviewer feedback, notify author per delivery policy, post Slack rejection update. Event-triggered from uc_review_initiation.",
-        "capability_summary": "Reviewer decision → Notion status update + author notification + Slack threaded update.",
+        "description": "Process reviewer decisions. On approve: knowledge base → Published, notify author, confirm in the messaging channel. On reject: knowledge base → Needs Revision with reviewer feedback, notify author per delivery policy, post messaging rejection update. Event-triggered from uc_review_initiation.",
+        "capability_summary": "Reviewer decision → knowledge base status update + author notification + messaging threaded update.",
         "category": "content",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -405,7 +405,7 @@
             "description": "Payload: { page_id, title, reviewer, rejection_reason, resolved_at }. Revision workflow subscribers can consume."
           }
         ],
-        "error_handling": "Notion update fails on approve → emit persona.error, do NOT send author 'Published'. Notion update fails on reject → log + alert operator, still attempt author email (Revision state in Notion is stale but author needs feedback). Gmail send fails → retry once, Slack-notify. Slack thread reply fails → log + fall back to unthreaded reply.",
+        "error_handling": "knowledge base update fails on approve → emit persona.error, do NOT send author 'Published'. knowledge base update fails on reject → log + alert operator, still attempt author email (Revision state in knowledge base is stale but author needs feedback). email send fails → retry once, messaging-notify. messaging threads reply fails → log + fall back to unthreaded reply.",
         "input_schema": [
           {
             "name": "hard_stops",
@@ -458,13 +458,13 @@
             {
               "id": "r3",
               "type": "connector",
-              "label": "Notion → Published",
+              "label": "knowledge base → Published",
               "connector": "knowledge_base"
             },
             {
               "id": "r4",
               "type": "connector",
-              "label": "Notion → Needs Revision + comment",
+              "label": "knowledge base → Needs Revision + comment",
               "connector": "knowledge_base"
             },
             {
@@ -476,7 +476,7 @@
             {
               "id": "r6",
               "type": "connector",
-              "label": "Slack threaded reply",
+              "label": "messaging threaded reply",
               "connector": "messaging"
             },
             {
@@ -542,7 +542,7 @@
       {
         "id": "uc_sla_watch",
         "title": "SLA Escalation",
-        "description": "Scan pending reviews for SLA-overdue items and execute the user's escalation policy (reminder / escalate to backup / notify author / flag Blocked in Notion). Default hourly — final cadence set at the trigger-composition step.",
+        "description": "Scan pending reviews for SLA-overdue items and execute the user's escalation policy (reminder / escalate to backup / notify author / flag Blocked in knowledge base). Default hourly — final cadence set at the trigger-composition step.",
         "capability_summary": "SLA watcher with configurable escalation policy.",
         "category": "content",
         "enabled_by_default": true,
@@ -576,7 +576,7 @@
             "description": "Payload: { page_id, title, hours_overdue, escalation_taken }."
           }
         ],
-        "error_handling": "Notion update for 'Blocked' fails → log + alert, keep item in pending_review state so another cycle can retry. Reminder send fail → retry once, else Slack-notify operator.",
+        "error_handling": "knowledge base update for 'Blocked' fails → log + alert, keep item in pending_review state so another cycle can retry. Reminder send fail → retry once, else messaging-notify operator.",
         "input_schema": [
           {
             "name": "sla_hours",
@@ -752,16 +752,16 @@
           "uc_review_initiation"
         ],
         "category": "configuration",
-        "question": "Which Notion database should the agent poll for Ready-for-Review items?",
+        "question": "Which knowledge base databases should the agent poll for Ready-for-Review items?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "notion",
+          "service_type": "knowledge_base",
           "operation": "list_databases",
           "source": "vault"
         },
         "maps_to": "use_cases[uc_review_initiation].sample_input.notion_database_ref",
         "variable_name": "notion_database_ref",
-        "context": "Options are auto-detected from your Notion integration's accessible databases. The database must expose a Status property with values including 'Ready for Review', 'Published', 'Needs Revision'.",
+        "context": "Options are auto-detected from your knowledge base integration's accessible databases. The database must expose a Status property with values including 'Ready for Review', 'Published', 'Needs Revision'.",
         "dimension": "connectors"
       },
       {
@@ -779,7 +779,7 @@
           "Never send more than one reminder email per review cycle",
           "Never post rejection feedback publicly in Slack — DM the author only"
         ],
-        "default": "Never move content to Published — always require a human to confirm in Notion",
+        "default": "Never move content to Published — always require a human to confirm in knowledge base",
         "maps_to": "use_cases[uc_approval_resolution].sample_input.hard_stops",
         "variable_name": "hard_stops",
         "context": "Hard stops prevent the agent from taking irreversible or politically sensitive actions autonomously.",
@@ -800,7 +800,7 @@
           "Both email and Slack DM",
           "Comment in Notion + Slack DM so feedback is attached to the content"
         ],
-        "default": "Comment in Notion + Slack DM so feedback is attached to the content",
+        "default": "Comment in knowledge base + direct messages so feedback is attached to the content",
         "maps_to": "use_cases[uc_approval_resolution].sample_input.rejection_delivery",
         "variable_name": "rejection_delivery",
         "context": "Determines delivery channels for rejection notes.",
@@ -864,7 +864,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -883,7 +883,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -902,7 +902,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

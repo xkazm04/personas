@@ -169,6 +169,9 @@ pub struct MemoryReviewDetail {
     pub score: i32,
     pub reason: String,
     pub action: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub error: Option<String>,
 }
 
 #[derive(Debug, serde::Serialize, TS)]
@@ -385,6 +388,7 @@ Memories to review:
                 score,
                 reason,
                 action: "deleted".to_string(),
+                error: None,
             });
         } else {
             // Map 7-10 to importance 3-5
@@ -401,41 +405,56 @@ Memories to review:
                 score,
                 reason,
                 action: "kept".to_string(),
+                error: None,
             });
         }
     }
 
-    // Batch delete below-threshold memories
-    let deleted_count = if !ids_to_delete.is_empty() {
-        match repo::batch_delete(&db, &ids_to_delete) {
-            Ok(n) => n as usize,
-            Err(e) => {
-                for detail in details.iter_mut().filter(|d| d.action == "deleted") {
-                    detail.action = "error".to_string();
-                    detail.reason = format!("Batch delete failed: {e}");
+    // Apply deletes per-id so a single failure does not mask successful writes
+    // and so the UI can show exactly which IDs failed (FK violation, row gone,
+    // etc.) without losing partial-success reporting.
+    let mut deleted_count: usize = 0;
+    for id in &ids_to_delete {
+        match repo::delete(&db, id) {
+            Ok(true) => {
+                deleted_count += 1;
+            }
+            Ok(false) => {
+                if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
+                    d.action = "error".to_string();
+                    d.error = Some("Memory not found (already deleted?)".to_string());
                 }
-                0
+            }
+            Err(e) => {
+                if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
+                    d.action = "error".to_string();
+                    d.error = Some(format!("{e}"));
+                }
             }
         }
-    } else {
-        0
-    };
+    }
 
-    // Batch update importance for kept memories
-    let updated_count = if !importance_updates.is_empty() {
-        match repo::batch_update_importance(&db, &importance_updates) {
-            Ok(n) => n as usize,
-            Err(e) => {
-                for detail in details.iter_mut().filter(|d| d.action == "kept") {
-                    detail.action = "error".to_string();
-                    detail.reason = format!("Batch update failed: {e}");
+    // Apply importance updates per-id for the same reason.
+    let mut updated_count: usize = 0;
+    for (id, importance) in &importance_updates {
+        match repo::update_importance(&db, id, *importance) {
+            Ok(true) => {
+                updated_count += 1;
+            }
+            Ok(false) => {
+                if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
+                    d.action = "error".to_string();
+                    d.error = Some("Memory not found (deleted since fetch?)".to_string());
                 }
-                0
+            }
+            Err(e) => {
+                if let Some(d) = details.iter_mut().find(|d| d.id == *id) {
+                    d.action = "error".to_string();
+                    d.error = Some(format!("{e}"));
+                }
             }
         }
-    } else {
-        0
-    };
+    }
 
     Ok(MemoryReviewResult {
         reviewed: reviews.len(),

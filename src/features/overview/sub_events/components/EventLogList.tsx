@@ -9,7 +9,7 @@ import DetailModal from '@/features/overview/components/dashboard/widgets/Detail
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { formatRelativeTime, EVENT_STATUS_COLORS, EVENT_TYPE_COLORS } from '@/lib/utils/formatters';
+import { formatRelativeTime, EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
@@ -163,7 +163,7 @@ export default function EventLogList() {
       filterValue: typeFilter,
       onFilterChange: setTypeFilter,
       render: (event) => {
-        const typeColor = EVENT_TYPE_COLORS[event.event_type]?.tailwind ?? 'text-foreground';
+        const typeColor = getEventTypeColor(event.event_type).tailwind;
         return <span className={`typo-heading truncate ${typeColor}`}>{event.event_type}</span>;
       },
     },

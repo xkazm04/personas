@@ -5,6 +5,7 @@ const logger = createLogger('auto-cred-browser');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { BrowserLogEntry, AutoCredMode } from '../helpers/types';
 import { openExternalUrl } from '@/api/system/system';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import {
   deriveSessionState, useElapsed, groupLogEntries,
   deriveEntryPhase, PHASE_LABELS,
@@ -50,7 +51,12 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
   }, [visibleLogs.length]);
 
   const handleUrlClick = useCallback((url: string) => {
-    openExternalUrl(url).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
+    const safe = sanitizeExternalUrl(url);
+    if (!safe) {
+      logger.warn('Blocked unsafe URL from auto-cred log', { url });
+      return;
+    }
+    openExternalUrl(safe).catch((err) => { logger.error('Failed to open URL', { error: String(err) }); });
   }, []);
 
   const groupedEntries = useMemo(() => groupLogEntries(visibleLogs), [visibleLogs]);

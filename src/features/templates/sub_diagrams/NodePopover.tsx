@@ -2,6 +2,7 @@ import { X } from 'lucide-react';
 import type { FlowNode } from '@/lib/types/frontendTypes';
 import { NODE_TYPE_META, DEFAULT_NODE_META } from './activityDiagramTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { CARD_PADDING } from '@/lib/utils/designTokens';
 
 // ============================================================================
 // Helpers
@@ -36,7 +37,7 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
   return (
     <div
-      className="bg-background/95 border border-primary/20 rounded-modal shadow-elevation-4 backdrop-blur-sm p-4 space-y-3 max-w-sm"
+      className={`bg-background/95 border border-primary/20 rounded-modal shadow-elevation-4 backdrop-blur-sm ${CARD_PADDING.standard} space-y-3 max-w-sm`}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Header */}

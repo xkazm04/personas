@@ -128,8 +128,15 @@ export function useDataPortability() {
 
   const handleCredImport = useCallback(async () => {
     if (credImportStatus === 'loading') return;
+    // Block starting a fresh import while a conflict-resolution pass is pending;
+    // the stored passphrase belongs to that pass and a silent re-run would double-import.
+    if (credImportFilePath) return;
     if (!credImportPassphrase) {
       setErrorMsg('Please enter the passphrase used during export');
+      return;
+    }
+    if (credImportPassphrase.length < 8) {
+      setErrorMsg('Passphrase must be at least 8 characters');
       return;
     }
     setCredImportStatus('loading');
@@ -157,7 +164,7 @@ export function useDataPortability() {
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
-  }, [credImportPassphrase, credImportStatus]);
+  }, [credImportPassphrase, credImportStatus, credImportFilePath]);
 
   const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
     if (credImportStatus === 'loading') return;

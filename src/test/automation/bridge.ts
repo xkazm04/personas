@@ -76,6 +76,54 @@ function _fmtBridgeErr(e: unknown): string {
   try { return JSON.stringify(e); } catch { return String(e); }
 }
 
+/** Extract declared parameter names from a function's source. Returns an
+ *  empty array when the source can't be parsed (minified builds, arrow
+ *  functions with destructured params, `...rest` only, etc.). */
+function parseParamNames(fn: (...a: unknown[]) => unknown): string[] {
+  const src = Function.prototype.toString.call(fn);
+  // Match the first parenthesised parameter list. Five shapes we care about:
+  //   function name(a, b)                    ← classic named fn
+  //   async function(a, b) { ... }           ← anonymous function expr
+  //   async name(a, b) { ... }               ← method shorthand (what
+  //                                            `bridge.driveWriteText(a, b)`
+  //                                            stringifies to)
+  //   (a, b) => ...                          ← arrow
+  //   async (a, b) => ...                    ← async arrow
+  // The prior regex required `function` when there was no leading `(`, so
+  // method shorthand fell through → Object.values fallback → alphabetical
+  // arg order bug that was the whole reason we added named dispatch.
+  const match = src.match(
+    /^(?:async\s+)?(?:function\s*\*?\s*[A-Za-z_$][A-Za-z0-9_$]*\s*)?\(([^)]*)\)/,
+  ) ?? src.match(/^(?:async\s+)?[A-Za-z_$][A-Za-z0-9_$]*\s*\(([^)]*)\)/);
+  if (!match) return [];
+  const raw = match[1] ?? '';
+  return raw
+    .split(',')
+    .map((s) => s.trim())
+    // Drop default-value expressions and `...rest`, then keep plain identifiers.
+    .map((s) => (s.split('=')[0] ?? '').trim())
+    .filter((s) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(s));
+}
+
+/** Map a params object onto a function's positional args by declared name.
+ *  Falls back to Object.values(params) when names can't be recovered (so
+ *  single-arg methods still work via the original key-insensitive path). */
+function resolveArgs(
+  fn: (...a: unknown[]) => unknown,
+  params: Record<string, unknown>,
+): unknown[] {
+  const names = parseParamNames(fn);
+  const keys = Object.keys(params);
+  // Only use named dispatch when at least one declared name matches a param
+  // key. This keeps `__exec__("foo", {x: 1})` working for methods whose first
+  // arg name doesn't appear in the params object (callers that pass raw
+  // positional tuples via `{0: ..., 1: ...}` etc.).
+  if (names.length > 0 && keys.some((k) => names.includes(k))) {
+    return names.map((n) => params[n]);
+  }
+  return Object.values(params);
+}
+
 function generateSelector(el: Element): string {
   if (el.id) return `#${el.id}`;
   const testId = el.getAttribute("data-testid");
@@ -788,6 +836,11 @@ const bridge: TestBridge = {
     // BEFORE toggling isCreatingPersona, otherwise the
     // selectedPersonaId-branch in PersonasPage can render PersonaEditor
     // first and race the matrix mount.
+    // Also reset any lingering build session from a prior scenario run —
+    // GlyphFullLayout's pre-build intent textarea is gated on
+    // `!hasDesignResult`, so a leftover `test_complete` session would hide
+    // the textarea and fail this method with "not visible after 15s".
+    useAgentStore.getState().resetBuildSession();
     useAgentStore.getState().selectPersona(null);
     useSystemStore.getState().setIsCreatingPersona(true);
     useSystemStore.getState().setSidebarSection('personas');
@@ -935,31 +988,8 @@ const bridge: TestBridge = {
   },
 
   /** Write a text document through the built-in Local Drive. Triggers
-   *  `drive.document.added` (or edited if the path already existed).
-   *
-   *  NOTE: __exec__ dispatches params via Object.values(params) which yields
-   *  ALPHABETICAL key order from serde_json / V8 alike. For two params named
-   *  (relPath, content), the positional order would be swapped. To keep the
-   *  callsite natural ({"relPath": ..., "content": ...}) the method destructures
-   *  a single object instead of taking positional args. */
-  async driveWriteText(...rawArgs: unknown[]) {
-    // __exec__ → Object.values(params) is ALPHABETICAL, so a POST with
-    // {relPath: "a", content: "b"} arrives as ["b", "a"] here. Accept either:
-    //   - A single {relPath, content} object (preferred; unambiguous).
-    //   - Two positional strings in alphabetical order [content, relPath]
-    //     which is what callers via /bridge-exec inadvertently produce.
-    let relPath: string;
-    let content: string;
-    const first = rawArgs[0];
-    if (first && typeof first === 'object' && !Array.isArray(first)) {
-      const obj = first as { relPath?: string; content?: string };
-      relPath = obj.relPath ?? '';
-      content = obj.content ?? '';
-    } else {
-      // Alphabetical positional fallback: content < relPath
-      content = String(rawArgs[0] ?? '');
-      relPath = String(rawArgs[1] ?? '');
-    }
+   *  `drive.document.added` (or edited if the path already existed). */
+  async driveWriteText(relPath: string, content: string) {
     if (!relPath) return { success: false, error: 'driveWriteText: relPath missing' };
     try {
       const entry = await invoke('drive_write_text', { relPath, content });
@@ -1046,20 +1076,16 @@ const bridge: TestBridge = {
     try {
       const fn = (this as unknown as Record<string, unknown>)[method];
       if (typeof fn !== "function") throw new Error(`Unknown method: ${method}`);
-      // __exec__ KEY-ORDER QUIRK — when Rust serializes params into an IPC
-      // payload, serde_json emits keys alphabetically (no preserve_order
-      // feature enabled). So Object.values(params) below yields values in
-      // ALPHABETICAL order of the key names, NOT the caller's declared
-      // positional order. Examples:
-      //   typeText(selector, text)     — "selector" < "text"   → OK by accident
-      //   driveWriteText(relPath, content) — "content" < "relPath" → SWAPPED
-      // Multi-arg methods that are vulnerable to this trap MUST accept their
-      // arguments as `...rawArgs: unknown[]` and re-derive the intended order
-      // from property names (see driveWriteText for the reference pattern).
-      // Do NOT change the dispatch to pass `params` as a single object —
-      // every existing single-arg positional method depends on the current
-      // shape.
-      const args = Object.values(params);
+      // Named-arg dispatch. Rust's serde_json (no preserve_order feature)
+      // serialises params alphabetically, so a naive Object.values(params)
+      // gives ALPHABETICAL order of keys — breaks any method where the
+      // declared positional order differs (driveWriteText(relPath, content)
+      // would receive (content, relPath)). We parse the method's declared
+      // parameter names from fn.toString() and pull arg values by name. When
+      // the source can't be parsed (minified builds, destructured params),
+      // we fall back to Object.values so single-arg positional methods keep
+      // working as before.
+      const args = resolveArgs(fn as (...a: unknown[]) => unknown, params);
 
       // Race the method call against a timeout to prevent queue blocking
       const result = await Promise.race([

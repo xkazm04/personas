@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/gmail.svg",
   "category": "email",
   "categories": [
-    "email",
-    "google_workspace"
+    "email"
   ],
   "fields": [],
   "healthcheck_config": {

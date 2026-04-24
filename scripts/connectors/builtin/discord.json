@@ -6,9 +6,7 @@
   "icon_url": "/icons/connectors/discord.svg",
   "category": "messaging",
   "categories": [
-    "messaging",
-    "chat",
-    "community"
+    "messaging"
   ],
   "fields": [
     {

@@ -4,10 +4,10 @@
   "label": "CircleCI",
   "color": "#343434",
   "icon_url": "/icons/connectors/circleci.svg",
-  "category": "devops",
+  "category": "ci_cd",
   "categories": [
-    "devops",
-    "ci_cd"
+    "ci_cd",
+    "devops"
   ],
   "fields": [
     {

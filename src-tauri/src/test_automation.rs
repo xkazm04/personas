@@ -305,6 +305,19 @@ async fn handle_screenshot(
     AxumState(_state): AxumState<ServerState>,
     Json(req): Json<ScreenshotRequest>,
 ) -> Result<String, (StatusCode, String)> {
+    // Screenshot capture needs `xcap` + `image`, which are optional deps only
+    // pulled in by the `test-automation` or `desktop` features. Default-feature
+    // builds return a 501 so the rest of the module still compiles.
+    #[cfg(not(any(feature = "test-automation", feature = "desktop")))]
+    {
+        let _ = req;
+        return Err((
+            StatusCode::NOT_IMPLEMENTED,
+            "screenshot capture requires the 'test-automation' or 'desktop' feature".to_string(),
+        ));
+    }
+    #[cfg(any(feature = "test-automation", feature = "desktop"))]
+    {
     use std::path::PathBuf;
 
     let save_dir = PathBuf::from(&req.save_dir);
@@ -400,6 +413,7 @@ async fn handle_screenshot(
         "height": height,
     })
     .to_string())
+    } // end cfg(any(feature = "test-automation", feature = "desktop"))
 }
 
 // ── Workflow macro handlers ──────────────────────────────────────────────────

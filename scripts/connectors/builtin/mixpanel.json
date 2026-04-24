@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/mixpanel.svg",
   "category": "analytics",
   "categories": [
-    "analytics",
-    "product_analytics"
+    "analytics"
   ],
   "fields": [
     {

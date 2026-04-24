@@ -6,8 +6,7 @@
   "icon_url": "/icons/connectors/pipedrive.svg",
   "category": "crm",
   "categories": [
-    "crm",
-    "sales_pipeline"
+    "crm"
   ],
   "fields": [
     {

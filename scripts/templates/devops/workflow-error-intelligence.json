@@ -5,11 +5,17 @@
   "description": "Meta-observability agent that watches every other persona on the platform — subscribes to execution failure events, classifies each error by category and root cause, detects cross-workflow patterns (recurring, cascading, service-wide), sends real-time critical alerts, and delivers daily digests and weekly reliability reports.",
   "icon": "Activity",
   "color": "#DC2626",
-  "category": ["devops"],
-  "service_flow": ["Messages"],
+  "category": [
+    "devops"
+  ],
+  "service_flow": [
+    "Messages"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Messages"],
+    "service_flow": [
+      "Messages"
+    ],
     "persona": {
       "goal": "Be the agent that watches the agents — turn individual execution failures into classified patterns, cascade traces, and week-over-week reliability trends the team can actually act on.",
       "identity": {
@@ -42,11 +48,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Four capabilities chain via event-driven ingestion + scheduled reports:\n\n1. **uc_ingestion** (event-listen on `persona.execution.failed` + `persona.runtime.error`; scheduled poll every 10 min for silent failures) — for every error, normalize into a structured record: { persona_id, persona_name, error_message, error_type, timestamp, execution_context }. Dedup by execution_id + timestamp in a 1-hour window. Append to `error_index.json` (rolling 90-day or 30-day under disk pressure). Every 10 min, poll the platform execution API for failed runs that didn't emit events.\n\n2. **uc_classification** (event-listen on `internal.error.ingested` emitted by uc_ingestion) — AI-classify across four dimensions. **Category** (one of 7): Auth Failure, Rate Limit, API Changed, Data Format Error, Timeout, Logic Error, Missing Resource. **Root cause**: correlate against `error_patterns.json`, consider the persona's service dependencies, check temporal context (recent deploy, credential rotation, API version change). **Impact**: blast radius via dependency graph, data freshness impact, severity rating (Critical / High / Medium / Low). **Remediation**: specific actionable fix tailored to the category and affected service. Store full classification back into `error_index.json`. Emit `internal.error.classified`.\n\n3. **uc_pattern_detection** (event-listen on `internal.error.classified`) — run four pattern checks: **Recurring** (same pattern 3+ times in 1h on one persona → `recurring`; 24h+ → `persistent_failure`). **Cascading** (persona A fails, then B which depends on A fails within 15m → trace chain, alert on root). **Time-based** (60%+ of a persona's errors in the same 2h window → time-correlated). **Service-wide** (3+ personas failing on the same external service within 30m → `service_outage`). Update `error_patterns.json` with matches. For critical patterns (auth failure, service outage, cascade, persistent failure, new error type), route an immediate Slack-style alert via the messaging connector; emit `workflow.pattern.detected` with pattern_type.\n\n4. **uc_reporting** (scheduled: daily 9 AM for digest, Monday 8 AM for weekly) — **Daily digest**: totals, per-persona counts, per-category breakdown, trending vs 7-day baseline, resolved-yesterday list, top remediation priority. Post to messaging channel; archive to `daily_digests/digest_{date}.json`. **Weekly reliability report**: error rate per persona (rank most-to-least reliable), MTTR by category, week-over-week reliability delta, top 3 improvement recommendations, dependency risk map. Post + archive to `weekly_reports/reliability_{date}.json`. On first run with <24h of data, post an abbreviated report noting limited window.\n\nState: `error_index.json` (rolling 90-day classified errors), `error_patterns.json` (detected patterns with status, first/last seen, counts), `persona_reliability.json` (per-persona scores, dependency map, MTTR history), `pending_alerts.json` (messaging retry queue).",
-      "tool_guidance": "**Platform event bus** (required — built-in):\n- Subscribe to `persona.execution.failed` and `persona.runtime.error`.\n- Event payload: `{ persona_id, persona_name, error: { message, type, stack }, execution_id, timestamp, context: { task, trigger } }`.\n- No polling needed for event-driven delivery.\n\n**Platform execution API** (required — built-in http_request):\n- `GET /api/v1/executions?status=failed&since={iso}&limit=100` — supplementary poll for silent failures.\n- `GET /api/v1/executions/{execution_id}` — full execution trace with per-step logs.\n- `GET /api/v1/personas` — enumerate all personas for dependency map.\n- `GET /api/v1/personas/{persona_id}` — inspect persona's service dependencies and trigger config.\n\n**Messaging connector** (required — user picks provider at adoption):\n- Typical shape: `POST {provider}/chat.postMessage` with severity-coded blocks (RED critical / YELLOW degraded / GREEN recovery) + fallback text. Specific API depends on the chosen messaging provider (Slack, Discord, Microsoft Teams, built-in Messages).\n- Use threaded replies (`thread_ts` or equivalent) for resolution updates on the original alert thread.\n- On 429, honor `Retry-After`; queue in `pending_alerts.json`.\n\n**Local state**:\n- `error_index.json` — 90-day rolling index of classified errors. Prune during each write. If >50MB, aggressively trim to 30 days.\n- `error_patterns.json` — detected patterns with status (active/resolved), first_seen, last_seen, occurrence_count, affected_personas.\n- `persona_reliability.json` — per-persona reliability scores, dependency map, MTTR history, trend baselines.\n- `daily_digests/digest_{YYYY-MM-DD}.json`, `weekly_reports/reliability_{YYYY-MM-DD}.json` — archived outputs.\n- `pending_alerts.json` — messaging retry queue; on recovery send consolidated summary, not one-at-a-time flood.",
+      "operating_instructions": "Four capabilities chain via event-driven ingestion + scheduled reports: 1. **uc_ingestion** (event-listen on `persona.execution.failed` + `persona.runtime.error`; scheduled poll every 10 min for silent failures) — for every error, normalize into a structured record: { persona_id, persona_name, error_message, error_type, timestamp, execution_context }. Dedup by execution_id + timestamp in a 1-hour window. Append to `error_index.json` (rolling 90-day or 30-day under disk pressure). Every 10 min, poll the platform execution API for failed runs that didn't emit events. 2. **uc_classification** (event-listen on `internal.error.ingested` emitted by uc_ingestion) — AI-classify across four dimensions. **Category** (one of 7): Auth Failure, Rate Limit, API Changed, Data Format Error, Timeout, Logic Error, Missing Resource. **Root cause**: correlate against `error_patterns.json`, consider the persona's service dependencies, check temporal context (recent deploy, credential rotation, API version change). **Impact**: blast radius via dependency graph, data freshness impact, severity rating (Critical / High / Medium / Low). **Remediation**: specific actionable fix tailored to the category and affected service. Store full classification back into `error_index.json`. Emit `internal.error.classified`. 3. **uc_pattern_detection** (event-listen on `internal.error.classified`) — run four pattern checks: **Recurring** (same pattern 3+ times in 1h on one persona → `recurring`; 24h+ → `persistent_failure`). **Cascading** (persona A fails, then B which depends on A fails within 15m → trace chain, alert on root). **Time-based** (60%+ of a persona's errors in the same 2h window → time-correlated). **Service-wide** (3+ personas failing on the same external service within 30m → `service_outage`). Update `error_patterns.json` with matches. For critical patterns (auth failure, service outage, cascade, persistent failure, new error type), route an immediate messaging-style alert via the messaging connector; emit `workflow.pattern.detected` with pattern_type. 4. **uc_reporting** (scheduled: daily 9 AM for digest, Monday 8 AM for weekly) — **Daily digest**: totals, per-persona counts, per-category breakdown, trending vs 7-day baseline, resolved-yesterday list, top remediation priority. Post to messaging channel; archive to `daily_digests/digest_{date}.json`. **Weekly reliability report**: error rate per persona (rank most-to-least reliable), MTTR by category, week-over-week reliability delta, top 3 improvement recommendations, dependency risk map. Post + archive to `weekly_reports/reliability_{date}.json`. On first run with <24h of data, post an abbreviated report noting limited window. State: `error_index.json` (rolling 90-day classified errors), `error_patterns.json` (detected patterns with status, first/last seen, counts), `persona_reliability.json` (per-persona scores, dependency map, MTTR history), `pending_alerts.json` (messaging retry queue).",
+      "tool_guidance": "**Platform event bus** (required — built-in):\n- Subscribe to `persona.execution.failed` and `persona.runtime.error`.\n- Event payload: `{ persona_id, persona_name, error: { message, type, stack }, execution_id, timestamp, context: { task, trigger } }`.\n- No polling needed for event-driven delivery. **Platform execution API** (required — built-in http_request):\n- `GET /api/v1/executions?status=failed&since={iso}&limit=100` — supplementary poll for silent failures.\n- `GET /api/v1/executions/{execution_id}` — full execution trace with per-step logs.\n- `GET /api/v1/personas` — enumerate all personas for dependency map.\n- `GET /api/v1/personas/{persona_id}` — inspect persona's service dependencies and trigger config. **Messaging connector** (required — user picks provider at adoption):\n- Typical shape: `POST {provider}/chat.postMessage` with severity-coded blocks (RED critical / YELLOW degraded / GREEN recovery) + fallback text. Specific API depends on the chosen messaging provider (messaging, messaging, messaging, built-in Messages).\n- Use threaded replies (`thread_ts` or equivalent) for resolution updates on the original alert thread.\n- On 429, honor `Retry-After`; queue in `pending_alerts.json`. **Local state**:\n- `error_index.json` — 90-day rolling index of classified errors. Prune during each write. If >50MB, aggressively trim to 30 days.\n- `error_patterns.json` — detected patterns with status (active/resolved), first_seen, last_seen, occurrence_count, affected_personas.\n- `persona_reliability.json` — per-persona reliability scores, dependency map, MTTR history, trend baselines.\n- `daily_digests/digest_{YYYY-MM-DD}.json`, `weekly_reports/reliability_{YYYY-MM-DD}.json` — archived outputs.\n- `pending_alerts.json` — messaging retry queue; on recovery send consolidated summary, not one-at-a-time flood.",
       "error_handling": "Malformed event → log as `unprocessable`, continue processing others. Event bus disconnection → fall back to polling-only mode, retry subscription every 5 min. Duplicate events → dedup by execution_id + timestamp within 1h window. Classification unknown → assign category `Uncategorized` + root_cause `Unknown — manual review recommended`; flag in daily digest. Messaging 429 → queue + honor Retry-After; critical alerts prioritize in queue. Messaging 401 → emit `persona_error` (self-monitors), continue collecting + classifying so alerts resume after reauth. Messaging down → buffer in `pending_alerts.json`; on recovery send consolidated summary. Error index corrupted → re-initialize empty, resume collection (historical data lost). Disk pressure (>50MB index) → trim to 30-day window. Volume anomaly (>10k errors/day) → switch to sampling mode (classify every 5th error, count all), emit alert. Self-monitoring: if no events processed for 30+ min, emit `persona_error` about self.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "messaging",
@@ -60,7 +70,12 @@
               "key": "provider",
               "label": "Messaging provider",
               "type": "select",
-              "options": ["slack", "discord", "microsoft_teams", "personas_messages"],
+              "options": [
+                "slack",
+                "discord",
+                "microsoft_teams",
+                "personas_messages"
+              ],
               "placeholder": "slack",
               "helpText": "Channel where critical alerts, daily digests, and weekly reports post. Selected at adoption via your vault's messaging credentials.",
               "required": true
@@ -70,7 +85,7 @@
               "label": "Access token / bot token",
               "type": "password",
               "placeholder": "",
-              "helpText": "Slack bot token, Discord bot token, or equivalent. Requires send-message permission on the target channel.",
+              "helpText": "messaging bot token, messaging bot token, or equivalent. Requires send-message permission on the target channel.",
               "required": true
             },
             {
@@ -82,7 +97,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Add a messaging credential (Slack, Discord, Microsoft Teams, or built-in Messages) to Vault → Catalog.\n2. Ensure the bot can post to the target alert channel.\n3. The persona uses the messaging-category credential you pick at adoption."
+          "setup_instructions": "1. Add a messaging credential (messaging, messaging, messaging, or built-in Messages) to Vault → Catalog.\n2. Ensure the bot can post to the target alert channel.\n3. The persona uses the messaging-category credential you pick at adoption."
         }
       ],
       "notification_channels_default": [
@@ -105,12 +120,18 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "*/10 * * * *", "timezone": "local" },
+          "config": {
+            "cron": "*/10 * * * *",
+            "timezone": "local"
+          },
           "description": "Default every 10 minutes for silent-failure polling (also event-driven on `persona.execution.failed` / `persona.runtime.error`). Final cadence set at the trigger-composition step."
         },
         "connectors": [],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Normalized error records accumulate into `error_index.json` — the primary input memory for classification, pattern detection, and reporting."
@@ -137,27 +158,70 @@
           {
             "name": "retention_days",
             "type": "enum",
-            "options": ["30", "60", "90", "180"],
+            "options": [
+              "30",
+              "60",
+              "90",
+              "180"
+            ],
             "default": "90",
             "description": "How many days of error history to retain in `error_index.json`."
           }
         ],
-        "sample_input": { "retention_days": "{{param.aq_retention_days}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "retention_days": "{{param.aq_retention_days}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "n1", "type": "start", "label": "Event received OR 10m poll tick" },
-            { "id": "n2", "type": "action", "label": "Normalize + deduplicate" },
-            { "id": "n3", "type": "action", "label": "Append to error_index, prune old records" },
-            { "id": "n4", "type": "event", "label": "Emit workflow.error.ingested" },
-            { "id": "n5", "type": "end", "label": "Ready for classification" }
+            {
+              "id": "n1",
+              "type": "start",
+              "label": "Event received OR 10m poll tick"
+            },
+            {
+              "id": "n2",
+              "type": "action",
+              "label": "Normalize + deduplicate"
+            },
+            {
+              "id": "n3",
+              "type": "action",
+              "label": "Append to error_index, prune old records"
+            },
+            {
+              "id": "n4",
+              "type": "event",
+              "label": "Emit workflow.error.ingested"
+            },
+            {
+              "id": "n5",
+              "type": "end",
+              "label": "Ready for classification"
+            }
           ],
           "edges": [
-            { "source": "n1", "target": "n2" },
-            { "source": "n2", "target": "n3" },
-            { "source": "n3", "target": "n4" },
-            { "source": "n4", "target": "n5" }
+            {
+              "source": "n1",
+              "target": "n2"
+            },
+            {
+              "source": "n2",
+              "target": "n3"
+            },
+            {
+              "source": "n3",
+              "target": "n4"
+            },
+            {
+              "source": "n4",
+              "target": "n5"
+            }
           ]
         }
       },
@@ -172,7 +236,9 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "workflow.error.ingested" },
+          "config": {
+            "event_type": "workflow.error.ingested"
+          },
           "description": "Fires on every ingested error. Not user-configurable — event triggers bypass the composition picker."
         },
         "connectors": [],
@@ -200,23 +266,65 @@
         "error_handling": "Unknown error type → category `Uncategorized`, root_cause `Unknown — manual review`, flag in daily digest. Ambiguous → assign highest-severity matching category, record ambiguity note.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["file_read", "file_write"],
+        "tool_hints": [
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "c1", "type": "start", "label": "workflow.error.ingested received" },
-            { "id": "c2", "type": "action", "label": "Load error_patterns + persona_reliability" },
-            { "id": "c3", "type": "action", "label": "AI-classify: category + root cause + impact + remediation" },
-            { "id": "c4", "type": "action", "label": "Store classification in error_index" },
-            { "id": "c5", "type": "event", "label": "Emit workflow.error.classified" },
-            { "id": "c6", "type": "end", "label": "Ready for pattern detection" }
+            {
+              "id": "c1",
+              "type": "start",
+              "label": "workflow.error.ingested received"
+            },
+            {
+              "id": "c2",
+              "type": "action",
+              "label": "Load error_patterns + persona_reliability"
+            },
+            {
+              "id": "c3",
+              "type": "action",
+              "label": "AI-classify: category + root cause + impact + remediation"
+            },
+            {
+              "id": "c4",
+              "type": "action",
+              "label": "Store classification in error_index"
+            },
+            {
+              "id": "c5",
+              "type": "event",
+              "label": "Emit workflow.error.classified"
+            },
+            {
+              "id": "c6",
+              "type": "end",
+              "label": "Ready for pattern detection"
+            }
           ],
           "edges": [
-            { "source": "c1", "target": "c2" },
-            { "source": "c2", "target": "c3" },
-            { "source": "c3", "target": "c4" },
-            { "source": "c4", "target": "c5" },
-            { "source": "c5", "target": "c6" }
+            {
+              "source": "c1",
+              "target": "c2"
+            },
+            {
+              "source": "c2",
+              "target": "c3"
+            },
+            {
+              "source": "c3",
+              "target": "c4"
+            },
+            {
+              "source": "c4",
+              "target": "c5"
+            },
+            {
+              "source": "c5",
+              "target": "c6"
+            }
           ]
         }
       },
@@ -231,12 +339,19 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "event_listener",
-          "config": { "event_type": "workflow.error.classified" },
+          "config": {
+            "event_type": "workflow.error.classified"
+          },
           "description": "Fires on every classified error. Not user-configurable — event triggers bypass the composition picker."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`error_patterns.json` — pattern state (active/resolved), first/last seen, counts, affected personas. Drives alert dedup and weekly report inputs."
@@ -263,7 +378,12 @@
           {
             "name": "severity_threshold",
             "type": "enum",
-            "options": ["critical", "high", "medium", "low"],
+            "options": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ],
             "default": "high",
             "description": "Minimum severity that triggers a real-time alert. Lower = more alerts; 'high' is the recommended default."
           },
@@ -280,28 +400,91 @@
           "severity_threshold": "{{param.aq_severity_threshold}}",
           "recurring_threshold": "{{param.aq_recurring_threshold}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "p1", "type": "start", "label": "workflow.error.classified received" },
-            { "id": "p2", "type": "action", "label": "Load patterns + dependency map" },
-            { "id": "p3", "type": "action", "label": "Run recurring / cascading / time-cluster / service-outage checks" },
-            { "id": "p4", "type": "decision", "label": "Critical pattern + above severity threshold?" },
-            { "id": "p5", "type": "connector", "label": "Send real-time alert", "connector": "messaging" },
-            { "id": "p6", "type": "event", "label": "Emit workflow.pattern.detected / workflow.reliability.breached" },
-            { "id": "p7", "type": "action", "label": "Update error_patterns + persona_reliability" },
-            { "id": "p8", "type": "end", "label": "Pattern pass complete" }
+            {
+              "id": "p1",
+              "type": "start",
+              "label": "workflow.error.classified received"
+            },
+            {
+              "id": "p2",
+              "type": "action",
+              "label": "Load patterns + dependency map"
+            },
+            {
+              "id": "p3",
+              "type": "action",
+              "label": "Run recurring / cascading / time-cluster / service-outage checks"
+            },
+            {
+              "id": "p4",
+              "type": "decision",
+              "label": "Critical pattern + above severity threshold?"
+            },
+            {
+              "id": "p5",
+              "type": "connector",
+              "label": "Send real-time alert",
+              "connector": "messaging"
+            },
+            {
+              "id": "p6",
+              "type": "event",
+              "label": "Emit workflow.pattern.detected / workflow.reliability.breached"
+            },
+            {
+              "id": "p7",
+              "type": "action",
+              "label": "Update error_patterns + persona_reliability"
+            },
+            {
+              "id": "p8",
+              "type": "end",
+              "label": "Pattern pass complete"
+            }
           ],
           "edges": [
-            { "source": "p1", "target": "p2" },
-            { "source": "p2", "target": "p3" },
-            { "source": "p3", "target": "p4" },
-            { "source": "p4", "target": "p5", "variant": "yes" },
-            { "source": "p4", "target": "p7", "variant": "no" },
-            { "source": "p5", "target": "p6" },
-            { "source": "p6", "target": "p7" },
-            { "source": "p7", "target": "p8" }
+            {
+              "source": "p1",
+              "target": "p2"
+            },
+            {
+              "source": "p2",
+              "target": "p3"
+            },
+            {
+              "source": "p3",
+              "target": "p4"
+            },
+            {
+              "source": "p4",
+              "target": "p5",
+              "variant": "yes"
+            },
+            {
+              "source": "p4",
+              "target": "p7",
+              "variant": "no"
+            },
+            {
+              "source": "p5",
+              "target": "p6"
+            },
+            {
+              "source": "p6",
+              "target": "p7"
+            },
+            {
+              "source": "p7",
+              "target": "p8"
+            }
           ]
         }
       },
@@ -316,12 +499,20 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 9 AM for the digest + Monday 8 AM for the weekly report — final cadence set at the trigger-composition step."
         },
-        "connectors": ["messaging"],
+        "connectors": [
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "`persona_reliability.json` holds historical baselines and MTTR history. Each weekly report updates trend baselines for next-week comparison."
@@ -344,26 +535,79 @@
             "description": "Hour of day (24h) when the daily digest ships. Default 9 AM local."
           }
         ],
-        "sample_input": { "daily_digest_hour": "{{param.aq_daily_digest_hour}}" },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "sample_input": {
+          "daily_digest_hour": "{{param.aq_daily_digest_hour}}"
+        },
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Daily 9 AM OR Monday 8 AM tick" },
-            { "id": "r2", "type": "action", "label": "Load error_index + patterns + reliability state" },
-            { "id": "r3", "type": "action", "label": "Compute metrics, rankings, trends, recommendations" },
-            { "id": "r4", "type": "connector", "label": "Post report to messaging channel", "connector": "messaging" },
-            { "id": "r5", "type": "action", "label": "Archive to digests/ or weekly_reports/" },
-            { "id": "r6", "type": "event", "label": "Emit workflow.report.delivered" },
-            { "id": "r7", "type": "end", "label": "Report delivered + archived" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Daily 9 AM OR Monday 8 AM tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Load error_index + patterns + reliability state"
+            },
+            {
+              "id": "r3",
+              "type": "action",
+              "label": "Compute metrics, rankings, trends, recommendations"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Post report to messaging channel",
+              "connector": "messaging"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Archive to digests/ or weekly_reports/"
+            },
+            {
+              "id": "r6",
+              "type": "event",
+              "label": "Emit workflow.report.delivered"
+            },
+            {
+              "id": "r7",
+              "type": "end",
+              "label": "Report delivered + archived"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            }
           ]
         }
       }
@@ -372,7 +616,9 @@
       {
         "id": "aq_messaging_provider",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which channel should receive critical alerts, daily digests, and weekly reports?",
         "type": "select",
@@ -383,17 +629,24 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_provider",
-        "context": "Options come from your vault's messaging-category credentials (Slack, Discord, Microsoft Teams, built-in Messages). Add a messaging credential first if the list is empty.",
+        "context": "Options come from your vault's messaging-category credentials (messaging, messaging, messaging, built-in Messages). Add a messaging credential first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_severity_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_pattern_detection"],
+        "use_case_ids": [
+          "uc_pattern_detection"
+        ],
         "category": "quality",
         "question": "Minimum severity level that triggers a real-time alert?",
         "type": "select",
-        "options": ["critical", "high", "medium", "low"],
+        "options": [
+          "critical",
+          "high",
+          "medium",
+          "low"
+        ],
         "default": "high",
         "maps_to": "use_cases[uc_pattern_detection].sample_input.severity_threshold",
         "variable_name": "severity_threshold",
@@ -403,11 +656,17 @@
       {
         "id": "aq_recurring_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_pattern_detection"],
+        "use_case_ids": [
+          "uc_pattern_detection"
+        ],
         "category": "quality",
         "question": "How many occurrences of the same error in 1 hour triggers a `recurring failure` pattern?",
         "type": "select",
-        "options": ["2", "3", "5"],
+        "options": [
+          "2",
+          "3",
+          "5"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_pattern_detection].sample_input.recurring_threshold",
         "variable_name": "recurring_threshold",
@@ -417,11 +676,18 @@
       {
         "id": "aq_retention_days",
         "scope": "capability",
-        "use_case_ids": ["uc_ingestion"],
+        "use_case_ids": [
+          "uc_ingestion"
+        ],
         "category": "configuration",
         "question": "How many days of error history to retain?",
         "type": "select",
-        "options": ["30", "60", "90", "180"],
+        "options": [
+          "30",
+          "60",
+          "90",
+          "180"
+        ],
         "default": "90",
         "maps_to": "use_cases[uc_ingestion].sample_input.retention_days",
         "variable_name": "retention_days",
@@ -431,11 +697,21 @@
       {
         "id": "aq_daily_digest_hour",
         "scope": "capability",
-        "use_case_ids": ["uc_reporting"],
+        "use_case_ids": [
+          "uc_reporting"
+        ],
         "category": "quality",
         "question": "What hour (local, 24h format) should the daily digest ship?",
         "type": "select",
-        "options": ["6", "7", "8", "9", "10", "12", "17"],
+        "options": [
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "12",
+          "17"
+        ],
         "default": "9",
         "maps_to": "use_cases[uc_reporting].sample_input.daily_digest_hour",
         "variable_name": "daily_digest_hour",

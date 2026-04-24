@@ -5,11 +5,19 @@
   "description": "Consumes human-authored Redash or Metabase saved queries by id, delivers a plain-English morning summary, flags direction-aware anomalies against week-over-week snapshots, and links deep back to the BI tool for follow-up.",
   "icon": "LayoutDashboard",
   "color": "#509EE3",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["BI", "Messaging"],
+  "service_flow": [
+    "BI",
+    "Messaging"
+  ],
   "payload": {
-    "service_flow": ["BI", "Messaging"],
+    "service_flow": [
+      "BI",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Bridge the BI tool and the morning briefing — let curated dashboards reach people where they read, with anomalies pre-flagged so nothing important waits until someone opens the tool.",
       "identity": {
@@ -42,11 +50,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability, clear sequence:\n\n1. **uc_morning_digest** (weekday 8am, default) — load `bi_digest_config.json`. For each configured query/card: fetch via the BI connector (Redash: `POST /api/queries/{id}/results` with `max_age=3600`, poll `/api/jobs/{job_id}` if 202, then GET `/api/query_results/{query_result_id}.json`. Metabase: `POST /api/card/{id}/query`, synchronous response). Extract headline number (first row, first numeric column unless overridden). Load prior snapshot from memory; compute raw + percent delta. Apply direction hint (up_is_good / down_is_good / neutral) to decide if the delta is 'good' or 'bad'. Flag anomalies when magnitude exceeds `aq_anomaly_threshold` in a bad direction. Compose status: Green (no anomalies), Yellow (1-2), Red (3+ or any bad-direction magnitude ≥ 2× threshold). Compose digest per voice.output_format. Deliver via messaging. Persist new snapshots to memory + append a one-line entry to `bi_digest_history.jsonl`. Emit `bi.digest.delivered` with status; emit `bi.anomaly.flagged` per bad-direction breach.\n\nState files: `bi_digest_config.json` (queries, direction hints, thresholds), `bi_digest_history.jsonl` (rolling run log). Agent memory retains per-query `{value, timestamp, label}` snapshots.",
-      "tool_guidance": "**Redash**:\n- Auth header: `Authorization: Key {api_key}` (NOT Bearer).\n- Execute saved query with cache: `POST {base_url}/api/queries/{id}/results` body `{\"parameters\":{},\"max_age\":3600}`.\n- Job poll (on 202): `GET {base_url}/api/jobs/{job_id}` until `status == 3`, then `GET /api/query_results/{query_result_id}.json`.\n- Deep link: `{base_url}/queries/{id}`.\n\n**Metabase**:\n- Auth header: `X-API-Key: {api_key}` (NOT Authorization).\n- Execute card: `POST {base_url}/api/card/{id}/query` body `{\"parameters\":[],\"ignore_cache\":false}`. Synchronous response with `data.rows` and `data.cols`.\n- Deep link: `{base_url}/question/{id}`.\n\n**Messaging**:\n- Post digest message with header, metrics table, anomaly section, deep links.\n- Split if > provider length limit.\n\n**Anomaly logic**:\n- `up_is_good`: positive delta is good, negative delta flagged when magnitude > threshold.\n- `down_is_good`: negative delta is good, positive delta flagged when magnitude > threshold.\n- `neutral`: report delta without good/bad framing; never flag.\n- Status: Green (0 bad), Yellow (1-2 bad), Red (3+ bad, OR any bad ≥ 2× threshold).\n\n**Memory**: per-query `{value, timestamp, label}`. Keep the two most recent snapshots to survive a skipped run.",
+      "operating_instructions": "One capability, clear sequence: 1. **uc_morning_digest** (weekday 8am, default) — load `bi_digest_config.json`. For each configured query/card: fetch via the BI connector (Redash: `POST /api/queries/{id}/results` with `max_age=3600`, poll `/api/jobs/{job_id}` if 202, then GET `/api/query_results/{query_result_id}.json`. Metabase: `POST /api/card/{id}/query`, synchronous response). Extract headline number (first row, first numeric column unless overridden). Load prior snapshot from memory; compute raw + percent delta. Apply direction hint (up_is_good / down_is_good / neutral) to decide if the delta is 'good' or 'bad'. Flag anomalies when magnitude exceeds `aq_anomaly_threshold` in a bad direction. Compose status: Green (no anomalies), Yellow (1-2), Red (3+ or any bad-direction magnitude ≥ 2× threshold). Compose digest per voice.output_format. Deliver via messaging. Persist new snapshots to memory + append a one-line entry to `bi_digest_history.jsonl`. Emit `bi.digest.delivered` with status; emit `bi.anomaly.flagged` per bad-direction breach. State files: `bi_digest_config.json` (queries, direction hints, thresholds), `bi_digest_history.jsonl` (rolling run log). Agent memory retains per-query `{value, timestamp, label}` snapshots.",
+      "tool_guidance": "**Redash**:\n- Auth header: `Authorization: Key {api_key}` (NOT Bearer).\n- Execute saved query with cache: `POST {base_url}/api/queries/{id}/results` body `{\"parameters\":{},\"max_age\":3600}`.\n- Job poll (on 202): `GET {base_url}/api/jobs/{job_id}` until `status == 3`, then `GET /api/query_results/{query_result_id}.json`.\n- Deep link: `{base_url}/queries/{id}`. **Metabase**:\n- Auth header: `X-API-Key: {api_key}` (NOT Authorization).\n- Execute card: `POST {base_url}/api/card/{id}/query` body `{\"parameters\":[],\"ignore_cache\":false}`. Synchronous response with `data.rows` and `data.cols`.\n- Deep link: `{base_url}/question/{id}`. **Messaging**:\n- Post digest message with header, metrics table, anomaly section, deep links.\n- Split if > provider length limit. **Anomaly logic**:\n- `up_is_good`: positive delta is good, negative delta flagged when magnitude > threshold.\n- `down_is_good`: negative delta is good, positive delta flagged when magnitude > threshold.\n- `neutral`: report delta without good/bad framing; never flag.\n- Status: Green (0 bad), Yellow (1-2 bad), Red (3+ bad, OR any bad ≥ 2× threshold). **Memory**: per-query `{value, timestamp, label}`. Keep the two most recent snapshots to survive a skipped run.",
       "error_handling": "BI 401/403 → emit user_message about auth; skip run. 404 on a query/card → log, skip that metric, continue. 429 → honor Retry-After, retry once, then proceed with partial. 5xx → retry after 15s; else use last snapshot labeled 'stale'. Timeout (>120s) → Redash: retry with `max_age=86400`. Metabase: skip. Messaging `channel_not_found` → emit user_message asking for reinvite; fall back to in-app delivery. Zero rows or null headline number → 'no data' label, don't report 0. First run with no prior snapshot → skip delta, label 'first run'. Every metric failed → emit user_message + abort (never post an empty digest).",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "bi",
@@ -115,10 +127,16 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * 1-5", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * 1-5",
+            "timezone": "local"
+          },
           "description": "Default weekday 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["bi", "messaging"],
+        "connectors": [
+          "bi",
+          "messaging"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "never",
@@ -158,7 +176,12 @@
           {
             "name": "report_depth",
             "type": "enum",
-            "options": ["absolute_plus_percent", "percent_only", "mask_on_anomaly", "no_masking"],
+            "options": [
+              "absolute_plus_percent",
+              "percent_only",
+              "mask_on_anomaly",
+              "no_masking"
+            ],
             "default": "absolute_plus_percent",
             "description": "Whether to include absolute numbers in the shared digest."
           }
@@ -168,29 +191,95 @@
           "anomaly_threshold_pct": "{{param.aq_anomaly_threshold}}",
           "report_depth": "{{param.aq_report_depth}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "Weekday 8am tick" },
-            { "id": "m2", "type": "action", "label": "Load bi_digest_config.json" },
-            { "id": "m3", "type": "connector", "label": "Fetch saved queries/cards (per-metric isolation)", "connector": "bi" },
-            { "id": "m4", "type": "action", "label": "Compute deltas vs memory; flag direction-aware anomalies" },
-            { "id": "m5", "type": "action", "label": "Assign green/yellow/red status" },
-            { "id": "m6", "type": "connector", "label": "Deliver digest via messaging", "connector": "messaging" },
-            { "id": "m7", "type": "action", "label": "Persist snapshots + append history log" },
-            { "id": "m8", "type": "event", "label": "Emit bi.digest.delivered + anomalies" },
-            { "id": "m9", "type": "end", "label": "Digest complete" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "Weekday 8am tick"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Load bi_digest_config.json"
+            },
+            {
+              "id": "m3",
+              "type": "connector",
+              "label": "Fetch saved queries/cards (per-metric isolation)",
+              "connector": "bi"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Compute deltas vs memory; flag direction-aware anomalies"
+            },
+            {
+              "id": "m5",
+              "type": "action",
+              "label": "Assign green/yellow/red status"
+            },
+            {
+              "id": "m6",
+              "type": "connector",
+              "label": "Deliver digest via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "m7",
+              "type": "action",
+              "label": "Persist snapshots + append history log"
+            },
+            {
+              "id": "m8",
+              "type": "event",
+              "label": "Emit bi.digest.delivered + anomalies"
+            },
+            {
+              "id": "m9",
+              "type": "end",
+              "label": "Digest complete"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            }
           ]
         }
       }
@@ -199,7 +288,9 @@
       {
         "id": "aq_bi_provider",
         "scope": "connector",
-        "connector_names": ["bi"],
+        "connector_names": [
+          "bi"
+        ],
         "category": "configuration",
         "question": "Which BI tool hosts the saved queries you want the digest to consume?",
         "type": "select",
@@ -216,11 +307,13 @@
       {
         "id": "aq_queries_config",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_digest"],
+        "use_case_ids": [
+          "uc_morning_digest"
+        ],
         "category": "configuration",
         "question": "Which saved queries or cards should the digest cover?",
         "type": "textarea",
-        "placeholder": "[\n  { \"id\": 42, \"label\": \"Weekly Signups\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n  { \"id\": 56, \"label\": \"Weekly Active Teams\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n  { \"id\": 71, \"label\": \"Support Tickets (open)\", \"unit\": \"count\", \"direction_hint\": \"down_is_good\" }\n]",
+        "placeholder": "[\n { \"id\": 42, \"label\": \"Weekly Signups\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n { \"id\": 56, \"label\": \"Weekly Active Teams\", \"unit\": \"count\", \"direction_hint\": \"up_is_good\" },\n { \"id\": 71, \"label\": \"Support Tickets (open)\", \"unit\": \"count\", \"direction_hint\": \"down_is_good\" }\n]",
         "default": "",
         "maps_to": "use_cases[uc_morning_digest].sample_input.queries_config",
         "variable_name": "queries_config",
@@ -230,11 +323,18 @@
       {
         "id": "aq_anomaly_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_digest"],
+        "use_case_ids": [
+          "uc_morning_digest"
+        ],
         "category": "quality",
         "question": "What percent change should flag a metric as an anomaly?",
         "type": "select",
-        "options": ["10", "15", "20", "25"],
+        "options": [
+          "10",
+          "15",
+          "20",
+          "25"
+        ],
         "default": "15",
         "maps_to": "use_cases[uc_morning_digest].sample_input.anomaly_threshold_pct",
         "variable_name": "anomaly_threshold",
@@ -244,7 +344,9 @@
       {
         "id": "aq_report_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_morning_digest"],
+        "use_case_ids": [
+          "uc_morning_digest"
+        ],
         "category": "boundaries",
         "question": "Should the digest include raw absolute numbers or percentages only?",
         "type": "select",
@@ -263,7 +365,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Where should the digest be delivered?",
         "type": "select",

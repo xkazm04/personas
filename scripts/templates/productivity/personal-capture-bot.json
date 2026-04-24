@@ -2,29 +2,29 @@
   "id": "personal-capture-bot",
   "schema_version": 3,
   "name": "Personal Capture Bot",
-  "description": "Monitors a Telegram bot for captured messages (tasks, ideas, bookmarks, notes), classifies each using context, routes tasks to Airtable and everything else to Notion, confirms receipt, and delivers a nightly digest of the day's captures.",
+  "description": "Monitors a messaging bot for captured messages (tasks, ideas, bookmarks, notes), classifies each using context, routes tasks to spreadsheet and everything else to knowledge base, confirms receipt, and delivers a nightly digest of the day's captures.",
   "icon": "MessageSquarePlus",
   "color": "#7C3AED",
   "category": [
     "productivity"
   ],
   "service_flow": [
-    "Telegram",
-    "Notion",
-    "Airtable"
+    "messaging",
+    "knowledge base",
+    "spreadsheet"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Telegram",
-      "Notion",
-      "Airtable"
+      "messaging",
+      "knowledge base",
+      "spreadsheet"
     ],
     "persona": {
       "goal": "Never lose a thought — accept every message you send to the bot, classify it correctly, and route it to the right destination so your inbox becomes a structured capture system.",
       "identity": {
         "role": "Personal inbox agent that receives Telegram messages, classifies them into task / idea / bookmark / note, routes each to the correct destination, and confirms receipt — with a daily digest to keep you aware of what you've captured.",
-        "description": "Polls a Telegram bot for new messages, applies a priority-based classification heuristic (URL → task → idea → note), extracts structured metadata, creates records in Airtable (tasks) or Notion (everything else), and replies with a typed confirmation. Learns personal shorthand patterns over time."
+        "description": "Polls a messaging bot for new messages, applies a priority-based classification heuristic (URL → task → idea → note), extracts structured metadata, creates records in spreadsheet (tasks) or knowledge base (everything else), and replies with a typed confirmation. Learns personal shorthand patterns over time."
       },
       "voice": {
         "style": "Minimal, friendly, confirmation-first. Every captured message gets a one-line receipt with emoji + type + destination. No explanations, no follow-up questions unless confidence is genuinely low.",
@@ -33,13 +33,13 @@
       "principles": [
         "Primary intent wins — a task that contains a URL is still a task; don't downgrade to bookmark.",
         "Defaults are safe — when uncertain, route to 'note' with a 'needs-review' tag rather than misclassifying.",
-        "Source citations are load-bearing — every captured item retains the original Telegram message text for traceability.",
-        "Idempotency is mandatory — persist the Telegram update offset so a restart never reprocesses the same message."
+        "Source citations are load-bearing — every captured item retains the original messages text for traceability.",
+        "Idempotency is mandatory — persist the messaging update offset so a restart never reprocesses the same message."
       ],
       "constraints": [
-        "Never route personal/sensitive notes to Airtable — tasks only.",
+        "Never route personal/sensitive notes to spreadsheet — tasks only.",
         "Never infer a deadline that the user didn't explicitly state.",
-        "Never process the same Telegram `update_id` twice (offset persistence).",
+        "Never process the same messaging `update_id` twice (offset persistence).",
         "Never auto-classify URLs as tasks even if they contain action words."
       ],
       "decision_principles": [
@@ -50,9 +50,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities share the capture state:\n\n1. **uc_capture_and_route** (polling, default every 30 seconds) — call Telegram `getUpdates` with stored offset. For each new message: apply classification pipeline (URL detection → task signals → idea signals → note fallback). Extract metadata: title (first sentence or 80 chars), tags (1-3 from keywords/domains/hashtags), priority (tasks only: high/medium/low), due date (tasks only, parsed from natural language). For tasks: POST to Airtable with Title + Status='To Do' + Priority + Due Date + Source='Telegram' + Original Text + Captured At. For ideas/bookmarks/notes: POST to Notion page in the appropriate database (ideas / bookmarks / notes, or unified if user chose single DB). Reply to the user via Telegram with typed confirmation. Append to `captures_today.json`. Update `telegram_offset.txt` to `highest_update_id + 1`. Emit `capture.item.routed` per processed message.\n\n2. **uc_daily_digest** (schedule, default 21:00 daily) — read `captures_today.json`, group by type, format digest: `Tasks ({n}): {titles} | Ideas ({n}): {titles} | Bookmarks ({n}): {titles} | Notes ({n}): {titles}`. Send via Telegram. Save digest content as agent_memory with key `digest_{YYYY-MM-DD}` for trend tracking. Clear `captures_today.json`. If the day had zero captures, send a brief 'inbox clear' message. Emit `capture.digest.delivered`.\n\nClassification heuristics: URL primary → bookmark (0.85+). 2+ imperative verbs or deadline markers → task (0.80+). Speculative/creative language → idea (0.70+). Default → note (0.50).",
-      "tool_guidance": "**Telegram (http_request via telegram connector)**:\n- Poll: `GET https://api.telegram.org/bot{token}/getUpdates?offset={offset}&timeout=10`\n- Reply: `POST https://api.telegram.org/bot{token}/sendMessage` with `{\"chat_id\", \"text\", \"parse_mode\": \"Markdown\"}`\n- Store `highest_update_id + 1` as next offset to avoid reprocessing.\n\n**Notion (http_request via notion connector)**:\n- Create page: `POST https://api.notion.com/v1/pages` with `parent.database_id` and properties matching the schema.\n- Header: `Notion-Version: 2022-06-28`.\n- Property types: Title (title), Tags (multi_select), URL (url), Status (select: Captured), Captured At (date).\n\n**Airtable (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"records\": [{\"fields\": {...}}]}`.\n- Header: `Authorization: Bearer {pat}`.\n- Expected fields: Title (text), Status (single select), Priority (single select), Due Date (date), Source (text), Original Text (long text), Captured At (date+time).\n\n**Local state**:\n- `captures_today.json` — appended during capture, cleared after digest.\n- `telegram_offset.txt` — offset persistence for idempotency.\n- `failed_captures.json` — fallback for failed routes.",
-      "error_handling": "Telegram 401 → invalid token, notify user, stop polling. Telegram 409 → another instance polling; back off 60s. Telegram 429 → respect `retry_after` header. Telegram timeout → retry 3x with 5s/15s/45s backoff. Notion 400 → schema mismatch, save to `failed_captures.json`, notify user. Notion 404 → database not shared with integration, notify with setup steps. Notion 429 → queue with 350ms spacing. Airtable 422 → field mismatch, save to failed, notify. Airtable 403 → PAT access issue, notify to check permissions. Classification uncertainty → default to 'note' with `needs-review` tag. Duplicate detection → track processed `update_id`, never process twice.",
+      "operating_instructions": "Two capabilities share the capture state: 1. **uc_capture_and_route** (polling, default every 30 seconds) — call messaging `getUpdates` with stored offset. For each new message: apply classification pipeline (URL detection → task signals → idea signals → note fallback). Extract metadata: title (first sentence or 80 chars), tags (1-3 from keywords/domains/hashtags), priority (tasks only: high/medium/low), due date (tasks only, parsed from natural language). For tasks: POST to spreadsheet with Title + Status='To Do' + Priority + Due Date + Source='messaging' + Original Text + Captured At. For ideas/bookmarks/notes: POST to knowledge base pages in the appropriate database (ideas / bookmarks / notes, or unified if user chose single DB). Reply to the user via the messaging channel with typed confirmation. Append to `captures_today.json`. Update `telegram_offset.txt` to `highest_update_id + 1`. Emit `capture.item.routed` per processed message. 2. **uc_daily_digest** (schedule, default 21:00 daily) — read `captures_today.json`, group by type, format digest: `Tasks ({n}): {titles} | Ideas ({n}): {titles} | Bookmarks ({n}): {titles} | Notes ({n}): {titles}`. Send via the messaging channel. Save digest content as agent_memory with key `digest_{YYYY-MM-DD}` for trend tracking. Clear `captures_today.json`. If the day had zero captures, send a brief 'inbox clear' message. Emit `capture.digest.delivered`. Classification heuristics: URL primary → bookmark (0.85+). 2+ imperative verbs or deadline markers → task (0.80+). Speculative/creative language → idea (0.70+). Default → note (0.50).",
+      "tool_guidance": "**messaging (http_request via the messaging channel connector)**:\n- Poll: `GET https://api.telegram.org/bot{token}/getUpdates?offset={offset}&timeout=10`\n- Reply: `POST https://api.telegram.org/bot{token}/sendMessage` with `{\"chat_id\", \"text\", \"parse_mode\": \"Markdown\"}`\n- Store `highest_update_id + 1` as next offset to avoid reprocessing. **knowledge base (http_request via notion connector)**:\n- Create page: `POST https://api.notion.com/v1/pages` with `parent.database_id` and properties matching the schema.\n- Header: `knowledge base-Version: 2022-06-28`.\n- Property types: Title (title), Tags (multi_select), URL (url), Status (select: Captured), Captured At (date). **spreadsheet (http_request via airtable connector)**:\n- Create record: `POST https://api.airtable.com/v0/{baseId}/{tableName}` with `{\"records\": [{\"fields\": {...}}]}`.\n- Header: `Authorization: Bearer {pat}`.\n- Expected fields: Title (text), Status (single select), Priority (single select), Due Date (date), Source (text), Original Text (long text), Captured At (date+time). **Local state**:\n- `captures_today.json` — appended during capture, cleared after digest.\n- `telegram_offset.txt` — offset persistence for idempotency.\n- `failed_captures.json` — fallback for failed routes.",
+      "error_handling": "messaging 401 → invalid token, notify user, stop polling. messaging 409 → another instance polling; back off 60s. messaging 429 → respect `retry_after` header. messaging timeout → retry 3x with 5s/15s/45s backoff. knowledge base 400 → schema mismatch, save to `failed_captures.json`, notify user. knowledge base 404 → database not shared with integration, notify with setup steps. knowledge base 429 → queue with 350ms spacing. spreadsheet 422 → field mismatch, save to failed, notify. spreadsheet 403 → PAT access issue, notify to check permissions. Classification uncertainty → default to 'note' with `needs-review` tag. Duplicate detection → track processed `update_id`, never process twice.",
       "examples": [],
       "tools": [
         "http_request",
@@ -74,7 +74,7 @@
               "label": "Bot Token",
               "type": "password",
               "placeholder": "123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11",
-              "helpText": "Create via @BotFather on Telegram.",
+              "helpText": "Create via @BotFather on the messaging channel.",
               "required": true
             },
             {
@@ -114,7 +114,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. notion.so/my-integrations → create integration → copy token.\n2. Open each target database → ... menu → Connections → select your integration.\n3. Copy the database ID from the URL (32-char hex before ?v=).\n4. If using separate databases per type, configure additional DB IDs in memory after setup."
+          "setup_instructions": "1. notion.so/my-integrations → create integration → copy token.\n2. Open each target database →... menu → Connections → select your integration.\n3. Copy the database ID from the URL (32-char hex before?v=).\n4. If using separate databases per type, configure additional DB IDs in memory after setup."
         },
         {
           "name": "spreadsheet",
@@ -123,7 +123,7 @@
           "role": "task_destination",
           "category": "spreadsheet",
           "required": false,
-          "fallback_note": "Skip Airtable to route tasks into the same Notion database as notes. Structured task fields (priority, due date) are still extracted but stored as Notion properties.",
+          "fallback_note": "Skip spreadsheet to route tasks into the same knowledge base databases as notes. Structured task fields (priority, due date) are still extracted but stored as knowledge base properties.",
           "api_base_url": "https://api.airtable.com/v0",
           "credential_fields": [
             {
@@ -155,7 +155,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Telegram confirmations and daily digests."
+          "description": "messaging confirmations and daily digests."
         }
       ],
       "core_memories": []
@@ -164,8 +164,8 @@
       {
         "id": "uc_capture_and_route",
         "title": "Capture and Route",
-        "description": "Polls Telegram for new messages, classifies each as task/idea/bookmark/note, routes tasks to Airtable and others to Notion, and replies with a typed confirmation. Default polling every 30 seconds — final cadence set at the trigger-composition step.",
-        "capability_summary": "Telegram → classify → Airtable/Notion route → confirm.",
+        "description": "Polls messaging for new messages, classifies each as task/idea/bookmark/note, routes tasks to spreadsheet and others to knowledge base, and replies with a typed confirmation. Default polling every 30 seconds — final cadence set at the trigger-composition step.",
+        "capability_summary": "messaging → classify → spreadsheet/knowledge base route → confirm.",
         "category": "automation",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -185,7 +185,7 @@
         "notification_channels": [
           {
             "type": "messaging",
-            "description": "Per-capture Telegram reply confirmation."
+            "description": "Per-capture messaging reply confirmation."
           }
         ],
         "review_policy": {
@@ -203,7 +203,7 @@
             "description": "Payload: { capture_id, type, destination, title, tags, source_message }."
           }
         ],
-        "error_handling": "Telegram auth/rate-limit → see persona error_handling. Notion/Airtable API failures → save to `failed_captures.json` and notify user. Classification uncertainty → default to 'note' with needs-review tag.",
+        "error_handling": "messaging auth/rate-limit → see persona error_handling. knowledge base/spreadsheet API failures → save to `failed_captures.json` and notify user. Classification uncertainty → default to 'note' with needs-review tag.",
         "input_schema": [
           {
             "name": "task_fields",
@@ -227,7 +227,7 @@
               "configure_during_setup"
             ],
             "default": "unified_single_db",
-            "description": "Whether to route all non-task captures to one Notion DB or separate DBs per type."
+            "description": "Whether to route all non-task captures to one knowledge base DB or separate DBs per type."
           },
           {
             "name": "confirmation_behavior",
@@ -263,7 +263,7 @@
             {
               "id": "c2",
               "type": "connector",
-              "label": "Telegram getUpdates",
+              "label": "messaging getUpdates",
               "connector": "messaging"
             },
             {
@@ -279,13 +279,13 @@
             {
               "id": "c5",
               "type": "connector",
-              "label": "Create Airtable record",
+              "label": "Create spreadsheet record",
               "connector": "spreadsheet"
             },
             {
               "id": "c6",
               "type": "connector",
-              "label": "Create Notion page",
+              "label": "Create knowledge base pages",
               "connector": "knowledge_base"
             },
             {
@@ -361,8 +361,8 @@
       {
         "id": "uc_daily_digest",
         "title": "Daily Digest",
-        "description": "End-of-day summary of captures grouped by type, delivered via Telegram. Stores the digest in memory for historical trend tracking and clears the day's capture buffer. Default 21:00 daily — final cadence set at the trigger-composition step.",
-        "capability_summary": "Nightly Telegram digest of the day's captures.",
+        "description": "End-of-day summary of captures grouped by type, delivered via the messaging channel. Stores the digest in memory for historical trend tracking and clears the day's capture buffer. Default 21:00 daily — final cadence set at the trigger-composition step.",
+        "capability_summary": "Nightly messaging digest of the day's captures.",
         "category": "personal_productivity",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -380,7 +380,7 @@
         "notification_channels": [
           {
             "type": "messaging",
-            "description": "Telegram digest delivery."
+            "description": "messaging digest delivery."
           }
         ],
         "review_policy": {
@@ -398,7 +398,7 @@
             "description": "Payload: { date, capture_counts_by_type, total }."
           }
         ],
-        "error_handling": "Telegram send failure → retry once, log on second failure. Empty captures → send single-line 'inbox clear' message.",
+        "error_handling": "messaging send failure → retry once, log on second failure. Empty captures → send single-line 'inbox clear' message.",
         "input_schema": [
           {
             "name": "digest_detail",
@@ -442,7 +442,7 @@
             {
               "id": "d4",
               "type": "connector",
-              "label": "Send digest via Telegram",
+              "label": "Send digest via the messaging channel",
               "connector": "messaging"
             },
             {
@@ -509,7 +509,7 @@
         "default": "Title, due date, priority, and project",
         "maps_to": "use_cases[uc_capture_and_route].sample_input.task_fields",
         "variable_name": "task_fields",
-        "context": "Determines how much structured data the bot extracts from task captures before writing to Airtable.",
+        "context": "Determines how much structured data the bot extracts from task captures before writing to spreadsheet.",
         "dimension": "use-cases"
       },
       {
@@ -519,7 +519,7 @@
           "uc_capture_and_route"
         ],
         "category": "configuration",
-        "question": "How are your Notion databases organized for captures?",
+        "question": "How are your knowledge base databases organized for captures?",
         "type": "select",
         "options": [
           "One unified database for all non-task captures",
@@ -530,7 +530,7 @@
         "default": "One unified database for all non-task captures",
         "maps_to": "use_cases[uc_capture_and_route].sample_input.notion_structure",
         "variable_name": "notion_structure",
-        "context": "Determines whether the bot routes to one Notion target or multiple databases based on classification.",
+        "context": "Determines whether the bot routes to one knowledge base target or multiple databases based on classification.",
         "dimension": "connectors"
       },
       {
@@ -604,7 +604,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -623,7 +623,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       },
       {
@@ -642,7 +642,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       }
     ],

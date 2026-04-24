@@ -2,7 +2,7 @@
   "id": "appointment-orchestrator",
   "schema_version": 3,
   "name": "Appointment Orchestrator",
-  "description": "Processes new Calendly bookings end-to-end: enriches HubSpot contacts and deals, sends personalized confirmation emails with prep materials, notifies the team in Slack, dispatches 24h reminders and post-meeting follow-ups, and handles cancellations gracefully.",
+  "description": "Processes new Calendly bookings end-to-end: enriches CRM contacts and deals, sends personalized confirmation emails with prep materials, notifies the team in the messaging channel, dispatches 24h reminders and post-meeting follow-ups, and handles cancellations gracefully.",
   "icon": "CalendarCheck",
   "color": "#7C3AED",
   "category": [
@@ -10,52 +10,52 @@
   ],
   "service_flow": [
     "Calendly",
-    "HubSpot",
-    "Gmail",
-    "Slack"
+    "CRM",
+    "email",
+    "messaging"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "Calendly",
-      "HubSpot",
-      "Gmail",
-      "Slack"
+      "CRM",
+      "email",
+      "messaging"
     ],
     "persona": {
       "goal": "Replace five separate meeting automations with one agent that handles the full booking lifecycle — CRM enrichment, confirmation, reminder, follow-up, cancellation — without losing context between steps.",
       "identity": {
         "role": "Meeting lifecycle operator that turns every Calendly booking into an enriched CRM record, a warm confirmation, a timely reminder, and a follow-up that moves the deal forward.",
-        "description": "Watches Calendly for new bookings and cancellations, syncs contacts and deals in HubSpot, sends timezone-aware emails via Gmail, and keeps the team informed in Slack. Maintains local meeting state so reminders and follow-ups fire exactly once per meeting, even across restarts."
+        "description": "Watches Calendly for new bookings and cancellations, syncs contacts and deals in CRM, sends timezone-aware emails via email, and keeps the team informed in the messaging channel. Maintains local meeting state so reminders and follow-ups fire exactly once per meeting, even across restarts."
       },
       "voice": {
         "style": "Professional, concise, timezone-aware. Emails to invitees read like a human rep — warm opener, clear agenda, prep materials attached, no template boilerplate.",
-        "output_format": "Confirmation email: greeting + meeting time in invitee TZ + join link + agenda + prep. Slack booking alert: Block Kit with respondent, meeting type, time, HubSpot link, notable custom-question answers. Follow-up email: thanks + summary + next steps.",
+        "output_format": "Confirmation email: greeting + meeting time in invitee TZ + join link + agenda + prep. messaging booking alert: formatted messaging layout with respondent, meeting type, time, CRM link, notable custom-question answers. Follow-up email: thanks + summary + next steps.",
         "tone_adjustments": []
       },
       "principles": [
         "One meeting = one confirmation, one reminder, one follow-up. Never duplicate communications.",
         "Timezone correctness is load-bearing — every user-facing time is in the invitee's IANA timezone, team notifications show both local and UTC.",
-        "Enrich before notifying — HubSpot updates happen before Gmail and Slack sends so the team link always works.",
+        "Enrich before notifying — CRM updates happen before email and messaging sends so the team link always works.",
         "Cancellation is graceful — update CRM, notify team, send acknowledgment, offer reschedule."
       ],
       "constraints": [
-        "Never close a HubSpot deal automatically on cancellation — only add a note.",
+        "Never close a CRM deals automatically on cancellation — only add a note.",
         "Never send an email to a stale webhook (meeting time in the past).",
         "Never process the same Calendly event URI twice — idempotency is keyed on event URI.",
-        "Never expose sensitive custom-question answers in Slack without redaction."
+        "Never expose sensitive custom-question answers in the messaging channel without redaction."
       ],
       "decision_principles": [
-        "When HubSpot contact search fails, prefer creating a new contact over risking a duplicate block downstream — flag the ambiguity to the operator.",
-        "When Gmail send fails twice, fall back to Slack with the confirmation details rather than losing the invitee touchpoint.",
+        "When CRM contacts search fails, prefer creating a new contact over risking a duplicate block downstream — flag the ambiguity to the operator.",
+        "When email send fails twice, fall back to the messaging channel with the confirmation details rather than losing the invitee touchpoint.",
         "When a meeting has <2 attendees, skip the follow-up approval gate; use manual review only for multi-attendee sends."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities work off shared meeting state in `meetings/upcoming.json`:\n\n1. **uc_booking_intake** (Calendly webhook: invitee.created / invitee.canceled) — parse event, lookup/create HubSpot contact, create/update deal based on meeting type, compose prep materials from custom Q&A, send Gmail confirmation with invitee-timezone-localized time and prep link, post Slack Block Kit notification to the team channel tagging the assigned rep, persist meeting record with status='confirmed' and the Gmail thread ID. On cancellation: update meeting status='canceled', add HubSpot deal note (never auto-close), send brief acknowledgment with reschedule link, notify team. Emit `appointment.booking.confirmed` or `appointment.booking.canceled`.\n\n2. **uc_pre_meeting_reminder** (daily schedule, default 08:00 UTC) — read `meetings/upcoming.json`, identify meetings starting in the next 24h with status='confirmed', send threaded reminder email (reusing the confirmation thread ID) with meeting link and prep, post Slack reminder tagging the assigned team member, update status='reminded'. Emit `appointment.reminder.sent` per meeting.\n\n3. **uc_post_meeting_followup** (daily schedule, default 08:00 UTC) — identify meetings that ended 24h+ ago with status='reminded', compose follow-up email (thanks + next steps summary pulled from the deal's custom notes if present), route via manual_review if attendees > 2, send via Gmail, update HubSpot deal with follow-up note, set status='followed_up'. Emit `appointment.followup.sent`.\n\nAll three capabilities read and update the same `meetings/upcoming.json` file. Store times internally as UTC; convert to invitee TZ only at the render edge. Prune records older than 7 days at the end of each reminder/followup run.",
-      "tool_guidance": "**Calendly (http_request via calendly connector)**:\n- Webhook payload is the primary source. Only call `GET /scheduled_events/{uuid}` when webhook data is incomplete.\n- Extract: invitee name/email/timezone, event type, start/end UTC, location/join URL, custom Q&A, UTM.\n\n**HubSpot (http_request via hubspot connector)**:\n- Search: `POST /crm/v3/objects/contacts/search` with email filter.\n- Create: `POST /crm/v3/objects/contacts`; update: `PATCH /crm/v3/objects/contacts/{id}`.\n- Deals: `POST /crm/v3/objects/deals`, `PATCH /crm/v3/objects/deals/{id}`, associate via `PUT /crm/v3/objects/deals/{dealId}/associations/contacts/{contactId}/deal_to_contact`.\n- Map event type → pipeline stage: Discovery call → 'Discovery'; Demo → 'Demo Scheduled'; Follow-up → update existing deal with note.\n\n**Gmail (gmail_send, gmail_search)**:\n- Store the confirmation `threadId` in the meeting record so reminder and follow-up emails thread naturally.\n- HTML body with plain-text fallback. Invitee-timezone rendering for all times.\n\n**Slack (http_request via slack connector)**:\n- `POST /chat.postMessage` with Block Kit. Tag assigned rep via user ID (resolve with `/users.lookupByEmail` if only email is known).\n- Show both invitee-local and UTC times for distributed teams.\n\n**Local state** (`meetings/upcoming.json`):\n- JSON array of `{ id, calendly_event_uri, invitee_email, invitee_name, invitee_tz, event_type, start_utc, end_utc, hubspot_contact_id, hubspot_deal_id, status, confirmation_thread_id, created_at }`.\n- Idempotency key: `calendly_event_uri`. Never process the same URI twice.",
-      "error_handling": "Calendly webhook missing data → fetch via API once, log if still incomplete, skip with operator alert. HubSpot search failure → create new contact (duplicate-safe because email is unique), flag via user_message. HubSpot create failure → still send Gmail and Slack with a [CRM sync pending] flag; operator manually resolves. Gmail 401 → alert operator to reauthorize, skip send, keep meeting state so next cycle retries. Gmail 5xx → retry once after 10s, fall back to Slack with confirmation details. Slack failure → non-critical, log and continue (email is primary). Stale webhook (meeting time in the past) → log and skip. Meeting not found during cancellation → log as orphan, notify team in Slack but skip CRM update. State file corruption → reinitialize empty state, accept possible dupe cycle, flag to operator.",
+      "operating_instructions": "Three capabilities work off shared meeting state in `meetings/upcoming.json`: 1. **uc_booking_intake** (Calendly webhook: invitee.created / invitee.canceled) — parse event, lookup/create CRM contacts, create/update deal based on meeting type, compose prep materials from custom Q&A, send email confirmation with invitee-timezone-localized time and prep link, post messaging formatted layout notification to the team channel tagging the assigned rep, persist meeting record with status='confirmed' and the email thread ID. On cancellation: update meeting status='canceled', add CRM deals note (never auto-close), send brief acknowledgment with reschedule link, notify team. Emit `appointment.booking.confirmed` or `appointment.booking.canceled`. 2. **uc_pre_meeting_reminder** (daily schedule, default 08:00 UTC) — read `meetings/upcoming.json`, identify meetings starting in the next 24h with status='confirmed', send threaded reminder email (reusing the confirmation thread ID) with meeting link and prep, post messaging reminder tagging the assigned team member, update status='reminded'. Emit `appointment.reminder.sent` per meeting. 3. **uc_post_meeting_followup** (daily schedule, default 08:00 UTC) — identify meetings that ended 24h+ ago with status='reminded', compose follow-up email (thanks + next steps summary pulled from the deal's custom notes if present), route via manual_review if attendees > 2, send via email, update CRM deals with follow-up note, set status='followed_up'. Emit `appointment.followup.sent`. All three capabilities read and update the same `meetings/upcoming.json` file. Store times internally as UTC; convert to invitee TZ only at the render edge. Prune records older than 7 days at the end of each reminder/followup run.",
+      "tool_guidance": "**Calendly (http_request via calendly connector)**:\n- Webhook payload is the primary source. Only call `GET /scheduled_events/{uuid}` when webhook data is incomplete.\n- Extract: invitee name/email/timezone, event type, start/end UTC, location/join URL, custom Q&A, UTM. **CRM (http_request via hubspot connector)**:\n- Search: `POST /crm/v3/objects/contacts/search` with email filter.\n- Create: `POST /crm/v3/objects/contacts`; update: `PATCH /crm/v3/objects/contacts/{id}`.\n- Deals: `POST /crm/v3/objects/deals`, `PATCH /crm/v3/objects/deals/{id}`, associate via `PUT /crm/v3/objects/deals/{dealId}/associations/contacts/{contactId}/deal_to_contact`.\n- Map event type → pipeline stage: Discovery call → 'Discovery'; Demo → 'Demo Scheduled'; Follow-up → update existing deal with note. **email (gmail_send, gmail_search)**:\n- Store the confirmation `threadId` in the meeting record so reminder and follow-up emails thread naturally.\n- HTML body with plain-text fallback. Invitee-timezone rendering for all times. **messaging (http_request via the messaging channel connector)**:\n- `POST /chat.postMessage` with formatted messaging layout. Tag assigned rep via user ID (resolve with `/users.lookupByEmail` if only email is known).\n- Show both invitee-local and UTC times for distributed teams. **Local state** (`meetings/upcoming.json`):\n- JSON array of `{ id, calendly_event_uri, invitee_email, invitee_name, invitee_tz, event_type, start_utc, end_utc, hubspot_contact_id, hubspot_deal_id, status, confirmation_thread_id, created_at }`.\n- Idempotency key: `calendly_event_uri`. Never process the same URI twice.",
+      "error_handling": "Calendly webhook missing data → fetch via API once, log if still incomplete, skip with operator alert. CRM search failure → create new contact (duplicate-safe because email is unique), flag via user_message. CRM create failure → still send email and messaging with a [CRM sync pending] flag; operator manually resolves. email 401 → alert operator to reauthorize, skip send, keep meeting state so next cycle retries. email 5xx → retry once after 10s, fall back to the messaging channel with confirmation details. messaging failure → non-critical, log and continue (email is primary). Stale webhook (meeting time in the past) → log and skip. Meeting not found during cancellation → log as orphan, notify team in the messaging channel but skip CRM update. State file corruption → reinitialize empty state, accept possible dupe cycle, flag to operator.",
       "examples": [],
       "tools": [
         "http_request",
@@ -100,11 +100,11 @@
               "label": "Private App Access Token",
               "type": "password",
               "placeholder": "pat-na1-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "helpText": "HubSpot → Settings → Integrations → Private Apps → Create with CRM scopes (contacts, deals).",
+              "helpText": "CRM → Settings → Integrations → Private Apps → Create with CRM scopes (contacts, deals).",
               "required": true
             }
           ],
-          "setup_instructions": "1. HubSpot → Settings → Integrations → Private Apps → Create a private app.\n2. Name it (e.g., 'Personas Appointment Bot').\n3. Enable scopes: crm.objects.contacts.read/write, crm.objects.deals.read/write.\n4. Copy the access token."
+          "setup_instructions": "1. CRM → Settings → Integrations → Private Apps → Create a private app.\n2. Name it (e.g., 'Personas Appointment Bot').\n3. Enable scopes: crm.objects.contacts.read/write, crm.objects.deals.read/write.\n4. Copy the access token."
         },
         {
           "name": "email",
@@ -134,7 +134,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Google Cloud Console → APIs & Services → enable Gmail API.\n2. Create OAuth 2.0 Client ID (Desktop app) and complete consent with scopes: gmail.send, gmail.readonly, gmail.modify.\n3. Paste client ID, secret, and refresh token."
+          "setup_instructions": "1. Google Cloud Console → APIs & Services → enable email API.\n2. Create OAuth 2.0 Client ID (Desktop app) and complete consent with scopes: gmail.send, gmail.readonly, gmail.modify.\n3. Paste client ID, secret, and refresh token."
         },
         {
           "name": "messaging",
@@ -143,7 +143,7 @@
           "role": "chat_messaging",
           "category": "messaging",
           "required": false,
-          "fallback_note": "Skip Slack to run email-only. Team notifications disappear but the invitee-facing flow is unaffected.",
+          "fallback_note": "Skip messaging to run email-only. Team notifications disappear but the invitee-facing flow is unaffected.",
           "api_base_url": "https://slack.com/api",
           "credential_fields": [
             {
@@ -151,7 +151,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-…",
-              "helpText": "Slack App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, users:read, users:read.email.",
+              "helpText": "messaging App → OAuth & Permissions → Bot User OAuth Token. Scopes: chat:write, chat:write.public, users:read, users:read.email.",
               "required": true
             }
           ],
@@ -165,7 +165,7 @@
         },
         {
           "type": "messaging",
-          "description": "Team-facing booking alerts and reminder pings via Slack."
+          "description": "Team-facing booking alerts and reminder pings via the messaging channel."
         }
       ],
       "core_memories": []
@@ -174,7 +174,7 @@
       {
         "id": "uc_booking_intake",
         "title": "Booking Intake",
-        "description": "Processes new Calendly bookings and cancellations end-to-end: enriches HubSpot, sends the confirmation or acknowledgment email, notifies the team, and persists meeting state for downstream reminder and follow-up capabilities.",
+        "description": "Processes new Calendly bookings and cancellations end-to-end: enriches CRM, sends the confirmation or acknowledgment email, notifies the team, and persists meeting state for downstream reminder and follow-up capabilities.",
         "capability_summary": "Webhook-driven booking + cancellation processing with CRM enrichment and team notification.",
         "category": "automation",
         "enabled_by_default": true,
@@ -204,7 +204,7 @@
           },
           {
             "type": "messaging",
-            "description": "Team Slack alert."
+            "description": "Team messaging alert."
           }
         ],
         "review_policy": {
@@ -227,17 +227,17 @@
             "description": "Payload: { meeting_id, invitee_email, cancellation_reason? }. Consumed by reminder UC to skip canceled meetings."
           }
         ],
-        "error_handling": "HubSpot create fails → send Gmail + Slack with [CRM sync pending] flag. Gmail send fails twice → post confirmation content to Slack as fallback. Calendly webhook missing data → fetch via API once; on second failure, alert operator. Duplicate event URI → skip silently (idempotency).",
+        "error_handling": "CRM create fails → send email + messaging with [CRM sync pending] flag. email send fails twice → post confirmation content to the messaging channel as fallback. Calendly webhook missing data → fetch via API once; on second failure, alert operator. Duplicate event URI → skip silently (idempotency).",
         "input_schema": [
           {
             "name": "hubspot_pipeline",
             "type": "text",
-            "description": "HubSpot pipeline name where new deals are created (e.g., 'Sales Pipeline'). Resolved at adoption via the HubSpot credential."
+            "description": "CRM pipelines name where new deals are created (e.g., 'Sales Pipeline'). Resolved at adoption via the CRM credential."
           },
           {
             "name": "slack_channel",
             "type": "text",
-            "description": "Slack channel for team booking notifications (e.g., '#meetings')."
+            "description": "messaging channels for team booking notifications (e.g., '#meetings')."
           },
           {
             "name": "meeting_focus",
@@ -279,19 +279,19 @@
             {
               "id": "b3",
               "type": "connector",
-              "label": "HubSpot contact + deal upsert",
+              "label": "CRM contacts + deal upsert",
               "connector": "crm"
             },
             {
               "id": "b4",
               "type": "connector",
-              "label": "Send Gmail confirmation",
+              "label": "Send email confirmation",
               "connector": "email"
             },
             {
               "id": "b5",
               "type": "connector",
-              "label": "Post Slack booking alert",
+              "label": "Post messaging booking alert",
               "connector": "messaging"
             },
             {
@@ -307,7 +307,7 @@
             {
               "id": "b8",
               "type": "connector",
-              "label": "HubSpot deal cancellation note",
+              "label": "CRM deals cancellation note",
               "connector": "crm"
             },
             {
@@ -382,8 +382,8 @@
       {
         "id": "uc_pre_meeting_reminder",
         "title": "Pre-meeting Reminder",
-        "description": "Scans the meeting state each day for bookings starting in the next 24 hours and sends a threaded reminder email with prep, plus a Slack ping tagging the assigned rep. Default daily 08:00 UTC — final cadence set at the trigger-composition step.",
-        "capability_summary": "24h-before reminder email and Slack ping per confirmed meeting.",
+        "description": "Scans the meeting state each day for bookings starting in the next 24 hours and sends a threaded reminder email with prep, plus a messaging ping tagging the assigned rep. Default daily 08:00 UTC — final cadence set at the trigger-composition step.",
+        "capability_summary": "24h-before reminder email and messaging ping per confirmed meeting.",
         "category": "automation",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -407,7 +407,7 @@
           },
           {
             "type": "messaging",
-            "description": "Slack reminder to the assigned rep."
+            "description": "messaging reminder to the assigned rep."
           }
         ],
         "review_policy": {
@@ -425,7 +425,7 @@
             "description": "Payload: { meeting_id, invitee_email, hours_until_meeting }. Per reminded meeting."
           }
         ],
-        "error_handling": "Gmail 5xx → retry once after 10s, fall back to Slack DM to the rep with meeting details. Slack failure → log and continue, email is primary. State read failure → skip cycle, alert operator.",
+        "error_handling": "email 5xx → retry once after 10s, fall back to direct messages to the rep with meeting details. messaging failure → log and continue, email is primary. State read failure → skip cycle, alert operator.",
         "input_schema": [
           {
             "name": "reminder_lead_hours",
@@ -474,7 +474,7 @@
             {
               "id": "r5",
               "type": "connector",
-              "label": "Post Slack rep ping",
+              "label": "Post messaging rep ping",
               "connector": "messaging"
             },
             {
@@ -528,8 +528,8 @@
       {
         "id": "uc_post_meeting_followup",
         "title": "Post-meeting Follow-up",
-        "description": "Scans for meetings that ended 24h+ ago and have not yet been followed up. Composes a thanks + next-steps email, optionally routes multi-attendee drafts through manual review, sends via Gmail, and adds a follow-up note to the HubSpot deal. Default daily 08:00 UTC — final cadence set at the trigger-composition step.",
-        "capability_summary": "24h-after follow-up email with optional human review and HubSpot deal note.",
+        "description": "Scans for meetings that ended 24h+ ago and have not yet been followed up. Composes a thanks + next-steps email, optionally routes multi-attendee drafts through manual review, sends via email, and adds a follow-up note to the CRM deals. Default daily 08:00 UTC — final cadence set at the trigger-composition step.",
+        "capability_summary": "24h-after follow-up email with optional human review and CRM deals note.",
         "category": "automation",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -567,7 +567,7 @@
             "description": "Payload: { meeting_id, hubspot_deal_id, attendee_count }. Per sent follow-up."
           }
         ],
-        "error_handling": "Gmail send failure → retry once, store pending in `pending_followups.json`. HubSpot note failure → non-blocking, log and continue. Meeting record missing → skip with warning. Manual review rejection → reset status to 'reminded' and flag for operator re-compose.",
+        "error_handling": "email send failure → retry once, store pending in `pending_followups.json`. CRM note failure → non-blocking, log and continue. Meeting record missing → skip with warning. Manual review rejection → reset status to 'reminded' and flag for operator re-compose.",
         "input_schema": [
           {
             "name": "followup_tone",
@@ -579,7 +579,7 @@
               "stage_adaptive"
             ],
             "default": "concise_professional",
-            "description": "Tone for the follow-up email. Adaptive mode varies by HubSpot deal stage."
+            "description": "Tone for the follow-up email. Adaptive mode varies by CRM deals stage."
           }
         ],
         "sample_input": {
@@ -633,7 +633,7 @@
             {
               "id": "f8",
               "type": "connector",
-              "label": "Add HubSpot deal note",
+              "label": "Add CRM deals note",
               "connector": "crm"
             },
             {
@@ -724,7 +724,7 @@
         "default": "B2B sales (discovery calls, demos, proposals)",
         "maps_to": "use_cases[uc_booking_intake].sample_input.meeting_focus",
         "variable_name": "meeting_focus",
-        "context": "Determines default HubSpot deal-stage mapping and prep material templates.",
+        "context": "Determines default CRM deals-stage mapping and prep material templates.",
         "dimension": "use-cases"
       },
       {
@@ -734,15 +734,15 @@
           "uc_booking_intake"
         ],
         "category": "configuration",
-        "question": "Which Slack channel should receive booking notifications?",
+        "question": "Which messaging channels should receive booking notifications?",
         "type": "select",
         "default": "#meetings",
         "maps_to": "use_cases[uc_booking_intake].sample_input.slack_channel",
         "variable_name": "slack_channel",
-        "context": "Slack channel for team booking alerts and cancellations. Pick from your connected Slack workspace.",
+        "context": "messaging channels for team booking alerts and cancellations. Pick from your connected messaging workspaces.",
         "dimension": "connectors",
         "dynamic_source": {
-          "service_type": "slack",
+          "service_type": "messaging",
           "operation": "list_channels",
           "source": "vault"
         }
@@ -754,15 +754,15 @@
           "uc_booking_intake"
         ],
         "category": "configuration",
-        "question": "Which HubSpot pipeline should new deals land in?",
+        "question": "Which CRM pipelines should new deals land in?",
         "type": "select",
         "default": "Sales Pipeline",
         "maps_to": "use_cases[uc_booking_intake].sample_input.hubspot_pipeline",
         "variable_name": "hubspot_pipeline",
-        "context": "HubSpot supports multiple pipelines; the orchestrator needs the exact pipeline name to place deals correctly.",
+        "context": "CRM supports multiple pipelines; the orchestrator needs the exact pipeline name to place deals correctly.",
         "dimension": "connectors",
         "dynamic_source": {
-          "service_type": "hubspot",
+          "service_type": "crm",
           "operation": "list_deal_pipelines",
           "source": "vault"
         }
@@ -805,7 +805,7 @@
         "default": "Concise and professional (under 150 words, no fluff)",
         "maps_to": "use_cases[uc_post_meeting_followup].sample_input.followup_tone",
         "variable_name": "followup_tone",
-        "context": "Shapes the follow-up email copy. Adaptive mode reads the HubSpot deal stage to vary tone.",
+        "context": "Shapes the follow-up email copy. Adaptive mode reads the CRM deals stage to vary tone.",
         "dimension": "use-cases"
       },
       {
@@ -824,7 +824,7 @@
         },
         "maps_to": "persona.connectors[calendar].credential_fields[provider].value",
         "variable_name": "calendar_credential",
-        "context": "Options are auto-detected from your calendar credentials in the Vault (Google Calendar, Outlook Calendar, Cal.com, Calendly).",
+        "context": "Options are auto-detected from your calendar credentials in the Vault (calendar, email Calendar, Cal.com, Calendly).",
         "dimension": "connectors"
       },
       {
@@ -843,7 +843,7 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[provider].value",
         "variable_name": "crm_credential",
-        "context": "Options are auto-detected from your crm credentials in the Vault (HubSpot, Attio, Pipedrive, …).",
+        "context": "Options are auto-detected from your crm credentials in the Vault (CRM, CRM, CRM, …).",
         "dimension": "connectors"
       },
       {
@@ -862,7 +862,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       },
       {
@@ -881,7 +881,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       }
     ],

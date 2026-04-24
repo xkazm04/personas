@@ -5,11 +5,22 @@
   "description": "Automates production of short feature announcement videos by generating scripts, voiceover audio via TTS API, and composing final videos via a cloud video API. Uses a 2-stage human review cycle (script approval, then final video approval) with Memory-driven learning to improve script style, visual choices, and narration tone over time.",
   "icon": "Video",
   "color": "#F43F5E",
-  "category": ["content", "marketing"],
+  "category": [
+    "content",
+    "marketing"
+  ],
   "is_published": true,
-  "service_flow": ["TTS API", "Video Composition API", "Messages"],
+  "service_flow": [
+    "TTS API",
+    "Video Composition API",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["TTS API", "Video Composition API", "Messages"],
+    "service_flow": [
+      "TTS API",
+      "Video Composition API",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn a feature description into a polished announcement video — scripted, narrated, composed, reviewed — without opening a video editor.",
       "identity": {
@@ -42,25 +53,34 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "One capability: produce a reviewed announcement video from a feature description.\n\n**uc_produce_video** — manual trigger with a feature description.\n\n1. Load creative memory: script tone preferences, visual preferences, narration voice settings, common rejection categories, brand guidelines.\n2. Generate the script + visual strategy:\n   - **Script**: hook (3s, problem or outcome), feature showcase (2-4 scenes, 3-8s each), CTA (3-5s).\n   - **Per scene**: background type (solid/gradient/screenshot/generated image), text overlay, transition, duration.\n   - **Production notes**: total duration, narration voice, music/sound notes, output format + resolution.\n3. Deliver the full strategy via Messages (always — regardless of review outcome).\n4. Script review gate: approve -> proceed. Reject with comments -> incorporate feedback, regenerate script (max `aq_max_iterations_per_stage` attempts). Save each decision to memory.\n5. Call the chosen TTS provider (ElevenLabs / Google / Polly / other) with the approved script. Split per-scene if the video API supports per-scene audio, else single continuous track.\n6. Call the chosen video composition provider (Creatomate / Shotstack / JSON2Video / other) with a JSON payload: scenes array, audio track, output settings. Poll the render status until complete. Retrieve the video URL.\n7. Final video review gate: approve -> finalize. Reject with comments -> route feedback to the right stage:\n   - Script issue -> regenerate script (step 2) + re-audio + re-compose.\n   - Audio issue -> regenerate TTS (step 5) + re-compose.\n   - Visual issue -> re-compose only (step 6).\n   Max iterations per stage `aq_max_iterations_per_stage`; after that, ask for a reference video or detailed brief.\n8. On final approval: save the approved script style, visual choices, voice settings, and iteration count to memory. Emit `feature_video.production.composed` + `feature_video.production.approved`.\n\nState lives in `video_config.json` (connected APIs, voice prefs, brand guidelines, output settings), `creative_profile.json` (aggregated approval/rejection patterns per stage).",
-      "tool_guidance": "**TTS provider endpoints** (shape depends on the user's choice at adoption):\n- **ElevenLabs**: `POST https://api.elevenlabs.io/v1/text-to-speech/{voice_id}` body `{text, model_id, voice_settings: {stability, similarity_boost}}`. Auth `xi-api-key`. List voices: `GET /v1/voices`.\n- **Google Cloud TTS**: `POST https://texttospeech.googleapis.com/v1/text:synthesize` body `{input: {text}, voice: {languageCode, name}, audioConfig: {audioEncoding: 'MP3'}}`. Auth `Bearer {token}`. Response: `{audioContent: base64}`.\n- **Amazon Polly (REST)**: `POST https://polly.{region}.amazonaws.com/v1/speech` body `{Text, OutputFormat: 'mp3', VoiceId}`. Auth: AWS SigV4.\n\n**Video composition endpoints** (shape depends on the user's choice):\n- **Creatomate**: `POST https://api.creatomate.com/v2/renders` body `{source: {output_format: 'mp4', width, height, elements: [{type: 'composition', track: 1, duration, elements: [...]}]}}` or `{template_id, modifications: {...}}`. Auth `Bearer`. Poll `GET /v2/renders/{id}` until `status: 'succeeded'`.\n- **Shotstack**: `POST https://api.shotstack.io/edit/v1/render` body `{timeline: {tracks: [{clips: [...]}]}, output: {format, resolution}}`. Auth `x-api-key`. Poll `GET /edit/v1/render/{id}` until `status: 'done'`.\n- **JSON2Video**: `POST https://api.json2video.com/v2/movies` body `{resolution, scenes: [{elements: [...]}]}`. Auth `x-api-key`. Poll `GET /v2/movies/{id}` until `status: 'done'`.\n\nPoll every 10s for up to 5 minutes on render; 30s retry on 5xx (max 2 retries).\n\n**Local state**: `video_config.json` (APIs + voice prefs + output settings), `creative_profile.json` (per-stage aggregated patterns).",
+      "operating_instructions": "One capability: produce a reviewed announcement video from a feature description. **uc_produce_video** — manual trigger with a feature description. 1. Load creative memory: script tone preferences, visual preferences, narration voice settings, common rejection categories, brand guidelines.\n2. Generate the script + visual strategy: - **Script**: hook (3s, problem or outcome), feature showcase (2-4 scenes, 3-8s each), CTA (3-5s). - **Per scene**: background type (solid/gradient/screenshot/generated image), text overlay, transition, duration. - **Production notes**: total duration, narration voice, music/sound notes, output format + resolution.\n3. Deliver the full strategy via Messages (always — regardless of review outcome).\n4. Script review gate: approve -> proceed. Reject with comments -> incorporate feedback, regenerate script (max `aq_max_iterations_per_stage` attempts). Save each decision to memory.\n5. Call the chosen TTS provider (voice generation AI / Google / Polly / other) with the approved script. Split per-scene if the video API supports per-scene audio, else single continuous track.\n6. Call the chosen video composition provider (Creatomate / Shotstack / JSON2Video / other) with a JSON payload: scenes array, audio track, output settings. Poll the render status until complete. Retrieve the video URL.\n7. Final video review gate: approve -> finalize. Reject with comments -> route feedback to the right stage: - Script issue -> regenerate script (step 2) + re-audio + re-compose. - Audio issue -> regenerate TTS (step 5) + re-compose. - Visual issue -> re-compose only (step 6). Max iterations per stage `aq_max_iterations_per_stage`; after that, ask for a reference video or detailed brief.\n8. On final approval: save the approved script style, visual choices, voice settings, and iteration count to memory. Emit `feature_video.production.composed` + `feature_video.production.approved`. State lives in `video_config.json` (connected APIs, voice prefs, brand guidelines, output settings), `creative_profile.json` (aggregated approval/rejection patterns per stage).",
+      "tool_guidance": "**TTS provider endpoints** (shape depends on the user's choice at adoption):\n- **voice generation AI**: `POST https://api.elevenlabs.io/v1/text-to-speech/{voice_id}` body `{text, model_id, voice_settings: {stability, similarity_boost}}`. Auth `xi-api-key`. List voices: `GET /v1/voices`.\n- **Google Cloud TTS**: `POST https://texttospeech.googleapis.com/v1/text:synthesize` body `{input: {text}, voice: {languageCode, name}, audioConfig: {audioEncoding: 'MP3'}}`. Auth `Bearer {token}`. Response: `{audioContent: base64}`.\n- **Amazon Polly (REST)**: `POST https://polly.{region}.amazonaws.com/v1/speech` body `{Text, OutputFormat: 'mp3', VoiceId}`. Auth: AWS SigV4. **Video composition endpoints** (shape depends on the user's choice):\n- **Creatomate**: `POST https://api.creatomate.com/v2/renders` body `{source: {output_format: 'mp4', width, height, elements: [{type: 'composition', track: 1, duration, elements: [...]}]}}` or `{template_id, modifications: {...}}`. Auth `Bearer`. Poll `GET /v2/renders/{id}` until `status: 'succeeded'`.\n- **Shotstack**: `POST https://api.shotstack.io/edit/v1/render` body `{timeline: {tracks: [{clips: [...]}]}, output: {format, resolution}}`. Auth `x-api-key`. Poll `GET /edit/v1/render/{id}` until `status: 'done'`.\n- **JSON2Video**: `POST https://api.json2video.com/v2/movies` body `{resolution, scenes: [{elements: [...]}]}`. Auth `x-api-key`. Poll `GET /v2/movies/{id}` until `status: 'done'`. Poll every 10s for up to 5 minutes on render; 30s retry on 5xx (max 2 retries). **Local state**: `video_config.json` (APIs + voice prefs + output settings), `creative_profile.json` (per-stage aggregated patterns).",
       "error_handling": "TTS 401/403 -> report credentials need updating via Messages; cannot proceed without audio. TTS 429 -> retry after cooldown; if quota exhausted, suggest shorter script or alternate voice tier. TTS 5xx -> one retry after 30s, then pause production. Garbled/silent audio -> retry with different encoding (mp3 vs wav, alt sample rate). Video API 401/403 -> report credentials need updating. Render timeout (>5min poll) -> inspect render status for errors, surface specific message. Render failure with structured error -> include error details in Messages for debugging. Template autofill errors -> fall back to from-scratch JSON. Max iterations on a stage -> request reference video or detailed brief. Vague input (<20 words) -> ask for more context. Memory empty (first run) -> neutral defaults (professional tone, 30s, clean visuals); note that preferences will sharpen. Messages failure -> write strategy to `latest_strategy.json`; always save final video URL to `latest_video.json`.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "tts_api",
+          "name": "voice_generation",
           "label": "Text-to-Speech API",
           "auth_type": "api_key",
           "role": "voice_generation",
-          "category": "ai",
+          "category": "voice_generation",
           "required": true,
           "credential_fields": [
             {
               "key": "provider",
               "label": "TTS provider",
               "type": "select",
-              "options": ["elevenlabs", "google_cloud_tts", "amazon_polly", "other"],
+              "options": [
+                "elevenlabs",
+                "google_cloud_tts",
+                "amazon_polly",
+                "other"
+              ],
               "placeholder": "elevenlabs",
               "helpText": "Which TTS service generates the narration. Shapes API calls and auth flow.",
               "required": true
@@ -78,7 +98,7 @@
               "label": "Default Voice ID",
               "type": "text",
               "placeholder": "EXAVITQu4vr4xnSDxMaL or en-US-Neural2-D",
-              "helpText": "ElevenLabs: voice ID from /v1/voices. Google: voice name like en-US-Neural2-D. Polly: VoiceId like Matthew. Can be overridden per video.",
+              "helpText": "voice generation AI: voice ID from /v1/voices. Google: voice name like en-US-Neural2-D. Polly: VoiceId like Matthew. Can be overridden per video.",
               "required": true
             },
             {
@@ -90,10 +110,10 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Pick your provider (ElevenLabs / Google Cloud TTS / Amazon Polly / other).\n2. Sign up and generate an API key.\n3. ElevenLabs: Profile -> API Key. Call GET /v1/voices to find a voice_id.\n4. Google Cloud: enable Text-to-Speech API, create a service account key.\n5. Polly: IAM user with polly:SynthesizeSpeech.\n6. Paste the key, voice id, and base URL. Test with a short clip."
+          "setup_instructions": "1. Pick your provider (voice generation AI / Google Cloud TTS / Amazon Polly / other).\n2. Sign up and generate an API key.\n3. voice generation AI: Profile -> API Key. Call GET /v1/voices to find a voice_id.\n4. Google Cloud: enable Text-to-Speech API, create a service account key.\n5. Polly: IAM user with polly:SynthesizeSpeech.\n6. Paste the key, voice id, and base URL. Test with a short clip."
         },
         {
-          "name": "video_composition_api",
+          "name": "video_generation",
           "label": "Video Composition API",
           "auth_type": "api_key",
           "role": "video_rendering",
@@ -104,7 +124,12 @@
               "key": "provider",
               "label": "Video composition provider",
               "type": "select",
-              "options": ["creatomate", "shotstack", "json2video", "other"],
+              "options": [
+                "creatomate",
+                "shotstack",
+                "json2video",
+                "other"
+              ],
               "placeholder": "creatomate",
               "helpText": "Which cloud service composes the final video. Shapes the JSON payload and polling endpoint.",
               "required": true
@@ -160,7 +185,10 @@
           "config": {},
           "description": "Manual — user supplies a feature description. Default manual — final cadence set at the trigger-composition step."
         },
-        "connectors": ["tts_api", "video_composition_api"],
+        "connectors": [
+          "voice_generation",
+          "video_generation"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -192,14 +220,24 @@
           {
             "name": "duration",
             "type": "enum",
-            "options": ["15s", "30s", "60s", "auto"],
+            "options": [
+              "15s",
+              "30s",
+              "60s",
+              "auto"
+            ],
             "default": "30s",
             "description": "Target duration. Auto lets the agent pick based on feature complexity."
           },
           {
             "name": "style",
             "type": "enum",
-            "options": ["minimal", "vibrant", "dark_mode", "branded"],
+            "options": [
+              "minimal",
+              "vibrant",
+              "dark_mode",
+              "branded"
+            ],
             "default": "minimal",
             "description": "Default visual style. The agent refines this from review feedback over time."
           }
@@ -209,37 +247,138 @@
           "duration": "{{param.aq_default_duration}}",
           "style": "{{param.aq_default_style}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "v1", "type": "start", "label": "Manual: feature description" },
-            { "id": "v2", "type": "action", "label": "Load creative memory + generate script + visual plan" },
-            { "id": "v3", "type": "action", "label": "Deliver strategy via Messages" },
-            { "id": "v4", "type": "decision", "label": "Script approved?" },
-            { "id": "v5", "type": "action", "label": "Incorporate feedback, regenerate script" },
-            { "id": "v6", "type": "connector", "label": "Generate voiceover via TTS", "connector": "tts_api" },
-            { "id": "v7", "type": "connector", "label": "Compose video via cloud API", "connector": "video_composition_api" },
-            { "id": "v8", "type": "decision", "label": "Final video approved?" },
-            { "id": "v9", "type": "action", "label": "Route feedback to correct stage" },
-            { "id": "v10", "type": "action", "label": "Save creative decisions to memory" },
-            { "id": "v11", "type": "event", "label": "Emit composed + approved" },
-            { "id": "v12", "type": "end", "label": "Video ready for distribution" }
+            {
+              "id": "v1",
+              "type": "start",
+              "label": "Manual: feature description"
+            },
+            {
+              "id": "v2",
+              "type": "action",
+              "label": "Load creative memory + generate script + visual plan"
+            },
+            {
+              "id": "v3",
+              "type": "action",
+              "label": "Deliver strategy via Messages"
+            },
+            {
+              "id": "v4",
+              "type": "decision",
+              "label": "Script approved?"
+            },
+            {
+              "id": "v5",
+              "type": "action",
+              "label": "Incorporate feedback, regenerate script"
+            },
+            {
+              "id": "v6",
+              "type": "connector",
+              "label": "Generate voiceover via TTS",
+              "connector": "tts_api"
+            },
+            {
+              "id": "v7",
+              "type": "connector",
+              "label": "Compose video via cloud API",
+              "connector": "video_composition_api"
+            },
+            {
+              "id": "v8",
+              "type": "decision",
+              "label": "Final video approved?"
+            },
+            {
+              "id": "v9",
+              "type": "action",
+              "label": "Route feedback to correct stage"
+            },
+            {
+              "id": "v10",
+              "type": "action",
+              "label": "Save creative decisions to memory"
+            },
+            {
+              "id": "v11",
+              "type": "event",
+              "label": "Emit composed + approved"
+            },
+            {
+              "id": "v12",
+              "type": "end",
+              "label": "Video ready for distribution"
+            }
           ],
           "edges": [
-            { "source": "v1", "target": "v2" },
-            { "source": "v2", "target": "v3" },
-            { "source": "v3", "target": "v4" },
-            { "source": "v4", "target": "v6", "label": "Approve", "variant": "yes" },
-            { "source": "v4", "target": "v5", "label": "Reject", "variant": "no" },
-            { "source": "v5", "target": "v3" },
-            { "source": "v6", "target": "v7" },
-            { "source": "v7", "target": "v8" },
-            { "source": "v8", "target": "v10", "label": "Approve", "variant": "yes" },
-            { "source": "v8", "target": "v9", "label": "Reject", "variant": "no" },
-            { "source": "v9", "target": "v2" },
-            { "source": "v10", "target": "v11" },
-            { "source": "v11", "target": "v12" }
+            {
+              "source": "v1",
+              "target": "v2"
+            },
+            {
+              "source": "v2",
+              "target": "v3"
+            },
+            {
+              "source": "v3",
+              "target": "v4"
+            },
+            {
+              "source": "v4",
+              "target": "v6",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "v4",
+              "target": "v5",
+              "label": "Reject",
+              "variant": "no"
+            },
+            {
+              "source": "v5",
+              "target": "v3"
+            },
+            {
+              "source": "v6",
+              "target": "v7"
+            },
+            {
+              "source": "v7",
+              "target": "v8"
+            },
+            {
+              "source": "v8",
+              "target": "v10",
+              "label": "Approve",
+              "variant": "yes"
+            },
+            {
+              "source": "v8",
+              "target": "v9",
+              "label": "Reject",
+              "variant": "no"
+            },
+            {
+              "source": "v9",
+              "target": "v2"
+            },
+            {
+              "source": "v10",
+              "target": "v11"
+            },
+            {
+              "source": "v11",
+              "target": "v12"
+            }
           ]
         }
       }
@@ -248,7 +387,9 @@
       {
         "id": "aq_feature_category",
         "scope": "capability",
-        "use_case_ids": ["uc_produce_video"],
+        "use_case_ids": [
+          "uc_produce_video"
+        ],
         "category": "domain",
         "question": "What type of features will you create videos for?",
         "type": "select",
@@ -266,7 +407,9 @@
       {
         "id": "aq_default_style",
         "scope": "capability",
-        "use_case_ids": ["uc_produce_video"],
+        "use_case_ids": [
+          "uc_produce_video"
+        ],
         "category": "configuration",
         "question": "Default visual style?",
         "type": "select",
@@ -285,7 +428,9 @@
       {
         "id": "aq_default_duration",
         "scope": "capability",
-        "use_case_ids": ["uc_produce_video"],
+        "use_case_ids": [
+          "uc_produce_video"
+        ],
         "category": "configuration",
         "question": "Default video duration?",
         "type": "select",
@@ -304,11 +449,17 @@
       {
         "id": "aq_max_iterations_per_stage",
         "scope": "capability",
-        "use_case_ids": ["uc_produce_video"],
+        "use_case_ids": [
+          "uc_produce_video"
+        ],
         "category": "configuration",
         "question": "Max review iterations per stage before escalating?",
         "type": "select",
-        "options": ["3", "5", "8"],
+        "options": [
+          "3",
+          "5",
+          "8"
+        ],
         "default": "5",
         "variable_name": "max_iterations_per_stage",
         "context": "After this many rejections on a single stage (script or visual), the agent requests a reference video or more detailed brief instead of silently retrying.",
@@ -317,7 +468,9 @@
       {
         "id": "aq_tts_provider",
         "scope": "connector",
-        "connector_names": ["tts_api"],
+        "connector_names": [
+          "tts_api"
+        ],
         "category": "configuration",
         "question": "Which Text-to-Speech provider should generate the narration?",
         "type": "select",
@@ -328,13 +481,15 @@
         },
         "maps_to": "persona.connectors[tts_api].credential_fields[provider].value",
         "variable_name": "tts_provider",
-        "context": "Auto-detected from voice_generation-category credentials in your Vault (ElevenLabs, Google Cloud TTS, Amazon Polly, etc.). Connect a TTS provider first if the list is empty.",
+        "context": "Auto-detected from voice_generation-category credentials in your Vault (voice generation AI, Google Cloud TTS, Amazon Polly, etc.). Connect a TTS provider first if the list is empty.",
         "dimension": "connectors"
       },
       {
         "id": "aq_video_provider",
         "scope": "connector",
-        "connector_names": ["video_composition_api"],
+        "connector_names": [
+          "video_composition_api"
+        ],
         "category": "configuration",
         "question": "Which video composition service should compose the final video?",
         "type": "select",

@@ -2,6 +2,7 @@ import { ShieldAlert, Settings, CalendarClock, PlayCircle, RefreshCw } from 'luc
 import { useSystemStore } from '@/stores/systemStore';
 import type { PersonaBudgetState, BudgetStatus } from '@/stores/slices/agents/budgetEnforcementSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 interface BudgetRecoveryCardProps {
   budgetStatus: BudgetStatus;
@@ -11,11 +12,13 @@ interface BudgetRecoveryCardProps {
   onOverrideStale: () => void;
 }
 
-function getResetDate(): string {
+function getResetLabel(t: Translations, tx: (tpl: string, vars: Record<string, string | number>) => string): string {
   const now = new Date();
   const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const diffDays = Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  return diffDays === 1 ? 'tomorrow' : `in ${diffDays} days`;
+  if (diffDays === 1) return t.execution.budget_reset_tomorrow;
+  const tpl = diffDays === 1 ? t.execution.budget_reset_in_days_one : t.execution.budget_reset_in_days_other;
+  return tx(tpl, { count: diffDays });
 }
 
 export function BudgetRecoveryCard({
@@ -25,9 +28,11 @@ export function BudgetRecoveryCard({
   onOverrideBudget,
   onOverrideStale,
 }: BudgetRecoveryCardProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
+  const currencyFmt = new Intl.NumberFormat(language, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+  const decimalFmt = new Intl.NumberFormat(language, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (budgetStatus === 'warning') {
     return (
@@ -35,7 +40,7 @@ export function BudgetRecoveryCard({
         <ShieldAlert className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
         <p className="typo-body text-amber-400/80">
           {e.approaching_budget}
-          {budgetEntry && <span className="text-amber-400/60"> -- ${budgetEntry.spend.toFixed(2)} / ${budgetEntry.maxBudget?.toFixed(2)} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
+          {budgetEntry && <span className="text-amber-400/60"> -- {currencyFmt.format(budgetEntry.spend)} / {budgetEntry.maxBudget != null ? currencyFmt.format(budgetEntry.maxBudget) : '?'} ({Math.round(budgetEntry.ratio * 100)}%)</span>}
         </p>
       </div>
     );
@@ -51,8 +56,8 @@ export function BudgetRecoveryCard({
             {budgetEntry && (
               <p className="typo-body text-red-400/60">
                 {tx(e.budget_spend_detail, {
-                  spend: budgetEntry.spend.toFixed(2),
-                  limit: budgetEntry.maxBudget?.toFixed(2) ?? '?',
+                  spend: decimalFmt.format(budgetEntry.spend),
+                  limit: budgetEntry.maxBudget != null ? decimalFmt.format(budgetEntry.maxBudget) : '?',
                   percent: String(Math.round(budgetEntry.ratio * 100)),
                 })}
               </p>
@@ -78,7 +83,7 @@ export function BudgetRecoveryCard({
             </button>
             <span className="flex items-center gap-1.5 typo-body text-foreground">
               <CalendarClock className="w-3.5 h-3.5" />
-              {tx(e.resets_in, { days: getResetDate() })}
+              {tx(e.resets_in, { days: getResetLabel(t, tx) })}
             </span>
           </div>
         )}

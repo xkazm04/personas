@@ -1,223 +1,386 @@
 {
-  "_description": "Single source of truth: maps connector names to architectural category keys. Used by both frontend (architecturalCategories.ts) and build scripts (fix-template-connectors.mjs).",
+  "_description": "Single source of truth: maps connector names to architectural category keys. Snake_case only. Connectors may claim multiple categories via categories[] in their JSON; this map records the PRIMARY category used for pill color/icon.",
   "categories": {
-    "messaging": { "label": "Messaging", "color": "#6366f1", "icon": "MessageSquare", "builtIn": true },
-    "database": { "label": "Database", "color": "#06b6d4", "icon": "Database", "builtIn": true },
-    "crm": { "label": "CRM", "color": "#f97316", "icon": "Users" },
-    "project-mgmt": { "label": "Project Mgmt", "color": "#0ea5e9", "icon": "Kanban" },
-    "devops": { "label": "DevOps / CI-CD", "color": "#8b5cf6", "icon": "Code2" },
-    "monitoring": { "label": "Monitoring", "color": "#14b8a6", "icon": "Activity" },
-    "analytics": { "label": "Analytics", "color": "#7856FF", "icon": "BarChart3" },
-    "email": { "label": "Email / SMS", "color": "#ef4444", "icon": "Mail" },
-    "finance": { "label": "Finance", "color": "#10b981", "icon": "CreditCard" },
-    "support": { "label": "Support", "color": "#0891b2", "icon": "LifeBuoy" },
-    "social": { "label": "Social", "color": "#ec4899", "icon": "Share2" },
-    "ecommerce": { "label": "E-Commerce", "color": "#7AB55C", "icon": "ShoppingBag" },
-    "scheduling": { "label": "Scheduling", "color": "#006BFF", "icon": "Calendar" },
-    "productivity": { "label": "Productivity", "color": "#eab308", "icon": "FileText" },
-    "time-tracking": { "label": "Time Tracking", "color": "#f59e0b", "icon": "Activity" },
-    "cloud": { "label": "Cloud", "color": "#3b82f6", "icon": "Cloud" },
-    "design": { "label": "Design", "color": "#F24E1E", "icon": "Layout" },
-    "ai": { "label": "AI", "color": "#6C3AEF", "icon": "Bot" },
-    "cms": { "label": "CMS", "color": "#4353FF", "icon": "Globe" },
-    "storage": { "label": "Storage", "color": "#569A31", "icon": "HardDrive" },
-    "forms": { "label": "Forms", "color": "#3CCF91", "icon": "ClipboardList" },
-    "notifications": { "label": "Notifications", "color": "#FF4981", "icon": "Bell" }
+    "messaging": {
+      "label": "Messaging",
+      "color": "#6366f1",
+      "icon": "MessageSquare",
+      "builtIn": true
+    },
+    "email": {
+      "label": "Email",
+      "color": "#ef4444",
+      "icon": "Mail"
+    },
+    "notifications": {
+      "label": "Notifications",
+      "color": "#FF4981",
+      "icon": "Bell"
+    },
+    "scheduling": {
+      "label": "Scheduling",
+      "color": "#006BFF",
+      "icon": "Calendar"
+    },
+    "calendar": {
+      "label": "Calendar",
+      "color": "#0EA5E9",
+      "icon": "CalendarDays"
+    },
+    "database": {
+      "label": "Database",
+      "color": "#06b6d4",
+      "icon": "Database",
+      "builtIn": true
+    },
+    "spreadsheet": {
+      "label": "Spreadsheet",
+      "color": "#16A34A",
+      "icon": "Table"
+    },
+    "storage": {
+      "label": "Storage",
+      "color": "#569A31",
+      "icon": "HardDrive"
+    },
+    "cache": {
+      "label": "Cache",
+      "color": "#F97316",
+      "icon": "Zap"
+    },
+    "vector_search": {
+      "label": "Vector Search",
+      "color": "#8B5CF6",
+      "icon": "Search",
+      "builtIn": true
+    },
+    "knowledge_base": {
+      "label": "Knowledge Base",
+      "color": "#A855F7",
+      "icon": "BookOpen"
+    },
+    "documentation": {
+      "label": "Documentation",
+      "color": "#4353FF",
+      "icon": "BookText"
+    },
+    "ai": {
+      "label": "AI",
+      "color": "#6C3AEF",
+      "icon": "Bot"
+    },
+    "image_generation": {
+      "label": "Image AI",
+      "color": "#EC4899",
+      "icon": "Image"
+    },
+    "video_generation": {
+      "label": "Video AI",
+      "color": "#F43F5E",
+      "icon": "Video"
+    },
+    "voice_generation": {
+      "label": "Voice AI",
+      "color": "#DB2777",
+      "icon": "Mic"
+    },
+    "transcription": {
+      "label": "Transcription",
+      "color": "#C026D3",
+      "icon": "AudioLines"
+    },
+    "vision": {
+      "label": "Vision",
+      "color": "#7C3AED",
+      "icon": "Eye"
+    },
+    "source_control": {
+      "label": "Source Control",
+      "color": "#334155",
+      "icon": "GitBranch"
+    },
+    "ci_cd": {
+      "label": "CI/CD",
+      "color": "#8b5cf6",
+      "icon": "Workflow"
+    },
+    "devops": {
+      "label": "DevOps",
+      "color": "#8b5cf6",
+      "icon": "Code2"
+    },
+    "containers": {
+      "label": "Containers",
+      "color": "#2496ED",
+      "icon": "Box"
+    },
+    "cloud": {
+      "label": "Cloud",
+      "color": "#3b82f6",
+      "icon": "Cloud"
+    },
+    "monitoring": {
+      "label": "Monitoring",
+      "color": "#14b8a6",
+      "icon": "Activity"
+    },
+    "development": {
+      "label": "Development",
+      "color": "#1e293b",
+      "icon": "Terminal"
+    },
+    "desktop": {
+      "label": "Desktop",
+      "color": "#64748B",
+      "icon": "Monitor"
+    },
+    "crm": {
+      "label": "CRM",
+      "color": "#f97316",
+      "icon": "Users"
+    },
+    "project_management": {
+      "label": "Project Mgmt",
+      "color": "#0ea5e9",
+      "icon": "Kanban"
+    },
+    "ticketing": {
+      "label": "Ticketing",
+      "color": "#F59E0B",
+      "icon": "Ticket"
+    },
+    "support": {
+      "label": "Support",
+      "color": "#0891b2",
+      "icon": "LifeBuoy"
+    },
+    "analytics": {
+      "label": "Analytics",
+      "color": "#7856FF",
+      "icon": "BarChart3"
+    },
+    "bi": {
+      "label": "BI",
+      "color": "#2563EB",
+      "icon": "PieChart"
+    },
+    "finance": {
+      "label": "Finance",
+      "color": "#10b981",
+      "icon": "CreditCard"
+    },
+    "ecommerce": {
+      "label": "E-Commerce",
+      "color": "#7AB55C",
+      "icon": "ShoppingBag"
+    },
+    "marketing": {
+      "label": "Marketing",
+      "color": "#E11D48",
+      "icon": "Megaphone"
+    },
+    "advertising": {
+      "label": "Advertising",
+      "color": "#DC2626",
+      "icon": "TrendingUp"
+    },
+    "social": {
+      "label": "Social",
+      "color": "#ec4899",
+      "icon": "Share2"
+    },
+    "time_tracking": {
+      "label": "Time Tracking",
+      "color": "#f59e0b",
+      "icon": "Timer"
+    },
+    "hr": {
+      "label": "HR",
+      "color": "#9333EA",
+      "icon": "Briefcase"
+    },
+    "legal": {
+      "label": "Legal",
+      "color": "#475569",
+      "icon": "Scale"
+    },
+    "security": {
+      "label": "Security",
+      "color": "#DC2626",
+      "icon": "ShieldCheck"
+    },
+    "research": {
+      "label": "Research",
+      "color": "#0891B2",
+      "icon": "Microscope"
+    },
+    "productivity": {
+      "label": "Productivity",
+      "color": "#eab308",
+      "icon": "FileText"
+    },
+    "forms": {
+      "label": "Forms",
+      "color": "#3CCF91",
+      "icon": "ClipboardList"
+    },
+    "design": {
+      "label": "Design",
+      "color": "#F24E1E",
+      "icon": "Layout"
+    },
+    "cms": {
+      "label": "CMS",
+      "color": "#4353FF",
+      "icon": "Globe"
+    },
+    "automation": {
+      "label": "Automation",
+      "color": "#F97316",
+      "icon": "Cable"
+    },
+    "integration": {
+      "label": "Integration",
+      "color": "#14B8A6",
+      "icon": "Plug"
+    },
+    "web_scraping": {
+      "label": "Web Scraping",
+      "color": "#0D9488",
+      "icon": "Download"
+    },
+    "browser_automation": {
+      "label": "Browser Automation",
+      "color": "#475569",
+      "icon": "MousePointer2"
+    },
+    "personalization": {
+      "label": "Personalization",
+      "color": "#D946EF",
+      "icon": "UserCircle"
+    }
   },
   "connectors": {
     "slack": "messaging",
     "discord": "messaging",
     "telegram": "messaging",
     "microsoft_teams": "messaging",
+    "twilio_sms": "messaging",
+    "crisp": "support",
+    "local_messaging": "messaging",
     "personas_messages": "messaging",
-    "in-app-messaging": "messaging",
-    "whatsapp": "messaging",
-    "signal": "messaging",
-    "matrix": "messaging",
-    "resend": "messaging",
-
-    "personas_database": "database",
-    "supabase": "database",
-    "neon": "database",
-    "postgres_proxy": "database",
-    "postgres": "database",
-    "convex": "database",
-    "upstash": "database",
-    "snowflake": "database",
-    "mongodb": "database",
-    "redis": "database",
-    "elasticsearch": "database",
-    "planetscale": "database",
-    "duckdb": "database",
-    "personas_vector_db": "database",
-    "notion": "database",
-    "google_sheets": "database",
-    "airtable": "database",
-    "microsoft_excel": "database",
-
-    "github": "devops",
-    "gitlab": "devops",
-    "azure_devops": "devops",
-    "circleci": "devops",
-    "github_actions": "devops",
-    "launchdarkly": "devops",
-    "clerk": "devops",
-    "n8n": "devops",
-    "zapier": "devops",
-    "auth0": "devops",
-    "okta": "devops",
-    "desktop_docker": "devops",
-
-    "jira": "project-mgmt",
-    "linear": "project-mgmt",
-    "clickup": "project-mgmt",
-    "asana": "project-mgmt",
-    "trello": "project-mgmt",
-    "monday": "project-mgmt",
-    "monday_com": "project-mgmt",
-    "todoist": "project-mgmt",
-
-    "confluence": "productivity",
-    "coda": "productivity",
-    "google_drive": "productivity",
-    "onedrive": "productivity",
-    "sharepoint": "productivity",
-    "algolia": "productivity",
-    "loom": "productivity",
-    "docusign": "productivity",
-    "evernote": "productivity",
-    "desktop_obsidian": "productivity",
-    "obsidian": "productivity",
-    "roam": "productivity",
-    "miro": "productivity",
-    "news_api": "productivity",
-
-    "toggl": "time-tracking",
-    "clockify": "time-tracking",
-    "harvest": "time-tracking",
-
-    "figma": "design",
-    "canva": "design",
-    "penpot": "design",
-
-    "vercel": "cloud",
-    "netlify": "cloud",
-    "cloudflare": "cloud",
-    "aws": "cloud",
-    "firebase": "cloud",
-    "kubernetes": "cloud",
-    "http": "cloud",
-    "rest_api": "cloud",
-    "webhook": "cloud",
-    "graphql": "cloud",
-    "operations_api": "cloud",
-
-    "sentry": "monitoring",
-    "datadog": "monitoring",
-    "pagerduty": "monitoring",
-    "betterstack": "monitoring",
-    "uptime_robot": "monitoring",
-    "snyk": "monitoring",
-
-    "mixpanel": "analytics",
-    "posthog": "analytics",
-    "amplitude": "analytics",
-    "segment": "analytics",
-    "twilio_segment": "analytics",
-    "google_analytics": "analytics",
-    "tableau": "analytics",
-    "looker": "analytics",
-    "bigquery": "analytics",
-    "google_search_console": "analytics",
-    "whoisxml": "analytics",
-
+    "personas_vector_db": "vector_search",
     "gmail": "email",
     "microsoft_outlook": "email",
     "sendgrid": "email",
-    "mailchimp": "email",
-    "twilio": "email",
-    "twilio_sms": "email",
-
-    "hubspot": "crm",
-    "intercom": "crm",
-    "pipedrive": "crm",
-    "attio": "crm",
-    "greenhouse": "crm",
-    "bamboohr": "crm",
-    "gusto": "crm",
-    "workday": "crm",
-    "clearbit": "crm",
-    "hunter": "crm",
-
-    "zendesk": "support",
-    "freshdesk": "support",
-    "crisp": "support",
-
-    "buffer": "social",
-    "linkedin": "social",
-    "twitter": "social",
-    "google_ads": "social",
-
-    "shopify": "ecommerce",
-    "shipstation": "ecommerce",
-    "woocommerce": "ecommerce",
-    "lemonsqueezy": "ecommerce",
-    "gumroad": "ecommerce",
-
-    "stripe": "finance",
-    "paddle": "finance",
-    "quickbooks": "finance",
-    "xero": "finance",
-    "plaid": "finance",
-    "paypal": "finance",
-    "square": "finance",
-    "braintree": "finance",
-
-    "google_calendar": "scheduling",
-    "microsoft_calendar": "scheduling",
+    "resend": "email",
+    "novu": "notifications",
+    "knock": "notifications",
+    "ntfy": "notifications",
+    "google_calendar": "calendar",
+    "microsoft_calendar": "calendar",
     "cal_com": "scheduling",
     "calendly": "scheduling",
-
-    "wordpress": "cms",
-    "webflow": "cms",
-    "contentful": "cms",
-    "ghost": "cms",
-    "strapi": "cms",
-    "sanity": "cms",
-    "prismic": "cms",
-
-    "leonardo_ai": "ai",
-    "openai": "ai",
-    "replicate": "ai",
-    "huggingface": "ai",
-    "anthropic": "ai",
-    "gemini": "ai",
-    "cohere": "ai",
-    "midjourney": "ai",
-    "stability_ai": "ai",
-
+    "personas_database": "database",
+    "supabase": "database",
+    "neon": "database",
+    "postgres": "database",
+    "convex": "database",
+    "upstash": "database",
+    "mongodb": "database",
+    "redis": "database",
+    "planetscale": "database",
+    "duckdb": "database",
+    "google_sheets": "spreadsheet",
+    "microsoft_excel": "spreadsheet",
+    "airtable": "spreadsheet",
     "aws_s3": "storage",
     "cloudflare_r2": "storage",
     "backblaze_b2": "storage",
     "dropbox": "storage",
+    "google_drive": "storage",
+    "onedrive": "storage",
     "local_drive": "storage",
-
-    "typeform": "forms",
-    "tally": "forms",
-    "formbricks": "forms",
-
-    "novu": "notifications",
-    "knock": "notifications",
-    "ntfy": "notifications",
-    "pushover": "notifications",
-    "pushbullet": "notifications",
-    "onesignal": "notifications",
-
-    "desktop_browser": "cloud",
-
-    "gcp_cloud": "cloud",
+    "notion": "knowledge_base",
+    "confluence": "knowledge_base",
+    "sharepoint": "knowledge_base",
+    "obsidian": "knowledge_base",
+    "desktop_obsidian": "knowledge_base",
+    "obsidian_memory": "knowledge_base",
+    "vector_knowledge_base": "vector_search",
+    "google_gemini": "ai",
+    "leonardo_ai": "ai",
+    "gemini_vision": "ai",
+    "elevenlabs": "ai",
+    "deepgram": "ai",
+    "github": "source_control",
+    "gitlab": "source_control",
+    "azure_devops": "source_control",
+    "github_actions": "ci_cd",
+    "circleci": "ci_cd",
+    "desktop_docker": "containers",
+    "kubernetes": "containers",
     "aws_cloud": "cloud",
     "azure_cloud": "cloud",
-    "cloud_billing": "cloud"
+    "gcp_cloud": "cloud",
+    "vercel": "cloud",
+    "netlify": "cloud",
+    "cloudflare": "cloud",
+    "fly_io": "cloud",
+    "railway": "cloud",
+    "digitalocean": "cloud",
+    "sentry": "monitoring",
+    "betterstack": "monitoring",
+    "codebase": "development",
+    "codebases": "development",
+    "desktop_browser": "browser_automation",
+    "jira": "project_management",
+    "linear": "project_management",
+    "asana": "project_management",
+    "clickup": "project_management",
+    "monday": "project_management",
+    "hubspot": "crm",
+    "pipedrive": "crm",
+    "attio": "crm",
+    "mixpanel": "analytics",
+    "posthog": "analytics",
+    "twilio_segment": "analytics",
+    "humbalytics": "analytics",
+    "metabase": "bi",
+    "redash": "bi",
+    "stripe": "finance",
+    "ramp": "finance",
+    "alpha_vantage": "finance",
+    "kalshi": "finance",
+    "lemonsqueezy": "ecommerce",
+    "woocommerce": "ecommerce",
+    "google_ads": "advertising",
+    "meta_ads": "advertising",
+    "linkedin_ads": "advertising",
+    "buffer": "social",
+    "linkedin": "social",
+    "reddit": "social",
+    "x_twitter": "social",
+    "youtube_data": "social",
+    "toggl": "time_tracking",
+    "clockify": "time_tracking",
+    "harvest": "time_tracking",
+    "figma": "design",
+    "canva": "design",
+    "penpot": "design",
+    "tally": "forms",
+    "formbricks": "forms",
+    "arxiv": "research",
+    "pubmed": "research",
+    "semantic_scholar": "research",
+    "news_api": "research",
+    "n8n": "automation",
+    "zapier": "automation",
+    "arcade": "integration",
+    "mcp_gateway": "integration",
+    "apify": "web_scraping",
+    "firecrawl": "web_scraping",
+    "twin": "personalization",
+    "google_workspace_oauth_template": "productivity"
   }
 }

@@ -2,35 +2,35 @@
   "id": "accounting-reconciliation-use-case",
   "schema_version": 3,
   "name": "Accounting Reconciliation Use Case",
-  "description": "Pulls Xero transactions, reconciles them against bank feeds, logs discrepancies to Google Sheets, alerts the finance team in Slack, and ships a weekly reconciliation summary by email. Learns recurring transaction patterns so predictable entries stop triggering false alerts.",
+  "description": "Pulls finance platform transactions, reconciles them against bank feeds, logs discrepancies to spreadsheet, alerts the finance team in the messaging channel, and ships a weekly reconciliation summary by email. Learns recurring transaction patterns so predictable entries stop triggering false alerts.",
   "icon": "Calculator",
   "color": "#22C55E",
   "category": [
     "finance"
   ],
   "service_flow": [
-    "Xero",
-    "Google Sheets",
-    "Slack",
-    "Gmail"
+    "finance platform",
+    "spreadsheet",
+    "messaging",
+    "email"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Xero",
-      "Google Sheets",
-      "Slack",
-      "Gmail"
+      "finance platform",
+      "spreadsheet",
+      "messaging",
+      "email"
     ],
     "persona": {
-      "goal": "Close the books every day by matching bank reality against Xero — silent when things line up, loud the moment they don't.",
+      "goal": "Close the books every day by matching bank reality against finance platform — silent when things line up, loud the moment they don't.",
       "identity": {
         "role": "Meticulous reconciliation agent that keeps Xero, bank feeds, and the finance team in lockstep.",
-        "description": "Pulls Xero transactions and bank-feed statement lines, matches them on amount + date + reference, classifies each as matched / partial / unmatched, logs discrepancies to a Google Sheets ledger, and alerts Slack with tiered urgency. A weekly email rolls up the numbers for leadership. Recurring patterns (subscriptions, payroll, rent) are memorized after 3+ observations so the same vendor doesn't trigger the same alert twice."
+        "description": "Pulls finance platform transactions and bank-feed statement lines, matches them on amount + date + reference, classifies each as matched / partial / unmatched, logs discrepancies to a spreadsheet ledger, and alerts messaging with tiered urgency. A weekly email rolls up the numbers for leadership. Recurring patterns (subscriptions, payroll, rent) are memorized after 3+ observations so the same vendor doesn't trigger the same alert twice."
       },
       "voice": {
         "style": "Precise, neutral, audit-grade. Numbers first. No marketing copy; no unprompted commentary on what the numbers mean.",
-        "output_format": "Discrepancy tables with Date | Amount | Source | Reference | Status | Confidence. Slack alerts use Block Kit with clear severity. Weekly email opens with the bottom-line match rate, then details.",
+        "output_format": "Discrepancy tables with Date | Amount | Source | Reference | Status | Confidence. messaging alerts use formatted messaging layout with clear severity. Weekly email opens with the bottom-line match rate, then details.",
         "tone_adjustments": []
       },
       "principles": [
@@ -38,26 +38,26 @@
         "Date tolerance is bounded: ±2 business days, explicit clearing-delay assumption.",
         "Every discrepancy is logged before any alert fires — the ledger is the source of truth.",
         "Recurring-pattern auto-match is opt-in via memory, not a heuristic guess.",
-        "Never modify Xero. Read-only analysis; humans act on what the agent surfaces."
+        "Never modify finance platform. Read-only analysis; humans act on what the agent surfaces."
       ],
       "constraints": [
         "Never auto-match a transaction in different currencies — flag currency mismatch explicitly.",
         "Never suppress an alert just because the total is small — low-value items roll into a grouped daily summary instead of being dropped.",
         "Never send the weekly email if the discrepancy log has pending human review items; note them in the email instead.",
-        "Never write to the Google Sheets Summary tab — that tab is reserved for user-authored formulas."
+        "Never write to the spreadsheet Summary tab — that tab is reserved for user-authored formulas."
       ],
       "decision_principles": [
         "When amount matches and date is within ±1 day, default to PARTIAL_MATCH with high confidence; humans override to full match if needed.",
         "When a vendor+amount+offset pattern repeats 3+ times, auto-match subsequent occurrences and annotate the row with the pattern ID.",
-        "When Xero returns 401/403, skip the cycle entirely and escalate — never proceed on stale data.",
+        "When finance platform returns 401/403, skip the cycle entirely and escalate — never proceed on stale data.",
         "When Sheets is unavailable, write discrepancies to a local CSV fallback so nothing is lost before retry."
       ],
       "verbosity_default": "normal",
       "trigger_composition": "shared",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities chain on a shared daily tick with a Friday extension:\n\n1. **uc_daily_reconciliation** — fetch yesterday's Xero transactions + matching bank statement lines; match on (amount exact, date ±2 business days, reference fuzzy); classify each as MATCHED / PARTIAL_MATCH / UNMATCHED_BANK / UNMATCHED_XERO; append all non-MATCHED rows to the Sheets Discrepancies tab; update the Sheets Summary tab daily totals. Persist `reconciliation_state.json` with unmatched-item history so same-day reprocessing is idempotent.\n\n2. **uc_discrepancy_alerts** — for every discrepancy written to the ledger this tick: items > $500 trigger individual Slack alerts, partial matches with confidence < 70% trigger review requests, total daily discrepancy > $5,000 escalates with an @-mention, low-value items roll into one grouped summary. Respects memory-matched recurring patterns — auto-matched items bypass alerting.\n\n3. **uc_weekly_email_summary** — Fridays only. Read the week's Sheets entries, compute match rate, outstanding discrepancies by age, top 10 largest unmatched items, trend vs previous week. Render an HTML email and send via Gmail to the finance distribution list. Write the report payload to local state for historical comparison.\n\nThe persona uses `trigger_composition: shared` so all three fire on the same daily tick (Friday additionally invokes uc_weekly_email_summary). Messages compose per-UC: Slack alerts belong to uc_discrepancy_alerts, email belongs to uc_weekly_email_summary, Sheets logging is silent output of uc_daily_reconciliation.",
-      "tool_guidance": "**Xero** (`https://api.xero.com/api.xro/2.0`):\n- `GET /BankTransactions?where=Date>=DateTime(YYYY,MM,DD)&order=Date` — daily transactions for the matching window.\n- `GET /BankStatements` — bank feed lines to match against.\n- `GET /Invoices?where=UpdatedDateUTC>=DateTime(...)` — recently modified invoices.\n- `GET /Payments` — payment cross-references.\n- Always set header `Xero-Tenant-Id`. The connector injects the OAuth2 bearer token.\n\n**Google Sheets** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append discrepancy rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — update daily totals on the Summary tab.\n- `GET /{id}/values/{range}` — dedupe check before appending.\n\n**Slack** (`https://slack.com/api`):\n- `POST chat.postMessage` — Block Kit alerts (individual + grouped summaries) to the configured finance channel.\n- `POST chat.update` — mutate a prior summary if same-day discrepancies resolve.\n\n**Gmail** — send the weekly HTML summary via the configured Gmail credential.\n\n**Local state**: `reconciliation_state.json` — last-sync timestamp, unmatched-item history keyed by (vendor, amount, date), recurring-pattern ledger, alert dedupe log.",
-      "error_handling": "Xero 401/403 → skip cycle, do NOT update last_sync timestamp (so next run retries the same window), emit persona-error Slack alert. Xero 429 → respect Retry-After, resume. Xero 5xx → up to 3 retries with 5/15/45s backoff; on failure, alert and skip. Sheets 404 (sheet deleted) → alert via Slack; fall back to local CSV at `data/discrepancies_fallback.csv`. Sheets 403 → surface the service account email in the alert so the user can grant access. Slack unreachable → queue alert payloads in `pending_slack.json`, retry next cycle (never silently drop). Gmail delivery failure → save the rendered HTML to `data/weekly_reports/report_{date}.html` and alert via Slack that email failed. Currency mismatch between Xero and bank entry → flag UNMATCHED with explicit note; never convert.",
+      "operating_instructions": "Three capabilities chain on a shared daily tick with a Friday extension: 1. **uc_daily_reconciliation** — fetch yesterday's finance platform transactions + matching bank statement lines; match on (amount exact, date ±2 business days, reference fuzzy); classify each as MATCHED / PARTIAL_MATCH / UNMATCHED_BANK / UNMATCHED_XERO; append all non-MATCHED rows to the Sheets Discrepancies tab; update the Sheets Summary tab daily totals. Persist `reconciliation_state.json` with unmatched-item history so same-day reprocessing is idempotent. 2. **uc_discrepancy_alerts** — for every discrepancy written to the ledger this tick: items > $500 trigger individual messaging alerts, partial matches with confidence < 70% trigger review requests, total daily discrepancy > $5,000 escalates with an @-mention, low-value items roll into one grouped summary. Respects memory-matched recurring patterns — auto-matched items bypass alerting. 3. **uc_weekly_email_summary** — Fridays only. Read the week's Sheets entries, compute match rate, outstanding discrepancies by age, top 10 largest unmatched items, trend vs previous week. Render an HTML email and send via email to the finance distribution list. Write the report payload to local state for historical comparison. The persona uses `trigger_composition: shared` so all three fire on the same daily tick (Friday additionally invokes uc_weekly_email_summary). Messages compose per-UC: messaging alerts belong to uc_discrepancy_alerts, email belongs to uc_weekly_email_summary, Sheets logging is silent output of uc_daily_reconciliation.",
+      "tool_guidance": "**finance platform** (`https://api.xero.com/api.xro/2.0`):\n- `GET /BankTransactions?where=Date>=DateTime(YYYY,MM,DD)&order=Date` — daily transactions for the matching window.\n- `GET /BankStatements` — bank feed lines to match against.\n- `GET /Invoices?where=UpdatedDateUTC>=DateTime(...)` — recently modified invoices.\n- `GET /Payments` — payment cross-references.\n- Always set header `finance platform-Tenant-Id`. The connector injects the OAuth2 bearer token. **spreadsheet** (`https://sheets.googleapis.com/v4/spreadsheets/`):\n- `POST /{id}/values/{range}:append?valueInputOption=USER_ENTERED` — append discrepancy rows.\n- `PUT /{id}/values/{range}?valueInputOption=USER_ENTERED` — update daily totals on the Summary tab.\n- `GET /{id}/values/{range}` — dedupe check before appending. **messaging** (`https://slack.com/api`):\n- `POST chat.postMessage` — formatted messaging layout alerts (individual + grouped summaries) to the configured finance channel.\n- `POST chat.update` — mutate a prior summary if same-day discrepancies resolve. **email** — send the weekly HTML summary via the configured email credential. **Local state**: `reconciliation_state.json` — last-sync timestamp, unmatched-item history keyed by (vendor, amount, date), recurring-pattern ledger, alert dedupe log.",
+      "error_handling": "finance platform 401/403 → skip cycle, do NOT update last_sync timestamp (so next run retries the same window), emit persona-error messaging alert. finance platform 429 → respect Retry-After, resume. finance platform 5xx → up to 3 retries with 5/15/45s backoff; on failure, alert and skip. Sheets 404 (sheet deleted) → alert via the messaging channel; fall back to local CSV at `data/discrepancies_fallback.csv`. Sheets 403 → surface the service account email in the alert so the user can grant access. messaging unreachable → queue alert payloads in `pending_slack.json`, retry next cycle (never silently drop). email delivery failure → save the rendered HTML to `data/weekly_reports/report_{date}.html` and alert via the messaging channel that email failed. Currency mismatch between finance platform and bank entry → flag UNMATCHED with explicit note; never convert.",
       "examples": [],
       "tools": [
         "http_request",
@@ -67,8 +67,8 @@
       ],
       "connectors": [
         {
-          "name": "xero",
-          "label": "Xero Accounting",
+          "name": "finance",
+          "label": "finance platform Accounting",
           "auth_type": "oauth2",
           "role": "accounting",
           "category": "finance",
@@ -83,7 +83,7 @@
               "label": "Client ID",
               "type": "text",
               "placeholder": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-              "helpText": "From your Xero Developer App at developer.xero.com -> My Apps -> your app -> Configuration",
+              "helpText": "From your finance platform Developer App at developer.xero.com -> My Apps -> your app -> Configuration",
               "required": true
             },
             {
@@ -91,19 +91,19 @@
               "label": "Client Secret",
               "type": "password",
               "placeholder": "your-client-secret",
-              "helpText": "From the same Xero Developer App configuration page. Generate a new secret if needed.",
+              "helpText": "From the same finance platform Developer App configuration page. Generate a new secret if needed.",
               "required": true
             },
             {
               "key": "tenant_id",
-              "label": "Xero Tenant ID",
+              "label": "finance platform Tenant ID",
               "type": "text",
               "placeholder": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-              "helpText": "Your Xero organization's tenant ID. Obtained during OAuth2 connection flow via the /connections endpoint.",
+              "helpText": "Your finance platform organization's tenant ID. Obtained during OAuth2 connection flow via the /connections endpoint.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to developer.xero.com and sign in with your Xero account.\n2. Click 'My Apps' -> 'New App'. Choose 'Web app' type.\n3. Set the redirect URI to your Personas callback URL.\n4. Copy the Client ID and generate a Client Secret.\n5. Under API scopes, enable: accounting.transactions.read, accounting.reports.read, accounting.settings.read.\n6. Complete the OAuth2 authorization flow to obtain your Tenant ID.\n7. Enter all three values in the connector fields above."
+          "setup_instructions": "1. Go to developer.xero.com and sign in with your finance platform account.\n2. Click 'My Apps' -> 'New App'. Choose 'Web app' type.\n3. Set the redirect URI to your Personas callback URL.\n4. Copy the Client ID and generate a Client Secret.\n5. Under API scopes, enable: accounting.transactions.read, accounting.reports.read, accounting.settings.read.\n6. Complete the OAuth2 authorization flow to obtain your Tenant ID.\n7. Enter all three values in the connector fields above."
         },
         {
           "name": "spreadsheet",
@@ -142,7 +142,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Google Sheets API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the spreadsheet API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with spreadsheets and drive.file scopes.\n7. Paste all three values here."
         },
         {
           "name": "messaging",
@@ -161,7 +161,7 @@
               "label": "Bot User OAuth Token",
               "type": "password",
               "placeholder": "xoxb-xxxxxxxxxxxx-xxxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx",
-              "helpText": "From your Slack App -> OAuth & Permissions -> Bot User OAuth Token. Starts with xoxb-.",
+              "helpText": "From your messaging App -> OAuth & Permissions -> Bot User OAuth Token. Starts with xoxb-.",
               "required": true
             },
             {
@@ -169,7 +169,7 @@
               "label": "Finance Alert Channel",
               "type": "text",
               "placeholder": "#finance-alerts",
-              "helpText": "The Slack channel where reconciliation alerts will be posted. The bot must be invited to this channel.",
+              "helpText": "The messaging channels where reconciliation alerts will be posted. The bot must be invited to this channel.",
               "required": true
             }
           ],
@@ -185,7 +185,7 @@
             "email"
           ],
           "required": false,
-          "fallback_note": "Without Gmail, the weekly summary is written to local HTML only (and announced in Slack). Re-enable to resume email delivery.",
+          "fallback_note": "Without email, the weekly summary is written to local HTML only (and announced in the messaging channel). Re-enable to resume email delivery.",
           "api_base_url": "https://www.googleapis.com",
           "credential_fields": [
             {
@@ -213,7 +213,7 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the Gmail API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
+          "setup_instructions": "1. Go to Google Cloud Console -> APIs & Services -> Library.\n2. Enable the email API.\n3. Go to Credentials -> Create Credentials -> OAuth 2.0 Client ID.\n4. Set application type to 'Desktop app'.\n5. Copy the Client ID and Client Secret.\n6. Complete the OAuth consent flow to obtain a refresh token with gmail.send, gmail.readonly, and gmail.modify scopes.\n7. Paste all three values here."
         }
       ],
       "notification_channels_default": [
@@ -232,8 +232,8 @@
       {
         "id": "uc_daily_reconciliation",
         "title": "Reconciliation Sync",
-        "description": "Pull yesterday's Xero transactions + matching bank statement lines, classify each as matched / partial / unmatched, and write discrepancies to the Google Sheets ledger. Default daily Mon-Fri 6:00 AM — final cadence set at the trigger-composition step.",
-        "capability_summary": "Daily Xero ↔ bank-feed matching with discrepancy logging to Sheets.",
+        "description": "Pull yesterday's finance platform transactions + matching bank statement lines, classify each as matched / partial / unmatched, and write discrepancies to the spreadsheet ledger. Default daily Mon-Fri 6:00 AM — final cadence set at the trigger-composition step.",
+        "capability_summary": "Daily finance platform ↔ bank-feed matching with discrepancy logging to Sheets.",
         "category": "operations",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -247,7 +247,7 @@
           "description": "Default Mon-Fri 6:00 AM — final cadence set at the trigger-composition step."
         },
         "connectors": [
-          "xero",
+          "finance",
           "spreadsheet"
         ],
         "notification_channels": [],
@@ -271,12 +271,12 @@
             "description": "Payload: { date, processed_count, matched_count, discrepancy_count, discrepancy_total }. Emitted once per daily cycle after state is persisted."
           }
         ],
-        "error_handling": "Xero auth failure → skip cycle, do not bump last_sync. Xero 429 → Retry-After. Sheets 404 → fallback to local CSV. Recurring-pattern auto-match applies before writing to the ledger.",
+        "error_handling": "finance platform auth failure → skip cycle, do not bump last_sync. finance platform 429 → Retry-After. Sheets 404 → fallback to local CSV. Recurring-pattern auto-match applies before writing to the ledger.",
         "input_schema": [
           {
             "name": "tracker_spreadsheet_id",
             "type": "text",
-            "description": "Google Sheets ID of the reconciliation ledger. Two tabs required: Discrepancies (appended to) and Summary (updated with daily totals)."
+            "description": "spreadsheet ID of the reconciliation ledger. Two tabs required: Discrepancies (appended to) and Summary (updated with daily totals)."
           },
           {
             "name": "date_tolerance_days",
@@ -288,7 +288,7 @@
               "5"
             ],
             "default": "2",
-            "description": "Business-day tolerance for matching a bank entry to a Xero entry by date. Amount always exact; date is fuzzy."
+            "description": "Business-day tolerance for matching a bank entry to a finance platform entry by date. Amount always exact; date is fuzzy."
           }
         ],
         "sample_input": {
@@ -316,7 +316,7 @@
             {
               "id": "d3",
               "type": "connector",
-              "label": "Fetch Xero txns + bank statements",
+              "label": "Fetch finance platform txns + bank statements",
               "connector": "xero"
             },
             {
@@ -399,8 +399,8 @@
       {
         "id": "uc_discrepancy_alerts",
         "title": "Discrepancy Alerting",
-        "description": "Route each discrepancy produced by the sync to Slack with tiered urgency — individual alerts for high-value items, review requests for low-confidence partials, grouped summary for low-value noise, @-mention escalation when the daily total crosses the escalation threshold. Default same tick as uc_daily_reconciliation — final cadence set at the trigger-composition step.",
-        "capability_summary": "Tiered Slack alerting on reconciliation discrepancies with grouping and escalation.",
+        "description": "Route each discrepancy produced by the sync to the messaging channel with tiered urgency — individual alerts for high-value items, review requests for low-confidence partials, grouped summary for low-value noise, @-mention escalation when the daily total crosses the escalation threshold. Default same tick as uc_daily_reconciliation — final cadence set at the trigger-composition step.",
+        "capability_summary": "Tiered messaging alerting on reconciliation discrepancies with grouping and escalation.",
         "category": "notifications",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -422,7 +422,7 @@
         },
         "memory_policy": {
           "enabled": true,
-          "context": "Alert dedupe log — prevents duplicate Slack posts for the same discrepancy across same-day retries. Tracks escalation state so a second 5K+ breach in the same day doesn't re-@-mention."
+          "context": "Alert dedupe log — prevents duplicate messaging posts for the same discrepancy across same-day retries. Tracks escalation state so a second 5K+ breach in the same day doesn't re-@-mention."
         },
         "event_subscriptions": [
           {
@@ -433,10 +433,10 @@
           {
             "event_type": "reconciliation.alert.sent",
             "direction": "emit",
-            "description": "Payload: { entry_id, tier (individual|grouped|escalation), slack_ts }. Emitted per Slack post for downstream tracking."
+            "description": "Payload: { entry_id, tier (individual|grouped|escalation), slack_ts }. Emitted per messaging post for downstream tracking."
           }
         ],
-        "error_handling": "Slack unreachable → queue payloads in `pending_slack.json`, retry on next cycle. Never silently drop. Duplicate-alert suppression honored via dedupe log.",
+        "error_handling": "messaging unreachable → queue payloads in `pending_slack.json`, retry on next cycle. Never silently drop. Duplicate-alert suppression honored via dedupe log.",
         "input_schema": [
           {
             "name": "alert_threshold",
@@ -461,7 +461,7 @@
               "25000"
             ],
             "default": "5000",
-            "description": "When the daily total of unmatched amounts crosses this, the Slack post includes an @-mention to the finance lead."
+            "description": "When the daily total of unmatched amounts crosses this, the messaging post includes an @-mention to the finance lead."
           },
           {
             "name": "confidence_review_cutoff",
@@ -473,7 +473,7 @@
               "95"
             ],
             "default": "90",
-            "description": "Partial matches below this confidence score trigger a Slack review request."
+            "description": "Partial matches below this confidence score trigger a messaging review request."
           }
         ],
         "sample_input": {
@@ -507,7 +507,7 @@
             {
               "id": "a4",
               "type": "connector",
-              "label": "Post individual alerts (Block Kit)",
+              "label": "Post individual alerts (formatted messaging layout)",
               "connector": "messaging"
             },
             {
@@ -610,7 +610,7 @@
             "description": "Payload: { week_ending, match_rate, outstanding_total, outstanding_count, wow_match_rate_delta }. Emitted on successful email delivery."
           }
         ],
-        "error_handling": "Sheets read failure → build summary from local state fallback with a freshness warning. Gmail delivery failure → save HTML to `data/weekly_reports/report_{date}.html` and alert via Slack.",
+        "error_handling": "Sheets read failure → build summary from local state fallback with a freshness warning. email delivery failure → save HTML to `data/weekly_reports/report_{date}.html` and alert via the messaging channel.",
         "input_schema": [
           {
             "name": "email_recipients",
@@ -666,7 +666,7 @@
             {
               "id": "w5",
               "type": "connector",
-              "label": "Send via Gmail",
+              "label": "Send via email",
               "connector": "email"
             },
             {
@@ -727,16 +727,16 @@
           "uc_weekly_email_summary"
         ],
         "category": "configuration",
-        "question": "Which Google Sheet should hold the reconciliation ledger?",
+        "question": "Which spreadsheet should hold the reconciliation ledger?",
         "type": "select",
         "dynamic_source": {
-          "service_type": "google_sheets",
+          "service_type": "spreadsheet",
           "operation": "list_sheets",
           "source": "vault"
         },
         "maps_to": "use_cases[uc_daily_reconciliation].sample_input.tracker_spreadsheet_id",
         "variable_name": "tracker_sheet",
-        "context": "Must have two tabs: 'Discrepancies' (the agent appends rows here) and 'Summary' (daily totals; reserved for user-authored formulas). Options come from your connected Google Sheets credential.",
+        "context": "Must have two tabs: 'Discrepancies' (the agent appends rows here) and 'Summary' (daily totals; reserved for user-authored formulas). Options come from your connected spreadsheet credential.",
         "dimension": "connectors"
       },
       {
@@ -746,7 +746,7 @@
           "uc_daily_reconciliation"
         ],
         "category": "configuration",
-        "question": "How many business days of date tolerance when matching a bank entry to a Xero entry?",
+        "question": "How many business days of date tolerance when matching a bank entry to a finance platform entry?",
         "type": "select",
         "options": [
           "1",
@@ -767,7 +767,7 @@
           "uc_discrepancy_alerts"
         ],
         "category": "configuration",
-        "question": "Above what amount should a single unmatched transaction trigger an individual Slack alert?",
+        "question": "Above what amount should a single unmatched transaction trigger an individual messaging alert?",
         "type": "select",
         "options": [
           "100",
@@ -837,7 +837,7 @@
         "default": "",
         "maps_to": "use_cases[uc_weekly_email_summary].sample_input.email_recipients",
         "variable_name": "email_recipients",
-        "context": "Comma-separated distribution list. The email is sent from your connected Gmail credential. If Gmail is skipped, the report is written to disk and announced in Slack instead.",
+        "context": "Comma-separated distribution list. The email is sent from your connected email credential. If email is skipped, the report is written to disk and announced in the messaging channel instead.",
         "dimension": "messages"
       },
       {
@@ -892,7 +892,7 @@
         },
         "maps_to": "persona.connectors[spreadsheet].credential_fields[provider].value",
         "variable_name": "spreadsheet_credential",
-        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (Google Sheets, Excel, Airtable, …).",
+        "context": "Options are auto-detected from your spreadsheet credentials in the Vault (spreadsheet, spreadsheet, spreadsheet, …).",
         "dimension": "connectors"
       },
       {
@@ -911,7 +911,7 @@
         },
         "maps_to": "persona.connectors[messaging].credential_fields[provider].value",
         "variable_name": "messaging_credential",
-        "context": "Options are auto-detected from your messaging-category credentials in the Vault (Slack, Discord, Teams, Telegram, …).",
+        "context": "Options are auto-detected from your messaging-category credentials in the Vault (messaging, messaging, messaging, messaging, …).",
         "dimension": "connectors"
       },
       {
@@ -930,7 +930,7 @@
         },
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_credential",
-        "context": "Options are auto-detected from your email-category credentials in the Vault (Gmail, Outlook, Resend, SendGrid, …).",
+        "context": "Options are auto-detected from your email-category credentials in the Vault (email, email, Resend, SendGrid, …).",
         "dimension": "connectors"
       }
     ],

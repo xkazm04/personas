@@ -5,11 +5,21 @@
   "description": "Transforms web URLs into structured knowledge base pages with AI summarization, multi-dimensional taxonomy tagging, and automatic cross-referencing. Manual URL submission or scheduled RSS feed scanning; handles paywalls gracefully; maintains a controlled taxonomy across runs.",
   "icon": "Sparkles",
   "color": "#8b5cf6",
-  "category": ["research"],
+  "category": [
+    "research"
+  ],
   "is_published": true,
-  "service_flow": ["Web Research", "Knowledge Base", "Messages"],
+  "service_flow": [
+    "Web Research",
+    "Knowledge Base",
+    "Messages"
+  ],
   "payload": {
-    "service_flow": ["Web Research", "Knowledge Base", "Messages"],
+    "service_flow": [
+      "Web Research",
+      "Knowledge Base",
+      "Messages"
+    ],
     "persona": {
       "goal": "Turn reading lists into a navigable knowledge graph — structured pages, consistent taxonomy, real cross-references. Every new article makes the existing collection easier to search.",
       "identity": {
@@ -42,11 +52,15 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Three capabilities, three trigger shapes:\n\n1. **uc_manual_curation** (manual trigger — user submits URLs) — validate URLs, dedup-check against `state/processed_urls.json`, fetch each page via http_request with proper User-Agent + redirect handling, extract content (strip nav/ads/sidebars), generate three-tier summary (one-line takeaway / executive summary / detailed notes), extract entities, classify content type + reading difficulty, assign controlled-taxonomy tags, query the KB for cross-references, create the page, update state (processed_urls, taxonomy_index, cross_ref_graph), emit `kb.curation.page_created`.\n\n2. **uc_feed_scanning** (scheduled — daily by default) — read RSS feed config from `state/feed_config.json`, fetch each feed with proper Accept header, parse items (RSS `<item>` or Atom `<entry>`), filter by `max_article_age_days` and dedup against processed URLs, cap at `batch_size`, then run each surviving article through Mode 1 Steps 2-7 with 350ms Notion-API pacing. Post summary via Messages. Emit `kb.curation.feed_scan_completed`.\n\n3. **uc_weekly_maintenance** (scheduled — weekly by default) — audit cross_ref_graph for orphans (zero inbound refs), scan taxonomy for near-duplicate tags (edit distance ≤2), compile curation stats (articles this week, tags added, cross-references created). Post a maintenance summary via Messages. Doesn't mutate pages automatically — surfaces suggestions the human can apply.\n\nState: `state/processed_urls.json` (URL → page_id + timestamp + tags for dedup), `state/taxonomy_index.json` (controlled vocabulary: { domain: [...], method: [...] }), `state/cross_ref_graph.json` (page adjacency list with relationship types), `state/feed_config.json` (RSS feed URLs with priority).",
-      "tool_guidance": "**Web fetching** (http_request):\n- `GET {url}` with `User-Agent: ResearchKnowledgeCurator/1.0`, `Accept: text/html`, 20s timeout, follow up to 3 redirects.\n- Strip `<nav>`, `<footer>`, `<aside>`, ad-related `<div>` before extracting body text.\n- Paywall / 403: extract `<meta og:description>` + abstract/preview paragraph; create partial page with `Paywall` status.\n- 404 / other error: log, skip, surface in Messages summary.\n\n**RSS / Atom** (http_request):\n- `GET {feed_url}` with `Accept: application/rss+xml, application/atom+xml, application/xml`.\n- Parse `<item>` (RSS) or `<entry>` (Atom) for title, link, published, description/summary, author.\n- Normalize dates to ISO 8601 before dedup comparison.\n\n**Knowledge base** (shape depends on connector picked at adoption):\n- **Notion**: `POST https://api.notion.com/v1/pages` with `Notion-Version: 2022-06-28`; `POST /v1/blocks/{page_id}/children` for structured body blocks; `POST /v1/databases/{db_id}/query` for cross-reference discovery. 350ms pacing between calls.\n- **Obsidian** (desktop_bridge): write a markdown file under `{vault}/{domain_tag}/{title}.md` with YAML frontmatter holding properties and body holding the structured sections.\n\n**Summarization framework**:\n- One-line takeaway: max 120 chars, single most important insight.\n- Executive summary: 2-3 sentences — problem / method / result.\n- Detailed notes: 3-5 bullets with supporting data + caveats.\n- Key entities: people, companies, products, technologies, concepts.\n- Content type: research_paper, tutorial, opinion, news, case_study, documentation, announcement.\n- Reading difficulty: beginner, intermediate, advanced.\n\n**Taxonomy assignment**:\n- Domain tags: 2-5 from `state/taxonomy_index.json.domain`.\n- Method tags: 1-2 from `state/taxonomy_index.json.method`.\n- New tags only when genuinely needed (no existing tag within edit-distance 2).\n\n**Cross-reference types**:\n- `builds-on`: extends a prior entry.\n- `contradicts`: opposing findings.\n- `complements`: related but distinct angle.\n- `supersedes`: more recent / comprehensive treatment.\n\n**Local state**:\n- `state/processed_urls.json` — `{ url_hash: { url, page_id, processed_at, tags } }` (dedup).\n- `state/taxonomy_index.json` — `{ domain: [...], method: [...] }` (controlled vocab).\n- `state/cross_ref_graph.json` — `{ page_id: [{ target_id, relationship }] }`.\n- `state/feed_config.json` — `{ feeds: [{ url, name, priority }] }`.\n- Always read-merge-write to prevent concurrent-run data loss.",
+      "operating_instructions": "Three capabilities, three trigger shapes: 1. **uc_manual_curation** (manual trigger — user submits URLs) — validate URLs, dedup-check against `state/processed_urls.json`, fetch each page via http_request with proper User-Agent + redirect handling, extract content (strip nav/ads/sidebars), generate three-tier summary (one-line takeaway / executive summary / detailed notes), extract entities, classify content type + reading difficulty, assign controlled-taxonomy tags, query the KB for cross-references, create the page, update state (processed_urls, taxonomy_index, cross_ref_graph), emit `kb.curation.page_created`. 2. **uc_feed_scanning** (scheduled — daily by default) — read RSS feed config from `state/feed_config.json`, fetch each feed with proper Accept header, parse items (RSS `<item>` or Atom `<entry>`), filter by `max_article_age_days` and dedup against processed URLs, cap at `batch_size`, then run each surviving article through Mode 1 Steps 2-7 with 350ms knowledge base-API pacing. Post summary via Messages. Emit `kb.curation.feed_scan_completed`. 3. **uc_weekly_maintenance** (scheduled — weekly by default) — audit cross_ref_graph for orphans (zero inbound refs), scan taxonomy for near-duplicate tags (edit distance ≤2), compile curation stats (articles this week, tags added, cross-references created). Post a maintenance summary via Messages. Doesn't mutate pages automatically — surfaces suggestions the human can apply. State: `state/processed_urls.json` (URL → page_id + timestamp + tags for dedup), `state/taxonomy_index.json` (controlled vocabulary: { domain: [...], method: [...] }), `state/cross_ref_graph.json` (page adjacency list with relationship types), `state/feed_config.json` (RSS feed URLs with priority).",
+      "tool_guidance": "**Web fetching** (http_request):\n- `GET {url}` with `User-Agent: ResearchKnowledgeCurator/1.0`, `Accept: text/html`, 20s timeout, follow up to 3 redirects.\n- Strip `<nav>`, `<footer>`, `<aside>`, ad-related `<div>` before extracting body text.\n- Paywall / 403: extract `<meta og:description>` + abstract/preview paragraph; create partial page with `Paywall` status.\n- 404 / other error: log, skip, surface in Messages summary. **RSS / Atom** (http_request):\n- `GET {feed_url}` with `Accept: application/rss+xml, application/atom+xml, application/xml`.\n- Parse `<item>` (RSS) or `<entry>` (Atom) for title, link, published, description/summary, author.\n- Normalize dates to ISO 8601 before dedup comparison. **Knowledge base** (shape depends on connector picked at adoption):\n- **knowledge base**: `POST https://api.notion.com/v1/pages` with `knowledge base-Version: 2022-06-28`; `POST /v1/blocks/{page_id}/children` for structured body blocks; `POST /v1/databases/{db_id}/query` for cross-reference discovery. 350ms pacing between calls.\n- **Obsidian** (desktop_bridge): write a markdown file under `{vault}/{domain_tag}/{title}.md` with YAML frontmatter holding properties and body holding the structured sections. **Summarization framework**:\n- One-line takeaway: max 120 chars, single most important insight.\n- Executive summary: 2-3 sentences — problem / method / result.\n- Detailed notes: 3-5 bullets with supporting data + caveats.\n- Key entities: people, companies, products, technologies, concepts.\n- Content type: research_paper, tutorial, opinion, news, case_study, documentation, announcement.\n- Reading difficulty: beginner, intermediate, advanced. **Taxonomy assignment**:\n- Domain tags: 2-5 from `state/taxonomy_index.json.domain`.\n- Method tags: 1-2 from `state/taxonomy_index.json.method`.\n- New tags only when genuinely needed (no existing tag within edit-distance 2). **Cross-reference types**:\n- `builds-on`: extends a prior entry.\n- `contradicts`: opposing findings.\n- `complements`: related but distinct angle.\n- `supersedes`: more recent / comprehensive treatment. **Local state**:\n- `state/processed_urls.json` — `{ url_hash: { url, page_id, processed_at, tags } }` (dedup).\n- `state/taxonomy_index.json` — `{ domain: [...], method: [...] }` (controlled vocab).\n- `state/cross_ref_graph.json` — `{ page_id: [{ target_id, relationship }] }`.\n- `state/feed_config.json` — `{ feeds: [{ url, name, priority }] }`.\n- Always read-merge-write to prevent concurrent-run data loss.",
       "error_handling": "KB connector 401 → alert via Messages asking for credential refresh, queue pending pages in `state/pending_pages.json` for retry. KB 429 → increase inter-request delay to 500ms for the rest of the batch; queue overflow. KB 400 (malformed payload) → retry without the problematic property; note the omission on the page. KB DB not found / not shared with integration → halt KB operations, alert user to re-share. Web fetch 403/401 (paywall) → create partial page with `Paywall` status. Web 404 → skip + report in summary. Web 429 → exponential backoff (2s, 4s, 8s). Timeout → one retry at 40s, then skip. Corrupted state JSON → load `.bak` backup if available; else initialize empty with warning (dedup history lost; some articles may reprocess). Duplicate content at different URLs (title + body similarity >90%) → add the new URL as alias to the existing page rather than creating a duplicate. Non-article URLs (login page, error page, <100 words body) → skip + report 'not an article'.",
       "examples": [],
-      "tools": ["http_request", "file_read", "file_write"],
+      "tools": [
+        "http_request",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
           "name": "knowledge_base",
@@ -60,9 +74,12 @@
               "key": "provider",
               "label": "KB provider",
               "type": "select",
-              "options": ["notion", "obsidian"],
+              "options": [
+                "notion",
+                "obsidian"
+              ],
               "placeholder": "notion",
-              "helpText": "Which knowledge base to curate pages into. Notion = cloud database; Obsidian = local vault via desktop bridge.",
+              "helpText": "Which knowledge base to curate pages into. knowledge base = cloud database; Obsidian = local vault via desktop bridge.",
               "required": true
             },
             {
@@ -70,7 +87,7 @@
               "label": "Database ID / Vault path",
               "type": "text",
               "placeholder": "",
-              "helpText": "Notion: the 32-char database ID from the URL. Obsidian: absolute path to the vault root.",
+              "helpText": "knowledge base: the 32-char database ID from the URL. Obsidian: absolute path to the vault root.",
               "required": true
             },
             {
@@ -78,11 +95,11 @@
               "label": "Integration token",
               "type": "password",
               "placeholder": "",
-              "helpText": "Notion: internal integration token (ntn_…). Obsidian: leave blank (desktop bridge handles auth).",
+              "helpText": "knowledge base: internal integration token (ntn_…). Obsidian: leave blank (desktop bridge handles auth).",
               "required": false
             }
           ],
-          "setup_instructions": "1. Pick a KB provider.\n2. Notion: create an internal integration with Read + Insert + Update content capabilities; share your database with it; paste the token and DB ID. Database should have: Title (title), Source URL (url), Author (text), Publication Date (date), Content Type (select), Reading Difficulty (select), Domain Tags (multi-select), Method Tags (multi-select), Status (select), Word Count (number), One-Line Takeaway (text), Related Pages (relation).\n3. Obsidian: ensure the desktop bridge is running and paste the vault path."
+          "setup_instructions": "1. Pick a KB provider.\n2. knowledge base: create an internal integration with Read + Insert + Update content capabilities; share your database with it; paste the token and DB ID. Database should have: Title (title), Source URL (url), Author (text), Publication Date (date), Content Type (select), Reading Difficulty (select), Domain Tags (multi-select), Method Tags (multi-select), Status (select), Word Count (number), One-Line Takeaway (text), Related Pages (relation).\n3. Obsidian: ensure the desktop bridge is running and paste the vault path."
         }
       ],
       "notification_channels_default": [
@@ -108,7 +125,9 @@
           "config": {},
           "description": "Manual — user invokes with one URL, a list, or a pasted batch."
         },
-        "connectors": ["knowledge_base"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -147,29 +166,95 @@
           "urls": "",
           "curation_intent": "{{param.aq_curation_intent}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "m1", "type": "start", "label": "URLs received" },
-            { "id": "m2", "type": "action", "label": "Validate + dedup-check" },
-            { "id": "m3", "type": "action", "label": "Fetch page + extract content" },
-            { "id": "m4", "type": "action", "label": "Summarize (three-tier) + classify + tag" },
-            { "id": "m5", "type": "connector", "label": "Query KB for cross-references", "connector": "knowledge_base" },
-            { "id": "m6", "type": "connector", "label": "Create KB page", "connector": "knowledge_base" },
-            { "id": "m7", "type": "action", "label": "Update state (processed_urls, taxonomy, graph)" },
-            { "id": "m8", "type": "event", "label": "Emit kb.curation.page_created + taxonomy_updated if new tag" },
-            { "id": "m9", "type": "end", "label": "Page(s) curated" }
+            {
+              "id": "m1",
+              "type": "start",
+              "label": "URLs received"
+            },
+            {
+              "id": "m2",
+              "type": "action",
+              "label": "Validate + dedup-check"
+            },
+            {
+              "id": "m3",
+              "type": "action",
+              "label": "Fetch page + extract content"
+            },
+            {
+              "id": "m4",
+              "type": "action",
+              "label": "Summarize (three-tier) + classify + tag"
+            },
+            {
+              "id": "m5",
+              "type": "connector",
+              "label": "Query KB for cross-references",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "m6",
+              "type": "connector",
+              "label": "Create KB page",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "m7",
+              "type": "action",
+              "label": "Update state (processed_urls, taxonomy, graph)"
+            },
+            {
+              "id": "m8",
+              "type": "event",
+              "label": "Emit kb.curation.page_created + taxonomy_updated if new tag"
+            },
+            {
+              "id": "m9",
+              "type": "end",
+              "label": "Page(s) curated"
+            }
           ],
           "edges": [
-            { "source": "m1", "target": "m2" },
-            { "source": "m2", "target": "m3" },
-            { "source": "m3", "target": "m4" },
-            { "source": "m4", "target": "m5" },
-            { "source": "m5", "target": "m6" },
-            { "source": "m6", "target": "m7" },
-            { "source": "m7", "target": "m8" },
-            { "source": "m8", "target": "m9" }
+            {
+              "source": "m1",
+              "target": "m2"
+            },
+            {
+              "source": "m2",
+              "target": "m3"
+            },
+            {
+              "source": "m3",
+              "target": "m4"
+            },
+            {
+              "source": "m4",
+              "target": "m5"
+            },
+            {
+              "source": "m5",
+              "target": "m6"
+            },
+            {
+              "source": "m6",
+              "target": "m7"
+            },
+            {
+              "source": "m7",
+              "target": "m8"
+            },
+            {
+              "source": "m8",
+              "target": "m9"
+            }
           ]
         }
       },
@@ -184,10 +269,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 8 * * *", "timezone": "local" },
+          "config": {
+            "cron": "0 8 * * *",
+            "timezone": "local"
+          },
           "description": "Default daily 8:00 AM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["knowledge_base"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "on_low_confidence",
@@ -238,25 +328,75 @@
           "batch_size": "{{param.aq_batch_size}}",
           "feed_urls": "{{param.aq_feed_urls}}"
         },
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "f1", "type": "start", "label": "Daily tick" },
-            { "id": "f2", "type": "action", "label": "Fetch all configured feeds" },
-            { "id": "f3", "type": "action", "label": "Dedup + age-filter + cap at batch_size" },
-            { "id": "f4", "type": "action", "label": "Curate each item (summarize, tag, cross-ref, create page)" },
-            { "id": "f5", "type": "event", "label": "Emit kb.curation.page_created per page" },
-            { "id": "f6", "type": "event", "label": "Emit kb.curation.feed_scan_completed" },
-            { "id": "f7", "type": "end", "label": "Scan delivered" }
+            {
+              "id": "f1",
+              "type": "start",
+              "label": "Daily tick"
+            },
+            {
+              "id": "f2",
+              "type": "action",
+              "label": "Fetch all configured feeds"
+            },
+            {
+              "id": "f3",
+              "type": "action",
+              "label": "Dedup + age-filter + cap at batch_size"
+            },
+            {
+              "id": "f4",
+              "type": "action",
+              "label": "Curate each item (summarize, tag, cross-ref, create page)"
+            },
+            {
+              "id": "f5",
+              "type": "event",
+              "label": "Emit kb.curation.page_created per page"
+            },
+            {
+              "id": "f6",
+              "type": "event",
+              "label": "Emit kb.curation.feed_scan_completed"
+            },
+            {
+              "id": "f7",
+              "type": "end",
+              "label": "Scan delivered"
+            }
           ],
           "edges": [
-            { "source": "f1", "target": "f2" },
-            { "source": "f2", "target": "f3" },
-            { "source": "f3", "target": "f4" },
-            { "source": "f4", "target": "f5" },
-            { "source": "f5", "target": "f6" },
-            { "source": "f6", "target": "f7" }
+            {
+              "source": "f1",
+              "target": "f2"
+            },
+            {
+              "source": "f2",
+              "target": "f3"
+            },
+            {
+              "source": "f3",
+              "target": "f4"
+            },
+            {
+              "source": "f4",
+              "target": "f5"
+            },
+            {
+              "source": "f5",
+              "target": "f6"
+            },
+            {
+              "source": "f6",
+              "target": "f7"
+            }
           ]
         }
       },
@@ -271,10 +411,15 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 18 * * 5", "timezone": "local" },
+          "config": {
+            "cron": "0 18 * * 5",
+            "timezone": "local"
+          },
           "description": "Default Friday 6:00 PM — final cadence set at the trigger-composition step."
         },
-        "connectors": ["knowledge_base"],
+        "connectors": [
+          "knowledge_base"
+        ],
         "notification_channels": [],
         "review_policy": {
           "mode": "always",
@@ -294,25 +439,76 @@
         "error_handling": "KB query failure → skip that audit section, note in the summary. State file missing → initialize empty, report.",
         "input_schema": [],
         "sample_input": {},
-        "tool_hints": ["http_request", "file_read", "file_write"],
+        "tool_hints": [
+          "http_request",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "w1", "type": "start", "label": "Weekly tick" },
-            { "id": "w2", "type": "connector", "label": "Query KB for all pages + relations", "connector": "knowledge_base" },
-            { "id": "w3", "type": "action", "label": "Detect orphans (zero inbound refs)" },
-            { "id": "w4", "type": "action", "label": "Audit taxonomy for near-duplicate tags" },
-            { "id": "w5", "type": "action", "label": "Compile weekly stats" },
-            { "id": "w6", "type": "event", "label": "Emit kb.curation.maintenance_report + deliver via Messages" },
-            { "id": "w7", "type": "end", "label": "Maintenance delivered" }
+            {
+              "id": "w1",
+              "type": "start",
+              "label": "Weekly tick"
+            },
+            {
+              "id": "w2",
+              "type": "connector",
+              "label": "Query KB for all pages + relations",
+              "connector": "knowledge_base"
+            },
+            {
+              "id": "w3",
+              "type": "action",
+              "label": "Detect orphans (zero inbound refs)"
+            },
+            {
+              "id": "w4",
+              "type": "action",
+              "label": "Audit taxonomy for near-duplicate tags"
+            },
+            {
+              "id": "w5",
+              "type": "action",
+              "label": "Compile weekly stats"
+            },
+            {
+              "id": "w6",
+              "type": "event",
+              "label": "Emit kb.curation.maintenance_report + deliver via Messages"
+            },
+            {
+              "id": "w7",
+              "type": "end",
+              "label": "Maintenance delivered"
+            }
           ],
           "edges": [
-            { "source": "w1", "target": "w2" },
-            { "source": "w2", "target": "w3" },
-            { "source": "w3", "target": "w4" },
-            { "source": "w4", "target": "w5" },
-            { "source": "w5", "target": "w6" },
-            { "source": "w6", "target": "w7" }
+            {
+              "source": "w1",
+              "target": "w2"
+            },
+            {
+              "source": "w2",
+              "target": "w3"
+            },
+            {
+              "source": "w3",
+              "target": "w4"
+            },
+            {
+              "source": "w4",
+              "target": "w5"
+            },
+            {
+              "source": "w5",
+              "target": "w6"
+            },
+            {
+              "source": "w6",
+              "target": "w7"
+            }
           ]
         }
       }
@@ -321,7 +517,10 @@
       {
         "id": "aq_curation_intent",
         "scope": "capability",
-        "use_case_ids": ["uc_manual_curation", "uc_feed_scanning"],
+        "use_case_ids": [
+          "uc_manual_curation",
+          "uc_feed_scanning"
+        ],
         "category": "domain",
         "question": "How should the curator work with your sources — what to emphasize, what taxonomy dimensions matter?",
         "type": "textarea",
@@ -335,7 +534,9 @@
       {
         "id": "aq_feed_urls",
         "scope": "capability",
-        "use_case_ids": ["uc_feed_scanning"],
+        "use_case_ids": [
+          "uc_feed_scanning"
+        ],
         "category": "domain",
         "question": "Which RSS/Atom feeds should be scanned?",
         "type": "textarea",
@@ -349,11 +550,19 @@
       {
         "id": "aq_max_article_age",
         "scope": "capability",
-        "use_case_ids": ["uc_feed_scanning"],
+        "use_case_ids": [
+          "uc_feed_scanning"
+        ],
         "category": "quality",
         "question": "How old can feed items be before they're skipped?",
         "type": "select",
-        "options": ["3", "7", "14", "30", "90"],
+        "options": [
+          "3",
+          "7",
+          "14",
+          "30",
+          "90"
+        ],
         "default": "7",
         "maps_to": "use_cases[uc_feed_scanning].sample_input.max_article_age_days",
         "variable_name": "max_article_age_days",
@@ -363,11 +572,19 @@
       {
         "id": "aq_batch_size",
         "scope": "capability",
-        "use_case_ids": ["uc_feed_scanning"],
+        "use_case_ids": [
+          "uc_feed_scanning"
+        ],
         "category": "quality",
         "question": "How many new articles should a single feed scan process?",
         "type": "select",
-        "options": ["5", "10", "20", "50", "100"],
+        "options": [
+          "5",
+          "10",
+          "20",
+          "50",
+          "100"
+        ],
         "default": "20",
         "maps_to": "use_cases[uc_feed_scanning].sample_input.batch_size",
         "variable_name": "batch_size",
@@ -377,7 +594,9 @@
       {
         "id": "aq_kb_provider",
         "scope": "connector",
-        "connector_names": ["knowledge_base"],
+        "connector_names": [
+          "knowledge_base"
+        ],
         "category": "configuration",
         "question": "Which knowledge base should receive the curated pages?",
         "type": "select",
@@ -388,7 +607,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_provider",
-        "context": "Auto-detected from your Vault's knowledge-base credentials (Notion, Obsidian, etc.). Add one in Vault → Catalog if the list is empty.",
+        "context": "Auto-detected from your Vault's knowledge-base credentials (knowledge base, Obsidian, etc.). Add one in Vault → Catalog if the list is empty.",
         "dimension": "connectors"
       }
     ],

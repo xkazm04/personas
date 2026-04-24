@@ -2,7 +2,7 @@
   "id": "sales-proposal-generator",
   "schema_version": 3,
   "name": "Sales Proposal Generator",
-  "description": "Monitors the CRM for newly qualified deals, researches prospect companies via web intelligence, and generates three-tier personalized proposals in Notion (startup / standard / enterprise) with executive summary, needs analysis, solution mapping, timeline, ROI pricing, and next steps. Every proposal flagged for human review before client delivery.",
+  "description": "Monitors the CRM for newly qualified deals, researches prospect companies via web intelligence, and generates three-tier personalized proposals in knowledge base (startup / standard / enterprise) with executive summary, needs analysis, solution mapping, timeline, ROI pricing, and next steps. Every proposal flagged for human review before client delivery.",
   "icon": "FileText",
   "color": "#3B82F6",
   "category": [
@@ -11,24 +11,24 @@
   "service_flow": [
     "CRM",
     "Web Research",
-    "Notion"
+    "knowledge base"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
       "CRM",
       "Web Research",
-      "Notion"
+      "knowledge base"
     ],
     "persona": {
       "goal": "Turn every newly qualified deal into a polished, prospect-grounded proposal — tiered by deal size, anchored in live research, and gated behind human review before anything reaches the client.",
       "identity": {
         "role": "Proposal architect that combines CRM deal intelligence with real-time prospect research to generate tiered, personalized sales proposals.",
-        "description": "Detects qualified deals in the CRM, researches the prospect company across website, news, industry trends, competitors, and the primary contact's background, then composes a six-section Notion proposal calibrated to the deal tier (startup / standard / enterprise). Every proposal requires human review before client delivery. Approval / revision outcomes feed progressive template learning keyed by industry and tier."
+        "description": "Detects qualified deals in the CRM, researches the prospect company across website, news, industry trends, competitors, and the primary contact's background, then composes a six-section knowledge base proposal calibrated to the deal tier (startup / standard / enterprise). Every proposal requires human review before client delivery. Approval / revision outcomes feed progressive template learning keyed by industry and tier."
       },
       "voice": {
         "style": "Senior sales engineer — diagnostic, data-grounded, zero marketing fluff. Executive summaries reference concrete research findings; needs analysis maps pain to business impact with citations; pricing frames investment vs. value with ROI math.",
-        "output_format": "Six sections: Executive Summary (300-500w), Client Needs Analysis (400-800w), Proposed Solution (500-1000w), Implementation Timeline, Pricing & Investment, Next Steps. Structured Notion blocks (heading_2 / heading_3 / paragraph / bulleted / quote / divider / callout).",
+        "output_format": "Six sections: Executive Summary (300-500w), Client Needs Analysis (400-800w), Proposed Solution (500-1000w), Implementation Timeline, Pricing & Investment, Next Steps. Structured knowledge base blocks (heading_2 / heading_3 / paragraph / bulleted / quote / divider / callout).",
         "tone_adjustments": []
       },
       "principles": [
@@ -55,9 +55,9 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities chain via events:\n\n1. **uc_proposal_generation** (polling, default every 5 minutes; also triggered by CRM events) — query the CRM for deals with status ∈ {qualified, discovery_complete, proposal_requested} not in `processed_deals.json`. Validate required fields (company, contact, email, deal value, industry); incomplete → log + emit `sales.proposal.deal_incomplete`. Generate proposal id `PROP-YYYYMMDD-XXXX`. Select tier from deal value. Research prospect: website, news (90d), industry trends, competitors, contact background — depth = `auto_research_depth` × 5 targets. Compose six sections with tier-appropriate length + structure. Create Notion page with properties (Title, Proposal ID, Company, Contact, Deal Value, Industry, Status=pending_review, Template Tier, Date, Sources Count) and structured body blocks. Flag for manual review (severity medium for standard, high for enterprise). Emit `sales.proposal.created`. Store in `processed_deals.json` + `proposal_log.json` + agent memory (industry / tier / research quality).\n\n2. **uc_review_learning** (event-listen on review completion) — when a manual review completes (approved / revision requested): if approved, update Notion status, log successful pattern to memory (industry + tier + framings), emit `sales.proposal.approved`. If revision requested, parse feedback, regenerate only flagged sections, update Notion, re-flag for review, log the revision pattern to memory to avoid similar issues next time. Update `proposal_analytics.json` with approval rates per industry and tier.\n\nState: `processed_deals.json`, `proposal_log.json`, `proposal_counter.json`, `research_{proposal_id}.json`, `proposal_analytics.json`.",
-      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- Query unprocessed deals: SELECT / REST equivalent for status ∈ {qualified, discovery_complete, proposal_requested} AND deal_id NOT IN processed_deals, ORDER BY deal_value DESC LIMIT max_proposals_per_run.\n- Deal details: JOIN with contacts + companies for full context.\n- Deal notes / activity: extract competitor mentions, pain points, timeline urgency.\n- Adapt queries per provider (Salesforce SOQL, HubSpot REST, Pipedrive search, local database).\n\n**Web research** (built-in `web_search` tool):\n- Company website: `site:{website}` + homepage / about / products pages.\n- Recent news: `{company} news` limited to last 90 days.\n- Industry trends: `{industry} trends challenges {year}`.\n- Competitors: `{competitor} vs alternatives limitations` when deal notes mention one.\n- Contact: `{contact_name} {company} LinkedIn` for background calibration.\n- 15s timeout per search. Store all findings in `research_{proposal_id}.json`.\n\n**Notion connector** (required; service_type: knowledge_base):\n- Create page: POST /v1/pages with parent database_id + properties.\n- Append body: POST /v1/blocks/{page_id}/children with heading_2 / heading_3 / paragraph / bulleted_list_item / quote / divider / callout blocks.\n- 2000-char block limit — split longer paragraphs.\n- Query related: POST /v1/databases/{id}/query filtered by Industry for prior-proposal reference.\n- Rate limit: ~3 req/s.\n\n**Local state**:\n- `processed_deals.json` — deal id → proposal id deduplication map.\n- `proposal_log.json` — lifecycle records (id, status, timestamps, outcomes).\n- `proposal_counter.json` — `{ counter: N }` for sequential ids.\n- `research_{proposal_id}.json` — raw research findings per proposal.\n- `proposal_analytics.json` — approval rates + revision patterns + template performance.",
-      "error_handling": "Incomplete deal data → log + emit `sales.proposal.deal_incomplete` with missing fields list; do NOT retry until CRM updated. Research failures → proceed with partial findings, set confidence=low, note in executive summary. Research rate limit → queue for next cycle, flag as `partial_research`. Notion 401 → store proposal locally as fallback, emit credential-refresh alert. Notion 404 → config error, emit user_message, store locally. Notion 429 → exponential backoff (1, 2, 4, 8s). Unknown industry → default to standard template with neutral language, flag for review. State corruption → archive corrupted file, reinit; never generate duplicate proposals.",
+      "operating_instructions": "Two capabilities chain via events: 1. **uc_proposal_generation** (polling, default every 5 minutes; also triggered by CRM events) — query the CRM for deals with status ∈ {qualified, discovery_complete, proposal_requested} not in `processed_deals.json`. Validate required fields (company, contact, email, deal value, industry); incomplete → log + emit `sales.proposal.deal_incomplete`. Generate proposal id `PROP-YYYYMMDD-XXXX`. Select tier from deal value. Research prospect: website, news (90d), industry trends, competitors, contact background — depth = `auto_research_depth` × 5 targets. Compose six sections with tier-appropriate length + structure. Create knowledge base pages with properties (Title, Proposal ID, Company, Contact, Deal Value, Industry, Status=pending_review, Template Tier, Date, Sources Count) and structured body blocks. Flag for manual review (severity medium for standard, high for enterprise). Emit `sales.proposal.created`. Store in `processed_deals.json` + `proposal_log.json` + agent memory (industry / tier / research quality). 2. **uc_review_learning** (event-listen on review completion) — when a manual review completes (approved / revision requested): if approved, update knowledge base status, log successful pattern to memory (industry + tier + framings), emit `sales.proposal.approved`. If revision requested, parse feedback, regenerate only flagged sections, update knowledge base, re-flag for review, log the revision pattern to memory to avoid similar issues next time. Update `proposal_analytics.json` with approval rates per industry and tier. State: `processed_deals.json`, `proposal_log.json`, `proposal_counter.json`, `research_{proposal_id}.json`, `proposal_analytics.json`.",
+      "tool_guidance": "**CRM connector** (required; service_type: crm):\n- Query unprocessed deals: SELECT / REST equivalent for status ∈ {qualified, discovery_complete, proposal_requested} AND deal_id NOT IN processed_deals, ORDER BY deal_value DESC LIMIT max_proposals_per_run.\n- Deal details: JOIN with contacts + companies for full context.\n- Deal notes / activity: extract competitor mentions, pain points, timeline urgency.\n- Adapt queries per provider (CRM SOQL, CRM REST, CRM search, local database). **Web research** (built-in `web_search` tool):\n- Company website: `site:{website}` + homepage / about / products pages.\n- Recent news: `{company} news` limited to last 90 days.\n- Industry trends: `{industry} trends challenges {year}`.\n- Competitors: `{competitor} vs alternatives limitations` when deal notes mention one.\n- Contact: `{contact_name} {company} LinkedIn` for background calibration.\n- 15s timeout per search. Store all findings in `research_{proposal_id}.json`. **knowledge base connector** (required; service_type: knowledge_base):\n- Create page: POST /v1/pages with parent database_id + properties.\n- Append body: POST /v1/blocks/{page_id}/children with heading_2 / heading_3 / paragraph / bulleted_list_item / quote / divider / callout blocks.\n- 2000-char block limit — split longer paragraphs.\n- Query related: POST /v1/databases/{id}/query filtered by Industry for prior-proposal reference.\n- Rate limit: ~3 req/s. **Local state**:\n- `processed_deals.json` — deal id → proposal id deduplication map.\n- `proposal_log.json` — lifecycle records (id, status, timestamps, outcomes).\n- `proposal_counter.json` — `{ counter: N }` for sequential ids.\n- `research_{proposal_id}.json` — raw research findings per proposal.\n- `proposal_analytics.json` — approval rates + revision patterns + template performance.",
+      "error_handling": "Incomplete deal data → log + emit `sales.proposal.deal_incomplete` with missing fields list; do NOT retry until CRM updated. Research failures → proceed with partial findings, set confidence=low, note in executive summary. Research rate limit → queue for next cycle, flag as `partial_research`. knowledge base 401 → store proposal locally as fallback, emit credential-refresh alert. knowledge base 404 → config error, emit user_message, store locally. knowledge base 429 → exponential backoff (1, 2, 4, 8s). Unknown industry → default to standard template with neutral language, flag for review. State corruption → archive corrupted file, reinit; never generate duplicate proposals.",
       "examples": [],
       "tools": [
         "http_request",
@@ -87,7 +87,7 @@
               "label": "Instance / Base URL",
               "type": "url",
               "placeholder": "",
-              "helpText": "CRM API base URL. Salesforce instance, HubSpot portal, Pipedrive company domain, or local database connection string.",
+              "helpText": "CRM API base URL. CRM instance, CRM portal, CRM company domain, or local database connection string.",
               "required": true
             }
           ],
@@ -115,17 +115,17 @@
               "label": "Proposals Database ID",
               "type": "text",
               "placeholder": "32-character id",
-              "helpText": "Extract the 32-character id from the database URL before the ?v= parameter.",
+              "helpText": "Extract the 32-character id from the database URL before the?v= parameter.",
               "required": true
             }
           ],
-          "setup_instructions": "1. Create a Notion integration with Read + Insert + Update content capabilities.\n2. Create a proposals database with properties: Title (Title), Proposal ID (rich_text), Company (rich_text), Contact (rich_text), Deal Value (number), Industry (select), Status (select: pending_review/approved/revision_needed/delivered), Template Tier (select: startup/standard/enterprise), Date (date), Sources Count (number).\n3. Share the database with the integration.\n4. Paste token + database id above."
+          "setup_instructions": "1. Create a knowledge base integration with Read + Insert + Update content capabilities.\n2. Create a proposals database with properties: Title (Title), Proposal ID (rich_text), Company (rich_text), Contact (rich_text), Deal Value (number), Industry (select), Status (select: pending_review/approved/revision_needed/delivered), Template Tier (select: startup/standard/enterprise), Date (date), Sources Count (number).\n3. Share the database with the integration.\n4. Paste token + database id above."
         }
       ],
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Proposal-ready notifications with company, deal value, tier, and Notion link. Incomplete-deal alerts listing missing fields. Priority scales with deal size."
+          "description": "Proposal-ready notifications with company, deal value, tier, and knowledge base link. Incomplete-deal alerts listing missing fields. Priority scales with deal size."
         }
       ],
       "core_memories": []
@@ -134,8 +134,8 @@
       {
         "id": "uc_proposal_generation",
         "title": "Proposal Generation",
-        "description": "Detect newly qualified deals in the CRM, research prospect company + industry + competitors + contact, compose a tiered Notion proposal (startup / standard / enterprise), and flag for human review. Default every 5 minutes — final cadence set at the trigger-composition step.",
-        "capability_summary": "Tiered proposal generation with live research + Notion delivery + mandatory review gate.",
+        "description": "Detect newly qualified deals in the CRM, research prospect company + industry + competitors + contact, compose a tiered knowledge base proposal (startup / standard / enterprise), and flag for human review. Default every 5 minutes — final cadence set at the trigger-composition step.",
+        "capability_summary": "Tiered proposal generation with live research + knowledge base delivery + mandatory review gate.",
         "category": "generation",
         "enabled_by_default": true,
         "execution_mode": "e2e",
@@ -173,7 +173,7 @@
             "description": "Payload: { deal_id, missing_fields[] }. Triggers CRM hygiene workflows."
           }
         ],
-        "error_handling": "Incomplete deal → emit deal_incomplete + log, no retry. Research rate limit → queue, retry next cycle, flag partial_research. Notion auth failure → store proposal locally as fallback. Notion 404 → emit user_message, store locally. Unknown industry → default to standard tier with neutral language.",
+        "error_handling": "Incomplete deal → emit deal_incomplete + log, no retry. Research rate limit → queue, retry next cycle, flag partial_research. knowledge base auth failure → store proposal locally as fallback. knowledge base 404 → emit user_message, store locally. Unknown industry → default to standard tier with neutral language.",
         "input_schema": [
           {
             "name": "auto_research_depth",
@@ -257,7 +257,7 @@
             {
               "id": "g8",
               "type": "connector",
-              "label": "Create Notion proposal page",
+              "label": "Create knowledge base proposal page",
               "connector": "knowledge_base"
             },
             {
@@ -340,7 +340,7 @@
       {
         "id": "uc_review_learning",
         "title": "Review Learning",
-        "description": "On review completion, apply approval or revision outcome: approved → memory reinforces successful pattern, status updated in Notion, approval event emitted. Revision requested → regenerate only flagged sections, resubmit for review, memory records the revision pattern to prevent recurrence. Event-driven; not user-configurable.",
+        "description": "On review completion, apply approval or revision outcome: approved → memory reinforces successful pattern, status updated in knowledge base, approval event emitted. Revision requested → regenerate only flagged sections, resubmit for review, memory records the revision pattern to prevent recurrence. Event-driven; not user-configurable.",
         "capability_summary": "Post-review feedback loop that sharpens future proposals.",
         "category": "review",
         "enabled_by_default": true,
@@ -382,7 +382,7 @@
             "description": "Payload: { proposal_id, feedback_summary }. Tracked for pattern learning."
           }
         ],
-        "error_handling": "Notion update failure → retry once, then emit user_message; proposal state preserved in `proposal_log.json`. Feedback parse failure → request clarification from reviewer via messaging, don't regenerate blindly.",
+        "error_handling": "knowledge base update failure → retry once, then emit user_message; proposal state preserved in `proposal_log.json`. Feedback parse failure → request clarification from reviewer via messaging, don't regenerate blindly.",
         "input_schema": [],
         "sample_input": {},
         "tool_hints": [
@@ -406,7 +406,7 @@
             {
               "id": "l3",
               "type": "connector",
-              "label": "Update Notion → approved",
+              "label": "Update knowledge base → approved",
               "connector": "knowledge_base"
             },
             {
@@ -427,7 +427,7 @@
             {
               "id": "l7",
               "type": "connector",
-              "label": "Update Notion → re-review",
+              "label": "Update knowledge base → re-review",
               "connector": "knowledge_base"
             },
             {
@@ -521,7 +521,7 @@
         },
         "maps_to": "persona.connectors[crm].credential_fields[access_token].value",
         "variable_name": "crm_provider",
-        "context": "Auto-detected from your Vault's crm-category credentials (Salesforce, HubSpot, Pipedrive, local database).",
+        "context": "Auto-detected from your Vault's crm-category credentials (CRM, CRM, CRM, local database).",
         "dimension": "connectors"
       },
       {
@@ -603,7 +603,7 @@
         },
         "maps_to": "persona.connectors[knowledge_base].credential_fields[provider].value",
         "variable_name": "knowledge_base_credential",
-        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (Notion, Confluence, Obsidian, …).",
+        "context": "Options are auto-detected from your knowledge_base credentials in the Vault (knowledge base, knowledge base, Obsidian, …).",
         "dimension": "connectors"
       }
     ],

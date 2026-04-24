@@ -4,11 +4,12 @@
   "label": "GitLab",
   "color": "#FC6D26",
   "icon_url": "/icons/connectors/gitlab.svg",
-  "category": "devops",
+  "category": "source_control",
   "categories": [
-    "devops",
     "source_control",
-    "development"
+    "development",
+    "ci_cd",
+    "devops"
   ],
   "fields": [
     {

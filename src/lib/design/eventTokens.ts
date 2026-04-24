@@ -6,6 +6,7 @@
  * Adding a new event type or status only requires updating this file.
  */
 
+import type { PersonaEventStatus } from '@/lib/bindings/PersonaEventStatus';
 import type { StatusToken } from '@/lib/design/statusTokens';
 
 // -- Event Type Colors ----------------------------------------------------
@@ -17,7 +18,12 @@ export interface EventTypeColor {
   hex: string;
 }
 
-export const EVENT_TYPE_COLORS: Record<string, EventTypeColor> = {
+/**
+ * Known event types. Keys drive the `EventType` union below; when Rust adds a
+ * new event variant, add a matching entry here or callers will get a dev-mode
+ * warning and the gray fallback.
+ */
+export const EVENT_TYPE_COLORS = {
   webhook_received:        { tailwind: 'text-blue-400',    hex: '#60a5fa' },
   execution_completed:     { tailwind: 'text-emerald-400', hex: '#34d399' },
   persona_action:          { tailwind: 'text-purple-400',  hex: '#a78bfa' },
@@ -41,7 +47,10 @@ export const EVENT_TYPE_COLORS: Record<string, EventTypeColor> = {
   review_submitted:        { tailwind: 'text-teal-400',    hex: '#2dd4bf' },
   test_event:              { tailwind: 'text-gray-400',    hex: '#9ca3af' },
   chain_triggered:         { tailwind: 'text-indigo-400',  hex: '#818cf8' },
-};
+} as const satisfies Record<string, EventTypeColor>;
+
+/** Union of all known event type keys, derived from the map above. */
+export type EventType = keyof typeof EVENT_TYPE_COLORS;
 
 /** Fallback color for unknown event types */
 export const EVENT_TYPE_FALLBACK: EventTypeColor = {
@@ -49,13 +58,39 @@ export const EVENT_TYPE_FALLBACK: EventTypeColor = {
   hex: '#9ca3af',
 };
 
-/** Get event type color with fallback for unknown types */
-export function getEventTypeColor(eventType: string): EventTypeColor {
-  return EVENT_TYPE_COLORS[eventType] ?? EVENT_TYPE_FALLBACK;
+// Dedupe dev warnings so each unknown token only logs once per session.
+const warnedEventTypes = new Set<string>();
+const warnedStatuses = new Set<string>();
+
+function isDev(): boolean {
+  // Vite exposes import.meta.env.DEV; guard against non-Vite test envs.
+  try {
+    return Boolean((import.meta as { env?: { DEV?: boolean } }).env?.DEV);
+  } catch {
+    return false;
+  }
 }
 
-/** Pre-built hex color record for SVG/canvas consumers */
-export const EVENT_TYPE_HEX_COLORS: Record<string, string> = Object.fromEntries(
+/** Get event type color with fallback for unknown types */
+export function getEventTypeColor(eventType: string): EventTypeColor {
+  const hit = (EVENT_TYPE_COLORS as Record<string, EventTypeColor>)[eventType];
+  if (hit) return hit;
+  if (isDev() && !warnedEventTypes.has(eventType)) {
+    warnedEventTypes.add(eventType);
+    console.warn(
+      `[eventTokens] Unknown event_type "${eventType}" — rendering gray fallback. ` +
+      `Add it to EVENT_TYPE_COLORS in src/lib/design/eventTokens.ts.`,
+    );
+  }
+  return EVENT_TYPE_FALLBACK;
+}
+
+/**
+ * Pre-built hex color record for SVG/canvas consumers. Typed so that string
+ * lookups yield `string | undefined` — callers can still supply a fallback,
+ * while the source map keeps its exhaustiveness check via `EVENT_TYPE_COLORS`.
+ */
+export const EVENT_TYPE_HEX_COLORS: Record<string, string | undefined> = Object.fromEntries(
   Object.entries(EVENT_TYPE_COLORS).map(([k, v]) => [k, v.hex]),
 );
 
@@ -64,7 +99,11 @@ export const EVENT_TYPE_HEX_COLORS: Record<string, string> = Object.fromEntries(
 /** Subset of StatusToken used for event status indicators. */
 export type EventStatusColor = Pick<StatusToken, 'bg' | 'text' | 'border'>;
 
-export const EVENT_STATUS_COLORS: Record<string, EventStatusColor> = {
+/**
+ * Typed against the generated `PersonaEventStatus` binding so adding a new
+ * Rust variant is a compile error until this map covers it.
+ */
+export const EVENT_STATUS_COLORS: Record<PersonaEventStatus, EventStatusColor> = {
   pending:     { bg: 'bg-status-pending/10',    text: 'text-status-pending',    border: 'border-status-pending/20' },
   processing:  { bg: 'bg-status-processing/10', text: 'text-status-processing', border: 'border-status-processing/20' },
   delivered:   { bg: 'bg-status-success/10',    text: 'text-status-success',    border: 'border-status-success/20' },
@@ -84,7 +123,17 @@ export const EVENT_STATUS_FALLBACK: EventStatusColor = {
 
 /** Get event status color with fallback for unknown statuses */
 export function getEventStatusColor(status: string): EventStatusColor {
-  return EVENT_STATUS_COLORS[status] ?? EVENT_STATUS_FALLBACK;
+  const hit = (EVENT_STATUS_COLORS as Record<string, EventStatusColor>)[status];
+  if (hit) return hit;
+  if (isDev() && !warnedStatuses.has(status)) {
+    warnedStatuses.add(status);
+    console.warn(
+      `[eventTokens] Unknown event status "${status}" — rendering gray fallback. ` +
+      `Add it to EVENT_STATUS_COLORS in src/lib/design/eventTokens.ts ` +
+      `(and check that PersonaEventStatus in bindings includes it).`,
+    );
+  }
+  return EVENT_STATUS_FALLBACK;
 }
 
 // -- Combined hook-style accessor -----------------------------------------

@@ -409,8 +409,10 @@ pub fn lab_accept_matrix_draft(
     require_auth_sync(&state)?;
     let run = matrix_repo::get_run_by_id(&state.db, &run_id)?;
 
-    // Idempotency guard: if the draft was already accepted, return the
-    // current persona without re-applying or creating duplicate versions.
+    // Fast-path idempotency check: if the draft was already accepted, return
+    // the current persona without re-applying. This is only an optimization;
+    // the authoritative guard is the conditional UPDATE inside the transaction
+    // below, which closes the TOCTOU window between concurrent accept calls.
     if run.draft_accepted {
         return persona_repo::get_by_id(&state.db, &run.persona_id);
     }
@@ -431,16 +433,23 @@ pub fn lab_accept_matrix_draft(
     let tx = conn.transaction().map_err(AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
 
+    // Authoritative idempotency guard: conditionally claim the accept within
+    // the transaction. If another concurrent call already flipped the flag,
+    // rows_affected will be 0 and we roll back without creating a duplicate
+    // version row.
+    let claimed = tx.execute(
+        "UPDATE lab_matrix_runs SET draft_accepted = 1 WHERE id = ?1 AND draft_accepted = 0",
+        rusqlite::params![run_id],
+    )?;
+    if claimed == 0 {
+        drop(tx);
+        return persona_repo::get_by_id(&state.db, &run.persona_id);
+    }
+
     // Apply draft prompt to the persona
     tx.execute(
         "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![draft_json, now, run.persona_id],
-    )?;
-
-    // Mark draft as accepted
-    tx.execute(
-        "UPDATE lab_matrix_runs SET draft_accepted = 1 WHERE id = ?1",
-        rusqlite::params![run_id],
     )?;
 
     // Auto-version the new prompt within the same transaction.
@@ -634,12 +643,9 @@ pub fn lab_tag_version(
     }
 
     if tag == "production" {
-        let version = metrics_repo::get_prompt_version_by_id(&state.db, &id)?;
-        if let Ok(Some(current_prod)) = metrics_repo::get_production_version(&state.db, &version.persona_id) {
-            if current_prod.id != id {
-                let _ = metrics_repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
-            }
-        }
+        // Demote any existing production version and promote this one atomically;
+        // a partial failure here would leave two rows tagged "production".
+        return metrics_repo::promote_to_production(&state.db, &id);
     }
 
     metrics_repo::update_prompt_version_tag(&state.db, &id, &tag)

@@ -5,11 +5,19 @@
   "description": "Crawls a business website via the desktop browser, scores it across 10 conversion dimensions (contact, social proof, CTA, mobile, speed, navigation, content, design, trust, engagement), delivers a prioritized audit report with revenue-impact estimates, and produces a ready-to-paste redesign prompt for AI website builders.",
   "icon": "SearchCheck",
   "color": "#DC2626",
-  "category": ["sales"],
-  "service_flow": ["Browser", "Messaging"],
+  "category": [
+    "sales"
+  ],
+  "service_flow": [
+    "Browser",
+    "Messaging"
+  ],
   "is_published": true,
   "payload": {
-    "service_flow": ["Browser", "Messaging"],
+    "service_flow": [
+      "Browser",
+      "Messaging"
+    ],
     "persona": {
       "goal": "Arm an agency with systematic, client-ready audit reports that convert pitches into redesign engagements — 10-dimension scoring, screenshot evidence, revenue-impact math, and a paste-ready AI-builder prompt.",
       "identity": {
@@ -45,18 +53,25 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two capabilities:\n\n1. **uc_single_audit** (manual trigger with URL + business_type) — navigate to homepage via desktop browser. Wait for load, take full-page screenshot, extract content + meta tags + links + forms. If audit_depth ≥ standard, crawl discovered subpages (About, Contact, Services). Resize to 375x812, take mobile screenshot, check responsiveness, resize back. Score 10 dimensions with evidence. Compute overall score + grade. Rank findings critical / important / minor. Generate structured audit report (executive summary, scorecard, critical issues with screenshot evidence + fix recs, important improvements, what's working, industry context, revenue impact estimate). If `include_redesign_prompt` applies, compose a paste-ready prompt for AI website builders naming business type, content to preserve, missing elements to add, style preferences, required sections. Store audit in local database. Deliver report via messaging. Emit `audit.website.completed`; emit `audit.website.critical` if any dimension scores 0-2.\n\n2. **uc_portfolio_reaudit** (scheduled, default Monday 09:00) — query database for all tracked sites. Re-crawl each at quick depth. Compare against prior scores. Flag improvements (+3) and regressions (-3). Store new audit record. Compose change summary and deliver via messaging. Update memory so next week's comparison uses the new baseline.\n\nState: local database `audits` table (client_name, url, overall_score, grade, dimension_scores JSON, critical_count, audit_date, business_type). `data/audits/{date}_{domain}/` screenshots + report.json + redesign_prompt.txt. `audit_config.json` cached config + industry defaults.",
-      "tool_guidance": "**Browser connector** (required; service_type: browser):\n- `browser_navigate` to URLs (10s timeout for initial load; 15s for JS-heavy).\n- `browser_screenshot` full-page for visual dimension scoring + evidence archive.\n- `browser_extract` for text content + links + form elements + meta tags + image alt + SSL status.\n- Mobile viewport: resize to 375x812 before screenshot, then restore 1440x900.\n- Subpage discovery: extract primary nav links from homepage, visit each (About / Contact / Services or nearest equivalents).\n\n**Database** (local, built-in):\n- Table `audits` — on first run, CREATE IF NOT EXISTS with the schema above.\n- Insert per audit; query by url for history; query all for portfolio re-audit.\n\n**Messaging connector** (required; service_type: messaging):\n- Deliver structured audit reports (critical issues + scorecard + redesign prompt attached).\n- Re-audit change summaries weekly.\n\n**Local files**:\n- `data/audits/{date}_{domain}/report.json` — structured audit data.\n- `data/audits/{date}_{domain}/redesign_prompt.txt` — paste-ready AI builder prompt.\n- `data/audits/{date}_{domain}/*.png` — screenshots.",
+      "operating_instructions": "Two capabilities: 1. **uc_single_audit** (manual trigger with URL + business_type) — navigate to homepage via desktop browser. Wait for load, take full-page screenshot, extract content + meta tags + links + forms. If audit_depth ≥ standard, crawl discovered subpages (About, Contact, Services). Resize to 375x812, take mobile screenshot, check responsiveness, resize back. Score 10 dimensions with evidence. Compute overall score + grade. Rank findings critical / important / minor. Generate structured audit report (executive summary, scorecard, critical issues with screenshot evidence + fix recs, important improvements, what's working, industry context, revenue impact estimate). If `include_redesign_prompt` applies, compose a paste-ready prompt for AI website builders naming business type, content to preserve, missing elements to add, style preferences, required sections. Store audit in local database. Deliver report via messaging. Emit `audit.website.completed`; emit `audit.website.critical` if any dimension scores 0-2. 2. **uc_portfolio_reaudit** (scheduled, default Monday 09:00) — query database for all tracked sites. Re-crawl each at quick depth. Compare against prior scores. Flag improvements (+3) and regressions (-3). Store new audit record. Compose change summary and deliver via messaging. Update memory so next week's comparison uses the new baseline. State: local database `audits` table (client_name, url, overall_score, grade, dimension_scores JSON, critical_count, audit_date, business_type). `data/audits/{date}_{domain}/` screenshots + report.json + redesign_prompt.txt. `audit_config.json` cached config + industry defaults.",
+      "tool_guidance": "**Browser connector** (required; service_type: browser):\n- `browser_navigate` to URLs (10s timeout for initial load; 15s for JS-heavy).\n- `browser_screenshot` full-page for visual dimension scoring + evidence archive.\n- `browser_extract` for text content + links + form elements + meta tags + image alt + SSL status.\n- Mobile viewport: resize to 375x812 before screenshot, then restore 1440x900.\n- Subpage discovery: extract primary nav links from homepage, visit each (About / Contact / Services or nearest equivalents). **Database** (local, built-in):\n- Table `audits` — on first run, CREATE IF NOT EXISTS with the schema above.\n- Insert per audit; query by url for history; query all for portfolio re-audit. **Messaging connector** (required; service_type: messaging):\n- Deliver structured audit reports (critical issues + scorecard + redesign prompt attached).\n- Re-audit change summaries weekly. **Local files**:\n- `data/audits/{date}_{domain}/report.json` — structured audit data.\n- `data/audits/{date}_{domain}/redesign_prompt.txt` — paste-ready AI builder prompt.\n- `data/audits/{date}_{domain}/*.png` — screenshots.",
       "error_handling": "Page timeout >15s → score Page Speed 0, continue audit with loaded content, note timeout. SSL error → score Trust Signals 0, proceed with --ignore-certificate-errors if possible. JS-only site (extraction <50 chars) → wait 10s + retry; if still empty, score from screenshots only, note 'partial audit'. Site unreachable → report as 'Site Unreachable' finding; store in DB with overall_score=0. Redirect to social media → score 0 across all dimensions, note 'no dedicated website'. Login/paywall → 'restricted access', score publicly visible only. Cookie banner blocking extraction → attempt dismiss. Table missing → CREATE IF NOT EXISTS on first run. Duplicate audit same URL same day → UPDATE existing, don't duplicate.",
       "examples": [],
-      "tools": ["browser_navigate", "browser_screenshot", "browser_extract", "database_query", "file_read", "file_write"],
+      "tools": [
+        "browser_navigate",
+        "browser_screenshot",
+        "browser_extract",
+        "database_query",
+        "file_read",
+        "file_write"
+      ],
       "connectors": [
         {
-          "name": "browser",
+          "name": "browser_automation",
           "label": "Desktop Browser",
           "auth_type": "local",
           "role": "browser",
-          "category": "browser",
+          "category": "browser_automation",
           "required": true,
           "credential_fields": [],
           "setup_instructions": "1. Ensure the Personas desktop bridge is running locally.\n2. No additional credentials — the desktop browser connector runs in-process and navigates on the user's machine."
@@ -106,9 +121,15 @@
           "config": {},
           "description": "Manually triggered per URL. No cadence default — use the Messages command to kick off an audit."
         },
-        "connectors": ["browser", "messaging"],
+        "connectors": [
+          "browser_automation",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Per-URL audit history + scoring calibration patterns by industry. Accumulated industry benchmarks sharpen future audits."
@@ -136,21 +157,41 @@
           {
             "name": "business_type",
             "type": "enum",
-            "options": ["HVAC", "Plumbing", "Landscaping", "Roofing", "Electrical", "General Contractor", "Dental", "Legal", "Real Estate", "Restaurant", "Other"],
+            "options": [
+              "HVAC",
+              "Plumbing",
+              "Landscaping",
+              "Roofing",
+              "Electrical",
+              "General Contractor",
+              "Dental",
+              "Legal",
+              "Real Estate",
+              "Restaurant",
+              "Other"
+            ],
             "default": "Other",
             "description": "Industry — drives competitive-context benchmarks in the report."
           },
           {
             "name": "audit_depth",
             "type": "enum",
-            "options": ["quick", "standard", "deep"],
+            "options": [
+              "quick",
+              "standard",
+              "deep"
+            ],
             "default": "standard",
             "description": "Quick = homepage only. Standard = homepage + 3 subpages. Deep = up to 10 pages."
           },
           {
             "name": "redesign_prompt_mode",
             "type": "enum",
-            "options": ["always", "low_scores", "never"],
+            "options": [
+              "always",
+              "low_scores",
+              "never"
+            ],
             "default": "always",
             "description": "When to include the AI-builder redesign prompt. always = every audit, low_scores = only when <70, never = audit only."
           }
@@ -161,34 +202,126 @@
           "audit_depth": "{{param.aq_audit_depth}}",
           "redesign_prompt_mode": "{{param.aq_redesign_prompt_mode}}"
         },
-        "tool_hints": ["browser_navigate", "browser_screenshot", "browser_extract", "database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "browser_navigate",
+          "browser_screenshot",
+          "browser_extract",
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "s1", "type": "start", "label": "Manual trigger (URL + business type)" },
-            { "id": "s2", "type": "connector", "label": "Navigate + screenshot + extract homepage", "connector": "browser" },
-            { "id": "s3", "type": "decision", "label": "Standard or deep?" },
-            { "id": "s4", "type": "connector", "label": "Crawl subpages", "connector": "browser" },
-            { "id": "s5", "type": "connector", "label": "Mobile viewport check", "connector": "browser" },
-            { "id": "s6", "type": "action", "label": "Score 10 dimensions + compute grade" },
-            { "id": "s7", "type": "action", "label": "Compose audit report + redesign prompt" },
-            { "id": "s8", "type": "action", "label": "Store audit in local DB" },
-            { "id": "s9", "type": "connector", "label": "Deliver via messaging", "connector": "messaging" },
-            { "id": "s10", "type": "event", "label": "Emit audit.completed / audit.critical" },
-            { "id": "s11", "type": "end", "label": "Audit delivered" }
+            {
+              "id": "s1",
+              "type": "start",
+              "label": "Manual trigger (URL + business type)"
+            },
+            {
+              "id": "s2",
+              "type": "connector",
+              "label": "Navigate + screenshot + extract homepage",
+              "connector": "browser"
+            },
+            {
+              "id": "s3",
+              "type": "decision",
+              "label": "Standard or deep?"
+            },
+            {
+              "id": "s4",
+              "type": "connector",
+              "label": "Crawl subpages",
+              "connector": "browser"
+            },
+            {
+              "id": "s5",
+              "type": "connector",
+              "label": "Mobile viewport check",
+              "connector": "browser"
+            },
+            {
+              "id": "s6",
+              "type": "action",
+              "label": "Score 10 dimensions + compute grade"
+            },
+            {
+              "id": "s7",
+              "type": "action",
+              "label": "Compose audit report + redesign prompt"
+            },
+            {
+              "id": "s8",
+              "type": "action",
+              "label": "Store audit in local DB"
+            },
+            {
+              "id": "s9",
+              "type": "connector",
+              "label": "Deliver via messaging",
+              "connector": "messaging"
+            },
+            {
+              "id": "s10",
+              "type": "event",
+              "label": "Emit audit.completed / audit.critical"
+            },
+            {
+              "id": "s11",
+              "type": "end",
+              "label": "Audit delivered"
+            }
           ],
           "edges": [
-            { "source": "s1", "target": "s2" },
-            { "source": "s2", "target": "s3" },
-            { "source": "s3", "target": "s4", "variant": "yes", "label": "Standard/Deep" },
-            { "source": "s3", "target": "s5", "variant": "no", "label": "Quick" },
-            { "source": "s4", "target": "s5" },
-            { "source": "s5", "target": "s6" },
-            { "source": "s6", "target": "s7" },
-            { "source": "s7", "target": "s8" },
-            { "source": "s8", "target": "s9" },
-            { "source": "s9", "target": "s10" },
-            { "source": "s10", "target": "s11" }
+            {
+              "source": "s1",
+              "target": "s2"
+            },
+            {
+              "source": "s2",
+              "target": "s3"
+            },
+            {
+              "source": "s3",
+              "target": "s4",
+              "variant": "yes",
+              "label": "Standard/Deep"
+            },
+            {
+              "source": "s3",
+              "target": "s5",
+              "variant": "no",
+              "label": "Quick"
+            },
+            {
+              "source": "s4",
+              "target": "s5"
+            },
+            {
+              "source": "s5",
+              "target": "s6"
+            },
+            {
+              "source": "s6",
+              "target": "s7"
+            },
+            {
+              "source": "s7",
+              "target": "s8"
+            },
+            {
+              "source": "s8",
+              "target": "s9"
+            },
+            {
+              "source": "s9",
+              "target": "s10"
+            },
+            {
+              "source": "s10",
+              "target": "s11"
+            }
           ]
         }
       },
@@ -203,12 +336,21 @@
         "model_override": null,
         "suggested_trigger": {
           "trigger_type": "schedule",
-          "config": { "cron": "0 9 * * 1", "timezone": "local" },
+          "config": {
+            "cron": "0 9 * * 1",
+            "timezone": "local"
+          },
           "description": "Default Monday 09:00 — final cadence set at the trigger-composition step."
         },
-        "connectors": ["browser", "messaging"],
+        "connectors": [
+          "browser_automation",
+          "messaging"
+        ],
         "notification_channels": [],
-        "review_policy": { "mode": "never", "context": null },
+        "review_policy": {
+          "mode": "never",
+          "context": null
+        },
         "memory_policy": {
           "enabled": true,
           "context": "Historical audit records provide the comparison baseline. Aggregate improvement / regression trends feed industry-benchmark calibration."
@@ -234,30 +376,106 @@
         "sample_input": {
           "improvement_threshold": "{{param.aq_improvement_threshold}}"
         },
-        "tool_hints": ["browser_navigate", "browser_screenshot", "browser_extract", "database_query", "file_read", "file_write"],
+        "tool_hints": [
+          "browser_navigate",
+          "browser_screenshot",
+          "browser_extract",
+          "database_query",
+          "file_read",
+          "file_write"
+        ],
         "test_fixtures": [],
         "use_case_flow": {
           "nodes": [
-            { "id": "r1", "type": "start", "label": "Monday tick" },
-            { "id": "r2", "type": "action", "label": "Load portfolio from DB" },
-            { "id": "r3", "type": "decision", "label": "Any sites to re-audit?" },
-            { "id": "r4", "type": "connector", "label": "Re-crawl + re-score (quick)", "connector": "browser" },
-            { "id": "r5", "type": "action", "label": "Compare vs prior scores; flag deltas" },
-            { "id": "r6", "type": "action", "label": "Store new audit records" },
-            { "id": "r7", "type": "connector", "label": "Deliver change summary", "connector": "messaging" },
-            { "id": "r8", "type": "event", "label": "Emit audit.portfolio.summary" },
-            { "id": "r9", "type": "end", "label": "Re-audit complete" }
+            {
+              "id": "r1",
+              "type": "start",
+              "label": "Monday tick"
+            },
+            {
+              "id": "r2",
+              "type": "action",
+              "label": "Load portfolio from DB"
+            },
+            {
+              "id": "r3",
+              "type": "decision",
+              "label": "Any sites to re-audit?"
+            },
+            {
+              "id": "r4",
+              "type": "connector",
+              "label": "Re-crawl + re-score (quick)",
+              "connector": "browser"
+            },
+            {
+              "id": "r5",
+              "type": "action",
+              "label": "Compare vs prior scores; flag deltas"
+            },
+            {
+              "id": "r6",
+              "type": "action",
+              "label": "Store new audit records"
+            },
+            {
+              "id": "r7",
+              "type": "connector",
+              "label": "Deliver change summary",
+              "connector": "messaging"
+            },
+            {
+              "id": "r8",
+              "type": "event",
+              "label": "Emit audit.portfolio.summary"
+            },
+            {
+              "id": "r9",
+              "type": "end",
+              "label": "Re-audit complete"
+            }
           ],
           "edges": [
-            { "source": "r1", "target": "r2" },
-            { "source": "r2", "target": "r3" },
-            { "source": "r3", "target": "r4", "variant": "yes", "label": "Yes" },
-            { "source": "r3", "target": "r9", "variant": "no", "label": "Empty" },
-            { "source": "r4", "target": "r5" },
-            { "source": "r5", "target": "r6" },
-            { "source": "r6", "target": "r7" },
-            { "source": "r7", "target": "r8" },
-            { "source": "r8", "target": "r9" }
+            {
+              "source": "r1",
+              "target": "r2"
+            },
+            {
+              "source": "r2",
+              "target": "r3"
+            },
+            {
+              "source": "r3",
+              "target": "r4",
+              "variant": "yes",
+              "label": "Yes"
+            },
+            {
+              "source": "r3",
+              "target": "r9",
+              "variant": "no",
+              "label": "Empty"
+            },
+            {
+              "source": "r4",
+              "target": "r5"
+            },
+            {
+              "source": "r5",
+              "target": "r6"
+            },
+            {
+              "source": "r6",
+              "target": "r7"
+            },
+            {
+              "source": "r7",
+              "target": "r8"
+            },
+            {
+              "source": "r8",
+              "target": "r9"
+            }
           ]
         }
       }
@@ -266,7 +484,9 @@
       {
         "id": "aq_business_type",
         "scope": "capability",
-        "use_case_ids": ["uc_single_audit"],
+        "use_case_ids": [
+          "uc_single_audit"
+        ],
         "category": "domain",
         "question": "What industry do you primarily serve?",
         "type": "select",
@@ -292,7 +512,9 @@
       {
         "id": "aq_audit_depth",
         "scope": "capability",
-        "use_case_ids": ["uc_single_audit"],
+        "use_case_ids": [
+          "uc_single_audit"
+        ],
         "category": "configuration",
         "question": "Default audit depth?",
         "type": "select",
@@ -310,7 +532,9 @@
       {
         "id": "aq_redesign_prompt_mode",
         "scope": "capability",
-        "use_case_ids": ["uc_single_audit"],
+        "use_case_ids": [
+          "uc_single_audit"
+        ],
         "category": "configuration",
         "question": "Include a ready-to-paste AI-builder redesign prompt?",
         "type": "select",
@@ -328,11 +552,18 @@
       {
         "id": "aq_improvement_threshold",
         "scope": "capability",
-        "use_case_ids": ["uc_portfolio_reaudit"],
+        "use_case_ids": [
+          "uc_portfolio_reaudit"
+        ],
         "category": "quality",
         "question": "Minimum score delta to flag as improvement or regression?",
         "type": "select",
-        "options": ["1", "2", "3", "5"],
+        "options": [
+          "1",
+          "2",
+          "3",
+          "5"
+        ],
         "default": "3",
         "maps_to": "use_cases[uc_portfolio_reaudit].sample_input.improvement_threshold",
         "variable_name": "improvement_threshold",
@@ -342,7 +573,9 @@
       {
         "id": "aq_messaging_channel",
         "scope": "connector",
-        "connector_names": ["messaging"],
+        "connector_names": [
+          "messaging"
+        ],
         "category": "configuration",
         "question": "Which messaging credential should receive audit reports? (Skip to keep reports in-app only.)",
         "type": "select",
