@@ -2000,10 +2000,16 @@ export type Translations = {
       issues_found_other: string;
       no_issues: string;
       stale: string;
+      stale_banner_label: string;
+      run_now: string;
       rerun: string;
       capabilities: string;
       all_healthy: string;
       all_healthy_detail: string;
+      status_ready: string;
+      status_blocked: string;
+      status_partial: string;
+      checked_at: string;
     };
     health_digest: {
       title: string;
@@ -2019,6 +2025,9 @@ export type Translations = {
       issues_one: string;
       issues_other: string;
       last_run: string;
+      group_blocked: string;
+      group_attention: string;
+      group_healthy: string;
     };
     health_issue: {
       apply_fix: string;
@@ -4600,6 +4609,13 @@ export type Translations = {
       never: string;
       fail_count: string;
     };
+    saved_views: {
+      errors: {
+        load_failed_message: string;
+        save_failed_message: string;
+        delete_failed_message: string;
+      };
+    };
     cron: {
       title: string;
       subtitle: string;
@@ -5162,6 +5178,19 @@ export type Translations = {
     healing_summary: {
       auto_fixed_this_week: string;
       issues_in_7d: string;
+    };
+    upcoming_routines: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      never_fired: string;
+      view_all: string;
+    };
+    vault_recent_changes: {
+      title: string;
+      subtitle: string;
+      empty: string;
+      view_all: string;
     };
   };
   matrix_v3: {
@@ -9178,6 +9207,58 @@ export type Translations = {
     normalize: string;
     normalize_hint: string;
     strip_audio_hint: string;
+    style_guide_title: string;
+    style_guide_edit: string;
+    style_guide_placeholder: string;
+    style_guide_hint: string;
+    style_guide_clear: string;
+    style_guide_save: string;
+    transcribe: string;
+    transcribe_running: string;
+    transcribe_done: string;
+    transcribe_failed: string;
+    transcribe_no_whisper: string;
+    transcribe_provider: string;
+    transcribe_provider_local: string;
+    transcribe_provider_elevenlabs: string;
+    transcribe_provider_openai: string;
+    action_transcribe_clip: string;
+    transcript_ready_badge: string;
+    anchor_section: string;
+    anchor_manual: string;
+    anchor_word_mode: string;
+    anchor_clip: string;
+    anchor_word: string;
+    anchor_occurrence: string;
+    anchor_occurrence_hint: string;
+    anchor_no_transcripts: string;
+    anchor_word_placeholder: string;
+    anchor_unresolved: string;
+    anchor_resolved_at: string;
+    auto_trim_title: string;
+    auto_trim_button: string;
+    auto_trim_needs_transcript: string;
+    auto_trim_analyzing: string;
+    auto_trim_empty: string;
+    auto_trim_apply: string;
+    auto_trim_discard: string;
+    auto_trim_keep_label: string;
+    auto_trim_cut_label: string;
+    auto_trim_reason_filler: string;
+    auto_trim_reason_silence: string;
+    auto_trim_reason_retake: string;
+    auto_trim_reason_repeat: string;
+    auto_trim_failed: string;
+    plan_compose_title: string;
+    plan_compose_brief_label: string;
+    plan_compose_brief_placeholder: string;
+    plan_compose_generate: string;
+    plan_compose_generating: string;
+    plan_compose_apply: string;
+    plan_compose_discard: string;
+    plan_compose_empty: string;
+    plan_compose_needs_transcript: string;
+    plan_compose_failed: string;
   };
   research_lab: {
     dashboard: string;

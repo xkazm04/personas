@@ -5126,6 +5126,19 @@
     "healing_summary": {
       "auto_fixed_this_week": "इस सप्ताह स्वचालित रूप से ठीक किया गया",
       "issues_in_7d": "7 दिनों में समस्याएँ"
+    },
+    "upcoming_routines": {
+      "title": "Upcoming Routines",
+      "subtitle": "next scheduled runs",
+      "empty": "No scheduled runs.",
+      "never_fired": "pending first run",
+      "view_all": "View schedules"
+    },
+    "vault_recent_changes": {
+      "title": "Vault Changes",
+      "subtitle": "recent Obsidian sync",
+      "empty": "No recent sync activity.",
+      "view_all": "View sync log"
     }
   },
   "templates": {

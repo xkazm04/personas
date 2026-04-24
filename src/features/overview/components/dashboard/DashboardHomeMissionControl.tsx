@@ -36,6 +36,8 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import { DashboardEmptyState } from './DashboardEmptyState';
 
 const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
+const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
+const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 
 type TriageKind = 'review' | 'alert';
 interface TriageItem {
@@ -222,6 +224,17 @@ export default function DashboardHomeMissionControl() {
           )}
 
           <FleetOptimizationCard />
+
+          {!isEmpty && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <Suspense fallback={null}>
+                <UpcomingRoutinesCard />
+              </Suspense>
+              <Suspense fallback={null}>
+                <VaultRecentChangesCard />
+              </Suspense>
+            </div>
+          )}
         </div>
       </ContentBody>
     </ContentBox>

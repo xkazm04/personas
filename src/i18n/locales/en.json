@@ -1994,10 +1994,16 @@
       "issues_found_other": "{count} issues found",
       "no_issues": "No issues detected",
       "stale": "Stale",
+      "stale_banner_label": "Last check is stale",
+      "run_now": "Run now",
       "rerun": "Re-run",
       "capabilities": "Capabilities",
       "all_healthy": "All systems healthy",
-      "all_healthy_detail": "No issues detected in agent configuration"
+      "all_healthy_detail": "No issues detected in agent configuration",
+      "status_ready": "Ready",
+      "status_blocked": "Blocked",
+      "status_partial": "Partial",
+      "checked_at": "Checked {time}"
     },
     "health_digest": {
       "title": "Agent Health Digest",
@@ -2012,7 +2018,10 @@
       "agents_checked_other": "{count} agents checked",
       "issues_one": "{count} issue",
       "issues_other": "{count} issues",
-      "last_run": "Last run: {time}"
+      "last_run": "Last run: {time}",
+      "group_blocked": "Blocked",
+      "group_attention": "Needs attention",
+      "group_healthy": "Healthy"
     },
     "health_issue": {
       "apply_fix": "Apply Fix: {label}",
@@ -4594,6 +4603,13 @@
       "never": "never",
       "fail_count": "{count}x fail"
     },
+    "saved_views": {
+      "errors": {
+        "load_failed_message": "Couldn't load your saved views.",
+        "save_failed_message": "Couldn't save this view.",
+        "delete_failed_message": "Couldn't delete this view."
+      }
+    },
     "cron": {
       "title": "Cron Agents",
       "subtitle": "Background agents running on scheduled intervals",
@@ -5156,56 +5172,59 @@
     "healing_summary": {
       "auto_fixed_this_week": "auto-fixed this week",
       "issues_in_7d": "issues in 7d"
+    },
+    "upcoming_routines": {
+      "title": "Upcoming Routines",
+      "subtitle": "next scheduled runs",
+      "empty": "No scheduled runs.",
+      "never_fired": "pending first run",
+      "view_all": "View schedules"
+    },
+    "vault_recent_changes": {
+      "title": "Vault Changes",
+      "subtitle": "recent Obsidian sync",
+      "empty": "No recent sync activity.",
+      "view_all": "View sync log"
     }
   },
   "matrix_v3": {
     "layout_toggle_legacy": "8-dimension view",
     "layout_toggle_v3": "Capability view",
     "layout_toggle_tooltip": "Switch between the legacy 8-dimension matrix and the capability-first view.",
-
     "behavior_core_section_title": "Behavior Core",
     "behavior_core_section_subtitle": "The mission and identity that every capability shares.",
-
     "mission_label": "Mission",
     "mission_placeholder": "Be the user's... so that...",
     "mission_coach_task_warning": "This reads like a task. A mission is the unchanging purpose every capability serves. Try starting with 'Be...', 'Make...', 'Ensure...', or 'Serve...'.",
     "mission_coach_good": "Strong mission — captures the shared purpose.",
     "mission_helper_text": "One sentence. What every capability ultimately serves.",
-
     "identity_label": "Identity",
     "identity_role_label": "Role",
     "identity_role_placeholder": "You are a senior email triage concierge.",
     "identity_description_label": "Description",
     "identity_description_placeholder": "What this persona is responsible for in one line.",
-
     "voice_label": "Voice",
     "voice_style_label": "Style",
     "voice_style_placeholder": "Direct, lightly wry, never alarmist.",
     "voice_output_format_label": "Output format",
     "voice_output_format_placeholder": "Markdown digest with a ranked list.",
-
     "principles_label": "Principles",
     "principles_helper_text": "Cross-cutting rules this persona always honors. 2-5 short entries.",
     "principles_add_placeholder": "Add a principle",
-
     "constraints_label": "Constraints",
     "constraints_helper_text": "Hard limits. Breaking them is a bug. 2-5 entries.",
     "constraints_add_placeholder": "Add a constraint",
-
     "decision_principles_label": "Decision principles",
     "decision_principles_helper_text": "Tiebreakers. 0-5 entries.",
     "decision_principles_add_placeholder": "Add a tiebreaker",
-
     "verbosity_label": "Default verbosity",
     "verbosity_terse": "Terse",
     "verbosity_normal": "Normal",
     "verbosity_verbose": "Verbose",
-
     "capabilities_section_title": "Capabilities",
     "capabilities_section_subtitle": "The distinct things this persona does. Each can be turned on and off independently.",
     "capabilities_add_button": "Add capability",
     "capabilities_empty": "No capabilities yet. The persona is still being designed.",
-
     "capability_row_expand": "Expand",
     "capability_row_collapse": "Collapse",
     "capability_row_remove": "Remove capability",
@@ -5221,18 +5240,15 @@
     "capability_row_field_tool_hints": "Tools",
     "capability_row_field_error_handling": "Error handling",
     "capability_row_field_pending": "pending",
-
     "capability_title_label": "Title",
     "capability_summary_label": "Summary",
     "capability_goal_label": "User-facing goal",
-
     "add_capability_modal_title": "Add a capability",
     "add_capability_modal_subtitle": "Describe what this capability does. The persona keeps its mission; this is just a new thing it knows how to do.",
     "add_capability_modal_title_placeholder": "Weekly Review",
     "add_capability_modal_summary_placeholder": "Sunday-evening pattern roll-up over the past 7 days.",
     "add_capability_modal_goal_placeholder": "See whether my attention allocation matched what mattered.",
     "add_capability_modal_cta": "Add capability",
-
     "shared_resources_section_title": "Shared Resources",
     "shared_resources_section_subtitle": "Persona-wide tools, connectors, and defaults every capability can draw from.",
     "shared_resources_tools_label": "Tools",
@@ -5244,18 +5260,15 @@
     "shared_resources_error_handling_label": "Error handling",
     "shared_resources_core_memories_label": "Core memories",
     "shared_resources_empty": "Nothing resolved yet.",
-
     "clarifying_scope_mission": "Mission",
     "clarifying_scope_capability": "Capability",
     "clarifying_scope_field": "Field",
     "clarifying_question_heading": "One question",
     "clarifying_question_answer_placeholder": "Pick an option or type your answer",
     "clarifying_question_submit": "Send answer",
-
     "review_mode_never": "Never",
     "review_mode_on_low_confidence": "On low confidence",
     "review_mode_always": "Always",
-
     "memory_enabled_true": "Enabled",
     "memory_enabled_false": "Disabled"
   },
@@ -9187,7 +9200,59 @@
     "fade_out": "Fade out",
     "normalize": "Normalize loudness",
     "normalize_hint": "EBU R128 applied on export; preview is an approximation",
-    "strip_audio_hint": "Mutes this clip's audio on export"
+    "strip_audio_hint": "Mutes this clip's audio on export",
+    "style_guide_title": "Style guide",
+    "style_guide_edit": "Edit style guide",
+    "style_guide_placeholder": "Describe the look and feel: motion language, palette, typography, pacing — anything you'd want the agent to follow every time it composes for this project.",
+    "style_guide_hint": "Reused by plan-compose and auto-trim prompts so the agent matches your style every time.",
+    "style_guide_clear": "Clear",
+    "style_guide_save": "Save",
+    "transcribe": "Transcribe",
+    "transcribe_running": "Transcribing…",
+    "transcribe_done": "Transcript ready",
+    "transcribe_failed": "Transcription failed",
+    "transcribe_no_whisper": "Local Whisper CLI not found. Install it with `pip install -U openai-whisper` (requires Python and ffmpeg).",
+    "transcribe_provider": "Provider",
+    "transcribe_provider_local": "Local Whisper (free)",
+    "transcribe_provider_elevenlabs": "ElevenLabs (coming soon)",
+    "transcribe_provider_openai": "OpenAI Whisper API (coming soon)",
+    "action_transcribe_clip": "Transcribe clip",
+    "transcript_ready_badge": "Transcript",
+    "anchor_section": "Anchor",
+    "anchor_manual": "Fixed time",
+    "anchor_word_mode": "Anchor to a spoken word",
+    "anchor_clip": "Clip",
+    "anchor_word": "Word",
+    "anchor_occurrence": "Occurrence",
+    "anchor_occurrence_hint": "If the word is spoken more than once, pick which one",
+    "anchor_no_transcripts": "No clips have transcripts yet. Transcribe a clip to anchor beats to spoken words.",
+    "anchor_word_placeholder": "Type the word",
+    "anchor_unresolved": "Word not found in transcript",
+    "anchor_resolved_at": "Resolved to {time}s",
+    "auto_trim_title": "Auto-trim filler words & silences",
+    "auto_trim_button": "Auto-trim from transcript",
+    "auto_trim_needs_transcript": "Transcribe the clip first to enable auto-trim.",
+    "auto_trim_analyzing": "Analyzing transcript for filler, silences, and retakes…",
+    "auto_trim_empty": "Nothing to cut — the transcript looks clean.",
+    "auto_trim_apply": "Apply cuts",
+    "auto_trim_discard": "Discard",
+    "auto_trim_keep_label": "Keep",
+    "auto_trim_cut_label": "Cut",
+    "auto_trim_reason_filler": "Filler word",
+    "auto_trim_reason_silence": "Silence",
+    "auto_trim_reason_retake": "Retake / false start",
+    "auto_trim_reason_repeat": "Repeated phrase",
+    "auto_trim_failed": "Couldn't parse the agent's proposal. Try again or edit manually.",
+    "plan_compose_title": "Plan composition",
+    "plan_compose_brief_label": "What should this video be?",
+    "plan_compose_brief_placeholder": "Describe the video: style, tone, key beats, calls to action. The agent will propose beats anchored to the transcript.",
+    "plan_compose_generate": "Generate plan",
+    "plan_compose_generating": "Planning…",
+    "plan_compose_apply": "Apply plan",
+    "plan_compose_discard": "Discard",
+    "plan_compose_empty": "No proposed beats yet. Describe the video above and generate.",
+    "plan_compose_needs_transcript": "Plan-compose works best when at least one video clip has a transcript.",
+    "plan_compose_failed": "Couldn't parse the plan. Try again with a more specific brief."
   },
   "research_lab": {
     "dashboard": "Dashboard",

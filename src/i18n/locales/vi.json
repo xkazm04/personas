@@ -5126,6 +5126,19 @@
     "healing_summary": {
       "auto_fixed_this_week": "đã tự động sửa tuần này",
       "issues_in_7d": "sự cố trong 7 ngày"
+    },
+    "upcoming_routines": {
+      "title": "Upcoming Routines",
+      "subtitle": "next scheduled runs",
+      "empty": "No scheduled runs.",
+      "never_fired": "pending first run",
+      "view_all": "View schedules"
+    },
+    "vault_recent_changes": {
+      "title": "Vault Changes",
+      "subtitle": "recent Obsidian sync",
+      "empty": "No recent sync activity.",
+      "view_all": "View sync log"
     }
   },
   "templates": {
