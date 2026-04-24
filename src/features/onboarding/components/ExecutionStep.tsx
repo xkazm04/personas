@@ -36,14 +36,22 @@ export function ExecutionStep({
     }
   }, [executionOutput]);
 
-  // Listen for execution completion
+  // Listen for execution completion.
+  // Cleanup runs synchronously, but `listen()` resolves asynchronously — so
+  // on rapid dismiss/reopen the listener can register *after* cleanup ran
+  // and would then leak. Use a cancelled flag to immediately unlisten any
+  // late-arriving registration, and guard the handler against firing into
+  // an unmounted/stale component.
   useEffect(() => {
     if (!activeExecutionId) return;
 
+    let cancelled = false;
     let unlisten: UnlistenFn | null = null;
+
     listen<{ execution_id: string; status: string }>(
       'execution-complete',
       (event) => {
+        if (cancelled) return;
         if (event.payload.execution_id === activeExecutionId) {
           setFinished(true);
           if (event.payload.status === 'completed') {
@@ -53,13 +61,25 @@ export function ExecutionStep({
           }
         }
       },
-    ).then((fn) => {
-      unlisten = fn;
-      unlistenRef.current = fn;
-    });
+    )
+      .then((fn) => {
+        if (cancelled) {
+          // Effect was torn down before listen() resolved — detach now.
+          fn();
+          return;
+        }
+        unlisten = fn;
+        unlistenRef.current = fn;
+      })
+      .catch(() => {
+        // listen() failed — nothing to clean up.
+      });
 
     return () => {
+      cancelled = true;
       unlisten?.();
+      unlisten = null;
+      unlistenRef.current = null;
     };
   }, [activeExecutionId, onComplete]);
 

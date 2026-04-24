@@ -43,6 +43,9 @@ for (const file of files) {
   const metadata = c.metadata ? JSON.stringify(c.metadata) : null;
   const services = JSON.stringify(c.services ?? []);
   const events = JSON.stringify(c.events ?? []);
+  const resources = Array.isArray(c.resources) && c.resources.length > 0
+    ? JSON.stringify(c.resources)
+    : null;
 
   entries.push(
     `        BuiltinConnector {
@@ -57,6 +60,7 @@ for (const file of files) {
             services: ${rustRawStr(services)},
             events: ${rustRawStr(events)},
             metadata: ${metadata ? `Some(${rustRawStr(metadata)})` : 'None'},
+            resources: ${resources ? `Some(${rustRawStr(resources)})` : 'None'},
         }`,
   );
 }
@@ -76,6 +80,9 @@ pub(crate) struct BuiltinConnector {
     pub services: &'static str,
     pub events: &'static str,
     pub metadata: Option<&'static str>,
+    /// JSON array of ResourceSpec objects (see docs/resource-scoping-spec.md).
+    /// None when the connector has no user-pickable sub-resources.
+    pub resources: Option<&'static str>,
 }
 
 pub(crate) const BUILTIN_CONNECTORS: &[BuiltinConnector] = &[

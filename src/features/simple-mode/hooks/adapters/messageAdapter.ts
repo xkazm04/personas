@@ -12,9 +12,9 @@ interface PersonaSummary {
   personaColor: string | null;
 }
 
-function priorityToSeverity(priority: string): Severity {
-  const p = priority.toLowerCase();
-  if (p === 'high') return 'warning';
+function priorityToSeverity(priority: unknown): Severity {
+  if (typeof priority !== 'string') return 'info';
+  if (priority.toLowerCase() === 'high') return 'warning';
   return 'info';
 }
 

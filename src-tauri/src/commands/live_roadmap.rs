@@ -153,17 +153,31 @@ pub async fn fetch_roadmap(
     let cached = read_cache(&cache_path);
 
     // Fresh-enough cache? Skip the network entirely.
+    //
+    // Clock-skew guard: `(Utc::now() - c.cached_at).to_std()` errors when the
+    // delta is negative (NTP correction, manual time change, VM resume). The
+    // previous `unwrap_or(Duration::ZERO)` treated that as "brand new cache"
+    // and held stale content forever until wall-clock advanced past
+    // `cached_at + TTL`. Instead, match explicitly and force a refetch on
+    // backward skew.
     if !force {
         if let Some(c) = &cached {
-            let age = (Utc::now() - c.cached_at)
-                .to_std()
-                .unwrap_or(Duration::ZERO);
-            if age < CACHE_TTL {
-                return Ok(LiveRoadmapResult {
-                    roadmap: c.roadmap.clone(),
-                    fetched_at: c.cached_at.to_rfc3339(),
-                    source: LiveRoadmapSource::Cache,
-                });
+            match (Utc::now() - c.cached_at).to_std() {
+                Ok(age) if age < CACHE_TTL => {
+                    return Ok(LiveRoadmapResult {
+                        roadmap: c.roadmap.clone(),
+                        fetched_at: c.cached_at.to_rfc3339(),
+                        source: LiveRoadmapSource::Cache,
+                    });
+                }
+                Ok(_) => { /* expired — fall through to network */ }
+                Err(_) => {
+                    tracing::warn!(
+                        cached_at = %c.cached_at.to_rfc3339(),
+                        now = %Utc::now().to_rfc3339(),
+                        "Roadmap cache timestamp is in the future (clock skew). Forcing refetch."
+                    );
+                }
             }
         }
     }
@@ -319,7 +333,15 @@ fn write_cache(path: &PathBuf, cache: &CachedRoadmap) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent)?;
     }
-    std::fs::write(path, bytes)
+    // Atomic write: serialize to a sibling tmp file, then rename into place.
+    // Without this, a crash or forced shutdown mid-write leaves the cache
+    // truncated; read_cache then silently drops it and offline users fall
+    // back to bundled content instead of the previously-cached roadmap.
+    // `fs::rename` is atomic on POSIX and on Windows (MoveFileEx semantics
+    // for same-volume rename; app_data_dir keeps tmp and dest on one volume).
+    let tmp_path = path.with_extension("json.tmp");
+    std::fs::write(&tmp_path, bytes)?;
+    std::fs::rename(&tmp_path, path)
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -281,6 +281,13 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   const [step, setStep] = useState(initialStep);
   const [goalDraft, setGoalDraft] = useState(setupGoal ?? '');
   const [direction, setDirection] = useState(1);
+
+  // Re-sync the draft when the store's setupGoal changes from outside the
+  // stepper (other surfaces, persisted rehydration). Without this the draft
+  // silently diverges and overwrites a newer store value on save.
+  useEffect(() => {
+    setGoalDraft(setupGoal ?? '');
+  }, [setupGoal]);
   const { t } = useTranslation();
   const ss = t.home.setup_stepper;
 

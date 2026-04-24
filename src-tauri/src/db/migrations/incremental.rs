@@ -2162,5 +2162,38 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         [],
     )?;
 
+    // -- Resource scoping: scoped_resources blob on persona_credentials ----------
+    // Post-auth picker stores user-selected sub-resources (GitHub repos, Supabase
+    // projects, Google Drive folders, etc.) as a JSON blob alongside the credential.
+    // Plaintext (not field-level encrypted) because identifiers are not secrets;
+    // the auth fields that grant access live in credential_fields and stay
+    // encrypted. Default NULL = broad scope (feature is opt-in; existing rows are
+    // unaffected).
+    let has_scoped_resources: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_credentials') WHERE name = 'scoped_resources'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_scoped_resources {
+        conn.execute_batch("ALTER TABLE persona_credentials ADD COLUMN scoped_resources TEXT;")?;
+        tracing::info!("Added scoped_resources column to persona_credentials");
+    }
+
+    // -- Connector resources spec: resources column on connector_definitions -----
+    // JSON array describing how to list user-pickable sub-resources (repos,
+    // projects, etc.). Seeded from scripts/connectors/builtin/*.json `resources[]`.
+    // See src-tauri/src/db/models/connector.rs for the typed shape.
+    let has_connector_resources: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('connector_definitions') WHERE name = 'resources'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_connector_resources {
+        conn.execute_batch("ALTER TABLE connector_definitions ADD COLUMN resources TEXT;")?;
+        tracing::info!("Added resources column to connector_definitions");
+    }
+
     Ok(())
 }

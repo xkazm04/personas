@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { useVaultStore } from "@/stores/vaultStore";
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { sanitize } from './schemaFormTypes';
 import { ExtraFieldRenderer } from './ExtraFieldRenderers';
@@ -55,6 +56,7 @@ export function CredentialSchemaForm({
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const health = useCredentialHealth(config.healthKey);
+  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
 
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
   const hasHealthcheck = !!activeSubType.healthcheck || !!config.customHealthcheck;
@@ -129,7 +131,7 @@ export function CredentialSchemaForm({
         ? { ...fieldValues, ...config.buildExtraCredData(subTypeId, extraState) }
         : fieldValues;
 
-      await createCredential({
+      const newCredId = await createCredential({
         name: `${effectiveName} Credential`,
         service_type: serviceType,
         data: credData,
@@ -137,6 +139,13 @@ export function CredentialSchemaForm({
       });
 
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
+
+      // If the connector declares resources[], prompt for scope before completing.
+      // Only runs when healthcheck passed — no point listing resources if auth is broken.
+      if (health.result?.success === true) {
+        await promptIfScoped({ credentialId: newCredId, serviceType });
+      }
+
       onComplete();
     } catch (err) {
       if (createdConnectorId) {
@@ -153,6 +162,7 @@ export function CredentialSchemaForm({
       className="animate-fade-slide-in space-y-4"
       data-testid="vault-schema-form"
     >
+      {resourcePickerElement}
       {showHeader && <SchemaFormHeader config={config} onBack={onBack} />}
 
       {!nameOverride && (

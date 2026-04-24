@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -60,6 +60,11 @@ export function useOnboardingState() {
   const [templateReloadNonce, setTemplateReloadNonce] = useState(0);
   const [showAdoptionWizard, setShowAdoptionWizard] = useState(false);
   const [selectedReview, setSelectedReview] = useState<PersonaDesignReview | null>(null);
+  const [isAdopting, setIsAdopting] = useState(false);
+  // Dedupe key: latest (templateId, click-timestamp) pair we accepted, so
+  // rapid double-clicks that slip past the React state update don't open two
+  // wizards or complete adoption twice.
+  const adoptionDedupeRef = useRef<{ reviewId: string; at: number } | null>(null);
 
   // -- Desktop discovery state --
   const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([]);
@@ -198,6 +203,14 @@ export function useOnboardingState() {
 
   const handleNextFromPick = () => {
     if (!onboardingSelectedReviewId || !selectedReview) return;
+    // Guard against rapid double-click: if we're already mid-adoption or if
+    // the same template was clicked again within 1s, ignore the second call.
+    if (isAdopting || showAdoptionWizard) return;
+    const now = Date.now();
+    const last = adoptionDedupeRef.current;
+    if (last && last.reviewId === onboardingSelectedReviewId && now - last.at < 1000) return;
+    adoptionDedupeRef.current = { reviewId: onboardingSelectedReviewId, at: now };
+    setIsAdopting(true);
     completeOnboardingStep('pick-template');
     setOnboardingStep('adopt');
     setShowAdoptionWizard(true);
@@ -205,6 +218,7 @@ export function useOnboardingState() {
 
   const handleAdoptionComplete = async (personaId: string) => {
     setShowAdoptionWizard(false);
+    setIsAdopting(false);
     completeOnboardingStep('adopt');
     // Explicit ID from the adoption wizard — no more guessing the newest
     // persona by created_at (which was racy against concurrent creates and
@@ -223,6 +237,7 @@ export function useOnboardingState() {
 
   const handleAdoptionClose = () => {
     setShowAdoptionWizard(false);
+    setIsAdopting(false);
     if (!onboardingStepCompleted['adopt']) {
       setOnboardingStep('pick-template');
     }
@@ -250,6 +265,7 @@ export function useOnboardingState() {
     isLoadingTemplates: templateLoadState.phase === 'loading',
     retryLoadTemplates,
     showAdoptionWizard,
+    isAdopting,
     selectedReview,
     createdPersona,
     // Desktop discovery

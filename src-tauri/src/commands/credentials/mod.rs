@@ -28,3 +28,4 @@ pub mod nl_query;
 pub mod vector_kb;
 pub mod openapi_autopilot;
 pub mod external_api_keys;
+pub mod resources;

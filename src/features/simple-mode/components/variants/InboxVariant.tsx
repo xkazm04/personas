@@ -32,13 +32,18 @@
  *   - Busy state disables buttons + swaps label to inb.action_running.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check } from 'lucide-react';
+
+import * as Sentry from '@sentry/react';
 
 import type { Translations } from '@/i18n/generated/types';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { log } from '@/lib/log';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 
 import { SimpleEmptyState } from '../SimpleEmptyState';
 import { InboxDetail } from '../inbox/InboxDetail';
@@ -74,6 +79,17 @@ export default function InboxVariant() {
   const [notes, setNotes] = useState('');
   const [busy, setBusy] = useState(false);
 
+  // Track mount status so in-flight actions don't setState after unmount
+  // (user navigating away mid-approval). Gate every setter in action finally
+  // blocks with mountedRef.current.
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const filtered = useMemo(
     () => (filter === 'needsme' ? items.filter(isNeedsMe) : items),
     [items, filter],
@@ -100,14 +116,35 @@ export default function InboxVariant() {
 
   const actions = useInboxActions(selected);
 
+  // Surface IPC/engine errors from action runners. Silent failure is the worst
+  // UX for Simple Mode — the user would think an approval went through and
+  // move on. Route through resolveErrorTranslated so the toast copy is
+  // localized and actionable.
+  const reportActionError = (slot: 'primary' | 'secondary' | 'tertiary', err: unknown): void => {
+    const kind = selected?.kind ?? 'unknown';
+    const raw = err instanceof Error ? err.message : String(err);
+    log.warn('InboxVariant', `${slot} action failed`, { kind, error: raw });
+    Sentry.addBreadcrumb({
+      category: 'simple_mode.inbox',
+      message: `inbox.${slot} failed`,
+      level: 'warning',
+      data: { kind, cause: raw },
+    });
+    const { message, suggestion } = resolveErrorTranslated(t, raw);
+    const copy = suggestion ? `${inb.action_failed}: ${message} ${suggestion}` : `${inb.action_failed}: ${message}`;
+    useToastStore.getState().addToast(copy.trim(), 'error', 6000);
+  };
+
   const runPrimary = async (): Promise<void> => {
     if (!actions.primary || busy) return;
     setBusy(true);
     try {
       await actions.primary.run(notes);
-      setNotes('');
+      if (mountedRef.current) setNotes('');
+    } catch (err) {
+      reportActionError('primary', err);
     } finally {
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
     }
   };
 
@@ -116,9 +153,11 @@ export default function InboxVariant() {
     setBusy(true);
     try {
       await actions.tertiary.run(notes);
-      setNotes('');
+      if (mountedRef.current) setNotes('');
+    } catch (err) {
+      reportActionError('tertiary', err);
     } finally {
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
     }
   };
 
@@ -127,8 +166,10 @@ export default function InboxVariant() {
     setBusy(true);
     try {
       await actions.secondary.run(notes);
+    } catch (err) {
+      reportActionError('secondary', err);
     } finally {
-      setBusy(false);
+      if (mountedRef.current) setBusy(false);
     }
   };
 

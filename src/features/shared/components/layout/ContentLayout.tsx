@@ -1,6 +1,18 @@
-import { useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
+
+// ---------------------------------------------------------------------------
+// ContentLayoutContext -- shares scroll state between ContentBody and
+// ContentHeader so the header can elevate on scroll. Threshold is 8px.
+// ---------------------------------------------------------------------------
+
+interface ContentLayoutContextValue {
+  scrolled: boolean;
+  setScrolled: (value: boolean) => void;
+}
+
+const ContentLayoutContext = createContext<ContentLayoutContextValue | null>(null);
 
 // ---------------------------------------------------------------------------
 // Icon color palette
@@ -35,25 +47,32 @@ interface ContentBoxProps {
 }
 
 export function ContentBox({ children, minWidth, 'data-testid': testId }: ContentBoxProps) {
+  const [scrolled, setScrolled] = useState(false);
+  const ctxValue = { scrolled, setScrolled };
+
   // Custom override -- used by TeamCanvas etc. to opt out of min-width
   if (minWidth !== undefined) {
     return (
-      <div
-        className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
-        style={minWidth > 0 ? { minWidth: `${minWidth}px` } : undefined}
-        data-testid={testId}
-      >
-        {children}
-      </div>
+      <ContentLayoutContext.Provider value={ctxValue}>
+        <div
+          className="flex-1 min-h-0 flex flex-col w-full overflow-hidden"
+          style={minWidth > 0 ? { minWidth: `${minWidth}px` } : undefined}
+          data-testid={testId}
+        >
+          {children}
+        </div>
+      </ContentLayoutContext.Provider>
     );
   }
 
   // Default: responsive min-width adjusted for 328px sidebar
   // xl 1280->952 available, 2xl 1536->1208, 3xl 1920->1592, 4xl 2560->2232
   return (
-    <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
-      {children}
-    </div>
+    <ContentLayoutContext.Provider value={ctxValue}>
+      <div data-testid={testId} className={`flex-1 min-h-0 flex flex-col w-full overflow-hidden ${IS_MOBILE ? '' : 'min-w-[800px] xl:min-w-[920px] 2xl:min-w-[1180px] 3xl:min-w-[1560px] 4xl:min-w-[2200px]'}`}>
+        {children}
+      </div>
+    </ContentLayoutContext.Provider>
   );
 }
 
@@ -88,8 +107,19 @@ export function ContentHeader({
     icon
   );
 
+  const layoutCtx = useContext(ContentLayoutContext);
+  const scrolled = layoutCtx?.scrolled ?? false;
+
   return (
-    <div className={`${IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6'} border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]`}>
+    <div
+      className={[
+        IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6',
+        'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
+        'sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card-bg/95',
+        'transition-shadow duration-150',
+        scrolled ? 'shadow-elevation-2' : 'shadow-none',
+      ].join(' ')}
+    >
       <div className="flex items-center gap-3 pr-20">
         {iconElement}
         <div className="flex-1 min-w-0">
@@ -132,6 +162,20 @@ export function ContentBody({
 }: ContentBodyProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { canScrollUp, canScrollDown } = useScrollShadow(scrollRef);
+  const layoutCtx = useContext(ContentLayoutContext);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    const setScrolled = layoutCtx?.setScrolled;
+    if (!el || !setScrolled) return;
+    const update = () => setScrolled(el.scrollTop > 8);
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', update);
+      setScrolled(false);
+    };
+  }, [layoutCtx?.setScrolled]);
 
   const shadowTop = (
     <div

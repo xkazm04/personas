@@ -27,6 +27,7 @@ export default function OnboardingOverlay() {
     templateLoadState,
     retryLoadTemplates,
     showAdoptionWizard,
+    isAdopting,
     selectedReview,
     createdPersona,
     discoveredApps,
@@ -179,7 +180,7 @@ export default function OnboardingOverlay() {
           {onboardingStep === 'pick-template' && (
             <button
               onClick={handleNextFromPick}
-              disabled={!onboardingSelectedReviewId || templates.length === 0}
+              disabled={!onboardingSelectedReviewId || templates.length === 0 || isAdopting}
               title={!onboardingSelectedReviewId ? t.onboarding.select_template_tooltip : undefined}
               className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >

@@ -67,6 +67,7 @@ Create a file at `scripts/connectors/builtin/{name}.json` following this exact s
   },
   "services": [],
   "events": [],
+  "resources": [],
   "metadata": {
     "template_enabled": true,
     "summary": "One-line description of the service.",
@@ -358,3 +359,41 @@ Files created/modified:
   ~ src/lib/credentials/connectorRoles.ts
   → Supabase connector_catalog (upsert)
 ```
+
+---
+
+## Step: Resource scoping (2nd-level selection)
+
+**Mandatory question to ask when authoring a new connector:**
+
+> Does this service expose user-scopable sub-resources (repos, projects, tables, folders, voices, workspaces, buckets, etc.) that templates might want to pin to a specific instance?
+
+If **yes**, populate `resources[]` on the connector JSON. If **no**, leave `"resources": []`.
+
+The full schema + pagination modes + templating rules live in `docs/resource-scoping-spec.md`. Copy the GitHub example as your starting point. One spec per user-pickable resource type; chain via `depends_on` for hierarchies (e.g. Figma teams → projects → files).
+
+**Minimum viable `resources[]` entry checklist:**
+
+1. `id` — stable snake_case (e.g. `repositories`, `projects`, `tables`, `voices`).
+2. `label` — pluralized user-facing (e.g. `"Repositories"`).
+3. `selection` — `"single"`, `"multi"`, or `"single_or_all"` based on how templates will consume.
+4. `list_endpoint.{method,url,headers}` — prefer a single, authenticated "list mine" endpoint. Use `{{field_key}}` templating to pull auth from credential fields. Include `User-Agent` where APIs require it.
+5. `list_endpoint.pagination` — pick from `none`, `link_header`, `page_param`, `cursor`. Set `max_pages` to a safe bound (3–10 typical).
+6. `response_mapping` — `items_path` (usually `$`), plus `id`, `label`, optional `sublabel` and `meta`. Values are JSONPath-lite into a single item.
+7. `search.mode` — `client` for lists ≤500 items, `server` for larger services.
+8. `cache_ttl_seconds` — default `600`. Longer (3600+) for slow-moving things like orgs.
+
+**Verify before committing:**
+- Paste the `url` + `headers` into curl with a real token. Confirm shape of response.
+- Check that every `response_mapping` path actually exists in a real item.
+- If pagination mode is `page_param` or `cursor`, test with an account that has >1 page of results.
+
+**Do NOT populate `resources[]` for:**
+- Connectors whose usage is single-endpoint (search APIs like arXiv, PubMed, news APIs).
+- Fire-and-forget notification channels (Novu, Knock, ntfy, Twilio SMS).
+- Built-in local services (personas_database, personas_messages, personas_vector_db).
+- Wrappers like Zapier, n8n, MCP gateways (users target specific workflows/servers by ID in template params, not via resource scoping).
+
+**After adding `resources[]`:**
+- Re-run `node scripts/generate-connector-seed.mjs` to refresh `builtin_connectors.rs`.
+- Test in dev: add the credential, confirm picker opens, confirm picks persist in `persona_credentials.scoped_resources`.

@@ -8076,6 +8076,7 @@ export type Translations = {
       action_dismiss: string;
       action_mark_read: string;
       action_running: string;
+      action_failed: string;
       try_this_label: string;
       relative_just_now: string;
       relative_minutes_one: string;

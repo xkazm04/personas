@@ -52,6 +52,11 @@ pub struct ConnectorDefinition {
     pub services: String,
     pub events: String,
     pub metadata: Option<String>,
+    /// JSON array of `ResourceSpec` objects describing user-pickable sub-resources
+    /// (repos, projects, folders). NULL / missing = this connector has no 2nd-level
+    /// resource selection. See `scripts/connectors/builtin/*.json -> resources[]`.
+    #[serde(default)]
+    pub resources: Option<String>,
     pub is_builtin: bool,
     pub created_at: String,
     pub updated_at: String,

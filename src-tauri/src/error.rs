@@ -76,6 +76,9 @@ pub enum AppError {
 
     #[error("{0}")]
     Internal(String),
+
+    #[error("{0}")]
+    External(String),
 }
 
 /// Sanitize error messages to avoid leaking internal file paths or system details
@@ -136,6 +139,7 @@ impl Serialize for AppError {
                 AppError::KeyringLost(_) => "keyring_lost",
                 AppError::AuthorizationRequired { .. } => "authorization_required",
                 AppError::Internal(_) => "internal",
+                AppError::External(_) => "external",
             },
         )?;
         if let AppError::AuthorizationRequired { credential_id, tool_name, authorize_url } = self {

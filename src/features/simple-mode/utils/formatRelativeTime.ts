@@ -7,8 +7,11 @@
  * teams for languages that inflect (Czech, Russian, Arabic, …) can translate
  * the `_one` vs `_other` cases independently.
  *
- * Buckets (unchanged since Phase 08):
- *   - no timestamp / unparseable  → "—"
+ * Buckets:
+ *   - nullish / non-string input  → "—"
+ *   - unparseable string          → raw string (so users see the bad value
+ *                                   instead of "NaNm ago")
+ *   - future-dated (clock skew)   → "just now"
  *   - < 1 minute                  → "just now"
  *   - < 1 hour                    → "{m}m ago"
  *   - < 24 hours                  → "{h}h ago"
@@ -66,15 +69,20 @@ export function formatRelativeTime(
   now: number = Date.now(),
 ): string {
   if (!iso) return '—';
+  if (typeof iso !== 'string') return '—';
   const ts = Date.parse(iso);
-  if (Number.isNaN(ts)) return '—';
+  // Number.isFinite rejects NaN *and* +/-Infinity; Date.parse never returns
+  // Infinity today, but this guards future engine quirks without extra cost.
+  if (!Number.isFinite(ts)) return iso;
   const delta = now - ts;
-  const min = Math.floor(delta / 60_000);
   const r = t?.simple_mode?.inbox;
 
-  if (min < 1) {
+  // Clamp future-dated timestamps (clock skew, bad server data) to "just now"
+  // rather than letting Math.floor of a negative delta cascade into nonsense.
+  if (delta < 60_000) {
     return r?.relative_just_now ?? 'just now';
   }
+  const min = Math.floor(delta / 60_000);
   if (min < 60) {
     const tmpl = min === 1 ? r?.relative_minutes_one : r?.relative_minutes_other;
     return tmpl ? interpolate(tmpl, { m: min }) : `${min}m ago`;

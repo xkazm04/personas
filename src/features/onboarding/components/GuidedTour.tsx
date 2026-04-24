@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -29,6 +29,33 @@ export default function GuidedTour() {
 
   const { t, tx } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
+  // Track pending setTimeouts so they can be cleared on dismissal/unmount.
+  // Without this, a queued advance/highlight can fire after the tour ends and
+  // navigate to a stale step index or set a highlight that's never dismissed.
+  const pendingTimeouts = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  const tourActiveRef = useRef(tourActive);
+  tourActiveRef.current = tourActive;
+
+  const scheduleTourTimeout = useCallback((fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      pendingTimeouts.current.delete(id);
+      if (!tourActiveRef.current) return;
+      fn();
+    }, ms);
+    pendingTimeouts.current.add(id);
+    return id;
+  }, []);
+
+  const clearPendingTimeouts = useCallback(() => {
+    pendingTimeouts.current.forEach((id) => clearTimeout(id));
+    pendingTimeouts.current.clear();
+  }, []);
+
+  useEffect(() => {
+    if (!tourActive) clearPendingTimeouts();
+  }, [tourActive, clearPendingTimeouts]);
+
+  useEffect(() => () => clearPendingTimeouts(), [clearPendingTimeouts]);
 
   const tourDef = getTourById(tourId);
   const visibleSteps = getActiveTourSteps(tourId);
@@ -48,7 +75,7 @@ export default function GuidedTour() {
 
       // Handle sub-tab setters
       if (step.nav.subTab && step.nav.subTabSetter) {
-        setTimeout(() => {
+        scheduleTourTimeout(() => {
           if (step.nav.subTabSetter === 'setSettingsTab') {
             setSettingsTab(step.nav.subTab as Parameters<typeof setSettingsTab>[0]);
           } else if (step.nav.subTabSetter === 'setOverviewTab') {
@@ -64,20 +91,20 @@ export default function GuidedTour() {
         const theme = useThemeStore.getState();
         captureAppearanceBaseline({ themeId: theme.themeId, textScale: theme.textScale, brightness: theme.brightness });
       } else if (step.id === 'credentials-intro') {
-        setTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
+        scheduleTourTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
       } else if (step.id === 'persona-creation') {
-        setTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
+        scheduleTourTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
       }
 
       // Set initial spotlight
       const firstSubHighlight = step.subSteps[0]?.highlightTestId;
       if (step.highlightTestId) {
-        setTimeout(() => setHighlightTestId(step.highlightTestId!), 300);
+        scheduleTourTimeout(() => setHighlightTestId(step.highlightTestId!), 300);
       } else if (firstSubHighlight) {
-        setTimeout(() => setHighlightTestId(firstSubHighlight), 300);
+        scheduleTourTimeout(() => setHighlightTestId(firstSubHighlight), 300);
       }
     },
-    [tourId, setSidebarSection, setSettingsTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId],
+    [tourId, setSidebarSection, setSettingsTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId, scheduleTourTimeout],
   );
 
   useEffect(() => {

@@ -60,6 +60,13 @@ export interface SimpleSummary {
   needsMeCount: number;
   /** Total inbox items (post-hook cap of 50). */
   inboxCount: number;
+  /**
+   * `true` once the source stores have produced a usable snapshot. During
+   * initial hydration (before `useUnifiedInbox` and the persona/credential
+   * stores resolve) this is `false` so consumers can render their empty /
+   * skeleton state instead of treating all-zeros as "definitively empty".
+   */
+  isHydrated: boolean;
 }
 
 /**
@@ -83,13 +90,24 @@ function bucketOfHour(h: number): SimpleSummary['greetingKind'] {
  * re-render, which is acceptable for greeting copy accuracy.
  */
 export function useSimpleSummary(): SimpleSummary {
-  const personas = useAgentStore((s) => s.personas);
-  const credentials = useVaultStore((s) => s.credentials);
+  const personasRaw = useAgentStore((s) => s.personas);
+  const credentialsRaw = useVaultStore((s) => s.credentials);
   const executionDashboard = useOverviewStore((s) => s.executionDashboard);
   const user = useAuthStore((s) => s.user);
-  const inbox = useUnifiedInbox();
+  const inboxRaw = useUnifiedInbox();
 
   return useMemo(() => {
+    // Guard the hook boundary: during first paint a Zustand slice may not yet
+    // have run its initializer, and `useUnifiedInbox` can transiently return
+    // `undefined` before its memo resolves. Defaulting to `[]` here keeps the
+    // Simple home page from blanking with a `Cannot read properties of
+    // undefined (reading 'filter')` on mount.
+    const personas = personasRaw ?? [];
+    const credentials = credentialsRaw ?? [];
+    const inbox = inboxRaw ?? [];
+    const isHydrated =
+      personasRaw !== undefined && credentialsRaw !== undefined && inboxRaw !== undefined;
+
     const name =
       user?.display_name ?? (user?.email ? user.email.split('@')[0] ?? null : null);
     const activePersonas = personas.filter((p) => p.enabled !== false);
@@ -113,6 +131,7 @@ export function useSimpleSummary(): SimpleSummary {
       connectedTotal: credentials.length,
       needsMeCount: needsMe,
       inboxCount: inbox.length,
+      isHydrated,
     };
-  }, [personas, credentials, executionDashboard, user, inbox]);
+  }, [personasRaw, credentialsRaw, executionDashboard, user, inboxRaw]);
 }

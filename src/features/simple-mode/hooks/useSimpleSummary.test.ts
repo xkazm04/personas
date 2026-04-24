@@ -204,6 +204,7 @@ describe('useSimpleSummary', () => {
       connectedTotal: 0,
       needsMeCount: 0,
       inboxCount: 0,
+      isHydrated: true,
     });
   });
 
@@ -313,6 +314,22 @@ describe('useSimpleSummary', () => {
     //   inboxCount = 3, needsMe = 2 (approval + critical)
     expect(result.current.inboxCount).toBe(3);
     expect(result.current.needsMeCount).toBe(2);
+  });
+
+  it('does not crash when source stores are transiently undefined (pre-hydration)', () => {
+    // Simulate the first-paint race where a Zustand slice has not yet run its
+    // initializer: the hook must fall back to empty arrays instead of calling
+    // `.filter` on `undefined`, and must signal `isHydrated: false` so the
+    // variant renders its skeleton/empty state.
+    useAgentStore.setState({ personas: undefined as unknown as never });
+    useVaultStore.setState({ credentials: undefined as unknown as never });
+    const { result } = renderHook(() => useSimpleSummary());
+    expect(result.current.inboxCount).toBe(0);
+    expect(result.current.activePersonaCount).toBe(0);
+    expect(result.current.totalPersonaCount).toBe(0);
+    expect(result.current.connectedOk).toBe(0);
+    expect(result.current.connectedTotal).toBe(0);
+    expect(result.current.isHydrated).toBe(false);
   });
 
   it('does not double-count a critical approval toward needsMe', () => {

@@ -32,6 +32,7 @@ pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
 pub mod design;
+pub mod director;
 pub mod error_taxonomy;
 pub mod eval;
 pub mod failover;
@@ -135,6 +136,7 @@ pub mod desktop_discovery;
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
 pub mod desktop_security;
+pub mod resource_listing;
 
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;

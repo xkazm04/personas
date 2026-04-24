@@ -14,6 +14,7 @@ import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
 import { AutoCredConsent } from './AutoCredConsent';
 import { AutoCredBrowser } from './AutoCredBrowser';
 import { AutoCredReview } from './AutoCredReview';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { AutoCredBrowserError } from './AutoCredBrowserError';
 import { AutoCredErrorDisplay } from '../display/AutoCredErrorDisplay';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -45,6 +46,19 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
   const session = useAutoCredSession({ adapter });
+  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
+
+  /**
+   * Wrap session.save so a successful save triggers the post-save resource
+   * scope picker (when the connector declares resources[]). No-op for
+   * connectors without resources or when healthcheck didn't pass.
+   */
+  const handleSave = async () => {
+    const result = await session.save();
+    if (result && result.healthcheckPassed) {
+      await promptIfScoped({ credentialId: result.id, serviceType: result.serviceType });
+    }
+  };
 
   // Kill running browser session on unmount (e.g. wizard closed, navigated away).
   // Store cancelBrowser in a ref so the cleanup always targets the current session,
@@ -86,6 +100,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   return (
     <div className="space-y-4">
+      {resourcePickerElement}
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
           <motion.div key="consent" {...phaseTransition}>
@@ -129,7 +144,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
               onValueChange={session.updateValue}
               onHealthcheck={session.runHealthcheck}
               healthResult={session.healthResult}
-              onSave={session.save}
+              onSave={handleSave}
               onRetry={session.startBrowser}
               onCancel={handleCancel}
               isSaving={session.isSaving}

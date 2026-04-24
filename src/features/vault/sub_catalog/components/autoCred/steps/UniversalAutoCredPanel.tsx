@@ -7,6 +7,7 @@ import { useAutoCredSession } from '../helpers/useAutoCredSession';
 import { tauriPlaywrightAdapter, tauriGuidedAdapter } from '../helpers/TauriPlaywrightAdapter';
 import { checkPlaywrightAvailable } from '@/api/vault/autoCredBrowser';
 import { useVaultStore } from '@/stores/vaultStore';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import { UniversalAutoCredInputPhase } from './UniversalAutoCredInputPhase';
 import { UniversalAutoCredRunningPhase } from './UniversalAutoCredRunningPhase';
 import { buildUniversalDesignResult } from './universalAutoCredHelpers';
@@ -30,6 +31,7 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
   const createCredential = useVaultStore((s) => s.createCredential);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
+  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
 
   useEffect(() => {
     checkPlaywrightAvailable()
@@ -136,7 +138,7 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
         }
       }
 
-      await createCredential({
+      const newCredId = await createCredential({
         name: session.credentialName.trim() || `${connectorLabel} Credential`,
         service_type: serviceType,
         data: cleanValues,
@@ -144,6 +146,12 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
       });
 
       await fetchCredentials();
+
+      // Scope picker — only prompt after a successful healthcheck.
+      if (session.healthResult?.success === true) {
+        await promptIfScoped({ credentialId: newCredId, serviceType });
+      }
+
       session.reset();
       setPhase('input');
       onComplete();
@@ -165,29 +173,35 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
 
   if (phase === 'input') {
     return (
-      <UniversalAutoCredInputPhase
-        serviceUrl={serviceUrl}
-        onServiceUrlChange={setServiceUrl}
-        description={description}
-        onDescriptionChange={setDescription}
-        isValidUrl={isValidUrl}
-        modeChecked={modeChecked}
-        mode={mode}
-        onStart={handleStart}
-        onCancel={onCancel}
-        onKeyDown={handleKeyDown}
-      />
+      <>
+        {resourcePickerElement}
+        <UniversalAutoCredInputPhase
+          serviceUrl={serviceUrl}
+          onServiceUrlChange={setServiceUrl}
+          description={description}
+          onDescriptionChange={setDescription}
+          isValidUrl={isValidUrl}
+          modeChecked={modeChecked}
+          mode={mode}
+          onStart={handleStart}
+          onCancel={onCancel}
+          onKeyDown={handleKeyDown}
+        />
+      </>
     );
   }
 
   return (
-    <UniversalAutoCredRunningPhase
-      session={session}
-      mode={mode}
-      universalSaving={universalSaving}
-      onUniversalSave={handleUniversalSave}
-      onCancel={handleCancel}
-      onComplete={onComplete}
-    />
+    <>
+      {resourcePickerElement}
+      <UniversalAutoCredRunningPhase
+        session={session}
+        mode={mode}
+        universalSaving={universalSaving}
+        onUniversalSave={handleUniversalSave}
+        onCancel={handleCancel}
+        onComplete={onComplete}
+      />
+    </>
   );
 }

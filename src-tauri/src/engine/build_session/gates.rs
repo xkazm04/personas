@@ -340,3 +340,561 @@ pub(super) fn synthesize_gate_question(
 
     build_clarifying_question_events(&obj, session_id)
 }
+
+// =============================================================================
+// Tests
+// =============================================================================
+//
+// These tests pin down the Rule 16/17 contract: every gated dimension must
+// either be auto-opened by an unambiguous intent keyword OR ask the user. The
+// `intent_implies_*` keyword lists are the load-bearing piece — when the
+// build prompt's "skip when intent literally says X" clauses change in
+// `session_prompt.rs::Rule 16`, mirror the change here so a drift in either
+// direction is caught at `cargo test` time, not by an e2e regression.
+//
+// `synthesize_gate_question` is covered for the field-scoped branches
+// (suggested_trigger / review_policy / memory_policy). The connectors branch
+// calls `infer_connector_category`, which hits the DB — that path is exercised
+// by the live `e2e_question_loop.py` scenario rather than here.
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── intent heuristics — trigger ─────────────────────────────────────────
+
+    #[test]
+    fn trigger_auto_opens_on_event_keywords() {
+        for intent in [
+            "translate every incoming document from english to czech",
+            "react to new files in my drive",
+            "whenever a new ticket arrives, triage it",
+            "on new email, summarise it",
+            "as soon as a stripe charge fails, log it",
+            "listen for inbound webhooks",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected event-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_auto_opens_on_schedule_keywords() {
+        for intent in [
+            "every morning summarise my inbox",
+            "daily digest of news",
+            "every week clean up dead branches",
+            "at 7am send the digest",
+            "cron 0 9 * * 1-5",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected schedule-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_auto_opens_on_manual_keywords() {
+        for intent in [
+            "on command, draft a reply",
+            "manually run a deep search",
+            "when i ask, summarise the meeting notes",
+            "on demand interactive assistant",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Open,
+                "expected manual-keyword auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn trigger_stays_closed_when_intent_is_silent() {
+        // No trigger-shaped phrase → must remain Closed → forces a question.
+        for intent in [
+            "translate documents from english to czech",
+            "draft a weekly report on customer churn",
+            "summarise my open tickets",
+            "help me triage support requests",
+        ] {
+            assert_eq!(
+                intent_implies_trigger(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — review_policy ───────────────────────────────────
+
+    #[test]
+    fn review_auto_opens_on_explicit_automation_keywords() {
+        for intent in [
+            "automatically publish the digest",
+            "no review needed, just send it",
+            "without asking, post to slack",
+            "fully automated translation pipeline",
+            "no human in the loop",
+        ] {
+            assert_eq!(
+                intent_implies_review(&intent.to_lowercase()),
+                Gate::Open,
+                "expected review auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn review_stays_closed_when_intent_is_silent_about_approval() {
+        for intent in [
+            "translate every incoming document",
+            "send a daily digest of headlines",
+        ] {
+            assert_eq!(
+                intent_implies_review(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — memory_policy ───────────────────────────────────
+
+    #[test]
+    fn memory_auto_opens_on_explicit_memory_keywords() {
+        for intent in [
+            "stateless email triage",
+            "each independently — no shared state",
+            "remember my preferences",
+            "remember user choices for next time",
+            "learn over time which senders i ignore",
+        ] {
+            assert_eq!(
+                intent_implies_memory(&intent.to_lowercase()),
+                Gate::Open,
+                "expected memory auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn memory_stays_closed_when_intent_is_silent() {
+        for intent in [
+            "translate every incoming document",
+            "weekly summary of github issues",
+        ] {
+            assert_eq!(
+                intent_implies_memory(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── intent heuristics — connectors ──────────────────────────────────────
+
+    #[test]
+    fn connectors_auto_opens_on_named_service() {
+        for intent in [
+            "summarise gmail and post to slack",
+            "react to new github issues",
+            "scan notion pages weekly",
+            "translate english documents from my local drive",
+        ] {
+            assert_eq!(
+                intent_implies_connectors(&intent.to_lowercase()),
+                Gate::Open,
+                "expected connectors auto-open for: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn connectors_stays_closed_when_intent_only_describes_data_shape() {
+        for intent in [
+            "translate every incoming document from english to czech",
+            "draft a weekly report on customer churn",
+            "summarise overnight messages",
+        ] {
+            assert_eq!(
+                intent_implies_connectors(&intent.to_lowercase()),
+                Gate::Closed,
+                "expected connectors Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── gate_seed_for_intent — composite of the four heuristics ─────────────
+
+    #[test]
+    fn ambiguous_intent_seeds_all_gates_closed() {
+        let seed = gate_seed_for_intent("help me build a translation companion");
+        assert_eq!(seed.trigger, Gate::Closed);
+        assert_eq!(seed.connectors, Gate::Closed);
+        assert_eq!(seed.review_policy, Gate::Closed);
+        assert_eq!(seed.memory_policy, Gate::Closed);
+    }
+
+    #[test]
+    fn explicit_intent_seeds_matching_gates_open() {
+        let seed = gate_seed_for_intent(
+            "every morning, automatically post a stateless gmail digest to slack",
+        );
+        assert_eq!(seed.trigger, Gate::Open, "every morning → trigger");
+        assert_eq!(seed.connectors, Gate::Open, "gmail/slack → connectors");
+        assert_eq!(seed.review_policy, Gate::Open, "automatically → review");
+        assert_eq!(seed.memory_policy, Gate::Open, "stateless → memory");
+    }
+
+    // ── CapabilityGates — state machine ─────────────────────────────────────
+
+    #[test]
+    fn default_gates_are_all_closed() {
+        let gates = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            assert_eq!(gates.field_state(field), Some(Gate::Closed));
+            assert!(!gates.is_gate_open(field));
+        }
+    }
+
+    #[test]
+    fn unknown_fields_report_open_to_avoid_blocking_unrelated_resolutions() {
+        // Non-gated fields must not be suppressed by the gate machinery —
+        // is_gate_open returns true so the resolution flows through.
+        let gates = CapabilityGates::default();
+        assert!(gates.is_gate_open("input_schema"));
+        assert!(gates.is_gate_open("tool_hints"));
+        assert_eq!(gates.field_state("input_schema"), None);
+    }
+
+    #[test]
+    fn mark_pending_promotes_closed_to_pending_but_not_open_to_pending() {
+        let mut gates = CapabilityGates::default();
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(gates.field_state("suggested_trigger"), Some(Gate::Pending));
+
+        gates.mark_open("suggested_trigger");
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(
+            gates.field_state("suggested_trigger"),
+            Some(Gate::Open),
+            "Open must NOT regress to Pending"
+        );
+    }
+
+    #[test]
+    fn mark_open_flips_any_state_to_open() {
+        let mut gates = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            gates.mark_open(field);
+            assert!(gates.is_gate_open(field));
+        }
+    }
+
+    #[test]
+    fn first_unopen_field_returns_in_priority_order() {
+        // Trigger first, then connectors, then review_policy, then memory_policy.
+        let mut gates = CapabilityGates::default();
+        assert_eq!(gates.first_unopen_field(), Some("suggested_trigger"));
+
+        gates.mark_open("suggested_trigger");
+        assert_eq!(gates.first_unopen_field(), Some("connectors"));
+
+        gates.mark_open("connectors");
+        assert_eq!(gates.first_unopen_field(), Some("review_policy"));
+
+        gates.mark_open("review_policy");
+        assert_eq!(gates.first_unopen_field(), Some("memory_policy"));
+
+        gates.mark_open("memory_policy");
+        assert_eq!(gates.first_unopen_field(), None);
+    }
+
+    #[test]
+    fn pending_counts_as_unopen() {
+        let mut gates = CapabilityGates::default();
+        gates.mark_pending("suggested_trigger");
+        assert_eq!(
+            gates.first_unopen_field(),
+            Some("suggested_trigger"),
+            "Pending must still surface as unopen — the user hasn't answered yet"
+        );
+    }
+
+    // ── is_gated_field / legacy_cell_to_v3_field ────────────────────────────
+
+    #[test]
+    fn is_gated_field_recognises_only_the_four_v3_fields() {
+        for field in GATED_CAPABILITY_FIELDS {
+            assert!(is_gated_field(field), "{field} should be gated");
+        }
+        for field in ["input_schema", "tool_hints", "use_case_flow", "tools", ""] {
+            assert!(!is_gated_field(field), "{field} should NOT be gated");
+        }
+    }
+
+    #[test]
+    fn legacy_cell_to_v3_field_round_trips_known_dims() {
+        assert_eq!(
+            legacy_cell_to_v3_field("triggers"),
+            Some("suggested_trigger")
+        );
+        assert_eq!(legacy_cell_to_v3_field("connectors"), Some("connectors"));
+        assert_eq!(
+            legacy_cell_to_v3_field("human-review"),
+            Some("review_policy")
+        );
+        assert_eq!(legacy_cell_to_v3_field("memory"), Some("memory_policy"));
+    }
+
+    #[test]
+    fn legacy_cell_to_v3_field_returns_none_for_non_gated_cells() {
+        // The matrix has cells like "messages", "use-cases", "events" that
+        // are NOT gated dimensions. The mapper must return None so the
+        // run_session loop skips its gate-flip path for those answers.
+        for cell in ["messages", "use-cases", "events", "error-handling", ""] {
+            assert!(
+                legacy_cell_to_v3_field(cell).is_none(),
+                "{cell} must not map to a gated v3 field"
+            );
+        }
+    }
+
+    // ── coverage map helpers ───────────────────────────────────────────────
+
+    #[test]
+    fn init_gates_from_enumeration_seeds_one_entry_per_capability() {
+        let mut coverage = HashMap::new();
+        let mut titles = HashMap::new();
+        let data = serde_json::json!({
+            "capabilities": [
+                {"id": "uc_morning_digest", "title": "Morning Digest"},
+                {"id": "uc_weekly_review",  "title": "Weekly Review"},
+            ]
+        });
+        init_gates_from_enumeration(&mut coverage, &mut titles, &data, "ambiguous");
+        assert_eq!(coverage.len(), 2);
+        assert!(coverage.contains_key("uc_morning_digest"));
+        assert!(coverage.contains_key("uc_weekly_review"));
+        assert_eq!(titles.get("uc_morning_digest").map(String::as_str), Some("Morning Digest"));
+        assert_eq!(titles.get("uc_weekly_review").map(String::as_str), Some("Weekly Review"));
+    }
+
+    #[test]
+    fn init_gates_from_enumeration_applies_intent_seed_to_every_capability() {
+        let mut coverage = HashMap::new();
+        let mut titles = HashMap::new();
+        let data = serde_json::json!({
+            "capabilities": [
+                {"id": "uc_a", "title": "A"},
+                {"id": "uc_b", "title": "B"},
+            ]
+        });
+        init_gates_from_enumeration(
+            &mut coverage,
+            &mut titles,
+            &data,
+            "every morning, automatically run gmail digest",
+        );
+        for id in ["uc_a", "uc_b"] {
+            let g = coverage.get(id).expect("capability should be seeded");
+            assert_eq!(g.trigger, Gate::Open, "{id}.trigger");
+            assert_eq!(g.connectors, Gate::Open, "{id}.connectors");
+            assert_eq!(g.review_policy, Gate::Open, "{id}.review_policy");
+            assert_eq!(g.memory_policy, Gate::Closed, "{id}.memory");
+        }
+    }
+
+    #[test]
+    fn init_gates_from_enumeration_does_not_overwrite_existing_state() {
+        let mut coverage = HashMap::new();
+        coverage.insert("uc_a".to_string(), {
+            let mut g = CapabilityGates::default();
+            g.mark_open("suggested_trigger");
+            g
+        });
+        let mut titles = HashMap::new();
+        let data = serde_json::json!({
+            "capabilities": [{"id": "uc_a", "title": "A"}]
+        });
+        // Intent that would seed Closed for trigger — must not regress prior Open.
+        init_gates_from_enumeration(&mut coverage, &mut titles, &data, "ambiguous");
+        assert_eq!(
+            coverage.get("uc_a").unwrap().trigger,
+            Gate::Open,
+            "existing Open must be preserved on re-init"
+        );
+    }
+
+    #[test]
+    fn init_gates_from_enumeration_handles_malformed_input_gracefully() {
+        // Missing `capabilities` array → no-op, no panic.
+        let mut coverage = HashMap::new();
+        let mut titles = HashMap::new();
+        init_gates_from_enumeration(
+            &mut coverage,
+            &mut titles,
+            &serde_json::json!({}),
+            "intent",
+        );
+        assert!(coverage.is_empty());
+        assert!(titles.is_empty());
+    }
+
+    #[test]
+    fn init_gates_from_enumeration_skips_capabilities_without_id() {
+        // Must skip without panic; downstream lookup by id would otherwise
+        // wedge the build session.
+        let mut coverage = HashMap::new();
+        let mut titles = HashMap::new();
+        let data = serde_json::json!({
+            "capabilities": [
+                {"title": "Anonymous"},
+                {"id": "uc_ok", "title": "Valid"},
+            ]
+        });
+        init_gates_from_enumeration(&mut coverage, &mut titles, &data, "intent");
+        assert_eq!(coverage.len(), 1);
+        assert!(coverage.contains_key("uc_ok"));
+    }
+
+    #[test]
+    fn ensure_capability_in_coverage_inserts_only_when_missing() {
+        let mut coverage = HashMap::new();
+        coverage.insert("uc_existing".to_string(), {
+            let mut g = CapabilityGates::default();
+            g.mark_open("memory_policy");
+            g
+        });
+        ensure_capability_in_coverage(&mut coverage, "uc_existing", "intent");
+        ensure_capability_in_coverage(&mut coverage, "uc_new", "intent");
+
+        // Existing entry untouched.
+        assert_eq!(
+            coverage.get("uc_existing").unwrap().memory_policy,
+            Gate::Open
+        );
+        // Missing entry seeded.
+        assert!(coverage.contains_key("uc_new"));
+    }
+
+    #[test]
+    fn find_first_unopen_gate_walks_capabilities_in_sorted_id_order() {
+        let mut coverage = HashMap::new();
+        // Insert in non-sorted order so the test catches a HashMap-iteration bug.
+        coverage.insert("uc_b".to_string(), CapabilityGates::default());
+        coverage.insert("uc_a".to_string(), CapabilityGates::default());
+        coverage.insert("uc_c".to_string(), CapabilityGates::default());
+
+        let (cap, field) = find_first_unopen_gate(&coverage).expect("at least one closed gate");
+        assert_eq!(cap, "uc_a", "must walk in sorted cap_id order for determinism");
+        assert_eq!(field, "suggested_trigger");
+    }
+
+    #[test]
+    fn find_first_unopen_gate_returns_none_when_everything_open() {
+        let mut coverage = HashMap::new();
+        let mut all_open = CapabilityGates::default();
+        for field in GATED_CAPABILITY_FIELDS {
+            all_open.mark_open(field);
+        }
+        coverage.insert("uc_only".to_string(), all_open);
+        assert!(find_first_unopen_gate(&coverage).is_none());
+    }
+
+    #[test]
+    fn find_first_unopen_gate_returns_none_for_empty_coverage() {
+        let coverage: HashMap<String, CapabilityGates> = HashMap::new();
+        assert!(find_first_unopen_gate(&coverage).is_none());
+    }
+
+    // ── synthesize_gate_question — field-scoped branches (no DB) ────────────
+    //
+    // These three branches don't touch the DB, so we can drive them with
+    // serde_json::Value::Null as the proposed_value. The connectors branch
+    // calls infer_connector_category which hits the DB — covered by the live
+    // e2e_question_loop.py scenario instead.
+
+    fn dummy_pool() -> crate::db::DbPool {
+        // We never use the pool for the field-scoped branches, but the API
+        // still requires one. An in-memory SQLite pool with no schema is the
+        // smallest construct that satisfies the type.
+        use r2d2_sqlite::SqliteConnectionManager;
+        r2d2::Pool::builder()
+            .max_size(1)
+            .build(SqliteConnectionManager::memory())
+            .expect("in-memory SQLite pool for tests")
+    }
+
+    fn assert_question_envelope(events: &[BuildEvent], expected_field: &str) {
+        // Both v3 + legacy mirror should be emitted by build_clarifying_question_events.
+        assert!(
+            events.len() >= 1,
+            "expected at least one event, got {}",
+            events.len()
+        );
+        let has_v3 = events.iter().any(|e| matches!(e, BuildEvent::ClarifyingQuestionV3 { field, .. } if field == expected_field));
+        assert!(has_v3, "expected v3 ClarifyingQuestionV3 for field {expected_field}");
+    }
+
+    #[test]
+    fn synthesize_trigger_question_includes_three_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "suggested_trigger",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        assert_question_envelope(&events, "suggested_trigger");
+    }
+
+    #[test]
+    fn synthesize_review_question_includes_three_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "review_policy",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        assert_question_envelope(&events, "review_policy");
+    }
+
+    #[test]
+    fn synthesize_memory_question_includes_two_options() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "memory_policy",
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        assert_question_envelope(&events, "memory_policy");
+    }
+
+    #[test]
+    fn synthesize_returns_empty_for_unknown_field() {
+        let events = synthesize_gate_question(
+            "uc_x",
+            "input_schema", // not a gated dimension
+            "Document Translator",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        assert!(
+            events.is_empty(),
+            "non-gated fields must produce zero synthesis events"
+        );
+    }
+}

@@ -163,6 +163,67 @@ management.
 24 fns; split into `import.rs` and `export.rs` with shared `shared.rs` for
 serialisation helpers.
 
+## Lessons learned (from runner + prompt + aborted events/data_portability passes)
+
+### Safe patterns
+
+- **Self-contained helper blocks**: the runner `env.rs` / `globals.rs` /
+  `credentials.rs` and prompt `capabilities.rs` / `cli_args.rs` / `templates.rs`
+  extractions worked because each block references only module-internal items
+  via explicit imports. Identify these by grepping for cross-function
+  references before cutting.
+- **Explicit submodule imports**: every moved file needs a `use` block at the
+  top that mirrors *only* what its functions reference. Don't copy the whole
+  parent import list — it'll leave dangling imports that turn into warnings.
+- **Visibility escalation**: private `fn foo()` called from another submodule
+  becomes `pub(super) fn foo()`. The runner/prompt splits use this
+  consistently; grep `pub(super)` in those modules for the pattern.
+
+### Traps to avoid
+
+- **`#[tauri::command]` functions cannot be freely moved.** The proc macro
+  generates a sibling `__cmd__<name>` item at the module where the function
+  is defined. `pub use submodule::cmd;` does NOT bring `__cmd__cmd` into the
+  parent namespace, so `lib.rs`'s `tauri::generate_handler!` registration
+  fails with "could not find `__cmd__cmd` in `<parent>`". **Rule:** keep
+  every `#[tauri::command]` function in the top-level `mod.rs`. Only split
+  the internal helpers they call.
+- **Private helper dependency graphs are load-bearing.** `db/repos/events.rs`
+  exposes ~32 `pub fn`s that all share ~5 private helpers (`row_to_event`,
+  `row_to_subscription`, `collect_rows`, `encrypt_optional_payload`,
+  `get_by_id`). Splitting *any* subset of the public functions into
+  submodules requires promoting those helpers to `pub(super)` first, AND
+  ensuring the new submodule imports them with the right path. Miss one and
+  you get dozens of cascading "cannot find X in this scope" errors.
+  **Rule:** before a repo split, grep every private helper the to-be-moved
+  functions call, promote each to `pub(super)`, verify the split compiles,
+  *then* add doc comments.
+- **Nested types in `crate::db::models`**. Types like
+  `CreatePersonaSubscriptionInput` live in separate sub-files under
+  `db/models/`. A submodule that references them needs
+  `crate::db::models::subscriptions::CreatePersonaSubscriptionInput`, not
+  the re-exported top-level path — depending on how the models crate
+  surfaces the types. Grep `use crate::db::models::` in the parent before
+  writing submodule imports.
+- **External callers on private-named helpers**. Commands outside the repo
+  file sometimes call helpers you'd assume were private (e.g. a `search`
+  function). Always grep the symbol across the whole tree before moving it.
+
+### Aborted passes (this session)
+
+- `commands/core/data_portability.rs` — reverted. 7 tauri::commands span the
+  whole file, and competitive-parser helpers pull in the full crate's
+  `db::repos::*` import tree. A viable split keeps all commands in
+  `mod.rs` and only extracts the non-command helpers (`build_export_bundle`,
+  `create_zip_bundle`, `validate_bundle`, competitive parsers, credential
+  encryption). Plan: add the full top-of-file `use` block to each submodule
+  header, make private helpers `pub(super)`, try again.
+- `db/repos/communication/events.rs` — reverted. Subscriptions and
+  dead-letter submodules lost access to `row_to_event`, `row_to_subscription`,
+  `collect_rows`, `encrypt_optional_payload`, and nested model types. Plan:
+  make all private helpers `pub(super)` in a prep commit first, verify no
+  behavior change, *then* do the submodule extraction.
+
 ## Will NOT refactor
 
 - `db/migrations/incremental.rs` (2166 LOC, 1 fn): linear by design — each

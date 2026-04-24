@@ -9,6 +9,7 @@ use crate::error::AppError;
 row_mapper!(row_to_connector -> ConnectorDefinition {
     id, name, label, icon_url, color, category, fields,
     healthcheck_config, services, events, metadata,
+    resources [opt],
     is_builtin [bool],
     created_at, updated_at,
 });

@@ -17,7 +17,9 @@ use crate::utils::sanitization::sanitize_secrets;
 
 row_mapper!(row_to_credential -> PersonaCredential {
     id, name, service_type, encrypted_data, iv,
-    metadata, last_used_at, created_at, updated_at,
+    metadata, last_used_at,
+    scoped_resources [opt],
+    created_at, updated_at,
 });
 
 row_mapper!(row_to_credential_event -> CredentialEvent {
@@ -418,6 +420,47 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
 /// Update only the metadata column for a credential.
 /// Used by the anomaly scoring engine to persist healthcheck ring buffer data
 /// without touching encrypted fields.
+/// Read the JSON `scoped_resources` blob for a credential (NULL -> None).
+pub fn get_scoped_resources(pool: &DbPool, id: &str) -> Result<Option<String>, AppError> {
+    timed_query!("persona_credentials", "persona_credentials::get_scoped_resources", {
+        let conn = pool.get()?;
+        let value: Option<String> = conn.query_row(
+            "SELECT scoped_resources FROM persona_credentials WHERE id = ?1",
+            params![id],
+            |row| row.get(0),
+        ).optional()?
+            .ok_or_else(|| AppError::NotFound(format!("Credential {id}")))?;
+        Ok(value)
+    })
+}
+
+/// Replace the JSON `scoped_resources` blob for a credential.
+///
+/// Pass `None` to reset to broad-scope. The value is validated as JSON before
+/// persist so malformed input is rejected at the boundary.
+pub fn set_scoped_resources(
+    pool: &DbPool,
+    id: &str,
+    blob: Option<&str>,
+) -> Result<(), AppError> {
+    if let Some(s) = blob {
+        serde_json::from_str::<serde_json::Value>(s)
+            .map_err(|e| AppError::Validation(format!("scoped_resources must be valid JSON: {e}")))?;
+    }
+    timed_query!("persona_credentials", "persona_credentials::set_scoped_resources", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE persona_credentials SET scoped_resources = ?1, updated_at = ?2 WHERE id = ?3",
+            params![blob, now, id],
+        )?;
+        if rows == 0 {
+            return Err(AppError::NotFound(format!("Credential {id}")));
+        }
+        Ok(())
+    })
+}
+
 pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Result<(), AppError> {
     timed_query!("persona_credentials", "persona_credentials::update_metadata", {
         let now = chrono::Utc::now().to_rfc3339();

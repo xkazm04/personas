@@ -1,0 +1,71 @@
+//! Credential resource-scoping commands.
+//!
+//! After a credential is saved and healthchecked, the frontend may optionally
+//! call a service API to list "sub-resources" (repos, projects, tables, folders,
+//! …) and persist the user's picks as a JSON blob on the credential row.
+//!
+//! This module handles the two persistence ends of that flow:
+//!   - `get_scoped_resources`   — return the current JSON blob
+//!   - `save_scoped_resources`  — replace the blob (after the picker commits)
+//!
+//! The HTTP listing itself (`list_connector_resources`) dispatches based on the
+//! connector's `resources[]` spec from its JSON definition — implemented in a
+//! sibling module to keep this command file narrow.
+use std::collections::HashMap;
+use std::sync::Arc;
+use tauri::State;
+
+use crate::db::repos::resources::credentials as repo;
+use crate::engine::resource_listing::{self, ResourceItem};
+use crate::error::AppError;
+use crate::ipc_auth::require_privileged_sync;
+use crate::AppState;
+
+/// Read the `scoped_resources` JSON blob for a credential.
+///
+/// Returns `None` (JSON null on the wire) when the credential has broad scope.
+/// Empty object `{}` means the picker was opened and skipped.
+#[tauri::command]
+pub fn get_scoped_resources(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+) -> Result<Option<String>, AppError> {
+    repo::get_scoped_resources(&state.db, &credential_id)
+}
+
+/// Replace the `scoped_resources` JSON blob for a credential.
+///
+/// Pass `None` (JSON null) to reset to broad-scope. The payload is validated
+/// as JSON before persist so malformed input is rejected at the boundary.
+///
+/// Requires IPC privilege because it modifies credential state — though the
+/// resource identifiers themselves are not secrets, they control which data
+/// an agent is allowed to reach, so they sit on the privileged surface.
+#[tauri::command]
+pub fn save_scoped_resources(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+    scoped_resources: Option<String>,
+) -> Result<(), AppError> {
+    require_privileged_sync(&state, "save_scoped_resources")?;
+    repo::set_scoped_resources(&state.db, &credential_id, scoped_resources.as_deref())
+}
+
+/// Invoke the connector's list endpoint for a given resource id, return
+/// mapped picker items. `depends_on_context` carries prior selections keyed
+/// by the resource id they came from (so `{{selected.<id>.<prop>}}` templates
+/// can resolve).
+///
+/// This is a privileged command because it decrypts credential fields and
+/// makes an outbound HTTP call using them.
+#[tauri::command]
+pub async fn list_connector_resources(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+    resource_id: String,
+    depends_on_context: Option<HashMap<String, serde_json::Value>>,
+) -> Result<Vec<ResourceItem>, AppError> {
+    require_privileged_sync(&state, "list_connector_resources")?;
+    let ctx = depends_on_context.unwrap_or_default();
+    resource_listing::list_resources(&state.db, &credential_id, &resource_id, &ctx).await
+}

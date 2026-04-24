@@ -21,6 +21,12 @@ pub struct PersonaCredential {
     pub iv: String,
     pub metadata: Option<String>,
     pub last_used_at: Option<String>,
+    /// JSON object of user-picked sub-resources (repos, projects, folders, …).
+    /// Shape: `{ "<resource_id>": [{ "id", "label", "meta"? }, ...] }`.
+    /// NULL = broad scope; empty object = picker was opened and skipped.
+    /// Identifiers are not secrets — stored plaintext. Auth fields that grant
+    /// access to these resources live in credential_fields (encrypted).
+    pub scoped_resources: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

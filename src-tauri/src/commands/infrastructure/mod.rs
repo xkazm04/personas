@@ -6,6 +6,7 @@ pub mod settings;
 pub mod cloud;
 pub mod context_generation;
 pub mod dev_tools;
+pub mod director;
 pub mod idea_scanner;
 pub mod task_executor;
 pub mod gitlab;

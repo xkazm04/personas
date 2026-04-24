@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Cloud, Radio, Unplug, Pause, Play, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
@@ -15,6 +16,7 @@ import { EventTypeChip } from './EventTypeChip';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
+const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
 
@@ -73,6 +75,11 @@ export function LiveStreamTab() {
     const cutoff = now - STREAM_WINDOW_MS;
     while (recvTimestamps.current.length > 0 && recvTimestamps.current[0]! < cutoff) {
       recvTimestamps.current.shift();
+    }
+    // Hard-cap buffer size: under sustained high-rate bursts the time-window
+    // trim alone can still let the array grow unboundedly. FIFO-evict the oldest.
+    if (recvTimestamps.current.length > STREAM_TIMESTAMP_CAP) {
+      recvTimestamps.current.splice(0, recvTimestamps.current.length - STREAM_TIMESTAMP_CAP);
     }
     setTotalReceived((c) => c + 1);
     setEventsPerMin(recvTimestamps.current.length);
@@ -262,22 +269,82 @@ export function LiveStreamTab() {
     <>
       {/* Stream stats bar */}
       <div className="flex items-center gap-4 px-4 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
-        <div className="flex items-center gap-1.5" title={attached ? 'Connected to event bus' : 'Connecting…'}>
-          <span className={`relative flex h-2 w-2 ${attached && !isPaused ? '' : 'opacity-40'}`}>
-            {attached && !isPaused && (
-              <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+        <button
+          onClick={() => isPaused ? handleResume() : setIsPaused(true)}
+          disabled={!attached && !isPaused}
+          className={`relative inline-flex items-center h-9 pl-3 pr-3.5 rounded-full typo-label font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/40 disabled:opacity-60 disabled:cursor-not-allowed ${
+            isPaused
+              ? 'bg-amber-500/10 text-amber-200 hover:bg-amber-500/15'
+              : attached
+                ? 'bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/15'
+                : 'bg-secondary/30 text-foreground'
+          }`}
+          title={isPaused ? t.triggers.resume_tooltip : t.triggers.pause_tooltip}
+          aria-live="polite"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            {isPaused ? (
+              <motion.span
+                key="ring-paused"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="pointer-events-none absolute inset-0 rounded-full border-2 border-amber-400/70"
+              />
+            ) : attached ? (
+              <motion.span
+                key="ring-live"
+                initial={{ opacity: 0.3 }}
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                className="pointer-events-none absolute inset-0 rounded-full border-2 border-emerald-400"
+              />
+            ) : (
+              <motion.span
+                key="ring-idle"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="pointer-events-none absolute inset-0 rounded-full border border-primary/20"
+              />
             )}
-            <span className={`relative inline-flex rounded-full h-2 w-2 ${isPaused ? 'bg-amber-400' : attached ? 'bg-emerald-400' : 'bg-muted-foreground/40'}`} />
+          </AnimatePresence>
+
+          <span className="relative flex items-center gap-2">
+            {isPaused ? (
+              <Play className="w-3.5 h-3.5" />
+            ) : attached ? (
+              <Pause className="w-3.5 h-3.5" />
+            ) : (
+              <Radio className="w-3.5 h-3.5" />
+            )}
+            <span className="flex items-baseline gap-1.5">
+              <span>
+                {isPaused
+                  ? t.triggers.paused_label
+                  : attached
+                    ? t.triggers.live_label
+                    : t.triggers.connecting_label}
+              </span>
+              {(isPaused || attached) && (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span className="tabular-nums font-semibold">
+                    {isPaused ? pausedQueueCount : eventsPerMin}
+                  </span>
+                  <span className="opacity-70">
+                    {isPaused ? t.triggers.queued_bare : t.triggers.events_per_min}
+                  </span>
+                </>
+              )}
+            </span>
           </span>
-          <span className="typo-label text-foreground">{isPaused ? t.triggers.paused_label : attached ? t.triggers.live_label : t.triggers.connecting_label}</span>
-        </div>
+        </button>
 
         <div className="h-4 w-px bg-primary/15" />
 
-        <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
-          <span className="text-foreground font-semibold">{eventsPerMin}</span>
-          <span className="text-foreground">{t.triggers.events_per_min}</span>
-        </div>
         <div className="flex items-center gap-1.5 typo-caption text-foreground tabular-nums">
           <span className="text-foreground font-semibold">{totalReceived}</span>
           <span className="text-foreground">{t.triggers.received_label}</span>
@@ -286,26 +353,8 @@ export function LiveStreamTab() {
           <span className="text-foreground font-semibold">{events.length}</span>
           <span className="text-foreground">{t.triggers.in_buffer}</span>
         </div>
-        {pausedQueueCount > 0 && (
-          <div className="flex items-center gap-1.5 typo-caption text-amber-300 tabular-nums">
-            <span className="font-semibold">{pausedQueueCount}</span>
-            <span className="text-amber-300/60">{t.triggers.queued_bare}</span>
-          </div>
-        )}
 
         <div className="ml-auto flex items-center gap-1">
-          <button
-            onClick={() => isPaused ? handleResume() : setIsPaused(true)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card typo-caption font-medium border transition-colors ${
-              isPaused
-                ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
-                : 'bg-secondary/30 text-foreground border-primary/15 hover:bg-secondary/50 hover:text-foreground'
-            }`}
-            title={isPaused ? t.triggers.resume_tooltip : t.triggers.pause_tooltip}
-          >
-            {isPaused ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
-            {isPaused ? t.triggers.resume_label : t.triggers.pause_label}
-          </button>
           <button
             onClick={handleClear}
             disabled={events.length === 0}

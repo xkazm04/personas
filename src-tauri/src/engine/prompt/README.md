@@ -1,9 +1,5 @@
 # `engine/prompt` — runtime persona prompt assembly
 
-> This file will become `src-tauri/src/engine/prompt/README.md` when the
-> split lands. Preserved here until the refactor is unblocked (see
-> `god-file-refactor-plan.md` for the reason).
-
 **Entry point:** [`assemble_prompt`](./mod.rs) — builds the full system
 prompt for a persona execution. Called by `engine::runner::run_execution`
 and by several `commands/*` callers (dry-run, test, cloud, twin). The

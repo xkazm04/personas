@@ -1,5 +1,5 @@
 import { useI18nStore, type Language } from '@/stores/i18nStore';
-import { Languages, Check } from 'lucide-react';
+import { Languages, Check, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/features/shared/components/buttons';
 
@@ -96,6 +96,7 @@ export function LanguageCardGrid() {
 
 export default function LanguageSwitcher() {
   const { language, setLanguage } = useI18nStore();
+  const fontReady = useI18nStore((s) => s.fontReady);
   const [isOpen, setIsOpen] = useState(false);
   const sorted = sortLanguages(language);
 
@@ -109,6 +110,12 @@ export default function LanguageSwitcher() {
       >
         {LANGUAGES.find(l => l.code === language)?.label}
       </Button>
+      <span
+        aria-hidden={fontReady}
+        className={`pointer-events-none absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-card border border-primary/30 flex items-center justify-center shadow-elevation-1 transition-opacity duration-150 ease-out ${fontReady ? 'opacity-0' : 'opacity-100'}`}
+      >
+        <Loader2 className="w-2.5 h-2.5 text-primary animate-spin" />
+      </span>
 
       {isOpen && (
           <>

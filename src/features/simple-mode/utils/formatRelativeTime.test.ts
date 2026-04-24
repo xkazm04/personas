@@ -33,8 +33,15 @@ describe('formatRelativeTime', () => {
     it('undefined iso renders em-dash', () => {
       expect(formatRelativeTime(undefined)).toBe('—');
     });
-    it('unparseable iso renders em-dash', () => {
-      expect(formatRelativeTime('not-a-date')).toBe('—');
+    it('unparseable iso falls back to the raw string (better than "NaNm ago")', () => {
+      expect(formatRelativeTime('not-a-date')).toBe('not-a-date');
+    });
+    it('non-string input renders em-dash', () => {
+      expect(formatRelativeTime(42 as unknown as string)).toBe('—');
+    });
+    it('future-dated iso clamps to "just now" (no "in 17 hours")', () => {
+      const future = new Date(NOW + 17 * 3_600_000).toISOString();
+      expect(formatRelativeTime(future, undefined, NOW)).toBe('just now');
     });
   });
 

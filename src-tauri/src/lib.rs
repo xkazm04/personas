@@ -519,6 +519,14 @@ pub fn run() {
             }
             st.checkpoint("credential_seed");
 
+            // Seed the single system-owned Director persona (coaches every
+            // other persona; idempotent on every boot).
+            match engine::director::ensure_director_persona(&pool) {
+                Ok(id) => tracing::info!(director_id = %id, "Director persona ready"),
+                Err(e) => tracing::warn!("Director seed deferred: {}", e),
+            }
+            st.checkpoint("director_seed");
+
             // Initialize P2P identity (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             match engine::identity::get_or_create_identity(&pool) {
@@ -1282,6 +1290,9 @@ pub fn run() {
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,
             commands::credentials::crud::update_credential_field,
+            commands::credentials::resources::get_scoped_resources,
+            commands::credentials::resources::save_scoped_resources,
+            commands::credentials::resources::list_connector_resources,
             // Credentials -- External API Keys (A2A Gateway management API auth)
             commands::credentials::external_api_keys::create_external_api_key,
             commands::credentials::external_api_keys::list_external_api_keys,
@@ -1885,6 +1896,11 @@ pub fn run() {
             commands::infrastructure::research_lab::research_lab_sync_daily_note,
             commands::infrastructure::research_lab::research_lab_list_experiment_runs,
             commands::infrastructure::research_lab::research_lab_create_experiment_run,
+            // Director -- meta-persona that coaches every other persona
+            commands::infrastructure::director::get_director_persona_id,
+            commands::infrastructure::director::run_director_on_persona,
+            commands::infrastructure::director::run_director_batch,
+            commands::infrastructure::director::list_director_verdicts,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project,

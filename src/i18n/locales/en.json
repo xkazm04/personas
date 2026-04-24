@@ -8070,6 +8070,7 @@
       "action_dismiss": "Dismiss",
       "action_mark_read": "Mark as read",
       "action_running": "Working…",
+      "action_failed": "Action failed",
       "try_this_label": "Try this",
       "relative_just_now": "just now",
       "relative_minutes_one": "{m}m ago",

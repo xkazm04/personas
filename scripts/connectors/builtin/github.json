@@ -34,6 +34,66 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "repositories",
+      "label": "Repositories",
+      "description": "Repos the token can see. Scope the credential to a subset so templates auto-fill and agents can't reach unrelated repos.",
+      "selection": "multi",
+      "required": false,
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+        "headers": {
+          "Authorization": "Bearer {{personal_access_token}}",
+          "Accept": "application/vnd.github+json",
+          "User-Agent": "personas-desktop"
+        },
+        "pagination": { "type": "link_header", "max_pages": 5 }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "full_name",
+        "label": "full_name",
+        "sublabel": "description",
+        "meta": {
+          "private": "private",
+          "fork": "fork",
+          "pushed_at": "pushed_at",
+          "default_branch": "default_branch",
+          "url": "html_url"
+        }
+      },
+      "search": { "supported": true, "mode": "client" },
+      "cache_ttl_seconds": 600
+    },
+    {
+      "id": "organizations",
+      "label": "Organizations",
+      "description": "Orgs the token has visibility into. Useful for org-scoped templates (audit logs, member management).",
+      "selection": "multi",
+      "required": false,
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.github.com/user/orgs?per_page=100",
+        "headers": {
+          "Authorization": "Bearer {{personal_access_token}}",
+          "Accept": "application/vnd.github+json",
+          "User-Agent": "personas-desktop"
+        },
+        "pagination": { "type": "link_header", "max_pages": 3 }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "login",
+        "label": "login",
+        "sublabel": "description",
+        "meta": { "id": "id", "url": "url" }
+      },
+      "search": { "supported": true, "mode": "client" },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "GitHub for repositories, issues, pull requests, and CI/CD.",

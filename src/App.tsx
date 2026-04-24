@@ -115,6 +115,7 @@ export default function App() {
 
   const { t } = useTranslation();
   const language = useI18nStore((s) => s.language);
+  const fontReady = useI18nStore((s) => s.fontReady);
   const { shouldAnimate } = useMotion();
 
   // Toast a localized confirmation when the language changes (skip initial mount).
@@ -143,7 +144,9 @@ export default function App() {
   return (
     <VibeThemeProvider>
         <AriaLiveProvider>
-        <div className="flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground">
+        <div
+          className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
+        >
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:top-1 focus:left-1 focus:z-[9999] focus:px-4 focus:py-2 focus:rounded-input focus:bg-primary focus:text-primary-foreground focus:typo-body focus:font-medium focus:shadow-elevation-3 focus:outline-none focus:ring-2 focus:ring-ring"

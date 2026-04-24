@@ -184,7 +184,8 @@ pub fn test_design_feasibility(
     let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
 
     let result = design::check_feasibility(&design_result, &tool_names, &connector_names);
-    Ok(serde_json::to_value(result).unwrap_or_default())
+    serde_json::to_value(result)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize feasibility result: {e}")))
 }
 
 #[tauri::command]

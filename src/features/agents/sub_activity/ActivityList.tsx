@@ -79,14 +79,23 @@ function useColumns(): TableColumn<ActivityItem>[] {
 export function ActivityList({ items, isLoading, onRowClick }: ActivityListProps) {
   const { t } = useTranslation();
   const columns = useColumns();
+  // Key on isLoading so the container remounts when a refresh resolves,
+  // replaying the fade-slide-in keyframe. Pair with a 150ms opacity pulse
+  // on the outgoing list so the motion reads as "data is refreshing" rather
+  // than an instant swap that disconnects from the spinning refresh icon.
   return (
-    <UnifiedTable
-      columns={columns}
-      data={items}
-      getRowKey={(item) => `${item.type}-${item.id}`}
-      onRowClick={onRowClick}
-      isLoading={isLoading}
-      emptyTitle={t.agents.activity.no_activity}
-    />
+    <div
+      key={isLoading ? 'loading' : 'ready'}
+      className={`animate-fade-slide-in transition-opacity duration-150 ${isLoading ? 'opacity-60' : 'opacity-100'}`}
+    >
+      <UnifiedTable
+        columns={columns}
+        data={items}
+        getRowKey={(item) => `${item.type}-${item.id}`}
+        onRowClick={onRowClick}
+        isLoading={isLoading}
+        emptyTitle={t.agents.activity.no_activity}
+      />
+    </div>
   );
 }

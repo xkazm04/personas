@@ -17,7 +17,7 @@ export default function VibeThemeProvider({ children }: { children: ReactNode })
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || !el.isConnected) return;
 
     applyVibeVars(el, vibe);
 

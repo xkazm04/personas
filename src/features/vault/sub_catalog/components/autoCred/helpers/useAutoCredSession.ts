@@ -177,24 +177,32 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     }
   }, [designResult, extractedValues, healthcheckPreview]);
 
-  /** Save the credential */
-  const save = useCallback(async () => {
-    if (!designResult || savingRef.current) return;
+  /**
+   * Save the credential.
+   *
+   * Returns the new credential id + service_type + healthcheck outcome so the
+   * caller can decide whether to open the post-save resource scope picker.
+   */
+  const save = useCallback(async (): Promise<{ id: string; serviceType: string; healthcheckPassed: boolean } | null> => {
+    if (!designResult || savingRef.current) return null;
     savingRef.current = true;
     setIsSaving(true);
     setPhase('saving');
     try {
-      await createCredential({
+      const healthcheckPassed = healthResult?.success === true;
+      const id = await createCredential({
         name: credentialName.trim() || `${designResult.connector.label} Credential`,
         service_type: designResult.connector.name,
         data: extractedValues,
-        healthcheck_passed: healthResult?.success === true,
+        healthcheck_passed: healthcheckPassed,
       });
       await fetchCredentials();
       setPhase('done');
+      return { id, serviceType: designResult.connector.name, healthcheckPassed };
     } catch (err) {
       setError(parseAutoCredError(err instanceof Error ? err.message : 'Failed to save credential'));
       setPhase('error');
+      return null;
     } finally {
       savingRef.current = false;
       setIsSaving(false);

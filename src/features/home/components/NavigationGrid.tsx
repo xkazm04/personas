@@ -37,11 +37,13 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       initial={shouldAnimate ? { opacity: 0, y: 24 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={shouldAnimate ? { delay: 0.15 + i * staggerDelay, duration: 0.45, ease: [0.22, 1, 0.36, 1] } : { duration: 0 }}
-      whileHover={shouldAnimate ? { y: -6, transition: { duration: 0.25 } } : {}}
+      whileHover={shouldAnimate ? { y: -3, transition: { duration: 0.2, ease: 'easeOut' } } : {}}
       onClick={() => onCardClick(card.id)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="group relative text-left cursor-pointer focus-ring h-[224px] flex flex-col"
+      onFocus={() => setHovered(true)}
+      onBlur={() => setHovered(false)}
+      className={`group relative text-left cursor-pointer h-[224px] flex flex-col rounded-modal outline-none focus-visible:ring-2 focus-visible:ring-offset-4 focus-visible:ring-offset-background focus-visible:ring-current ${card.iconText}`}
     >
       {/* Illustration area -- fixed height */}
       <div className={`relative w-full h-[140px] flex-shrink-0 rounded-modal border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 group-hover:shadow-elevation-3 transition-all duration-400`}>
@@ -69,7 +71,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
 
         {/* Arrow overlay */}
         <div className="absolute top-3 right-3 z-10">
-          <ArrowRight className={`w-4 h-4 ${card.iconText} opacity-0 group-hover:opacity-80 translate-x-[-6px] group-hover:translate-x-0 transition-all duration-300`} />
+          <ArrowRight className={`w-4 h-4 ${card.iconText} opacity-0 group-hover:opacity-80 group-focus-visible:opacity-80 translate-x-[-6px] group-hover:translate-x-0 group-focus-visible:translate-x-0 transition-all duration-300`} />
         </div>
 
         {/* Bottom gradient line */}

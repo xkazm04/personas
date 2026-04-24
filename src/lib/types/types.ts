@@ -142,6 +142,69 @@ export interface ConnectorDefinitionBase {
   services: { toolName: string; label: string }[];
   events: CredentialTemplateEvent[];
   metadata: Record<string, unknown> | null;
+  /** Optional multi-tag list — declared in builtin JSON, not stored on backend. */
+  categories?: string[];
+  /**
+   * Optional 2nd-level resource scoping specs.
+   * After credential save + healthcheck, the app can list user-pickable
+   * sub-resources (repos, projects, folders) via each spec's list_endpoint
+   * and persist the picks to credential.scoped_resources.
+   * See docs/resource-scoping-spec.md for the full shape.
+   */
+  resources?: ResourceSpec[];
+}
+
+/**
+ * Declarative spec for a 2nd-level sub-resource a credential can be scoped to.
+ * Canonical example: GitHub `repositories` (list via /user/repos, pick N).
+ */
+export interface ResourceSpec {
+  /** Stable key used in scoped_resources JSON and requires_resource. */
+  id: string;
+  /** Short user-facing label (pluralized — "Repositories", "Projects"). */
+  label: string;
+  /** One-sentence hint shown in the picker. */
+  description?: string;
+  /** "single" = pick one, "multi" = pick many, "single_or_all" = pick one or broad. */
+  selection: 'single' | 'multi' | 'single_or_all';
+  /** If true, credential is incomplete until at least one pick is made. */
+  required?: boolean;
+  /** Other resource ids that must be selected first; their selections are available as template vars. */
+  depends_on?: string[];
+  list_endpoint: {
+    method: 'GET' | 'POST';
+    /** URL template — `{{field_key}}` resolves from credential fields, `{{selected.<id>.<prop>}}` from prior picks. */
+    url: string;
+    headers?: Record<string, string>;
+    body?: string;
+    /** Pagination strategy. `link_header` = RFC 5988 next rel; `page_param` = numeric page; `cursor` = cursor field. */
+    pagination?:
+      | { type: 'none' }
+      | { type: 'link_header'; max_pages?: number }
+      | { type: 'page_param'; page_param: string; per_page?: number; max_pages?: number }
+      | { type: 'cursor'; cursor_param: string; cursor_path: string; max_pages?: number };
+  };
+  response_mapping: {
+    /** JSONPath-lite to the array of items. `$` = response root is the array. */
+    items_path: string;
+    /** Path within an item for its stable id (used as scoped_resources key). */
+    id: string;
+    /** Path within an item for the picker label. */
+    label: string;
+    /** Optional secondary line (description, path, url…). */
+    sublabel?: string;
+    /** Arbitrary extra fields to persist per-pick. Key is our key; value is JSONPath in the item. */
+    meta?: Record<string, string>;
+  };
+  search?: {
+    supported: boolean;
+    /** `client` = filter in-memory; `server` = refetch with query_template. */
+    mode: 'client' | 'server';
+    /** Template with `{{query}}` — only used when mode='server'. */
+    query_template?: string;
+  };
+  /** How long to cache the last list response. Default 600s. */
+  cache_ttl_seconds?: number;
 }
 
 /** Parsed frontend connector definition (JSON fields pre-parsed) */
@@ -167,6 +230,12 @@ export function parseConnectorDefinition(raw: RawConnectorDefinition): Connector
     services: safeJsonParse(raw.services, []),
     events: safeJsonParse(raw.events, []),
     metadata: raw.metadata ? safeJsonParse(raw.metadata, null) : null,
+    resources: (() => {
+      // `resources` is a newer Rust field; ts-rs bindings may not yet include it
+      // until cargo rebuilds. Accept it optionally via a duck-typed read.
+      const r = (raw as unknown as { resources?: string | null }).resources;
+      return r ? safeJsonParse<unknown>(r, []) as ConnectorDefinitionBase['resources'] : undefined;
+    })(),
     is_builtin: raw.is_builtin,
     created_at: raw.created_at,
     updated_at: raw.updated_at,
