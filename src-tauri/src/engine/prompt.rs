@@ -1207,6 +1207,22 @@ fn build_cli_args_inner(
         "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
         "1".to_string(),
     ));
+    // Block every CLI auto-update path during headless spawns. Personas runs
+    // `claude -p` dozens of times per session; a mid-spawn updater adds startup
+    // latency and stderr noise. CLI updates are managed out-of-band by the user.
+    // Env var introduced in CLI 2.1.118; no-op on older CLIs.
+    cli_args.env_overrides.push((
+        "DISABLE_UPDATES".to_string(),
+        "1".to_string(),
+    ));
+    // Conceal cwd from the CLI's startup banner and internal telemetry. Personas
+    // runs each execution in a per-execution directory that may embed GUIDs or
+    // temp paths; there is no reason for those to leak into CLI-side logs.
+    // Env var introduced in CLI 2.1.119; no-op on older CLIs.
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_HIDE_CWD".to_string(),
+        "1".to_string(),
+    ));
 
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
@@ -1284,6 +1300,9 @@ fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
                 "CLAUDE_CODE_DISABLE_TERMINAL_TITLE".to_string(),
                 "1".to_string(),
             ),
+            // Parity with fresh runs — see the matching block in `build_cli_args`.
+            ("DISABLE_UPDATES".to_string(), "1".to_string()),
+            ("CLAUDE_CODE_HIDE_CWD".to_string(), "1".to_string()),
         ],
         env_removals: vec![
             "CLAUDECODE".to_string(),
@@ -2587,6 +2606,8 @@ mod tests {
         for key in [
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
             "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+            "DISABLE_UPDATES",
+            "CLAUDE_CODE_HIDE_CWD",
         ] {
             let entry = args
                 .env_overrides
@@ -2606,6 +2627,8 @@ mod tests {
         for key in [
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
             "CLAUDE_CODE_DISABLE_TERMINAL_TITLE",
+            "DISABLE_UPDATES",
+            "CLAUDE_CODE_HIDE_CWD",
         ] {
             let entry = args
                 .env_overrides
