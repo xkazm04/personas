@@ -435,6 +435,7 @@ function TimelinePanelImpl({
                 onSelect={onSelect}
                 onAdd={onAddText}
                 onUpdate={onUpdate}
+                videoClips={videoItems}
                 hideHeader
                 hideAdd
               />

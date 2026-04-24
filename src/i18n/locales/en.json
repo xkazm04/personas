@@ -46,6 +46,7 @@
     "confirm_destructive_discard_event_warning": "This dead-letter event will be permanently discarded.",
     "error": "Error",
     "success": "Success",
+    "language_changed": "Language changed",
     "required": "required",
     "optional": "optional",
     "select": "-- select --",
@@ -8144,6 +8145,11 @@
       "queued": "Queued",
       "running": "Running",
       "failed": "Failed"
+    },
+    "circuit_breaker": {
+      "provider_claude_code": "Claude",
+      "provider_codex_cli": "Codex",
+      "provider_global": "Global"
     }
   },
   "project_overview": {
@@ -9737,7 +9743,22 @@
     "run_preview": "Run Preview",
     "close_preview": "Close preview",
     "budget_limit": "Budget limit",
-    "run_agent": "Run Agent"
+    "run_agent": "Run Agent",
+    "model": "Model",
+    "trust": "Trust",
+    "timeout": "Timeout",
+    "preview_aria_label": "Pre-run preview for {name}",
+    "tool_count_one": "{count} tool",
+    "tool_count_other": "{count} tools",
+    "missing_count": "{count} missing",
+    "time_seconds_ago": "{count}s ago",
+    "time_minutes_ago": "{count}m ago",
+    "time_hours_ago": "{count}h ago",
+    "budget_reset_tomorrow": "tomorrow",
+    "budget_reset_in_days_one": "in {count} day",
+    "budget_reset_in_days_other": "in {count} days",
+    "interruptions_per_hour_one": "({count} interruption/1h)",
+    "interruptions_per_hour_other": "({count} interruptions/1h)"
   },
   "gitlab": {
     "integration_title": "GitLab Integration",

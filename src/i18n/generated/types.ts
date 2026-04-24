@@ -52,6 +52,7 @@ export type Translations = {
     confirm_destructive_discard_event_warning: string;
     error: string;
     success: string;
+    language_changed: string;
     required: string;
     optional: string;
     select: string;
@@ -8151,6 +8152,11 @@ export type Translations = {
       running: string;
       failed: string;
     };
+    circuit_breaker: {
+      provider_claude_code: string;
+      provider_codex_cli: string;
+      provider_global: string;
+    };
   };
   project_overview: {
     codebase: string;
@@ -9744,6 +9750,21 @@ export type Translations = {
     close_preview: string;
     budget_limit: string;
     run_agent: string;
+    model: string;
+    trust: string;
+    timeout: string;
+    preview_aria_label: string;
+    tool_count_one: string;
+    tool_count_other: string;
+    missing_count: string;
+    time_seconds_ago: string;
+    time_minutes_ago: string;
+    time_hours_ago: string;
+    budget_reset_tomorrow: string;
+    budget_reset_in_days_one: string;
+    budget_reset_in_days_other: string;
+    interruptions_per_hour_one: string;
+    interruptions_per_hour_other: string;
   };
   gitlab: {
     integration_title: string;

@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { save as saveDialog } from '@tauri-apps/plugin-dialog';
 import {
   AlertTriangle,
+  BookText,
   Camera,
+  Captions,
   Check,
   FileVideo,
   FolderOpen,
@@ -19,12 +21,15 @@ import {
   VolumeX,
   Waves,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import {
+  artistCheckLocalWhisper,
   artistExtractAudio,
   artistMeasureLoudness,
   artistProbeMedia,
   artistSaveThumbnail,
+  artistTranscribeMedia,
   artistTrimFile,
 } from '@/api/artist';
 import { toastCatch } from '@/lib/silentCatch';
@@ -86,6 +91,7 @@ export default function MediaStudioToolbar({
   exportDisabled,
   exporting,
 }: Props) {
+  const { t } = useTranslation();
   const isVideo = selectedItem?.type === 'video';
   const isAudio = selectedItem?.type === 'audio';
   const isText = selectedItem?.type === 'text';
@@ -156,6 +162,19 @@ export default function MediaStudioToolbar({
               />
             </label>
           </div>
+        </IconPopover>
+
+        {/* Style guide — per-composition motion philosophy, reused by agent prompts */}
+        <IconPopover
+          icon={BookText}
+          title={t.media_studio.style_guide_title}
+          active={Boolean(composition.styleGuide && composition.styleGuide.trim().length > 0)}
+          widthPx={380}
+        >
+          <StyleGuidePanel
+            value={composition.styleGuide ?? ''}
+            onChange={(v) => onUpdateComposition({ styleGuide: v })}
+          />
         </IconPopover>
 
         {/* Trim / timing — media clips */}
@@ -345,13 +364,14 @@ export default function MediaStudioToolbar({
           )}
         </IconPopover>
 
-        {/* Clip actions (split, extract, thumbnail, trim-to-file) */}
+        {/* Clip actions (split, extract, thumbnail, trim-to-file, transcribe) */}
         <IconPopover icon={Palette} title="Clip actions" disabled={!selectedItem} widthPx={260}>
           {selectedItem && (
             <ClipActions
               item={selectedItem}
               engine={engine}
               onAddItem={onAddItem}
+              onUpdate={onUpdate}
             />
           )}
         </IconPopover>
@@ -519,6 +539,55 @@ function CompositionIdentity({
   );
 }
 
+function StyleGuidePanel({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  const dirty = draft !== value;
+  return (
+    <div className="flex flex-col gap-2">
+      <textarea
+        rows={10}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder={t.media_studio.style_guide_placeholder}
+        className="w-full px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-rose-500/40 resize-y font-mono"
+      />
+      <p className="text-[11px] text-foreground/60">
+        {t.media_studio.style_guide_hint}
+      </p>
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setDraft('');
+            onChange('');
+          }}
+          disabled={!value && !draft}
+        >
+          {t.media_studio.style_guide_clear}
+        </Button>
+        <Button
+          variant="accent"
+          accentColor="rose"
+          size="sm"
+          onClick={() => onChange(draft)}
+          disabled={!dirty}
+        >
+          {t.media_studio.style_guide_save}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function AudioControls({
   clip,
   onUpdate,
@@ -584,13 +653,46 @@ function ClipActions({
   item,
   engine,
   onAddItem,
+  onUpdate,
 }: {
   item: TimelineItem;
   engine: PlaybackEngine;
   onAddItem: (item: TimelineItem) => void;
+  onUpdate: (id: string, patch: Partial<TimelineItem>) => void;
 }) {
+  const { t } = useTranslation();
   const isVideo = item.type === 'video';
   const isMedia = isVideo || item.type === 'audio';
+  const videoClip = isVideo ? (item as VideoClip) : null;
+  const transcribing = videoClip?.transcriptStatus === 'running';
+  const hasTranscript = Boolean(videoClip?.transcriptPath && videoClip.transcriptStatus !== 'failed');
+
+  const handleTranscribe = useCallback(async () => {
+    if (!videoClip) return;
+    // Optimistically mark running so the button spinner shows immediately.
+    onUpdate(videoClip.id, { transcriptStatus: 'running' } as Partial<TimelineItem>);
+    try {
+      const installed = await artistCheckLocalWhisper();
+      if (!installed) {
+        onUpdate(videoClip.id, { transcriptStatus: 'failed' } as Partial<TimelineItem>);
+        useToastStore.getState().addToast(t.media_studio.transcribe_no_whisper, 'error');
+        return;
+      }
+      useToastStore.getState().addToast(t.media_studio.transcribe_running, 'success');
+      const result = await artistTranscribeMedia(videoClip.filePath, 'local-whisper');
+      onUpdate(videoClip.id, {
+        transcriptPath: result.transcriptPath,
+        transcriptStatus: 'ready',
+      } as Partial<TimelineItem>);
+      useToastStore.getState().addToast(
+        `${t.media_studio.transcribe_done} (${result.wordCount} words)`,
+        'success',
+      );
+    } catch (err) {
+      onUpdate(videoClip.id, { transcriptStatus: 'failed' } as Partial<TimelineItem>);
+      toastCatch(t.media_studio.transcribe_failed)(err);
+    }
+  }, [videoClip, onUpdate, t]);
 
   const handleExtractAudio = useCallback(async () => {
     if (!isVideo) return;
@@ -689,6 +791,22 @@ function ClipActions({
         <Button variant="ghost" size="sm" onClick={handleTrimToFile}>
           <FileVideo className="w-3.5 h-3.5" />
           Trim to file
+        </Button>
+      )}
+      {isVideo && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleTranscribe}
+          disabled={transcribing}
+          title={hasTranscript ? t.media_studio.transcript_ready_badge : t.media_studio.action_transcribe_clip}
+        >
+          {transcribing ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Captions className="w-3.5 h-3.5" />
+          )}
+          {hasTranscript ? t.media_studio.transcript_ready_badge : t.media_studio.action_transcribe_clip}
         </Button>
       )}
       {!isVideo && !isMedia && (

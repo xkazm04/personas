@@ -212,6 +212,43 @@ export interface LoudnessStats {
 export const artistMeasureLoudness = (filePath: string) =>
   invoke<LoudnessStats>("artist_measure_loudness", { filePath }, undefined, 120_000);
 
+// -- Transcription ---------------------------------------------------------
+
+export type TranscribeProvider =
+  | "local-whisper"
+  | "elevenlabs"
+  | "openai-whisper";
+
+export interface TranscribeResult {
+  /** Absolute path to the `*.transcript.json` sidecar written next to the clip. */
+  transcriptPath: string;
+  wordCount: number;
+  durationSeconds: number | null;
+}
+
+/**
+ * Transcribe a clip to word-level timestamps. Only `local-whisper` is wired;
+ * the other providers will return a clear NotImplemented error for now.
+ */
+export const artistTranscribeMedia = (
+  filePath: string,
+  provider: TranscribeProvider = "local-whisper",
+) =>
+  invoke<TranscribeResult>(
+    "artist_transcribe_media",
+    { filePath, provider },
+    undefined,
+    600_000,
+  );
+
+/** Probe whether the local `whisper` binary is installed. */
+export const artistCheckLocalWhisper = () =>
+  invoke<boolean>("artist_check_local_whisper");
+
+/** Load a transcript sidecar's raw JSON body. Path must end in `.transcript.json`. */
+export const artistLoadTranscript = (transcriptPath: string) =>
+  invoke<string>("artist_load_transcript", { transcriptPath });
+
 /** Trim a media file between start/end seconds into a new file. */
 export const artistTrimFile = (
   inputPath: string,

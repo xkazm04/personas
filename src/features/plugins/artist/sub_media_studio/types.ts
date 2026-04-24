@@ -31,6 +31,25 @@ export interface TextItem extends TimelineItemBase {
    * rendered into the preview frame or the exported video.
    */
   text: string;
+  /**
+   * Optional anchor: tie this beat's `startTime` to a spoken word in a
+   * transcribed video clip. When present, `useAnchorResolver` recomputes
+   * `startTime` from the clip's transcript each time the composition or
+   * any clip's trim changes, so the beat stays in sync with the word.
+   */
+  anchor?: BeatAnchor;
+}
+
+/**
+ * Anchors a beat to the Nth occurrence of `word` spoken in the clip
+ * identified by `videoClipId`. Resolution happens in the frontend via
+ * the clip's word-level transcript sidecar.
+ */
+export interface BeatAnchor {
+  videoClipId: string;
+  word: string;
+  /** 1-indexed occurrence; defaults to 1 if the word is only said once. */
+  occurrence: number;
 }
 
 export interface ImageItem extends TimelineItemBase {
@@ -64,6 +83,40 @@ export interface VideoClip extends TimelineItemBase {
   fadeOut?: number;
   /** Drop this clip's audio track on export. */
   stripAudio?: boolean;
+  /**
+   * Absolute path to a sidecar `*.transcript.json` file with word-level
+   * timestamps. Produced by `artist_transcribe_media`. Persistence
+   * preserves the pointer across save/load so beat anchors and auto-trim
+   * can resolve after reload. Optional.
+   */
+  transcriptPath?: string;
+  /** Last known transcription status for UI badges. */
+  transcriptStatus?: 'idle' | 'running' | 'ready' | 'failed';
+}
+
+/**
+ * Word-level transcript produced by `artist_transcribe_media`. Persisted
+ * as a sidecar JSON file next to the source clip; `VideoClip.transcriptPath`
+ * points to it. Schema version starts at 1; bump on breaking changes.
+ */
+export interface WordTimeline {
+  schemaVersion: number;
+  language: string | null;
+  fullText: string;
+  /** Provider that produced this transcript. */
+  provider: 'local-whisper' | 'elevenlabs' | 'openai-whisper';
+  words: TranscriptWord[];
+}
+
+export interface TranscriptWord {
+  /** The word as spoken (may include leading space from whisper's tokenizer). */
+  text: string;
+  /** Seconds from the start of the source media. */
+  start: number;
+  /** Seconds from the start of the source media. */
+  end: number;
+  /** Optional confidence (0-1) if the provider exposes it. */
+  probability?: number;
 }
 
 export interface AudioClip extends TimelineItemBase {
@@ -107,6 +160,13 @@ export interface Composition {
   fps: number;
   backgroundColor: string;
   items: TimelineItem[];
+  /**
+   * Freeform markdown describing the look/feel, motion language, palette,
+   * typography, pacing conventions the agent should follow for this
+   * composition. Prepended to plan-compose and auto-trim prompts so the
+   * agent matches the author's style every run. Optional; empty = no guide.
+   */
+  styleGuide?: string;
 }
 
 // -- Playback ---------------------------------------------------------------

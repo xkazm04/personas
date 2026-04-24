@@ -33,6 +33,10 @@ pub struct Composition {
     pub fps: u32,
     pub background_color: String,
     pub items: Vec<TimelineItem>,
+    /// Freeform markdown style guide reused by plan-compose and auto-trim
+    /// prompts. Not consumed by the compiler; preserved across save/load.
+    #[serde(default)]
+    pub style_guide: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,6 +80,16 @@ pub struct VideoClipInput {
     pub fade_out: f64,
     #[serde(default)]
     pub strip_audio: bool,
+    /// Absolute path to a sidecar `*.transcript.json` with word-level
+    /// timestamps produced by `artist_transcribe_media`. Optional; the
+    /// compiler does not consume it but persistence preserves the pointer
+    /// so anchor-word beats and auto-trim can resolve on reload.
+    #[serde(default)]
+    pub transcript_path: Option<String>,
+    /// Last known transcription status for UI badges: "idle" | "running"
+    /// | "ready" | "failed". Preserved across save/load for continuity.
+    #[serde(default)]
+    pub transcript_status: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -131,12 +145,33 @@ pub struct TextItemInput {
     pub duration: f64,
     #[serde(default)]
     pub text: String,
+    /// Optional anchor that ties this beat's `start_time` to a spoken word
+    /// in a video clip's transcript. When present, the frontend resolver
+    /// recomputes `start_time` from the transcript so the beat stays in
+    /// sync with the word even when clips are re-trimmed or reshuffled.
+    /// The backend does not resolve it — the resolved `start_time` is
+    /// what the compiler reads.
+    #[serde(default)]
+    pub anchor: Option<BeatAnchor>,
     /// Catches the now-removed fontSize/color/positionX/positionY/fadeIn/
     /// fadeOut fields so older saved files still deserialize. The struct
     /// ignores their values — beats have no visual properties.
     #[serde(flatten, default)]
     pub _legacy: std::collections::HashMap<String, serde_json::Value>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BeatAnchor {
+    pub video_clip_id: String,
+    pub word: String,
+    /// 1-indexed occurrence of `word` in the clip's transcript. Defaults
+    /// to 1 (first occurrence).
+    #[serde(default = "default_one_u32")]
+    pub occurrence: u32,
+}
+
+fn default_one_u32() -> u32 { 1 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

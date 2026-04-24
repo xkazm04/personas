@@ -1701,6 +1701,9 @@ pub fn run() {
             commands::artist::persistence::artist_clear_autosave,
             commands::artist::persistence::artist_default_save_dir,
             commands::artist::persistence::artist_composition_file_extension,
+            commands::artist::transcribe::artist_transcribe_media,
+            commands::artist::transcribe::artist_check_local_whisper,
+            commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
             commands::infrastructure::skill_files::skill_files_read,

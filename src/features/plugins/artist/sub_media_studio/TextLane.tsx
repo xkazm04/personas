@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, Plus, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
-import type { TextItem } from './types';
+import type { BeatAnchor, TextItem, VideoClip } from './types';
 
 interface TextLaneProps {
   items: TextItem[];
@@ -12,23 +12,38 @@ interface TextLaneProps {
   onSelect: (id: string) => void;
   onAdd: () => void;
   onUpdate: (id: string, patch: Partial<TextItem>) => void;
+  /** Video clips in the composition — used to populate the anchor-word
+   *  picker in the beat-edit modal. Only clips with a transcript can be
+   *  anchor sources. */
+  videoClips?: VideoClip[];
   hideHeader?: boolean;
   hideAdd?: boolean;
 }
 
-/** Modal for editing a beat's word + longer description. */
+/** Modal for editing a beat's word, description, and optional word-anchor. */
 function BeatEditModal({
   item,
+  videoClips,
   onSave,
   onClose,
 }: {
   item: TextItem;
-  onSave: (word: string, description: string) => void;
+  videoClips: VideoClip[];
+  onSave: (patch: { label: string; text: string; anchor: BeatAnchor | undefined }) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [word, setWord] = useState(item.label);
   const [description, setDescription] = useState(item.text);
+  const anchorableClips = videoClips.filter((c) => c.transcriptPath);
+  const [anchorMode, setAnchorMode] = useState<'manual' | 'word'>(
+    item.anchor ? 'word' : 'manual',
+  );
+  const [anchorClipId, setAnchorClipId] = useState(
+    item.anchor?.videoClipId ?? anchorableClips[0]?.id ?? '',
+  );
+  const [anchorWord, setAnchorWord] = useState(item.anchor?.word ?? '');
+  const [anchorOccurrence, setAnchorOccurrence] = useState(item.anchor?.occurrence ?? 1);
 
   return (
     <div
@@ -36,7 +51,7 @@ function BeatEditModal({
       onClick={onClose}
     >
       <div
-        className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-sm shadow-elevation-4"
+        className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-elevation-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
@@ -58,9 +73,70 @@ function BeatEditModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder={t.media_studio.beat_description_placeholder}
-            rows={4}
+            rows={3}
             className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30 resize-none"
           />
+
+          {/* Anchor section */}
+          <div className="border-t border-primary/10 pt-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="typo-label text-foreground">{t.media_studio.anchor_section}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="flex items-center gap-1.5 text-md text-foreground cursor-pointer">
+                <input
+                  type="radio"
+                  checked={anchorMode === 'manual'}
+                  onChange={() => setAnchorMode('manual')}
+                />
+                {t.media_studio.anchor_manual}
+              </label>
+              <label className={`flex items-center gap-1.5 text-md cursor-pointer ${anchorableClips.length === 0 ? 'text-foreground/40 cursor-not-allowed' : 'text-foreground'}`}>
+                <input
+                  type="radio"
+                  checked={anchorMode === 'word'}
+                  onChange={() => setAnchorMode('word')}
+                  disabled={anchorableClips.length === 0}
+                />
+                {t.media_studio.anchor_word_mode}
+              </label>
+            </div>
+            {anchorMode === 'word' && anchorableClips.length === 0 && (
+              <p className="text-[11px] text-foreground/60">{t.media_studio.anchor_no_transcripts}</p>
+            )}
+            {anchorMode === 'word' && anchorableClips.length > 0 && (
+              <div className="grid grid-cols-[1fr_2fr_auto] gap-2">
+                <select
+                  value={anchorClipId}
+                  onChange={(e) => setAnchorClipId(e.target.value)}
+                  className="px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground"
+                  aria-label={t.media_studio.anchor_clip}
+                >
+                  {anchorableClips.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={anchorWord}
+                  onChange={(e) => setAnchorWord(e.target.value)}
+                  placeholder={t.media_studio.anchor_word_placeholder}
+                  className="px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40"
+                  aria-label={t.media_studio.anchor_word}
+                />
+                <input
+                  type="number"
+                  min={1}
+                  value={anchorOccurrence}
+                  onChange={(e) => setAnchorOccurrence(Math.max(1, Number(e.target.value) || 1))}
+                  className="w-14 px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground tabular-nums"
+                  aria-label={t.media_studio.anchor_occurrence}
+                  title={t.media_studio.anchor_occurrence_hint}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-5">
@@ -72,7 +148,19 @@ function BeatEditModal({
             accentColor="amber"
             size="sm"
             onClick={() => {
-              onSave(word.trim() || item.label, description);
+              let anchor: BeatAnchor | undefined;
+              if (anchorMode === 'word' && anchorClipId && anchorWord.trim()) {
+                anchor = {
+                  videoClipId: anchorClipId,
+                  word: anchorWord.trim(),
+                  occurrence: anchorOccurrence,
+                };
+              }
+              onSave({
+                label: word.trim() || item.label,
+                text: description,
+                anchor,
+              });
               onClose();
             }}
           >
@@ -178,6 +266,7 @@ function TextLaneImpl({
   onSelect,
   onAdd,
   onUpdate,
+  videoClips,
   hideHeader,
   hideAdd,
 }: TextLaneProps) {
@@ -240,8 +329,9 @@ function TextLaneImpl({
       {editingItem && (
         <BeatEditModal
           item={editingItem}
-          onSave={(word, text) => {
-            onUpdate(editingItem.id, { label: word, text });
+          videoClips={videoClips ?? []}
+          onSave={({ label, text, anchor }) => {
+            onUpdate(editingItem.id, { label, text, anchor });
           }}
           onClose={() => setEditingItem(null)}
         />

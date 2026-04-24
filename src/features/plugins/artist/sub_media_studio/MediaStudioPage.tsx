@@ -9,13 +9,14 @@ import { useMediaExport } from './hooks/useMediaExport';
 import { useMediaStudio } from './hooks/useMediaStudio';
 import { useMediaStudioPersistence } from './hooks/useMediaStudioPersistence';
 import { useRenderPlan } from './hooks/useRenderPlan';
+import { useTranscriptCache } from './hooks/useTranscriptCache';
 import { useTimelinePlayback } from './hooks/useTimelinePlayback';
 import { useMediaFilePicker } from './hooks/useMediaFilePicker';
 import { useTimelineKeyboard } from './hooks/useTimelineKeyboard';
 import MediaStudioToolbar from './toolbar/MediaStudioToolbar';
 import { artistProbeMedia } from '@/api/artist/index';
 import { VIDEO_EXTENSIONS, AUDIO_EXTENSIONS, IMAGE_EXTENSIONS } from './constants';
-import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
+import type { VideoClip, AudioClip, TextItem, ImageItem, TimelineItem } from './types';
 import FfmpegStatusBanner from './FfmpegStatusBanner';
 import CompositionPreview from './CompositionPreview';
 import TimelinePanel from './TimelinePanel';
@@ -54,6 +55,25 @@ export default function MediaStudioPage() {
   });
 
   const { plan } = useRenderPlan(composition);
+  const { resolve: resolveAnchor } = useTranscriptCache(composition);
+
+  // -- Anchor-word resolution: for any beat with a BeatAnchor, recompute
+  // startTime from the referenced clip's word-level transcript. Runs after
+  // the transcript cache loads and whenever clip trims or start times
+  // change. Writes back via updateItem; the mutation is skipped when the
+  // resolved time matches the beat's current startTime so we don't churn
+  // history entries.
+  useEffect(() => {
+    for (const item of composition.items) {
+      if (item.type !== 'text') continue;
+      const beat = item as TextItem;
+      if (!beat.anchor) continue;
+      const resolved = resolveAnchor(beat.anchor, composition.items);
+      if (resolved === null) continue;
+      if (Math.abs(resolved - beat.startTime) < 0.01) continue;
+      updateItem(beat.id, { startTime: resolved } as Partial<TimelineItem>);
+    }
+  }, [composition.items, resolveAnchor, updateItem]);
 
   const { exportState, startExport, cancelExport } = useMediaExport(composition);
 
