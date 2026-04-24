@@ -29,7 +29,7 @@ use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{CreateManualReviewInput, Persona, PersonaTrustOrigin};
+use crate::db::models::{CreateManualReviewInput, Persona};
 use crate::db::repos::communication::manual_reviews;
 use crate::db::repos::core::{memories, personas};
 use crate::db::repos::execution::{executions, healing};
@@ -749,8 +749,6 @@ pub fn list_verdicts(
     let results: Vec<DirectorVerdictRow> = rows
         .filter_map(|r| r.ok())
         .collect();
-
-    let _ = PersonaTrustOrigin::System; // keep the import live for future use
     Ok(results)
 }
 
@@ -782,7 +780,7 @@ mod tests {
     }
 
     fn dummy_persona(system_prompt: &str) -> Persona {
-        use crate::db::models::{HealthStatus, PersonaHealth, PersonaTrustLevel};
+        use crate::db::models::{PersonaGatewayExposure, PersonaTrustLevel};
         Persona {
             id: "p-1".into(),
             project_id: "default".into(),
@@ -804,6 +802,7 @@ mod tests {
             max_turns: None,
             notification_channels: None,
             parameters: None,
+            gateway_exposure: PersonaGatewayExposure::default(),
             trust_level: PersonaTrustLevel::default(),
             trust_origin: PersonaTrustOrigin::User,
             trust_verified_at: None,
@@ -813,15 +812,6 @@ mod tests {
             group_id: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
-            health: PersonaHealth {
-                status: HealthStatus::Healthy,
-                last_execution_status: None,
-                last_execution_at: None,
-                avg_duration_ms: None,
-                success_rate: 1.0,
-                consecutive_failures: 0,
-                sparkline_data: vec![],
-            },
         }
     }
 

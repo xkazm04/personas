@@ -1916,6 +1916,22 @@ export type Translations = {
       reviews_desc: string;
       versions: string;
       versions_desc: string;
+      director: string;
+      director_title: string;
+      director_subtitle: string;
+      director_run: string;
+      director_running: string;
+      director_rationale: string;
+      director_accept: string;
+      director_dismiss: string;
+      director_pending: string;
+      director_resolved: string;
+      director_empty_title: string;
+      director_empty_hint: string;
+      director_last_run_empty: string;
+      director_last_run_one: string;
+      director_last_run_many: string;
+      switch_panel_director: string;
     };
     ops_run: {
       execute_agent: string;

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
-import { MessageSquare, Play, FlaskConical, Activity, ShieldCheck } from 'lucide-react';
+import { MessageSquare, Play, FlaskConical, Activity, ShieldCheck, Compass } from 'lucide-react';
 import { SessionSidebar } from './SessionSidebar';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -7,10 +7,11 @@ const OpsRunPanel = lazy(() => import('./panels/OpsRunPanel'));
 const OpsLabPanel = lazy(() => import('./panels/OpsLabPanel'));
 const OpsHealthPanel = lazy(() => import('./panels/OpsHealthPanel'));
 const OpsAssertionsPanel = lazy(() => import('./panels/OpsAssertionsPanel'));
+const OpsDirectorPanel = lazy(() => import('./panels/OpsDirectorPanel'));
 
 // ── Panel types ────────────────────────────────────────────────────────
 
-export type OpsPanel = 'sessions' | 'run' | 'lab' | 'health' | 'assertions';
+export type OpsPanel = 'sessions' | 'run' | 'lab' | 'health' | 'assertions' | 'director';
 
 interface PanelDef {
   id: OpsPanel;
@@ -27,6 +28,7 @@ function usePanels(): PanelDef[] {
     { id: 'lab', icon: FlaskConical, label: t.agents.ops.lab, color: 'text-violet-400' },
     { id: 'health', icon: Activity, label: t.agents.ops.health, color: 'text-amber-400' },
     { id: 'assertions', icon: ShieldCheck, label: t.agents.ops.assertions, color: 'text-cyan-400' },
+    { id: 'director', icon: Compass, label: t.agents.ops.director, color: 'text-violet-400' },
   ];
 }
 
@@ -46,7 +48,7 @@ interface OpsSidebarProps {
   badges?: OpsBadges;
 }
 
-const PANEL_ORDER: OpsPanel[] = ['sessions', 'run', 'lab', 'health', 'assertions'];
+const PANEL_ORDER: OpsPanel[] = ['sessions', 'run', 'lab', 'health', 'assertions', 'director'];
 
 export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps) {
   const { t, tx } = useTranslation();
@@ -112,6 +114,7 @@ export function OpsSidebar({ personaId, onNewSession, badges }: OpsSidebarProps)
               {activePanel === 'lab' && <OpsLabPanel personaId={personaId} />}
               {activePanel === 'health' && <OpsHealthPanel personaId={personaId} />}
               {activePanel === 'assertions' && <OpsAssertionsPanel personaId={personaId} />}
+              {activePanel === 'director' && <OpsDirectorPanel personaId={personaId} />}
             </div>
           </Suspense>
         )}
