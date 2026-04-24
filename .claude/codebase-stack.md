@@ -190,6 +190,14 @@ These exist as separate entities, related by `persona_id`:
 - **Teams** (`persona_teams`, `persona_team_members`, `persona_team_connections`) — the hierarchical team graph. Teams have a `parent_team_id` for nesting, members have a role (`orchestrator`/`worker`/`reviewer`/`router`), and team connections are directed edges between personas (`source_persona_id` → `target_persona_id` with `connection_type`, `condition`, `label`) for hierarchy/dependency/routing relationships. **This is the org-chart primitive** — do NOT propose building one from scratch.
 - **Review queues** (`persona_manual_reviews` + `review_messages`) — manual review items with title, description, severity (`info`/`warning`/`error`), context_data, reviewer_notes, status (`pending`/`resolved`/etc.). Review messages are the per-review conversation thread. Used by the `design-reviews` group.
 
+### `review_decision.*` event payload — missing `context_data` (multi-use-case chaining caveat)
+
+Discovered in `/research` run on 2026-04-24 (MiniMax-AI/skills) while designing the Skill Librarian template's two-use-case pipeline. The platform publishes `review_decision.approved` / `review_decision.rejected` from `src-tauri/src/commands/design/reviews.rs:878-919` with payload `{ review_id, execution_id, persona_id, title, decision, reviewer_notes }` — note that **`context_data` is NOT in the payload**.
+
+**Implication for template authors:** any use case that subscribes to `review_decision.*` and needs the original review body (proposed diff, structured proposal payload, anything richer than title + reviewer notes) must call back via an IPC to fetch the review row using `review_id`. The Skill Librarian template's UC2 is the reference implementation — its `error_handling` documents the fetch-back and the fallback `manual_review` on IPC failure.
+
+**Candidate platform improvement:** extend the `json!({...})` block at `reviews.rs:887-896` to include `context_data`. Small patch; eliminates the fetch-back requirement for every multi-use-case persona chaining off review approvals. Not blocking — templates work today with the callback pattern — but it's a cleanup that amortizes across every future chaining template.
+
 ### Connector binding model — catalog vs runtime (CRITICAL distinction)
 
 The 87 connectors in `scripts/connectors/builtin/` (and the 87 entries in `codebase-catalogs.md`) are a **discovery catalog**, not a runtime tool surface. Each persona instance **binds only 0-3 connectors** from the catalog to its execution context. The system prompt at runtime injects credentials only for those bound connectors (see `engine/prompt.rs:342-354` `## Available Credentials` section).

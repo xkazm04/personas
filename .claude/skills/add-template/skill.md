@@ -12,6 +12,103 @@ Wait for the user's response. Once you have the idea, proceed with the phases be
 
 ---
 
+## Architecture Awareness (read before Phase 1)
+
+Before running the phases, anchor your generation in the platform's current design. The authoritative references live in `docs/concepts/persona-capabilities/` — scan `00-vision.md`, `02-use-case-as-capability.md`, `03-runtime.md`, `04-data-model.md`, and `C3-template-schema-v3.md` at minimum. The highlights below are load-bearing for template shape; verify against those docs if anything below conflicts with what you read.
+
+### Schema v3 template shape (current)
+
+Recent templates use `schema_version: 3` with a `payload.persona` object instead of the older flat `structured_prompt` block. The `persona` object contains:
+
+- `goal` — one-sentence mission statement
+- `identity` — `{ role, description }`
+- `voice` — `{ style, output_format }`
+- `principles[]` — inviolable rules
+- `constraints[]` — hard "never do X" list
+- `decision_principles[]` — how to resolve ambiguity
+- `verbosity_default` — `silent` | `terse` | `normal` | `verbose`
+- `trigger_composition`, `message_composition` — `per_use_case` or `shared`
+- `operating_instructions` — multi-paragraph how-it-runs walkthrough
+- `tool_guidance`, `error_handling`, `examples[]`
+- `tools[]`, `connectors[]`
+- `use_cases[]` — **the core composition primitive** (see below)
+
+Older templates (`schema_version` missing or 2) use a flat `structured_prompt` with `identity`/`instructions`/`toolGuidance`/`examples`/`errorHandling` strings. **Prefer schema_version 3** for new work unless the user explicitly asks for v2 for parity with an older sibling template. Always read one recent schema_version-3 neighbor in the chosen category before generating.
+
+### Use cases are the composition primitive — a persona is ONE agent with MANY capabilities
+
+A persona hosts **one or more** `DesignUseCase` entries (aka capabilities). Each use case is a discrete, independently-triggerable, independently-toggleable job the persona can perform. This is NOT a separate persona per job — it is one persona that fans out to many capabilities.
+
+Each use case has its own:
+
+- `id`, `title`, `description`, `category`, `execution_mode`
+- `sample_input`, `input_schema`, `time_filter`
+- `suggested_trigger` — `schedule` | `polling` | `webhook` | (manual is always implicit)
+- `event_subscriptions[]` — events this use case consumes
+- `notification_channels[]` — where this use case's output lands
+- `model_override` — optional per-capability model/effort
+- `tool_hints[]` — tools most relevant to this capability
+- `capability_summary` — one-line prompt-injected description
+
+**When to design a multi-use-case persona (vs multiple personas):**
+- The jobs share the same identity, principles, memory, and domain expertise
+- They form a pipeline coordinated via events (see below)
+- The user thinks of them as "the same agent doing different things"
+
+**When to use separate personas instead:**
+- The jobs have different voice/style requirements
+- They need hard trust separation (one is read-only, another writes)
+- They target different audiences (the user vs an external collaborator)
+
+### Capabilities communicate via events (not direct calls)
+
+Capabilities do not invoke each other directly. They publish/consume events through the platform event bus:
+
+```
+Use Case A         Event Bus         Use Case B
+---------- emit -> ---------- route -> ----------
+```
+
+Conventions:
+- Event type format: `entity.action.state` (e.g., `review_decision.approved`, `skill.update.issue_created`)
+- Emitted via the `emit_event` persona protocol during execution
+- Consumed via `event_subscriptions[]` on the receiving use case
+- The platform auto-routes matching events to create an execution on the subscribing use case
+- Filtering by `source_persona_id` on the consumer side is how you ensure a use case only reacts to its own persona's events (otherwise any persona's matching event triggers it)
+
+This is how you decompose a "scan → propose → create issue" pipeline: one use case scans and surfaces a `manual_review`, the platform publishes `review_decision.approved` on user acceptance, and a second use case on the same persona subscribes to that event and does the follow-on work.
+
+### 2-Phase Review — exact payload and the `context_data` caveat
+
+When a human approves/rejects a manual review in the UI, the platform publishes `review_decision.approved` or `review_decision.rejected` with payload:
+
+```json
+{
+  "review_id": "...",
+  "execution_id": "...",
+  "persona_id": "...",
+  "title": "...",
+  "decision": "approved | rejected",
+  "reviewer_notes": "..."
+}
+```
+
+**IMPORTANT GAP:** the event payload does NOT include the review's `context_data` field. If a downstream use case needs the full review body (diffs, proposal content, structured payload), it must fetch the review row via an IPC callback using `review_id`. Document this in your template's `error_handling` whenever a use case subscribes to `review_decision.*`.
+
+The platform also handles Phase 2 automatically: each review decision becomes a learning memory (`category: "learned"`, importance 5, tags `["review", "approved|rejected"]`) that gets injected into future prompts. Templates get this for free — do NOT re-implement it, but DO shape `manual_review` titles/descriptions so the learnings compose meaningfully across runs.
+
+### Multi-use-case checklist before you generate
+
+- [ ] Is this genuinely one agent with many jobs, or multiple agents? (Default to multi-use-case if the domain is shared.)
+- [ ] Does each use case have a distinct trigger (schedule / polling / webhook / event subscription)?
+- [ ] Are events between use cases named `entity.action.state`?
+- [ ] If a use case subscribes to `review_decision.*`, does `error_handling` mention the `context_data` fetch-back?
+- [ ] Does `trigger_composition: per_use_case` (default) fit, or do multiple use cases share one trigger? Override to `shared` only when genuinely shared.
+- [ ] Does `message_composition: per_use_case` (default) fit, or do all use cases write to one channel? Override to `shared` only when notifications are centralized.
+- [ ] Are `tool_hints` populated per use case so the prompt renderer can scope tool visibility?
+
+---
+
 ## Phase 1: Research & Service Discovery
 
 Use WebSearch and WebFetch to research:
