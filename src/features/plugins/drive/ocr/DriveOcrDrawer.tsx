@@ -12,6 +12,7 @@ import {
 import { cancelOcrOperation } from "@/api/ocr";
 import {
   driveWriteText,
+  ocrDriveFileClaude,
   ocrDriveFileGemini,
   type DriveEntry,
   type OcrDriveResult,
@@ -30,6 +31,7 @@ interface Props {
 }
 
 type Phase = "input" | "running" | "done";
+type Backend = "gemini" | "claude";
 
 const DEFAULT_OUTPUT_SUFFIX = ".ocr.txt";
 
@@ -40,6 +42,11 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<OcrDriveResult | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  // Default to Gemini when a credential is connected, otherwise Claude
+  // (which only needs the local CLI). Users can flip either way.
+  const [backend, setBackend] = useState<Backend>(
+    ocr.hasGemini ? "gemini" : "claude",
+  );
   // Tracks the in-flight OCR call so a drawer close mid-run can signal
   // the backend to abort the reqwest future instead of silently paying
   // for a Gemini call whose result we'll throw away.
@@ -73,20 +80,31 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   // (parent re-render, route change). Mirrors the manual close path.
   useEffect(() => () => cancelInFlight(), []);
 
+  const canExtract =
+    backend === "gemini" ? Boolean(ocr.geminiCredentialId) : true;
+
   const handleExtract = async () => {
-    if (!ocr.geminiCredentialId) return;
+    if (!canExtract) return;
     setPhase("running");
     setResult(null);
     setSaved(null);
-    const operationId = crypto.randomUUID();
-    operationIdRef.current = operationId;
+    const trimmedPrompt = prompt.trim() || undefined;
     try {
-      const res = await ocrDriveFileGemini(
-        entry.path,
-        ocr.geminiCredentialId,
-        prompt.trim() || undefined,
-        operationId,
-      );
+      let res: OcrDriveResult;
+      if (backend === "gemini") {
+        const operationId = crypto.randomUUID();
+        operationIdRef.current = operationId;
+        res = await ocrDriveFileGemini(
+          entry.path,
+          ocr.geminiCredentialId!,
+          trimmedPrompt,
+          operationId,
+        );
+      } else {
+        // Claude CLI path: no operation_id wired (cancel would need to
+        // kill the spawned child; deferred to a follow-up if it bites).
+        res = await ocrDriveFileClaude(entry.path, trimmedPrompt);
+      }
       setResult(res);
       setPhase("done");
     } catch (e) {
@@ -146,10 +164,14 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="typo-heading-sm typo-section-title">
-                {t.plugins.drive.ocr_title}
+                {backend === "claude"
+                  ? t.plugins.drive.ocr_title_claude
+                  : t.plugins.drive.ocr_title}
               </div>
               <div className="typo-body text-foreground/90 truncate">
-                {t.plugins.drive.ocr_subtitle}
+                {backend === "claude"
+                  ? t.plugins.drive.ocr_subtitle_claude
+                  : t.plugins.drive.ocr_subtitle}
               </div>
             </div>
             <button
@@ -180,6 +202,34 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             )}
           </div>
 
+          {/* Backend selector — only adjustable before extraction starts */}
+          {phase !== "done" && (
+            <div>
+              <label className="typo-label text-foreground/90 block mb-1.5">
+                {t.plugins.drive.ocr_backend_label}
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {(["gemini", "claude"] as const).map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBackend(b)}
+                    disabled={phase === "running"}
+                    className={`rounded-input border px-3 py-2 typo-body font-medium text-left transition-colors ${
+                      backend === b
+                        ? "border-violet-500/50 bg-violet-500/15 text-violet-100"
+                        : "border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {b === "gemini"
+                      ? t.plugins.drive.ocr_backend_gemini
+                      : t.plugins.drive.ocr_backend_claude}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Model info */}
           <div className="rounded-card border border-violet-500/25 bg-violet-500/10 px-3 py-2 flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-violet-300 flex-shrink-0" />
@@ -187,24 +237,32 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <span className="font-semibold text-violet-200">
                 {t.plugins.drive.ocr_model_label}
               </span>{" "}
-              <span className="font-mono">gemini-3-flash-preview</span>
+              <span className="font-mono">
+                {backend === "claude" ? "claude-code-cli" : "gemini-3-flash-preview"}
+              </span>
             </div>
           </div>
 
-          {/* Credential status */}
-          {ocr.hasGemini ? (
-            <div className="rounded-card border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
-              <div className="typo-body text-foreground">
-                {t.plugins.drive.ocr_connector_ready}:{" "}
-                <span className="font-medium text-emerald-200">
-                  {ocr.geminiCredentialName}
-                </span>
+          {/* Backend status: Gemini → credential card; Claude → CLI info */}
+          {backend === "gemini" ? (
+            ocr.hasGemini ? (
+              <div className="rounded-card border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 flex items-center gap-2">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300 flex-shrink-0" />
+                <div className="typo-body text-foreground">
+                  {t.plugins.drive.ocr_connector_ready}:{" "}
+                  <span className="font-medium text-emerald-200">
+                    {ocr.geminiCredentialName}
+                  </span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 typo-body text-amber-200">
+                {t.plugins.drive.ocr_connector_missing}
+              </div>
+            )
           ) : (
-            <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-3 py-2 typo-body text-amber-200">
-              {t.plugins.drive.ocr_connector_missing}
+            <div className="rounded-card border border-sky-500/30 bg-sky-500/10 px-3 py-2 typo-body text-foreground">
+              {t.plugins.drive.ocr_claude_info}
             </div>
           )}
 
@@ -293,7 +351,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <button
                 type="button"
                 onClick={handleExtract}
-                disabled={!ocr.hasGemini || phase === "running"}
+                disabled={!canExtract || phase === "running"}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/25 to-fuchsia-500/10 text-violet-100 border border-violet-500/40 typo-body font-semibold hover:from-violet-500/35 hover:to-fuchsia-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_14px_-4px_rgba(167,139,250,0.5)]"
               >
                 <ScanLine className="w-3.5 h-3.5" />

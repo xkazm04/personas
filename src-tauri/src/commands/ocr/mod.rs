@@ -344,15 +344,73 @@ pub async fn ocr_with_claude(
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
     }
+    run_claude_ocr(&state.db, &path, file_path, prompt).await
+}
 
-    let file_name = path.file_name()
+/// Drive-integrated Claude CLI OCR. Resolves the managed-root sandbox and
+/// extension allowlist exactly like `ocr_drive_file_gemini`, then runs the
+/// shared Claude OCR core. Uses the user's existing Claude subscription
+/// (no vault credential lookup; Claude binary discovery happens inside
+/// the core).
+#[tauri::command]
+pub async fn ocr_drive_file_claude(
+    app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    rel_path: String,
+    prompt: Option<String>,
+) -> Result<OcrResult, AppError> {
+    require_auth_sync(&state)?;
+
+    let root = crate::commands::drive::managed_root(&app)?;
+    let abs = crate::commands::drive::resolve_safe(&root, &rel_path)?;
+    if !abs.exists() {
+        return Err(AppError::NotFound(format!("Drive file not found: {rel_path}")));
+    }
+    let ext = abs
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_default();
+    if !ALLOWED_OCR_EXTENSIONS.iter().any(|allowed| *allowed == ext) {
+        return Err(AppError::Validation(format!(
+            "File type not supported for OCR: .{ext}"
+        )));
+    }
+
+    let abs_display = abs.to_string_lossy().to_string();
+    run_claude_ocr(&state.db, &abs, abs_display, prompt).await
+}
+
+/// Shared Claude CLI OCR core. Reads the file, base64-encodes it into a
+/// stdin-piped prompt, spawns the Claude binary, and persists an
+/// `OcrDocument`. Used by both `ocr_with_claude` (legacy form-input flow)
+/// and `ocr_drive_file_claude` (drive sandbox flow).
+async fn run_claude_ocr(
+    pool: &DbPool,
+    path: &Path,
+    file_path_for_record: String,
+    prompt: Option<String>,
+) -> Result<OcrResult, AppError> {
+    let file_size = std::fs::metadata(path)
+        .map_err(|e| AppError::Internal(format!("Cannot stat file: {e}")))?
+        .len();
+    if file_size > MAX_OCR_FILE_BYTES {
+        return Err(AppError::Validation(format!(
+            "File is too large for OCR ({} MB). Limit is {} MB.",
+            file_size / (1024 * 1024),
+            MAX_OCR_FILE_BYTES / (1024 * 1024),
+        )));
+    }
+
+    let file_name = path
+        .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".into());
 
     let user_prompt = prompt.clone().unwrap_or_else(|| OCR_SYSTEM_PROMPT.to_string());
 
     // Read the file and encode as base64 so Claude can process it directly
-    let file_bytes = std::fs::read(&path)
+    let file_bytes = std::fs::read(path)
         .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
     let file_b64 = B64.encode(&file_bytes);
 
@@ -465,7 +523,7 @@ pub async fn ocr_with_claude(
     let doc = OcrDocument {
         id,
         file_name,
-        file_path: Some(file_path),
+        file_path: Some(file_path_for_record),
         provider: "claude".into(),
         model: Some("claude-code-cli".into()),
         extracted_text,
@@ -476,7 +534,7 @@ pub async fn ocr_with_claude(
         created_at: now,
     };
 
-    let saved = repo::insert_document(&state.db, &doc)?;
+    let saved = repo::insert_document(pool, &doc)?;
 
     Ok(OcrResult {
         document: saved,
