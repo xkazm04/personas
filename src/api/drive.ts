@@ -103,10 +103,16 @@ export const ocrDriveFileGemini = (
   relPath: string,
   credentialId: string,
   prompt?: string,
+  operationId?: string,
 ) =>
   invoke<OcrDriveResult>(
     "ocr_drive_file_gemini",
-    { relPath, credentialId, prompt: prompt ?? null },
+    {
+      relPath,
+      credentialId,
+      prompt: prompt ?? null,
+      operationId: operationId ?? null,
+    },
     undefined,
     180_000,
   );

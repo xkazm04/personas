@@ -7651,6 +7651,8 @@
     "validation_suggestion": "Review the highlighted fields and correct any errors.",
     "body_too_large_message": "The data you're sending is too large.",
     "body_too_large_suggestion": "Reduce the size of your input and try again.",
+    "ocr_file_too_large_message": "This file is too large for OCR.",
+    "ocr_file_too_large_suggestion": "Drive OCR sends the file inline to the model. Limit is 20 MB. Split the document or extract selected pages first.",
     "decryption_message": "Could not decrypt — the passphrase may be wrong or the file is corrupted.",
     "decryption_suggestion": "Double-check your passphrase and try again.",
     "circular_chain_message": "This would create a loop where agents trigger each other endlessly.",

@@ -1,11 +1,13 @@
+use std::collections::HashMap;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
 use chrono::Utc;
 use serde::Deserialize;
 use tauri::{AppHandle, State};
+use tokio_util::sync::CancellationToken;
 
 use crate::db::models::{OcrDocument, OcrResult};
 use crate::db::repos::resources::{credentials, ocr as repo};
@@ -25,6 +27,41 @@ const OCR_SYSTEM_PROMPT: &str =
     "Extract ALL text from this image/document. Preserve the original structure, \
      paragraphs, headers, lists, and tables as closely as possible. \
      Return ONLY the extracted text, no commentary.";
+
+/// Hard cap on bytes sent to a Vision OCR backend. 20 MB matches Gemini's
+/// documented inline-data ceiling and keeps base64-encoded payloads within
+/// reasonable HTTP body size for any provider; larger files should be
+/// pre-split or run through a native PDF text path.
+const MAX_OCR_FILE_BYTES: u64 = 20 * 1024 * 1024;
+
+/// Registry of in-flight OCR cancellation tokens, keyed by client-supplied
+/// `operation_id`. The `cancel_ocr_operation` command pulls the token out
+/// and signals it; the OCR call's `tokio::select!` resolves to the
+/// cancellation arm and returns an "OCR cancelled" error.
+static OCR_CANCEL_TOKENS: LazyLock<Mutex<HashMap<String, CancellationToken>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn register_cancel_token(operation_id: &str) -> CancellationToken {
+    let token = CancellationToken::new();
+    let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
+    map.insert(operation_id.to_string(), token.clone());
+    token
+}
+
+fn deregister_cancel_token(operation_id: &str) {
+    let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
+    map.remove(operation_id);
+}
+
+/// RAII guard that removes the cancellation token from the registry when
+/// the OCR call returns or panics, preventing the map from growing on
+/// dropped futures.
+struct CancelGuard<'a>(&'a str);
+impl Drop for CancelGuard<'_> {
+    fn drop(&mut self) {
+        deregister_cancel_token(self.0);
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct GeminiResponse {
@@ -75,6 +112,7 @@ pub async fn ocr_with_gemini(
     api_key: String,
     model: Option<String>,
     prompt: Option<String>,
+    operation_id: Option<String>,
 ) -> Result<OcrResult, AppError> {
     require_auth_sync(&state)?;
 
@@ -83,7 +121,7 @@ pub async fn ocr_with_gemini(
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
     }
-    run_gemini_ocr(&state.db, &path, file_path, &api_key, model, prompt).await
+    run_gemini_ocr(&state.db, &path, file_path, &api_key, model, prompt, operation_id).await
 }
 
 /// Shared Gemini OCR core. Reads the file, POSTs it to the Generative
@@ -91,6 +129,11 @@ pub async fn ocr_with_gemini(
 /// returns the result. Used by both `ocr_with_gemini` (API key from form
 /// input) and `ocr_drive_file_gemini` (API key resolved from a vault
 /// credential).
+///
+/// When `operation_id` is `Some`, registers a `CancellationToken` so the
+/// frontend can call `cancel_ocr_operation` to abort the in-flight
+/// reqwest call instead of letting the user pay for tokens on a closed
+/// drawer.
 async fn run_gemini_ocr(
     pool: &DbPool,
     path: &Path,
@@ -98,7 +141,19 @@ async fn run_gemini_ocr(
     api_key: &str,
     model: Option<String>,
     prompt: Option<String>,
+    operation_id: Option<String>,
 ) -> Result<OcrResult, AppError> {
+    let file_size = tokio::fs::metadata(path).await
+        .map_err(|e| AppError::Internal(format!("Cannot stat file: {e}")))?
+        .len();
+    if file_size > MAX_OCR_FILE_BYTES {
+        return Err(AppError::Validation(format!(
+            "File is too large for OCR ({} MB). Limit is {} MB.",
+            file_size / (1024 * 1024),
+            MAX_OCR_FILE_BYTES / (1024 * 1024),
+        )));
+    }
+
     let file_bytes = tokio::fs::read(path).await
         .map_err(|e| AppError::Internal(format!("Cannot read file: {e}")))?;
     let b64_data = B64.encode(&file_bytes);
@@ -121,15 +176,31 @@ async fn run_gemini_ocr(
         model_name, api_key
     );
 
-    let resp = SHARED_HTTP.post(&url)
-        .json(&body)
-        .send()
-        .await
-        .map_err(|e| AppError::Internal(format!("Gemini API request failed: {e}")))?;
+    let cancel_token = operation_id.as_deref().map(register_cancel_token);
+    let _guard = operation_id.as_deref().map(CancelGuard);
+
+    let request_future = SHARED_HTTP.post(&url).json(&body).send();
+    let resp = match cancel_token.as_ref() {
+        Some(token) => tokio::select! {
+            biased;
+            _ = token.cancelled() => return Err(AppError::Internal("OCR cancelled".into())),
+            r = request_future => r,
+        },
+        None => request_future.await,
+    }
+    .map_err(|e| AppError::Internal(format!("Gemini API request failed: {e}")))?;
 
     let status = resp.status();
-    let resp_text = resp.text().await
-        .map_err(|e| AppError::Internal(format!("Failed to read Gemini response: {e}")))?;
+    let read_body = resp.text();
+    let resp_text = match cancel_token.as_ref() {
+        Some(token) => tokio::select! {
+            biased;
+            _ = token.cancelled() => return Err(AppError::Internal("OCR cancelled".into())),
+            t = read_body => t,
+        },
+        None => read_body.await,
+    }
+    .map_err(|e| AppError::Internal(format!("Failed to read Gemini response: {e}")))?;
 
     if !status.is_success() {
         return Err(AppError::Internal(format!("Gemini API error ({}): {}", status, resp_text)));
@@ -194,6 +265,7 @@ pub async fn ocr_drive_file_gemini(
     rel_path: String,
     credential_id: String,
     prompt: Option<String>,
+    operation_id: Option<String>,
 ) -> Result<OcrResult, AppError> {
     require_auth_sync(&state)?;
 
@@ -234,7 +306,25 @@ pub async fn ocr_drive_file_gemini(
         .clone();
 
     let abs_display = abs.to_string_lossy().to_string();
-    run_gemini_ocr(&state.db, &abs, abs_display, &api_key, None, prompt).await
+    run_gemini_ocr(&state.db, &abs, abs_display, &api_key, None, prompt, operation_id).await
+}
+
+/// Cancel an in-flight OCR operation by its client-supplied `operation_id`.
+/// Idempotent: returns `Ok(false)` if no token is registered (operation
+/// already finished, never started, or already cancelled).
+#[tauri::command]
+pub async fn cancel_ocr_operation(
+    state: State<'_, Arc<AppState>>,
+    operation_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some(token) = map.get(&operation_id) {
+        token.cancel();
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }
 
 // ---------------------------------------------------------------------------

@@ -7657,6 +7657,8 @@ export type Translations = {
     validation_suggestion: string;
     body_too_large_message: string;
     body_too_large_suggestion: string;
+    ocr_file_too_large_message: string;
+    ocr_file_too_large_suggestion: string;
     decryption_message: string;
     decryption_suggestion: string;
     circular_chain_message: string;

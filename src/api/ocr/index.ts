@@ -24,10 +24,19 @@ export const ocrWithGemini = (
   apiKey: string,
   model?: string,
   prompt?: string,
-) => invoke<OcrResult>("ocr_with_gemini", { filePath, apiKey, model, prompt });
+  operationId?: string,
+) => invoke<OcrResult>("ocr_with_gemini", { filePath, apiKey, model, prompt, operationId });
 
 export const ocrWithClaude = (filePath: string, prompt?: string) =>
   invoke<OcrResult>("ocr_with_claude", { filePath, prompt }, undefined, 300_000);
+
+/**
+ * Signal an in-flight OCR run to abort. Resolves to `true` if the token
+ * was found and cancelled, `false` if the operation already finished or
+ * was never registered.
+ */
+export const cancelOcrOperation = (operationId: string) =>
+  invoke<boolean>("cancel_ocr_operation", { operationId });
 
 export const listOcrDocuments = () =>
   invoke<OcrDocument[]>("list_ocr_documents");
