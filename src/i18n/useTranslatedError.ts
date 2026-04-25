@@ -42,6 +42,7 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string }> = [
   { match: 'Invalid JSON', keyPrefix: 'invalid_json' },
   { match: 'Validation', keyPrefix: 'validation' },
   { match: 'Request body too large', keyPrefix: 'body_too_large' },
+  { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large' },
   { match: 'Decryption failed', keyPrefix: 'decryption' },
   { match: 'Circular chain detected', keyPrefix: 'circular_chain' },
   { match: 'NotFound', keyPrefix: 'not_found' },

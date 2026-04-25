@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ScanLine,
   X,
@@ -9,6 +9,7 @@ import {
   FileText,
 } from "lucide-react";
 
+import { cancelOcrOperation } from "@/api/ocr";
 import {
   driveWriteText,
   ocrDriveFileGemini,
@@ -16,7 +17,7 @@ import {
   type OcrDriveResult,
 } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 
 import type { useOcr } from "./useOcr";
@@ -39,31 +40,64 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<OcrDriveResult | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  // Tracks the in-flight OCR call so a drawer close mid-run can signal
+  // the backend to abort the reqwest future instead of silently paying
+  // for a Gemini call whose result we'll throw away.
+  const operationIdRef = useRef<string | null>(null);
+
+  const cancelInFlight = () => {
+    const id = operationIdRef.current;
+    if (id) {
+      cancelOcrOperation(id).catch(silentCatch("drive:ocr:cancel"));
+      operationIdRef.current = null;
+    }
+  };
+
+  const handleClose = () => {
+    cancelInFlight();
+    onClose();
+  };
 
   useEffect(() => {
     const esc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") handleClose();
     };
     document.addEventListener("keydown", esc);
     return () => document.removeEventListener("keydown", esc);
+    // handleClose is stable for this component's lifetime; refs don't
+    // need a dep entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose]);
+
+  // Best-effort cleanup if the drawer unmounts for any other reason
+  // (parent re-render, route change). Mirrors the manual close path.
+  useEffect(() => () => cancelInFlight(), []);
 
   const handleExtract = async () => {
     if (!ocr.geminiCredentialId) return;
     setPhase("running");
     setResult(null);
     setSaved(null);
+    const operationId = crypto.randomUUID();
+    operationIdRef.current = operationId;
     try {
       const res = await ocrDriveFileGemini(
         entry.path,
         ocr.geminiCredentialId,
         prompt.trim() || undefined,
+        operationId,
       );
       setResult(res);
       setPhase("done");
     } catch (e) {
-      toastCatch("drive:ocr")(e);
+      const msg = e instanceof Error ? e.message : String(e);
+      // Cancellation is a user-initiated outcome, not an error to surface.
+      if (!msg.includes("OCR cancelled")) {
+        toastCatch("drive:ocr")(e);
+      }
       setPhase("input");
+    } finally {
+      operationIdRef.current = null;
     }
   };
 
@@ -96,7 +130,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
     <div
       className="fixed inset-0 z-[9998] flex items-start justify-end bg-background/50 backdrop-blur-sm"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) handleClose();
       }}
     >
       <aside className="w-[480px] h-full flex flex-col bg-background/95 border-l border-primary/20 shadow-elevation-4">
@@ -120,7 +154,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             </div>
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="p-1.5 rounded-input text-foreground/90 hover:text-foreground hover:bg-secondary/50"
               aria-label={t.plugins.drive.cancel}
             >
@@ -241,7 +275,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleClose}
                 className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 {t.plugins.drive.confirm}
@@ -251,9 +285,8 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             <>
               <button
                 type="button"
-                onClick={onClose}
-                disabled={phase === "running"}
-                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+                onClick={handleClose}
+                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
               >
                 {t.plugins.drive.cancel}
               </button>
