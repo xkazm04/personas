@@ -8297,7 +8297,13 @@ export type Translations = {
       ctx_extract_text: string;
       ctx_extract_text_no_gemini: string;
       ocr_title: string;
+      ocr_title_claude: string;
       ocr_subtitle: string;
+      ocr_subtitle_claude: string;
+      ocr_backend_label: string;
+      ocr_backend_gemini: string;
+      ocr_backend_claude: string;
+      ocr_claude_info: string;
       ocr_model_label: string;
       ocr_connector_ready: string;
       ocr_connector_missing: string;

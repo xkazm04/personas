@@ -117,6 +117,21 @@ export const ocrDriveFileGemini = (
     180_000,
   );
 
+/**
+ * Run Claude CLI OCR on a drive file. Uses the user's local Claude
+ * subscription (no vault credential lookup) — succeeds when the
+ * `claude` binary is on PATH; otherwise the backend returns a
+ * "Claude Code CLI not found in PATH" error. Generous 5-minute
+ * timeout because the CLI is slower than the Gemini HTTP path.
+ */
+export const ocrDriveFileClaude = (relPath: string, prompt?: string) =>
+  invoke<OcrDriveResult>(
+    "ocr_drive_file_claude",
+    { relPath, prompt: prompt ?? null },
+    undefined,
+    300_000,
+  );
+
 export const DRIVE_MIME_ICONS: Record<string, string> = {
   "text/plain": "FileText",
   "application/json": "Braces",
