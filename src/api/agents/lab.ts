@@ -11,6 +11,8 @@ import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
+import type { LabResultEvent } from "@/lib/bindings/LabResultEvent";
+import type { LabResultKind } from "@/lib/bindings/LabResultKind";
 import type { ModelTestConfig } from "./tests";
 
 // ============================================================================
@@ -173,3 +175,10 @@ export interface ActiveLabProgress {
 
 export const labGetActiveProgress = (personaId: string) =>
   invoke<ActiveLabProgress[]>("lab_get_active_progress", { personaId });
+
+// ============================================================================
+// Per-result event stream — typed conversation captured during the CLI run
+// ============================================================================
+
+export const labGetResultEvents = (resultId: string, resultKind: LabResultKind) =>
+  invoke<LabResultEvent[]>("lab_get_result_events", { resultId, resultKind });

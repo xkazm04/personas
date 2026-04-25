@@ -6,6 +6,7 @@ import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 interface UserRatingEntry {
   rating: number;
@@ -146,7 +147,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
           </div>
           {(llmSummary || summary) && (
             <p className="typo-body text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: (llmSummary ?? summary ?? '').replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichSummary(llmSummary ?? summary ?? '') }}
             />
           )}
         </div>
@@ -360,6 +361,8 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
+            resultId={selectedResult.id}
+            resultKind="arena"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.model, rating, feedback) : undefined}
           />
         );

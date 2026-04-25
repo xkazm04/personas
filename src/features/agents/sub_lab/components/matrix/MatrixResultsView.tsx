@@ -155,6 +155,8 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
+            resultId={r.id}
+            resultKind="matrix"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.variant, rating, feedback) : undefined}
           />
         );

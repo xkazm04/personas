@@ -11,6 +11,7 @@ use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
+use crate::db::repos::lab::events as events_repo;
 use crate::db::repos::lab::ratings as ratings_repo;
 use crate::db::repos::resources::tools::{self as tool_repo, row_to_tool_def};
 use crate::engine::test_runner::{self, parse_model_configs};
@@ -985,4 +986,22 @@ pub fn lab_get_ratings(
 ) -> Result<Vec<LabUserRating>, AppError> {
     require_auth_sync(&state)?;
     ratings_repo::get_ratings_for_run(&state.db, &run_id)
+}
+
+// ============================================================================
+// Per-result Event Stream — typed conversation captured during the CLI run
+// ============================================================================
+
+/// Fetch the captured stream events for a single lab result row.
+/// `result_kind` MUST be one of "eval" | "ab" | "arena" | "matrix" | "consensus".
+#[tauri::command]
+pub fn lab_get_result_events(
+    state: State<'_, Arc<AppState>>,
+    result_id: String,
+    result_kind: String,
+) -> Result<Vec<LabResultEvent>, AppError> {
+    require_auth_sync(&state)?;
+    let kind = LabResultKind::from_db(&result_kind)
+        .ok_or_else(|| AppError::Validation(format!("Unknown lab result_kind: {result_kind}")))?;
+    events_repo::list_events_for_result(&state.db, &result_id, kind)
 }

@@ -36,7 +36,8 @@ fn scenario_cache_key(persona: &crate::db::models::Persona, tools: &[crate::db::
 
 use crate::db::models::{
     CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateConsensusResultInput,
-    CreateMatrixResultInput, CreateEvalResultInput, CreateLabResultBaseInput, LabRunStatus,
+    CreateMatrixResultInput, CreateEvalResultInput, CreateLabResultBaseInput,
+    CreateLabResultEventInput, LabResultKind, LabRunStatus,
     Persona, PersonaToolDefinition,
 };
 use super::types::EphemeralPersona;
@@ -46,6 +47,7 @@ use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::consensus as consensus_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
+use crate::db::repos::lab::events as events_repo;
 use crate::db::DbPool;
 
 use super::eval::{self, EvalInput, WEIGHT_TOOL_ACCURACY, WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE};
@@ -234,6 +236,7 @@ pub async fn run_test(
                         output_preview: None, tool_calls_actual: None,
                         input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                         error_message: Some("Cancelled".to_string()), rationale: None, suggestions: None, eval_method: None,
+                        events: Vec::new(),
                     });
                 }
                 let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
@@ -249,6 +252,7 @@ pub async fn run_test(
                             output_preview: Some(e.clone()), tool_calls_actual: None,
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                             error_message: Some(e.clone()), rationale: None, suggestions: None, eval_method: None,
+                            events: Vec::new(),
                         },
                     ),
                 };
@@ -618,6 +622,10 @@ pub(crate) struct ScoreResult {
     pub(crate) rationale: Option<String>,
     pub(crate) suggestions: Option<String>,
     pub(crate) eval_method: Option<String>,
+    /// Captured stream events from the CLI execution. Carried through scoring
+    /// so per-mode persist callbacks can write them into `lab_result_events`
+    /// keyed by the freshly-created result row's id.
+    pub(crate) events: Vec<CreateLabResultEventInput>,
 }
 
 pub(crate) async fn execute_scenario(
@@ -706,6 +714,20 @@ async fn execute_scenario_ollama(
     let eval_count = json.get("eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
     let prompt_eval_count = json.get("prompt_eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
 
+    let events = if assistant_text.is_empty() {
+        Vec::new()
+    } else {
+        vec![CreateLabResultEventInput {
+            event_index: 0,
+            event_type: "assistant_text".to_string(),
+            tool_name: None,
+            tool_args_preview: None,
+            tool_result_preview: None,
+            text_preview: Some(assistant_text.clone()),
+            ts_ms_relative: duration_ms as i64,
+        }]
+    };
+
     Ok(ExecutionOutput {
         assistant_text,
         tool_calls: Vec::new(), // local models don't use tool protocol
@@ -714,6 +736,7 @@ async fn execute_scenario_ollama(
         cost_usd: 0.0,
         duration_ms,
         error: None,
+        events,
     })
 }
 
@@ -817,6 +840,7 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
         rationale: Some(serde_json::to_string(&rationale_json).unwrap_or(llm_result.rationale)),
         suggestions: Some(llm_result.suggestions),
         eval_method: Some(llm_result.eval_method.as_str().to_string()),
+        events: output.events.clone(),
     }
 }
 
@@ -929,6 +953,11 @@ pub(crate) struct ExecutionOutput {
     cost_usd: f64,
     duration_ms: u64,
     error: Option<String>,
+    /// Per-event capture of the CLI stream-JSON lines, in order. Used by lab
+    /// modes to populate `lab_result_events` so the ScenarioDetailPanel can
+    /// render the conversation post-hoc. Empty for paths that don't produce
+    /// stream JSON (e.g., native Ollama HTTP).
+    events: Vec<CreateLabResultEventInput>,
 }
 
 /// Build a configured CLI `Command` with a temporary working directory.
@@ -969,23 +998,76 @@ async fn spawn_cli_and_collect_structured(
     let mut assistant_text = String::new();
     let mut tool_calls: Vec<String> = Vec::new();
     let mut metrics = ExecutionMetrics::default();
+    // Captured stream-event log for the lab event-stream sidecar.
+    let mut events: Vec<CreateLabResultEventInput> = Vec::new();
 
     let timeout = tokio::time::Duration::from_secs(300);
     let stream_err = driver.collect_lines_with_timeout(timeout, |line| {
         let (line_type, _) = parser::parse_stream_line(line);
+        let ts_ms = start.elapsed().as_millis() as i64;
+        let idx = events.len() as i32;
 
         match line_type {
             StreamLineType::AssistantText { text } => {
                 assistant_text.push_str(&text);
                 assistant_text.push('\n');
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "assistant_text".to_string(),
+                    tool_name: None,
+                    tool_args_preview: None,
+                    tool_result_preview: None,
+                    text_preview: Some(text),
+                    ts_ms_relative: ts_ms,
+                });
             }
-            StreamLineType::AssistantToolUse { tool_name, .. } => {
-                tool_calls.push(tool_name);
+            StreamLineType::AssistantToolUse { tool_name, input_preview } => {
+                tool_calls.push(tool_name.clone());
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "tool_use".to_string(),
+                    tool_name: Some(tool_name),
+                    tool_args_preview: Some(input_preview),
+                    tool_result_preview: None,
+                    text_preview: None,
+                    ts_ms_relative: ts_ms,
+                });
+            }
+            StreamLineType::ToolResult { content_preview } => {
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "tool_result".to_string(),
+                    tool_name: None,
+                    tool_args_preview: None,
+                    tool_result_preview: Some(content_preview),
+                    text_preview: None,
+                    ts_ms_relative: ts_ms,
+                });
+            }
+            StreamLineType::SystemInit { ref model, .. } => {
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "system_init".to_string(),
+                    tool_name: None,
+                    tool_args_preview: None,
+                    tool_result_preview: None,
+                    text_preview: Some(model.clone()),
+                    ts_ms_relative: ts_ms,
+                });
             }
             StreamLineType::Result { .. } => {
                 parser::update_metrics_from_result(&mut metrics, &line_type);
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "result".to_string(),
+                    tool_name: None,
+                    tool_args_preview: None,
+                    tool_result_preview: None,
+                    text_preview: None,
+                    ts_ms_relative: ts_ms,
+                });
             }
-            _ => {}
+            StreamLineType::Unknown => {}
         }
     }).await;
 
@@ -1013,6 +1095,7 @@ async fn spawn_cli_and_collect_structured(
         cost_usd: metrics.cost_usd,
         duration_ms,
         error,
+        events,
     })
 }
 
@@ -1221,6 +1304,7 @@ async fn run_lab_loop(
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                             error_message: Some("Cancelled".to_string()),
                             rationale: None, suggestions: None, eval_method: None,
+                            events: Vec::new(),
                         });
                     }
                     let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
@@ -1232,6 +1316,7 @@ async fn run_lab_loop(
                             input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
                             error_message: Some(e.clone()),
                             rationale: None, suggestions: None, eval_method: None,
+                            events: Vec::new(),
                         }),
                     };
                     (mi, vi, status, scores)
@@ -1609,9 +1694,16 @@ pub async fn run_ab_test(
                 return;
             };
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = ab_repo::create_result(pool, &CreateAbResultInput {
+            match ab_repo::create_result(pool, &CreateAbResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            });
+            }) {
+                Ok(result) => {
+                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Ab, &scores.events) {
+                        tracing::warn!("Failed to persist A/B event stream for result {}: {e}", result.id);
+                    }
+                }
+                Err(e) => tracing::error!("A/B result create failed: {e}"),
+            }
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1657,9 +1749,16 @@ pub async fn run_eval_test(
                 return;
             };
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
+            match eval_repo::create_result(pool, &CreateEvalResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            });
+            }) {
+                Ok(result) => {
+                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Eval, &scores.events) {
+                        tracing::warn!("Failed to persist eval event stream for result {}: {e}", result.id);
+                    }
+                }
+                Err(e) => tracing::error!("Eval result create failed: {e}"),
+            }
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1736,9 +1835,16 @@ pub async fn run_matrix_test(
         }),
         persist_result: Box::new(|pool, run_id, variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
+            match matrix_repo::create_result(pool, &CreateMatrixResultInput {
                 run_id: run_id.to_string(), variant: variant.label.clone(), base,
-            });
+            }) {
+                Ok(result) => {
+                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Matrix, &scores.events) {
+                        tracing::warn!("Failed to persist matrix event stream for result {}: {e}", result.id);
+                    }
+                }
+                Err(e) => tracing::error!("Matrix result create failed: {e}"),
+            }
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {

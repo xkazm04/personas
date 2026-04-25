@@ -9,6 +9,7 @@ import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
+import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 
 interface UserRatingEntry {
   rating: number;
@@ -141,7 +142,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
           </div>
           {summary && (
             <p className="typo-body text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichSummary(summary) }}
             />
           )}
         </div>
@@ -325,6 +326,8 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
+            resultId={selectedResult.id}
+            resultKind="eval"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, `${selectedCell.versionId}::${selectedCell.modelId}`, rating, feedback) : undefined}
           />
         );

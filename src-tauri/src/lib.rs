@@ -1122,6 +1122,7 @@ pub fn run() {
             commands::execution::lab::lab_get_active_progress,
             commands::execution::lab::lab_rate_result,
             commands::execution::lab::lab_get_ratings,
+            commands::execution::lab::lab_get_result_events,
             // Execution -- Genome Breeding
             commands::execution::genome::genome_extract,
             commands::execution::genome::genome_fitness,

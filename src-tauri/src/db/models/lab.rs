@@ -410,6 +410,82 @@ pub struct CreateRatingInput {
 }
 
 // ============================================================================
+// Lab: Per-result event stream (typed conversation captured during execution)
+// ============================================================================
+
+/// Which lab table the parent `result_id` points at. Used as a discriminator
+/// because lab results live in five different tables (eval/ab/arena/matrix/
+/// consensus) but share the same event-shape sidecar.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum LabResultKind {
+    Eval,
+    Ab,
+    Arena,
+    Matrix,
+    Consensus,
+}
+
+impl LabResultKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Eval => "eval",
+            Self::Ab => "ab",
+            Self::Arena => "arena",
+            Self::Matrix => "matrix",
+            Self::Consensus => "consensus",
+        }
+    }
+
+    pub fn from_db(s: &str) -> Option<Self> {
+        match s {
+            "eval" => Some(Self::Eval),
+            "ab" => Some(Self::Ab),
+            "arena" => Some(Self::Arena),
+            "matrix" => Some(Self::Matrix),
+            "consensus" => Some(Self::Consensus),
+            _ => None,
+        }
+    }
+}
+
+/// One typed event captured during a lab scenario's CLI execution. Maps loosely
+/// to `engine::types::StreamLineType` but normalised for storage + display.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabResultEvent {
+    pub id: String,
+    pub result_id: String,
+    pub result_kind: String,
+    #[ts(type = "number")]
+    pub event_index: i32,
+    /// One of: "assistant_text" | "tool_use" | "tool_result" | "system_init" | "result"
+    pub event_type: String,
+    pub tool_name: Option<String>,
+    pub tool_args_preview: Option<String>,
+    pub tool_result_preview: Option<String>,
+    pub text_preview: Option<String>,
+    #[ts(type = "number")]
+    pub ts_ms_relative: i64,
+    pub created_at: String,
+}
+
+/// Insert-side shape — `id`, `created_at`, and `result_kind` are filled by the
+/// repo; `result_id` by the persistence callback.
+#[derive(Debug, Clone)]
+pub struct CreateLabResultEventInput {
+    pub event_index: i32,
+    pub event_type: String,
+    pub tool_name: Option<String>,
+    pub tool_args_preview: Option<String>,
+    pub tool_result_preview: Option<String>,
+    pub text_preview: Option<String>,
+    pub ts_ms_relative: i64,
+}
+
+// ============================================================================
 // Full Persona Versioning (prompts + settings + tools reference)
 // ============================================================================
 

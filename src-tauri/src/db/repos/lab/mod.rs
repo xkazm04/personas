@@ -3,6 +3,7 @@ pub mod ab;
 pub mod consensus;
 pub mod matrix;
 pub mod eval;
+pub mod events;
 pub mod ratings;
 pub mod genome;
 pub mod evolution;

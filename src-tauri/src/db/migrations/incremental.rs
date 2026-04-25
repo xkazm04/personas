@@ -2195,5 +2195,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added resources column to connector_definitions");
     }
 
+    // -- Lab: per-result event stream (typed sequence captured during lab runs) --
+    // Each lab scenario produces a stream of typed events (assistant text, tool
+    // use with args, tool result, system_init, result). The lab result table
+    // stores only aggregate scores + tool name list; events sit in a sidecar
+    // table so the ScenarioDetailPanel can render the actual conversation when
+    // a row scored low. result_kind disambiguates which lab table the
+    // result_id points at (eval/ab/arena/matrix/consensus). Forward-only —
+    // older results have no events. Truncated payloads at the boundary so a
+    // single chatty scenario can't blow up the DB.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS lab_result_events (
+            id                  TEXT PRIMARY KEY,
+            result_id           TEXT NOT NULL,
+            result_kind         TEXT NOT NULL,
+            event_index         INTEGER NOT NULL,
+            event_type          TEXT NOT NULL,
+            tool_name           TEXT,
+            tool_args_preview   TEXT,
+            tool_result_preview TEXT,
+            text_preview        TEXT,
+            ts_ms_relative      INTEGER NOT NULL DEFAULT 0,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_lab_result_events_lookup
+            ON lab_result_events(result_kind, result_id, event_index);"
+    )?;
+
     Ok(())
 }

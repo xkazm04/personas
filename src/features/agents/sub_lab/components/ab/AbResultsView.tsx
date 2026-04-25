@@ -6,6 +6,7 @@ import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateAbResults, type AbVersionAggregate, type AbAggregation } from '../../libs/labAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { AbResultsViewVersus } from './AbResultsViewVersus';
 import { AbResultsViewDiff } from './AbResultsViewDiff';
 
@@ -192,6 +193,8 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, var
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
+            resultId={selectedFirst.id}
+            resultKind="ab"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.versionId, rating, feedback) : undefined}
           />
         );
@@ -226,7 +229,7 @@ function AbResultsViewBaseline({ results, aggregation, selectedCell, onSelectCel
           </div>
           {summary && (
             <p className="typo-body text-foreground leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: summary.replace(/\*\*(.*?)\*\*/g, '<strong class="text-foreground/90">$1</strong>') }}
+              dangerouslySetInnerHTML={{ __html: sanitizeRichSummary(summary) }}
             />
           )}
         </div>

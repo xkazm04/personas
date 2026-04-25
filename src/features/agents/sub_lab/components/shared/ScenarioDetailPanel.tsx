@@ -1,6 +1,8 @@
 import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
+import { LabEventStream } from './LabEventStream';
+import type { LabResultKind } from '@/lib/bindings/LabResultKind';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScenarioResult {
@@ -34,6 +36,10 @@ interface ScenarioDetailPanelProps {
   rating?: number;
   ratingFeedback?: string;
   onRate?: (rating: number, feedback?: string) => void;
+  /** When provided alongside `resultKind`, renders the captured CLI event stream
+   *  for this scenario. Forward-only — older results have no events to render. */
+  resultId?: string;
+  resultKind?: LabResultKind;
 }
 
 /** Try to parse structured rationale JSON, fall back to plain string. */
@@ -92,7 +98,7 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
   );
 }
 
-export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, onRate }: ScenarioDetailPanelProps) {
+export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, onRate, resultId, resultKind }: ScenarioDetailPanelProps) {
   const { t } = useTranslation();
   const ta = result.toolAccuracyScore ?? 0;
   const oq = result.outputQualityScore ?? 0;
@@ -213,6 +219,11 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
               {result.outputPreview}
             </pre>
           </details>
+        )}
+
+        {/* Event stream — only when result has a captured event log */}
+        {resultId && resultKind && (
+          <LabEventStream resultId={resultId} resultKind={resultKind} />
         )}
 
         {/* Tool calls */}
