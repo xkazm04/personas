@@ -1,4 +1,4 @@
-import { Play, Square, ArrowRight } from 'lucide-react';
+import { Play, Square, ArrowRight, Rocket } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { UseCaseModelDropdown } from './UseCaseModelDropdown';
@@ -35,6 +35,8 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
     modelLabel,
     handleRunTest,
     handleCancelTest,
+    handleManualRun,
+    isManualRunning,
     handleModelSelect,
     handleSaveFixture,
     handleDeleteFixture,
@@ -112,6 +114,27 @@ export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, conne
               <Play className="w-3.5 h-3.5" /> {uc.test}
             </button>
           )}
+          {/* Real-execution trigger — distinct from "Test" because it spawns
+              the production runner, fires `emit_event` protocols, and
+              cascades into any downstream personas listening on this UC's
+              event_subscriptions. Disabled while a test is in progress to
+              avoid contention on the lab harness. */}
+          <button
+            type="button"
+            onClick={handleManualRun}
+            disabled={!hasPrompt || !modelConfig || isManualRunning || isTestRunning}
+            data-testid="use-case-run-now"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            title={
+              !hasPrompt
+                ? uc.no_prompt_configured
+                : isManualRunning
+                  ? 'Manual run in progress'
+                  : 'Run this use case now — fires real execution and downstream events'
+            }
+          >
+            <Rocket className="w-3.5 h-3.5" /> Run now
+          </button>
           <button
             onClick={() => setEditorTab('lab')}
             className="flex items-center gap-1 typo-body text-foreground hover:text-primary/70 transition-colors"
