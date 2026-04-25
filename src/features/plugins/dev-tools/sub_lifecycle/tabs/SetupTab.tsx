@@ -1,9 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { ReadinessGates, type QualityGate } from '../setup/ReadinessGates';
 import { DevCloneAdoptionCard } from '../setup/DevCloneAdoptionCard';
 import { buildFlowSteps, FlowStepsList, TriggerList } from '../setup/FlowSteps';
-import { SetupMissionControl } from '../setup/variants/SetupMissionControl';
-import { SetupLoop } from '../setup/variants/SetupLoop';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
@@ -19,57 +17,7 @@ interface SetupTabProps {
   onRefresh: () => void;
 }
 
-// ---------------------------------------------------------------------------
-// Variant switcher (prototype scaffolding — removed once a winner is picked)
-// ---------------------------------------------------------------------------
-
-type VariantId = 'baseline' | 'mission' | 'loop';
-
-const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
-  { id: 'baseline', label: 'Baseline', subtitle: 'Current cards' },
-  { id: 'mission', label: 'Mission Control', subtitle: 'Linear chapters' },
-  { id: 'loop', label: 'The Loop', subtitle: 'Cycle diagram' },
-];
-
-export function SetupTab(props: SetupTabProps) {
-  const [variant, setVariant] = useState<VariantId>('baseline');
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-1 p-1 rounded-card border border-primary/10 bg-card/30 w-fit">
-        {VARIANTS.map((v) => {
-          const active = v.id === variant;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setVariant(v.id)}
-              className={[
-                'px-3 py-1.5 rounded-interactive transition-colors text-left',
-                active
-                  ? 'bg-violet-500/15 border border-violet-500/30 text-foreground'
-                  : 'border border-transparent text-foreground/70 hover:bg-secondary/30',
-              ].join(' ')}
-            >
-              <div className="text-sm font-semibold leading-tight">{v.label}</div>
-              <div className="text-xs text-foreground/50 leading-tight">{v.subtitle}</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {variant === 'baseline' && <SetupTabBaseline {...props} />}
-      {variant === 'mission' && <SetupMissionControl {...props} />}
-      {variant === 'loop' && <SetupLoop {...props} />}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// SetupTabBaseline — the original implementation, preserved for A/B
-// ---------------------------------------------------------------------------
-
-function SetupTabBaseline({
+export function SetupTab({
   devClone, triggers, activeProject, goalCount,
   hasApprovedListener, hasRejectedListener, hasScheduleTrigger,
   loading, onRefresh,

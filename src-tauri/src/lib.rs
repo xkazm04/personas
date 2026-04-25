@@ -1797,6 +1797,7 @@ pub fn run() {
             commands::infrastructure::setup::cancel_setup_install,
             // Infrastructure -- Settings
             commands::infrastructure::settings::get_app_setting,
+            commands::infrastructure::settings::get_app_settings_bulk,
             commands::infrastructure::settings::set_app_setting,
             commands::infrastructure::settings::delete_app_setting,
             commands::infrastructure::settings::get_quality_gate_config,

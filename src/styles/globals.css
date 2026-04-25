@@ -16,6 +16,14 @@
   }
 }
 
+/* Hides keyboard-only affordances on touch devices where a hardware keyboard
+   isn't the primary input. Used for numeric hotkey badges, kbd hints, etc. */
+@utility hide-on-touch {
+  @media (pointer: coarse) {
+    display: none;
+  }
+}
+
 /* -- Custom Title Bar -- */
 .titlebar {
   display: flex;
@@ -27,6 +35,7 @@
   border-bottom: 1px solid var(--card-border);
   user-select: none;
   -webkit-app-region: drag;
+  position: relative;
   z-index: 9999;
 }
 
@@ -89,6 +98,40 @@
 [data-theme="light-news"] .titlebar-btn-close:hover {
   background: #e81123;
   color: #fff;
+}
+
+/* -- Ambient time-of-day decoration --
+   Purely decorative: a Lucide phase icon centered in the titlebar with
+   per-side SVG flourishes (horizon, rays, sediment bands, stars). Color
+   follows the active theme's --primary so it tints with whatever skin the
+   user has selected. */
+.ambient-deco {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+  z-index: -1;
+  color: var(--primary);
+  opacity: 0.4;
+}
+
+.ambient-deco-icon {
+  flex-shrink: 0;
+  display: block;
+}
+
+.ambient-deco-svg {
+  display: block;
+}
+
+[data-theme="light"] .ambient-deco,
+[data-theme="light-ice"] .ambient-deco,
+[data-theme="light-news"] .ambient-deco {
+  opacity: 0.45;
 }
 
 /* -- Design Tokens --

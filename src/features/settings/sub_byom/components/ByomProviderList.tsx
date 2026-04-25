@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
 import type { ByomPolicy, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult } from '@/api/system/byom';
 import { testProviderConnection } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
@@ -13,14 +13,16 @@ interface ByomProviderListProps {
   toggleProvider: (providerId: string, list: 'allowed' | 'blocked') => void;
 }
 
+interface TrendBucket {
+  executions: number[];
+  cost: number[];
+  duration: number[];
+}
+
 /** Group timeseries rows by engine_kind, extracting per-metric arrays. */
 function useTimeseriesByEngine(timeseries: ProviderUsageTimeseries[]) {
   return useMemo(() => {
-    const map = new Map<string, {
-      executions: number[];
-      cost: number[];
-      duration: number[];
-    }>();
+    const map = new Map<string, TrendBucket>();
     for (const row of timeseries) {
       let bucket = map.get(row.engine_kind);
       if (!bucket) {
@@ -41,6 +43,71 @@ interface ConnectionTestResult {
   state: TestState;
   result?: ProviderConnectionResult;
 }
+
+interface ProviderUsageCardProps {
+  stat: ProviderUsageStats;
+  trends?: TrendBucket;
+  executionsLabel: string;
+  costLabel: string;
+  avgDurationLabel: string;
+}
+
+const ProviderUsageCard = memo(function ProviderUsageCard({
+  stat,
+  trends,
+  executionsLabel,
+  costLabel,
+  avgDurationLabel,
+}: ProviderUsageCardProps) {
+  const formattedCost = useMemo(
+    () => `$${stat.total_cost_usd.toFixed(4)}`,
+    [stat.total_cost_usd],
+  );
+  const formattedDuration = useMemo(
+    () => `${Math.round(stat.avg_duration_ms / 1000)}s`,
+    [stat.avg_duration_ms],
+  );
+
+  return (
+    <div className="p-3 rounded-card border border-primary/10 bg-secondary/20">
+      <div className="typo-body font-medium text-foreground mb-2">
+        {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="space-y-1">
+          <div className="typo-caption text-foreground">{executionsLabel}</div>
+          <div className="typo-body font-medium text-foreground">{stat.execution_count}</div>
+          <ProviderSparkline
+            data={trends?.executions ?? []}
+            color="#10b981"
+            label="daily"
+          />
+        </div>
+        <div className="space-y-1">
+          <div className="typo-caption text-foreground">{costLabel}</div>
+          <div className="typo-body font-medium text-foreground">{formattedCost}</div>
+          <ProviderSparkline
+            data={trends?.cost ?? []}
+            color="#8b5cf6"
+            label="daily"
+          />
+        </div>
+        <div className="space-y-1">
+          <div className="typo-caption text-foreground">{avgDurationLabel}</div>
+          <div className="typo-body font-medium text-foreground">{formattedDuration}</div>
+          <ProviderSparkline
+            data={trends?.duration ?? []}
+            color="#f59e0b"
+            label="daily"
+          />
+        </div>
+      </div>
+      {stat.failover_count > 0 && (
+        <div className="typo-caption text-amber-400 mt-2">{stat.failover_count} failovers</div>
+      )}
+    </div>
+  );
+});
 
 export function ByomProviderList({ policy, usageStats, usageTimeseries, toggleProvider }: ByomProviderListProps) {
   const trendsByEngine = useTimeseriesByEngine(usageTimeseries);
@@ -141,48 +208,16 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
             <span className="typo-caption text-foreground">{s.usage_trends}</span>
           </div>
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-            {usageStats.map((stat) => {
-              const trends = trendsByEngine.get(stat.engine_kind);
-              return (
-                <div key={stat.engine_kind} className="p-3 rounded-card border border-primary/10 bg-secondary/20">
-                  <div className="typo-body font-medium text-foreground mb-2">
-                    {ENGINE_LABELS[stat.engine_kind] || stat.engine_kind}
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <div className="typo-caption text-foreground">{s.executions}</div>
-                      <div className="typo-body font-medium text-foreground">{stat.execution_count}</div>
-                      <ProviderSparkline
-                        data={trends?.executions ?? []}
-                        color="#10b981"
-                        label="daily"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="typo-caption text-foreground">{s.cost}</div>
-                      <div className="typo-body font-medium text-foreground">${stat.total_cost_usd.toFixed(4)}</div>
-                      <ProviderSparkline
-                        data={trends?.cost ?? []}
-                        color="#8b5cf6"
-                        label="daily"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="typo-caption text-foreground">{s.avg_duration}</div>
-                      <div className="typo-body font-medium text-foreground">{Math.round(stat.avg_duration_ms / 1000)}s</div>
-                      <ProviderSparkline
-                        data={trends?.duration ?? []}
-                        color="#f59e0b"
-                        label="daily"
-                      />
-                    </div>
-                  </div>
-                  {stat.failover_count > 0 && (
-                    <div className="typo-caption text-amber-400 mt-2">{stat.failover_count} failovers</div>
-                  )}
-                </div>
-              );
-            })}
+            {usageStats.map((stat) => (
+              <ProviderUsageCard
+                key={stat.engine_kind}
+                stat={stat}
+                trends={trendsByEngine.get(stat.engine_kind)}
+                executionsLabel={s.executions}
+                costLabel={s.cost}
+                avgDurationLabel={s.avg_duration}
+              />
+            ))}
           </div>
         </div>
       )}

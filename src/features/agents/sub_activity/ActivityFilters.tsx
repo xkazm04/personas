@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { FILTER_TABS, type ActivityType } from './activityTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -21,22 +22,32 @@ export function ActivityFilters({
   return (
     <div className="flex items-center gap-3 border-b border-primary/10 pb-0">
       <div className="flex gap-1">
-        {FILTER_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
-            className={`px-3 py-1.5 typo-body font-medium rounded-t-lg transition-colors ${
-              filter === tab.id
-                ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                : 'text-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-            {counts[tab.id] > 0 && (
-              <span className="ml-1.5 text-foreground">({counts[tab.id]})</span>
-            )}
-          </button>
-        ))}
+        {FILTER_TABS.map((tab) => {
+          const isActive = filter === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => { onFilterChange(tab.id); onStatusFilterChange('all'); }}
+              className={`relative px-3 py-1.5 typo-body font-medium rounded-t-lg transition-colors duration-150 ease-out ${
+                isActive
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground hover:text-foreground hover:bg-primary/5'
+              }`}
+            >
+              {tab.label}
+              {counts[tab.id] > 0 && (
+                <span className="ml-1.5 text-foreground">({counts[tab.id]})</span>
+              )}
+              {isActive && (
+                <motion.div
+                  layoutId="activityFilterTab"
+                  className="absolute -bottom-px left-2 right-2 h-0.5 bg-primary rounded-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
       <div className="ml-auto flex items-center gap-2">
         {useCaseOptions.length > 0 && (

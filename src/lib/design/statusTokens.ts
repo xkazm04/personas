@@ -104,6 +104,40 @@ export const STATUS_PALETTE_EXTENDED = {
 export type StatusKey = keyof typeof STATUS_PALETTE;
 export type StatusKeyExtended = keyof typeof STATUS_PALETTE_EXTENDED;
 
+// -- Settings sidebar / SectionHeading per-domain accents -----------------
+//
+// One palette slot per settings sub-page. Used by the settings sidebar to
+// tint the active item (10% bg + accent icon/border) and by SectionHeading
+// to color a page-level icon. Add a new entry whenever a new settings
+// sub-page is introduced in `getSettingsItems` (see sidebarData.ts).
+
+export interface SettingsIconAccent {
+  /** Icon stroke color, e.g. "text-violet-400" */
+  text: string;
+  /** Active-state tinted background (10%), e.g. "bg-violet-500/10" */
+  bg: string;
+  /** Active-state border, e.g. "border-violet-500/30" */
+  border: string;
+}
+
+export const SETTINGS_ICON_ACCENTS = {
+  appearance:      { text: 'text-violet-400',  bg: 'bg-violet-500/10',  border: 'border-violet-500/30' },
+  notifications:   { text: 'text-amber-400',   bg: 'bg-amber-500/10',   border: 'border-amber-500/30' },
+  engine:          { text: 'text-cyan-400',    bg: 'bg-cyan-500/10',    border: 'border-cyan-500/30' },
+  byom:            { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/30' },
+  'quality-gates': { text: 'text-sky-400',     bg: 'bg-sky-500/10',     border: 'border-sky-500/30' },
+  portability:     { text: 'text-indigo-400',  bg: 'bg-indigo-500/10',  border: 'border-indigo-500/30' },
+  admin:           { text: 'text-rose-400',    bg: 'bg-rose-500/10',    border: 'border-rose-500/30' },
+  account:         { text: 'text-slate-400',   bg: 'bg-slate-500/10',   border: 'border-slate-500/30' },
+} as const satisfies Record<string, SettingsIconAccent>;
+
+export type SettingsIconAccentKey = keyof typeof SETTINGS_ICON_ACCENTS;
+
+/** Look up an accent by settings sub-page id; returns null for unmapped ids (Network, Config Resolution, ...). */
+export function getSettingsIconAccent(id: string): SettingsIconAccent | null {
+  return (SETTINGS_ICON_ACCENTS as Record<string, SettingsIconAccent>)[id] ?? null;
+}
+
 // -- Severity style helpers (left-border accent) -------------------------
 
 export interface SeverityAccent {

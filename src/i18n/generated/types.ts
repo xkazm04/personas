@@ -5681,6 +5681,7 @@ export type Translations = {
       search_suggestions_aria: string;
       clear_search_aria: string;
       search_with_ai_aria: string;
+      density_filter_aria: string;
     };
     list: {
       template_name: string;
@@ -7056,6 +7057,14 @@ export type Translations = {
       contribute_title: string;
       contribute_hint: string;
       contribute_github: string;
+      ambient_title: string;
+      ambient_hint: string;
+      ambient_enabled: string;
+      ambient_disabled: string;
+      ambient_phase_dawn: string;
+      ambient_phase_day: string;
+      ambient_phase_dusk: string;
+      ambient_phase_night: string;
     };
     notifications: {
       title: string;
@@ -7698,6 +7707,8 @@ export type Translations = {
     severity_high: string;
     severity_medium: string;
     severity_low: string;
+    recovered_title: string;
+    recovered_illustration_aria: string;
   };
   empty_states: {
     credentials_title: string;

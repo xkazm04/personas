@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 
@@ -23,6 +24,35 @@ pub fn get_app_setting(
     require_auth_sync(&state)?;
     require_valid_key(&key)?;
     repo::get(&state.db, &key)
+}
+
+/// Bulk-read variant of [`get_app_setting`]. Issues a single
+/// `SELECT key, value FROM app_settings WHERE key IN (...)` and returns a map
+/// of `{ key: value | null }`.
+///
+/// Keys missing from the table are returned with `null` so the caller can
+/// distinguish "absent" from "empty string". Unknown keys (not on the
+/// settings allow-list) are also returned with `null`, matching the
+/// behaviour of the single-key reader for typo'd or stale references.
+///
+/// Frontend panels that mount and read several settings at once should
+/// prefer this command over a fan-out of `get_app_setting` calls — each
+/// invoke costs ~1-5 ms of serialisation overhead even for cache-hot
+/// SQLite reads, so 20+ serial roundtrips add up to perceptible lag.
+#[tauri::command]
+pub fn get_app_settings_bulk(
+    state: State<'_, Arc<AppState>>,
+    keys: Vec<String>,
+) -> Result<HashMap<String, Option<String>>, AppError> {
+    require_auth_sync(&state)?;
+    if keys.len() > repo::GET_BATCH_MAX_KEYS {
+        return Err(AppError::Validation(format!(
+            "get_app_settings_bulk accepts at most {} keys (got {})",
+            repo::GET_BATCH_MAX_KEYS,
+            keys.len(),
+        )));
+    }
+    repo::get_batch(&state.db, &keys)
 }
 
 #[tauri::command]

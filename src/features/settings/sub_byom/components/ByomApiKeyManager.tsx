@@ -1,6 +1,6 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2 } from 'lucide-react';
-import { getAppSetting, setAppSetting, deleteAppSetting } from '@/api/system/settings';
+import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -65,13 +65,16 @@ export function ByomApiKeyManager() {
   const { t } = useTranslation();
   const s = t.settings.byom;
 
-  // Load all key values from settings
+  // Load all key values in a single bulk IPC instead of N parallel invokes.
+  const settingsKeys = useMemo(() => PROVIDER_KEYS.map((def) => def.settingsKey), []);
   useEffect(() => {
     let cancelled = false;
-    async function load() {
-      const results = await Promise.all(
-        PROVIDER_KEYS.map(async (def) => {
-          const value = await getAppSetting(def.settingsKey).catch(() => null);
+    getAppSettingsBulk(settingsKeys)
+      .catch(() => ({} as Record<string, string | null>))
+      .then((map) => {
+        if (cancelled) return;
+        const results: KeyEntry[] = PROVIDER_KEYS.map((def) => {
+          const value = map[def.settingsKey] ?? null;
           return {
             def,
             value: value ?? '',
@@ -81,16 +84,12 @@ export function ByomApiKeyManager() {
             connectionState: 'idle' as ConnectionState,
             lastUsed: null,
           };
-        }),
-      );
-      if (!cancelled) {
+        });
         setEntries(results);
         setLoading(false);
-      }
-    }
-    load();
+      });
     return () => { cancelled = true; };
-  }, []);
+  }, [settingsKeys]);
 
   const updateEntry = useCallback((index: number, patch: Partial<KeyEntry>) => {
     setEntries((prev) => prev.map((e, i) => (i === index ? { ...e, ...patch } : e)));

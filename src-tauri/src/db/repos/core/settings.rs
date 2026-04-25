@@ -1,4 +1,6 @@
 use rusqlite::params;
+use rusqlite::params_from_iter;
+use std::collections::HashMap;
 
 use crate::db::settings_keys;
 use crate::db::DbPool;
@@ -48,6 +50,70 @@ pub fn set(pool: &DbPool, key: &str, value: &str) -> Result<(), AppError> {
             params![key, value, now],
         )?;
         Ok(())
+    })
+}
+
+/// Maximum number of keys accepted in a single [`get_batch`] call.
+///
+/// SQLite supports up to 32 766 host parameters per statement, so the limit
+/// is conservative — it exists to bound the IPC payload and prevent a caller
+/// from issuing pathological requests by mistake.
+pub const GET_BATCH_MAX_KEYS: usize = 256;
+
+/// Get many settings in a single round-trip. Returns a map from each requested
+/// key to its value. Keys that do not exist in the table are returned with
+/// value `None`, so the caller can distinguish "absent" from "empty".
+///
+/// Unknown keys (failing `validate_key`) are dropped from the query rather
+/// than rejecting the whole call: a typo or stale frontend reference
+/// surfaces as `None` plus a `tracing::warn!` breadcrumb, mirroring [`get`].
+pub fn get_batch(
+    pool: &DbPool,
+    keys: &[String],
+) -> Result<HashMap<String, Option<String>>, AppError> {
+    if keys.is_empty() {
+        return Ok(HashMap::new());
+    }
+
+    // Dedupe + filter unknowns, preserving the original keys in the result map
+    // so callers always get an entry for every key they asked for.
+    let mut unique_valid: Vec<&str> = Vec::with_capacity(keys.len());
+    let mut result: HashMap<String, Option<String>> =
+        HashMap::with_capacity(keys.len());
+    for key in keys {
+        if result.contains_key(key) {
+            continue;
+        }
+        result.insert(key.clone(), None);
+        if let Err(msg) = settings_keys::validate_key(key) {
+            tracing::warn!(key = %key, reason = %msg, "settings::get_batch called with unknown key");
+            continue;
+        }
+        unique_valid.push(key.as_str());
+    }
+
+    if unique_valid.is_empty() {
+        return Ok(result);
+    }
+
+    timed_query!("app_settings", "app_settings::get_batch", {
+        let conn = pool.get()?;
+        let placeholders = std::iter::repeat("?")
+            .take(unique_valid.len())
+            .collect::<Vec<_>>()
+            .join(",");
+        let sql = format!(
+            "SELECT key, value FROM app_settings WHERE key IN ({placeholders})"
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_from_iter(unique_valid.iter()), |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        for row in rows {
+            let (k, v) = row.map_err(AppError::Database)?;
+            result.insert(k, Some(v));
+        }
+        Ok(result)
     })
 }
 
@@ -146,6 +212,60 @@ mod tests {
         assert!(matches!(err, AppError::Validation(_)), "expected Validation error, got {err:?}");
         // Valid value accepted
         set(&pool, settings_keys::EVENT_RETENTION_DAYS, "45").unwrap();
+    }
+
+    #[test]
+    fn get_batch_returns_present_and_absent() {
+        let pool = init_test_db().unwrap();
+        set(&pool, settings_keys::CLI_ENGINE, "claude_code").unwrap();
+        set(&pool, settings_keys::HEALTH_DIGEST_ENABLED, "true").unwrap();
+
+        let keys = vec![
+            settings_keys::CLI_ENGINE.to_string(),
+            settings_keys::HEALTH_DIGEST_ENABLED.to_string(),
+            settings_keys::NOTIFICATION_PREFS.to_string(), // absent
+        ];
+        let result = get_batch(&pool, &keys).unwrap();
+        assert_eq!(result.len(), 3);
+        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("claude_code".to_string())));
+        assert_eq!(result.get(settings_keys::HEALTH_DIGEST_ENABLED), Some(&Some("true".to_string())));
+        assert_eq!(result.get(settings_keys::NOTIFICATION_PREFS), Some(&None));
+    }
+
+    #[test]
+    fn get_batch_ignores_unknown_keys() {
+        let pool = init_test_db().unwrap();
+        set(&pool, settings_keys::CLI_ENGINE, "claude_code").unwrap();
+
+        let keys = vec![
+            settings_keys::CLI_ENGINE.to_string(),
+            "evil_key".to_string(),
+        ];
+        let result = get_batch(&pool, &keys).unwrap();
+        assert_eq!(result.len(), 2);
+        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("claude_code".to_string())));
+        // Unknown key still appears in the result map but with None.
+        assert_eq!(result.get("evil_key"), Some(&None));
+    }
+
+    #[test]
+    fn get_batch_empty_input_returns_empty_map() {
+        let pool = init_test_db().unwrap();
+        let result = get_batch(&pool, &[]).unwrap();
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn get_batch_dedupes_repeated_keys() {
+        let pool = init_test_db().unwrap();
+        set(&pool, settings_keys::CLI_ENGINE, "codex_cli").unwrap();
+        let keys = vec![
+            settings_keys::CLI_ENGINE.to_string(),
+            settings_keys::CLI_ENGINE.to_string(),
+        ];
+        let result = get_batch(&pool, &keys).unwrap();
+        assert_eq!(result.len(), 1);
+        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("codex_cli".to_string())));
     }
 
     #[test]

@@ -15,6 +15,7 @@ import {
   homeItems, overviewItems, credentialItems, templateItems,
   eventBusItems, getSettingsItems,
 } from './sidebarData';
+import { SETTINGS_ICON_ACCENTS } from '@/lib/design/statusTokens';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { filterByTier } from './sidebarData';
 import { AgentsSidebarNav } from './sections/AgentsSidebarNav';
@@ -205,6 +206,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
           devItems={isDev ? new Set(['engine', 'byom', 'network', 'quality-gates', 'config', 'admin']) : undefined}
+          accents={SETTINGS_ICON_ACCENTS}
         />
       );
 

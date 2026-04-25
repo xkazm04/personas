@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import type { SettingsIconAccent } from '@/lib/design/statusTokens';
 
 export interface SubNavItem {
   id: string;
@@ -28,6 +29,7 @@ export default function SidebarSubNav({
   badges = {},
   variant = 'compact',
   devItems,
+  accents,
   children,
 }: {
   items: SubNavItem[];
@@ -38,6 +40,8 @@ export default function SidebarSubNav({
   badges?: Record<string, SubNavBadge>;
   variant?: 'overview' | 'compact';
   devItems?: Set<string>;
+  /** Per-item domain accents — when present, the active item is tinted with the accent. */
+  accents?: Record<string, SettingsIconAccent>;
   children?: ReactNode;
 }) {
   const isOverview = variant === 'overview';
@@ -60,6 +64,19 @@ export default function SidebarSubNav({
         const isActive = activeId === item.id;
         const badge = badges[item.id];
         const isDevItem = devItems?.has(item.id);
+        const accent = accents?.[item.id];
+
+        // Active container styling: domain accent overrides the default
+        // primary tint (and the dev-only amber tint) when one is supplied.
+        const activeButtonClass = accent
+          ? `${accent.bg} ${accent.border}`
+          : isDevItem
+            ? 'bg-amber-500/8 border-amber-500/35'
+            : activeClass;
+        const activeIconBoxClass = accent
+          ? `${accent.bg} ${accent.border}`
+          : activeIconBox;
+        const activeIconColor = accent ? accent.text : 'text-primary';
 
         return (
           <button
@@ -70,9 +87,7 @@ export default function SidebarSubNav({
             aria-current={isActive ? 'page' : undefined}
             className={`w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
               isActive
-                ? isDevItem
-                  ? 'bg-amber-500/8 border-amber-500/35'
-                  : activeClass
+                ? activeButtonClass
                 : isDevItem
                   ? 'bg-amber-500/5 border-amber-500/25 hover:bg-amber-500/10'
                   : isOverview
@@ -82,10 +97,10 @@ export default function SidebarSubNav({
           >
             <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
               isActive
-                ? activeIconBox
+                ? activeIconBoxClass
                 : 'bg-secondary/40 border-primary/15'
             }`}>
-              <Icon className={`${iconSize} ${isActive ? 'text-primary' : 'text-foreground'}`} />
+              <Icon className={`${iconSize} ${isActive ? activeIconColor : 'text-foreground'}`} />
             </div>
             <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground' : 'text-foreground'}`}>
               {labelOf(item.id, item.label)}

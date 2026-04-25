@@ -37,7 +37,7 @@ export function PluginsSidebarNav() {
           aria-current={pluginTab === 'browse' ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             pluginTab === 'browse'
-              ? 'bg-primary/10 text-foreground/90'
+              ? 'bg-primary/10 text-primary'
               : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
           }`}
         >
@@ -53,7 +53,7 @@ export function PluginsSidebarNav() {
               aria-current={pluginTab === 'artist' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'artist'
-                  ? 'bg-primary/10 text-foreground/90'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
@@ -75,7 +75,7 @@ export function PluginsSidebarNav() {
                     onClick={() => setArtistTab(item.id as ArtistTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       artistTab === item.id
-                        ? 'bg-primary/10 text-foreground'
+                        ? 'bg-primary/10 text-primary'
                         : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}
                   >
@@ -96,54 +96,50 @@ export function PluginsSidebarNav() {
               aria-current={pluginTab === 'dev-tools' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'dev-tools'
-                  ? 'bg-primary/10 text-foreground/90'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
               <Wrench className="w-4 h-4 flex-shrink-0" />
               {t.shared.sidebar_extra.dev_tools_label}
             </button>
+            {activeProject && (
+              <div className="ml-7 -mt-0.5 mb-1 flex">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium truncate max-w-full">
+                  {activeProject.name}
+                </span>
+              </div>
+            )}
             {/* Dev Tools sub-tabs */}
             {pluginTab === 'dev-tools' && (
-              <>
-                <div className="ml-4 space-y-0.5">
-                  {devToolsItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setDevToolsTab(item.id as DevToolsTab)}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
-                        devToolsTab === item.id
-                          ? 'bg-primary/10 text-foreground'
-                          : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
-                      }`}
-                    >
-                      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                {activeProject && (
-                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-secondary/20 border border-primary/10">
-                    <p className="text-[10px] uppercase tracking-wider text-foreground/90 font-medium mb-0.5">{t.shared.sidebar_extra.active_project}</p>
-                    <p className="typo-caption text-foreground truncate">{activeProject.name}</p>
-                    {activeProject.root_path && (
-                      <p className="text-[10px] text-foreground/90 truncate mt-0.5">{activeProject.root_path}</p>
-                    )}
-                  </div>
-                )}
-              </>
+              <div className="ml-4 space-y-0.5">
+                {devToolsItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setDevToolsTab(item.id as DevToolsTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      devToolsTab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         )}
 
-        {/* Obsidian Brain */}
+        {/* Brain (Obsidian) */}
         {enabledPlugins.has('obsidian-brain') && (
           <button
             onClick={() => setPluginTab('obsidian-brain')}
             aria-current={pluginTab === 'obsidian-brain' ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               pluginTab === 'obsidian-brain'
-                ? 'bg-primary/10 text-foreground/90'
+                ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
@@ -159,7 +155,7 @@ export function PluginsSidebarNav() {
             aria-current={pluginTab === 'drive' ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
               pluginTab === 'drive'
-                ? 'bg-primary/10 text-foreground/90'
+                ? 'bg-primary/10 text-primary'
                 : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
             }`}
           >
@@ -176,7 +172,7 @@ export function PluginsSidebarNav() {
               aria-current={pluginTab === 'twin' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'twin'
-                  ? 'bg-primary/10 text-foreground/90'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
@@ -186,34 +182,30 @@ export function PluginsSidebarNav() {
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
               )}
             </button>
+            {activeTwin && (
+              <div className="ml-7 -mt-0.5 mb-1 flex">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-medium truncate max-w-full">
+                  {activeTwin.name}
+                </span>
+              </div>
+            )}
             {pluginTab === 'twin' && (
-              <>
-                <div className="ml-4 space-y-0.5">
-                  {twinItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setTwinTab(item.id as TwinTab)}
-                      className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
-                        twinTab === item.id
-                          ? 'bg-primary/10 text-foreground'
-                          : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
-                      }`}
-                    >
-                      {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-                {activeTwin && (
-                  <div className="mx-1 mt-2 px-3 py-2 rounded-lg bg-violet-500/5 border border-violet-500/15">
-                    <p className="text-[10px] uppercase tracking-wider text-violet-400/80 font-medium mb-0.5">{t.shared.sidebar_extra.active_twin}</p>
-                    <p className="typo-caption text-foreground truncate">{activeTwin.name}</p>
-                    {activeTwin.role && (
-                      <p className="text-[10px] text-foreground truncate mt-0.5">{activeTwin.role}</p>
-                    )}
-                  </div>
-                )}
-              </>
+              <div className="ml-4 space-y-0.5">
+                {twinItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setTwinTab(item.id as TwinTab)}
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      twinTab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -226,7 +218,7 @@ export function PluginsSidebarNav() {
               aria-current={pluginTab === 'research-lab' ? 'page' : undefined}
               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 pluginTab === 'research-lab'
-                  ? 'bg-primary/10 text-foreground/90'
+                  ? 'bg-primary/10 text-primary'
                   : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
               }`}
             >
@@ -241,7 +233,7 @@ export function PluginsSidebarNav() {
                     onClick={() => setResearchLabTab(item.id as import('@/lib/types/types').ResearchLabTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       researchLabTab === item.id
-                        ? 'bg-primary/10 text-foreground'
+                        ? 'bg-primary/10 text-primary'
                         : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}
                   >

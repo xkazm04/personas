@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { Check, Globe, Palette, Sun, Type, Sparkles } from 'lucide-react';
+import { Check, Globe, Palette, Sun, Type, Sparkles, Sunrise } from 'lucide-react';
+import { AmbientDeco } from '@/features/shared/components/layout/TitleBarAmbient';
+import { useTimeOfDay, type TimeOfDay } from '@/hooks/utility/useTimeOfDay';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
@@ -102,6 +104,57 @@ const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: strin
   { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
 ];
 
+function AmbientSection({ enabled, onChange, currentPhase, title, hint, enabledLabel, disabledLabel }: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+  currentPhase: TimeOfDay;
+  title: string;
+  hint: string;
+  enabledLabel: string;
+  disabledLabel: string;
+}) {
+  const phases: TimeOfDay[] = ['dawn', 'day', 'dusk', 'night'];
+  return (
+    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
+      <div className="flex items-center justify-between gap-4">
+        <SectionHeading title={title} icon={<Sunrise />} />
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => onChange(!enabled)}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus-ring ${
+            enabled ? 'bg-primary/60' : 'bg-foreground/15'
+          }`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-foreground transition-transform ${
+              enabled ? 'translate-x-6' : 'translate-x-1'
+            }`}
+          />
+          <span className="sr-only">{enabled ? enabledLabel : disabledLabel}</span>
+        </button>
+      </div>
+      <p className="text-xs text-foreground">{hint}</p>
+      <div className="grid grid-cols-4 gap-3">
+        {phases.map((p) => {
+          const isActive = enabled && p === currentPhase;
+          return (
+            <div
+              key={p}
+              className={`isolate relative h-12 rounded-modal overflow-hidden border bg-background ${
+                isActive ? 'border-primary/40 ring-1 ring-primary/30' : 'border-primary/10'
+              }`}
+            >
+              <AmbientDeco phase={p} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: {
   themeId: ThemeId;
   setTheme: (id: ThemeId) => void;
@@ -164,6 +217,11 @@ export default function AppearanceSettings() {
 
   const brightness = useThemeStore((s) => s.brightness);
   const rawSetBrightness = useThemeStore((s) => s.setBrightness);
+
+  const ambientTimeOfDay = useThemeStore((s) => s.ambientTimeOfDay);
+  const rawSetAmbientTimeOfDay = useThemeStore((s) => s.setAmbientTimeOfDay);
+  const setAmbientTimeOfDay = useCallback((v: boolean) => { rawSetAmbientTimeOfDay(v); trigger(); }, [rawSetAmbientTimeOfDay, trigger]);
+  const currentPhase = useTimeOfDay();
 
   const setTheme = useCallback((id: ThemeId) => { rawSetTheme(id); trigger(); }, [rawSetTheme, trigger]);
   const setTextScale = useCallback((id: TextScale) => { rawSetTextScale(id); trigger(); }, [rawSetTextScale, trigger]);
@@ -350,6 +408,17 @@ export default function AppearanceSettings() {
               })}
             </div>
           </div>
+
+          {/* Ambient time-of-day chip */}
+          <AmbientSection
+            enabled={ambientTimeOfDay}
+            onChange={setAmbientTimeOfDay}
+            currentPhase={currentPhase}
+            title={s.ambient_title}
+            hint={s.ambient_hint}
+            enabledLabel={s.ambient_enabled}
+            disabledLabel={s.ambient_disabled}
+          />
 
           {/* Theming (moved to last) */}
           <ThemingSection

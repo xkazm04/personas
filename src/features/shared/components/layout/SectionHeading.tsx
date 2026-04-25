@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { getSettingsIconAccent } from '@/lib/design/statusTokens';
 
 interface SectionHeadingProps {
   /** Simple string title — renders the icon/action variant. */
@@ -11,9 +12,17 @@ interface SectionHeadingProps {
   className?: string;
   /** Semantic heading level. Defaults to h2 for title variant, h3 for children variant. */
   as?: 'h2' | 'h3' | 'h4';
+  /**
+   * Settings sub-page id (e.g. `'appearance'`, `'byom'`) — when set, the
+   * leading icon is tinted with the matching accent from
+   * `SETTINGS_ICON_ACCENTS`. Unmapped ids fall back to text-foreground.
+   */
+  iconAccentId?: string;
+  /** Direct override class for the icon span (takes precedence over iconAccentId). */
+  iconClassName?: string;
 }
 
-export function SectionHeading({ title, icon, action, children, className = '', as }: SectionHeadingProps) {
+export function SectionHeading({ title, icon, action, children, className = '', as, iconAccentId, iconClassName }: SectionHeadingProps) {
   // --- Children variant (compact, used by cloud panels etc.) ---
   if (children !== undefined && children !== null) {
     const Tag = as ?? 'h3';
@@ -27,9 +36,12 @@ export function SectionHeading({ title, icon, action, children, className = '', 
   // --- Title variant (with optional icon & action, used by settings pages) ---
   const Tag = as ?? 'h2';
 
+  const accent = iconAccentId ? getSettingsIconAccent(iconAccentId) : null;
+  const iconColorClass = iconClassName ?? accent?.text ?? 'text-foreground';
+
   const heading = (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {icon && <span className="w-4 h-4 text-foreground shrink-0 [&>svg]:w-4 [&>svg]:h-4">{icon}</span>}
+      {icon && <span className={`w-4 h-4 ${iconColorClass} shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>{icon}</span>}
       <Tag className="text-sm font-mono text-foreground uppercase tracking-wider">{title}</Tag>
     </div>
   );

@@ -12,3 +12,10 @@ export { UseCaseFilterPicker } from './UseCaseFilterPicker';
 export { LabActionButtons } from './LabActionButtons';
 export { LabPanelShell } from './LabPanelShell';
 export { DisabledGuide, type GuideItem } from './DisabledGuide';
+export {
+  getChartTheme,
+  useChartTheme,
+  seriesColor,
+  seriesFillColor,
+  type ChartTheme,
+} from './chartTheme';

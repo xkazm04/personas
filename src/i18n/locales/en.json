@@ -5674,7 +5674,8 @@
       "coverage_filter_aria": "Coverage filter",
       "search_suggestions_aria": "Search suggestions",
       "clear_search_aria": "Clear search",
-      "search_with_ai_aria": "Search with AI"
+      "search_with_ai_aria": "Search with AI",
+      "density_filter_aria": "Layout density"
     },
     "list": {
       "template_name": "Template Name",
@@ -7049,7 +7050,15 @@
       "coverage_hint": "Translation coverage -- click to export",
       "contribute_title": "Contribute translations",
       "contribute_hint": "Help translate Personas into your language. Export a language file above, translate the values, and submit via GitHub.",
-      "contribute_github": "Contribute on GitHub"
+      "contribute_github": "Contribute on GitHub",
+      "ambient_title": "Ambient time-of-day",
+      "ambient_hint": "Phase chip in the title bar that updates with your local clock — dawn, day, dusk, night.",
+      "ambient_enabled": "Enabled",
+      "ambient_disabled": "Off",
+      "ambient_phase_dawn": "Dawn",
+      "ambient_phase_day": "Day",
+      "ambient_phase_dusk": "Dusk",
+      "ambient_phase_night": "Night"
     },
     "notifications": {
       "title": "Notifications",
@@ -7691,7 +7700,9 @@
     "severity_critical": "Needs immediate attention",
     "severity_high": "Important issue",
     "severity_medium": "Minor issue",
-    "severity_low": "Informational"
+    "severity_low": "Informational",
+    "recovered_title": "We caught that for you",
+    "recovered_illustration_aria": "Recovery in progress"
   },
   "empty_states": {
     "credentials_title": "Your agents need credentials to run",
@@ -10340,7 +10351,7 @@
       "draft_builds": "Draft builds",
       "progress": "Progress",
       "dev_tools_label": "Dev Tools",
-      "obsidian_brain": "Obsidian Brain",
+      "obsidian_brain": "Brain",
       "active_twin": "Active Twin",
       "research_lab": "Research Lab"
     },

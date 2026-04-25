@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { GenomeBreedingResult } from '@/lib/bindings/GenomeBreedingResult';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useChartTheme } from '../../shared/chartTheme';
 
 interface GenerationStats {
   generation: number;
@@ -56,11 +57,11 @@ function computeGenerationStats(results: GenomeBreedingResult[]): GenerationStat
   return stats.sort((a, b) => a.generation - b.generation);
 }
 
-function TrendIndicator({ current, previous }: { current: number; previous: number }) {
+function TrendIndicator({ current, previous, regressionColor }: { current: number; previous: number; regressionColor: string }) {
   const diff = current - previous;
   if (Math.abs(diff) < 0.01) return <Minus className="w-3 h-3 text-foreground" />;
   if (diff > 0) return <TrendingUp className="w-3 h-3 text-emerald-400" />;
-  return <TrendingDown className="w-3 h-3 text-red-400" />;
+  return <TrendingDown className="w-3 h-3" style={{ color: regressionColor }} />;
 }
 
 export function GenerationEvolutionChart({
@@ -71,11 +72,15 @@ export function GenerationEvolutionChart({
   onSelectOffspring?: (id: string) => void;
 }) {
   const { t } = useTranslation();
+  const chart = useChartTheme();
   const stats = useMemo(() => computeGenerationStats(results), [results]);
 
   if (stats.length === 0) return null;
 
   const maxFitness = Math.max(...stats.map((s) => s.bestFitness), 0.01);
+  const bestColor = chart.series[0];
+  const avgColor = chart.series[2];
+  const worstColor = chart.series[4];
 
   return (
     <div className="space-y-3" role="region" aria-label="Generation evolution chart">
@@ -103,17 +108,18 @@ export function GenerationEvolutionChart({
               <div className="w-full flex items-end justify-center gap-px h-24 relative">
                 {/* Worst (background) */}
                 <div
-                  className="animate-fade-in w-2 bg-red-500/20 rounded-t-sm" style={{ height: `${worstHeight}%` }}
+                  className="animate-fade-in w-2 rounded-t-sm"
+                  style={{ height: `${worstHeight}%`, backgroundColor: worstColor, opacity: 0.25 }}
                 />
                 {/* Average */}
                 <div
-                  className="animate-fade-in w-2 bg-amber-500/40 rounded-t-sm"
-                  style={{ height: `${avgHeight}%` }}
+                  className="animate-fade-in w-2 rounded-t-sm"
+                  style={{ height: `${avgHeight}%`, backgroundColor: avgColor, opacity: 0.55 }}
                 />
                 {/* Best */}
                 <div
-                  className="animate-fade-in w-2 bg-violet-500 rounded-t-sm group-hover:bg-violet-400 transition-colors"
-                  style={{ height: `${bestHeight}%` }}
+                  className="animate-fade-in w-2 rounded-t-sm transition-opacity group-hover:opacity-80"
+                  style={{ height: `${bestHeight}%`, backgroundColor: bestColor }}
                 />
 
                 {/* Tooltip on hover */}
@@ -130,13 +136,13 @@ export function GenerationEvolutionChart({
       {/* Legend */}
       <div className="flex items-center gap-4 justify-center">
         <span className="flex items-center gap-1 text-[10px] text-foreground">
-          <span className="w-2 h-2 rounded-interactive bg-violet-500 inline-block" /> {t.agents.lab.best_legend}
+          <span className="w-2 h-2 rounded-interactive inline-block" style={{ backgroundColor: bestColor }} /> {t.agents.lab.best_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-foreground">
-          <span className="w-2 h-2 rounded-interactive bg-amber-500/40 inline-block" /> {t.agents.lab.avg_legend}
+          <span className="w-2 h-2 rounded-interactive inline-block" style={{ backgroundColor: avgColor, opacity: 0.55 }} /> {t.agents.lab.avg_legend}
         </span>
         <span className="flex items-center gap-1 text-[10px] text-foreground">
-          <span className="w-2 h-2 rounded-interactive bg-red-500/20 inline-block" /> {t.agents.lab.worst_legend}
+          <span className="w-2 h-2 rounded-interactive inline-block" style={{ backgroundColor: worstColor, opacity: 0.25 }} /> {t.agents.lab.worst_legend}
         </span>
       </div>
 
@@ -150,6 +156,7 @@ export function GenerationEvolutionChart({
               <TrendIndicator
                 current={last.bestFitness}
                 previous={first.bestFitness}
+                regressionColor={chart.destructive}
               />
               <span>
                 {first.bestFitness > 0

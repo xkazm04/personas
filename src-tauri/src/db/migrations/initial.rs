@@ -75,6 +75,19 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_lab_ratings_run ON lab_user_ratings(run_id);"
     )?;
 
+    // Deduplicate any pre-existing rows that share (run_id, scenario_name, result_id),
+    // keeping the most recent row, then enforce uniqueness via an expression index.
+    // COALESCE(result_id, '') makes NULL result_ids collide as the existing repo logic intends.
+    conn.execute_batch(
+        "DELETE FROM lab_user_ratings
+         WHERE rowid NOT IN (
+             SELECT MAX(rowid) FROM lab_user_ratings
+             GROUP BY run_id, scenario_name, COALESCE(result_id, '')
+         );
+         CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_ratings_unique
+            ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));"
+    )?;
+
     // -- Extend persona_prompt_versions with full persona snapshot fields ------
     for col in &[
         "ALTER TABLE persona_prompt_versions ADD COLUMN design_context TEXT;",

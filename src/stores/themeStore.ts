@@ -190,12 +190,14 @@ interface ThemeState {
   timezone: TimezoneMode;
   brightness: BrightnessLevel;
   customTheme: CustomThemeConfig | null;
+  ambientTimeOfDay: boolean;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
   setBrightness: (level: BrightnessLevel) => void;
   setCustomTheme: (config: CustomThemeConfig) => void;
   clearCustomTheme: () => void;
+  setAmbientTimeOfDay: (enabled: boolean) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -216,6 +218,7 @@ export const useThemeStore = create<ThemeState>()(
       timezone: 'local' as TimezoneMode,
       brightness: 'low' as BrightnessLevel,
       customTheme: null as CustomThemeConfig | null,
+      ambientTimeOfDay: true,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -246,6 +249,10 @@ export const useThemeStore = create<ThemeState>()(
         applyThemeToDOM(fallback, null);
         applyBrightness(get().brightness, fallback, null);
         set({ customTheme: null, themeId: fallback });
+      },
+      setAmbientTimeOfDay: (enabled: boolean) => {
+        set({ ambientTimeOfDay: enabled });
+        storeBus.emit('appearance:changed', { field: 'ambientTimeOfDay', value: enabled ? 'on' : 'off' });
       },
     }),
     {

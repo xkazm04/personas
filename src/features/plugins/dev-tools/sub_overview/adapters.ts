@@ -59,7 +59,13 @@ export async function fetchGitHubStats(
   owner: string,
   repo: string,
 ): Promise<RepoStats> {
-  const headers = { Accept: 'application/vnd.github+json' };
+  // GitHub rejects requests without a User-Agent header (403 "Request forbidden
+  // by administrative rules"). The healthcheck connector already uses
+  // 'personas-desktop' — match it here so the same rules apply.
+  const headers = {
+    Accept: 'application/vnd.github+json',
+    'User-Agent': 'personas-desktop',
+  };
 
   // 1. Repo metadata (open_issues_count includes PRs on GitHub)
   const repoRes = await executeApiRequest(

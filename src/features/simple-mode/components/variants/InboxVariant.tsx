@@ -180,33 +180,62 @@ export default function InboxVariant() {
   // The listener binds ONCE on mount and reads current state via refs so
   // keystrokes in the notes textarea don't tear down/re-attach a window-level
   // listener on every character.
+  //
+  // Defense against list mutation: the inbox is live — items can resolve and
+  // disappear between commits. We always look up by id (not cached index) and
+  // re-validate at event time. If the selection has drifted (item gone),
+  // repair to the nearest neighbor of the last-known position and swallow the
+  // keystroke instead of firing an action against the wrong item.
   const filteredRef = useRef(filtered);
   const selectedIdRef = useRef<string | null>(selected?.id ?? null);
   const actionsRef = useRef(actions);
   const busyRef = useRef(busy);
   const runPrimaryRef = useRef(runPrimary);
+  const lastKnownIndexRef = useRef(0);
   useEffect(() => { filteredRef.current = filtered; }, [filtered]);
   useEffect(() => { selectedIdRef.current = selected?.id ?? null; }, [selected?.id]);
   useEffect(() => { actionsRef.current = actions; }, [actions]);
   useEffect(() => { busyRef.current = busy; }, [busy]);
   useEffect(() => { runPrimaryRef.current = runPrimary; });
+  useEffect(() => {
+    const idx = filtered.findIndex((i) => i.id === selected?.id);
+    if (idx >= 0) lastKnownIndexRef.current = idx;
+  }, [filtered, selected?.id]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Enter') return;
+
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase() ?? '';
       if (tag === 'textarea' || tag === 'input') return;
 
       const list = filteredRef.current;
-      const idx = list.findIndex((i) => i.id === selectedIdRef.current);
+      if (list.length === 0) return;
 
-      if (e.key === 'ArrowDown' && idx < list.length - 1) {
+      const currentId = selectedIdRef.current;
+      const currentIdx = currentId == null ? -1 : list.findIndex((i) => i.id === currentId);
+
+      // Selection drifted: the item we last saw selected is no longer in the
+      // filtered list (resolved/removed by a background update between the
+      // previous commit and this keypress). Re-anchor to the nearest neighbor
+      // of the last-known position and bail — never dispatch an action against
+      // a vanished item, even if the action ref still points somewhere valid.
+      if (currentIdx === -1) {
         e.preventDefault();
-        const next = list[idx + 1];
+        const anchor = Math.min(Math.max(0, lastKnownIndexRef.current), list.length - 1);
+        const fallback = list[anchor];
+        if (fallback) setSelectedId(fallback.id);
+        return;
+      }
+
+      if (e.key === 'ArrowDown' && currentIdx < list.length - 1) {
+        e.preventDefault();
+        const next = list[currentIdx + 1];
         if (next) setSelectedId(next.id);
-      } else if (e.key === 'ArrowUp' && idx > 0) {
+      } else if (e.key === 'ArrowUp' && currentIdx > 0) {
         e.preventDefault();
-        const prev = list[idx - 1];
+        const prev = list[currentIdx - 1];
         if (prev) setSelectedId(prev.id);
       } else if (e.key === 'Enter' && actionsRef.current.primary && !busyRef.current) {
         e.preventDefault();

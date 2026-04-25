@@ -1,7 +1,26 @@
 import type { StateCreator } from "zustand";
+import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
-import { reportError } from "../../storeTypes";
+import { errMsg } from "../../storeTypes";
 import * as api from "@/api/researchLab/researchLab";
+
+/**
+ * Passive list-load failure handler. Research-lab list fetches run on mount,
+ * not on user action — a red toast for "list came back empty/unavailable" is
+ * noise. Log to console for debugging, capture to Sentry for telemetry, and
+ * leave the slice in its empty state. User-initiated mutations
+ * (create/update/delete) still surface errors via toastCatch in the calling
+ * component, so feedback isn't lost where it matters.
+ */
+function logPassiveFetchFailure(action: string, err: unknown): void {
+  // eslint-disable-next-line no-console
+  console.warn(`[research-lab] ${action} failed (showing empty state):`, errMsg(err, action), err);
+  Sentry.withScope((scope) => {
+    scope.setTag("error.action", action);
+    scope.setLevel("warning");
+    Sentry.captureException(err);
+  });
+}
 import type {
   ResearchProject, CreateResearchProject, UpdateResearchProject,
   ResearchSource, CreateResearchSource,
@@ -83,7 +102,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchProjects = await api.listProjects();
       set({ researchProjects, researchProjectsLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch research projects", set, { stateUpdates: { researchProjectsLoading: false } });
+      logPassiveFetchFailure("fetchResearchProjects", err);
+      set({ researchProjectsLoading: false });
     }
   },
 
@@ -118,7 +138,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchSources = await api.listSources(projectId);
       set({ researchSources, researchSourcesLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch research sources", set, { stateUpdates: { researchSourcesLoading: false } });
+      logPassiveFetchFailure("fetchResearchSources", err);
+      set({ researchSourcesLoading: false });
     }
   },
 
@@ -143,7 +164,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchHypotheses = await api.listHypotheses(projectId);
       set({ researchHypotheses, researchHypothesesLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch hypotheses", set, { stateUpdates: { researchHypothesesLoading: false } });
+      logPassiveFetchFailure("fetchResearchHypotheses", err);
+      set({ researchHypothesesLoading: false });
     }
   },
 
@@ -168,7 +190,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchExperiments = await api.listExperiments(projectId);
       set({ researchExperiments, researchExperimentsLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch experiments", set, { stateUpdates: { researchExperimentsLoading: false } });
+      logPassiveFetchFailure("fetchResearchExperiments", err);
+      set({ researchExperimentsLoading: false });
     }
   },
 
@@ -193,7 +216,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchFindings = await api.listFindings(projectId);
       set({ researchFindings, researchFindingsLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch findings", set, { stateUpdates: { researchFindingsLoading: false } });
+      logPassiveFetchFailure("fetchResearchFindings", err);
+      set({ researchFindingsLoading: false });
     }
   },
 
@@ -218,7 +242,8 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchReports = await api.listReports(projectId);
       set({ researchReports, researchReportsLoading: false });
     } catch (err) {
-      reportError(err, "Failed to fetch reports", set, { stateUpdates: { researchReportsLoading: false } });
+      logPassiveFetchFailure("fetchResearchReports", err);
+      set({ researchReportsLoading: false });
     }
   },
 
@@ -241,7 +266,7 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
       const researchDashboardStats = await api.getDashboardStats();
       set({ researchDashboardStats });
     } catch (err) {
-      reportError(err, "Failed to fetch research dashboard stats", set);
+      logPassiveFetchFailure("fetchResearchDashboardStats", err);
     }
   },
 

@@ -576,6 +576,27 @@ pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<
     })
 }
 
+/// Capability-scoped running-count: how many executions are queued/running for
+/// this exact (persona_id, use_case_id) pair. Used by the event-bus cascade
+/// guard so that a UC1→UC2 chain within the same persona isn't blocked by
+/// UC1 still being in-flight when its emitted event lands.
+pub fn get_running_count_for_persona_use_case(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: &str,
+) -> Result<i64, AppError> {
+    timed_query!("persona_executions", "persona_executions::get_running_count_for_persona_use_case", {
+        let conn = pool.get()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_executions \
+             WHERE persona_id = ?1 AND use_case_id = ?2 AND status IN ('queued', 'running')",
+            params![persona_id, use_case_id],
+            |row| row.get(0),
+        )?;
+        Ok(count)
+    })
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_executions", "persona_executions::delete", {
         let conn = pool.get()?;

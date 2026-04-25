@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getAppSetting, setAppSetting } from '@/api/system/settings';
+import { setAppSetting } from '@/api/system/settings';
+import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { healthCheckLocal } from "@/api/system/system";
 import { silentCatch } from "@/lib/silentCatch";
 
@@ -36,32 +37,33 @@ export function useEngineCapabilities(opts?: { onSave?: () => void }): UseEngine
   const [loaded, setLoaded] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Load saved capabilities + detect installed providers
+  // Load saved capabilities + detect installed providers in parallel. The
+  // settings read goes through the microtask coalescer so it shares an IPC
+  // with any sibling `useAppSetting` calls mounting in the same tick.
   useEffect(() => {
     const loadAll = async () => {
-      // Load saved capabilities
-      try {
-        const saved = await getAppSetting(CAPABILITY_SETTING_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved) as Partial<EngineCapabilityMap>;
+      const [savedResult, localResult] = await Promise.allSettled([
+        getAppSettingCoalesced(CAPABILITY_SETTING_KEY),
+        healthCheckLocal(),
+      ]);
+
+      if (savedResult.status === 'fulfilled' && savedResult.value) {
+        try {
+          const parsed = JSON.parse(savedResult.value) as Partial<EngineCapabilityMap>;
           setCapabilities(mergeCapabilities(parsed));
+        } catch {
+          // Malformed JSON — fall back to defaults silently.
         }
-      } catch {
-        // Use defaults on error
       }
 
-      // Detect installed providers (lightweight local-only probe)
-      try {
-        const localSection = await healthCheckLocal();
+      if (localResult.status === 'fulfilled') {
         const installed = new Set<CliEngine>();
-        for (const item of localSection.items) {
-          if (item.status === 'ok') {
-            if (item.id === 'claude_cli') installed.add('claude_code');
+        for (const item of localResult.value.items) {
+          if (item.status === 'ok' && item.id === 'claude_cli') {
+            installed.add('claude_code');
           }
         }
         setInstalledProviders(installed);
-      } catch {
-        // No providers detected
       }
 
       setLoaded(true);

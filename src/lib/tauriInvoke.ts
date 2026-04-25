@@ -81,6 +81,69 @@ export class InvokeTimeoutError extends Error {
 const inflightByKey = new Map<string, Promise<unknown>>();
 
 /**
+ * Tracks in-flight (and very recently settled) read-only invocations keyed by
+ * `${cmd}:${stableStringify(args)}`. Lets us automatically fold duplicate
+ * concurrent IPC reads into a single Rust round-trip without callers needing
+ * to thread an idempotency key through every API wrapper.
+ *
+ * Entries live for {@link AUTO_DEDUP_TTL_MS} after settle so slice init
+ * races, StrictMode double-mount, and parallel component mounts all share
+ * one response. Rejections are evicted immediately so callers can retry.
+ */
+const inflightAutoDedup = new Map<string, Promise<unknown>>();
+
+/** TTL (ms) for auto-dedup entries after the underlying invocation settles. */
+const AUTO_DEDUP_TTL_MS = 250;
+
+/** Command prefixes considered read-only and eligible for auto-dedup. */
+const READ_ONLY_PREFIXES = ["list_", "get_", "fetch_"] as const;
+
+function isReadOnlyCommand(cmd: string): boolean {
+  for (const p of READ_ONLY_PREFIXES) {
+    if (cmd.startsWith(p)) return true;
+  }
+  return false;
+}
+
+/**
+ * Deterministic JSON.stringify that sorts object keys at every depth so
+ * `{a:1,b:2}` and `{b:2,a:1}` produce the same hash. Returns `null` if
+ * the input contains values that would break the dedup contract — class
+ * instances (e.g. Tauri Channel/Image/Resource), functions, or cycles —
+ * signalling that the call should bypass auto-dedup.
+ */
+function stableStringify(value: unknown): string | null {
+  const seen = new WeakSet<object>();
+  const walk = (v: unknown): unknown => {
+    if (v === undefined) return null;
+    if (v === null) return null;
+    const t = typeof v;
+    if (t === "string" || t === "number" || t === "boolean") return v;
+    if (t === "function") throw new Error("non-stable");
+    if (t !== "object") throw new Error("non-stable");
+    const obj = v as object;
+    if (seen.has(obj)) throw new Error("cycle");
+    seen.add(obj);
+    if (Array.isArray(obj)) return obj.map(walk);
+    const proto = Object.getPrototypeOf(obj);
+    if (proto !== Object.prototype && proto !== null) {
+      // Class instance (Channel, Date, Image, Resource, ...) — opaque, bail.
+      throw new Error("non-stable");
+    }
+    const out: Record<string, unknown> = {};
+    for (const k of Object.keys(obj as Record<string, unknown>).sort()) {
+      out[k] = walk((obj as Record<string, unknown>)[k]);
+    }
+    return out;
+  };
+  try {
+    return JSON.stringify(walk(value));
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Recursively walks an args object (or array) and converts every `undefined`
  * value to `null` so that Rust `Option<T>` fields deserialise correctly.
  * Arrays are recursed element-by-element; plain objects are recursed
@@ -139,6 +202,13 @@ export interface InvokeOpts {
    * Tauri invoke. The key is removed once the promise settles.
    */
   idempotencyKey?: string;
+  /**
+   * Opt out of automatic in-flight dedup for read-only commands
+   * (`list_*`, `get_*`, `fetch_*`). Almost no caller needs this — set it
+   * only when the same read intentionally needs to hit the backend twice
+   * within ~250ms (e.g. cache-busting health probe).
+   */
+  noAutoDedup?: boolean;
 }
 
 /**
@@ -180,12 +250,14 @@ export function invokeWithTimeout<T>(
   let resolvedOptions: InvokeOptions | undefined;
   let resolvedTimeout: number;
   let idempotencyKey: string | undefined;
+  let noAutoDedup = false;
 
-  if (opts && "idempotencyKey" in opts) {
+  if (opts && ("idempotencyKey" in opts || "timeoutMs" in opts || "noAutoDedup" in opts)) {
     // New opts-object form
     resolvedOptions = (opts as InvokeOpts).options;
     resolvedTimeout = (opts as InvokeOpts).timeoutMs ?? DEFAULT_TIMEOUT_MS;
     idempotencyKey = (opts as InvokeOpts).idempotencyKey;
+    noAutoDedup = (opts as InvokeOpts).noAutoDedup ?? false;
   } else {
     // Legacy positional form: (cmd, args, options?, timeoutMs?)
     resolvedOptions = opts as InvokeOptions | undefined;
@@ -198,6 +270,20 @@ export function invokeWithTimeout<T>(
     if (existing) return existing as Promise<T>;
   }
 
+  // --- Auto-dedup: read-only commands keyed by stable-hash(args) ---------
+  // Skip when the caller already supplied an idempotency key (their dedup
+  // wins) or explicitly opted out. Class-instance args (Channel, Image, ...)
+  // produce a `null` hash and bypass auto-dedup.
+  let autoKey: string | null = null;
+  if (!idempotencyKey && !noAutoDedup && isReadOnlyCommand(cmd)) {
+    const argHash = args === undefined ? "" : stableStringify(args);
+    if (argHash !== null) {
+      autoKey = `${cmd}:${argHash}`;
+      const existing = inflightAutoDedup.get(autoKey);
+      if (existing) return existing as Promise<T>;
+    }
+  }
+
   const promise = _invokeCore<T>(cmd, args, resolvedOptions, resolvedTimeout);
 
   if (idempotencyKey) {
@@ -207,7 +293,40 @@ export function invokeWithTimeout<T>(
     promise.finally(() => inflightByKey.delete(key));
   }
 
+  if (autoKey) {
+    const key = autoKey;
+    inflightAutoDedup.set(key, promise);
+    promise.then(
+      () => {
+        // Hold the resolved promise for a short TTL so init races settling
+        // within the same tick share the response. Use the same map ref to
+        // guard against an entry being replaced by a newer call.
+        setTimeout(() => {
+          if (inflightAutoDedup.get(key) === promise) {
+            inflightAutoDedup.delete(key);
+          }
+        }, AUTO_DEDUP_TTL_MS);
+      },
+      () => {
+        // Evict failed calls immediately so callers can retry without waiting.
+        if (inflightAutoDedup.get(key) === promise) {
+          inflightAutoDedup.delete(key);
+        }
+      },
+    );
+  }
+
   return promise;
+}
+
+/**
+ * Test-only: clear the auto-dedup map. Exported for unit tests so each
+ * test starts from a clean slate.
+ *
+ * @internal
+ */
+export function _clearAutoDedupForTests(): void {
+  inflightAutoDedup.clear();
 }
 
 // Track concurrent in-flight IPC calls to detect stampedes early.

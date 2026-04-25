@@ -7,6 +7,7 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import ProcessActivityIndicator from './ProcessActivityIndicator';
+import { TitleBarAmbient } from './TitleBarAmbient';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 
@@ -61,6 +62,9 @@ export default function TitleBar() {
 
       {/* Spacer -- entire middle area is draggable */}
       <div data-tauri-drag-region className="flex-1" />
+
+      {/* Time-of-day chip -- inline, sits before the action tray */}
+      <TitleBarAmbient />
 
       {/* Quick-action tray */}
       <div className="flex items-center gap-0.5 mr-1">

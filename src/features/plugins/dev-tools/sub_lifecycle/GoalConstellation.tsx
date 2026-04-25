@@ -6,6 +6,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import * as devApi from '@/api/devTools/devTools';
+import { GoalProjectPulse } from './GoalProjectPulse';
+import { GoalDependencyFlow } from './GoalDependencyFlow';
 
 // ---------------------------------------------------------------------------
 // Force-directed layout (pure JS, no D3)
@@ -118,8 +120,16 @@ function nodeRadius(goal: DevGoal): number {
 }
 
 // ---------------------------------------------------------------------------
-// Component
+// Variant switcher (prototype scaffolding — removed when a winner is picked)
 // ---------------------------------------------------------------------------
+
+type VariantId = 'baseline' | 'pulse' | 'flow';
+
+const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
+  { id: 'baseline', label: 'Baseline', subtitle: 'Force-directed graph' },
+  { id: 'pulse',    label: 'Project Pulse', subtitle: 'Triage + spotlight' },
+  { id: 'flow',     label: 'Dependency Flow', subtitle: 'Kanban with deps' },
+];
 
 export default function GoalConstellation() {
   const { t } = useTranslation();
@@ -128,19 +138,15 @@ export default function GoalConstellation() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
-  const [hoveredId, setHoveredId] = useState<string | null>(null);
-  const [zoom, setZoom] = useState(1);
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  const WIDTH = 800;
-  const HEIGHT = 500;
+  const [variant, setVariant] = useState<VariantId>('baseline');
 
   useEffect(() => {
     if (activeProjectId) fetchGoals(activeProjectId);
   }, [activeProjectId, fetchGoals]);
 
-  // Fetch all dependencies
+  // Fetch all dependencies for the project's goals
   useEffect(() => {
+    let cancelled = false;
     async function loadDeps() {
       const allDeps: DevGoalDependency[] = [];
       for (const g of goals) {
@@ -149,10 +155,71 @@ export default function GoalConstellation() {
           allDeps.push(...deps);
         } catch { /* ignore */ }
       }
-      setDependencies(allDeps);
+      if (!cancelled) setDependencies(allDeps);
     }
     if (goals.length > 0) loadDeps();
+    return () => { cancelled = true; };
   }, [goals]);
+
+  if (goals.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Target className="w-10 h-10 text-foreground mb-3" />
+        <p className="typo-body text-foreground">{t.plugins.dev_tools.no_goals_constellation}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Variant tab strip */}
+      <div className="flex items-center gap-1 p-1 rounded-card border border-primary/10 bg-card/30 w-fit">
+        {VARIANTS.map((v) => {
+          const active = v.id === variant;
+          return (
+            <button
+              key={v.id}
+              type="button"
+              onClick={() => setVariant(v.id)}
+              className={[
+                'px-3 py-1.5 rounded-interactive transition-colors text-left',
+                active
+                  ? 'bg-violet-500/15 border border-violet-500/30 text-foreground'
+                  : 'border border-transparent text-foreground/70 hover:bg-secondary/30',
+              ].join(' ')}
+            >
+              <div className="text-sm font-semibold leading-tight">{v.label}</div>
+              <div className="text-xs text-foreground/50 leading-tight">{v.subtitle}</div>
+            </button>
+          );
+        })}
+      </div>
+
+      {variant === 'baseline' && <GoalConstellationBaseline goals={goals} dependencies={dependencies} />}
+      {variant === 'pulse'    && <GoalProjectPulse goals={goals} dependencies={dependencies} />}
+      {variant === 'flow'     && <GoalDependencyFlow goals={goals} dependencies={dependencies} />}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Baseline — original force-directed SVG diagram, preserved for A/B
+// ---------------------------------------------------------------------------
+
+function GoalConstellationBaseline({
+  goals,
+  dependencies,
+}: {
+  goals: DevGoal[];
+  dependencies: DevGoalDependency[];
+}) {
+  const { t } = useTranslation();
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  const WIDTH = 800;
+  const HEIGHT = 500;
 
   // Build edges from parent_goal_id + dependencies
   const edges = useMemo(() => {
@@ -194,15 +261,6 @@ export default function GoalConstellation() {
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 2)), []);
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.2, 0.4)), []);
   const handleReset = useCallback(() => setZoom(1), []);
-
-  if (goals.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <Target className="w-10 h-10 text-foreground mb-3" />
-        <p className="typo-body text-foreground">{t.plugins.dev_tools.no_goals_constellation}</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-3">

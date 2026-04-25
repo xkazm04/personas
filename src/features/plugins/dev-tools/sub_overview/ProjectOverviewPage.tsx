@@ -32,6 +32,27 @@ import {
 } from './adapters';
 
 // ---------------------------------------------------------------------------
+// Error formatting — Tauri rejects with serialized `AppError` *objects*, not
+// JS Error instances. `String(obj)` becomes "[object Object]", so we have to
+// normalize manually before showing anything to the user.
+// ---------------------------------------------------------------------------
+
+function formatErr(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  if (err && typeof err === 'object') {
+    const obj = err as Record<string, unknown>;
+    if (typeof obj.message === 'string') return obj.message;
+    // Tauri AppError variants are { Variant: "msg" } — surface the inner string.
+    for (const v of Object.values(obj)) {
+      if (typeof v === 'string') return v;
+    }
+    try { return JSON.stringify(obj); } catch { /* fall through */ }
+  }
+  return String(err);
+}
+
+// ---------------------------------------------------------------------------
 // Stat card
 // ---------------------------------------------------------------------------
 
@@ -175,6 +196,142 @@ function ConnectionCard({
 }
 
 // ---------------------------------------------------------------------------
+// Connector chain — visualises plugin → project → URL → credential so the
+// user understands (and can edit) which credential is providing the data.
+// ---------------------------------------------------------------------------
+
+function ConnectorChain({
+  projectName,
+  url,
+  credentials,
+  activeCredId,
+  onPickCred,
+  onEditUrl,
+}: {
+  projectName: string;
+  url: string | null;
+  credentials: PersonaCredential[];
+  activeCredId: string | null;
+  onPickCred: (id: string) => void;
+  onEditUrl: () => void;
+}) {
+  const activeCred = credentials.find((c) => c.id === activeCredId);
+  return (
+    <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
+      <p className="typo-caption uppercase tracking-[0.18em] text-foreground/60 mb-2">
+        Connection chain
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Project */}
+        <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+          <LayoutDashboard className="w-3 h-3 text-primary" />
+          <span className="font-medium">{projectName}</span>
+        </span>
+        <ChevronArrow />
+
+        {/* URL */}
+        <button
+          type="button"
+          onClick={onEditUrl}
+          className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors"
+          title="Edit project to change the repo URL"
+        >
+          <GitBranch className="w-3 h-3 text-blue-400" />
+          {url ? <span className="font-mono truncate max-w-[260px]">{url}</span> : <span className="text-amber-400">no repo URL</span>}
+          <ExternalLink className="w-3 h-3 opacity-60" />
+        </button>
+        <ChevronArrow />
+
+        {/* Credential */}
+        {credentials.length === 0 ? (
+          <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
+            <Key className="w-3 h-3" /> no credential
+          </span>
+        ) : credentials.length === 1 ? (
+          <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+            <Key className="w-3 h-3 text-emerald-400" />
+            <span className="font-medium">{credentials[0]!.name}</span>
+            <span className="text-foreground/50 font-mono">({credentials[0]!.service_type})</span>
+          </span>
+        ) : (
+          <div className="inline-flex items-center gap-1">
+            <Key className="w-3 h-3 text-emerald-400" />
+            <select
+              value={activeCredId ?? credentials[0]!.id}
+              onChange={(e) => onPickCred(e.target.value)}
+              className="px-1.5 py-0.5 typo-caption bg-secondary/40 border border-primary/10 rounded-card text-foreground"
+            >
+              {credentials.map((c) => (
+                <option key={c.id} value={c.id}>{c.name} ({c.service_type})</option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+      {activeCred && (
+        <p className="typo-caption text-foreground/50 mt-1.5">
+          Stats are fetched through the API proxy using this credential's auth.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ChevronArrow() {
+  return <span className="typo-caption text-foreground/40 select-none">→</span>;
+}
+
+function MonitoringChain({
+  projectName,
+  credential,
+  slug,
+}: {
+  projectName: string;
+  credential: PersonaCredential | null;
+  slug: string | null;
+}) {
+  const [orgSlug, projectSlug] = splitSentrySlug(slug);
+  return (
+    <div className="rounded-modal border border-primary/10 bg-card/30 px-3 py-2.5">
+      <p className="typo-caption uppercase tracking-[0.18em] text-foreground/60 mb-2">
+        Connection chain
+      </p>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+          <LayoutDashboard className="w-3 h-3 text-primary" />
+          <span className="font-medium">{projectName}</span>
+        </span>
+        <ChevronArrow />
+        {credential ? (
+          <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+            <Key className="w-3 h-3 text-emerald-400" />
+            <span className="font-medium">{credential.name}</span>
+            <span className="text-foreground/50 font-mono">({credential.service_type})</span>
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
+            <Key className="w-3 h-3" /> no credential linked
+          </span>
+        )}
+        {credential && (
+          <>
+            <ChevronArrow />
+            {projectSlug ? (
+              <span className="inline-flex items-center gap-1 typo-caption text-foreground">
+                <Shield className="w-3 h-3 text-red-400" />
+                <span className="font-mono">{orgSlug ? `${orgSlug}/${projectSlug}` : projectSlug}</span>
+              </span>
+            ) : (
+              <span className="typo-caption text-amber-400">no project slug</span>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Sentry org + project picker (replaces the old free-text MonitoringLinkForm)
 // ---------------------------------------------------------------------------
 
@@ -199,17 +356,18 @@ function SentryProjectPicker({
   const [loadingOrgs, setLoadingOrgs] = useState(false);
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [discoveryError, setDiscoveryError] = useState<string | null>(null);
+  const [manualMode, setManualMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Reset downstream selection when the credential changes
   useEffect(() => {
     setOrgs([]); setOrgSlug(''); setProjects([]); setProjectSlug('');
-    setDiscoveryError(null);
+    setDiscoveryError(null); setManualMode(false);
   }, [selectedCredId]);
 
   // Discover organizations for the selected credential
   useEffect(() => {
-    if (!selectedCredId) return;
+    if (!selectedCredId || manualMode) return;
     let cancelled = false;
     setLoadingOrgs(true);
     setDiscoveryError(null);
@@ -221,24 +379,30 @@ function SentryProjectPicker({
       })
       .catch((err) => {
         if (cancelled) return;
-        setDiscoveryError(err instanceof Error ? err.message : String(err));
+        // Auto-flip to manual entry — discovery is a convenience, not a gate.
+        setDiscoveryError(formatErr(err));
+        setManualMode(true);
       })
       .finally(() => { if (!cancelled) setLoadingOrgs(false); });
     return () => { cancelled = true; };
-  }, [selectedCredId]);
+  }, [selectedCredId, manualMode]);
 
-  // Discover projects when an org is selected
+  // Discover projects when an org is selected (skipped in manual mode)
   useEffect(() => {
-    if (!selectedCredId || !orgSlug) return;
+    if (!selectedCredId || !orgSlug || manualMode) return;
     let cancelled = false;
     setLoadingProjects(true);
     setProjects([]); setProjectSlug('');
     fetchSentryProjects(selectedCredId, orgSlug)
       .then((list) => { if (!cancelled) setProjects(list); })
-      .catch((err) => { if (!cancelled) setDiscoveryError(err instanceof Error ? err.message : String(err)); })
+      .catch((err) => {
+        if (cancelled) return;
+        setDiscoveryError(formatErr(err));
+        setManualMode(true);
+      })
       .finally(() => { if (!cancelled) setLoadingProjects(false); });
     return () => { cancelled = true; };
-  }, [selectedCredId, orgSlug]);
+  }, [selectedCredId, orgSlug, manualMode]);
 
   const handleSave = async () => {
     if (!selectedCredId || !orgSlug || !projectSlug) return;
@@ -277,46 +441,91 @@ function SentryProjectPicker({
         </div>
       )}
 
-      <div className="space-y-1">
-        <label className="typo-caption text-foreground/70">Organization</label>
-        <select
-          value={orgSlug}
-          onChange={(e) => setOrgSlug(e.target.value)}
-          disabled={loadingOrgs || orgs.length === 0}
-          className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
-        >
-          <option value="" disabled>
-            {loadingOrgs ? 'Discovering organizations…' : orgs.length === 0 ? 'No orgs found' : 'Select an organization'}
-          </option>
-          {orgs.map((o) => (
-            <option key={o.slug} value={o.slug}>{o.name} ({o.slug})</option>
-          ))}
-        </select>
-      </div>
+      {manualMode ? (
+        <>
+          <div className="space-y-1">
+            <label className="typo-caption text-foreground/70">Organization slug</label>
+            <input
+              value={orgSlug}
+              onChange={(e) => setOrgSlug(e.target.value.trim())}
+              placeholder="my-org"
+              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="typo-caption text-foreground/70">Project slug</label>
+            <input
+              value={projectSlug}
+              onChange={(e) => setProjectSlug(e.target.value.trim())}
+              placeholder="my-project"
+              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <label className="typo-caption text-foreground/70">Organization</label>
+            <select
+              value={orgSlug}
+              onChange={(e) => setOrgSlug(e.target.value)}
+              disabled={loadingOrgs || orgs.length === 0}
+              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
+            >
+              <option value="" disabled>
+                {loadingOrgs ? 'Discovering organizations…' : orgs.length === 0 ? 'No orgs found' : 'Select an organization'}
+              </option>
+              {orgs.map((o) => (
+                <option key={o.slug} value={o.slug}>{o.name} ({o.slug})</option>
+              ))}
+            </select>
+          </div>
 
-      <div className="space-y-1">
-        <label className="typo-caption text-foreground/70">Project</label>
-        <select
-          value={projectSlug}
-          onChange={(e) => setProjectSlug(e.target.value)}
-          disabled={loadingProjects || !orgSlug || projects.length === 0}
-          className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
-        >
-          <option value="" disabled>
-            {!orgSlug ? 'Pick an organization first' : loadingProjects ? 'Loading projects…' : projects.length === 0 ? 'No projects in this org' : 'Select a project'}
-          </option>
-          {projects.map((p) => (
-            <option key={p.slug} value={p.slug}>{p.name} ({p.slug})</option>
-          ))}
-        </select>
-      </div>
+          <div className="space-y-1">
+            <label className="typo-caption text-foreground/70">Project</label>
+            <select
+              value={projectSlug}
+              onChange={(e) => setProjectSlug(e.target.value)}
+              disabled={loadingProjects || !orgSlug || projects.length === 0}
+              className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
+            >
+              <option value="" disabled>
+                {!orgSlug ? 'Pick an organization first' : loadingProjects ? 'Loading projects…' : projects.length === 0 ? 'No projects in this org' : 'Select a project'}
+              </option>
+              {projects.map((p) => (
+                <option key={p.slug} value={p.slug}>{p.name} ({p.slug})</option>
+              ))}
+            </select>
+          </div>
+        </>
+      )}
 
       {discoveryError && (
         <div className="flex items-start gap-2 p-2 rounded-modal bg-red-500/5 border border-red-500/15">
           <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-          <p className="typo-caption text-foreground break-words">{discoveryError}</p>
+          <div className="flex-1 min-w-0">
+            <p className="typo-caption text-foreground break-words">
+              Sentry discovery failed: {discoveryError}
+            </p>
+            <p className="typo-caption text-foreground/60 mt-1">
+              Enter the slugs manually below — find them in your Sentry URL: <span className="font-mono">sentry.io/organizations/<b>your-org</b>/projects/<b>your-project</b>/</span>
+            </p>
+          </div>
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={() => {
+          setManualMode((m) => !m);
+          setDiscoveryError(null);
+          setOrgSlug(''); setProjectSlug('');
+        }}
+        className="typo-caption text-foreground/70 hover:text-foreground underline-offset-2 hover:underline"
+      >
+        {manualMode ? 'Try auto-discovery again' : 'Enter slugs manually instead'}
+      </button>
+
 
       <div className="flex justify-end">
         <Button
@@ -360,6 +569,9 @@ export default function ProjectOverviewPage() {
   const [repoProvider, setRepoProvider] = useState<RepoProvider | null>(null);
   const [repoStats, setRepoStats] = useState<RepoStats | null>(null);
   const [repoError, setRepoError] = useState<string | null>(null);
+  // The credential currently being used to fetch repo stats. Surfaced in the
+  // UI so the "plugin → project → connector → credential" chain is visible.
+  const [activeRepoCredId, setActiveRepoCredId] = useState<string | null>(null);
 
   // Monitoring stats
   const [monitorState, setMonitorState] = useState<ConnectionState>('loading');
@@ -412,11 +624,18 @@ export default function ProjectOverviewPage() {
       return;
     }
 
-    const cred = credentials.find((c) => provider === 'github' ? isGitHubCred(c) : isGitLabCred(c));
+    // Use whichever credential the user has selected (if multiple are
+    // available); otherwise auto-pick the first matching one.
+    const stickyCred = activeRepoCredId ? credentials.find((c) => c.id === activeRepoCredId) : undefined;
+    const matchesProvider = (c: PersonaCredential) => provider === 'github' ? isGitHubCred(c) : isGitLabCred(c);
+    const cred = (stickyCred && matchesProvider(stickyCred)) ? stickyCred
+      : credentials.find(matchesProvider);
     if (!cred) {
       setRepoState('unmapped');
+      setActiveRepoCredId(null);
       return;
     }
+    setActiveRepoCredId(cred.id);
 
     setRepoState('loading');
     try {
@@ -434,9 +653,9 @@ export default function ProjectOverviewPage() {
       setRepoState('connected');
     } catch (err) {
       setRepoState('error');
-      setRepoError(err instanceof Error ? err.message : String(err));
+      setRepoError(formatErr(err));
     }
-  }, [activeProject?.github_url, credentials, credLoaded]);
+  }, [activeProject?.github_url, credentials, credLoaded, activeRepoCredId]);
 
   // Fetch monitoring stats
   const loadMonitorStats = useCallback(async () => {
@@ -476,7 +695,7 @@ export default function ProjectOverviewPage() {
       setMonitorState('connected');
     } catch (err) {
       setMonitorState('error');
-      setMonitorError(err instanceof Error ? err.message : String(err));
+      setMonitorError(formatErr(err));
     }
   }, [activeProject, credentials, credLoaded, sentryCreds.length]);
 
@@ -550,6 +769,18 @@ export default function ProjectOverviewPage() {
                 {po.codebase}
               </h2>
             </div>
+
+            {/* Connector chain — makes plugin → project → URL → credential visible */}
+            {(repoState === 'connected' || repoState === 'error' || repoState === 'unmapped') && (
+              <ConnectorChain
+                projectName={activeProject.name}
+                url={activeProject.github_url ?? null}
+                credentials={repoCreds}
+                activeCredId={activeRepoCredId}
+                onPickCred={(id) => { setActiveRepoCredId(id); }}
+                onEditUrl={() => setDevToolsTab('projects')}
+              />
+            )}
 
             {repoState === 'empty' && (
               <ConnectionCard
@@ -644,6 +875,19 @@ export default function ProjectOverviewPage() {
                 {po.monitoring}
               </h2>
             </div>
+
+            {/* Connector chain — same wiring view as Codebase */}
+            {(monitorState === 'connected' || monitorState === 'error' || monitorState === 'unmapped') && (
+              <MonitoringChain
+                projectName={activeProject.name}
+                credential={
+                  activeProject.monitoring_credential_id
+                    ? credentials.find((c) => c.id === activeProject.monitoring_credential_id) ?? null
+                    : null
+                }
+                slug={activeProject.monitoring_project_slug ?? null}
+              />
+            )}
 
             {monitorState === 'empty' && (
               <ConnectionCard

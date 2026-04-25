@@ -6,12 +6,28 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { SectionHeader } from '../_shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
+import { PrototypeTabs } from '../_shared/PrototypeTabs';
 import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../_shared/tokens';
+import LiteratureSearchPanelAtelier from './LiteratureSearchPanelAtelier';
+import LiteratureSearchPanelWorkbench from './LiteratureSearchPanelWorkbench';
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
 
 export default function LiteratureSearchPanel() {
+  return (
+    <PrototypeTabs
+      defaultId="baseline"
+      variants={[
+        { id: 'baseline', label: 'Baseline', subtitle: 'Current list', render: () => <LiteratureSearchPanelBaseline /> },
+        { id: 'atelier', label: 'Atelier', subtitle: 'Hero source + chronology', render: () => <LiteratureSearchPanelAtelier /> },
+        { id: 'workbench', label: 'Workbench', subtitle: 'Index cards on corkboard', render: () => <LiteratureSearchPanelWorkbench /> },
+      ]}
+    />
+  );
+}
+
+function LiteratureSearchPanelBaseline() {
   const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeResearchProjectId);
   const sources = useSystemStore((s) => s.researchSources);
@@ -73,7 +89,7 @@ export default function LiteratureSearchPanel() {
   };
 
   return (
-    <div className="p-6 space-y-4 overflow-y-auto">
+    <div className="p-6 space-y-4 overflow-y-auto h-full">
       <SectionHeader
         title={t.research_lab.literature}
         actionLabel={t.research_lab.search_sources}

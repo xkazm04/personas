@@ -6,12 +6,28 @@ import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { SectionHeader } from '../_shared/SectionHeader';
 import { EmptyState } from '../_shared/EmptyState';
+import { PrototypeTabs } from '../_shared/PrototypeTabs';
 import { projectStatusColor, projectStatusLabel, domainLabel } from '../_shared/tokens';
 import type { ResearchProject } from '@/api/researchLab/researchLab';
+import ResearchProjectListAtelier from './ResearchProjectListAtelier';
+import ResearchProjectListCartograph from './ResearchProjectListCartograph';
 
 const ResearchProjectForm = lazy(() => import('./ResearchProjectForm'));
 
 export default function ResearchProjectList() {
+  return (
+    <PrototypeTabs
+      defaultId="baseline"
+      variants={[
+        { id: 'baseline', label: 'Baseline', subtitle: 'Current grid', render: () => <ResearchProjectListBaseline /> },
+        { id: 'atelier', label: 'Atelier', subtitle: 'Hero project + chronology', render: () => <ResearchProjectListAtelier /> },
+        { id: 'cartograph', label: 'Cartograph', subtitle: 'Phase × domain map', render: () => <ResearchProjectListCartograph /> },
+      ]}
+    />
+  );
+}
+
+function ResearchProjectListBaseline() {
   const { t } = useTranslation();
   const projects = useSystemStore((s) => s.researchProjects);
   const loading = useSystemStore((s) => s.researchProjectsLoading);
@@ -85,7 +101,7 @@ export default function ResearchProjectList() {
   }
 
   return (
-    <div className="p-6 space-y-4 overflow-y-auto">
+    <div className="p-6 space-y-4 overflow-y-auto h-full">
       <SectionHeader
         title={t.research_lab.projects}
         actionLabel={t.research_lab.create_project}

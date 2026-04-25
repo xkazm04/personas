@@ -1391,7 +1391,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 change_summary TEXT,
                 tag TEXT NOT NULL DEFAULT 'experimental',
                 parent_version_id TEXT,
-                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                created_at TEXT,
                 FOREIGN KEY (persona_id) REFERENCES personas(id) ON DELETE CASCADE
             );
             CREATE INDEX idx_pv_persona ON persona_versions(persona_id);
@@ -2222,5 +2222,124 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON lab_result_events(result_kind, result_id, event_index);"
     )?;
 
+    // -- Research Lab plugin: defensive column ALTERs ---------------------------
+    // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
+    // initial.rs. If a legacy DB has any of these tables with a drifted column
+    // set (e.g. created before obsidian_vault_path was added), the SELECT
+    // statements in db/repos/research_lab.rs will fail with
+    // "no such column: <name>" and the UI surfaces "Database error: ..." on
+    // every fetch/create. The block below idempotently brings legacy schemas
+    // up to the current expected shape. Each ALTER is wrapped in `let _ =`
+    // because SQLite errors on duplicate column names — that error is the
+    // success path on already-migrated DBs.
+    research_lab_align_columns(conn);
+
     Ok(())
+}
+
+/// Bring legacy `research_*` table schemas up to the column set expected by
+/// `db/repos/research_lab.rs`. SQLite has no `ADD COLUMN IF NOT EXISTS`, so we
+/// skip per-column PRAGMA checks and rely on the duplicate-column error being
+/// the success path. Tables that don't exist yet are created by initial.rs;
+/// these ALTERs are no-ops on a fresh DB.
+fn research_lab_align_columns(conn: &Connection) {
+    let stmts = [
+        // research_projects
+        "ALTER TABLE research_projects ADD COLUMN description TEXT",
+        "ALTER TABLE research_projects ADD COLUMN domain TEXT",
+        "ALTER TABLE research_projects ADD COLUMN status TEXT NOT NULL DEFAULT 'scoping'",
+        "ALTER TABLE research_projects ADD COLUMN thesis TEXT",
+        "ALTER TABLE research_projects ADD COLUMN scope_constraints TEXT",
+        "ALTER TABLE research_projects ADD COLUMN team_id TEXT",
+        "ALTER TABLE research_projects ADD COLUMN obsidian_vault_path TEXT",
+        "ALTER TABLE research_projects ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_projects ADD COLUMN updated_at TEXT",
+        // research_sources
+        "ALTER TABLE research_sources ADD COLUMN source_type TEXT NOT NULL DEFAULT 'web'",
+        "ALTER TABLE research_sources ADD COLUMN authors TEXT",
+        "ALTER TABLE research_sources ADD COLUMN year INTEGER",
+        "ALTER TABLE research_sources ADD COLUMN abstract_text TEXT",
+        "ALTER TABLE research_sources ADD COLUMN doi TEXT",
+        "ALTER TABLE research_sources ADD COLUMN url TEXT",
+        "ALTER TABLE research_sources ADD COLUMN pdf_path TEXT",
+        "ALTER TABLE research_sources ADD COLUMN citation_count INTEGER",
+        "ALTER TABLE research_sources ADD COLUMN metadata TEXT",
+        "ALTER TABLE research_sources ADD COLUMN relevance_score REAL",
+        "ALTER TABLE research_sources ADD COLUMN knowledge_base_id TEXT",
+        "ALTER TABLE research_sources ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'",
+        "ALTER TABLE research_sources ADD COLUMN ingested_at TEXT",
+        "ALTER TABLE research_sources ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_sources ADD COLUMN updated_at TEXT",
+        // research_hypotheses
+        "ALTER TABLE research_hypotheses ADD COLUMN rationale TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN status TEXT NOT NULL DEFAULT 'proposed'",
+        "ALTER TABLE research_hypotheses ADD COLUMN confidence REAL NOT NULL DEFAULT 0.5",
+        "ALTER TABLE research_hypotheses ADD COLUMN parent_hypothesis_id TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN generated_by TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN supporting_evidence TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN counter_evidence TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN linked_experiments TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_hypotheses ADD COLUMN updated_at TEXT",
+        // research_experiments
+        "ALTER TABLE research_experiments ADD COLUMN hypothesis_id TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN methodology TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN input_schema TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN success_criteria TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN status TEXT NOT NULL DEFAULT 'designed'",
+        "ALTER TABLE research_experiments ADD COLUMN pipeline_id TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_experiments ADD COLUMN updated_at TEXT",
+        // research_experiment_runs
+        "ALTER TABLE research_experiment_runs ADD COLUMN run_number INTEGER NOT NULL DEFAULT 1",
+        "ALTER TABLE research_experiment_runs ADD COLUMN inputs TEXT",
+        "ALTER TABLE research_experiment_runs ADD COLUMN outputs TEXT",
+        "ALTER TABLE research_experiment_runs ADD COLUMN metrics TEXT",
+        "ALTER TABLE research_experiment_runs ADD COLUMN passed INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE research_experiment_runs ADD COLUMN execution_id TEXT",
+        "ALTER TABLE research_experiment_runs ADD COLUMN duration_ms INTEGER",
+        "ALTER TABLE research_experiment_runs ADD COLUMN cost_usd REAL",
+        "ALTER TABLE research_experiment_runs ADD COLUMN created_at TEXT",
+        // research_findings
+        "ALTER TABLE research_findings ADD COLUMN description TEXT",
+        "ALTER TABLE research_findings ADD COLUMN confidence REAL NOT NULL DEFAULT 0.5",
+        "ALTER TABLE research_findings ADD COLUMN category TEXT",
+        "ALTER TABLE research_findings ADD COLUMN source_experiment_ids TEXT",
+        "ALTER TABLE research_findings ADD COLUMN source_ids TEXT",
+        "ALTER TABLE research_findings ADD COLUMN hypothesis_ids TEXT",
+        "ALTER TABLE research_findings ADD COLUMN generated_by TEXT",
+        "ALTER TABLE research_findings ADD COLUMN status TEXT NOT NULL DEFAULT 'draft'",
+        "ALTER TABLE research_findings ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_findings ADD COLUMN updated_at TEXT",
+        // research_reports
+        "ALTER TABLE research_reports ADD COLUMN report_type TEXT",
+        "ALTER TABLE research_reports ADD COLUMN status TEXT NOT NULL DEFAULT 'outline'",
+        "ALTER TABLE research_reports ADD COLUMN template TEXT",
+        "ALTER TABLE research_reports ADD COLUMN format TEXT",
+        "ALTER TABLE research_reports ADD COLUMN review_id TEXT",
+        "ALTER TABLE research_reports ADD COLUMN created_at TEXT",
+        "ALTER TABLE research_reports ADD COLUMN updated_at TEXT",
+    ];
+    for sql in stmts {
+        let _ = conn.execute_batch(sql);
+    }
+
+    // Backfill any NULL timestamps left by an ADD COLUMN on a legacy DB.
+    // (SQLite forbids non-constant DEFAULTs on ADD COLUMN, so the ALTER
+    // statements above intentionally omit the `DEFAULT (datetime('now'))`
+    // clause — without this backfill, existing rows would carry NULL and the
+    // repo's `row.get::<_, String>` would fail on read.) Targets `IS NULL` so
+    // rows already populated by the table-level default are untouched.
+    let backfills = [
+        "UPDATE research_projects SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+        "UPDATE research_sources SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+        "UPDATE research_hypotheses SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+        "UPDATE research_experiments SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+        "UPDATE research_experiment_runs SET created_at = COALESCE(created_at, datetime('now')) WHERE created_at IS NULL",
+        "UPDATE research_findings SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+        "UPDATE research_reports SET created_at = COALESCE(created_at, datetime('now')), updated_at = COALESCE(updated_at, datetime('now')) WHERE created_at IS NULL OR updated_at IS NULL",
+    ];
+    for sql in backfills {
+        let _ = conn.execute_batch(sql);
+    }
 }

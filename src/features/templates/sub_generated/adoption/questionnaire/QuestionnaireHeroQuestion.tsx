@@ -153,7 +153,7 @@ export function QuestionnaireHeroQuestion({
               onChange={(v) => onAnswerUpdated(question.id, v)}
             />
             {options.length > 1 && (
-              <div className="mt-4 text-xs text-foreground/55 flex items-center gap-2">
+              <div className="hide-on-touch mt-4 text-xs text-foreground/55 flex items-center gap-2">
                 <span>Press</span>
                 <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
                   1

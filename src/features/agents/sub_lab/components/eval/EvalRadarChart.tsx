@@ -7,16 +7,16 @@ import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/Cha
 import { useScaledFontSize } from '@/stores/themeStore';
 import type { VersionAggregate } from '../../libs/evalAggregation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useChartTheme, seriesColor } from '../../shared/chartTheme';
 
 interface EvalRadarChartProps {
   versionAggs: VersionAggregate[];
 }
 
-const RADAR_PALETTE = ['#60A5FA', '#A78BFA', '#34D399', '#F59E0B', '#FB7185', '#22D3EE'];
-
 export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
   const { t } = useTranslation();
   const sf = useScaledFontSize();
+  const chart = useChartTheme();
   const radarVersions = versionAggs.slice(0, 4);
 
   const radarData = useMemo(() =>
@@ -47,23 +47,23 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
           <ChartErrorBoundary>
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData} outerRadius="72%">
-                <PolarGrid stroke="rgba(148, 163, 184, 0.25)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(226,232,240,0.85)', fontSize: sf(12) }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: 'rgba(148,163,184,0.75)', fontSize: sf(10) }} />
+                <PolarGrid stroke={chart.gridStroke} />
+                <PolarAngleAxis dataKey="metric" tick={{ fill: chart.axisLabelFill, fontSize: sf(12) }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: chart.axisFill, fontSize: sf(10) }} />
                 <Tooltip
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={((value: number | string | undefined) => [value ?? 0, 'Score']) as any}
                   contentStyle={{
-                    background: 'rgba(10, 14, 24, 0.92)',
-                    border: '1px solid rgba(99, 102, 241, 0.25)',
+                    background: chart.tooltipBg,
+                    border: `1px solid ${chart.tooltipBorder}`,
                     borderRadius: 10,
-                    color: '#e2e8f0',
+                    color: chart.tooltipText,
                   }}
                 />
                 {radarVersions.map((agg, idx) => (
                   <Radar key={agg.versionId} name={`v${agg.versionNumber}`} dataKey={agg.versionId}
-                    stroke={RADAR_PALETTE[idx % RADAR_PALETTE.length]}
-                    fill={RADAR_PALETTE[idx % RADAR_PALETTE.length]}
+                    stroke={seriesColor(idx, chart)}
+                    fill={seriesColor(idx, chart)}
                     fillOpacity={0.16} strokeWidth={2} />
                 ))}
               </RadarChart>
@@ -73,7 +73,7 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
         <div className="mt-2 flex flex-wrap gap-2">
           {radarVersions.map((agg, idx) => (
             <span key={agg.versionId} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card typo-body border border-primary/10 bg-secondary/20 text-foreground">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: RADAR_PALETTE[idx % RADAR_PALETTE.length] }} />
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seriesColor(idx, chart) }} />
               v{agg.versionNumber}
             </span>
           ))}

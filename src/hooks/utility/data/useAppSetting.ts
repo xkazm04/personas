@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { deleteAppSetting, getAppSetting, setAppSetting } from '@/api/system/settings';
+import { deleteAppSetting, setAppSetting } from '@/api/system/settings';
+import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('app-setting');
@@ -33,7 +34,7 @@ export function useAppSetting(
   valueRef.current = value;
 
   useEffect(() => {
-    getAppSetting(key)
+    getAppSettingCoalesced(key)
       .then((val) => {
         if (val) {
           if (validate && !validate(val)) {

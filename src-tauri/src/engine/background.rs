@@ -751,15 +751,23 @@ pub(crate) async fn event_bus_tick(
                 }
             };
 
-            // Guard: skip if persona already has a running execution (prevents cascade)
-            let running_count = exec_repo::get_running_count_for_persona(pool, &persona.id).unwrap_or(0);
+            // Cascade guard. Scope it to the capability when the match is
+            // capability-scoped so a legitimate UC1→UC2 chain in the same
+            // persona isn't blocked by UC1 still completing when its
+            // emitted event lands. Persona-wide matches keep the original
+            // per-persona guard (no use_case to disambiguate).
+            let running_count = match m.use_case_id.as_deref() {
+                Some(uc_id) => exec_repo::get_running_count_for_persona_use_case(pool, &persona.id, uc_id).unwrap_or(0),
+                None => exec_repo::get_running_count_for_persona(pool, &persona.id).unwrap_or(0),
+            };
             if running_count > 0 {
                 tracing::info!(
                     persona_id = %persona.id,
                     persona_name = %persona.name,
+                    use_case_id = ?m.use_case_id,
                     running_count = running_count,
                     event_type = %event.event_type,
-                    "Event bus: skipping — persona already has running execution (cascade guard)"
+                    "Event bus: skipping — capability already has running execution (cascade guard)"
                 );
                 continue;
             }

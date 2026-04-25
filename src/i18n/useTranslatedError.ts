@@ -12,48 +12,52 @@
  *   const label = friendlySeverityT('critical'); // "Needs immediate attention" (translated)
  */
 import type { Translations } from './en';
+import type { FriendlyErrorCategory } from '@/lib/errors/errorRegistry';
 
 export interface TranslatedError {
   message: string;
   suggestion: string;
+  category: FriendlyErrorCategory;
 }
 
 // Map raw error match patterns → i18n key prefixes in error_registry section.
 // Order matters: most specific patterns first (mirrors errorRegistry.ts).
-const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string }> = [
-  { match: 'NetworkOffline', keyPrefix: 'network_offline' },
-  { match: 'timed out', keyPrefix: 'timed_out' },
-  { match: 'Failed to build HTTP client', keyPrefix: 'http_client' },
-  { match: 'Auth token missing or invalid', keyPrefix: 'auth_invalid' },
-  { match: 'Session expired', keyPrefix: 'session_expired' },
-  { match: 'OAuth authorization timed out', keyPrefix: 'oauth_timeout' },
-  { match: 'permission denied', keyPrefix: 'permission_denied' },
-  { match: 'Forbidden', keyPrefix: 'forbidden' },
-  { match: 'rate limit exceeded', keyPrefix: 'rate_limit' },
-  { match: 'RateLimited', keyPrefix: 'rate_limited' },
-  { match: 'Budget limit exceeded', keyPrefix: 'budget_limit' },
-  { match: 'budget exceeded', keyPrefix: 'budget_exceeded' },
-  { match: 'Claude CLI not found', keyPrefix: 'cli_not_found' },
-  { match: 'CLAUDECODE environment variable', keyPrefix: 'cli_config_conflict' },
-  { match: 'Claude CLI exited with error', keyPrefix: 'cli_error' },
-  { match: 'CLI produced no output', keyPrefix: 'cli_no_output' },
-  { match: 'Failed to extract connector design', keyPrefix: 'connector_design' },
-  { match: 'Failed to generate', keyPrefix: 'generation_failed' },
-  { match: 'Invalid JSON', keyPrefix: 'invalid_json' },
-  { match: 'Validation', keyPrefix: 'validation' },
-  { match: 'Request body too large', keyPrefix: 'body_too_large' },
-  { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large' },
-  { match: 'Decryption failed', keyPrefix: 'decryption' },
-  { match: 'Circular chain detected', keyPrefix: 'circular_chain' },
-  { match: 'NotFound', keyPrefix: 'not_found' },
-  { match: 'Connection limit reached', keyPrefix: 'connection_limit' },
-  { match: /Webhook returned HTTP \d+/, keyPrefix: 'webhook_error' },
-  { match: 'Cannot reach Zapier hook', keyPrefix: 'zapier' },
-  { match: 'is not active', keyPrefix: 'inactive' },
-  { match: 'no webhook URL configured', keyPrefix: 'no_webhook' },
-  { match: 'no platform credential configured', keyPrefix: 'no_credential' },
-  { match: 'Bundle file is empty or unreadable', keyPrefix: 'empty_bundle' },
-  { match: 'ZIP archive does not contain manifest', keyPrefix: 'invalid_bundle' },
+// Each entry's `category` mirrors the same field on the corresponding rule
+// in errorRegistry.ts — keep the two in sync when adding new rules.
+const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category: FriendlyErrorCategory }> = [
+  { match: 'NetworkOffline', keyPrefix: 'network_offline', category: 'system' },
+  { match: 'timed out', keyPrefix: 'timed_out', category: 'recoverable' },
+  { match: 'Failed to build HTTP client', keyPrefix: 'http_client', category: 'system' },
+  { match: 'Auth token missing or invalid', keyPrefix: 'auth_invalid', category: 'user_action' },
+  { match: 'Session expired', keyPrefix: 'session_expired', category: 'user_action' },
+  { match: 'OAuth authorization timed out', keyPrefix: 'oauth_timeout', category: 'user_action' },
+  { match: 'permission denied', keyPrefix: 'permission_denied', category: 'user_action' },
+  { match: 'Forbidden', keyPrefix: 'forbidden', category: 'user_action' },
+  { match: 'rate limit exceeded', keyPrefix: 'rate_limit', category: 'recoverable' },
+  { match: 'RateLimited', keyPrefix: 'rate_limited', category: 'recoverable' },
+  { match: 'Budget limit exceeded', keyPrefix: 'budget_limit', category: 'user_action' },
+  { match: 'budget exceeded', keyPrefix: 'budget_exceeded', category: 'user_action' },
+  { match: 'Claude CLI not found', keyPrefix: 'cli_not_found', category: 'system' },
+  { match: 'CLAUDECODE environment variable', keyPrefix: 'cli_config_conflict', category: 'recoverable' },
+  { match: 'Claude CLI exited with error', keyPrefix: 'cli_error', category: 'recoverable' },
+  { match: 'CLI produced no output', keyPrefix: 'cli_no_output', category: 'recoverable' },
+  { match: 'Failed to extract connector design', keyPrefix: 'connector_design', category: 'user_action' },
+  { match: 'Failed to generate', keyPrefix: 'generation_failed', category: 'recoverable' },
+  { match: 'Invalid JSON', keyPrefix: 'invalid_json', category: 'user_action' },
+  { match: 'Validation', keyPrefix: 'validation', category: 'user_action' },
+  { match: 'Request body too large', keyPrefix: 'body_too_large', category: 'user_action' },
+  { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large', category: 'user_action' },
+  { match: 'Decryption failed', keyPrefix: 'decryption', category: 'user_action' },
+  { match: 'Circular chain detected', keyPrefix: 'circular_chain', category: 'user_action' },
+  { match: 'NotFound', keyPrefix: 'not_found', category: 'recoverable' },
+  { match: 'Connection limit reached', keyPrefix: 'connection_limit', category: 'system' },
+  { match: /Webhook returned HTTP \d+/, keyPrefix: 'webhook_error', category: 'system' },
+  { match: 'Cannot reach Zapier hook', keyPrefix: 'zapier', category: 'user_action' },
+  { match: 'is not active', keyPrefix: 'inactive', category: 'user_action' },
+  { match: 'no webhook URL configured', keyPrefix: 'no_webhook', category: 'user_action' },
+  { match: 'no platform credential configured', keyPrefix: 'no_credential', category: 'user_action' },
+  { match: 'Bundle file is empty or unreadable', keyPrefix: 'empty_bundle', category: 'user_action' },
+  { match: 'ZIP archive does not contain manifest', keyPrefix: 'invalid_bundle', category: 'user_action' },
 ];
 
 type ErrorRegistryKeys = Translations['error_registry'];
@@ -71,6 +75,7 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
   const fallback: TranslatedError = {
     message: getRegistryString(registry, 'generic_message') ?? 'Something went wrong.',
     suggestion: getRegistryString(registry, 'generic_suggestion') ?? 'Try again.',
+    category: 'unclassified',
   };
 
   if (!raw) return fallback;
@@ -84,6 +89,7 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
       return {
         message: getRegistryString(registry, `${rule.keyPrefix}_message`) ?? raw,
         suggestion: getRegistryString(registry, `${rule.keyPrefix}_suggestion`) ?? '',
+        category: rule.category,
       };
     }
   }

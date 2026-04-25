@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::sync::Arc;
 
 use tauri::State;
 
@@ -17,27 +18,27 @@ use crate::AppState;
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_projects(state: State<'_, AppState>) -> Result<Vec<ResearchProject>, AppError> {
+pub fn research_lab_list_projects(state: State<'_, Arc<AppState>>) -> Result<Vec<ResearchProject>, AppError> {
     repo::list_projects(&state.db)
 }
 
 #[tauri::command]
-pub fn research_lab_get_project(state: State<'_, AppState>, id: String) -> Result<ResearchProject, AppError> {
+pub fn research_lab_get_project(state: State<'_, Arc<AppState>>, id: String) -> Result<ResearchProject, AppError> {
     repo::get_project(&state.db, &id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_project(state: State<'_, AppState>, input: CreateResearchProject) -> Result<ResearchProject, AppError> {
+pub fn research_lab_create_project(state: State<'_, Arc<AppState>>, input: CreateResearchProject) -> Result<ResearchProject, AppError> {
     repo::create_project(&state.db, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_update_project(state: State<'_, AppState>, id: String, input: UpdateResearchProject) -> Result<ResearchProject, AppError> {
+pub fn research_lab_update_project(state: State<'_, Arc<AppState>>, id: String, input: UpdateResearchProject) -> Result<ResearchProject, AppError> {
     repo::update_project(&state.db, &id, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_delete_project(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_project(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_project(&state.db, &id)
 }
 
@@ -46,17 +47,17 @@ pub fn research_lab_delete_project(state: State<'_, AppState>, id: String) -> Re
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_sources(state: State<'_, AppState>, project_id: String) -> Result<Vec<ResearchSource>, AppError> {
+pub fn research_lab_list_sources(state: State<'_, Arc<AppState>>, project_id: String) -> Result<Vec<ResearchSource>, AppError> {
     repo::list_sources(&state.db, &project_id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_source(state: State<'_, AppState>, input: CreateResearchSource) -> Result<ResearchSource, AppError> {
+pub fn research_lab_create_source(state: State<'_, Arc<AppState>>, input: CreateResearchSource) -> Result<ResearchSource, AppError> {
     repo::create_source(&state.db, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_delete_source(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_source(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_source(&state.db, &id)
 }
 
@@ -65,18 +66,18 @@ pub fn research_lab_delete_source(state: State<'_, AppState>, id: String) -> Res
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_hypotheses(state: State<'_, AppState>, project_id: String) -> Result<Vec<ResearchHypothesis>, AppError> {
+pub fn research_lab_list_hypotheses(state: State<'_, Arc<AppState>>, project_id: String) -> Result<Vec<ResearchHypothesis>, AppError> {
     repo::list_hypotheses(&state.db, &project_id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_hypothesis(state: State<'_, AppState>, input: CreateResearchHypothesis) -> Result<ResearchHypothesis, AppError> {
+pub fn research_lab_create_hypothesis(state: State<'_, Arc<AppState>>, input: CreateResearchHypothesis) -> Result<ResearchHypothesis, AppError> {
     repo::create_hypothesis(&state.db, &input)
 }
 
 #[tauri::command]
 pub fn research_lab_update_hypothesis(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     id: String,
     status: Option<String>,
     confidence: Option<f64>,
@@ -94,7 +95,7 @@ pub fn research_lab_update_hypothesis(
 }
 
 #[tauri::command]
-pub fn research_lab_delete_hypothesis(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_hypothesis(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_hypothesis(&state.db, &id)
 }
 
@@ -103,17 +104,17 @@ pub fn research_lab_delete_hypothesis(state: State<'_, AppState>, id: String) ->
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_experiments(state: State<'_, AppState>, project_id: String) -> Result<Vec<ResearchExperiment>, AppError> {
+pub fn research_lab_list_experiments(state: State<'_, Arc<AppState>>, project_id: String) -> Result<Vec<ResearchExperiment>, AppError> {
     repo::list_experiments(&state.db, &project_id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_experiment(state: State<'_, AppState>, input: CreateResearchExperiment) -> Result<ResearchExperiment, AppError> {
+pub fn research_lab_create_experiment(state: State<'_, Arc<AppState>>, input: CreateResearchExperiment) -> Result<ResearchExperiment, AppError> {
     repo::create_experiment(&state.db, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_delete_experiment(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_experiment(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_experiment(&state.db, &id)
 }
 
@@ -122,17 +123,17 @@ pub fn research_lab_delete_experiment(state: State<'_, AppState>, id: String) ->
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_findings(state: State<'_, AppState>, project_id: String) -> Result<Vec<ResearchFinding>, AppError> {
+pub fn research_lab_list_findings(state: State<'_, Arc<AppState>>, project_id: String) -> Result<Vec<ResearchFinding>, AppError> {
     repo::list_findings(&state.db, &project_id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_finding(state: State<'_, AppState>, input: CreateResearchFinding) -> Result<ResearchFinding, AppError> {
+pub fn research_lab_create_finding(state: State<'_, Arc<AppState>>, input: CreateResearchFinding) -> Result<ResearchFinding, AppError> {
     repo::create_finding(&state.db, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_delete_finding(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_finding(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_finding(&state.db, &id)
 }
 
@@ -141,17 +142,17 @@ pub fn research_lab_delete_finding(state: State<'_, AppState>, id: String) -> Re
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_list_reports(state: State<'_, AppState>, project_id: String) -> Result<Vec<ResearchReport>, AppError> {
+pub fn research_lab_list_reports(state: State<'_, Arc<AppState>>, project_id: String) -> Result<Vec<ResearchReport>, AppError> {
     repo::list_reports(&state.db, &project_id)
 }
 
 #[tauri::command]
-pub fn research_lab_create_report(state: State<'_, AppState>, input: CreateResearchReport) -> Result<ResearchReport, AppError> {
+pub fn research_lab_create_report(state: State<'_, Arc<AppState>>, input: CreateResearchReport) -> Result<ResearchReport, AppError> {
     repo::create_report(&state.db, &input)
 }
 
 #[tauri::command]
-pub fn research_lab_delete_report(state: State<'_, AppState>, id: String) -> Result<(), AppError> {
+pub fn research_lab_delete_report(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     repo::delete_report(&state.db, &id)
 }
 
@@ -160,7 +161,7 @@ pub fn research_lab_delete_report(state: State<'_, AppState>, id: String) -> Res
 // ============================================================================
 
 #[tauri::command]
-pub fn research_lab_get_dashboard_stats(state: State<'_, AppState>) -> Result<ResearchDashboardStats, AppError> {
+pub fn research_lab_get_dashboard_stats(state: State<'_, Arc<AppState>>) -> Result<ResearchDashboardStats, AppError> {
     repo::get_dashboard_stats(&state.db)
 }
 
@@ -170,7 +171,7 @@ pub fn research_lab_get_dashboard_stats(state: State<'_, AppState>) -> Result<Re
 
 #[tauri::command]
 pub fn research_lab_update_source_status(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     id: String,
     status: String,
     knowledge_base_id: Option<String>,
@@ -184,7 +185,7 @@ pub fn research_lab_update_source_status(
 
 #[tauri::command]
 pub fn research_lab_sync_to_obsidian(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<u32, AppError> {
     let project = repo::get_project(&state.db, &project_id)?;
@@ -266,7 +267,7 @@ pub fn research_lab_sync_to_obsidian(
 
 #[tauri::command]
 pub fn research_lab_sync_daily_note(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<String, AppError> {
     let project = repo::get_project(&state.db, &project_id)?;
@@ -329,7 +330,7 @@ pub fn research_lab_sync_daily_note(
 
 #[tauri::command]
 pub fn research_lab_list_experiment_runs(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     experiment_id: String,
 ) -> Result<Vec<ResearchExperimentRun>, AppError> {
     repo::list_experiment_runs(&state.db, &experiment_id)
@@ -337,7 +338,7 @@ pub fn research_lab_list_experiment_runs(
 
 #[tauri::command]
 pub fn research_lab_create_experiment_run(
-    state: State<'_, AppState>,
+    state: State<'_, Arc<AppState>>,
     experiment_id: String,
     outputs: Option<String>,
     metrics: Option<String>,
