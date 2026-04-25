@@ -1,0 +1,1848 @@
+WEBVTT
+Kind: captions
+Language: en
+
+00:00:00.960 --> 00:00:03.110 align:start position:0%
+ 
+So,<00:00:01.520><c> there's</c><00:00:01.720><c> this</c><00:00:01.920><c> MCP</c><00:00:02.440><c> plugin</c><00:00:02.800><c> called</c>
+
+00:00:03.110 --> 00:00:03.120 align:start position:0%
+So, there's this MCP plugin called
+ 
+
+00:00:03.120 --> 00:00:05.670 align:start position:0%
+So, there's this MCP plugin called
+Claude<00:00:03.480><c> Context</c><00:00:04.160><c> that</c><00:00:04.360><c> indexes</c><00:00:04.880><c> your</c><00:00:05.080><c> entire</c>
+
+00:00:05.670 --> 00:00:05.680 align:start position:0%
+Claude Context that indexes your entire
+ 
+
+00:00:05.680 --> 00:00:07.910 align:start position:0%
+Claude Context that indexes your entire
+code<00:00:06.040><c> base</c><00:00:06.360><c> into</c><00:00:06.760><c> a</c><00:00:06.840><c> vector</c><00:00:07.280><c> database,</c>
+
+00:00:07.910 --> 00:00:07.920 align:start position:0%
+code base into a vector database,
+ 
+
+00:00:07.920 --> 00:00:09.630 align:start position:0%
+code base into a vector database,
+meaning<00:00:08.160><c> your</c><00:00:08.320><c> coding</c><00:00:08.720><c> agent</c><00:00:09.120><c> can</c><00:00:09.280><c> get</c><00:00:09.560><c> the</c>
+
+00:00:09.630 --> 00:00:09.640 align:start position:0%
+meaning your coding agent can get the
+ 
+
+00:00:09.640 --> 00:00:11.780 align:start position:0%
+meaning your coding agent can get the
+exact<00:00:10.200><c> code</c><00:00:10.480><c> it</c><00:00:10.600><c> needs</c><00:00:10.840><c> quickly</c><00:00:11.520><c> without</c>
+
+00:00:11.780 --> 00:00:11.790 align:start position:0%
+exact code it needs quickly without
+ 
+
+00:00:11.790 --> 00:00:13.910 align:start position:0%
+exact code it needs quickly without
+[music]<00:00:12.000><c> guessing</c><00:00:12.360><c> using</c><00:00:12.640><c> grep</c><00:00:13.000><c> or</c><00:00:13.160><c> glob</c><00:00:13.680><c> and</c>
+
+00:00:13.910 --> 00:00:13.920 align:start position:0%
+[music] guessing using grep or glob and
+ 
+
+00:00:13.920 --> 00:00:15.790 align:start position:0%
+[music] guessing using grep or glob and
+hoping<00:00:14.240><c> it</c><00:00:14.400><c> finds</c><00:00:14.680><c> the</c><00:00:14.760><c> right</c><00:00:15.040><c> file.</c><00:00:15.480><c> It</c><00:00:15.600><c> even</c>
+
+00:00:15.790 --> 00:00:15.800 align:start position:0%
+hoping it finds the right file. It even
+ 
+
+00:00:15.800 --> 00:00:18.150 align:start position:0%
+hoping it finds the right file. It even
+passes<00:00:16.120><c> your</c><00:00:16.240><c> code</c><00:00:16.600><c> with</c><00:00:16.840><c> ASTs</c><00:00:17.600><c> and</c><00:00:17.760><c> uses</c><00:00:18.040><c> a</c>
+
+00:00:18.150 --> 00:00:18.160 align:start position:0%
+passes your code with ASTs and uses a
+ 
+
+00:00:18.160 --> 00:00:20.070 align:start position:0%
+passes your code with ASTs and uses a
+hybrid<00:00:18.720><c> search</c><00:00:19.000><c> approach</c><00:00:19.640><c> combining</c>
+
+00:00:20.070 --> 00:00:20.080 align:start position:0%
+hybrid search approach combining
+ 
+
+00:00:20.080 --> 00:00:22.270 align:start position:0%
+hybrid search approach combining
+semantic<00:00:20.560><c> vectors</c><00:00:21.240><c> with</c><00:00:21.400><c> keyword</c><00:00:21.800><c> matching,</c>
+
+00:00:22.270 --> 00:00:22.280 align:start position:0%
+semantic vectors with keyword matching,
+ 
+
+00:00:22.280 --> 00:00:24.550 align:start position:0%
+semantic vectors with keyword matching,
+which<00:00:22.520><c> ends</c><00:00:22.720><c> up</c><00:00:22.880><c> using</c><00:00:23.120><c> 40%</c><00:00:23.880><c> less</c><00:00:24.080><c> context.</c>
+
+00:00:24.550 --> 00:00:24.560 align:start position:0%
+which ends up using 40% less context.
+ 
+
+00:00:24.560 --> 00:00:26.830 align:start position:0%
+which ends up using 40% less context.
+But,<00:00:24.800><c> it</c><00:00:24.920><c> does</c><00:00:25.120><c> need</c><00:00:25.400><c> a</c><00:00:25.480><c> Zilliz</c><00:00:25.800><c> Cloud</c><00:00:26.160><c> account</c>
+
+00:00:26.830 --> 00:00:26.840 align:start position:0%
+But, it does need a Zilliz Cloud account
+ 
+
+00:00:26.840 --> 00:00:29.270 align:start position:0%
+But, it does need a Zilliz Cloud account
+and<00:00:27.160><c> an</c><00:00:27.320><c> OpenAI</c><00:00:27.760><c> key</c><00:00:28.040><c> for</c><00:00:28.240><c> embeddings</c><00:00:28.800><c> even</c><00:00:29.120><c> if</c>
+
+00:00:29.270 --> 00:00:29.280 align:start position:0%
+and an OpenAI key for embeddings even if
+ 
+
+00:00:29.280 --> 00:00:31.390 align:start position:0%
+and an OpenAI key for embeddings even if
+you<00:00:29.400><c> use</c><00:00:29.640><c> Claude</c><00:00:30.080><c> Code.</c><00:00:30.520><c> So,</c><00:00:30.760><c> is</c><00:00:30.920><c> the</c><00:00:31.080><c> extra</c>
+
+00:00:31.390 --> 00:00:31.400 align:start position:0%
+you use Claude Code. So, is the extra
+ 
+
+00:00:31.400 --> 00:00:33.950 align:start position:0%
+you use Claude Code. So, is the extra
+effort<00:00:31.720><c> and</c><00:00:31.880><c> cost</c><00:00:32.560><c> worth</c><00:00:32.840><c> the</c><00:00:33.000><c> token</c><00:00:33.320><c> savings?</c>
+
+00:00:33.950 --> 00:00:33.960 align:start position:0%
+effort and cost worth the token savings?
+ 
+
+00:00:33.960 --> 00:00:39.110 align:start position:0%
+effort and cost worth the token savings?
+Hit<00:00:34.080><c> subscribe</c><00:00:34.640><c> and</c><00:00:34.880><c> let's</c><00:00:35.080><c> find</c><00:00:35.280><c> out.</c>
+
+00:00:39.110 --> 00:00:39.120 align:start position:0%
+ 
+ 
+
+00:00:39.120 --> 00:00:41.110 align:start position:0%
+ 
+Okay,<00:00:39.440><c> so</c><00:00:39.680><c> Claude</c><00:00:39.960><c> Context,</c><00:00:40.560><c> not</c><00:00:40.760><c> sure</c><00:00:40.920><c> about</c>
+
+00:00:41.110 --> 00:00:41.120 align:start position:0%
+Okay, so Claude Context, not sure about
+ 
+
+00:00:41.120 --> 00:00:43.270 align:start position:0%
+Okay, so Claude Context, not sure about
+the<00:00:41.200><c> name,</c><00:00:41.720><c> is</c><00:00:41.880><c> made</c><00:00:42.120><c> by</c><00:00:42.280><c> Zilliz,</c><00:00:42.840><c> which</c><00:00:43.080><c> is</c><00:00:43.240><c> a</c>
+
+00:00:43.270 --> 00:00:43.280 align:start position:0%
+the name, is made by Zilliz, which is a
+ 
+
+00:00:43.280 --> 00:00:45.190 align:start position:0%
+the name, is made by Zilliz, which is a
+company<00:00:43.760><c> created</c><00:00:44.240><c> by</c><00:00:44.440><c> the</c><00:00:44.640><c> founders</c><00:00:45.040><c> of</c>
+
+00:00:45.190 --> 00:00:45.200 align:start position:0%
+company created by the founders of
+ 
+
+00:00:45.200 --> 00:00:47.070 align:start position:0%
+company created by the founders of
+Milvus,<00:00:45.640><c> a</c><00:00:45.720><c> very</c><00:00:46.040><c> performant</c><00:00:46.600><c> vector</c>
+
+00:00:47.070 --> 00:00:47.080 align:start position:0%
+Milvus, a very performant vector
+ 
+
+00:00:47.080 --> 00:00:49.070 align:start position:0%
+Milvus, a very performant vector
+database.<00:00:47.760><c> It</c><00:00:47.880><c> connects</c><00:00:48.200><c> to</c><00:00:48.280><c> your</c><00:00:48.480><c> agent</c><00:00:48.840><c> by</c>
+
+00:00:49.070 --> 00:00:49.080 align:start position:0%
+database. It connects to your agent by
+ 
+
+00:00:49.080 --> 00:00:51.390 align:start position:0%
+database. It connects to your agent by
+MCP,<00:00:49.720><c> so</c><00:00:50.000><c> this</c><00:00:50.240><c> means</c><00:00:50.400><c> it</c><00:00:50.480><c> can</c><00:00:50.600><c> work</c><00:00:50.800><c> with</c><00:00:51.120><c> any</c>
+
+00:00:51.390 --> 00:00:51.400 align:start position:0%
+MCP, so this means it can work with any
+ 
+
+00:00:51.400 --> 00:00:53.910 align:start position:0%
+MCP, so this means it can work with any
+agent<00:00:51.760><c> harness</c><00:00:52.320><c> and</c><00:00:52.640><c> not</c><00:00:52.920><c> just</c><00:00:53.120><c> Claude</c><00:00:53.440><c> Code.</c>
+
+00:00:53.910 --> 00:00:53.920 align:start position:0%
+agent harness and not just Claude Code.
+ 
+
+00:00:53.920 --> 00:00:56.310 align:start position:0%
+agent harness and not just Claude Code.
+But,<00:00:54.160><c> it</c><00:00:54.280><c> does</c><00:00:54.520><c> three</c><00:00:54.960><c> pretty</c><00:00:55.320><c> complex</c><00:00:55.760><c> things</c>
+
+00:00:56.310 --> 00:00:56.320 align:start position:0%
+But, it does three pretty complex things
+ 
+
+00:00:56.320 --> 00:00:58.430 align:start position:0%
+But, it does three pretty complex things
+to<00:00:56.440><c> make</c><00:00:56.640><c> your</c><00:00:56.760><c> code</c><00:00:57.160><c> easily</c><00:00:57.560><c> findable.</c>
+
+00:00:58.430 --> 00:00:58.440 align:start position:0%
+to make your code easily findable.
+ 
+
+00:00:58.440 --> 00:01:00.750 align:start position:0%
+to make your code easily findable.
+First,<00:00:58.760><c> it</c><00:00:58.920><c> uses</c><00:00:59.240><c> Tree-sitter</c><00:01:00.120><c> to</c><00:01:00.440><c> pass</c>
+
+00:01:00.750 --> 00:01:00.760 align:start position:0%
+First, it uses Tree-sitter to pass
+ 
+
+00:01:00.760 --> 00:01:02.670 align:start position:0%
+First, it uses Tree-sitter to pass
+through<00:01:01.000><c> all</c><00:01:01.120><c> of</c><00:01:01.240><c> the</c><00:01:01.320><c> code</c><00:01:01.920><c> creating</c><00:01:02.320><c> chunks</c>
+
+00:01:02.670 --> 00:01:02.680 align:start position:0%
+through all of the code creating chunks
+ 
+
+00:01:02.680 --> 00:01:04.670 align:start position:0%
+through all of the code creating chunks
+of<00:01:02.840><c> functions</c><00:01:03.400><c> and</c><00:01:03.600><c> classes,</c><00:01:04.360><c> and</c><00:01:04.559><c> this</c>
+
+00:01:04.670 --> 00:01:04.680 align:start position:0%
+of functions and classes, and this
+ 
+
+00:01:04.680 --> 00:01:06.430 align:start position:0%
+of functions and classes, and this
+supports<00:01:05.199><c> nine</c><00:01:05.480><c> languages</c><00:01:06.000><c> including</c>
+
+00:01:06.430 --> 00:01:06.440 align:start position:0%
+supports nine languages including
+ 
+
+00:01:06.440 --> 00:01:08.790 align:start position:0%
+supports nine languages including
+TypeScript,<00:01:07.080><c> Python,</c><00:01:07.560><c> Rust,</c><00:01:07.880><c> and</c><00:01:08.120><c> Go.</c><00:01:08.520><c> Then,</c>
+
+00:01:08.790 --> 00:01:08.800 align:start position:0%
+TypeScript, Python, Rust, and Go. Then,
+ 
+
+00:01:08.800 --> 00:01:11.430 align:start position:0%
+TypeScript, Python, Rust, and Go. Then,
+it<00:01:08.960><c> uses</c><00:01:09.200><c> a</c><00:01:09.280><c> custom</c><00:01:09.720><c> Merkle</c><00:01:10.080><c> DAG</c><00:01:10.640><c> to</c><00:01:10.800><c> hash</c><00:01:11.160><c> each</c>
+
+00:01:11.430 --> 00:01:11.440 align:start position:0%
+it uses a custom Merkle DAG to hash each
+ 
+
+00:01:11.440 --> 00:01:14.030 align:start position:0%
+it uses a custom Merkle DAG to hash each
+file<00:01:12.040><c> with</c><00:01:12.280><c> JSON</c><00:01:12.720><c> snapshots,</c><00:01:13.520><c> meaning</c><00:01:13.840><c> it</c>
+
+00:01:14.030 --> 00:01:14.040 align:start position:0%
+file with JSON snapshots, meaning it
+ 
+
+00:01:14.040 --> 00:01:16.030 align:start position:0%
+file with JSON snapshots, meaning it
+only<00:01:14.360><c> re-indexes</c><00:01:15.160><c> the</c><00:01:15.280><c> files</c><00:01:15.720><c> that</c><00:01:15.880><c> have</c>
+
+00:01:16.030 --> 00:01:16.040 align:start position:0%
+only re-indexes the files that have
+ 
+
+00:01:16.040 --> 00:01:18.390 align:start position:0%
+only re-indexes the files that have
+changed<00:01:16.680><c> and</c><00:01:16.880><c> not</c><00:01:17.120><c> the</c><00:01:17.240><c> whole</c><00:01:17.560><c> code</c><00:01:17.800><c> base.</c><00:01:18.280><c> And</c>
+
+00:01:18.390 --> 00:01:18.400 align:start position:0%
+changed and not the whole code base. And
+ 
+
+00:01:18.400 --> 00:01:19.710 align:start position:0%
+changed and not the whole code base. And
+then,<00:01:18.600><c> when</c><00:01:18.720><c> you</c><00:01:18.800><c> actually</c><00:01:19.080><c> want</c><00:01:19.240><c> to</c><00:01:19.360><c> search</c>
+
+00:01:19.710 --> 00:01:19.720 align:start position:0%
+then, when you actually want to search
+ 
+
+00:01:19.720 --> 00:01:21.710 align:start position:0%
+then, when you actually want to search
+through<00:01:19.920><c> the</c><00:01:20.000><c> code,</c><00:01:20.560><c> it</c><00:01:20.720><c> does</c><00:01:21.200><c> two</c><00:01:21.440><c> different</c>
+
+00:01:21.710 --> 00:01:21.720 align:start position:0%
+through the code, it does two different
+ 
+
+00:01:21.720 --> 00:01:23.950 align:start position:0%
+through the code, it does two different
+types<00:01:21.960><c> of</c><00:01:22.080><c> searches</c><00:01:22.640><c> at</c><00:01:22.800><c> the</c><00:01:22.880><c> same</c><00:01:23.240><c> time.</c><00:01:23.880><c> A</c>
+
+00:01:23.950 --> 00:01:23.960 align:start position:0%
+types of searches at the same time. A
+ 
+
+00:01:23.960 --> 00:01:26.190 align:start position:0%
+types of searches at the same time. A
+vector<00:01:24.360><c> search</c><00:01:24.920><c> to</c><00:01:25.120><c> find</c><00:01:25.480><c> the</c><00:01:25.680><c> semantic</c>
+
+00:01:26.190 --> 00:01:26.200 align:start position:0%
+vector search to find the semantic
+ 
+
+00:01:26.200 --> 00:01:29.310 align:start position:0%
+vector search to find the semantic
+meaning<00:01:26.680><c> of</c><00:01:26.840><c> the</c><00:01:26.920><c> code</c><00:01:27.480><c> and</c><00:01:27.760><c> a</c><00:01:27.840><c> BM25</c><00:01:28.960><c> index</c>
+
+00:01:29.310 --> 00:01:29.320 align:start position:0%
+meaning of the code and a BM25 index
+ 
+
+00:01:29.320 --> 00:01:31.590 align:start position:0%
+meaning of the code and a BM25 index
+search<00:01:29.800><c> for</c><00:01:29.960><c> exact</c><00:01:30.440><c> keyword</c><00:01:30.920><c> matching.</c><00:01:31.440><c> This</c>
+
+00:01:31.590 --> 00:01:31.600 align:start position:0%
+search for exact keyword matching. This
+ 
+
+00:01:31.600 --> 00:01:34.030 align:start position:0%
+search for exact keyword matching. This
+all<00:01:31.760><c> results</c><00:01:32.160><c> in</c><00:01:32.240><c> an</c><00:01:32.400><c> up</c><00:01:32.640><c> to</c><00:01:32.880><c> 40%</c><00:01:33.640><c> context</c>
+
+00:01:34.030 --> 00:01:34.040 align:start position:0%
+all results in an up to 40% context
+ 
+
+00:01:34.040 --> 00:01:36.430 align:start position:0%
+all results in an up to 40% context
+reduction,<00:01:34.840><c> which</c><00:01:35.120><c> is</c><00:01:35.280><c> a</c><00:01:35.360><c> lot</c><00:01:35.720><c> for</c><00:01:35.880><c> large</c><00:01:36.200><c> code</c>
+
+00:01:36.430 --> 00:01:36.440 align:start position:0%
+reduction, which is a lot for large code
+ 
+
+00:01:36.440 --> 00:01:38.950 align:start position:0%
+reduction, which is a lot for large code
+bases.<00:01:37.080><c> In</c><00:01:37.200><c> fact,</c><00:01:37.640><c> let's</c><00:01:37.920><c> see</c><00:01:38.080><c> it</c><00:01:38.280><c> in</c><00:01:38.400><c> action</c>
+
+00:01:38.950 --> 00:01:38.960 align:start position:0%
+bases. In fact, let's see it in action
+ 
+
+00:01:38.960 --> 00:01:41.030 align:start position:0%
+bases. In fact, let's see it in action
+by<00:01:39.120><c> testing</c><00:01:39.480><c> it</c><00:01:39.640><c> against</c><00:01:39.960><c> the</c><00:01:40.160><c> VS</c><00:01:40.520><c> Code</c><00:01:40.800><c> code</c>
+
+00:01:41.030 --> 00:01:41.040 align:start position:0%
+by testing it against the VS Code code
+ 
+
+00:01:41.040 --> 00:01:44.070 align:start position:0%
+by testing it against the VS Code code
+base,<00:01:41.560><c> which</c><00:01:41.800><c> has</c><00:01:42.080><c> around</c><00:01:42.480><c> 1.5</c><00:01:43.280><c> million</c><00:01:43.760><c> lines</c>
+
+00:01:44.070 --> 00:01:44.080 align:start position:0%
+base, which has around 1.5 million lines
+ 
+
+00:01:44.080 --> 00:01:46.390 align:start position:0%
+base, which has around 1.5 million lines
+of<00:01:44.200><c> code.</c><00:01:44.600><c> So,</c><00:01:44.840><c> inside</c><00:01:45.400><c> the</c><00:01:45.560><c> current</c><00:01:45.960><c> VS</c><00:01:46.160><c> Code</c>
+
+00:01:46.390 --> 00:01:46.400 align:start position:0%
+of code. So, inside the current VS Code
+ 
+
+00:01:46.400 --> 00:01:48.390 align:start position:0%
+of code. So, inside the current VS Code
+repo,<00:01:47.000><c> I'm</c><00:01:47.160><c> going</c><00:01:47.280><c> to</c><00:01:47.360><c> be</c><00:01:47.440><c> using</c><00:01:47.760><c> Open</c><00:01:48.040><c> Code</c>
+
+00:01:48.390 --> 00:01:48.400 align:start position:0%
+repo, I'm going to be using Open Code
+ 
+
+00:01:48.400 --> 00:01:50.790 align:start position:0%
+repo, I'm going to be using Open Code
+with<00:01:48.640><c> GLM-5</c><00:01:49.320><c> Turbo</c><00:01:49.720><c> because</c><00:01:50.160><c> I</c><00:01:50.240><c> don't</c><00:01:50.520><c> want</c><00:01:50.680><c> to</c>
+
+00:01:50.790 --> 00:01:50.800 align:start position:0%
+with GLM-5 Turbo because I don't want to
+ 
+
+00:01:50.800 --> 00:01:52.670 align:start position:0%
+with GLM-5 Turbo because I don't want to
+burn<00:01:51.080><c> through</c><00:01:51.520><c> my</c><00:01:51.680><c> Claude</c><00:01:52.080><c> Pro</c><00:01:52.360><c> weekly</c>
+
+00:01:52.670 --> 00:01:52.680 align:start position:0%
+burn through my Claude Pro weekly
+ 
+
+00:01:52.680 --> 00:01:55.190 align:start position:0%
+burn through my Claude Pro weekly
+limits.<00:01:53.160><c> And</c><00:01:53.440><c> in</c><00:01:53.600><c> order</c><00:01:53.800><c> to</c><00:01:53.920><c> get</c><00:01:54.160><c> the</c><00:01:54.480><c> MCP</c>
+
+00:01:55.190 --> 00:01:55.200 align:start position:0%
+limits. And in order to get the MCP
+ 
+
+00:01:55.200 --> 00:01:56.950 align:start position:0%
+limits. And in order to get the MCP
+server<00:01:55.520><c> set</c><00:01:55.680><c> up,</c><00:01:56.080><c> which</c><00:01:56.360><c> you</c><00:01:56.480><c> can</c><00:01:56.640><c> see</c><00:01:56.800><c> over</c>
+
+00:01:56.950 --> 00:01:56.960 align:start position:0%
+server set up, which you can see over
+ 
+
+00:01:56.960 --> 00:01:58.750 align:start position:0%
+server set up, which you can see over
+here,<00:01:57.400><c> I've</c><00:01:57.600><c> already</c><00:01:57.880><c> added</c><00:01:58.200><c> the</c><00:01:58.360><c> relevant</c>
+
+00:01:58.750 --> 00:01:58.760 align:start position:0%
+here, I've already added the relevant
+ 
+
+00:01:58.760 --> 00:02:01.390 align:start position:0%
+here, I've already added the relevant
+information<00:01:59.560><c> to</c><00:01:59.680><c> my</c><00:01:59.840><c> Open</c><00:02:00.120><c> Code</c><00:02:00.480><c> JSON</c><00:02:00.800><c> file.</c>
+
+00:02:01.390 --> 00:02:01.400 align:start position:0%
+information to my Open Code JSON file.
+ 
+
+00:02:01.400 --> 00:02:03.110 align:start position:0%
+information to my Open Code JSON file.
+And<00:02:01.520><c> for</c><00:02:01.600><c> this</c><00:02:01.800><c> information</c><00:02:02.280><c> over</c><00:02:02.520><c> here,</c><00:02:03.000><c> you</c>
+
+00:02:03.110 --> 00:02:03.120 align:start position:0%
+And for this information over here, you
+ 
+
+00:02:03.120 --> 00:02:05.310 align:start position:0%
+And for this information over here, you
+could<00:02:03.400><c> run</c><00:02:03.640><c> Milvus</c><00:02:04.000><c> locally,</c><00:02:04.560><c> but</c><00:02:04.720><c> I've</c><00:02:04.920><c> used</c>
+
+00:02:05.310 --> 00:02:05.320 align:start position:0%
+could run Milvus locally, but I've used
+ 
+
+00:02:05.320 --> 00:02:07.830 align:start position:0%
+could run Milvus locally, but I've used
+Zilliz<00:02:05.640><c> Cloud.</c><00:02:06.360><c> So,</c><00:02:06.480><c> I've</c><00:02:06.560><c> got</c><00:02:06.720><c> my</c><00:02:06.920><c> API</c><00:02:07.280><c> key</c>
+
+00:02:07.830 --> 00:02:07.840 align:start position:0%
+Zilliz Cloud. So, I've got my API key
+ 
+
+00:02:07.840 --> 00:02:10.669 align:start position:0%
+Zilliz Cloud. So, I've got my API key
+from<00:02:08.080><c> over</c><00:02:08.240><c> here</c><00:02:08.720><c> and</c><00:02:09.119><c> I</c><00:02:09.320><c> created</c><00:02:09.880><c> a</c><00:02:10.000><c> cluster,</c>
+
+00:02:10.669 --> 00:02:10.679 align:start position:0%
+from over here and I created a cluster,
+ 
+
+00:02:10.679 --> 00:02:13.030 align:start position:0%
+from over here and I created a cluster,
+so<00:02:10.840><c> this</c><00:02:10.960><c> is</c><00:02:11.080><c> an</c><00:02:11.200><c> AWS</c><00:02:11.640><c> cluster,</c><00:02:12.360><c> and</c><00:02:12.560><c> got</c><00:02:12.800><c> the</c>
+
+00:02:13.030 --> 00:02:13.040 align:start position:0%
+so this is an AWS cluster, and got the
+ 
+
+00:02:13.040 --> 00:02:15.110 align:start position:0%
+so this is an AWS cluster, and got the
+public<00:02:13.440><c> endpoint</c><00:02:13.840><c> from</c><00:02:14.000><c> here.</c><00:02:14.680><c> Now,</c><00:02:14.920><c> while</c>
+
+00:02:15.110 --> 00:02:15.120 align:start position:0%
+public endpoint from here. Now, while
+ 
+
+00:02:15.120 --> 00:02:17.190 align:start position:0%
+public endpoint from here. Now, while
+we're<00:02:15.240><c> on</c><00:02:15.320><c> clusters,</c><00:02:16.000><c> I</c><00:02:16.080><c> did</c><00:02:16.280><c> try</c><00:02:16.520><c> to</c><00:02:16.760><c> use</c><00:02:17.000><c> the</c>
+
+00:02:17.190 --> 00:02:17.200 align:start position:0%
+we're on clusters, I did try to use the
+ 
+
+00:02:17.200 --> 00:02:19.550 align:start position:0%
+we're on clusters, I did try to use the
+free<00:02:17.560><c> one</c><00:02:17.840><c> first,</c><00:02:18.480><c> but</c><00:02:18.600><c> I</c><00:02:18.680><c> kept</c><00:02:19.080><c> on</c><00:02:19.240><c> getting</c>
+
+00:02:19.550 --> 00:02:19.560 align:start position:0%
+free one first, but I kept on getting
+ 
+
+00:02:19.560 --> 00:02:20.990 align:start position:0%
+free one first, but I kept on getting
+timeout<00:02:19.960><c> issues.</c><00:02:20.440><c> So,</c><00:02:20.560><c> I</c><00:02:20.600><c> have</c><00:02:20.720><c> to</c><00:02:20.800><c> get</c><00:02:20.960><c> a</c>
+
+00:02:20.990 --> 00:02:21.000 align:start position:0%
+timeout issues. So, I have to get a
+ 
+
+00:02:21.000 --> 00:02:23.350 align:start position:0%
+timeout issues. So, I have to get a
+serverless<00:02:21.400><c> one,</c><00:02:22.000><c> which</c><00:02:22.480><c> does</c><00:02:22.760><c> cost</c><00:02:23.080><c> money,</c>
+
+00:02:23.350 --> 00:02:23.360 align:start position:0%
+serverless one, which does cost money,
+ 
+
+00:02:23.360 --> 00:02:25.390 align:start position:0%
+serverless one, which does cost money,
+but<00:02:23.680><c> did</c><00:02:24.000><c> work</c><00:02:24.240><c> a</c><00:02:24.280><c> lot</c><00:02:24.480><c> better.</c><00:02:25.000><c> Now,</c><00:02:25.160><c> once</c><00:02:25.280><c> you</c>
+
+00:02:25.390 --> 00:02:25.400 align:start position:0%
+but did work a lot better. Now, once you
+ 
+
+00:02:25.400 --> 00:02:27.230 align:start position:0%
+but did work a lot better. Now, once you
+have<00:02:25.600><c> set</c><00:02:25.760><c> up</c><00:02:25.880><c> the</c><00:02:26.000><c> MCP</c><00:02:26.400><c> server,</c><00:02:26.960><c> make</c><00:02:27.120><c> sure</c>
+
+00:02:27.230 --> 00:02:27.240 align:start position:0%
+have set up the MCP server, make sure
+ 
+
+00:02:27.240 --> 00:02:29.030 align:start position:0%
+have set up the MCP server, make sure
+you're<00:02:27.320><c> running</c><00:02:27.560><c> a</c><00:02:27.640><c> version</c><00:02:27.960><c> of</c><00:02:28.080><c> Node</c><00:02:28.520><c> below</c>
+
+00:02:29.030 --> 00:02:29.040 align:start position:0%
+you're running a version of Node below
+ 
+
+00:02:29.040 --> 00:02:31.670 align:start position:0%
+you're running a version of Node below
+24,<00:02:29.680><c> but</c><00:02:30.040><c> above</c><00:02:30.440><c> or</c><00:02:30.520><c> equal</c><00:02:30.760><c> to</c><00:02:30.880><c> 20.</c><00:02:31.520><c> I'm</c>
+
+00:02:31.670 --> 00:02:31.680 align:start position:0%
+24, but above or equal to 20. I'm
+ 
+
+00:02:31.680 --> 00:02:33.710 align:start position:0%
+24, but above or equal to 20. I'm
+currently<00:02:32.040><c> using</c><00:02:32.360><c> version</c><00:02:32.680><c> 22</c><00:02:33.280><c> just</c><00:02:33.520><c> for</c><00:02:33.600><c> this</c>
+
+00:02:33.710 --> 00:02:33.720 align:start position:0%
+currently using version 22 just for this
+ 
+
+00:02:33.720 --> 00:02:35.190 align:start position:0%
+currently using version 22 just for this
+project,<00:02:34.320><c> and</c><00:02:34.440><c> that</c><00:02:34.520><c> will</c><00:02:34.640><c> give</c><00:02:34.760><c> you</c><00:02:34.840><c> access</c>
+
+00:02:35.190 --> 00:02:35.200 align:start position:0%
+project, and that will give you access
+ 
+
+00:02:35.200 --> 00:02:37.630 align:start position:0%
+project, and that will give you access
+to<00:02:35.400><c> four</c><00:02:35.640><c> MCP</c><00:02:36.120><c> tools:</c><00:02:36.640><c> index</c><00:02:36.920><c> code,</c><00:02:37.320><c> search</c>
+
+00:02:37.630 --> 00:02:37.640 align:start position:0%
+to four MCP tools: index code, search
+ 
+
+00:02:37.640 --> 00:02:40.150 align:start position:0%
+to four MCP tools: index code, search
+code,<00:02:38.040><c> clear</c><00:02:38.280><c> index,</c><00:02:38.720><c> and</c><00:02:38.960><c> get</c><00:02:39.240><c> index</c><00:02:39.600><c> status.</c>
+
+00:02:40.150 --> 00:02:40.160 align:start position:0%
+code, clear index, and get index status.
+ 
+
+00:02:40.160 --> 00:02:41.310 align:start position:0%
+code, clear index, and get index status.
+Now,<00:02:40.240><c> the</c><00:02:40.320><c> first</c><00:02:40.560><c> thing</c><00:02:40.680><c> you</c><00:02:40.720><c> have</c><00:02:40.880><c> to</c><00:02:40.960><c> do</c><00:02:41.120><c> is</c>
+
+00:02:41.310 --> 00:02:41.320 align:start position:0%
+Now, the first thing you have to do is
+ 
+
+00:02:41.320 --> 00:02:43.230 align:start position:0%
+Now, the first thing you have to do is
+index<00:02:41.680><c> the</c><00:02:41.800><c> code</c><00:02:42.040><c> base.</c><00:02:42.640><c> And</c><00:02:42.720><c> we</c><00:02:42.800><c> can</c><00:02:42.920><c> do</c><00:02:43.040><c> that</c>
+
+00:02:43.230 --> 00:02:43.240 align:start position:0%
+index the code base. And we can do that
+ 
+
+00:02:43.240 --> 00:02:44.790 align:start position:0%
+index the code base. And we can do that
+with<00:02:43.400><c> this</c><00:02:43.560><c> prompt.</c><00:02:44.080><c> But,</c><00:02:44.240><c> before</c><00:02:44.440><c> we</c><00:02:44.560><c> hit</c>
+
+00:02:44.790 --> 00:02:44.800 align:start position:0%
+with this prompt. But, before we hit
+ 
+
+00:02:44.800 --> 00:02:46.430 align:start position:0%
+with this prompt. But, before we hit
+enter,<00:02:45.360><c> let's</c><00:02:45.560><c> take</c><00:02:45.720><c> a</c><00:02:45.760><c> look</c><00:02:46.000><c> at</c><00:02:46.120><c> how</c><00:02:46.240><c> much</c>
+
+00:02:46.430 --> 00:02:46.440 align:start position:0%
+enter, let's take a look at how much
+ 
+
+00:02:46.440 --> 00:02:48.150 align:start position:0%
+enter, let's take a look at how much
+money<00:02:46.680><c> we've</c><00:02:46.880><c> already</c><00:02:47.160><c> spent</c><00:02:47.560><c> on</c><00:02:47.680><c> embeddings</c>
+
+00:02:48.150 --> 00:02:48.160 align:start position:0%
+money we've already spent on embeddings
+ 
+
+00:02:48.160 --> 00:02:50.750 align:start position:0%
+money we've already spent on embeddings
+from<00:02:48.320><c> OpenAI,</c><00:02:49.080><c> which</c><00:02:49.360><c> is</c><00:02:49.520><c> just</c><00:02:49.840><c> 1</c><00:02:50.000><c> cent</c><00:02:50.600><c> and</c>
+
+00:02:50.750 --> 00:02:50.760 align:start position:0%
+from OpenAI, which is just 1 cent and
+ 
+
+00:02:50.760 --> 00:02:53.270 align:start position:0%
+from OpenAI, which is just 1 cent and
+was<00:02:50.880><c> for</c><00:02:51.000><c> me</c><00:02:51.320><c> testing</c><00:02:51.840><c> a</c><00:02:52.000><c> 23,000</c><00:02:52.880><c> line</c><00:02:53.080><c> code</c>
+
+00:02:53.270 --> 00:02:53.280 align:start position:0%
+was for me testing a 23,000 line code
+ 
+
+00:02:53.280 --> 00:02:55.110 align:start position:0%
+was for me testing a 23,000 line code
+base.<00:02:53.680><c> We</c><00:02:53.760><c> can</c><00:02:53.880><c> also</c><00:02:54.120><c> see</c><00:02:54.360><c> in</c><00:02:54.520><c> our</c><00:02:54.600><c> cluster</c><00:02:54.960><c> we</c>
+
+00:02:55.110 --> 00:02:55.120 align:start position:0%
+base. We can also see in our cluster we
+ 
+
+00:02:55.120 --> 00:02:56.870 align:start position:0%
+base. We can also see in our cluster we
+already<00:02:55.400><c> have</c><00:02:55.600><c> information</c><00:02:56.240><c> from</c><00:02:56.520><c> the</c><00:02:56.640><c> code</c>
+
+00:02:56.870 --> 00:02:56.880 align:start position:0%
+already have information from the code
+ 
+
+00:02:56.880 --> 00:02:58.670 align:start position:0%
+already have information from the code
+base<00:02:57.120><c> that</c><00:02:57.320><c> was</c><00:02:57.480><c> indexed.</c><00:02:58.040><c> So,</c><00:02:58.160><c> now</c><00:02:58.400><c> if</c><00:02:58.560><c> we</c>
+
+00:02:58.670 --> 00:02:58.680 align:start position:0%
+base that was indexed. So, now if we
+ 
+
+00:02:58.680 --> 00:03:00.590 align:start position:0%
+base that was indexed. So, now if we
+index<00:02:59.120><c> this</c><00:02:59.360><c> code</c><00:02:59.560><c> base,</c><00:02:59.840><c> it</c><00:03:00.040><c> does</c><00:03:00.240><c> take</c><00:03:00.440><c> some</c>
+
+00:03:00.590 --> 00:03:00.600 align:start position:0%
+index this code base, it does take some
+ 
+
+00:03:00.600 --> 00:03:02.590 align:start position:0%
+index this code base, it does take some
+time<00:03:01.120><c> and</c><00:03:01.280><c> starts</c><00:03:01.600><c> the</c><00:03:01.720><c> indexing</c><00:03:02.320><c> in</c><00:03:02.520><c> the</c>
+
+00:03:02.590 --> 00:03:02.600 align:start position:0%
+time and starts the indexing in the
+ 
+
+00:03:02.600 --> 00:03:03.990 align:start position:0%
+time and starts the indexing in the
+background.<00:03:03.200><c> At</c><00:03:03.320><c> this</c><00:03:03.480><c> point,</c><00:03:03.720><c> I</c><00:03:03.760><c> don't</c>
+
+00:03:03.990 --> 00:03:04.000 align:start position:0%
+background. At this point, I don't
+ 
+
+00:03:04.000 --> 00:03:05.670 align:start position:0%
+background. At this point, I don't
+recommend<00:03:04.400><c> doing</c><00:03:04.640><c> any</c><00:03:04.840><c> searches.</c><00:03:05.560><c> Now,</c>
+
+00:03:05.670 --> 00:03:05.680 align:start position:0%
+recommend doing any searches. Now,
+ 
+
+00:03:05.680 --> 00:03:07.390 align:start position:0%
+recommend doing any searches. Now,
+because<00:03:05.920><c> this</c><00:03:06.080><c> is</c><00:03:06.160><c> a</c><00:03:06.240><c> large</c><00:03:06.720><c> code</c><00:03:06.960><c> base,</c><00:03:07.240><c> it</c>
+
+00:03:07.390 --> 00:03:07.400 align:start position:0%
+because this is a large code base, it
+ 
+
+00:03:07.400 --> 00:03:09.390 align:start position:0%
+because this is a large code base, it
+will<00:03:07.600><c> take</c><00:03:07.920><c> a</c><00:03:08.000><c> while</c><00:03:08.200><c> to</c><00:03:08.320><c> index,</c><00:03:08.880><c> so</c><00:03:09.120><c> I'll</c><00:03:09.240><c> come</c>
+
+00:03:09.390 --> 00:03:09.400 align:start position:0%
+will take a while to index, so I'll come
+ 
+
+00:03:09.400 --> 00:03:11.310 align:start position:0%
+will take a while to index, so I'll come
+back<00:03:09.560><c> later</c><00:03:09.920><c> when</c><00:03:10.080><c> the</c><00:03:10.200><c> indexing</c><00:03:10.720><c> is</c><00:03:10.880><c> done.</c>
+
+00:03:11.310 --> 00:03:11.320 align:start position:0%
+back later when the indexing is done.
+ 
+
+00:03:11.320 --> 00:03:13.630 align:start position:0%
+back later when the indexing is done.
+And<00:03:11.520><c> after</c><00:03:11.840><c> about</c><00:03:12.120><c> 50</c><00:03:12.480><c> minutes,</c><00:03:12.840><c> the</c><00:03:13.040><c> indexing</c>
+
+00:03:13.630 --> 00:03:13.640 align:start position:0%
+And after about 50 minutes, the indexing
+ 
+
+00:03:13.640 --> 00:03:15.670 align:start position:0%
+And after about 50 minutes, the indexing
+is<00:03:13.880><c> complete.</c><00:03:14.680><c> And</c><00:03:14.720><c> we</c><00:03:14.800><c> can</c><00:03:14.960><c> see</c><00:03:15.240><c> we</c><00:03:15.400><c> have</c><00:03:15.640><c> a</c>
+
+00:03:15.670 --> 00:03:15.680 align:start position:0%
+is complete. And we can see we have a
+ 
+
+00:03:15.680 --> 00:03:17.950 align:start position:0%
+is complete. And we can see we have a
+new<00:03:15.920><c> chunk</c><00:03:16.240><c> in</c><00:03:16.360><c> our</c><00:03:16.440><c> cluster</c><00:03:17.280><c> with</c><00:03:17.600><c> over</c>
+
+00:03:17.950 --> 00:03:17.960 align:start position:0%
+new chunk in our cluster with over
+ 
+
+00:03:17.960 --> 00:03:19.910 align:start position:0%
+new chunk in our cluster with over
+223,000
+
+00:03:19.910 --> 00:03:19.920 align:start position:0%
+223,000
+ 
+
+00:03:19.920 --> 00:03:22.150 align:start position:0%
+223,000
+loaded<00:03:20.240><c> entries.</c><00:03:20.960><c> And</c><00:03:21.080><c> for</c><00:03:21.200><c> reference,</c><00:03:21.760><c> the</c>
+
+00:03:22.150 --> 00:03:22.160 align:start position:0%
+loaded entries. And for reference, the
+ 
+
+00:03:22.160 --> 00:03:24.030 align:start position:0%
+loaded entries. And for reference, the
+code<00:03:22.400><c> that</c><00:03:22.520><c> I</c><00:03:22.560><c> was</c><00:03:22.720><c> testing</c><00:03:23.080><c> with</c><00:03:23.560><c> that</c><00:03:23.760><c> had</c>
+
+00:03:24.030 --> 00:03:24.040 align:start position:0%
+code that I was testing with that had
+ 
+
+00:03:24.040 --> 00:03:28.310 align:start position:0%
+code that I was testing with that had
+23,000<00:03:25.360><c> lines</c><00:03:25.760><c> of</c><00:03:25.880><c> code</c><00:03:26.520><c> has</c><00:03:26.840><c> about</c><00:03:27.400><c> 1,000</c>
+
+00:03:28.310 --> 00:03:28.320 align:start position:0%
+23,000 lines of code has about 1,000
+ 
+
+00:03:28.320 --> 00:03:30.990 align:start position:0%
+23,000 lines of code has about 1,000
+lines<00:03:28.760><c> of</c><00:03:28.960><c> entries</c><00:03:29.680><c> and</c><00:03:30.120><c> took</c><00:03:30.480><c> less</c><00:03:30.720><c> than</c><00:03:30.840><c> 1</c>
+
+00:03:30.990 --> 00:03:31.000 align:start position:0%
+lines of entries and took less than 1
+ 
+
+00:03:31.000 --> 00:03:32.910 align:start position:0%
+lines of entries and took less than 1
+minute<00:03:31.320><c> to</c><00:03:31.440><c> index.</c><00:03:32.000><c> And</c><00:03:32.200><c> with</c><00:03:32.320><c> our</c><00:03:32.440><c> OpenAI</c>
+
+00:03:32.910 --> 00:03:32.920 align:start position:0%
+minute to index. And with our OpenAI
+ 
+
+00:03:32.920 --> 00:03:36.630 align:start position:0%
+minute to index. And with our OpenAI
+usage,<00:03:33.360><c> we've</c><00:03:33.560><c> gone</c><00:03:33.880><c> from</c><00:03:34.160><c> 1</c><00:03:34.400><c> cent</c><00:03:34.800><c> to</c><00:03:35.000><c> $1.06,</c>
+
+00:03:36.630 --> 00:03:36.640 align:start position:0%
+usage, we've gone from 1 cent to $1.06,
+ 
+
+00:03:36.640 --> 00:03:38.550 align:start position:0%
+usage, we've gone from 1 cent to $1.06,
+which<00:03:36.960><c> is</c><00:03:37.120><c> a</c><00:03:37.200><c> lot,</c><00:03:37.760><c> but</c><00:03:37.880><c> I</c><00:03:37.920><c> don't</c><00:03:38.120><c> imagine</c>
+
+00:03:38.550 --> 00:03:38.560 align:start position:0%
+which is a lot, but I don't imagine
+ 
+
+00:03:38.560 --> 00:03:41.150 align:start position:0%
+which is a lot, but I don't imagine
+going<00:03:38.840><c> through</c><00:03:39.160><c> 1.5</c><00:03:39.880><c> million</c><00:03:40.240><c> lines</c><00:03:40.480><c> of</c><00:03:40.600><c> code</c>
+
+00:03:41.150 --> 00:03:41.160 align:start position:0%
+going through 1.5 million lines of code
+ 
+
+00:03:41.160 --> 00:03:43.190 align:start position:0%
+going through 1.5 million lines of code
+is<00:03:41.320><c> something</c><00:03:41.720><c> people</c><00:03:42.000><c> will</c><00:03:42.120><c> do</c><00:03:42.400><c> regularly.</c>
+
+00:03:43.190 --> 00:03:43.200 align:start position:0%
+is something people will do regularly.
+ 
+
+00:03:43.200 --> 00:03:44.670 align:start position:0%
+is something people will do regularly.
+Okay,<00:03:43.480><c> let's</c><00:03:43.680><c> see</c><00:03:43.800><c> how</c><00:03:43.920><c> fast</c><00:03:44.240><c> it</c><00:03:44.320><c> is</c><00:03:44.440><c> to</c><00:03:44.520><c> make</c><00:03:44.640><c> a</c>
+
+00:03:44.670 --> 00:03:44.680 align:start position:0%
+Okay, let's see how fast it is to make a
+ 
+
+00:03:44.680 --> 00:03:46.430 align:start position:0%
+Okay, let's see how fast it is to make a
+search.<00:03:45.160><c> Here</c><00:03:45.360><c> we</c><00:03:45.440><c> have</c><00:03:45.680><c> one</c><00:03:45.920><c> instance</c><00:03:46.320><c> of</c>
+
+00:03:46.430 --> 00:03:46.440 align:start position:0%
+search. Here we have one instance of
+ 
+
+00:03:46.440 --> 00:03:48.910 align:start position:0%
+search. Here we have one instance of
+Open<00:03:46.640><c> Code</c><00:03:47.200><c> using</c><00:03:47.560><c> the</c><00:03:47.760><c> Claude</c><00:03:48.040><c> Context</c><00:03:48.480><c> MCP</c>
+
+00:03:48.910 --> 00:03:48.920 align:start position:0%
+Open Code using the Claude Context MCP
+ 
+
+00:03:48.920 --> 00:03:51.510 align:start position:0%
+Open Code using the Claude Context MCP
+server,<00:03:49.480><c> and</c><00:03:49.600><c> here</c><00:03:49.760><c> we</c><00:03:49.880><c> have</c><00:03:50.080><c> one</c><00:03:50.600><c> with</c><00:03:50.920><c> no</c><00:03:51.120><c> MCP</c>
+
+00:03:51.510 --> 00:03:51.520 align:start position:0%
+server, and here we have one with no MCP
+ 
+
+00:03:51.520 --> 00:03:53.670 align:start position:0%
+server, and here we have one with no MCP
+server.<00:03:52.040><c> So,</c><00:03:52.200><c> it'll</c><00:03:52.360><c> be</c><00:03:52.520><c> using</c><00:03:53.000><c> the</c><00:03:53.280><c> regular</c>
+
+00:03:53.670 --> 00:03:53.680 align:start position:0%
+server. So, it'll be using the regular
+ 
+
+00:03:53.680 --> 00:03:55.270 align:start position:0%
+server. So, it'll be using the regular
+grep<00:03:54.080><c> and</c><00:03:54.240><c> glob</c><00:03:54.480><c> tools</c><00:03:54.840><c> to</c><00:03:54.920><c> search</c><00:03:55.160><c> through</c>
+
+00:03:55.270 --> 00:03:55.280 align:start position:0%
+grep and glob tools to search through
+ 
+
+00:03:55.280 --> 00:03:57.230 align:start position:0%
+grep and glob tools to search through
+the<00:03:55.360><c> code.</c><00:03:56.040><c> And</c><00:03:56.160><c> we'll</c><00:03:56.240><c> give</c><00:03:56.360><c> it</c><00:03:56.520><c> a</c><00:03:56.640><c> prompt</c><00:03:57.080><c> of</c>
+
+00:03:57.230 --> 00:03:57.240 align:start position:0%
+the code. And we'll give it a prompt of
+ 
+
+00:03:57.240 --> 00:03:59.510 align:start position:0%
+the code. And we'll give it a prompt of
+use<00:03:57.520><c> Claude</c><00:03:57.760><c> Context</c><00:03:58.360><c> to</c><00:03:58.560><c> find</c><00:03:58.920><c> the</c><00:03:59.160><c> entry</c>
+
+00:03:59.510 --> 00:03:59.520 align:start position:0%
+use Claude Context to find the entry
+ 
+
+00:03:59.520 --> 00:04:01.750 align:start position:0%
+use Claude Context to find the entry
+point<00:04:00.080><c> of</c><00:04:00.240><c> when</c><00:04:00.440><c> this</c><00:04:00.600><c> project</c><00:04:00.880><c> starts</c><00:04:01.240><c> up.</c>
+
+00:04:01.750 --> 00:04:01.760 align:start position:0%
+point of when this project starts up.
+ 
+
+00:04:01.760 --> 00:04:03.310 align:start position:0%
+point of when this project starts up.
+Let's<00:04:01.920><c> see</c><00:04:02.040><c> how</c><00:04:02.160><c> long</c><00:04:02.280><c> this</c><00:04:02.440><c> takes.</c><00:04:03.040><c> Okay,</c><00:04:03.240><c> so</c>
+
+00:04:03.310 --> 00:04:03.320 align:start position:0%
+Let's see how long this takes. Okay, so
+ 
+
+00:04:03.320 --> 00:04:04.830 align:start position:0%
+Let's see how long this takes. Okay, so
+it's<00:04:03.400><c> using</c><00:04:03.640><c> the</c><00:04:03.760><c> index</c><00:04:04.080><c> tool,</c><00:04:04.560><c> and</c><00:04:04.680><c> now</c><00:04:04.760><c> it's</c>
+
+00:04:04.830 --> 00:04:04.840 align:start position:0%
+it's using the index tool, and now it's
+ 
+
+00:04:04.840 --> 00:04:06.590 align:start position:0%
+it's using the index tool, and now it's
+using<00:04:05.040><c> the</c><00:04:05.120><c> search</c><00:04:05.480><c> tool,</c><00:04:06.080><c> and</c><00:04:06.320><c> the</c><00:04:06.400><c> whole</c>
+
+00:04:06.590 --> 00:04:06.600 align:start position:0%
+using the search tool, and the whole
+ 
+
+00:04:06.600 --> 00:04:08.870 align:start position:0%
+using the search tool, and the whole
+thing<00:04:06.880><c> took</c><00:04:07.120><c> about</c><00:04:07.400><c> 19</c><00:04:07.800><c> seconds</c><00:04:08.480><c> to</c><00:04:08.600><c> search</c>
+
+00:04:08.870 --> 00:04:08.880 align:start position:0%
+thing took about 19 seconds to search
+ 
+
+00:04:08.880 --> 00:04:10.670 align:start position:0%
+thing took about 19 seconds to search
+through<00:04:09.040><c> this</c><00:04:09.200><c> whole</c><00:04:09.560><c> project</c><00:04:10.120><c> and</c><00:04:10.240><c> find</c><00:04:10.560><c> the</c>
+
+00:04:10.670 --> 00:04:10.680 align:start position:0%
+through this whole project and find the
+ 
+
+00:04:10.680 --> 00:04:12.510 align:start position:0%
+through this whole project and find the
+main.ts<00:04:11.560><c> file.</c><00:04:12.000><c> And</c><00:04:12.080><c> now</c><00:04:12.200><c> we're</c><00:04:12.280><c> going</c><00:04:12.440><c> to</c>
+
+00:04:12.510 --> 00:04:12.520 align:start position:0%
+main.ts file. And now we're going to
+ 
+
+00:04:12.520 --> 00:04:14.430 align:start position:0%
+main.ts file. And now we're going to
+give<00:04:12.720><c> this</c><00:04:13.000><c> Open</c><00:04:13.200><c> Code</c><00:04:13.520><c> a</c><00:04:13.600><c> similar</c><00:04:13.920><c> prompt,</c>
+
+00:04:14.430 --> 00:04:14.440 align:start position:0%
+give this Open Code a similar prompt,
+ 
+
+00:04:14.440 --> 00:04:16.630 align:start position:0%
+give this Open Code a similar prompt,
+and<00:04:14.560><c> it</c><00:04:14.680><c> finds</c><00:04:14.880><c> a</c><00:04:14.920><c> response</c><00:04:15.320><c> in</c><00:04:15.480><c> 14</c><00:04:16.040><c> seconds.</c>
+
+00:04:16.630 --> 00:04:16.640 align:start position:0%
+and it finds a response in 14 seconds.
+ 
+
+00:04:16.640 --> 00:04:18.190 align:start position:0%
+and it finds a response in 14 seconds.
+So,<00:04:16.799><c> it's</c><00:04:16.920><c> like</c><00:04:17.079><c> for</c><00:04:17.200><c> this</c><00:04:17.320><c> query,</c><00:04:17.680><c> using</c><00:04:17.959><c> just</c>
+
+00:04:18.190 --> 00:04:18.200 align:start position:0%
+So, it's like for this query, using just
+ 
+
+00:04:18.200 --> 00:04:20.470 align:start position:0%
+So, it's like for this query, using just
+regular<00:04:18.519><c> GLM</c><00:04:18.959><c> is</c><00:04:19.160><c> a</c><00:04:19.200><c> lot</c><00:04:19.400><c> faster.</c><00:04:20.000><c> Let's</c><00:04:20.160><c> start</c>
+
+00:04:20.470 --> 00:04:20.480 align:start position:0%
+regular GLM is a lot faster. Let's start
+ 
+
+00:04:20.480 --> 00:04:22.069 align:start position:0%
+regular GLM is a lot faster. Let's start
+a<00:04:20.519><c> new</c><00:04:20.680><c> session,</c><00:04:21.519><c> and</c><00:04:21.680><c> then</c><00:04:21.799><c> I'm</c><00:04:21.840><c> going</c><00:04:22.040><c> to</c>
+
+00:04:22.069 --> 00:04:22.079 align:start position:0%
+a new session, and then I'm going to
+ 
+
+00:04:22.079 --> 00:04:23.950 align:start position:0%
+a new session, and then I'm going to
+give<00:04:22.200><c> it</c><00:04:22.360><c> a</c><00:04:22.440><c> new</c><00:04:22.680><c> prompt</c><00:04:23.080><c> of</c><00:04:23.240><c> what</c><00:04:23.480><c> function</c>
+
+00:04:23.950 --> 00:04:23.960 align:start position:0%
+give it a new prompt of what function
+ 
+
+00:04:23.960 --> 00:04:26.350 align:start position:0%
+give it a new prompt of what function
+opens<00:04:24.400><c> a</c><00:04:24.480><c> new</c><00:04:24.800><c> untitled</c><00:04:25.360><c> document.</c><00:04:26.080><c> This</c><00:04:26.240><c> one</c>
+
+00:04:26.350 --> 00:04:26.360 align:start position:0%
+opens a new untitled document. This one
+ 
+
+00:04:26.360 --> 00:04:28.470 align:start position:0%
+opens a new untitled document. This one
+took<00:04:26.480><c> a</c><00:04:26.520><c> bit</c><00:04:26.640><c> longer</c><00:04:27.040><c> at</c><00:04:27.280><c> 40</c><00:04:27.640><c> seconds</c><00:04:28.320><c> and</c>
+
+00:04:28.470 --> 00:04:28.480 align:start position:0%
+took a bit longer at 40 seconds and
+ 
+
+00:04:28.480 --> 00:04:30.030 align:start position:0%
+took a bit longer at 40 seconds and
+found<00:04:28.640><c> the</c><00:04:28.720><c> main</c><00:04:28.920><c> function</c><00:04:29.640><c> with</c><00:04:29.760><c> a</c><00:04:29.800><c> line</c>
+
+00:04:30.030 --> 00:04:30.040 align:start position:0%
+found the main function with a line
+ 
+
+00:04:30.040 --> 00:04:32.790 align:start position:0%
+found the main function with a line
+number<00:04:30.400><c> and</c><00:04:30.600><c> used</c><00:04:30.800><c> about</c><00:04:31.080><c> 23K</c><00:04:32.040><c> tokens.</c><00:04:32.640><c> And</c>
+
+00:04:32.790 --> 00:04:32.800 align:start position:0%
+number and used about 23K tokens. And
+ 
+
+00:04:32.800 --> 00:04:34.790 align:start position:0%
+number and used about 23K tokens. And
+the<00:04:32.880><c> other</c><00:04:33.040><c> instance</c><00:04:33.440><c> did</c><00:04:33.600><c> it</c><00:04:33.880><c> in</c><00:04:34.080><c> 12</c><00:04:34.360><c> seconds</c>
+
+00:04:34.790 --> 00:04:34.800 align:start position:0%
+the other instance did it in 12 seconds
+ 
+
+00:04:34.800 --> 00:04:37.310 align:start position:0%
+the other instance did it in 12 seconds
+and<00:04:35.040><c> used</c><00:04:35.280><c> 18K</c><00:04:35.800><c> tokens,</c><00:04:36.520><c> but</c><00:04:36.800><c> it</c><00:04:36.920><c> looks</c><00:04:37.120><c> like</c>
+
+00:04:37.310 --> 00:04:37.320 align:start position:0%
+and used 18K tokens, but it looks like
+ 
+
+00:04:37.320 --> 00:04:39.310 align:start position:0%
+and used 18K tokens, but it looks like
+it<00:04:37.480><c> found</c><00:04:37.800><c> a</c><00:04:37.880><c> different</c><00:04:38.280><c> file.</c><00:04:38.960><c> In</c><00:04:39.080><c> fact,</c>
+
+00:04:39.310 --> 00:04:39.320 align:start position:0%
+it found a different file. In fact,
+ 
+
+00:04:39.320 --> 00:04:40.710 align:start position:0%
+it found a different file. In fact,
+Claude<00:04:39.520><c> Context</c><00:04:39.960><c> gives</c><00:04:40.280><c> way</c><00:04:40.520><c> more</c>
+
+00:04:40.710 --> 00:04:40.720 align:start position:0%
+Claude Context gives way more
+ 
+
+00:04:40.720 --> 00:04:43.110 align:start position:0%
+Claude Context gives way more
+information<00:04:41.520><c> showing</c><00:04:41.920><c> the</c><00:04:42.040><c> code</c><00:04:42.800><c> and</c><00:04:42.920><c> other</c>
+
+00:04:43.110 --> 00:04:43.120 align:start position:0%
+information showing the code and other
+ 
+
+00:04:43.120 --> 00:04:45.430 align:start position:0%
+information showing the code and other
+files<00:04:43.440><c> related</c><00:04:43.800><c> to</c><00:04:43.920><c> opening</c><00:04:44.320><c> the</c><00:04:44.520><c> editor.</c><00:04:45.200><c> So,</c>
+
+00:04:45.430 --> 00:04:45.440 align:start position:0%
+files related to opening the editor. So,
+ 
+
+00:04:45.440 --> 00:04:46.870 align:start position:0%
+files related to opening the editor. So,
+I'm<00:04:45.560><c> going</c><00:04:45.680><c> to</c><00:04:45.760><c> ask</c><00:04:45.960><c> them</c><00:04:46.120><c> both</c><00:04:46.480><c> to</c><00:04:46.600><c> show</c><00:04:46.760><c> me</c>
+
+00:04:46.870 --> 00:04:46.880 align:start position:0%
+I'm going to ask them both to show me
+ 
+
+00:04:46.880 --> 00:04:48.750 align:start position:0%
+I'm going to ask them both to show me
+the<00:04:47.000><c> exact</c><00:04:47.320><c> code,</c><00:04:47.880><c> and</c><00:04:48.000><c> at</c><00:04:48.080><c> this</c><00:04:48.280><c> point</c><00:04:48.520><c> Claude</c>
+
+00:04:48.750 --> 00:04:48.760 align:start position:0%
+the exact code, and at this point Claude
+ 
+
+00:04:48.760 --> 00:04:51.070 align:start position:0%
+the exact code, and at this point Claude
+Context<00:04:49.120><c> responds</c><00:04:49.480><c> in</c><00:04:49.640><c> 23</c><00:04:50.200><c> seconds</c><00:04:50.840><c> with</c><00:04:51.000><c> the</c>
+
+00:04:51.070 --> 00:04:51.080 align:start position:0%
+Context responds in 23 seconds with the
+ 
+
+00:04:51.080 --> 00:04:53.350 align:start position:0%
+Context responds in 23 seconds with the
+code,<00:04:51.840><c> and</c><00:04:52.040><c> the</c><00:04:52.160><c> non-Claude</c><00:04:52.800><c> Context</c><00:04:53.160><c> Open</c>
+
+00:04:53.350 --> 00:04:53.360 align:start position:0%
+code, and the non-Claude Context Open
+ 
+
+00:04:53.360 --> 00:04:55.590 align:start position:0%
+code, and the non-Claude Context Open
+Code<00:04:53.720><c> responds</c><00:04:54.160><c> in</c><00:04:54.320><c> 49</c><00:04:54.760><c> seconds,</c><00:04:55.320><c> almost</c>
+
+00:04:55.590 --> 00:04:55.600 align:start position:0%
+Code responds in 49 seconds, almost
+ 
+
+00:04:55.600 --> 00:04:57.110 align:start position:0%
+Code responds in 49 seconds, almost
+double<00:04:55.920><c> the</c><00:04:56.040><c> amount</c><00:04:56.280><c> of</c><00:04:56.360><c> time.</c><00:04:56.800><c> And</c><00:04:56.880><c> it</c><00:04:56.960><c> gives</c>
+
+00:04:57.110 --> 00:04:57.120 align:start position:0%
+double the amount of time. And it gives
+ 
+
+00:04:57.120 --> 00:04:58.390 align:start position:0%
+double the amount of time. And it gives
+you<00:04:57.200><c> the</c><00:04:57.280><c> exact</c><00:04:57.520><c> same</c><00:04:57.640><c> code</c><00:04:58.000><c> as</c><00:04:58.200><c> Claude</c>
+
+00:04:58.390 --> 00:04:58.400 align:start position:0%
+you the exact same code as Claude
+ 
+
+00:04:58.400 --> 00:05:00.590 align:start position:0%
+you the exact same code as Claude
+Context<00:04:58.760><c> did,</c><00:04:59.160><c> which</c><00:04:59.600><c> gives</c><00:04:59.800><c> me</c><00:04:59.920><c> an</c><00:05:00.000><c> idea.</c><00:05:00.520><c> I'm</c>
+
+00:05:00.590 --> 00:05:00.600 align:start position:0%
+Context did, which gives me an idea. I'm
+ 
+
+00:05:00.600 --> 00:05:01.990 align:start position:0%
+Context did, which gives me an idea. I'm
+going<00:05:00.800><c> to</c><00:05:00.880><c> give</c><00:05:01.000><c> it</c><00:05:01.120><c> a</c><00:05:01.160><c> more</c><00:05:01.520><c> broad</c>
+
+00:05:01.990 --> 00:05:02.000 align:start position:0%
+going to give it a more broad
+ 
+
+00:05:02.000 --> 00:05:03.910 align:start position:0%
+going to give it a more broad
+generalized<00:05:02.520><c> prompt</c><00:05:03.000><c> of</c><00:05:03.480><c> look</c><00:05:03.680><c> through</c><00:05:03.840><c> the</c>
+
+00:05:03.910 --> 00:05:03.920 align:start position:0%
+generalized prompt of look through the
+ 
+
+00:05:03.920 --> 00:05:06.190 align:start position:0%
+generalized prompt of look through the
+code<00:05:04.320><c> and</c><00:05:04.480><c> tell</c><00:05:04.720><c> me</c><00:05:04.960><c> how</c><00:05:05.160><c> this</c><00:05:05.320><c> project</c><00:05:05.640><c> works.</c>
+
+00:05:06.190 --> 00:05:06.200 align:start position:0%
+code and tell me how this project works.
+ 
+
+00:05:06.200 --> 00:05:08.310 align:start position:0%
+code and tell me how this project works.
+Claude<00:05:06.400><c> Context</c><00:05:06.760><c> finishes</c><00:05:07.080><c> in</c><00:05:07.200><c> 49</c><00:05:07.760><c> seconds</c>
+
+00:05:08.310 --> 00:05:08.320 align:start position:0%
+Claude Context finishes in 49 seconds
+ 
+
+00:05:08.320 --> 00:05:11.190 align:start position:0%
+Claude Context finishes in 49 seconds
+using<00:05:08.560><c> 41K</c><00:05:09.360><c> tokens,</c><00:05:10.120><c> and</c><00:05:10.400><c> the</c><00:05:10.520><c> other</c><00:05:10.760><c> instance</c>
+
+00:05:11.190 --> 00:05:11.200 align:start position:0%
+using 41K tokens, and the other instance
+ 
+
+00:05:11.200 --> 00:05:13.630 align:start position:0%
+using 41K tokens, and the other instance
+finishes<00:05:11.640><c> faster</c><00:05:12.120><c> and</c><00:05:12.360><c> uses</c><00:05:12.640><c> less</c><00:05:12.880><c> tokens.</c>
+
+00:05:13.630 --> 00:05:13.640 align:start position:0%
+finishes faster and uses less tokens.
+ 
+
+00:05:13.640 --> 00:05:15.190 align:start position:0%
+finishes faster and uses less tokens.
+But,<00:05:13.800><c> if</c><00:05:13.920><c> we</c><00:05:14.040><c> have</c><00:05:14.200><c> a</c><00:05:14.280><c> look</c><00:05:14.600><c> at</c><00:05:14.760><c> the</c><00:05:14.920><c> output</c>
+
+00:05:15.190 --> 00:05:15.200 align:start position:0%
+But, if we have a look at the output
+ 
+
+00:05:15.200 --> 00:05:16.790 align:start position:0%
+But, if we have a look at the output
+produced,<00:05:15.880><c> we</c><00:05:15.960><c> can</c><00:05:16.120><c> see</c><00:05:16.240><c> there's</c><00:05:16.440><c> much</c><00:05:16.680><c> more</c>
+
+00:05:16.790 --> 00:05:16.800 align:start position:0%
+produced, we can see there's much more
+ 
+
+00:05:16.800 --> 00:05:18.630 align:start position:0%
+produced, we can see there's much more
+detail<00:05:17.120><c> from</c><00:05:17.320><c> Claude</c><00:05:17.560><c> Context</c><00:05:18.200><c> giving</c><00:05:18.480><c> the</c>
+
+00:05:18.630 --> 00:05:18.640 align:start position:0%
+detail from Claude Context giving the
+ 
+
+00:05:18.640 --> 00:05:20.350 align:start position:0%
+detail from Claude Context giving the
+layered<00:05:19.040><c> architecture</c><00:05:19.920><c> and</c><00:05:20.040><c> even</c><00:05:20.240><c> some</c>
+
+00:05:20.350 --> 00:05:20.360 align:start position:0%
+layered architecture and even some
+ 
+
+00:05:20.360 --> 00:05:22.030 align:start position:0%
+layered architecture and even some
+information<00:05:20.880><c> about</c><00:05:21.160><c> the</c><00:05:21.280><c> Electron</c><00:05:21.680><c> app</c><00:05:21.920><c> and</c>
+
+00:05:22.030 --> 00:05:22.040 align:start position:0%
+information about the Electron app and
+ 
+
+00:05:22.040 --> 00:05:23.870 align:start position:0%
+information about the Electron app and
+the<00:05:22.120><c> processes</c><00:05:22.640><c> it</c><00:05:22.800><c> uses.</c><00:05:23.560><c> And</c><00:05:23.760><c> the</c>
+
+00:05:23.870 --> 00:05:23.880 align:start position:0%
+the processes it uses. And the
+ 
+
+00:05:23.880 --> 00:05:26.230 align:start position:0%
+the processes it uses. And the
+non-Claude<00:05:24.360><c> Context</c><00:05:24.800><c> option</c><00:05:25.520><c> does</c><00:05:25.760><c> also</c><00:05:26.040><c> give</c>
+
+00:05:26.230 --> 00:05:26.240 align:start position:0%
+non-Claude Context option does also give
+ 
+
+00:05:26.240 --> 00:05:28.230 align:start position:0%
+non-Claude Context option does also give
+some<00:05:26.440><c> architectural</c><00:05:26.920><c> information,</c><00:05:27.680><c> but</c><00:05:28.000><c> it's</c>
+
+00:05:28.230 --> 00:05:28.240 align:start position:0%
+some architectural information, but it's
+ 
+
+00:05:28.240 --> 00:05:30.110 align:start position:0%
+some architectural information, but it's
+not<00:05:28.400><c> as</c><00:05:28.520><c> detailed</c><00:05:29.040><c> as</c><00:05:29.200><c> the</c><00:05:29.360><c> other</c><00:05:29.520><c> one.</c><00:05:30.000><c> In</c>
+
+00:05:30.110 --> 00:05:30.120 align:start position:0%
+not as detailed as the other one. In
+ 
+
+00:05:30.120 --> 00:05:31.910 align:start position:0%
+not as detailed as the other one. In
+fact,<00:05:30.520><c> I</c><00:05:30.560><c> know</c><00:05:30.760><c> it</c><00:05:30.840><c> doesn't</c><00:05:31.120><c> look</c><00:05:31.280><c> like</c><00:05:31.480><c> it,</c>
+
+00:05:31.910 --> 00:05:31.920 align:start position:0%
+fact, I know it doesn't look like it,
+ 
+
+00:05:31.920 --> 00:05:33.590 align:start position:0%
+fact, I know it doesn't look like it,
+but<00:05:32.080><c> I</c><00:05:32.160><c> would</c><00:05:32.280><c> say</c><00:05:32.440><c> Claude</c><00:05:32.720><c> Context</c><00:05:33.160><c> is</c><00:05:33.320><c> very</c>
+
+00:05:33.590 --> 00:05:33.600 align:start position:0%
+but I would say Claude Context is very
+ 
+
+00:05:33.600 --> 00:05:35.510 align:start position:0%
+but I would say Claude Context is very
+good<00:05:33.960><c> at</c><00:05:34.120><c> getting</c><00:05:34.440><c> code</c><00:05:34.800><c> information</c><00:05:35.360><c> up</c>
+
+00:05:35.510 --> 00:05:35.520 align:start position:0%
+good at getting code information up
+ 
+
+00:05:35.520 --> 00:05:37.830 align:start position:0%
+good at getting code information up
+front<00:05:35.800><c> quickly</c><00:05:36.440><c> in</c><00:05:36.640><c> lots</c><00:05:36.880><c> of</c><00:05:37.000><c> detail.</c><00:05:37.600><c> I</c><00:05:37.680><c> mean,</c>
+
+00:05:37.830 --> 00:05:37.840 align:start position:0%
+front quickly in lots of detail. I mean,
+ 
+
+00:05:37.840 --> 00:05:39.430 align:start position:0%
+front quickly in lots of detail. I mean,
+take<00:05:38.000><c> a</c><00:05:38.040><c> look</c><00:05:38.160><c> at</c><00:05:38.200><c> this.</c><00:05:38.720><c> So,</c><00:05:39.040><c> from</c><00:05:39.280><c> this</c>
+
+00:05:39.430 --> 00:05:39.440 align:start position:0%
+take a look at this. So, from this
+ 
+
+00:05:39.440 --> 00:05:41.190 align:start position:0%
+take a look at this. So, from this
+prompt<00:05:39.800><c> I</c><00:05:39.880><c> asked</c><00:05:40.200><c> a</c><00:05:40.280><c> follow-up</c><00:05:40.760><c> prompt</c><00:05:41.080><c> to</c>
+
+00:05:41.190 --> 00:05:41.200 align:start position:0%
+prompt I asked a follow-up prompt to
+ 
+
+00:05:41.200 --> 00:05:42.990 align:start position:0%
+prompt I asked a follow-up prompt to
+tell<00:05:41.440><c> me</c><00:05:41.560><c> more</c><00:05:41.720><c> information</c><00:05:42.320><c> about</c><00:05:42.600><c> the</c><00:05:42.720><c> main</c>
+
+00:05:42.990 --> 00:05:43.000 align:start position:0%
+tell me more information about the main
+ 
+
+00:05:43.000 --> 00:05:45.310 align:start position:0%
+tell me more information about the main
+process<00:05:43.760><c> in</c><00:05:43.880><c> the</c><00:05:43.960><c> Electron</c><00:05:44.360><c> app,</c><00:05:44.920><c> which</c><00:05:45.160><c> it</c>
+
+00:05:45.310 --> 00:05:45.320 align:start position:0%
+process in the Electron app, which it
+ 
+
+00:05:45.320 --> 00:05:47.910 align:start position:0%
+process in the Electron app, which it
+stated<00:05:45.800><c> up</c><00:05:46.080><c> here.</c><00:05:46.920><c> So,</c><00:05:47.160><c> after</c><00:05:47.480><c> I</c><00:05:47.520><c> asked</c><00:05:47.760><c> this</c>
+
+00:05:47.910 --> 00:05:47.920 align:start position:0%
+stated up here. So, after I asked this
+ 
+
+00:05:47.920 --> 00:05:51.190 align:start position:0%
+stated up here. So, after I asked this
+prompt,<00:05:48.240><c> it</c><00:05:48.560><c> took</c><00:05:48.880><c> about</c><00:05:50.040><c> 1</c><00:05:50.320><c> minute</c><00:05:50.640><c> and</c><00:05:50.800><c> 47</c>
+
+00:05:51.190 --> 00:05:51.200 align:start position:0%
+prompt, it took about 1 minute and 47
+ 
+
+00:05:51.200 --> 00:05:53.510 align:start position:0%
+prompt, it took about 1 minute and 47
+seconds,<00:05:51.920><c> but</c><00:05:52.120><c> look</c><00:05:52.280><c> at</c><00:05:52.520><c> all</c><00:05:52.680><c> that</c><00:05:52.880><c> detail.</c>
+
+00:05:53.510 --> 00:05:53.520 align:start position:0%
+seconds, but look at all that detail.
+ 
+
+00:05:53.520 --> 00:05:55.430 align:start position:0%
+seconds, but look at all that detail.
+So,<00:05:53.720><c> it</c><00:05:53.840><c> started</c><00:05:54.160><c> out</c><00:05:54.400><c> with</c><00:05:54.840><c> the</c><00:05:55.200><c> boot</c>
+
+00:05:55.430 --> 00:05:55.440 align:start position:0%
+So, it started out with the boot
+ 
+
+00:05:55.440 --> 00:05:57.350 align:start position:0%
+So, it started out with the boot
+sequence<00:05:56.240><c> and</c><00:05:56.320><c> then</c><00:05:56.480><c> phase</c><00:05:56.760><c> one,</c><00:05:57.160><c> so</c><00:05:57.280><c> the</c>
+
+00:05:57.350 --> 00:05:57.360 align:start position:0%
+sequence and then phase one, so the
+ 
+
+00:05:57.360 --> 00:05:59.070 align:start position:0%
+sequence and then phase one, so the
+service<00:05:57.680><c> creation</c><00:05:58.560><c> and</c><00:05:58.760><c> service</c>
+
+00:05:59.070 --> 00:05:59.080 align:start position:0%
+service creation and service
+ 
+
+00:05:59.080 --> 00:06:01.030 align:start position:0%
+service creation and service
+initialization.<00:06:00.200><c> And</c><00:06:00.320><c> we've</c><00:06:00.440><c> got</c><00:06:00.680><c> so</c><00:06:00.840><c> much</c>
+
+00:06:01.030 --> 00:06:01.040 align:start position:0%
+initialization. And we've got so much
+ 
+
+00:06:01.040 --> 00:06:02.630 align:start position:0%
+initialization. And we've got so much
+more<00:06:01.320><c> from</c><00:06:01.520><c> phase</c><00:06:01.760><c> two,</c><00:06:02.160><c> the</c><00:06:02.320><c> code</c>
+
+00:06:02.630 --> 00:06:02.640 align:start position:0%
+more from phase two, the code
+ 
+
+00:06:02.640 --> 00:06:04.830 align:start position:0%
+more from phase two, the code
+application<00:06:03.160><c> app</c><00:06:03.640><c> with</c><00:06:03.880><c> all</c><00:06:04.040><c> the</c><00:06:04.120><c> references</c>
+
+00:06:04.830 --> 00:06:04.840 align:start position:0%
+application app with all the references
+ 
+
+00:06:04.840 --> 00:06:06.190 align:start position:0%
+application app with all the references
+to<00:06:05.040><c> the</c><00:06:05.120><c> relevant</c><00:06:05.480><c> files.</c><00:06:05.840><c> So,</c><00:06:05.920><c> we've</c><00:06:06.040><c> got</c>
+
+00:06:06.190 --> 00:06:06.200 align:start position:0%
+to the relevant files. So, we've got
+ 
+
+00:06:06.200 --> 00:06:09.230 align:start position:0%
+to the relevant files. So, we've got
+app.ts<00:06:06.760><c> line</c><00:06:07.000><c> 185,</c><00:06:08.000><c> and</c><00:06:08.360><c> we</c><00:06:08.440><c> could</c><00:06:08.640><c> keep</c><00:06:08.920><c> going</c>
+
+00:06:09.230 --> 00:06:09.240 align:start position:0%
+app.ts line 185, and we could keep going
+ 
+
+00:06:09.240 --> 00:06:10.950 align:start position:0%
+app.ts line 185, and we could keep going
+on<00:06:09.480><c> and</c><00:06:09.680><c> on.</c><00:06:10.160><c> Whereas,</c><00:06:10.440><c> without</c><00:06:10.760><c> Claude</c>
+
+00:06:10.950 --> 00:06:10.960 align:start position:0%
+on and on. Whereas, without Claude
+ 
+
+00:06:10.960 --> 00:06:12.950 align:start position:0%
+on and on. Whereas, without Claude
+Context,<00:06:11.640><c> Open</c><00:06:11.880><c> Code</c><00:06:12.160><c> is</c><00:06:12.320><c> still</c><00:06:12.680><c> going</c>
+
+00:06:12.950 --> 00:06:12.960 align:start position:0%
+Context, Open Code is still going
+ 
+
+00:06:12.960 --> 00:06:14.990 align:start position:0%
+Context, Open Code is still going
+through<00:06:13.200><c> all</c><00:06:13.320><c> the</c><00:06:13.400><c> files</c><00:06:14.160><c> using</c><00:06:14.480><c> multiple</c>
+
+00:06:14.990 --> 00:06:15.000 align:start position:0%
+through all the files using multiple
+ 
+
+00:06:15.000 --> 00:06:17.430 align:start position:0%
+through all the files using multiple
+sub-agents,<00:06:15.960><c> and</c><00:06:16.400><c> this</c><00:06:16.600><c> is</c><00:06:16.720><c> a</c><00:06:16.800><c> bit</c><00:06:17.040><c> deceiving</c>
+
+00:06:17.430 --> 00:06:17.440 align:start position:0%
+sub-agents, and this is a bit deceiving
+ 
+
+00:06:17.440 --> 00:06:19.470 align:start position:0%
+sub-agents, and this is a bit deceiving
+because<00:06:17.680><c> we</c><00:06:17.800><c> can't</c><00:06:18.200><c> see</c><00:06:18.320><c> exactly</c><00:06:19.160><c> how</c><00:06:19.280><c> many</c>
+
+00:06:19.470 --> 00:06:19.480 align:start position:0%
+because we can't see exactly how many
+ 
+
+00:06:19.480 --> 00:06:22.070 align:start position:0%
+because we can't see exactly how many
+tokens<00:06:20.000><c> each</c><00:06:20.320><c> sub-agent</c><00:06:20.960><c> is</c><00:06:21.120><c> using.</c><00:06:21.720><c> But,</c><00:06:21.960><c> if</c>
+
+00:06:22.070 --> 00:06:22.080 align:start position:0%
+tokens each sub-agent is using. But, if
+ 
+
+00:06:22.080 --> 00:06:23.870 align:start position:0%
+tokens each sub-agent is using. But, if
+we<00:06:22.200><c> wait</c><00:06:22.440><c> for</c><00:06:22.560><c> a</c><00:06:22.600><c> bit</c><00:06:22.880><c> and</c><00:06:23.000><c> come</c><00:06:23.120><c> back,</c><00:06:23.600><c> we</c><00:06:23.720><c> can</c>
+
+00:06:23.870 --> 00:06:23.880 align:start position:0%
+we wait for a bit and come back, we can
+ 
+
+00:06:23.880 --> 00:06:25.990 align:start position:0%
+we wait for a bit and come back, we can
+see<00:06:24.120><c> after</c><00:06:24.360><c> about</c><00:06:24.640><c> 5</c><00:06:24.880><c> minutes</c><00:06:25.320><c> Open</c><00:06:25.600><c> Code</c>
+
+00:06:25.990 --> 00:06:26.000 align:start position:0%
+see after about 5 minutes Open Code
+ 
+
+00:06:26.000 --> 00:06:28.590 align:start position:0%
+see after about 5 minutes Open Code
+responds<00:06:26.840><c> with</c><00:06:27.160><c> a</c><00:06:27.240><c> lot</c><00:06:27.560><c> of</c><00:06:27.640><c> information</c><00:06:28.240><c> about</c>
+
+00:06:28.590 --> 00:06:28.600 align:start position:0%
+responds with a lot of information about
+ 
+
+00:06:28.600 --> 00:06:30.710 align:start position:0%
+responds with a lot of information about
+the<00:06:28.720><c> Electron</c><00:06:29.080><c> process,</c><00:06:29.720><c> but</c><00:06:30.040><c> this</c><00:06:30.240><c> isn't</c><00:06:30.560><c> as</c>
+
+00:06:30.710 --> 00:06:30.720 align:start position:0%
+the Electron process, but this isn't as
+ 
+
+00:06:30.720 --> 00:06:32.710 align:start position:0%
+the Electron process, but this isn't as
+much<00:06:31.000><c> as</c><00:06:31.160><c> what</c><00:06:31.360><c> Claude</c><00:06:31.600><c> Context</c><00:06:32.000><c> provided,</c>
+
+00:06:32.710 --> 00:06:32.720 align:start position:0%
+much as what Claude Context provided,
+ 
+
+00:06:32.720 --> 00:06:35.350 align:start position:0%
+much as what Claude Context provided,
+and<00:06:32.840><c> it</c><00:06:32.920><c> did</c><00:06:33.120><c> take</c><00:06:33.520><c> five</c><00:06:33.880><c> times</c><00:06:34.240><c> longer.</c><00:06:34.880><c> Now,</c>
+
+00:06:35.350 --> 00:06:35.360 align:start position:0%
+and it did take five times longer. Now,
+ 
+
+00:06:35.360 --> 00:06:37.630 align:start position:0%
+and it did take five times longer. Now,
+yes,<00:06:35.680><c> maybe</c><00:06:35.960><c> if</c><00:06:36.120><c> I</c><00:06:36.160><c> used</c><00:06:36.560><c> a</c><00:06:36.680><c> smarter</c><00:06:37.080><c> model</c>
+
+00:06:37.630 --> 00:06:37.640 align:start position:0%
+yes, maybe if I used a smarter model
+ 
+
+00:06:37.640 --> 00:06:40.270 align:start position:0%
+yes, maybe if I used a smarter model
+like<00:06:37.840><c> Opus</c><00:06:38.160><c> 4.7</c><00:06:39.080><c> with</c><00:06:39.240><c> high</c><00:06:39.440><c> effort,</c><00:06:40.040><c> it</c><00:06:40.160><c> would</c>
+
+00:06:40.270 --> 00:06:40.280 align:start position:0%
+like Opus 4.7 with high effort, it would
+ 
+
+00:06:40.280 --> 00:06:41.790 align:start position:0%
+like Opus 4.7 with high effort, it would
+get<00:06:40.480><c> more</c><00:06:40.600><c> information,</c><00:06:41.320><c> but</c><00:06:41.440><c> it</c><00:06:41.520><c> would</c><00:06:41.600><c> still</c>
+
+00:06:41.790 --> 00:06:41.800 align:start position:0%
+get more information, but it would still
+ 
+
+00:06:41.800 --> 00:06:43.710 align:start position:0%
+get more information, but it would still
+take<00:06:42.040><c> a</c><00:06:42.120><c> long</c><00:06:42.320><c> time</c><00:06:42.760><c> and</c><00:06:43.000><c> use</c><00:06:43.240><c> a</c><00:06:43.320><c> lot</c><00:06:43.600><c> of</c>
+
+00:06:43.710 --> 00:06:43.720 align:start position:0%
+take a long time and use a lot of
+ 
+
+00:06:43.720 --> 00:06:45.230 align:start position:0%
+take a long time and use a lot of
+tokens.<00:06:44.360><c> And</c><00:06:44.520><c> these</c><00:06:44.800><c> are</c><00:06:44.880><c> the</c><00:06:44.960><c> kind</c><00:06:45.160><c> of</c>
+
+00:06:45.230 --> 00:06:45.240 align:start position:0%
+tokens. And these are the kind of
+ 
+
+00:06:45.240 --> 00:06:47.270 align:start position:0%
+tokens. And these are the kind of
+differences,<00:06:45.680><c> so</c><00:06:45.800><c> 5</c><00:06:46.040><c> minutes</c><00:06:46.400><c> and</c><00:06:46.600><c> 1</c><00:06:46.720><c> minute,</c>
+
+00:06:47.270 --> 00:06:47.280 align:start position:0%
+differences, so 5 minutes and 1 minute,
+ 
+
+00:06:47.280 --> 00:06:48.830 align:start position:0%
+differences, so 5 minutes and 1 minute,
+that<00:06:47.440><c> I</c><00:06:47.480><c> was</c><00:06:47.680><c> seeing</c><00:06:48.000><c> when</c><00:06:48.080><c> I</c><00:06:48.160><c> was</c><00:06:48.320><c> testing</c>
+
+00:06:48.830 --> 00:06:48.840 align:start position:0%
+that I was seeing when I was testing
+ 
+
+00:06:48.840 --> 00:06:51.470 align:start position:0%
+that I was seeing when I was testing
+before<00:06:49.240><c> recording</c><00:06:49.760><c> with</c><00:06:49.960><c> the</c><00:06:50.120><c> 23K</c><00:06:51.000><c> line</c><00:06:51.280><c> code</c>
+
+00:06:51.470 --> 00:06:51.480 align:start position:0%
+before recording with the 23K line code
+ 
+
+00:06:51.480 --> 00:06:52.950 align:start position:0%
+before recording with the 23K line code
+base.<00:06:51.800><c> So,</c><00:06:51.920><c> in</c><00:06:52.080><c> the</c><00:06:52.200><c> end,</c><00:06:52.400><c> it's</c><00:06:52.520><c> difficult</c><00:06:52.840><c> to</c>
+
+00:06:52.950 --> 00:06:52.960 align:start position:0%
+base. So, in the end, it's difficult to
+ 
+
+00:06:52.960 --> 00:06:55.070 align:start position:0%
+base. So, in the end, it's difficult to
+say<00:06:53.280><c> who</c><00:06:53.560><c> is</c><00:06:53.760><c> the</c><00:06:53.960><c> clear</c><00:06:54.240><c> winner.</c><00:06:54.760><c> I</c><00:06:54.840><c> mean,</c>
+
+00:06:55.070 --> 00:06:55.080 align:start position:0%
+say who is the clear winner. I mean,
+ 
+
+00:06:55.080 --> 00:06:57.350 align:start position:0%
+say who is the clear winner. I mean,
+Claude<00:06:55.360><c> Context</c><00:06:55.840><c> did</c><00:06:56.160><c> always</c><00:06:56.480><c> provide</c><00:06:56.960><c> more</c>
+
+00:06:57.350 --> 00:06:57.360 align:start position:0%
+Claude Context did always provide more
+ 
+
+00:06:57.360 --> 00:06:59.630 align:start position:0%
+Claude Context did always provide more
+detail,<00:06:58.000><c> but</c><00:06:58.240><c> it</c><00:06:58.360><c> wasn't</c><00:06:58.680><c> always</c><00:06:58.960><c> the</c><00:06:59.080><c> fastest</c>
+
+00:06:59.630 --> 00:06:59.640 align:start position:0%
+detail, but it wasn't always the fastest
+ 
+
+00:06:59.640 --> 00:07:01.750 align:start position:0%
+detail, but it wasn't always the fastest
+and<00:06:59.960><c> the</c><00:07:00.080><c> most</c><00:07:00.440><c> token</c><00:07:00.760><c> efficient.</c><00:07:01.480><c> And</c><00:07:01.640><c> for</c>
+
+00:07:01.750 --> 00:07:01.760 align:start position:0%
+and the most token efficient. And for
+ 
+
+00:07:01.760 --> 00:07:03.790 align:start position:0%
+and the most token efficient. And for
+large<00:07:01.960><c> code</c><00:07:02.120><c> bases,</c><00:07:02.480><c> it</c><00:07:02.680><c> did</c><00:07:02.920><c> take</c><00:07:03.200><c> a</c><00:07:03.280><c> very</c>
+
+00:07:03.790 --> 00:07:03.800 align:start position:0%
+large code bases, it did take a very
+ 
+
+00:07:03.800 --> 00:07:05.830 align:start position:0%
+large code bases, it did take a very
+long<00:07:04.120><c> time</c><00:07:04.440><c> to</c><00:07:04.600><c> index.</c><00:07:05.240><c> However,</c><00:07:05.640><c> for</c>
+
+00:07:05.830 --> 00:07:05.840 align:start position:0%
+long time to index. However, for
+ 
+
+00:07:05.840 --> 00:07:08.910 align:start position:0%
+long time to index. However, for
+average-size<00:07:06.480><c> code</c><00:07:06.640><c> bases,</c><00:07:07.120><c> so</c><00:07:07.480><c> 20</c><00:07:07.960><c> to</c><00:07:08.160><c> 30,000</c>
+
+00:07:08.910 --> 00:07:08.920 align:start position:0%
+average-size code bases, so 20 to 30,000
+ 
+
+00:07:08.920 --> 00:07:10.670 align:start position:0%
+average-size code bases, so 20 to 30,000
+lines<00:07:09.080><c> of</c><00:07:09.160><c> code,</c><00:07:09.760><c> the</c><00:07:09.840><c> indexing</c><00:07:10.200><c> time</c><00:07:10.520><c> is</c>
+
+00:07:10.670 --> 00:07:10.680 align:start position:0%
+lines of code, the indexing time is
+ 
+
+00:07:10.680 --> 00:07:12.470 align:start position:0%
+lines of code, the indexing time is
+really<00:07:10.920><c> quick,</c><00:07:11.480><c> and</c><00:07:11.640><c> the</c><00:07:11.800><c> difference</c><00:07:12.320><c> in</c>
+
+00:07:12.470 --> 00:07:12.480 align:start position:0%
+really quick, and the difference in
+ 
+
+00:07:12.480 --> 00:07:14.510 align:start position:0%
+really quick, and the difference in
+detail<00:07:12.840><c> when</c><00:07:12.960><c> it</c><00:07:13.040><c> comes</c><00:07:13.360><c> to</c><00:07:13.480><c> results</c><00:07:13.960><c> is</c><00:07:14.160><c> very</c>
+
+00:07:14.510 --> 00:07:14.520 align:start position:0%
+detail when it comes to results is very
+ 
+
+00:07:14.520 --> 00:07:16.390 align:start position:0%
+detail when it comes to results is very
+apparent.<00:07:15.360><c> In</c><00:07:15.400><c> fact,</c><00:07:15.680><c> I</c><00:07:15.720><c> would</c><00:07:15.880><c> say</c><00:07:16.120><c> I</c><00:07:16.200><c> would</c>
+
+00:07:16.390 --> 00:07:16.400 align:start position:0%
+apparent. In fact, I would say I would
+ 
+
+00:07:16.400 --> 00:07:19.110 align:start position:0%
+apparent. In fact, I would say I would
+much<00:07:16.760><c> rather</c><00:07:17.240><c> use</c><00:07:17.840><c> Claude</c><00:07:18.080><c> Context</c><00:07:18.840><c> for</c>
+
+00:07:19.110 --> 00:07:19.120 align:start position:0%
+much rather use Claude Context for
+ 
+
+00:07:19.120 --> 00:07:21.070 align:start position:0%
+much rather use Claude Context for
+average-size<00:07:19.560><c> code</c><00:07:19.680><c> bases</c><00:07:20.360><c> than</c><00:07:20.600><c> use</c><00:07:20.760><c> it</c><00:07:20.920><c> on</c>
+
+00:07:21.070 --> 00:07:21.080 align:start position:0%
+average-size code bases than use it on
+ 
+
+00:07:21.080 --> 00:07:22.990 align:start position:0%
+average-size code bases than use it on
+large<00:07:21.360><c> code</c><00:07:21.560><c> bases.</c><00:07:22.040><c> So,</c><00:07:22.560><c> that's</c><00:07:22.760><c> something</c>
+
+00:07:22.990 --> 00:07:23.000 align:start position:0%
+large code bases. So, that's something
+ 
+
+00:07:23.000 --> 00:07:24.390 align:start position:0%
+large code bases. So, that's something
+to<00:07:23.040><c> think</c><00:07:23.160><c> about.</c><00:07:23.440><c> But,</c><00:07:23.600><c> to</c><00:07:23.680><c> be</c><00:07:23.760><c> honest,</c><00:07:24.120><c> this</c>
+
+00:07:24.390 --> 00:07:24.400 align:start position:0%
+to think about. But, to be honest, this
+ 
+
+00:07:24.400 --> 00:07:26.550 align:start position:0%
+to think about. But, to be honest, this
+is<00:07:24.520><c> more</c><00:07:24.760><c> of</c><00:07:24.880><c> a</c><00:07:24.960><c> great</c><00:07:25.280><c> sales</c><00:07:25.640><c> tool</c><00:07:25.880><c> for</c><00:07:26.000><c> Zilliz</c>
+
+00:07:26.550 --> 00:07:26.560 align:start position:0%
+is more of a great sales tool for Zilliz
+ 
+
+00:07:26.560 --> 00:07:28.350 align:start position:0%
+is more of a great sales tool for Zilliz
+because<00:07:27.000><c> before</c><00:07:27.360><c> using</c><00:07:27.560><c> Claude</c><00:07:27.800><c> Context,</c><00:07:28.280><c> I</c>
+
+00:07:28.350 --> 00:07:28.360 align:start position:0%
+because before using Claude Context, I
+ 
+
+00:07:28.360 --> 00:07:30.230 align:start position:0%
+because before using Claude Context, I
+had<00:07:28.600><c> never</c><00:07:28.880><c> heard</c><00:07:29.080><c> of</c><00:07:29.200><c> them,</c><00:07:29.640><c> and</c><00:07:29.800><c> now</c><00:07:30.080><c> they</c>
+
+00:07:30.230 --> 00:07:30.240 align:start position:0%
+had never heard of them, and now they
+ 
+
+00:07:30.240 --> 00:07:32.030 align:start position:0%
+had never heard of them, and now they
+have<00:07:30.560><c> a</c><00:07:30.640><c> new</c><00:07:31.000><c> paying</c><00:07:31.280><c> customer.</c><00:07:31.720><c> But,</c><00:07:31.840><c> even</c>
+
+00:07:32.030 --> 00:07:32.040 align:start position:0%
+have a new paying customer. But, even
+ 
+
+00:07:32.040 --> 00:07:34.030 align:start position:0%
+have a new paying customer. But, even
+though<00:07:32.240><c> it</c><00:07:32.440><c> did</c><00:07:32.640><c> take</c><00:07:32.840><c> a</c><00:07:32.920><c> while</c><00:07:33.120><c> to</c><00:07:33.280><c> set</c><00:07:33.520><c> up</c><00:07:33.840><c> and</c>
+
+00:07:34.030 --> 00:07:34.040 align:start position:0%
+though it did take a while to set up and
+ 
+
+00:07:34.040 --> 00:07:36.630 align:start position:0%
+though it did take a while to set up and
+indexing<00:07:34.600><c> large</c><00:07:35.000><c> code</c><00:07:35.240><c> bases</c><00:07:35.760><c> took</c><00:07:36.080><c> a</c><00:07:36.160><c> very</c>
+
+00:07:36.630 --> 00:07:36.640 align:start position:0%
+indexing large code bases took a very
+ 
+
+00:07:36.640 --> 00:07:38.790 align:start position:0%
+indexing large code bases took a very
+long<00:07:36.920><c> while.</c><00:07:37.520><c> As</c><00:07:37.640><c> someone</c><00:07:37.960><c> who</c><00:07:38.280><c> regularly</c>
+
+00:07:38.790 --> 00:07:38.800 align:start position:0%
+long while. As someone who regularly
+ 
+
+00:07:38.800 --> 00:07:41.310 align:start position:0%
+long while. As someone who regularly
+goes<00:07:39.160><c> through</c><00:07:39.520><c> open-source</c><00:07:40.240><c> code</c><00:07:40.600><c> bases</c><00:07:41.080><c> and</c>
+
+00:07:41.310 --> 00:07:41.320 align:start position:0%
+goes through open-source code bases and
+ 
+
+00:07:41.320 --> 00:07:43.070 align:start position:0%
+goes through open-source code bases and
+asks<00:07:41.560><c> questions,</c><00:07:42.120><c> I</c><00:07:42.200><c> think</c><00:07:42.400><c> this</c><00:07:42.520><c> is</c><00:07:42.640><c> a</c><00:07:42.680><c> tool</c>
+
+00:07:43.070 --> 00:07:43.080 align:start position:0%
+asks questions, I think this is a tool
+ 
+
+00:07:43.080 --> 00:07:44.910 align:start position:0%
+asks questions, I think this is a tool
+I'm<00:07:43.200><c> going</c><00:07:43.400><c> to</c><00:07:43.480><c> be</c><00:07:43.600><c> using</c><00:07:43.960><c> a</c><00:07:44.040><c> lot</c><00:07:44.440><c> more.</c><00:07:44.880><c> I</c>
+
+00:07:44.910 --> 00:07:44.920 align:start position:0%
+I'm going to be using a lot more. I
+ 
+
+00:07:44.920 --> 00:07:46.830 align:start position:0%
+I'm going to be using a lot more. I
+mean,<00:07:45.160><c> for</c><00:07:45.280><c> an</c><00:07:45.400><c> average-size</c><00:07:46.080><c> code</c><00:07:46.320><c> base,</c><00:07:46.680><c> the</c>
+
+00:07:46.830 --> 00:07:46.840 align:start position:0%
+mean, for an average-size code base, the
+ 
+
+00:07:46.840 --> 00:07:49.310 align:start position:0%
+mean, for an average-size code base, the
+serverless<00:07:47.320><c> plan</c><00:07:47.960><c> isn't</c><00:07:48.240><c> too</c><00:07:48.320><c> expensive</c><00:07:49.080><c> as</c>
+
+00:07:49.310 --> 00:07:49.320 align:start position:0%
+serverless plan isn't too expensive as
+ 
+
+00:07:49.320 --> 00:07:51.230 align:start position:0%
+serverless plan isn't too expensive as
+the<00:07:49.480><c> OpenAI</c><00:07:50.040><c> embeddings</c><00:07:50.600><c> don't</c><00:07:50.880><c> cost</c><00:07:51.120><c> too</c>
+
+00:07:51.230 --> 00:07:51.240 align:start position:0%
+the OpenAI embeddings don't cost too
+ 
+
+00:07:51.240 --> 00:07:52.910 align:start position:0%
+the OpenAI embeddings don't cost too
+much<00:07:51.520><c> either.</c><00:07:51.840><c> So,</c><00:07:52.080><c> I'm</c><00:07:52.200><c> happy</c><00:07:52.440><c> to</c><00:07:52.560><c> take</c><00:07:52.840><c> the</c>
+
+00:07:52.910 --> 00:07:52.920 align:start position:0%
+much either. So, I'm happy to take the
+ 
+
+00:07:52.920 --> 00:07:55.270 align:start position:0%
+much either. So, I'm happy to take the
+hit.<00:07:53.280><c> Speaking</c><00:07:53.640><c> of</c><00:07:53.760><c> data</c><00:07:54.040><c> retrieval</c><00:07:54.520><c> and</c><00:07:54.720><c> AI,</c>
+
+00:07:55.270 --> 00:07:55.280 align:start position:0%
+hit. Speaking of data retrieval and AI,
+ 
+
+00:07:55.280 --> 00:07:56.830 align:start position:0%
+hit. Speaking of data retrieval and AI,
+if<00:07:55.400><c> you</c><00:07:55.480><c> want</c><00:07:55.640><c> to</c><00:07:55.720><c> learn</c><00:07:55.960><c> how</c><00:07:56.160><c> to</c><00:07:56.320><c> build</c><00:07:56.720><c> a</c>
+
+00:07:56.830 --> 00:07:56.840 align:start position:0%
+if you want to learn how to build a
+ 
+
+00:07:56.840 --> 00:07:59.430 align:start position:0%
+if you want to learn how to build a
+really<00:07:57.280><c> good</c><00:07:57.640><c> rag</c><00:07:57.920><c> system</c><00:07:58.440><c> from</c><00:07:58.600><c> scratch</c><00:07:59.200><c> that</c>
+
+00:07:59.430 --> 00:07:59.440 align:start position:0%
+really good rag system from scratch that
+ 
+
+00:07:59.440 --> 00:08:01.190 align:start position:0%
+really good rag system from scratch that
+actually<00:07:59.840><c> works,</c><00:08:00.440><c> then</c><00:08:00.680><c> check</c><00:08:00.880><c> out</c><00:08:01.040><c> this</c>
+
+00:08:01.190 --> 00:08:01.200 align:start position:0%
+actually works, then check out this
+ 
+
+00:08:01.200 --> 00:08:02.990 align:start position:0%
+actually works, then check out this
+video<00:08:01.480><c> from</c><00:08:01.720><c> Andras.</c><00:08:02.320><c> And</c><00:08:02.440><c> if</c><00:08:02.520><c> you're</c><00:08:02.640><c> a</c><00:08:02.680><c> Star</c>
+
+00:08:02.990 --> 00:08:03.000 align:start position:0%
+video from Andras. And if you're a Star
+ 
+
+00:08:03.000 --> 00:08:04.750 align:start position:0%
+video from Andras. And if you're a Star
+Wars<00:08:03.240><c> fan,</c><00:08:03.720><c> you're</c><00:08:03.840><c> especially</c><00:08:04.480><c> going</c><00:08:04.640><c> to</c>
+
+00:08:04.750 --> 00:08:04.760 align:start position:0%
+Wars fan, you're especially going to
+ 
+
+00:08:04.760 --> 00:08:07.440 align:start position:0%
+Wars fan, you're especially going to
+like<00:08:04.880><c> this</c><00:08:05.040><c> video.</c>
+

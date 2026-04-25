@@ -1,8 +1,8 @@
 # C3 — 4-template redesign proposal (vision alignment check)
 
-> Compact decompositions for four templates under schema v3.1
-> (`C3-schema-v3.1-delta.md`). Not a full rewrite — a proposal the user
-> can approve or redirect before I hand-author the JSON.
+> Compact decompositions for four templates under the v3.1 schema rules
+> (now consolidated in `C3-template-schema-v3.md`). Not a full rewrite — a
+> proposal the user can approve or redirect before I hand-author the JSON.
 >
 > Format per template: unifying goal → use cases (with emit events) →
 > connectors (required/optional with fallback) → composition →

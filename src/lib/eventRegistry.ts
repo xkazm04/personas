@@ -211,6 +211,11 @@ export type EventNameValue = (typeof EventName)[keyof typeof EventName];
 export type ExecutionEventPayload =
   | { type: 'text'; execution_id: string; content: string }
   | { type: 'tool_use'; execution_id: string; tool_name: string; input_preview: string }
+  | {
+      type: 'todo_update';
+      execution_id: string;
+      items: Array<{ content: string; status: string; active_form?: string }>;
+    }
   | { type: 'tool_result'; execution_id: string; content_preview: string }
   | { type: 'system_init'; execution_id: string; model: string; session_id?: string }
   | {

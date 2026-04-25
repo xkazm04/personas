@@ -62,6 +62,24 @@ impl ExecutionState {
     }
 }
 
+/// A single item from a Claude CLI `TodoWrite` tool emission.
+///
+/// Mirrors Claude's TodoWrite tool input shape:
+/// `{ todos: [{ content, status, activeForm }] }`. The `status` field is a
+/// free string at the protocol level; in practice it is one of
+/// `"pending"` / `"in_progress"` / `"completed"`. Treat unknowns as `"pending"`
+/// for display.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub struct TodoItem {
+    pub content: String,
+    pub status: String,
+    /// Present-tense form ("Reading file") shown while the item is in progress.
+    /// Optional — older TodoWrite payloads omit it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active_form: Option<String>,
+}
+
 /// Classified stream-json line from Claude CLI stdout
 #[derive(Debug, Clone, PartialEq)]
 pub enum StreamLineType {
@@ -80,6 +98,13 @@ pub enum StreamLineType {
     AssistantToolUse {
         tool_name: String,
         input_preview: String,
+    },
+    /// `TodoWrite` tool call parsed into structured items so the chat UI can
+    /// render a checklist instead of a truncated JSON preview. The full latest
+    /// list is always carried — TodoWrite re-emits the entire array on every
+    /// update, so consumers should replace, not merge.
+    AssistantTodoWrite {
+        items: Vec<TodoItem>,
     },
     ToolResult {
         content_preview: String,
@@ -517,6 +542,12 @@ pub enum StructuredExecutionEvent {
         execution_id: String,
         tool_name: String,
         input_preview: String,
+    },
+    /// Latest plan emitted by Claude's `TodoWrite` tool. Replaces (not merges)
+    /// any previously-emitted plan for the same execution.
+    TodoUpdate {
+        execution_id: String,
+        items: Vec<TodoItem>,
     },
     ToolResult {
         execution_id: String,

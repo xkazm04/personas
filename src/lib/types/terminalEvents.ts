@@ -1,5 +1,18 @@
 /** Structured execution events emitted by the backend on the 'execution-event' channel. */
 
+/**
+ * One item from a Claude `TodoWrite` tool emission. Mirrors the Rust
+ * `TodoItem` struct in `src-tauri/src/engine/types.rs`. `status` is a free
+ * string at the protocol level — in practice `"pending"` / `"in_progress"` /
+ * `"completed"`. Unknown values should be treated as `"pending"` for display.
+ */
+export interface TodoItem {
+  content: string;
+  status: string;
+  /** Present-tense form ("Reading file") shown while in progress. */
+  active_form?: string;
+}
+
 export interface TextEvent {
   type: 'text';
   execution_id: string;
@@ -11,6 +24,17 @@ export interface ToolUseEvent {
   execution_id: string;
   tool_name: string;
   input_preview: string;
+}
+
+/**
+ * Latest plan emitted by Claude's TodoWrite tool. The full list is always
+ * carried — TodoWrite re-emits the entire array on every update, so consumers
+ * should replace, not merge.
+ */
+export interface TodoUpdateEvent {
+  type: 'todo_update';
+  execution_id: string;
+  items: TodoItem[];
 }
 
 export interface ToolResultEvent {
@@ -54,6 +78,7 @@ export interface HeartbeatEvent {
 export type StructuredExecutionEvent =
   | TextEvent
   | ToolUseEvent
+  | TodoUpdateEvent
   | ToolResultEvent
   | SystemInitEvent
   | ResultEvent

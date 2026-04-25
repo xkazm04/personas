@@ -1033,6 +1033,19 @@ async fn spawn_cli_and_collect_structured(
                     ts_ms_relative: ts_ms,
                 });
             }
+            StreamLineType::AssistantTodoWrite { items } => {
+                tool_calls.push("TodoWrite".to_string());
+                let preview = serde_json::to_string(&items).unwrap_or_default();
+                events.push(CreateLabResultEventInput {
+                    event_index: idx,
+                    event_type: "tool_use".to_string(),
+                    tool_name: Some("TodoWrite".to_string()),
+                    tool_args_preview: Some(preview),
+                    tool_result_preview: None,
+                    text_preview: None,
+                    ts_ms_relative: ts_ms,
+                });
+            }
             StreamLineType::ToolResult { content_preview } => {
                 events.push(CreateLabResultEventInput {
                     event_index: idx,

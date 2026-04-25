@@ -1,12 +1,12 @@
-# Persona Capabilities — implementation plan
+# Persona Capabilities — implementation reference
 
 > Architectural reframe: **persona = behavior core + composable capabilities (use cases)**.
 > Each use case is a first-class runnable entity with its own triggers, executions,
 > messages, reviews, and memories. Persona keeps identity, goal, voice, tools, and shared memory.
 
-**Status:** C1 – C5b shipped to master. C3 template migration in progress (v3.1 schema ratified 2026-04-20). UI variant prototype (Trigger Composition) landed as WIP 2026-04-20. No production personas yet — greenfield, no backward-compat required.
+**Status (as of 2026-04-25):** C1–C5b shipped. Schema v3.2 ratified and live. All 107 templates on v3.1 shape. Build pipeline state-machine gate enforces clarifying questions per dimension. Drive plugin + drive tools wired to runner via MCP sidecar.
 
-**👉 New coordinator picking this up? Start at [C3-session-handoff-2026-04-20.md](C3-session-handoff-2026-04-20.md)** — latest session state, open decisions, precise Phase A-F execution queue for the next work block.
+Active workstreams now live in `.planning/phases/` and the top-level `docs/HANDOFF-*.md` files. This directory holds the **stable architecture reference** for the persona-as-capabilities model and the v3.x template authoring contract.
 
 ---
 
@@ -29,19 +29,13 @@ docs/concepts/persona-capabilities/
 ├── 09-implementation-plan.md        ordered phases with tasks
 ├── 10-deferred-backlog.md           intentionally deferred items
 │
-│   Template authoring — v3 / v3.1
-├── C3-template-schema-v3.md         v3 schema reference
-├── C3-schema-v3.1-delta.md          v3.1 refinement (8 normative principles)
-├── C3-v3.1-impact-analysis.md       file-level impact map for v3.1
+│   Template authoring contract (consolidated — v3 / v3.1 / v3.2 in one doc)
+├── C3-template-schema-v3.md         current schema reference
+├── C3-v3.1-authoring-lessons.md     authoring guidance — read before authoring a template
 ├── C3-4-template-proposal.md        vision-alignment proposal (4 templates)
-├── C3-AUTHORING-PROGRESS.md         active status tracker (per template)
-├── C3-session-handoff-2026-04-20.md latest handoff — start here
+├── C3-AUTHORING-PROGRESS.md         migration summary (mass v3.1 pass)
 │
-└── _archive/                        historical/superseded docs
-    ├── C2-*.md                      C2 phase working docs
-    ├── C3-template-authoring-handoff.md  pre-v3.1 handoff (superseded)
-    ├── C4-build-from-scratch-v3-handoff.md
-    └── HANDOFF-2026-04-19.md        prior session handoff
+└── _archive/                        historical handoffs and superseded docs
 ```
 
 ## TL;DR architecture
@@ -57,43 +51,61 @@ Persona
   ├── Composition
   │     ├── trigger_composition    (shared | per_use_case)
   │     └── message_composition    (combined | per_use_case)
+  ├── Notification channels  (v3.2 — per-channel use_case_ids + event_filter)
   └── Capabilities (use cases)
         ├── Purpose / capability_summary    (what this capability does)
         ├── Triggers                        (schedule | polling | webhook | manual | event_listener)
-        ├── Event subscriptions             (emit | listen — <domain>.<subdomain>.<action>)
+        ├── Event subscriptions             (emit | listen — <domain>.<subdomain>.<action>;
+        │                                    notify_titlebar gates bell surfacing)
         ├── Connectors used                 (names referencing persona.connectors)
-        ├── Notification channels           (per-UC delivery targets)
+        ├── Sample output                   (v3.2 — {title?, body?, format?} for Test Run)
         ├── Review policy                   (never | on_low_confidence | always + context)
         ├── Memory policy                   (enabled + context)
         ├── Input schema / sample_input     (with {{param.X}} adoption-time substitution)
+        ├── Output assertions               (per-UC + persona-wide; baseline NotContains)
+        ├── Model override                  (per-UC failover-chain primary)
+        ├── Error handling                  (per-UC subsection in active-capability prompt)
         ├── Flow diagram                    (documentation only — prompt is authoritative)
         └── enabled_by_default              (runtime toggle, no rebuild)
 ```
 
-## Status per phase
+## What's shipped
 
 | Phase | Subject | State |
 |---|---|---|
-| C1 | Runtime foundation — prompt assembly, session cache, enabled flag | **shipped** |
-| C2 | Building pipeline — AgentIr, CLI prompts, template schema v2 | **shipped** |
-| C3 | UI activation — toggle, simulate, per-UC Execute in tab | **shipped** |
-| C3 template migration (v3) | Hand-authored v3 shape for 107 templates | **6/107 done** — see `C3-AUTHORING-PROGRESS.md` |
-| C3.1 schema refinement | 8 normative principles (goal, use_case_ids[], composition, required connectors, ui_component hints, event namespace, flow=doc, N-ary question links) | **ratified 2026-04-20**; normalizer shipped with 4 new tests |
-| C3.1 template pass | Financial + Idea Harvester + Web Marketing + Game Animator + Briefer + Dev Clone rewritten | **shipped 2026-04-20** (a109fcf7 → a0b5de23) |
-| C3.1 runtime test | User-driven adoption walkthrough of 4 new templates | **in progress** — Daily Briefer + Dev Clone still untested |
-| C4 | Triggers/automations first-class (trigger builder rewired) | **shipped** |
-| C5 | Per-use-case messages/reviews/memories | **shipped** |
-| C5b | Per-capability generation policy + event aliasing | **shipped** |
-| Trigger Composition UI | Variant A (chip grid) + Variant B (master + override) prototypes | **landed as WIP 2026-04-20** (5daa03d2) |
-| C6 | Lab per-use-case + versioning | not started |
+| C1 | Runtime foundation — prompt assembly, session cache, enabled flag | shipped |
+| C2 | Building pipeline — AgentIr, CLI prompts, template schema v2 | shipped |
+| C3 | UI activation — toggle, simulate, per-UC Execute in tab | shipped |
+| C3 template migration | v3.1 hand-authored shape for 107 templates | shipped (mass migration 2026-04-20) |
+| C3.1 schema | 8 normative principles (P1–P8) | shipped |
+| C3.2 schema | `sample_output`, `notify_titlebar`, `notification_channels` v2 | shipped |
+| C4 | Triggers/automations first-class (trigger builder rewired) | shipped |
+| C4 build gate | State-machine gate forces clarifying questions per dimension | shipped (commit `44b681fa`) |
+| C4 drive tools | `drive_write_text` / `drive_read_text` / `drive_list` exposed via MCP sidecar | shipped |
+| C5 | Per-use-case messages/reviews/memories | shipped |
+| C5b | Per-capability generation policy + event aliasing | shipped |
+| Trigger Composition UI | Variant prototypes (chip grid + master/override) | landed as WIP |
+| Execution Verification | Notification center bridge, output assertions, per-UC error_handling, policy events backend, per-UC model_override | shipped (Phases 5, 6a, 7, 8 backend, 9, 10) |
 
-## Quick resume for a new session
+## What's deferred
 
-1. Read [`C3-session-handoff-2026-04-20.md`](C3-session-handoff-2026-04-20.md) first. It lists the exact Phase A-F execution queue + 5 open decisions to confirm with the user.
-2. `git log --oneline -10` — recent commits (most recent: trigger UI prototypes, 4-template v3.1 rewrite, v3.1 schema delta).
-3. `npx tsc --noEmit` clean, `cargo test --lib engine::template_v3::` 15/15, `npx vitest run src/lib/personas/templates` 17/17.
-4. `.planning/` — none this repo uses; planning lives in these docs.
-5. Template catalog: 107 templates, 6 on v3.1, balance on v3 pre-v3.1 (see progress doc).
+- C6 — Lab per-use-case + versioning (not started)
+- Phase 6b — pre-execution healthcheck gate (assertion layer already catches the symptom; gate is belt-and-suspenders)
+- Phase 8 — frontend "Policy Events" tab (backend persists; reader UI not built)
+- `TriggerCompositionStep.tsx` / `MessageCompositionStep.tsx` UI productionization (prototypes only)
+- `ConnectorGateStep.tsx` empty-state UI
+
+## Where to find current work
+
+Active workstreams have moved out of this directory:
+
+- `docs/HANDOFF-resource-scoping.md` — current credential resource-scoping handoff (live)
+- `.planning/phases/17-schema-v3-2/` — v3.2 schema execution
+- `.planning/phases/18-personas-messages-connector/` — messaging connector
+- `.planning/phases/19-backend-delivery-glue/` — delivery glue
+- `.planning/handoffs/` — dated session handoffs
+
+For historical context on how we got here, see `_archive/`.
 
 ## Key design decisions (stable)
 
@@ -111,11 +123,13 @@ Persona
 | 10 (v3.1) | Questions link to N use cases via `use_case_ids[]`, hidden when all referenced UCs disabled | P5 |
 | 11 (v3.1) | Connectors declare `required: bool` + `fallback_note` for optional | P8 |
 | 12 (v3.1) | Events use `<domain>.<subdomain>.<action>` convention | P7 |
+| 13 (v3.2) | Schema version stays `3` — v3.2 is additive, fully back-compat | D-02 from Phase 17 |
+| 14 (v3.2) | Build pipeline enforces per-dimension clarifying gates on the Rust side, not via prompt rules alone | LLM treats prompt rules as suggestions |
 
 ## Who reads what
 
-- **Next-session coordinator** → `C3-session-handoff-2026-04-20.md` (everything needed to continue)
-- **Template author** → `C3-template-schema-v3.md` + `C3-schema-v3.1-delta.md` + `C3-AUTHORING-PROGRESS.md`
-- **Human reviewer (architecture)** → `00-vision.md` + `09-implementation-plan.md`
-- **Implementer mid-phase** → the phase-relevant base doc (03, 04, 05) + latest handoff
-- **Historical lookup** → `_archive/` for superseded handoffs and C2-era working docs
+- **New coordinator** → start with `00-vision.md`, then this README's status table, then `docs/HANDOFF-resource-scoping.md` for the active workstream.
+- **Template author** → `C3-template-schema-v3.md` (single canonical schema doc) + `C3-v3.1-authoring-lessons.md` (do/don't patterns).
+- **Human reviewer (architecture)** → `00-vision.md` + `09-implementation-plan.md`.
+- **Implementer mid-phase** → the phase-relevant base doc (03, 04, 05) + the relevant `.planning/phases/<n>/` directory.
+- **Historical lookup** → `_archive/` for superseded handoffs, the original v3.1 + v3.2 schema deltas (now folded into `C3-template-schema-v3.md`), the C3 messaging design proposal, the v3.1 impact analysis, and the EXEC-VERIF execution plan.

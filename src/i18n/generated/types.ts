@@ -1873,6 +1873,14 @@ export type Translations = {
       processing: string;
       delete_conversation: string;
       confirm_delete_conversation: string;
+      plan_title: string;
+      plan_count_one: string;
+      plan_count_other: string;
+      plan_status_pending: string;
+      plan_status_in_progress: string;
+      plan_status_completed: string;
+      plan_collapse: string;
+      plan_expand: string;
     };
     advisory: {
       how_can_improve: string;

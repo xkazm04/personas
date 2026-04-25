@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
-use super::types::{ExecutionMetrics, ProtocolMessage, StreamLineType};
+use super::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, TodoItem};
 
 const MAX_TOOL_INPUT_DISPLAY: usize = 500;
 const MAX_TOOL_RESULT_DISPLAY: usize = 200;
@@ -135,6 +135,24 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     .unwrap_or("unknown")
                                     .to_string();
                                 let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
+
+                                // Special-case TodoWrite: parse the structured `todos` array
+                                // so the chat can render a checklist instead of a truncated
+                                // JSON preview. Falls through to the generic tool_use path
+                                // if the input shape is unrecognized.
+                                if name == "TodoWrite" {
+                                    if let Some(items) = extract_todo_items(&input_json) {
+                                        let display = format!("> Plan updated: {} item(s)", items.len());
+                                        if first_type.is_none() {
+                                            first_type = Some(StreamLineType::AssistantTodoWrite { items });
+                                            tool_display = Some(display);
+                                        } else if tool_display.is_none() {
+                                            tool_display = Some(display);
+                                        }
+                                        continue;
+                                    }
+                                }
+
                                 let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
                                 let input_preview_truncated = truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {name}");
@@ -163,6 +181,9 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                 (first_type.unwrap(), display)
                             }
                             StreamLineType::AssistantToolUse { .. } => {
+                                (first_type.unwrap(), tool_display)
+                            }
+                            StreamLineType::AssistantTodoWrite { .. } => {
                                 (first_type.unwrap(), tool_display)
                             }
                             _ => (StreamLineType::Unknown, None),
@@ -260,6 +281,41 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             }
         }
     }
+}
+
+/// Parse a Claude `TodoWrite` tool input into a list of structured todo items.
+///
+/// Returns `None` if `todos` is missing or not an array — the caller falls
+/// back to the generic tool_use path so the event still surfaces somewhere.
+/// Items missing required fields are silently skipped (defensive vs. partial
+/// emissions or future schema additions).
+fn extract_todo_items(input: &serde_json::Value) -> Option<Vec<TodoItem>> {
+    let arr = input.get("todos")?.as_array()?;
+    let mut items = Vec::with_capacity(arr.len());
+    for entry in arr {
+        let content = match entry.get("content").and_then(|v| v.as_str()) {
+            Some(s) if !s.is_empty() => s.to_string(),
+            _ => continue,
+        };
+        let status = entry
+            .get("status")
+            .and_then(|v| v.as_str())
+            .unwrap_or("pending")
+            .to_string();
+        // Claude emits camelCase `activeForm` over the wire; the field is
+        // optional and only present while an item is in progress.
+        let active_form = entry
+            .get("activeForm")
+            .or_else(|| entry.get("active_form"))
+            .and_then(|v| v.as_str())
+            .map(String::from);
+        items.push(TodoItem {
+            content,
+            status,
+            active_form,
+        });
+    }
+    Some(items)
 }
 
 /// Extract a text preview from a tool_result content block.
@@ -512,11 +568,21 @@ pub fn is_session_limit_error(stderr: &str) -> bool {
 }
 
 /// Count tool usage occurrences from a list of parsed stream line types.
+///
+/// `AssistantTodoWrite` is counted as the synthetic tool name `"TodoWrite"`
+/// so usage stats stay accurate after the parser stops routing it through the
+/// generic `AssistantToolUse` path.
 pub fn count_tool_usage(lines: &[StreamLineType]) -> HashMap<String, u32> {
     let mut counts = HashMap::new();
     for line in lines {
-        if let StreamLineType::AssistantToolUse { tool_name, .. } = line {
-            *counts.entry(tool_name.clone()).or_insert(0) += 1;
+        match line {
+            StreamLineType::AssistantToolUse { tool_name, .. } => {
+                *counts.entry(tool_name.clone()).or_insert(0) += 1;
+            }
+            StreamLineType::AssistantTodoWrite { .. } => {
+                *counts.entry("TodoWrite".to_string()).or_insert(0) += 1;
+            }
+            _ => {}
         }
     }
     counts
@@ -701,6 +767,48 @@ mod tests {
             _ => panic!("Expected AssistantToolUse, got {st:?}"),
         }
         assert_eq!(display, Some("> Using tool: read_file".to_string()));
+    }
+
+    #[test]
+    fn test_parse_assistant_todowrite() {
+        let line = r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"TodoWrite","id":"t1","input":{"todos":[{"content":"Read parser.rs","status":"completed","activeForm":"Reading parser.rs"},{"content":"Add TodoWrite parsing","status":"in_progress","activeForm":"Adding TodoWrite parsing"},{"content":"Wire UI panel","status":"pending"}]}}]}}"#;
+        let (st, display) = parse_stream_line(line);
+
+        match st {
+            StreamLineType::AssistantTodoWrite { items } => {
+                assert_eq!(items.len(), 3);
+                assert_eq!(items[0].content, "Read parser.rs");
+                assert_eq!(items[0].status, "completed");
+                assert_eq!(items[0].active_form.as_deref(), Some("Reading parser.rs"));
+                assert_eq!(items[1].status, "in_progress");
+                assert_eq!(items[2].status, "pending");
+                assert!(items[2].active_form.is_none());
+            }
+            _ => panic!("Expected AssistantTodoWrite, got {st:?}"),
+        }
+        assert_eq!(display, Some("> Plan updated: 3 item(s)".to_string()));
+
+        // count_tool_usage should record TodoWrite occurrences.
+        let counts = count_tool_usage(&[
+            StreamLineType::AssistantTodoWrite { items: vec![] },
+            StreamLineType::AssistantTodoWrite { items: vec![] },
+        ]);
+        assert_eq!(counts.get("TodoWrite"), Some(&2));
+    }
+
+    #[test]
+    fn test_parse_assistant_todowrite_falls_back_when_shape_unknown() {
+        // Missing `todos` key — parser must fall through to the generic
+        // tool_use path so the event still surfaces.
+        let line = r#"{"type":"assistant","message":{"content":[{"type":"tool_use","name":"TodoWrite","id":"t1","input":{"unexpected":"shape"}}]}}"#;
+        let (st, _display) = parse_stream_line(line);
+
+        match st {
+            StreamLineType::AssistantToolUse { tool_name, .. } => {
+                assert_eq!(tool_name, "TodoWrite");
+            }
+            other => panic!("Expected fallback AssistantToolUse, got {other:?}"),
+        }
     }
 
     #[test]

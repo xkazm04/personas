@@ -172,6 +172,29 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         tracing::debug!("Knowledge base schema ensured in user database");
     }
 
+    // One-time backfill of kb_chunks_fts for installs that already have chunks
+    // from before the FTS5 index existed. The triggers keep them in sync after
+    // this. Skipped on fresh installs (chunk_count == 0) and idempotent (only
+    // rebuilds when the FTS row count is short of kb_chunks).
+    {
+        let conn = pool.get()?;
+        let chunk_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM kb_chunks", [], |r| r.get(0))
+            .unwrap_or(0);
+        let fts_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM kb_chunks_fts", [], |r| r.get(0))
+            .unwrap_or(0);
+        if chunk_count > 0 && fts_count < chunk_count {
+            tracing::info!(
+                chunks = chunk_count,
+                fts_rows = fts_count,
+                "Backfilling kb_chunks_fts (one-time)"
+            );
+            conn.execute_batch("INSERT INTO kb_chunks_fts(kb_chunks_fts) VALUES('rebuild');")?;
+            tracing::info!("kb_chunks_fts backfill complete");
+        }
+    }
+
     tracing::info!("User data database initialized successfully");
     Ok(pool)
 }
@@ -224,6 +247,26 @@ CREATE TABLE IF NOT EXISTS kb_chunks (
 );
 CREATE INDEX IF NOT EXISTS idx_kb_chunks_doc ON kb_chunks(document_id);
 CREATE INDEX IF NOT EXISTS idx_kb_chunks_kb ON kb_chunks(kb_id);
+
+-- FTS5 keyword index over chunk content. External-content mode references
+-- kb_chunks(content) by rowid so chunk text is not duplicated. Used by the
+-- BM25 re-ranker in kb_search; vector ranking remains the canonical score.
+CREATE VIRTUAL TABLE IF NOT EXISTS kb_chunks_fts USING fts5(
+    content,
+    content='kb_chunks',
+    content_rowid='rowid'
+);
+
+CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_ai AFTER INSERT ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
+CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_ad AFTER DELETE ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+END;
+CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_au AFTER UPDATE ON kb_chunks BEGIN
+    INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
+    INSERT INTO kb_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -623,6 +623,28 @@ fn collect_files_recursive(
 // Search
 // ============================================================================
 
+/// Overfetch multiplier for vector candidates before BM25 re-ranking.
+/// We pull `top_k * RERANK_OVERFETCH` from the vector index (capped at
+/// MAX_TOP_K), let BM25 reorder within that pool, then trim to top_k.
+const RERANK_OVERFETCH: usize = 3;
+
+/// Build an FTS5 MATCH expression from a free-text query.
+///
+/// Tokenizes on whitespace, escapes inner double-quotes, wraps each token as
+/// an FTS5 quoted phrase, and joins with `OR`. This gives "any token matches"
+/// semantics — appropriate for a re-ranker where we want to surface chunks
+/// that mention any of the user's terms, not just chunks that mention all.
+/// Returns an empty string when the query has no usable tokens; callers must
+/// treat empty as "skip the FTS path".
+fn build_fts5_query(query: &str) -> String {
+    let tokens: Vec<String> = query
+        .split_whitespace()
+        .filter(|t| !t.is_empty())
+        .map(|t| format!("\"{}\"", t.replace('"', "\"\"")))
+        .collect();
+    tokens.join(" OR ")
+}
+
 #[tauri::command]
 #[tracing::instrument(skip(state))]
 pub async fn kb_search(
@@ -648,12 +670,101 @@ pub async fn kb_search(
     // Embed the query
     let query_vec = embedder.embed_query(&query.query).await?;
 
-    // Search vectors
-    let matches = vector_store.search(&query.kb_id, &query_vec, top_k)?;
+    // Vector search with overfetch: BM25 re-ranks within this pool. Vector
+    // ranking is canonical — `score`/`distance` per chunk are unchanged. Only
+    // the result ordering (and which chunks fall outside the top_k cut) can
+    // shift relative to pure-vector behavior.
+    let pool_size = top_k.saturating_mul(RERANK_OVERFETCH).clamp(top_k, MAX_TOP_K);
+    let mut matches = vector_store.search(&query.kb_id, &query_vec, pool_size)?;
 
     if matches.is_empty() {
         return Ok(Vec::new());
     }
+
+    // BM25 re-rank within the vector candidate pool. Vector candidates always
+    // win the `score` field; BM25 only nudges ordering when a chunk also
+    // contains the user's literal tokens. Failures here degrade to vector-only
+    // ordering — never block the search.
+    let fts_query = build_fts5_query(&query.query);
+    if !fts_query.is_empty() && matches.len() > 1 {
+        let candidate_ids: Vec<&str> = matches.iter().map(|(id, _)| id.as_str()).collect();
+        let chunk_ids_json = match serde_json::to_string(&candidate_ids) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::warn!(error = %e, "Failed to serialize FTS candidate IDs; falling back to vector ranking");
+                String::new()
+            }
+        };
+
+        if !chunk_ids_json.is_empty() {
+            let fts_ranks: std::collections::HashMap<String, usize> = match state.user_db.get() {
+                Ok(conn) => {
+                    let result: Result<std::collections::HashMap<String, usize>, rusqlite::Error> = (|| {
+                        let mut stmt = conn.prepare_cached(
+                            "SELECT c.id
+                             FROM kb_chunks_fts f
+                             JOIN kb_chunks c ON c.rowid = f.rowid
+                             WHERE f.content MATCH ?1
+                               AND c.kb_id = ?2
+                               AND c.id IN (SELECT value FROM json_each(?3))
+                             ORDER BY bm25(kb_chunks_fts) ASC",
+                        )?;
+                        let mut map = std::collections::HashMap::new();
+                        let rows = stmt.query_map(
+                            params![fts_query, query.kb_id, chunk_ids_json],
+                            |row| row.get::<_, String>(0),
+                        )?;
+                        for (i, row) in rows.flatten().enumerate() {
+                            map.insert(row, i + 1);
+                        }
+                        Ok(map)
+                    })();
+                    match result {
+                        Ok(map) => map,
+                        Err(e) => {
+                            tracing::warn!(error = %e, "BM25 re-rank query failed; falling back to vector ranking");
+                            std::collections::HashMap::new()
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(error = %e, "Could not acquire user_db conn for BM25 re-rank");
+                    std::collections::HashMap::new()
+                }
+            };
+
+            if !fts_ranks.is_empty() {
+                // Reciprocal rank fusion over (vector_rank, fts_rank). The
+                // constant 60.0 follows the standard RRF recipe — small enough
+                // that top-ranked items dominate, large enough that a chunk
+                // appearing only in the vector pool still gets a non-trivial
+                // score even if BM25 ignores it.
+                const RRF_K: f32 = 60.0;
+                let mut scored: Vec<(usize, f32)> = matches
+                    .iter()
+                    .enumerate()
+                    .map(|(idx, (cid, _))| {
+                        let v_rank = (idx + 1) as f32;
+                        let mut s = 1.0 / (RRF_K + v_rank);
+                        if let Some(fr) = fts_ranks.get(cid) {
+                            s += 1.0 / (RRF_K + (*fr as f32));
+                        }
+                        (idx, s)
+                    })
+                    .collect();
+                scored.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+
+                let reordered: Vec<(String, f32)> = scored
+                    .into_iter()
+                    .map(|(idx, _)| matches[idx].clone())
+                    .collect();
+                matches = reordered;
+            }
+        }
+    }
+
+    // Trim back to the caller's top_k after re-ranking.
+    matches.truncate(top_k);
 
     // Hydrate results with chunk and document metadata in a single batch query.
     // Uses json_each() with a single JSON array parameter so the query shape is

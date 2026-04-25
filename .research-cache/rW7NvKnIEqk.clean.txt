@@ -1,0 +1,227 @@
+[00:00:00] Holy smokes. I did not expect to be
+[00:00:02] making this video today. But if you've
+[00:00:04] been using claw code in the terminal
+[00:00:05] inside VS Code or anything like that and
+[00:00:08] you've been waiting for a reason to
+[00:00:09] switch to the desktop app, then today
+[00:00:12] might be that day. So last week Claude
+[00:00:14] dropped an update and while the
+[00:00:15] announcement focused on running sessions
+[00:00:17] in parallel and reviewing things without
+[00:00:19] leaving the app, they forgot to mention
+[00:00:22] or they buried two features that are
+[00:00:23] actually going to change how most people
+[00:00:26] use Claude inside the desktop. So the
+[00:00:28] real issue before was that the desktop
+[00:00:30] app was always super one-dimensional. So
+[00:00:33] remember back to the days of chatbt
+[00:00:35] chatting back and forth with one single
+[00:00:37] task. Everything lived in an isolated
+[00:00:39] workspace. Then came along claw desktop.
+[00:00:42] It brought claw co-work as well as claw
+[00:00:44] code. But even then everything was
+[00:00:46] designed to be a back and forth chat
+[00:00:47] with individual tasks. So you had no
+[00:00:49] visibility into your wider business
+[00:00:51] context, no connection between your
+[00:00:53] sessions and no sense of progress across
+[00:00:55] projects. These are all things you
+[00:00:57] absolutely need when you're working on a
+[00:00:59] real business problem. And it's exactly
+[00:01:00] the reason we built our own agentic
+[00:01:02] operating system in the first place,
+[00:01:04] which is effectively a pre-built file
+[00:01:05] structure that stores your context,
+[00:01:08] loads it in only when you need it, and
+[00:01:09] is designed to improve its own outputs
+[00:01:11] every single time you use it just by
+[00:01:13] managing context in the right way. But
+[00:01:15] you couldn't properly use that in the
+[00:01:16] desktop app before because the files
+[00:01:19] were invisible. Now you can actually see
+[00:01:22] and interact with them. So instead of
+[00:01:23] those isolated chats, you've got the
+[00:01:25] framework to carry out structured
+[00:01:27] complex projects. Each client can have
+[00:01:29] their own folder. You can move into that
+[00:01:31] workspace, run tasks inside the
+[00:01:33] workspace, and keep everything tied with
+[00:01:35] the right context. And because of that,
+[00:01:37] you can plan properly, track progress,
+[00:01:38] and actually start to improve your
+[00:01:40] outputs over time. So effectively, the
+[00:01:42] same system that used to require the
+[00:01:44] terminal due to its flexibility now can
+[00:01:47] work natively on desktop. And I'm
+[00:01:48] stunned that it's happened so quickly,
+[00:01:50] to be honest. So, let me show you
+[00:01:52] exactly the features that were buried in
+[00:01:54] there that I think are going to be game
+[00:01:55] changers and might just move you off the
+[00:01:57] terminal today directly into the desktop
+[00:01:59] app. I've also noticed a few limitations
+[00:02:01] which we'll touch on as well. So,
+[00:02:03] firstly, this was announced multiple
+[00:02:06] sessions. So, you can see that we have
+[00:02:07] multiple sessions running at once. So,
+[00:02:09] you can see a holistic view of all of
+[00:02:11] your sessions. It's no longer chats on
+[00:02:14] the left hand side. It means you can
+[00:02:16] work on actual projects where you have
+[00:02:17] multiple tasks or multiple sessions
+[00:02:19] pertaining to a single project. You can
+[00:02:21] also see how they all connect. Secondly,
+[00:02:23] let's jump into one of these. Say we
+[00:02:25] have a plan. We used to have to view the
+[00:02:27] plan down here. But Claude has quietly
+[00:02:30] launched this sidebar here that has
+[00:02:33] options to actually view the plan inside
+[00:02:35] markdown. So say we want to view the
+[00:02:37] plan, we now get the markdown rendered
+[00:02:39] and formatted in this nice plan view
+[00:02:41] that we can expand and collapse. We can
+[00:02:43] see exactly what plan claude set out for
+[00:02:46] us and we can also therefore execute
+[00:02:48] against the plan inside the chat without
+[00:02:50] having to go all the way back up and
+[00:02:51] viewing the plan. You can now track
+[00:02:53] progress side by side. Secondly, split
+[00:02:55] view. So having a holistic view of a
+[00:02:58] given project where you have multiple
+[00:03:00] sessions is super important. And what's
+[00:03:02] more important is actually being able to
+[00:03:03] view those in a split view. So say for
+[00:03:05] example I wanted to view two of these
+[00:03:07] sessions together then I'm absolutely
+[00:03:08] able to do that. I just drag and drop
+[00:03:10] and I can also open up the plan on this
+[00:03:12] here and they are completely independent
+[00:03:14] windows. So I can have multiple windows
+[00:03:16] running. Say I want to run a third
+[00:03:17] session. I can actually run that in
+[00:03:19] there and we can run up to four sessions
+[00:03:20] at once adjusting how we please and
+[00:03:23] using the real estate on the screen how
+[00:03:25] we want. So we can go into the plan and
+[00:03:27] we can go into the files. So previously
+[00:03:29] similar to the plan we never had any of
+[00:03:31] our outputs rendered at all and this
+[00:03:34] made it really difficult. This is also a
+[00:03:36] pain in working inside VS Code because
+[00:03:38] you had to go and render things like PGs
+[00:03:40] elsewhere without a preview window. Let
+[00:03:42] me close these PES down. We're not only
+[00:03:45] able to view the plan, but let's say we
+[00:03:46] want to view a previous output. We go
+[00:03:49] into the same window. We can go into
+[00:03:51] files and as long as we have an
+[00:03:52] operating system in the back end telling
+[00:03:54] it where to put output files, we keep
+[00:03:56] ours in projects for example. We can go
+[00:03:58] into any of these output files,
+[00:04:01] especially if they're markdown, and
+[00:04:02] actually see the full preview of that
+[00:04:04] file rendered in Markdown on the right
+[00:04:07] hand side. Yes, it's not perfect. It
+[00:04:08] doesn't render exactly, but these are
+[00:04:10] things that Claude will fix, but you can
+[00:04:12] effectively start to see how they're
+[00:04:14] going to build out an ability to see
+[00:04:16] your output files all in one place,
+[00:04:18] rendered in Markdown, and then able to
+[00:04:20] actually go in and directly edit these
+[00:04:22] Markdown files. Now, we've been
+[00:04:23] literally building out a UI to do this
+[00:04:25] exact thing. see holistic views of
+[00:04:27] projects edit mark fat down files and
+[00:04:30] I'm quite amazed that Claude has got to
+[00:04:32] this phase already but one of the most
+[00:04:34] important things although we jumped into
+[00:04:36] a file that I haven't mentioned yet is
+[00:04:38] this file structure so previously we
+[00:04:40] were never able to see this file
+[00:04:42] structure at all so if you were building
+[00:04:44] your own agentic operating system in the
+[00:04:46] back end we weren't able to see these
+[00:04:48] files and the file structure in the back
+[00:04:50] end we weren't able to actually go into
+[00:04:52] our claw MD and make edits we weren't
+[00:04:55] able to display our outputs that are
+[00:04:56] being put into projects. We weren't able
+[00:04:58] to add in and read our context about the
+[00:05:01] agent or our brand context where we have
+[00:05:04] our positioning, our voice profile, all
+[00:05:06] of that stuff. I can now preview and
+[00:05:08] actually update in the Claw desktop app.
+[00:05:10] And it goes without saying that now when
+[00:05:12] we're working inside Claw Code, we can
+[00:05:14] actually choose when we start a new
+[00:05:15] session which folder we want to start
+[00:05:17] in. So previously we were kind of
+[00:05:19] working in an isolated environment with
+[00:05:21] zero context. Now you can work inside
+[00:05:23] your business operating system, your or
+[00:05:25] your Aentic OS and you can pull all of
+[00:05:27] the context from that specific folder.
+[00:05:29] And the reason that's super important is
+[00:05:31] because now you can actually work
+[00:05:32] directly in an individual client folder.
+[00:05:34] You might have a bunch of context that
+[00:05:36] spreads across all of your clients and
+[00:05:38] then specific client brand context that
+[00:05:40] sits within each job. You might have
+[00:05:41] specific projects that relate to those.
+[00:05:43] And as long as you've got these rules
+[00:05:45] defined in your aentic operating system
+[00:05:47] that sits behind the desktop app, you're
+[00:05:49] able to effectively use it now in a
+[00:05:52] really clean way with a UI inside the
+[00:05:54] claw desktop app. And all of this
+[00:05:56] building out this agentic operating
+[00:05:57] system, your own operating system, helps
+[00:06:00] you achieve 10x results without having
+[00:06:02] to look at another terminal at all. Now,
+[00:06:04] there are a few downsides that I've
+[00:06:06] noticed, but I'm sure they'll be fixed
+[00:06:08] soon. The first is if you're looking at,
+[00:06:10] for example, let's say we've got the
+[00:06:11] Excalador skill that's outputting PNGs.
+[00:06:14] If we try to render that, it's just
+[00:06:16] going to give us the PNG as code rather
+[00:06:19] than actually rendering the output.
+[00:06:20] That's something I'm sure they'll fix
+[00:06:21] super quickly. The second downside is
+[00:06:24] that we can't still see our skills
+[00:06:26] folders. So, our our hidden files like
+[00:06:29] Claude, we're not able to actually see
+[00:06:31] any of the skills inside here and edit
+[00:06:33] them directly. we're still forced to
+[00:06:34] actually go to the file structure or
+[00:06:36] open it in VS Code and actually make
+[00:06:39] those changes directly in the back end
+[00:06:40] to our skills. That's something I'm sure
+[00:06:42] will be also fixed soon or at least the
+[00:06:45] ability to view the skills inside here
+[00:06:47] if they're in an underlying folder. And
+[00:06:49] the third and final thing which is a bit
+[00:06:50] harder to get round is thev files. So
+[00:06:53] the hidden environment variables where
+[00:06:54] you keep all your credentials for your
+[00:06:56] API keys. Right now there's no ability
+[00:06:58] to access that and change those. So you
+[00:07:00] have to go to the underlying file
+[00:07:02] structure or in open it up in VS code to
+[00:07:04] actually change and add credentials.
+[00:07:06] However, if you're working in the
+[00:07:07] Aenttos repo, it's still able to access
+[00:07:10] those credentials and use them in API
+[00:07:12] calls, etc. So it has access. You just
+[00:07:14] can't change them yet in the claw
+[00:07:16] desktop app. So given all these updates,
+[00:07:17] I can actually now see myself starting
+[00:07:19] to fully move away from VS Code. And I'm
+[00:07:21] curious if there's any features I've
+[00:07:23] missed, anything that you think still
+[00:07:25] holding you back from jumping to the
+[00:07:26] desktop app. Drop a comment below.
+[00:07:28] Subscribe if you found this valuable.

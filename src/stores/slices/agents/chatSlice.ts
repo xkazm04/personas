@@ -4,6 +4,7 @@ import { reportError } from "../../storeTypes";
 import type { ChatMessage } from "@/lib/bindings/ChatMessage";
 import type { ChatSession } from "@/lib/bindings/ChatSession";
 import type { ChatSessionContext } from "@/lib/bindings/ChatSessionContext";
+import type { TodoItem } from "@/lib/types/terminalEvents";
 import {
   listChatSessions,
   getChatMessages,
@@ -36,9 +37,18 @@ export interface ChatSlice {
    * heuristic that keyed on activeChatSessionId && chatMessages.length > 0.
    */
   chatPreloaded: boolean;
+  /**
+   * Latest plan emitted by the active execution's `TodoWrite` tool, or `null`
+   * when no plan is active. Replaced (not merged) on every `todo_update`
+   * stream event — TodoWrite always re-emits the full latest list. Reset to
+   * `null` on session start / restore / clear.
+   */
+  chatTodos: TodoItem[] | null;
 
   // Actions
   setChatMode: (mode: ChatMode) => void;
+  /** Replace the active plan with the latest TodoWrite emission, or clear it. */
+  setChatTodos: (todos: TodoItem[] | null) => void;
   /** Consume and return the preloaded flag in one atomic step. */
   consumeChatPreloaded: () => boolean;
   fetchChatSessions: (personaId: string) => Promise<void>;
@@ -82,6 +92,9 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   chatMode: 'advisory' as ChatMode,
   chatSessionContext: null,
   chatPreloaded: false,
+  chatTodos: null,
+
+  setChatTodos: (todos) => set({ chatTodos: todos }),
 
   consumeChatPreloaded: () => {
     const was = get().chatPreloaded;
@@ -138,7 +151,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // Sessions are derived from chat_messages grouped by session_id —
     // no backend call needed. The session materialises when the first message is sent.
     const sessionId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    set({ activeChatSessionId: sessionId, chatMessages: [], chatSessionContext: null });
+    set({ activeChatSessionId: sessionId, chatMessages: [], chatSessionContext: null, chatTodos: null });
     return sessionId;
   },
 
@@ -215,6 +228,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         chatMessages: s.activeChatSessionId === sessionId ? [] : s.chatMessages,
         activeChatSessionId: s.activeChatSessionId === sessionId ? null : s.activeChatSessionId,
         chatSessionContext: s.activeChatSessionId === sessionId ? null : s.chatSessionContext,
+        chatTodos: s.activeChatSessionId === sessionId ? null : s.chatTodos,
       }));
     } catch (err) {
       reportError(err, "Failed to clear chat session", set);
@@ -337,6 +351,9 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           chatMessages: messages.slice(-MAX_CHAT_MESSAGES),
           chatSessionContext: ctx,
           chatMode: (ctx?.chatMode === 'agent' ? 'agent' : 'advisory') as ChatMode,
+          // Plans are ephemeral session UI state — clear on restore so the
+          // panel doesn't show stale todos from a prior persona/session.
+          chatTodos: null,
           // Explicit preload flag — upstream callers (drawer / notifications)
           // hit this path with a specific session id. ChatTab will consume it
           // on mount and skip its default restore.

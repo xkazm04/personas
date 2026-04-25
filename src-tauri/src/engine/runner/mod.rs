@@ -1308,6 +1308,10 @@ pub async fn run_execution(
                                     tool_name: tool_name.clone(),
                                     input_preview: input_preview.clone(),
                                 }),
+                                StreamLineType::AssistantTodoWrite { items } => Some(StructuredExecutionEvent::TodoUpdate {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    items: items.clone(),
+                                }),
                                 StreamLineType::ToolResult { content_preview } => Some(StructuredExecutionEvent::ToolResult {
                                     execution_id: exec_id_for_stream.clone(),
                                     content_preview: content_preview.clone(),

@@ -5,6 +5,7 @@ import type {
   StructuredExecutionEvent,
   TextEvent,
   ToolUseEvent,
+  TodoUpdateEvent,
   ToolResultEvent,
   SystemInitEvent,
   ResultEvent,
@@ -15,6 +16,7 @@ import type {
 export interface StreamHandlers {
   onText?: (event: TextEvent) => void;
   onToolUse?: (event: ToolUseEvent) => void;
+  onTodoUpdate?: (event: TodoUpdateEvent) => void;
   onToolResult?: (event: ToolResultEvent) => void;
   onSystemInit?: (event: SystemInitEvent) => void;
   onResult?: (event: ResultEvent) => void;
@@ -50,6 +52,9 @@ export function useStructuredStream(
           break;
         case 'tool_use':
           h.onToolUse?.(payload);
+          break;
+        case 'todo_update':
+          h.onTodoUpdate?.(payload);
           break;
         case 'tool_result':
           h.onToolResult?.(payload);

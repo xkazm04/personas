@@ -13,7 +13,7 @@ npx tsc --noEmit         # TypeScript check (tsc not on PATH on Windows)
 npm run lint             # ESLint
 npm run test             # Vitest (675+ tests)
 npx vite build           # Production frontend build
-node scripts/check-locale-parity.mjs   # i18n coverage report
+node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
 
 ## Architecture
@@ -166,9 +166,10 @@ const FILTERS = [{ id: 'active', labelKey: 'common.active' as const }];
 ### Checking Coverage
 
 ```bash
-node scripts/check-locale-parity.mjs          # All locales
-node scripts/check-locale-parity.mjs cs de     # Specific locales
-node scripts/check-locale-parity.mjs --json    # Machine-readable
+node scripts/i18n/check-coverage.mjs           # CI gate — fails if any locale's keyset diverges from en.json
+node scripts/i18n/check-coverage.mjs --json    # Machine-readable
+node scripts/i18n-real-coverage.mjs            # Real coverage report across all 13 locales (handles inline-object keys)
+npm run check:i18n                             # Same as check-coverage above (wired into CI)
 ```
 
 ### Feature-Scoped i18n Hooks (Deprecated)

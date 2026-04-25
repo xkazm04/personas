@@ -1866,7 +1866,15 @@
       "confirm_delete": "Delete?",
       "processing": "Processing...",
       "delete_conversation": "Delete conversation",
-      "confirm_delete_conversation": "Confirm delete conversation"
+      "confirm_delete_conversation": "Confirm delete conversation",
+      "plan_title": "Plan",
+      "plan_count_one": "{count} item",
+      "plan_count_other": "{count} items",
+      "plan_status_pending": "Pending",
+      "plan_status_in_progress": "In progress",
+      "plan_status_completed": "Completed",
+      "plan_collapse": "Hide plan",
+      "plan_expand": "Show plan"
     },
     "advisory": {
       "how_can_improve": "How can this agent work better for you?",

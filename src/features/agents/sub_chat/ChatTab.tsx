@@ -3,9 +3,11 @@ import { Send, ArrowDown, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
+import { useStructuredStream } from '@/hooks/execution/useStructuredStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
 import { OpsSidebar, type OpsBadges } from './OpsSidebar';
 import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
+import { PlanPanel } from './PlanPanel';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -41,6 +43,15 @@ export function ChatTab() {
   const { textLines: streamTextLines } = useExecutionStream(personaId);
   const { pendingExperiments } = useExperimentBridge();
   const healthDigest = useAgentStore((s) => s.healthDigest);
+  const chatTodos = useAgentStore((s) => s.chatTodos);
+  const setChatTodos = useAgentStore((s) => s.setChatTodos);
+
+  // Subscribe to TodoWrite updates from the active execution. The structured
+  // stream is filtered by execution id inside the hook, so cross-persona
+  // updates never leak. The latest emission replaces the panel state.
+  useStructuredStream(activeExecutionId, {
+    onTodoUpdate: (event) => setChatTodos(event.items),
+  });
 
   // Compute badges for the ops sidebar icon rail
   const opsBadges = useMemo((): OpsBadges => {
@@ -179,6 +190,11 @@ export function ChatTab() {
       <OpsSidebar personaId={personaId} onNewSession={handleNewSession} badges={opsBadges} />
 
       <div className="flex-1 flex flex-col min-w-0">
+        {/* Plan sidebar — surfaces the agent's TodoWrite emissions as a
+            checklist while the conversation continues. Hidden when no plan
+            has been emitted (chatTodos is null or empty). */}
+        {chatTodos && chatTodos.length > 0 && <PlanPanel todos={chatTodos} />}
+
         {/* Messages area */}
         <div
           ref={scrollContainerRef}
