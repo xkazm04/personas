@@ -30,7 +30,7 @@ parser.add_argument(
         "Czech and save the translated copy next to the source file."
     ),
 )
-parser.add_argument("--doc-path", default="inbox/eng-sample.md")
+parser.add_argument("--doc-path", default=f"inbox/eng-sample-{int(time.time())}.md")
 parser.add_argument(
     "--doc-content",
     default=(
@@ -46,7 +46,7 @@ args = parser.parse_args()
 
 
 BASE = f"http://127.0.0.1:{args.port}"
-client = httpx.Client(timeout=60.0)
+client = httpx.Client(timeout=120.0)
 events: list[dict] = []
 
 
@@ -94,13 +94,34 @@ ANSWERS = {
 FALLBACK = "Please proceed with the most sensible default for this dimension."
 
 
+def cleanup_existing_personas(name_keywords: list[str]) -> None:
+    """Delete prior personas whose name contains any of `name_keywords`. Each
+    scenario run creates a new persona; without cleanup, a single drive event
+    fans out to every prior copy and the fresh persona's execution competes
+    for the cascade-guard slot."""
+    r = bridge("listAllPersonas", {}, 15)
+    for p in r.get("personas", []) or []:
+        if p.get("trust_origin") == "system":
+            continue
+        name = (p.get("name") or "").lower()
+        if any(kw.lower() in name for kw in name_keywords):
+            d = bridge("deletePersonaById", {"personaId": p.get("id")}, 30)
+            record("cleanup", "ok" if d.get("success") else "info", id=str(p.get("id"))[:8], name=p.get("name"))
+
+
 def run_question_loop() -> bool:
+    cleanup_existing_personas(["translat", "translation", "drive", "czech"])
     r = bridge("startBuildFromIntent", {"intent": args.intent, "timeoutMs": 25000}, 30)
     if not r.get("success"):
         record("start_build", "fail", error=r.get("error"))
         return False
     record("start_build", "ok", persona_id=r.get("personaId"))
-    seen: set[str] = set()
+    # Allow each cell to be re-asked up to 4 times — multi-step rules (rule 18
+    # source-acquisition, rule 19 destination-category) plus multi-UC builds
+    # legitimately re-emit the same cellKey for follow-ups. Hard-fail only on
+    # actual loops (5+ attempts).
+    answer_count: dict[str, int] = {}
+    MAX_PER_CELL = 4
     for i in range(args.max_rounds):
         deadline = time.time() + 240
         phase = None
@@ -126,13 +147,14 @@ def run_question_loop() -> bool:
             time.sleep(1)
             continue
         cell = qs[0].get("cellKey", "")
-        if cell in seen:
-            record("loop.repeat", "fail", cell=cell)
+        cnt = answer_count.get(cell, 0) + 1
+        if cnt > MAX_PER_CELL:
+            record("loop.repeat", "fail", cell=cell, attempts=cnt)
             return False
-        seen.add(cell)
+        answer_count[cell] = cnt
         answer = ANSWERS.get(cell, FALLBACK)
         bridge("answerPendingBuildQuestions", {"answers": {cell: answer}}, 30)
-        record(f"round{i}.answer", "ok", cell=cell)
+        record(f"round{i}.answer", "ok", cell=cell, attempt=cnt)
     return False
 
 

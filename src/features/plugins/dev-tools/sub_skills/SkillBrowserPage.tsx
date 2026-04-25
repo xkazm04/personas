@@ -4,6 +4,7 @@ import {
   RefreshCw, X, FolderOpen, AlertCircle,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useToastStore } from '@/stores/toastStore';
@@ -154,7 +155,10 @@ export default function SkillBrowserPage() {
         iconColor="primary"
         title={t.plugins.dev_tools.skills_title}
         subtitle={`${skills.length} skill${skills.length !== 1 ? 's' : ''} installed`}
-        actions={
+      />
+
+      <ContentBody>
+        <ActionRow>
           <Button
             variant="secondary"
             size="sm"
@@ -164,10 +168,8 @@ export default function SkillBrowserPage() {
           >
             {t.common.refresh}
           </Button>
-        }
-      />
+        </ActionRow>
 
-      <ContentBody>
         <div className="flex gap-4 h-full min-h-[400px]">
           {/* Left panel — skill list */}
           <div className="w-64 shrink-0 flex flex-col gap-3">

@@ -1030,6 +1030,17 @@ export type Translations = {
       cancel_default: string;
       hide_impact: string;
       show_impact: string;
+      event_stream: string;
+      event_stream_loading: string;
+      event_stream_failed: string;
+      event_stream_empty: string;
+      event_assistant: string;
+      event_tool_use: string;
+      event_tool_result: string;
+      event_system_init: string;
+      event_result: string;
+      event_args_label: string;
+      event_duration_ms: string;
     };
     design: {
       select_agent: string;
@@ -10472,6 +10483,10 @@ export type Translations = {
       release_0_0_2_item_17_description: string;
       release_0_0_2_item_18_title: string;
       release_0_0_2_item_18_description: string;
+      release_0_0_2_item_19_title: string;
+      release_0_0_2_item_19_description: string;
+      release_0_0_2_item_20_title: string;
+      release_0_0_2_item_20_description: string;
       release_roadmap_label: string;
       release_roadmap_summary: string;
       release_roadmap_item_2_title: string;

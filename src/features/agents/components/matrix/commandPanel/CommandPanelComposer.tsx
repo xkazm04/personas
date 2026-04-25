@@ -121,7 +121,7 @@ function scheduleSummary(freq: Frequency | null, days: string[], monthDay: numbe
 // ---------------------------------------------------------------------------
 
 interface RowProps {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   iconColor?: string;
   children: React.ReactNode;

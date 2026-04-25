@@ -6,6 +6,7 @@ import {
   Bug, Activity, BarChart3, Link2, Save,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,9 +21,14 @@ import {
   fetchGitHubStats,
   fetchGitLabStats,
   fetchSentryStats,
+  fetchSentryOrgs,
+  fetchSentryProjects,
+  splitSentrySlug,
   type RepoStats,
   type MonitoringStats,
   type RepoProvider,
+  type SentryOrg,
+  type SentryProject,
 } from './adapters';
 
 // ---------------------------------------------------------------------------
@@ -62,8 +68,8 @@ function StatCard({
         <Icon className={`w-4.5 h-4.5 ${tw.icon}`} />
       </div>
       <div className="min-w-0">
-        <p className="text-lg font-semibold text-primary leading-tight truncate">{value}</p>
-        <p className="text-[11px] text-foreground truncate">{label}</p>
+        <p className="typo-data-lg text-primary leading-tight truncate">{value}</p>
+        <p className="typo-caption text-foreground truncate">{label}</p>
       </div>
     </div>
   );
@@ -79,6 +85,7 @@ function ConnectionCard({
   title,
   state,
   serviceName,
+  errorMessage,
   onAction,
   actionLabel,
   children,
@@ -86,6 +93,7 @@ function ConnectionCard({
   title: string;
   state: ConnectionState;
   serviceName: string;
+  errorMessage?: string | null;
   onAction?: () => void;
   actionLabel?: string;
   children?: React.ReactNode;
@@ -97,7 +105,7 @@ function ConnectionCard({
     return (
       <div className="rounded-card border border-primary/10 bg-card/30 p-6 flex items-center justify-center gap-2">
         <RefreshCw className="w-4 h-4 animate-spin text-foreground" />
-        <span className="text-md text-foreground">{po.loading_stats}</span>
+        <span className="typo-body text-foreground">{po.loading_stats}</span>
       </div>
     );
   }
@@ -106,7 +114,7 @@ function ConnectionCard({
     return (
       <div className="rounded-card border border-primary/10 bg-card/30 p-6 text-center">
         <Key className="w-8 h-8 text-foreground mx-auto mb-3" />
-        <p className="text-md text-foreground mb-3">
+        <p className="typo-body text-foreground mb-3">
           {po.connect_to_see_stats.replace('{{service}}', serviceName).replace('{{category}}', title.toLowerCase())}
         </p>
         {onAction && (
@@ -123,7 +131,7 @@ function ConnectionCard({
       <div className="rounded-card border border-amber-500/20 bg-amber-500/5 p-5">
         <div className="flex items-center gap-2 mb-2">
           <AlertTriangle className="w-4 h-4 text-amber-400" />
-          <span className="text-md font-medium text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
+          <span className="typo-body font-medium text-foreground">{po.credential_found.replace('{{service}}', serviceName)}</span>
         </div>
         {children}
       </div>
@@ -132,13 +140,22 @@ function ConnectionCard({
 
   if (state === 'error') {
     return (
-      <div className="rounded-card border border-red-500/20 bg-red-500/5 p-5 text-center">
-        <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-2" />
-        <p className="text-md text-foreground mb-3">{po.failed_to_load}</p>
+      <div className="rounded-card border border-red-500/20 bg-red-500/5 p-5">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="typo-body font-medium text-foreground">{po.failed_to_load}</p>
+            {errorMessage && (
+              <p className="typo-caption text-foreground mt-1 break-words">{errorMessage}</p>
+            )}
+          </div>
+        </div>
         {onAction && (
-          <Button variant="secondary" size="sm" onClick={onAction}>
-            {po.retry}
-          </Button>
+          <div className="mt-3">
+            <Button variant="secondary" size="sm" onClick={onAction}>
+              {po.retry}
+            </Button>
+          </div>
         )}
       </div>
     );
@@ -149,8 +166,8 @@ function ConnectionCard({
     <div className="rounded-card border border-emerald-500/20 bg-emerald-500/5 p-4">
       <div className="flex items-center gap-2 mb-3">
         <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-        <span className="text-md font-medium text-foreground">{serviceName}</span>
-        <span className="text-[10px] text-emerald-400 ml-auto">{po.connected}</span>
+        <span className="typo-body font-medium text-foreground">{serviceName}</span>
+        <span className="typo-caption text-emerald-400 ml-auto">{po.connected}</span>
       </div>
       {children}
     </div>
@@ -158,10 +175,10 @@ function ConnectionCard({
 }
 
 // ---------------------------------------------------------------------------
-// Monitoring link form (inline)
+// Sentry org + project picker (replaces the old free-text MonitoringLinkForm)
 // ---------------------------------------------------------------------------
 
-function MonitoringLinkForm({
+function SentryProjectPicker({
   credentials,
   projectId,
   onLinked,
@@ -173,17 +190,64 @@ function MonitoringLinkForm({
   const { t } = useTranslation();
   const po = t.project_overview;
   const addToast = useToastStore((s) => s.addToast);
+
   const [selectedCredId, setSelectedCredId] = useState(credentials[0]?.id ?? '');
-  const [slug, setSlug] = useState('');
+  const [orgs, setOrgs] = useState<SentryOrg[]>([]);
+  const [orgSlug, setOrgSlug] = useState('');
+  const [projects, setProjects] = useState<SentryProject[]>([]);
+  const [projectSlug, setProjectSlug] = useState('');
+  const [loadingOrgs, setLoadingOrgs] = useState(false);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [discoveryError, setDiscoveryError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Reset downstream selection when the credential changes
+  useEffect(() => {
+    setOrgs([]); setOrgSlug(''); setProjects([]); setProjectSlug('');
+    setDiscoveryError(null);
+  }, [selectedCredId]);
+
+  // Discover organizations for the selected credential
+  useEffect(() => {
+    if (!selectedCredId) return;
+    let cancelled = false;
+    setLoadingOrgs(true);
+    setDiscoveryError(null);
+    fetchSentryOrgs(selectedCredId)
+      .then((list) => {
+        if (cancelled) return;
+        setOrgs(list);
+        if (list.length === 1 && list[0]) setOrgSlug(list[0].slug);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDiscoveryError(err instanceof Error ? err.message : String(err));
+      })
+      .finally(() => { if (!cancelled) setLoadingOrgs(false); });
+    return () => { cancelled = true; };
+  }, [selectedCredId]);
+
+  // Discover projects when an org is selected
+  useEffect(() => {
+    if (!selectedCredId || !orgSlug) return;
+    let cancelled = false;
+    setLoadingProjects(true);
+    setProjects([]); setProjectSlug('');
+    fetchSentryProjects(selectedCredId, orgSlug)
+      .then((list) => { if (!cancelled) setProjects(list); })
+      .catch((err) => { if (!cancelled) setDiscoveryError(err instanceof Error ? err.message : String(err)); })
+      .finally(() => { if (!cancelled) setLoadingProjects(false); });
+    return () => { cancelled = true; };
+  }, [selectedCredId, orgSlug]);
+
   const handleSave = async () => {
-    if (!selectedCredId || !slug.trim()) return;
+    if (!selectedCredId || !orgSlug || !projectSlug) return;
     setSaving(true);
     try {
       await updateProject(projectId, {
         monitoringCredentialId: selectedCredId,
-        monitoringProjectSlug: slug.trim(),
+        // Persisted as `org/project` so we don't need a new column.
+        monitoringProjectSlug: `${orgSlug}/${projectSlug}`,
       });
       onLinked();
       addToast('Monitoring linked', 'success');
@@ -196,25 +260,65 @@ function MonitoringLinkForm({
 
   return (
     <div className="space-y-3 mt-3">
-      <p className="text-xs text-foreground">{po.link_monitoring}</p>
+      <p className="typo-caption text-foreground">{po.link_monitoring}</p>
+
       {credentials.length > 1 && (
+        <div className="space-y-1">
+          <label className="typo-caption text-foreground/70">Credential</label>
+          <select
+            value={selectedCredId}
+            onChange={(e) => setSelectedCredId(e.target.value)}
+            className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground"
+          >
+            {credentials.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <div className="space-y-1">
+        <label className="typo-caption text-foreground/70">Organization</label>
         <select
-          value={selectedCredId}
-          onChange={(e) => setSelectedCredId(e.target.value)}
-          className="w-full px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-modal text-foreground"
+          value={orgSlug}
+          onChange={(e) => setOrgSlug(e.target.value)}
+          disabled={loadingOrgs || orgs.length === 0}
+          className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
         >
-          {credentials.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+          <option value="" disabled>
+            {loadingOrgs ? 'Discovering organizations…' : orgs.length === 0 ? 'No orgs found' : 'Select an organization'}
+          </option>
+          {orgs.map((o) => (
+            <option key={o.slug} value={o.slug}>{o.name} ({o.slug})</option>
           ))}
         </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="typo-caption text-foreground/70">Project</label>
+        <select
+          value={projectSlug}
+          onChange={(e) => setProjectSlug(e.target.value)}
+          disabled={loadingProjects || !orgSlug || projects.length === 0}
+          className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
+        >
+          <option value="" disabled>
+            {!orgSlug ? 'Pick an organization first' : loadingProjects ? 'Loading projects…' : projects.length === 0 ? 'No projects in this org' : 'Select a project'}
+          </option>
+          {projects.map((p) => (
+            <option key={p.slug} value={p.slug}>{p.name} ({p.slug})</option>
+          ))}
+        </select>
+      </div>
+
+      {discoveryError && (
+        <div className="flex items-start gap-2 p-2 rounded-modal bg-red-500/5 border border-red-500/15">
+          <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+          <p className="typo-caption text-foreground break-words">{discoveryError}</p>
+        </div>
       )}
-      <div className="flex gap-2">
-        <input
-          value={slug}
-          onChange={(e) => setSlug(e.target.value)}
-          placeholder={po.project_slug_placeholder}
-          className="flex-1 px-3 py-2 text-xs bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground"
-        />
+
+      <div className="flex justify-end">
         <Button
           variant="accent"
           accentColor="emerald"
@@ -222,7 +326,7 @@ function MonitoringLinkForm({
           icon={<Save className="w-3 h-3" />}
           onClick={handleSave}
           loading={saving}
-          disabled={!slug.trim()}
+          disabled={!orgSlug || !projectSlug}
         >
           {po.save}
         </Button>
@@ -255,10 +359,12 @@ export default function ProjectOverviewPage() {
   const [repoState, setRepoState] = useState<ConnectionState>('loading');
   const [repoProvider, setRepoProvider] = useState<RepoProvider | null>(null);
   const [repoStats, setRepoStats] = useState<RepoStats | null>(null);
+  const [repoError, setRepoError] = useState<string | null>(null);
 
   // Monitoring stats
   const [monitorState, setMonitorState] = useState<ConnectionState>('loading');
   const [monitorStats, setMonitorStats] = useState<MonitoringStats | null>(null);
+  const [monitorError, setMonitorError] = useState<string | null>(null);
 
   // Load credentials once
   useEffect(() => {
@@ -268,10 +374,27 @@ export default function ProjectOverviewPage() {
     }).catch(() => setCredLoaded(true));
   }, []);
 
-  // Derive connection state for codebase
-  const repoCreds = credentials.filter(
-    (c) => c.service_type === 'github' || c.service_type === 'github_actions' || c.service_type === 'gitlab',
-  );
+  // Recognize a credential as GitHub-capable. Beyond the canonical service_type
+  // values from the catalog we also probe the credential metadata's
+  // platform_type — covers user-renamed credentials and OAuth-imported ones
+  // where the legacy matcher would otherwise leak past the filter.
+  const isGitHubCred = (c: PersonaCredential) => {
+    if (c.service_type === 'github' || c.service_type === 'github_actions') return true;
+    if (!c.metadata) return false;
+    try {
+      const meta = JSON.parse(c.metadata);
+      return meta?.platform_type === 'github' || meta?.platform_type === 'github_actions';
+    } catch { return false; }
+  };
+  const isGitLabCred = (c: PersonaCredential) => {
+    if (c.service_type === 'gitlab') return true;
+    if (!c.metadata) return false;
+    try {
+      const meta = JSON.parse(c.metadata);
+      return meta?.platform_type === 'gitlab';
+    } catch { return false; }
+  };
+  const repoCreds = credentials.filter((c) => isGitHubCred(c) || isGitLabCred(c));
   const sentryCreds = credentials.filter((c) => c.service_type === 'sentry');
 
   // Fetch repo stats
@@ -281,15 +404,15 @@ export default function ProjectOverviewPage() {
     const url = activeProject.github_url;
     const provider = detectRepoProvider(url);
     setRepoProvider(provider);
+    setRepoError(null);
 
     if (!provider) {
-      setRepoState('unmapped');
+      setRepoState('error');
+      setRepoError(`Cannot detect repo provider from URL: ${url}`);
       return;
     }
 
-    // Find matching credential
-    const matchType = provider === 'github' ? ['github', 'github_actions'] : ['gitlab'];
-    const cred = credentials.find((c) => matchType.includes(c.service_type));
+    const cred = credentials.find((c) => provider === 'github' ? isGitHubCred(c) : isGitLabCred(c));
     if (!cred) {
       setRepoState('unmapped');
       return;
@@ -300,17 +423,18 @@ export default function ProjectOverviewPage() {
       let stats: RepoStats;
       if (provider === 'github') {
         const parsed = parseGitHubUrl(url);
-        if (!parsed) { setRepoState('error'); return; }
+        if (!parsed) { setRepoState('error'); setRepoError(`Could not parse GitHub URL: ${url}`); return; }
         stats = await fetchGitHubStats(cred.id, parsed.owner, parsed.repo);
       } else {
         const parsed = parseGitLabUrl(url);
-        if (!parsed) { setRepoState('error'); return; }
+        if (!parsed) { setRepoState('error'); setRepoError(`Could not parse GitLab URL: ${url}`); return; }
         stats = await fetchGitLabStats(cred.id, parsed.path);
       }
       setRepoStats(stats);
       setRepoState('connected');
-    } catch {
+    } catch (err) {
       setRepoState('error');
+      setRepoError(err instanceof Error ? err.message : String(err));
     }
   }, [activeProject?.github_url, credentials, credLoaded]);
 
@@ -320,13 +444,13 @@ export default function ProjectOverviewPage() {
 
     const credId = activeProject.monitoring_credential_id;
     const slug = activeProject.monitoring_project_slug;
+    setMonitorError(null);
 
     if (!credId || !slug) {
       setMonitorState(sentryCreds.length > 0 ? 'unmapped' : 'empty');
       return;
     }
 
-    // Find the org slug from the credential metadata
     const cred = credentials.find((c) => c.id === credId);
     if (!cred) {
       setMonitorState('unmapped');
@@ -335,14 +459,24 @@ export default function ProjectOverviewPage() {
 
     setMonitorState('loading');
     try {
-      // For Sentry, the org slug comes from the credential metadata
-      // We'll use the credential name as a fallback, or try to extract from metadata
-      const orgSlug = cred.name.toLowerCase().replace(/\s+/g, '-');
-      const stats = await fetchSentryStats(credId, orgSlug, slug);
+      const [storedOrg, storedProject] = splitSentrySlug(slug);
+      let orgSlug = storedOrg;
+      const projectSlug = storedProject ?? slug;
+
+      // Backfill for legacy entries that only stored the project slug — discover
+      // the org via the API instead of guessing from the credential name.
+      if (!orgSlug) {
+        const orgs = await fetchSentryOrgs(credId);
+        if (orgs.length === 1 && orgs[0]) orgSlug = orgs[0].slug;
+        else throw new Error('Org slug missing — re-link this monitoring connection.');
+      }
+
+      const stats = await fetchSentryStats(credId, orgSlug, projectSlug);
       setMonitorStats(stats);
       setMonitorState('connected');
-    } catch {
+    } catch (err) {
       setMonitorState('error');
+      setMonitorError(err instanceof Error ? err.message : String(err));
     }
   }, [activeProject, credentials, credLoaded, sentryCreds.length]);
 
@@ -387,7 +521,10 @@ export default function ProjectOverviewPage() {
         iconColor="primary"
         title={activeProject.name}
         subtitle={activeProject.root_path}
-        actions={
+      />
+
+      <ContentBody>
+        <ActionRow>
           <Button
             variant="secondary"
             size="sm"
@@ -400,10 +537,8 @@ export default function ProjectOverviewPage() {
           >
             {po.retry}
           </Button>
-        }
-      />
+        </ActionRow>
 
-      <ContentBody>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
           {/* ============================================================ */}
           {/* LEFT: Codebase                                               */}
@@ -429,7 +564,7 @@ export default function ProjectOverviewPage() {
               <ConnectionCard
                 title={po.codebase}
                 state="unmapped"
-                serviceName={repoCreds.length > 0 ? (repoCreds[0]!.service_type === 'gitlab' ? 'GitLab' : 'GitHub') : 'GitHub'}
+                serviceName={repoCreds.length > 0 ? (isGitLabCred(repoCreds[0]!) ? 'GitLab' : 'GitHub') : 'GitHub'}
               >
                 <p className="typo-caption text-foreground mt-1">{po.set_repo_url}</p>
                 <Button
@@ -453,6 +588,7 @@ export default function ProjectOverviewPage() {
                 title={po.codebase}
                 state="error"
                 serviceName=""
+                errorMessage={repoError}
                 onAction={loadRepoStats}
               />
             )}
@@ -490,7 +626,7 @@ export default function ProjectOverviewPage() {
                   />
                 </div>
                 {repoStats.lastPushAt && (
-                  <p className="text-[10px] text-foreground mt-2">
+                  <p className="typo-caption text-foreground mt-2">
                     {po.last_push}: {new Date(repoStats.lastPushAt).toLocaleDateString()}
                   </p>
                 )}
@@ -524,12 +660,11 @@ export default function ProjectOverviewPage() {
                 state="unmapped"
                 serviceName="Sentry"
               >
-                <MonitoringLinkForm
+                <SentryProjectPicker
                   credentials={sentryCreds}
                   projectId={activeProject.id}
                   onLinked={() => {
                     fetchProjects();
-                    // Re-trigger monitoring load after project is updated
                     setTimeout(() => loadMonitorStats(), 500);
                   }}
                 />
@@ -545,6 +680,7 @@ export default function ProjectOverviewPage() {
                 title={po.monitoring}
                 state="error"
                 serviceName=""
+                errorMessage={monitorError}
                 onAction={loadMonitorStats}
               />
             )}
@@ -576,7 +712,7 @@ export default function ProjectOverviewPage() {
                   />
                   <StatCard
                     icon={Link2}
-                    value={activeProject.monitoring_project_slug ?? '-'}
+                    value={splitSentrySlug(activeProject.monitoring_project_slug)[1] ?? '-'}
                     label={po.project_slug}
                     color="violet"
                   />

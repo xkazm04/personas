@@ -134,18 +134,18 @@ export function GoalBoard({
         </div>
 
         {goals.length === 0 ? (
-          <div className="text-center py-12">
-            <Target className="w-8 h-8 text-foreground mx-auto mb-2" />
-            <p className="text-md text-foreground">{t.plugins.dev_projects.no_goals_add_below}</p>
+          <div className="text-center py-8">
+            <Target className="w-7 h-7 text-foreground/60 mx-auto mb-2" />
+            <p className="typo-body text-foreground">{t.plugins.dev_projects.no_goals_add_below}</p>
           </div>
         ) : (
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             {goals.map((goal, _i) => {
               const GoalIcon = GOAL_ICONS[goal.status];
               return (
                 <div
                   key={goal.id}
-                  className={`animate-fade-slide-in group flex items-center gap-3 px-3 py-2.5 rounded-modal border cursor-pointer transition-colors ${
+                  className={`animate-fade-slide-in group flex items-center gap-2.5 px-2.5 py-1.5 rounded-modal border cursor-pointer transition-colors ${
                     selectedGoalId === goal.id
                       ? 'bg-primary/10 border-primary/20'
                       : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
@@ -154,7 +154,7 @@ export function GoalBoard({
                 >
                   <GripVertical className="w-3.5 h-3.5 text-foreground flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab" />
                   {GoalIcon && <GoalIcon className="w-4 h-4 flex-shrink-0 text-foreground" />}
-                  <span className="flex-1 min-w-0 text-md text-foreground truncate">{goal.title}</span>
+                  <span className="flex-1 min-w-0 typo-body text-foreground truncate">{goal.title}</span>
                   <div className="w-20 h-1.5 bg-primary/10 rounded-full overflow-hidden flex-shrink-0">
                     <div
                       className="h-full bg-amber-400/60 rounded-full transition-all"
@@ -177,13 +177,13 @@ export function GoalBoard({
         )}
 
         {/* Inline goal creation */}
-        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-primary/5">
+        <div className="flex items-center gap-2 mt-2 pt-2 border-t border-primary/5">
           <input
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
             placeholder={t.plugins.dev_projects.goal_title_placeholder}
-            className="flex-1 px-3 py-2 text-md bg-secondary/30 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+            className="flex-1 px-3 py-1.5 typo-body bg-secondary/30 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/50 focus-ring"
           />
           <Button
             variant="accent"

@@ -1068,8 +1068,66 @@ fn create_triggers_in_tx(
     for (idx, t) in ir.triggers.iter().enumerate() {
         let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
         let trigger_type = trigger_repo::normalize_trigger_type(raw_type).to_string();
-        let config = t.config.as_ref()
-            .map(|v| serde_json::to_string(v).unwrap_or_default());
+        // Normalise event-listener configs at the IR-to-trigger boundary so
+        // the dispatcher's `json_extract(config, '$.listen_event_type')`
+        // lookup finds them. The v3 build prompt uses `event_type` (it's the
+        // user-facing field on `event_subscriptions`) but the persistence
+        // layer's runtime matcher keys off `listen_event_type`. Translate
+        // here so the LLM doesn't have to know the storage detail and so
+        // every event-driven persona's events actually dispatch.
+        let config = t.config.as_ref().map(|v| {
+            if trigger_type == "event_listener" {
+                if let Some(obj) = v.as_object() {
+                    let mut patched = obj.clone();
+                    if !patched.contains_key("listen_event_type") {
+                        // Probe several IR-side variants the LLM emits in the
+                        // wild — `event_type`, `event_types[0]`, `events[0]`,
+                        // `subscribe_to[0]`, `event` — and lift the first one
+                        // that resolves to a non-empty string into the
+                        // `listen_event_type` key the dispatcher matches on.
+                        let candidate: Option<String> = patched
+                            .get("event_type")
+                            .and_then(|x| x.as_str())
+                            .map(str::to_string)
+                            .or_else(|| {
+                                patched
+                                    .get("event_types")
+                                    .and_then(|x| x.as_array())
+                                    .and_then(|arr| arr.iter().find_map(|v| v.as_str()))
+                                    .map(str::to_string)
+                            })
+                            .or_else(|| {
+                                patched
+                                    .get("events")
+                                    .and_then(|x| x.as_array())
+                                    .and_then(|arr| arr.iter().find_map(|v| v.as_str()))
+                                    .map(str::to_string)
+                            })
+                            .or_else(|| {
+                                patched
+                                    .get("subscribe_to")
+                                    .and_then(|x| x.as_array())
+                                    .and_then(|arr| arr.iter().find_map(|v| v.as_str()))
+                                    .map(str::to_string)
+                            })
+                            .or_else(|| {
+                                patched
+                                    .get("event")
+                                    .and_then(|x| x.as_str())
+                                    .map(str::to_string)
+                            });
+                        if let Some(et) = candidate.filter(|s| !s.is_empty()) {
+                            patched.insert(
+                                "listen_event_type".to_string(),
+                                serde_json::Value::String(et),
+                            );
+                        }
+                    }
+                    return serde_json::to_string(&patched).unwrap_or_default();
+                }
+            }
+            serde_json::to_string(v).unwrap_or_default()
+        });
         let use_case_id = use_case_ids.get(idx)
             .or_else(|| use_case_ids.last())
             .cloned();

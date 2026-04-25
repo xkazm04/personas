@@ -18,7 +18,7 @@ interface ToolCallTiming {
 function deriveToolCallDurations(events: LabResultEvent[]): Map<number, ToolCallTiming> {
   const durations = new Map<number, ToolCallTiming>();
   for (let i = 0; i < events.length; i++) {
-    const ev = events[i];
+    const ev = events[i]!;
     if (ev.eventType !== 'tool_use') continue;
     const next = events.slice(i + 1).find((e) => e.eventType === 'tool_result');
     durations.set(ev.eventIndex, {

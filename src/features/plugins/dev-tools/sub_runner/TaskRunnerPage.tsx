@@ -8,6 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
@@ -453,48 +454,46 @@ export default function TaskRunnerPage() {
         iconColor="amber"
         title={t.plugins.dev_tools.task_runner_title}
         subtitle={t.plugins.dev_tools.task_runner_subtitle}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              onClick={() => setShowModal(true)}
-            >
-              {t.plugins.dev_runner.new_task}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={<ListChecks className="w-3.5 h-3.5" />}
-              onClick={() => batchFromAccepted()}
-            >
-              {t.plugins.dev_runner.batch_from_accepted}
-            </Button>
-            <Button
-              variant="accent"
-              accentColor="amber"
-              size="sm"
-              icon={<Play className="w-3.5 h-3.5" />}
-              disabled={queuedCount === 0 && runningCount === 0}
-              onClick={() => { startBatch(); useOverviewStore.getState().processStarted('task_runner', undefined, 'Task Runner Batch'); }}
-            >
-              {t.plugins.dev_runner.start_batch}
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              icon={<XCircle className="w-3.5 h-3.5" />}
-              disabled={runningCount === 0 && queuedCount === 0}
-              onClick={() => cancelAll()}
-            >
-              {t.plugins.dev_runner.cancel_all}
-            </Button>
-          </div>
-        }
       />
 
       <ContentBody>
+        <ActionRow>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => setShowModal(true)}
+          >
+            {t.plugins.dev_runner.new_task}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<ListChecks className="w-3.5 h-3.5" />}
+            onClick={() => batchFromAccepted()}
+          >
+            {t.plugins.dev_runner.batch_from_accepted}
+          </Button>
+          <Button
+            variant="accent"
+            accentColor="amber"
+            size="sm"
+            icon={<Play className="w-3.5 h-3.5" />}
+            disabled={queuedCount === 0 && runningCount === 0}
+            onClick={() => { startBatch(); useOverviewStore.getState().processStarted('task_runner', undefined, 'Task Runner Batch'); }}
+          >
+            {t.plugins.dev_runner.start_batch}
+          </Button>
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<XCircle className="w-3.5 h-3.5" />}
+            disabled={runningCount === 0 && queuedCount === 0}
+            onClick={() => cancelAll()}
+          >
+            {t.plugins.dev_runner.cancel_all}
+          </Button>
+        </ActionRow>
         <div className="space-y-5">
           {/* Batch progress header */}
           {totalCount > 0 && (

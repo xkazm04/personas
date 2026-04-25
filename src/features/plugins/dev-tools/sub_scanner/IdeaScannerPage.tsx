@@ -7,6 +7,7 @@ import {
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
@@ -352,43 +353,41 @@ export default function IdeaScannerPage() {
         iconColor="amber"
         title={t.plugins.dev_scanner.idea_scanner_title}
         subtitle={t.plugins.dev_scanner.idea_scanner_subtitle}
-        actions={
-          <div className="flex items-center gap-2">
-            <LifecycleProjectPicker />
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={toggleAll}
-            >
-              {selectedAgents.size === SCAN_AGENTS.length ? 'Clear All' : 'Select All'}
-            </Button>
-            <Button
-              variant="accent"
-              accentColor="amber"
-              size="sm"
-              icon={<Play className="w-3.5 h-3.5" />}
-              disabled={selectedAgents.size === 0 || isRunning || autoScanRunning}
-              loading={isRunning && !autoScanRunning}
-              onClick={handleRunScan}
-            >
-              {t.plugins.dev_scanner.run_scan_btn}{selectedAgents.size})
-            </Button>
-            <Button
-              variant="accent"
-              accentColor="violet"
-              size="sm"
-              icon={<BrainCircuit className="w-3.5 h-3.5" />}
-              disabled={isRunning || autoScanRunning || !activeProjectId}
-              loading={autoScanRunning}
-              onClick={handleAutoScan}
-            >
-              {t.plugins.dev_scanner.auto_scan}
-            </Button>
-          </div>
-        }
       />
 
       <ContentBody centered>
+        <ActionRow left={<LifecycleProjectPicker />}>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={toggleAll}
+          >
+            {selectedAgents.size === SCAN_AGENTS.length ? 'Clear All' : 'Select All'}
+          </Button>
+          <Button
+            variant="accent"
+            accentColor="amber"
+            size="sm"
+            icon={<Play className="w-3.5 h-3.5" />}
+            disabled={selectedAgents.size === 0 || isRunning || autoScanRunning}
+            loading={isRunning && !autoScanRunning}
+            onClick={handleRunScan}
+          >
+            {t.plugins.dev_scanner.run_scan_btn}{selectedAgents.size})
+          </Button>
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="sm"
+            icon={<BrainCircuit className="w-3.5 h-3.5" />}
+            disabled={isRunning || autoScanRunning || !activeProjectId}
+            loading={autoScanRunning}
+            onClick={handleAutoScan}
+          >
+            {t.plugins.dev_scanner.auto_scan}
+          </Button>
+        </ActionRow>
+
         <div className="space-y-6">
           {/* Scan progress */}
           <AnimatePresence>

@@ -743,6 +743,68 @@ const bridge: TestBridge = {
     }
   },
 
+  /** List every persona (id, name, group, trust_origin). For scenario
+   *  cleanup helpers — runners use this + `deletePersonaById` to keep a
+   *  single drive event from fanning out across N stale copies of the same
+   *  persona that prior test runs left behind. */
+  async listAllPersonas() {
+    try {
+      const rows = await invoke<Array<Record<string, unknown>>>('list_personas');
+      return {
+        success: true,
+        personas: rows.map((p) => ({
+          id: p.id,
+          name: p.name,
+          enabled: p.enabled,
+          trust_origin: p.trust_origin ?? null,
+          created_at: p.created_at ?? null,
+        })),
+      };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Hard-delete a persona by id — wraps the `delete_persona` IPC. Required
+   *  by scenario runners that need to clean up duplicates. The persona's
+   *  triggers, subscriptions, executions, and audit rows cascade with it. */
+  async deletePersonaById(personaId: string) {
+    try {
+      await invoke('delete_persona', { id: personaId });
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
+  /** Introspect a promoted persona's IR — triggers (with full config),
+   *  subscriptions, and tools. Lets scenario runners assert the build's
+   *  structural outcome without a get_persona schema mismatch. Reads
+   *  `get_persona_detail` (which joins the triggers/subscriptions tables). */
+  async getPersonaIr(personaId: string) {
+    try {
+      const detail = await invoke<Record<string, unknown>>('get_persona_detail', { id: personaId });
+      const triggers = (detail.triggers as Array<Record<string, unknown>> | undefined) ?? [];
+      const subscriptions = (detail.subscriptions as Array<Record<string, unknown>> | undefined) ?? [];
+      const tools = (detail.tools as Array<Record<string, unknown>> | undefined) ?? [];
+      return {
+        success: true,
+        triggers: triggers.map((t) => ({ ...t })),
+        subscriptions: subscriptions.map((s) => ({
+          event_type: s.event_type,
+          source_filter: s.source_filter,
+          direction: s.direction,
+          use_case_id: s.use_case_id,
+        })),
+        toolNames: tools.map((t) => t.name),
+        notification_channels: detail.notification_channels ?? null,
+        warnings: detail.warnings ?? [],
+      };
+    } catch (e: unknown) {
+      return { success: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  },
+
   /** Get artifact counts for a persona across all overview modules. */
   async getOverviewCounts(personaId: string) {
     try {
@@ -847,20 +909,33 @@ const bridge: TestBridge = {
     // UnifiedMatrixEntry is a lazy chunk behind React.Suspense. On a cold
     // reload the first mount after setIsCreatingPersona(true) can take
     // several seconds to paint the textarea. Poll instead of a fixed sleep.
+    //
+    // The pre-build entry surface evolved: legacy GlyphFullLayout exposed a
+    // single `agent-intent-input` textarea; current CommandPanelComposer
+    // exposes per-row inputs (`composer-row-task`, `composer-row-when`, …).
+    // Probe both — fill whichever exists. The first one we find wins.
     const mountDeadline = Date.now() + 15_000;
-    let ta: HTMLTextAreaElement | null = null;
+    let target: HTMLTextAreaElement | HTMLInputElement | null = null;
+    const probeSelectors = [
+      '[data-testid="agent-intent-input"]',
+      '[data-testid="composer-row-task"]',
+    ];
     while (Date.now() < mountDeadline) {
-      ta = document.querySelector<HTMLTextAreaElement>('[data-testid="agent-intent-input"]');
-      if (ta && (ta as HTMLElement).offsetParent !== null) break;
+      for (const sel of probeSelectors) {
+        const el = document.querySelector<HTMLTextAreaElement | HTMLInputElement>(sel);
+        if (el && (el as HTMLElement).offsetParent !== null) { target = el; break; }
+      }
+      if (target) break;
       await new Promise((r) => setTimeout(r, 150));
     }
-    if (!ta || (ta as HTMLElement).offsetParent === null) {
-      return { success: false, error: 'agent-intent-input textarea not visible after 15s' };
+    if (!target || (target as HTMLElement).offsetParent === null) {
+      return { success: false, error: `intent input not visible after 15s (probed ${probeSelectors.join(', ')})` };
     }
-    const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
-    setter?.call(ta, intent);
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-    ta.dispatchEvent(new Event('change', { bubbles: true }));
+    const proto = target.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
+    setter?.call(target, intent);
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    target.dispatchEvent(new Event('change', { bubbles: true }));
     await new Promise((r) => setTimeout(r, 150));
 
     const btn = document.querySelector<HTMLButtonElement>('[data-testid="agent-launch-btn"]');

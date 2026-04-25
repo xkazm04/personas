@@ -449,6 +449,84 @@ pub fn assemble_prompt(
         }
     }
 
+    // Personas Tool Semantics — algorithmic, not connector-specific.
+    //
+    // The CLI sees three classes of tools simultaneously and tends to default
+    // to the lowest-friction option (built-in `Bash`/`Write`). That fails the
+    // user contract: anything the user expects to see — input documents,
+    // output artefacts, status messages, persisted records — must travel
+    // through `mcp__personas__*` because that's the only surface that
+    // (a) addresses the user's real sandbox and (b) fires connector events
+    // that downstream personas can observe.
+    //
+    // The decision is intentionally framed as an algorithm, not as a
+    // connector list. Whatever connectors a future persona uses (Drive,
+    // Slack, GitHub, a vector DB), the rule is the same: route user-visible
+    // I/O through the connector's MCP verb.
+    prompt.push_str("## Tool Selection — Mandatory Algorithm\n\n");
+    prompt.push_str(
+        "Three tool families are visible at runtime; pick the right one EVERY \
+         time. Failure to follow this rule manifests as the user reporting \
+         \"the agent didn't actually do anything\" because their files / \
+         channels show no change.\n\n\
+         **Family 1 — `mcp__personas__*` (the user's real environment).**\n\
+         Each connector wired into a capability advertises its read/write \
+         verbs through the `personas` MCP server. Examples by family:\n\
+         - storage → `drive_list`, `drive_read_text`, `drive_write_text`\n\
+         - messaging → `*_send`, `*_post`\n\
+         - email → `*_send`, `*_get_messages`\n\
+         - vector_db → `*_index`, `*_search`\n\
+         - task_management → `*_create_issue`, `*_list_issues`\n\
+         These are the ONLY tools that touch the user's data. Use them \
+         whenever the operation has a user-observable effect.\n\n\
+         **Family 2 — built-in CLI tools (`Bash`, `Read`, `Write`, `Edit`).**\n\
+         Operate on the ephemeral exec workspace at CWD. Files written here \
+         are temporary and invisible to the user. Use ONLY for transient \
+         scratch (intermediate JSON parsing, text tokenisation, \
+         pretty-printing for your own consumption).\n\n\
+         **Family 3 — persona-registered tools (listed in `## Tools`).**\n\
+         Curl/script-backed tools the persona's IR explicitly declared. \
+         Call these by their declared name when the IR registered them.\n\n\
+         **Algorithm — apply on every tool call:**\n\
+         ```\n\
+         IF data_will_be_seen_by_user OR data_will_trigger_downstream_persona:\n\
+            connector = the one wired into this capability's `connectors`\n\
+            verb      = the connector's MCP verb that matches the operation\n\
+            CALL `mcp__personas__<verb>` with the relative path/identifier\n\
+            from `input_data` (these are RELATIVE to the connector sandbox,\n\
+            never absolute, never relative to your CWD)\n\
+         ELIF data_is_purely_transient_for_your_own_reasoning:\n\
+            CALL Bash / Read / Write / Edit on CWD\n\
+         ELIF persona_IR_registered_a_specific_named_tool:\n\
+            CALL that tool by its declared name\n\
+         ```\n\n\
+         **Common trip-wires:**\n\
+         - `input_data.path` arriving from a `<connector>.<resource>.added` \
+         event is RELATIVE to that connector. `Bash ls inbox/` will fail \
+         because the connector's `inbox/` does NOT exist in your CWD. Use \
+         the connector's `*_list` MCP verb instead.\n\
+         - When the user says \"save the result next to the source\", the \
+         destination is the SAME connector with a sibling `rel_path`. Resolve \
+         the sibling path arithmetically (e.g. `parent + '/' + stem + suffix \
+         + ext`) and call the connector's `*_write*` verb.\n\
+         - Built-in `Write` to a relative path looks like it worked because \
+         the file is created on disk — but the user will never see it. The \
+         system will report \"no document in the connector\" and the run is \
+         a failure regardless of exit code.\n\n",
+    );
+    if let Some(drive_root) = crate::commands::drive::cached_managed_root() {
+        prompt.push_str(&format!(
+            "**Drive sandbox snapshot (for storage connectors).** The user's \
+             local-drive sandbox is rooted at `{}`. You do NOT address it by \
+             absolute path — pass the relative `path` you received in \
+             `input_data` (or `_event.source_id`) to \
+             `mcp__personas__drive_read_text`, `mcp__personas__drive_list`, \
+             or `mcp__personas__drive_write_text`. The MCP server resolves \
+             the absolute path internally and enforces sandbox boundaries.\n\n",
+            drive_root.display()
+        ));
+    }
+
     // Memory System Self-Awareness
     // Inspired by Karpathy-style LLM knowledge bases (research run 2026-04-08).
     // Personas exposes a layered memory system; the agent can navigate it more
