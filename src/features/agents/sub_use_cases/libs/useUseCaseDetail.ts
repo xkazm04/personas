@@ -7,6 +7,8 @@ import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator
 import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
 import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
+import { executePersona } from '@/api/agents/executions';
+import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("use-case-detail");
@@ -66,6 +68,40 @@ export function useUseCaseDetail(useCaseId: string) {
     if (!selectedPersona || !modelConfig) return;
     await startTest(selectedPersona.id, [modelConfig], useCaseId);
   }, [selectedPersona, modelConfig, useCaseId, startTest]);
+
+  // Manual real-execution trigger. Unlike `handleRunTest` (which records to
+  // the lab and is sandboxed from event delivery), this calls the production
+  // `execute_persona` IPC: real CLI spawn, real cost, and — crucially — any
+  // `emit_event` protocol messages the persona sends fire downstream
+  // listeners. That's how chained capabilities (UC1 → UC2 across personas)
+  // can be exercised on demand without waiting for a schedule tick.
+  const [isManualRunning, setIsManualRunning] = useState(false);
+  const handleManualRun = useCallback(async () => {
+    if (!selectedPersona || isManualRunning) return;
+    setIsManualRunning(true);
+    try {
+      // Prefer the selected fixture's inputs (or the use case's
+      // sample_input as a fallback). Pass undefined when neither is set so
+      // the runner uses the persona's default input contract.
+      const inputs = selectedFixture?.inputs ?? useCase?.sample_input;
+      const inputData = inputs && Object.keys(inputs).length > 0
+        ? JSON.stringify(inputs)
+        : undefined;
+      const exec = await executePersona(
+        selectedPersona.id,
+        undefined,
+        inputData,
+        useCaseId,
+        undefined,
+        crypto.randomUUID(),
+      );
+      logger.info('Manual run started', { executionId: exec?.id, useCaseId });
+    } catch (err) {
+      toastCatch('use-case:manual-run', 'Failed to start manual execution')(err);
+    } finally {
+      setIsManualRunning(false);
+    }
+  }, [selectedPersona, isManualRunning, selectedFixture, useCase?.sample_input, useCaseId]);
 
   const handleCancelTest = useCallback(async () => {
     if (testRunProgress?.runId) {
@@ -168,6 +204,8 @@ export function useUseCaseDetail(useCaseId: string) {
     modelLabel,
     handleRunTest,
     handleCancelTest,
+    handleManualRun,
+    isManualRunning,
     handleModelSelect,
     handleSaveFixture,
     handleDeleteFixture,
