@@ -39,6 +39,72 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "organizations",
+      "label": "Organizations",
+      "description": "Sentry organizations the auth token can access.",
+      "selection": "single_or_all",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://sentry.io/api/0/organizations/?member=1",
+        "headers": {
+          "Authorization": "Bearer {{auth_token}}"
+        },
+        "pagination": {
+          "type": "link_header",
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "slug",
+        "label": "name",
+        "sublabel": "slug",
+        "meta": {
+          "id": "id"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    },
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Sentry projects across the user's organizations. Scope to specific projects so an alert agent only watches the ones you care about.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://sentry.io/api/0/projects/",
+        "headers": {
+          "Authorization": "Bearer {{auth_token}}"
+        },
+        "pagination": {
+          "type": "link_header",
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "slug",
+        "label": "name",
+        "sublabel": "organization.slug",
+        "meta": {
+          "id": "id",
+          "platform": "platform",
+          "organization": "organization.slug"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Sentry application monitoring for errors, performance, and session replay.",

@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2 } from 'lucide-react';
+import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
@@ -21,6 +22,31 @@ const logger = createLogger("event-log");
 // Status options and source type labels are built inside the component to use translations
 
 const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' };
+
+const TRIGGER_ICON_MAP: Record<string, { icon: LucideIcon; tone: string }> = {
+  persona:         { icon: Bot,            tone: 'text-violet-400' },
+  user:            { icon: User,           tone: 'text-sky-400' },
+  system:          { icon: Cog,            tone: 'text-foreground/70' },
+  scheduler:       { icon: CalendarClock,  tone: 'text-amber-400' },
+  local_drive:     { icon: HardDrive,      tone: 'text-emerald-400' },
+  webhook:         { icon: Webhook,        tone: 'text-cyan-400' },
+  trigger_engine:  { icon: Workflow,       tone: 'text-amber-400' },
+  vault:           { icon: KeyRound,       tone: 'text-amber-300' },
+  health_monitor:  { icon: HeartPulse,     tone: 'text-rose-400' },
+  cloud_deploy:    { icon: CloudUpload,    tone: 'text-blue-400' },
+  memory_engine:   { icon: Brain,          tone: 'text-fuchsia-400' },
+  review_pipeline: { icon: ClipboardCheck, tone: 'text-emerald-400' },
+  manual_review:   { icon: UserCheck,      tone: 'text-emerald-400' },
+  test:            { icon: FlaskConical,   tone: 'text-foreground/60' },
+};
+
+const FALLBACK_TRIGGER_ICON = { icon: HelpCircle, tone: 'text-foreground/60' };
+
+function resolveTriggerIcon(sourceType: string): { icon: LucideIcon; tone: string } {
+  if (sourceType.startsWith('persona:')) return TRIGGER_ICON_MAP.persona ?? FALLBACK_TRIGGER_ICON;
+  if (sourceType.startsWith('trigger:')) return TRIGGER_ICON_MAP.trigger_engine ?? FALLBACK_TRIGGER_ICON;
+  return TRIGGER_ICON_MAP[sourceType] ?? FALLBACK_TRIGGER_ICON;
+}
 
 export default function EventLogList() {
   const { t, tx } = useTranslation();
@@ -127,8 +153,23 @@ export default function EventLogList() {
         />
       ),
       render: (event) => {
-        const label = SOURCE_TYPE_LABELS[event.source_type] ?? event.source_type;
-        return <span className="typo-body text-foreground">{label}</span>;
+        const raw = event.source_type || '';
+        const baseKey = raw.startsWith('persona:')
+          ? 'persona'
+          : raw.startsWith('trigger:')
+            ? 'trigger_engine'
+            : raw;
+        const label = SOURCE_TYPE_LABELS[baseKey] ?? baseKey.replace(/_/g, ' ');
+        const { icon: Icon, tone } = resolveTriggerIcon(raw);
+        return (
+          <span
+            className={`inline-flex items-center justify-center w-7 h-7 rounded-card bg-secondary/30 border border-primary/10 ${tone}`}
+            title={label}
+            aria-label={label}
+          >
+            <Icon className="w-3.5 h-3.5" />
+          </span>
+        );
       },
     },
     {
@@ -143,16 +184,27 @@ export default function EventLogList() {
         />
       ),
       render: (event) => {
-        const targetPersona = getPersona(event.target_persona_id);
-        if (targetPersona) {
-          return <span className="typo-body text-foreground truncate">{targetPersona.name}</span>;
-        }
-        // Strip "persona:" prefix from source_type values
         const raw = event.source_type || '';
-        const display = raw.startsWith('persona:') ? raw.slice(8) : '';
-        return display
-          ? <span className="typo-body text-foreground truncate">{display}</span>
-          : <span className="typo-body text-foreground">—</span>;
+        const isPersonaTrigger = raw === 'persona' || raw.startsWith('persona:');
+        if (!isPersonaTrigger) {
+          return <span className="typo-body text-foreground">—</span>;
+        }
+
+        const personaId = raw.startsWith('persona:')
+          ? raw.slice('persona:'.length)
+          : event.source_id;
+        const persona = getPersona(personaId ?? null);
+        if (persona) {
+          return <span className="typo-body text-foreground truncate">{persona.name}</span>;
+        }
+        if (personaId) {
+          return (
+            <span className="typo-body text-foreground/60 truncate font-mono" title={personaId}>
+              {personaId.length > 8 ? `${personaId.slice(0, 8)}…` : personaId}
+            </span>
+          );
+        }
+        return <span className="typo-body text-foreground">—</span>;
       },
     },
     {

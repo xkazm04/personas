@@ -32,6 +32,74 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "teams",
+      "label": "Teams",
+      "description": "Linear teams the API key can access. Scope a credential to specific teams so agents can't create or read issues elsewhere.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "POST",
+        "url": "https://api.linear.app/graphql",
+        "headers": {
+          "Authorization": "{{api_key}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"query\":\"{ teams(first: 100) { nodes { id key name description } } }\"}",
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data.teams.nodes",
+        "id": "key",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "id": "id",
+          "key": "key"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    },
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Active Linear projects across all accessible teams.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "POST",
+        "url": "https://api.linear.app/graphql",
+        "headers": {
+          "Authorization": "{{api_key}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"query\":\"{ projects(first: 100) { nodes { id slugId name description state } } }\"}",
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data.projects.nodes",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "state": "state",
+          "slugId": "slugId"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Linear issue tracking for software teams with cycles, projects, and triage.",

@@ -30,6 +30,42 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Vercel projects accessible to the token.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.vercel.com/v9/projects?limit=100",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "cursor",
+          "cursor_param": "until",
+          "cursor_path": "pagination.next",
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "projects",
+        "id": "id",
+        "label": "name",
+        "sublabel": "framework",
+        "meta": {
+          "framework": "framework",
+          "accountId": "accountId"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Vercel frontend deployment platform with serverless functions and edge network.",

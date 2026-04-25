@@ -38,6 +38,44 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Neon Postgres projects accessible to the API key.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://console.neon.tech/api/v2/projects?limit=100",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "cursor",
+          "cursor_param": "cursor",
+          "cursor_path": "pagination.cursor",
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "projects",
+        "id": "id",
+        "label": "name",
+        "sublabel": "region_id",
+        "meta": {
+          "pg_version": "pg_version",
+          "org_id": "org_id",
+          "branch_logical_size_limit": "branch_logical_size_limit"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Neon serverless Postgres with branching, autoscaling, and bottomless storage.",

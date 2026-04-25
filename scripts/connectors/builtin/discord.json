@@ -29,6 +29,38 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "guilds",
+      "label": "Servers",
+      "description": "Discord guilds (servers) the bot has joined. Scope to specific servers so the bot can't post into unrelated communities.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://discord.com/api/v10/users/@me/guilds?limit=200",
+        "headers": {
+          "Authorization": "Bot {{bot_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "owner": "owner",
+          "permissions": "permissions"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Discord bot integration for server messaging, moderation, and notifications.",

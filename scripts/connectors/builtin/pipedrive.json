@@ -36,6 +36,39 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "pipelines",
+      "label": "Pipelines",
+      "description": "Pipedrive sales pipelines. Scope a credential to specific pipelines.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://{{domain}}.pipedrive.com/api/v1/pipelines?api_token={{api_token}}",
+        "headers": {
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data",
+        "id": "id",
+        "label": "name",
+        "sublabel": "url_title",
+        "meta": {
+          "active": "active",
+          "deal_probability": "deal_probability"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Pipedrive CRM for managing deals, contacts, activities, and sales pipelines via the Pipedrive REST API.",

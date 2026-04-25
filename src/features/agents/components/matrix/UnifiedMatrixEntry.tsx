@@ -409,7 +409,10 @@ export function UnifiedMatrixEntry() {
           way the Glyph prototype does. Prior iteration auto-opened a modal
           for every pending question in non-Glyph layouts; this inlines the
           Q&A as a first-class surface of the flow rather than a takeover. */}
-      {build.pendingQuestions && build.pendingQuestions.length > 0 && (
+      {/* Inline Q&A is rendered here only for the legacy 8-dimension layout —
+          Glyph Full hosts Q&A inside the CommandPanel's Refine step so the
+          composer + Q&A read as one continuous surface. */}
+      {layout !== "glyph-full" && build.pendingQuestions && build.pendingQuestions.length > 0 && (
         <div className="flex-shrink-0 mb-3" data-testid="build-inline-questions">
           <GlyphQuestionPanel
             questions={build.pendingQuestions}

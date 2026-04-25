@@ -32,6 +32,74 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "GitLab projects (repos) the token can see. Scope a credential to a subset so templates auto-fill and agents can't reach unrelated projects.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://gitlab.com/api/v4/projects?membership=true&per_page=100&order_by=last_activity_at",
+        "headers": {
+          "PRIVATE-TOKEN": "{{personal_access_token}}"
+        },
+        "pagination": {
+          "type": "link_header",
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "path_with_namespace",
+        "label": "name_with_namespace",
+        "sublabel": "description",
+        "meta": {
+          "id": "id",
+          "visibility": "visibility",
+          "default_branch": "default_branch",
+          "url": "web_url"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    },
+    {
+      "id": "groups",
+      "label": "Groups",
+      "description": "Top-level groups the token has visibility into.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://gitlab.com/api/v4/groups?per_page=100&top_level_only=true",
+        "headers": {
+          "PRIVATE-TOKEN": "{{personal_access_token}}"
+        },
+        "pagination": {
+          "type": "link_header",
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "full_path",
+        "label": "full_name",
+        "sublabel": "description",
+        "meta": {
+          "id": "id",
+          "url": "web_url"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "GitLab for repositories, CI/CD pipelines, issues, and merge requests.",

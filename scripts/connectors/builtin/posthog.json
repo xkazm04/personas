@@ -48,6 +48,42 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "PostHog projects (teams) the personal API key can access.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "{{host|https://us.posthog.com}}/api/projects/",
+        "headers": {
+          "Authorization": "Bearer {{personal_api_key}}"
+        },
+        "pagination": {
+          "type": "page_param",
+          "page_param": "page",
+          "per_page": 100,
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "results",
+        "id": "id",
+        "label": "name",
+        "sublabel": "organization",
+        "meta": {
+          "api_token": "api_token",
+          "timezone": "timezone"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "PostHog product analytics, feature flags, session replay, and A/B testing.",

@@ -31,6 +31,39 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "pipelines",
+      "label": "Deal pipelines",
+      "description": "HubSpot deal pipelines (sales funnels). Scope a credential to specific pipelines so agents only act on the ones you care about.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.hubapi.com/crm/v3/pipelines/deals",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "results",
+        "id": "id",
+        "label": "label",
+        "sublabel": "displayOrder",
+        "meta": {
+          "archived": "archived",
+          "stagesCount": "stages.length"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.",

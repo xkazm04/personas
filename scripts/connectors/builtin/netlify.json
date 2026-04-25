@@ -30,6 +30,42 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "sites",
+      "label": "Sites",
+      "description": "Netlify sites the access token can manage.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.netlify.com/api/v1/sites?per_page=100",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "page_param",
+          "page_param": "page",
+          "per_page": 100,
+          "max_pages": 3
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "id",
+        "label": "name",
+        "sublabel": "url",
+        "meta": {
+          "url": "url",
+          "custom_domain": "custom_domain"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Netlify web deployment platform with serverless functions and form handling.",

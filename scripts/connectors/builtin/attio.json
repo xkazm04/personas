@@ -29,6 +29,67 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "workspaces",
+      "label": "Workspaces",
+      "description": "Attio workspaces accessible to the access token.",
+      "selection": "single_or_all",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.attio.com/v2/self",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "workspace_id",
+        "label": "workspace_name",
+        "meta": {
+          "active": "active"
+        }
+      },
+      "search": {
+        "supported": false,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    },
+    {
+      "id": "lists",
+      "label": "Lists",
+      "description": "Attio lists (custom views over collections).",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.attio.com/v2/lists",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data",
+        "id": "id.list_id",
+        "label": "name",
+        "meta": {
+          "parent_object": "parent_object",
+          "api_slug": "api_slug"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Attio next-gen CRM for managing people, companies, deals, and custom objects via the Attio API v2.",

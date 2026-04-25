@@ -79,7 +79,7 @@ export function PersonaSelectorModal({
         isOpen={open}
         onClose={handleClose}
         titleId="persona-selector-modal"
-        maxWidthClass="max-w-md"
+        maxWidthClass="max-w-2xl"
         portal
         panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[70vh]"
       >

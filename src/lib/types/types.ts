@@ -73,6 +73,18 @@ export interface CredentialMetadata {
   oauth_token_expires_at: string | null;
   usage_count: number;
   last_used_at: string | null;
+  /**
+   * User-picked sub-resources keyed by `ResourceSpec.id`. Each value is an
+   * array of `{id, label, sublabel?, meta?}` items. `null` = broad scope (no
+   * scope picker has been completed). Empty object `{}` = picker opened and
+   * skipped. Used by adoption questionnaire's `requires_resource` filter.
+   *
+   * Renamed (vs the wire field `scoped_resources` on PersonaCredential which
+   * is `string | null`) so structurally-typed code that passes
+   * `CredentialMetadata[]` into helpers expecting `PersonaCredential[]` keeps
+   * working — the parsed object form is exposed under a distinct property.
+   */
+  scopedResources: Record<string, Array<{ id: string; label: string; sublabel?: string; meta?: Record<string, unknown> }>> | null;
   created_at: string;
   updated_at: string;
 }
@@ -106,6 +118,13 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     ? parsedMetadata.usage_count
     : 0;
 
+  // Parse scoped_resources blob — newer Rust field; ts-rs binding may not
+  // include it until cargo test regenerates. Read defensively.
+  const rawScoped = (c as unknown as { scoped_resources?: string | null }).scoped_resources;
+  const scopedResources = rawScoped
+    ? parseJsonOrDefault<CredentialMetadata['scopedResources']>(rawScoped, null)
+    : null;
+
   return {
     id: c.id,
     name: c.name,
@@ -120,6 +139,7 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     oauth_token_expires_at: oauthTokenExpiresAt,
     usage_count: usageCount,
     last_used_at: c.last_used_at,
+    scopedResources,
     created_at: c.created_at,
     updated_at: c.updated_at,
   };

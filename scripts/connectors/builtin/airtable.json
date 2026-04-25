@@ -40,6 +40,71 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "bases",
+      "label": "Bases",
+      "description": "Airtable bases the token can read. Scope the credential to specific bases for tighter blast radius.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/meta/bases",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "pagination": {
+          "type": "cursor",
+          "cursor_param": "offset",
+          "cursor_path": "offset",
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "bases",
+        "id": "id",
+        "label": "name",
+        "sublabel": "permissionLevel",
+        "meta": {
+          "permissionLevel": "permissionLevel"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    },
+    {
+      "id": "tables",
+      "label": "Tables",
+      "description": "Tables inside the base configured on this credential.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/meta/bases/{{base_id}}/tables",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "tables",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "primaryFieldId": "primaryFieldId"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Airtable spreadsheet-database for project tracking and data management.",

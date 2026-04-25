@@ -49,6 +49,45 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Jira projects the API token can access. Scope the credential so agents can't reach unrelated projects.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://{{domain}}/rest/api/3/project/search?maxResults=100&orderBy=lastIssueUpdatedTime",
+        "headers": {
+          "Authorization": "Bearer {{api_token}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "page_param",
+          "page_param": "startAt",
+          "per_page": 100,
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "values",
+        "id": "key",
+        "label": "name",
+        "sublabel": "projectTypeKey",
+        "meta": {
+          "id": "id",
+          "key": "key",
+          "projectTypeKey": "projectTypeKey",
+          "url": "self"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Jira issue tracking and project management for agile software teams.",

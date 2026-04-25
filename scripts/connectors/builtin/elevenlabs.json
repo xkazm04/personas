@@ -30,6 +30,69 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "voices",
+      "label": "Voices",
+      "description": "ElevenLabs voices in the user's library (premade + custom cloned). Scope a credential to a small set so templates auto-fill the right voice without listing everything.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.elevenlabs.io/v1/voices",
+        "headers": {
+          "xi-api-key": "{{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "voices",
+        "id": "voice_id",
+        "label": "name",
+        "sublabel": "category",
+        "meta": {
+          "category": "category",
+          "preview_url": "preview_url"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    },
+    {
+      "id": "models",
+      "label": "Models",
+      "description": "TTS models available to the account.",
+      "selection": "single_or_all",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.elevenlabs.io/v1/models",
+        "headers": {
+          "xi-api-key": "{{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "model_id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "languages": "languages"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 86400
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "ElevenLabs AI voice generation, text-to-speech, and audio processing platform.",

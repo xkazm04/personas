@@ -187,6 +187,34 @@ and the GitHub example as a template. See
 `.claude/skills/add-credential/resource-scoping.md` (to be added in the
 same follow-up).
 
+## Template adoption: `requires_resource`
+
+Templates can pin a connector slot to credentials that have completed the scope picker for a specific resource type. Add the field to the slot's adoption question:
+
+```jsonc
+{
+  "id": "aq_choose_repo_credential",
+  "scope": "connector",
+  "connector_names": ["github_repo"],
+  "category": "configuration",
+  "type": "select",
+  "dynamic_source": {
+    "source": "vault",
+    "operation": "list_credentials",
+    "service_type": "source_control",
+    "requires_resource": "repositories"
+  }
+}
+```
+
+When the user opens the adoption questionnaire, the option list filters to:
+1. Credentials in the `source_control` category (existing behaviour), AND
+2. Credentials whose `scoped_resources.repositories` array has at least one pick.
+
+A broad-scope credential (no scope picker completed) and a skipped-scope credential (`{}`) both fail filter (2). The error message reads "Connect a `source_control` credential and pick at least one `repositories`" so users know they need to (re)open the credential edit form and select a repo.
+
+This makes templates that ask "Which repo?" automatically respect the user's scope choices — the agent will only see credentials that have already narrowed their blast radius.
+
 ## Smoke test (once picker lands)
 
 1. Add GitHub PAT in vault → healthcheck passes.

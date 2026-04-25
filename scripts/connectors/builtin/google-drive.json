@@ -29,6 +29,67 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "folders",
+      "label": "Folders (My Drive root)",
+      "description": "Top-level folders in the user's My Drive. Scope a credential to specific folders so agents can't reach the rest of the drive.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/files?q=mimeType%3D%27application%2Fvnd.google-apps.folder%27+and+%27root%27+in+parents+and+trashed%3Dfalse&pageSize=100&fields=files(id,name,modifiedTime)&orderBy=modifiedTime+desc",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "files",
+        "id": "id",
+        "label": "name",
+        "sublabel": "modifiedTime",
+        "meta": {
+          "modifiedTime": "modifiedTime"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    },
+    {
+      "id": "shared_drives",
+      "label": "Shared Drives",
+      "description": "Shared drives (Team Drives) accessible to the user.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/drive/v3/drives?pageSize=100",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "drives",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "createdTime": "createdTime"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Google Drive storage — read/write files and folders via the Drive v3 API. Use as a persona's storage target for generated artifacts (reports, sprite sheets, videos, exports).",

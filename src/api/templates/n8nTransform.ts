@@ -122,6 +122,15 @@ export interface TransformQuestionResponse {
      * vault catalog over time.
      */
     source?: 'vault';
+    /**
+     * Optional resource-scope requirement (only meaningful when `source: 'vault'`).
+     * When set, the picker filters to credentials whose `scoped_resources` blob
+     * has at least one pick under this resource id. E.g. `'repositories'`
+     * filters to GitHub credentials that have completed the post-save scope
+     * picker for `repositories`. Use to ensure templates that ask "Which
+     * repo?" only see credentials that have actually scoped a repo.
+     */
+    requires_resource?: string;
   };
 }
 

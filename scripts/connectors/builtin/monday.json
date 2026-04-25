@@ -32,6 +32,41 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "boards",
+      "label": "Boards",
+      "description": "Monday.com boards. Scope a credential so an agent only sees the boards you intend.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "POST",
+        "url": "https://api.monday.com/v2",
+        "headers": {
+          "Authorization": "{{api_key_v2}}",
+          "Content-Type": "application/json",
+          "API-Version": "2024-01"
+        },
+        "body": "{\"query\":\"{ boards (limit: 200, state: active) { id name description workspace { id name } } }\"}",
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data.boards",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "workspace": "workspace.name"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Monday.com work management platform for projects, workflows, and CRM.",

@@ -50,6 +50,43 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "spaces",
+      "label": "Spaces",
+      "description": "Confluence spaces the API token can access.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://{{domain}}/wiki/rest/api/space?limit=100&type=global",
+        "headers": {
+          "Authorization": "Bearer {{api_token}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "page_param",
+          "page_param": "start",
+          "per_page": 100,
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "results",
+        "id": "key",
+        "label": "name",
+        "sublabel": "description.plain.value",
+        "meta": {
+          "id": "id",
+          "type": "type"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Confluence wiki and knowledge base for team documentation and collaboration.",

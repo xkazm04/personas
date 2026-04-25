@@ -31,6 +31,37 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "workspaces",
+      "label": "Workspaces",
+      "description": "ClickUp workspaces (called \"teams\" in the API). Scope to limit which workspaces the credential can act on.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team",
+        "headers": {
+          "Authorization": "{{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "teams",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "color": "color"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "ClickUp project management with tasks, docs, goals, and time tracking.",

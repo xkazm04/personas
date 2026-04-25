@@ -861,7 +861,10 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
         {/* Pre-build command panel — variant-switched (Workbench | Composer).
             See src/features/agents/components/matrix/commandPanel/ for the
             prototype variants. Props/callbacks are identical across variants. */}
-        {isPreBuild && (
+        {/* Show panel during pre-build AND during the active build so the
+            Refine step can host follow-up Q&A inline. Hide once the agent
+            is in test/promote phases (panel's job is done). */}
+        {(isPreBuild || isBuilding || (pendingQuestions && pendingQuestions.length > 0)) && (
           <CommandPanel
             intentText={intentText}
             onIntentChange={onIntentChange}
@@ -869,6 +872,8 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             launchDisabled={launchDisabled}
             onKeyDown={handleLaunchKey}
             onQuickConfigChange={onQuickConfigChange}
+            pendingQuestions={pendingQuestions}
+            onAnswer={onAnswer}
           />
         )}
 

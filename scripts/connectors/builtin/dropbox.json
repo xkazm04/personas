@@ -29,6 +29,40 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "folders",
+      "label": "Folders (root)",
+      "description": "Top-level folders in the user's Dropbox. Scope a credential so an agent can't read or write outside the chosen folders.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "POST",
+        "url": "https://api.dropboxapi.com/2/files/list_folder",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": "{\"path\":\"\",\"recursive\":false,\"include_non_downloadable_files\":false,\"limit\":200}",
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "entries",
+        "id": "path_lower",
+        "label": "name",
+        "sublabel": "path_display",
+        "meta": {
+          "tag": ".tag"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Dropbox cloud storage for file sync, sharing, and collaboration.",

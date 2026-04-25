@@ -29,6 +29,66 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "workspaces",
+      "label": "Workspaces",
+      "description": "Asana workspaces the token can access.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://app.asana.com/api/1.0/workspaces?limit=100",
+        "headers": {
+          "Authorization": "Bearer {{personal_access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data",
+        "id": "gid",
+        "label": "name",
+        "meta": {
+          "resource_type": "resource_type"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    },
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Active Asana projects across all accessible workspaces.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://app.asana.com/api/1.0/projects?archived=false&limit=100",
+        "headers": {
+          "Authorization": "Bearer {{personal_access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data",
+        "id": "gid",
+        "label": "name",
+        "meta": {
+          "resource_type": "resource_type"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Asana project management for tasks, projects, and team collaboration.",

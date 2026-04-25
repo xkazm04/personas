@@ -29,6 +29,43 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "channels",
+      "label": "Channels",
+      "description": "Slack channels the bot is a member of. Scope the credential to specific channels so agents can't post anywhere else.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://slack.com/api/conversations.list?types=public_channel,private_channel&exclude_archived=true&limit=200",
+        "headers": {
+          "Authorization": "Bearer {{bot_token}}"
+        },
+        "pagination": {
+          "type": "cursor",
+          "cursor_param": "cursor",
+          "cursor_path": "response_metadata.next_cursor",
+          "max_pages": 5
+        }
+      },
+      "response_mapping": {
+        "items_path": "channels",
+        "id": "id",
+        "label": "name",
+        "sublabel": "purpose.value",
+        "meta": {
+          "is_private": "is_private",
+          "num_members": "num_members",
+          "is_archived": "is_archived"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Slack workspace messaging for channels, DMs, and workflow notifications.",

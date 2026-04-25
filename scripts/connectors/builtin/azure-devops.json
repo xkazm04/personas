@@ -40,6 +40,41 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Azure DevOps projects in the configured organization.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1&$top=200",
+        "headers": {
+          "Authorization": "Basic {{base64(:pat)}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "state": "state",
+          "visibility": "visibility",
+          "url": "url"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Azure DevOps for repositories, work items, pipelines, and CI/CD.",

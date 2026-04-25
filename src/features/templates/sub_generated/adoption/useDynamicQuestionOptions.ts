@@ -98,31 +98,50 @@ export function useDynamicQuestionOptions(
       // match the requested category tag. No IPC, no per-connector discovery.
       // Each eligible credential becomes one option: value = connector name
       // (service_type the persona will attach), label = credential name.
+      //
+      // When the question's `dynamic_source.requires_resource` is set, an
+      // additional filter applies: only credentials whose `scoped_resources`
+      // contains a non-empty array under that resource key make it into the
+      // option list. This is how templates pin themselves to credentials that
+      // have actually completed the post-save scope picker (e.g. only show
+      // GitHub credentials that have at least one `repositories` pick).
       if (src.source === 'vault') {
         const category = src.service_type;
+        const requiresResource = (src as { requires_resource?: string }).requires_resource;
         const items: DiscoveredItem[] = [];
+        let scopeFilteredOut = 0;
         for (const c of credentials) {
           if (c.healthcheck_last_success === false) continue;
           if (!connectorCategoryTags(c.service_type).includes(category)) continue;
+          if (requiresResource) {
+            const picks = c.scopedResources?.[requiresResource];
+            if (!picks || picks.length === 0) {
+              scopeFilteredOut++;
+              continue;
+            }
+          }
           items.push({
             value: c.service_type,
             label: c.name,
-            sublabel: c.service_type,
+            sublabel: requiresResource && c.scopedResources?.[requiresResource]?.length
+              ? `${c.scopedResources[requiresResource].length} ${requiresResource}`
+              : c.service_type,
           });
         }
-        // Re-dispatch only when the item set actually changed — otherwise the
-        // effect loops on every credentials reference change.
-        const fingerprint = `vault|${category}|${items.map((i) => i.value).join(',')}`;
+        const fingerprint = `vault|${category}|${requiresResource ?? '*'}|${items.map((i) => i.value).join(',')}`;
         if (lastFingerprintRef.current[q.id] === fingerprint) continue;
         lastFingerprintRef.current[q.id] = fingerprint;
+        const errorMsg = items.length > 0
+          ? null
+          : requiresResource && scopeFilteredOut > 0
+            ? `Connect a ${category} credential and pick at least one ${requiresResource}`
+            : `No healthy ${category} credential connected`;
         setStateByQuestion((prev) => ({
           ...prev,
           [q.id]: {
             loading: false,
             ready: items.length > 0,
-            error: items.length === 0
-              ? `No healthy ${category} credential connected`
-              : null,
+            error: errorMsg,
             items,
             waitingOnParent: false,
           },
