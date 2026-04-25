@@ -94,13 +94,41 @@ ANSWERS = {
 FALLBACK = "Please proceed with the most sensible default for this dimension."
 
 
+def cleanup_existing_personas(name_keywords: list[str]) -> None:
+    """Delete prior personas whose name contains any of `name_keywords`.
+    Each scenario run creates a new persona; without cleanup, a single drive
+    event fans out to every prior copy and the fresh persona's execution
+    competes for the cascade-guard slot."""
+    r = bridge("listPersonas", {}, 15)
+    for p in r.get("personas", []) or []:
+        name = (p.get("name") or "").lower()
+        origin = p.get("trust_origin")
+        if origin == "system":
+            continue  # never touch the Director / system personas
+        if any(kw.lower() in name for kw in name_keywords):
+            d = bridge("deletePersona", {"personaId": p.get("id")}, 30)
+            record(
+                "cleanup",
+                "ok" if d.get("success") else "info",
+                id=str(p.get("id"))[:8],
+                name=p.get("name"),
+                error=(d.get("error") or "")[:80],
+            )
+
+
 def run_question_loop() -> bool:
+    cleanup_existing_personas(["translat", "translation", "drive", "czech", "english"])
     r = bridge("startBuildFromIntent", {"intent": args.intent, "timeoutMs": 25000}, 30)
     if not r.get("success"):
         record("start_build", "fail", error=r.get("error"))
         return False
     record("start_build", "ok", persona_id=r.get("personaId"))
-    seen: set[str] = set()
+    # Track how often each cell was answered so we can short-circuit a true
+    # infinite loop (LLM rejecting answer N times) without false-failing on
+    # legitimate re-asks (e.g. multi-UC build asking the same dimension once
+    # per capability, or the LLM asking a follow-up after a 2-step rule).
+    answer_count: dict[str, int] = {}
+    MAX_PER_CELL = 4
     for i in range(args.max_rounds):
         deadline = time.time() + 240
         phase = None
@@ -126,13 +154,14 @@ def run_question_loop() -> bool:
             time.sleep(1)
             continue
         cell = qs[0].get("cellKey", "")
-        if cell in seen:
-            record("loop.repeat", "fail", cell=cell)
+        cnt = answer_count.get(cell, 0) + 1
+        if cnt > MAX_PER_CELL:
+            record("loop.repeat", "fail", cell=cell, attempts=cnt)
             return False
-        seen.add(cell)
+        answer_count[cell] = cnt
         answer = ANSWERS.get(cell, FALLBACK)
         bridge("answerPendingBuildQuestions", {"answers": {cell: answer}}, 30)
-        record(f"round{i}.answer", "ok", cell=cell)
+        record(f"round{i}.answer", "ok", cell=cell, attempt=cnt)
     return False
 
 

@@ -58,7 +58,7 @@ export default function PersonaOverviewPage() {
     personas, view, search, triggerCounts, lastRunMap, healthMap, isBuilding, isDraft, isFavorite,
   });
 
-  const { modal, handleDelete, handleBatchDelete, handleDeleteDrafts, handleEdit, draftIds } =
+  const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
 
   // Drop selections that no longer match the filtered data
@@ -116,7 +116,7 @@ export default function PersonaOverviewPage() {
 
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
-    onRowClick: handleRowClick, onDelete: handleDelete, onEdit: handleEdit,
+    onRowClick: handleRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap, allConnectorNames,
   });
 
@@ -163,8 +163,6 @@ export default function PersonaOverviewPage() {
             isFavorite={isFavorite}
             toggleFavorite={toggleFavorite}
             onRowClick={handleRowClick}
-            onDelete={handleDelete}
-            onEdit={handleEdit}
             isBuilding={isBuilding}
             isDraft={isDraft}
             healthMap={healthMap}
@@ -177,6 +175,7 @@ export default function PersonaOverviewPage() {
             columns={columns}
             data={filteredData}
             getRowKey={(p) => p.id}
+            onRowClick={handleRowClick}
             getRowAccent={(p) =>
               selectedIds.has(p.id) ? 'border-l-primary/60 bg-primary/[0.03]'
                 : isBuilding(p.id) ? 'border-l-violet-400/60'

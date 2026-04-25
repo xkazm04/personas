@@ -449,6 +449,85 @@ pub fn assemble_prompt(
         }
     }
 
+    // Personas Tool Semantics — algorithmic guidance, not hardcoded names.
+    //
+    // The CLI sees three classes of tools at runtime:
+    //   1. Built-in CLI tools (Bash, Read, Write, Edit) — operate on the
+    //      ephemeral exec workspace at CWD. Anything written here is invisible
+    //      to the user and never fires connector events.
+    //   2. `mcp__personas__*` MCP tools — the user-facing surface. Each
+    //      connector the user wired into a capability exposes its read/write
+    //      verbs through this server (drive_read_text/drive_write_text/
+    //      drive_list for storage; equivalent verbs for messaging, email,
+    //      task_management, etc., named after the connector's family).
+    //   3. Persona-specific tools listed in `## Tools` above (curl-backed,
+    //      script-backed, automation-backed) — call those by name when the
+    //      persona's IR explicitly registered them.
+    //
+    // Decision rule the agent MUST apply:
+    //   * Any read or write of data the USER will observe (input docs, output
+    //     artefacts, status messages, persisted records) → route through a
+    //     `mcp__personas__*` tool whose family matches the connector slot in
+    //     the use_case's `connectors` field.
+    //   * Built-in Bash/Read/Write/Edit are STRICTLY for transient scratch
+    //     work (parsing intermediate JSON, tokenising text, formatting
+    //     output) the user should never see.
+    //
+    // Common trip-wires:
+    //   * `input_data.path` arriving from a connector event is RELATIVE to
+    //     that connector's sandbox, not your CWD. `Bash ls inbox/` will fail
+    //     because `inbox/` lives inside the connector, not the workspace.
+    //     Use the connector's MCP tool to enumerate (e.g.
+    //     `mcp__personas__drive_list({"rel_path":"inbox"})`) and to read the
+    //     specific file (`mcp__personas__drive_read_text({"rel_path":"<path>"})`).
+    //   * Output artefacts MUST go through the connector's write verb so the
+    //     user sees the result and downstream events fire. Saving via the
+    //     built-in Write tool to a relative path lands in scratch and the
+    //     user will report "no file appeared".
+    prompt.push_str("## Personas Tool Semantics\n\n");
+    prompt.push_str(
+        "Tools belong to one of three classes, with sharply different effects:\n\n\
+         1. **`mcp__personas__*` (the user-facing surface).** Each connector \
+         wired into a capability advertises its verbs through this MCP server: \
+         storage connectors expose `drive_list` / `drive_read_text` / \
+         `drive_write_text`; messaging exposes `*_post` / `*_send`; equivalent \
+         shapes exist for email / task_management / vector_db / etc. \
+         **EVERY read or write the user will observe MUST go through this \
+         family.**\n\
+         2. **Built-in CLI tools (Bash / Read / Write / Edit).** Operate on \
+         the ephemeral exec-workspace at CWD. Use them ONLY for transient \
+         scratch work the user does not need to see (parsing intermediate \
+         JSON, tokenising text, computing diffs). Never use them for the \
+         final artefact, never use them to read user-supplied input.\n\
+         3. **Persona-registered tools** (listed in `## Tools` above). Call \
+         these by name when the persona's IR explicitly declared them.\n\n\
+         **Decision algorithm — apply on every tool call:**\n\
+         - If the data is user input (event payload reference, input file, \
+         user message) → use the matching connector's `*_read*` / `*_list` \
+         verb. Treat any `input_data.path` / `input_data.url` value as \
+         RELATIVE to that connector's sandbox, NOT the CWD.\n\
+         - If the data is the run's output (translation, summary, ticket, \
+         message) → use the matching connector's `*_write*` / `*_post` / \
+         `*_send` verb. Producing an artefact via built-in Write means the \
+         user never sees it.\n\
+         - Only when the operation is purely transient (a regex on text \
+         already in your context, a cron-time computation) → use Bash / \
+         Read / Write / Edit on the ephemeral workspace.\n\n",
+    );
+    if let Some(drive_root) = crate::commands::drive::cached_managed_root() {
+        prompt.push_str(&format!(
+            "**Sandbox snapshot.** The user's local-drive sandbox is at \
+             `{}`. Files surfaced by `drive.document.*` events live under \
+             this root — but you do NOT need to address them by absolute \
+             path. Always pass the relative `path` you received in \
+             `input_data` (or `_event.source_id`) to `mcp__personas__drive_read_text` / \
+             `mcp__personas__drive_write_text` / `mcp__personas__drive_list`. \
+             The MCP server resolves the absolute path internally and \
+             enforces the sandbox boundary.\n\n",
+            drive_root.display()
+        ));
+    }
+
     // Memory System Self-Awareness
     // Inspired by Karpathy-style LLM knowledge bases (research run 2026-04-08).
     // Personas exposes a layered memory system; the agent can navigate it more

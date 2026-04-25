@@ -121,19 +121,20 @@ export function PersonaOverviewToolbar({
         )}
       </div>
 
-      {/* Favorites quick-toggle */}
+      {/* Favorites quick-toggle (icon-only) */}
       <button
         type="button"
         onClick={() => onViewChange({ ...view, favoriteOnly: !view.favoriteOnly })}
         title={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
-        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card text-md font-medium border transition-all ${
+        aria-label={view.favoriteOnly ? t.agents.persona_list.show_all_personas : t.agents.persona_list.show_only_favorites}
+        aria-pressed={view.favoriteOnly}
+        className={`flex items-center justify-center p-1.5 rounded-card border transition-all ${
           view.favoriteOnly
             ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
-            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-muted-foreground'
+            : 'border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:text-amber-400'
         }`}
       >
         <Star className={`w-3.5 h-3.5 ${view.favoriteOnly ? 'fill-amber-400' : ''}`} />
-        {t.agents.persona_list.favorites}
       </button>
 
       {/* Active filter chips */}

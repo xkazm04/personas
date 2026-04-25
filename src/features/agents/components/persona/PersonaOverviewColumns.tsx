@@ -8,7 +8,6 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
-import { PersonaOverviewRowMenu } from './PersonaOverviewRowMenu';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import type { AgentListViewConfig } from './ViewPresetBar';
 
@@ -20,8 +19,6 @@ interface UsePersonaColumnsArgs {
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
   onRowClick: (p: Persona) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
   isBuilding: (id: string) => boolean;
   isDraft: (p: Persona) => boolean;
   healthMap: Record<string, PersonaHealth | undefined>;
@@ -37,7 +34,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
   const { t } = useTranslation();
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-    onDelete, onEdit, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
     connectorNamesMap, allConnectorNames,
   } = args;
 
@@ -163,14 +160,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             <span className="text-md text-foreground">--</span>
           ),
       },
-      {
-        key: 'actions', label: '', width: '40px',
-        render: (p) => <PersonaOverviewRowMenu persona={p} onDelete={onDelete} onEdit={onEdit} />,
-      },
     ],
     [
       view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-      onDelete, onEdit, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
+      isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
       connectorNamesMap, connectorOptions,
     ],
   );

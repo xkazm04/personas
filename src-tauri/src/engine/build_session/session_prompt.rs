@@ -376,7 +376,41 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     The spirit of this rule: treat every capability as a short interview that maps the flow abstractly (source → process → destination + trigger). The user may answer with local_drive today and GDrive tomorrow — the question must not bake the answer in.
 
-17. **When emitting `clarifying_question` with `scope: "connector_category"`, the `category` field is REQUIRED and must be one of the machine tokens present in the `## Available Connectors` section's `(category: ...)` suffix.** Known categories include but are not limited to: `ai`, `ai_chat`, `ai_image`, `ai_vision`, `calendar`, `codebase`, `crm`, `email`, `image_generation`, `messaging`, `monitoring`, `social`, `storage`, `task_management`, `text_generation`, `vision`. The frontend's connector picker is keyed off this category. Example: for "listen for new files in a drive", `category: "storage"`. For "post digest to Slack/Discord/Teams", `category: "messaging"`. For "generate an image", `category: "image_generation"`.
+17. **When emitting `clarifying_question` with `scope: "connector_category"`, the `category` field is REQUIRED and must be one of the machine tokens present in the `## Available Connectors` section's `(category: ...)` suffix.** Known categories include but are not limited to: `ai`, `ai_chat`, `ai_image`, `ai_vision`, `calendar`, `codebase`, `crm`, `email`, `image_generation`, `messaging`, `monitoring`, `social`, `storage`, `task_management`, `text_generation`, `vector_db`, `vision`. The frontend's connector picker is keyed off this category. Example: for "listen for new files in a drive", `category: "storage"`. For "post digest to Slack/Discord/Teams", `category: "messaging"`. For "save articles into a knowledge base", `category: "vector_db"`. For "generate an image", `category: "image_generation"`.
+
+18. **Source acquisition vs delegation.** Some capabilities READ from a *set of items the user maintains* (URLs to scrape, accounts to watch, topics to track). When the user's intent does not enumerate that set, ASK whether the user wants to provide it or whether the agent should curate it. Two-step pattern:
+
+    Step 1 — meta-question (option-based, no category):
+    ```
+    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "source_acquisition", "question": "How should <capability_title> get its source list?", "options": ["A: I'll paste the list — sources, URLs, accounts, etc.", "B: Let the agent pick reputable sources for the topic"]}}}}
+    ```
+
+    Step 2 — depends on the answer:
+    - If user picks **A**: emit a follow-up with `options: []` and a freetext prompt asking for the list. The user's free-text answer becomes the capability's `input_schema.sources` default. Example follow-up:
+      ```
+      {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "sources_list", "question": "Paste the sources <capability_title> should watch (one URL or identifier per line):", "options": []}}}}
+      ```
+    - If user picks **B**: do NOT emit a follow-up. Add `web_search` to `agent_ir.tools` and reference it in the capability's `tool_hints`. The capability's `operating_instructions` MUST instruct the agent to search the web at runtime for reputable sources matching the topic — not hardcode a list.
+
+    NEVER hardcode a fixed source list inside the persona's `system_prompt` for a delegated capability. The freshness of the source set is the agent's responsibility, not the build pipeline's.
+
+19. **Output target category branching.** Some capabilities can target multiple connector categories — a "news watcher" can write to a knowledge base (vector_db), to a messaging channel, or both. When the intent doesn't pick a category, ASK two-step:
+
+    Step 1 — category meta-question:
+    ```
+    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "output_target_category", "question": "Where should <capability_title> publish its output?", "options": ["A: Save to a knowledge base (vector_db)", "B: Send a messaging digest", "C: Both"]}}}}
+    ```
+
+    Step 2 — connector picker(s) keyed off the chosen category:
+    - On **A**: emit `clarifying_question` with `scope: "connector_category"`, `category: "vector_db"`.
+    - On **B**: emit `clarifying_question` with `scope: "connector_category"`, `category: "messaging"`.
+    - On **C**: emit BOTH (vector_db then messaging) in sequence.
+
+    Do NOT skip the category meta-question with a heuristic guess. The user's destination preference defines the persona's output contract — assuming wrong forces a rebuild later.
+
+20. **Quick-add hint when the picker is empty.** When emitting `scope: "connector_category"`, the UI MAY render an empty-state with a "+ Add <category> connector" CTA that opens an inline credential-add modal. The build session pauses identically to the regular vault-pick path; on credential added, the picker re-renders without restarting the build. You do NOT have to do anything special on the LLM side — emit the same `connector_category` event. The frontend handles the empty-state transition.
+
+21. **Auto-triage as a review-policy mode.** When the user picks "auto-triage" / "let the agent decide" / "LLM-judged review", emit `review_policy.value` with `mode: "auto_triage"` (NOT `"never"`, NOT `"on_low_confidence"`, NOT `"always"`). At runtime, the persona will perform a self-review pass against its `decision_principles` instead of emitting `manual_review` and waiting. The build IR shape is unchanged; only the `mode` token differs. When chaining capabilities (e.g. UC1 produces a candidate, UC2 publishes the accepted ones), set UC1's `review_policy.mode = "auto_triage"` and let UC2 listen on UC1's `<persona>.<task>.accepted` event for downstream emission.
 
 {template_context}
 

@@ -6,7 +6,6 @@ import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
-import { PersonaOverviewRowMenu } from './PersonaOverviewRowMenu';
 import { useTranslation } from '@/i18n/useTranslation';
 
 async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
@@ -26,8 +25,6 @@ interface PersonaOverviewCardListProps {
   isFavorite: (id: string) => boolean;
   toggleFavorite: (id: string) => void;
   onRowClick: (p: Persona) => void;
-  onDelete: (id: string) => void;
-  onEdit: (id: string) => void;
   isBuilding: (id: string) => boolean;
   isDraft: (p: Persona) => boolean;
   healthMap: Record<string, PersonaHealth | undefined>;
@@ -48,7 +45,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   const { t } = useTranslation();
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-    onDelete, onEdit, isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap,
   } = props;
 
   if (data.length === 0) {
@@ -132,7 +129,6 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
               >
                 <Star className={`w-3.5 h-3.5 ${isFavorite(p.id) ? 'text-amber-400 fill-amber-400' : 'text-foreground'}`} />
               </button>
-              <PersonaOverviewRowMenu persona={p} onDelete={onDelete} onEdit={onEdit} />
             </div>
 
             {/* Meta row */}

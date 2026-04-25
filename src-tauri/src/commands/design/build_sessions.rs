@@ -1068,8 +1068,33 @@ fn create_triggers_in_tx(
     for (idx, t) in ir.triggers.iter().enumerate() {
         let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
         let trigger_type = trigger_repo::normalize_trigger_type(raw_type).to_string();
-        let config = t.config.as_ref()
-            .map(|v| serde_json::to_string(v).unwrap_or_default());
+        // Normalise event-listener configs so the dispatcher's
+        // `listen_event_type` lookup finds them. The v3 build prompt uses
+        // `event_type` because that's the user-facing field name on
+        // `event_subscriptions`; the persistence layer's runtime matcher keys
+        // off `listen_event_type`. Translate here at the boundary so the LLM
+        // doesn't have to know the storage detail.
+        let config = t.config.as_ref().map(|v| {
+            if trigger_type == "event_listener" {
+                if let Some(obj) = v.as_object() {
+                    let mut patched = obj.clone();
+                    if !patched.contains_key("listen_event_type") {
+                        if let Some(et) = patched
+                            .get("event_type")
+                            .and_then(|x| x.as_str())
+                            .map(str::to_string)
+                        {
+                            patched.insert(
+                                "listen_event_type".to_string(),
+                                serde_json::Value::String(et),
+                            );
+                        }
+                    }
+                    return serde_json::to_string(&patched).unwrap_or_default();
+                }
+            }
+            serde_json::to_string(v).unwrap_or_default()
+        });
         let use_case_id = use_case_ids.get(idx)
             .or_else(|| use_case_ids.last())
             .cloned();

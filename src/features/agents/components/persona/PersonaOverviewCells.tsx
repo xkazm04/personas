@@ -155,14 +155,16 @@ export function ConnectorsCell({
         const meta = getConnectorMeta(name);
         return (
           <Tooltip key={name} content={meta.label}>
-            <div className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0">
+            <div
+              className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 cursor-help transition-colors hover:bg-secondary/60 hover:border-primary/25"
+            >
               <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
             </div>
           </Tooltip>
         );
       })}
       {connectors.length > MAX_VISIBLE_CONNECTORS && (
-        <Tooltip content={connectors.slice(MAX_VISIBLE_CONNECTORS).join(', ')}>
+        <Tooltip content={connectors.slice(MAX_VISIBLE_CONNECTORS).map((n) => getConnectorMeta(n).label).join(', ')}>
           <span className="text-md text-foreground ml-0.5 cursor-help">
             +{connectors.length - MAX_VISIBLE_CONNECTORS}
           </span>

@@ -20,12 +20,13 @@
  * is reactive: adding a credential in another tab unblocks the question
  * without a reload.
  */
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { DiscoveredItem } from '@/api/templates/discovery';
 import { CredentialPickerCards } from './CredentialPickerCards';
+import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
 
 export interface VaultConnectorPickerProps {
   /** Machine token — e.g. "storage", "messaging", "ai_vision", "image_generation". */
@@ -47,6 +48,7 @@ export function VaultConnectorPicker({
   onAddFromCatalog,
 }: VaultConnectorPickerProps) {
   const credentials = useVaultStore((s) => s.credentials);
+  const [showQuickAdd, setShowQuickAdd] = useState(false);
 
   // A credential is eligible when its connector's category tag set includes
   // the requested category. Match against both the singular `category` field
@@ -83,29 +85,54 @@ export function VaultConnectorPicker({
 
   if (items.length === 0) {
     return (
-      <div
-        className="flex flex-col items-start gap-2 rounded-card border border-dashed border-border bg-foreground/[0.02] p-4"
-        data-testid="vault-connector-picker-empty"
-      >
-        <span className="typo-body text-foreground/80">
-          {/* intentionally un-i18n'd pending translation key approval; see handoff */}
-          No <strong>{category}</strong> connector in your vault yet.
-        </span>
-        <span className="typo-caption text-foreground/55">
-          Add one from the Catalog, then return here to pick it.
-        </span>
-        {onAddFromCatalog && (
-          <button
-            type="button"
-            onClick={() => onAddFromCatalog(category)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-primary/15 hover:bg-primary/25 border border-primary/30 typo-body text-primary cursor-pointer transition-colors"
-            data-testid="vault-connector-picker-add"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Open Catalog
-          </button>
+      <>
+        <div
+          className="flex flex-col items-start gap-2 rounded-card border border-dashed border-border bg-foreground/[0.02] p-4"
+          data-testid="vault-connector-picker-empty"
+        >
+          <span className="typo-body text-foreground/80">
+            {/* intentionally un-i18n'd pending translation key approval; see handoff */}
+            No <strong>{category}</strong> connector in your vault yet.
+          </span>
+          <span className="typo-caption text-foreground/55">
+            Add one inline, or open the full Catalog.
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowQuickAdd(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-primary/15 hover:bg-primary/25 border border-primary/30 typo-body text-primary cursor-pointer transition-colors"
+              data-testid="vault-connector-picker-empty-add"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add {category} connector
+            </button>
+            {onAddFromCatalog && (
+              <button
+                type="button"
+                onClick={() => onAddFromCatalog(category)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-secondary/30 hover:bg-secondary/40 border border-border/40 typo-caption text-foreground/70 cursor-pointer transition-colors"
+                data-testid="vault-connector-picker-add"
+              >
+                Open Catalog
+              </button>
+            )}
+          </div>
+        </div>
+        {showQuickAdd && (
+          <QuickAddCredentialModal
+            category={category}
+            onCredentialAdded={(serviceType) => {
+              setShowQuickAdd(false);
+              // Auto-fill the picker's value so the user doesn't have to click
+              // the freshly-added card. The vault store's reactive update
+              // re-renders the populated state on the next tick.
+              onChange(serviceType);
+            }}
+            onClose={() => setShowQuickAdd(false)}
+          />
         )}
-      </div>
+      </>
     );
   }
 
