@@ -2,6 +2,7 @@ import { FlaskConical, X } from 'lucide-react';
 import type { SimulationResult } from './credentialGraph';
 import { getSeverityStyles } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import { escapeHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import {
   AffectedPersonas,
   AffectedWorkflows,
@@ -21,6 +22,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
 
   const workflowPlural = simulation.totalAffectedWorkflows !== 1 ? 's' : '';
   const personaPlural = simulation.totalAffectedPersonas !== 1 ? 's' : '';
+  const safeCredentialName = escapeHtml(simulation.credentialName);
 
   return (
     <div className="animate-fade-slide-in rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden">
@@ -67,7 +69,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_critical, {
-                  credentialName: `<strong class="text-fuchsia-400">${simulation.credentialName}</strong>`,
+                  credentialName: `<strong class="text-fuchsia-400">${safeCredentialName}</strong>`,
                   workflows: `<strong class="text-red-400">${simulation.totalAffectedWorkflows}</strong>`,
                   workflowPlural,
                   personas: simulation.totalAffectedPersonas,
@@ -79,7 +81,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_high, {
-                  credentialName: `<strong class="text-red-400">${simulation.credentialName}</strong>`,
+                  credentialName: `<strong class="text-red-400">${safeCredentialName}</strong>`,
                   personas: simulation.totalAffectedPersonas,
                   personaPlural,
                 }),
@@ -89,7 +91,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_medium, {
-                  credentialName: `<strong class="text-amber-400">${simulation.credentialName}</strong>`,
+                  credentialName: `<strong class="text-amber-400">${safeCredentialName}</strong>`,
                 }),
               }}
             />

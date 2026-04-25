@@ -336,7 +336,8 @@ async fn handle_share_download(Path(token): Path<String>) -> impl IntoResponse {
 
     drop(store);
 
-    tracing::info!(token = %token, bytes = bytes.len(), action = "share_link_downloaded", "Share link downloaded");
+    let token_prefix: String = token.chars().take(8).collect();
+    tracing::info!(token_prefix = %token_prefix, bytes = bytes.len(), action = "share_link_downloaded", "Share link downloaded");
 
     (
         StatusCode::OK,

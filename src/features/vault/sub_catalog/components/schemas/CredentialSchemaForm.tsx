@@ -56,7 +56,9 @@ export function CredentialSchemaForm({
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
   const health = useCredentialHealth(config.healthKey);
-  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
+  // Picker dispatch — global <ResourcePickerHost /> renders the modal so it
+  // survives this form's unmount on `onComplete()` after save.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   const activeSubType = (config.subTypes.find((st) => st.id === subTypeId) ?? config.subTypes[0])!;
   const hasHealthcheck = !!activeSubType.healthcheck || !!config.customHealthcheck;
@@ -140,11 +142,10 @@ export function CredentialSchemaForm({
 
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
 
-      // If the connector declares resources[], prompt for scope before completing.
-      // Only runs when healthcheck passed — no point listing resources if auth is broken.
-      if (health.result?.success === true) {
-        await promptIfScoped({ credentialId: newCredId, serviceType });
-      }
+      // Prompt for scope if the connector declares resources[]. The picker
+      // is rendered globally; list errors surface inline. No-op when there
+      // are no resources, so safe to call unconditionally.
+      await promptIfScoped({ credentialId: newCredId, serviceType });
 
       onComplete();
     } catch (err) {
@@ -162,7 +163,6 @@ export function CredentialSchemaForm({
       className="animate-fade-slide-in space-y-4"
       data-testid="vault-schema-form"
     >
-      {resourcePickerElement}
       {showHeader && <SchemaFormHeader config={config} onBack={onBack} />}
 
       {!nameOverride && (

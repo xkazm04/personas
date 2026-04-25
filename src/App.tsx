@@ -8,6 +8,7 @@ import { useAuthStore } from "@/stores/authStore";
 import VibeThemeProvider from "@/features/shared/components/layout/VibeThemeProvider";
 import { AriaLiveProvider } from "@/features/shared/components/feedback/AriaLiveProvider";
 import { ChartGradientDefs } from "@/features/overview/sub_usage/components/ChartGradientDefs";
+import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/picker/ResourcePickerHost";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
@@ -189,6 +190,11 @@ export default function App() {
           )}
           <ChartGradientDefs />
           <ToastContainer />
+          {/* Global host for the credential resource-scope picker.
+              Mounted at App root so the picker outlives parent unmounts
+              when Catalog dispatches GO_LIST, autopilot panels reset,
+              or edit forms close after save. */}
+          <ResourcePickerHost />
           {import.meta.env.DEV && isMobilePreview && (
             <div className="fixed top-1 right-1 z-[999] px-2 py-1 rounded-card bg-cyan-500/90 text-white typo-caption font-bold shadow-elevation-3 pointer-events-none select-none">
               MOBILE PREVIEW

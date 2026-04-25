@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { useGoogleOAuth } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { useVaultStore } from "@/stores/vaultStore";
 import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 import type { WorkspaceProvider, WorkspaceService } from './workspaceProviders';
 import { aggregateScopes } from './workspaceProviders';
 
@@ -39,6 +40,8 @@ export interface WorkspaceConnectState {
 
 export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConnectState {
   const createCredential = useVaultStore((s) => s.createCredential);
+  // Picker dispatch — global <ResourcePickerHost /> renders the modal.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   const [selectedServices, setSelectedServices] = useState<WorkspaceService[]>(
     () => [...provider.services],
@@ -82,6 +85,9 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
             },
           });
           states[i] = { ...state, status: 'created', credentialId: credId };
+          // Prompt for scope if this connector has resources[]. Global host
+          // outlives this hook's caller unmount.
+          await promptIfScoped({ credentialId: credId, serviceType: svc.serviceType });
         } catch (err) {
           states[i] = {
             ...state,
@@ -97,7 +103,7 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
       const anyFailed = states.some((s) => s.status === 'failed');
       setPhase(anyFailed ? 'error' : 'done');
     },
-    [createCredential, provider.id],
+    [createCredential, provider.id, promptIfScoped],
   );
 
   const provisionRef = useRef(provisionCredentials);

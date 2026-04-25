@@ -10,6 +10,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { OverviewSections } from './OverviewSections';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 
 export interface OverviewTabProps {
   credential: CredentialMetadata;
@@ -51,6 +52,8 @@ export function OverviewTab({
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateCredential = useVaultStore((s) => s.updateCredential);
+  // Picker dispatch — modal is rendered by global <ResourcePickerHost />.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   const copyCredentialId = useCallback(async () => {
     try {
@@ -81,6 +84,14 @@ export function OverviewTab({
               await updateCredential(credential.id, { data: values });
               googleOAuth.reset();
               setIsEditing(false);
+              // Open the resource picker if the connector declares any.
+              // promptIfScoped is a no-op when there are no resources;
+              // list errors surface inline in the picker, so we don't
+              // gate behind a pre-save healthcheck.
+              await promptIfScoped({
+                credentialId: credential.id,
+                serviceType: credential.service_type,
+              });
             } catch (err) {
               setEditError(err instanceof Error ? err.message : sh.failed_update);
             }

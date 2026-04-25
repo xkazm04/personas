@@ -46,16 +46,18 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   const adapter = mode === 'guided' ? tauriGuidedAdapter : tauriPlaywrightAdapter;
   const session = useAutoCredSession({ adapter });
-  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
+  // Picker dispatch — global <ResourcePickerHost /> renders the modal.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   /**
    * Wrap session.save so a successful save triggers the post-save resource
-   * scope picker (when the connector declares resources[]). No-op for
-   * connectors without resources or when healthcheck didn't pass.
+   * scope picker. No-op for connectors without `resources[]`. List-endpoint
+   * errors surface inside the picker, so we don't gate behind a pre-save
+   * healthcheck — let the user see the picker even if their token is bad.
    */
   const handleSave = async () => {
     const result = await session.save();
-    if (result && result.healthcheckPassed) {
+    if (result) {
       await promptIfScoped({ credentialId: result.id, serviceType: result.serviceType });
     }
   };
@@ -100,7 +102,6 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
 
   return (
     <div className="space-y-4">
-      {resourcePickerElement}
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
           <motion.div key="consent" {...phaseTransition}>

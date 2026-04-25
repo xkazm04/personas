@@ -1,18 +1,19 @@
 /**
- * Post-save orchestration for credential resource scoping.
+ * Caller-side hook — fires the global resource-picker store.
  *
- * Flow: caller awaits `createCredential` → calls `promptIfScoped(credentialId, serviceType)`.
- * If the connector declares `resources[]`, we render the picker as a portal'd
- * modal and resolve the promise when it closes (commit or skip).
+ * After a credential save, callers do:
+ *   await promptIfScoped({ credentialId, serviceType });
  *
- * The goal: no "Scope" tab in card details; the picker is a natural step at
- * credential-creation time, visible in both the manual schema form and the
- * auto-add / autopilot flows.
+ * The promise resolves when the user commits, skips, or cancels the picker
+ * (or immediately when the connector has no `resources[]`). The picker UI
+ * itself lives in `<ResourcePickerHost />` mounted at App root, so the
+ * promise survives the caller's parent unmounting on view transitions
+ * (Catalog GO_LIST after save, autopilot reset, edit form close).
  */
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import type { ConnectorDefinition, ResourceSpec } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
-import { ResourcePicker } from './ResourcePicker';
+import { useResourcePickerStore } from './resourcePickerStore';
 
 type PromptArgs = {
   credentialId: string;
@@ -21,12 +22,7 @@ type PromptArgs = {
 
 export function usePostSaveResourcePicker() {
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
-  const [active, setActive] = useState<{
-    credentialId: string;
-    connectorLabel: string;
-    specs: ResourceSpec[];
-    resolve: () => void;
-  } | null>(null);
+  const prompt = useResourcePickerStore((s) => s.prompt);
 
   const promptIfScoped = useCallback(
     async ({ credentialId, serviceType }: PromptArgs): Promise<void> => {
@@ -35,31 +31,14 @@ export function usePostSaveResourcePicker() {
         | undefined;
       const specs = connector?.resources ?? [];
       if (!connector || specs.length === 0) return;
-
-      return new Promise<void>((resolve) => {
-        setActive({
-          credentialId,
-          connectorLabel: connector.label,
-          specs,
-          resolve,
-        });
+      await prompt({
+        credentialId,
+        connectorLabel: connector.label,
+        specs,
       });
     },
-    [connectorDefinitions],
+    [connectorDefinitions, prompt],
   );
 
-  const element = active ? (
-    <ResourcePicker
-      credentialId={active.credentialId}
-      connectorLabel={active.connectorLabel}
-      specs={active.specs}
-      onClose={() => {
-        const r = active.resolve;
-        setActive(null);
-        r();
-      }}
-    />
-  ) : null;
-
-  return { promptIfScoped, element };
+  return { promptIfScoped };
 }

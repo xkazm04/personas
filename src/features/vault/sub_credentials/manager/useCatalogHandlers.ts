@@ -6,6 +6,7 @@ import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialViewState } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import type { CredentialViewAction } from '@/features/vault/shared/hooks/useCredentialViewFSM';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 
 interface CatalogFormData {
   connector: ConnectorDefinition;
@@ -41,6 +42,11 @@ export function useCatalogHandlers({
     serviceType: viewState.view === 'catalog-form' ? viewState.connector.name : null,
   });
 
+  // Resource scope picker — global host renders the modal, this handler just
+  // dispatches into the store. Survives the GO_LIST view transition that
+  // unmounts the form after save.
+  const { promptIfScoped } = usePostSaveResourcePicker();
+
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
     if (!catalogFormData) return;
     // Populate the form with OAuth tokens so the user can test and confirm before saving.
@@ -75,14 +81,20 @@ export function useCatalogHandlers({
   const handleCreateCredential = async (values: Record<string, string>) => {
     if (!catalogFormData) return;
     const name = catalogFormData.credentialName.trim() || `${catalogFormData.connector.label} Credential`;
+    const serviceType = catalogFormData.connector.name;
     setError(null);
     try {
-      await createCredential({
+      const newCredId = await createCredential({
         name,
-        service_type: catalogFormData.connector.name,
+        service_type: serviceType,
         data: values,
       });
       await fetchCredentials();
+      // Prompt for scope BEFORE GO_LIST so the catalog form stays mounted
+      // (visually obscured by the picker) until the user commits or skips.
+      // The global ResourcePickerHost would handle this either way, but
+      // keeping the flow here is clearer: form save → scope → list.
+      await promptIfScoped({ credentialId: newCredId, serviceType });
       dispatch({ type: 'GO_LIST' });
       setCredentialSearch('');
     } catch {

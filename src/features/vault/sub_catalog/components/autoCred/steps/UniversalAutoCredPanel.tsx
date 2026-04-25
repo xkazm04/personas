@@ -31,7 +31,8 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
   const createCredential = useVaultStore((s) => s.createCredential);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
-  const { promptIfScoped, element: resourcePickerElement } = usePostSaveResourcePicker();
+  // Picker dispatch — global <ResourcePickerHost /> renders the modal.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   useEffect(() => {
     checkPlaywrightAvailable()
@@ -147,10 +148,8 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
 
       await fetchCredentials();
 
-      // Scope picker — only prompt after a successful healthcheck.
-      if (session.healthResult?.success === true) {
-        await promptIfScoped({ credentialId: newCredId, serviceType });
-      }
+      // Always prompt — picker is no-op if no resources[] on the connector.
+      await promptIfScoped({ credentialId: newCredId, serviceType });
 
       session.reset();
       setPhase('input');
@@ -173,28 +172,23 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
 
   if (phase === 'input') {
     return (
-      <>
-        {resourcePickerElement}
-        <UniversalAutoCredInputPhase
-          serviceUrl={serviceUrl}
-          onServiceUrlChange={setServiceUrl}
-          description={description}
-          onDescriptionChange={setDescription}
-          isValidUrl={isValidUrl}
-          modeChecked={modeChecked}
-          mode={mode}
-          onStart={handleStart}
-          onCancel={onCancel}
-          onKeyDown={handleKeyDown}
-        />
-      </>
+      <UniversalAutoCredInputPhase
+        serviceUrl={serviceUrl}
+        onServiceUrlChange={setServiceUrl}
+        description={description}
+        onDescriptionChange={setDescription}
+        isValidUrl={isValidUrl}
+        modeChecked={modeChecked}
+        mode={mode}
+        onStart={handleStart}
+        onCancel={onCancel}
+        onKeyDown={handleKeyDown}
+      />
     );
   }
 
   return (
-    <>
-      {resourcePickerElement}
-      <UniversalAutoCredRunningPhase
+    <UniversalAutoCredRunningPhase
         session={session}
         mode={mode}
         universalSaving={universalSaving}
@@ -202,6 +196,5 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
         onCancel={handleCancel}
         onComplete={onComplete}
       />
-    </>
   );
 }
