@@ -60,6 +60,72 @@
         "mode": "client"
       },
       "cache_ttl_seconds": 1800
+    },
+    {
+      "id": "spaces",
+      "label": "Spaces",
+      "description": "Spaces inside the picked workspace.",
+      "selection": "multi",
+      "depends_on": [
+        "workspaces"
+      ],
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/team/{{selected.workspaces.id}}/space?archived=false",
+        "headers": {
+          "Authorization": "{{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "spaces",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "private": "private",
+          "archived": "archived"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    },
+    {
+      "id": "lists",
+      "label": "Lists",
+      "description": "Folder-less lists inside the picked space. (Folder-nested lists are not exposed at this level.)",
+      "selection": "multi",
+      "depends_on": [
+        "spaces"
+      ],
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.clickup.com/api/v2/space/{{selected.spaces.id}}/list?archived=false",
+        "headers": {
+          "Authorization": "{{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "lists",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "task_count": "task_count",
+          "archived": "archived"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
     }
   ],
   "metadata": {

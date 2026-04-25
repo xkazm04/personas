@@ -391,6 +391,14 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "twilio_sms" => Some("https://api.twilio.com"),
         "zapier" => Some("https://api.zapier.com"),
         "asana" => Some("https://app.asana.com/api/1.0"),
+        // azure_devops_org: org-aware variant. Base URL is org-agnostic; the
+        // org lives in scoped_resources.organizations[0].id and agents inject
+        // it via the §4.1 from_scope auto-fill, producing calls like
+        // `/{org}/_apis/projects?…`. The §5 enforce regex on the
+        // `organizations` resource validates the picked org appears in path.
+        // (The narrow `azure_devops` connector takes the org from a credential
+        //  field instead — see dynamic_base_url below.)
+        "azure_devops_org" => Some("https://dev.azure.com"),
         "canva" => Some("https://api.canva.com/rest/v1"),
         "attio" => Some("https://api.attio.com/v2"),
         "crisp" => Some("https://api.crisp.chat/v1"),
@@ -422,6 +430,14 @@ fn dynamic_base_url(service_type: &str, fields: &HashMap<String, String>) -> Opt
         "telegram" => {
             let token = fields.get("bot_token")?;
             Some(format!("https://api.telegram.org/bot{token}"))
+        }
+        // Narrow Azure DevOps: org is a credential field, baked into the
+        // base URL so agents can call `path = "/_apis/projects/..."` without
+        // knowing the org. Sibling `azure_devops_org` connector takes the
+        // org from scoped picks instead — see well_known_base_url above.
+        "azure_devops" => {
+            let org = fields.get("organization")?;
+            Some(format!("https://dev.azure.com/{org}"))
         }
         _ => None,
     }
@@ -560,6 +576,50 @@ pub async fn execute_api_request(
         .iter()
         .find(|c| c.name == credential.service_type);
     let connector_metadata = connector.and_then(|c| c.metadata.as_deref());
+
+    // §5 — runtime scope enforcement. Block (or warn) if the request operates
+    // on a resource the user did not pick during scoping. Pure pass-through
+    // when the credential is broad-scoped or the connector declares no
+    // `enforce` rules. Mode comes from the credential's metadata
+    // (`scope_enforcement: "block"` flips warn-only to hard reject).
+    let enforcement_mode = super::scope_enforcement::EnforcementMode::from_metadata(
+        credential.metadata.as_deref(),
+    );
+    let connector_resources = connector.and_then(|c| c.resources.as_deref());
+    let outcome = super::scope_enforcement::evaluate(
+        connector_resources,
+        credential.scoped_resources.as_deref(),
+        path,
+        enforcement_mode,
+    )?;
+    use super::scope_enforcement::EnforcementOutcome;
+    match outcome {
+        EnforcementOutcome::Allow => {}
+        EnforcementOutcome::WarnOnly { resource, attempted_id } => {
+            tracing::warn!(
+                credential_id = %credential.id,
+                service_type = %credential.service_type,
+                resource = %resource,
+                attempted_id = %attempted_id,
+                path = %path,
+                "scope_enforcement: out-of-scope request (warn-only mode)"
+            );
+        }
+        EnforcementOutcome::Block { resource, attempted_id } => {
+            tracing::warn!(
+                credential_id = %credential.id,
+                service_type = %credential.service_type,
+                resource = %resource,
+                attempted_id = %attempted_id,
+                path = %path,
+                "scope_enforcement: blocked out-of-scope request"
+            );
+            return Err(AppError::Forbidden(format!(
+                "Credential is scoped to a subset of {resource}; request targets '{attempted_id}' which is not in scope. \
+                 Add it via the credential's Scope picker, or set scope_enforcement=warn to allow with a log entry."
+            )));
+        }
+    }
 
     // Per-credential rate limiting (token-bucket, default 60 req/min)
     check_rate_limit(credential_id, connector_metadata).await?;

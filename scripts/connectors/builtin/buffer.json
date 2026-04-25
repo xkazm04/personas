@@ -28,6 +28,38 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "profiles",
+      "label": "Profiles",
+      "description": "Connected social profiles (Twitter, LinkedIn, Facebook, etc.) that this Buffer access token can publish to.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.bufferapp.com/1/profiles.json?access_token={{access_token}}",
+        "headers": {},
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "id",
+        "label": "formatted_username",
+        "sublabel": "service",
+        "meta": {
+          "service": "service",
+          "service_username": "service_username",
+          "timezone": "timezone"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Buffer social media management for scheduling and publishing.",

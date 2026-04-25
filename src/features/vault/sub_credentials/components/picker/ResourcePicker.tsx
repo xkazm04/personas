@@ -40,6 +40,8 @@ type FetchState = {
   loading: boolean;
   items: ResourceItem[];
   error: string | null;
+  /** True after the first successful fetch — gates stale detection. */
+  fetched: boolean;
 };
 
 export function ResourcePicker({
@@ -59,7 +61,7 @@ export function ResourcePicker({
   const orderedSpecs = useMemo(() => topoSortSpecs(specs), [specs]);
 
   const fetchSpec = useCallback(
-    async (spec: ResourceSpec) => {
+    async (spec: ResourceSpec, bypassCache = false) => {
       // Gate on any unresolved depends_on
       for (const dep of spec.depends_on ?? []) {
         if (!selections[dep]?.length) {
@@ -69,6 +71,7 @@ export function ResourcePicker({
               loading: false,
               items: [],
               error: `Pick a ${dep} first`,
+              fetched: false,
             },
           }));
           return;
@@ -77,7 +80,7 @@ export function ResourcePicker({
 
       setState((s) => ({
         ...s,
-        [spec.id]: { loading: true, items: [], error: null },
+        [spec.id]: { ...(s[spec.id] ?? { items: [], error: null, fetched: false }), loading: true, error: null },
       }));
 
       try {
@@ -86,16 +89,16 @@ export function ResourcePicker({
           const first = selections[dep]?.[0];
           if (first) ctx[dep] = first;
         }
-        const items = await listConnectorResources(credentialId, spec.id, ctx);
+        const items = await listConnectorResources(credentialId, spec.id, ctx, bypassCache);
         setState((s) => ({
           ...s,
-          [spec.id]: { loading: false, items, error: null },
+          [spec.id]: { loading: false, items, error: null, fetched: true },
         }));
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : String(e);
         setState((s) => ({
           ...s,
-          [spec.id]: { loading: false, items: [], error: msg },
+          [spec.id]: { loading: false, items: [], error: msg, fetched: false },
         }));
       }
     },
@@ -190,7 +193,7 @@ export function ResourcePicker({
 
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
         {orderedSpecs.map((spec) => {
-          const st = state[spec.id] ?? { loading: false, items: [], error: null };
+          const st = state[spec.id] ?? { loading: false, items: [], error: null, fetched: false };
           const q = (search[spec.id] ?? '').toLowerCase();
           const visible = q
             ? st.items.filter(
@@ -201,6 +204,21 @@ export function ResourcePicker({
               )
             : st.items;
           const picked = selections[spec.id] ?? [];
+          // Picks that don't appear in the freshly-fetched list — most often
+          // because the resource was deleted upstream, or the credential lost
+          // access to it. Only computed once we have a real response (not on
+          // load or error) so a transient zero-results state doesn't flag
+          // every pick as stale.
+          const stalePicks = st.fetched
+            ? picked.filter((p) => !st.items.some((i) => i.id === p.id))
+            : [];
+          const dropStale = () =>
+            setSelections((prev) => ({
+              ...prev,
+              [spec.id]: (prev[spec.id] ?? []).filter(
+                (p) => !stalePicks.some((s) => s.id === p.id),
+              ),
+            }));
           return (
             <section key={spec.id}>
               <div className="flex items-center justify-between mb-2">
@@ -224,7 +242,7 @@ export function ResourcePicker({
                     </span>
                   )}
                   <button
-                    onClick={() => fetchSpec(spec)}
+                    onClick={() => fetchSpec(spec, true)}
                     className="p-1.5 rounded-interactive hover:bg-foreground/5 text-foreground/60 hover:text-foreground transition-colors"
                     title="Refresh"
                     disabled={st.loading}
@@ -240,6 +258,38 @@ export function ResourcePicker({
                 <div className="mb-2 px-3 py-2 rounded-input bg-status-warning/10 border border-status-warning/30 flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5" />
                   <p className="typo-caption text-status-warning">{st.error}</p>
+                </div>
+              )}
+
+              {stalePicks.length > 0 && (
+                <div
+                  data-testid={`resource-stale-${spec.id}`}
+                  className="mb-2 px-3 py-2 rounded-input bg-status-warning/10 border border-status-warning/30 flex items-start gap-2"
+                >
+                  <AlertTriangle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="typo-caption text-status-warning font-medium">
+                      {stalePicks.length} pick{stalePicks.length === 1 ? '' : 's'} no longer exist
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {stalePicks.map((p) => (
+                        <span
+                          key={p.id}
+                          className="typo-caption px-2 py-0.5 rounded bg-status-warning/20 text-status-warning line-through"
+                          title={p.id}
+                        >
+                          {p.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <button
+                    onClick={dropStale}
+                    data-testid={`resource-drop-stale-${spec.id}`}
+                    className="typo-caption px-2 py-1 rounded-interactive bg-status-warning/20 hover:bg-status-warning/30 text-status-warning transition-colors flex-shrink-0"
+                  >
+                    Drop stale
+                  </button>
                 </div>
               )}
 

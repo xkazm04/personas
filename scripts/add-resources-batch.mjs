@@ -369,6 +369,8 @@ const SPECS = {
         pagination: { type: 'none' },
       },
       response_mapping: {
+        // gid is the workspace's stable id; surface it as `id` so chained
+        // resources can reference it via {{selected.workspaces.id}}.
         items_path: 'data', id: 'gid', label: 'name',
         meta: { resource_type: 'resource_type' },
       },
@@ -376,11 +378,12 @@ const SPECS = {
     },
     {
       id: 'projects', label: 'Projects',
-      description: 'Active Asana projects across all accessible workspaces.',
+      description: 'Active Asana projects in the picked workspace. Pick a workspace first.',
       selection: 'multi',
+      depends_on: ['workspaces'],
       list_endpoint: {
         method: 'GET',
-        url: 'https://app.asana.com/api/1.0/projects?archived=false&limit=100',
+        url: 'https://app.asana.com/api/1.0/workspaces/{{selected.workspaces.id}}/projects?archived=false&limit=100',
         headers: { Authorization: 'Bearer {{personal_access_token}}' },
         pagination: { type: 'none' },
       },
@@ -521,24 +524,10 @@ const SPECS = {
   ],
 
   attio: [
-    {
-      id: 'workspaces', label: 'Workspaces',
-      description: 'Attio workspaces accessible to the access token.',
-      selection: 'single_or_all',
-      list_endpoint: {
-        method: 'GET',
-        url: 'https://api.attio.com/v2/self',
-        headers: { Authorization: 'Bearer {{access_token}}' },
-        pagination: { type: 'none' },
-      },
-      response_mapping: {
-        items_path: '$',
-        id: 'workspace_id',
-        label: 'workspace_name',
-        meta: { active: 'active' },
-      },
-      search: { supported: false, mode: 'client' }, cache_ttl_seconds: 3600,
-    },
+    // NOTE: workspaces resource was removed — Attio access tokens are bound
+    // to a single workspace at issue time, and `/v2/self` returns a flat
+    // object (not an array) with no `workspace_name` field. The auth choice
+    // already pins the workspace, so there's nothing for the user to pick.
     {
       id: 'lists', label: 'Lists',
       description: 'Attio lists (custom views over collections).',
@@ -574,6 +563,40 @@ const SPECS = {
       },
       search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
     },
+    {
+      id: 'spaces', label: 'Spaces',
+      description: 'Spaces inside the picked workspace.',
+      selection: 'multi',
+      depends_on: ['workspaces'],
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://api.clickup.com/api/v2/team/{{selected.workspaces.id}}/space?archived=false',
+        headers: { Authorization: '{{api_key}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'spaces', id: 'id', label: 'name',
+        meta: { private: 'private', archived: 'archived' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
+    },
+    {
+      id: 'lists', label: 'Lists',
+      description: 'Folder-less lists inside the picked space. (Folder-nested lists are not exposed at this level.)',
+      selection: 'multi',
+      depends_on: ['spaces'],
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://api.clickup.com/api/v2/space/{{selected.spaces.id}}/list?archived=false',
+        headers: { Authorization: '{{api_key}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'lists', id: 'id', label: 'name',
+        meta: { task_count: 'task_count', archived: 'archived' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
+    },
   ],
 
   neon: [
@@ -600,6 +623,9 @@ const SPECS = {
     },
   ],
 
+  // Narrow-PAT path: organization is a credential field, projects scope under it.
+  // For PATs that include User Profile (read) scope, use the
+  // `azure-devops-org` connector instead, which lets the user pick orgs.
   'azure-devops': [
     {
       id: 'projects', label: 'Projects',
@@ -608,6 +634,49 @@ const SPECS = {
       list_endpoint: {
         method: 'GET',
         url: 'https://dev.azure.com/{{organization}}/_apis/projects?api-version=7.1&$top=200',
+        headers: { Authorization: 'Basic {{base64(:pat)}}', Accept: 'application/json' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'name', sublabel: 'description',
+        meta: { state: 'state', visibility: 'visibility', url: 'url' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 600,
+    },
+  ],
+
+  // Org-aware variant: PAT includes User Profile (read) scope, no field for
+  // organization — the user picks an org from the scope picker, projects
+  // chain on it.
+  'azure-devops-org': [
+    {
+      id: 'organizations', label: 'Organizations',
+      description: 'Azure DevOps organizations the PAT can access. Requires User Profile (read) scope on the PAT.',
+      selection: 'single',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.1',
+        headers: { Authorization: 'Basic {{base64(:pat)}}', Accept: 'application/json' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'accountName', label: 'accountName',
+        sublabel: 'organizationName',
+        meta: { accountId: 'accountId', accountUri: 'accountUri' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+      // §5 — runtime requests must target the picked org. Base URL is
+      // `https://dev.azure.com`, so paths look like `/{org}/_apis/...`.
+      enforce: { url_regex: '^/?([^/?#]+)/_apis/', id_capture: 1 },
+    },
+    {
+      id: 'projects', label: 'Projects',
+      description: 'Projects in the picked organization. Pick an organization first.',
+      selection: 'multi',
+      depends_on: ['organizations'],
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://dev.azure.com/{{selected.organizations.id}}/_apis/projects?api-version=7.1&$top=200',
         headers: { Authorization: 'Basic {{base64(:pat)}}', Accept: 'application/json' },
         pagination: { type: 'none' },
       },
@@ -651,6 +720,236 @@ const SPECS = {
         meta: { id: 'id', platform: 'platform', organization: 'organization.slug' },
       },
       search: { supported: true, mode: 'client' }, cache_ttl_seconds: 600,
+    },
+  ],
+
+  gmail: [
+    {
+      id: 'labels', label: 'Labels',
+      description: "User-defined Gmail labels. Scoping a credential to specific labels lets agents only read or modify mail under those labels.",
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://gmail.googleapis.com/gmail/v1/users/me/labels',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'labels', id: 'id', label: 'name', sublabel: 'type',
+        meta: { type: 'type', messageListVisibility: 'messageListVisibility', labelListVisibility: 'labelListVisibility' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+  ],
+
+  'microsoft-outlook': [
+    {
+      id: 'folders', label: 'Mail folders',
+      description: 'Top-level mail folders in the user mailbox. Scope so agents only operate inside chosen folders (e.g. Inbox, Archive).',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/me/mailFolders?$top=100',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'displayName', sublabel: 'parentFolderId',
+        meta: { totalItemCount: 'totalItemCount', unreadItemCount: 'unreadItemCount', parentFolderId: 'parentFolderId' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+  ],
+
+  'google-calendar': [
+    {
+      id: 'calendars', label: 'Calendars',
+      description: "Calendars in the user's calendar list. Scope so an agent only reads or writes the calendars you intend.",
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'items', id: 'id', label: 'summary', sublabel: 'description',
+        meta: { primary: 'primary', accessRole: 'accessRole', timeZone: 'timeZone' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+  ],
+
+  'microsoft-calendar': [
+    {
+      id: 'calendars', label: 'Calendars',
+      description: "Calendars on the user's Outlook account.",
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/me/calendars?$top=100',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'name',
+        meta: { isDefaultCalendar: 'isDefaultCalendar', canEdit: 'canEdit', owner: 'owner.name' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+  ],
+
+  'microsoft-teams': [
+    {
+      id: 'teams', label: 'Teams',
+      description: 'Teams the user has joined. Scope so an agent only posts into intended workspaces.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/me/joinedTeams',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'displayName', sublabel: 'description',
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+    {
+      id: 'channels', label: 'Channels',
+      description: 'Channels inside the picked team.',
+      selection: 'multi',
+      depends_on: ['teams'],
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/teams/{{selected.teams.id}}/channels',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'displayName', sublabel: 'description',
+        meta: { membershipType: 'membershipType' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
+    },
+  ],
+
+  sharepoint: [
+    {
+      id: 'sites', label: 'Sites',
+      description: 'SharePoint sites the user can search.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/sites?search=*',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'displayName', sublabel: 'webUrl',
+        meta: { name: 'name', webUrl: 'webUrl' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+    {
+      id: 'lists', label: 'Lists',
+      description: 'Document libraries and lists on the picked site.',
+      selection: 'multi',
+      depends_on: ['sites'],
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://graph.microsoft.com/v1.0/sites/{{selected.sites.id}}/lists',
+        headers: { Authorization: 'Bearer {{access_token}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'value', id: 'id', label: 'displayName', sublabel: 'description',
+        meta: { webUrl: 'webUrl', list_template: 'list.template' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
+    },
+  ],
+
+  buffer: [
+    {
+      id: 'profiles', label: 'Profiles',
+      description: 'Connected social profiles (Twitter, LinkedIn, Facebook, etc.) that this Buffer access token can publish to.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        // Buffer v1 takes the token as a query param, not a header.
+        url: 'https://api.bufferapp.com/1/profiles.json?access_token={{access_token}}',
+        headers: {},
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: '$', id: 'id', label: 'formatted_username', sublabel: 'service',
+        meta: { service: 'service', service_username: 'service_username', timezone: 'timezone' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
+    },
+  ],
+
+  stripe: [
+    {
+      id: 'products', label: 'Products',
+      description: 'Stripe products on this account. Scope a credential to specific products so an agent that creates checkout sessions or invoices can only reach those.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://api.stripe.com/v1/products?limit=100&active=true',
+        headers: { Authorization: 'Bearer {{api_key}}' },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'data', id: 'id', label: 'name', sublabel: 'description',
+        meta: { active: 'active', livemode: 'livemode' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 600,
+    },
+  ],
+
+  mixpanel: [
+    {
+      id: 'projects', label: 'Projects',
+      description: 'Mixpanel projects the service account can access.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://mixpanel.com/api/app/projects/',
+        headers: {
+          Authorization: 'Basic {{base64(service_account_username:service_account_secret)}}',
+          Accept: 'application/json',
+        },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: '$', id: 'id', label: 'name',
+        meta: { timezone: 'timezone', organization: 'organization' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 1800,
+    },
+  ],
+
+  'twilio-sms': [
+    {
+      id: 'phone_numbers', label: 'Phone numbers',
+      description: 'Numbers owned by this Twilio account. Scope to limit which numbers an agent can send from.',
+      selection: 'multi',
+      list_endpoint: {
+        method: 'GET',
+        url: 'https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}/IncomingPhoneNumbers.json?PageSize=100',
+        headers: {
+          Authorization: 'Basic {{base64(account_sid:auth_token)}}',
+          Accept: 'application/json',
+        },
+        pagination: { type: 'none' },
+      },
+      response_mapping: {
+        items_path: 'incoming_phone_numbers', id: 'sid', label: 'phone_number', sublabel: 'friendly_name',
+        meta: { capabilities: 'capabilities', status: 'status', country: 'iso_country' },
+      },
+      search: { supported: true, mode: 'client' }, cache_ttl_seconds: 3600,
     },
   ],
 };

@@ -1294,6 +1294,7 @@ pub fn run() {
             commands::credentials::resources::get_scoped_resources,
             commands::credentials::resources::save_scoped_resources,
             commands::credentials::resources::list_connector_resources,
+            commands::credentials::resources::set_credential_scope_enforcement,
             // Credentials -- External API Keys (A2A Gateway management API auth)
             commands::credentials::external_api_keys::create_external_api_key,
             commands::credentials::external_api_keys::list_external_api_keys,

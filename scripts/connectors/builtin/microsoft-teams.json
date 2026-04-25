@@ -19,6 +19,68 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "teams",
+      "label": "Teams",
+      "description": "Teams the user has joined. Scope so an agent only posts into intended workspaces.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/me/joinedTeams",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "displayName",
+        "sublabel": "description"
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    },
+    {
+      "id": "channels",
+      "label": "Channels",
+      "description": "Channels inside the picked team.",
+      "selection": "multi",
+      "depends_on": [
+        "teams"
+      ],
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/teams/{{selected.teams.id}}/channels",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "displayName",
+        "sublabel": "description",
+        "meta": {
+          "membershipType": "membershipType"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Microsoft Teams messaging for sending messages, managing channels, and team collaboration via the Microsoft Graph API.",

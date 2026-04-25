@@ -301,9 +301,68 @@ This is the most critical section. Each sub-field must be detailed and technical
     "related_triggers": [0],
     "api_base_url": "https://...",
     "role": "functional_role",
-    "category": "service_category"
+    "category": "service_category",
+    "requires_resource": "repositories"
   }
   ```
+
+  **`requires_resource` (optional)** — pin this connector slot to credentials
+  that have at least one pick under the named scoped-resource id. The string
+  must match a `resources[].id` declared on the corresponding builtin
+  connector (e.g. `"repositories"` for github/gitlab, `"voices"` for
+  elevenlabs, `"channels"` for discord, `"projects"` for jira/sentry/linear/
+  notion/posthog/azure-devops, `"databases"` for notion, `"folders"` for
+  dropbox/google-drive/microsoft-outlook, `"workspaces"` for asana/clickup,
+  `"calendars"` for google-calendar/microsoft-calendar, `"teams"` for
+  microsoft-teams, `"sites"` for sharepoint, …).
+
+  When set, the adoption questionnaire will only surface credentials whose
+  `scoped_resources` blob has a non-empty array under that key — i.e. the
+  user has actually completed the post-save scope picker. Use this when your
+  template asks "Which X?" and you want to guarantee the answer is already
+  narrowed by the user's scope choice rather than asking again.
+
+  Slot-level `requires_resource` overrides any per-question
+  `dynamic_source.requires_resource`. Prefer slot-level — the constraint
+  lives next to the slot definition where authors expect it.
+
+### Auto-fill from scoped resources (§4.1)
+
+When a connector slot declares `requires_resource`, downstream questions can
+auto-fill from the user's scoped picks instead of asking again. Add a
+follow-up adoption question chained on the credential pick:
+
+```jsonc
+{
+  "id": "aq_target_repository",
+  "type": "select",
+  "scope": "connector",
+  "connector_names": ["github"],
+  "dynamic_source": {
+    "service_type": "source_control",
+    "operation": "list_scope_picks",
+    "source": "scope",
+    "from_scope": "repositories",
+    "from_credential_question": "aq_source_control"
+  },
+  "maps_to": "persona.connectors[github].credential_fields[repo].value",
+  "variable_name": "target_repository"
+}
+```
+
+Behavior:
+
+1. Adoption hook reads `userAnswers["aq_source_control"]` (the chosen
+   credential's `service_type`), resolves the matching vault credential, and
+   surfaces `scopedResources["repositories"]` as the option list.
+2. **Exactly one pick** → the answer is auto-set and shown with the
+   "auto-detected" badge — the user doesn't see a question to confirm.
+3. **Multiple picks** → rendered as a normal select; user picks which one.
+4. **Zero picks** → friendly error pointing the user to the credential's
+   scope picker.
+
+Use whenever your template asks a follow-up question whose options the user
+already pinned during scoping (repo, project, channel, calendar, …).
 
 - **suggested_notification_channels**: Array of notification targets. Use generic architecture roles (e.g., `"type": "messaging"` not `"type": "slack"`) so the user can choose their platform during adoption:
   ```json

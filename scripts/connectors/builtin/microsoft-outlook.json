@@ -20,6 +20,40 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "folders",
+      "label": "Mail folders",
+      "description": "Top-level mail folders in the user mailbox. Scope so agents only operate inside chosen folders (e.g. Inbox, Archive).",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/me/mailFolders?$top=100",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "displayName",
+        "sublabel": "parentFolderId",
+        "meta": {
+          "totalItemCount": "totalItemCount",
+          "unreadItemCount": "unreadItemCount",
+          "parentFolderId": "parentFolderId"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Microsoft Outlook email, calendar, and contacts automation via the Microsoft Graph API.",

@@ -1,0 +1,126 @@
+{
+  "id": "builtin-azure-devops-org",
+  "name": "azure_devops_org",
+  "label": "Azure DevOps (org-aware)",
+  "color": "#0078D7",
+  "icon_url": "/icons/connectors/azure-devops.svg",
+  "category": "source_control",
+  "categories": [
+    "source_control",
+    "ci_cd",
+    "devops"
+  ],
+  "fields": [
+    {
+      "key": "pat",
+      "label": "Personal Access Token",
+      "type": "password",
+      "required": true,
+      "placeholder": "",
+      "helpText": "Generate at dev.azure.com/{org}/_usersSettings/tokens. Must include 'User Profile (read)' scope (so the picker can list your orgs) plus the work scopes your agents need (Code, Work Items, Build, etc.). Use the plain 'Azure DevOps' connector for narrow PATs that don't include identity scope.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.1",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(:pat)}}",
+      "Accept": "application/json"
+    },
+    "description": "Validates PAT via Azure DevOps accounts endpoint (lists orgs the PAT has access to)"
+  },
+  "services": [],
+  "events": [],
+  "resources": [
+    {
+      "id": "organizations",
+      "label": "Organizations",
+      "description": "Azure DevOps organizations the PAT can access. Requires User Profile (read) scope on the PAT.",
+      "selection": "single",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://app.vssps.visualstudio.com/_apis/accounts?api-version=7.1",
+        "headers": {
+          "Authorization": "Basic {{base64(:pat)}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "accountName",
+        "label": "accountName",
+        "sublabel": "organizationName",
+        "meta": {
+          "accountId": "accountId",
+          "accountUri": "accountUri"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600,
+      "enforce": {
+        "url_regex": "^/?([^/?#]+)/_apis/",
+        "id_capture": 1
+      }
+    },
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Projects in the picked organization. Pick an organization first.",
+      "selection": "multi",
+      "depends_on": [
+        "organizations"
+      ],
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://dev.azure.com/{{selected.organizations.id}}/_apis/projects?api-version=7.1&$top=200",
+        "headers": {
+          "Authorization": "Basic {{base64(:pat)}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "state": "state",
+          "visibility": "visibility",
+          "url": "url"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Azure DevOps with org-level scoping. Pick which organization(s) and projects this credential should operate against.",
+    "auth_type": "pat",
+    "auth_type_label": "PAT",
+    "docs_url": "https://learn.microsoft.com/en-us/rest/api/azure/devops/",
+    "setup_guide": "1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) -> Personal Access Tokens\n3. Click 'New Token'\n4. IMPORTANT — under Scopes, check BOTH 'User Profile (read)' AND your work scopes (Code, Work Items, Build, etc.). Without User Profile (read), this connector cannot enumerate your organizations.\n5. Copy the generated token and paste it here\n6. After saving, the scope picker lists your organizations — pick one. Projects under that org are then listed for further scoping.\n\nIf your PAT is project-narrow (no identity scope), use the plain 'Azure DevOps' connector instead — it asks for the organization name as a field and works with any PAT scope.",
+    "pricing_tier": "freemium",
+    "auth_methods": [
+      {
+        "id": "pat",
+        "label": "PAT",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

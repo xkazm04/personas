@@ -741,13 +741,77 @@ async fn execute_healthcheck_request_with_strategy(
     }
 }
 
-/// Replace `{{key}}` placeholders in a template string with values from the map.
+/// Replace `{{...}}` placeholders in a template string.
+///
+/// Supported token forms:
+/// - `{{key}}` — flat lookup in `values`. Unresolved tokens are left verbatim
+///   so post-resolution validation (e.g. `validate_healthcheck_url`) can flag
+///   missing fields.
+/// - `{{key|fallback}}` — uses `values[key]` when present and non-empty,
+///   otherwise the literal text after `|`. Lets connectors hard-code default
+///   hosts (e.g. PostHog `{{host|https://us.posthog.com}}`).
+/// - `{{base64(a:b)}}` — looks up fields `a` and `b`, joins with `:`, and
+///   emits the standard-alphabet base64 encoding. Used for HTTP Basic auth
+///   (Jira, Confluence, Twilio, Azure DevOps, Mixpanel, Segment, Toggl).
+///   An empty side (`base64(:pat)` or `base64(write_key:)`) is allowed and
+///   contributes the empty string to the colon-joined input.
 pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>) -> String {
-    let mut resolved = template.to_string();
-    for (key, value) in values {
-        resolved = resolved.replace(&format!("{{{{{key}}}}}"), value);
+    let mut out = String::with_capacity(template.len());
+    let mut rest = template;
+    while let Some(start) = rest.find("{{") {
+        out.push_str(&rest[..start]);
+        let after_open = &rest[start + 2..];
+        let Some(close_rel) = after_open.find("}}") else {
+            out.push_str("{{");
+            out.push_str(after_open);
+            return out;
+        };
+        let inner = &after_open[..close_rel];
+        let after_close = &after_open[close_rel + 2..];
+        match resolve_token(inner, values) {
+            Some(resolved) => out.push_str(&resolved),
+            None => {
+                out.push_str("{{");
+                out.push_str(inner);
+                out.push_str("}}");
+            }
+        }
+        rest = after_close;
     }
-    resolved
+    out.push_str(rest);
+    out
+}
+
+fn resolve_token(inner: &str, values: &HashMap<String, String>) -> Option<String> {
+    if let Some(rest) = inner.strip_prefix("base64(") {
+        return rest.strip_suffix(')').and_then(|args| resolve_base64(args, values));
+    }
+    if let Some((key, fallback)) = inner.split_once('|') {
+        if let Some(v) = values.get(key) {
+            if !v.is_empty() {
+                return Some(v.clone());
+            }
+        }
+        return Some(fallback.to_string());
+    }
+    values.get(inner).cloned()
+}
+
+fn resolve_base64(args: &str, values: &HashMap<String, String>) -> Option<String> {
+    use base64::engine::general_purpose::STANDARD;
+    use base64::Engine;
+    let (a, b) = args.split_once(':')?;
+    let lhs = if a.is_empty() {
+        String::new()
+    } else {
+        values.get(a)?.clone()
+    };
+    let rhs = if b.is_empty() {
+        String::new()
+    } else {
+        values.get(b)?.clone()
+    };
+    Some(STANDARD.encode(format!("{lhs}:{rhs}")))
 }
 
 /// Validate that a URL template does not contain `{{...}}` placeholders in the
@@ -1375,5 +1439,139 @@ mod tests {
         let resolved = resolve_template(template, &values);
         assert_eq!(resolved, "https://xxxx.supabase.co/rest/v1/");
         assert!(validate_healthcheck_url(&resolved).is_ok());
+    }
+
+    // ---- resolve_template helper tests (§3.3) ----
+
+    fn b64(s: &str) -> String {
+        use base64::engine::general_purpose::STANDARD;
+        use base64::Engine;
+        STANDARD.encode(s)
+    }
+
+    #[test]
+    fn test_resolve_template_plain_key() {
+        let mut values = HashMap::new();
+        values.insert("api_key".into(), "sk-123".into());
+        assert_eq!(
+            resolve_template("Bearer {{api_key}}", &values),
+            "Bearer sk-123"
+        );
+    }
+
+    #[test]
+    fn test_resolve_template_missing_key_left_verbatim() {
+        let values = HashMap::new();
+        assert_eq!(
+            resolve_template("Bearer {{api_key}}", &values),
+            "Bearer {{api_key}}"
+        );
+    }
+
+    #[test]
+    fn test_resolve_template_multiple_substitutions() {
+        let mut values = HashMap::new();
+        values.insert("domain".into(), "acme.atlassian.net".into());
+        values.insert("email".into(), "u@acme.com".into());
+        values.insert("api_token".into(), "tok".into());
+        let resolved = resolve_template(
+            "https://{{domain}}/rest/api/3/myself|Basic {{base64(email:api_token)}}",
+            &values,
+        );
+        assert_eq!(
+            resolved,
+            format!("https://acme.atlassian.net/rest/api/3/myself|Basic {}", b64("u@acme.com:tok"))
+        );
+    }
+
+    #[test]
+    fn test_resolve_template_base64_both_sides() {
+        let mut values = HashMap::new();
+        values.insert("email".into(), "u@acme.com".into());
+        values.insert("api_token".into(), "tok".into());
+        let resolved = resolve_template("Basic {{base64(email:api_token)}}", &values);
+        assert_eq!(resolved, format!("Basic {}", b64("u@acme.com:tok")));
+    }
+
+    #[test]
+    fn test_resolve_template_base64_empty_username() {
+        // Azure DevOps form: PAT-only basic auth -> `:pat`
+        let mut values = HashMap::new();
+        values.insert("pat".into(), "azdoTOKEN".into());
+        let resolved = resolve_template("Basic {{base64(:pat)}}", &values);
+        assert_eq!(resolved, format!("Basic {}", b64(":azdoTOKEN")));
+    }
+
+    #[test]
+    fn test_resolve_template_base64_empty_password() {
+        // Segment form: write_key as username, empty password -> `write_key:`
+        let mut values = HashMap::new();
+        values.insert("write_key".into(), "wk".into());
+        let resolved = resolve_template("Basic {{base64(write_key:)}}", &values);
+        assert_eq!(resolved, format!("Basic {}", b64("wk:")));
+    }
+
+    #[test]
+    fn test_resolve_template_base64_missing_field_left_verbatim() {
+        // If a referenced field is absent, the placeholder must remain so URL
+        // validation surfaces it.
+        let values = HashMap::new();
+        let template = "Basic {{base64(email:api_token)}}";
+        assert_eq!(resolve_template(template, &values), template);
+    }
+
+    #[test]
+    fn test_resolve_template_fallback_uses_field_when_present() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "https://eu.posthog.com".into());
+        let resolved = resolve_template(
+            "{{host|https://us.posthog.com}}/api/projects/",
+            &values,
+        );
+        assert_eq!(resolved, "https://eu.posthog.com/api/projects/");
+    }
+
+    #[test]
+    fn test_resolve_template_fallback_uses_default_when_missing() {
+        let values = HashMap::new();
+        let resolved = resolve_template(
+            "{{host|https://us.posthog.com}}/api/projects/",
+            &values,
+        );
+        assert_eq!(resolved, "https://us.posthog.com/api/projects/");
+    }
+
+    #[test]
+    fn test_resolve_template_fallback_uses_default_when_empty() {
+        let mut values = HashMap::new();
+        values.insert("host".into(), "".into());
+        let resolved = resolve_template(
+            "{{host|https://us.posthog.com}}/api/projects/",
+            &values,
+        );
+        assert_eq!(resolved, "https://us.posthog.com/api/projects/");
+    }
+
+    #[test]
+    fn test_resolve_template_unclosed_token_passthrough() {
+        // Malformed input must not panic; emit verbatim and return.
+        let values = HashMap::new();
+        assert_eq!(resolve_template("hello {{world", &values), "hello {{world");
+    }
+
+    #[test]
+    fn test_resolve_template_dotted_keys_for_selected_chains() {
+        // `selected.<resource>.<prop>` keys come from depends_on chain context
+        // (engine/resource_listing.rs flattens picks into dotted keys).
+        let mut values = HashMap::new();
+        values.insert("selected.workspaces.id".into(), "ws_42".into());
+        let resolved = resolve_template(
+            "https://app.asana.com/api/1.0/workspaces/{{selected.workspaces.id}}/projects",
+            &values,
+        );
+        assert_eq!(
+            resolved,
+            "https://app.asana.com/api/1.0/workspaces/ws_42/projects"
+        );
     }
 }

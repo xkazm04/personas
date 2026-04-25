@@ -56,6 +56,39 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "projects",
+      "label": "Projects",
+      "description": "Mixpanel projects the service account can access.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://mixpanel.com/api/app/projects/",
+        "headers": {
+          "Authorization": "Basic {{base64(service_account_username:service_account_secret)}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "$",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "timezone": "timezone",
+          "organization": "organization"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Mixpanel product analytics with GDPR-compliant data access.",

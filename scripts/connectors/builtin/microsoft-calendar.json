@@ -20,6 +20,39 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "calendars",
+      "label": "Calendars",
+      "description": "Calendars on the user's Outlook account.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/me/calendars?$top=100",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "name",
+        "meta": {
+          "isDefaultCalendar": "isDefaultCalendar",
+          "canEdit": "canEdit",
+          "owner": "owner.name"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Microsoft Outlook Calendar scheduling for creating, reading, and managing calendar events via the Microsoft Graph API.",

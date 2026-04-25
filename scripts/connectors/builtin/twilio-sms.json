@@ -39,6 +39,41 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "phone_numbers",
+      "label": "Phone numbers",
+      "description": "Numbers owned by this Twilio account. Scope to limit which numbers an agent can send from.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.twilio.com/2010-04-01/Accounts/{{account_sid}}/IncomingPhoneNumbers.json?PageSize=100",
+        "headers": {
+          "Authorization": "Basic {{base64(account_sid:auth_token)}}",
+          "Accept": "application/json"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "incoming_phone_numbers",
+        "id": "sid",
+        "label": "phone_number",
+        "sublabel": "friendly_name",
+        "meta": {
+          "capabilities": "capabilities",
+          "status": "status",
+          "country": "iso_country"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Twilio SMS, voice, WhatsApp, and communication APIs.",

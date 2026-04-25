@@ -589,9 +589,19 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   // Resolve dynamic option lists (Sentry projects, codebases, ...) from the
   // user's connected credentials. Questions without a `dynamic_source` simply
   // get an empty state and fall through to the existing static rendering.
+  // Pass the template's connector slots so slot-level `requires_resource`
+  // (§4.2) overrides question-level when both are present.
+  const personaConnectorSlots = useMemo(() => {
+    const persona = designResult?.persona as { connectors?: unknown } | undefined;
+    const arr = Array.isArray(persona?.connectors) ? persona.connectors : [];
+    return arr.filter((c): c is { name: string } & Record<string, unknown> =>
+      typeof c === 'object' && c !== null && typeof (c as { name?: unknown }).name === 'string',
+    );
+  }, [designResult]);
   const { dynamicOptions, retry: retryDynamic } = useDynamicQuestionOptions(
     adoptionQuestions,
     adoptionAnswers,
+    personaConnectorSlots,
   );
 
 
@@ -632,6 +642,40 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
     if (Object.keys(merged).length > 0) setAdoptionAnswers(merged);
     if (detected.size > 0) setAutoDetectedIds(detected);
   }, [hasAdoptionQuestions, adoptionQuestions, review.id]);
+
+  // §4.1 — auto-fill from scoped resources. Watches `dynamicOptions` for
+  // questions whose `dynamic_source.source === 'scope'` resolved to exactly
+  // one pick, and pre-fills the answer so the user doesn't have to confirm
+  // a single-option select. Multiple picks = render as a normal select; zero
+  // picks = the hook surfaces an error pointing the user back to scoping.
+  //
+  // Idempotent — only sets the answer once per (question, option-set) pair so
+  // a user who manually clears the field doesn't have it bounce back.
+  const scopeAutoFilledRef = useRef<Record<string, string>>({});
+  useEffect(() => {
+    if (!hasAdoptionQuestions) return;
+    let nextAnswers: Record<string, string> | null = null;
+    let nextAuto: Set<string> | null = null;
+    for (const q of adoptionQuestions) {
+      if (q.dynamic_source?.source !== 'scope') continue;
+      const st = dynamicOptions[q.id];
+      if (!st || st.loading || st.items.length !== 1) continue;
+      const only = st.items[0];
+      if (!only) continue;
+      const onlyValue = only.value;
+      if (scopeAutoFilledRef.current[q.id] === onlyValue) continue;
+      if (adoptionAnswers[q.id]) {
+        scopeAutoFilledRef.current[q.id] = onlyValue;
+        continue;
+      }
+      scopeAutoFilledRef.current[q.id] = onlyValue;
+      nextAnswers = { ...(nextAnswers ?? adoptionAnswers), [q.id]: onlyValue };
+      nextAuto = new Set(nextAuto ?? autoDetectedIds);
+      nextAuto.add(q.id);
+    }
+    if (nextAnswers) setAdoptionAnswers(nextAnswers);
+    if (nextAuto) setAutoDetectedIds(nextAuto);
+  }, [adoptionQuestions, dynamicOptions, adoptionAnswers, autoDetectedIds, hasAdoptionQuestions]);
 
   // When questions are completed, store answers in the build draft and transition to draft_ready.
   // Adoption sessions are pre-designed templates — they don't have active LLM build tasks,

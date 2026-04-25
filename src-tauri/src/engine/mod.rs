@@ -137,6 +137,7 @@ pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
 pub mod desktop_security;
 pub mod resource_listing;
+pub mod scope_enforcement;
 
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;

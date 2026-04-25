@@ -81,7 +81,7 @@
     "auth_type": "pat",
     "auth_type_label": "PAT",
     "docs_url": "https://learn.microsoft.com/en-us/rest/api/azure/devops/",
-    "setup_guide": "1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) -> Personal Access Tokens\n3. Click 'New Token', set scopes (e.g. Code, Work Items, Build)\n4. Copy the generated token\n5. Enter your organization name and paste the token",
+    "setup_guide": "1. Go to dev.azure.com and sign in\n2. Click User Settings (gear icon) -> Personal Access Tokens\n3. Click 'New Token', set the scopes you need (e.g. Code, Work Items, Build)\n4. Copy the generated token\n5. Enter your organization name and paste the token\n\nUse this connector for narrow, single-org PATs (typical for ticketing/CI agents). If your PAT has 'User Profile (read)' and you want to scope by organization at adoption time, use the 'Azure DevOps (org-aware)' connector instead.",
     "pricing_tier": "freemium",
     "auth_methods": [
       {

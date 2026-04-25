@@ -62,11 +62,14 @@
     {
       "id": "projects",
       "label": "Projects",
-      "description": "Active Asana projects across all accessible workspaces.",
+      "description": "Active Asana projects in the picked workspace. Pick a workspace first.",
       "selection": "multi",
+      "depends_on": [
+        "workspaces"
+      ],
       "list_endpoint": {
         "method": "GET",
-        "url": "https://app.asana.com/api/1.0/projects?archived=false&limit=100",
+        "url": "https://app.asana.com/api/1.0/workspaces/{{selected.workspaces.id}}/projects?archived=false&limit=100",
         "headers": {
           "Authorization": "Bearer {{personal_access_token}}"
         },

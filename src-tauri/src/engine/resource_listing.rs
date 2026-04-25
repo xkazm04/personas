@@ -8,8 +8,9 @@
 //! Narrow by design: no rate-limit bookkeeping, no write operations, no
 //! filesystem side effects.  Failure modes surface as `AppError::External`
 //! with sanitized messages.
-use std::collections::HashMap;
-use std::time::Duration;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{LazyLock, Mutex};
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -33,12 +34,15 @@ struct ResourceSpec {
     label: String,
     #[serde(default)]
     depends_on: Vec<String>,
+    #[serde(default = "default_selection")]
+    selection: String,
     list_endpoint: ListEndpoint,
     response_mapping: ResponseMapping,
     #[serde(default = "default_ttl")]
-    #[allow(dead_code)]
     cache_ttl_seconds: u32,
 }
+
+fn default_selection() -> String { "multi".to_string() }
 
 fn default_ttl() -> u32 { 600 }
 
@@ -103,6 +107,60 @@ pub struct ResourceItem {
 }
 
 // ---------------------------------------------------------------------------
+// In-memory TTL cache (§3.1)
+// ---------------------------------------------------------------------------
+
+struct CacheEntry {
+    fetched_at: Instant,
+    ttl: Duration,
+    items: Vec<ResourceItem>,
+}
+
+static CACHE: LazyLock<Mutex<HashMap<String, CacheEntry>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn cache_key(
+    credential_id: &str,
+    resource_id: &str,
+    deps: &HashMap<String, serde_json::Value>,
+) -> String {
+    // Deterministic key: sort deps so HashMap iteration order can't shift it.
+    let sorted: BTreeMap<&String, &serde_json::Value> = deps.iter().collect();
+    let deps_json = serde_json::to_string(&sorted).unwrap_or_default();
+    format!("{credential_id}|{resource_id}|{deps_json}")
+}
+
+fn cache_get(key: &str) -> Option<Vec<ResourceItem>> {
+    let map = CACHE.lock().ok()?;
+    let entry = map.get(key)?;
+    if entry.fetched_at.elapsed() < entry.ttl {
+        Some(entry.items.clone())
+    } else {
+        None
+    }
+}
+
+fn cache_put(key: String, ttl_seconds: u32, items: Vec<ResourceItem>) {
+    let Ok(mut map) = CACHE.lock() else { return };
+    map.insert(
+        key,
+        CacheEntry {
+            fetched_at: Instant::now(),
+            ttl: Duration::from_secs(ttl_seconds.max(1) as u64),
+            items,
+        },
+    );
+}
+
+/// Drop every cached entry for a given credential. Called on credential
+/// delete/edit so stale picks aren't surfaced after auth fields change.
+#[allow(dead_code)]
+pub fn invalidate_credential(credential_id: &str) {
+    let Ok(mut map) = CACHE.lock() else { return };
+    map.retain(|k, _| !k.starts_with(&format!("{credential_id}|")));
+}
+
+// ---------------------------------------------------------------------------
 // Public entrypoint
 // ---------------------------------------------------------------------------
 
@@ -111,12 +169,24 @@ pub struct ResourceItem {
 /// `depends_on_context` carries prior picks so `{{selected.<id>.<prop>}}`
 /// templates can resolve (e.g. Figma team picked first, then project listing
 /// for that team). Empty map is fine when the resource has no `depends_on`.
+///
+/// Set `bypass_cache: true` from the picker's Refresh button to force a fresh
+/// fetch; otherwise cached items are returned within the spec's
+/// `cache_ttl_seconds` window.
 pub async fn list_resources(
     pool: &DbPool,
     credential_id: &str,
     resource_id: &str,
     depends_on_context: &HashMap<String, serde_json::Value>,
+    bypass_cache: bool,
 ) -> Result<Vec<ResourceItem>, AppError> {
+    let key = cache_key(credential_id, resource_id, depends_on_context);
+    if !bypass_cache {
+        if let Some(hit) = cache_get(&key) {
+            return Ok(hit);
+        }
+    }
+
     // 1. Load credential + connector
     let cred = cred_repo::get_by_id(pool, credential_id)?;
     let connector = connector_repo::get_by_name(pool, &cred.service_type)?
@@ -176,11 +246,12 @@ pub async fn list_resources(
     let items = fetch_all_pages(&spec, &values).await?;
 
     // 6. Map each raw item through response_mapping
-    let mapped = items
+    let mapped: Vec<ResourceItem> = items
         .into_iter()
         .filter_map(|raw| map_item(&raw, &spec.response_mapping))
         .collect();
 
+    cache_put(key, spec.cache_ttl_seconds, mapped.clone());
     Ok(mapped)
 }
 
@@ -374,6 +445,85 @@ fn jsonpath_get<'a>(root: &'a serde_json::Value, path: &str) -> Option<serde_jso
         cur = cur.get(seg)?;
     }
     Some(cur.clone())
+}
+
+// ---------------------------------------------------------------------------
+// Save-side validation (§3.6)
+// ---------------------------------------------------------------------------
+
+/// Validate a `scoped_resources` payload against a connector's `resources[]`
+/// spec. Called by `save_scoped_resources` before persisting so malformed or
+/// out-of-spec submissions are rejected at the IPC boundary.
+///
+/// Empty object `{}` is valid (= picker was opened and skipped).
+///
+/// Rules:
+/// - Top level must be a JSON object.
+/// - Each key must match a `ResourceSpec.id` declared on the connector.
+/// - Each value must be an array of objects.
+/// - Each pick object must carry non-empty string `id` and `label`.
+/// - For `selection: "single"` or `"single_or_all"`, the array length is at most 1.
+pub fn validate_scoped_resources_payload(
+    connector_resources_json: Option<&str>,
+    payload: &str,
+) -> Result<(), AppError> {
+    let parsed: serde_json::Value = serde_json::from_str(payload)
+        .map_err(|e| AppError::Validation(format!("scoped_resources must be valid JSON: {e}")))?;
+    let obj = parsed.as_object().ok_or_else(|| {
+        AppError::Validation("scoped_resources must be a JSON object".into())
+    })?;
+
+    if obj.is_empty() {
+        return Ok(()); // Picker-skipped form is allowed.
+    }
+
+    let specs_json = connector_resources_json.ok_or_else(|| {
+        AppError::Validation(
+            "Connector declares no resources[] but a scope payload was submitted".into(),
+        )
+    })?;
+    let specs: Vec<ResourceSpec> = serde_json::from_str(specs_json)
+        .map_err(|e| AppError::Internal(format!("Malformed connector resources[]: {e}")))?;
+
+    for (key, value) in obj {
+        let spec = specs
+            .iter()
+            .find(|s| s.id == *key)
+            .ok_or_else(|| AppError::Validation(format!(
+                "Unknown resource id '{key}' — not declared on the connector"
+            )))?;
+
+        let arr = value.as_array().ok_or_else(|| {
+            AppError::Validation(format!("Picks for '{key}' must be a JSON array"))
+        })?;
+
+        if matches!(spec.selection.as_str(), "single" | "single_or_all") && arr.len() > 1 {
+            return Err(AppError::Validation(format!(
+                "Resource '{key}' has selection='{}' but {} picks were submitted",
+                spec.selection, arr.len()
+            )));
+        }
+
+        for (idx, pick) in arr.iter().enumerate() {
+            let pick_obj = pick.as_object().ok_or_else(|| {
+                AppError::Validation(format!("Pick {idx} for '{key}' must be an object"))
+            })?;
+            let id = pick_obj.get("id").and_then(|v| v.as_str()).unwrap_or("");
+            let label = pick_obj.get("label").and_then(|v| v.as_str()).unwrap_or("");
+            if id.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "Pick {idx} for '{key}' is missing a non-empty `id`"
+                )));
+            }
+            if label.is_empty() {
+                return Err(AppError::Validation(format!(
+                    "Pick {idx} for '{key}' is missing a non-empty `label`"
+                )));
+            }
+        }
+    }
+
+    Ok(())
 }
 
 fn map_item(raw: &serde_json::Value, mapping: &ResponseMapping) -> Option<ResourceItem> {

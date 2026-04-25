@@ -50,19 +50,43 @@ export async function saveScopedResources(
 }
 
 /**
+ * Set the credential's runtime scope-enforcement mode.
+ *
+ * - `"warn"` (default) — out-of-scope API calls through the credential proxy
+ *   are logged but allowed through. Safe rollout: existing agents keep
+ *   working, you get visibility into violations.
+ * - `"block"` — the proxy returns Forbidden for out-of-scope requests.
+ *   Flip on once warnings stop appearing for an agent you trust.
+ */
+export async function setCredentialScopeEnforcement(
+  credentialId: string,
+  mode: 'warn' | 'block',
+): Promise<void> {
+  await invokeWithTimeout<void>('set_credential_scope_enforcement', {
+    credentialId,
+    mode,
+  });
+}
+
+/**
  * List picker items for a given resource spec.
  *
  * `dependsOnContext` carries prior picks keyed by resource id. For a resource
  * that declares `depends_on: ["team"]`, pass `{ team: { id: "abc", label: "…" } }`.
+ *
+ * `bypassCache: true` forces a fresh fetch — wire to the picker's Refresh
+ * button. Otherwise the result is cached for `spec.cache_ttl_seconds`.
  */
 export async function listConnectorResources(
   credentialId: string,
   resourceId: string,
   dependsOnContext: Record<string, unknown> = {},
+  bypassCache = false,
 ): Promise<ResourceItem[]> {
   return invokeWithTimeout<ResourceItem[]>('list_connector_resources', {
     credentialId,
     resourceId,
     dependsOnContext,
+    bypassCache,
   });
 }
