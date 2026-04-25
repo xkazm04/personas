@@ -199,7 +199,7 @@ export default function GoalConstellation() {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Target className="w-10 h-10 text-foreground mb-3" />
-        <p className="text-md text-foreground">{t.plugins.dev_tools.no_goals_constellation}</p>
+        <p className="typo-body text-foreground">{t.plugins.dev_tools.no_goals_constellation}</p>
       </div>
     );
   }
@@ -217,7 +217,7 @@ export default function GoalConstellation() {
         <Button variant="ghost" size="icon-sm" onClick={handleReset} title={t.plugins.dev_tools.reset_view}>
           <Maximize2 className="w-4 h-4" />
         </Button>
-        <span className="text-md text-foreground ml-2">{goals.length} {t.plugins.dev_tools.goals_label} {edges.length} {t.plugins.dev_tools.connections_label}</span>
+        <span className="typo-caption text-foreground ml-2">{goals.length} {t.plugins.dev_tools.goals_label} {edges.length} {t.plugins.dev_tools.connections_label}</span>
       </div>
 
       {/* SVG Canvas */}
@@ -324,8 +324,8 @@ export default function GoalConstellation() {
                 {isHovered && (
                   <foreignObject x={pos.x - 100} y={pos.y - r - 50} width={200} height={40}>
                     <div className="bg-background/95 border border-primary/20 rounded-card px-3 py-1.5 text-center shadow-elevation-3">
-                      <p className="text-md font-medium text-foreground truncate">{goal.title}</p>
-                      <p className="text-md text-foreground">{goal.status} &middot; {goal.progress}%</p>
+                      <p className="typo-body font-medium text-foreground truncate">{goal.title}</p>
+                      <p className="typo-caption text-foreground">{goal.status} &middot; {goal.progress}%</p>
                     </div>
                   </foreignObject>
                 )}
@@ -336,7 +336,7 @@ export default function GoalConstellation() {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-md text-foreground">
+      <div className="flex items-center gap-4 typo-caption text-foreground">
         {Object.entries(STATUS_COLORS).map(([status, colors]) => (
           <div key={status} className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colors.fill }} />

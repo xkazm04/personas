@@ -68,6 +68,9 @@ export async function fetchGitHubStats(
     `/repos/${owner}/${repo}`,
     headers,
   );
+  if (repoRes.status >= 400) {
+    throw new Error(`GitHub repo request failed (${repoRes.status}): ${repoRes.body.slice(0, 200)}`);
+  }
   const repoData = JSON.parse(repoRes.body);
 
   // 2. Open PRs count
@@ -121,6 +124,9 @@ export async function fetchGitLabStats(
     `/api/v4/projects/${encoded}?statistics=true`,
     headers,
   );
+  if (projRes.status >= 400) {
+    throw new Error(`GitLab project request failed (${projRes.status}): ${projRes.body.slice(0, 200)}`);
+  }
   const projData = JSON.parse(projRes.body);
 
   // 2. Open MRs
@@ -157,6 +163,64 @@ export async function fetchGitLabStats(
 // Sentry adapter
 // ---------------------------------------------------------------------------
 
+export interface SentryOrg {
+  slug: string;
+  name: string;
+}
+
+export interface SentryProject {
+  slug: string;
+  name: string;
+  platform: string | null;
+}
+
+/** Lists organizations the credential's auth token has access to. */
+export async function fetchSentryOrgs(credentialId: string): Promise<SentryOrg[]> {
+  const res = await executeApiRequest(credentialId, 'GET', '/api/0/organizations/', {});
+  if (res.status >= 400) {
+    throw new Error(`Sentry orgs request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+  const data = JSON.parse(res.body);
+  if (!Array.isArray(data)) return [];
+  return data.map((o: { slug: string; name: string }) => ({ slug: o.slug, name: o.name }));
+}
+
+/** Lists projects in an organization. */
+export async function fetchSentryProjects(
+  credentialId: string,
+  orgSlug: string,
+): Promise<SentryProject[]> {
+  const res = await executeApiRequest(
+    credentialId,
+    'GET',
+    `/api/0/organizations/${orgSlug}/projects/`,
+    {},
+  );
+  if (res.status >= 400) {
+    throw new Error(`Sentry projects request failed (${res.status}): ${res.body.slice(0, 200)}`);
+  }
+  const data = JSON.parse(res.body);
+  if (!Array.isArray(data)) return [];
+  return data.map((p: { slug: string; name: string; platform: string | null }) => ({
+    slug: p.slug,
+    name: p.name,
+    platform: p.platform,
+  }));
+}
+
+/**
+ * Splits the persisted slug into `[orgSlug, projectSlug]`.
+ * The project's `monitoring_project_slug` column holds `org/project` so we
+ * avoid an extra DB column for the org. Pre-existing single-slug entries are
+ * tolerated by returning `[null, slug]` and letting the caller fall back.
+ */
+export function splitSentrySlug(combined: string | null | undefined): [string | null, string | null] {
+  if (!combined) return [null, null];
+  const idx = combined.indexOf('/');
+  if (idx === -1) return [null, combined];
+  return [combined.slice(0, idx), combined.slice(idx + 1)];
+}
+
 export async function fetchSentryStats(
   credentialId: string,
   orgSlug: string,
@@ -171,6 +235,9 @@ export async function fetchSentryStats(
     `/api/0/projects/${orgSlug}/${projectSlug}/issues/?query=is:unresolved&limit=1`,
     headers,
   );
+  if (issuesRes.status >= 400) {
+    throw new Error(`Sentry issues request failed (${issuesRes.status}): ${issuesRes.body.slice(0, 200)}`);
+  }
   // Sentry returns total in X-Hits header or we count items
   const totalHeader = issuesRes.headers['x-hits'] ?? issuesRes.headers['X-Hits'];
   const unresolvedIssues = totalHeader ? parseInt(totalHeader, 10) : 0;

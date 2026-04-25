@@ -6,6 +6,7 @@ import {
   ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -264,30 +265,33 @@ export default function IdeaTriagePage() {
         iconColor="amber"
         title={dt.triage_title}
         subtitle={dt.triage_subtitle}
-        actions={
-          <div className="flex items-center gap-2">
-            <LifecycleProjectPicker />
-            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
-              {tx(dt.accepted_badge, { count: acceptedCount })}
-            </span>
-            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
-              {tx(dt.rejected_badge, { count: rejectedCount })}
-            </span>
-            <span className="rounded-full px-2.5 py-0.5 text-md font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
-              {tx(dt.pending_badge, { count: pendingCount })}
-            </span>
-            <button
-              onClick={() => setShowShortcuts((p) => !p)}
-              className="ml-1 w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
-              title={dt.shortcuts_open_title}
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-foreground" />
-            </button>
-          </div>
-        }
       />
 
       <ContentBody>
+        <ActionRow
+          left={
+            <>
+              <LifecycleProjectPicker />
+              <span className="rounded-full px-2.5 py-0.5 typo-caption font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+                {tx(dt.accepted_badge, { count: acceptedCount })}
+              </span>
+              <span className="rounded-full px-2.5 py-0.5 typo-caption font-medium bg-red-500/15 text-red-400 border border-red-500/25">
+                {tx(dt.rejected_badge, { count: rejectedCount })}
+              </span>
+              <span className="rounded-full px-2.5 py-0.5 typo-caption font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
+                {tx(dt.pending_badge, { count: pendingCount })}
+              </span>
+            </>
+          }
+        >
+          <button
+            onClick={() => setShowShortcuts((p) => !p)}
+            className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
+            title={dt.shortcuts_open_title}
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-foreground" />
+          </button>
+        </ActionRow>
         {/* Auto-Triage Rules Panel */}
         {activeProjectId && (
           <div className="mb-4">

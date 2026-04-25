@@ -4,6 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { EventName } from '@/lib/eventRegistry';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
@@ -301,15 +302,14 @@ export default function ContextMapPage() {
         iconColor="amber"
         title={t.plugins.dev_tools.context_map_title}
         subtitle={t.plugins.dev_tools.context_map_subtitle}
-        actions={
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>{t.plugins.dev_tools.group}</Button>
-            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
-          </div>
-        }
       />
 
       <ContentBody>
+        <ActionRow>
+          <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>{t.plugins.dev_tools.group}</Button>
+          <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
+        </ActionRow>
+
         <div className="flex gap-0 min-h-0 flex-1">
           <GroupList
             groups={groups}

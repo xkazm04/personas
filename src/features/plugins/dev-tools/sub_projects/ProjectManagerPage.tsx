@@ -3,6 +3,7 @@ import {
   FolderKanban, Plus, ChevronRight, Folder, Network,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useContextScanBackground } from '../hooks/useContextScanBackground';
@@ -128,66 +129,51 @@ export default function ProjectManagerPage() {
         icon={<FolderKanban className="w-5 h-5 text-amber-400" />}
         iconColor="amber"
         title={t.plugins.dev_tools.projects_title}
-        subtitle={t.plugins.dev_tools.projects_subtitle}
-        actions={
-          <div className="flex items-center gap-2">
-            <LifecycleProjectPicker />
-            <Button
-              variant="accent"
-              accentColor="violet"
-              size="sm"
-              icon={<Network className="w-3.5 h-3.5" />}
-              onClick={() => setShowCrossProjectMap(true)}
-              disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
-              disabled={projects.length === 0}
-            >
-              {t.plugins.dev_projects.cross_project_map_btn}
-            </Button>
-            <Button
-              variant="accent"
-              accentColor="amber"
-              size="sm"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              onClick={() => { setEditingProject(null); setShowModal(true); }}
-            >
-              {t.plugins.dev_projects.new_project}
-            </Button>
-          </div>
-        }
       />
 
       <ContentBody>
+        <ActionRow left={<LifecycleProjectPicker />}>
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="sm"
+            icon={<Network className="w-3.5 h-3.5" />}
+            onClick={() => setShowCrossProjectMap(true)}
+            disabledReason={projects.length === 0 ? 'Create at least one project first' : undefined}
+            disabled={projects.length === 0}
+          >
+            {t.plugins.dev_projects.cross_project_map_btn}
+          </Button>
+          <Button
+            variant="accent"
+            accentColor="amber"
+            size="sm"
+            icon={<Plus className="w-3.5 h-3.5" />}
+            onClick={() => { setEditingProject(null); setShowModal(true); }}
+          >
+            {t.plugins.dev_projects.new_project}
+          </Button>
+        </ActionRow>
+
         <div className="space-y-6">
-          {/* Active project header */}
+          {/* Active project — compressed: single thin row, then GoalBoard */}
           {activeProject ? (
-            <div
-              className="animate-fade-slide-in border border-primary/10 rounded-2xl p-5 bg-gradient-to-br from-amber-500/5 to-transparent"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
-                  <Folder className="w-5 h-5 text-amber-400" />
+            <div className="animate-fade-slide-in border border-primary/10 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent">
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
+                <div className="w-8 h-8 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
+                  <Folder className="w-4 h-4 text-amber-400" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h2 className="typo-section-title">{activeProject.name}</h2>
-                  <p className="typo-caption text-foreground truncate">{activeProject.path}</p>
-                </div>
+                <h2 className="typo-section-title shrink-0">{activeProject.name}</h2>
+                <span className="typo-caption text-foreground truncate min-w-0 flex-1">{activeProject.path}</span>
+                {activeProject.techStack.length > 0 && (
+                  <span className="typo-caption text-foreground/70 shrink-0 hidden md:inline">
+                    {activeProject.techStack.join(' · ')}
+                  </span>
+                )}
                 <StatusBadge status={activeProject.status} />
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: t.plugins.dev_tools.col_goals, value: activeProject.goalCount },
-                  { label: t.plugins.dev_projects.tech_stack, value: activeProject.techStack.join(', ') || 'N/A' },
-                  { label: t.common.created, value: activeProject.createdAt },
-                ].map((stat) => (
-                  <div key={stat.label} className="bg-primary/5 rounded-modal px-3 py-2">
-                    <p className="text-[10px] uppercase tracking-wider text-primary font-medium">{stat.label}</p>
-                    <p className="text-md text-foreground mt-0.5 truncate">{stat.value}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-5">
+              <div className="px-4 pb-4 pt-3">
                 <GoalBoard
                   goals={goals}
                   onUpdateGoal={(id, data) => updateGoal?.(id, data)}
@@ -203,7 +189,7 @@ export default function ProjectManagerPage() {
           ) : (
             <div className="border border-dashed border-primary/10 rounded-2xl p-8 text-center">
               <Folder className="w-8 h-8 text-foreground mx-auto mb-2" />
-              <p className="text-md text-foreground">{t.plugins.dev_projects.select_or_create}</p>
+              <p className="typo-body text-foreground">{t.plugins.dev_projects.select_or_create}</p>
             </div>
           )}
 
@@ -218,7 +204,7 @@ export default function ProjectManagerPage() {
                 <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-3">
                   <FolderKanban className="w-7 h-7 text-amber-400/50" />
                 </div>
-                <p className="text-md text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
+                <p className="typo-body text-foreground mb-4">{t.plugins.dev_projects.no_projects_yet}</p>
                 <Button
                   variant="accent"
                   accentColor="amber"
@@ -252,7 +238,7 @@ export default function ProjectManagerPage() {
                         : 'hover:bg-primary/5'
                     }`}
                   >
-                    <span className="text-md text-foreground font-medium flex items-center gap-2 truncate">
+                    <span className="typo-body text-foreground font-medium flex items-center gap-2 truncate">
                       <ChevronRight className={`w-3.5 h-3.5 text-foreground transition-transform ${activeProjectId === project.id ? 'rotate-90' : ''}`} />
                       {project.name}
                     </span>
