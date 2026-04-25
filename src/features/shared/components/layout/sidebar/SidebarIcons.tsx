@@ -8,12 +8,7 @@
 
 import React from 'react';
 
-// -- Animation styles ----------------------------------------------------
-
-/** No-op: styles moved to globals.css to prevent inline <style> re-injection on every render. */
-export function SidebarIconStyles() {
-  return null;
-}
+// Styles for sidebar icon animations live in globals.css (pi-breathe, pi-flow, pi-pulse, pi-pulse-d).
 
 function a(cls: string, active: boolean) { return active ? cls : ''; }
 

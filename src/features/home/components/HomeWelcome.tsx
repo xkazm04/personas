@@ -1,8 +1,9 @@
 import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useHomeTranslation } from '../i18n/useTranslation';
+import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
 import WelcomeLayout from './WelcomeLayout';
 
 import type { NavCard } from './NavigationGrid';
@@ -31,6 +32,8 @@ export default function HomeWelcome() {
   }, [t]);
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || t.operator;
+
+  useEffect(() => schedulePrefetchOtherHomeTabs(), []);
 
   return (
     <WelcomeLayout

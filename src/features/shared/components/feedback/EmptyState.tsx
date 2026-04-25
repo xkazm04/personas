@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Key, Zap, Bot, Play, Radio, Link, ListChecks, type LucideIcon } from 'lucide-react';
+import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // -- Scenario Variants --------------------------------------------
@@ -10,7 +10,8 @@ export type EmptyStateVariant =
   | 'dashboard-no-executions'
   | 'subscriptions-empty'
   | 'connectors-empty'
-  | 'use-cases-empty';
+  | 'use-cases-empty'
+  | 'no-results';
 
 interface StepGuide {
   icon: LucideIcon;
@@ -35,6 +36,9 @@ const SCENARIO_STYLES: Record<EmptyStateVariant, Omit<ScenarioConfig, 'title' | 
   'subscriptions-empty': { icon: Radio, iconColor: 'text-cyan-400/75', iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20' },
   'connectors-empty': { icon: Link, iconColor: 'text-cyan-400/75', iconContainerClassName: 'bg-cyan-500/10 border-cyan-500/20' },
   'use-cases-empty': { icon: ListChecks, iconColor: 'text-violet-400/75', iconContainerClassName: 'bg-violet-500/10 border-violet-500/20' },
+  // Subtler illustration for the filter-reset case so it reads as "adjust, don't panic"
+  // rather than a full first-run empty state.
+  'no-results': { icon: SearchX, iconColor: 'text-muted-foreground', iconContainerClassName: 'bg-secondary/40 border-primary/10' },
 };
 
 function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {
@@ -56,6 +60,7 @@ function useScenarioConfigs(): Record<EmptyStateVariant, ScenarioConfig> {
     'subscriptions-empty': { ...SCENARIO_STYLES['subscriptions-empty'], title: es.events_title, subtitle: es.events_subtitle },
     'connectors-empty': { ...SCENARIO_STYLES['connectors-empty'], title: es.tools_title, subtitle: es.tools_subtitle },
     'use-cases-empty': { ...SCENARIO_STYLES['use-cases-empty'], title: es.use_cases_title, subtitle: es.use_cases_subtitle },
+    'no-results': { ...SCENARIO_STYLES['no-results'], title: es.no_results_title, subtitle: es.no_results_subtitle },
   };
 }
 
@@ -144,7 +149,7 @@ export default function EmptyState({
           {action && (
             <button
               onClick={action.onClick}
-              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
             >
               {action.icon && <action.icon className="w-3.5 h-3.5" />}
               {action.label}
@@ -153,7 +158,7 @@ export default function EmptyState({
           {secondaryAction && (
             <button
               onClick={secondaryAction.onClick}
-              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors"
+              className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
             >
               {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
               {secondaryAction.label}
@@ -164,3 +169,37 @@ export default function EmptyState({
     </div>
   );
 }
+
+// -- NoResults convenience wrapper -------------------------------
+// Use when a filtered list returns zero matches. Wires the Reset filters CTA
+// to the caller-provided onReset handler so every filtered surface presents a
+// consistent recovery path.
+
+interface NoResultsProps {
+  onReset: () => void;
+  /** Override the default title copy (from t.empty_states.no_results_title). */
+  title?: string;
+  /** Override the default subtitle copy (from t.empty_states.no_results_subtitle). */
+  subtitle?: string;
+  /** Override the default Reset filters label. */
+  resetLabel?: string;
+  className?: string;
+}
+
+export function NoResults({ onReset, title, subtitle, resetLabel, className }: NoResultsProps) {
+  const { t } = useTranslation();
+  return (
+    <EmptyState
+      variant="no-results"
+      title={title}
+      subtitle={subtitle}
+      className={className}
+      action={{
+        label: resetLabel ?? t.empty_states.reset_filters,
+        onClick: onReset,
+        icon: RotateCcw,
+      }}
+    />
+  );
+}
+

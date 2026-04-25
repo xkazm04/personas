@@ -22,6 +22,7 @@
  *   - Broken connection chip: switches to Power mode + credentials page.
  */
 
+import { useMemo } from 'react';
 import {
   AlertCircle,
   Check,
@@ -69,16 +70,27 @@ const SEVERITY_RANK: Record<UnifiedInboxItem['severity'], number> = {
  * `createdAt` wins. Returns null when inbox is empty — callers render a
  * welcome hero in that case.
  *
- * Pure helper — exported to keep the decision testable without mounting the
- * whole component.
+ * Single-pass O(n) reducer — no copy, no sort. Relies on `useUnifiedInbox`
+ * delivering items already sorted newest-first so the createdAt tiebreak is
+ * satisfied by "first item wins" among equal-severity candidates.
  */
 export function pickHero(items: readonly UnifiedInboxItem[]): UnifiedInboxItem | null {
-  if (items.length === 0) return null;
-  return [...items].sort((a, b) => {
-    const r = SEVERITY_RANK[b.severity] - SEVERITY_RANK[a.severity];
-    if (r !== 0) return r;
-    return b.createdAt.localeCompare(a.createdAt);
-  })[0] ?? null;
+  let best: UnifiedInboxItem | null = null;
+  let bestRank = -1;
+  let bestCreatedAt = '';
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]!;
+    const rank = SEVERITY_RANK[item.severity];
+    if (
+      rank > bestRank ||
+      (rank === bestRank && item.createdAt.localeCompare(bestCreatedAt) > 0)
+    ) {
+      best = item;
+      bestRank = rank;
+      bestCreatedAt = item.createdAt;
+    }
+  }
+  return best;
 }
 
 // ---------------------------------------------------------------------------
@@ -140,17 +152,30 @@ export default function MosaicVariant() {
     return <SimpleEmptyState onCreate={startOnboarding} />;
   }
 
-  const hero = pickHero(inbox);
-  const secondary = (
-    hero ? inbox.filter((i) => i.id !== hero.id) : inbox
-  ).slice(0, 3);
+  const hero = useMemo(() => pickHero(inbox), [inbox]);
+  const secondary = useMemo(() => {
+    if (!hero) return inbox.slice(0, 3);
+    const out: UnifiedInboxItem[] = [];
+    for (let i = 0; i < inbox.length && out.length < 3; i++) {
+      const item = inbox[i]!;
+      if (item.id !== hero.id) out.push(item);
+    }
+    return out;
+  }, [inbox, hero]);
 
   // Persona quick-tiles: up to 3 personas that are NOT already surfaced as
   // the hero or a secondary tile (avoids rendering "Invoice Watcher" twice).
-  const surfacedPersonaIds = new Set<string>(
-    [hero, ...secondary].filter((x): x is UnifiedInboxItem => x !== null).map((i) => i.personaId),
-  );
-  const personaSlots = personas.filter((p) => !surfacedPersonaIds.has(p.id)).slice(0, 3);
+  const personaSlots = useMemo(() => {
+    const surfaced = new Set<string>();
+    if (hero) surfaced.add(hero.personaId);
+    for (const s of secondary) surfaced.add(s.personaId);
+    const out: Persona[] = [];
+    for (let i = 0; i < personas.length && out.length < 3; i++) {
+      const p = personas[i]!;
+      if (!surfaced.has(p.id)) out.push(p);
+    }
+    return out;
+  }, [hero, secondary, personas]);
 
   const onHeroAction = () => {
     // Phase 09 will wire this to an in-surface detail pane; for now we just

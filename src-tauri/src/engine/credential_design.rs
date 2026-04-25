@@ -236,6 +236,7 @@ mod tests {
             services: "[]".into(),
             events: "[]".into(),
             metadata: None,
+            resources: None,
             is_builtin: true,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),

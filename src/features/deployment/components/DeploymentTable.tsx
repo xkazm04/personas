@@ -75,10 +75,10 @@ export function DeploymentTable({
           <SortHeader label={dt.col_target} sortKey="target" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_status} sortKey="status" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_invocations} sortKey="invocations" current={sortKey} dir={sortDir} onToggle={toggleSort} align="right" />
-          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_health}</th>
+          <th className="px-4 py-2.5 text-left typo-label text-foreground">{dt.col_health}</th>
           <SortHeader label={dt.col_last_activity} sortKey="lastActivity" current={sortKey} dir={sortDir} onToggle={toggleSort} />
           <SortHeader label={dt.col_created} sortKey="createdAt" current={sortKey} dir={sortDir} onToggle={toggleSort} />
-          <th className="px-4 py-2.5 text-left typo-label font-medium text-foreground uppercase tracking-wider">{dt.col_actions}</th>
+          <th className="px-4 py-2.5 text-left typo-label text-foreground">{dt.col_actions}</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-primary/5">
@@ -100,7 +100,7 @@ export function DeploymentTable({
                 />
               </td>
               <td className="px-4 py-3">
-                <span className="font-medium text-foreground/90">{row.name}</span>
+                <span className="typo-body font-medium text-foreground/90">{row.name}</span>
               </td>
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${tb.cls}`}>
@@ -114,7 +114,7 @@ export function DeploymentTable({
                   {row.status}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right tabular-nums text-foreground">
+              <td className="px-4 py-3 text-right typo-data text-foreground">
                 {row.invocations > 0 ? row.invocations.toLocaleString() : '-'}
               </td>
               <td className="px-4 py-3">
@@ -123,7 +123,7 @@ export function DeploymentTable({
                   return health ? (
                     <DeploymentHealthSparkline daily={health} />
                   ) : (
-                    <span className="text-[10px] text-foreground">{row.target === 'cloud' ? t.common.loading : '-'}</span>
+                    <span className="typo-caption text-foreground">{row.target === 'cloud' ? t.common.loading : '-'}</span>
                   );
                 })()}
               </td>
@@ -149,7 +149,7 @@ export function DeploymentTable({
                   )}
                   {testResult && (
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-medium rounded-card border ${
+                      className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${
                         testResult.status === 'pass'
                           ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                           : 'bg-red-500/10 border-red-500/20 text-red-400'

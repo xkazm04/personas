@@ -1,10 +1,11 @@
 import { motion } from 'framer-motion';
-import { useState, useMemo } from 'react';
+import { memo, useState, useMemo } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
-import { SIDEBAR_ICONS, SidebarIconStyles } from '@/features/shared/components/layout/sidebar/SidebarIcons';
+import { SIDEBAR_ICONS } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
+import { prefetchNavTarget } from '../lib/prefetch';
 
 export interface NavCard {
   id: string;
@@ -25,7 +26,7 @@ interface NavigationGridProps {
 }
 
 /** Fixed-height card: illustration with label overlay + description below. */
-function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: number; cardT: { label: string; description: string }; onCardClick: (id: string) => void }) {
+const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: number; cardT: { label: string; description: string }; onCardClick: (id: string) => void }) {
   const [hovered, setHovered] = useState(false);
   const CustomIcon = SIDEBAR_ICONS[card.id];
   const { shouldAnimate, staggerDelay } = useMotion();
@@ -40,6 +41,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       whileHover={shouldAnimate ? { y: -3, transition: { duration: 0.2, ease: 'easeOut' } } : {}}
       onClick={() => onCardClick(card.id)}
       onMouseEnter={() => setHovered(true)}
+      onPointerEnter={() => prefetchNavTarget(card.id)}
       onMouseLeave={() => setHovered(false)}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
@@ -84,7 +86,7 @@ function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: num
       </div>
     </motion.button>
   );
-}
+});
 
 export default function NavigationGrid({ cards, translations, onCardClick }: NavigationGridProps) {
   const { isStarter: isSimple, isBuilder: isDevMode } = useTier();
@@ -100,7 +102,6 @@ export default function NavigationGrid({ cards, translations, onCardClick }: Nav
 
   return (
     <>
-      <SidebarIconStyles />
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5">
         {visibleCards.map((card, i) => {
           const cardT = translations[card.id] || { label: card.id, description: '' };

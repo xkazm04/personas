@@ -176,33 +176,48 @@ export default function InboxVariant() {
   // Keyboard nav. ArrowDown/Up walk the list; Enter fires the primary
   // action. Suppressed while focus is inside a textarea/input so the notes
   // field (and any future inline search box) keeps working.
+  //
+  // The listener binds ONCE on mount and reads current state via refs so
+  // keystrokes in the notes textarea don't tear down/re-attach a window-level
+  // listener on every character.
+  const filteredRef = useRef(filtered);
+  const selectedIdRef = useRef<string | null>(selected?.id ?? null);
+  const actionsRef = useRef(actions);
+  const busyRef = useRef(busy);
+  const runPrimaryRef = useRef(runPrimary);
+  useEffect(() => { filteredRef.current = filtered; }, [filtered]);
+  useEffect(() => { selectedIdRef.current = selected?.id ?? null; }, [selected?.id]);
+  useEffect(() => { actionsRef.current = actions; }, [actions]);
+  useEffect(() => { busyRef.current = busy; }, [busy]);
+  useEffect(() => { runPrimaryRef.current = runPrimary; });
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase() ?? '';
       if (tag === 'textarea' || tag === 'input') return;
 
-      const idx = filtered.findIndex((i) => i.id === (selected?.id ?? null));
+      const list = filteredRef.current;
+      const idx = list.findIndex((i) => i.id === selectedIdRef.current);
 
-      if (e.key === 'ArrowDown' && idx < filtered.length - 1) {
+      if (e.key === 'ArrowDown' && idx < list.length - 1) {
         e.preventDefault();
-        const next = filtered[idx + 1];
+        const next = list[idx + 1];
         if (next) setSelectedId(next.id);
       } else if (e.key === 'ArrowUp' && idx > 0) {
         e.preventDefault();
-        const prev = filtered[idx - 1];
+        const prev = list[idx - 1];
         if (prev) setSelectedId(prev.id);
-      } else if (e.key === 'Enter' && actions.primary && !busy) {
+      } else if (e.key === 'Enter' && actionsRef.current.primary && !busyRef.current) {
         e.preventDefault();
-        void runPrimary();
+        void runPrimaryRef.current();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener('keydown', onKey);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, selected?.id, actions, busy, notes]);
+  }, []);
 
   // Zero-persona onboarding beats zero-inbox empty state. Delegated to the
   // shared SimpleEmptyState (same component Mosaic/Console render).

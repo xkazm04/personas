@@ -110,6 +110,10 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
             items={homeItems}
             activeId={homeTab}
             onSelect={(id) => setHomeTab(id as HomeTab)}
+            onHoverItem={(id) => {
+              if (id === 'roadmap') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeReleases());
+              else if (id === 'learning') void import('@/features/home/lib/prefetch').then(m => m.prefetchHomeLearning());
+            }}
             variant="overview"
           />
           <div className="flex-1" />

@@ -34,6 +34,15 @@ const executionLifecycle = createRunLifecycle('isExecuting', 'executionProgress'
 
 /** Maximum number of completed execution output snapshots to retain in memory. */
 const MAX_COMPLETED_SNAPSHOTS = 5;
+/**
+ * Completed execution output TTL (ms). Snapshots older than this are dropped
+ * on the next finish sweep — guards against long multi-hour sessions where
+ * a handful of unconsumed snapshots would otherwise pin tens of MB.
+ */
+const COMPLETED_OUTPUT_TTL_MS = 30 * 60 * 1000;
+
+/** Finish-time map keyed by executionId. Module-local (not persisted). */
+const completedOutputFinishedAt = new Map<string, number>();
 
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
 export interface QueueStatusPayload {
@@ -130,6 +139,22 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   executionSink.bind((output, totalBytes) => {
     set({ executionOutput: output, executionOutputBytes: totalBytes });
   });
+
+  // Dev-only size probe — surfaces ring/tail occupancy, byte total, spilled
+  // flag, and completed-snapshot count so regressions in long sessions are
+  // visible from the DevTools console without any UI.
+  if (import.meta.env.DEV) {
+    (globalThis as unknown as { __executionBufferProbe__?: () => unknown }).__executionBufferProbe__ = () => {
+      const sink = executionSink.probe();
+      const completed = get().completedExecutionOutputs;
+      return {
+        ...sink,
+        completedSnapshots: Object.keys(completed).length,
+        completedMaxSnapshots: MAX_COMPLETED_SNAPSHOTS,
+        completedTtlMs: COMPLETED_OUTPUT_TTL_MS,
+      };
+    };
+  }
 
   // Recovery: restore active execution state from localStorage
   const recoveredState = (() => {
@@ -357,12 +382,24 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       const snapshot = [...get().executionOutput];
       const prev = get().completedExecutionOutputs;
       const updated = { ...prev, [finishedExecId]: snapshot };
+      const now = Date.now();
+      completedOutputFinishedAt.set(finishedExecId, now);
+
+      // TTL sweep — drop any snapshot older than COMPLETED_OUTPUT_TTL_MS.
+      for (const key of Object.keys(updated)) {
+        const finishedAt = completedOutputFinishedAt.get(key);
+        if (finishedAt !== undefined && now - finishedAt > COMPLETED_OUTPUT_TTL_MS) {
+          delete updated[key];
+          completedOutputFinishedAt.delete(key);
+        }
+      }
 
       const keys = Object.keys(updated);
       if (keys.length > MAX_COMPLETED_SNAPSHOTS) {
         // Keys preserve insertion order for non-integer strings (UUIDs) — evict oldest.
         for (const key of keys.slice(0, keys.length - MAX_COMPLETED_SNAPSHOTS)) {
           delete updated[key];
+          completedOutputFinishedAt.delete(key);
         }
       }
 
@@ -500,6 +537,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     const output = map[executionId];
     if (output) {
       const { [executionId]: _, ...rest } = map;
+      completedOutputFinishedAt.delete(executionId);
       set({ completedExecutionOutputs: rest });
     }
     return output;

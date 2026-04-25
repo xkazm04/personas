@@ -158,7 +158,7 @@ export function UnifiedDeploymentDashboard() {
       <div className="px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="typo-heading-lg font-semibold text-foreground/90">{dt.title}</h1>
+            <h1 className="typo-section-title text-foreground/90">{dt.title}</h1>
             <p className="typo-body text-foreground mt-0.5">{dt.subtitle}</p>
           </div>
           <button
@@ -241,7 +241,7 @@ export function UnifiedDeploymentDashboard() {
       {displayRows.length > 0 && (
         <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between typo-caption text-foreground flex-shrink-0">
           <span>{tx(dt.showing_of, { showing: displayRows.length, total: unified.length, plural: unified.length !== 1 ? 's' : '' })}</span>
-          <span>{dt.total_invocations} <span className="text-foreground font-medium">{totalInvocations.toLocaleString()}</span></span>
+          <span>{dt.total_invocations} <span className="typo-data text-foreground">{totalInvocations.toLocaleString()}</span></span>
         </div>
       )}
     </div>

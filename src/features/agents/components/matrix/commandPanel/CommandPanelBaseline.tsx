@@ -18,7 +18,7 @@ export function CommandPanelBaseline({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
 }: CommandPanelProps) {
   return (
-    <div className="w-full max-w-5xl flex flex-col gap-3 rounded-modal border border-card-border bg-card-bg/60 backdrop-blur-lg shadow-elevation-3 p-4 md:p-5">
+    <div className="w-full min-w-[760px] 2xl:min-w-[1080px] 3xl:min-w-[1340px] max-w-[1500px] flex flex-col gap-3 rounded-modal border border-card-border bg-card-bg/60 backdrop-blur-lg shadow-elevation-3 p-4 md:p-5">
       <div className="flex flex-col lg:flex-row gap-4">
         <div className="flex-[3] min-w-0 flex flex-col gap-2">
           <div className="flex items-center gap-1.5 typo-label font-bold uppercase tracking-[0.18em] text-foreground/55">

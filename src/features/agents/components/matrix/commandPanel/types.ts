@@ -11,7 +11,7 @@ export interface CommandPanelProps {
   onIntentChange: (v: string) => void;
   onLaunch: () => void;
   launchDisabled: boolean;
-  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   /** Optional — when absent, the variant hides the quick-setup area. */
   onQuickConfigChange?: (c: QuickConfigState) => void;
 }

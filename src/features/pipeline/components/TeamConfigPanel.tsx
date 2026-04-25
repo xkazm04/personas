@@ -93,7 +93,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
-          <span className="typo-code font-mono text-foreground uppercase tracking-wider">{t.pipeline.configure}</span>
+          <span className="typo-label text-foreground">{t.pipeline.configure}</span>
           <button
             onClick={onClose}
             className="p-1 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors"
@@ -108,8 +108,8 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
           <div className="flex items-center gap-3 p-3 rounded-modal bg-secondary/40 border border-primary/10">
             <PersonaAvatar icon={personaIcon} color={personaColor} size="lg" />
             <div className="min-w-0 flex-1">
-              <div className="typo-heading font-semibold text-foreground/90 truncate">{personaName}</div>
-              <div className="typo-code text-foreground font-mono truncate">{member.id?.slice(0, 8)}...</div>
+              <div className="typo-heading text-foreground/90 truncate">{personaName}</div>
+              <div className="typo-code text-foreground truncate">{member.id?.slice(0, 8)}...</div>
             </div>
             {member.persona_id && (
               <button
@@ -141,7 +141,7 @@ export default function TeamConfigPanel({ member, onClose, onRoleChange, onRemov
 
           {/* Role Selector */}
           <div>
-            <label className="typo-code font-mono text-foreground uppercase tracking-wider mb-2 block">
+            <label className="typo-label text-foreground mb-2 block">
               {t.pipeline.role}
             </label>
             <div className="space-y-1.5">
@@ -215,7 +215,7 @@ function StatPill({ icon: Icon, label, value, color }: { icon: React.ComponentTy
     <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal bg-secondary/30 border border-primary/8">
       <Icon className="w-3 h-3 shrink-0" style={{ color: colorWithAlpha(color, 0.67) }} />
       <span className="typo-body text-foreground truncate">{label}</span>
-      <span className="typo-heading text-foreground font-semibold ml-auto">{value}</span>
+      <span className="typo-data text-foreground ml-auto">{value}</span>
     </div>
   );
 }

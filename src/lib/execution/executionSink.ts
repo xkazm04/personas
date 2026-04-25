@@ -161,6 +161,22 @@ export class ExecutionSink {
     this.tailRing.clear();
   }
 
+  /**
+   * Dev-only size probe. Returns current ring occupancy, byte total, and the
+   * "spilled" flag (true once the byte budget was exceeded and tail mode is
+   * active). Used by `globalThis.__executionBufferProbe__` to detect regressions
+   * in long-running sessions.
+   */
+  probe(): { ringLines: number; tailLines: number; totalBytes: number; spilled: boolean; capacity: number } {
+    return {
+      ringLines: this.ring.count,
+      tailLines: this.tailRing.count,
+      totalBytes: this.totalBytes,
+      spilled: this.truncated,
+      capacity: MAX_TERMINAL_LINES,
+    };
+  }
+
   // -- Private --------------------------------------------------------
 
   private flush(expectedGeneration: number): void {

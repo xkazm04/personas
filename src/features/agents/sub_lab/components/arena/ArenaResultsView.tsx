@@ -361,8 +361,6 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
-            resultId={selectedResult.id}
-            resultKind="arena"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.model, rating, feedback) : undefined}
           />
         );

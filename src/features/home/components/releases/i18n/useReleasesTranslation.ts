@@ -118,6 +118,8 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
           '16': { title: r.release_0_0_2_item_16_title, description: r.release_0_0_2_item_16_description },
           '17': { title: r.release_0_0_2_item_17_title, description: r.release_0_0_2_item_17_description },
           '18': { title: r.release_0_0_2_item_18_title, description: r.release_0_0_2_item_18_description },
+          '19': { title: r.release_0_0_2_item_19_title, description: r.release_0_0_2_item_19_description },
+          '20': { title: r.release_0_0_2_item_20_title, description: r.release_0_0_2_item_20_description },
         },
       },
       roadmap: {

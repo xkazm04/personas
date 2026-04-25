@@ -168,6 +168,7 @@ export function ResourcePicker({
       maxWidthClass="max-w-3xl"
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
     >
+      <div data-testid="resource-picker" className="contents" />
       <header className="px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
         <div>
           <h2 id="resource-picker-title" className="typo-heading-md text-foreground">
@@ -273,6 +274,7 @@ export function ResourcePicker({
                         <button
                           key={item.id}
                           onClick={() => toggleItem(spec, item)}
+                          data-testid={`resource-pick-${spec.id}-${item.id}`}
                           className={`w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-foreground/5 transition-colors ${
                             sel ? 'bg-primary/5' : ''
                           }`}
@@ -311,6 +313,7 @@ export function ResourcePicker({
         <button
           onClick={handleSkip}
           disabled={saving}
+          data-testid="resource-picker-skip"
           className="typo-body-sm text-foreground/60 hover:text-foreground transition-colors disabled:opacity-50"
         >
           Skip — use broad scope
@@ -319,6 +322,7 @@ export function ResourcePicker({
           <button
             onClick={onClose}
             disabled={saving}
+            data-testid="resource-picker-cancel"
             className="px-4 py-1.5 rounded-interactive border border-border hover:bg-foreground/5 typo-body-sm text-foreground transition-colors disabled:opacity-50"
           >
             Cancel
@@ -326,6 +330,7 @@ export function ResourcePicker({
           <button
             onClick={handleSave}
             disabled={saving || requiredMissing}
+            data-testid="resource-picker-save"
             className="px-4 py-1.5 rounded-interactive bg-primary hover:bg-primary/90 typo-body-sm text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving…' : 'Save scope'}

@@ -1,10 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useSyncExternalStore } from 'react';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
 import { formatCountdown } from '@/lib/utils/formatters';
 import { TRIGGER_RING_COLORS } from './triggerListTypes';
 import { RadialCountdownRing } from './RadialCountdownRing';
 import { useTranslation } from '@/i18n/useTranslation';
+
+// Single shared 1Hz ticker for all TriggerCountdown instances. Prevents N setIntervals
+// on pages with many triggers. Uses useSyncExternalStore so each component re-renders
+// once per second without creating its own interval.
+const tickSubscribers = new Set<() => void>();
+let tickIntervalId: ReturnType<typeof setInterval> | null = null;
+let tickValue = Date.now();
+
+function subscribeTick(cb: () => void) {
+  tickSubscribers.add(cb);
+  if (tickIntervalId === null) {
+    tickIntervalId = setInterval(() => {
+      tickValue = Date.now();
+      tickSubscribers.forEach((fn) => fn());
+    }, 1000);
+  }
+  return () => {
+    tickSubscribers.delete(cb);
+    if (tickSubscribers.size === 0 && tickIntervalId !== null) {
+      clearInterval(tickIntervalId);
+      tickIntervalId = null;
+    }
+  };
+}
+
+function getTickSnapshot() {
+  return tickValue;
+}
 
 /** Compute the next trigger time in ms (epoch), or null if not applicable. */
 export function getNextTriggerMs(trigger: PersonaTrigger): number | null {
@@ -51,40 +79,12 @@ export function getTotalIntervalSeconds(trigger: PersonaTrigger): number {
 /** Live countdown for schedule/polling triggers */
 export function TriggerCountdown({ trigger, accentColorClass }: { trigger: PersonaTrigger; accentColorClass: string }) {
   const { t } = useTranslation();
-  const computeRemaining = useCallback(() => {
-    const nextMs = getNextTriggerMs(trigger);
-    if (nextMs === null) return null;
-    return Math.floor((nextMs - Date.now()) / 1000);
-  }, [trigger]);
+  const now = useSyncExternalStore(subscribeTick, getTickSnapshot, getTickSnapshot);
 
-  const [remaining, setRemaining] = useState(computeRemaining);
-  const [firing, setFiring] = useState(false);
-
-  useEffect(() => {
-    setRemaining(computeRemaining());
-    setFiring(false);
-  }, [computeRemaining]);
-
-  useEffect(() => {
-    if (remaining === null) return;
-
-    const id = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev === null) return null;
-        const next = prev - 1;
-        if (next <= 0) {
-          setFiring(true);
-          setTimeout(() => setFiring(false), 2000);
-          // Re-calculate after firing animation
-          const fresh = computeRemaining();
-          return fresh !== null ? Math.max(fresh, 0) : 0;
-        }
-        return next;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [remaining === null, computeRemaining]);
+  const nextMs = useMemo(() => getNextTriggerMs(trigger), [trigger]);
+  const remaining = nextMs === null ? null : Math.floor((nextMs - now) / 1000);
+  // Firing window: briefly show the fire state once we cross zero, until backend updates next_trigger_at
+  const firing = remaining !== null && remaining <= 0 && remaining > -2;
 
   if (!trigger.enabled) return <span className="typo-body text-foreground">{t.triggers.disabled_label}</span>;
   if (trigger.trigger_type === 'manual') return <span className="typo-body text-foreground">{t.triggers.manual_label}</span>;

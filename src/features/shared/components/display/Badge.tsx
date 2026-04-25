@@ -85,11 +85,25 @@ interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
-  ({ variant, size = 'sm', shape = 'pill', interactive = false, className = '', children, ...rest }, ref) => {
+  ({ variant, size = 'sm', shape = 'pill', interactive = false, className = '', children, tabIndex, ...rest }, ref) => {
+    // Interactive badges MUST be keyboard-reachable and render a focus ring.
+    // See Design.md §7.6 — every interactive primitive applies focus-ring.
+    const interactiveProps = interactive
+      ? {
+          tabIndex: tabIndex ?? 0,
+          role: rest.role ?? 'button',
+        }
+      : tabIndex !== undefined
+        ? { tabIndex }
+        : {};
+    const interactiveClasses = interactive
+      ? `cursor-pointer transition-colors focus-ring ${BADGE_HOVER[variant]}`
+      : '';
     return (
       <span
         ref={ref}
-        className={`inline-flex items-center font-medium border ${BADGE_VARIANTS[variant]} ${SIZE_CLASSES[size]} ${SHAPE_CLASSES[shape]} ${interactive ? `transition-colors ${BADGE_HOVER[variant]}` : ''} ${className}`}
+        className={`inline-flex items-center font-medium border ${BADGE_VARIANTS[variant]} ${SIZE_CLASSES[size]} ${SHAPE_CLASSES[shape]} ${interactiveClasses} ${className}`}
+        {...interactiveProps}
         {...rest}
       >
         {children}

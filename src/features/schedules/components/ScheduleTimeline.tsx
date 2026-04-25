@@ -66,45 +66,62 @@ export default function ScheduleTimeline() {
     batchRecover,
   } = useScheduleActions();
 
-  // Load agents + scheduler status when tab becomes visible
+  // Unified refresh: initial load, 30s poll, and OVERDUE_TRIGGERS_FIRED all
+  // funnel through a single scheduler with in-flight dedupe + 500ms coalescing
+  // so a poll tick coinciding with an overdue event does not double-fetch.
   useEffect(() => {
     if (!isVisible) return;
     let cancelled = false;
-    fetchCronAgents();
-    getSchedulerStatus()
-      .then((d) => { if (!cancelled) setSchedulerStats(d); })
-      .catch(silentCatch("ScheduleTimeline:getSchedulerStatus"));
-    return () => { cancelled = true; };
-  }, [fetchCronAgents, isVisible]);
+    let coalesceTimer: ReturnType<typeof setTimeout> | null = null;
+    let inFlight: Promise<void> | null = null;
+    let pending = false;
 
-  // Auto-refresh every 30s — only while visible
-  useEffect(() => {
-    if (!isVisible) return;
-    let cancelled = false;
-    const interval = setInterval(() => {
-      fetchCronAgents();
-      getSchedulerStatus()
-        .then((d) => { if (!cancelled) setSchedulerStats(d); })
-        .catch(silentCatch("ScheduleTimeline:refreshSchedulerStatus"));
-    }, 30_000);
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [fetchCronAgents, isVisible]);
+    const doRefresh = (): Promise<void> => {
+      if (inFlight) { pending = true; return inFlight; }
+      const p = (async () => {
+        try {
+          await Promise.all([
+            fetchCronAgents(),
+            getSchedulerStatus()
+              .then((d) => { if (!cancelled) setSchedulerStats(d); })
+              .catch(silentCatch("ScheduleTimeline:refresh")),
+          ]);
+        } finally {
+          inFlight = null;
+          if (pending && !cancelled) {
+            pending = false;
+            doRefresh();
+          }
+        }
+      })();
+      inFlight = p;
+      return p;
+    };
 
-  // Immediate refresh when backend fires overdue triggers — only while visible
-  useEffect(() => {
-    if (!isVisible) return;
-    let cancelled = false;
-    const unlisten = listen<{ recovered: number; timestamp: string }>(
+    const scheduleRefresh = () => {
+      if (coalesceTimer || cancelled) return;
+      coalesceTimer = setTimeout(() => {
+        coalesceTimer = null;
+        if (!cancelled) doRefresh();
+      }, 500);
+    };
+
+    // Initial load fires immediately (skip the coalesce window)
+    doRefresh();
+
+    const interval = setInterval(scheduleRefresh, 30_000);
+
+    const unlistenP = listen<{ recovered: number; timestamp: string }>(
       EventName.OVERDUE_TRIGGERS_FIRED,
-      () => {
-        if (cancelled) return;
-        fetchCronAgents();
-        getSchedulerStatus()
-          .then((d) => { if (!cancelled) setSchedulerStats(d); })
-          .catch(silentCatch("ScheduleTimeline:overdueTriggersRefresh"));
-      },
+      () => { if (!cancelled) scheduleRefresh(); },
     );
-    return () => { cancelled = true; unlisten.then((fn) => fn()); };
+
+    return () => {
+      cancelled = true;
+      if (coalesceTimer) clearTimeout(coalesceTimer);
+      clearInterval(interval);
+      unlistenP.then((fn) => fn()).catch(silentCatch("ScheduleTimeline:unlisten"));
+    };
   }, [fetchCronAgents, isVisible]);
 
   // Parse all agents into schedule entries, applying persona filter

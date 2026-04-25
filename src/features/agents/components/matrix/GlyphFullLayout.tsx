@@ -795,7 +795,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
 
   // Enter submits; Shift+Enter inserts a newline. Mirrors standard chat-input
   // conventions so users don't have to hunt for a keyboard shortcut.
-  const handleLaunchKey = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleLaunchKey = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (!launchDisabled) onLaunch();

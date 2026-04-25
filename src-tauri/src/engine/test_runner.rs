@@ -1522,9 +1522,16 @@ pub async fn run_arena_test(
         }),
         persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = arena_repo::create_result(pool, &CreateArenaResultInput {
+            match arena_repo::create_result(pool, &CreateArenaResultInput {
                 run_id: run_id.to_string(), base,
-            });
+            }) {
+                Ok(result) => {
+                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Arena, &scores.events) {
+                        tracing::warn!("Failed to persist arena event stream for result {}: {e}", result.id);
+                    }
+                }
+                Err(e) => tracing::error!("Arena result create failed: {e}"),
+            }
         }),
         build_summary: Box::new(build_arena_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1575,9 +1582,16 @@ pub async fn run_consensus_test(
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(0);
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = consensus_repo::create_result(pool, &CreateConsensusResultInput {
+            match consensus_repo::create_result(pool, &CreateConsensusResultInput {
                 run_id: run_id.to_string(), sample_index: idx, base,
-            });
+            }) {
+                Ok(result) => {
+                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Consensus, &scores.events) {
+                        tracing::warn!("Failed to persist consensus event stream for result {}: {e}", result.id);
+                    }
+                }
+                Err(e) => tracing::error!("Consensus result create failed: {e}"),
+            }
         }),
         build_summary: Box::new(build_consensus_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1694,16 +1708,9 @@ pub async fn run_ab_test(
                 return;
             };
             let base = make_common_result_fields(scenario, model, status, scores);
-            match ab_repo::create_result(pool, &CreateAbResultInput {
+            let _ = ab_repo::create_result(pool, &CreateAbResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            }) {
-                Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Ab, &scores.events) {
-                        tracing::warn!("Failed to persist A/B event stream for result {}: {e}", result.id);
-                    }
-                }
-                Err(e) => tracing::error!("A/B result create failed: {e}"),
-            }
+            });
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1749,16 +1756,9 @@ pub async fn run_eval_test(
                 return;
             };
             let base = make_common_result_fields(scenario, model, status, scores);
-            match eval_repo::create_result(pool, &CreateEvalResultInput {
+            let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
                 run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            }) {
-                Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Eval, &scores.events) {
-                        tracing::warn!("Failed to persist eval event stream for result {}: {e}", result.id);
-                    }
-                }
-                Err(e) => tracing::error!("Eval result create failed: {e}"),
-            }
+            });
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1835,16 +1835,9 @@ pub async fn run_matrix_test(
         }),
         persist_result: Box::new(|pool, run_id, variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            match matrix_repo::create_result(pool, &CreateMatrixResultInput {
+            let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
                 run_id: run_id.to_string(), variant: variant.label.clone(), base,
-            }) {
-                Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Matrix, &scores.events) {
-                        tracing::warn!("Failed to persist matrix event stream for result {}: {e}", result.id);
-                    }
-                }
-                Err(e) => tracing::error!("Matrix result create failed: {e}"),
-            }
+            });
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {

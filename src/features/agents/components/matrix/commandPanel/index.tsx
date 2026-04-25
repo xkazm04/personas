@@ -49,7 +49,7 @@ export function CommandPanel(props: CommandPanelProps) {
     variant === "composer" ? CommandPanelComposer : CommandPanelBaseline;
 
   return (
-    <div className="w-full max-w-5xl flex flex-col items-center gap-2">
+    <div className="w-full min-w-[760px] 2xl:min-w-[1080px] 3xl:min-w-[1340px] max-w-[1500px] flex flex-col items-center gap-2">
       {/* Variant switcher — unobtrusive strip above the active panel. */}
       <div
         className="self-end inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5"

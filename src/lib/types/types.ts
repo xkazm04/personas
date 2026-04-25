@@ -230,12 +230,7 @@ export function parseConnectorDefinition(raw: RawConnectorDefinition): Connector
     services: safeJsonParse(raw.services, []),
     events: safeJsonParse(raw.events, []),
     metadata: raw.metadata ? safeJsonParse(raw.metadata, null) : null,
-    resources: (() => {
-      // `resources` is a newer Rust field; ts-rs bindings may not yet include it
-      // until cargo rebuilds. Accept it optionally via a duck-typed read.
-      const r = (raw as unknown as { resources?: string | null }).resources;
-      return r ? safeJsonParse<unknown>(r, []) as ConnectorDefinitionBase['resources'] : undefined;
-    })(),
+    resources: raw.resources ? safeJsonParse(raw.resources, []) : undefined,
     is_builtin: raw.is_builtin,
     created_at: raw.created_at,
     updated_at: raw.updated_at,

@@ -29,6 +29,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/qa-guardian.json': '00045a4d8af01aa2',
   'development/real-time-database-watcher.json': '00101c6682c7f329',
   'development/self-evolving-codebase-memory.json': '000847cdc27d1efb',
+  'development/skill-librarian.json': '001fbf3a5f292e84',
   'development/user-lifecycle-manager.json': '001671352a0b2a7a',
   'devops/devops-guardian.json': '001e3b3570d471dd',
   'devops/incident-logger.json': '000518079c5a0214',

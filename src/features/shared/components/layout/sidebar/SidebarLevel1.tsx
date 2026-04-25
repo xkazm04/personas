@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
-import { SidebarIconStyles, SIDEBAR_ICONS } from './SidebarIcons';
+import { SIDEBAR_ICONS } from './SidebarIcons';
 import { BadgeSlot, type BadgeDefinition } from './BadgeSlot';
 import { OrbitDots } from './OrbitDots';
 import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
@@ -150,7 +150,6 @@ export default function SidebarLevel1({
 
   return (
     <>
-      <SidebarIconStyles />
       <div className={`${collapsed ? 'w-[52px]' : 'w-[88px]'} bg-secondary/40 border-r border-primary/15 flex flex-col items-center py-3 gap-1 transition-all duration-200`}>
         {sections
           .filter((s) => (!s.devOnly || isDev) && (!IS_MOBILE || MOBILE_SECTIONS.has(s.id)) && isTierVisible(s.minTier ?? TIERS.STARTER, tier.current))

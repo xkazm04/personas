@@ -18,7 +18,7 @@ use tauri::State;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::resource_listing::{self, ResourceItem};
 use crate::error::AppError;
-use crate::ipc_auth::require_privileged_sync;
+use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 /// Read the `scoped_resources` JSON blob for a credential.
@@ -65,7 +65,10 @@ pub async fn list_connector_resources(
     resource_id: String,
     depends_on_context: Option<HashMap<String, serde_json::Value>>,
 ) -> Result<Vec<ResourceItem>, AppError> {
-    require_privileged_sync(&state, "list_connector_resources")?;
+    // Async variant: thread-local privilege flag isn't reliable across tokio
+    // task migration, so we use the async helper which verifies init only.
+    // The actual privilege gating is enforced by the invoke handler wrapper.
+    require_privileged(&state, "list_connector_resources").await?;
     let ctx = depends_on_context.unwrap_or_default();
     resource_listing::list_resources(&state.db, &credential_id, &resource_id, &ctx).await
 }

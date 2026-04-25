@@ -43,8 +43,8 @@ interface PersonaSummary {
   personaColor: string | null;
 }
 
-function resolvePersona(personas: Persona[], personaId: string): PersonaSummary {
-  const p = personas.find((x) => x.id === personaId);
+function resolvePersonaFromIndex(index: Map<string, Persona>, personaId: string): PersonaSummary {
+  const p = index.get(personaId);
   return {
     personaName: p?.name ?? 'Unknown assistant',
     personaIcon: p?.icon ?? null,
@@ -71,24 +71,32 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
   const personas = useAgentStore((s) => s.personas);
 
   return useMemo(() => {
+    // Index personas by id once so each adapter call is O(1). With 20 personas
+    // and 50 inbox items, this avoids up to ~1000 linear scans per rebuild.
+    const personaIndex = new Map<string, Persona>();
+    for (const p of personas) personaIndex.set(p.id, p);
+    const resolve = (id: string): PersonaSummary => resolvePersonaFromIndex(personaIndex, id);
+
     const approvals = manualReviews
       .filter((r) => r.status === 'pending')
-      .map((r) => adaptApproval(r, resolvePersona(personas, r.persona_id)));
+      .map((r) => adaptApproval(r, resolve(r.persona_id)));
 
     // Phase 16 Topic B: partition unread messages into output-like artifacts
     // and regular messages via `isMessageOutput`. Each message flows through
-    // exactly one adapter — no double emission.
-    const unread = messages.filter((m) => m.is_read === false);
-    const outputs = unread
-      .filter(isMessageOutput)
-      .map((m) => adaptOutput(m, resolvePersona(personas, m.persona_id)));
-    const regularMessages = unread
-      .filter((m) => !isMessageOutput(m))
-      .map((m) => adaptMessage(m, resolvePersona(personas, m.persona_id)));
+    // exactly one adapter — no double emission. Single-pass partition avoids
+    // three full scans (one unread filter + two isMessageOutput filters).
+    const outputs: UnifiedInboxItem[] = [];
+    const regularMessages: UnifiedInboxItem[] = [];
+    for (const m of messages) {
+      if (m.is_read !== false) continue;
+      const persona = resolve(m.persona_id);
+      if (isMessageOutput(m)) outputs.push(adaptOutput(m, persona));
+      else regularMessages.push(adaptMessage(m, persona));
+    }
 
     const healing = healingIssues
       .filter((h) => h.status === 'open' && h.auto_fixed === false)
-      .map((h) => adaptHealing(h, resolvePersona(personas, h.persona_id)));
+      .map((h) => adaptHealing(h, resolve(h.persona_id)));
 
     return [...approvals, ...regularMessages, ...outputs, ...healing]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))

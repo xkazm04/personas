@@ -24,6 +24,7 @@ export default function SidebarSubNav({
   items,
   activeId,
   onSelect,
+  onHoverItem,
   badges = {},
   variant = 'compact',
   devItems,
@@ -32,6 +33,8 @@ export default function SidebarSubNav({
   items: SubNavItem[];
   activeId: string;
   onSelect: (id: string) => void;
+  /** Fires on pointerenter for an item — use for route-level prefetch. */
+  onHoverItem?: (id: string) => void;
   badges?: Record<string, SubNavBadge>;
   variant?: 'overview' | 'compact';
   devItems?: Set<string>;
@@ -63,6 +66,7 @@ export default function SidebarSubNav({
             key={item.id}
             data-testid={`tab-${item.id}`}
             onClick={() => onSelect(item.id)}
+            onPointerEnter={onHoverItem ? () => onHoverItem(item.id) : undefined}
             aria-current={isActive ? 'page' : undefined}
             className={`w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
               isActive

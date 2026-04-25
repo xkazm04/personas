@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { MOTION } from '@/lib/utils/designTokens';
 type Placement = 'top' | 'bottom' | 'left' | 'right';
 
 interface TooltipProps {
@@ -94,7 +95,7 @@ export function Tooltip({
   content,
   children,
   placement = 'top',
-  delay = 400,
+  delay = MOTION.delay.tooltip,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);

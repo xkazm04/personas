@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useSystemStore } from '@/stores/systemStore';
@@ -8,13 +8,30 @@ import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
 
 import { SimpleHomeShell } from './components/SimpleHomeShell';
 import { GraduateToPowerModal } from './components/GraduateToPowerModal';
+import { CATEGORIES } from './hooks/useIllustration';
 
 // Variants are lazy-loaded so switching tabs only fetches the chunk you need.
 // Each variant is an empty placeholder in this phase; Phases 07/08/09 wire
 // real data.
-const MosaicVariant = lazy(() => import('./components/variants/MosaicVariant'));
-const ConsoleVariant = lazy(() => import('./components/variants/ConsoleVariant'));
-const InboxVariant = lazy(() => import('./components/variants/InboxVariant'));
+const loadMosaic = () => import('./components/variants/MosaicVariant');
+const loadConsole = () => import('./components/variants/ConsoleVariant');
+const loadInbox = () => import('./components/variants/InboxVariant');
+const MosaicVariant = lazy(loadMosaic);
+const ConsoleVariant = lazy(loadConsole);
+const InboxVariant = lazy(loadInbox);
+
+type IdleCb = (deadline: { didTimeout: boolean; timeRemaining: () => number }) => void;
+type IdleScheduler = (cb: IdleCb, opts?: { timeout?: number }) => number;
+
+function onIdle(cb: () => void): () => void {
+  const g = globalThis as unknown as { requestIdleCallback?: IdleScheduler; cancelIdleCallback?: (h: number) => void };
+  if (typeof g.requestIdleCallback === 'function') {
+    const h = g.requestIdleCallback(() => cb(), { timeout: 2000 });
+    return () => g.cancelIdleCallback?.(h);
+  }
+  const h = setTimeout(cb, 0);
+  return () => clearTimeout(h);
+}
 
 function variantFor(tab: SimpleTab) {
   switch (tab) {
@@ -52,6 +69,20 @@ export default function SimpleHomePage() {
   );
 
   const [graduateOpen, setGraduateOpen] = useState(false);
+
+  // Preload the 12 category PNGs + warm sibling variant chunks on first mount.
+  // Both run during idle time so they never compete with first paint.
+  useEffect(() => {
+    return onIdle(() => {
+      for (const cat of CATEGORIES) {
+        const img = new Image();
+        img.src = `/illustrations/simple-mode/category-${cat}.png`;
+      }
+      void loadMosaic();
+      void loadConsole();
+      void loadInbox();
+    });
+  }, []);
 
   const handleOpenGraduate = useCallback(() => {
     setGraduateOpen(true);

@@ -390,6 +390,28 @@ async fn run_creative_cli(
         );
     }
 
+    // Image-gen prompting playbook (per OpenAI image-gen prompting guide). Distilled
+    // because casual user inputs ("cyberpunk portrait") otherwise reach the tool
+    // unstructured — the playbook teaches the model to expand them.
+    if has_leonardo || has_gemini {
+        system_parts.push(
+            "## Image Prompting Playbook\n\
+             When you call image-generation tools, expand the user's request \
+             into a prompt structured in this order:\n\
+             1. Scene / background — environment, setting, atmosphere.\n\
+             2. Subject — primary focus, person, or object.\n\
+             3. Visual details — medium (photorealistic, watercolor, 3D render), \
+             lighting (soft, golden hour, backlit), framing (close-up, wide, eye-level, 50mm lens), \
+             materials, mood.\n\
+             4. Constraints — preserve-list for edits, exclusions (no watermarks, no extra text, no stray logos).\n\
+             For photoreal output include the word \"photorealistic\" and add \
+             anti-glamorization cues (\"no heavy retouching\") when authenticity matters. \
+             For literal text in an image quote it verbatim (\"Fresh and clean\") or use ALL CAPS, \
+             and instruct \"rendered exactly once, clearly and legibly\"; spell unfamiliar brand names letter-by-letter. \
+             For follow-up edits, change one thing at a time and repeat the preserve-list every iteration to prevent drift.".to_string(),
+        );
+    }
+
     // Instruct the CLI to save all generated files to the artist output folder
     if let Some(folder) = output_folder {
         system_parts.push(format!(

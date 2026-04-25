@@ -326,8 +326,6 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
-            resultId={selectedResult.id}
-            resultKind="eval"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, `${selectedCell.versionId}::${selectedCell.modelId}`, rating, feedback) : undefined}
           />
         );

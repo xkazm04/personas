@@ -1130,19 +1130,25 @@ input[type="number"] {
   animation: confidence-shimmer 2s ease-in-out infinite;
 }
 
-/* -- Animation timing utilities -- */
+/* -- Animation timing utilities --
+   Canonical duration tokens (see Design.md §6 Motion).
+   Prefer `duration-fast / normal / slow`. The `snap / flow / ease`
+   aliases exist for backwards compatibility with older call sites. */
 .duration-instant {
   transition-duration: var(--duration-instant);
 }
 
+.duration-fast,
 .duration-snap {
   transition-duration: var(--duration-fast);
 }
 
+.duration-normal,
 .duration-flow {
   transition-duration: var(--duration-normal);
 }
 
+.duration-slow,
 .duration-ease {
   transition-duration: var(--duration-slow);
 }

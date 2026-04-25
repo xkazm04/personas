@@ -193,8 +193,6 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, var
             onClose={() => setSelectedCell(null)}
             rating={ratingEntry?.rating}
             ratingFeedback={ratingEntry?.feedback}
-            resultId={selectedFirst.id}
-            resultKind="ab"
             onRate={onRate ? (rating, feedback) => onRate(selectedCell.scenario, selectedCell.versionId, rating, feedback) : undefined}
           />
         );

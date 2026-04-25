@@ -29,16 +29,19 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
   const [result, setResult] = useState<NlParseResult | null>(null);
   const [noMatch, setNoMatch] = useState(false);
   const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Rotate placeholder examples
+  // Rotate placeholder examples. Pause when focused or input has content — rotation is
+  // purely decorative there, and keeping the timer running leaks CPU/battery.
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (focused || input.length > 0) return;
+    const intervalId = setInterval(() => {
       setPlaceholderIdx((i) => (i + 1) % PLACEHOLDER_EXAMPLES.length);
     }, 3000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearInterval(intervalId);
+  }, [focused, input.length]);
 
   const doParse = useCallback((text: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -102,6 +105,8 @@ export function NlTriggerInput({ onApplyResult }: NlTriggerInputProps) {
           value={input}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder={PLACEHOLDER_EXAMPLES[placeholderIdx]}
           className="w-full pl-3 pr-10 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-violet-500/40 focus:ring-1 focus:ring-violet-500/20 transition-all"
         />

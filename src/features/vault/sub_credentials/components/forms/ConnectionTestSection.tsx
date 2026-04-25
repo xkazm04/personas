@@ -32,6 +32,7 @@ export function ConnectionTestSection({
           <button
             onClick={onTest}
             disabled={isTesting}
+            data-testid="vault-test-connection"
             className={`flex items-center gap-2 px-4 py-2 border rounded-modal typo-body font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
               result?.success
                 ? 'bg-emerald-500/10 hover:bg-emerald-500/20 border-emerald-500/20 text-emerald-400'

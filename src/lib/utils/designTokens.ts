@@ -20,6 +20,29 @@ export const SPACING = {
 /** Allowed spacing values on the 4px grid */
 export type SpacingToken = keyof typeof SPACING;
 
+// -- Motion tokens ---------------------------------------------------------
+// Unified animation timing registry — the JS counterpart of the CSS
+// custom properties --duration-{instant,fast,normal,slow} in globals.css.
+// Every setTimeout/transition that drives UI motion should derive from this
+// registry so global tuning is a single edit.
+
+export const MOTION = {
+  /** Transition / animation durations in milliseconds. */
+  duration: {
+    instant: 50,
+    fast: 150,
+    normal: 250,
+    slow: 400,
+  },
+  /** Deliberate delays before a UI element appears. */
+  delay: {
+    tooltip: 400,
+  },
+} as const;
+
+export type MotionDurationToken = keyof typeof MOTION.duration;
+export type MotionDelayToken = keyof typeof MOTION.delay;
+
 // -- Semantic spacing tokens ------------------------------------------------
 // Use these instead of raw p-*, px-*, py-*, space-y-*, gap-* classes.
 // Each token encodes design intent so the "why" is clear at the call site.

@@ -8,6 +8,7 @@ import type { RotationStatus } from '@/api/vault/rotation';
 import type { HealthResult } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 import { useTranslation } from '@/i18n/useTranslation';
+import { usePostSaveResourcePicker } from '@/features/vault/sub_credentials/components/picker/usePostSaveResourcePicker';
 
 export interface CredentialCardBodyProps {
   credential: CredentialMetadata;
@@ -46,6 +47,10 @@ export function CredentialCardBody({
   const { t, tx } = useTranslation();
   const [editingId, setEditingId] = useState<string | null>(null);
   const updateCredential = useVaultStore((s) => s.updateCredential);
+  // After saving an edit to a credential that declares resources[], re-prompt
+  // for scope — the edit may have changed which resources the token can see.
+  // The picker modal is rendered globally by <ResourcePickerHost />.
+  const { promptIfScoped } = usePostSaveResourcePicker();
 
   if (!connector) {
     return (
@@ -73,6 +78,11 @@ export function CredentialCardBody({
                 await updateCredential(credential.id, { data: values });
                 googleOAuth.reset();
                 setEditingId(null);
+                // Open the resource picker if the connector declares any.
+                // promptIfScoped is a no-op when the connector has no
+                // resources[]; list-endpoint errors are surfaced inline in
+                // the picker, so we don't gate on a pre-save healthcheck.
+                await promptIfScoped({ credentialId: credential.id, serviceType: credential.service_type });
               } catch (err) {
                 setEditError(err instanceof Error ? err.message : t.vault.card_body.failed_update);
               }

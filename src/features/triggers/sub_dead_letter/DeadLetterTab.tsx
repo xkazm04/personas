@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Archive, RefreshCw, Trash2, AlertTriangle, Ban } from 'lucide-react';
 import { listDeadLetterEvents, retryDeadLetterEvent, discardDeadLetterEvent } from '@/api/overview/events';
@@ -200,17 +200,7 @@ export function DeadLetterTab() {
                 )}
 
                 {evt.payload && (
-                  <details className="typo-caption">
-                    <summary className="text-foreground cursor-pointer hover:text-foreground transition-colors">
-                      {t.triggers.dead_letter_payload}
-                    </summary>
-                    <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground overflow-x-auto text-[11px] max-h-32">
-                      {(() => {
-                        try { return JSON.stringify(JSON.parse(evt.payload), null, 2); }
-                        catch { return evt.payload; }
-                      })()}
-                    </pre>
-                  </details>
+                  <LazyPayload payload={evt.payload} summaryLabel={t.triggers.dead_letter_payload} />
                 )}
               </motion.div>
             ))}
@@ -221,5 +211,30 @@ export function DeadLetterTab() {
 
       <ConfirmDestructiveModal {...modal} />
     </div>
+  );
+}
+
+function LazyPayload({ payload, summaryLabel }: { payload: string; summaryLabel: string }) {
+  const [open, setOpen] = useState(false);
+  const pretty = useMemo(() => {
+    if (!open) return null;
+    try { return JSON.stringify(JSON.parse(payload), null, 2); }
+    catch { return payload; }
+  }, [payload, open]);
+
+  return (
+    <details
+      className="typo-caption"
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
+    >
+      <summary className="text-foreground cursor-pointer hover:text-foreground transition-colors">
+        {summaryLabel}
+      </summary>
+      {open && pretty !== null && (
+        <pre className="mt-1 p-2 rounded bg-secondary/50 text-foreground overflow-x-auto text-[11px] max-h-32">
+          {pretty}
+        </pre>
+      )}
+    </details>
   );
 }
