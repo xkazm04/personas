@@ -241,6 +241,29 @@ pub struct ProposedLink {
     pub rationale: String,
 }
 
+/// A forward-looking research suggestion: a topic where the vault is
+/// incomplete and an external source or new investigation would close
+/// the gap. Distinct from `MissingPageCandidate` (which surfaces topics
+/// already mentioned but lacking a dedicated page) — a knowledge gap is
+/// a hole in the *substance*, not the *organization*.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct KnowledgeGap {
+    /// Short title of the gap area.
+    pub topic: String,
+    /// Vault-relative paths of notes that touch the topic shallowly or
+    /// where the gap is visible. Empty when the gap is a global
+    /// observation not tied to specific notes.
+    pub mentioned_in: Vec<String>,
+    /// A concrete research question the user could investigate to close
+    /// the gap. Phrased as a question, not a topic.
+    pub suggested_question: String,
+    /// One-line action suggestion (e.g. "web search for recent benchmarks",
+    /// "find a primary source on technique X", "deeper read of paper Y").
+    pub recommended_action: String,
+}
+
 /// LLM-assisted semantic lint report. Complementary to `VaultLintReport`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -253,6 +276,9 @@ pub struct SemanticLintReport {
     pub inconsistencies: Vec<Inconsistency>,
     pub missing_page_candidates: Vec<MissingPageCandidate>,
     pub proposed_links: Vec<ProposedLink>,
+    /// Forward-looking research suggestions — gaps in vault substance the
+    /// LLM thinks would benefit from external investigation.
+    pub knowledge_gaps: Vec<KnowledgeGap>,
     /// Raw CLI log lines captured during the Claude call (for debugging).
     pub cli_log: Vec<String>,
     pub generated_at: String,
