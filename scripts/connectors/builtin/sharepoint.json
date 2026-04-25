@@ -21,6 +21,73 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "sites",
+      "label": "Sites",
+      "description": "SharePoint sites the user can search.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/sites?search=*",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "displayName",
+        "sublabel": "webUrl",
+        "meta": {
+          "name": "name",
+          "webUrl": "webUrl"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    },
+    {
+      "id": "lists",
+      "label": "Lists",
+      "description": "Document libraries and lists on the picked site.",
+      "selection": "multi",
+      "depends_on": [
+        "sites"
+      ],
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://graph.microsoft.com/v1.0/sites/{{selected.sites.id}}/lists",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "value",
+        "id": "id",
+        "label": "displayName",
+        "sublabel": "description",
+        "meta": {
+          "webUrl": "webUrl",
+          "list_template": "list.template"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 1800
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "SharePoint document management and team sites for storing, organizing, and collaborating on content via the Microsoft Graph API.",

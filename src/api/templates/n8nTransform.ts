@@ -54,6 +54,25 @@ export interface N8nTransformStartResult {
   transform_id: string;
 }
 
+/**
+ * One entry in the template's `payload.persona.connectors[]` array. Templates
+ * declare each connector slot the persona will ultimately attach.
+ *
+ * `requires_resource` is the slot-level form of the field that also lives on
+ * `dynamic_source.requires_resource` (per question). When both are set, the
+ * slot wins — slot-level is more discoverable for template authors and keeps
+ * the resource-scope contract next to the connector definition.
+ */
+export interface PersonaConnectorSlot {
+  name: string;
+  label?: string;
+  category?: string;
+  role?: string;
+  requires_resource?: string;
+  /** Templates may carry many other fields (auth_type, credential_fields, …) — kept open. */
+  [key: string]: unknown;
+}
+
 export interface TransformQuestionResponse {
   id: string;
   category?: string;
@@ -111,6 +130,12 @@ export interface TransformQuestionResponse {
     multi?: boolean;
     include_all_option?: boolean;
     /**
+     * - `"vault"` — sourced from installed credentials (see below).
+     * - `"scope"` — sourced from a previously-picked credential's
+     *   `scoped_resources` blob (§4.1 auto-fill from scope). Use when a prior
+     *   question picked a credential and you want a follow-up pinned to that
+     *   credential's scoped picks.
+     *
      * When `"vault"`, the option list is sourced directly from the user's
      * installed credentials — no IPC call, no per-connector discovery. The
      * `service_type` is interpreted as a connector category tag (see
@@ -121,7 +146,7 @@ export interface TransformQuestionResponse {
      * options would otherwise hardcode a provider list that drifts from the
      * vault catalog over time.
      */
-    source?: 'vault';
+    source?: 'vault' | 'scope';
     /**
      * Optional resource-scope requirement (only meaningful when `source: 'vault'`).
      * When set, the picker filters to credentials whose `scoped_resources` blob
@@ -131,6 +156,21 @@ export interface TransformQuestionResponse {
      * repo?" only see credentials that have actually scoped a repo.
      */
     requires_resource?: string;
+    /**
+     * Required when `source: 'scope'`. Names the resource id whose picks
+     * become this question's options (e.g. `"repositories"`). Picks come from
+     * `scopedResources[from_scope]` on the credential the user chose for
+     * `from_credential_question`.
+     */
+    from_scope?: string;
+    /**
+     * Required when `source: 'scope'`. Question id whose answer is the
+     * credential's service_type — i.e. the upstream "Which credential?"
+     * question. The hook reads `userAnswers[from_credential_question]`,
+     * resolves it to a vault credential, and pulls picks from its
+     * `scoped_resources` blob.
+     */
+    from_credential_question?: string;
   };
 }
 

@@ -89,6 +89,7 @@
           "role": "vcs",
           "category": "development",
           "required": true,
+          "requires_resource": "repositories",
           "api_base_url": "https://api.github.com",
           "credential_fields": [
             {
@@ -810,6 +811,28 @@
         "maps_to": "persona.connectors[source_control].credential_fields[provider].value",
         "variable_name": "source_control_provider",
         "context": "Options are auto-detected from your source_control-category credentials in the Vault (GitHub, GitLab). The concrete repository is resolved at build time via the provider's API (GitHub: /user/repos, GitLab: /projects?membership=true) — if no repo is configured yet, the building process will walk you through picking one. The persona's webhook is installed on the selected repo so PR-comment events reach uc_implementation.",
+        "dimension": "connectors"
+      },
+      {
+        "id": "aq_target_repository",
+        "scope": "connector",
+        "connector_names": [
+          "github",
+          "gitlab"
+        ],
+        "category": "configuration",
+        "question": "Which repository should Dev Clone work in?",
+        "type": "select",
+        "dynamic_source": {
+          "service_type": "source_control",
+          "operation": "list_scope_picks",
+          "source": "scope",
+          "from_scope": "repositories",
+          "from_credential_question": "aq_source_control"
+        },
+        "maps_to": "persona.connectors[github].credential_fields[repo].value",
+        "variable_name": "target_repository",
+        "context": "Auto-fills from the scoped repositories on the selected credential. If you scoped to a single repo at vault time, this question is answered for you; if you scoped to several, pick the one this Dev Clone should operate in.",
         "dimension": "connectors"
       },
       {

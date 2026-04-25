@@ -20,6 +20,40 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "calendars",
+      "label": "Calendars",
+      "description": "Calendars in the user's calendar list. Scope so an agent only reads or writes the calendars you intend.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=250",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "items",
+        "id": "id",
+        "label": "summary",
+        "sublabel": "description",
+        "meta": {
+          "primary": "primary",
+          "accessRole": "accessRole",
+          "timeZone": "timeZone"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Google Calendar scheduling for creating, reading, and managing calendar events via the Calendar API v3.",

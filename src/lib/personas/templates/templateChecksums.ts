@@ -21,7 +21,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/build-intelligence-use-case.json': '001833b3a4fdf2e8',
   'development/codebase-health-scanner.json': '000fb3d23ccd6b9d',
   'development/design-handoff-coordinator.json': '0007c93e4a36900d',
-  'development/dev-clone.json': '0002faafcac2a4ef',
+  'development/dev-clone.json': '000357c3eac835db',
   'development/dev-lifecycle-manager.json': '0018510af7df4cb8',
   'development/documentation-freshness-guardian.json': '000d6f8b16a8db17',
   'development/feature-flag-experiment-analyst.json': '00116bcbfa3da659',

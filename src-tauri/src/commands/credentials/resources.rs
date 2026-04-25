@@ -15,6 +15,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 
+use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as repo;
 use crate::engine::resource_listing::{self, ResourceItem};
 use crate::error::AppError;
@@ -48,7 +49,47 @@ pub fn save_scoped_resources(
     scoped_resources: Option<String>,
 ) -> Result<(), AppError> {
     require_privileged_sync(&state, "save_scoped_resources")?;
+    if let Some(payload) = scoped_resources.as_deref() {
+        // Cross-check the payload against the connector's resources[] spec so
+        // unknown keys, malformed picks, or single-selection violations are
+        // rejected here rather than surfacing later as silent broken state.
+        let cred = repo::get_by_id(&state.db, &credential_id)?;
+        let connector = connector_repo::get_by_name(&state.db, &cred.service_type)?
+            .ok_or_else(|| AppError::NotFound(format!("Connector {}", cred.service_type)))?;
+        resource_listing::validate_scoped_resources_payload(
+            connector.resources.as_deref(),
+            payload,
+        )?;
+    }
     repo::set_scoped_resources(&state.db, &credential_id, scoped_resources.as_deref())
+}
+
+/// Set the credential's runtime scope-enforcement mode. `"warn"` (default)
+/// logs out-of-scope API calls; `"block"` rejects them at the proxy boundary.
+/// Stored under `metadata.scope_enforcement` so the api_proxy can read it on
+/// every request without an extra DB column.
+#[tauri::command]
+pub fn set_credential_scope_enforcement(
+    state: State<'_, Arc<AppState>>,
+    credential_id: String,
+    mode: String,
+) -> Result<(), AppError> {
+    require_privileged_sync(&state, "set_credential_scope_enforcement")?;
+    let normalized = match mode.as_str() {
+        "warn" | "block" => mode,
+        other => {
+            return Err(AppError::Validation(format!(
+                "scope_enforcement mode must be 'warn' or 'block', got '{other}'"
+            )));
+        }
+    };
+    let mut patch = serde_json::Map::new();
+    patch.insert(
+        "scope_enforcement".into(),
+        serde_json::Value::String(normalized),
+    );
+    repo::patch_metadata_atomic(&state.db, &credential_id, patch)?;
+    Ok(())
 }
 
 /// Invoke the connector's list endpoint for a given resource id, return
@@ -64,11 +105,19 @@ pub async fn list_connector_resources(
     credential_id: String,
     resource_id: String,
     depends_on_context: Option<HashMap<String, serde_json::Value>>,
+    bypass_cache: Option<bool>,
 ) -> Result<Vec<ResourceItem>, AppError> {
     // Async variant: thread-local privilege flag isn't reliable across tokio
     // task migration, so we use the async helper which verifies init only.
     // The actual privilege gating is enforced by the invoke handler wrapper.
     require_privileged(&state, "list_connector_resources").await?;
     let ctx = depends_on_context.unwrap_or_default();
-    resource_listing::list_resources(&state.db, &credential_id, &resource_id, &ctx).await
+    resource_listing::list_resources(
+        &state.db,
+        &credential_id,
+        &resource_id,
+        &ctx,
+        bypass_cache.unwrap_or(false),
+    )
+    .await
 }

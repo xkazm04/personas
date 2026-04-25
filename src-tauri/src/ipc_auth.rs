@@ -111,6 +111,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // Credentials -- Resource scoping (post-save sub-resource picker)
     "save_scoped_resources",
     "list_connector_resources",
+    "set_credential_scope_enforcement",
     // Credentials -- Connectors (writes only; list/get are public)
     "create_connector",
     "update_connector",

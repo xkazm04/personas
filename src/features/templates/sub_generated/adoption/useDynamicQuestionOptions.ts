@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { discoverConnectorResources, type DiscoveredItem } from '@/api/templates/discovery';
-import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { PersonaConnectorSlot, TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { createLogger } from '@/lib/log';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 
@@ -49,6 +49,12 @@ const EMPTY_STATE: DynamicOptionState = {
 export function useDynamicQuestionOptions(
   questions: TransformQuestionResponse[],
   userAnswers: Record<string, string>,
+  /**
+   * Optional connector slot defs from `payload.persona.connectors[]`. When a
+   * slot declares `requires_resource`, it overrides the question-level
+   * `dynamic_source.requires_resource` (per handoff §4.2 — slot wins).
+   */
+  personaConnectors: PersonaConnectorSlot[] = [],
 ): {
   dynamicOptions: Record<string, DynamicOptionState>;
   retry: (questionId: string) => void;
@@ -94,6 +100,58 @@ export function useDynamicQuestionOptions(
         continue;
       }
 
+      // source: "scope" → §4.1 auto-fill. The upstream credential question's
+      // answer (a service_type) identifies a vault credential; the picks under
+      // `scopedResources[from_scope]` become this question's options. Empty
+      // = "user hasn't scoped" → friendly error pointing them at the vault.
+      if (src.source === 'scope') {
+        const fromScope = (src as { from_scope?: string }).from_scope;
+        const fromCredQ = (src as { from_credential_question?: string }).from_credential_question;
+        if (!fromScope || !fromCredQ) {
+          setStateByQuestion((prev) => ({
+            ...prev,
+            [q.id]: {
+              ...EMPTY_STATE,
+              error: 'Misconfigured: source=scope requires from_scope + from_credential_question',
+            },
+          }));
+          continue;
+        }
+        const credServiceType = userAnswers[fromCredQ];
+        if (!credServiceType) {
+          setStateByQuestion((prev) => {
+            if (prev[q.id]?.waitingOnParent) return prev;
+            return { ...prev, [q.id]: { ...EMPTY_STATE, waitingOnParent: true } };
+          });
+          continue;
+        }
+        const cred = credentials.find(
+          (c) => c.service_type === credServiceType && c.healthcheck_last_success !== false,
+        );
+        const picks = cred?.scopedResources?.[fromScope] ?? [];
+        const items: DiscoveredItem[] = picks.map((p) => ({
+          value: p.id,
+          label: p.label,
+          sublabel: p.sublabel ?? p.id,
+        }));
+        const fingerprint = `scope|${credServiceType}|${fromScope}|${items.map((i) => i.value).join(',')}`;
+        if (lastFingerprintRef.current[q.id] === fingerprint) continue;
+        lastFingerprintRef.current[q.id] = fingerprint;
+        setStateByQuestion((prev) => ({
+          ...prev,
+          [q.id]: {
+            loading: false,
+            ready: items.length > 0,
+            error: items.length === 0
+              ? `Open the ${credServiceType} credential and pick at least one ${fromScope}`
+              : null,
+            items,
+            waitingOnParent: false,
+          },
+        }));
+        continue;
+      }
+
       // source: "vault" → synthesize options from installed credentials that
       // match the requested category tag. No IPC, no per-connector discovery.
       // Each eligible credential becomes one option: value = connector name
@@ -107,7 +165,16 @@ export function useDynamicQuestionOptions(
       // GitHub credentials that have at least one `repositories` pick).
       if (src.source === 'vault') {
         const category = src.service_type;
-        const requiresResource = (src as { requires_resource?: string }).requires_resource;
+        // Slot-level overrides question-level (§4.2). Look up the connector
+        // slot the question configures via `connector_names[0]` (the slot
+        // name) and prefer its `requires_resource`.
+        const slotName = q.connector_names?.[0];
+        const slot = slotName
+          ? personaConnectors.find((c) => c.name === slotName)
+          : undefined;
+        const requiresResource =
+          slot?.requires_resource ??
+          (src as { requires_resource?: string }).requires_resource;
         const items: DiscoveredItem[] = [];
         let scopeFilteredOut = 0;
         for (const c of credentials) {

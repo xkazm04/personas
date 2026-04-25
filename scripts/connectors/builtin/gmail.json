@@ -19,6 +19,40 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "labels",
+      "label": "Labels",
+      "description": "User-defined Gmail labels. Scoping a credential to specific labels lets agents only read or modify mail under those labels.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/labels",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "labels",
+        "id": "id",
+        "label": "name",
+        "sublabel": "type",
+        "meta": {
+          "type": "type",
+          "messageListVisibility": "messageListVisibility",
+          "labelListVisibility": "labelListVisibility"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 3600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Gmail email automation for reading, sending, and managing messages via the Gmail API v1.",

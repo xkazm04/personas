@@ -30,6 +30,39 @@
   },
   "services": [],
   "events": [],
+  "resources": [
+    {
+      "id": "products",
+      "label": "Products",
+      "description": "Stripe products on this account. Scope a credential to specific products so an agent that creates checkout sessions or invoices can only reach those.",
+      "selection": "multi",
+      "list_endpoint": {
+        "method": "GET",
+        "url": "https://api.stripe.com/v1/products?limit=100&active=true",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "pagination": {
+          "type": "none"
+        }
+      },
+      "response_mapping": {
+        "items_path": "data",
+        "id": "id",
+        "label": "name",
+        "sublabel": "description",
+        "meta": {
+          "active": "active",
+          "livemode": "livemode"
+        }
+      },
+      "search": {
+        "supported": true,
+        "mode": "client"
+      },
+      "cache_ttl_seconds": 600
+    }
+  ],
   "metadata": {
     "template_enabled": true,
     "summary": "Stripe payment processing platform -- charges, subscriptions, invoices, and Connect.",

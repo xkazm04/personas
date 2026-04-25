@@ -65,7 +65,11 @@
         }
       },
       "search": { "supported": true, "mode": "client" },
-      "cache_ttl_seconds": 600
+      "cache_ttl_seconds": 600,
+      "enforce": {
+        "url_regex": "^/?repos/([^/?#]+/[^/?#]+)",
+        "id_capture": 1
+      }
     },
     {
       "id": "organizations",
