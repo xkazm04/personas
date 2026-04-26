@@ -42,7 +42,7 @@ static CONNECTOR_CACHE: LazyLock<std::sync::Mutex<Option<ConnectorCache>>> =
     LazyLock::new(|| std::sync::Mutex::new(None));
 
 /// Return the full connector list, reusing a cached copy when fresh.
-fn get_all_connectors_cached(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, AppError> {
+pub(crate) fn get_all_connectors_cached(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, AppError> {
     let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(ref entry) = *cache {
         if entry.fetched_at.elapsed().as_secs_f64() < CONNECTOR_CACHE_TTL_SECS {
@@ -57,10 +57,60 @@ fn get_all_connectors_cached(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, 
     Ok(connectors)
 }
 
+/// Return the lowercase set of registered connector names from the cache.
+/// Used by intent-analysis heuristics so that any connector added to the
+/// registry contributes to keyword matching without a code edit. Returns
+/// `None` on DB error so callers can fall back to their built-in seed lists.
+pub(crate) fn cached_connector_keywords(pool: &DbPool) -> Option<Vec<String>> {
+    get_all_connectors_cached(pool)
+        .ok()
+        .map(|list| list.into_iter().map(|c| c.name.to_lowercase()).collect())
+}
+
+// ---------------------------------------------------------------------------
+// Process-wide connector-name snapshot (read by intent-analysis heuristics
+// in modules that don't have a DbPool handy — e.g. `engine::build_session::
+// gates::intent_implies_connectors` and `templates::extract_keywords`).
+//
+// Refreshed lazily by `refresh_connector_keyword_snapshot()` after CRUD on
+// connector definitions, and from app startup. Falls back to an empty slice
+// when never initialized so callers safely default to their built-in seeds.
+// ---------------------------------------------------------------------------
+
+static CONNECTOR_KEYWORD_SNAPSHOT: LazyLock<std::sync::RwLock<Vec<String>>> =
+    LazyLock::new(|| std::sync::RwLock::new(Vec::new()));
+
+/// Refresh the process-wide connector-name snapshot from the live cache.
+/// Call after connector CRUD (already triggered by `invalidate_connector_cache`)
+/// and once at app startup so heuristics see the user's actual registry.
+pub fn refresh_connector_keyword_snapshot(pool: &DbPool) {
+    if let Some(names) = cached_connector_keywords(pool) {
+        if let Ok(mut snap) = CONNECTOR_KEYWORD_SNAPSHOT.write() {
+            *snap = names;
+        }
+    }
+}
+
+/// Read-only snapshot of registered connector names (lowercase). Empty when
+/// not yet initialized — callers should treat this as a supplement to their
+/// built-in seed list, never the sole source of truth.
+pub fn connector_keyword_snapshot() -> Vec<String> {
+    CONNECTOR_KEYWORD_SNAPSHOT
+        .read()
+        .map(|snap| snap.clone())
+        .unwrap_or_default()
+}
+
 /// Invalidate the connector cache (call after connector CRUD operations).
+/// Also clears the keyword snapshot so the next read repopulates from a
+/// fresh DB query via `refresh_connector_keyword_snapshot`. Call sites
+/// that have a `DbPool` should follow this with an explicit refresh.
 pub fn invalidate_connector_cache() {
     let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
     *cache = None;
+    if let Ok(mut snap) = CONNECTOR_KEYWORD_SNAPSHOT.write() {
+        snap.clear();
+    }
 }
 
 // ---------------------------------------------------------------------------

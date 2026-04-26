@@ -163,6 +163,7 @@ event_names! {
     // Background monitoring
     OVERDUE_TRIGGERS_FIRED     => "overdue-triggers-fired",
     ZOMBIE_EXECUTIONS_DETECTED => "zombie-executions-detected",
+    EXECUTIONS_SILENT_DETECTED => "executions-silent-detected",
     AUTO_ROLLBACK_TRIGGERED    => "auto-rollback-triggered",
     SUBSCRIPTION_CRASHED       => "subscription-crashed",
 

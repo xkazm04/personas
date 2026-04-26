@@ -26,6 +26,11 @@ pub struct EvolutionPolicy {
     /// Minimum completed executions between evolution cycles.
     #[ts(type = "number")]
     pub min_executions_between: i32,
+    /// Mutation strategy: "mechanical" (shuffle/drop/duplicate prompt
+    /// segments, permute tools, jiggle timeout) or "critique" (LLM reads
+    /// recent low-fitness traces and rewrites prompt segments). NULL or
+    /// missing falls back to "mechanical" so legacy rows behave unchanged.
+    pub mutation_strategy: Option<String>,
     /// Timestamp of last completed evolution cycle.
     pub last_cycle_at: Option<String>,
     /// Total cycles completed.
@@ -48,6 +53,7 @@ pub struct UpsertEvolutionPolicyInput {
     pub variants_per_cycle: Option<i32>,
     pub improvement_threshold: Option<f64>,
     pub min_executions_between: Option<i32>,
+    pub mutation_strategy: Option<String>,
 }
 
 // =============================================================================

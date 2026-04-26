@@ -22,7 +22,7 @@ export function useRovingTabIndex<T extends HTMLElement>(
 
   const onKeyDown = useCallback(
     (e: KeyboardEvent<T>) => {
-      let next = -1;
+      let next: number;
       switch (e.key) {
         case 'ArrowRight':
           next = (activeIndex + 1) % count;

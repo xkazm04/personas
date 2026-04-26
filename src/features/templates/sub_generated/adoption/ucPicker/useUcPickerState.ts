@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment, @typescript-eslint/no-unused-expressions */
 // @ts-nocheck — strict-record-index noise from noUncheckedIndexedAccess;
 // all record writes are followed by immediate reads in the same scope
 // so the undefined paths are unreachable at runtime. Drop this pragma

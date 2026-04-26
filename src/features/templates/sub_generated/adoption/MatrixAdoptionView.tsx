@@ -1123,7 +1123,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
       {/* Legacy: handleApplyEdits / handleDiscardEdits were wired to the
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
-      {false && (handleApplyEdits || handleDiscardEdits)}
+      {void (handleApplyEdits || handleDiscardEdits)}
 
       {/* Note: questionnaire is rendered inline in the !seeded branch above.
           Once seeded === true the user has already submitted, so no need

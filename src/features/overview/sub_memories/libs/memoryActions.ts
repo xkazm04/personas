@@ -29,7 +29,7 @@ let _sessionBackup: MemoryAction[] = [];
 let _hasReportedCorruption = false;
 
 export function loadActions(): MemoryAction[] {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch (err) {

@@ -1796,6 +1796,38 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added template_category column to personas");
     }
 
+    // mutation_strategy column on evolution_policies — selects between the
+    // existing mechanical mutator (shuffle/drop/duplicate prompt segments,
+    // permute tools, jiggle timeout) and an LLM-critique-and-rewrite mutator
+    // that uses recent low-fitness traces as the gradient signal. NULL means
+    // "mechanical" (the legacy default), so existing rows stay on the proven
+    // path until a user opts into the new strategy.
+    let has_mutation_strategy: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('evolution_policies') WHERE name = 'mutation_strategy'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_mutation_strategy {
+        conn.execute_batch("ALTER TABLE evolution_policies ADD COLUMN mutation_strategy TEXT;")?;
+        tracing::info!("Added mutation_strategy column to evolution_policies");
+    }
+
+    // last_heartbeat_at column on persona_executions — written by the runner
+    // every 30s alongside the EXECUTION_HEARTBEAT event so a supervisor scan
+    // can detect long-silent runs. Today, stuck CLI subprocesses are caught
+    // only by hard timeout_ms kill; this column lets a passive watchdog emit
+    // a stale-execution signal earlier without changing the canonical status
+    // lifecycle.
+    let has_last_heartbeat_at: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'last_heartbeat_at'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_last_heartbeat_at {
+        conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN last_heartbeat_at TEXT;")?;
+        tracing::info!("Added last_heartbeat_at column to persona_executions");
+    }
+
     Ok(())
 }
 

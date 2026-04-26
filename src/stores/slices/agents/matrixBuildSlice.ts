@@ -1094,10 +1094,11 @@ export const createMatrixBuildSlice: StateCreator<
         ? (draft.use_cases as Array<Record<string, unknown>>)
         : [];
 
+      const capabilities = sess.capabilities ?? {};
       const hasApproval = useCasesIR.some((uc) => {
         const policy = uc.review_policy as { mode?: string } | undefined;
         return policy?.mode === 'on_low_confidence' || policy?.mode === 'always';
-      }) || Object.values(sess.capabilities).some((cap) => {
+      }) || Object.values(capabilities).some((cap) => {
         const mode = cap.review_policy?.mode;
         return mode === 'on_low_confidence' || mode === 'always';
       });
@@ -1105,14 +1106,15 @@ export const createMatrixBuildSlice: StateCreator<
       const hasMemory = useCasesIR.some((uc) => {
         const policy = uc.memory_policy as { enabled?: boolean } | undefined;
         return policy?.enabled === true;
-      }) || Object.values(sess.capabilities).some((cap) => cap.memory_policy?.enabled === true);
+      }) || Object.values(capabilities).some((cap) => cap.memory_policy?.enabled === true);
 
       const connectorMap: Record<string, string> = {};
       const connectors = draft.required_connectors;
       if (Array.isArray(connectors)) {
+        const connectorLinks = sess.connectorLinks ?? {};
         for (const c of connectors) {
           const name = (c as Record<string, unknown>)?.name as string;
-          const linked = sess.connectorLinks[name];
+          const linked = connectorLinks[name];
           if (name && linked) connectorMap[name] = linked;
         }
       }

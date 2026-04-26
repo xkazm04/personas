@@ -123,6 +123,7 @@ CREATE TABLE IF NOT EXISTS persona_executions (
     duration_ms       INTEGER,
     started_at        TEXT,
     completed_at      TEXT,
+    last_heartbeat_at TEXT,
     created_at        TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pe_persona ON persona_executions(persona_id);
@@ -1488,6 +1489,7 @@ CREATE TABLE IF NOT EXISTS evolution_policies (
     variants_per_cycle      INTEGER NOT NULL DEFAULT 4,
     improvement_threshold   REAL NOT NULL DEFAULT 0.05,
     min_executions_between  INTEGER NOT NULL DEFAULT 10,
+    mutation_strategy       TEXT,
     last_cycle_at           TEXT,
     total_cycles            INTEGER NOT NULL DEFAULT 0,
     total_promotions        INTEGER NOT NULL DEFAULT 0,

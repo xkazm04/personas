@@ -1599,6 +1599,13 @@ pub async fn run_execution(
                             silence_ms,
                         },
                     );
+                    // Stamp last_heartbeat_at so the supervisor watchdog scan
+                    // can detect long-silent runs. Best-effort; failure here
+                    // must not interrupt the stream loop.
+                    let _ = crate::db::repos::execution::executions::touch_last_heartbeat(
+                        &pool_for_stream,
+                        &exec_id_for_stream,
+                    );
                 }
             }
         }

@@ -2067,7 +2067,10 @@
     },
     "health_issue": {
       "apply_fix": "Apply Fix: {label}",
-      "manual_action": "Manual action needed"
+      "manual_action": "Manual action needed",
+      "category_config": "Configuration",
+      "category_runtime": "Runtime",
+      "category_policy": "Policy"
     },
     "health_score": {
       "healthy": "Healthy",

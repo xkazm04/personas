@@ -590,6 +590,11 @@ pub fn run() {
 
             // Initialise the connector strategy registry (healthcheck + rotation dispatch)
             engine::connector_strategy::init_registry();
+            // Seed the registry-keyword snapshot consulted by intent-analysis
+            // heuristics (gates::intent_implies_connectors, templates::extract_keywords).
+            // Without this seed, those heuristics fall back to a hardcoded list and
+            // miss any user-added connector until the next CRUD refreshes the snapshot.
+            engine::api_proxy::refresh_connector_keyword_snapshot(&pool);
             st.checkpoint("connector_registry");
 
             // Install panic crash hook that writes to crash_logs/ before aborting

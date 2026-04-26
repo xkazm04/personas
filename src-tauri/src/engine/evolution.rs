@@ -178,14 +178,60 @@ pub async fn run_evolution_cycle(
     let incumbent_fitness = compute_fitness(&pool, &persona_id, &objective);
 
     // Create variants by self-breeding (cloning + mutation)
-    // We create a small population by cloning the incumbent and mutating
+    // We create a small population by cloning the incumbent and mutating.
+    //
+    // Mutation strategy resolution:
+    //   - "mechanical" or NULL — point mutation (shuffle/drop/permute/jiggle).
+    //     Cheap, deterministic, no LLM calls. The legacy default.
+    //   - "critique" — LLM reads recent failure-leaning knowledge and
+    //     rewrites the prompt segments. Expensive (one CLI call per variant)
+    //     but introduces NEW prompt content rather than just rearranging.
+    //     Falls back to mechanical when the gradient is empty or the CLI
+    //     errors, so a "critique" policy still always produces variants.
+    //   - "hybrid" — first variant uses critique, the rest use mechanical.
+    //     Cheap-by-default with one expensive exploration variant per cycle.
     let variant_count = policy.variants_per_cycle.clamp(2, 8) as usize;
     let mutation_rate = policy.mutation_rate;
+    let strategy = policy
+        .mutation_strategy
+        .as_deref()
+        .unwrap_or("mechanical");
     let mut variants: Vec<PersonaGenome> = Vec::with_capacity(variant_count);
 
-    for _ in 0..variant_count {
-        let mut variant = incumbent_genome.clone();
-        genome::mutate(&mut variant, mutation_rate);
+    for variant_idx in 0..variant_count {
+        let use_critique = match strategy {
+            "critique" => true,
+            "hybrid" => variant_idx == 0,
+            _ => false,
+        };
+
+        let mut variant = if use_critique {
+            match crate::engine::genome_critique::mutate_via_critique(
+                &pool,
+                &persona,
+                &incumbent_genome,
+            )
+            .await
+            {
+                Ok(g) => g,
+                Err(e) => {
+                    tracing::info!(
+                        cycle_id = %cycle_id,
+                        persona_id = %persona_id,
+                        reason = %e,
+                        "Critique mutator failed; falling back to mechanical for this variant",
+                    );
+                    let mut g = incumbent_genome.clone();
+                    genome::mutate(&mut g, mutation_rate);
+                    g
+                }
+            }
+        } else {
+            let mut g = incumbent_genome.clone();
+            genome::mutate(&mut g, mutation_rate);
+            g
+        };
+
         variant.source_persona_id = format!("evo-{}", uuid::Uuid::new_v4());
         variant.source_persona_name = format!("{} (variant)", persona.name);
         variants.push(variant);

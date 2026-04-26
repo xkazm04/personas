@@ -49,7 +49,7 @@ describe('sanitizeExternalUrl', () => {
 
   describe('blocks unicode/obfuscation attack vectors', () => {
     it('blocks javascript: hidden with zero-width space', () => {
-      // "java​script:alert(1)"
+      // "java<U+200B>script:alert(1)" — literal ZWS in the string below
       expect(sanitizeExternalUrl('java​script:alert(1)')).toBeNull();
     });
 

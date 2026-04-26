@@ -2074,6 +2074,9 @@ export type Translations = {
     health_issue: {
       apply_fix: string;
       manual_action: string;
+      category_config: string;
+      category_runtime: string;
+      category_policy: string;
     };
     health_score: {
       healthy: string;

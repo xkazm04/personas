@@ -10,6 +10,7 @@
  */
 import { vi } from "vitest";
 import { invoke } from "@tauri-apps/api/core";
+import { _clearAutoDedupForTests } from "@/lib/tauriInvoke";
 
 const mockedInvoke = vi.mocked(invoke);
 
@@ -61,4 +62,10 @@ export function mockInvokeError(command: string, error: string): void {
 export function resetInvokeMocks(): void {
   mockedInvoke.mockReset();
   mockedInvoke.mockResolvedValue(undefined);
+  // Auto-dedup caches read-only `list_*` / `get_*` / `fetch_*` responses for
+  // 250ms after settle so concurrent slice init / StrictMode mounts share one
+  // round-trip. Without an explicit clear, a successful first test "poisons"
+  // every later test that reuses the same command name (e.g. "rejects on
+  // backend error" sees the cached resolved value instead of the new mock).
+  _clearAutoDedupForTests();
 }

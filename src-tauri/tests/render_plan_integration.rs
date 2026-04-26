@@ -24,6 +24,7 @@ fn empty_comp() -> Composition {
         fps: 30,
         background_color: "#000000".into(),
         items: vec![],
+        style_guide: None,
     }
 }
 
@@ -50,6 +51,8 @@ fn video_clip(
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: false,
+        transcript_path: None,
+        transcript_status: None,
     })
 }
 
@@ -164,6 +167,7 @@ fn text_items_never_produce_overlays() {
         start_time: 0.0,
         duration: 2.0,
         text: String::new(),
+        anchor: None,
         _legacy: Default::default(),
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();

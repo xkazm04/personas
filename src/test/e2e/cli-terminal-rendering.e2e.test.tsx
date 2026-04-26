@@ -577,8 +577,8 @@ describe('E2E: CliOutputPanel -- provider execution rendering', () => {
           const trimmed = line.trim();
           if (trimmed) {
             expect(
-              screen.getByText((_content, el) => el?.textContent?.trim() === trimmed),
-            ).toBeInTheDocument();
+              screen.getAllByText((_content, el) => el?.textContent?.trim() === trimmed).length,
+            ).toBeGreaterThanOrEqual(1);
           }
         }
       });
@@ -682,7 +682,9 @@ describe('E2E: line classification in CliOutputPanel', () => {
     // Find the scrollable output area (has overflow-y-auto and typo-code)
     const outputArea = container.querySelector('[class*="overflow-y-auto"][class*="typo-code"]');
     expect(outputArea).toBeTruthy();
-    const lineDivs = outputArea!.querySelectorAll(':scope > div.whitespace-pre-wrap');
+    // Virtualized: line divs live inside per-row absolute wrappers, not as
+    // direct children of the scroll area. Walk the subtree.
+    const lineDivs = outputArea!.querySelectorAll('div.whitespace-pre-wrap');
 
     // Meta line should be italic
     expect(lineDivs[0].className).toContain('italic');
@@ -791,8 +793,12 @@ describe('E2E: large output rendering', () => {
       <CliOutputPanel phase="completed" lines={lines} />,
     );
 
+    // TerminalBody virtualizes via @tanstack/react-virtual: only rows in the
+    // visible window + overscan are mounted, so we cannot assert that every
+    // line is in the DOM. The "doesn't crash" guarantee is still meaningful —
+    // assert the header lineCount is correct and at least the first row
+    // renders, which proves the virtualizer is wired up.
     expect(screen.getByText('Output line 1')).toBeInTheDocument();
-    expect(screen.getByText('Output line 500')).toBeInTheDocument();
     expect(screen.getByText('Completed (500 lines)')).toBeInTheDocument();
   });
 

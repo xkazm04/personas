@@ -102,6 +102,10 @@ describe("UnifiedMatrixEntry", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     capturedMatrixProps = {};
+    // Force legacy 8-dimension layout — these tests assert on the
+    // PersonaMatrix render path; the default Glyph Full layout uses
+    // GlyphFullLayout instead and never mounts PersonaMatrix.
+    localStorage.setItem("personas:build-layout", "legacy-dimensions");
     mockBuildReturn = {
       buildPhase: "initializing",
       cellStates: {},

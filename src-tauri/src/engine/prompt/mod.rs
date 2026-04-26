@@ -703,6 +703,7 @@ pub fn assemble_prompt(
 mod tests {
     use super::*;
     use crate::db::models::{Persona, PersonaToolDefinition};
+    use super::runtime_safety::{sanitize_runtime_variable, MAX_RUNTIME_VAR_LENGTH};
 
     fn test_persona() -> Persona {
         Persona {

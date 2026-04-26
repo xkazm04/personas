@@ -353,6 +353,32 @@ pub(super) async fn run_session(
                         capability_id, field, value, ..
                     } => {
                         ensure_capability_in_coverage(&mut coverage, capability_id, &raw_user_intent);
+                        // Defensive open: when the user already answered the
+                        // legacy cell that maps to this field in a prior turn
+                        // (still pending in `last_answered_cells` until the
+                        // post-loop clear), trust their answer and mark the
+                        // gate Open before the gate-state check. Without this,
+                        // an LLM that re-emits a CapRes for an already-answered
+                        // field gets suppressed + re-asked, looping the user
+                        // through the same question. This was the root cause
+                        // of the build pipeline stalling on non-translation
+                        // intents.
+                        if let Some(legacy) = map_capability_field_to_legacy_dimension(field) {
+                            if last_answered_cells.iter().any(|c| c == legacy) {
+                                if let Some(cg) = coverage.get_mut(capability_id) {
+                                    if !cg.is_gate_open(field) {
+                                        cg.mark_open(field);
+                                        tracing::info!(
+                                            session_id = %session_id,
+                                            cap_id = %capability_id,
+                                            field = %field,
+                                            answered_cell = %legacy,
+                                            "Gate auto-opened: user already answered the legacy cell this turn"
+                                        );
+                                    }
+                                }
+                            }
+                        }
                         let gate_open = coverage
                             .get(capability_id)
                             .map(|g| g.is_gate_open(field))

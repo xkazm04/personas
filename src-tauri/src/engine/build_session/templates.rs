@@ -92,7 +92,11 @@ fn extract_keywords(text: &str) -> Vec<String> {
         .collect();
 
     // Service name substring scan — finds "gmail" inside "Gmailのメール" etc.
-    let known_services = [
+    // Sources the canonical name list from the connector registry snapshot
+    // (refreshed from DB on connector CRUD), supplemented by a small fallback
+    // set so template matching still works when the snapshot is empty
+    // (uninitialized at startup, or under unit tests with no DB).
+    const FALLBACK_SERVICES: &[&str] = &[
         "gmail", "outlook", "notion", "slack", "discord", "trello", "jira",
         "asana", "github", "gitlab", "linear", "airtable", "google", "sheets",
         "drive", "calendar", "teams", "zoom", "hubspot", "salesforce",
@@ -100,9 +104,15 @@ fn extract_keywords(text: &str) -> Vec<String> {
         "telegram", "whatsapp", "twilio", "sendgrid", "calcom",
     ];
     let text_lower = text.to_lowercase();
-    for svc in &known_services {
-        if text_lower.contains(svc) && !keywords.contains(&svc.to_string()) {
-            keywords.push(svc.to_string());
+    let registry = crate::engine::api_proxy::connector_keyword_snapshot();
+    let services_iter: Box<dyn Iterator<Item = String>> = if registry.is_empty() {
+        Box::new(FALLBACK_SERVICES.iter().map(|s| s.to_string()))
+    } else {
+        Box::new(registry.into_iter())
+    };
+    for svc in services_iter {
+        if text_lower.contains(svc.as_str()) && !keywords.contains(&svc) {
+            keywords.push(svc);
         }
     }
 

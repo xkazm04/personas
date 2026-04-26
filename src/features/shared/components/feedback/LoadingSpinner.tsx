@@ -1,14 +1,7 @@
-const sizeClasses = {
-  xs: '',
-  sm: '',
-  md: '',
-  lg: '',
-  xl: '',
-  '2xl': '',
-} as const;
+type SpinnerSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 interface LoadingSpinnerProps {
-  size?: keyof typeof sizeClasses;
+  size?: SpinnerSize;
   label?: string;
   className?: string;
 }

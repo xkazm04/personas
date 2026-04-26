@@ -102,6 +102,7 @@ pub mod db_query;
 pub mod safe_json;
 pub mod output_assertions;
 pub mod genome;
+pub mod genome_critique;
 pub mod evolution;
 pub mod chunker;
 #[cfg(feature = "ml")]

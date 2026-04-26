@@ -619,6 +619,46 @@ pub fn set_traceparent(pool: &DbPool, execution_id: &str, traceparent: &str) -> 
     })
 }
 
+/// Stamp the supervisory `last_heartbeat_at` column whenever the runner emits
+/// a heartbeat tick. Read by the watchdog scan in `engine::healthcheck` to
+/// detect long-silent runs without changing the canonical status lifecycle.
+/// Errors are non-fatal — heartbeat is best-effort.
+pub fn touch_last_heartbeat(pool: &DbPool, execution_id: &str) -> Result<(), AppError> {
+    timed_query!("persona_executions", "persona_executions::touch_last_heartbeat", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE persona_executions SET last_heartbeat_at = ?1 WHERE id = ?2",
+            params![now, execution_id],
+        )?;
+        Ok(())
+    })
+}
+
+/// Find still-running executions whose last heartbeat is older than the given
+/// cutoff timestamp (RFC3339). Returns just the IDs — the watchdog only needs
+/// to fire a passive event, not surface a typed row. Limited to keep a single
+/// scan tick bounded.
+pub fn find_silent_running(
+    pool: &DbPool,
+    cutoff_rfc3339: &str,
+    limit: i64,
+) -> Result<Vec<String>, AppError> {
+    timed_query!("persona_executions", "persona_executions::find_silent_running", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id FROM persona_executions
+             WHERE status = 'running'
+               AND last_heartbeat_at IS NOT NULL
+               AND last_heartbeat_at < ?1
+             ORDER BY last_heartbeat_at ASC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![cutoff_rfc3339, limit], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
 /// Create an execution record that is a healing retry of `original_exec_id`.
 pub fn create_retry(
     pool: &DbPool,

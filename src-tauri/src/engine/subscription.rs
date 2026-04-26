@@ -738,6 +738,7 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
 
     async fn tick(&self) {
         super::background::zombie_execution_tick(&self.pool, &self.app);
+        super::background::silent_execution_tick(&self.pool, &self.app);
     }
 }
 

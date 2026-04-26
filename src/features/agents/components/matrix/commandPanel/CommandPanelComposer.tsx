@@ -71,6 +71,35 @@ function composeIntent(draft: IntentDraft): string {
   return parts.join("\n");
 }
 
+/**
+ * Inverse of composeIntent: split a composed string back into its
+ * structured rows. Used when initializing draft from a parent-controlled
+ * intentText that may already include `Label: ` prefixes from a prior
+ * round-trip — without this, the prefix accumulates ("Task: Task: …")
+ * each time the composer remounts.
+ */
+function parseIntent(text: string): IntentDraft {
+  const draft: IntentDraft = { ...EMPTY_DRAFT };
+  if (!text) return draft;
+  const labelToKey = new Map<string, IntentKey>(
+    INTENT_ROWS.map((r) => [r.composeLabel, r.key]),
+  );
+  let active: IntentKey = "task";
+  for (const rawLine of text.split("\n")) {
+    const m = rawLine.match(/^([A-Za-z][A-Za-z ]*?):\s*(.*)$/);
+    const label = m?.[1];
+    const value = m?.[2] ?? "";
+    if (label && labelToKey.has(label)) {
+      active = labelToKey.get(label)!;
+      draft[active] = draft[active] ? `${draft[active]}\n${value}` : value;
+    } else {
+      // Continuation line or free-form text → append to the current row.
+      draft[active] = draft[active] ? `${draft[active]}\n${rawLine}` : rawLine;
+    }
+  }
+  return draft;
+}
+
 // ---------------------------------------------------------------------------
 // Q&A — cell key → glyph dimension (drives icon + tint per question)
 // ---------------------------------------------------------------------------
@@ -321,9 +350,7 @@ export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
   pendingQuestions, onAnswer,
 }: CommandPanelProps) {
-  const [draft, setDraft] = useState<IntentDraft>(() =>
-    intentText ? { ...EMPTY_DRAFT, task: intentText } : EMPTY_DRAFT,
-  );
+  const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
   const [frequency, setFrequency] = useState<Frequency | null>(null);
   const [time, setTime] = useState("09:00");
   const [days, setDays] = useState<string[]>(["mon"]);

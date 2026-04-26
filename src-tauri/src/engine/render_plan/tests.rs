@@ -26,6 +26,7 @@ fn empty_comp() -> Composition {
         fps: 30,
         background_color: "#000000".into(),
         items: vec![],
+        style_guide: None,
     }
 }
 
@@ -52,6 +53,8 @@ fn video_clip(
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: false,
+        transcript_path: None,
+        transcript_status: None,
     })
 }
 
@@ -92,6 +95,7 @@ fn text_item(id: &str, start: f64, duration: f64) -> TimelineItem {
         start_time: start,
         duration,
         text: "hello".into(),
+        anchor: None,
         _legacy: Default::default(),
     })
 }
@@ -235,6 +239,8 @@ fn strip_audio_flag_omits_embedded_stage() {
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: true,
+        transcript_path: None,
+        transcript_status: None,
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
     assert!(plan
@@ -297,6 +303,8 @@ fn speed_clamp_emits_warning() {
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: false,
+        transcript_path: None,
+        transcript_status: None,
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
     assert!(plan.warnings.iter().any(|w| matches!(w, CompileWarning::SpeedClamped { applied, .. } if (*applied - 16.0).abs() < 1e-9)));
@@ -369,6 +377,8 @@ fn source_out_of_bounds_is_compile_error() {
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: false,
+        transcript_path: None,
+        transcript_status: None,
     })];
     // Without a mediaProbe the compiler expands the fallback to fit the clip,
     // so out-of-bounds can only fire when a probe delivers authoritative

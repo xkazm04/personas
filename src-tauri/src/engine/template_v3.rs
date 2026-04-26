@@ -1270,7 +1270,7 @@ mod tests {
     #[test]
     fn test_sample_output_serde_roundtrip() {
         let json = r#"{"title":"T","body":"B","format":"markdown"}"#;
-        let parsed: crate::db::models::persona::SampleOutput =
+        let parsed: crate::db::models::SampleOutput =
             serde_json::from_str(json).expect("valid markdown format parses");
         let out = serde_json::to_string(&parsed).unwrap();
         assert!(out.contains("\"format\":\"markdown\""));
@@ -1279,7 +1279,7 @@ mod tests {
     #[test]
     fn test_sample_output_format_unknown_value_deserialize_error() {
         let json = r#"{"format":"xml"}"#;
-        let parsed: Result<crate::db::models::persona::SampleOutput, _> = serde_json::from_str(json);
+        let parsed: Result<crate::db::models::SampleOutput, _> = serde_json::from_str(json);
         assert!(parsed.is_err(), "unknown format must fail at serde layer (D-01)");
     }
 }

@@ -107,6 +107,7 @@ describe("matrixBuildSlice", () => {
       expect(s.buildPendingQuestions).toEqual([
         {
           cellKey: "use-cases",
+          connectorCategory: null,
           question: "What should this agent do?",
           options: ["Option A", "Option B"],
         },

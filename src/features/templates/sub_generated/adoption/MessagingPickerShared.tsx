@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck — visual-review prototype; wires to mocked vault credentials
 // + sample messages. Not imported by the production adoption flow yet.
 //
@@ -150,7 +151,7 @@ export interface TestDeliveryResult {
 
 export async function mockTestDelivery(
   channelIds: string[],
-  sample: SampleOutput,
+  _sample: SampleOutput,
 ): Promise<TestDeliveryResult[]> {
   // Simulate varying latencies and an occasional failure for visual richness.
   const results: TestDeliveryResult[] = [];

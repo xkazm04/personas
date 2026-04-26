@@ -36,6 +36,7 @@ pub fn evolution_upsert_policy(
     variants_per_cycle: Option<i32>,
     improvement_threshold: Option<f64>,
     min_executions_between: Option<i32>,
+    mutation_strategy: Option<String>,
 ) -> Result<EvolutionPolicy, AppError> {
     require_auth_sync(&state)?;
 
@@ -45,6 +46,14 @@ pub fn evolution_upsert_policy(
         None => None,
     };
 
+    // Boundary validation: only accept the three known strategies. Unknown
+    // values fall back to None so the runtime treats the policy as legacy
+    // mechanical, rather than silently dispatching to an undefined branch.
+    let strategy = mutation_strategy.and_then(|s| match s.as_str() {
+        "mechanical" | "critique" | "hybrid" => Some(s),
+        _ => None,
+    });
+
     let input = UpsertEvolutionPolicyInput {
         persona_id,
         enabled,
@@ -53,6 +62,7 @@ pub fn evolution_upsert_policy(
         variants_per_cycle: variants_per_cycle.map(|v| v.clamp(2, 8)),
         improvement_threshold: improvement_threshold.map(|t| t.clamp(0.0, 0.5)),
         min_executions_between: min_executions_between.map(|m| m.clamp(3, 100)),
+        mutation_strategy: strategy,
     };
 
     evolution_repo::upsert_policy(&state.db, &input)
@@ -75,6 +85,7 @@ pub fn evolution_toggle(
         variants_per_cycle: None,
         improvement_threshold: None,
         min_executions_between: None,
+        mutation_strategy: None,
     };
 
     evolution_repo::upsert_policy(&state.db, &input)
@@ -126,6 +137,7 @@ pub async fn evolution_trigger_cycle(
                 variants_per_cycle: None,
                 improvement_threshold: None,
                 min_executions_between: None,
+                mutation_strategy: None,
             };
             evolution_repo::upsert_policy(&state.db, &input)?
         }

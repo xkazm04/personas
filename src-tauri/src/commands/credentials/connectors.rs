@@ -5,7 +5,7 @@ use crate::db::models::{
     ConnectorDefinition, CreateConnectorDefinitionInput, UpdateConnectorDefinitionInput,
 };
 use crate::db::repos::resources::connectors as repo;
-use crate::engine::api_proxy::invalidate_connector_cache;
+use crate::engine::api_proxy::{invalidate_connector_cache, refresh_connector_keyword_snapshot};
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged_sync;
 use crate::AppState;
@@ -34,6 +34,7 @@ pub fn create_connector(
     require_privileged_sync(&state, "create_connector")?;
     let result = repo::create(&state.db, input)?;
     invalidate_connector_cache();
+    refresh_connector_keyword_snapshot(&state.db);
     Ok(result)
 }
 
@@ -46,6 +47,7 @@ pub fn update_connector(
     require_privileged_sync(&state, "update_connector")?;
     let result = repo::update(&state.db, &id, input)?;
     invalidate_connector_cache();
+    refresh_connector_keyword_snapshot(&state.db);
     Ok(result)
 }
 
@@ -57,5 +59,6 @@ pub fn delete_connector(
     require_privileged_sync(&state, "delete_connector")?;
     let result = repo::delete(&state.db, &id)?;
     invalidate_connector_cache();
+    refresh_connector_keyword_snapshot(&state.db);
     Ok(result)
 }

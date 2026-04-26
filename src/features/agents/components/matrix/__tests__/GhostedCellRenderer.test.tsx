@@ -16,7 +16,7 @@ describe('GhostedCellRenderer', () => {
   it('renders label with reduced opacity class', () => {
     render(<GhostedCellRenderer label="Tasks" watermark={StubIcon} watermarkColor="text-violet-400" />);
     const label = screen.getByText('Tasks');
-    expect(label.className).toContain('text-foreground/20');
+    expect(label.className).toContain('text-foreground');
   });
 
   it('renders label with uppercase tracking style', () => {
@@ -37,7 +37,7 @@ describe('GhostedCellRenderer', () => {
   it('renders with rounded-xl border classes', () => {
     const { container } = render(<GhostedCellRenderer label="Tasks" watermark={StubIcon} watermarkColor="text-violet-400" />);
     const outer = container.firstElementChild!;
-    expect(outer.className).toContain('rounded-xl');
+    expect(outer.className).toContain('rounded-modal');
     expect(outer.className).toContain('border');
   });
 

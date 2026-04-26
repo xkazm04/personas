@@ -168,17 +168,46 @@ fn intent_implies_memory(intent_lower: &str) -> Gate {
     Gate::Closed
 }
 
+/// Fuzzy aliases the connector registry doesn't necessarily carry as exact
+/// `name` rows — multi-word forms ("google drive"), normalised spellings
+/// ("local-drive" / "built-in drive"). Kept as a small seed so intent matching
+/// works even when the registry only has the canonical name. Real connectors
+/// added to the DB are picked up dynamically via `registry_keywords`.
+const FUZZY_CONNECTOR_ALIASES: &[&str] = &[
+    "google drive", "google sheets", "google calendar",
+    "local drive", "local-drive", "local_drive", "built-in drive", "built in drive",
+];
+
+fn intent_implies_connectors_with_registry(intent_lower: &str, registry_keywords: &[String]) -> Gate {
+    for kw in FUZZY_CONNECTOR_ALIASES {
+        if intent_lower.contains(kw) { return Gate::Open; }
+    }
+    for kw in registry_keywords {
+        if !kw.is_empty() && intent_lower.contains(kw.as_str()) { return Gate::Open; }
+    }
+    Gate::Closed
+}
+
+/// Production entry — combines the fuzzy aliases (which the connector
+/// registry doesn't carry as exact names) with the live connector registry
+/// snapshot from `engine::api_proxy::connector_keyword_snapshot`. Falls
+/// back to a small set of well-known service names if the snapshot is
+/// empty (uninitialized at startup or in tests), so the heuristic still
+/// behaves sensibly without DB access.
 fn intent_implies_connectors(intent_lower: &str) -> Gate {
-    const KNOWN: &[&str] = &[
+    const KNOWN_FALLBACK: &[&str] = &[
         "gmail", "outlook", "slack", "discord", "teams", "github", "gitlab",
         "linear", "jira", "notion", "trello", "asana", "airtable",
-        "google drive", "google sheets", "google calendar",
-        "local drive", "local-drive", "local_drive", "built-in drive", "built in drive",
         "hubspot", "salesforce", "stripe", "sentry", "supabase",
         "telegram", "whatsapp", "twilio",
     ];
-    for kw in KNOWN { if intent_lower.contains(kw) { return Gate::Open; } }
-    Gate::Closed
+    let registry = crate::engine::api_proxy::connector_keyword_snapshot();
+    if registry.is_empty() {
+        let fallback: Vec<String> = KNOWN_FALLBACK.iter().map(|s| s.to_string()).collect();
+        intent_implies_connectors_with_registry(intent_lower, &fallback)
+    } else {
+        intent_implies_connectors_with_registry(intent_lower, &registry)
+    }
 }
 
 /// Intent-heuristic gate seed — shared by enumeration-time init and lazy
@@ -186,11 +215,32 @@ fn intent_implies_connectors(intent_lower: &str) -> Gate {
 /// fires before any resolution we use it; when the LLM skips enumeration
 /// entirely we still apply the same heuristic on first resolution so gates
 /// work uniformly.
+///
+/// Test/legacy entry — connectors gate sees only the fallback set. Real
+/// callers should prefer `gate_seed_for_intent_with_registry` so personas
+/// matched against connectors added to the DB without a code edit.
 pub(super) fn gate_seed_for_intent(intent: &str) -> CapabilityGates {
     let intent_lower = intent.to_lowercase();
     CapabilityGates {
         trigger: intent_implies_trigger(&intent_lower),
         connectors: intent_implies_connectors(&intent_lower),
+        review_policy: intent_implies_review(&intent_lower),
+        memory_policy: intent_implies_memory(&intent_lower),
+    }
+}
+
+/// Same as `gate_seed_for_intent` but consults the connector registry list
+/// (typically from `engine::api_proxy::cached_connector_keywords`) so any
+/// connector added via the catalog UI participates in keyword matching
+/// without a code edit.
+pub(super) fn gate_seed_for_intent_with_registry(
+    intent: &str,
+    registry_keywords: &[String],
+) -> CapabilityGates {
+    let intent_lower = intent.to_lowercase();
+    CapabilityGates {
+        trigger: intent_implies_trigger(&intent_lower),
+        connectors: intent_implies_connectors_with_registry(&intent_lower, registry_keywords),
         review_policy: intent_implies_review(&intent_lower),
         memory_policy: intent_implies_memory(&intent_lower),
     }
@@ -839,7 +889,7 @@ mod tests {
             "expected at least one event, got {}",
             events.len()
         );
-        let has_v3 = events.iter().any(|e| matches!(e, BuildEvent::ClarifyingQuestionV3 { field, .. } if field == expected_field));
+        let has_v3 = events.iter().any(|e| matches!(e, BuildEvent::ClarifyingQuestionV3 { field, .. } if field.as_deref() == Some(expected_field)));
         assert!(has_v3, "expected v3 ClarifyingQuestionV3 for field {expected_field}");
     }
 

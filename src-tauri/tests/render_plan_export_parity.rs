@@ -26,6 +26,7 @@ fn empty_comp(fps: u32) -> Composition {
         fps,
         background_color: "#000000".into(),
         items: vec![],
+        style_guide: None,
     }
 }
 
@@ -52,6 +53,8 @@ fn video_clip(
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: false,
+        transcript_path: None,
+        transcript_status: None,
     })
 }
 
@@ -92,6 +95,7 @@ fn text(id: &str, label: &str, start: f64, duration: f64) -> TimelineItem {
         start_time: start,
         duration,
         text: String::new(),
+        anchor: None,
         _legacy: Default::default(),
     })
 }
@@ -418,6 +422,8 @@ fn strip_audio_removes_embedded_audio_branch_only() {
         fade_in: 0.0,
         fade_out: 0.0,
         strip_audio: true,
+        transcript_path: None,
+        transcript_status: None,
     })];
     let args_stripped = args_for(&stripped);
     let fc_stripped = joined_filters(&args_stripped).unwrap_or("");

@@ -198,6 +198,39 @@ export function UnifiedMatrixEntry() {
     if (!draftPersonaId) autoTestedRef.current = null;
   }, [draftPersonaId]);
 
+  // -- Auto-submit collected answers when the round empties ----------------
+  // The QuestionRow / GlyphQuestionCard Send buttons call `collectAnswer`
+  // which only stores the answer locally; the CLI never receives anything
+  // until `submitAllAnswers` fires. The Glyph Full layout (the default) had
+  // no Submit-All affordance, so users would answer every question, watch
+  // them disappear, then see the same questions re-emitted by the CLI on its
+  // next turn (the LLM never got a reply). Auto-submit once the visible
+  // queue is empty and at least one answer is buffered. A short debounce
+  // lets the user finish the last keystroke and lets a quick LLM follow-up
+  // question (which would re-populate `pendingQuestions`) cancel the submit.
+  const autoSubmitTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (autoSubmitTimer.current !== null) {
+      window.clearTimeout(autoSubmitTimer.current);
+      autoSubmitTimer.current = null;
+    }
+    if (!draftPersonaId) return;
+    const phase = build.buildPhase;
+    if (phase !== 'awaiting_input' && phase !== 'analyzing' && phase !== 'resolving') return;
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
+    if (build.pendingAnswerCount === 0) return;
+    autoSubmitTimer.current = window.setTimeout(() => {
+      autoSubmitTimer.current = null;
+      void build.handleSubmitAnswers();
+    }, 250);
+    return () => {
+      if (autoSubmitTimer.current !== null) {
+        window.clearTimeout(autoSubmitTimer.current);
+        autoSubmitTimer.current = null;
+      }
+    };
+  }, [build, draftPersonaId]);
+
   // -- Sync build phase → process activity status -------------------------
 
   const currentPhase = useAgentStore((s) => s.buildPhase);

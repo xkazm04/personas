@@ -71,6 +71,8 @@ fn arb_video_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
                 fade_in: fi,
                 fade_out: fo,
                 strip_audio: strip,
+                transcript_path: None,
+                transcript_status: None,
             })
         })
 }
@@ -121,6 +123,7 @@ fn arb_text_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
                 start_time: start,
                 duration,
                 text: format!("body{ordinal}"),
+                anchor: None,
                 _legacy: Default::default(),
             })
         },
@@ -190,6 +193,7 @@ fn arb_composition() -> impl Strategy<Value = Composition> {
                 fps,
                 background_color: "#000000".into(),
                 items,
+                style_guide: None,
             }
         })
 }

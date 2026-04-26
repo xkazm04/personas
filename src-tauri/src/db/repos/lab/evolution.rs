@@ -12,6 +12,7 @@ row_mapper!(row_to_policy -> EvolutionPolicy {
     enabled [bool],
     fitness_objective, mutation_rate, variants_per_cycle,
     improvement_threshold, min_executions_between,
+    mutation_strategy [opt],
     last_cycle_at, total_cycles, total_promotions,
     created_at, updated_at,
 });
@@ -53,8 +54,9 @@ pub fn upsert_policy(
                     variants_per_cycle = COALESCE(?4, variants_per_cycle),
                     improvement_threshold = COALESCE(?5, improvement_threshold),
                     min_executions_between = COALESCE(?6, min_executions_between),
-                    updated_at = ?7
-                 WHERE id = ?8",
+                    mutation_strategy = COALESCE(?7, mutation_strategy),
+                    updated_at = ?8
+                 WHERE id = ?9",
                 params![
                     input.enabled.map(|b| b as i32),
                     input.fitness_objective,
@@ -62,6 +64,7 @@ pub fn upsert_policy(
                     input.variants_per_cycle,
                     input.improvement_threshold,
                     input.min_executions_between,
+                    input.mutation_strategy,
                     now,
                     id,
                 ],
@@ -85,8 +88,8 @@ pub fn upsert_policy(
                 "INSERT INTO evolution_policies
                     (id, persona_id, enabled, fitness_objective, mutation_rate,
                      variants_per_cycle, improvement_threshold, min_executions_between,
-                     created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                     mutation_strategy, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
                 params![
                     id,
                     input.persona_id,
@@ -96,6 +99,7 @@ pub fn upsert_policy(
                     variants,
                     threshold,
                     min_execs,
+                    input.mutation_strategy,
                     now,
                     now,
                 ],

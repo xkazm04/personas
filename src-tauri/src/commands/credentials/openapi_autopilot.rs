@@ -640,6 +640,7 @@ pub fn openapi_generate_connector(
 
     let connector = connector_repo::create(&state.db, input)?;
     invalidate_connector_cache();
+    crate::engine::api_proxy::refresh_connector_keyword_snapshot(&state.db);
 
     Ok(GeneratedConnectorResult {
         connector_id: connector.id,

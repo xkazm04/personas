@@ -198,9 +198,11 @@ describe('mergeTemplateOverlay — arrays', () => {
         { id: 'uc_a', title: 'Á' },
       ],
     };
-    expect(mergeTemplateOverlay(canon, overlay)).toEqual({
-      use_cases: [{ id: 'uc_a', title: 'Á' }],
-    });
+    // recordIdMismatch throws under vitest so locale-parity drift fails loudly.
+    // The "silently skipped" guarantee still holds for dev/prod; here we only
+    // assert that the unknown id surfaces an explicit error rather than silently
+    // poisoning the merge output.
+    expect(() => mergeTemplateOverlay(canon, overlay)).toThrow(/uc_unknown/);
   });
 });
 

@@ -20,6 +20,30 @@ const VALID_SECTIONS: SidebarSection[] = [
   "design-reviews", "plugins", "settings",
 ];
 
+/**
+ * Render any thrown value into a useful string for the bridge response.
+ * Tauri rejects with structured AppError objects, not Error instances —
+ * `String({...})` would yield `"[object Object]"`, swallowing the real
+ * cause. Probe the common shapes (`.message`, `.error`, nested
+ * `{error,kind}`) before falling back to a JSON dump.
+ */
+function unpackError(e: unknown): string {
+  if (e == null) return "Unknown error";
+  if (e instanceof Error) return e.message;
+  if (typeof e === "string") return e;
+  if (typeof e === "object") {
+    const obj = e as Record<string, unknown>;
+    const msg = obj.message ?? obj.error ?? obj.reason;
+    if (typeof msg === "string" && msg.length > 0) return msg;
+    if (msg && typeof msg === "object") {
+      const inner = (msg as Record<string, unknown>).message ?? (msg as Record<string, unknown>).error;
+      if (typeof inner === "string") return inner;
+    }
+    try { return JSON.stringify(e); } catch { /* circular — fall through */ }
+  }
+  return String(e);
+}
+
 interface TestBridge {
   navigate(section: string): { success: boolean; section?: string; error?: string };
   getState(): Record<string, unknown>;
@@ -513,7 +537,7 @@ const bridge: TestBridge = {
       }
       return { success: true, deleted: match.name };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -574,7 +598,7 @@ const bridge: TestBridge = {
       });
       return { success: false, error: 'Second build was NOT rejected — expected rejection' };
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = unpackError(e);
       if (msg.includes('already active')) {
         return { success: true };
       }
@@ -620,7 +644,7 @@ const bridge: TestBridge = {
       useAgentStore.getState().selectPersona(personaId);
       return { success: true, result, personaId };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -706,7 +730,7 @@ const bridge: TestBridge = {
       });
       return { success: true, execution: result, personaName: match.name };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -726,7 +750,7 @@ const bridge: TestBridge = {
       });
       return { success: true, report };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -739,7 +763,7 @@ const bridge: TestBridge = {
       const detail = await invoke('get_persona_detail', { id: personaId });
       return { success: true, detail };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -760,7 +784,7 @@ const bridge: TestBridge = {
         })),
       };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -772,7 +796,7 @@ const bridge: TestBridge = {
       await invoke('delete_persona', { id: personaId });
       return { success: true };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -805,7 +829,7 @@ const bridge: TestBridge = {
         warnings: detail.warnings ?? [],
       };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -835,7 +859,7 @@ const bridge: TestBridge = {
         reviews: (reviews as unknown[]).length,
       };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -848,7 +872,7 @@ const bridge: TestBridge = {
       const services = await invoke<string[]>("list_cli_capturable_services");
       return { success: true, services };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -876,7 +900,7 @@ const bridge: TestBridge = {
         expiresAt: result.expires_at,
       };
     } catch (e: unknown) {
-      return { success: false, error: e instanceof Error ? e.message : String(e) };
+      return { success: false, error: unpackError(e) };
     }
   },
 
@@ -1170,7 +1194,7 @@ const bridge: TestBridge = {
 
       await invoke("__test_respond", { id, result: JSON.stringify(result) });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = unpackError(e);
       await invoke("__test_respond", { id, result: JSON.stringify({ error: msg }) });
     }
   },

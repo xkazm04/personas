@@ -441,7 +441,7 @@ function HeroCard(props: HeroCardProps) {
 
 /* ── Satellite card ────────────────────────────────────────────────── */
 
-interface SatelliteCardProps extends Omit<HeroCardProps, 'isActive'> {}
+type SatelliteCardProps = Omit<HeroCardProps, 'isActive'>;
 
 function SatelliteCard(props: SatelliteCardProps) {
   const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;

@@ -74,7 +74,7 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
     // Index personas by id once so each adapter call is O(1). With 20 personas
     // and 50 inbox items, this avoids up to ~1000 linear scans per rebuild.
     const personaIndex = new Map<string, Persona>();
-    for (const p of personas) personaIndex.set(p.id, p);
+    if (Array.isArray(personas)) for (const p of personas) personaIndex.set(p.id, p);
     const resolve = (id: string): PersonaSummary => resolvePersonaFromIndex(personaIndex, id);
 
     const approvals = manualReviews
