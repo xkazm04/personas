@@ -751,6 +751,22 @@ pub(crate) async fn event_bus_tick(
                 }
             };
 
+            // Honour the persona Active/Off toggle. The header switch sets
+            // personas.enabled = 0; without this guard the event-bus path
+            // happily dispatched executions to disabled personas because the
+            // get_subscriptions / get_event_listeners SQL paths never joined
+            // on personas.enabled. Skip silently — no DLQ, no retry — the
+            // user explicitly turned the agent off.
+            if !persona.enabled {
+                tracing::info!(
+                    persona_id = %persona.id,
+                    persona_name = %persona.name,
+                    event_type = %event.event_type,
+                    "Event bus: skipping — persona is disabled"
+                );
+                continue;
+            }
+
             // Cascade guard. Scope it to the capability when the match is
             // capability-scoped so a legitimate UC1→UC2 chain in the same
             // persona isn't blocked by UC1 still completing when its

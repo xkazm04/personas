@@ -1224,10 +1224,19 @@ pub fn get_enabled_by_type(pool: &DbPool, trigger_type: &str) -> Result<Vec<Pers
 pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_due", {
         let conn = pool.get()?;
+        // Honour the persona Active/Off toggle: a disabled persona's
+        // schedule triggers must not fire. Without the JOIN+WHERE the
+        // header toggle was purely cosmetic — `personas.enabled = 0` was
+        // never read by the dispatch path, and cron continued to fire
+        // executions after the user "switched the agent off".
         let mut stmt = conn.prepare(
-            "SELECT * FROM persona_triggers
-             WHERE status = 'active' AND next_trigger_at IS NOT NULL AND next_trigger_at <= ?1
-             ORDER BY next_trigger_at ASC",
+            "SELECT t.* FROM persona_triggers t
+             INNER JOIN personas p ON p.id = t.persona_id
+             WHERE t.status = 'active'
+               AND t.next_trigger_at IS NOT NULL
+               AND t.next_trigger_at <= ?1
+               AND p.enabled = 1
+             ORDER BY t.next_trigger_at ASC",
         )?;
         let rows = stmt.query_map(params![now], row_to_trigger)?;
         let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
