@@ -1,6 +1,8 @@
 use std::sync::Arc;
 use tauri::State;
 
+pub mod workspace;
+
 use crate::db::models::{
     DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup, DevContextGroupRelationship,
     DevGoal, DevGoalDependency, DevGoalSignal, DevIdea, DevPipeline, DevProject, DevScan, DevTask,
