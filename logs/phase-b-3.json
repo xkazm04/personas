@@ -1,0 +1,231 @@
+{
+  "scenario": "phase-b-chained-personas",
+  "started": "2026-04-27T09:30:38.483614+00:00",
+  "finished": "2026-04-27T09:41:25.428169+00:00",
+  "duration_s": 646.944555,
+  "persona_ids": [
+    "418444dd-5f24-4346-847b-63350bb4f846",
+    "ec3a847f-7816-458a-8c1a-6d176fa6fc04",
+    "7a83addd-0013-437c-a957-ba69af25060d"
+  ],
+  "log": [
+    {
+      "ts": "2026-04-27T09:30:38.492772+00:00",
+      "step": "preflight.health",
+      "outcome": "ok",
+      "server": "personas-test-automation",
+      "version": "0.2.0"
+    },
+    {
+      "ts": "2026-04-27T09:30:39.341047+00:00",
+      "step": "build.X.start",
+      "outcome": "ok",
+      "session_id": "7a18fb70-cffa-4b88-a759-7535c0d5a561",
+      "persona_id": "418444dd-5f24-4346-847b-63350bb4f846"
+    },
+    {
+      "ts": "2026-04-27T09:33:53.978426+00:00",
+      "step": "build.X.answer_done",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 11
+    },
+    {
+      "ts": "2026-04-27T09:33:53.989062+00:00",
+      "step": "build.X.test",
+      "outcome": "ok",
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T09:33:54.070863+00:00",
+      "step": "build.X.promote",
+      "outcome": "ok",
+      "persona_id": "418444dd-5f24-4346-847b-63350bb4f846"
+    },
+    {
+      "ts": "2026-04-27T09:33:54.111770+00:00",
+      "step": "inspect.X",
+      "outcome": "ok",
+      "name": "HN News Scraper",
+      "use_cases": 1,
+      "triggers": 1,
+      "chain_subs": [
+        {
+          "src": "persona",
+          "event": "news.draft.captured",
+          "direction": null
+        },
+        {
+          "src": "uc-76ed88ba-fce5-445e-8a04-a6a79e1fb359",
+          "event": "news.draft.captured",
+          "direction": null
+        }
+      ]
+    },
+    {
+      "ts": "2026-04-27T09:33:54.655421+00:00",
+      "step": "build.Y.start",
+      "outcome": "ok",
+      "session_id": "236c9eb4-f1b8-41d3-ac0b-f8ce25b7aa35",
+      "persona_id": "ec3a847f-7816-458a-8c1a-6d176fa6fc04"
+    },
+    {
+      "ts": "2026-04-27T09:36:30.557962+00:00",
+      "step": "build.Y.answer_done",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 9
+    },
+    {
+      "ts": "2026-04-27T09:36:30.566028+00:00",
+      "step": "build.Y.test",
+      "outcome": "ok",
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T09:36:30.639735+00:00",
+      "step": "build.Y.promote",
+      "outcome": "ok",
+      "persona_id": "ec3a847f-7816-458a-8c1a-6d176fa6fc04"
+    },
+    {
+      "ts": "2026-04-27T09:36:30.667655+00:00",
+      "step": "inspect.Y",
+      "outcome": "ok",
+      "name": "News Draft Summarizer",
+      "use_cases": 1,
+      "triggers": 1,
+      "chain_subs": [
+        {
+          "src": "persona",
+          "event": "news.draft.captured",
+          "direction": null
+        },
+        {
+          "src": "persona",
+          "event": "news.summary.ready",
+          "direction": null
+        },
+        {
+          "src": "uc-9ba16aa5-778e-44d7-b588-11ff3fa20c5d",
+          "event": "news.draft.captured",
+          "direction": null
+        },
+        {
+          "src": "uc-9ba16aa5-778e-44d7-b588-11ff3fa20c5d",
+          "event": "news.summary.ready",
+          "direction": null
+        }
+      ]
+    },
+    {
+      "ts": "2026-04-27T09:36:31.205193+00:00",
+      "step": "build.Z.start",
+      "outcome": "ok",
+      "session_id": "b2e85802-462d-4567-b46e-485dc4a04532",
+      "persona_id": "7a83addd-0013-437c-a957-ba69af25060d"
+    },
+    {
+      "ts": "2026-04-27T09:39:33.757918+00:00",
+      "step": "build.Z.answer_done",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 10
+    },
+    {
+      "ts": "2026-04-27T09:39:33.767643+00:00",
+      "step": "build.Z.test",
+      "outcome": "ok",
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T09:39:33.844291+00:00",
+      "step": "build.Z.promote",
+      "outcome": "ok",
+      "persona_id": "7a83addd-0013-437c-a957-ba69af25060d"
+    },
+    {
+      "ts": "2026-04-27T09:39:33.874800+00:00",
+      "step": "inspect.Z",
+      "outcome": "ok",
+      "name": "News Digest Archivist",
+      "use_cases": 1,
+      "triggers": 1,
+      "chain_subs": [
+        {
+          "src": "persona",
+          "event": "news.summary.ready",
+          "direction": null
+        },
+        {
+          "src": "uc-2c3596de-4f12-4455-940f-ca3f99db09e2",
+          "event": "news.summary.ready",
+          "direction": null
+        }
+      ]
+    },
+    {
+      "ts": "2026-04-27T09:39:33.886686+00:00",
+      "step": "cascade.fire_x",
+      "outcome": "ok",
+      "x_id": "418444dd-5f24-4346-847b-63350bb4f846",
+      "since": "2026-04-27T09:39:33.875027+00:00"
+    },
+    {
+      "ts": "2026-04-27T09:40:26.632436+00:00",
+      "step": "cascade.observed_X",
+      "outcome": "ok",
+      "persona_id": "418444dd-5f24-4346-847b-63350bb4f846",
+      "execution_id": "66fe6f41-9ba0-410d-b7a3-7c225b61e326",
+      "status": "completed",
+      "use_case_id": null
+    },
+    {
+      "ts": "2026-04-27T09:40:29.877430+00:00",
+      "step": "cascade.observed_Y",
+      "outcome": "ok",
+      "persona_id": "ec3a847f-7816-458a-8c1a-6d176fa6fc04",
+      "execution_id": "acbb7ba9-1c2c-46e9-8b9d-92782aecc784",
+      "status": "completed",
+      "use_case_id": "uc-9ba16aa5-778e-44d7-b588-11ff3fa20c5d"
+    },
+    {
+      "ts": "2026-04-27T09:41:25.399403+00:00",
+      "step": "cascade.observed_Z",
+      "outcome": "ok",
+      "persona_id": "7a83addd-0013-437c-a957-ba69af25060d",
+      "execution_id": "1b728949-a689-4206-a92e-9dd58ee10dac",
+      "status": "completed",
+      "use_case_id": "uc-2c3596de-4f12-4455-940f-ca3f99db09e2"
+    },
+    {
+      "ts": "2026-04-27T09:41:25.399536+00:00",
+      "step": "cascade.full_chain",
+      "outcome": "ok",
+      "418444dd-5f24-4346-847b-63350bb4f846": "66fe6f41-9ba0-410d-b7a3-7c225b61e326",
+      "ec3a847f-7816-458a-8c1a-6d176fa6fc04": "acbb7ba9-1c2c-46e9-8b9d-92782aecc784",
+      "7a83addd-0013-437c-a957-ba69af25060d": "1b728949-a689-4206-a92e-9dd58ee10dac"
+    },
+    {
+      "ts": "2026-04-27T09:41:25.411443+00:00",
+      "step": "cleanup.deletePersona",
+      "outcome": "ok",
+      "persona_id": "418444dd-5f24-4346-847b-63350bb4f846",
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T09:41:25.419351+00:00",
+      "step": "cleanup.deletePersona",
+      "outcome": "ok",
+      "persona_id": "ec3a847f-7816-458a-8c1a-6d176fa6fc04",
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T09:41:25.428074+00:00",
+      "step": "cleanup.deletePersona",
+      "outcome": "ok",
+      "persona_id": "7a83addd-0013-437c-a957-ba69af25060d",
+      "error": null
+    }
+  ]
+}

@@ -1,0 +1,327 @@
+{
+  "scenario": "coordinator",
+  "started": "2026-04-27T07:51:50.392279+00:00",
+  "finished": "2026-04-27T07:57:54.296900+00:00",
+  "duration_s": 363.904621,
+  "log": [
+    {
+      "ts": "2026-04-27T07:51:50.401280+00:00",
+      "step": "preflight.health",
+      "outcome": "ok",
+      "server": "personas-test-automation",
+      "version": "0.2.0"
+    },
+    {
+      "ts": "2026-04-27T07:51:51.250951+00:00",
+      "step": "start_build",
+      "outcome": "ok",
+      "session_id": "04963373-7643-4544-90b4-c2353877dbd4",
+      "persona_id": "2fdd557e-e139-4063-b97e-413994175b89"
+    },
+    {
+      "ts": "2026-04-27T07:52:11.554753+00:00",
+      "step": "wait.phase.round0",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:52:31.803503+00:00",
+      "step": "wait.phase.round1",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:52:52.105013+00:00",
+      "step": "wait.phase.round2",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:53:12.436524+00:00",
+      "step": "wait.phase.round3",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:53:32.740241+00:00",
+      "step": "wait.phase.round4",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:53:53.037831+00:00",
+      "step": "wait.phase.round5",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:53:59.953615+00:00",
+      "step": "wait.phase.round6",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:54:00.134248+00:00",
+      "step": "answer.round6",
+      "outcome": "ok",
+      "answered": [
+        "human-review"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:54:20.422990+00:00",
+      "step": "wait.phase.round7",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:54:40.690366+00:00",
+      "step": "wait.phase.round8",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:55:00.972016+00:00",
+      "step": "wait.phase.round9",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:55:13.555254+00:00",
+      "step": "wait.phase.round10",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:55:13.683318+00:00",
+      "step": "answer.round10",
+      "outcome": "ok",
+      "answered": [
+        "human-review"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:55:33.902018+00:00",
+      "step": "wait.phase.round11",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:55:54.172770+00:00",
+      "step": "wait.phase.round12",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:56:14.407090+00:00",
+      "step": "wait.phase.round13",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:56:14.817506+00:00",
+      "step": "wait.phase.round14",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:56:14.951928+00:00",
+      "step": "answer.round14",
+      "outcome": "ok",
+      "answered": [
+        "human-review"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:56:35.184647+00:00",
+      "step": "wait.phase.round15",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:56:55.421323+00:00",
+      "step": "wait.phase.round16",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:57:15.690070+00:00",
+      "step": "wait.phase.round17",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:57:35.939495+00:00",
+      "step": "wait.phase.round18",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:57:54.139471+00:00",
+      "step": "wait.phase.round19",
+      "outcome": "ok",
+      "phase": "test_complete",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:57:54.139967+00:00",
+      "step": "answer_dimensions",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 19
+    },
+    {
+      "ts": "2026-04-27T07:57:54.147605+00:00",
+      "step": "test_build_draft",
+      "outcome": "ok",
+      "report_keys": [
+        "credential_issues",
+        "results",
+        "tools_failed",
+        "tools_passed",
+        "tools_skipped",
+        "tools_tested"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.227488+00:00",
+      "step": "promote_build_draft",
+      "outcome": "ok",
+      "persona_id": "2fdd557e-e139-4063-b97e-413994175b89"
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261240+00:00",
+      "step": "persona_detail",
+      "outcome": "ok",
+      "name": "Weekly Work Planner",
+      "use_cases": 4,
+      "triggers": 4,
+      "connectors": [
+        "linear",
+        "github",
+        "google_calendar",
+        "local_drive"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261522+00:00",
+      "step": "acceptance.use_case_count",
+      "outcome": "fail",
+      "got": 4,
+      "expected": 3,
+      "uc_titles": [
+        "Linear Issues Collector",
+        "GitHub PRs Collector",
+        "Calendar Events Collector",
+        "Weekly Digest Assembler"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261675+00:00",
+      "step": "acceptance.uc_trigger",
+      "outcome": "fail",
+      "uc_id": "uc-ddfc205f-b09d-4339-9b54-bd3f26e4a485",
+      "trigger": null,
+      "expected_one_of": [
+        "schedule"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261717+00:00",
+      "step": "acceptance.uc_trigger",
+      "outcome": "fail",
+      "uc_id": "uc-546fdd73-b99c-4ab2-ae7f-cbaff607273a",
+      "trigger": null,
+      "expected_one_of": [
+        "schedule"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261738+00:00",
+      "step": "acceptance.uc_trigger",
+      "outcome": "fail",
+      "uc_id": "uc-6dcae3a7-2900-4daa-8946-dabcfd751835",
+      "trigger": null,
+      "expected_one_of": [
+        "schedule"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261756+00:00",
+      "step": "acceptance.uc_trigger",
+      "outcome": "fail",
+      "uc_id": "uc-ce16bc5f-1906-4233-adfb-647e68e998af",
+      "trigger": null,
+      "expected_one_of": [
+        "schedule"
+      ]
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261773+00:00",
+      "step": "acceptance.uc_connectors",
+      "outcome": "ok",
+      "uc_id": "uc-ddfc205f-b09d-4339-9b54-bd3f26e4a485",
+      "connectors": []
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261791+00:00",
+      "step": "acceptance.uc_connectors",
+      "outcome": "ok",
+      "uc_id": "uc-546fdd73-b99c-4ab2-ae7f-cbaff607273a",
+      "connectors": []
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261806+00:00",
+      "step": "acceptance.uc_connectors",
+      "outcome": "ok",
+      "uc_id": "uc-6dcae3a7-2900-4daa-8946-dabcfd751835",
+      "connectors": []
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261819+00:00",
+      "step": "acceptance.uc_connectors",
+      "outcome": "ok",
+      "uc_id": "uc-ce16bc5f-1906-4233-adfb-647e68e998af",
+      "connectors": []
+    },
+    {
+      "ts": "2026-04-27T07:57:54.261835+00:00",
+      "step": "acceptance.expected_connector_categories",
+      "outcome": "info",
+      "expected": [
+        "calendar",
+        "code_repository",
+        "project_management"
+      ],
+      "note": "Manual inspection \u2014 connector category checks live in the catalog tags."
+    },
+    {
+      "ts": "2026-04-27T07:57:54.296797+00:00",
+      "step": "cleanup.deleteAgent",
+      "outcome": "ok",
+      "deleted": "Weekly Work Planner"
+    }
+  ]
+}

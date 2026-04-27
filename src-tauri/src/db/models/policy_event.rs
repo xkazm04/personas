@@ -27,13 +27,19 @@ pub struct PolicyEvent {
     /// Optional — set when the dispatch context knew which UC was firing.
     pub use_case_id: Option<String>,
     /// Kind of policy that tripped. Conventional values:
-    ///   - `"review.off"`              — manual_review dropped silently
-    ///   - `"review.trust_llm"`        — review created but auto-resolved
-    ///   - `"review.auto_triage"`      — review created but auto-resolved
-    ///                                   under capability review_policy.mode = "auto_triage"
-    ///   - `"memory.off"`              — emit_memory blocked
-    ///   - `"event.off"`               — persona_action / custom event dropped
-    ///   - `"event.aliased"`           — event renamed by policy
+    ///   - `"review.off"`                       — manual_review dropped silently
+    ///   - `"review.trust_llm"`                 — review created but auto-resolved
+    ///   - `"review.auto_triage.approved"`      — auto_triage second-pass LLM
+    ///                                            evaluator approved the review
+    ///   - `"review.auto_triage.rejected"`      — auto_triage second-pass LLM
+    ///                                            evaluator rejected the review
+    ///   - `"review.auto_triage.fallback"`      — auto_triage evaluator failed
+    ///                                            (CLI spawn / timeout / parse) and
+    ///                                            the row was auto-resolved as a
+    ///                                            degraded equivalent of the C6 MVP
+    ///   - `"memory.off"`                       — emit_memory blocked
+    ///   - `"event.off"`                        — persona_action / custom event dropped
+    ///   - `"event.aliased"`                    — event renamed by policy
     pub policy_kind: String,
     /// What happened. Conventional values: `"dropped"`, `"auto_resolved"`,
     /// `"aliased"`.

@@ -554,6 +554,12 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 context_data.clone()
             };
 
+            // Pre-serialise suggested_actions once — used both by the row insert
+            // and (when auto_triage) by the spawned evaluator's payload.
+            let suggested_actions_json = suggested_actions
+                .as_ref()
+                .map(|a| serde_json::json!(a).to_string());
+            let context_data_for_eval = effective_context_data.clone();
             match review_repo::create(
                 ctx.pool,
                 CreateManualReviewInput {
@@ -563,9 +569,7 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     description: description.clone(),
                     severity: severity.clone(),
                     context_data: effective_context_data,
-                    suggested_actions: suggested_actions
-                        .as_ref()
-                        .map(|a| serde_json::json!(a).to_string()),
+                    suggested_actions: suggested_actions_json.clone(),
                     use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
@@ -576,43 +580,55 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     ));
                     // Auto-resolve paths:
                     //   - TrustLlm: user opted to trust the LLM end-to-end.
+                    //     Runtime stores the row and auto-resolves it
+                    //     immediately (no second-pass evaluation).
                     //   - AutoTriage: capability declares `review_policy.mode
-                    //     = "auto_triage"`; agent is expected to apply its
-                    //     decision_principles before emitting manual_review,
-                    //     so the runtime stores + auto-resolves.
-                    // Both store the row (auditable) but skip the human queue
-                    // and notifications. They differ only in audit tag and
-                    // resolution note so dashboards can distinguish them.
+                    //     = "auto_triage"`; runtime spawns a background LLM
+                    //     evaluator that judges the review against the
+                    //     persona's decision_principles and transitions the
+                    //     row to Approved / Rejected. Falls back to Resolved
+                    //     with a distinct audit tag on evaluator failure
+                    //     (preserves the C6 MVP behaviour). See
+                    //     `engine::auto_triage` for the full design.
+                    // Both skip the human queue and notifications.
                     let trust_llm = matches!(review_policy, testable::ReviewPolicy::TrustLlm);
                     let auto_triage = matches!(review_policy, testable::ReviewPolicy::AutoTriage);
                     let auto_resolved = trust_llm || auto_triage;
-                    if auto_resolved {
-                        let (note, audit_tag) = if trust_llm {
-                            (
-                                "auto-approved by trust_llm policy".to_string(),
-                                "review.trust_llm",
-                            )
-                        } else {
-                            (
-                                "auto-triaged by capability review_policy.mode=auto_triage".to_string(),
-                                "review.auto_triage",
-                            )
-                        };
+                    if trust_llm {
                         if let Err(e) = review_repo::update_status(
                             ctx.pool,
                             &r.id,
                             crate::db::models::ManualReviewStatus::Resolved,
-                            Some(note.clone()),
+                            Some("auto-approved by trust_llm policy".to_string()),
                         ) {
                             ctx.logger.log(&format!(
-                                "[POLICY] {audit_tag} auto-resolve failed for review {}: {e}",
+                                "[POLICY] review.trust_llm auto-resolve failed for review {}: {e}",
                                 r.id
                             ));
                         } else {
-                            let reason = format!("{audit_tag} — review {} auto-resolved", r.id);
+                            let reason = format!("review.trust_llm — review {} auto-resolved", r.id);
                             ctx.logger.log(&format!("[POLICY] {reason}"));
-                            audit_policy_event(ctx, audit_tag, "auto_resolved", Some(title), Some(&reason));
+                            audit_policy_event(ctx, "review.trust_llm", "auto_resolved", Some(title), Some(&reason));
                         }
+                    } else if auto_triage {
+                        ctx.logger.log(&format!(
+                            "[POLICY] review.auto_triage — spawning second-pass evaluator for review {}",
+                            r.id
+                        ));
+                        crate::engine::auto_triage::spawn_evaluator_task(
+                            crate::engine::auto_triage::SpawnedEvaluatorContext {
+                                pool: ctx.pool.clone(),
+                                review_id: r.id.clone(),
+                                execution_id: ctx.execution_id.to_string(),
+                                persona_id: ctx.persona_id.to_string(),
+                                use_case_id: ctx.use_case_id.map(|s| s.to_string()),
+                                review_title: title.clone(),
+                                review_description: description.clone(),
+                                review_severity: severity.clone(),
+                                review_context_data: context_data_for_eval,
+                                review_suggested_actions: suggested_actions_json,
+                            },
+                        );
                     }
                     if ctx.is_simulation {
                         ctx.logger.log("[SIM] Manual-review notification skipped (simulation)");

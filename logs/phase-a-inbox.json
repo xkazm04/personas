@@ -1,0 +1,190 @@
+{
+  "scenario": "inbox",
+  "started": "2026-04-27T07:44:36.676645+00:00",
+  "finished": "2026-04-27T07:49:53.656643+00:00",
+  "duration_s": 316.979998,
+  "log": [
+    {
+      "ts": "2026-04-27T07:44:36.687200+00:00",
+      "step": "preflight.health",
+      "outcome": "ok",
+      "server": "personas-test-automation",
+      "version": "0.2.0"
+    },
+    {
+      "ts": "2026-04-27T07:44:37.534995+00:00",
+      "step": "start_build",
+      "outcome": "ok",
+      "session_id": "9fdd758f-e5f4-4f65-b3f2-4e60674011af",
+      "persona_id": "1b1b0ec8-4036-4050-bc3b-0dc10f7cfa23"
+    },
+    {
+      "ts": "2026-04-27T07:44:57.795772+00:00",
+      "step": "wait.phase.round0",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:45:06.732015+00:00",
+      "step": "wait.phase.round1",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:45:06.861603+00:00",
+      "step": "answer.round1",
+      "outcome": "ok",
+      "answered": [
+        "triggers"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:45:27.124125+00:00",
+      "step": "wait.phase.round2",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:45:47.367836+00:00",
+      "step": "wait.phase.round3",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:46:07.613828+00:00",
+      "step": "wait.phase.round4",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:46:19.777239+00:00",
+      "step": "wait.phase.round5",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:46:19.872998+00:00",
+      "step": "answer.round5",
+      "outcome": "ok",
+      "answered": [
+        "human-review"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:46:40.182477+00:00",
+      "step": "wait.phase.round6",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:47:00.430298+00:00",
+      "step": "wait.phase.round7",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:47:20.621040+00:00",
+      "step": "wait.phase.round8",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:47:40.905946+00:00",
+      "step": "wait.phase.round9",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:48:01.161823+00:00",
+      "step": "wait.phase.round10",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:48:08.440003+00:00",
+      "step": "wait.phase.round11",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:48:08.580290+00:00",
+      "step": "answer.round11",
+      "outcome": "ok",
+      "answered": [
+        "memory"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:48:28.818961+00:00",
+      "step": "wait.phase.round12",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:48:49.067378+00:00",
+      "step": "wait.phase.round13",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:48:52.720886+00:00",
+      "step": "wait.phase.round14",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-27T07:48:52.867928+00:00",
+      "step": "answer.round14",
+      "outcome": "ok",
+      "answered": [
+        "human-review"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-27T07:49:13.102113+00:00",
+      "step": "wait.phase.round15",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:49:33.387885+00:00",
+      "step": "wait.phase.round16",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:49:53.653700+00:00",
+      "step": "wait.phase.round17",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-27T07:49:53.653955+00:00",
+      "step": "scenario.abort",
+      "outcome": "fail",
+      "error": "Exceeded max answer rounds (18) without reaching draft_ready"
+    }
+  ]
+}

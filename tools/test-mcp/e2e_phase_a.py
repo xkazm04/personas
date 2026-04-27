@@ -81,7 +81,10 @@ SCENARIOS = {
             "independently. Save the digest as a single markdown file in my "
             "local drive — never email or message."
         ),
-        "expected_use_cases": 3,
+        # 3 collectors + 1 digest assembler. Rule D (capability-granularity for
+        # chained producer/publisher pipelines) makes the LLM legitimately split
+        # the assembler out of the collectors — verified live in C6 Phase A.2.
+        "expected_use_cases": 4,
         "expected_trigger_kinds": {"schedule"},
         # Categories accepted; LLM may pick `project_management` for Linear,
         # `code_repository` for GitHub, `calendar` for Calendar.

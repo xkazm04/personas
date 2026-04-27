@@ -13,6 +13,7 @@ import { initAnalytics } from "./lib/analytics";
 import { isTelemetryEnabled } from "./lib/telemetryPreference";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import { createLogger } from "./lib/log";
+import { installPreloadErrorRecovery } from "./lib/recovery/preloadErrorRecovery";
 import "./styles/globals.css";
 
 const globalErrorLogger = createLogger("global-error");
@@ -116,33 +117,10 @@ window.addEventListener("unhandledrejection", (event) => {
   persistCrash("unhandledrejection", reason);
 });
 
-// Recover from stale dynamic-import chunks. Vite emits `vite:preloadError`
-// when a code-split chunk fails to fetch — common after `tauri-cli`
-// restarts the Rust binary in dev (the WebView's HMR socket points at a
-// dev server that has reloaded its module graph) and after production
-// redeploys (asset URLs change between builds). A reload pulls a fresh
-// `index.html` whose chunk paths are current and lets navigation continue.
-// The throttle prevents infinite reload loops when the failure is genuine
-// and reload doesn't fix it.
-window.addEventListener("vite:preloadError", (event) => {
-  const RELOAD_KEY = "__vite_preload_reload_at";
-  const RELOAD_THROTTLE_MS = 30_000;
-  const lastReloadAt = Number(sessionStorage.getItem(RELOAD_KEY) || "0");
-  const now = Date.now();
-  const evt = event as Event & { message?: string; payload?: unknown };
-  if (now - lastReloadAt < RELOAD_THROTTLE_MS) {
-    globalErrorLogger.error("vite:preloadError repeated within throttle — letting it surface", {
-      message: evt.message,
-    });
-    return;
-  }
-  sessionStorage.setItem(RELOAD_KEY, String(now));
-  try { evt.preventDefault?.(); } catch { /* intentional no-op */ }
-  globalErrorLogger.error("vite:preloadError — reloading to pick up fresh chunks", {
-    message: evt.message,
-  });
-  window.location.reload();
-});
+// Recover from stale dynamic-import chunks. Listener is extracted into
+// `lib/recovery/preloadErrorRecovery.ts` so it can be unit-tested with JSDOM
+// (see preloadErrorRecovery.test.ts).
+installPreloadErrorRecovery();
 
 // -- Render React immediately (sync) -----------------------------------------
 // On Android WebView, async bootstrap can hang if Tauri IPC promises never
