@@ -118,6 +118,14 @@ export function groupByTimeWindow(entries: ScheduleEntry[]): TimeGroup[] {
  * Detect agents whose last_triggered_at + interval has passed, meaning
  * they likely missed executions while the app was offline.
  */
+/** Cap how far back the skipped-execution detector looks. Without this, an
+ *  agent imported from another machine (or a fresh install where the trigger
+ *  was created with last_triggered_at set well in the past) reports thousands
+ *  of "missed" runs — and clicking Recover All blasts that many real
+ *  executions through the queue, blowing token budgets. 24h is the longest
+ *  window that's plausibly useful for "missed while the app was closed". */
+const SKIPPED_LOOKBACK_MS = 24 * 60 * 60 * 1000;
+
 export function detectSkippedExecutions(agents: CronAgent[]): SkippedExecution[] {
   const now = Date.now();
   const skipped: SkippedExecution[] = [];
@@ -137,13 +145,19 @@ export function detectSkippedExecutions(agents: CronAgent[]): SkippedExecution[]
 
     if (!lastRun) continue;
 
-    const elapsed = now - lastRun;
+    // Compute "effective last run" as max(actual lastRun, lookback window).
+    // An imported agent or fresh install can have lastRun set months ago;
+    // floor(elapsed / intervalMs) would then be in the thousands. Capping
+    // elapsed to the 24h lookback bounds the recommended-recovery count to
+    // something the user could plausibly want to actually run.
+    const effectiveLastRun = Math.max(lastRun, now - SKIPPED_LOOKBACK_MS);
+    const elapsed = now - effectiveLastRun;
     if (elapsed > intervalMs * 1.5) {
       const missedCount = Math.floor(elapsed / intervalMs) - 1;
       if (missedCount > 0) {
         skipped.push({
           agent,
-          missedAt: new Date(lastRun + intervalMs),
+          missedAt: new Date(effectiveLastRun + intervalMs),
           missedCount: Math.min(missedCount, 100), // cap display
         });
       }
