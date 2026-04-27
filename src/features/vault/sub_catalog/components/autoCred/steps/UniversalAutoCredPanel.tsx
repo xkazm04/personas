@@ -139,6 +139,31 @@ export function UniversalAutoCredPanel({ onComplete, onCancel }: UniversalAutoCr
         }
       }
 
+      // When we re-used an existing connector definition (name collision),
+      // the discovered field schema was silently discarded. Verify the
+      // credential's data keys cover the existing connector's required fields
+      // — otherwise we'd persist a credential that downstream healthchecks
+      // and tool-binding code expects to introspect, but whose data shape
+      // doesn't match the schema. The user previously got a "saved" toast
+      // and discovered the breakage only when an agent first tried to use it.
+      if (existing && Array.isArray(existing.fields)) {
+        const requiredKeys = existing.fields
+          .filter((f) => f.required === true)
+          .map((f) => f.key);
+        const provided = new Set(Object.keys(cleanValues));
+        const missing = requiredKeys.filter((k) => !provided.has(k));
+        if (missing.length > 0) {
+          const message =
+            `Cannot save credential: existing connector "${existing.name}" requires ` +
+            `[${missing.join(', ')}] but the discovered values do not include them. ` +
+            `Pick a different connector name or fill these fields manually.`;
+          logger.warn('Universal save aborted: connector schema mismatch', {
+            existingConnector: existing.name, missingRequiredKeys: missing,
+          });
+          throw new Error(message);
+        }
+      }
+
       const newCredId = await createCredential({
         name: session.credentialName.trim() || `${connectorLabel} Credential`,
         service_type: serviceType,
