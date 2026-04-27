@@ -51,7 +51,14 @@ const PROVIDER_KEYS: ProviderKeyDef[] = [
   },
 ];
 
-type ConnectionState = 'idle' | 'testing' | 'connected' | 'error';
+/**
+ * Honest naming: 'stored' means we verified the key round-trips through the
+ * settings store. It does NOT mean the API endpoint is reachable or that the
+ * key authenticates successfully — only a real network probe could prove
+ * those, and we don't make one here. The visual treatment matches: a neutral
+ * checkmark, not a green 'connected' indicator that lies about API health.
+ */
+type ConnectionState = 'idle' | 'testing' | 'stored' | 'error';
 
 interface KeyEntry {
   def: ProviderKeyDef;
@@ -147,7 +154,7 @@ export function ByomApiKeyManager() {
     updateEntry(index, { connectionState: 'testing' });
     try {
       const stored = await getAppSetting(entry.def.settingsKey);
-      updateEntry(index, { connectionState: stored ? 'connected' : 'error' });
+      updateEntry(index, { connectionState: stored ? 'stored' : 'error' });
     } catch (err) {
       logSecretSafeError('test', entry.def.settingsKey, err);
       updateEntry(index, { connectionState: 'error' });
@@ -344,10 +351,13 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
     );
   }
 
-  if (state === 'connected') {
+  if (state === 'stored') {
+    // Neutral indicator: confirms the key round-trips through storage. Not a
+    // green 'connected' check — we did NOT contact the API. Previously this
+    // used emerald visuals that misled users into thinking auth was verified.
     return (
-      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+      <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+        <Check className="w-3 h-3" />
         {s.stored}
       </span>
     );
