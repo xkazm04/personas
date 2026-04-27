@@ -43,6 +43,19 @@ function addDays(d: Date, n: number): Date {
   return r;
 }
 
+/**
+ * Re-anchored day step that constructs a fresh local-midnight Date for the
+ * day `n` calendar days after `d`. Use this when you need a stable midnight
+ * across DST transitions — `setDate(+n)` preserves the time-of-day in local
+ * wall-clock terms but DST boundaries can leave the cursor at 01:00 instead
+ * of 00:00 if the original date sat in the missing hour. Always re-construct
+ * via `new Date(y, m, d+n)` and the underlying epoch lands on midnight local
+ * regardless of whether the day in question is 23, 24, or 25 hours long.
+ */
+function nextLocalMidnight(d: Date, n: number): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+}
+
 export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear()
     && a.getMonth() === b.getMonth()
@@ -102,7 +115,15 @@ export function generateCronFireTimes(
   const dayStart = startOfDay(cursor);
   const endMs = end.getTime();
 
-  for (let d = dayStart; d.getTime() < endMs && results.length < maxResults; d = addDays(d, 1)) {
+  // Use nextLocalMidnight (constructor-based) instead of addDays (setDate-based)
+  // so the day cursor re-anchors to local midnight every iteration. setDate(+1)
+  // preserves the time field in local wall-clock terms, but a DST transition
+  // can leave it at 01:00 instead of 00:00 — t.setHours(h, m, 0, 0) below
+  // would then emit fire times that skip or duplicate around the transition
+  // week. Re-deriving from dayStart + dayOffset always lands on a fresh
+  // midnight regardless of whether the day is 23, 24, or 25 hours long.
+  let dayOffset = 0;
+  for (let d = dayStart; d.getTime() < endMs && results.length < maxResults; d = nextLocalMidnight(dayStart, ++dayOffset)) {
     const month1 = d.getMonth() + 1; // 1-indexed
     if (!months.has(month1)) continue;
 
@@ -172,6 +193,12 @@ export function generateIntervalFireTimes(
 
 function parseCronField(field: string, min: number, max: number): Set<number> | null {
   const result = new Set<number>();
+  // Helper: reject anything outside the field's domain. Previously single
+  // values and N-M ranges were added without bounds checking, so a typoed
+  // cron like '0 25 * * *' emitted phantom calendar events at 25:00 (rolled
+  // by setHours into the next day). Now any out-of-range value invalidates
+  // the entire field — matching the backend's stricter parser.
+  const inRange = (v: number): boolean => Number.isInteger(v) && v >= min && v <= max;
 
   for (const part of field.split(',')) {
     const trimmed = part.trim();
@@ -200,6 +227,7 @@ function parseCronField(field: string, min: number, max: number): Set<number> | 
         rangeStart = parseInt(stepMatch[2]!, 10);
         rangeEnd = max;
       }
+      if (!inRange(rangeStart) || !inRange(rangeEnd) || rangeStart > rangeEnd) return null;
       for (let i = rangeStart; i <= rangeEnd; i += step) result.add(i);
       continue;
     }
@@ -209,13 +237,14 @@ function parseCronField(field: string, min: number, max: number): Set<number> | 
     if (rangeMatch) {
       const rStart = parseInt(rangeMatch[1]!, 10);
       const rEnd = parseInt(rangeMatch[2]!, 10);
+      if (!inRange(rStart) || !inRange(rEnd) || rStart > rEnd) return null;
       for (let i = rStart; i <= rEnd; i++) result.add(i);
       continue;
     }
 
     // Single value
     const val = parseInt(trimmed, 10);
-    if (isNaN(val)) return null;
+    if (isNaN(val) || !inRange(val)) return null;
     result.add(val);
   }
 
