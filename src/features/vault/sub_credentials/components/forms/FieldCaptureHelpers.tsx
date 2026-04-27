@@ -1,10 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
 
 const MIN_KEY_LENGTH = 8;
+
+// Auto-clear copied secrets from the OS clipboard after this many ms.
+// Only fires when the clipboard still contains the value we wrote — never overwrites
+// a value the user copied afterwards.
+const SECRET_CLIPBOARD_TTL_MS = 30_000;
 
 export type FieldInputType = 'text' | 'password' | 'url' | 'select';
 
@@ -40,6 +45,8 @@ interface FieldActionButtonsProps {
   allowPaste: boolean;
   testIdBase?: string;
   onChange?: (value: string) => void;
+  isVisible: boolean;
+  setIsVisible: Dispatch<SetStateAction<boolean>>;
 }
 
 export function FieldActionButtons({
@@ -51,15 +58,18 @@ export function FieldActionButtons({
   allowPaste,
   testIdBase,
   onChange,
+  isVisible,
+  setIsVisible,
 }: FieldActionButtonsProps) {
   const { t } = useTranslation();
-  const [isVisible, setIsVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clipboardWipeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     return () => {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      if (clipboardWipeTimerRef.current) clearTimeout(clipboardWipeTimerRef.current);
     };
   }, []);
 
@@ -80,69 +90,82 @@ export function FieldActionButtons({
       setCopied(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
+
+      // For secrets, wipe the clipboard after a TTL — but only if the user hasn't
+      // copied anything else in the meantime (don't trample later copies).
+      if (isSecret) {
+        if (clipboardWipeTimerRef.current) clearTimeout(clipboardWipeTimerRef.current);
+        const copiedValue = value;
+        clipboardWipeTimerRef.current = setTimeout(async () => {
+          try {
+            const current = await navigator.clipboard.readText();
+            if (current === copiedValue) {
+              await navigator.clipboard.writeText('');
+            }
+          } catch {
+            // intentional: cannot verify, skip wipe
+          }
+        }, SECRET_CLIPBOARD_TTL_MS);
+      }
     } catch {
       // intentional: non-critical
     }
   };
 
-  return {
-    isVisible,
-    copied,
-    buttons: (
-      <div className="flex items-center gap-1">
-        {mode === 'confirming' && value && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 typo-body">
-            <Check className="w-2.5 h-2.5" />
-            captured
-          </span>
-        )}
-        {isSecret && (
+  return (
+    <div className="flex items-center gap-1">
+      {mode === 'confirming' && value && (
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 typo-body">
+          <Check className="w-2.5 h-2.5" />
+          captured
+        </span>
+      )}
+      {isSecret && (
+        <button
+          type="button"
+          onClick={() => setIsVisible((v) => !v)}
+          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
+        >
+          {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+        </button>
+      )}
+      {allowCopy && (
+        <div className="relative flex flex-col items-center">
           <button
             type="button"
-            onClick={() => setIsVisible((v) => !v)}
-            className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
-            data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
+            onClick={handleCopy}
+            disabled={!value}
+            className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
+            title={t.vault.credential_forms.copy_value}
+            data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
           >
-            {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-          </button>
-        )}
-        {allowCopy && (
-          <div className="relative flex flex-col items-center">
-            <button
-              type="button"
-              onClick={handleCopy}
-              disabled={!value}
-              className="p-0.5 text-foreground hover:text-foreground/80 disabled:opacity-30 transition-colors"
-              title={t.vault.credential_forms.copy_value}
-              data-testid={testIdBase ? `${testIdBase}-copy-btn` : undefined}
-            >
-              {copied ? (
-                <div className="animate-fade-scale-in">
-                  <Check className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-            </button>
-            {isSecret && copied && (
-              <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
-                {t.vault.forms.copied_to_clipboard}
-              </span>
+            {copied ? (
+              <div className="animate-fade-scale-in">
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              </div>
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
             )}
-          </div>
-        )}
-        {allowPaste && isEditable && (
-          <button
-            type="button"
-            onClick={handlePaste}
-            className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
-            title={t.vault.credential_forms.paste_from_clipboard}
-            data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
-          >
-            <ClipboardPaste className="w-3.5 h-3.5" />
           </button>
-        )}
-      </div>
-    ),
-  };
+          {isSecret && copied && (
+            <span className="absolute top-full mt-0.5 typo-body text-foreground whitespace-nowrap">
+              {t.vault.forms.copied_to_clipboard}
+            </span>
+          )}
+        </div>
+      )}
+      {allowPaste && isEditable && (
+        <button
+          type="button"
+          onClick={handlePaste}
+          className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
+          title={t.vault.credential_forms.paste_from_clipboard}
+          data-testid={testIdBase ? `${testIdBase}-paste-btn` : undefined}
+        >
+          <ClipboardPaste className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
 }

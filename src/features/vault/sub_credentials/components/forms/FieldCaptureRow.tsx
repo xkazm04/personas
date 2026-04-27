@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import {
   type FieldInputType,
@@ -58,17 +58,7 @@ export function FieldCaptureRow({
   const isSecret = inputType === 'password';
   const fieldId = testIdBase ?? label.toLowerCase().replace(/\s+/g, '-');
   const errorId = `${fieldId}-error`;
-
-  const { isVisible, buttons } = FieldActionButtons({
-    mode,
-    value,
-    isSecret,
-    isEditable,
-    allowCopy,
-    allowPaste,
-    testIdBase,
-    onChange,
-  });
+  const [isVisible, setIsVisible] = useState(false);
 
   const glow: ValidationGlow = useMemo(
     () => (isEditable && inputType !== 'select') ? computeValidationGlow(value, inputType) : 'none',
@@ -86,7 +76,18 @@ export function FieldCaptureRow({
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
-        {buttons}
+        <FieldActionButtons
+          mode={mode}
+          value={value}
+          isSecret={isSecret}
+          isEditable={isEditable}
+          allowCopy={allowCopy}
+          allowPaste={allowPaste}
+          testIdBase={testIdBase}
+          onChange={onChange}
+          isVisible={isVisible}
+          setIsVisible={setIsVisible}
+        />
       </div>
 
       {hint && <p className="typo-body text-foreground">{hint}</p>}
