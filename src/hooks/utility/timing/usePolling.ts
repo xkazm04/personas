@@ -73,35 +73,44 @@ export function usePolling(
 
     let stopped = false;
     let visible = typeof document === 'undefined' || document.visibilityState === 'visible';
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-    const schedule = () => {
+    // Recursive setTimeout instead of setInterval. setInterval evaluated
+    // getDelay() ONCE at scheduling time, so the exponential backoff was a
+    // no-op while a polling cycle was alive — during a sustained backend
+    // outage the hook kept hammering the API at the original 5s/12s/15s
+    // cadence and could trip rate limits (esp. self-hosted GitLab). Now
+    // each tick awaits runFetch() then recomputes the delay against the
+    // current errorCountRef before scheduling the next tick.
+    const tick = async () => {
+      if (stopped || !visible) return;
+      await runFetch();
       if (stopped) return;
-      clear();
-      if (!visible) return;
-      timerRef.current = setInterval(() => { void runFetch(); }, getDelay());
+      timeoutId = setTimeout(() => { void tick(); }, getDelay());
+      // Mirror to timerRef so external code that inspects it still works
+      // (the existing clear() logic is gone but kept the same ref shape).
+      timerRef.current = timeoutId as unknown as ReturnType<typeof setInterval>;
     };
 
     const clear = () => {
-      if (timerRef.current != null) {
-        clearInterval(timerRef.current);
-        timerRef.current = null;
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
       }
+      timerRef.current = null;
     };
 
     const onVisibility = () => {
       visible = document.visibilityState === 'visible';
       if (visible) {
-        void runFetch();
-        schedule();
+        void tick();
       } else {
         clear();
       }
     };
 
     document.addEventListener('visibilitychange', onVisibility);
-    // Fire immediately on enable so callers don't need a separate mount effect.
-    if (visible) void runFetch();
-    schedule();
+    if (visible) void tick();
 
     return () => {
       stopped = true;
