@@ -10,12 +10,23 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<RecipeExecutionResult[]>([]);
   const runCountRef = useRef(0);
+  // Tracks which run produced the current `result`. When a late-arriving
+  // execution.output fires the merge effect, we compare against this so we
+  // don't scribble run #1's LLM output onto run #2's result. Without this,
+  // switching recipes mid-flight (or starting a second run before the first
+  // completed) would conflate llm_output with the wrong rendered_prompt and
+  // corrupt the history entry.
+  const resultRunIdRef = useRef<number>(0);
 
   const execution = useRecipeExecution();
 
-  // When LLM execution completes, store output on the result and add to history
+  // When LLM execution completes, store output on the result and add to history.
+  // Gated by run-id correlation: only merge if the current `result` was produced
+  // by the same run that this execution.output belongs to (i.e. no newer run
+  // has been started since).
   useEffect(() => {
-    if (execution.phase === 'done' && execution.output && result) {
+    if (execution.phase === 'done' && execution.output && result &&
+        resultRunIdRef.current === runCountRef.current) {
       const updated = { ...result, llm_output: execution.output };
       setResult(updated);
       setHistory((prev) => {
@@ -23,13 +34,14 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
         return [updated, ...rest].slice(0, 20);
       });
     }
-  }, [execution.phase, execution.output]);
+  }, [execution.phase, execution.output, result]);
 
   const execute = useCallback(async (inputData: Record<string, unknown>) => {
     const runId = ++runCountRef.current;
     setRunning(true);
     setError(null);
     setResult(null);
+    resultRunIdRef.current = 0; // invalidate prior result's run-id binding
     execution.reset();
 
     try {
@@ -39,6 +51,7 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
         input_data: inputData,
       });
       if (runId !== runCountRef.current) return;
+      resultRunIdRef.current = runId;
       setResult(res);
       setHistory((prev) => [res, ...prev].slice(0, 20));
 
