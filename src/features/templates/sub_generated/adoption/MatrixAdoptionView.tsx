@@ -18,6 +18,7 @@ import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBui
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
@@ -370,6 +371,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   const [fadeOut, setFadeOut] = useState(false);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
+  const seedInFlight = useRef(false);
 
   // Parse design result from the template
   const designResult: Record<string, unknown> | null = (() => {
@@ -753,10 +755,15 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
   // (if one exists). This prevents creating a draft persona when the user might
   // close the questionnaire without finishing it.
   useEffect(() => {
-    if (seedDone.current || !designResult) return;
+    // seedDone flips true only on success. seedInFlight blocks duplicate
+    // concurrent attempts while the async IIFE below is still running. If the
+    // backend createPersona/create_adoption_session call fails, we delete the
+    // partially-created persona, reset the in-flight flag, and leave seedDone
+    // false so the user can retry instead of being stuck on "Loading template…".
+    if (seedDone.current || seedInFlight.current || !designResult) return;
     if (!useCaseStepDone) return;
     if (hasFilteredQuestions && !questionsComplete) return;
-    seedDone.current = true;
+    seedInFlight.current = true;
 
     // Derive credential bindings from vault-category questions so the Apps &
     // Services matrix cell reflects the user's concrete picks (e.g. Leonardo
@@ -791,6 +798,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
 
     // Create a draft persona for this adoption
     (async () => {
+      let createdPersonaId: string | null = null;
       try {
         const name = (designResult as Record<string, unknown>).name as string ?? templateName;
         const persona = await createPersona({
@@ -798,6 +806,7 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
           description: review.instruction?.slice(0, 200) ?? undefined,
           system_prompt: "You are a helpful AI assistant.",
         });
+        createdPersonaId = persona.id;
         setPersonaId(persona.id);
 
         // Create an adoption build session so test_build_draft can work.
@@ -857,8 +866,26 @@ export function MatrixAdoptionView({ review, onClose, onPersonaCreated }: Matrix
         useSystemStore.getState().setTemplateAdoptActive(true);
 
         setSeeded(true);
+        seedDone.current = true;
       } catch (err) {
         logger.error("Failed to create draft persona for adoption", { err });
+        // Clean up the orphaned draft persona if createPersona succeeded but a
+        // later step failed. Without this, every transient backend failure
+        // leaves a phantom draft in the user's persona list.
+        if (createdPersonaId) {
+          void useAgentStore
+            .getState()
+            .deletePersona(createdPersonaId)
+            .catch(() => { /* best-effort cleanup */ });
+          setPersonaId(null);
+        }
+        useToastStore.getState().addToast(
+          `Failed to start template adoption: ${err instanceof Error ? err.message : 'Unknown error'}. Please try again.`,
+          'error',
+        );
+        // Leave seedDone=false so the next render can retry the seed.
+      } finally {
+        seedInFlight.current = false;
       }
     })();
   }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections]);
