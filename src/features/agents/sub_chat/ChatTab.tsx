@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Send, ArrowDown, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { useStructuredStream } from '@/hooks/execution/useStructuredStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
@@ -158,9 +159,19 @@ export function ChatTab() {
       // Guard: bail if the user navigated away to a different persona while
       // the session was being created. The session still exists for the
       // original persona — just don't post this user message into it
-      // against a stale selection.
+      // against a stale selection. Surface a toast so the user knows their
+      // action was suppressed; previously this returned silently and the
+      // typed message stayed in the input with no explanation, leading to
+      // confused re-sends.
       const currentPersonaId = useAgentStore.getState().selectedPersona?.id ?? '';
-      if (currentPersonaId !== sendPersonaId) return;
+      if (currentPersonaId !== sendPersonaId) {
+        useToastStore.getState().addToast(
+          'Persona switched while creating the chat session — message not sent. Try again.',
+          'error',
+          4000,
+        );
+        return;
+      }
     }
     setInputValue('');
     sendMessage(sendPersonaId, sessionId, text);

@@ -74,6 +74,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
+    const savePersonaId = selectedPersona.id;
     const prevBaseline = { ...baselineRef.current };
     const op: PersonaOperation = {
       kind: 'UpdateSettings',
@@ -86,13 +87,20 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
       enabled: d.enabled,
       sensitive: d.sensitive,
     };
-    await applyPersonaOp(selectedPersona.id, op);
+    await applyPersonaOp(savePersonaId, op);
+    // Guard: bail if persona switched during the IPC await. The setBaseline /
+    // pushUndo setters are persona-agnostic — they always mutate the currently-
+    // selected persona's editor state. Without this guard, persona A's old
+    // draft fields would silently overwrite persona B's freshly-loaded baseline,
+    // and the undo entry would attach to B's history.
+    if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
   }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersona) return;
+    const savePersonaId = selectedPersona.id;
     const prevBaseline = { ...baselineRef.current };
 
     let profile: string | null;
@@ -134,7 +142,9 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
       max_budget_usd: d.maxBudget === '' ? null : d.maxBudget,
       max_turns: d.maxTurns === '' ? null : d.maxTurns,
     };
-    await applyPersonaOp(selectedPersona.id, op);
+    await applyPersonaOp(savePersonaId, op);
+    // Guard: bail if persona switched during the IPC await — see performSettingsSave.
+    if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns, promptCachePolicy: d.promptCachePolicy }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
   }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
