@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { createTeamMemory, listTeamMemories } from "@/api/pipeline/teamMemories";
-import { addTeamMember, createTeamConnection, listTeamMembers, suggestTopology, suggestTopologyLlm } from "@/api/pipeline/teams";
+import { addTeamMember, createTeamConnection, deleteTeam, listTeamMembers, suggestTopology, suggestTopologyLlm } from "@/api/pipeline/teams";
 
 import type { TopologyBlueprint } from '@/lib/bindings/TopologyBlueprint';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
@@ -108,17 +108,32 @@ export function useAutoTeam(): AutoTeamState {
 
       setCreatedTeam(team);
 
-      // 2. Add members and collect their IDs
+      // 2. Add members and collect their IDs. addTeamMember can return null
+      // (the store action swallows backend errors); without the nullcheck this
+      // throws TypeError later, the outer catch surfaces a generic 'Failed
+      // to create team', and the half-built team row + partial members stay
+      // orphaned in the DB with no recovery affordance.
       const newMemberIds: string[] = [];
-      for (const member of blueprint.members) {
-        const added = await addTeamMember(
-          team.id,
-          member.persona_id,
-          member.role,
-          member.position_x,
-          member.position_y,
-        );
-        newMemberIds.push(added.id);
+      try {
+        for (const member of blueprint.members) {
+          const added = await addTeamMember(
+            team.id,
+            member.persona_id,
+            member.role,
+            member.position_x,
+            member.position_y,
+          );
+          if (!added) {
+            throw new Error(`Failed to add member ${member.persona_id} to team`);
+          }
+          newMemberIds.push(added.id);
+        }
+      } catch (err) {
+        // Roll back the partial team — best-effort, we've already surfaced the
+        // failure via the outer catch.
+        try { await deleteTeam(team.id); } catch { /* best-effort cleanup */ }
+        setCreatedTeam(null);
+        throw err;
       }
       if (cancelledRef.current) return;
       setMemberCount(newMemberIds.length);
