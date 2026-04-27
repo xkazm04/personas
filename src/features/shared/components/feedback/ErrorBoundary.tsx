@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from "@/stores/systemStore";
 
 const logger = createLogger("error-boundary");
 
@@ -84,13 +85,16 @@ function ErrorFallback({
 
   const handleGoHome = () => {
     try {
-      // Try store-based navigation first for seamless UX
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { useSystemStore } = require("@/stores/systemStore");
+      // Use the statically-imported store. Previously this used require(), a
+      // Node/Webpack pattern Vite cannot resolve at runtime — the try always
+      // threw and every "Go Home" click hit window.location.reload(), wiping
+      // the user's in-memory onboarding/wizard state. Static ESM import is
+      // both faster and never throws on missing symbols.
       useSystemStore.getState().setSidebarSection('home');
       onReset();
     } catch {
-      // Store is corrupt — fall back to a hard navigation
+      // Store action itself failed (truly broken state) — fall back to hard
+      // navigation as a last resort.
       window.location.hash = '#/';
       window.location.reload();
     }
