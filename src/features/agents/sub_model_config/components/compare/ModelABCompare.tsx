@@ -52,9 +52,18 @@ export function ModelABCompare() {
     if (!selectedPersona || !optA || !optB || modelA === modelB) return;
     setLastResults(null);
     const models: ModelTestConfig[] = [toTestConfig(optA), toTestConfig(optB)];
-    const runId = await startArena(selectedPersona.id, models);
-    if (runId) setActiveRunId(runId);
-  }, [selectedPersona, optA, optB, modelA, modelB, startArena]);
+    const startedFor = selectedPersona.id;
+    const runId = await startArena(startedFor, models);
+    if (!runId) return;
+    // Persona may have changed during the await — never adopt this runId into
+    // a different persona's UI (would leak prompts/results across workspaces).
+    const currentId = useAgentStore.getState().selectedPersona?.id ?? null;
+    if (currentId !== startedFor) {
+      void cancelArena(runId);
+      return;
+    }
+    setActiveRunId(runId);
+  }, [selectedPersona, optA, optB, modelA, modelB, startArena, cancelArena]);
 
   const handleCancel = useCallback(async () => {
     if (activeRunId) {
