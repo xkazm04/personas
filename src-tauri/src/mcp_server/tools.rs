@@ -288,6 +288,45 @@ pub fn list_tools() -> Vec<Value> {
             }
         }),
         json!({
+            "name": "arena_list_models",
+            "description": "List the model contenders that can be passed to an arena run (Anthropic + local Ollama). Headless callers should consult this rather than hardcoding model ids.",
+            "inputSchema": { "type": "object", "properties": {} }
+        }),
+        json!({
+            "name": "arena_list_runs",
+            "description": "List arena runs for a persona, newest first. Returns the run rows used by the desktop chronicle (status, models_tested, scenarios_count, created_at).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "persona_id": { "type": "string", "description": "The persona UUID" },
+                    "limit": { "type": "number", "description": "Max results (default: 10)" }
+                },
+                "required": ["persona_id"]
+            }
+        }),
+        json!({
+            "name": "arena_run_status",
+            "description": "Progress snapshot for an arena run — run row plus per-status result counts. Use to poll until status is 'completed', 'failed', or 'cancelled'.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_id": { "type": "string", "description": "Arena run UUID" }
+                },
+                "required": ["run_id"]
+            }
+        }),
+        json!({
+            "name": "arena_get_results",
+            "description": "Fetch every per-scenario, per-model result row for an arena run (scores, tokens, cost, duration, rationale).",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "run_id": { "type": "string", "description": "Arena run UUID" }
+                },
+                "required": ["run_id"]
+            }
+        }),
+        json!({
             "name": "drive_write_text",
             "description": "Write a UTF-8 text file into the persona's local drive (paths relative to the managed root). The drive location is resolved from PERSONAS_DRIVE_ROOT. Creates parent directories as needed. Returns the written path.",
             "inputSchema": {
@@ -335,6 +374,10 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "personas_annotate" => handle_annotate(args, pool),
         "personas_health" => handle_health(args, pool),
         "personas_list_templates" => handle_list_templates(args, pool),
+        "arena_list_models" => handle_arena_list_models(args),
+        "arena_list_runs" => handle_arena_list_runs(args, pool),
+        "arena_run_status" => handle_arena_run_status(args, pool),
+        "arena_get_results" => handle_arena_get_results(args, pool),
         "drive_write_text" => handle_drive_write_text(args),
         "drive_read_text" => handle_drive_read_text(args),
         "drive_list" => handle_drive_list(args),
@@ -689,4 +732,189 @@ fn handle_list_templates(args: &Value, pool: &McpDbPool) -> Result<String, Strin
             .collect()
     };
     serde_json::to_string_pretty(&templates).map_err(|e| format!("Serialize error: {e}"))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arena tools — read-only mirror so personas in execution can introspect lab
+// runs without going through HTTP. Mutation (start, cancel, delete) lives on
+// the Node MCP / management API surface; the in-process MCP intentionally
+// stays read-only because it only has a SQLite handle, not AppState.
+// ─────────────────────────────────────────────────────────────────────────────
+
+fn handle_arena_list_models(_args: &Value) -> Result<String, String> {
+    // Mirrors `ARENA_ROSTER` in the desktop frontend (`modelCatalog.ts`).
+    // Each entry is shaped to match the start_arena_test 'models' array element
+    // used by the Node MCP and the Tauri lab_start_arena command.
+    let catalog = json!([
+        { "id": "haiku",  "provider": "anthropic", "model": "haiku",  "label": "Haiku",  "tier": "budget"   },
+        { "id": "sonnet", "provider": "anthropic", "model": "sonnet", "label": "Sonnet", "tier": "balanced" },
+        { "id": "opus",   "provider": "anthropic", "model": "opus",   "label": "Opus",   "tier": "quality"  },
+        { "id": "ollama:gemma4",  "provider": "ollama", "model": "gemma4",  "label": "Gemma 4 (local)",  "tier": "local", "base_url": "http://localhost:11434" },
+        { "id": "ollama:qwen3.5", "provider": "ollama", "model": "qwen3.5", "label": "Qwen 3.5 (local)", "tier": "local", "base_url": "http://localhost:11434" },
+    ]);
+    serde_json::to_string_pretty(&catalog).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_arena_list_runs(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let persona_id = args
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or("persona_id is required")?;
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(10)
+        .max(1)
+        .min(100);
+
+    let conn = pool.get()?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, persona_id, status, models_tested, scenarios_count, summary, error,
+                    created_at, completed_at
+             FROM lab_arena_runs
+             WHERE persona_id = ?1
+             ORDER BY created_at DESC
+             LIMIT ?2",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+
+    let rows = stmt
+        .query_map(rusqlite::params![persona_id, limit], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "persona_id": row.get::<_, String>(1)?,
+                "status": row.get::<_, String>(2)?,
+                "models_tested": row.get::<_, String>(3)?,
+                "scenarios_count": row.get::<_, i64>(4)?,
+                "summary": row.get::<_, Option<String>>(5)?,
+                "error": row.get::<_, Option<String>>(6)?,
+                "created_at": row.get::<_, String>(7)?,
+                "completed_at": row.get::<_, Option<String>>(8)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+
+    let runs: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&runs).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_arena_run_status(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let run_id = args
+        .get("run_id")
+        .and_then(|v| v.as_str())
+        .ok_or("run_id is required")?;
+
+    let conn = pool.get()?;
+
+    let run = conn
+        .query_row(
+            "SELECT id, persona_id, status, models_tested, scenarios_count, summary, error,
+                    created_at, completed_at, progress_json, llm_summary
+             FROM lab_arena_runs WHERE id = ?1",
+            rusqlite::params![run_id],
+            |row| {
+                Ok(json!({
+                    "id": row.get::<_, String>(0)?,
+                    "persona_id": row.get::<_, String>(1)?,
+                    "status": row.get::<_, String>(2)?,
+                    "models_tested": row.get::<_, String>(3)?,
+                    "scenarios_count": row.get::<_, i64>(4)?,
+                    "summary": row.get::<_, Option<String>>(5)?,
+                    "error": row.get::<_, Option<String>>(6)?,
+                    "created_at": row.get::<_, String>(7)?,
+                    "completed_at": row.get::<_, Option<String>>(8)?,
+                    "progress_json": row.get::<_, Option<String>>(9)?,
+                    "llm_summary": row.get::<_, Option<String>>(10)?,
+                }))
+            },
+        )
+        .map_err(|e| format!("Arena run not found: {e}"))?;
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+    let counts: Vec<(String, i64)> = stmt
+        .query_map(rusqlite::params![run_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })
+        .map_err(|e| format!("Query error: {e}"))?
+        .filter_map(|r| r.ok())
+        .collect();
+    let mut counts_map = serde_json::Map::new();
+    let mut total: i64 = 0;
+    let mut completed: i64 = 0;
+    for (status, n) in counts {
+        if status == "completed" {
+            completed = n;
+        }
+        total += n;
+        counts_map.insert(status, json!(n));
+    }
+
+    let status_str = run
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let terminal = matches!(status_str.as_str(), "completed" | "failed" | "cancelled");
+
+    serde_json::to_string_pretty(&json!({
+        "run": run,
+        "result_counts": Value::Object(counts_map),
+        "results_total": total,
+        "results_completed": completed,
+        "terminal": terminal,
+    }))
+    .map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_arena_get_results(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let run_id = args
+        .get("run_id")
+        .and_then(|v| v.as_str())
+        .ok_or("run_id is required")?;
+
+    let conn = pool.get()?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, run_id, scenario_name, model_id, provider, status, output_preview,
+                    tool_calls_expected, tool_calls_actual, tool_accuracy_score,
+                    output_quality_score, protocol_compliance, input_tokens, output_tokens,
+                    cost_usd, duration_ms, error_message, created_at
+             FROM lab_arena_results
+             WHERE run_id = ?1
+             ORDER BY scenario_name, model_id",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+
+    let rows = stmt
+        .query_map(rusqlite::params![run_id], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "run_id": row.get::<_, String>(1)?,
+                "scenario_name": row.get::<_, String>(2)?,
+                "model_id": row.get::<_, String>(3)?,
+                "provider": row.get::<_, String>(4)?,
+                "status": row.get::<_, String>(5)?,
+                "output_preview": row.get::<_, Option<String>>(6)?,
+                "tool_calls_expected": row.get::<_, Option<String>>(7)?,
+                "tool_calls_actual": row.get::<_, Option<String>>(8)?,
+                "tool_accuracy_score": row.get::<_, Option<i64>>(9)?,
+                "output_quality_score": row.get::<_, Option<i64>>(10)?,
+                "protocol_compliance": row.get::<_, Option<i64>>(11)?,
+                "input_tokens": row.get::<_, i64>(12)?,
+                "output_tokens": row.get::<_, i64>(13)?,
+                "cost_usd": row.get::<_, f64>(14)?,
+                "duration_ms": row.get::<_, i64>(15)?,
+                "error_message": row.get::<_, Option<String>>(16)?,
+                "created_at": row.get::<_, String>(17)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+
+    let results: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
 }

@@ -80,18 +80,27 @@ export function PersonaIcon({
   const style = { color: color ?? 'var(--primary)' };
 
   // Backwards compat: framed without display → treat as "framed"
-  const resolvedDisplay = display ?? (framed ? 'framed' : undefined);
+  const requestedDisplay = display ?? (framed ? 'framed' : undefined);
+
+  // Detect emoji-like icons: short strings (≤8 chars) that aren't plain ASCII identifiers.
+  // Anything longer or ASCII-only (like "persona:Foo") is not a valid icon → fall back to Bot.
+  const isEmoji = typeof icon === 'string' && icon.trim().length > 0
+    && icon.trim().length <= 8 && !/^[a-zA-Z0-9_:.\-/]+$/.test(icon.trim());
+
+  // The "pop" variant intentionally bursts the icon ~3× past its frame for
+  // branded persona art. The generic Bot fallback isn't art — at 3× it
+  // becomes an oversized blob that bleeds into adjacent text. Downgrade to
+  // "framed" so the fallback stays contained within its colored chip.
+  const willFallbackToBot = !isAgentIcon(icon) && !isEmoji;
+  const resolvedDisplay = requestedDisplay === 'pop' && willFallbackToBot
+    ? 'framed'
+    : requestedDisplay;
 
   // Determine if we're in wrapped mode
   const isWrapped = resolvedDisplay === 'framed' || resolvedDisplay === 'pop';
 
   // Build the inner element — no size classes when wrapped (CSS handles it)
   let inner: React.ReactNode;
-
-  // Detect emoji-like icons: short strings (≤8 chars) that aren't plain ASCII identifiers.
-  // Anything longer or ASCII-only (like "persona:Foo") is not a valid icon → fall back to Bot.
-  const isEmoji = typeof icon === 'string' && icon.trim().length > 0
-    && icon.trim().length <= 8 && !/^[a-zA-Z0-9_:.\-/]+$/.test(icon.trim());
 
   if (isAgentIcon(icon)) {
     inner = (

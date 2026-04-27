@@ -4646,7 +4646,11 @@
       "issues_count": "{count} issues",
       "issues_count_one": "{count} issue",
       "never": "never",
-      "fail_count": "{count}x fail"
+      "fail_count": "{count}x fail",
+      "rotation_manage_all": "Manage",
+      "rotation_open_in_connections": "Open in Connections",
+      "rotation_started_for": "Rotation started for {name}",
+      "rotation_failed_for": "Failed to rotate {name}"
     },
     "saved_views": {
       "errors": {

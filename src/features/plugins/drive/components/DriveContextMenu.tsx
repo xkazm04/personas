@@ -111,16 +111,16 @@ export function DriveContextMenu({
       }}
       className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-input mx-1 ${
         opts.disabled
-          ? "text-foreground cursor-not-allowed"
+          ? "text-foreground opacity-40 cursor-not-allowed"
           : opts.danger
-          ? "text-rose-300 hover:bg-gradient-to-r hover:from-rose-500/25 hover:to-rose-500/5 hover:text-rose-100"
-          : "text-foreground hover:bg-gradient-to-r hover:from-cyan-500/25 hover:to-cyan-500/5 hover:text-cyan-50"
+          ? "text-rose-200 hover:bg-gradient-to-r hover:from-rose-500/30 hover:to-rose-500/5 hover:text-rose-50"
+          : "text-foreground hover:bg-gradient-to-r hover:from-cyan-500/30 hover:to-cyan-500/5 hover:text-cyan-50"
       }`}
     >
       <span className="w-3.5 h-3.5 flex-shrink-0">{icon}</span>
       <span className="flex-1">{label}</span>
       {opts.shortcut && (
-        <kbd className="ml-auto typo-body text-foreground/90 font-mono tracking-tight">
+        <kbd className="ml-auto typo-caption text-foreground/85 font-mono tracking-tight">
           {opts.shortcut}
         </kbd>
       )}
@@ -128,7 +128,7 @@ export function DriveContextMenu({
   );
 
   const divider = (
-    <div className="my-1 mx-2 border-t border-primary/10" aria-hidden />
+    <div className="my-1 mx-2 border-t border-primary/15" aria-hidden />
   );
 
   return (

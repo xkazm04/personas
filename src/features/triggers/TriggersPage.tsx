@@ -83,6 +83,11 @@ export function TriggersPage() {
 
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>([]);
   const [_busHealth, setBusHealth] = useState<BusHealth>(null);
+  const [tabHeaderExtra, setTabHeaderExtra] = useState<ReactNode>(null);
+
+  // Reset the header slot whenever the active tab changes — each tab owns
+  // its own decorations, and stale content from the previous tab would leak.
+  useEffect(() => { setTabHeaderExtra(null); }, [eventBusTab]);
 
   useEffect(() => {
     let stale = false;
@@ -117,10 +122,12 @@ export function TriggersPage() {
         title={header.title}
         subtitle={header.subtitle}
         actions={header.renderActions?.()}
-      />
+      >
+        {tabHeaderExtra}
+      </ContentHeader>
 
       <div key={eventBusTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
-        {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} /></LazyWrap>}
+        {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} setHeaderExtra={setTabHeaderExtra} /></LazyWrap>}
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}

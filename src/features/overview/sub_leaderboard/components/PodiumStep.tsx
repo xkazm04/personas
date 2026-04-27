@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from 'framer-motion';
 import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
@@ -12,6 +13,8 @@ const PODIUM_CONFIG: Record<PodiumSlot, {
   accentText: string;
   scoreText: string;
   orderClass: string;
+  /** Stagger delay for entrance — gold lands first, then silver, then bronze. */
+  staggerDelay: number;
 }> = {
   gold: {
     label: '1st',
@@ -21,6 +24,7 @@ const PODIUM_CONFIG: Record<PodiumSlot, {
     accentText: 'text-amber-300',
     scoreText: 'text-amber-200',
     orderClass: 'md:order-2',
+    staggerDelay: 0,
   },
   silver: {
     label: '2nd',
@@ -30,6 +34,7 @@ const PODIUM_CONFIG: Record<PodiumSlot, {
     accentText: 'text-slate-200',
     scoreText: 'text-slate-100',
     orderClass: 'md:order-1',
+    staggerDelay: 0.08,
   },
   bronze: {
     label: '3rd',
@@ -39,12 +44,13 @@ const PODIUM_CONFIG: Record<PodiumSlot, {
     accentText: 'text-orange-300',
     scoreText: 'text-orange-200',
     orderClass: 'md:order-3',
+    staggerDelay: 0.14,
   },
 };
 
 const TREND = {
   improving: { Icon: TrendingUp, color: 'text-emerald-400', label: 'improving' },
-  stable:    { Icon: Minus, color: 'text-foreground/60', label: 'stable' },
+  stable:    { Icon: Minus, color: 'text-foreground', label: 'stable' },
   degrading: { Icon: TrendingDown, color: 'text-red-400', label: 'degrading' },
 } as const;
 
@@ -56,20 +62,26 @@ interface PodiumStepProps {
 }
 
 export function PodiumStep({ entry, slot, selected, onClick }: PodiumStepProps) {
+  const reduce = useReducedMotion();
   const cfg = PODIUM_CONFIG[slot];
   const trend = TREND[entry.trend];
   const TrendIcon = trend.Icon;
 
   return (
-    <button
+    <motion.button
       onClick={onClick}
+      initial={reduce ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduce ? 0 : 0.45, delay: reduce ? 0 : cfg.staggerDelay, ease: [0.22, 0.61, 0.36, 1] }}
+      whileHover={reduce ? undefined : { y: -3 }}
+      whileTap={reduce ? undefined : { scale: 0.98 }}
       className={`group flex flex-col items-center gap-3 flex-1 min-w-[180px] max-w-[260px] ${cfg.orderClass}`}
       data-testid={`podium-${slot}`}
     >
       <div
-        className={`flex flex-col items-center gap-2 p-4 rounded-modal border transition-all duration-300 ${
+        className={`flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors duration-300 ${
           selected
-            ? 'bg-primary/10 border-primary/30 scale-[1.02]'
+            ? 'bg-primary/10 border-primary/30'
             : 'bg-secondary/[0.04] border-primary/10 group-hover:bg-primary/[0.05]'
         }`}
       >
@@ -79,21 +91,27 @@ export function PodiumStep({ entry, slot, selected, onClick }: PodiumStepProps) 
             <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-amber-300 animate-pulse" />
           )}
         </div>
-        <p className={`typo-body font-semibold ${cfg.accentText} text-center max-w-[180px] truncate`}>
+        <p className={`typo-heading font-semibold ${cfg.accentText} text-center max-w-[180px] truncate`}>
           {entry.personaName}
         </p>
         <div className="flex items-center gap-2">
-          <span className={`typo-heading-lg font-bold tabular-nums ${cfg.scoreText}`}>
+          <span className={`typo-display font-bold tabular-nums ${cfg.scoreText}`}>
             {entry.compositeScore}
           </span>
           <TrendIcon className={`w-4 h-4 ${trend.color}`} aria-label={trend.label} />
         </div>
       </div>
-      <div className={`w-full ${cfg.heightClass} border rounded-t-card ${cfg.stepClass} flex items-start justify-center pt-3 transition-all duration-500`}>
-        <span className={`typo-heading-lg font-black tracking-widest ${cfg.accentText}`}>
+      <motion.div
+        initial={reduce ? false : { scaleY: 0.4, opacity: 0 }}
+        animate={{ scaleY: 1, opacity: 1 }}
+        style={{ transformOrigin: 'bottom' }}
+        transition={{ duration: reduce ? 0 : 0.55, delay: reduce ? 0 : cfg.staggerDelay + 0.15, ease: [0.34, 1.4, 0.64, 1] }}
+        className={`w-full ${cfg.heightClass} border rounded-t-card ${cfg.stepClass} flex items-start justify-center pt-3`}
+      >
+        <span className={`typo-display font-black tracking-widest ${cfg.accentText}`}>
           {cfg.label}
         </span>
-      </div>
-    </button>
+      </motion.div>
+    </motion.button>
   );
 }

@@ -1,19 +1,16 @@
 import { useState } from 'react';
 import { ArenaPanelColosseum } from './ArenaPanelColosseum';
-import { ArenaPanelConstellation } from './ArenaPanelConstellation';
 import { ArenaPanelLedger } from './ArenaPanelLedger';
 
 // --- Prototype tab switcher (throwaway scaffold) ---------------------
 // Directional variants of the Arena surface. Baseline was retired once
-// Colosseum + Ledger proved superior; Constellation now contests
-// Colosseum's centrepiece with a celestial orrery treatment.
+// Colosseum + Ledger proved superior.
 
-type ArenaVariant = 'colosseum' | 'constellation' | 'ledger';
+type ArenaVariant = 'colosseum' | 'ledger';
 
 const VARIANT_TABS: Array<{ id: ArenaVariant; label: string; subtitle: string }> = [
-  { id: 'colosseum',     label: 'Colosseum',     subtitle: 'Heraldic gladiator ring' },
-  { id: 'constellation', label: 'Constellation', subtitle: 'Celestial orrery — models on cost orbits' },
-  { id: 'ledger',        label: 'Ledger',        subtitle: 'Quiet data-dense instrument' },
+  { id: 'colosseum', label: 'Colosseum', subtitle: 'Heraldic gladiator ring' },
+  { id: 'ledger',    label: 'Ledger',    subtitle: 'Quiet data-dense instrument' },
 ];
 
 export function ArenaPanel() {
@@ -39,9 +36,8 @@ export function ArenaPanel() {
           );
         })}
       </div>
-      {variant === 'colosseum'     && <ArenaPanelColosseum />}
-      {variant === 'constellation' && <ArenaPanelConstellation />}
-      {variant === 'ledger'        && <ArenaPanelLedger />}
+      {variant === 'colosseum' && <ArenaPanelColosseum />}
+      {variant === 'ledger'    && <ArenaPanelLedger />}
     </div>
   );
 }

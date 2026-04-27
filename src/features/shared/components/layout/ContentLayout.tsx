@@ -114,8 +114,14 @@ export function ContentHeader({
     <div
       className={[
         IS_MOBILE ? 'px-3 py-3' : 'px-4 md:px-6 xl:px-8 py-6',
-        'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
-        'sticky top-0 z-10 backdrop-blur supports-[backdrop-filter]:bg-card-bg/95',
+        // bg-card-bg maps to --color-card-bg via @theme; the previous
+        // bg-primary/5 fallback (used pre-backdrop-filter) introduced a
+        // brand-tinted variant that didn't match the theme's neutral
+        // surface tokens. Single-token surface keeps the header coherent
+        // across all themes and removes the discoloration on browsers
+        // without backdrop-filter support.
+        'border-b border-card-border bg-card-bg flex-shrink-0 min-w-[80vw]',
+        'sticky top-0 z-10 backdrop-blur',
         'transition-shadow duration-150',
         scrolled ? 'shadow-elevation-2' : 'shadow-none',
       ].join(' ')}

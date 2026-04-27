@@ -46,11 +46,16 @@ export function EventRow({
       <button
         type="button"
         onClick={onToggleExpand}
-        className="group w-full grid items-center gap-3 px-3 py-2.5 hover:bg-secondary/20 transition-colors text-left"
+        aria-expanded={expanded}
+        className={`group w-full grid items-center gap-3 px-3 py-2.5 cursor-pointer text-left border-l-2 transition-colors ${
+          expanded
+            ? 'bg-secondary/40 border-l-primary/60'
+            : 'border-l-transparent hover:bg-secondary/35 hover:border-l-primary/40'
+        }`}
         style={{ gridTemplateColumns: GRID_COLUMNS }}
       >
         <motion.span animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }} className="inline-flex">
-          <ChevronRight className="w-3.5 h-3.5 text-foreground/40" />
+          <ChevronRight className="w-3.5 h-3.5 text-foreground/60 group-hover:text-foreground transition-colors" />
         </motion.span>
 
         <PulseDot activity={activity} />

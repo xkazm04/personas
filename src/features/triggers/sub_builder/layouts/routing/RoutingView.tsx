@@ -9,7 +9,7 @@
  * filters (useRoutingFilters), UI chrome (Toolbar + GroupPanel), and the
  * three shared modals. All row / panel / stack details live in siblings.
  */
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Radio } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -22,6 +22,7 @@ import { DisconnectDialog } from '../DisconnectDialog';
 import { RenameEventDialog } from '../RenameEventDialog';
 import { useRoutingState } from '../useRoutingState';
 import { buildActivityMap } from './activity';
+import { ClassPillsBar } from './ClassPillsBar';
 import { GroupPanel } from './GroupPanel';
 import { Toolbar } from './Toolbar';
 import { useRoutingFilters } from './useRoutingFilters';
@@ -31,6 +32,8 @@ interface Props {
   initialEvents: PersonaEvent[];
   personas: Persona[];
   groups: PersonaGroup[];
+  /** Page-level slot. RoutingView publishes the class-pill bar into the page header. */
+  setHeaderExtra?: (node: ReactNode) => void;
 }
 
 export function RoutingView(props: Props) {
@@ -50,6 +53,21 @@ export function RoutingView(props: Props) {
 
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set());
+
+  // Publish the class-pill bar into the page header. Cleared on unmount so
+  // the slot doesn't leak into other tabs.
+  const { setHeaderExtra } = props;
+  useEffect(() => {
+    if (!setHeaderExtra) return;
+    setHeaderExtra(
+      <ClassPillsBar
+        visibleClasses={filters.visibleClasses}
+        classCounts={filters.classCounts}
+        onToggle={filters.toggleClass}
+      />,
+    );
+    return () => setHeaderExtra(null);
+  }, [setHeaderExtra, filters.visibleClasses, filters.classCounts, filters.toggleClass]);
 
   const toggleGroup = (id: string) => setCollapsed(prev => {
     const next = new Set(prev);

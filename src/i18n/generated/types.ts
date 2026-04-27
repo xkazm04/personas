@@ -4653,6 +4653,10 @@ export type Translations = {
       issues_count_one: string;
       never: string;
       fail_count: string;
+      rotation_manage_all: string;
+      rotation_open_in_connections: string;
+      rotation_started_for: string;
+      rotation_failed_for: string;
     };
     saved_views: {
       errors: {

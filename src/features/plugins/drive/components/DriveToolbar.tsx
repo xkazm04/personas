@@ -84,7 +84,7 @@ export function DriveToolbar({
           const isLast = i === segments.length - 1;
           return (
             <div key={subPath} className="flex items-center gap-0.5 min-w-0">
-              <ChevronRight className="w-3 h-3 text-foreground/90 flex-shrink-0" />
+              <ChevronRight className="w-3 h-3 text-foreground flex-shrink-0" />
               <BreadcrumbPill
                 label={seg}
                 onClick={() => drive.navigate(subPath)}
@@ -97,19 +97,19 @@ export function DriveToolbar({
 
       {/* Search */}
       <div className="relative flex items-center group">
-        <Search className="absolute left-2.5 w-3.5 h-3.5 text-foreground/90 pointer-events-none transition-colors group-focus-within:text-cyan-400" />
+        <Search className="absolute left-2.5 w-3.5 h-3.5 text-foreground pointer-events-none transition-colors group-focus-within:text-cyan-300" />
         <input
           type="text"
           value={drive.searchQuery}
           onChange={(e) => drive.setSearchQuery(e.target.value)}
           placeholder={t.plugins.drive.search_placeholder}
-          className="pl-8 pr-7 py-1.5 w-56 rounded-card bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground/90 focus:outline-none focus:border-cyan-500/40 focus:ring-2 focus:ring-cyan-500/20 transition-all"
+          className="pl-8 pr-7 py-1.5 w-56 rounded-card bg-secondary/40 border border-primary/15 typo-body text-foreground placeholder:text-foreground focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all"
         />
         {drive.searchQuery && (
           <button
             type="button"
             onClick={() => drive.setSearchQuery("")}
-            className="absolute right-1.5 p-0.5 rounded text-foreground/90 hover:text-foreground hover:bg-primary/10"
+            className="absolute right-1.5 p-0.5 rounded text-foreground hover:text-foreground hover:bg-primary/10"
             aria-label="clear"
           >
             <X className="w-3 h-3" />
@@ -187,7 +187,7 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-primary/10 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+      className="p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-primary/10 disabled:opacity-40 disabled:text-foreground disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
     >
       <Icon className="w-4 h-4" />
     </button>
@@ -209,10 +209,10 @@ function BreadcrumbPill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body truncate max-w-[160px] transition-colors ${
+      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body font-medium truncate max-w-[160px] transition-colors ${
         isLast
           ? "typo-section-title"
-          : "text-foreground/90 hover:text-foreground hover:bg-primary/10"
+          : "text-foreground hover:text-cyan-200 hover:bg-primary/10"
       }`}
     >
       {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
@@ -242,8 +242,8 @@ function ViewSegment({
       aria-pressed={active}
       className={`flex items-center gap-1.5 px-2 py-1 rounded-input typo-body font-medium transition-all ${
         active
-          ? "bg-gradient-to-b from-cyan-500/30 to-cyan-500/10 text-cyan-100 shadow-elevation-1 border border-cyan-500/40"
-          : "text-foreground hover:text-foreground hover:bg-primary/10 border border-transparent"
+          ? "bg-gradient-to-b from-cyan-500/35 to-cyan-500/10 text-cyan-50 shadow-elevation-1 border border-cyan-500/50"
+          : "text-foreground hover:text-cyan-200 hover:bg-primary/10 border border-transparent"
       }`}
     >
       <Icon className="w-3.5 h-3.5" />

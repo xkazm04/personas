@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry, Medal, PerformanceTier } from '../libs/leaderboardScoring';
@@ -25,7 +26,8 @@ const TREND_ICON = {
 
 // ── Mini score ring ────────────────────────────────────────────────────
 
-function MiniScoreRing({ score, size = 44 }: { score: number; size?: number }) {
+function MiniScoreRing({ score, size = 48 }: { score: number; size?: number }) {
+  const reduce = useReducedMotion();
   const radius = (size - 6) / 2;
   const circumference = 2 * Math.PI * radius;
   const progress = score / 100;
@@ -35,15 +37,16 @@ function MiniScoreRing({ score, size = 44 }: { score: number; size?: number }) {
     <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${size} ${size}`}>
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary/10" />
-        <circle
+        <motion.circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={strokeColor} strokeWidth="3"
           strokeLinecap="round" strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - progress)}
-          className="transition-all duration-700"
+          initial={reduce ? false : { strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: circumference * (1 - progress) }}
+          transition={{ duration: reduce ? 0 : 0.7, ease: [0.22, 0.61, 0.36, 1] }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="typo-caption font-bold text-foreground/90">{score}</span>
+        <span className="typo-body font-bold text-foreground tabular-nums">{score}</span>
       </div>
     </div>
   );
@@ -51,15 +54,21 @@ function MiniScoreRing({ score, size = 44 }: { score: number; size?: number }) {
 
 // ── Dimension bar ──────────────────────────────────────────────────────
 
-function DimensionBar({ label, value, raw }: { label: string; value: number; raw: string }) {
-  const barColor = value >= 80 ? 'bg-emerald-500/60' : value >= 60 ? 'bg-blue-500/60' : value >= 40 ? 'bg-amber-500/60' : 'bg-red-500/60';
+function DimensionBar({ label, value, raw, delay = 0 }: { label: string; value: number; raw: string; delay?: number }) {
+  const reduce = useReducedMotion();
+  const barColor = value >= 80 ? 'bg-emerald-500/70' : value >= 60 ? 'bg-blue-500/70' : value >= 40 ? 'bg-amber-500/70' : 'bg-red-500/70';
   return (
     <div className="flex items-center gap-2">
-      <span className="text-[10px] text-foreground w-12 text-right flex-shrink-0">{label}</span>
+      <span className="typo-caption text-foreground w-14 text-right flex-shrink-0">{label}</span>
       <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden">
-        <div className={`h-full rounded-full transition-all duration-500 ${barColor}`} style={{ width: `${value}%` }} />
+        <motion.div
+          className={`h-full rounded-full ${barColor}`}
+          initial={reduce ? false : { width: 0 }}
+          animate={{ width: `${value}%` }}
+          transition={{ duration: reduce ? 0 : 0.55, delay: reduce ? 0 : delay, ease: [0.22, 0.61, 0.36, 1] }}
+        />
       </div>
-      <span className="text-[10px] text-foreground w-14 flex-shrink-0">{raw}</span>
+      <span className="typo-caption font-mono text-foreground w-16 flex-shrink-0">{raw}</span>
     </div>
   );
 }
@@ -71,19 +80,27 @@ interface LeaderboardCardProps {
   selected?: boolean;
   onClick?: () => void;
   onNavigateToAgent?: (personaId: string) => void;
+  /** Index in the visible list — used to stagger entrance animations. */
+  index?: number;
 }
 
-export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }: LeaderboardCardProps) {
+export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, index = 0 }: LeaderboardCardProps) {
+  const reduce = useReducedMotion();
   const medalCfg = entry.medal ? MEDAL_CONFIG[entry.medal] : null;
   const tierCfg = TIER_CONFIG[entry.tier];
   const trendCfg = TREND_ICON[entry.trend];
   const TrendIcon = trendCfg.Icon;
 
   return (
-    <button
+    <motion.button
+      layout
       onClick={onClick}
       data-testid={`leaderboard-card-${entry.personaId}`}
-      className={`w-full text-left p-3 rounded-modal border transition-all duration-200 ${
+      initial={reduce ? false : { opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: reduce ? 0 : 0.28, delay: reduce ? 0 : index * 0.035, ease: [0.22, 0.61, 0.36, 1] }}
+      whileHover={reduce ? undefined : { y: -1 }}
+      className={`w-full text-left p-3.5 rounded-modal border transition-colors duration-200 ${
         selected
           ? 'bg-primary/8 border-primary/25 ring-1 ring-primary/15'
           : 'bg-secondary/[0.03] border-primary/[0.08] hover:bg-primary/[0.04] hover:border-primary/15'
@@ -91,24 +108,24 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
     >
       <div className="flex items-center gap-3">
         {/* Rank */}
-        <div className="w-8 flex-shrink-0 text-center">
+        <div className="w-9 flex-shrink-0 text-center">
           {medalCfg ? (
-            <span className={`inline-flex items-center justify-center w-7 h-7 rounded-card typo-caption font-bold border ${medalCfg.bg} ${medalCfg.border} ${medalCfg.text}`}>
+            <span className={`inline-flex items-center justify-center w-8 h-7 rounded-card typo-caption font-bold border ${medalCfg.bg} ${medalCfg.border} ${medalCfg.text}`}>
               {medalCfg.emoji}
             </span>
           ) : (
-            <span className="typo-body font-medium text-foreground">#{entry.rank}</span>
+            <span className="typo-body font-semibold text-foreground tabular-nums">#{entry.rank}</span>
           )}
         </div>
 
         {/* Avatar + name */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2.5 flex-1 min-w-0">
           <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
           <div className="min-w-0">
-            <p className="typo-body font-medium text-foreground truncate">{entry.personaName}</p>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-[10px] font-medium ${tierCfg.color}`}>{tierCfg.label}</span>
-              <TrendIcon className={`w-3 h-3 ${trendCfg.color}`} />
+            <p className="typo-body font-semibold text-foreground truncate leading-tight">{entry.personaName}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className={`typo-caption font-semibold ${tierCfg.color}`}>{tierCfg.label}</span>
+              <TrendIcon className={`w-3.5 h-3.5 ${trendCfg.color}`} aria-label={`Trend: ${entry.trend}`} />
             </div>
           </div>
         </div>
@@ -118,27 +135,27 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent }:
       </div>
 
       {/* Dimension bars */}
-      <div className="mt-2.5 space-y-1 pl-11">
-        {entry.dimensions.map((dim) => (
-          <DimensionBar key={dim.label} label={dim.label} value={dim.value} raw={dim.raw} />
+      <div className="mt-3 space-y-1.5 pl-12">
+        {entry.dimensions.map((dim, i) => (
+          <DimensionBar key={dim.label} label={dim.label} value={dim.value} raw={dim.raw} delay={i * 0.05} />
         ))}
       </div>
 
       {/* Open Agent link */}
       {onNavigateToAgent && (
-        <div className="mt-2 pl-11">
+        <div className="mt-2.5 pl-12">
           <span
             role="button"
             tabIndex={0}
             onClick={(e) => { e.stopPropagation(); onNavigateToAgent(entry.personaId); }}
             onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); onNavigateToAgent(entry.personaId); } }}
-            className="inline-flex items-center gap-1 text-[11px] text-primary/60 hover:text-primary transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 typo-caption font-medium text-primary/70 hover:text-primary transition-colors cursor-pointer"
           >
             <ExternalLink className="w-3 h-3" />
             Open Agent
           </span>
         </div>
       )}
-    </button>
+    </motion.button>
   );
 }

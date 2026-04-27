@@ -94,13 +94,14 @@ export default function LeaderboardPage() {
             {listEntries.length > 0 ? (
               <div className="flex gap-6">
                 <div className="flex-1 space-y-2 min-w-0">
-                  {listEntries.map((entry) => (
+                  {listEntries.map((entry, idx) => (
                     <LeaderboardCard
                       key={entry.personaId}
                       entry={entry}
                       selected={selectedId === entry.personaId}
                       onClick={() => handleSelect(entry.personaId)}
                       onNavigateToAgent={handleNavigateToAgent}
+                      index={idx}
                     />
                   ))}
                 </div>
