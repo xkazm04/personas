@@ -15,6 +15,24 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger("bundle-export");
 
+// Bundle bytes and share-link tokens are credentials. Auto-clear them from the
+// OS clipboard after this many ms — but only if the clipboard still contains
+// what we wrote (don't trample later copies).
+const SENSITIVE_CLIPBOARD_TTL_MS = 30_000;
+
+async function scheduleSensitiveClipboardClear(payload: string): Promise<void> {
+  setTimeout(async () => {
+    try {
+      const current = await navigator.clipboard.readText();
+      if (current === payload) {
+        await navigator.clipboard.writeText('');
+      }
+    } catch {
+      // intentional: cannot verify, skip wipe
+    }
+  }, SENSITIVE_CLIPBOARD_TTL_MS);
+}
+
 type ExportMode = 'bundle' | 'enclave';
 
 interface BundleExportDialogProps {
@@ -117,6 +135,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       setCopying(true);
       const result = await exportBundleToClipboard(Array.from(selected));
       await navigator.clipboard.writeText(result.base64);
+      void scheduleSensitiveClipboardClear(result.base64);
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
       addToast(`Bundle copied: ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (${formatBytes(result.byte_size)})`, 'success');
@@ -136,6 +155,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
       setCreatingLink(true);
       const result = await createShareLink(Array.from(selected));
       await navigator.clipboard.writeText(result.deep_link);
+      void scheduleSensitiveClipboardClear(result.deep_link);
       setLinkCopied(true);
       setTimeout(() => setLinkCopied(false), 3000);
       addToast(`Share link copied! ${result.resource_count} resource${result.resource_count !== 1 ? 's' : ''} (expires in 24h, single use)`, 'success');
