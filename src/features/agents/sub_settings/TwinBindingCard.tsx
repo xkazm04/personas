@@ -46,12 +46,29 @@ export function TwinBindingCard() {
   const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
   const loadedRef = useRef(false);
 
+  // Set loadedRef AFTER the fetch settles, not before. Previously the ref
+  // was flipped synchronously above the await — a fetch failure (offline,
+  // backend command unavailable) silently set loadedRef=true with empty
+  // twinProfiles, so the card displayed 'No twins configured' forever.
+  // Worse: the orphan detection at line 64 is gated on twinProfiles.length>0,
+  // so a persona pinned to a deleted twin showed the harmless 'No twins'
+  // message instead of the orphan banner — silent identity-binding drift.
+  // Now: re-fetches if a previous attempt failed (loadedRef stays false on
+  // error), and re-fetches when selectedPersona changes so the card
+  // reflects the freshest twin set.
   useEffect(() => {
-    if (!loadedRef.current && twinProfiles.length === 0) {
-      loadedRef.current = true;
-      void fetchTwinProfiles();
-    }
-  }, [twinProfiles.length, fetchTwinProfiles]);
+    if (loadedRef.current || twinProfiles.length > 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await fetchTwinProfiles();
+        if (!cancelled) loadedRef.current = true;
+      } catch {
+        // Leave loadedRef=false so the next render (or persona switch) retries.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [selectedPersona?.id, twinProfiles.length, fetchTwinProfiles]);
 
   if (!selectedPersona) return null;
 
