@@ -15,6 +15,7 @@ import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimestamp } from '@/lib/utils/formatters';
 
@@ -77,17 +78,13 @@ function PersonaDigestRow({
       onClick={() => onNavigate(check.personaId)}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-modal hover:bg-primary/5 transition-colors text-left group ${severityClass}`}
     >
-      {/* Persona icon */}
-      <div
-        className="w-8 h-8 rounded-card flex items-center justify-center typo-caption font-bold flex-shrink-0"
-        style={{
-          backgroundColor: `${check.personaColor || '#6B7280'}20`,
-          border: `1px solid ${check.personaColor || '#6B7280'}40`,
-          color: check.personaColor || '#6B7280',
-        }}
-      >
-        {check.personaIcon || check.personaName.charAt(0).toUpperCase()}
-      </div>
+      {/* Persona icon — shared component handles emoji / catalog icon / Bot fallback */}
+      <PersonaIcon
+        icon={check.personaIcon ?? null}
+        color={check.personaColor ?? null}
+        display="framed"
+        frameSize="md"
+      />
 
       {/* Name + issue counts */}
       <div className="flex-1 min-w-0">
@@ -240,23 +237,25 @@ export function HealthDigestPanel() {
         </div>
       )}
 
-      {/* Summary bar */}
-      <div className="px-4 py-3 flex items-center gap-4 border-b border-primary/10 bg-primary/[0.02]">
+      {/* Summary bar — compact so the meta row + severity badges always fit
+          on one line in a narrow right-rail card. Wraps gracefully on
+          extreme widths instead of clipping. */}
+      <div className="px-4 py-3 flex items-center gap-3 border-b border-primary/10 bg-primary/[0.02]">
         <CompactScoreRing score={totalScore} />
         <div className="flex-1 min-w-0">
-          <p className="typo-body font-medium text-foreground">
+          <p className="typo-body font-medium text-foreground truncate">
             {totalScore.grade === 'healthy' ? t.agents.health_digest.all_healthy :
              totalScore.grade === 'degraded' ? t.agents.health_digest.some_attention :
              t.agents.health_digest.critical_issues}
           </p>
-          <div className="flex items-center gap-3 mt-0.5">
-            <span className="typo-caption text-foreground">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5 typo-caption text-foreground">
+            <span>
               {tx(personas.length === 1 ? t.agents.health_digest.agents_checked_one : t.agents.health_digest.agents_checked_other, { count: personas.length })}
             </span>
             {totalIssues > 0 && (
               <>
-                <span className="typo-caption text-foreground">\u00b7</span>
-                <span className="typo-caption text-foreground">
+                <span aria-hidden="true">·</span>
+                <span>
                   {tx(totalIssues === 1 ? t.agents.health_digest.issues_one : t.agents.health_digest.issues_other, { count: totalIssues })}
                 </span>
               </>
@@ -266,19 +265,19 @@ export function HealthDigestPanel() {
 
         {/* Issue breakdown badges */}
         {totalIssues > 0 && (
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {errorCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.error.bg} ${SEVERITY_STYLES.error.text}`}>
                 <XCircle className="w-3 h-3" /> {errorCount}
               </span>
             )}
             {warningCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.warning.bg} ${SEVERITY_STYLES.warning.text}`}>
                 <AlertTriangle className="w-3 h-3" /> {warningCount}
               </span>
             )}
             {infoCount > 0 && (
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
+              <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-card typo-caption font-medium ${SEVERITY_STYLES.info.bg} ${SEVERITY_STYLES.info.text}`}>
                 <Info className="w-3 h-3" /> {infoCount}
               </span>
             )}

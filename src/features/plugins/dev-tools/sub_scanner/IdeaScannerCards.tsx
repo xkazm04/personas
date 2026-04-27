@@ -7,11 +7,12 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -71,29 +72,49 @@ export function AgentCard({
   onToggle: () => void;
 }) {
   const ac = agentColor(agent);
+  const Icon = agent.icon;
   return (
     <motion.button
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
       onClick={onToggle}
-      className={`relative flex flex-col items-start p-3.5 rounded-modal border text-left transition-colors ${
+      title={agent.label}
+      className={`group relative flex items-center justify-center h-14 px-7 rounded-card border overflow-hidden transition-colors ${
         selected
-          ? 'bg-primary/10 border-primary/20 ring-1 ring-amber-500/20'
+          ? 'bg-primary/10 border-primary/30 ring-1 ring-amber-500/30'
           : 'border-primary/10 hover:bg-primary/5 hover:border-primary/20'
       }`}
     >
-      <div className={`w-9 h-9 rounded-card ${ac.bg} border ${ac.border} flex items-center justify-center typo-heading-lg mb-2`}>
-        {agent.emoji}
-      </div>
-      <span className="text-md font-medium text-foreground mb-0.5">{agent.label}</span>
-      <span className="text-md text-foreground line-clamp-2 leading-relaxed">{agent.description}</span>
-      <div className="absolute top-3 right-3">
+      {/* Background icon — semitransparent at rest, fully visible on hover */}
+      <Icon
+        className={`pointer-events-none absolute inset-0 m-auto w-12 h-12 ${ac.text} opacity-15 group-hover:opacity-90 transition-opacity duration-200`}
+        strokeWidth={1.5}
+        aria-hidden="true"
+      />
+
+      {/* Centered title */}
+      <span className="relative z-10 typo-card-label text-foreground text-center leading-tight">
+        {agent.label}
+      </span>
+
+      {/* Selection indicator — top-left */}
+      <span className="absolute top-1.5 left-1.5 z-10">
         {selected ? (
-          <CheckSquare className="w-4 h-4 text-amber-400" />
+          <CheckSquare className="w-3.5 h-3.5 text-amber-400" />
         ) : (
-          <Square className="w-4 h-4 text-foreground" />
+          <Square className="w-3.5 h-3.5 text-foreground/40" />
         )}
-      </div>
+      </span>
+
+      {/* Help tooltip — top-right */}
+      <span
+        className="absolute top-1.5 right-1.5 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Tooltip content={agent.description} placement="top">
+          <Info className="w-3.5 h-3.5 text-foreground/40 hover:text-foreground transition-colors" />
+        </Tooltip>
+      </span>
     </motion.button>
   );
 }

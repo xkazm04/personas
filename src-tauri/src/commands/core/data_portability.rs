@@ -436,6 +436,116 @@ pub struct CompetitiveImportPreview {
 }
 
 // ============================================================================
+// Debug-only commands for smoke testing
+//
+// The production export/import commands open native file dialogs, which makes
+// IPC-only round-trip testing impossible. These variants accept an explicit
+// `file_path` and bypass the dialog so e2e_portability.py can drive a real
+// export → import round-trip via window.__TAURI__.invoke. Compiled out of
+// release builds.
+// ============================================================================
+
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn export_selective_to_path(
+    state: State<'_, Arc<AppState>>,
+    persona_ids: Vec<String>,
+    team_ids: Vec<String>,
+    credential_ids: Vec<String>,
+    passphrase: Option<String>,
+    file_path: String,
+) -> Result<bool, AppError> {
+    if passphrase.as_ref().is_some_and(|pp| pp.len() >= 8) {
+        require_privileged(&state, "export_selective_to_path").await?;
+    } else {
+        require_auth(&state).await?;
+    }
+
+    let pool = &state.db;
+    let scope = ExportScope::Selective {
+        persona_ids: persona_ids.clone(),
+        team_ids: team_ids.clone(),
+        credential_ids: credential_ids.clone(),
+    };
+    let mut bundle = build_export_bundle(pool, scope)?;
+
+    if let Some(ref pp) = passphrase {
+        if pp.len() >= 8 {
+            let filter_ids = if credential_ids.is_empty() { None } else { Some(&credential_ids) };
+            let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
+            bundle.encrypted_credentials = Some(envelope);
+            bundle.format_version = 3;
+        }
+    }
+
+    let json = serde_json::to_string_pretty(&bundle)
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let zip_bytes = create_zip_bundle(&json)?;
+    tokio::fs::write(&file_path, zip_bytes)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to write file: {e}")))?;
+
+    Ok(true)
+}
+
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn import_portability_bundle_from_path(
+    state: State<'_, Arc<AppState>>,
+    passphrase: Option<String>,
+    file_path: String,
+) -> Result<Option<PortabilityImportResult>, AppError> {
+    require_privileged(&state, "import_portability_bundle_from_path").await?;
+    let path = std::path::PathBuf::from(&file_path);
+
+    let content = if path.extension().is_some_and(|ext| ext == "zip") {
+        read_zip_bundle(&path)?
+    } else {
+        tokio::fs::read_to_string(&path)
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?
+    };
+
+    let bundle: PortabilityBundle = serde_json::from_str(&content)
+        .map_err(|e| AppError::Validation(format!("Invalid export file: {e}")))?;
+
+    if bundle.format_version != 2 && bundle.format_version != 3 {
+        return Err(AppError::Validation(format!(
+            "Unsupported format version: {} (expected 2 or 3)",
+            bundle.format_version
+        )));
+    }
+
+    validate_bundle(&bundle)?;
+
+    let pool = &state.db;
+    let mut result = import_bundle(pool, &bundle)?;
+
+    if let (Some(envelope), Some(ref pp)) = (&bundle.encrypted_credentials, &passphrase) {
+        if !pp.is_empty() {
+            match apply_encrypted_credentials(pool, envelope, pp, &bundle.credentials) {
+                Ok(count) => {
+                    if count > 0 {
+                        result.warnings.push(format!(
+                            "{} credential secret(s) decrypted and applied",
+                            count
+                        ));
+                    }
+                }
+                Err(e) => {
+                    result.warnings.push(format!(
+                        "Failed to decrypt embedded credentials: {}. Credential shells were still imported without secrets.",
+                        e
+                    ));
+                }
+            }
+        }
+    }
+
+    Ok(Some(result))
+}
+
+// ============================================================================
 // Internal helpers
 // ============================================================================
 

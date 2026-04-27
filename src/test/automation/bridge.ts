@@ -1146,6 +1146,57 @@ const bridge: TestBridge = {
     return { success: false, timedOut: true, personaId };
   },
 
+  /** Get workspace export statistics — wraps the same Tauri command the
+   *  Data Portability settings panel calls. Used by e2e_portability.py to
+   *  capture a baseline before round-tripping. */
+  async getPortabilityStats() {
+    try {
+      const stats = await invoke<Record<string, unknown>>('get_export_stats');
+      return { success: true, stats };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** Debug-only round-trip helper: export selected personas/teams/credentials
+   *  to a known path, bypassing the OS save dialog. The Tauri command is
+   *  gated by #[cfg(debug_assertions)] so this only works in dev builds. */
+  async exportPortabilityToPath(
+    personaIds: string[],
+    teamIds: string[],
+    credentialIds: string[],
+    passphrase: string | null,
+    filePath: string,
+  ) {
+    try {
+      const wrote = await invoke<boolean>('export_selective_to_path', {
+        personaIds,
+        teamIds,
+        credentialIds,
+        passphrase,
+        filePath,
+      });
+      return { success: true, wrote, filePath };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** Debug-only round-trip helper: import a portability bundle from a known
+   *  path, bypassing the OS file picker. Returns the PortabilityImportResult
+   *  shape so the smoke test can assert on counts and warnings. */
+  async importPortabilityFromPath(passphrase: string | null, filePath: string) {
+    try {
+      const result = await invoke<Record<string, unknown> | null>(
+        'import_portability_bundle_from_path',
+        { passphrase, filePath },
+      );
+      return { success: true, result };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** List available credential service types from the vault. */
   listCredentials() {
     const creds = useVaultStore.getState().credentials;

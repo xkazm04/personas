@@ -200,8 +200,8 @@ export function ArenaPanelLedger() {
         {/* Setup — roster + use case picker */}
         <section className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span className="typo-label text-foreground/70">Setup</span>
-            <span className="typo-caption text-foreground/60 tabular-nums">
+            <span className="typo-label text-foreground/90">Setup</span>
+            <span className="typo-caption text-foreground/90 tabular-nums">
               {contenderCount}/{ARENA_ROSTER.length} contender{contenderCount === 1 ? '' : 's'}
             </span>
           </div>
@@ -221,8 +221,8 @@ export function ArenaPanelLedger() {
           {/* Use case picker */}
           <div className="border-t border-border px-4 py-3 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="typo-label text-foreground/70">Use case filter</span>
-              <span className="typo-caption text-foreground/60 tabular-nums">
+              <span className="typo-label text-foreground/90">Use case filter</span>
+              <span className="typo-caption text-foreground/90 tabular-nums">
                 {scenarioCount}/{useCases.length} scenario{scenarioCount === 1 ? '' : 's'}
               </span>
             </div>
@@ -238,7 +238,7 @@ export function ArenaPanelLedger() {
         {/* Readiness column */}
         <aside className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1 self-start">
           <div className="px-4 py-3 border-b border-border">
-            <span className="typo-label text-foreground/70">Readiness</span>
+            <span className="typo-label text-foreground/90">Readiness</span>
           </div>
           <ul className="p-2 space-y-1">
             <LedgerReadinessRow
@@ -302,8 +302,8 @@ export function ArenaPanelLedger() {
           <AlertCircle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
           <div className="space-y-1">
             <p className="typo-body-lg font-medium text-status-warning">Match conditions unmet</p>
-            {!hasPrompt && <p className="typo-body-lg text-foreground/85">{t.agents.lab.no_prompt_warning}</p>}
-            {!hasTools && <p className="typo-body-lg text-foreground/85">{t.agents.lab.no_tools_warning}</p>}
+            {!hasPrompt && <p className="typo-body-lg text-foreground">{t.agents.lab.no_prompt_warning}</p>}
+            {!hasTools && <p className="typo-body-lg text-foreground">{t.agents.lab.no_tools_warning}</p>}
           </div>
         </div>
       )}
@@ -328,7 +328,7 @@ export function ArenaPanelLedger() {
             <Trophy className="w-4 h-4 text-primary" />
             Chronicle
           </h4>
-          <span className="typo-caption text-foreground/60">{arenaRuns.length} run{arenaRuns.length === 1 ? '' : 's'} logged</span>
+          <span className="typo-caption text-foreground/90">{arenaRuns.length} run{arenaRuns.length === 1 ? '' : 's'} logged</span>
         </div>
         <StandingChampionCard champion={champion} totalRuns={arenaRuns.length} />
         <ArenaHistory
@@ -385,7 +385,7 @@ function FormulaPiece({ n, label, highlight }: { n: number; label: string; highl
   return (
     <span className="flex flex-col items-end leading-none">
       <span className={`typo-data-lg font-bold tabular-nums ${highlight ? 'text-primary' : 'text-foreground'}`}>{n}</span>
-      <span className="typo-caption text-foreground/60 mt-0.5">{label}</span>
+      <span className="typo-caption text-foreground/90 mt-0.5">{label}</span>
     </span>
   );
 }
@@ -407,7 +407,7 @@ function LedgerRosterRow({
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-interactive border transition-colors text-left ${
         selected
           ? 'bg-primary/10 border-primary/35 text-foreground'
-          : 'bg-transparent border-transparent text-foreground/80 hover:bg-foreground/[0.03] hover:border-border'
+          : 'bg-transparent border-transparent text-foreground hover:bg-foreground/[0.03] hover:border-border'
       }`}
     >
       {/* selection box */}
@@ -421,24 +421,24 @@ function LedgerRosterRow({
       </span>
       {/* sigil */}
       <span className={`flex items-center justify-center w-8 h-8 rounded-interactive flex-shrink-0 ${
-        selected ? 'bg-primary/15 text-primary' : 'bg-foreground/[0.06] text-foreground/70'
+        selected ? 'bg-primary/15 text-primary' : 'bg-foreground/[0.06] text-foreground/90'
       }`}>
         <Sigil className="w-4 h-4" strokeWidth={1.75} />
       </span>
       {/* name + provider */}
       <span className="flex-1 min-w-0">
         <span className="typo-body-lg font-semibold text-foreground truncate block">{option.label}</span>
-        <span className="typo-caption text-foreground/60 truncate block">{meta.providerTag}</span>
+        <span className="typo-caption text-foreground/90 truncate block">{meta.providerTag}</span>
       </span>
       {/* stats */}
-      <span className="flex items-center gap-3 typo-data text-foreground/75 tabular-nums">
+      <span className="flex items-center gap-3 typo-data text-foreground/90 tabular-nums">
         <span className="flex flex-col items-end leading-none">
           <span className="font-semibold">{meta.costLabel}</span>
-          <span className="typo-caption text-foreground/55">cost</span>
+          <span className="typo-caption text-foreground">cost</span>
         </span>
         <span className="flex flex-col items-end leading-none">
           <span className="font-semibold">{meta.speedLabel}</span>
-          <span className="typo-caption text-foreground/55">speed</span>
+          <span className="typo-caption text-foreground">speed</span>
         </span>
       </span>
     </button>
@@ -459,7 +459,7 @@ function LedgerUseCasePicker({
     <div className="flex flex-wrap gap-1.5">
       <UseCasePill active={effective === '__all__'} onClick={() => onSelect(null)} label={allLabel} />
       {useCases.length === 0 ? (
-        <span className="typo-body italic text-foreground/60 px-2 py-1.5">no use cases authored</span>
+        <span className="typo-body italic text-foreground/90 px-2 py-1.5">no use cases authored</span>
       ) : (
         useCases.map((uc) => (
           <UseCasePill
@@ -483,7 +483,7 @@ function UseCasePill({ active, onClick, label }: { active: boolean; onClick: () 
       className={`max-w-[200px] truncate px-3 py-1.5 rounded-interactive border typo-body font-medium transition-colors ${
         active
           ? 'bg-primary/15 border-primary/40 text-foreground'
-          : 'bg-transparent border-border text-foreground/75 hover:text-foreground hover:border-primary/30'
+          : 'bg-transparent border-border text-foreground/90 hover:text-foreground hover:border-primary/30'
       }`}
     >
       {label}
@@ -512,10 +512,10 @@ function LedgerReadinessRow({
     : 'text-foreground';
   return (
     <li className="flex items-center gap-3 px-3 py-2 rounded-interactive hover:bg-foreground/[0.03] transition-colors">
-      <Icon className="w-4 h-4 text-foreground/60 flex-shrink-0" />
+      <Icon className="w-4 h-4 text-foreground/90 flex-shrink-0" />
       <span className="flex-1 min-w-0 leading-tight">
         <span className="typo-body-lg font-medium text-foreground truncate block">{label}</span>
-        <span className="typo-caption text-foreground/60 truncate block">{detail}</span>
+        <span className="typo-caption text-foreground/90 truncate block">{detail}</span>
       </span>
       <span className="flex items-center gap-1.5 flex-shrink-0">
         <span className={`h-2 w-2 rounded-full ${dotClass}`} />
@@ -548,14 +548,14 @@ function LedgerLaunchBar({
             : canLaunch ? 'bg-status-success'
             : 'bg-status-neutral'
         }`} />
-        <span className="typo-label text-foreground/70">
+        <span className="typo-label text-foreground/90">
           {isRunning ? 'Run in progress'
             : canLaunch ? 'Ready to launch'
             : 'Awaiting readiness'}
         </span>
       </div>
 
-      <div className="flex items-center gap-2 typo-body text-foreground/75 tabular-nums">
+      <div className="flex items-center gap-2 typo-body text-foreground/90 tabular-nums">
         <span><span className="font-semibold text-foreground">{contenders}</span> contenders</span>
         <span className="text-foreground/30">×</span>
         <span><span className="font-semibold text-foreground">{scenarios}</span> scenarios</span>
@@ -588,12 +588,12 @@ function LedgerLaunchBar({
             className={`flex items-center gap-2 px-5 py-2 rounded-interactive border typo-body-lg font-semibold transition-colors ${
               canLaunch
                 ? 'bg-primary/20 hover:bg-primary/30 border-primary/40 text-foreground'
-                : 'bg-foreground/[0.04] border-border text-foreground/45 cursor-not-allowed'
+                : 'bg-foreground/[0.04] border-border text-foreground cursor-not-allowed'
             }`}
           >
             <Rocket className="w-4 h-4" />
             Begin the match
-            <span className="typo-caption font-normal text-foreground/70 ml-1">× {contenders}</span>
+            <span className="typo-caption font-normal text-foreground/90 ml-1">× {contenders}</span>
           </button>
         )}
       </div>
@@ -610,8 +610,8 @@ function StandingChampionCard({
   if (!champion) {
     return (
       <div className="rounded-card border border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-3">
-        <Trophy className="w-4 h-4 text-foreground/40" />
-        <p className="typo-body-lg italic text-foreground/60">
+        <Trophy className="w-4 h-4 text-foreground" />
+        <p className="typo-body-lg italic text-foreground/90">
           No chronicle yet — the first match will crown a champion.
         </p>
       </div>
@@ -630,7 +630,7 @@ function StandingChampionCard({
           Standing Champion
         </p>
         <p className="typo-section-title text-foreground capitalize mt-1">{champion.model}</p>
-        <p className="typo-caption text-foreground/65">
+        <p className="typo-caption text-foreground/90">
           {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} judged match{champion.total === 1 ? '' : 'es'}
           {' '}· {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
         </p>
@@ -638,8 +638,8 @@ function StandingChampionCard({
       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/[0.04] border border-border typo-data text-foreground">
         <Swords className="w-3.5 h-3.5 text-primary" />
         <span className="font-semibold tabular-nums">{champion.wins}</span>
-        <span className="text-foreground/60">/</span>
-        <span className="text-foreground/60 tabular-nums">{champion.total}</span>
+        <span className="text-foreground/90">/</span>
+        <span className="text-foreground/90 tabular-nums">{champion.total}</span>
       </div>
     </div>
   );

@@ -1039,6 +1039,10 @@ pub fn run() {
             commands::core::data_portability::preview_competitive_import,
             commands::core::data_portability::export_credentials,
             commands::core::data_portability::import_credentials,
+            #[cfg(debug_assertions)]
+            commands::core::data_portability::export_selective_to_path,
+            #[cfg(debug_assertions)]
+            commands::core::data_portability::import_portability_bundle_from_path,
             // Core -- Saved Views
             commands::core::saved_views::create_saved_view,
             commands::core::saved_views::list_saved_views,

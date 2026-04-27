@@ -9,6 +9,7 @@
  */
 import { ArrowUpDown, RefreshCw, Search, Wand2 } from 'lucide-react';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SORT_MODES, type SortMode } from './types';
 import type { SourceOption } from './useRoutingFilters';
 
@@ -81,6 +82,7 @@ export function Toolbar(props: Props) {
           value={props.sourceFilter}
           options={props.sourceOptions}
           onChange={(v) => props.onSourceFilterChange(v || 'all')}
+          popupClassName="min-w-[400px]"
         />
       </div>
 
@@ -97,14 +99,15 @@ export function Toolbar(props: Props) {
       {/* Sort */}
       <div className="flex items-center gap-1 pl-2 border-l border-primary/10">
         <ArrowUpDown className="w-3.5 h-3.5 text-foreground/50" />
-        <select
+        <ThemedSelect
           value={props.sortMode}
           onChange={(e) => props.onSortModeChange(e.target.value as SortMode)}
-          className="bg-secondary/30 border border-primary/10 rounded-card text-xs text-foreground px-2 py-1 focus:outline-none focus:border-cyan-400/40"
+          wrapperClassName="w-[170px]"
+          className="py-1.5 text-xs"
           title="Sort events within each panel"
         >
           {SORT_MODES.map(m => <option key={m.key} value={m.key}>{m.label}</option>)}
-        </select>
+        </ThemedSelect>
       </div>
 
       {/* Stats + actions */}

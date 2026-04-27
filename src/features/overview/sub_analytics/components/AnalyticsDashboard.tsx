@@ -2,23 +2,19 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, BarChart3, AlertTriangle } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import HealingIssueModal from '@/features/overview/sub_observability/components/HealingIssueModal';
 import { useOverviewFilters } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewMetrics } from '../libs/useOverviewMetrics';
 import { useChartSeries } from '../libs/useChartSeries';
-import { useHealingWorkflow } from '../libs/useHealingWorkflow';
 import { AnalyticsSummaryCards } from './AnalyticsSummaryCards';
 import { AnalyticsFilters } from './AnalyticsFilters';
 import { AnalyticsCharts } from './AnalyticsCharts';
-import { HealthIssuesPanel } from './HealthIssuesPanel';
 import { RotationOverviewPanel } from './RotationOverviewPanel';
 
 export default function AnalyticsDashboard() {
   const { t, tx } = useTranslation();
   const metrics = useOverviewMetrics();
   const charts = useChartSeries();
-  const healing = useHealingWorkflow();
   const {
     dayRange: days,
     setDayRange: setDays,
@@ -125,32 +121,8 @@ export default function AnalyticsDashboard() {
           />
 
           <RotationOverviewPanel />
-
-          <HealthIssuesPanel
-            healingIssues={healing.healingIssues}
-            healingRunning={healing.healingRunning}
-            sortedFilteredIssues={healing.sortedFilteredIssues}
-            issueFilter={healing.issueFilter}
-            setIssueFilter={healing.setIssueFilter}
-            issueCounts={healing.issueCounts}
-            analysisResult={healing.analysisResult}
-            analysisError={healing.analysisError}
-            setAnalysisResult={healing.setAnalysisResult}
-            setAnalysisError={healing.setAnalysisError}
-            handleRunAnalysis={healing.handleRunAnalysis}
-            resolveHealingIssue={healing.resolveHealingIssue}
-            onSelectIssue={healing.setSelectedIssue}
-          />
         </div>
       </ContentBody>
-
-      {healing.selectedIssue && (
-        <HealingIssueModal
-          issue={healing.selectedIssue}
-          onResolve={(id) => healing.resolveHealingIssue(id)}
-          onClose={() => healing.setSelectedIssue(null)}
-        />
-      )}
     </ContentBox>
   );
 }

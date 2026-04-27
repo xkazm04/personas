@@ -221,15 +221,15 @@ export function ArenaPanelColosseum() {
           {/* CENTER : SVG scenery + persona + contender arc */}
           <div className="relative min-h-[500px]">
             <StageScenery />
-            <div className="relative mx-auto h-[500px] w-full max-w-[620px]">
-              {/* Contender arc — widened, pinned to upper third of the stage */}
+            <div className="relative mx-auto h-[500px] w-full max-w-[760px]">
+              {/* Contender arc — widely spaced so banners do not crowd each other */}
               {ARENA_ROSTER.map((m, i) => {
                 const total = ARENA_ROSTER.length;
-                // Upper arc -150° → -30°, flatter & wider for breathing room
-                const deg = -150 + (i * 120) / Math.max(total - 1, 1);
+                // Upper arc -160° → -20°, larger radius gives generous chord between adjacent banners
+                const deg = -160 + (i * 140) / Math.max(total - 1, 1);
                 const rad = (deg * Math.PI) / 180;
-                const rx = 252;
-                const ry = 78;
+                const rx = 320;
+                const ry = 86;
                 const x = Math.cos(rad) * rx;
                 const y = Math.sin(rad) * ry;
                 const isSelected = selectedModels.has(m.id);
@@ -334,7 +334,7 @@ export function ArenaPanelColosseum() {
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className="typo-body-lg font-medium text-foreground">{m.label}</span>
-                          <span className="typo-body text-foreground/60 italic ml-1.5">{h.epithet}</span>
+                          <span className="typo-body text-foreground/90 italic ml-1.5">{h.epithet}</span>
                         </span>
                         <StatPips label="cost" level={h.cost} icon={Coins} />
                         <StatPips label="speed" level={h.speed} icon={Zap} />
@@ -361,7 +361,7 @@ export function ArenaPanelColosseum() {
                 ) : useCases.length > 0 ? (
                   <>
                     <span className="typo-label text-primary/70">All grounds</span>
-                    <p className="typo-body-lg text-foreground/80 mt-1">
+                    <p className="typo-body-lg text-foreground mt-1">
                       Every authored use case will be fought.
                     </p>
                   </>
@@ -369,7 +369,7 @@ export function ArenaPanelColosseum() {
                   <EmptyLine>No use cases authored — the match will run on defaults.</EmptyLine>
                 )}
               </div>
-              <div className="pt-2 border-t border-primary/10 typo-body text-foreground/70">
+              <div className="pt-2 border-t border-primary/10 typo-body text-foreground/90">
                 <span className="flex items-center gap-1.5">
                   <Circle className="w-2 h-2 fill-current" />
                   {useCases.length} total use case{useCases.length === 1 ? '' : 's'} on file
@@ -425,7 +425,7 @@ export function ArenaPanelColosseum() {
       </section>
 
       {/* Status foot */}
-      <div className="flex items-center justify-center gap-2 typo-body text-foreground/50 pt-2">
+      <div className="flex items-center justify-center gap-2 typo-body text-foreground/85 pt-2">
         <Medal className="w-3.5 h-3.5" />
         {healthCheck.phase === 'idle' && <span>Systems on standby — run a health check to illuminate</span>}
         {healthCheck.phase === 'running' && <span>The herald sweeps the field…</span>}
@@ -450,11 +450,11 @@ function ArenaMarquee({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5 text-primary">
           <Swords className="w-5 h-5" />
-          <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground/40'}`} fill="currentColor" strokeWidth={1.25} />
+          <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground'}`} fill="currentColor" strokeWidth={1.25} />
         </div>
         <div>
           <h3 className="typo-heading-lg font-semibold text-foreground tracking-wide">The Arena</h3>
-          <p className="typo-body-lg text-foreground/80">
+          <p className="typo-body-lg text-foreground">
             {personaName
               ? <>A trial for <span className="text-foreground font-medium">{personaName}</span> — <span className="italic text-primary/80">{match}</span></>
               : 'Select a persona to open the gates'}
@@ -625,7 +625,7 @@ function PersonaStandard({
   return (
     <div className="flex flex-col items-center gap-0">
       <Crown
-        className={`w-6 h-6 ${arrayed ? 'text-primary' : 'text-foreground/40'} -mb-0.5`}
+        className={`w-6 h-6 ${arrayed ? 'text-primary' : 'text-foreground'} -mb-0.5`}
         strokeWidth={1.5}
         fill="currentColor"
       />
@@ -664,7 +664,7 @@ function PersonaStandard({
       <div className="mt-2 flex items-center gap-1 rounded-full border border-primary/30 bg-background/75 px-3 py-0.5 typo-body text-foreground">
         <Shield className="w-3.5 h-3.5 text-primary" />
         <span className="font-semibold">{trustScore}</span>
-        <span className="text-foreground/60">trust</span>
+        <span className="text-foreground/90">trust</span>
       </div>
     </div>
   );
@@ -712,13 +712,13 @@ function ModelBanner({
         <div className={`relative mx-auto w-12 h-12 rounded-full flex items-center justify-center border ${
           selected ? 'border-primary/60 bg-gradient-to-br from-primary/30 to-background/50 shadow-inner' : 'border-primary/20 bg-background/40'
         }`}>
-          <Sigil className={`w-6 h-6 ${selected ? 'text-foreground' : 'text-foreground/55'}`} strokeWidth={1.75} />
+          <Sigil className={`w-6 h-6 ${selected ? 'text-foreground' : 'text-foreground/85'}`} strokeWidth={1.75} />
         </div>
 
-        <p className={`typo-body font-semibold text-center mt-1.5 truncate ${selected ? 'text-foreground' : 'text-foreground/80'}`}>
+        <p className={`typo-body font-semibold text-center mt-1.5 truncate ${selected ? 'text-foreground' : 'text-foreground'}`}>
           {label}
         </p>
-        <p className={`typo-caption italic text-center truncate ${selected ? 'text-primary/85' : 'text-foreground/55'}`}>
+        <p className={`typo-caption italic text-center truncate ${selected ? 'text-primary/85' : 'text-foreground/85'}`}>
           {heraldry.epithet}
         </p>
 
@@ -740,7 +740,7 @@ function ModelBanner({
 function BannerPips({ level, icon: Icon, active, title }: { level: number; icon: LucideIcon; active: boolean; title: string }) {
   return (
     <span className="flex items-center gap-0.5" title={`${title}: ${level}/3`}>
-      <Icon className={`w-2.5 h-2.5 ${active ? 'text-primary' : 'text-foreground/40'}`} strokeWidth={2} />
+      <Icon className={`w-2.5 h-2.5 ${active ? 'text-primary' : 'text-foreground'}`} strokeWidth={2} />
       {[1, 2, 3].map((i) => (
         <span
           key={i}
@@ -777,7 +777,7 @@ function UseCaseList({
       <div className="p-2 space-y-1 lg:max-h-[400px] lg:overflow-y-auto">
         <UseCaseRow active={effective === '__all__'} onClick={() => onSelect(null)}>{allLabel}</UseCaseRow>
         {useCases.length === 0 ? (
-          <p className="typo-body italic text-foreground/60 px-2 py-1">no ground authored</p>
+          <p className="typo-body italic text-foreground/90 px-2 py-1">no ground authored</p>
         ) : (
           useCases.map((uc) => (
             <UseCaseRow key={uc.id} active={uc.id === effective} onClick={() => onSelect(uc.id)}>
@@ -802,7 +802,7 @@ function UseCaseRow({
       className={`w-full text-left px-2.5 py-1.5 rounded-interactive border typo-body transition-colors truncate ${
         active
           ? 'bg-primary/15 border-primary/35 text-foreground font-medium'
-          : 'bg-transparent border-transparent text-foreground/75 hover:bg-background/50 hover:text-foreground'
+          : 'bg-transparent border-transparent text-foreground/90 hover:bg-background/50 hover:text-foreground'
       }`}
     >
       {children}
@@ -881,12 +881,12 @@ function FormulaToken({
     <span className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-card border ${color}`}>
       <Icon className="w-3.5 h-3.5 text-primary/70" />
       <span className="typo-body-lg font-semibold tabular-nums">{n}</span>
-      <span className="typo-body text-foreground/70">{label}</span>
+      <span className="typo-body text-foreground/90">{label}</span>
     </span>
   );
 }
-function Times()  { return <span aria-hidden className="typo-body-lg text-foreground/40">×</span>; }
-function Equals() { return <span aria-hidden className="typo-body-lg text-foreground/40">=</span>; }
+function Times()  { return <span aria-hidden className="typo-body-lg text-foreground">×</span>; }
+function Equals() { return <span aria-hidden className="typo-body-lg text-foreground">=</span>; }
 
 function WaxSealButton({
   canLaunch, contenders, disabledReason, onLaunch,
@@ -906,7 +906,7 @@ function WaxSealButton({
         className={`relative group flex items-center gap-3 pl-6 pr-5 py-3 rounded-modal border typo-body-lg font-semibold transition-all ${
           canLaunch
             ? 'bg-gradient-to-r from-primary/30 via-primary/20 to-accent/20 hover:from-primary/40 hover:via-primary/30 hover:to-accent/30 border-primary/40 text-foreground shadow-elevation-3'
-            : 'bg-secondary/40 border-primary/10 text-foreground/50 cursor-not-allowed'
+            : 'bg-secondary/40 border-primary/10 text-foreground/85 cursor-not-allowed'
         }`}
       >
         <span
@@ -917,17 +917,17 @@ function WaxSealButton({
               : 'bg-secondary border-primary/20'
           }`}
         >
-          <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-foreground/40'}`} strokeWidth={2} />
+          <Swords className={`w-4 h-4 ${canLaunch ? 'text-background' : 'text-foreground'}`} strokeWidth={2} />
         </span>
         <span className="flex flex-col items-start leading-tight">
           <span className="typo-body-lg font-semibold">Begin the Match</span>
-          <span className="typo-label text-foreground/70">
+          <span className="typo-label text-foreground/90">
             {contenders} {contenders === 1 ? 'contender' : 'contenders'}
           </span>
         </span>
       </button>
       {!canLaunch && disabledReason && (
-        <span className="typo-body text-foreground/70 flex items-center gap-1">
+        <span className="typo-body text-foreground/90 flex items-center gap-1">
           <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
           {disabledReason}
         </span>
@@ -952,7 +952,7 @@ function SectionHeader({
           {title}
         </h4>
       </div>
-      <span className="typo-body italic text-foreground/60">{subtitle}</span>
+      <span className="typo-body italic text-foreground/90">{subtitle}</span>
     </div>
   );
 }
@@ -976,7 +976,7 @@ function ParchmentCard({
           <Icon className="w-4 h-4 text-primary" strokeWidth={1.75} />
           <span className="typo-label text-primary/80">{title}</span>
         </div>
-        <span className="typo-body text-foreground/70 font-medium truncate max-w-[140px]" title={meta}>{meta}</span>
+        <span className="typo-body text-foreground/90 font-medium truncate max-w-[140px]" title={meta}>{meta}</span>
       </div>
       <div className="p-4">{children}</div>
     </div>
@@ -985,7 +985,7 @@ function ParchmentCard({
 
 function EmptyLine({ children }: { children: React.ReactNode }) {
   return (
-    <span className="typo-body-lg italic text-foreground/60">{children}</span>
+    <span className="typo-body-lg italic text-foreground/90">{children}</span>
   );
 }
 
@@ -1021,10 +1021,10 @@ function ChampionCard({
             <p className="typo-heading text-foreground">
               {modelLabel}
               {heraldry.epithet && (
-                <span className="italic text-foreground/70 font-normal ml-1.5">{heraldry.epithet}</span>
+                <span className="italic text-foreground/90 font-normal ml-1.5">{heraldry.epithet}</span>
               )}
             </p>
-            <p className="typo-body text-foreground/70 mt-0.5">{sourceLabel}</p>
+            <p className="typo-body text-foreground/90 mt-0.5">{sourceLabel}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 pt-2 border-t border-primary/10">
@@ -1034,7 +1034,7 @@ function ChampionCard({
             <p className="typo-body-lg font-medium text-foreground truncate">{personaName ?? '—'}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 typo-body text-foreground/70">
+        <div className="flex items-center gap-2 typo-body text-foreground/90">
           <Crown className="w-3.5 h-3.5 text-primary" />
           <span>Contenders must unseat this sword to win the chronicle.</span>
         </div>
@@ -1053,8 +1053,8 @@ function StandingChampionBanner({
   if (!champion) {
     return (
       <div className="rounded-modal border border-primary/15 bg-secondary/30 px-4 py-3 flex items-center gap-3">
-        <Trophy className="w-4 h-4 text-foreground/40" />
-        <p className="typo-body-lg italic text-foreground/60">
+        <Trophy className="w-4 h-4 text-foreground" />
+        <p className="typo-body-lg italic text-foreground/90">
           No chronicle yet — the first match will crown a champion.
         </p>
       </div>
@@ -1075,17 +1075,17 @@ function StandingChampionBanner({
             Standing Champion
           </p>
           <p className="typo-heading-lg font-semibold text-foreground capitalize mt-0.5">
-            {champion.model} <span className="italic text-foreground/70 font-normal">{heraldry.epithet}</span>
+            {champion.model} <span className="italic text-foreground/90 font-normal">{heraldry.epithet}</span>
           </p>
-          <p className="typo-body text-foreground/70">
+          <p className="typo-body text-foreground/90">
             {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} judged match{champion.total === 1 ? '' : 'es'} · {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
           </p>
         </div>
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/60 border border-primary/25 typo-body-lg text-foreground">
           <Trophy className="w-4 h-4 text-primary" />
           <span className="font-semibold tabular-nums">{champion.wins}</span>
-          <span className="text-foreground/60">/</span>
-          <span className="text-foreground/60 tabular-nums">{champion.total}</span>
+          <span className="text-foreground/90">/</span>
+          <span className="text-foreground/90 tabular-nums">{champion.total}</span>
         </div>
       </div>
     </div>

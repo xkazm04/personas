@@ -13,6 +13,7 @@ import {
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { listPersonas } from '@/api/agents/personas';
 import { listTeams } from '@/api/pipeline/teams';
 import { listCredentials } from '@/api/vault/credentials';
@@ -20,6 +21,10 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useTranslation } from '@/i18n/useTranslation';
+
+// Teams export is intentionally hidden from the UI but kept wired in the backend
+// payload — enable by adding 'teams' to VISIBLE_CATEGORY_KEYS.
+const VISIBLE_CATEGORY_KEYS = new Set(['personas', 'credentials']);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +36,7 @@ interface ExportableItem {
   description?: string | null;
   icon?: string | null;
   color?: string | null;
+  iconNode?: React.ReactNode;
 }
 
 interface CategoryConfig {
@@ -179,9 +185,11 @@ function CategorySection({
                 onChange={() => onToggleItem(item.id)}
               />
               <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                {item.icon && (
+                {item.iconNode ? (
+                  item.iconNode
+                ) : item.icon ? (
                   <span className="typo-body-lg flex-shrink-0">{item.icon}</span>
-                )}
+                ) : null}
                 <div className="min-w-0">
                   <div className="typo-body text-foreground/85 truncate">{item.name}</div>
                   {item.description && (
@@ -231,15 +239,17 @@ export function ExportSelectionModal({
         setPersonas(p);
         setTeams(t);
         setCredentials(c);
-        // Select all by default
+        // Select all by default. Teams are hidden from the UI, so they stay empty
+        // and won't be included in the exported bundle.
         setSelectedPersonaIds(new Set(p.map((x) => x.id)));
-        setSelectedTeamIds(new Set(t.map((x) => x.id)));
+        setSelectedTeamIds(new Set());
         setSelectedCredentialIds(new Set(c.map((x) => x.id)));
       })
       .finally(() => setLoading(false));
   }, [isOpen]);
 
-  // Build category configs
+  // Build category configs. Teams stays in the array so backend wiring keeps
+  // working, but it's filtered out of the rendered list via VISIBLE_CATEGORY_KEYS.
   const categories: CategoryConfig[] = useMemo(
     () => [
       {
@@ -251,8 +261,16 @@ export function ExportSelectionModal({
           id: p.id,
           name: p.name,
           description: p.description,
-          icon: p.icon,
-          color: p.color,
+          iconNode: (
+            <PersonaIcon
+              icon={p.icon}
+              color={p.color}
+              display="pop"
+              frameSize="sm"
+              frameClass="border border-primary/15"
+              frameStyle={{ backgroundColor: `${p.color ?? 'var(--primary)'}15` }}
+            />
+          ),
         })),
       },
       {
@@ -281,6 +299,11 @@ export function ExportSelectionModal({
       },
     ],
     [personas, teams, credentials],
+  );
+
+  const visibleCategories = useMemo(
+    () => categories.filter((c) => VISIBLE_CATEGORY_KEYS.has(c.key)),
+    [categories],
   );
 
   // Selection helpers
@@ -317,23 +340,23 @@ export function ExportSelectionModal({
     [selectedPersonaIds, selectedTeamIds, selectedCredentialIds],
   );
 
-  // Global select/deselect all
-  const totalItems = personas.length + teams.length + credentials.length;
-  const totalSelected = selectedPersonaIds.size + selectedTeamIds.size + selectedCredentialIds.size;
+  // Global select/deselect all. Teams are excluded from these totals because the
+  // category is hidden from the UI — counting them would produce confusing math
+  // (e.g. "0 of 5 selected" with no rows visible).
+  const totalItems = personas.length + credentials.length;
+  const totalSelected = selectedPersonaIds.size + selectedCredentialIds.size;
   const allGlobalSelected = totalItems > 0 && totalSelected === totalItems;
   const someGlobalSelected = totalSelected > 0;
 
   const toggleGlobalAll = useCallback(() => {
     if (allGlobalSelected) {
       setSelectedPersonaIds(new Set());
-      setSelectedTeamIds(new Set());
       setSelectedCredentialIds(new Set());
     } else {
       setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
-      setSelectedTeamIds(new Set(teams.map((t) => t.id)));
       setSelectedCredentialIds(new Set(credentials.map((c) => c.id)));
     }
-  }, [allGlobalSelected, personas, teams, credentials]);
+  }, [allGlobalSelected, personas, credentials]);
 
   const handleExport = () => {
     onExport(
@@ -349,11 +372,16 @@ export function ExportSelectionModal({
   const isFullExport =
     totalItems > 0 &&
     selectedPersonaIds.size === personas.length &&
-    selectedTeamIds.size === teams.length &&
     selectedCredentialIds.size === credentials.length;
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} titleId="export-selection-title" size="lg">
+    <BaseModal
+      isOpen={isOpen}
+      onClose={onClose}
+      titleId="export-selection-title"
+      size="lg"
+      panelClassName="max-h-[85vh] bg-background rounded-2xl shadow-elevation-4 overflow-hidden border border-primary/15"
+    >
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-5 border-b border-primary/10">
         <div>
@@ -397,7 +425,7 @@ export function ExportSelectionModal({
 
             {/* Category sections */}
             <div className="space-y-3">
-              {categories.map((cat) => (
+              {visibleCategories.map((cat) => (
                 <CategorySection
                   key={cat.key}
                   config={cat}

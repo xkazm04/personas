@@ -423,19 +423,19 @@ export default function IdeaScannerPage() {
             </motion.div>
           )}
 
-          {/* Agent selection grid */}
-          <div className="space-y-5">
+          {/* Agent selection — 4 category columns side-by-side, agents stacked as rows within each column */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             {AGENT_CATEGORIES.map((cat) => {
               const agents = agentsByCategory.get(cat.key) ?? [];
               const catTw = CATEGORY_TW[cat.key] ?? DEFAULT_CATEGORY_TW;
               if (agents.length === 0) return null;
               return (
-                <div key={cat.key}>
-                  <h3 className="text-md font-semibold uppercase tracking-wider text-primary mb-2.5 flex items-center gap-2">
+                <div key={cat.key} className="flex flex-col gap-2">
+                  <h3 className="typo-label text-primary flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${catTw.dot}`} />
                     {cat.label}
                   </h3>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                  <div className="flex flex-col gap-1.5">
                     {agents.map((agent) => (
                       <AgentCard
                         key={agent.key}

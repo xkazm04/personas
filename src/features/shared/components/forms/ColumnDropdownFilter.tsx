@@ -17,6 +17,8 @@ interface ColumnDropdownFilterProps {
   onChange: (value: string) => void;
   /** Value representing "no filter" (default: 'all') */
   allValue?: string;
+  /** Extra classes for the popup panel — useful to widen the dropdown */
+  popupClassName?: string;
 }
 
 /**
@@ -31,6 +33,7 @@ export function ColumnDropdownFilter({
   options,
   onChange,
   allValue = 'all',
+  popupClassName = '',
 }: ColumnDropdownFilterProps) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -68,7 +71,7 @@ export function ColumnDropdownFilter({
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-elevation-3">
+        <div className={`absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-elevation-3 ${popupClassName}`}>
           {options.map((opt) => (
             <button
               key={opt.value}

@@ -1,4 +1,3 @@
-import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import type { OverviewStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
@@ -135,7 +134,12 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   pipelineErrors: {},
   pipelineFetchedAt: {},
 
-  setOverviewTab: (tab) => startTransition(() => set({ overviewTab: tab })),
+  // Note: do NOT wrap this in startTransition. Sidebar nav clicks must be
+  // a synchronous, deterministic state update — the OverviewPage uses
+  // `key={overviewTab}` to remount lazy subtab chunks via Suspense, and a
+  // deferred transition can be interrupted by higher-priority renders so
+  // the content never swaps even though the sidebar highlight updated.
+  setOverviewTab: (tab) => set({ overviewTab: tab }),
   setPipelineError: (source, error) => set((prev) => {
     const next = { ...prev.pipelineErrors };
     if (error) next[source] = error;

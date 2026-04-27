@@ -4,6 +4,7 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useOverviewStore } from "@/stores/overviewStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
@@ -38,10 +39,17 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   const [credentials, setCredentials] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [connectorDefinitions, setConnectorDefinitions] = useState<any[]>([]);
-  const [overviewTab, setOverviewTabState] = useState<OverviewTab>("home" as OverviewTab);
+  // Read overview tab directly from the store so the sidebar highlight and
+  // OverviewPage render from the exact same source. The previous local-state
+  // mirror introduced a brittle indirection (and a memory leak under React
+  // 18 strict mode) that made it possible for the highlight to advance
+  // while the page content stayed stuck on the old tab.
+  const overviewTab = useOverviewStore((s) => s.overviewTab);
+  const setOverviewTab = useCallback((tab: OverviewTab) => {
+    useOverviewStore.getState().setOverviewTab(tab);
+  }, []);
   useEffect(() => {
     let vaultUnsub: (() => void) | undefined;
-    let overviewUnsub: (() => void) | undefined;
     void import("@/stores/vaultStore").then(({ useVaultStore }) => {
       const s = useVaultStore.getState();
       setCredentials(s.credentials);
@@ -53,15 +61,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         if (s.connectorDefinitions !== prevDefs) { prevDefs = s.connectorDefinitions; setConnectorDefinitions(s.connectorDefinitions); }
       });
     });
-    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
-      setOverviewTabState(useOverviewStore.getState().overviewTab);
-      overviewUnsub = useOverviewStore.subscribe((s) => setOverviewTabState(s.overviewTab));
-    });
-    return () => { vaultUnsub?.(); overviewUnsub?.(); };
-  }, []);
-  const setOverviewTab = useCallback((tab: OverviewTab) => {
-    setOverviewTabState(tab);
-    void import("@/stores/overviewStore").then(({ useOverviewStore }) => useOverviewStore.getState().setOverviewTab(tab));
+    return () => { vaultUnsub?.(); };
   }, []);
   const homeTab = useSystemStore((s) => s.homeTab);
   const setHomeTab = useSystemStore((s) => s.setHomeTab);

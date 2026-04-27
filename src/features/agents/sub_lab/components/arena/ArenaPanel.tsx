@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArenaPanelColosseum } from './ArenaPanelColosseum';
-import { ArenaPanelLedger } from './ArenaPanelLedger';
 import { ArenaPanelConstellation } from './ArenaPanelConstellation';
+import { ArenaPanelLedger } from './ArenaPanelLedger';
 
 // --- Prototype tab switcher (throwaway scaffold) ---------------------
 // Directional variants of the Arena surface. Baseline was retired once

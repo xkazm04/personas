@@ -299,12 +299,11 @@ export default function CompositionPreview({
     : false;
 
   return (
-    <div className="flex flex-col rounded-modal bg-card border border-primary/10 overflow-hidden w-full shadow-elevation-2">
-      <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
-        <div
-          ref={previewContainerRef}
-          className="absolute inset-0 bg-black flex items-center justify-center overflow-hidden"
-        >
+    <div className="flex flex-col rounded-modal bg-card border border-primary/10 overflow-hidden shadow-elevation-2 aspect-video w-full max-h-full">
+      <div
+        ref={previewContainerRef}
+        className="relative flex-1 min-h-0 bg-black flex items-center justify-center overflow-hidden"
+      >
           {videoSrc ? (
             <video
               ref={videoRef}
@@ -366,10 +365,9 @@ export default function CompositionPreview({
               </span>
             </div>
           </div>
-        </div>
       </div>
 
-      <div className="h-1 bg-secondary/20">
+      <div className="h-1 bg-secondary/20 shrink-0">
         <div
           className="h-full bg-gradient-to-r from-rose-500/60 to-rose-400/40"
           style={{ width: `${progress * 100}%` }}

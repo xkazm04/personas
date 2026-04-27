@@ -9,9 +9,7 @@ import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTool
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
 import { useChartSeries } from '@/features/overview/sub_analytics/libs/useChartSeries';
-import { useHealingWorkflow } from '@/features/overview/sub_analytics/libs/useHealingWorkflow';
 import { RotationOverviewPanel } from '@/features/overview/sub_analytics/components/RotationOverviewPanel';
-import { HealthIssuesPanel } from '@/features/overview/sub_analytics/components/HealthIssuesPanel';
 
 /**
  * Lazy-loaded analytics inserts for DashboardHome.
@@ -59,26 +57,9 @@ function CenterCharts() {
 }
 
 function RightPanels() {
-  const healing = useHealingWorkflow();
-
   return (
     <>
       <RotationOverviewPanel />
-      <HealthIssuesPanel
-        healingIssues={healing.healingIssues}
-        healingRunning={healing.healingRunning}
-        sortedFilteredIssues={healing.sortedFilteredIssues}
-        issueFilter={healing.issueFilter}
-        setIssueFilter={healing.setIssueFilter}
-        issueCounts={healing.issueCounts}
-        analysisResult={healing.analysisResult}
-        analysisError={healing.analysisError}
-        setAnalysisResult={healing.setAnalysisResult}
-        setAnalysisError={healing.setAnalysisError}
-        handleRunAnalysis={healing.handleRunAnalysis}
-        resolveHealingIssue={healing.resolveHealingIssue}
-        onSelectIssue={healing.setSelectedIssue}
-      />
     </>
   );
 }
