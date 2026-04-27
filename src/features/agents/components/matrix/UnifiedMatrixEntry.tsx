@@ -343,7 +343,18 @@ export function UnifiedMatrixEntry() {
       try {
         await deletePersona(personaId);
       } catch { /* best-effort cleanup */ }
-      setDraftPersonaId(null);
+      // Don't call setDraftPersonaId(null) — that calls resetBuildSession()
+      // unconditionally, which would wipe whatever session is currently active
+      // (potentially a *different* persona's in-progress build that the user
+      // had open in another tab or restored from hydration). Instead, find the
+      // build session for *this* failed launch's persona and remove only that.
+      const buildState = useAgentStore.getState();
+      const failedSessionEntry = Object.entries(buildState.buildSessions).find(
+        ([, sess]) => sess.personaId === personaId,
+      );
+      if (failedSessionEntry) {
+        buildState.removeBuildSession(failedSessionEntry[0]);
+      }
     } finally {
       setIsLaunching(false);
     }
