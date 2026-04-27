@@ -64,7 +64,16 @@ export function useHealthDigestScheduler() {
         // Run the digest
         const digest = await useAgentStore.getState().runFullHealthDigest();
         if (abort.signal.aborted) return;
-        if (!digest) return; // Will retry — finally resets running
+        if (!digest) {
+          // Attempt failed (transient). Previously we returned without latching
+          // ran.current and the finally below released running.current — every
+          // subsequent re-render of the host component re-fired the effect,
+          // hammering the IPC layer in a tight retry storm. Treat one attempt
+          // per app session as the contract: if it failed, the user retries by
+          // restarting the app (or an explicit Settings 'Run digest now' button).
+          ran.current = true;
+          return;
+        }
 
         // Record timestamp
         await setAppSetting(LAST_DIGEST_KEY, new Date().toISOString());
