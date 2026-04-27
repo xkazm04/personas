@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Bot, User, Copy, Check } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
@@ -32,9 +32,29 @@ function CopyBtn({ text }: { text: string }) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Clear any pending copied-flag timer on unmount AND between rapid clicks.
+  // Without ref-tracking the timer, two quick clicks stacked two timeouts:
+  // the first reset copied=false while the second was still pending its own
+  // 2s window — UI flickered. Unmount within 2s also held the closure and
+  // text in memory until the timer fired.
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const markCopied = useCallback(() => {
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => {
+      setCopied(false);
+      copiedTimerRef.current = null;
+    }, 2000);
   }, []);
   const handleCopy = useCallback(() => {
     const fail = () => {
