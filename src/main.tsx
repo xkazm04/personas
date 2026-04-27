@@ -13,6 +13,7 @@ import { initAnalytics } from "./lib/analytics";
 import { isTelemetryEnabled } from "./lib/telemetryPreference";
 import { persistCrash } from "./lib/utils/crashPersistence";
 import { createLogger } from "./lib/log";
+import { installPreloadErrorRecovery } from "./lib/recovery/preloadErrorRecovery";
 import "./styles/globals.css";
 
 const globalErrorLogger = createLogger("global-error");
@@ -115,6 +116,11 @@ window.addEventListener("unhandledrejection", (event) => {
   }
   persistCrash("unhandledrejection", reason);
 });
+
+// Recover from stale dynamic-import chunks. Listener is extracted into
+// `lib/recovery/preloadErrorRecovery.ts` so it can be unit-tested with JSDOM
+// (see preloadErrorRecovery.test.ts).
+installPreloadErrorRecovery();
 
 // -- Render React immediately (sync) -----------------------------------------
 // On Android WebView, async bootstrap can hang if Tauri IPC promises never

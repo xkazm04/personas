@@ -5,8 +5,8 @@ import type { ChannelSpecV2Type } from "./ChannelSpecV2Type";
 export interface ChannelSpecV2 {
   type: ChannelSpecV2Type;
   enabled: boolean;
-  credentialId?: string;
-  useCaseIds: ChannelScopeV2;
-  eventFilter?: Array<string>;
+  credential_id?: string;
+  use_case_ids: ChannelScopeV2;
+  event_filter?: Array<string>;
   config?: unknown;
 }

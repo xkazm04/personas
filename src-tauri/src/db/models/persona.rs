@@ -274,9 +274,16 @@ pub enum SampleOutputFormat {
 /// Discriminant vs. legacy shape B: presence of `use_case_ids`.
 /// `credential_id` is optional because `type: "built-in"` and
 /// `type: "titlebar"` have no credential backing them (D-07; spec §4.2).
+///
+/// Wire format is snake_case throughout the codebase — frontend, storage,
+/// validation, and the `parse_channels_v2` discriminant all probe
+/// `use_case_ids` / `credential_id` / `event_filter` directly. An earlier
+/// `#[serde(rename_all = "camelCase")]` on this struct silently broke
+/// every shape-v2 round-trip because the deserializer was the only place
+/// that expected camelCase; reverting keeps serde aligned with the rest
+/// of the codebase.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
 #[ts(export)]
-#[serde(rename_all = "camelCase")]
 pub struct ChannelSpecV2 {
     #[serde(rename = "type")]
     pub channel_type: ChannelSpecV2Type,

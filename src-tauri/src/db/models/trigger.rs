@@ -252,6 +252,10 @@ pub enum TriggerConfig {
     Schedule {
         cron: Option<String>,
         interval_seconds: Option<u64>,
+        /// Optional IANA timezone (e.g. "America/New_York") in which the cron
+        /// expression should be evaluated. When `None`, the system's local
+        /// timezone is used.
+        timezone: Option<String>,
         event_type: Option<String>,
         payload: Option<serde_json::Value>,
     },
@@ -499,6 +503,7 @@ impl TriggerConfig {
             "schedule" => TriggerConfig::Schedule {
                 cron: val.get("cron").and_then(|v| v.as_str()).map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
+                timezone: val.get("timezone").and_then(|v| v.as_str()).map(String::from),
                 event_type,
                 payload,
             },
