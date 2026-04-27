@@ -56,30 +56,76 @@ export default function TourSpotlight() {
 
     let currentTarget: Element | null = null;
     let observer: MutationObserver | null = null;
+    let missingRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Tour steps frequently navigate to a new view between anchor mounts. The
+    // anchor briefly disconnects, then re-mounts at a new DOM node with the
+    // same data-testid. Previously we dismissed the tour on the first
+    // disconnected sample, which made step-2 → step-3 transitions looking
+    // like a buggy auto-exit. Give the anchor a short window to re-appear
+    // before bailing.
+    const MISSING_TARGET_RETRY_MS = 500;
+    const MAX_MISSING_TARGET_RETRIES = 4;
+    let missingRetryCount = 0;
+
+    const clearMissingRetry = () => {
+      if (missingRetryTimer !== null) {
+        clearTimeout(missingRetryTimer);
+        missingRetryTimer = null;
+      }
+      missingRetryCount = 0;
+    };
 
     const dismissForMissingTarget = () => {
+      clearMissingRetry();
       setRect(null);
       // Auto-end the tour so the user isn't stuck behind a stale mask.
       // `dismissTour` is idempotent, so racing mutations can't stack dismissals.
       try { dismissTour?.(); } catch { /* intentional: dismissTour may be a no-op */ }
     };
 
+    const scheduleMissingRetry = () => {
+      if (missingRetryTimer !== null) return; // already scheduled
+      if (missingRetryCount >= MAX_MISSING_TARGET_RETRIES) {
+        dismissForMissingTarget();
+        return;
+      }
+      missingRetryCount++;
+      missingRetryTimer = setTimeout(() => {
+        missingRetryTimer = null;
+        const found = measure();
+        if (found) {
+          // Re-appeared. Re-anchor and reset retry counter.
+          currentTarget = found;
+          missingRetryCount = 0;
+          reattachObserver();
+        } else {
+          scheduleMissingRetry();
+        }
+      }, MISSING_TARGET_RETRY_MS);
+    };
+
     const handleReposition = () => {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = requestAnimationFrame(() => {
-        // If the target vanished (sidebar collapse, route change, modal close),
-        // bail out of the tour rather than rendering a mask over nothing.
+        // If the target vanished (sidebar collapse, route change, modal close,
+        // OR a transient disconnect mid-step-navigation), give it a short
+        // retry window before deciding the tour is done.
         if (currentTarget && !currentTarget.isConnected) {
-          dismissForMissingTarget();
+          scheduleMissingRetry();
           return;
         }
         const found = measure();
         if (!found) {
-          dismissForMissingTarget();
+          scheduleMissingRetry();
         } else if (found !== currentTarget) {
           // Target re-mounted at a new node — re-scope observer.
           currentTarget = found;
+          clearMissingRetry();
           reattachObserver();
+        } else {
+          // Target stable — clear any pending retry from a prior false alarm.
+          clearMissingRetry();
         }
       });
     };
@@ -109,6 +155,7 @@ export default function TourSpotlight() {
 
     return () => {
       clearTimeout(timer);
+      clearMissingRetry();
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener('scroll', handleReposition, true);
       window.removeEventListener('resize', handleReposition);
