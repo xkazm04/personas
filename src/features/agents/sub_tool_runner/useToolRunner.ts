@@ -20,6 +20,15 @@ const EMPTY_STATE: ToolRunState = {
 export function useToolRunner(personaId: string | undefined) {
   const [states, setStates] = useState<Record<string, ToolRunState>>({});
 
+  // Track the latest personaId in a ref so the runTool result-write code can
+  // detect a persona switch that happened during the in-flight IPC call.
+  // Updated SYNCHRONOUSLY in the render body (not via useEffect) so there is
+  // no commit-vs-effect-flush lag — a tool result resolving in the microtask
+  // queue between commit and effect-flush would otherwise see a one-render-
+  // stale ref and either accept a stale write or drop a valid one.
+  const personaIdRef = useRef<string | undefined>(personaId);
+  personaIdRef.current = personaId;
+
   // Reset cached state when the persona changes. Without this, a tool run
   // started under persona A would land in the map keyed only by toolId and
   // be surfaced under persona B (same toolId, different persona) — a
@@ -102,13 +111,6 @@ export function useToolRunner(personaId: string | undefined) {
     },
     [personaId],
   );
-
-  // Track the latest personaId in a ref so the runTool closures can detect a
-  // persona switch at result-write time without being re-created.
-  const personaIdRef = useRef<string | undefined>(personaId);
-  useEffect(() => {
-    personaIdRef.current = personaId;
-  }, [personaId]);
 
   return { getState, runTool };
 }
