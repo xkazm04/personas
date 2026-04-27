@@ -32,8 +32,49 @@ export interface VerifyDocumentResult {
 export const generateSigningKey = () =>
   invoke<{ peer_id: string; display_name: string; status: string }>("generate_signing_key");
 
-export const signDocument = (filePath: string, metadata?: string) =>
-  invoke<SignDocumentResult>("sign_document", { filePath, metadata });
+export class SignDocumentRejectedError extends Error {
+  constructor(reason: string) {
+    super(`signDocument refused: ${reason}`);
+    this.name = "SignDocumentRejectedError";
+  }
+}
+
+// Frontend-only defense in depth. Even if a caller forgets to gate on user
+// confirmation (e.g. a future persona tool), refuse paths that match obvious
+// secret/private-key locations. This is not a substitute for backend path
+// allowlisting, but it stops the most damaging "sign my private key" attacks
+// before they hit the IPC boundary.
+const SENSITIVE_PATH_PATTERNS: RegExp[] = [
+  /[/\\]\.ssh[/\\]/i,
+  /[/\\]\.gnupg[/\\]/i,
+  /[/\\]\.aws[/\\]credentials/i,
+  /[/\\]\.config[/\\]gcloud[/\\]/i,
+  /[/\\]id_rsa(\.|$)/i,
+  /[/\\]id_ed25519(\.|$)/i,
+  /[/\\]id_ecdsa(\.|$)/i,
+  /[/\\]id_dsa(\.|$)/i,
+  /\.(pem|p12|pfx|key|jks|keystore)$/i,
+  /[/\\]private[_-]?key/i,
+  /[/\\]wallet\.dat$/i,
+  /[/\\]\.npmrc$/i,
+  /[/\\]\.netrc$/i,
+];
+
+function isSensitivePath(filePath: string): boolean {
+  return SENSITIVE_PATH_PATTERNS.some((re) => re.test(filePath));
+}
+
+export const signDocument = (filePath: string, metadata?: string) => {
+  if (isSensitivePath(filePath)) {
+    return Promise.reject(
+      new SignDocumentRejectedError(
+        "path matches a sensitive credential pattern (private key / vault / cloud credentials). " +
+          "Pick a different file via the Drive picker.",
+      ),
+    );
+  }
+  return invoke<SignDocumentResult>("sign_document", { filePath, metadata });
+};
 
 export const verifyDocument = (filePath: string, sidecarJson: string) =>
   invoke<VerifyDocumentResult>("verify_document", {
