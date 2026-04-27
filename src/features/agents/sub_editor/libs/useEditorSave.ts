@@ -99,10 +99,17 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     const cachePolicy = d.promptCachePolicy !== 'none' ? d.promptCachePolicy : undefined;
     const ollamaPreset = getOllamaPreset(d.selectedModel);
     if (ollamaPreset) {
+      // Ollama Cloud presets need the user's API key to authenticate. The
+      // auth field is shown in the UI and bound to draft.authToken; without
+      // serialising it here, the keystroke the user just typed is silently
+      // dropped on save. The first execution then fails with a generic 401
+      // and the field appears empty after reload — confusing because the
+      // user remembers entering it.
       profile = JSON.stringify({
         model: ollamaPreset.modelId,
         provider: 'ollama',
         base_url: OLLAMA_CLOUD_BASE_URL,
+        auth_token: d.authToken || undefined,
         prompt_cache_policy: cachePolicy,
       } satisfies ModelProfile);
     } else if (d.selectedModel === 'custom') {
