@@ -40,7 +40,7 @@ export function useCanvasHandlers({
   fetchAnalytics,
 }: UseCanvasHandlersArgs) {
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const saveRef = useRef<() => Promise<void>>(() => Promise.resolve());
+  const saveRef = useRef<(saveForTeamId?: string) => Promise<void>>(() => Promise.resolve());
 
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const teams = usePipelineStore((s) => s.teams);
@@ -104,8 +104,15 @@ export function useCanvasHandlers({
     addTeamMember(personaId, 'worker', snapToGrid(100 + (count % 4) * 220), snapToGrid(80 + Math.floor(count / 4) * 140));
   }, [teamMembers, addTeamMember]);
 
-  const handleSave = useCallback(async () => {
-    if (!selectedTeamId) return;
+  const handleSave = useCallback(async (saveForTeamId?: string) => {
+    const teamAtCall = saveForTeamId ?? selectedTeamId;
+    if (!teamAtCall) return;
+    // Don't persist nodes for the wrong team. The debounce-fire path passes
+    // saveForTeamId captured at debounce-start; if the user switched teams in
+    // the 1500ms window, abort rather than write team-A node positions under
+    // team B's id (silent data corruption / 404 silently swallowed by the
+    // store).
+    if (saveForTeamId && saveForTeamId !== selectedTeamId) return;
     setSaveStatus('saving');
     try {
       await Promise.all(nodes.filter((n) => n.type !== 'stickyNote').map((n) => updateTeamMember(n.id, undefined, n.position.x, n.position.y)));
@@ -124,9 +131,12 @@ export function useCanvasHandlers({
       }
       setSaveStatus('unsaved');
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
-      autoSaveTimer.current = setTimeout(() => { saveRef.current(); }, 1500);
+      // Capture the team id at debounce-start so the deferred save bails out
+      // if the user switches teams during the 1500ms window.
+      const debouncedTeamId = selectedTeamId;
+      autoSaveTimer.current = setTimeout(() => { saveRef.current(debouncedTeamId ?? undefined); }, 1500);
     }
-  }, [onNodesChangeBase, dispatch, setSaveStatus]);
+  }, [onNodesChangeBase, dispatch, setSaveStatus, selectedTeamId]);
 
   const onNodeDrag = useCallback((_event: React.MouseEvent, node: Node) => {
     dispatch({ type: 'SET_IS_DRAGGING_NODE', dragging: true });

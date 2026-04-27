@@ -79,23 +79,22 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
   const handleSave = useCallback(async () => {
     if (!isValid || saving) return;
     setSaving(true);
+    const payload = {
+      name: name.trim(),
+      description: description.trim() || null,
+      category: category || null,
+      prompt_template: promptTemplate,
+      input_schema: serializeSchema(schemaFields),
+      output_contract: null,
+      tool_requirements: null,
+      credential_requirements: null,
+      model_preference: null,
+      sample_inputs: null,
+      tags: serializeTags(tags),
+      icon: null,
+      color: null,
+    };
     try {
-      const payload = {
-        name: name.trim(),
-        description: description.trim() || null,
-        category: category || null,
-        prompt_template: promptTemplate,
-        input_schema: serializeSchema(schemaFields),
-        output_contract: null,
-        tool_requirements: null,
-        credential_requirements: null,
-        model_preference: null,
-        sample_inputs: null,
-        tags: serializeTags(tags),
-        icon: null,
-        color: null,
-      };
-
       if (recipe) {
         await updateRecipe(recipe.id, payload);
       } else {
