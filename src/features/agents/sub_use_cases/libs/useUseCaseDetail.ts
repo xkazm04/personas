@@ -78,6 +78,22 @@ export function useUseCaseDetail(useCaseId: string) {
   const [isManualRunning, setIsManualRunning] = useState(false);
   const handleManualRun = useCallback(async () => {
     if (!selectedPersona || isManualRunning) return;
+    // Snapshot the persona at click entry. If a fast persona switch happened
+    // between the last render and this click, the closure's `selectedPersona`
+    // is stale and we'd otherwise spawn a real (paid) production CLI run
+    // against the wrong agent — and any emit_event payloads that fire would
+    // cascade as if the old agent produced them. Re-read the live store value
+    // and abort if the user has navigated away.
+    const expectedPersonaId = selectedPersona.id;
+    const liveSelectedId = useAgentStore.getState().selectedPersona?.id ?? null;
+    if (liveSelectedId !== expectedPersonaId) {
+      logger.warn('Manual run aborted: persona changed between render and click', {
+        expectedPersonaId,
+        liveSelectedId,
+        useCaseId,
+      });
+      return;
+    }
     setIsManualRunning(true);
     try {
       // Prefer the selected fixture's inputs (or the use case's
@@ -88,7 +104,7 @@ export function useUseCaseDetail(useCaseId: string) {
         ? JSON.stringify(inputs)
         : undefined;
       const exec = await executePersona(
-        selectedPersona.id,
+        expectedPersonaId,
         undefined,
         inputData,
         useCaseId,
