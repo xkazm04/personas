@@ -67,10 +67,14 @@ function formatSummary(summary: unknown): string {
 
 // ── Core delivery function ──────────────────────────────────────────────
 
-/** Write experiment results to the chat thread and clean up working memory. */
+/** Write experiment results to the chat thread and clean up working memory.
+ *
+ *  Phase 'finished-unknown' is used by the polling fallback (mechanism 2) when
+ *  it can only tell that the run is no longer active — it doesn't know if it
+ *  succeeded, failed, or was cancelled. Says so honestly instead of lying. */
 async function deliverExperimentResult(
   exp: PendingExperiment,
-  phase: "completed" | "failed",
+  phase: "completed" | "failed" | "finished-unknown",
   summary: unknown,
   error?: string,
 ) {
@@ -81,6 +85,12 @@ async function deliverExperimentResult(
     if (exp.mode === "matrix") {
       content += "\n\n> You can review the results in the Lab tab, or ask me to analyze them here.";
     }
+  } else if (phase === "finished-unknown") {
+    content =
+      `**Experiment Finished: ${exp.hypothesis}**\n\n` +
+      `The run is no longer active. Open the Lab tab to see whether it ` +
+      `completed, failed, or was cancelled — the realtime status event was ` +
+      `not received here so I can't show the result inline.`;
   } else {
     content = `**Experiment Failed: ${exp.hypothesis}**\n\nError: ${error || "Unknown error"}`;
   }
@@ -190,12 +200,20 @@ export function useExperimentBridge() {
 
       for (const exp of experiments) {
         if (deliveredRunIds.has(exp.runId)) continue;
-        // If the run is no longer in the active list, it must have completed or failed
+        // If the run is no longer in the active list it has *terminated* —
+        // but 'not active' conflates 'completed', 'failed', and 'cancelled'.
+        // We can't tell from the active-progress API alone, and the realtime
+        // event listener (mechanism 1) is the authoritative source of phase.
+        // Deliver an ambiguous 'finished' message that points the user to the
+        // Lab tab instead of falsely claiming 'Experiment Complete: ...' for
+        // failed/cancelled runs (which is what the user sees today).
         if (!activeRunIds.has(exp.runId)) {
           deliveredRunIds.add(exp.runId);
-          // We don't have the summary from polling, so deliver a generic message
           await deliverExperimentResult(
-            exp, "completed", null, undefined,
+            exp,
+            "finished-unknown",
+            null,
+            undefined,
           );
         }
       }
