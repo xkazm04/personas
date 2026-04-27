@@ -161,12 +161,23 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       const realMember = await addTeamMember(teamId, personaId, role, posX, posY);
+      // Bail if the user switched teams during the IPC. Without this guard,
+      // selectTeam would have cleared teamMembers to []; the map below would
+      // produce [] (no temp to replace), and the realMember (which exists in
+      // the DB) would be invisible until a manual refresh — UX-silent
+      // disappearance. Worse: re-adding the same persona would create a
+      // duplicate row.
+      if (get().selectedTeamId !== teamId) return realMember;
       // Replace temp with real member atomically to avoid interleaving with concurrent adds
       set((state) => ({ teamMembers: state.teamMembers.map((m) => (m.id === tempId ? realMember : m)) }));
       return realMember;
     } catch (err) {
       // Rollback atomically — only remove our temp entry, preserve concurrent changes
-      set((state) => ({ teamMembers: state.teamMembers.filter((m) => m.id !== tempId) }));
+      // (and only if we're still on the originating team — switching away
+      // already wiped the temp via selectTeam's reset).
+      if (get().selectedTeamId === teamId) {
+        set((state) => ({ teamMembers: state.teamMembers.filter((m) => m.id !== tempId) }));
+      }
       reportError(err, "Failed to add team member", set);
       return null;
     }
@@ -216,11 +227,16 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
 
     try {
       const realConn = await createTeamConnection(teamId, sourceMemberId, targetMemberId, connectionType, condition, label);
+      // Same staleness guard as addTeamMember — if the user switched teams
+      // during the await, the temp is already gone and writing the real conn
+      // into the now-other-team's connections would be visually wrong.
+      if (get().selectedTeamId !== teamId) return realConn;
       set((state) => ({ teamConnections: state.teamConnections.map((c) => (c.id === tempId ? realConn : c)) }));
       return realConn;
     } catch (err) {
-      // Rollback atomically — only remove our temp entry, preserve concurrent changes
-      set((state) => ({ teamConnections: state.teamConnections.filter((c) => c.id !== tempId) }));
+      if (get().selectedTeamId === teamId) {
+        set((state) => ({ teamConnections: state.teamConnections.filter((c) => c.id !== tempId) }));
+      }
       reportError(err, "Failed to create team connection", set);
       return null;
     }
