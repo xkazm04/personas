@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Code2, ArrowRight, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Code2, ArrowRight, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('codebase-project-picker');
@@ -31,21 +31,32 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
   const ps = t.vault.picker_section;
   const [projects, setProjects] = useState<DevProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const result = await listProjects('active');
-        setProjects(result);
-      } catch (err) {
-        logger.error('Failed to load projects', { error: String(err) });
-      } finally {
-        setLoading(false);
-      }
-    })();
+  // Load (or reload on Retry). Tracks load failure separately from
+  // 'no projects exist' so the empty-state UI can distinguish a real
+  // empty workspace from a transient IPC failure — previously both
+  // showed the same 'go to dev tools' screen, which led users to
+  // re-create projects that already existed.
+  const loadProjects = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const result = await listProjects('active');
+      setProjects(result);
+    } catch (err) {
+      logger.error('Failed to load projects', { error: String(err) });
+      setLoadError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
 
   const handleSelect = (id: string) => {
     if (multiSelect) {
@@ -93,6 +104,35 @@ export function CodebaseProjectPicker({ onSave, onCancel, credentialName, onCred
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-5 h-5 animate-spin text-primary/50" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-10 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/15 flex items-center justify-center">
+          <AlertTriangle className="w-7 h-7 text-amber-400/80" />
+        </div>
+        <div className="space-y-1">
+          <p className="typo-body font-medium text-foreground">Couldn't load projects</p>
+          <p className="typo-caption text-foreground max-w-xs break-words">{loadError}</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadProjects()}
+          className="flex items-center gap-2 px-4 py-2 rounded-card typo-body font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20 hover:bg-amber-500/25 transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          Retry
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="typo-caption text-foreground hover:text-foreground/70 transition-colors"
+        >
+          {t.common.cancel}
+        </button>
       </div>
     );
   }
