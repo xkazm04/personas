@@ -36,24 +36,40 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
   const modelDirty = draftChanged(draft, baseline, MODEL_KEYS);
 
   /** Build an undo entry that restores draft+baseline to `prev` for the given keys,
-   *  and can re-apply the forward state (`next`) on redo. */
+   *  and can re-apply the forward state (`next`) on redo.
+   *
+   *  Tagged with the personaId at capture time. The setDraft/setBaseline
+   *  setters are persona-agnostic — they always mutate the currently-selected
+   *  persona. Without the personaId guard, pressing Ctrl+Z after switching
+   *  personas (and before the persona-reset effect's clearHistory commits)
+   *  would write persona A's old field values into persona B's draft+baseline,
+   *  silently corrupting B and lying that "All saved" while disk holds the
+   *  original values. */
   const makeUndoEntry = useCallback(
-    (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => ({
-      operation: op,
-      restore: async () => {
-        const patch: Partial<PersonaDraft> = {};
-        for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
-        setDraft((d) => ({ ...d, ...patch }));
-        setBaseline((b) => ({ ...b, ...patch }));
-      },
-      reapply: async () => {
-        const patch: Partial<PersonaDraft> = {};
-        for (const k of keys) (patch as Record<string, unknown>)[k] = next[k];
-        setDraft((d) => ({ ...d, ...patch }));
-        setBaseline((b) => ({ ...b, ...patch }));
-      },
-    }),
-    [setDraft, setBaseline],
+    (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => {
+      const capturedPersonaId = selectedPersona?.id ?? null;
+      const stillForCapturedPersona = () =>
+        capturedPersonaId !== null &&
+        useAgentStore.getState().selectedPersona?.id === capturedPersonaId;
+      return {
+        operation: op,
+        restore: async () => {
+          if (!stillForCapturedPersona()) return;
+          const patch: Partial<PersonaDraft> = {};
+          for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
+          setDraft((d) => ({ ...d, ...patch }));
+          setBaseline((b) => ({ ...b, ...patch }));
+        },
+        reapply: async () => {
+          if (!stillForCapturedPersona()) return;
+          const patch: Partial<PersonaDraft> = {};
+          for (const k of keys) (patch as Record<string, unknown>)[k] = next[k];
+          setDraft((d) => ({ ...d, ...patch }));
+          setBaseline((b) => ({ ...b, ...patch }));
+        },
+      };
+    },
+    [selectedPersona, setDraft, setBaseline],
   );
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
