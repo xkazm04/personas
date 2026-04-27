@@ -3,6 +3,17 @@ import { Eye, EyeOff, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('ByomApiKeyManager');
+
+// Backend IPC errors can include the rejected payload (the secret) in their message.
+// Never surface raw error messages or values from this module — they would leak to
+// Sentry, browser console, or React error boundaries. Log only the settings key.
+function logSecretSafeError(op: string, settingsKey: string, err: unknown): void {
+  const code = err instanceof Error ? err.name : typeof err;
+  logger.error(`${op} failed`, { settingsKey, code });
+}
 
 /** Definition of a provider API key entry that maps to a backend settings_key. */
 interface ProviderKeyDef {
@@ -99,19 +110,29 @@ export function ByomApiKeyManager() {
     const entry = entries[index];
     if (!entry) return;
     const value = entry.value.trim();
-    if (value) {
-      await setAppSetting(entry.def.settingsKey, value);
-    } else {
-      await deleteAppSetting(entry.def.settingsKey);
+    try {
+      if (value) {
+        await setAppSetting(entry.def.settingsKey, value);
+      } else {
+        await deleteAppSetting(entry.def.settingsKey);
+      }
+      updateEntry(index, { savedValue: value, value, editing: false });
+    } catch (err) {
+      logSecretSafeError('save', entry.def.settingsKey, err);
+      updateEntry(index, { connectionState: 'error' });
     }
-    updateEntry(index, { savedValue: value, value, editing: false });
   }, [entries, updateEntry]);
 
   const handleDelete = useCallback(async (index: number) => {
     const entry = entries[index];
     if (!entry) return;
-    await deleteAppSetting(entry.def.settingsKey);
-    updateEntry(index, { value: '', savedValue: '', editing: false, connectionState: 'idle' });
+    try {
+      await deleteAppSetting(entry.def.settingsKey);
+      updateEntry(index, { value: '', savedValue: '', editing: false, connectionState: 'idle' });
+    } catch (err) {
+      logSecretSafeError('delete', entry.def.settingsKey, err);
+      updateEntry(index, { connectionState: 'error' });
+    }
   }, [entries, updateEntry]);
 
   const handleCancel = useCallback((index: number) => {
@@ -124,16 +145,13 @@ export function ByomApiKeyManager() {
     const entry = entries[index];
     if (!entry || !entry.savedValue) return;
     updateEntry(index, { connectionState: 'testing' });
-    // Simple connectivity test: verify the key is stored and retrievable
     try {
       const stored = await getAppSetting(entry.def.settingsKey);
-      updateEntry(index, {
-        connectionState: stored ? 'connected' : 'error',
-      });
-    } catch {
+      updateEntry(index, { connectionState: stored ? 'connected' : 'error' });
+    } catch (err) {
+      logSecretSafeError('test', entry.def.settingsKey, err);
       updateEntry(index, { connectionState: 'error' });
     }
-    // Reset status after 4 seconds
     setTimeout(() => {
       updateEntry(index, { connectionState: 'idle' });
     }, 4000);
