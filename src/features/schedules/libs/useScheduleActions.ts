@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { executePersona } from "@/api/agents/executions";
-import { previewCronSchedule, updateTrigger } from "@/api/pipeline/triggers";
+import { listTriggers, previewCronSchedule, updateTrigger } from "@/api/pipeline/triggers";
 
 import type { CronPreview } from '@/api/pipeline/triggers';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
@@ -57,9 +57,34 @@ export function useScheduleActions() {
   ) => {
     setState((s) => ({ ...s, editing: agent.trigger_id }));
     try {
-      const configObj: Record<string, unknown> = { type: 'schedule' };
-      if (newCron) configObj.cron = newCron;
-      if (newIntervalSeconds) configObj.interval_seconds = newIntervalSeconds;
+      // Read-modify-write: fetch the current trigger config and merge the new
+      // schedule fields on top. Building config from scratch silently wipes
+      // active_window, rate_limit, and any other settings — turning a
+      // business-hours trigger into a 24/7 one with no UI signal.
+      const triggers = await listTriggers(agent.persona_id);
+      const current = triggers.find((tr) => tr.id === agent.trigger_id);
+      let baseConfig: Record<string, unknown> = {};
+      if (current?.config) {
+        try {
+          const parsed = JSON.parse(current.config);
+          if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+            baseConfig = parsed as Record<string, unknown>;
+          }
+        } catch {
+          // Existing config is malformed JSON. Fall back to empty merge — the
+          // schedule fields below still take effect; we don't want to block the
+          // user's edit because the prior write was corrupt.
+        }
+      }
+
+      const configObj: Record<string, unknown> = { ...baseConfig, type: 'schedule' };
+      if (newCron) {
+        configObj.cron = newCron;
+        delete configObj.interval_seconds;
+      } else if (newIntervalSeconds) {
+        configObj.interval_seconds = newIntervalSeconds;
+        delete configObj.cron;
+      }
 
       await updateTrigger(agent.trigger_id, agent.persona_id, {
         trigger_type: null,
