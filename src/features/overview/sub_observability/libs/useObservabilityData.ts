@@ -95,33 +95,22 @@ export function useObservabilityData() {
     ? ((summary.successfulExecutions / summary.totalExecutions) * 100).toFixed(1)
     : '0';
 
-  const trends = useMemo(() => {
-    if (chartData.length < 2) return { cost: null, executions: null, successRate: null, personas: null };
-    const mid = Math.floor(chartData.length / 2);
-    const prev = chartData.slice(0, mid);
-    const curr = chartData.slice(mid);
-    const sum = (arr: typeof chartData, key: 'cost' | 'executions' | 'success' | 'failed') =>
-      arr.reduce((acc, d) => acc + d[key], 0);
-    const prevCost = sum(prev, 'cost');
-    const currCost = sum(curr, 'cost');
-    const prevExec = sum(prev, 'executions');
-    const currExec = sum(curr, 'executions');
-    const prevSuccess = sum(prev, 'success');
-    const prevTotal = prevSuccess + sum(prev, 'failed');
-    const currSuccess = sum(curr, 'success');
-    const currTotal = currSuccess + sum(curr, 'failed');
-    const prevRate = prevTotal > 0 ? (prevSuccess / prevTotal) * 100 : 0;
-    const currRate = currTotal > 0 ? (currSuccess / currTotal) * 100 : 0;
-    const pctChange = (c: number, p: number) => p === 0 ? (c > 0 ? 100 : 0) : ((c - p) / p) * 100;
-    const prevPersonas = prev.reduce((acc, d) => acc + d.active_personas, 0) / (prev.length || 1);
-    const currPersonas = curr.reduce((acc, d) => acc + d.active_personas, 0) / (curr.length || 1);
-    return {
-      cost: { pct: pctChange(currCost, prevCost), invertColor: true },
-      executions: { pct: pctChange(currExec, prevExec), invertColor: false },
-      successRate: { pct: currRate - prevRate, invertColor: false },
-      personas: { pct: pctChange(currPersonas, prevPersonas), invertColor: false },
-    };
-  }, [chartData]);
+  // Trend percentages are deliberately disabled until a proper period-over-
+  // period fetch is wired into this hook. The previous implementation split
+  // the SAME chartData window in half (first half = 'previous', second half =
+  // 'current') and reported the ratio as 'period-over-period change' — but
+  // the data was never fetched at 2× the window, so the percentages were
+  // statistical noise. Users reacted to phantom 'cost spiked 40%' deltas
+  // that meant nothing more than 'the second half of this week was different
+  // from the first half of this week'. Returning nulls makes the Summary
+  // cards omit the trend chips (the consumer already handles null) instead
+  // of lying about a comparison we didn't actually compute.
+  // TODO: fetch with `2 × effectiveDays` and compute against the true prior
+  // period, or wire this hook to `useExecutionMetrics`'s comparedChartData.
+  const trends = useMemo(
+    () => ({ cost: null, executions: null, successRate: null, personas: null }),
+    [],
+  );
 
   const chartAnnotations = useAnnotationData({ selectedPersonaId, healingIssues });
 
