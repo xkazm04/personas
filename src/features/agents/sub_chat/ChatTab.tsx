@@ -109,7 +109,7 @@ export function ChatTab() {
   // event bridge hiccup, engine panic, sleep/resume) and leave chatStreaming
   // stuck true forever — locking the input. Two guards:
   //   1. Explicit clear when activeExecutionId transitions to null.
-  //   2. 60s idle watchdog on streamTextLines growth while chatStreaming.
+  //   2. 5-minute idle watchdog on streamTextLines growth while chatStreaming.
   useEffect(() => {
     if (chatStreaming && !activeExecutionId) {
       useAgentStore.setState({ chatStreaming: false, isExecuting: false });
@@ -118,14 +118,19 @@ export function ChatTab() {
 
   useEffect(() => {
     if (!chatStreaming) return;
-    const STREAM_IDLE_TIMEOUT_MS = 60_000;
+    // 5 minutes — long enough that legitimate slow tool calls (large file Read,
+    // codebase scans, multi-minute thinking, slow networks) don't trip it.
+    // Previously 60s, which routinely fired during normal long-running work.
+    const STREAM_IDLE_TIMEOUT_MS = 5 * 60_000;
     const timer = window.setTimeout(() => {
-      useAgentStore.setState({
-        chatStreaming: false,
-        isExecuting: false,
-        activeExecutionId: null,
-        executionPersonaId: null,
-      });
+      // Only hide the streaming bubble. DO NOT clear activeExecutionId /
+      // executionPersonaId / isExecuting — the backend execution may still
+      // be alive (we have no way to confirm from here) and clearing those
+      // would orphan the structured-stream subscription, silently dropping
+      // any late events (TodoWrite payloads, tool results, etc.) that arrive.
+      // The user retains the explicit Cancel button (handleCancelStream) as
+      // the manual escape if they believe the execution is truly stuck.
+      useAgentStore.setState({ chatStreaming: false });
     }, STREAM_IDLE_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
   }, [chatStreaming, streamTextLines.length]);
