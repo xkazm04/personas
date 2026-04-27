@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { executePersona } from '@/api/agents/executions';
 
 export interface TestResult {
@@ -24,6 +24,20 @@ const RESULT_DISPLAY_MS = 15_000;
 export function useDeploymentTest() {
   const [tests, setTests] = useState<Record<string, TestState>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // Walk all pending dismiss timers and clear them on unmount so stale
+  // setTests calls don't fire on an unmounted hook (memory retention of
+  // closure + test result map; React 19 silently no-ops the setState but
+  // the timer still holds the closure until it fires).
+  useEffect(() => {
+    const timerMap = timers.current;
+    return () => {
+      for (const id of Object.keys(timerMap)) {
+        clearTimeout(timerMap[id]);
+        delete timerMap[id];
+      }
+    };
+  }, []);
 
   const runTest = useCallback(async (deploymentId: string, personaId: string, prompt?: string) => {
     // Prevent double-fire
