@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 
 /**
  * Imperative playback engine.
@@ -39,9 +39,17 @@ export function useTimelinePlayback(totalDuration: number): UseTimelinePlaybackR
   const lastFrameRef = useRef(0);
   const subscribersRef = useRef<Set<(t: number) => void>>(new Set());
 
-  // Keep refs aligned with the latest props/state
-  totalRef.current = totalDuration;
-  loopingRef.current = looping;
+  // Keep refs aligned with the latest props/state. Previously these assignments
+  // ran in the render body, which is only safe for first-render initialization.
+  // Under React 19 concurrent rendering the render function may be invoked
+  // speculatively then thrown away — a rAF tick reading loopingRef.current
+  // between two speculative renders would see a value from a discarded render.
+  // useLayoutEffect runs synchronously after a *committed* render only, so the
+  // refs always reflect the actual UI state.
+  useLayoutEffect(() => {
+    totalRef.current = totalDuration;
+    loopingRef.current = looping;
+  });
 
   const notify = useCallback((time: number) => {
     subscribersRef.current.forEach((cb) => cb(time));
