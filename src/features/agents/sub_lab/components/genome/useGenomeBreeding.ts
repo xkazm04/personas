@@ -75,7 +75,15 @@ export function useGenomeBreeding() {
     }
   }, [runs]);
 
-  if (!hasLoadedRuns) { loadRuns(); }
+  // Load breeding runs once. Calling loadRuns() at the top level of the hook
+  // body (outside any useEffect) violated the rules of hooks: React 19 strict
+  // mode double-invokes render and would double-fire the IPC, and any state
+  // update from the async callback could re-render mid-render and re-trigger
+  // the call before hasLoadedRuns flipped — risking a fetch loop on slow
+  // networks. The effect runs once after first commit.
+  useEffect(() => {
+    if (!hasLoadedRuns) void loadRuns();
+  }, [hasLoadedRuns, loadRuns]);
 
   const toggleParent = useCallback((id: string) => {
     setSelectedParents((prev) =>
