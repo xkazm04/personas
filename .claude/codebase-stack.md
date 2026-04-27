@@ -25,13 +25,14 @@ Personas is a **Tauri v2 desktop app** that wraps the **Claude Code CLI** (and C
 
 ## 2. Engine: Claude Code CLI Wrapping (CRITICAL)
 
-**This is the single most important fact about personas:** the application does not implement an LLM client. It shells out to the `claude` binary on the user's `PATH` (or `claude-code` / `claude.exe` / `claude.cmd` on Windows) and treats it as the LLM provider. Codex CLI is the secondary provider with the same shape.
+**This is the single most important fact about personas:** the application does not implement an LLM client. It shells out to the `claude` binary on the user's `PATH` (or `claude-code` / `claude.exe` / `claude.cmd` on Windows) and treats it as the LLM provider. (Codex CLI was previously a secondary provider with the same shape but was removed — see "Codex provider was removed" below.)
 
 ### Provider abstraction
 
-Defined in `src-tauri/src/engine/provider/mod.rs` as the `CliProvider` trait. Two concrete impls:
+Defined in `src-tauri/src/engine/provider/mod.rs` as the `CliProvider` trait. **One concrete impl as of 2026-04-27:**
 - `src-tauri/src/engine/provider/claude.rs` — `ClaudeProvider`, engine name `"Claude Code CLI"`, context file `CLAUDE.md`
-- `src-tauri/src/engine/provider/codex.rs` — `CodexProvider`, engine name `"Codex CLI"`, context file `AGENTS.md`
+
+`EngineKind::ALL = [EngineKind::ClaudeCode]`; the `from_str` impl maps the legacy setting string `"codex_cli"` back to `ClaudeCode` for back-compat. There is no `CodexProvider` and no `engine/provider/codex.rs` file. The `PromptDelivery` enum still has `PositionalArg` and `Flag(String)` variants tagged for Codex but they are dead-code without a provider impl. **Discovered in `/research` run 2026-04-27 (Hermes Agent compare); previous versions of this doc described a sibling Codex provider that no longer exists.**
 
 `CliProvider` exposes:
 - `binary_candidates()` — names to search PATH for
@@ -86,7 +87,17 @@ Plus `apply_provider_env` injects per-provider env vars (OLLAMA_*, ANTHROPIC_*, 
 
 `build_resume_cli_args(session_id)` is the parallel function for `--resume` mode and pins the same `--effort medium` default so resumed sessions stay on the same effort policy.
 
-`engine/provider/codex.rs::build_execution_args` does NOT call into `prompt::build_cli_args` — it builds Codex args independently, so Claude-specific flags like `--effort` don't apply to Codex. When proposing CLI flag changes, verify the flag is Claude-specific before adding it here.
+**Codex provider was removed (2026-04-27).** Earlier versions of this doc said `engine/provider/codex.rs::build_execution_args` builds Codex args independently. That file no longer exists; only ClaudeProvider remains. CLI-flag changes only need to be evaluated for Claude Code applicability — there is no second provider to coordinate with. If Codex (or any new CLI engine) is re-introduced, sibling providers would need their own `build_execution_args` impl that does NOT call `prompt::build_cli_args` (since that funnel pins Claude-specific flags like `--effort`).
+
+### Lifecycle hooks: `hooks_sidecar.rs` is narrow (Claude Code's NATIVE hooks only)
+
+`src-tauri/src/engine/hooks_sidecar.rs` writes a `.claude/settings.json` sidecar into each per-persona `exec_dir` so **Claude Code's NATIVE hooks** (`SessionStart`, `Stop`, `PreCompact`) fire and drop session transcripts into a `.personas/session_queue.jsonl` for the memory-capture pipeline (Karpathy run, 2026-04-08). It is **opt-in via env var** `PERSONAS_HOOKS_SIDECAR=1`.
+
+**Personas does NOT have its own runner-level lifecycle hook surface.** There is no `pre_tool_call` / `post_tool_call` / `pre_llm_call` / `post_llm_call` / `on_session_start` / `on_session_end` plugin hook system at the personas Rust layer (zero hits across the codebase as of `/research` run 2026-04-27 Hermes compare). The natural attachment point for such a surface is `engine/runner/mod.rs::run_persona`'s stream-line `match &line_type` block (~line 1301 — see "Two parallel stream channels" below) and `engine/event_registry.rs`. Adding this is a discrete future finding, not an existing primitive.
+
+When `/research` findings propose plugin extensions to the runner, distinguish:
+- "delegate to Claude Code's native hook" → use `hooks_sidecar.rs` pattern (write `.claude/settings.json`)
+- "personas-specific runner hook" → does not exist; would need to be built first
 
 ### `assemble_prompt` brackets the persona content with TWO autonomy directives (top + bottom)
 
@@ -125,7 +136,7 @@ This was added after `/research` run on 2026-04-25 (Simon Scrapes Claude desktop
 When an idea touches **any** Claude Code CLI feature, it's almost certainly relevant:
 - Hooks (PreToolUse/PostToolUse/Stop/etc.) → personas could surface them as persona-level event subscriptions
 - Slash commands → potentially compilable into persona use cases
-- MCP servers → already integrated via `mcp_server/` module — ideas about MCP are direct hits
+- MCP → personas integrates **both directions**: INBOUND (consumes external MCP servers as tools — `commands/credentials/mcp_gateways.rs`, `commands/credentials/mcp_tools.rs`, `engine/mcp_tools.rs`, `db/repos/resources/mcp_gateways.rs`) and OUTBOUND (acts as an MCP server exposing personas tools to Claude Code/other clients — `mcp_server/` module + `mcp_bin.rs` binary). Ideas about MCP are direct hits — verify which direction the idea targets before scoring.
 - Settings.json → persona settings could project into per-persona settings overrides
 - Subagents → personas already implements something analogous via pipelines and chains
 - Session resume → already used; ideas about better session management apply
