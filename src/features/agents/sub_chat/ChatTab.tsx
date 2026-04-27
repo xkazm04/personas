@@ -111,9 +111,14 @@ export function ChatTab() {
   // stuck true forever — locking the input. Two guards:
   //   1. Explicit clear when activeExecutionId transitions to null.
   //   2. 5-minute idle watchdog on streamTextLines growth while chatStreaming.
+  // Also clears chatTodos here: useStructuredStream filters by activeExecutionId,
+  // so once it goes null the subscription dies and any unprocessed TodoWrite
+  // emissions never arrive. Leaving the previous run's plan visible while
+  // input is unlocked for a brand-new prompt would conflate two executions
+  // in the user's mental model.
   useEffect(() => {
     if (chatStreaming && !activeExecutionId) {
-      useAgentStore.setState({ chatStreaming: false, isExecuting: false });
+      useAgentStore.setState({ chatStreaming: false, isExecuting: false, chatTodos: null });
     }
   }, [chatStreaming, activeExecutionId]);
 

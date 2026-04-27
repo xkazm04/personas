@@ -125,8 +125,19 @@ async function deliverExperimentResult(
 }
 
 // Track which run IDs we've already delivered results for (prevents duplicates
-// between event listener and polling)
+// between event listener and polling). Bounded with FIFO eviction so the set
+// doesn't grow without limit across long sessions, HMR, or many experiments.
+// Set iteration is insertion order, so the first .values() entry is the oldest.
+const DELIVERED_CACHE_LIMIT = 200;
 const deliveredRunIds = new Set<string>();
+function markDelivered(runId: string): void {
+  if (deliveredRunIds.has(runId)) return;
+  deliveredRunIds.add(runId);
+  if (deliveredRunIds.size > DELIVERED_CACHE_LIMIT) {
+    const oldest = deliveredRunIds.values().next().value;
+    if (oldest !== undefined) deliveredRunIds.delete(oldest);
+  }
+}
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
@@ -160,7 +171,7 @@ export function useExperimentBridge() {
           const exp = experiments.find((e) => e.runId === runId && e.mode === mode);
           if (!exp) return;
 
-          deliveredRunIds.add(runId);
+          markDelivered(runId);
           await deliverExperimentResult(exp, phase as "completed" | "failed", payload.summary, payload.error);
         });
         unlistenRefs.current.push(unlisten);
@@ -208,7 +219,7 @@ export function useExperimentBridge() {
         // Lab tab instead of falsely claiming 'Experiment Complete: ...' for
         // failed/cancelled runs (which is what the user sees today).
         if (!activeRunIds.has(exp.runId)) {
-          deliveredRunIds.add(exp.runId);
+          markDelivered(exp.runId);
           await deliverExperimentResult(
             exp,
             "finished-unknown",
