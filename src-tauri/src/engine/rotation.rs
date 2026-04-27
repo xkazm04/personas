@@ -1180,10 +1180,19 @@ fn evaluate_cron_event(
         .map(|dt| dt.with_timezone(&chrono::Utc))
         .unwrap_or_else(|| *now - chrono::Duration::seconds(60));
 
-    // If the next fire time after last poll falls within (from, now], trigger
-    // Uses local time evaluation so user-configured cron hours match local clock.
-    match cron::next_fire_time_local(&schedule, from) {
-        Some(next) => next <= *now,
+    // If the next fire time after last poll falls within (from, now], trigger.
+    // Honors an optional `timezone` IANA string in the config so user-configured
+    // cron hours match the intended zone; falls back to system local otherwise.
+    let tz = config
+        .get("timezone")
+        .and_then(|v| v.as_str())
+        .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+    let next = match tz {
+        Some(zone) => cron::next_fire_time_in_tz(&schedule, from, zone),
+        None => cron::next_fire_time_local(&schedule, from),
+    };
+    match next {
+        Some(t) => t <= *now,
         None => false,
     }
 }

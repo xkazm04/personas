@@ -1453,6 +1453,7 @@ mod tests {
         let cfg = TriggerConfig::Schedule {
             cron: Some("*/15 * * * *".into()),
             interval_seconds: None,
+            timezone: None,
             event_type: None,
             payload: None,
         };
@@ -1516,6 +1517,7 @@ mod tests {
         let cfg = TriggerConfig::Schedule {
             cron: Some("0 * * * *".into()),
             interval_seconds: None,
+            timezone: None,
             event_type: None,
             payload: None,
         };

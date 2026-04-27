@@ -29,6 +29,8 @@ pub struct PolicyEvent {
     /// Kind of policy that tripped. Conventional values:
     ///   - `"review.off"`              — manual_review dropped silently
     ///   - `"review.trust_llm"`        — review created but auto-resolved
+    ///   - `"review.auto_triage"`      — review created but auto-resolved
+    ///                                   under capability review_policy.mode = "auto_triage"
     ///   - `"memory.off"`              — emit_memory blocked
     ///   - `"event.off"`               — persona_action / custom event dropped
     ///   - `"event.aliased"`           — event renamed by policy

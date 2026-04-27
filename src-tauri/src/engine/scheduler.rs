@@ -1,4 +1,5 @@
 use chrono::{DateTime, Duration, Utc};
+use chrono_tz::Tz;
 
 use crate::db::models::{PersonaTrigger, TriggerConfig};
 
@@ -9,9 +10,12 @@ use super::cron;
 /// when `parse_config()` has already been called for other purposes.
 pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) -> Option<String> {
     match cfg {
-        TriggerConfig::Schedule { cron: Some(cron_expr), .. } => {
+        TriggerConfig::Schedule { cron: Some(cron_expr), timezone, .. } => {
             let schedule = cron::parse_cron(cron_expr).ok()?;
-            let next = cron::next_fire_time_local(&schedule, now)?;
+            let next = match timezone.as_deref().and_then(|s| s.parse::<Tz>().ok()) {
+                Some(tz) => cron::next_fire_time_in_tz(&schedule, now, tz)?,
+                None => cron::next_fire_time_local(&schedule, now)?,
+            };
             Some(next.to_rfc3339())
         }
         TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
@@ -65,6 +69,36 @@ mod tests {
         let now = Utc.with_ymd_and_hms(2026, 1, 15, 10, 30, 0).unwrap();
         let next = compute_next_trigger_at(&trigger, now).unwrap();
         assert!(next.contains("11:00:00"));
+    }
+
+    #[test]
+    fn test_compute_next_schedule_with_timezone_summer() {
+        // Repro from C5-handoff-2026-04-26: cron 0 7 * * * + America/New_York
+        // around 2026-04-26 should land at 11:00 UTC (07:00 EDT, UTC-4),
+        // not at 05:00 UTC (which is what the system Local fallback produced
+        // on a Europe/Prague dev box).
+        let trigger = make_trigger(
+            "schedule",
+            Some(r#"{"cron": "0 7 * * *", "timezone": "America/New_York"}"#),
+        );
+        let now = Utc.with_ymd_and_hms(2026, 4, 26, 22, 0, 0).unwrap();
+        let next = compute_next_trigger_at(&trigger, now).unwrap();
+        assert!(
+            next.starts_with("2026-04-27T11:00:00"),
+            "expected 2026-04-27T11:00:00 (07:00 EDT), got {next}"
+        );
+    }
+
+    #[test]
+    fn test_compute_next_schedule_with_invalid_timezone_falls_back_to_local() {
+        // Garbage timezone should not crash; the cron still produces a result
+        // by falling back to system local.
+        let trigger = make_trigger(
+            "schedule",
+            Some(r#"{"cron": "0 * * * *", "timezone": "Not/A_Real_Zone"}"#),
+        );
+        let now = Utc.with_ymd_and_hms(2026, 1, 15, 10, 30, 0).unwrap();
+        assert!(compute_next_trigger_at(&trigger, now).is_some());
     }
 
     #[test]

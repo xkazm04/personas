@@ -244,7 +244,10 @@ def step_answer_dimensions() -> None:
         ),
     }
 
-    max_rounds = 12
+    # Multi-UC builds spend many rounds in `resolving` between question
+    # batches; 30 gives the LLM headroom even when only a few user-facing
+    # questions fire. The Phase A/B/C drivers use the same value.
+    max_rounds = 30
     for round_ix in range(max_rounds):
         phase_r = bridge(
             "waitForBuildPhase",

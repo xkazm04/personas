@@ -833,6 +833,59 @@ const bridge: TestBridge = {
     }
   },
 
+  /** Phase B helper — patch a persona_event_subscription's source_filter so a
+   *  cross-persona chain can fire. The bus self-scopes persona-sourced events
+   *  to the emitting persona unless the subscription has an explicit
+   *  source_filter; setting it to "*" opts that subscription into receiving
+   *  events from any persona. Used only by chained-persona scenarios. */
+  async patchSubscriptionSourceFilter(subscriptionId: string, filter: string) {
+    try {
+      // Rust's serde with default rename rules expects snake_case keys for
+      // the inner Input struct (it has no #[serde(rename_all = "camelCase")]
+      // on UpdateEventSubscriptionInput). The outer command parameter
+      // (`input`) IS auto-mapped, but the struct fields are not.
+      const result = await invoke('update_subscription', {
+        id: subscriptionId,
+        input: { source_filter: filter, event_type: null, enabled: null },
+      });
+      return { success: true, result };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** Phase B helper — patch a persona_trigger's config to add a source_filter.
+   *  Mirrors patchSubscriptionSourceFilter for the unified event_listener
+   *  trigger path. The new config replaces the old config wholesale. */
+  async patchTriggerSourceFilter(triggerId: string, personaId: string, filter: string) {
+    try {
+      const detail = await invoke<{ triggers?: Array<Record<string, unknown>> }>(
+        'get_persona_detail',
+        { id: personaId },
+      );
+      const triggers = detail.triggers ?? [];
+      const trig = triggers.find((t) => (t as { id?: string }).id === triggerId);
+      if (!trig) return { success: false, error: `trigger ${triggerId} not found on ${personaId}` };
+      const cfgRaw = (trig as { config?: string }).config ?? '{}';
+      let cfgObj: Record<string, unknown>;
+      try {
+        cfgObj = JSON.parse(cfgRaw);
+      } catch {
+        cfgObj = {};
+      }
+      cfgObj.source_filter = filter;
+      const newCfg = JSON.stringify(cfgObj);
+      const result = await invoke('update_trigger', {
+        id: triggerId,
+        personaId,
+        input: { trigger_type: null, config: newCfg, enabled: null, next_trigger_at: null },
+      });
+      return { success: true, result };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** Get artifact counts for a persona across all overview modules. */
   async getOverviewCounts(personaId: string) {
     try {

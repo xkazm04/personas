@@ -151,8 +151,11 @@ export interface CronPreview {
   error: string | null;
 }
 
-export const previewCronSchedule = (cronExpression: string, count?: number) =>
-  invoke<CronPreview>("preview_cron_schedule", { cronExpression, count: count });
+export const previewCronSchedule = (
+  cronExpression: string,
+  count?: number,
+  timezone?: string,
+) => invoke<CronPreview>("preview_cron_schedule", { cronExpression, count, timezone });
 
 // ============================================================================
 // Webhook Server

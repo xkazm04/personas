@@ -1052,6 +1052,61 @@ fn create_tools_in_tx(
 }
 
 // ============================================================================
+// Cross-persona chain detection
+// ============================================================================
+//
+// The event bus self-scopes persona-emitted events to the emitting persona
+// unless the subscription has an explicit `source_filter` (see
+// `engine::bus.rs::match_event` lines 131-145). That defends two unrelated
+// personas with overlapping event names from triggering each other's runs,
+// but it also blocks intentional cross-persona chains (Persona X emits
+// `news.draft.captured`; Persona Y listens for the same event from elsewhere).
+//
+// At promote time we know the full emit set the persona produces. Any LISTEN
+// subscription whose event_type is NOT in that set must be coming from a
+// different persona — defaulting `source_filter = "*"` for those entries
+// makes the chain wire up automatically. Intra-persona self-loops (event
+// emitted AND listened to by the same persona) keep the null source_filter
+// so the bus's self-scoping protects them.
+//
+// Used by both `create_triggers_in_tx` (event_listener trigger configs) and
+// `create_event_subscriptions_in_tx` (persona_event_subscriptions rows).
+fn collect_persona_emit_event_types(
+    ir: &crate::db::models::AgentIr,
+    use_cases: &UseCaseData,
+) -> std::collections::HashSet<String> {
+    let mut emits: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // Persona-level legacy events list.
+    for evt in &ir.events {
+        if evt.direction.as_deref() == Some("emit") {
+            if let Some(et) = evt.event_type.as_deref() {
+                if !et.is_empty() {
+                    emits.insert(et.to_string());
+                }
+            }
+        }
+    }
+
+    // Per-UC event_subscriptions[direction == "emit"].
+    for uc in &use_cases.structured {
+        if let Some(subs) = uc.get("event_subscriptions").and_then(|v| v.as_array()) {
+            for sub in subs {
+                if sub.get("direction").and_then(|v| v.as_str()) == Some("emit") {
+                    if let Some(et) = sub.get("event_type").and_then(|v| v.as_str()) {
+                        if !et.is_empty() {
+                            emits.insert(et.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    emits
+}
+
+// ============================================================================
 // Transaction: create triggers linked to use cases
 // ============================================================================
 
@@ -1060,6 +1115,7 @@ fn create_triggers_in_tx(
     persona_id: &str,
     ir: &crate::db::models::AgentIr,
     use_case_ids: &[String],
+    persona_emits: &std::collections::HashSet<String>,
     now: &str,
 ) -> Result<(u32, Vec<String>), AppError> {
     let mut triggers_created = 0u32;
@@ -1088,6 +1144,26 @@ fn create_triggers_in_tx(
                                 "listen_event_type".to_string(),
                                 serde_json::Value::String(et),
                             );
+                        }
+                    }
+                    // Cross-persona chain default: when this trigger listens
+                    // for an event that no UC in this same persona emits, the
+                    // event has to come from a different persona. The bus's
+                    // self-scoping rule would silently drop those matches
+                    // unless source_filter is set, so default to "*" (any
+                    // source) when the LLM didn't specify one.
+                    let listen_et = patched
+                        .get("listen_event_type")
+                        .and_then(|x| x.as_str())
+                        .map(str::to_string);
+                    if !patched.contains_key("source_filter") {
+                        if let Some(et) = listen_et {
+                            if !persona_emits.contains(&et) {
+                                patched.insert(
+                                    "source_filter".to_string(),
+                                    serde_json::Value::String("*".to_string()),
+                                );
+                            }
                         }
                     }
                     return serde_json::to_string(&patched).unwrap_or_default();
@@ -1129,6 +1205,7 @@ fn create_event_subscriptions_in_tx(
     persona_id: &str,
     ir: &crate::db::models::AgentIr,
     use_cases: &UseCaseData,
+    persona_emits: &std::collections::HashSet<String>,
     now: &str,
 ) -> Result<u32, AppError> {
     let mut subscriptions_created = 0u32;
@@ -1170,10 +1247,21 @@ fn create_event_subscriptions_in_tx(
             };
             let direction = sub.get("direction").and_then(|v| v.as_str());
             if !is_listen(direction) { continue; }
-            let source_filter = sub
+            // Cross-persona chain default — see `collect_persona_emit_event_types`.
+            // When this persona doesn't emit this event itself, the event has to
+            // arrive from a different persona; default source_filter to "*" so
+            // the bus's self-scoping rule doesn't silently drop the match.
+            let source_filter: Option<String> = sub
                 .get("source_filter")
                 .and_then(|v| v.as_str())
-                .map(|s| s.to_string());
+                .map(|s| s.to_string())
+                .or_else(|| {
+                    if persona_emits.contains(&event_type) {
+                        None
+                    } else {
+                        Some("*".to_string())
+                    }
+                });
 
             let key = (event_type.clone(), source_filter.clone());
             if !seen.insert(key) { continue; }
@@ -1217,7 +1305,14 @@ fn create_event_subscriptions_in_tx(
         if event_type.is_empty() { continue; }
         if !is_listen(evt.direction.as_deref()) { continue; }
 
-        let source_filter: Option<String> = evt.source_filter.clone();
+        // Same cross-persona-chain default as the per-UC loop above.
+        let source_filter: Option<String> = evt.source_filter.clone().or_else(|| {
+            if persona_emits.contains(&event_type) {
+                None
+            } else {
+                Some("*".to_string())
+            }
+        });
         let key = (event_type.clone(), source_filter.clone());
         if !seen.insert(key) { continue; }
 
@@ -1406,13 +1501,43 @@ pub async fn promote_build_draft_inner(
     session_id: String,
     persona_id: String,
 ) -> Result<serde_json::Value, AppError> {
-    let session = build_session_repo::get_by_id(&state.db, &session_id)?
+    let mut session = build_session_repo::get_by_id(&state.db, &session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
     session
         .phase
         .validate_transition(BuildPhase::Promoted)
         .map_err(AppError::Validation)?;
+
+    // Brief retry on agent_ir absence: the build pipeline emits `phase:
+    // test_complete` slightly before the agent_ir column is written. A caller
+    // that promotes immediately on `test_complete` (e.g. the test bridge)
+    // hits a ~100–300ms race where the row exists but `agent_ir` is still
+    // null. Re-fetch up to ~2s before failing. See C5-handoff-2026-04-26 §2.
+    if session.agent_ir.is_none() {
+        for attempt in 1..=20u32 {
+            tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+            match build_session_repo::get_by_id(&state.db, &session_id)? {
+                Some(refreshed) if refreshed.agent_ir.is_some() => {
+                    tracing::info!(
+                        session_id = %session_id,
+                        attempt,
+                        "promote_build_draft: agent_ir became available after retry"
+                    );
+                    session = refreshed;
+                    break;
+                }
+                Some(refreshed) => {
+                    session = refreshed;
+                }
+                None => {
+                    return Err(AppError::NotFound(format!(
+                        "Build session {session_id} disappeared while waiting for agent_ir"
+                    )));
+                }
+            }
+        }
+    }
 
     // Belt-and-braces normalization (§5.3 item 5 of C4-build-from-scratch-v3-handoff.md):
     // CLI build-from-scratch sessions bypass create_adoption_session, so their
@@ -1421,7 +1546,7 @@ pub async fn promote_build_draft_inner(
     let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
         None => {
             return Err(AppError::Validation(
-                "Build session has no agent_ir (field is null)".to_string(),
+                "Build session has no agent_ir (field is null after retry)".to_string(),
             ))
         }
         Some(raw) => {
@@ -1496,8 +1621,13 @@ pub async fn promote_build_draft_inner(
     let now = chrono::Utc::now().to_rfc3339();
 
     let tools_created = create_tools_in_tx(&tx, &persona_id, &tool_actions, &now)?;
-    let (triggers_created, created_trigger_ids) = create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &now)?;
-    let subscriptions_created = create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &now)?;
+    // Compute the persona's own emit-event set once; both trigger config
+    // patching and subscription insertion need it to decide whether an inbound
+    // listen is intra-persona (self-loop) or cross-persona (chain) so the
+    // promote path can default `source_filter = "*"` for chain inbounds.
+    let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
+    let (triggers_created, created_trigger_ids) = create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &persona_emits, &now)?;
+    let subscriptions_created = create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &persona_emits, &now)?;
     let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
     update_persona_in_tx(&tx, &persona_id, &ir, &notification_channels, &design_context_str, &design_result_str, &now)?;
     create_version_snapshot_in_tx(&tx, &persona_id, &ir, &design_context_str, &design_result_str, &session.resolved_cells, &now)?;
@@ -1524,4 +1654,98 @@ pub async fn promote_build_draft_inner(
         "assertions_created": assertions_created,
         "connectors_needing_setup": connectors_needing_setup,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::models::{AgentIr, AgentIrEvent};
+
+    fn uc_with_subs(id: &str, subs: serde_json::Value) -> serde_json::Value {
+        serde_json::json!({ "id": id, "event_subscriptions": subs })
+    }
+
+    #[test]
+    fn collect_emit_set_from_per_uc_subs() {
+        let ir = AgentIr::default();
+        let use_cases = UseCaseData {
+            structured: vec![
+                uc_with_subs("uc-1", serde_json::json!([
+                    {"event_type": "news.draft.captured", "direction": "emit"},
+                    {"event_type": "external.thing.happened", "direction": "listen"},
+                ])),
+            ],
+            ids: vec!["uc-1".into()],
+        };
+        let emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert!(emits.contains("news.draft.captured"));
+        assert!(!emits.contains("external.thing.happened"));
+    }
+
+    #[test]
+    fn collect_emit_set_from_persona_level_events() {
+        let ir = AgentIr {
+            events: vec![
+                AgentIrEvent {
+                    event_type: Some("a.b.published".into()),
+                    direction: Some("emit".into()),
+                    source_filter: None,
+                },
+                AgentIrEvent {
+                    event_type: Some("c.d.received".into()),
+                    direction: Some("listen".into()),
+                    source_filter: None,
+                },
+            ],
+            ..Default::default()
+        };
+        let use_cases = UseCaseData { structured: vec![], ids: vec![] };
+        let emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert!(emits.contains("a.b.published"));
+        assert!(!emits.contains("c.d.received"));
+    }
+
+    #[test]
+    fn collect_emit_set_unions_persona_and_uc_sources() {
+        let ir = AgentIr {
+            events: vec![AgentIrEvent {
+                event_type: Some("alpha.x.emitted".into()),
+                direction: Some("emit".into()),
+                source_filter: None,
+            }],
+            ..Default::default()
+        };
+        let use_cases = UseCaseData {
+            structured: vec![uc_with_subs(
+                "uc-1",
+                serde_json::json!([{"event_type": "beta.y.emitted", "direction": "emit"}]),
+            )],
+            ids: vec!["uc-1".into()],
+        };
+        let emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert_eq!(emits.len(), 2);
+        assert!(emits.contains("alpha.x.emitted"));
+        assert!(emits.contains("beta.y.emitted"));
+    }
+
+    #[test]
+    fn collect_emit_set_ignores_non_emit_directions() {
+        let ir = AgentIr {
+            events: vec![AgentIrEvent {
+                event_type: Some("x.y.z".into()),
+                direction: Some("subscribe".into()),
+                source_filter: None,
+            }],
+            ..Default::default()
+        };
+        let use_cases = UseCaseData {
+            structured: vec![uc_with_subs(
+                "uc-1",
+                serde_json::json!([{"event_type": "p.q.r"}]),  // missing direction
+            )],
+            ids: vec!["uc-1".into()],
+        };
+        let emits = collect_persona_emit_event_types(&ir, &use_cases);
+        assert!(emits.is_empty());
+    }
 }

@@ -1,4 +1,5 @@
-use chrono::{DateTime, Datelike, Timelike, Utc, Local, Duration};
+use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Timelike, Utc};
+use chrono_tz::Tz;
 
 /// Parsed cron schedule (5-field standard cron) using bitfield matching.
 ///
@@ -165,21 +166,15 @@ fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
         && day_matches(schedule, day, weekday)
 }
 
-/// Check if a UTC datetime matches the schedule when interpreted in the system's
-/// local timezone. This ensures cron "9" means 9:00 local, consistent with
-/// ActiveWindow which also operates in local time.
-fn matches_local(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
-    let local = dt.with_timezone(&Local);
-    let minute = local.minute();
-    let hour = local.hour();
-    let day = local.day();
-    let month = local.month();
-    let weekday = local.weekday().num_days_from_sunday(); // 0=Sun
-
-    schedule.has_minute(minute)
-        && schedule.has_hour(hour)
-        && schedule.has_month(month)
-        && day_matches(schedule, day, weekday)
+/// Check if a UTC datetime matches the schedule when interpreted in `tz`.
+/// Generic over any `TimeZone` so callers can pass `chrono::Local` (system
+/// timezone) or `chrono_tz::Tz` (an explicit IANA zone).
+fn matches_in_zone<Z: TimeZone>(schedule: &CronSchedule, dt: &DateTime<Utc>, tz: &Z) -> bool {
+    let local = dt.with_timezone(tz);
+    schedule.has_minute(local.minute())
+        && schedule.has_hour(local.hour())
+        && schedule.has_month(local.month())
+        && day_matches(schedule, local.day(), local.weekday().num_days_from_sunday())
 }
 
 /// Compute the next fire time strictly after `from` (cron evaluated in UTC).
@@ -243,13 +238,18 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
 }
 
 /// Compute the next fire time strictly after `from`, evaluating the cron
-/// expression in the system's local timezone.
+/// expression in `tz` (any `TimeZone` impl, typically `chrono::Local` or
+/// `chrono_tz::Tz`).
 ///
-/// This matches user expectations: cron "0 9 * * *" fires at 9:00 local time,
-/// consistent with how `ActiveWindow::is_active_at()` interprets hours.
-/// The returned `DateTime<Utc>` is the UTC instant when the local clock
-/// reaches the next matching minute.
-pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
+/// The returned `DateTime<Utc>` is the UTC instant when the local clock in
+/// `tz` reaches the next matching minute. `with_*` calls return `Option` so
+/// DST gaps (non-existent local times) fall through to minute-level
+/// advancement instead of panicking.
+fn next_fire_time_in_zone<Z: TimeZone>(
+    schedule: &CronSchedule,
+    from: DateTime<Utc>,
+    tz: &Z,
+) -> Option<DateTime<Utc>> {
     let start = from
         .with_second(0)
         .unwrap()
@@ -261,15 +261,11 @@ pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Opt
     let mut current = start;
 
     for _ in 0..max_iterations {
-        if matches_local(schedule, &current) {
+        if matches_in_zone(schedule, &current, tz) {
             return Some(current);
         }
 
-        // Optimization: skip ahead using local-time components.
-        // All with_hour/with_minute/with_day/with_month calls use unwrap_or_else
-        // to fall back to simple minute-level advancement during DST gaps where
-        // certain local times do not exist.
-        let local = current.with_timezone(&Local);
+        let local = current.with_timezone(tz);
 
         if !schedule.has_month(local.month()) {
             let next_month = if local.month() == 12 {
@@ -282,7 +278,10 @@ pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Opt
                     .with_month(local.month() + 1)
                     .and_then(|d| d.with_day(1))
             };
-            current = match next_month.and_then(|d| d.with_hour(0)).and_then(|d| d.with_minute(0)) {
+            current = match next_month
+                .and_then(|d| d.with_hour(0))
+                .and_then(|d| d.with_minute(0))
+            {
                 Some(t) => t.with_timezone(&Utc),
                 None => current + Duration::minutes(1),
             };
@@ -313,6 +312,29 @@ pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Opt
     }
 
     None
+}
+
+/// Compute the next fire time strictly after `from`, evaluating the cron
+/// expression in the system's local timezone.
+///
+/// This matches user expectations: cron "0 9 * * *" fires at 9:00 local time,
+/// consistent with how `ActiveWindow::is_active_at()` interprets hours.
+pub fn next_fire_time_local(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
+    next_fire_time_in_zone(schedule, from, &Local)
+}
+
+/// Compute the next fire time strictly after `from`, evaluating the cron
+/// expression in the supplied IANA timezone.
+///
+/// Use this when the trigger's `config` has an explicit `timezone` field
+/// (e.g. `"America/New_York"`). Falls back to `next_fire_time_local` when the
+/// caller has no explicit zone.
+pub fn next_fire_time_in_tz(
+    schedule: &CronSchedule,
+    from: DateTime<Utc>,
+    tz: Tz,
+) -> Option<DateTime<Utc>> {
+    next_fire_time_in_zone(schedule, from, &tz)
 }
 
 #[cfg(test)]
@@ -484,6 +506,50 @@ mod tests {
         // 2026-01-20 is Tuesday
         let tue = Utc.with_ymd_and_hms(2026, 1, 20, 9, 0, 0).unwrap();
         assert!(!matches(&s, &tue));
+    }
+
+    // -- IANA timezone awareness ------------------------------------------------
+
+    #[test]
+    fn test_next_fire_in_tz_handoff_case_edt() {
+        // Repro from C5-handoff-2026-04-26: cron "0 7 * * *" + America/New_York
+        // on 2026-04-26 should fire at 11:00 UTC (07:00 EDT, UTC-4).
+        let s = parse_cron("0 7 * * *").unwrap();
+        let tz: Tz = "America/New_York".parse().unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 4, 26, 22, 0, 0).unwrap();
+        let next = next_fire_time_in_tz(&s, from, tz).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 4, 27, 11, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn test_next_fire_in_tz_winter_est() {
+        // Same cron, winter (EST, UTC-5): 07:00 EST = 12:00 UTC.
+        let s = parse_cron("0 7 * * *").unwrap();
+        let tz: Tz = "America/New_York".parse().unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 1, 14, 22, 0, 0).unwrap();
+        let next = next_fire_time_in_tz(&s, from, tz).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 1, 15, 12, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn test_next_fire_in_tz_utc_is_identity() {
+        // When tz is UTC, behaviour matches the plain UTC matcher.
+        let s = parse_cron("30 14 * * *").unwrap();
+        let tz: Tz = "UTC".parse().unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 6, 1, 10, 0, 0).unwrap();
+        let next = next_fire_time_in_tz(&s, from, tz).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 6, 1, 14, 30, 0).unwrap());
+    }
+
+    #[test]
+    fn test_next_fire_in_tz_crosses_utc_day_boundary() {
+        // Asia/Tokyo (UTC+9): 09:00 JST is 00:00 UTC the same day. From the
+        // previous day at 23:00 UTC, next fire is 00:00 UTC the next day.
+        let s = parse_cron("0 9 * * *").unwrap();
+        let tz: Tz = "Asia/Tokyo".parse().unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 5, 9, 23, 0, 0).unwrap();
+        let next = next_fire_time_in_tz(&s, from, tz).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 5, 10, 0, 0, 0).unwrap());
     }
 
     #[test]

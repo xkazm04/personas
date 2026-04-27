@@ -223,10 +223,23 @@ pub async fn validate_trigger(
             if let Some(cron_expr) = config.get("cron").or(config.get("cron_expression")).and_then(|v| v.as_str()) {
                 match crate::engine::cron::parse_cron(cron_expr) {
                     Ok(schedule) => {
-                        let next_msg = crate::engine::cron::next_fire_time_local(&schedule, chrono::Utc::now())
-                            .map(|t| {
-                                let local = t.with_timezone(&chrono::Local);
-                                format!("Valid -- next fire: {}", local.format("%Y-%m-%d %H:%M"))
+                        let tz_str = config.get("timezone").and_then(|v| v.as_str());
+                        let tz = tz_str.and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+                        let next = match tz {
+                            Some(t) => crate::engine::cron::next_fire_time_in_tz(&schedule, chrono::Utc::now(), t),
+                            None => crate::engine::cron::next_fire_time_local(&schedule, chrono::Utc::now()),
+                        };
+                        let next_msg = next
+                            .map(|t| match tz {
+                                Some(zone) => format!(
+                                    "Valid -- next fire: {} ({})",
+                                    t.with_timezone(&zone).format("%Y-%m-%d %H:%M"),
+                                    zone.name()
+                                ),
+                                None => format!(
+                                    "Valid -- next fire: {}",
+                                    t.with_timezone(&chrono::Local).format("%Y-%m-%d %H:%M")
+                                ),
                             })
                             .unwrap_or_else(|| "Valid syntax (no upcoming fire time)".into());
                         checks.push(TriggerValidationCheck {
@@ -678,11 +691,16 @@ pub struct CronPreview {
 }
 
 /// Parse a cron expression and return a human-readable description + next N fire times.
+///
+/// `timezone` is an optional IANA name (e.g. `"America/New_York"`). When set,
+/// the cron expression is evaluated in that zone; otherwise the system local
+/// zone is used.
 #[tauri::command]
 pub fn preview_cron_schedule(
     state: State<'_, Arc<AppState>>,
     cron_expression: String,
     count: Option<usize>,
+    timezone: Option<String>,
 ) -> Result<CronPreview, AppError> {
     require_auth_sync(&state)?;
     let count = count.unwrap_or(5).min(10);
@@ -699,14 +717,20 @@ pub fn preview_cron_schedule(
         }
     };
 
-    // Compute next N fire times (cron evaluated in local timezone)
+    let tz = timezone.as_deref().and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+
+    // Compute next N fire times (in the supplied IANA tz, else system local).
     let mut runs = Vec::with_capacity(count);
     let mut from = chrono::Utc::now();
     for _ in 0..count {
-        match crate::engine::cron::next_fire_time_local(&schedule, from) {
-            Some(next) => {
-                runs.push(next.to_rfc3339());
-                from = next;
+        let next = match tz {
+            Some(zone) => crate::engine::cron::next_fire_time_in_tz(&schedule, from, zone),
+            None => crate::engine::cron::next_fire_time_local(&schedule, from),
+        };
+        match next {
+            Some(t) => {
+                runs.push(t.to_rfc3339());
+                from = t;
             }
             None => break,
         }

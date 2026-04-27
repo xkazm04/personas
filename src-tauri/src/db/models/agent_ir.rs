@@ -368,17 +368,40 @@ pub struct AgentIrUseCaseEvent {
 // ---- Accessor helpers ----
 
 impl AgentIr {
-    /// Notification channels from `messages.channels` or top-level `notification_channels`.
+    /// Notification channels from any of three IR shapes the build pipeline
+    /// emits. Resolved in priority order:
+    ///
+    /// 1. Legacy v1/v2 — `{ messages: { channels: [...] } }` (object with
+    ///    `channels` sub-array).
+    /// 2. v3.1 build prompt — `suggested_notification_channels: [...]`
+    ///    deserialised straight into `messages` via the field alias as a
+    ///    bare array (no `.channels` wrapper).
+    /// 3. Top-level — `{ notification_channels: [...] }`.
+    ///
+    /// Without case 2, `prepare_notification_channels` silently dropped
+    /// every persona whose IR used the v3.1 shape — observed in Phase C
+    /// where a titlebar-only persona promoted with NULL
+    /// `personas.notification_channels` despite the LLM emitting the
+    /// channel correctly.
     pub fn notification_channel_array(&self) -> Option<&serde_json::Value> {
-        self.messages
+        // Case 1: messages is an object with a `channels` array.
+        if let Some(arr) = self
+            .messages
             .as_ref()
             .and_then(|v| v.get("channels"))
             .filter(|v| v.is_array())
-            .or_else(|| {
-                self.notification_channels
-                    .as_ref()
-                    .filter(|v| v.is_array())
-            })
+        {
+            return Some(arr);
+        }
+        // Case 2: messages itself is an array (v3.1 alias from
+        // `suggested_notification_channels`).
+        if let Some(arr) = self.messages.as_ref().filter(|v| v.is_array()) {
+            return Some(arr);
+        }
+        // Case 3: top-level notification_channels.
+        self.notification_channels
+            .as_ref()
+            .filter(|v| v.is_array())
     }
 
     /// Derive connectors from `service_flow` when `required_connectors` is empty.
@@ -522,6 +545,69 @@ mod tests {
             Some("uc_gem"),
             "use_case_id survives round-trip"
         );
+    }
+
+    // -- notification_channel_array shape coverage -------------------------
+
+    #[test]
+    fn notification_channels_v1v2_messages_dot_channels() {
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "messages": {
+                "channels": [{"channel": "email", "target": "ops@x", "format": "html"}]
+            }
+        }))
+        .unwrap();
+        let arr = ir.notification_channel_array().expect("legacy shape resolves");
+        assert!(arr.is_array());
+        assert_eq!(arr.as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn notification_channels_v3_1_suggested_alias_array() {
+        // v3.1 build prompt — `suggested_notification_channels` aliases into
+        // `messages` as a top-level array. This is the case Phase C found
+        // dropped silently before the fix.
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "suggested_notification_channels": [
+                {"channel": "built-in", "target": "titlebar", "format": "notification"}
+            ]
+        }))
+        .unwrap();
+        let arr = ir.notification_channel_array().expect("v3.1 alias array resolves");
+        assert!(arr.is_array());
+        assert_eq!(arr.as_array().unwrap()[0]["target"], "titlebar");
+    }
+
+    #[test]
+    fn notification_channels_top_level_field() {
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "notification_channels": [
+                {"channel": "slack", "target": "#alerts"}
+            ]
+        }))
+        .unwrap();
+        let arr = ir.notification_channel_array().expect("top-level resolves");
+        assert!(arr.is_array());
+        assert_eq!(arr.as_array().unwrap()[0]["channel"], "slack");
+    }
+
+    #[test]
+    fn notification_channels_priority_order() {
+        // When multiple shapes are present, messages.channels (case 1) wins
+        // over messages-as-array (case 2) which wins over notification_channels.
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({
+            "messages": {"channels": [{"channel": "first"}]},
+            "notification_channels": [{"channel": "second"}]
+        }))
+        .unwrap();
+        let arr = ir.notification_channel_array().unwrap();
+        assert_eq!(arr.as_array().unwrap()[0]["channel"], "first");
+    }
+
+    #[test]
+    fn notification_channels_returns_none_when_absent() {
+        let ir: AgentIr = serde_json::from_value(serde_json::json!({})).unwrap();
+        assert!(ir.notification_channel_array().is_none());
     }
 
     /// C2 — `enabled: false` is the explicit disable marker; `None` (missing)

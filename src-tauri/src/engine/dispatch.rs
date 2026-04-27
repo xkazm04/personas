@@ -574,31 +574,49 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         "[REVIEW] Created manual review: {} ({})",
                         title, r.id
                     ));
-                    // Phase C5b — trust_llm: auto-resolve immediately so the
-                    // review is auditable but never blocks a human queue. We
-                    // also skip the OS notification for trust_llm since there
-                    // is nothing for the user to act on.
+                    // Auto-resolve paths:
+                    //   - TrustLlm: user opted to trust the LLM end-to-end.
+                    //   - AutoTriage: capability declares `review_policy.mode
+                    //     = "auto_triage"`; agent is expected to apply its
+                    //     decision_principles before emitting manual_review,
+                    //     so the runtime stores + auto-resolves.
+                    // Both store the row (auditable) but skip the human queue
+                    // and notifications. They differ only in audit tag and
+                    // resolution note so dashboards can distinguish them.
                     let trust_llm = matches!(review_policy, testable::ReviewPolicy::TrustLlm);
-                    if trust_llm {
+                    let auto_triage = matches!(review_policy, testable::ReviewPolicy::AutoTriage);
+                    let auto_resolved = trust_llm || auto_triage;
+                    if auto_resolved {
+                        let (note, audit_tag) = if trust_llm {
+                            (
+                                "auto-approved by trust_llm policy".to_string(),
+                                "review.trust_llm",
+                            )
+                        } else {
+                            (
+                                "auto-triaged by capability review_policy.mode=auto_triage".to_string(),
+                                "review.auto_triage",
+                            )
+                        };
                         if let Err(e) = review_repo::update_status(
                             ctx.pool,
                             &r.id,
                             crate::db::models::ManualReviewStatus::Resolved,
-                            Some("auto-approved by trust_llm policy".to_string()),
+                            Some(note.clone()),
                         ) {
                             ctx.logger.log(&format!(
-                                "[POLICY] trust_llm auto-resolve failed for review {}: {e}",
+                                "[POLICY] {audit_tag} auto-resolve failed for review {}: {e}",
                                 r.id
                             ));
                         } else {
-                            let reason = format!("trust_llm policy — review {} auto-resolved", r.id);
+                            let reason = format!("{audit_tag} — review {} auto-resolved", r.id);
                             ctx.logger.log(&format!("[POLICY] {reason}"));
-                            audit_policy_event(ctx, "review.trust_llm", "auto_resolved", Some(title), Some(&reason));
+                            audit_policy_event(ctx, audit_tag, "auto_resolved", Some(title), Some(&reason));
                         }
                     }
                     if ctx.is_simulation {
                         ctx.logger.log("[SIM] Manual-review notification skipped (simulation)");
-                    } else if trust_llm {
+                    } else if auto_resolved {
                         // No notification for auto-resolved reviews — nothing to act on.
                     } else {
                         let channels = ctx.resolve_notification_channels();
@@ -687,7 +705,9 @@ pub(crate) mod testable {
     use crate::db::repos::core::personas as persona_repo;
     use crate::db::DbPool;
 
-    /// Phase C5b — three-state review policy, mirrored on the frontend.
+    /// Review policy resolved from `generation_settings.reviews` (explicit
+    /// runtime override) or from the per-capability `review_policy.mode` IR
+    /// field. Mirrored on the frontend.
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
     pub enum ReviewPolicy {
         /// Default: queue manual reviews for human resolution.
@@ -698,6 +718,13 @@ pub(crate) mod testable {
         /// (status='resolved', notes='auto-approved by trust_llm policy')
         /// so it never blocks a human queue.
         TrustLlm,
+        /// Auto-triage: the capability's `review_policy.mode = "auto_triage"`.
+        /// The agent is expected to apply its `decision_principles` itself
+        /// before emitting `manual_review`. Runtime stores the row and
+        /// auto-resolves it (so it remains auditable) and emits a distinct
+        /// `review.auto_triage` policy_event so dashboards can differentiate
+        /// LLM-judged vs trusted vs human-queued reviews.
+        AutoTriage,
     }
 
     /// Phase C5b — boolean policy mirrored on the frontend ('on' / 'off').
@@ -755,6 +782,7 @@ pub(crate) mod testable {
             policy.reviews = match s.to_ascii_lowercase().as_str() {
                 "off" => ReviewPolicy::Off,
                 "trust_llm" | "trustllm" | "trust-llm" => ReviewPolicy::TrustLlm,
+                "auto_triage" | "autotriage" | "auto-triage" => ReviewPolicy::AutoTriage,
                 _ => ReviewPolicy::On,
             };
         }
@@ -778,6 +806,16 @@ pub(crate) mod testable {
     /// Pull `generation_settings` for a capability from a design_context
     /// JSON blob. Returns the permissive default when the capability lacks
     /// the field. Pure — no DB access.
+    ///
+    /// Precedence for the review policy:
+    ///   1. `generation_settings.reviews` (explicit runtime override).
+    ///   2. `review_policy.mode` (build-time IR; emitted by the build LLM
+    ///      per session_prompt rule 21). Mapping:
+    ///      - `"never"`              → `ReviewPolicy::Off`
+    ///      - `"auto_triage"`        → `ReviewPolicy::AutoTriage`
+    ///      - `"on_low_confidence"`  → `ReviewPolicy::On`
+    ///      - `"always"` / other     → `ReviewPolicy::On`
+    ///   3. Default `ReviewPolicy::On`.
     pub fn pick_generation_policy(
         design_context_json: &str,
         use_case_id: &str,
@@ -792,10 +830,34 @@ pub(crate) mod testable {
         else {
             return GenerationPolicy::permissive();
         };
-        match uc.get("generation_settings") {
+
+        let mut policy = match uc.get("generation_settings") {
             Some(s) if !s.is_null() => parse_generation_settings(s),
             _ => GenerationPolicy::permissive(),
+        };
+
+        // If `reviews` was not set explicitly via generation_settings, fall
+        // back to the build-time IR field `review_policy.mode`. This is what
+        // wires `mode: "auto_triage"` into runtime behaviour without forcing
+        // the user to also flip a `generation_settings` toggle.
+        let reviews_explicit = uc
+            .get("generation_settings")
+            .and_then(|s| s.get("reviews"))
+            .is_some();
+        if !reviews_explicit {
+            if let Some(mode) = uc
+                .get("review_policy")
+                .and_then(|v| v.get("mode"))
+                .and_then(|v| v.as_str())
+            {
+                policy.reviews = match mode.to_ascii_lowercase().as_str() {
+                    "never" => ReviewPolicy::Off,
+                    "auto_triage" | "autotriage" | "auto-triage" => ReviewPolicy::AutoTriage,
+                    _ => ReviewPolicy::On,
+                };
+            }
         }
+        policy
     }
 
     /// DB-touching variant: resolves the effective policy by reading the
@@ -1050,6 +1112,73 @@ mod tests {
         let p2 = testable::pick_generation_policy(&dc, "uc-2");
         assert!(matches!(p2.memories, testable::BoolPolicy::On));
         assert!(matches!(p2.reviews, testable::ReviewPolicy::TrustLlm));
+    }
+
+    #[test]
+    fn parse_generation_settings_recognises_auto_triage() {
+        // Variant + spelling tolerance for explicit runtime override.
+        for kw in ["auto_triage", "autotriage", "auto-triage", "AUTO_TRIAGE"] {
+            let v = serde_json::json!({"reviews": kw});
+            let p = testable::parse_generation_settings(&v);
+            assert!(
+                matches!(p.reviews, testable::ReviewPolicy::AutoTriage),
+                "keyword {kw} should resolve to AutoTriage"
+            );
+        }
+    }
+
+    #[test]
+    fn pick_generation_policy_falls_back_to_review_policy_mode_auto_triage() {
+        // No generation_settings — runtime should look at review_policy.mode.
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "uc-auto", "review_policy": { "mode": "auto_triage" } }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-auto");
+        assert!(matches!(p.reviews, testable::ReviewPolicy::AutoTriage));
+    }
+
+    #[test]
+    fn pick_generation_policy_falls_back_to_review_policy_mode_never() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "uc-never", "review_policy": { "mode": "never" } }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-never");
+        assert!(matches!(p.reviews, testable::ReviewPolicy::Off));
+    }
+
+    #[test]
+    fn pick_generation_policy_explicit_settings_wins_over_review_policy_mode() {
+        // generation_settings.reviews="off" should win even though review_policy.mode="auto_triage"
+        let dc = serde_json::json!({
+            "use_cases": [
+                {
+                    "id": "uc-mixed",
+                    "generation_settings": { "reviews": "off" },
+                    "review_policy": { "mode": "auto_triage" }
+                }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-mixed");
+        assert!(matches!(p.reviews, testable::ReviewPolicy::Off));
+    }
+
+    #[test]
+    fn pick_generation_policy_review_policy_always_maps_to_on() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "uc-always", "review_policy": { "mode": "always" } }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-always");
+        assert!(matches!(p.reviews, testable::ReviewPolicy::On));
     }
 
     #[test]
