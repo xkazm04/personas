@@ -138,6 +138,37 @@ function findProcessKey(
   return null;
 }
 
+/**
+ * Like {@link findProcessKey} but refuses the prefix-fallback when it would
+ * be ambiguous. Used by `processEnded` because reaping the wrong row corrupts
+ * activity-dock state irrecoverably (real completed run vanishes, the still-
+ * running row gets marked completed then purged). Callers without a runId
+ * may only end a domain when at most one `domain:*` row exists; otherwise
+ * we warn and refuse so the caller is forced to supply the runId.
+ */
+function findUniqueProcessKey(
+  activeProcesses: Record<string, ActiveProcess>,
+  domain: string,
+  runId?: string,
+): string | null {
+  const exact = runId ? processKey(domain, runId) : domain;
+  if (exact in activeProcesses) return exact;
+  if (!runId) {
+    const matches = Object.keys(activeProcesses).filter((k) => k.startsWith(`${domain}:`));
+    if (matches.length === 1) return matches[0]!;
+    if (matches.length > 1) {
+      // Ambiguous: refusing rather than reaping an arbitrary row.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `[processActivity] processEnded("${domain}") refused — ${matches.length} active runs ` +
+          `match domain "${domain}". Caller must supply runId. Active keys: ${matches.join(", ")}`,
+      );
+      return null;
+    }
+  }
+  return null;
+}
+
 export const createProcessActivitySlice: StateCreator<
   ProcessActivitySlice,
   [],
@@ -168,11 +199,12 @@ export const createProcessActivitySlice: StateCreator<
 
   processEnded: (domain, action, runId) => {
     set((state) => {
-      // Mirror the prefix-match fallback in enrichProcess / updateProcessStatus
-      // so `processEnded("execution")` can still reap a row stored under
-      // `"execution:<id>"`. Without this, async enrichment that added the
-      // runId would leave a "running" row forever after completion.
-      const key = findProcessKey(state.activeProcesses, domain, runId);
+      // Use the *strict* key lookup: when no runId is supplied and multiple
+      // `domain:*` rows are active, refuse rather than reap an arbitrary one.
+      // The prior loose prefix-fallback could mark a still-running execution
+      // as completed while the actually-finished one stayed `running` forever
+      // — irrecoverable activity-dock corruption.
+      const key = findUniqueProcessKey(state.activeProcesses, domain, runId);
       if (!key) return state;
       const process = state.activeProcesses[key];
       if (!process) return state;
