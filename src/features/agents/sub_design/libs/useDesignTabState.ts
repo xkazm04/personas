@@ -67,17 +67,29 @@ export function useDesignTabState() {
     if (!autoStartDesignInstruction || !selectedPersona || phase !== 'idle') return;
     const instructionText = autoStartDesignInstruction.trim();
     if (!instructionText) { setAutoStartDesignInstruction(null); return; }
+    // Snapshot the persona id at effect start so every async hop uses the
+    // same target. The cancelled guard previously only fired before
+    // setConversationId — compile() then ran unconditionally, kicking off a
+    // multi-minute LLM compilation against whichever persona happened to be
+    // captured in the closure even if the user navigated away.
+    const startedForPersonaId = selectedPersona.id;
     let cancelled = false;
     const startAutoDesign = async () => {
       setInstruction(instructionText);
       setAutoStartDesignInstruction(null);
       const hasContext = designContext.files.length > 0 || designContext.references.length > 0;
-      if (hasContext) await mutateDesignFiles(selectedPersona.id, () => designContext);
+      if (hasContext) await mutateDesignFiles(startedForPersonaId, () => designContext);
+      if (cancelled) return;
       const conv = await startConversation(instructionText);
       if (cancelled) return;
       const convId = conv?.id ?? null;
       setConversationId(convId);
-      compile(selectedPersona.id, instructionText, convId);
+      // Re-check cancelled before the expensive compile dispatch — without
+      // this, a persona switch between startConversation resolving and the
+      // synchronous compile call still fires the LLM run for the wrong
+      // persona (cost burned, result lands in the original persona's history).
+      if (cancelled) return;
+      compile(startedForPersonaId, instructionText, convId);
     };
     void startAutoDesign();
     return () => { cancelled = true; };
