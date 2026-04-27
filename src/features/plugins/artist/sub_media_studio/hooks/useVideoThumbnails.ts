@@ -38,7 +38,13 @@ async function seekTo(video: HTMLVideoElement, t: number): Promise<void> {
   });
 }
 
-async function extractFrames(filePath: string): Promise<string[]> {
+function teardownVideo(video: HTMLVideoElement): void {
+  // Detach src so the element + decoded buffers can be GC'd. Wrapped because
+  // some browsers throw on .load() when src has been removed; we don't care.
+  try { video.pause(); video.removeAttribute('src'); video.load(); } catch { /* ignore */ }
+}
+
+async function extractFrames(filePath: string, signal?: AbortSignal): Promise<string[]> {
   const src = convertFileSrc(filePath);
 
   const video = document.createElement('video');
@@ -48,41 +54,59 @@ async function extractFrames(filePath: string): Promise<string[]> {
   video.playsInline = true;
   video.src = src;
 
-  await new Promise<void>((resolve, reject) => {
-    const onMeta = () => { video.removeEventListener('loadedmetadata', onMeta); resolve(); };
-    const onErr = () => { video.removeEventListener('error', onErr); reject(new Error('metadata load failed')); };
-    video.addEventListener('loadedmetadata', onMeta, { once: true });
-    video.addEventListener('error', onErr, { once: true });
-  });
+  // Wrap the entire decode pipeline in try/finally so a metadata load failure,
+  // codec error, or cancellation always tears down the HTMLVideoElement —
+  // previously the cleanup at the end of the function only ran on the success
+  // path, leaving a detached video element with src= still set holding the
+  // file open and decoded buffers in memory.
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const onMeta = () => { cleanup(); resolve(); };
+      const onErr = () => { cleanup(); reject(new Error('metadata load failed')); };
+      const onAbort = () => { cleanup(); reject(new DOMException('Aborted', 'AbortError')); };
+      const cleanup = () => {
+        video.removeEventListener('loadedmetadata', onMeta);
+        video.removeEventListener('error', onErr);
+        signal?.removeEventListener('abort', onAbort);
+      };
+      video.addEventListener('loadedmetadata', onMeta, { once: true });
+      video.addEventListener('error', onErr, { once: true });
+      if (signal) {
+        if (signal.aborted) { cleanup(); reject(new DOMException('Aborted', 'AbortError')); return; }
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
+    });
 
-  const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 1;
-  const aspect = video.videoHeight > 0 && video.videoWidth > 0
-    ? video.videoHeight / video.videoWidth
-    : 9 / 16;
+    const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 1;
+    const aspect = video.videoHeight > 0 && video.videoWidth > 0
+      ? video.videoHeight / video.videoWidth
+      : 9 / 16;
 
-  const canvas = document.createElement('canvas');
-  canvas.width = THUMB_WIDTH;
-  canvas.height = Math.round(THUMB_WIDTH * aspect);
-  const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('canvas 2d unavailable');
+    const canvas = document.createElement('canvas');
+    canvas.width = THUMB_WIDTH;
+    canvas.height = Math.round(THUMB_WIDTH * aspect);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('canvas 2d unavailable');
 
-  const frames: string[] = [];
-  // Sample at N+1 evenly spaced points from 0.0..(duration-epsilon),
-  // but skip t=0 since many codecs render a black/near-black first frame.
-  for (let i = 0; i < FRAMES_PER_CLIP; i++) {
-    const t = ((i + 0.5) / FRAMES_PER_CLIP) * duration;
-    try {
-      await seekTo(video, Math.min(duration - 0.05, t));
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      frames.push(canvas.toDataURL('image/jpeg', 0.6));
-    } catch {
-      // Skip this sample; later ones may still work.
+    const frames: string[] = [];
+    // Sample at N+1 evenly spaced points from 0.0..(duration-epsilon),
+    // but skip t=0 since many codecs render a black/near-black first frame.
+    for (let i = 0; i < FRAMES_PER_CLIP; i++) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      const t = ((i + 0.5) / FRAMES_PER_CLIP) * duration;
+      try {
+        await seekTo(video, Math.min(duration - 0.05, t));
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        frames.push(canvas.toDataURL('image/jpeg', 0.6));
+      } catch {
+        // Skip this sample; later ones may still work.
+      }
     }
-  }
 
-  // Best-effort cleanup — detach src so the element can be GC'd
-  try { video.pause(); video.removeAttribute('src'); video.load(); } catch { /* ignore */ }
-  return frames;
+    return frames;
+  } finally {
+    teardownVideo(video);
+  }
 }
 
 /**
@@ -107,6 +131,13 @@ export function useVideoThumbnails(filePath: string | null): string[] | null {
     let cancelled = false;
     let promise = inflight.get(filePath);
     if (!promise) {
+      // Note: extractFrames accepts an AbortSignal but we don't pass one here.
+      // The inflight Map is module-scoped and shared across consumers — if
+      // consumer A starts the decode and B mounts during it, B reuses A's
+      // promise. If A unmounts and aborts, B would be denied the result. The
+      // signal hook stays in the API for a future ref-counted version. The
+      // try/finally inside extractFrames already guarantees HTMLVideoElement
+      // teardown when the decode completes naturally (success or error path).
       promise = extractFrames(filePath).then((p) => {
         putInCache(filePath, p);
         inflight.delete(filePath);
