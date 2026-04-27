@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useParsedDesignContext } from '@/stores/selectors/personaSelectors';
 import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { applyDesignContextMutation } from '@/hooks/design/core/useDesignContextMutator';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 
 /**
@@ -38,7 +39,6 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
  */
 export function TwinBindingCard() {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
-  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const designContext = useParsedDesignContext();
 
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
@@ -67,15 +67,17 @@ export function TwinBindingCard() {
     !twinProfiles.some((tw) => tw.id === currentTwinId);
 
   const handleChange = async (value: string) => {
-    // Merge twinId into the existing design_context envelope. Empty string
-    // means "inherit active twin" — store it as undefined so the field
-    // drops out of the JSON entirely (smaller payload, easier diff).
-    const next = parseDesignContext(selectedPersona.design_context);
-    if (value) next.twinId = value;
-    else delete next.twinId;
-    await applyPersonaOp(selectedPersona.id, {
-      kind: 'UpdateDesignContext',
-      design_context: serializeDesignContext(next),
+    // Merge twinId into the existing design_context envelope via the serialized
+    // mutation queue. Without this queue, a concurrent in-flight design-files
+    // mutation (or a useCases edit) would be overwritten because UpdateDesignContext
+    // is a whole-document write — last-writer-wins on the JSON blob. The queue
+    // ensures this mutator reads the LATEST design_context (after any prior
+    // queued writes have landed) before merging twinId.
+    await applyDesignContextMutation(selectedPersona.id, (current) => {
+      const next = parseDesignContext(current);
+      if (value) next.twinId = value;
+      else delete next.twinId;
+      return serializeDesignContext(next);
     });
   };
 
