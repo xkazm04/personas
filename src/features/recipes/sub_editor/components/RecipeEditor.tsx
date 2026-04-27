@@ -106,8 +106,19 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         });
       }
       onSaved();
-    } catch {
-      useToastStore.getState().addToast('Failed to save recipe', 'error');
+    } catch (err) {
+      // Surface the real error message instead of a generic toast — and offer
+      // a clipboard copy so the user can rescue 5+ minutes of edits if the
+      // recipe was deleted underneath them (updateRecipe against a non-existent
+      // ID silently 404s on some backends, throws on others; either way the
+      // user previously saw 'Failed to save recipe' with no recovery path).
+      const msg = err instanceof Error ? err.message : String(err);
+      const draftJson = JSON.stringify(payload, null, 2);
+      try { await navigator.clipboard.writeText(draftJson); } catch { /* ignore */ }
+      useToastStore.getState().addToast(
+        `Failed to save recipe: ${msg}. Draft copied to clipboard.`,
+        'error',
+      );
     } finally {
       setSaving(false);
     }
