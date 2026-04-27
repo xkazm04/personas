@@ -62,10 +62,46 @@ export function useStatusPageData() {
     }
   }, [fetchExecutionDashboard]);
 
-  // Initial load
+  // Initial load + 60s auto-refresh while the tab is visible. Without this
+  // the status page is a permanent snapshot from mount time — its entire
+  // purpose is freshness, so a stale "all green" view during a real outage
+  // is the worst possible failure mode. Refresh pauses while the tab is
+  // hidden (saves IPC) and resumes immediately on visibility return.
   useEffect(() => {
     void loadData();
-  }, []);
+    const REFRESH_INTERVAL_MS = 60_000;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (intervalId !== null) return;
+      intervalId = setInterval(() => { void loadData(); }, REFRESH_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    if (typeof document === 'undefined' || !document.hidden) start();
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        // Refresh immediately on becoming visible — the user just opened the
+        // page, give them current data instead of waiting up to 60s.
+        void loadData();
+        start();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loadData]);
 
   const entries = useMemo((): CompositeHealthEntry[] => {
     const personas = storeBus.get<Persona[]>(AccessorKey.AGENTS_PERSONAS) ?? [];
