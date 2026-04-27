@@ -38,6 +38,7 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
 }) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
   const executionSummary = useExecutionSummary(traceEntries, traceLive);
@@ -47,11 +48,28 @@ function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, execu
     return meaningful.slice(-6).join('\n');
   }, [executionOutput]);
 
+  // Clear any pending copied-flag timer on unmount so the closure (which holds
+  // a reference to executionOutput) can be GC'd, and so a quick double-click
+  // can't race two timers (the first would set copied=false while the second
+  // is still pending its own 2s window — UI flickers).
+  useEffect(() => {
+    return () => {
+      if (copiedTimerRef.current !== null) {
+        clearTimeout(copiedTimerRef.current);
+        copiedTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleCopy = useCallback(() => {
     const full = executionOutput.join('\n');
     navigator.clipboard.writeText(full).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copiedTimerRef.current !== null) clearTimeout(copiedTimerRef.current);
+      copiedTimerRef.current = setTimeout(() => {
+        setCopied(false);
+        copiedTimerRef.current = null;
+      }, 2000);
     });
   }, [executionOutput]);
 
