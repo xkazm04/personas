@@ -32,6 +32,15 @@ export function useMediaExport(composition: Composition) {
 
   const startExport = useCallback(
     async (outputPath: string) => {
+      // Tear down any listeners from a prior in-flight export before starting
+      // a new one. Without this, re-entrant startExport (e.g. user clicks
+      // Export twice or restarts after an error) overwrote unlistenersRef
+      // with the new subscription set, leaving the prior set unreferenced
+      // and forever fed events for a job nobody is watching.
+      const previousUnsubs = unlistenersRef.current;
+      unlistenersRef.current = [];
+      previousUnsubs.forEach((u) => u());
+
       const jobId = crypto.randomUUID();
       setExportState({
         status: 'exporting',
