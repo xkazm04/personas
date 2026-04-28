@@ -29,6 +29,22 @@ export interface PersonaHealthSignal {
 
   // Component signals
   successRate: number;         // 0-100%
+  /**
+   * Where `successRate` came from for this persona:
+   *  - `'measured'` — computed from this persona's actual per-day execution
+   *    data (today the slice has no per-persona-per-day failure data so this
+   *    case never arises; reserved for when it lands)
+   *  - `'proxy'` — fleet-wide `overall_success_rate` substituted because no
+   *    per-persona daily data exists (the current behaviour for active
+   *    personas). Two personas in the same fleet will show identical
+   *    successRate even when one is healthy and one is failing — UI must
+   *    surface this caveat (e.g. a "fleet avg" badge) rather than display
+   *    the number as if it were per-persona.
+   *  - `'unknown'` — no activity (or fleet rate unavailable). Default 100
+   *    keeps `computeHeartbeatScore` numerically stable but consumers
+   *    showing health grades should distinguish unknown from healthy.
+   */
+  successRateSource: 'measured' | 'proxy' | 'unknown';
   healingFrequency: number;    // issues per day (trailing 7d)
   rollbackCount: number;       // circuit-breaker issues count
   budgetRatio: number;         // 0..N (spend / max_budget)
@@ -320,10 +336,22 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
             }
           }
 
-          // Success rate (use top persona's data or global)
-          const successRate = totalExecs > 0
-            ? (dashboard?.overall_success_rate ?? 100)
-            : 100;
+          // Success rate: today there is no per-persona-per-day failure data
+          // available, so for active personas we substitute the fleet-wide
+          // `overall_success_rate` and tag the source as 'proxy'. Inactive
+          // personas (or runs where the dashboard is missing) are tagged
+          // 'unknown' with a 100 default kept for `computeHeartbeatScore`
+          // numerical stability — UI consumers reading this signal SHOULD
+          // distinguish unknown from healthy via `successRateSource`.
+          let successRate: number;
+          let successRateSource: 'proxy' | 'measured' | 'unknown';
+          if (totalExecs > 0 && dashboard?.overall_success_rate !== undefined) {
+            successRate = dashboard.overall_success_rate;
+            successRateSource = 'proxy';
+          } else {
+            successRate = 100;
+            successRateSource = 'unknown';
+          }
 
           // Healing frequency
           const recentIssues = issues.filter(i => {
@@ -372,6 +400,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
             grade: computeGrade(heartbeatScore),
             heartbeatScore,
             successRate,
+            successRateSource,
             healingFrequency,
             rollbackCount,
             budgetRatio,
