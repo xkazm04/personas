@@ -29,6 +29,26 @@ export function useApplyHealthFix() {
           }
           case 'AUTO_MATCH_CREDENTIALS': {
             const { credentials } = action.payload as { credentials: Array<{ id: string; service_type: string }> };
+            // Refuse to auto-match when ANY service_type has more than one
+            // credential — silently picking by array order decides "which
+            // identity does this agent act as" by iteration order, which is
+            // a real trust-boundary issue. Force the user to pick instead.
+            const byType = new Map<string, Array<{ id: string; service_type: string }>>();
+            for (const cred of credentials) {
+              const list = byType.get(cred.service_type) ?? [];
+              list.push(cred);
+              byType.set(cred.service_type, list);
+            }
+            const ambiguous: string[] = [];
+            for (const [type, creds] of byType) {
+              if (creds.length > 1 && !updated.credentialLinks?.[type]) ambiguous.push(type);
+            }
+            if (ambiguous.length > 0) {
+              throw new Error(
+                `Auto-match blocked: ${ambiguous.length === 1 ? 'credential service' : 'credential services'} ` +
+                  `${ambiguous.join(', ')} have multiple credentials. Pick the right one manually before applying.`,
+              );
+            }
             const links = { ...updated.credentialLinks };
             for (const cred of credentials) {
               if (!links[cred.service_type]) {
