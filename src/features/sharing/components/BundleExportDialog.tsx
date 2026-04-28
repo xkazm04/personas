@@ -27,8 +27,22 @@ async function scheduleSensitiveClipboardClear(payload: string): Promise<void> {
       if (current === payload) {
         await navigator.clipboard.writeText('');
       }
-    } catch {
-      // intentional: cannot verify, skip wipe
+      // current !== payload: the user already copied something else.
+      // Leave it; trampling a verified-different clipboard is rude.
+    } catch (readErr) {
+      // Clipboard read failed (Tauri/Windows can intermittently deny on
+      // permission/focus reasons). The secret bundle/share-link may still
+      // be sitting in the OS clipboard — and a "skip wipe" branch leaves
+      // it there indefinitely. Choose security over preserving an
+      // unverifiable later copy and force-wipe anyway. The user can
+      // re-copy benign later content easily; an exfiltrated secret
+      // cannot be undone.
+      logger.warn('clipboard verify-before-wipe failed; force-wiping', { reason: readErr });
+      try {
+        await navigator.clipboard.writeText('');
+      } catch (wipeErr) {
+        logger.error('failed to wipe sensitive clipboard payload', { reason: wipeErr });
+      }
     }
   }, SENSITIVE_CLIPBOARD_TTL_MS);
 }
