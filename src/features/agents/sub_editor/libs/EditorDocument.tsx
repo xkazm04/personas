@@ -150,9 +150,19 @@ function createDirtyStore(): DirtyStore {
       for (const [tab] of tabsToSave) {
         const save = saveMap.get(tab);
         if (!save) {
-          savedTabs.push(tab);
-          dirtyMap.set(tab, false);
-          continue;
+          // A dirty tab with no registered save callback CANNOT be persisted.
+          // The previous behaviour silently marked it clean, fabricating an
+          // "all saved" outcome — the user's toast was a lie. Treat this as
+          // a save failure so the tab keeps its dirty flag and the caller's
+          // TabSaveError lists the tab as failed. This is almost always a
+          // programmer bug (tab marked dirty but registered no save), so log
+          // it loudly to surface the missing wiring.
+          logger.error('Dirty tab has no registered save callback', { tab });
+          notify();
+          const failedTabs = tabsToSave
+            .filter(([t]) => !savedTabs.includes(t))
+            .map(([t]) => t);
+          throw new TabSaveError(failedTabs, savedTabs);
         }
         try {
           await save();
