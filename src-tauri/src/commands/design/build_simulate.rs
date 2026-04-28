@@ -192,14 +192,22 @@ pub async fn simulate_build_draft(
 
     let persona_id = session.persona_id.clone();
 
+    // Read persona once, up front. Two reasons:
+    //   1. fallback agent_ir source when session.agent_ir is null;
+    //   2. capture the *current* design_context BEFORE the snapshot
+    //      overwrite below — needed to resolve post-promote UUID-form
+    //      use_case ids back to the LLM-emitted names that live in the
+    //      snapshot. See `resolve_simulation_use_case_id`.
+    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let prior_design_context = persona.design_context.clone();
+
     // Parse agent_ir (session first, fall back to persona.last_design_result)
     let mut agent_ir: AgentIr = if let Some(ref raw) = session.agent_ir {
         serde_json::from_str(raw).map_err(|e| {
             AppError::Validation(format!("Build session agent_ir parse error: {e}"))
         })?
     } else {
-        let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
-        let design_result = persona.last_design_result.ok_or_else(|| {
+        let design_result = persona.last_design_result.clone().ok_or_else(|| {
             AppError::Validation(
                 "Build session has no agent_ir and persona has no design result".to_string(),
             )
@@ -247,12 +255,25 @@ pub async fn simulate_build_draft(
     let snap_value: serde_json::Value = serde_json::from_str(&snapshot).map_err(|e| {
         AppError::Validation(format!("simulation snapshot is not valid JSON: {e}"))
     })?;
+
+    // Caller may pass either:
+    //   (a) the LLM-emitted snake_case id (matches the snapshot directly), OR
+    //   (b) the post-promote UUID id (matches the persona's prior
+    //       design_context's `useCases[].id` — UI fetches via
+    //       `getPersonaDetail` use these).
+    // Normalize (b) → (a) by position before the snapshot lookup.
+    let resolved_use_case_id = resolve_simulation_use_case_id(
+        &use_case_id,
+        &snap_value,
+        prior_design_context.as_deref(),
+    );
+
     let use_case = snap_value
         .get("use_cases")
         .and_then(|v| v.as_array())
         .and_then(|arr| {
             arr.iter().find(|uc| {
-                uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id.as_str())
+                uc.get("id").and_then(|v| v.as_str()) == Some(resolved_use_case_id.as_str())
             })
         })
         .ok_or_else(|| {
@@ -284,12 +305,78 @@ pub async fn simulate_build_draft(
         persona_id,
         /* trigger_id */ None,
         input_data,
-        Some(use_case_id),
+        Some(resolved_use_case_id),
         /* continuation */ None,
         /* idempotency_key */ None,
         /* is_simulation */ true,
     )
     .await
+}
+
+/// Normalize a caller-supplied `use_case_id` into one that matches the
+/// simulation snapshot's `use_cases[].id` set.
+///
+/// Two id forms reach this command:
+/// 1. **LLM-emitted snake_case** (e.g. `uc_generate_invoice`) — matches
+///    the snapshot directly because the snapshot is built from
+///    `session.agent_ir`, which preserves LLM names.
+/// 2. **Post-promote UUID** (e.g. `uc-b98e7b9a-3617-…`) — surfaced by
+///    `getPersonaDetail` after the build promote re-keyed UC ids in
+///    `personas.design_context`. Doesn't match the snapshot, but the
+///    persona's *prior* design_context (captured before the snapshot
+///    overwrite) does carry it. Resolve by array-position to the
+///    snapshot id at the same index.
+///
+/// When neither path resolves, the original `requested` id is returned so
+/// the caller's existing "id not found" error surfaces with the input it
+/// was actually given. Pure: no I/O.
+fn resolve_simulation_use_case_id(
+    requested: &str,
+    snapshot: &serde_json::Value,
+    prior_design_context: Option<&str>,
+) -> String {
+    let Some(snap_arr) = snapshot.get("use_cases").and_then(|v| v.as_array()) else {
+        return requested.to_string();
+    };
+
+    // Path 1 — direct snapshot id match.
+    if snap_arr
+        .iter()
+        .any(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(requested))
+    {
+        return requested.to_string();
+    }
+
+    // Path 2 — UUID lookup against the persona's pre-overwrite design_context.
+    let Some(dc_raw) = prior_design_context else {
+        return requested.to_string();
+    };
+    let Ok(dc_value) = serde_json::from_str::<serde_json::Value>(dc_raw) else {
+        return requested.to_string();
+    };
+    let Some(prior_arr) = crate::engine::design_context::pick_use_cases_array(&dc_value) else {
+        return requested.to_string();
+    };
+    let Some(position) = prior_arr
+        .iter()
+        .position(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(requested))
+    else {
+        return requested.to_string();
+    };
+    let Some(snap_at_position) = snap_arr.get(position) else {
+        return requested.to_string();
+    };
+    let Some(snap_id) = snap_at_position.get("id").and_then(|v| v.as_str()) else {
+        return requested.to_string();
+    };
+
+    tracing::info!(
+        requested_id = %requested,
+        resolved_id = %snap_id,
+        position,
+        "simulate_build_draft: resolved post-promote UUID to LLM-emitted id by position"
+    );
+    snap_id.to_string()
 }
 
 // ---------------------------------------------------------------------------
@@ -449,6 +536,99 @@ mod tests {
         // Without a title we still get a usable id
         assert_eq!(fabricated_id(5, None), "uc_idx_5");
         assert_eq!(fabricated_id(0, Some("")), "uc_idx_0");
+    }
+
+    // ── resolve_simulation_use_case_id ──────────────────────────────────────
+
+    fn snap_with_ids(ids: &[&str]) -> serde_json::Value {
+        serde_json::json!({
+            "use_cases": ids.iter().map(|id| serde_json::json!({"id": id})).collect::<Vec<_>>(),
+            "_simulation_snapshot": true,
+        })
+    }
+
+    fn dc_camelcase_with_ids(ids: &[&str]) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "useCases": ids.iter().map(|id| serde_json::json!({"id": id})).collect::<Vec<_>>(),
+        }))
+        .unwrap()
+    }
+
+    fn dc_snakecase_with_ids(ids: &[&str]) -> String {
+        serde_json::to_string(&serde_json::json!({
+            "use_cases": ids.iter().map(|id| serde_json::json!({"id": id})).collect::<Vec<_>>(),
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn resolver_returns_llm_id_unchanged_when_snapshot_already_matches() {
+        let snap = snap_with_ids(&["uc_generate_invoice", "uc_send_summary"]);
+        // Even with a prior design_context that has UUIDs, an LLM-shape match
+        // short-circuits — no UUID rewrite required.
+        let prior = dc_camelcase_with_ids(&["uc-aaaa", "uc-bbbb"]);
+        let out = resolve_simulation_use_case_id("uc_send_summary", &snap, Some(&prior));
+        assert_eq!(out, "uc_send_summary");
+    }
+
+    #[test]
+    fn resolver_maps_post_promote_uuid_to_llm_id_via_position() {
+        let snap = snap_with_ids(&["uc_generate_invoice", "uc_send_summary"]);
+        let prior = dc_camelcase_with_ids(&[
+            "uc-b98e7b9a-3617-49e1-a587-b5bc6886eb35",
+            "uc-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+        ]);
+        let out = resolve_simulation_use_case_id(
+            "uc-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
+            &snap,
+            Some(&prior),
+        );
+        // Position 1 in prior dc → position 1 in snapshot → uc_send_summary.
+        assert_eq!(out, "uc_send_summary");
+    }
+
+    #[test]
+    fn resolver_handles_snake_case_prior_design_context() {
+        // Prior may have been a previous simulation snapshot (snake_case)
+        // rather than a post-promote design_context (camelCase). Both shapes
+        // should resolve via `pick_use_cases_array`.
+        let snap = snap_with_ids(&["uc_a", "uc_b"]);
+        let prior = dc_snakecase_with_ids(&["foo_id", "bar_id"]);
+        let out = resolve_simulation_use_case_id("bar_id", &snap, Some(&prior));
+        assert_eq!(out, "uc_b");
+    }
+
+    #[test]
+    fn resolver_returns_input_when_no_match_anywhere() {
+        let snap = snap_with_ids(&["uc_a", "uc_b"]);
+        let prior = dc_camelcase_with_ids(&["uc-x", "uc-y"]);
+        // "ghost-id" is in neither — caller's not-found error path takes over.
+        let out = resolve_simulation_use_case_id("ghost-id", &snap, Some(&prior));
+        assert_eq!(out, "ghost-id");
+    }
+
+    #[test]
+    fn resolver_returns_input_when_prior_design_context_is_none() {
+        let snap = snap_with_ids(&["uc_a", "uc_b"]);
+        let out = resolve_simulation_use_case_id("uc-zzzz", &snap, None);
+        assert_eq!(out, "uc-zzzz");
+    }
+
+    #[test]
+    fn resolver_returns_input_when_prior_design_context_is_unparseable() {
+        let snap = snap_with_ids(&["uc_a"]);
+        let out = resolve_simulation_use_case_id("uc-zzzz", &snap, Some("{not json"));
+        assert_eq!(out, "uc-zzzz");
+    }
+
+    #[test]
+    fn resolver_returns_input_when_position_exceeds_snapshot_length() {
+        // Prior had 3 UCs, snapshot only has 2 — caller must have stale ids.
+        let snap = snap_with_ids(&["uc_a", "uc_b"]);
+        let prior = dc_camelcase_with_ids(&["uc-x", "uc-y", "uc-z"]);
+        // "uc-z" lives at prior position 2, which is out of bounds in snap.
+        let out = resolve_simulation_use_case_id("uc-z", &snap, Some(&prior));
+        assert_eq!(out, "uc-z");
     }
 }
 

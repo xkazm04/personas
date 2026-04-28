@@ -133,9 +133,17 @@ fn intent_implies_trigger(intent_lower: &str) -> Gate {
         "as soon as", "reacts to", "react to", "listen for", "listening for",
         "incoming ", "arrives", "when arrives",
     ];
+    // Bare "weekly"/"monthly" are intentionally NOT keywords — in English
+    // they more often modify a content noun ("draft a weekly report",
+    // "monthly recap") than express a schedule. For schedule intents users
+    // can say "every week"/"every month"/"runs weekly"/"weekly at 9am".
+    // "daily " is kept because the dominant phrasing ("daily digest",
+    // "daily report") is genuinely schedule-leaning here.
     const SCHEDULE_KW: &[&str] = &[
-        "every morning", "every day", "every hour", "every week",
-        "daily ", "daily.", "weekly ", "weekly.", "monthly ",
+        "every morning", "every day", "every hour", "every week", "every month",
+        "daily ", "daily.",
+        "runs daily", "runs weekly", "runs monthly",
+        "weekly at", "monthly at",
         "at 9am", "at 8am", "at 7am", "at 6am", "cron",
     ];
     const MANUAL_KW: &[&str] = &[
@@ -437,6 +445,9 @@ mod tests {
             "every morning summarise my inbox",
             "daily digest of news",
             "every week clean up dead branches",
+            "every month reconcile expenses",
+            "runs weekly to refresh the leaderboard",
+            "weekly at 9am post the recap",
             "at 7am send the digest",
             "cron 0 9 * * 1-5",
         ] {
