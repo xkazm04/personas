@@ -141,6 +141,40 @@ export const reviewMemory = (id: string, approved: boolean, reviewerNotes?: stri
 export const listCommunications = (twinId: string, channel?: TwinChannelKind, limit?: number) =>
   invoke<TwinCommunication[]>("twin_list_communications", { twinId, channel, limit });
 
+/** Frontend trust-boundary cap for keyFactsJson. The Rust handler stores this
+ *  blob alongside the communication row; without a cap, an LLM-generated key-
+ *  facts payload could overflow the IPC frame, OOM the SQLite write, or get
+ *  silently truncated by the engine. 64 KB is generous for structured fact
+ *  lists and small enough that misuse fails fast at the wrapper. */
+const TWIN_KEY_FACTS_JSON_MAX_BYTES = 64 * 1024;
+
+function validateKeyFactsJson(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "string") {
+    throw new Error("twin: keyFactsJson must be a JSON string");
+  }
+  // UTF-8 byte-length cap. JS .length undercounts non-BMP characters; the
+  // backend cares about bytes (SQLite TEXT column / IPC frame), so use the
+  // encoder's true byte count.
+  const byteLen = new TextEncoder().encode(value).length;
+  if (byteLen > TWIN_KEY_FACTS_JSON_MAX_BYTES) {
+    throw new Error(
+      `twin: keyFactsJson exceeds ${TWIN_KEY_FACTS_JSON_MAX_BYTES} bytes (got ${byteLen})`,
+    );
+  }
+  // JSON parse roundtrip. We don't validate the shape — that's the backend's
+  // job — but rejecting unparseable JSON here prevents a silent truncate /
+  // store-and-fail-later when the persona tool emits a malformed payload.
+  try {
+    JSON.parse(value);
+  } catch (e) {
+    throw new Error(
+      `twin: keyFactsJson is not valid JSON (${e instanceof Error ? e.message : String(e)})`,
+    );
+  }
+  return value;
+}
+
 export const recordInteraction = (
   twinId: string,
   channel: TwinChannelKind,
@@ -158,7 +192,7 @@ export const recordInteraction = (
     contactHandle,
     content,
     summary,
-    keyFactsJson,
+    keyFactsJson: validateKeyFactsJson(keyFactsJson),
     createMemory,
   });
 

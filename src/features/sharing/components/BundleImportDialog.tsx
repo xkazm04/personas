@@ -23,9 +23,14 @@ interface BundleImportDialogProps {
   onClose: () => void;
   /** Pre-fill with a personas://share deep link URL and auto-start preview. */
   initialShareUrl?: string;
+  /** Bumped by the parent on every share-link arrival. Distinct from the URL
+   *  itself so identical URLs in succession still re-trigger auto-preview;
+   *  React's setState bails on identical values, otherwise. Optional — when
+   *  absent, the legacy URL-equality comparison is used. */
+  shareLinkKey?: number;
 }
 
-export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleImportDialogProps) {
+export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLinkKey }: BundleImportDialogProps) {
   const previewBundleImport = useSystemStore((s) => s.previewBundleImport);
   const previewBundleFromClipboard = useSystemStore((s) => s.previewBundleFromClipboard);
   const previewShareLink = useSystemStore((s) => s.previewShareLink);
@@ -57,6 +62,7 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
   // bundle metadata into a subsequent open.
   const requestTokenRef = useRef(0);
   const autoStartedRef = useRef<string | null>(null);
+  const autoStartedKeyRef = useRef<number | null>(null);
 
   const reset = () => {
     requestTokenRef.current++;
@@ -74,25 +80,32 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl }: BundleI
     setDangerConfirmed(false);
   };
 
-  // Reset on open (and whenever initialShareUrl changes while open) so the
-  // dialog never flashes a previous preview before the new fetch completes.
+  // Reset on open (and whenever initialShareUrl OR the parent's shareLinkKey
+  // changes while open) so the dialog never flashes a previous preview before
+  // the new fetch completes. Re-arrival of the same URL is detected via the
+  // key bump; without it, identical URLs in succession would fail to
+  // re-trigger the auto-preview because React's setState short-circuits on
+  // identical values.
   useEffect(() => {
     if (!isOpen) {
       autoStartedRef.current = null;
+      autoStartedKeyRef.current = null;
       reset();
       return;
     }
-    // Fresh open or new share URL → reset state, then kick off auto-preview.
-    if (autoStartedRef.current !== (initialShareUrl ?? null)) {
+    const urlChanged = autoStartedRef.current !== (initialShareUrl ?? null);
+    const keyChanged = shareLinkKey !== undefined && autoStartedKeyRef.current !== shareLinkKey;
+    if (urlChanged || keyChanged) {
       reset();
       autoStartedRef.current = initialShareUrl ?? null;
+      autoStartedKeyRef.current = shareLinkKey ?? null;
       if (initialShareUrl) {
         setShareLinkInput(initialShareUrl);
         queueMicrotask(() => handleImportShareLink(initialShareUrl));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, initialShareUrl]);
+  }, [isOpen, initialShareUrl, shareLinkKey]);
 
   const handleClose = () => {
     reset();
