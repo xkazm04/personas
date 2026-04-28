@@ -54,9 +54,19 @@ export interface ProcessActivitySlice {
     action: "completed" | "failed" | "cancelled",
     runId?: string,
   ) => void;
+  /**
+   * Merge partial telemetry into an active process. Pass `opts.runId` whenever
+   * two runs may share the same `domain` (e.g. two `"execution"` rows running
+   * concurrently); without it, the prefix-fallback in `findProcessKey` returns
+   * the *first* `domain:*` key from `Object.keys`, which is iteration-order
+   * dependent and silently mutates the wrong process — scrambling cost and
+   * tool-call telemetry across runs with no UI signal. Mirrors the
+   * `runId`-aware shape of {@link updateProcessStatus}.
+   */
   enrichProcess: (
     domain: string,
     updates: Partial<Pick<ActiveProcess, "toolCallCount" | "costUsd" | "lastEvent">>,
+    opts?: { runId?: string },
   ) => void;
   /** Update the status and/or navigateTo of an active process. */
   updateProcessStatus: (
@@ -217,9 +227,11 @@ export const createProcessActivitySlice: StateCreator<
     });
   },
 
-  enrichProcess: (domain, updates) => {
+  enrichProcess: (domain, updates, opts) => {
     set((state) => {
-      const key = findProcessKey(state.activeProcesses, domain);
+      // Forward runId so concurrent runs sharing a domain don't have their
+      // telemetry mutated against the wrong process via the prefix-fallback.
+      const key = findProcessKey(state.activeProcesses, domain, opts?.runId);
       if (!key) return state;
       const existing = state.activeProcesses[key];
       if (!existing) return state;
