@@ -263,6 +263,23 @@ on a creation flow that hasn't been requested yet (#3).
 `use_case_id` to title (em-dash when unattributed); simulation rows carry
 the badge. `npx tsc --noEmit` clean; lint adds 0 new errors.
 
+## §N — Build-wizard wave deferred items (sessions C5–C8)
+
+> Added 2026-04-28 from the build-wizard wave (`C7-handoff-2026-04-28.md`,
+> `C8-handoff-2026-04-28.md`). These are independently scoped from the
+> Lab work and don't gate it.
+
+| Item | Trigger to promote | Notes |
+|---|---|---|
+| **Phase K runtime** — implement ElevenLabs TTS command + expose ffmpeg as a persona-callable connector | When a user asks to actually run a video-narration persona (today only the build-shape lands; runtime can't compose audio or video) | TTS scaffolded as `NotImplemented` in `commands/artist/transcribe.rs`; ffmpeg lives in `commands/artist/ffmpeg.rs` but isn't a connector. Multi-session work — each leg adds an HTTP command + connector registry entry + runtime wiring. |
+| **PDF / Office text extraction in references** | First reference attempt that requires non-text input (e.g. user-provided PDF spec, Word doc fixture) | Today only text-mode references work (`engine::build_session::reference::read_file_reference` extension allowlist). Needs a text-layer extractor library — `pdf-extract` or similar. |
+| **Custom (non-smee) webhook URL in build flow** | First user with ngrok or cloud-tunnel ask; smee.io is the default but isn't the only acceptable forwarder | `auto_create_smee_relays` only handles smee URLs today; `validate_url_safety` would need broadening + the relay manager would need a non-smee transport. |
+| **Multi-source webhook** | One trigger that should fire from multiple smee channels (e.g. monorepo split across orgs) | Today the `TriggerConfig::Webhook.smee_channel_url` is a single optional string. Would become `Vec<SmeeBinding>`; promote auto-bind would loop. |
+| **Build-session race fix at source** | Reproducible failure where the 2s server-side retry + 60s driver-side wait both miss | The current retries handle the race; replacing with a signal channel from runner → promote is medium-effort with no observed defect today. |
+| **`messages` / `events` in `get_simulation_artefacts`** | First user complaint that dry-run preview is missing message / event output | Need new `get_by_execution` accessors for both repos; `persona_events` uses `source_id` for execution linkage which complicates the query. |
+| **Phase E live verification** (preload-error reload) | Time to script a deterministic WebView2 stale-chunk repro | Listener is unit-tested (`preloadErrorRecovery.test.ts`, 6 cases). Manual checklist in `C7-handoff-2026-04-28.md`. |
+| **C6-handoff-doc retroactive split** ✅ **closed 2026-04-28** | — | Done — `C7-handoff-2026-04-28.md` extracted from the C6 tail. |
+
 ## How to promote an item out of this backlog
 
 1. Confirm the trigger condition has fired.

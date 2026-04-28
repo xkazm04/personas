@@ -1,6 +1,14 @@
 # 08 — Frontend Impact
 
 > UI surfaces that change, why, and when.
+>
+> **For the current state of the build-wizard UI specifically (glyph
+> layout post-2026-04-28 refactor, dimension panel, picker modals,
+> `BuildSimulatePanel`, `ReferenceAttachmentPicker`,
+> `WebhookSourcePicker`, `SpatialQuestionPopover`) — read
+> [`11-build-wizard.md`](11-build-wizard.md). This doc remains the
+> historical reference for the C1-C5 tab-by-tab rewiring; the
+> wizard-internal surfaces evolved past it during the C5-C8 wave.**
 
 ## Core decisions (confirmed)
 

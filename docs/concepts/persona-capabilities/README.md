@@ -28,6 +28,9 @@ docs/concepts/persona-capabilities/
 ├── 08-frontend-impact.md            UI surfaces and changes
 ├── 09-implementation-plan.md        ordered phases with tasks
 ├── 10-deferred-backlog.md           intentionally deferred items
+├── 11-build-wizard.md               CURRENT-STATE reference for the build wizard layer (post-C5b/C6/C7/C8)
+├── 12-test-scenarios.md             Phase A-K driver inventory + status
+├── test-scenarios.xlsx              manual-comparison checklist (regenerated from generate_test_scenarios_xlsx.py)
 │
 │   Template authoring contract (consolidated — v3 / v3.1 / v3.2 in one doc)
 ├── C3-template-schema-v3.md         current schema reference
@@ -132,4 +135,7 @@ For historical context on how we got here, see `_archive/`.
 - **Template author** → `C3-template-schema-v3.md` (single canonical schema doc) + `C3-v3.1-authoring-lessons.md` (do/don't patterns).
 - **Human reviewer (architecture)** → `00-vision.md` + `09-implementation-plan.md`.
 - **Implementer mid-phase** → the phase-relevant base doc (03, 04, 05) + the relevant `.planning/phases/<n>/` directory.
+- **Build-wizard / questionnaire / glyph work** → `11-build-wizard.md` is the load-bearing current-state reference. The historical 06 + 08 docs are still useful for the original C2/C3 contract.
+- **Test-suite work** (adding/fixing phase drivers) → `12-test-scenarios.md` for the architecture and driver index; open `test-scenarios.xlsx` side-by-side to walk a scenario manually and spot false-greens.
+- **Session continuity (where did we leave off?)** → most recent `C<n>-handoff-*.md` plus `11-build-wizard.md` for the consolidated current-state mental model.
 - **Historical lookup** → `_archive/` for superseded handoffs, the original v3.1 + v3.2 schema deltas (now folded into `C3-template-schema-v3.md`), the C3 messaging design proposal, the v3.1 impact analysis, and the EXEC-VERIF execution plan.

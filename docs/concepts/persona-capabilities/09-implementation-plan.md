@@ -455,6 +455,43 @@ per-capability queues and scoped learned memory.
 > so legacy personas keep behaving exactly as before until the user
 > explicitly sets a policy.
 
+## Build-wizard wave — sessions C5/C6/C7/C8 (post-C5b, pre-Lab)
+
+> **Status: SHIPPED — running 2026-04-25 → 2026-04-28.**
+>
+> Note on terminology: "C5", "C6", "C7", "C8" here refer to **session
+> handoffs** (dated docs in this directory), not new architectural phases.
+> They are the iterative build-wizard wave that landed between C5b and
+> the still-unstarted "Phase C6 — Lab per-use-case" below. The current
+> state is consolidated in [`11-build-wizard.md`](11-build-wizard.md);
+> the per-session detail lives in the dated handoffs.
+
+| Handoff | Subject | Key shipments |
+|---|---|---|
+| `C5-handoff-2026-04-25-EOD.md` / `C5-handoff-2026-04-26.md` | Stabilization | Notification channel resolver, scheduler tz, gate state machine, build prompt rule 21 (auto_triage), 5 simple scenarios green |
+| `C6-handoff-2026-04-27.md` | Architectural close-out | cron-tz, agent_ir-promote race, auto_triage MVP + full second-pass evaluator (`engine::auto_triage`), capability-granularity rule, vite preload-error recovery, cross-persona auto-`source_filter`, v3.1 notification_channels, build prompt rule 22 (verbatim event names), Phase A/B/C drivers green |
+| `C7-handoff-2026-04-28.md` | Build wizard features | Dry-run preview (`simulate_build_draft`, `BuildSimulatePanel`), `design_context` case-key fix (`engine::design_context::pick_use_cases_array`), reference-input questionnaire (rule 23, `ReferenceAttachmentPicker`), webhook trigger source picker w/ smee auto-bind (rule 24, `WebhookSourcePicker`, `auto_create_smee_relays`), Phase D/F/G/H/I drivers, persona-block hoist into `last_design_result`, smee orphan cleanup |
+| `C8-handoff-2026-04-28.md` | Phase D2 + scenario coverage | `simulate_build_draft` UC-id adapter (accepts LLM-emitted snake_case OR post-promote UUID by position lookup), trigger-gate keyword cleanup (drop bare `weekly`/`monthly` from `SCHEDULE_KW`, add `every month`/`weekly at`/`runs weekly` anchors), `synthesize_manual_review` test bridge command, Phase D2 (auto_triage runtime E2E green), Phase J (docs archiver, all 5 acceptance gates), Phase K (video narration build-shape, single-run green) |
+
+**Test scenario suite — current snapshot.** Phase A/B/C/D/F/G/H/I/J/K all
+green via `tools/test-mcp/e2e_phase_*.py`. Phase D2 verifies the
+auto_triage runtime evaluator end-to-end. Phase E remains
+deferred-manual (WebView2 stale-chunk repro). See
+[`12-test-scenarios.md`](12-test-scenarios.md) and the matching
+`test-scenarios.xlsx` for the manual-comparison checklist.
+
+**Active deferred items** carried out of this wave (and not in the Lab
+backlog below):
+
+- Phase K runtime — needs ElevenLabs TTS command implementation +
+  ffmpeg exposed as a persona-callable connector.
+- PDF/Office text extraction in references (today: text formats only).
+- Custom (non-smee) webhook URL support in build flow.
+- Multi-source webhook (one trigger forwarded from multiple smee channels).
+- Build-session race fix at the source (the 2s server-side retry +
+  60s driver-side wait works; replace with a signal channel only when
+  there's a real reproducer).
+
 ## Phase C6 — Lab per-use-case (RFC-gated)
 
 **Goal:** Lab can refine whole persona or specific capabilities; versioning

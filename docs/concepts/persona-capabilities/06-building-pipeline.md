@@ -4,6 +4,13 @@
 > adoption, and the template-v2 schema rewrite for the 107 existing templates.
 >
 > **This is Phase C2 — lands immediately after C1 runtime foundation.**
+>
+> **For the current state (post-C5b/C6/C7/C8) of the build-wizard layer
+> — gate state machine, typed-payload questionnaire (rules 21-24), smee
+> auto-bind, dry-run preview, auto_triage runtime — read
+> [`11-build-wizard.md`](11-build-wizard.md). This doc remains the
+> historical reference for the original C2 pipeline shape and the
+> 107-template migration.**
 
 ## Two entry points
 
