@@ -1287,7 +1287,16 @@ export const createMatrixBuildSlice: StateCreator<
     }
 
     set((state) => {
-      // Create (or replace) the session in the map, and make it active
+      // Create (or replace) the session in the map, and make it active. When
+      // an in-state session for this id already exists, the transient
+      // lifecycle fields below (test/edit/v3 state, pendingAnswers) are NOT
+      // present on `PersistedBuildSession` but ARE valuable in-flight state
+      // the user is actively interacting with — wiping them on every
+      // re-hydration silently destroys mid-test results, draft answers, and
+      // the v3 clarifying question. Preserve them when an existing session
+      // is being re-hydrated; on first hydration (existing === undefined)
+      // the empty-session defaults remain correct.
+      const existing = state.buildSessions[session.id];
       const hydrated: BuildSessionState = {
         ...emptySessionState(session.personaId, session.id),
         phase: session.phase,
@@ -1307,6 +1316,20 @@ export const createMatrixBuildSlice: StateCreator<
         parserResultJson: state.buildParserResultJson,
         workflowName: state.buildWorkflowName,
         workflowPlatform: state.buildWorkflowPlatform,
+        ...(existing ? {
+          pendingAnswers: existing.pendingAnswers,
+          testId: existing.testId,
+          testPassed: existing.testPassed,
+          testOutputLines: existing.testOutputLines,
+          testError: existing.testError,
+          toolTestResults: existing.toolTestResults,
+          testSummary: existing.testSummary,
+          testConnectors: existing.testConnectors,
+          editState: existing.editState,
+          editDirty: existing.editDirty,
+          editingCellKey: existing.editingCellKey,
+          clarifyingQuestionV3: existing.clarifyingQuestionV3,
+        } : {}),
       };
       const nextSessions = { ...state.buildSessions, [session.id]: hydrated };
       return {
