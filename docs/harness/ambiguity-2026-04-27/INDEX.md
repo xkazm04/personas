@@ -128,22 +128,20 @@ A regex / cast / literal is wrong, and there's no contract or test to catch it. 
 
 ---
 
-## Triage themes (suggested fix-wave split)
+## Triage themes (active fix-wave split)
 
-Each wave shares a mental model so the per-fix context stays warm. Sized at **5-7 fixes per wave** (the recommended ceiling). Each wave bundles its criticals plus the obvious related highs from the same theme.
+Per user direction on 2026-04-28, only **Waves 1-3** are in scope. Themes D-G (validation gates, state/cache, sanitization, magic-number sweep) are intentionally out of scope this session — their findings remain in the per-context reports but are not being closed here.
+
+Each wave shares a mental model so the per-fix context stays warm. Sized at **5-7 fixes per wave** (the recommended ceiling).
 
 | Wave | Theme | Approx fixes | Why this is a wave, not just individual fixes |
 |---|---|---:|---|
-| **1** | **Two-X-coexist** — unify or delete divergent `libs/` hooks | 5-7 | All three criticals share the same shape: pick canonical, delete the unused-but-misleading `libs/` variant, update consumers. Probably exposes a few more lib/ duplicates we haven't catalogued yet. |
+| **1** | **Two-X-coexist** — unify or delete divergent `libs/` hooks | 3-5 | All three criticals share the same shape: pick canonical, delete the unused-but-misleading `libs/` variant, update consumers. |
 | **2** | **Silent failure / lying state** — every failure path emits a signal | 6-7 | Cross-cutting `catch {}` rule + skeleton-as-loading + saveAll/hydrate-discard policy. Establishes the convention "happy UX requires happy outcome — failures must surface." |
 | **3** | **Cross-entity scoping** — every lookup keys on full identity tuple | 4-5 | (runId, personaId, teamId) must be in the lookup key wherever the domain alone is non-unique. Single mental model: scope-by-identity. |
-| **4** | **Validation/security gates** — apply gates everywhere; default-deny | 6-7 | Inventory every privileged action (replay, sign, fire, link credential, deploy template) and ensure each path goes through the same validator. Default-deny when state is unknown. |
-| **5** | **State / cache invalidation contracts** | 4-6 | Cache lifetime declared explicitly (rotate-on-X, expire-after-Y); per-entity stats labeled with their data source; render-side registration moved out of render path. |
-| **6** | **Sanitization & cross-boundary contracts** | 5-7 | Fix the broken `escapeSqlStringLiteral`; add escape to Redis SCAN; add a contract test for `ROLE_PRESETS` keys against the Rust JSON; runtime-validate `auth_variants` shape. Plus delete the dead `templateIndex.ts`. |
-| **7 (optional)** | **Magic-number sweep** | 8-10 | The 35 magic-number findings (mostly low/medium): name them, comment why, group into a constants file per feature. Pure polish — postpone unless the user wants a clean sweep. |
 
-**Total criticals to close across waves 1-6:** ~28-29 (depending on bundling).
-**Total findings closeable across waves 1-7:** ~80-100 of the 202 (the others are mediums/lows that are real but lower-leverage).
+**Total criticals to close across waves 1-3:** ~17 (3 + 10 + 4).
+**Out of scope this session:** Themes D (validation gates, 6 criticals), E (state/cache, 4 criticals), F (sanitization, 4 criticals), G (magic-number sweep). These remain documented in the per-context reports for future sessions.
 
 ---
 
