@@ -1,7 +1,6 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useCallback, useRef, lazy, Suspense } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { EventName } from '@/lib/eventRegistry';
+import { EventName, typedListen } from '@/lib/eventRegistry';
 import { useElementVisible } from '@/hooks/utility/useElementVisible';
 import {
   CalendarClock, RefreshCw, Pause, Plus, Calendar, Filter, Zap,
@@ -111,7 +110,7 @@ export default function ScheduleTimeline() {
 
     const interval = setInterval(scheduleRefresh, 30_000);
 
-    const unlistenP = listen<{ recovered: number; timestamp: string }>(
+    const unlistenP = typedListen(
       EventName.OVERDUE_TRIGGERS_FIRED,
       () => { if (!cancelled) scheduleRefresh(); },
     );
