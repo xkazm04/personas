@@ -7,24 +7,40 @@
  * surfaced by the 2026-04-27 bug-hunt scan (~28 findings, of which 7 closed
  * in Wave 4 and 4 closed in Wave 8c).
  *
- * Caught patterns:
- *   - setInterval(...) without clearInterval in cleanup
- *   - setTimeout(...) without clearTimeout in cleanup
- *   - <target>.addEventListener(...) without removeEventListener in cleanup
- *   - window.addEventListener / document.addEventListener (same as above)
+ * v2 (2026-04-28) extended coverage to the four classes the v1 rule
+ * intentionally skipped: Tauri `listen()`, native observer instances, and
+ * `AbortController`. v1's "stricter shape" allocations (setInterval/timeout/
+ * addEventListener) are unchanged.
  *
- * Not caught (intentionally — to keep the rule a useful heuristic without
- * false-positive noise on patterns the project uses heavily):
- *   - Tauri listen() — returns an UnlistenFn promise; cleanup pattern is
- *     bespoke (.then(fn => fn())). Audit by hand.
- *   - ResizeObserver / IntersectionObserver / MutationObserver — instance
- *     lifecycle (.observe / .disconnect) is not call-site obvious.
- *   - AbortController — pairs with .abort() but allocations look like new
- *     AbortController() not a tracked call.
- *   - setIntervals stored in refs and cleared via helper functions.
+ * Caught patterns:
+ *
+ *   v1 (call → matching call cleanup):
+ *     - setInterval(...) without clearInterval in cleanup
+ *     - setTimeout(...) without clearTimeout in cleanup
+ *     - <target>.addEventListener(...) without removeEventListener in cleanup
+ *
+ *   v2 (`new Constructor()` → matching method-call cleanup):
+ *     - new ResizeObserver(...) / IntersectionObserver / MutationObserver /
+ *       PerformanceObserver without a .disconnect() in cleanup
+ *     - new AbortController() without a .abort() in cleanup
+ *
+ *   v2 (Tauri / async-promise allocation → cleanup function present):
+ *     - listen(...) without ANY cleanup function returned (the unlisten
+ *       contract is bespoke — `return () => unlistenP.then(fn => fn())` —
+ *       so we only require that some cleanup exists, not that it call a
+ *       specific method)
+ *
+ * Not caught (intentionally):
+ *   - Aliased imports of listen / setInterval / etc. (rule matches by
+ *     local-binding name only, no import-resolution)
+ *   - Resources allocated inside helper functions defined within the effect
+ *     body (deliberate scope limit — keeps the rule readable)
+ *   - setIntervals stored in refs and cleared via helper functions called
+ *     from the cleanup return — partially handled by collectAllReachableCalls
+ *     descending into the cleanup body's nested helpers
  *
  * Severity: "warn". The rule is intentionally conservative and may have
- * false negatives — the goal is to surface the most common shape during
+ * false negatives — the goal is to surface the most common shapes during
  * code review, not to be a complete static analysis.
  */
 
@@ -34,28 +50,50 @@ module.exports = {
     type: 'problem',
     docs: {
       description:
-        'Disallow useEffect bodies that allocate scheduled or listener resources without a matching cleanup return',
+        'Disallow useEffect bodies that allocate scheduled, listener, observer, or subscription resources without a matching cleanup return',
     },
     messages: {
-      missingCleanup:
+      missingCleanupCall:
         'useEffect calls {{ resource }}() but the effect has no cleanup return — the resource will leak across effect re-runs and unmount. ' +
         'Return a cleanup function that calls {{ expected }}().',
-      cleanupMissingMatch:
+      cleanupMissingMatchCall:
         'useEffect calls {{ resource }}() but its cleanup return does not call {{ expected }}() — the resource leaks across effect re-runs and unmount.',
+      missingCleanupNew:
+        'useEffect creates a new {{ resource }} but the effect has no cleanup return — the resource will leak. ' +
+        'Return a cleanup function that calls .{{ expected }}() on it.',
+      cleanupMissingMatchNew:
+        'useEffect creates a new {{ resource }} but its cleanup return does not call .{{ expected }}() — the resource leaks.',
+      missingCleanupListen:
+        'useEffect calls listen(...) (Tauri event subscription) but the effect has no cleanup return — the listener will leak across effect re-runs and unmount. ' +
+        'Capture the returned promise and unlisten in cleanup, e.g. `const unlistenP = listen(...); return () => { unlistenP.then((fn) => fn()); };`.',
     },
     schema: [],
   },
   create(context) {
-    /** Allocation -> matching cleanup name. */
-    const RESOURCE_PAIRS = {
+    /** Allocation call name -> matching cleanup call name. */
+    const CALL_RESOURCE_PAIRS = {
       setInterval: 'clearInterval',
       setTimeout: 'clearTimeout',
       addEventListener: 'removeEventListener',
     };
-    const ALLOCATION_NAMES = Object.keys(RESOURCE_PAIRS);
+    const CALL_ALLOCATION_NAMES = Object.keys(CALL_RESOURCE_PAIRS);
 
-    function getCalleeName(callExpr) {
-      const c = callExpr.callee;
+    /** Constructor name -> matching cleanup method name (called as `.method()`). */
+    const NEW_RESOURCE_PAIRS = {
+      ResizeObserver: 'disconnect',
+      IntersectionObserver: 'disconnect',
+      MutationObserver: 'disconnect',
+      PerformanceObserver: 'disconnect',
+      AbortController: 'abort',
+    };
+    const NEW_ALLOCATION_NAMES = Object.keys(NEW_RESOURCE_PAIRS);
+
+    /** Allocation calls that require *some* cleanup return but whose specific
+     *  cleanup pattern is bespoke (Tauri listen — UnlistenFn promise pattern). */
+    const ASYNC_ALLOCATION_NAMES = ['listen'];
+
+    function getCalleeName(callOrNewExpr) {
+      const c = callOrNewExpr.callee;
       if (!c) return null;
       if (c.type === 'Identifier') return c.name;
       if (c.type === 'MemberExpression' && c.property && c.property.type === 'Identifier') {
@@ -64,38 +102,47 @@ module.exports = {
       return null;
     }
 
-    /** Recursively walk an AST subtree and collect CallExpression nodes whose
-     *  callee name (identifier or member-expression property) matches one of
-     *  `names`. Skips nested function/arrow declarations so we only count
-     *  calls in the effect body itself, not in helpers it defines. */
-    function collectCalls(node, names, results) {
+    /** Recursively walk an AST subtree and collect:
+     *  - CallExpression nodes whose callee name matches `callNames`
+     *  - NewExpression nodes whose callee name matches `newNames`
+     *  Skips nested function declarations so we only count allocations
+     *  executed when the effect itself runs, not those inside helpers it
+     *  defines. */
+    function collectAllocations(node, callNames, newNames, results) {
       if (!node || typeof node !== 'object' || !node.type) return;
       if (
         node.type === 'FunctionExpression' ||
         node.type === 'FunctionDeclaration' ||
         node.type === 'ArrowFunctionExpression'
       ) {
-        // Don't recurse into nested function definitions — we want only calls
-        // executed when the effect itself runs, not those inside helpers it
-        // defines. This is a deliberate trade-off; nested helper-driven
-        // allocations are a known false-negative.
         return;
       }
       if (node.type === 'CallExpression') {
         const name = getCalleeName(node);
-        if (name && names.includes(name)) {
-          results.push({ node, name });
+        if (name && callNames.includes(name)) {
+          results.push({ node, name, kind: 'call' });
+        }
+      } else if (node.type === 'NewExpression') {
+        const name = getCalleeName(node);
+        if (name && newNames.includes(name)) {
+          results.push({ node, name, kind: 'new' });
         }
       }
       for (const key of Object.keys(node)) {
-        if (key === 'parent' || key === 'loc' || key === 'range' || key === 'leadingComments' || key === 'trailingComments') {
+        if (
+          key === 'parent' ||
+          key === 'loc' ||
+          key === 'range' ||
+          key === 'leadingComments' ||
+          key === 'trailingComments'
+        ) {
           continue;
         }
         const val = node[key];
         if (Array.isArray(val)) {
-          for (const item of val) collectCalls(item, names, results);
+          for (const item of val) collectAllocations(item, callNames, newNames, results);
         } else if (val && typeof val === 'object' && val.type) {
-          collectCalls(val, names, results);
+          collectAllocations(val, callNames, newNames, results);
         }
       }
     }
@@ -108,7 +155,6 @@ module.exports = {
       const body = effectCallback.body;
       if (!body) return null;
       if (body.type !== 'BlockStatement') {
-        // Concise-body arrow returns its expression — not a function, so no cleanup.
         return null;
       }
       for (const stmt of body.body) {
@@ -135,7 +181,13 @@ module.exports = {
         }
       }
       for (const key of Object.keys(node)) {
-        if (key === 'parent' || key === 'loc' || key === 'range' || key === 'leadingComments' || key === 'trailingComments') {
+        if (
+          key === 'parent' ||
+          key === 'loc' ||
+          key === 'range' ||
+          key === 'leadingComments' ||
+          key === 'trailingComments'
+        ) {
           continue;
         }
         const val = node[key];
@@ -163,38 +215,92 @@ module.exports = {
           return;
         }
 
+        // Collect call-style and new-style allocations together.
         const allocations = [];
-        collectCalls(callback.body, ALLOCATION_NAMES, allocations);
+        const allCallNames = [...CALL_ALLOCATION_NAMES, ...ASYNC_ALLOCATION_NAMES];
+        collectAllocations(callback.body, allCallNames, NEW_ALLOCATION_NAMES, allocations);
         if (allocations.length === 0) return;
 
         const cleanupFn = findCleanupFunction(callback);
 
-        // Build the set of cleanup-method names actually invoked from the cleanup body.
-        const expectedCleanupNames = Array.from(
-          new Set(allocations.map((a) => RESOURCE_PAIRS[a.name])),
-        );
+        // Build the union of cleanup names we'd accept for any allocation
+        // present in the effect — pre-compute the cleanup-body call set once
+        // so per-allocation checks below are O(1).
+        const expectedCleanupNames = new Set();
+        for (const alloc of allocations) {
+          if (alloc.kind === 'call') {
+            const expected = CALL_RESOURCE_PAIRS[alloc.name];
+            if (expected) expectedCleanupNames.add(expected);
+          } else if (alloc.kind === 'new') {
+            const expected = NEW_RESOURCE_PAIRS[alloc.name];
+            if (expected) expectedCleanupNames.add(expected);
+          }
+          // ASYNC_ALLOCATION_NAMES (listen) doesn't have a single cleanup-call
+          // shape — we just check that *some* cleanup function exists.
+        }
         const cleanupCalls = [];
-        if (cleanupFn) {
-          collectAllReachableCalls(cleanupFn.body, expectedCleanupNames, cleanupCalls);
+        if (cleanupFn && expectedCleanupNames.size > 0) {
+          collectAllReachableCalls(
+            cleanupFn.body,
+            Array.from(expectedCleanupNames),
+            cleanupCalls,
+          );
         }
         const cleanupCallNames = new Set(cleanupCalls.map((c) => c.name));
 
         for (const alloc of allocations) {
-          const expected = RESOURCE_PAIRS[alloc.name];
-          if (!cleanupFn) {
-            context.report({
-              node: alloc.node,
-              messageId: 'missingCleanup',
-              data: { resource: alloc.name, expected },
-            });
+          if (alloc.kind === 'call' && CALL_RESOURCE_PAIRS[alloc.name]) {
+            const expected = CALL_RESOURCE_PAIRS[alloc.name];
+            if (!cleanupFn) {
+              context.report({
+                node: alloc.node,
+                messageId: 'missingCleanupCall',
+                data: { resource: alloc.name, expected },
+              });
+              continue;
+            }
+            if (!cleanupCallNames.has(expected)) {
+              context.report({
+                node: alloc.node,
+                messageId: 'cleanupMissingMatchCall',
+                data: { resource: alloc.name, expected },
+              });
+            }
             continue;
           }
-          if (!cleanupCallNames.has(expected)) {
-            context.report({
-              node: alloc.node,
-              messageId: 'cleanupMissingMatch',
-              data: { resource: alloc.name, expected },
-            });
+
+          if (alloc.kind === 'new' && NEW_RESOURCE_PAIRS[alloc.name]) {
+            const expected = NEW_RESOURCE_PAIRS[alloc.name];
+            if (!cleanupFn) {
+              context.report({
+                node: alloc.node,
+                messageId: 'missingCleanupNew',
+                data: { resource: alloc.name, expected },
+              });
+              continue;
+            }
+            if (!cleanupCallNames.has(expected)) {
+              context.report({
+                node: alloc.node,
+                messageId: 'cleanupMissingMatchNew',
+                data: { resource: alloc.name, expected },
+              });
+            }
+            continue;
+          }
+
+          if (alloc.kind === 'call' && ASYNC_ALLOCATION_NAMES.includes(alloc.name)) {
+            // Tauri listen / similar: require some cleanup function exists.
+            // Don't try to match a specific cleanup-call name — the unlisten
+            // contract is bespoke (.then(fn => fn()) or await + fn()).
+            if (!cleanupFn) {
+              context.report({
+                node: alloc.node,
+                messageId: 'missingCleanupListen',
+                data: {},
+              });
+            }
+            continue;
           }
         }
       },
