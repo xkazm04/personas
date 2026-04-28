@@ -39,11 +39,27 @@ export class SignDocumentRejectedError extends Error {
   }
 }
 
-// Frontend-only defense in depth. Even if a caller forgets to gate on user
-// confirmation (e.g. a future persona tool), refuse paths that match obvious
-// secret/private-key locations. This is not a substitute for backend path
-// allowlisting, but it stops the most damaging "sign my private key" attacks
-// before they hit the IPC boundary.
+// SENSITIVE PATH GUARD — TRUST STATEMENT (read this before changing).
+//
+// This array is checked by `signDocument` (below) before invoking the Tauri
+// `sign_document` command. It refuses paths that match obvious secret /
+// private-key / wallet locations.
+//
+// Trust assumption: backend enforcement of the same allowlist has NOT been
+// verified by this audit (the Rust side was out of scope for the
+// 2026-04-27 ambiguity audit). Until a contract test pairs this list with
+// the backend's allowlist, treat this guard as the PRIMARY gate, not
+// defense in depth — a future persona tool that calls
+// `invoke("sign_document", …)` directly would bypass this check entirely
+// and could sign arbitrary credential files. If you find yourself wanting
+// to call the IPC directly, route through `signDocument` instead, or
+// confirm the backend enforces these patterns and update this comment.
+//
+// Pattern shape: each regex must match its documented threat AND fail
+// against innocuous paths that share substrings (e.g. `private_key` was
+// previously over-broad — `Documents/private_key_lecture_notes.md` would
+// have matched and been silently blocked. Patterns now require a path
+// boundary plus a real key extension or a literal `.key` suffix).
 const SENSITIVE_PATH_PATTERNS: RegExp[] = [
   /[/\\]\.ssh[/\\]/i,
   /[/\\]\.gnupg[/\\]/i,
@@ -54,7 +70,10 @@ const SENSITIVE_PATH_PATTERNS: RegExp[] = [
   /[/\\]id_ecdsa(\.|$)/i,
   /[/\\]id_dsa(\.|$)/i,
   /\.(pem|p12|pfx|key|jks|keystore)$/i,
-  /[/\\]private[_-]?key/i,
+  // Tightened: must end with a key-bearing extension OR be a bare
+  // `private_key` / `private-key` filename. Avoids matching unrelated
+  // notes, lectures, or directories that happen to contain the substring.
+  /[/\\]private[_-]?key(\.(pem|p12|pfx|key|jks|keystore|asc|gpg|pub|der|crt|cer|p7b))?$/i,
   /[/\\]wallet\.dat$/i,
   /[/\\]\.npmrc$/i,
   /[/\\]\.netrc$/i,
