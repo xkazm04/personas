@@ -1534,6 +1534,7 @@
       "requires_cred": "Requires a {label} credential to connect",
       "calls": "{count} calls",
       "impact_label": "Impact",
+      "recommended_because": "Recommended · pairs with {name}",
       "removed": "Removed {name}",
       "undo": "Undo",
       "general": "General",

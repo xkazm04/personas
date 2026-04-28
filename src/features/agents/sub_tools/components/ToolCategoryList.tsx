@@ -11,6 +11,7 @@ interface ToolCategoryListProps {
   filteredTools: ToolDef[];
   connectorGroups: Array<[string, ToolDef[]]>;
   assignedToolIds: Set<string>;
+  assignedToolNames: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   usageByTool: Map<string, number>;
@@ -26,7 +27,7 @@ interface ToolCategoryListProps {
 }
 
 export function ToolCategoryList({
-  viewMode, filteredTools, connectorGroups, assignedToolIds,
+  viewMode, filteredTools, connectorGroups, assignedToolIds, assignedToolNames,
   credentialTypeSet, credentialLabel, usageByTool, impactDataMap,
   isSearching, assignedCount, onClearSearch, onBrowseTools, onToggleTool, onBulkToggle, onAddCredential,
 }: ToolCategoryListProps) {
@@ -71,6 +72,7 @@ export function ToolCategoryList({
                 credentialTypeSet={credentialTypeSet}
                 usageByTool={usageByTool}
                 impactData={impactDataMap.get(tool.name)}
+                assignedToolNames={assignedToolNames}
                 onToggle={onToggleTool}
                 onAddCredential={onAddCredential}
               />
@@ -91,6 +93,7 @@ export function ToolCategoryList({
             connectorKey={connectorKey}
             tools={tools}
             assignedToolIds={assignedToolIds}
+            assignedToolNames={assignedToolNames}
             credentialTypeSet={credentialTypeSet}
             credentialLabel={credentialLabel}
             usageByTool={usageByTool}

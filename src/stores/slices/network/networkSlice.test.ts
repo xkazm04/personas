@@ -29,34 +29,31 @@ function makeHarness() {
   return { get: () => state };
 }
 
-describe("networkSlice STALE_THRESHOLD", () => {
+describe("networkSlice STALE_THRESHOLD (per-endpoint)", () => {
   beforeEach(() => {
     vi.mocked(discoveryApi.getDiscoveredPeers).mockReset();
     vi.mocked(discoveryApi.getNetworkStatus).mockReset();
     vi.mocked(discoveryApi.getNetworkSnapshot).mockReset();
   });
 
-  it("is a shared counter across all three pollers", () => {
+  it("threshold is 3", () => {
     expect(STALE_THRESHOLD).toBe(3);
   });
 
-  it("trips the warning after 3 mixed failures (status + peers + snapshot)", async () => {
+  it("does NOT trip the warning on a single failure across each endpoint", async () => {
+    // The pre-fix shared counter would have tripped here. Per-endpoint
+    // counters require 3 consecutive failures on the SAME endpoint.
     const h = makeHarness();
     vi.mocked(discoveryApi.getDiscoveredPeers).mockRejectedValue(new Error("boom"));
     vi.mocked(discoveryApi.getNetworkStatus).mockRejectedValue(new Error("boom"));
     vi.mocked(discoveryApi.getNetworkSnapshot).mockRejectedValue(new Error("boom"));
 
     await h.get().fetchNetworkStatus();
-    expect(h.get().networkError).toBeNull();
-    expect(h.get().networkConsecutiveFailures).toBe(1);
-
     await h.get().fetchDiscoveredPeers();
-    expect(h.get().networkError).toBeNull();
-    expect(h.get().networkConsecutiveFailures).toBe(2);
-
     await h.get().fetchNetworkSnapshot();
-    expect(h.get().networkConsecutiveFailures).toBe(3);
-    expect(h.get().networkError).toBeTruthy();
+
+    expect(h.get().networkConsecutiveFailures).toBe(1); // each endpoint = 1
+    expect(h.get().networkError).toBeNull();
   });
 
   it("trips the warning after 3 consecutive snapshot failures", async () => {
@@ -71,18 +68,48 @@ describe("networkSlice STALE_THRESHOLD", () => {
     expect(h.get().networkError).toBeTruthy();
   });
 
-  it("resets the counter on any successful poll from any endpoint", async () => {
+  it("does NOT silently mask a stale endpoint when a different one succeeds", async () => {
+    // The bug: a single success on snapshot reset the shared counter to 0,
+    // hiding repeated status-poll failures. Per-endpoint counters fix it.
     const h = makeHarness();
     vi.mocked(discoveryApi.getNetworkStatus).mockRejectedValue(new Error("boom"));
     vi.mocked(discoveryApi.getDiscoveredPeers).mockResolvedValue([]);
 
     await h.get().fetchNetworkStatus();
     await h.get().fetchNetworkStatus();
+    await h.get().fetchNetworkStatus();
+    expect(h.get().networkError).toBeTruthy(); // status hit threshold
+
+    // A success on a different poller should NOT clear the warning.
+    await h.get().fetchDiscoveredPeers();
+    expect(h.get().networkError).toBeTruthy();
+    expect(h.get().networkConsecutiveFailures).toBe(3);
+  });
+
+  it("only the failing endpoint's counter is reset on its own success", async () => {
+    const h = makeHarness();
+    vi.mocked(discoveryApi.getNetworkStatus).mockRejectedValueOnce(new Error("boom"));
+    vi.mocked(discoveryApi.getNetworkStatus).mockRejectedValueOnce(new Error("boom"));
+
+    await h.get().fetchNetworkStatus();
+    await h.get().fetchNetworkStatus();
     expect(h.get().networkConsecutiveFailures).toBe(2);
 
-    // A success on a *different* poller resets the shared counter.
-    await h.get().fetchDiscoveredPeers();
+    // Now status succeeds — its own slot resets to 0.
+    vi.mocked(discoveryApi.getNetworkStatus).mockResolvedValueOnce({} as never);
+    await h.get().fetchNetworkStatus();
     expect(h.get().networkConsecutiveFailures).toBe(0);
     expect(h.get().networkError).toBeNull();
+  });
+
+  it("aggregate networkConsecutiveFailures reflects the worst endpoint", async () => {
+    const h = makeHarness();
+    vi.mocked(discoveryApi.getDiscoveredPeers).mockRejectedValue(new Error("boom"));
+    vi.mocked(discoveryApi.getNetworkStatus).mockRejectedValue(new Error("boom"));
+
+    await h.get().fetchNetworkStatus();
+    await h.get().fetchDiscoveredPeers();
+    await h.get().fetchDiscoveredPeers();
+    expect(h.get().networkConsecutiveFailures).toBe(2); // peers = 2, status = 1
   });
 });

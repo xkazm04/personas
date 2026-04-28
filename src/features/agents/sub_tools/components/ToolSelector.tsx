@@ -44,6 +44,7 @@ export function ToolSelector() {
         filteredTools={search.filteredTools}
         connectorGroups={search.connectorGroups}
         assignedToolIds={persona.assignedToolIds}
+        assignedToolNames={persona.assignedToolNames}
         assignedCount={persona.assignedTools.length}
         credentialTypeSet={persona.credentialTypeSet}
         credentialLabel={persona.credentialLabel}

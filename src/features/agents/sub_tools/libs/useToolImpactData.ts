@@ -8,6 +8,31 @@ import { parseToolNames, parseUseCaseTitles } from './toolImpactTypes';
 export type { ToolImpactData, ToolUseCaseRef, CoUsedTool } from './toolImpactTypes';
 
 /**
+ * Pure helper: given a tool's pre-computed `coUsedTools` and the names of
+ * tools the persona already has, return the strongest co-used tool that's
+ * already assigned (highest co-occurrence count) — i.e. "Recommended because
+ * you have X". Returns `null` when there's no overlap, when the tool itself
+ * is already assigned, or when impact data is missing.
+ *
+ * Selection rule: `coUsedTools` is already sorted by co-occurrence count
+ * descending (see `useToolImpactData`), so the first match wins. This makes
+ * the recommendation deterministic across renders.
+ *
+ * Exported for reuse by ToolCard / GroupedToolRow / unit tests.
+ */
+export function recommendationFromCoUsedTools(
+  impact: ToolImpactData | undefined,
+  isAssigned: boolean,
+  assignedToolNames: Set<string>,
+): string | null {
+  if (isAssigned || !impact || impact.coUsedTools.length === 0) return null;
+  for (const co of impact.coUsedTools) {
+    if (assignedToolNames.has(co.toolName)) return co.toolName;
+  }
+  return null;
+}
+
+/**
  * Hook that computes impact analysis data for all tools.
  * Returns a Map keyed by tool name for O(1) lookup.
  */

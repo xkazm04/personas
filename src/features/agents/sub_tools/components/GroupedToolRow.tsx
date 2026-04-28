@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { BarChart3, ChevronDown } from 'lucide-react';
+import { BarChart3, ChevronDown, Sparkles } from 'lucide-react';
 import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { recommendationFromCoUsedTools } from '../libs/useToolImpactData';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -13,6 +14,7 @@ export function GroupedToolRow({
   missingCredential,
   usageByTool,
   impactData,
+  assignedToolNames,
   onToggle,
 }: {
   tool: ToolDef;
@@ -20,9 +22,10 @@ export function GroupedToolRow({
   missingCredential: boolean;
   usageByTool: Map<string, number>;
   impactData?: ToolImpactData;
+  assignedToolNames?: Set<string>;
   onToggle: (id: string, name: string, assigned: boolean) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const { isStarter: isSimple } = useTier();
   const usageCount = usageByTool.get(tool.name) ?? 0;
@@ -31,6 +34,9 @@ export function GroupedToolRow({
     (impactData.usage && impactData.usage.total_invocations > 0) ||
     impactData.coUsedTools.length > 0
   );
+  const recommendedBecause = assignedToolNames
+    ? recommendationFromCoUsedTools(impactData, isAssigned, assignedToolNames)
+    : null;
 
   return (
     <div>
@@ -57,6 +63,15 @@ export function GroupedToolRow({
             <p className="typo-body text-foreground truncate">{tool.description}</p>
           )}
         </div>
+        {recommendedBecause && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex-shrink-0"
+            title={tx(t.agents.tools.recommended_because, { name: recommendedBecause })}
+          >
+            <Sparkles className="w-2.5 h-2.5" />
+            {recommendedBecause}
+          </span>
+        )}
         {usageCount > 0 && (
           <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-body bg-primary/5 text-foreground border border-primary/10 flex-shrink-0">
             <BarChart3 className="w-2.5 h-2.5" />

@@ -7,7 +7,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
 import { toastCatch } from "@/lib/silentCatch";
 import type { DeployTarget, DeployStatus, SortKey, SortDir, UnifiedDeployment } from './deploymentTypes';
-import { compareValues } from './deploymentTypes';
+import { compareValues, mapCloudStatus, mapGitlabStatus } from './deploymentTypes';
 import { SummaryCard } from './DeploymentSubComponents';
 import { DeploymentTable } from './DeploymentTable';
 import { DeploymentFilters } from './DeploymentFilters';
@@ -60,7 +60,7 @@ export function UnifiedDeploymentDashboard() {
         id: `cloud-${d.id}`, target: 'cloud',
         personaName: d.label || personaName(d.persona_id), personaId: d.persona_id,
         name: d.label || personaName(d.persona_id),
-        status: (d.status === 'active' || d.status === 'paused' || d.status === 'failed' ? d.status : 'unknown') as DeployStatus,
+        status: mapCloudStatus(d.status),
         invocations: d.invocation_count, lastActivity: d.last_invoked_at,
         createdAt: d.created_at,
         webUrl: cloudBaseUrl ? `${cloudBaseUrl}/api/deployed/${d.slug}` : null,
@@ -70,7 +70,7 @@ export function UnifiedDeploymentDashboard() {
     for (const a of gitlabAgents) {
       rows.push({
         id: `gitlab-${a.id}`, target: 'gitlab', personaName: a.name, personaId: null,
-        name: a.name, status: 'active', invocations: 0,
+        name: a.name, status: mapGitlabStatus(a), invocations: 0,
         lastActivity: a.createdAt, createdAt: a.createdAt, webUrl: a.webUrl,
         _gitlab: a, _gitlabProjectId: gitlabSelectedProjectId ?? undefined,
       });

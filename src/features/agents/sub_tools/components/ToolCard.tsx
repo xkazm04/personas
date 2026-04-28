@@ -1,11 +1,12 @@
 import { useState, memo } from 'react';
-import { CheckCircle, AlertCircle, ArrowRight, BarChart3, ChevronDown } from 'lucide-react';
+import { CheckCircle, AlertCircle, ArrowRight, BarChart3, ChevronDown, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ToolImpactPanel } from './ToolImpactPanel';
 import { ToolCheckbox } from './ToolCheckbox';
 import type { ToolDef } from './ToolCardItems';
 import type { ToolImpactData } from '../libs/toolImpactTypes';
+import { recommendationFromCoUsedTools } from '../libs/useToolImpactData';
 import { TOOLS_BORDER, TOOLS_BTN_COMPACT } from '@/lib/utils/designTokens';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 
@@ -17,6 +18,7 @@ export const ToolCard = memo(function ToolCard({
   credentialTypeSet,
   usageByTool,
   impactData,
+  assignedToolNames,
   onToggle,
   onAddCredential,
 }: {
@@ -27,6 +29,7 @@ export const ToolCard = memo(function ToolCard({
   credentialTypeSet: Set<string>;
   usageByTool: Map<string, number>;
   impactData?: ToolImpactData;
+  assignedToolNames?: Set<string>;
   onToggle: (id: string, name: string, assigned: boolean) => void;
   onAddCredential: () => void;
 }) {
@@ -39,6 +42,13 @@ export const ToolCard = memo(function ToolCard({
     (impactData.usage && impactData.usage.total_invocations > 0) ||
     impactData.coUsedTools.length > 0
   );
+  // Co-occurrence recommendation: if this tool is unassigned and one of its
+  // top co-used tools is already on the persona, surface it as a "Recommended
+  // because you have X" badge — turning the catalog into a discovery loop
+  // instead of a passive analytics blob (idea-eace246e).
+  const recommendedBecause = assignedToolNames
+    ? recommendationFromCoUsedTools(impactData, isAssigned, assignedToolNames)
+    : null;
 
   return (
     <motion.div
@@ -92,6 +102,15 @@ export const ToolCard = memo(function ToolCard({
             </div>
           )}
           <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {recommendedBecause && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-body bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                title={tx(t.agents.tools.recommended_because, { name: recommendedBecause })}
+              >
+                <Sparkles className="w-3 h-3" />
+                {tx(t.agents.tools.recommended_because, { name: recommendedBecause })}
+              </span>
+            )}
             {tool.category && (
               <span className={`inline-block px-2 py-0.5 rounded-card typo-code font-mono bg-background/50 text-foreground border ${TOOLS_BORDER}`}>
                 {tool.category}

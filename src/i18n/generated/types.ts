@@ -1540,6 +1540,7 @@ export type Translations = {
       requires_cred: string;
       calls: string;
       impact_label: string;
+      recommended_because: string;
       removed: string;
       undo: string;
       general: string;

@@ -22,36 +22,44 @@ import * as enclaveApi from "@/api/network/enclave";
 import * as discoveryApi from "@/api/network/discovery";
 
 /**
- * Number of consecutive poll failures — counted across ALL network pollers
- * (`fetchDiscoveredPeers`, `fetchNetworkStatus`, `fetchNetworkSnapshot`) —
- * before surfacing a "Network backend unreachable" warning.
+ * Number of consecutive poll failures — counted PER ENDPOINT — before
+ * surfacing a "Network backend unreachable" warning.
  *
- * ## Semantics (decided 2026-04-20)
+ * ## Semantics (revised 2026-04-28; see `idea-9ac76b08`)
  *
- * This is a SHARED counter, not a per-endpoint counter. A mix of failures
- * across different pollers trips the warning the same as repeated failures
- * from one endpoint:
+ * The previous shared counter was incorrect: when one poller succeeded while
+ * another repeatedly failed, every success reset the shared counter to 0 and
+ * the threshold was never reached, so the UI silently showed stale data
+ * forever. This was particularly bad for partial backend outages where, e.g.,
+ * `getNetworkSnapshot` kept working but `getDiscoveredPeers` was failing.
  *
- *   1 status-failure + 1 peers-failure + 1 snapshot-failure  →  warning ON
- *   3 consecutive snapshot-failures                          →  warning ON
- *
- * ### Rationale
- * All three pollers hit the same Rust `NetworkService`. If any one is failing,
- * it almost always means the service is down — tracking per-endpoint counters
- * would delay the warning (and split state) for no diagnostic benefit.
+ * Now each poller (`fetchDiscoveredPeers`, `fetchNetworkStatus`,
+ * `fetchNetworkSnapshot`) maintains its own consecutive-failure count in
+ * `networkFailureCounts`. The warning trips as soon as ANY single poller
+ * crosses `STALE_THRESHOLD` consecutive failures.
  *
  * ### Reset contract
- * ANY successful call from ANY poller resets `networkConsecutiveFailures` to 0
- * and clears `networkError`. This means a healthy snapshot every 30s will
- * mask intermittent status-poll failures — accepted tradeoff, since the
- * snapshot is the authoritative source of truth.
+ * Only the specific poller that succeeded resets its own slot. A successful
+ * snapshot does NOT mask repeated status-poll failures.
+ *
+ * ### Aggregate field
+ * `networkConsecutiveFailures` (kept for backwards-compat with the
+ * eventBridge bulk-reset path and the partial-match indicator) is derived as
+ * `Math.max(...Object.values(networkFailureCounts))` so existing readers see
+ * the worst endpoint's count.
  *
  * ### If you add a new poller
- * It MUST increment `networkConsecutiveFailures` on error and reset it on
- * success, matching the existing pattern. Otherwise it will silently bypass
- * the staleness warning.
+ * Use `bumpFailure(endpointKey)` and `clearFailure(endpointKey)` helpers — do
+ * NOT mutate `networkConsecutiveFailures` directly. The eventBridge has a
+ * legacy bulk-reset path (`networkConsecutiveFailures: 0`) that's still
+ * supported and clears the entire `networkFailureCounts` map.
  */
 export const STALE_THRESHOLD = 3;
+
+/** Endpoint keys used as failure-counter slots. */
+const ENDPOINT_DISCOVERED_PEERS = 'discoveredPeers';
+const ENDPOINT_NETWORK_STATUS = 'networkStatus';
+const ENDPOINT_NETWORK_SNAPSHOT = 'networkSnapshot';
 
 export interface NetworkSlice {
   // State (Phase 1)
@@ -74,6 +82,8 @@ export interface NetworkSlice {
   // Network health tracking
   networkError: string | null;
   networkConsecutiveFailures: number;
+  /** Per-endpoint consecutive failure counts; each poller updates only its own slot. */
+  networkFailureCounts: Record<string, number>;
 
   // Identity actions
   fetchLocalIdentity: () => Promise<void>;
@@ -143,6 +153,7 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   // Network health tracking
   networkError: null,
   networkConsecutiveFailures: 0,
+  networkFailureCounts: {},
 
   // -- Identity --------------------------------------------------------
 
@@ -419,15 +430,9 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   fetchDiscoveredPeers: async () => {
     try {
       const peers = await discoveryApi.getDiscoveredPeers();
-      set({ discoveredPeers: peers, networkConsecutiveFailures: 0, networkError: null });
+      set((s) => clearFailure(s, ENDPOINT_DISCOVERED_PEERS, { discoveredPeers: peers }));
     } catch (err) {
-      const failures = get().networkConsecutiveFailures + 1;
-      set({
-        networkConsecutiveFailures: failures,
-        networkError: failures >= STALE_THRESHOLD
-          ? errMsg(err, "Network backend unreachable")
-          : null,
-      });
+      set((s) => bumpFailure(s, ENDPOINT_DISCOVERED_PEERS, err));
     }
   },
 
@@ -487,39 +492,91 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
   fetchNetworkStatus: async () => {
     try {
       const status = await discoveryApi.getNetworkStatus();
-      set({ networkStatus: status, networkConsecutiveFailures: 0, networkError: null });
+      set((s) => clearFailure(s, ENDPOINT_NETWORK_STATUS, { networkStatus: status }));
     } catch (err) {
-      const failures = get().networkConsecutiveFailures + 1;
-      set({
-        networkConsecutiveFailures: failures,
-        networkError: failures >= STALE_THRESHOLD
-          ? errMsg(err, "Network backend unreachable")
-          : null,
-      });
+      set((s) => bumpFailure(s, ENDPOINT_NETWORK_STATUS, err));
     }
   },
 
   fetchNetworkSnapshot: async () => {
     try {
       const snapshot = await discoveryApi.getNetworkSnapshot();
-      set({
-        networkStatus: snapshot.status,
-        connectionHealth: snapshot.health,
-        discoveredPeers: snapshot.discoveredPeers,
-        messagingMetrics: snapshot.messagingMetrics,
-        connectionMetrics: snapshot.connectionMetrics,
-        manifestSyncMetrics: snapshot.manifestSyncMetrics,
-        networkConsecutiveFailures: 0,
-        networkError: null,
-      });
+      set((s) =>
+        clearFailure(s, ENDPOINT_NETWORK_SNAPSHOT, {
+          networkStatus: snapshot.status,
+          connectionHealth: snapshot.health,
+          discoveredPeers: snapshot.discoveredPeers,
+          messagingMetrics: snapshot.messagingMetrics,
+          connectionMetrics: snapshot.connectionMetrics,
+          manifestSyncMetrics: snapshot.manifestSyncMetrics,
+        }),
+      );
     } catch (err) {
-      const failures = get().networkConsecutiveFailures + 1;
-      set({
-        networkConsecutiveFailures: failures,
-        networkError: failures >= STALE_THRESHOLD
-          ? errMsg(err, "Network backend unreachable")
-          : null,
-      });
+      set((s) => bumpFailure(s, ENDPOINT_NETWORK_SNAPSHOT, err));
     }
   },
 });
+
+/**
+ * Increment the per-endpoint failure counter for `endpoint`. Returns a
+ * partial state update that:
+ * - bumps `networkFailureCounts[endpoint]` by 1
+ * - recomputes `networkConsecutiveFailures` as the max across all endpoints
+ * - sets `networkError` iff any endpoint hit `STALE_THRESHOLD`
+ *
+ * Other endpoints' counters are left untouched — that is the entire point of
+ * this rewrite. See the `STALE_THRESHOLD` doc comment for context.
+ */
+function bumpFailure(
+  s: NetworkSlice,
+  endpoint: string,
+  err: unknown,
+): Partial<NetworkSlice> {
+  const counts = { ...s.networkFailureCounts, [endpoint]: (s.networkFailureCounts[endpoint] ?? 0) + 1 };
+  const max = maxCount(counts);
+  return {
+    networkFailureCounts: counts,
+    networkConsecutiveFailures: max,
+    networkError: max >= STALE_THRESHOLD ? errMsg(err, "Network backend unreachable") : s.networkError,
+  };
+}
+
+/**
+ * Reset the per-endpoint failure counter for `endpoint` (and merge any
+ * additional state updates the caller wants to commit). Other endpoints'
+ * counters are preserved — a healthy snapshot does not mask repeated
+ * status-poll failures.
+ */
+function clearFailure(
+  s: NetworkSlice,
+  endpoint: string,
+  extra: Partial<NetworkSlice>,
+): Partial<NetworkSlice> {
+  // If this endpoint had no recorded failures, nothing to reset and the
+  // aggregate cannot change — return the extras unchanged. Crucially we do
+  // NOT touch `networkError` here: an unrelated endpoint may still be over
+  // threshold, and the bug we're fixing is that one endpoint's success was
+  // silently masking another endpoint's stale failures.
+  const prior = s.networkFailureCounts[endpoint] ?? 0;
+  if (prior === 0) {
+    return { ...extra };
+  }
+  const counts = { ...s.networkFailureCounts };
+  delete counts[endpoint];
+  const max = maxCount(counts);
+  return {
+    ...extra,
+    networkFailureCounts: counts,
+    networkConsecutiveFailures: max,
+    // Only clear the error if no remaining endpoint is still over threshold.
+    networkError: max >= STALE_THRESHOLD ? s.networkError : null,
+  };
+}
+
+function maxCount(counts: Record<string, number>): number {
+  let max = 0;
+  for (const v of Object.values(counts)) {
+    if (v > max) max = v;
+  }
+  return max;
+}
