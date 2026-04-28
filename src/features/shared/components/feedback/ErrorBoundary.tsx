@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } from 'lucide-react';
 import { useState } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -81,7 +82,7 @@ function ErrorFallback({
 }) {
   const { t, tx } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   const handleGoHome = () => {
     try {
@@ -108,10 +109,7 @@ function ErrorFallback({
       `Component Stack: ${errorInfo}`,
     ].join('\n\n');
 
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    copy(text);
   };
 
   return (
