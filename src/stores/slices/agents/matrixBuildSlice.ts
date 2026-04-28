@@ -401,13 +401,23 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
 /**
  * Pin the "next active session" policy when the current active session is
  * removed: pick the remaining session with the newest createdAt, breaking
- * ties by sessionId (lexicographic) for determinism. Returns null when no
- * sessions remain.
+ * ties by sessionId (lexicographic) for determinism.
+ *
+ * When `preferPersonaId` is supplied, ONLY sessions for that persona are
+ * considered. Without this scoping, removing one persona's failed session
+ * could flip the active editor to a different persona's draft (the editor
+ * mirrors the active session's scalars), so the user would silently see
+ * another persona's UI swap in. If no sessions remain for the preferred
+ * persona, returns null — the caller is expected to clear active state
+ * rather than fall back to an unrelated persona's draft.
  */
 function pickNextActiveSessionId(
   sessions: Record<string, BuildSessionState>,
+  preferPersonaId?: string,
 ): string | null {
-  const ids = Object.keys(sessions);
+  const ids = preferPersonaId
+    ? Object.keys(sessions).filter((id) => sessions[id]?.personaId === preferPersonaId)
+    : Object.keys(sessions);
   if (ids.length === 0) return null;
   ids.sort((a, b) => {
     const ca = sessions[a]?.createdAt ?? 0;
@@ -523,9 +533,15 @@ export const createMatrixBuildSlice: StateCreator<
 
   removeBuildSession: (sessionId) => {
     set((state) => {
+      const removed = state.buildSessions[sessionId];
       const { [sessionId]: _removed, ...rest } = state.buildSessions;
       const wasActive = state.activeBuildSessionId === sessionId;
-      const nextActiveId = wasActive ? pickNextActiveSessionId(rest) : state.activeBuildSessionId;
+      // Scope the next-active pick to the same persona as the session we
+      // just removed. Without this, a failed-launch cleanup that removes
+      // persona A's session could flip the editor to persona B's draft.
+      const nextActiveId = wasActive
+        ? pickNextActiveSessionId(rest, removed?.personaId)
+        : state.activeBuildSessionId;
       const nextActive = nextActiveId ? rest[nextActiveId] ?? null : null;
       return {
         buildSessions: rest,
