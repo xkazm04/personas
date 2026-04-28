@@ -321,6 +321,22 @@ pub fn unassign_tool(pool: &DbPool, persona_id: &str, tool_id: &str) -> Result<b
     })
 }
 
+/// Returns true if the persona has the given tool assigned. Used to gate
+/// direct tool invocation: callers (even privileged) must not be able to run
+/// a tool against a persona it was never configured for.
+pub fn is_tool_assigned(pool: &DbPool, persona_id: &str, tool_id: &str) -> Result<bool, AppError> {
+    timed_query!("persona_tool_definitions", "persona_tool_definitions::is_tool_assigned", {
+        let conn = pool.get()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+            params![persona_id, tool_id],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+
+    })
+}
+
 /// Assign multiple tools to a persona in a single transaction.
 pub fn bulk_assign_tools(
     pool: &DbPool,
@@ -492,6 +508,53 @@ mod tests {
 
         let tools_after = get_tools_for_persona(&pool, &persona.id).unwrap();
         assert_eq!(tools_after.len(), 0);
+    }
+
+    #[test]
+    fn test_is_tool_assigned_reflects_membership() {
+        let pool = init_test_db().unwrap();
+
+        use crate::db::models::CreatePersonaInput;
+        let persona = crate::db::repos::core::personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Assignment Check Agent".into(),
+                system_prompt: "Test assignment check.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let all_defs = get_all_definitions(&pool).unwrap();
+        let builtin = &all_defs[0];
+
+        // Not yet assigned
+        assert!(!is_tool_assigned(&pool, &persona.id, &builtin.id).unwrap());
+
+        // After assigning, returns true
+        assign_tool(&pool, &persona.id, &builtin.id, None).unwrap();
+        assert!(is_tool_assigned(&pool, &persona.id, &builtin.id).unwrap());
+
+        // After unassigning, returns false again
+        unassign_tool(&pool, &persona.id, &builtin.id).unwrap();
+        assert!(!is_tool_assigned(&pool, &persona.id, &builtin.id).unwrap());
+
+        // Unknown ids return false (not an error)
+        assert!(!is_tool_assigned(&pool, "no-such-persona", &builtin.id).unwrap());
+        assert!(!is_tool_assigned(&pool, &persona.id, "no-such-tool").unwrap());
     }
 
     #[test]

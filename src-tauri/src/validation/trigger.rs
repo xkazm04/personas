@@ -101,6 +101,54 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
     errors
 }
 
+/// Schedule triggers must declare either a `cron` expression or
+/// `interval_seconds` — without one, `compute_next_from_config` returns `None`
+/// forever and the trigger silently never fires. Reject the misconfiguration
+/// at creation/update time so the failure is visible, not silent.
+pub fn validate_schedule_has_cron_or_interval(
+    trigger_type: &str,
+    config: Option<&str>,
+) -> Vec<ValidationError> {
+    if trigger_type != "schedule" {
+        return vec![];
+    }
+    let parsed = config
+        .map(str::trim)
+        .filter(|c| !c.is_empty())
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok());
+
+    let parsed = match parsed {
+        Some(v) => v,
+        None => {
+            return vec![ValidationError::new(
+                "config",
+                "required",
+                "Schedule triggers require a config with either a cron expression or interval_seconds",
+            )];
+        }
+    };
+
+    let cron = parsed
+        .get("cron")
+        .or_else(|| parsed.get("cron_expression"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let interval = parsed
+        .get("interval_seconds")
+        .and_then(|v| v.as_i64())
+        .filter(|n| *n > 0);
+
+    if cron.is_none() && interval.is_none() {
+        return vec![ValidationError::new(
+            "config",
+            "required",
+            "Schedule triggers require either a non-empty cron expression or a positive interval_seconds",
+        )];
+    }
+    vec![]
+}
+
 pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<ValidationError> {
     if trigger_type != "polling" {
         return vec![];
@@ -124,6 +172,88 @@ pub fn validate_polling_url(trigger_type: &str, config: Option<&str>) -> Vec<Val
         }
     }
     vec![]
+}
+
+// -- Tests --------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn schedule_validator_skips_non_schedule_types() {
+        assert!(validate_schedule_has_cron_or_interval("manual", None).is_empty());
+        assert!(validate_schedule_has_cron_or_interval("polling", Some("{}")).is_empty());
+        assert!(validate_schedule_has_cron_or_interval("webhook", None).is_empty());
+    }
+
+    #[test]
+    fn schedule_validator_rejects_missing_config() {
+        assert_eq!(validate_schedule_has_cron_or_interval("schedule", None).len(), 1);
+        assert_eq!(validate_schedule_has_cron_or_interval("schedule", Some("")).len(), 1);
+        assert_eq!(validate_schedule_has_cron_or_interval("schedule", Some("   ")).len(), 1);
+    }
+
+    #[test]
+    fn schedule_validator_rejects_empty_object() {
+        let errs = validate_schedule_has_cron_or_interval("schedule", Some("{}"));
+        assert_eq!(errs.len(), 1);
+    }
+
+    #[test]
+    fn schedule_validator_rejects_blank_cron_and_zero_interval() {
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"cron": ""}"#)).len(),
+            1
+        );
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"cron": "   "}"#)).len(),
+            1
+        );
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": 0}"#)).len(),
+            1
+        );
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": -10}"#)).len(),
+            1
+        );
+    }
+
+    #[test]
+    fn schedule_validator_accepts_cron() {
+        assert!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"cron": "0 * * * *"}"#))
+                .is_empty()
+        );
+        // Alternate key alias
+        assert!(
+            validate_schedule_has_cron_or_interval(
+                "schedule",
+                Some(r#"{"cron_expression": "0 * * * *"}"#)
+            )
+            .is_empty()
+        );
+    }
+
+    #[test]
+    fn schedule_validator_accepts_interval() {
+        assert!(
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": 60}"#))
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn schedule_validator_accepts_both() {
+        assert!(
+            validate_schedule_has_cron_or_interval(
+                "schedule",
+                Some(r#"{"cron": "*/5 * * * *", "interval_seconds": 300}"#)
+            )
+            .is_empty()
+        );
+    }
 }
 
 // -- Rule catalog -------------------------------------------------------------
