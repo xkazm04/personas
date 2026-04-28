@@ -1,5 +1,13 @@
 # Ambiguity Audit — personas, 2026-04-27
 
+> **Status (closed 2026-04-28):** all 26 critical findings across themes A-F
+> closed across 6 themed fix waves (`FIXES-WAVE-1.md` … `FIXES-WAVE-6.md`),
+> plus 2 already-existed catches. The audit is complete; the high / medium /
+> low findings, theme G (magic-number sweep), and 2 deferred theme-B
+> criticals (`recipes-pipelines.md` #10, `deployment-sharing-plugins.md` #2)
+> are intentionally NOT being carried forward — see "Out of scope, not
+> planned" below.
+
 > Run by `vibeman` Pipeline B (scan + triage). Scanner agent: **`ambiguity-guardian`**.
 > 17 parallel subagent runs across 17 contexts, batched in waves of ≤8 (8 + 8 + 1).
 > Side-scope: client-side only (`src-tauri/` Rust paths dropped).
@@ -128,20 +136,28 @@ A regex / cast / literal is wrong, and there's no contract or test to catch it. 
 
 ---
 
-## Triage themes (active fix-wave split)
+## Fix-wave outcomes (closed 2026-04-28)
 
-Per user direction on 2026-04-28, only **Waves 1-3** are in scope. Themes D-G (validation gates, state/cache, sanitization, magic-number sweep) are intentionally out of scope this session — their findings remain in the per-context reports but are not being closed here.
+All 6 themed fix waves completed during the 2026-04-27/28 session. Per-wave detail in the `FIXES-WAVE-N.md` files; baseline (`tsc 0`) preserved across all waves.
 
-Each wave shares a mental model so the per-fix context stays warm. Sized at **5-7 fixes per wave** (the recommended ceiling).
-
-| Wave | Theme | Approx fixes | Why this is a wave, not just individual fixes |
+| Wave | Theme | Closed | Doc |
 |---|---|---:|---|
-| **1** | **Two-X-coexist** — unify or delete divergent `libs/` hooks | 3-5 | All three criticals share the same shape: pick canonical, delete the unused-but-misleading `libs/` variant, update consumers. |
-| **2** | **Silent failure / lying state** — every failure path emits a signal | 6-7 | Cross-cutting `catch {}` rule + skeleton-as-loading + saveAll/hydrate-discard policy. Establishes the convention "happy UX requires happy outcome — failures must surface." |
-| **3** | **Cross-entity scoping** — every lookup keys on full identity tuple | 4-5 | (runId, personaId, teamId) must be in the lookup key wherever the domain alone is non-unique. Single mental model: scope-by-identity. |
+| 1 | **Two-X-coexist** — unify or delete divergent `libs/` hooks | 3 critical | [`FIXES-WAVE-1.md`](FIXES-WAVE-1.md) |
+| 2 | **Silent failure / lying state** — every failure path emits a signal | 6 critical (+1 already-fixed) | [`FIXES-WAVE-2.md`](FIXES-WAVE-2.md) |
+| 3 | **Cross-entity scoping** — every lookup keys on full identity tuple | 4 critical | [`FIXES-WAVE-3.md`](FIXES-WAVE-3.md) |
+| 4 | **Validation / security gates** — apply gates everywhere; default-deny | 6 critical | [`FIXES-WAVE-4.md`](FIXES-WAVE-4.md) |
+| 5 | **State / cache invalidation** — declared cache lifetimes; no faked stats | 4 critical | [`FIXES-WAVE-5.md`](FIXES-WAVE-5.md) |
+| 6 | **Sanitization & cross-boundary contracts** — escape, validate, contract-check | 3 critical (+1 already-fixed) | [`FIXES-WAVE-6.md`](FIXES-WAVE-6.md) |
 
-**Total criticals to close across waves 1-3:** ~17 (3 + 10 + 4).
-**Out of scope this session:** Themes D (validation gates, 6 criticals), E (state/cache, 4 criticals), F (sanitization, 4 criticals), G (magic-number sweep). These remain documented in the per-context reports for future sessions.
+**Total closed:** 26 critical fixes + 2 already-existed catches = 28 of the 29 catalogued criticals. Pattern catalogue (24 items) is documented across the wave docs.
+
+## Out of scope, not planned
+
+The items below were surfaced by the audit but are **not** being carried forward. They remain documented in the per-context reports below as a historical record only — no follow-up wave is planned.
+
+- **Theme G — magic-number sweep** (~35 magic-number findings, mostly low/medium): polish work, deferred indefinitely.
+- **2 theme-B criticals not closed in Wave 2** — `recipes-pipelines.md` #10 (pipeline events dropped on team-id mismatch) and `deployment-sharing-plugins.md` #2 (`dangerConfirmed` shared across distinct danger paths; the latter was partially addressed by the Wave 4 dangerKind work but the deploy/sharing variant has its own diff that wasn't applied).
+- **All 66 high-severity, 89 medium-severity, and 18 low-severity findings** documented in the per-context reports below.
 
 ---
 
@@ -162,13 +178,12 @@ Each wave shares a mental model so the per-fix context stays warm. Sized at **5-
 
 ---
 
-## Resuming from this INDEX in a future session
+## Closure note
 
-This INDEX is the durable artifact. To start a fix wave:
-
-1. Pick a wave from the table above (or the user's preferred theme).
-2. Read the per-context report files referenced by that theme to get the full Scenario / Root cause / Impact / Fix sketch for each finding.
-3. Per the skill protocol, each fix is one atomic commit with a `Refs:` line pointing back to its source finding.
-4. After each wave, write `FIXES-WAVE-N.md` next to this file documenting what was fixed and the patterns extracted.
-
-Pause/resume safe: walking away here loses no state — the scan results are written, the INDEX captures the triage decisions, and the per-wave summary docs accumulate as fixes happen.
+This audit is closed. The 26 critical fixes that landed are recorded in the
+6 wave-summary docs alongside the original per-context reports. The
+remaining items listed under "Out of scope, not planned" stay in this
+directory as historical evidence, NOT as a backlog — no further session is
+scheduled to pick them up. If a specific finding becomes load-bearing
+later, treat it as a fresh investigation against the current codebase
+rather than an open todo.
