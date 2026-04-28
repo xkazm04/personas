@@ -9,7 +9,7 @@ import type { BundleImportPreview } from '@/api/network/bundle';
 import type { EnclaveVerifyResult } from '@/api/network/enclave';
 import { EnclaveVerificationView } from './EnclaveVerificationView';
 import { ImportSuccessCelebration } from './ImportSuccessCelebration';
-import { BundlePreviewContent } from './BundlePreviewContent';
+import { BundlePreviewContent, type DangerConfirmKind } from './BundlePreviewContent';
 import { createLogger } from "@/lib/log";
 import { errMsg } from "@/stores/storeTypes";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -53,7 +53,10 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
   const [renamePrefix, setRenamePrefix] = useState('');
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: string[] } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dangerConfirmed, setDangerConfirmed] = useState(false);
+  // Tagged with the kind of warning the user acknowledged so consent can't
+  // silently carry over from one warning shape (tamper) to another (unknown
+  // signer) when `signer_trusted` flips between preview re-fetches.
+  const [dangerConfirmed, setDangerConfirmed] = useState<DangerConfirmKind>(null);
 
   const isEnclave = filePath?.endsWith('.enclave') ?? false;
 
@@ -77,8 +80,16 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
     setRenamePrefix('');
     setImportResult(null);
     setError(null);
-    setDangerConfirmed(false);
+    setDangerConfirmed(null);
   };
+
+  // If the danger context of the preview changes (bundle hash, signer trust,
+  // or signature validity), drop any prior consent. Without this, a preview
+  // re-fetch that flips `signer_trusted` could carry an old "tamper" consent
+  // into a freshly-rendered "unknown signer" warning.
+  useEffect(() => {
+    setDangerConfirmed(null);
+  }, [preview?.bundle_hash, preview?.signer_trusted, preview?.signature_valid]);
 
   // Reset on open (and whenever initialShareUrl OR the parent's shareLinkKey
   // changes while open) so the dialog never flashes a previous preview before
@@ -388,16 +399,23 @@ export function BundleImportDialog({ isOpen, onClose, initialShareUrl, shareLink
                 <Download className="w-3.5 h-3.5" />
                 {st.import_btn}
               </button>
-            ) : (
-              <button
-                onClick={dangerConfirmed ? handleImport : undefined}
-                disabled={!dangerConfirmed}
-                className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
-              >
-                <ShieldOff className="w-3.5 h-3.5" />
-                {st.import_anyway}
-              </button>
-            )
+            ) : (() => {
+              // Import is enabled only when the user has acknowledged the
+              // SPECIFIC danger that the current preview surfaces. A 'tamper'
+              // ack does not unlock 'unknown signer' or vice versa.
+              const requiredKind: DangerConfirmKind = preview.signer_trusted ? 'tamper' : 'unknown';
+              const matchedKind = dangerConfirmed === requiredKind;
+              return (
+                <button
+                  onClick={matchedKind ? handleImport : undefined}
+                  disabled={!matchedKind}
+                  className="px-3 py-1.5 typo-caption rounded-card bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  <ShieldOff className="w-3.5 h-3.5" />
+                  {st.import_anyway}
+                </button>
+              );
+            })()
           )}
         </div>
       </div>

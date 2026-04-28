@@ -3,6 +3,20 @@ import type { BundleImportPreview, BundleResourcePreview } from '@/api/network/b
 import { NetworkAccessScopeBadge } from './NetworkAccessScopeBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
+/**
+ * Discriminator for which danger warning the user explicitly acknowledged.
+ *  - `'tamper'`   → trusted peer with a bad signature (possible tampering)
+ *  - `'unknown'`  → unknown signer (cannot verify)
+ *  - `null`       → no acknowledgement
+ *
+ * The two warnings are mutually exclusive at render time, but `signer_trusted`
+ * is server-derived and can flip between preview re-fetches. A single shared
+ * boolean previously let consent for warning A silently carry over into
+ * warning B; tagging by kind closes the carry-over and gives any future
+ * audit log a record of which danger was accepted.
+ */
+export type DangerConfirmKind = 'tamper' | 'unknown' | null;
+
 export function BundlePreviewContent({
   preview,
   skipConflicts,
@@ -17,8 +31,8 @@ export function BundlePreviewContent({
   setSkipConflicts: (v: boolean) => void;
   renamePrefix: string;
   setRenamePrefix: (v: string) => void;
-  dangerConfirmed: boolean;
-  setDangerConfirmed: (v: boolean) => void;
+  dangerConfirmed: DangerConfirmKind;
+  setDangerConfirmed: (v: DangerConfirmKind) => void;
 }) {
   const { t } = useTranslation();
   const st = t.sharing;
@@ -85,8 +99,8 @@ export function BundlePreviewContent({
           <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
             <input
               type="checkbox"
-              checked={dangerConfirmed}
-              onChange={(e) => setDangerConfirmed(e.target.checked)}
+              checked={dangerConfirmed === 'tamper'}
+              onChange={(e) => setDangerConfirmed(e.target.checked ? 'tamper' : null)}
               className="rounded border-red-500/40"
             />
             {st.danger_trusted_confirm}
@@ -109,8 +123,8 @@ export function BundlePreviewContent({
           <label className="flex items-center gap-2 typo-caption text-red-400 cursor-pointer pt-1">
             <input
               type="checkbox"
-              checked={dangerConfirmed}
-              onChange={(e) => setDangerConfirmed(e.target.checked)}
+              checked={dangerConfirmed === 'unknown'}
+              onChange={(e) => setDangerConfirmed(e.target.checked ? 'unknown' : null)}
               className="rounded border-red-500/40"
             />
             {st.danger_unknown_confirm}
