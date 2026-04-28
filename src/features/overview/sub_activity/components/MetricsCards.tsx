@@ -1,49 +1,7 @@
-import { DollarSign, AlertTriangle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import type { DashboardCostAnomaly } from '@/lib/bindings/DashboardCostAnomaly';
-import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { fmtCost, fmtDate } from '../libs/executionMetricsHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
-
-// -- Summary Card -----------------------------------------------------
-
-interface SummaryCardProps {
-  icon: typeof DollarSign;
-  label: string;
-  value: string;
-  color: string;
-  /** Raw numeric value — when provided, the card animates from previous to current */
-  numericValue?: number;
-  /** Formatter for the animated number (required when numericValue is set) */
-  formatFn?: (v: number) => string;
-}
-
-export function SummaryCard({ icon: Icon, label, value, color, numericValue, formatFn }: SummaryCardProps) {
-  const colorMap: Record<string, string> = {
-    blue: 'text-blue-400 bg-blue-500/15 border-blue-500/25',
-    emerald: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/25',
-    violet: 'text-violet-400 bg-violet-500/15 border-violet-500/25',
-    amber: 'text-amber-400 bg-amber-500/15 border-amber-500/25',
-  };
-  const c = colorMap[color] ?? colorMap.blue!;
-  const parts = c.split(' ');
-  const textColor = parts[0];
-  const bg = parts[1];
-  const border = parts[2];
-
-  return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-modal border ${border} ${bg}`}>
-      <Icon className={`w-4 h-4 ${textColor}`} />
-      <div className="min-w-0">
-        <p className="typo-body text-foreground truncate">{label}</p>
-        <p className={`typo-heading ${textColor}`}>
-          {numericValue != null && formatFn
-            ? <AnimatedCounter value={numericValue} formatFn={formatFn} />
-            : value}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // -- Anomaly Badge ----------------------------------------------------
 
