@@ -80,12 +80,13 @@ const KPI_PALETTE: Record<string, {
   purple:  { text: 'text-purple-400',  bg: 'bg-purple-500/15',  border: 'border-purple-500/25',  gradient: 'from-purple-500/10 to-transparent border-purple-500/20',   iconBg: 'bg-purple-500/10 border-purple-500/20' },
   red:     { text: 'text-red-400',     bg: 'bg-red-500/15',     border: 'border-red-500/25',     gradient: 'from-red-500/10 to-transparent border-red-500/20',         iconBg: 'bg-red-500/10 border-red-500/20' },
   amber:   { text: 'text-amber-400',   bg: 'bg-amber-500/15',   border: 'border-amber-500/25',   gradient: 'from-amber-500/10 to-transparent border-amber-500/20',     iconBg: 'bg-amber-500/10 border-amber-500/20' },
+  cyan:    { text: 'text-cyan-400',    bg: 'bg-cyan-500/15',    border: 'border-cyan-500/25',    gradient: 'from-cyan-500/10 to-transparent border-cyan-500/20',       iconBg: 'bg-cyan-500/10 border-cyan-500/20' },
   primary: { text: 'text-primary',     bg: 'bg-primary/15',     border: 'border-primary/25',     gradient: 'from-primary/10 to-transparent border-primary/20',         iconBg: 'bg-primary/10 border-primary/20' },
 };
 
 const SPARKLINE_HEX: Record<string, string> = {
   blue: '#3b82f6', emerald: '#10b981', green: '#22c55e', violet: '#8b5cf6',
-  purple: '#a855f7', red: '#ef4444', amber: '#f59e0b', primary: '#8b5cf6',
+  purple: '#a855f7', red: '#ef4444', amber: '#f59e0b', cyan: '#06b6d4', primary: '#8b5cf6',
 };
 
 function Sparkline({ data, hex }: { data: number[]; hex: string }) {
