@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
@@ -27,23 +28,19 @@ export function RecipeOutputSection({
   executionError,
 }: RecipeOutputSectionProps) {
   const { t } = useTranslation();
-  const [copiedPrompt, setCopiedPrompt] = useState(false);
-  const [copiedOutput, setCopiedOutput] = useState(false);
+  const { copied: copiedPrompt, copy: copyPrompt } = useCopyToClipboard();
+  const { copied: copiedOutput, copy: copyOutput } = useCopyToClipboard();
   const [terminalExpanded, setTerminalExpanded] = useState(false);
 
-  const handleCopyPrompt = useCallback(async () => {
+  const handleCopyPrompt = useCallback(() => {
     if (!result) return;
-    await navigator.clipboard.writeText(result.rendered_prompt);
-    setCopiedPrompt(true);
-    setTimeout(() => setCopiedPrompt(false), 2000);
-  }, [result]);
+    copyPrompt(result.rendered_prompt);
+  }, [result, copyPrompt]);
 
-  const handleCopyOutput = useCallback(async () => {
+  const handleCopyOutput = useCallback(() => {
     if (!llmOutput) return;
-    await navigator.clipboard.writeText(llmOutput);
-    setCopiedOutput(true);
-    setTimeout(() => setCopiedOutput(false), 2000);
-  }, [llmOutput]);
+    copyOutput(llmOutput);
+  }, [llmOutput, copyOutput]);
 
   return (
     <>
