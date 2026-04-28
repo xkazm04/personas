@@ -107,7 +107,12 @@ interface UseBuildSessionReturn {
     workflowJson?: string,
     parserResultJson?: string,
   ) => Promise<string>;
-  answerQuestion: (cellKey: string, answer: string) => Promise<void>;
+  answerQuestion: (
+    cellKey: string,
+    answer: string,
+    reference?: import("@/lib/types/buildTypes").BuildReference | null,
+    webhookSource?: import("@/lib/types/buildTypes").BuildWebhookSource | null,
+  ) => Promise<void>;
   submitAllAnswers: () => Promise<void>;
   cancelSession: () => Promise<void>;
   // State is read from useAgentStore selectors, not returned here
@@ -350,13 +355,37 @@ export function useBuildSession(
   /**
    * Collect an answer locally without sending to CLI.
    * The user answers all pending questions, then clicks "Continue" to send.
+   *
+   * **C7 — reference attachments AND webhook sources bypass the batch path**
+   * and ship straight to the backend. Reasons: (1) the resolved file/URL
+   * contents (or fenced webhook block) inflate the answer text well past the
+   * typical batch size, so combining with other answers gives the LLM a
+   * confusing wall of mixed content; (2) the typed payload IS the answer
+   * for that question — there is no second piece of information to wait
+   * for. Other (non-typed) pending answers still batch normally.
    */
   const answerQuestion = useCallback(
-    async (cellKey: string, answer: string): Promise<void> => {
+    async (
+      cellKey: string,
+      answer: string,
+      reference?: import("@/lib/types/buildTypes").BuildReference | null,
+      webhookSource?: import("@/lib/types/buildTypes").BuildWebhookSource | null,
+    ): Promise<void> => {
       if (!sessionIdRef.current) {
         throw new Error("[useBuildSession] No active session to answer");
       }
-      // Store answer locally — don't send to CLI yet
+      if (reference || webhookSource) {
+        await answerBuildQuestion(
+          sessionIdRef.current,
+          cellKey,
+          answer,
+          reference,
+          webhookSource,
+        );
+        return;
+      }
+      // Store answer locally — don't send to CLI yet (the user answers all
+      // pending questions then clicks Continue to submit as a batch).
       useAgentStore.getState().collectAnswer(cellKey, answer);
     },
     [],

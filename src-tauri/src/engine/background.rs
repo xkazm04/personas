@@ -1498,6 +1498,8 @@ mod tests {
             webhook_secret: None,
             event_type: None,
             payload: None,
+            smee_channel_url: None,
+            smee_event_filter: None,
         };
         let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();

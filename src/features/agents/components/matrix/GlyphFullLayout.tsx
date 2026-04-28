@@ -17,8 +17,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Play, CheckCircle2, Loader2, AlertCircle, ArrowRight,
   Rocket, Send, X, HelpCircle, Settings2, Pencil, Plus,
-  ThumbsDown, RefreshCw, Terminal, ChevronDown,
+  ThumbsDown, RefreshCw, Terminal, ChevronDown, FlaskConical,
 } from "lucide-react";
+import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
+import { useTranslation } from "@/i18n/useTranslation";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase } from "@/lib/types/buildTypes";
@@ -730,6 +732,12 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [refining, setRefining] = useState(false);
+  const [showSimulate, setShowSimulate] = useState(false);
+
+  // Build session id + draft IR for the dry-run preview panel.
+  const buildSessionId = useAgentStore((s) => s.buildSessionId);
+  const buildDraft = useAgentStore((s) => s.buildDraft);
+  const { t } = useTranslation();
 
   const SIZE = 640;
   const isPreBuild = !isBuilding && !hasDesignResult;
@@ -1037,6 +1045,17 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                           <Rocket className="w-3.5 h-3.5" />
                           {testPassed ? "Promote" : "Promote Anyway"}
                         </button>
+                        <button
+                          type="button"
+                          data-testid="build-simulate-open"
+                          onClick={() => setShowSimulate(true)}
+                          disabled={!buildSessionId}
+                          className="px-3 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 disabled:opacity-50 disabled:cursor-not-allowed border border-border/30 typo-body text-foreground/80 cursor-pointer flex items-center gap-1.5"
+                          title={t.agents.build_simulate.subtitle}
+                        >
+                          <FlaskConical className="w-3.5 h-3.5" />
+                          {t.agents.build_simulate.open_button}
+                        </button>
                         {onRefine && (
                           <button
                             type="button"
@@ -1226,6 +1245,12 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
       </div>
 
       <CapabilityAddModal open={showAdd} onClose={() => setShowAdd(false)} />
+      <BuildSimulatePanel
+        isOpen={showSimulate}
+        onClose={() => setShowSimulate(false)}
+        sessionId={buildSessionId}
+        draft={buildDraft}
+      />
     </div>
   );
 }

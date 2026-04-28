@@ -1187,6 +1187,8 @@ pub fn run() {
             commands::design::build_sessions::promote_build_draft,
             commands::design::build_sessions::create_adoption_session,
             commands::design::build_sessions::save_adoption_answers,
+            commands::design::build_simulate::simulate_build_draft,
+            commands::design::build_simulate::get_simulation_artefacts,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,

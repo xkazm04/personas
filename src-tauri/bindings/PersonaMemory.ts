@@ -22,4 +22,11 @@ access_count: number,
 /**
  * Last time this memory was injected into a prompt (ISO 8601).
  */
-last_accessed_at: string | null, created_at: string, updated_at: string, };
+last_accessed_at: string | null, created_at: string, updated_at: string, 
+/**
+ * Capability (use case) attribution. Memories with `use_case_id = Some(_)`
+ * are scoped to that capability for injection (active/working tier).
+ * `None` means persona-wide; injected for any execution. Core-tier memories
+ * are always persona-wide regardless of this column. Phase C5.
+ */
+use_case_id: string | null, };

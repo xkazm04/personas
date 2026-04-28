@@ -8,6 +8,8 @@ import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import { Channel } from "@tauri-apps/api/core";
 import type {
   BuildEvent,
+  BuildReference,
+  BuildWebhookSource,
   PersistedBuildSession,
   BuildSessionSummary,
   PromoteBuildResult,
@@ -36,16 +38,34 @@ export async function startBuildSession(
   });
 }
 
-/** Submit an answer to a pending build question. */
+/** Submit an answer to a pending build question.
+ *
+ * `reference` is optional — supply when the question carried
+ * `acceptsReference: true` and the user attached a file / URL / inline text.
+ * The backend resolves the reference server-side (SSRF-safe URL fetch,
+ * size cap, content-type guard) and prepends a fenced block to the answer
+ * before piping it to the CLI subprocess. See
+ * `src-tauri/src/engine/build_session/reference.rs`.
+ *
+ * `webhookSource` is optional — supply when the question carried
+ * `acceptsWebhookSource: true` and the user attached a smee.io URL. The
+ * backend appends a fenced WEBHOOK SOURCE block to the answer text so the
+ * LLM places the URL on the trigger config; promote then auto-creates the
+ * smee_relays binding (see `commands/design/build_sessions.rs::auto_create_smee_relays`).
+ */
 export async function answerBuildQuestion(
   sessionId: string,
   cellKey: string,
   answer: string,
+  reference?: BuildReference | null,
+  webhookSource?: BuildWebhookSource | null,
 ): Promise<void> {
   return invokeWithTimeout("answer_build_question", {
     sessionId,
     cellKey,
     answer,
+    reference: reference ?? null,
+    webhookSource: webhookSource ?? null,
   });
 }
 
@@ -98,5 +118,96 @@ export async function promoteBuildDraft(
   return invokeWithTimeout<PromoteBuildResult>("promote_build_draft", {
     sessionId,
     personaId,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Dry-run / simulation (C7) — preview a capability before promoting.
+// Backend: src-tauri/src/commands/design/build_simulate.rs
+// ---------------------------------------------------------------------------
+
+/** Minimal shape of a PersonaExecution row returned by simulate_build_draft.
+ * Snake-case fields mirror what `serde` emits (no rename_all on PersonaExecution).
+ */
+export interface SimulatedExecution {
+  id: string;
+  persona_id: string;
+  status: string;
+  is_simulation?: boolean;
+  use_case_id?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  // Other fields (input_data, output_data, error_message, ...) are present
+  // but the dry-run UI doesn't currently consume them — kept open via index.
+  [key: string]: unknown;
+}
+
+/** Bundled artefacts response from get_simulation_artefacts. CamelCase per the
+ * Rust struct's `#[serde(rename_all = "camelCase")]`. */
+export interface SimulationArtefacts {
+  executionId: string;
+  /** Manual reviews emitted during the simulated execution. Snake-case fields
+   * inside each item mirror PersonaManualReview as serialised today. */
+  reviews: Array<{
+    id: string;
+    execution_id: string;
+    persona_id: string;
+    title: string;
+    description: string | null;
+    severity: string;
+    status: "pending" | "approved" | "rejected" | "resolved";
+    reviewer_notes: string | null;
+    use_case_id: string | null;
+    created_at: string;
+    updated_at: string;
+    [key: string]: unknown;
+  }>;
+  /** Memories the agent stored during the simulated execution. */
+  memories: Array<{
+    id: string;
+    persona_id: string;
+    title: string;
+    content: string;
+    category: string | null;
+    importance: number | null;
+    created_at: string;
+    [key: string]: unknown;
+  }>;
+}
+
+/**
+ * Run a capability against the draft persona's `agent_ir` without promoting.
+ * Snapshots a `design_context` onto the persona row, dispatches via
+ * `execute_persona_inner` with `is_simulation=true`, returns the execution row.
+ *
+ * Throws AppError::Validation if the session is in a phase earlier than
+ * `draft_ready`, or if `useCaseId` doesn't match any UC in the draft IR.
+ */
+export async function simulateBuildDraft(
+  sessionId: string,
+  useCaseId: string,
+  inputOverride?: string | null,
+): Promise<SimulatedExecution> {
+  return invokeWithTimeout<SimulatedExecution>(
+    "simulate_build_draft",
+    {
+      sessionId,
+      useCaseId,
+      inputOverride: inputOverride ?? null,
+    },
+    undefined,
+    180_000,
+  );
+}
+
+/**
+ * Fetch artefacts (manual reviews, memories) a single simulation execution
+ * produced. Used by the dry-run preview panel.
+ */
+export async function getSimulationArtefacts(
+  executionId: string,
+): Promise<SimulationArtefacts> {
+  return invokeWithTimeout<SimulationArtefacts>("get_simulation_artefacts", {
+    executionId,
   });
 }

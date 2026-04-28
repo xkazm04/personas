@@ -84,8 +84,13 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
   );
 
   const handleAnswer = useCallback(
-    async (cellKey: string, answer: string) => {
-      await session.answerQuestion(cellKey, answer);
+    async (
+      cellKey: string,
+      answer: string,
+      reference?: import("@/lib/types/buildTypes").BuildReference | null,
+      webhookSource?: import("@/lib/types/buildTypes").BuildWebhookSource | null,
+    ) => {
+      await session.answerQuestion(cellKey, answer, reference, webhookSource);
     },
     [session],
   );

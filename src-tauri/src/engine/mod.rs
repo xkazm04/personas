@@ -26,6 +26,7 @@ pub mod smee_relay;
 pub mod connector_strategy;
 pub mod credential_design;
 pub mod auto_triage;
+pub mod design_context;
 pub mod dispatch;
 pub mod quality_gate;
 pub mod protocol;

@@ -219,9 +219,7 @@ pub async fn run_execution(
     // profile (provider, temperature, etc.). If no override: untouched.
     if let (Some(uc_id), Some(ref dc_json)) = (&execution_use_case_id, &persona.design_context) {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
-            let uc_override = dc
-                .get("useCases")
-                .and_then(|v| v.as_array())
+            let uc_override = crate::engine::design_context::pick_use_cases_array(&dc)
                 .and_then(|arr| {
                     arr.iter().find(|uc| uc.get("id").and_then(|i| i.as_str()) == Some(uc_id.as_str()))
                 })

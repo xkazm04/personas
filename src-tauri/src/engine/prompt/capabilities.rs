@@ -27,7 +27,7 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
 pub fn render_active_capabilities(design_context: Option<&str>) -> String {
     let Some(dc_json) = design_context else { return String::new(); };
     let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
-    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else { return String::new(); };
     if use_cases.is_empty() { return String::new(); }
 
     let mut out = String::new();
@@ -109,7 +109,7 @@ pub fn render_active_capabilities(design_context: Option<&str>) -> String {
 pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
     let Some(dc_json) = design_context else { return String::new(); };
     let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
-    let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) else { return String::new(); };
+    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else { return String::new(); };
 
     let mut entries: Vec<String> = use_cases
         .iter()

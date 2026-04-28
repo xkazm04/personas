@@ -1,0 +1,180 @@
+{
+  "scenario": "phase_d_auto_triage_shape",
+  "started": "2026-04-28T12:31:48.694531+00:00",
+  "finished": "2026-04-28T12:34:09.185246+00:00",
+  "duration_s": 140.490715,
+  "result": {
+    "auto_triage_use_cases": [
+      "uc-df6e1303-1374-4700-8373-5c7586d3b37e"
+    ],
+    "decision_principles_count": 0
+  },
+  "log": [
+    {
+      "ts": "2026-04-28T12:31:48.700227+00:00",
+      "step": "preflight.health",
+      "outcome": "ok",
+      "server": "personas-test-automation",
+      "version": "0.2.0"
+    },
+    {
+      "ts": "2026-04-28T12:31:49.537332+00:00",
+      "step": "start_build",
+      "outcome": "ok",
+      "session_id": "2aa3cadc-7545-47b7-80fe-db94bf54d12c",
+      "persona_id": "67bba33b-0f39-41fb-9434-798935ec1856"
+    },
+    {
+      "ts": "2026-04-28T12:32:09.791929+00:00",
+      "step": "wait.phase.round0",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:32:19.927577+00:00",
+      "step": "wait.phase.round1",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-28T12:32:20.013721+00:00",
+      "step": "answer.round1",
+      "outcome": "ok",
+      "answered": [
+        "connectors"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T12:32:40.258238+00:00",
+      "step": "wait.phase.round2",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:33:00.504706+00:00",
+      "step": "wait.phase.round3",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:33:20.742832+00:00",
+      "step": "wait.phase.round4",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:33:26.828029+00:00",
+      "step": "wait.phase.round5",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-28T12:33:26.920072+00:00",
+      "step": "answer.round5",
+      "outcome": "ok",
+      "answered": [
+        "memory"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T12:33:47.156531+00:00",
+      "step": "wait.phase.round6",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:34:07.424929+00:00",
+      "step": "wait.phase.round7",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:34:09.051135+00:00",
+      "step": "wait.phase.round8",
+      "outcome": "ok",
+      "phase": "test_complete",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T12:34:09.051373+00:00",
+      "step": "answer_dimensions",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 8
+    },
+    {
+      "ts": "2026-04-28T12:34:09.063826+00:00",
+      "step": "wait_for_agent_ir.phase_change",
+      "outcome": "info",
+      "phase": "test_complete",
+      "has_agent_ir": true
+    },
+    {
+      "ts": "2026-04-28T12:34:09.063922+00:00",
+      "step": "wait_for_agent_ir",
+      "outcome": "ok"
+    },
+    {
+      "ts": "2026-04-28T12:34:09.068763+00:00",
+      "step": "test_build_draft",
+      "outcome": "ok",
+      "report_keys": [
+        "credential_issues",
+        "results",
+        "tools_failed",
+        "tools_passed",
+        "tools_skipped",
+        "tools_tested"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T12:34:09.127237+00:00",
+      "step": "promote_build_draft",
+      "outcome": "ok",
+      "persona_id": "67bba33b-0f39-41fb-9434-798935ec1856",
+      "triggers_created": null
+    },
+    {
+      "ts": "2026-04-28T12:34:09.140633+00:00",
+      "step": "acceptance.auto_triage_mode_set",
+      "outcome": "ok",
+      "auto_triage_use_cases": [
+        "uc-df6e1303-1374-4700-8373-5c7586d3b37e"
+      ],
+      "all_modes": [
+        "auto_triage"
+      ]
+    },
+    {
+      "ts": "2026-04-28T12:34:09.140787+00:00",
+      "step": "acceptance.decision_principles_structured",
+      "outcome": "info",
+      "count": 0,
+      "sample": [],
+      "note": "Not exposed as a structured array \u2014 embedded in structured_prompt prose. Evaluator runs with empty principles; deferred for v3 normaliser to hoist explicitly."
+    },
+    {
+      "ts": "2026-04-28T12:34:09.147031+00:00",
+      "step": "acceptance.no_pending_reviews_pre_fire",
+      "outcome": "ok",
+      "count": 0
+    },
+    {
+      "ts": "2026-04-28T12:34:09.185178+00:00",
+      "step": "cleanup.deleteAgent",
+      "outcome": "ok",
+      "deleted": "Email Triage Manager"
+    }
+  ]
+}

@@ -273,6 +273,19 @@ pub enum TriggerConfig {
         webhook_secret: Option<String>,
         event_type: Option<String>,
         payload: Option<serde_json::Value>,
+        /// C7 — smee.io channel URL the user attached during build. The
+        /// promote pipeline reads this and creates a `smee_relays` row so
+        /// the persona starts receiving forwarded events immediately. Not
+        /// consumed by the runtime webhook listener (which fires on
+        /// `POST /webhook/{trigger_id}` regardless). When `None`, no smee
+        /// relay is auto-created — the user can still attach one
+        /// post-promote via SmeeRelayTab.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        smee_channel_url: Option<String>,
+        /// Comma-separated `event_type` allowlist forwarded to the
+        /// `smee_relays.event_filter` column when auto-creating the relay.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        smee_event_filter: Option<String>,
     },
     #[serde(rename = "chain")]
     Chain {
@@ -532,6 +545,14 @@ impl TriggerConfig {
                     .map(String::from),
                 event_type,
                 payload,
+                smee_channel_url: val
+                    .get("smee_channel_url")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
+                smee_event_filter: val
+                    .get("smee_event_filter")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
             },
             "chain" => TriggerConfig::Chain {
                 source_persona_id: val

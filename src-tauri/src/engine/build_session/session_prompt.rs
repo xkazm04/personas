@@ -415,6 +415,84 @@ The agent runs on a platform with built-in communication protocols. When composi
 
 22. **Verbatim event names from the user.** When the user's intent or clarifying answer explicitly names an `event_type` — typically inside backticks (e.g. ``` `news.draft.captured` ```) or visibly quoted as the literal target — use that exact string verbatim everywhere it appears (`event_subscriptions[].event_type`, `emit_event.type`). Do NOT rewrite it into a fresh `<persona>.<task>.<event_type>` token derived from the current persona's name. The three-level-dot rule (rule 5) is a *default* that applies when YOU invent a new event name; it is NOT licence to rename a name the user has hand-wired. The user is almost always pinning a chain across personas — renaming the prefix to match this persona breaks the chain because the upstream emitter and the downstream listener no longer agree on the string. If the user supplies `news.draft.captured`, emit and subscribe to exactly `news.draft.captured` — never `hn_scraper.story.draft_captured`, never `<this_persona>.<task>.draft_captured`. When in doubt, treat any backtick-quoted three-level-dot string in user input as a hard literal.
 
+23. **Reference attachments — ask for a sample/template when one would settle the design.** Some fields are far easier to design correctly when the user can show you a concrete example: the shape of an `input_schema`, the layout of a generated artefact (invoice, report, email body), the field set of an external API the persona will write to, the style/tone of a free-text template, the wire-format of an event payload it must produce.
+
+    When you would otherwise have to guess at any of these — and the user's intent does NOT already include the example inline — emit a `clarifying_question` with `accepts_reference: true`. The frontend will show the user a "+ Attach reference" affordance alongside the regular freetext answer; the user can attach a local file (text-only, ≤ 256 KB, common formats: txt/md/json/yaml/csv/html/xml/source code) OR a URL (HTTPS, fetched with SSRF protection, same size cap and content-type allowlist).
+
+    Shape (any scope can carry the flag — `field` is the most common):
+    ```
+    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "<sample_input|sample_output|input_schema|operating_instructions|...>", "question": "<short ask explaining what the example will be used for>", "options": [], "accepts_reference": true}}}}
+    ```
+
+    The user's answer will arrive on the next `--continue` turn with the file/URL contents fenced like this:
+
+    ```
+    <user's freetext answer, possibly empty>
+
+    --- ATTACHED REFERENCE: <name> ---
+    <file or URL contents>
+    --- END REFERENCE ---
+    ```
+
+    Use the fenced contents to infer the field shape directly — do NOT ask follow-up questions about details you can read from the reference. If the reference is unhelpful (truncated, off-topic, parser garbage), explain why in your next clarifying_question and ask for a different sample.
+
+    **When to ask for a reference (representative cues):**
+    - Field is `sample_input` and the user mentioned a real input format (e.g. "use the same payload Clockify sends me").
+    - Field is `sample_output` or output format and the user mentioned matching an existing template (invoice, report, brief).
+    - The persona writes to an external API and the user references a "fixture" / "template" / "spec" / "schema".
+    - The persona's tone or style needs to match an existing artefact ("write like this article", "in the voice of these emails").
+
+    **When NOT to ask for a reference:**
+    - The intent already inlines the example (the user typed the JSON/template into the intent textarea).
+    - The field has a small, well-known enum of options (`review_policy`, `trigger_type`, `category`).
+    - You're picking from a vault-backed connector list (use `scope: "connector_category"` instead).
+    - You only need confirmation, not new content.
+
+    The IR shape after the answer is unchanged — the user's answer (with the embedded reference) is your evidence; treat the contents as authoritative input data, not as questionable user prose. At most one reference per question; if you need two examples, emit two questions.
+
+24. **Webhook trigger source — ASK for a smee.io URL.** When you pick `trigger_type: "webhook"` for a capability, you MUST also ask the user where the webhook will originate from. The runtime listens locally on `POST /webhook/<trigger_id>` with HMAC verification, but most users want to forward an external service's webhook through smee.io rather than expose a public URL. Ask for the smee channel up front so the build pipeline can auto-create the proxy binding at promote time.
+
+    Shape:
+    ```
+    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "webhook_source", "question": "<short ask explaining what service will send the webhook + that smee.io is the recommended bridge>", "options": [], "accepts_webhook_source": true}}}}
+    ```
+
+    The user's answer arrives with a fenced summary appended (the frontend submits the URL via a typed payload — do NOT treat the URL as plain freetext from the user). Look for this exact shape:
+
+    ```
+    <user's freetext answer, possibly empty>
+
+    --- WEBHOOK SOURCE ---
+    channel_url: https://smee.io/<channel>
+    event_filter: <optional comma-separated event_type allowlist or "(none)">
+    --- END WEBHOOK SOURCE ---
+    ```
+
+    On the next turn, place the URL on the corresponding webhook trigger's config so promote can wire it:
+
+    ```
+    {{"capability_resolution": {{"id": "uc_...", "field": "suggested_trigger", "value": {{
+      "trigger_type": "webhook",
+      "config": {{
+        "webhook_secret": null,
+        "smee_channel_url": "https://smee.io/<channel>",
+        "smee_event_filter": "github.push,github.pull_request"
+      }},
+      "description": "Forwarded via smee.io from <originating service>"
+    }}, "status": "resolved"}}}}
+    ```
+
+    `webhook_secret` should be left `null` — promote auto-generates a 32-byte hex secret. If `event_filter` was empty / "(none)", omit `smee_event_filter` entirely (the proxy then forwards every smee event).
+
+    **When to ASK for a smee URL** (default — emit the question):
+    - The user picked webhook trigger but didn't paste a `smee.io` URL in their intent.
+    - The intent says "react to GitHub", "react to Stripe webhook", "when a Linear issue is created" or any external-service-pushes-to-us pattern AND you've selected webhook trigger.
+
+    **When to SKIP** (do NOT emit the question):
+    - The user already pasted a smee.io URL in the intent — pull it verbatim into `smee_channel_url`.
+    - You picked a non-webhook trigger type (schedule / polling / manual / event / event_listener).
+    - The user explicitly said "I'll set up the smee URL myself later" — leave `smee_channel_url` null and trust them to attach via SmeeRelayTab post-promote.
+
 {template_context}
 
 Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###

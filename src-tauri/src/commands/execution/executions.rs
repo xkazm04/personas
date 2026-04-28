@@ -170,9 +170,7 @@ pub(crate) async fn execute_persona_inner(
         let dc: serde_json::Value = serde_json::from_str(dc_str).map_err(|e| {
             AppError::Validation(format!("design_context is not valid JSON: {}", e))
         })?;
-        let use_case = dc
-            .get("use_cases")
-            .and_then(|v| v.as_array())
+        let use_case = crate::engine::design_context::pick_use_cases_array(&dc)
             .and_then(|arr| arr.iter().find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id)))
             .cloned()
             .ok_or_else(|| {
