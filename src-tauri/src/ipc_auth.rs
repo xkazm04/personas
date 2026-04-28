@@ -601,7 +601,9 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "smee_relay_create",
     "smee_relay_update",
     "smee_relay_set_status",
-    "smee_relay_delete",
+    // C7 — `smee_relay_delete` removed from cloud commands. Local DB
+    // delete with `require_auth`; smee.io is account-less so no OAuth.
+    // Stays under the IPC token gate via the PRIVILEGED list below.
     // GitLab (gitlab_get_config is public — read-only startup check)
     "gitlab_connect",
     "gitlab_connect_from_vault",

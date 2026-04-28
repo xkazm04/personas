@@ -93,6 +93,21 @@ pub struct AgentIr {
     /// insert rows into the `output_assertions` table.
     #[serde(default, alias = "suggested_output_assertions")]
     pub output_assertions: Vec<serde_json::Value>,
+
+    /// v3 persona block — `{mission, identity, voice, principles[],
+    /// constraints[], decision_principles[], verbosity_default,
+    /// operating_instructions, tool_guidance, error_handling, tools[],
+    /// connectors[], notification_channels_default, core_memories[]}`.
+    /// Preserved as opaque JSON so downstream consumers can read structured
+    /// fields without re-parsing the prompt prose. Specifically lets the
+    /// auto_triage second-pass evaluator extract `decision_principles[]`
+    /// via `extract_principles_from_design_result` (which reads
+    /// `persona.decision_principles`).
+    ///
+    /// Promote forwards this onto `last_design_result.persona` so
+    /// runtime helpers can query it post-promote.
+    #[serde(default)]
+    pub persona: Option<serde_json::Value>,
 }
 
 // ---- Sub-types ----

@@ -1178,12 +1178,19 @@ pub async fn smee_relay_set_status(
 }
 
 /// Delete a Smee relay.
+///
+/// Local DB delete — uses regular `require_auth`. Same rationale as
+/// `smee_relay_list`: smee.io is a public-URL forwarding service with no
+/// account / API key, so our local-DB CRUD on `smee_relays` rows isn't
+/// a cloud operation. Stays in `PRIVILEGED_COMMANDS_SET` so it requires
+/// the IPC session token — write operations gate on a token even when
+/// they don't gate on Google OAuth.
 #[tauri::command]
 pub async fn smee_relay_delete(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
-    require_cloud_auth(&state, "smee_relay_delete").await?;
+    require_auth(&state).await?;
     smee_relay_repo::delete(&state.db, &id)?;
     state.smee_relay_notifier.notify();
     Ok(())

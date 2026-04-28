@@ -1029,6 +1029,11 @@ fn build_design_json(
         "suggested_notification_channels": ir.messages.clone(),
         "use_case_flows": ir_use_cases_json,
         "service_flow": serde_json::to_value(&ir.service_flow).unwrap_or_default(),
+        // C7 — preserve the v3 persona block (mission, principles[],
+        // constraints[], decision_principles[], etc.) so downstream
+        // consumers like auto_triage's extract_principles_from_design_result
+        // can read structured arrays without re-parsing prompt prose.
+        "persona": ir.persona.clone(),
     });
 
     (

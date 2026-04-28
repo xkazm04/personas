@@ -776,6 +776,16 @@ const bridge: TestBridge = {
     }
   },
 
+  /** C7 — delete a smee_relays row by id. Used for test cleanup. */
+  async smeeRelayDelete(id: string) {
+    try {
+      await invoke('smee_relay_delete', { id });
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** C7 — list smee_relays rows. Used by Phase H to verify the
    *  promote-time auto-bind landed (smee_relays row created with the
    *  expected target_persona_id + event_filter). */
