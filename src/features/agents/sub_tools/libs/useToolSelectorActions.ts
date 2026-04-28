@@ -20,7 +20,18 @@ export function useToolSelectorActions(
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const { navigate } = useCredentialNav();
 
-  const [undoToast, setUndoToast] = useState<{ toolId: string; toolName: string } | null>(null);
+  // The undo toast captures the personaId at the moment of removal. Undo
+  // must route back to the *origin* persona (the one the tool was removed
+  // from), not whatever persona happens to be selected when the user clicks
+  // Undo — otherwise a fast persona switch between remove and undo would
+  // re-assign the tool to the wrong agent. The persona-switch effect below
+  // also dismisses the toast as a UX safeguard, but the captured-personaId
+  // shape is the authoritative correctness guarantee.
+  const [undoToast, setUndoToast] = useState<{
+    toolId: string;
+    toolName: string;
+    personaId: string;
+  } | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearUndoToast = useCallback(() => {
@@ -35,8 +46,11 @@ export function useToolSelectorActions(
   const handleToggleTool = useCallback(async (toolId: string, toolName: string, isAssigned: boolean) => {
     clearUndoToast();
     if (isAssigned) {
-      await removeTool(personaId, toolId);
-      setUndoToast({ toolId, toolName });
+      // Snapshot the personaId at call time so a switch mid-undo-window can't
+      // reroute the undo to a different agent.
+      const originPersonaId = personaId;
+      await removeTool(originPersonaId, toolId);
+      setUndoToast({ toolId, toolName, personaId: originPersonaId });
       undoTimerRef.current = setTimeout(() => setUndoToast(null), 5000);
     } else {
       await assignTool(personaId, toolId);
@@ -45,9 +59,10 @@ export function useToolSelectorActions(
 
   const handleUndo = useCallback(async () => {
     if (!undoToast) return;
-    await assignTool(personaId, undoToast.toolId);
+    // Use the captured originating personaId, not the live `personaId` prop.
+    await assignTool(undoToast.personaId, undoToast.toolId);
     clearUndoToast();
-  }, [undoToast, assignTool, personaId, clearUndoToast]);
+  }, [undoToast, assignTool, clearUndoToast]);
 
   const handleClearAll = useCallback(async () => {
     clearUndoToast();
