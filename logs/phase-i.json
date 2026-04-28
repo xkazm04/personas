@@ -1,0 +1,272 @@
+{
+  "scenario": "phase_i_clockify_invoice",
+  "started": "2026-04-28T13:42:11.199458+00:00",
+  "finished": "2026-04-28T13:44:50.845546+00:00",
+  "duration_s": 159.646088,
+  "result": {
+    "use_case_count": 2,
+    "use_case_ids": [
+      "uc-b98e7b9a-3617-49e1-a587-b5bc6886eb35",
+      "uc-4837f746-4bba-49ef-892b-f1af4056144c"
+    ],
+    "trigger_types": [
+      "schedule",
+      "event_listener"
+    ],
+    "all_connectors": [
+      "clockify",
+      "gmail",
+      "local_drive",
+      "clockify",
+      "gmail",
+      "local_drive",
+      "clockify",
+      "local_drive",
+      "gmail",
+      "local_drive"
+    ],
+    "review_modes": [
+      "never",
+      "always"
+    ],
+    "decision_principles_count": 2
+  },
+  "log": [
+    {
+      "ts": "2026-04-28T13:42:11.205353+00:00",
+      "step": "preflight.health",
+      "outcome": "ok",
+      "server": "personas-test-automation",
+      "version": "0.2.0"
+    },
+    {
+      "ts": "2026-04-28T13:42:11.753709+00:00",
+      "step": "start_build",
+      "outcome": "ok",
+      "session_id": "bfdbe349-91aa-4ee5-8462-fdaa4ca7bc98",
+      "persona_id": "10877345-9924-4592-ab36-01fb2ace7a05"
+    },
+    {
+      "ts": "2026-04-28T13:42:31.987198+00:00",
+      "step": "wait.phase.round0",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:42:52.257540+00:00",
+      "step": "wait.phase.round1",
+      "outcome": "info",
+      "phase": "analyzing",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:42:55.092370+00:00",
+      "step": "wait.phase.round2",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 1
+    },
+    {
+      "ts": "2026-04-28T13:42:55.180761+00:00",
+      "step": "answer.round2",
+      "outcome": "ok",
+      "answered": [
+        "use-cases"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T13:43:15.426762+00:00",
+      "step": "wait.phase.round3",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:43:25.981465+00:00",
+      "step": "wait.phase.round4",
+      "outcome": "ok",
+      "phase": "awaiting_input",
+      "pending": 3
+    },
+    {
+      "ts": "2026-04-28T13:43:26.071234+00:00",
+      "step": "answer.round4",
+      "outcome": "ok",
+      "answered": [
+        "connectors",
+        "human-review",
+        "memory"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T13:43:46.321436+00:00",
+      "step": "wait.phase.round5",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:06.539215+00:00",
+      "step": "wait.phase.round6",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:26.785477+00:00",
+      "step": "wait.phase.round7",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:47.056377+00:00",
+      "step": "wait.phase.round8",
+      "outcome": "info",
+      "phase": "resolving",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:50.709467+00:00",
+      "step": "wait.phase.round9",
+      "outcome": "ok",
+      "phase": "test_complete",
+      "pending": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:50.709726+00:00",
+      "step": "answer_dimensions",
+      "outcome": "ok",
+      "final_phase": "test_complete",
+      "rounds": 9,
+      "reference_attached": false
+    },
+    {
+      "ts": "2026-04-28T13:44:50.718432+00:00",
+      "step": "wait_for_agent_ir.phase_change",
+      "outcome": "info",
+      "phase": "test_complete",
+      "has_agent_ir": true
+    },
+    {
+      "ts": "2026-04-28T13:44:50.718514+00:00",
+      "step": "wait_for_agent_ir",
+      "outcome": "ok"
+    },
+    {
+      "ts": "2026-04-28T13:44:50.725550+00:00",
+      "step": "test_build_draft",
+      "outcome": "ok",
+      "report_keys": [
+        "credential_issues",
+        "results",
+        "tools_failed",
+        "tools_passed",
+        "tools_skipped",
+        "tools_tested"
+      ],
+      "error": null
+    },
+    {
+      "ts": "2026-04-28T13:44:50.777521+00:00",
+      "step": "promote_build_draft",
+      "outcome": "ok",
+      "persona_id": "10877345-9924-4592-ab36-01fb2ace7a05",
+      "triggers_created": 2,
+      "smee_relays_created": 0
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794233+00:00",
+      "step": "acceptance.use_case_count",
+      "outcome": "ok",
+      "got": 2,
+      "expected": 2,
+      "ids": [
+        "uc-b98e7b9a-3617-49e1-a587-b5bc6886eb35",
+        "uc-4837f746-4bba-49ef-892b-f1af4056144c"
+      ]
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794316+00:00",
+      "step": "acceptance.schedule_triggers_present",
+      "outcome": "ok",
+      "schedule_count": 1,
+      "all_trigger_types": [
+        "schedule",
+        "event_listener"
+      ]
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794454+00:00",
+      "step": "acceptance.clockify_present",
+      "outcome": "ok",
+      "all_connectors": [
+        "clockify",
+        "gmail",
+        "local_drive"
+      ],
+      "persona_level_only": [
+        "clockify",
+        "gmail",
+        "local_drive"
+      ],
+      "per_uc_only": [
+        "clockify",
+        "gmail",
+        "local_drive"
+      ]
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794484+00:00",
+      "step": "acceptance.email_connector_present",
+      "outcome": "ok",
+      "matched": [
+        "gmail"
+      ]
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794497+00:00",
+      "step": "acceptance.human_review_gate_present",
+      "outcome": "ok",
+      "review_modes": [
+        "never",
+        "always"
+      ],
+      "note": null
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794511+00:00",
+      "step": "acceptance.review_policy_preserved_in_design_context",
+      "outcome": "ok",
+      "has_data": true
+    },
+    {
+      "ts": "2026-04-28T13:44:50.794524+00:00",
+      "step": "acceptance.decision_principles_hoisted",
+      "outcome": "ok",
+      "count": 2,
+      "sample": [
+        "When uncertain about billable status, include rather than exclude entries.",
+        "Prefer itemized detail over summary aggregation for transparency."
+      ],
+      "note": null
+    },
+    {
+      "ts": "2026-04-28T13:44:50.802062+00:00",
+      "step": "dry_run.simulate",
+      "outcome": "info",
+      "error": "Validation error: use_case_id 'uc-b98e7b9a-3617-49e1-a587-b5bc6886eb35' not found in draft agent_ir \u2014 available ids: [\"uc_generate_invoice\", \"uc_prepare_email_draft\"]",
+      "uc_id": "uc-b98e7b9a-3617-49e1-a587-b5bc6886eb35",
+      "note": "dry-run failed; primary acceptance gates already passed"
+    },
+    {
+      "ts": "2026-04-28T13:44:50.845472+00:00",
+      "step": "cleanup.deleteAgent",
+      "outcome": "ok",
+      "deleted": "Invoice Generator"
+    }
+  ]
+}
