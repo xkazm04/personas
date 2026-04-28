@@ -1,10 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   AlertTriangle, MousePointerClick, ExternalLink, Copy, Check,
 } from 'lucide-react';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('auto-cred-log-entries');
 import type { BrowserLogEntry } from '../helpers/types';
 import { splitByUrls, formatLogsForCopy } from '../helpers/autoCredHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -119,15 +117,12 @@ export function RichMessage({
 
 export function CopyLogButton({ logs }: { logs: BrowserLogEntry[] }) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   const handleCopy = useCallback(() => {
     if (logs.length === 0) return;
-    navigator.clipboard.writeText(formatLogsForCopy(logs)).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }).catch((err) => { logger.error('Failed to copy log to clipboard', { error: String(err) }); });
-  }, [logs]);
+    copy(formatLogsForCopy(logs));
+  }, [logs, copy]);
 
   if (logs.length === 0) return <div />;
 

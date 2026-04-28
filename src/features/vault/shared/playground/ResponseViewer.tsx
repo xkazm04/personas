@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useMemo } from 'react';
 import { Clock, Copy, Check } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { ApiProxyResponse } from '@/api/system/apiProxy';
 
@@ -25,7 +26,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
   const vt = t.vault.playground_extra;
   const sh = t.vault.shared;
   const [subTab, setSubTab] = useState<ResponseSubTab>('body');
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1500);
 
   const prettyBody = useMemo(() => {
     if (!response.body) return '';
@@ -49,9 +50,7 @@ export function ResponseViewer({ response }: ResponseViewerProps) {
   );
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(subTab === 'headers' ? JSON.stringify(response.headers, null, 2) : response.body);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    copy(subTab === 'headers' ? JSON.stringify(response.headers, null, 2) : response.body);
   };
 
   return (
