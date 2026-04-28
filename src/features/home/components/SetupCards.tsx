@@ -279,12 +279,27 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   const setSetupGoal = useSystemStore((s) => s.setSetupGoal);
 
   const [step, setStep] = useState(initialStep);
+  // All three steps now buffer drafts; the store is written ONLY on Finish.
+  // Previously, RoleStep and ToolStep wrote `setSetupRole` / `setSetupTool`
+  // instantly on click while only `goalDraft` buffered. A user who opened
+  // the stepper, picked a different role to compare, then dismissed via X
+  // or escape would silently corrupt their saved profile with a half-edit
+  // — there was no Cancel semantics. The buffered shape gives the modal
+  // proper Save/Cancel behaviour: the X / escape path discards drafts.
+  const [roleDraft, setRoleDraft] = useState<string | null>(setupRole);
+  const [toolDraft, setToolDraft] = useState<string | null>(setupTool);
   const [goalDraft, setGoalDraft] = useState(setupGoal ?? '');
   const [direction, setDirection] = useState(1);
 
-  // Re-sync the draft when the store's setupGoal changes from outside the
-  // stepper (other surfaces, persisted rehydration). Without this the draft
-  // silently diverges and overwrites a newer store value on save.
+  // Re-sync drafts when the store's values change from outside the stepper
+  // (other surfaces, persisted rehydration). Without these, an externally-
+  // updated value would silently get overwritten by the stale draft on save.
+  useEffect(() => {
+    setRoleDraft(setupRole);
+  }, [setupRole]);
+  useEffect(() => {
+    setToolDraft(setupTool);
+  }, [setupTool]);
   useEffect(() => {
     setGoalDraft(setupGoal ?? '');
   }, [setupGoal]);
@@ -292,19 +307,22 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
   const ss = t.home.setup_stepper;
 
   const completed = {
-    role: setupRole !== null,
-    tool: setupTool !== null,
-    goal: setupGoal !== null,
+    role: roleDraft !== null,
+    tool: toolDraft !== null,
+    goal: goalDraft.trim().length >= 10,
   };
 
   const canNext = step === 0
-    ? setupRole !== null
+    ? roleDraft !== null
     : step === 1
-      ? setupTool !== null
+      ? toolDraft !== null
       : goalDraft.trim().length >= 10;
 
   const goNext = () => {
     if (step === 2 && goalDraft.trim().length >= 10) {
+      // Commit all three drafts atomically on Finish.
+      if (roleDraft !== null) setSetupRole(roleDraft);
+      if (toolDraft !== null) setSetupTool(toolDraft);
       setSetupGoal(goalDraft.trim());
       onClose();
       return;
@@ -348,8 +366,8 @@ function SetupStepper({ isOpen, onClose, initialStep }: { isOpen: boolean; onClo
               transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
               className="w-full"
             >
-              {step === 0 && <RoleStep selected={setupRole} onSelect={setSetupRole} />}
-              {step === 1 && <ToolStep role={setupRole} selected={setupTool} onSelect={setSetupTool} />}
+              {step === 0 && <RoleStep selected={roleDraft} onSelect={setRoleDraft} />}
+              {step === 1 && <ToolStep role={roleDraft} selected={toolDraft} onSelect={setToolDraft} />}
               {step === 2 && <GoalStep value={goalDraft} onChange={setGoalDraft} />}
             </motion.div>
           </AnimatePresence>
