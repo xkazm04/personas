@@ -734,6 +734,148 @@ const bridge: TestBridge = {
     }
   },
 
+  /** C7 reference-input: answer a clarifying_question that carried
+   *  `accepts_reference: true`, attaching either a local file path, an
+   *  HTTPS URL, or inline text. Backend resolves + fences the reference
+   *  into the answer before piping to the CLI. */
+  async answerBuildQuestionWithReference(
+    cellKey: string,
+    answer: string,
+    reference: { path?: string; url?: string; inlineContent?: string; name?: string },
+  ) {
+    const state = useAgentStore.getState();
+    const sessionId = state.buildSessionId;
+    if (!sessionId) {
+      return { success: false, error: 'No active build session (no sessionId)' };
+    }
+    try {
+      await invoke('answer_build_question', {
+        sessionId,
+        cellKey,
+        answer,
+        reference,
+      });
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 — fetch the active build session for a persona, with `agent_ir`
+   *  parsed as JSON. Used by Phase G to find the first capability id
+   *  pre-promote (where `personas.design_context` and
+   *  `personas.last_design_result` are still NULL). Returns the
+   *  `PersistedBuildSession` shape — `agentIr` is the typed IR the LLM
+   *  built up over the conversation. */
+  async getActiveBuildSession(personaId: string) {
+    try {
+      const session = await invoke('get_active_build_session', { personaId });
+      return { success: true, session };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 — list smee_relays rows. Used by Phase H to verify the
+   *  promote-time auto-bind landed (smee_relays row created with the
+   *  expected target_persona_id + event_filter). */
+  async smeeRelayList() {
+    try {
+      const relays = await invoke('smee_relay_list');
+      return { success: true, relays };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 — list persona_manual_reviews rows, optionally filtered by
+   *  persona_id + status. Used by Phase D to verify auto_triage landed
+   *  reviews in `approved` / `rejected` (not `resolved`). */
+  async listManualReviews(personaId?: string | null, status?: string | null) {
+    try {
+      const reviews = await invoke('list_manual_reviews', {
+        personaId: personaId ?? null,
+        status: status ?? null,
+      });
+      return { success: true, reviews };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 — list policy_events rows for a given execution. Used by Phase D
+   *  to verify the auto_triage second-pass evaluator emitted the right
+   *  audit tag (review.auto_triage.approved / .rejected / .fallback). */
+  async getPolicyEventsForExecution(executionId: string) {
+    try {
+      const events = await invoke('get_policy_events_for_execution', { executionId });
+      return { success: true, events };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 webhook source: answer a clarifying_question that carried
+   *  `accepts_webhook_source: true`, attaching a smee.io URL (and optional
+   *  comma-separated event_filter). Backend appends a fenced WEBHOOK
+   *  SOURCE block to the answer text per session_prompt rule 24. */
+  async answerBuildQuestionWithWebhookSource(
+    cellKey: string,
+    answer: string,
+    webhookSource: { channelUrl: string; eventFilter?: string },
+  ) {
+    const state = useAgentStore.getState();
+    const sessionId = state.buildSessionId;
+    if (!sessionId) {
+      return { success: false, error: 'No active build session (no sessionId)' };
+    }
+    try {
+      await invoke('answer_build_question', {
+        sessionId,
+        cellKey,
+        answer,
+        webhookSource,
+      });
+      return { success: true };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 dry-run: simulate a capability against the draft persona without
+   *  promoting. Snapshots a `design_context` onto the draft row, dispatches
+   *  via execute_persona_inner with is_simulation=true, returns the
+   *  PersonaExecution row. Backend: simulate_build_draft. */
+  async simulateBuildDraft(useCaseId: string, inputOverride?: string | null) {
+    const state = useAgentStore.getState();
+    const sessionId = state.buildSessionId;
+    if (!sessionId) {
+      return { success: false, error: 'No active build session (no sessionId)' };
+    }
+    try {
+      const execution = await invoke('simulate_build_draft', {
+        sessionId,
+        useCaseId,
+        inputOverride: inputOverride ?? null,
+      }) as { id: string; status?: string; persona_id?: string };
+      return { success: true, execution };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /** C7 dry-run: fetch the artefacts (manual reviews + memories) the
+   *  simulation produced. Skips messages/events for v1 — those have no
+   *  per-execution repo accessor yet. */
+  async getSimulationArtefacts(executionId: string) {
+    try {
+      const artefacts = await invoke('get_simulation_artefacts', { executionId });
+      return { success: true, artefacts };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** Gap 6: Trigger test_build_draft for the active build session */
   async triggerBuildTest() {
     const state = useAgentStore.getState();

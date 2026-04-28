@@ -354,6 +354,32 @@ pub struct AgentIrUseCaseData {
     /// per-UC strings extend it, never replace it.
     #[serde(default)]
     pub error_handling: Option<String>,
+
+    /// v3 capability envelope field — `{"mode": "never"|"on_low_confidence"|
+    /// "always"|"auto_triage", "context": "<short rationale>"}`. Emitted by
+    /// the build LLM via `capability_resolution` events with
+    /// `field: "review_policy"` (build prompt rules 16d, 21). The promote
+    /// pipeline forwards this onto `design_context.useCases[i].review_policy`
+    /// so the dispatch layer's `pick_generation_policy` can route
+    /// `mode: "auto_triage"` to the second-pass evaluator (C7).
+    /// Without this field, runtime defaults to `ReviewPolicy::On`.
+    #[serde(default)]
+    pub review_policy: Option<serde_json::Value>,
+
+    /// v3 capability envelope field — `{"memories": "on"|"off", "reviews":
+    /// "on"|"off"|"trust_llm"|"auto_triage", "events": "on"|"off",
+    /// "event_aliases": {…}}`. Per-capability runtime override of generation
+    /// policy. Forwarded onto `design_context.useCases[i].generation_settings`
+    /// so dispatch's `parse_generation_settings` can read it.
+    #[serde(default)]
+    pub generation_settings: Option<serde_json::Value>,
+
+    /// v3 capability envelope field — `{"enabled": true|false, "context":
+    /// "<what to remember across runs>"}`. Documentation-only at runtime
+    /// (memory writes are gated by `generation_settings.memories` instead).
+    /// Forwarded for the design_context preview UI.
+    #[serde(default)]
+    pub memory_policy: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

@@ -10,10 +10,12 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { HelpCircle, Send, X, Hash } from "lucide-react";
-import type { BuildQuestion } from "@/lib/types/buildTypes";
+import type { BuildQuestion, BuildReference, BuildWebhookSource } from "@/lib/types/buildTypes";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
+import { ReferenceAttachmentPicker } from '@/features/agents/components/matrix/ReferenceAttachmentPicker';
+import { WebhookSourcePicker } from '@/features/agents/components/matrix/WebhookSourcePicker';
 
 const DIMENSION_COLORS: Record<string, string> = {
   "use-cases": "text-violet-400",
@@ -29,7 +31,17 @@ const DIMENSION_COLORS: Record<string, string> = {
 interface SpatialQuestionPopoverProps {
   referenceElement: HTMLElement | null;
   question: BuildQuestion;
-  onAnswer: (cellKey: string, answer: string) => void;
+  /** C7 — `reference` is supplied when the question carried
+   *  `acceptsReference: true` AND the user attached one. `webhookSource` is
+   *  supplied when the question carried `acceptsWebhookSource: true`. The
+   *  two are mutually exclusive at the question level (the build prompt
+   *  emits at most one flag per clarifying_question). */
+  onAnswer: (
+    cellKey: string,
+    answer: string,
+    reference?: BuildReference | null,
+    webhookSource?: BuildWebhookSource | null,
+  ) => void;
   isOpen?: boolean;
   onRequestOpen?: () => void;
   onRequestClose?: () => void;
@@ -41,11 +53,18 @@ function QuestionModal({
   onClose,
 }: {
   question: BuildQuestion;
-  onAnswer: (cellKey: string, answer: string) => void;
+  onAnswer: (
+    cellKey: string,
+    answer: string,
+    reference?: BuildReference | null,
+    webhookSource?: BuildWebhookSource | null,
+  ) => void;
   onClose: () => void;
 }) {
   const { t, tx } = useTranslation();
   const [freeText, setFreeText] = useState("");
+  const [reference, setReference] = useState<BuildReference | null>(null);
+  const [webhookSource, setWebhookSource] = useState<BuildWebhookSource | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -99,7 +118,11 @@ function QuestionModal({
 
   function handleFreeTextSubmit() {
     const trimmed = freeText.trim();
-    if (trimmed) onAnswer(question.cellKey, trimmed);
+    // An empty answer is valid when EITHER a reference OR a webhook source
+    // is attached — both are typed payloads that carry the user's intent
+    // independent of the freetext.
+    if (!trimmed && !reference && !webhookSource) return;
+    onAnswer(question.cellKey, trimmed, reference, webhookSource);
   }
 
   return createPortal(
@@ -209,10 +232,31 @@ function QuestionModal({
               className="w-full resize-none rounded-modal border border-primary/12 bg-card-bg p-3 typo-body text-foreground/90 placeholder:text-foreground focus:border-primary/30 focus:outline-none focus:ring-1 focus:ring-primary/15 transition-colors"
               data-testid="freetext-input"
             />
+            {/* C7 — reference attachment surface, only when the v3
+                clarifying_question carried `accepts_reference: true`. */}
+            {question.acceptsReference && (
+              <div className="mt-1" data-testid="reference-attachment-container">
+                <ReferenceAttachmentPicker
+                  value={reference}
+                  onChange={setReference}
+                />
+              </div>
+            )}
+            {/* C7 — webhook source surface, only when the v3
+                clarifying_question carried `accepts_webhook_source: true`
+                (build prompt rule 24, emitted with webhook trigger picks). */}
+            {question.acceptsWebhookSource && (
+              <div className="mt-1" data-testid="webhook-source-container">
+                <WebhookSourcePicker
+                  value={webhookSource}
+                  onChange={setWebhookSource}
+                />
+              </div>
+            )}
             <button
               type="button"
               onClick={handleFreeTextSubmit}
-              disabled={!freeText.trim()}
+              disabled={!freeText.trim() && !reference && !webhookSource}
               className="self-end inline-flex items-center gap-2 rounded-modal bg-primary text-primary-foreground px-4 py-2 typo-body font-medium transition-colors hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
               data-testid="submit-button"
             >

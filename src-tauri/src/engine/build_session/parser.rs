@@ -297,6 +297,8 @@ pub(super) fn parse_json_object(
             question,
             options,
             connector_category: None,
+            accepts_reference: false,
+            accepts_webhook_source: false,
         }];
     }
 
@@ -406,6 +408,18 @@ pub(super) fn build_clarifying_question_events(
         .get("category")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // C7 — `accepts_reference` flips the answering UI into reference-attach
+    // mode. Optional + defaults to false so older CLI streams keep working.
+    let accepts_reference = obj
+        .get("accepts_reference")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    // C7 — `accepts_webhook_source` flips the answering UI into smee.io
+    // URL-input mode. Same backwards-compat default.
+    let accepts_webhook_source = obj
+        .get("accepts_webhook_source")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
     let mut events = vec![BuildEvent::ClarifyingQuestionV3 {
         session_id: session_id.to_string(),
@@ -415,6 +429,8 @@ pub(super) fn build_clarifying_question_events(
         question: question.clone(),
         options: options.clone(),
         category: category.clone(),
+        accepts_reference,
+        accepts_webhook_source,
     }];
 
     // Legacy Question mirror — the old UI keys by `cell_key`. Pick the most
@@ -444,6 +460,8 @@ pub(super) fn build_clarifying_question_events(
         question,
         options,
         connector_category: legacy_category,
+        accepts_reference,
+        accepts_webhook_source,
     });
 
     events

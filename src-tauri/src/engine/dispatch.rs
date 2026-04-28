@@ -839,9 +839,7 @@ pub(crate) mod testable {
         let Some(dc) = serde_json::from_str::<serde_json::Value>(design_context_json).ok() else {
             return GenerationPolicy::permissive();
         };
-        let Some(uc) = dc
-            .get("use_cases")
-            .and_then(|v| v.as_array())
+        let Some(uc) = crate::engine::design_context::pick_use_cases_array(&dc)
             .and_then(|arr| arr.iter().find(|u| u.get("id").and_then(|v| v.as_str()) == Some(use_case_id)))
         else {
             return GenerationPolicy::permissive();
@@ -907,9 +905,7 @@ pub(crate) mod testable {
         use_case_id: &str,
     ) -> Option<String> {
         let dc: serde_json::Value = serde_json::from_str(design_context_json).ok()?;
-        let uc = dc
-            .get("use_cases")
-            .and_then(|v| v.as_array())?
+        let uc = crate::engine::design_context::pick_use_cases_array(&dc)?
             .iter()
             .find(|u| {
                 u.get("id").and_then(|v| v.as_str()) == Some(use_case_id)

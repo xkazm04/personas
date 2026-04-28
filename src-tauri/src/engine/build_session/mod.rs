@@ -20,6 +20,7 @@
 mod events;
 mod gates;
 mod parser;
+pub mod reference;
 mod runner;
 mod session_prompt;
 mod templates;

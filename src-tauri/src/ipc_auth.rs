@@ -595,7 +595,9 @@ pub const CLOUD_COMMANDS: &[&str] = &[
     "cloud_delete_trigger",
     "cloud_list_trigger_firings",
     "cloud_webhook_relay_status",
-    "smee_relay_list",
+    // C7 — `smee_relay_list` removed from cloud commands. It's a read-only
+    // DB query equivalent to `list_credentials` / `list_connectors`, both
+    // of which are Public tier. Inner handler still calls `require_auth`.
     "smee_relay_create",
     "smee_relay_update",
     "smee_relay_set_status",
@@ -703,3 +705,4 @@ mod tests {
         assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
     }
 }
+

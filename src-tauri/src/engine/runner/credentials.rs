@@ -188,8 +188,9 @@ pub(super) async fn inject_design_context_credentials(
     // Connector names may be in useCases[].connectors or a top-level connectors/summary field
     let mut connector_names: Vec<String> = Vec::new();
 
-    // Check useCases[].connectors (common pattern from promote)
-    if let Some(use_cases) = parsed.get("useCases").and_then(|v| v.as_array()) {
+    // Check use_cases[].connectors (matches both shapes via the helper —
+    // promote writes camelCase, dry-run snapshot writes snake_case).
+    if let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&parsed) {
         for uc in use_cases {
             if let Some(conns) = uc.get("connectors").and_then(|v| v.as_array()) {
                 for c in conns {

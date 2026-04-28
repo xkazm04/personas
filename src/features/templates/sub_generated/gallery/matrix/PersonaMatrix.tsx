@@ -93,7 +93,12 @@ interface PersonaMatrixBaseProps {
   /** Pending Q&A questions for spatial popover anchoring */
   pendingQuestions?: BuildQuestion[];
   /** Answer a spatial question (cellKey, answer) */
-  onAnswerBuildQuestion?: (cellKey: string, answer: string) => void;
+  onAnswerBuildQuestion?: (
+    cellKey: string,
+    answer: string,
+    reference?: import("@/lib/types/buildTypes").BuildReference | null,
+    webhookSource?: import("@/lib/types/buildTypes").BuildWebhookSource | null,
+  ) => void;
   /** Current build phase for lifecycle state branching in command center */
   buildPhase?: BuildPhase;
   /** Lifecycle: start test run */
@@ -491,9 +496,9 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
           key={q.cellKey}
           referenceElement={cellRefsRef.current[q.cellKey] ?? null}
           question={q}
-          onAnswer={(cellKey, answer) => {
+          onAnswer={(cellKey, answer, reference, webhookSource) => {
             setOpenQuestionKey(null);
-            onAnswerBuildQuestion?.(cellKey, answer);
+            onAnswerBuildQuestion?.(cellKey, answer, reference, webhookSource);
           }}
           isOpen={openQuestionKey === q.cellKey}
           onRequestOpen={() => setOpenQuestionKey(q.cellKey)}

@@ -21,7 +21,9 @@ use self::testable::{build_simulation_input, cascade_use_case_toggle};
 
 /// Pure helpers extracted from the IPC commands so the inline tests can
 /// exercise cascade + simulation logic without constructing an `AppState`.
-mod testable {
+/// Visible crate-wide so the build-flow dry-run path
+/// (`commands/design/build_simulate.rs`) can reuse `build_simulation_input`.
+pub(crate) mod testable {
     use super::{AppError, UseCaseGenerationSettings, UseCaseToggleResult};
 
     /// Apply a capability toggle: patch `personas.design_context.useCases[i].enabled`
@@ -57,9 +59,7 @@ mod testable {
 
         let mut dc: serde_json::Value = serde_json::from_str(&dc_str)
             .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
-        let use_cases = dc
-            .get_mut("use_cases")
-            .and_then(|v| v.as_array_mut())
+        let use_cases = crate::engine::design_context::pick_use_cases_array_mut(&mut dc)
             .ok_or_else(|| {
                 AppError::Validation(format!(
                     "Persona '{}' design_context has no use_cases array", persona_id
@@ -157,9 +157,7 @@ mod testable {
 
         let mut dc: serde_json::Value = serde_json::from_str(&dc_str)
             .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
-        let use_cases = dc
-            .get_mut("use_cases")
-            .and_then(|v| v.as_array_mut())
+        let use_cases = crate::engine::design_context::pick_use_cases_array_mut(&mut dc)
             .ok_or_else(|| {
                 AppError::Validation(format!(
                     "Persona '{}' design_context has no use_cases array",
@@ -564,9 +562,7 @@ pub async fn simulate_use_case(
     })?;
     let dc: serde_json::Value = serde_json::from_str(&dc_str)
         .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
-    let use_case = dc
-        .get("use_cases")
-        .and_then(|v| v.as_array())
+    let use_case = crate::engine::design_context::pick_use_cases_array(&dc)
         .and_then(|arr| arr.iter().find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id.as_str())))
         .ok_or_else(|| {
             AppError::Validation(format!(

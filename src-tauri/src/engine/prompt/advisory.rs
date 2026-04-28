@@ -93,7 +93,7 @@ pub(super) fn build_advisory_prompt(
     // Use cases from design_context — critical for understanding business intent
     if let Some(ref dc_json) = persona.design_context {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
-            if let Some(use_cases) = dc.get("use_cases").and_then(|v| v.as_array()) {
+            if let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) {
                 if !use_cases.is_empty() {
                     p.push_str("### Use Cases (Business Intent)\n");
                     for uc in use_cases {

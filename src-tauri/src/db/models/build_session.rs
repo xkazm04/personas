@@ -116,6 +116,17 @@ pub enum BuildEvent {
         /// machine-token category the vault picker should filter by.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         connector_category: Option<String>,
+        /// C7 — true when the v3 question carried `accepts_reference: true`,
+        /// meaning the answering UI should expose the file/URL attachment
+        /// affordance and the answer payload may carry a `reference`.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        accepts_reference: bool,
+        /// C7 — true when the v3 question carried
+        /// `accepts_webhook_source: true`, meaning the answering UI should
+        /// expose a smee.io URL input. Used when the LLM picks the
+        /// `webhook` trigger type for a capability.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        accepts_webhook_source: bool,
     },
     Progress {
         session_id: String,
@@ -202,6 +213,16 @@ pub enum BuildEvent {
         /// "messaging", "image_generation"). None for other scopes.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         category: Option<String>,
+        /// C7 — when true, the answering UI surfaces a file/URL attachment
+        /// affordance. The answer command resolves the reference server-side
+        /// and prepends a fenced block to the answer text before piping to
+        /// the CLI. See `engine::build_session::reference`.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        accepts_reference: bool,
+        /// C7 — when true, the answering UI surfaces a smee.io URL input.
+        /// Emitted when the LLM picks the `webhook` trigger type (rule 24).
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        accepts_webhook_source: bool,
     },
 }
 
@@ -252,6 +273,69 @@ impl BuildSession {
 pub struct UserAnswer {
     pub cell_key: String,
     pub answer: String,
+    /// Optional reference attachment for clarifying questions whose IR shape
+    /// carries `accepts_reference: true`. C7 (2026-04-27). At most one of
+    /// `path` / `url` / `inline_content` is populated; the answer command
+    /// resolves whichever is set, fences the contents, and prepends them to
+    /// `answer` before piping to the CLI subprocess. See
+    /// `engine::build_session::reference` for the contract.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reference: Option<UserAnswerReference>,
+    /// Optional webhook source for clarifying questions whose IR shape
+    /// carries `accepts_webhook_source: true`. C7 (2026-04-28). The answer
+    /// command appends a fenced "WEBHOOK SOURCE" block to the answer text
+    /// so the LLM places the URL on the relevant trigger config's
+    /// `smee_channel_url` field. Promote-time then auto-creates the
+    /// `smee_relays` row.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub webhook_source: Option<UserWebhookSource>,
+}
+
+/// Webhook source attachment payload — captured during the build wizard
+/// when the LLM picks `trigger_type: "webhook"` for a capability and asks
+/// the user for a smee.io URL via a clarifying_question carrying
+/// `accepts_webhook_source: true`. C7 (2026-04-28).
+///
+/// The frontend submits this via `answer_build_question`; the answer
+/// command appends a fenced summary of the URL to the answer text so the
+/// LLM can place it on the trigger config's `smee_channel_url` field.
+/// Promote-time then reads the trigger config and auto-creates a
+/// `smee_relays` row pointing at this persona.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct UserWebhookSource {
+    /// `https://smee.io/<channel>` URL the user pasted (or created at
+    /// smee.io/new and copied back).
+    pub channel_url: String,
+    /// Optional comma-separated `event_type` allowlist forwarded to the
+    /// `smee_relays.event_filter` column. Empty / None means no filter
+    /// (relay forwards every smee event to the persona).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub event_filter: Option<String>,
+}
+
+/// Reference attachment payload — either a local file path, a URL, or
+/// caller-supplied inline text.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct UserAnswerReference {
+    /// Local filesystem path (resolved by the file-picker dialog on the
+    /// frontend). Mutually exclusive with `url` / `inline_content`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    /// HTTPS URL — fetched server-side with SSRF protection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    /// Pre-loaded text content (e.g. from a paste). Server still applies
+    /// the size cap.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub inline_content: Option<String>,
+    /// Optional human-friendly name shown to the LLM. Defaults to filename
+    /// (file), URL (url), or "pasted reference" (inline).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 }
 
 // ============================================================================

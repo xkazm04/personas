@@ -191,16 +191,89 @@ pub async fn save_adoption_answers(
 }
 
 /// Send a user answer to a pending question in a build session.
+///
+/// When `reference` is supplied (C7 — clarifying questions with
+/// `accepts_reference: true`), the file / URL / inline content is
+/// resolved server-side, fenced via
+/// `engine::build_session::reference::inject_reference_into_answer`,
+/// and prepended to `answer` before piping to the CLI subprocess. This
+/// keeps the CLI-side prompt schema unchanged — the LLM sees one text
+/// answer with the reference embedded.
 #[tauri::command]
 pub async fn answer_build_question(
     state: State<'_, Arc<AppState>>,
     session_id: String,
     cell_key: String,
     answer: String,
+    reference: Option<crate::db::models::UserAnswerReference>,
+    webhook_source: Option<crate::db::models::UserWebhookSource>,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
 
-    let user_answer = UserAnswer { cell_key, answer };
+    // Step 1 — resolve any reference attachment, fence its contents into
+    // the answer text. Existing C7 path; unchanged.
+    let mut resolved_answer = if let Some(ref r) = reference {
+        let source = if let Some(ref p) = r.path {
+            crate::engine::build_session::reference::ReferenceSource::File(p.as_str())
+        } else if let Some(ref u) = r.url {
+            crate::engine::build_session::reference::ReferenceSource::Url(u.as_str())
+        } else if let Some(ref c) = r.inline_content {
+            crate::engine::build_session::reference::ReferenceSource::Inline {
+                name: r.name.as_deref().unwrap_or(""),
+                content: c.as_str(),
+            }
+        } else {
+            return Err(AppError::Validation(
+                "Reference attachment must include one of path / url / inlineContent".to_string(),
+            ));
+        };
+
+        let (resolved_name, resolved_content) =
+            crate::engine::build_session::reference::materialise_reference(source).await?;
+
+        // Honour the caller's preferred display name when given (overrides
+        // the fetcher's default — e.g. file basename or URL).
+        let display_name = r
+            .name
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string())
+            .unwrap_or(resolved_name);
+
+        crate::engine::build_session::reference::inject_reference_into_answer(
+            &answer,
+            &display_name,
+            &resolved_content,
+        )
+    } else {
+        answer
+    };
+
+    // Step 2 — when the user attached a webhook source via the typed
+    // payload, validate the URL and append a fenced WEBHOOK SOURCE block
+    // to the answer text so the LLM places it on the trigger config's
+    // `smee_channel_url` field per session_prompt rule 24.
+    if let Some(ref ws) = webhook_source {
+        let url = ws.channel_url.trim();
+        if !url.starts_with("https://smee.io/") {
+            return Err(AppError::Validation(
+                "Webhook source channelUrl must start with https://smee.io/".to_string(),
+            ));
+        }
+        resolved_answer = crate::engine::build_session::reference::append_webhook_source_fence(
+            &resolved_answer,
+            url,
+            ws.event_filter.as_deref(),
+        );
+    }
+
+    let user_answer = UserAnswer {
+        cell_key,
+        answer: resolved_answer,
+        reference,
+        webhook_source,
+    };
     state
         .build_session_manager
         .send_answer(&session_id, user_answer)
@@ -497,9 +570,23 @@ fn build_structured_use_cases(
         // Per-UC model override carried through so the runner's failover
         // chain can seed the primary model from the capability-specific
         // preference. Shape: null | string ("haiku") | full ModelProfile obj.
-        let model_override = match uc {
-            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => d.model_override.clone(),
-            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => None,
+        //
+        // C7 — also carry through review_policy / generation_settings /
+        // memory_policy so the dispatch layer's `pick_generation_policy`
+        // can route `mode: "auto_triage"` to the second-pass evaluator
+        // (auto_triage.rs). Without these fields the runtime falls back
+        // to permissive defaults regardless of what the build LLM
+        // declared per build prompt rules 16d / 21.
+        let (model_override, review_policy, generation_settings, memory_policy) = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                d.model_override.clone(),
+                d.review_policy.clone(),
+                d.generation_settings.clone(),
+                d.memory_policy.clone(),
+            ),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
+                (None, None, None, None)
+            }
         };
 
         structured.push(serde_json::json!({
@@ -512,6 +599,9 @@ fn build_structured_use_cases(
             "event_subscriptions": event_subs,
             "error_handling": error_handling,
             "model_override": model_override,
+            "review_policy": review_policy,
+            "generation_settings": generation_settings,
+            "memory_policy": memory_policy,
         }));
         ids.push(uc_id);
     }
@@ -1646,14 +1736,152 @@ pub async fn promote_build_draft_inner(
     // Post-transaction: best-effort scheduler updates
     update_trigger_schedules(&state.db, &created_trigger_ids);
 
+    // C7 — auto-create smee_relays rows for every webhook trigger that
+    // carried a `smee_channel_url` from the build prompt rule 24 flow.
+    // Best-effort: a failure here doesn't unwind the promote (the webhook
+    // trigger still works on `POST /webhook/<id>` directly; the user can
+    // attach a smee binding manually via SmeeRelayTab if this fails).
+    let smee_relays_created = auto_create_smee_relays(&state.db, &persona_id, &ir);
+    if smee_relays_created > 0 {
+        // Notify the relay manager to pick up the new rows immediately.
+        state.smee_relay_notifier.notify();
+        tracing::info!(
+            persona_id = %persona_id,
+            count = smee_relays_created,
+            "Auto-created smee_relays rows from webhook triggers"
+        );
+    }
+
     Ok(serde_json::json!({
         "persona": { "id": persona_id },
         "triggers_created": triggers_created,
         "tools_created": tools_created,
         "subscriptions_created": subscriptions_created,
         "assertions_created": assertions_created,
+        "smee_relays_created": smee_relays_created,
         "connectors_needing_setup": connectors_needing_setup,
     }))
+}
+
+// ============================================================================
+// C7 — Smee relay auto-binding from webhook triggers
+// ============================================================================
+
+/// Iterate `ir.triggers`, find webhook triggers carrying `smee_channel_url`,
+/// and create matching `smee_relays` rows pointing at this persona.
+///
+/// Idempotent: when a relay for the same `(channel_url, persona_id)` already
+/// exists we skip silently. When a relay for the same URL exists pointing
+/// at a DIFFERENT persona, we log a warning and skip (do NOT repoint —
+/// that's a user-managed concern).
+///
+/// Returns the count of relays actually created. Best-effort — individual
+/// failures are logged but never bubble up to fail the promote.
+fn auto_create_smee_relays(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    ir: &crate::db::models::AgentIr,
+) -> u32 {
+    use crate::db::models::CreateSmeeRelayInput;
+    use crate::db::repos::communication::smee_relays as smee_repo;
+
+    let mut created = 0u32;
+
+    for (idx, trigger) in ir.triggers.iter().enumerate() {
+        if trigger.trigger_type.as_deref() != Some("webhook") {
+            continue;
+        }
+        let Some(cfg) = trigger.config.as_ref() else { continue; };
+        let Some(channel_url) = cfg
+            .get("smee_channel_url")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+        else {
+            continue;
+        };
+
+        // Idempotency probe — direct query to keep this self-contained
+        // without a new repo method. If we find an existing relay for the
+        // same URL we skip; only matters for re-promote loops.
+        let existing_persona_id: Option<Option<String>> = pool
+            .get()
+            .ok()
+            .and_then(|conn| {
+                conn.query_row(
+                    "SELECT target_persona_id FROM smee_relays WHERE channel_url = ?1",
+                    rusqlite::params![channel_url],
+                    |row| row.get::<_, Option<String>>(0),
+                )
+                .ok()
+                .map(Some)
+            })
+            .flatten();
+
+        if let Some(existing) = existing_persona_id {
+            match existing {
+                Some(ref pid) if pid == persona_id => {
+                    tracing::debug!(
+                        persona_id = %persona_id,
+                        channel_url = %channel_url,
+                        "smee_relay already bound to this persona — skipping auto-create"
+                    );
+                }
+                Some(other_pid) => {
+                    tracing::warn!(
+                        persona_id = %persona_id,
+                        other_persona_id = %other_pid,
+                        channel_url = %channel_url,
+                        "smee_relay URL already bound to a different persona — refusing to repoint"
+                    );
+                }
+                None => {
+                    tracing::warn!(
+                        persona_id = %persona_id,
+                        channel_url = %channel_url,
+                        "smee_relay URL exists with no persona binding — leaving for manual rebind"
+                    );
+                }
+            }
+            continue;
+        }
+
+        let event_filter = cfg
+            .get("smee_event_filter")
+            .and_then(|v| v.as_str())
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .map(|s| s.to_string());
+
+        let label = format!(
+            "Build · trigger {}",
+            trigger
+                .description
+                .as_deref()
+                .map(|d| d.chars().take(48).collect::<String>())
+                .filter(|d| !d.is_empty())
+                .unwrap_or_else(|| format!("#{idx}"))
+        );
+
+        let input = CreateSmeeRelayInput {
+            label,
+            channel_url: channel_url.to_string(),
+            event_filter,
+            target_persona_id: Some(persona_id.to_string()),
+        };
+
+        match smee_repo::create(pool, input) {
+            Ok(_) => created += 1,
+            Err(e) => tracing::warn!(
+                persona_id = %persona_id,
+                channel_url = %channel_url,
+                error = %e,
+                "auto_create_smee_relays: smee_repo::create failed — relay can be added later via SmeeRelayTab"
+            ),
+        }
+    }
+
+    created
 }
 
 #[cfg(test)]
@@ -1748,4 +1976,167 @@ mod tests {
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert!(emits.is_empty());
     }
+
+    // ----------------------------------------------------------------------
+    // C7 — auto_create_smee_relays
+    // ----------------------------------------------------------------------
+
+    use crate::db::models::agent_ir::AgentIrTrigger;
+
+    fn webhook_trigger(smee_url: Option<&str>, event_filter: Option<&str>) -> AgentIrTrigger {
+        let mut config = serde_json::Map::new();
+        config.insert("webhook_secret".into(), serde_json::json!("a".repeat(32)));
+        if let Some(url) = smee_url {
+            config.insert("smee_channel_url".into(), serde_json::json!(url));
+        }
+        if let Some(f) = event_filter {
+            config.insert("smee_event_filter".into(), serde_json::json!(f));
+        }
+        AgentIrTrigger {
+            trigger_type: Some("webhook".to_string()),
+            config: Some(serde_json::Value::Object(config)),
+            description: Some("github push handler".to_string()),
+            use_case_id: Some("uc-1".to_string()),
+        }
+    }
+
+    fn schedule_trigger() -> AgentIrTrigger {
+        AgentIrTrigger {
+            trigger_type: Some("schedule".to_string()),
+            config: Some(serde_json::json!({"cron": "0 7 * * *"})),
+            description: Some("daily".to_string()),
+            use_case_id: Some("uc-2".to_string()),
+        }
+    }
+
+    fn seed_test_persona(pool: &crate::db::DbPool, persona_id: &str) {
+        let conn = pool.get().unwrap();
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "INSERT INTO personas (id, project_id, name, system_prompt, enabled, sensitive, headless, max_concurrent, timeout_ms, trust_level, created_at, updated_at)
+             VALUES (?1, 'default', 'TestPersona', 'system', 0, 0, 0, 1, 60000, 'untrusted', ?2, ?2)",
+            rusqlite::params![persona_id, now],
+        ).unwrap();
+    }
+
+    #[test]
+    fn auto_create_skips_when_no_webhook_triggers() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        let ir = AgentIr {
+            triggers: vec![schedule_trigger()],
+            ..Default::default()
+        };
+        let count = auto_create_smee_relays(&pool, "p_a", &ir);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn auto_create_skips_webhook_trigger_without_smee_url() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        let ir = AgentIr {
+            triggers: vec![webhook_trigger(None, None)],
+            ..Default::default()
+        };
+        let count = auto_create_smee_relays(&pool, "p_a", &ir);
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn auto_create_creates_relay_for_webhook_trigger_with_smee_url() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        let url = "https://smee.io/test-channel-1";
+        let ir = AgentIr {
+            triggers: vec![webhook_trigger(Some(url), Some("github.push"))],
+            ..Default::default()
+        };
+        let count = auto_create_smee_relays(&pool, "p_a", &ir);
+        assert_eq!(count, 1);
+
+        // Confirm the row landed with the right shape
+        let conn = pool.get().unwrap();
+        let (target_persona_id, event_filter, label): (Option<String>, Option<String>, String) =
+            conn.query_row(
+                "SELECT target_persona_id, event_filter, label FROM smee_relays WHERE channel_url = ?1",
+                rusqlite::params![url],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+            ).unwrap();
+        assert_eq!(target_persona_id.as_deref(), Some("p_a"));
+        assert_eq!(event_filter.as_deref(), Some("github.push"));
+        assert!(label.starts_with("Build · trigger"));
+    }
+
+    #[test]
+    fn auto_create_is_idempotent_for_same_persona_url_pair() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        let url = "https://smee.io/idempotent-channel";
+        let ir = AgentIr {
+            triggers: vec![webhook_trigger(Some(url), None)],
+            ..Default::default()
+        };
+        assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir), 1);
+        // Second invocation finds existing row → skip
+        assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir), 0);
+    }
+
+    #[test]
+    fn auto_create_refuses_to_repoint_existing_url_to_different_persona() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        seed_test_persona(&pool, "p_b");
+        let url = "https://smee.io/shared-channel";
+        let ir_a = AgentIr {
+            triggers: vec![webhook_trigger(Some(url), None)],
+            ..Default::default()
+        };
+        assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir_a), 1);
+
+        // p_b tries to claim the same URL — must skip silently
+        let ir_b = AgentIr {
+            triggers: vec![webhook_trigger(Some(url), None)],
+            ..Default::default()
+        };
+        assert_eq!(auto_create_smee_relays(&pool, "p_b", &ir_b), 0);
+
+        // Original binding to p_a is preserved
+        let conn = pool.get().unwrap();
+        let target: Option<String> = conn.query_row(
+            "SELECT target_persona_id FROM smee_relays WHERE channel_url = ?1",
+            rusqlite::params![url],
+            |row| row.get(0),
+        ).unwrap();
+        assert_eq!(target.as_deref(), Some("p_a"));
+    }
+
+    #[test]
+    fn auto_create_handles_mixed_trigger_types() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_mix");
+        let ir = AgentIr {
+            triggers: vec![
+                schedule_trigger(),
+                webhook_trigger(Some("https://smee.io/mix-1"), None),
+                webhook_trigger(None, None),  // webhook but no smee URL
+                webhook_trigger(Some("https://smee.io/mix-2"), Some("a,b")),
+            ],
+            ..Default::default()
+        };
+        let count = auto_create_smee_relays(&pool, "p_mix", &ir);
+        assert_eq!(count, 2);
+    }
+
+    #[test]
+    fn auto_create_skips_blank_smee_url() {
+        let pool = crate::db::init_test_db().unwrap();
+        seed_test_persona(&pool, "p_a");
+        let ir = AgentIr {
+            triggers: vec![webhook_trigger(Some("   "), None)],
+            ..Default::default()
+        };
+        assert_eq!(auto_create_smee_relays(&pool, "p_a", &ir), 0);
+    }
 }
+// touch 1777378957

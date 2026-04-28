@@ -88,6 +88,23 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                         "Webhook triggers require a non-empty webhook_secret for HMAC authentication",
                     ));
                 }
+
+                // C7 — when the build pipeline attached a smee.io channel URL,
+                // validate format up front so a malformed URL fails build/promote
+                // rather than silently being skipped at smee-relay-create time.
+                if let Some(smee_url) = parsed
+                    .get("smee_channel_url")
+                    .and_then(|v| v.as_str())
+                {
+                    let trimmed = smee_url.trim();
+                    if !trimmed.is_empty() && !trimmed.starts_with("https://smee.io/") {
+                        errors.push(ValidationError::new(
+                            "config.smee_channel_url",
+                            "format",
+                            "smee_channel_url must be an https://smee.io/ URL",
+                        ));
+                    }
+                }
             }
         }
     } else if trigger_type == "webhook" {

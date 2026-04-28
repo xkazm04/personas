@@ -243,6 +243,46 @@ export interface BuildQuestion {
    *  vault-backed connector picker instead of a plain option list, filtered
    *  by this category token. */
   connectorCategory?: string | null;
+  /** C7 — true when the v3 question carried `accepts_reference: true`. The
+   *  answering UI should expose a "+ Attach reference" affordance (file
+   *  picker + URL input). The submitted answer payload may carry an optional
+   *  `reference` resolved server-side and fenced into the answer text before
+   *  the CLI sees it. */
+  acceptsReference?: boolean;
+  /** C7 — true when the v3 question carried `accepts_webhook_source: true`.
+   *  Surfaces a smee.io URL input so the user can attach the webhook
+   *  source up front. The backend appends a fenced WEBHOOK SOURCE block to
+   *  the answer text (see session_prompt rule 24); the LLM places the URL
+   *  on the corresponding webhook trigger's `smee_channel_url` config; the
+   *  promote pipeline then auto-creates the smee_relays row. */
+  acceptsWebhookSource?: boolean;
+}
+
+/** Webhook source attachment payload mirrored to Rust's
+ *  UserWebhookSource. Captured during the build wizard when the LLM picks
+ *  webhook trigger and asks for a smee.io URL. */
+export interface BuildWebhookSource {
+  /** `https://smee.io/<channel>` — backend rejects anything else. */
+  channelUrl: string;
+  /** Optional comma-separated event_type allowlist (forwarded as-is to
+   *  smee_relays.event_filter). Empty means "no filter". */
+  eventFilter?: string;
+}
+
+/** Reference attachment payload mirrored to Rust's UserAnswerReference. At
+ *  most one of `path` / `url` / `inlineContent` should be populated; the
+ *  backend rejects an empty payload with a Validation error. */
+export interface BuildReference {
+  /** Local filesystem path (typically from the @tauri-apps/plugin-dialog
+   *  `open()` picker). */
+  path?: string;
+  /** HTTPS URL — fetched server-side with SSRF protection. */
+  url?: string;
+  /** Pre-loaded text content (e.g. from a paste). */
+  inlineContent?: string;
+  /** Optional human-friendly name shown to the LLM in the fence header.
+   *  Defaults to filename / URL / "pasted reference" when omitted. */
+  name?: string;
 }
 
 /** Full persisted build session loaded from SQLite. */

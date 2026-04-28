@@ -18,7 +18,7 @@ use crate::db::repos::resources::tools;
 use crate::db::repos::communication::smee_relays as smee_relay_repo;
 use crate::engine;
 use crate::error::AppError;
-use crate::ipc_auth::require_cloud_auth;
+use crate::ipc_auth::{require_auth, require_cloud_auth};
 use crate::AppState;
 
 // ---------------------------------------------------------------------------
@@ -1117,11 +1117,16 @@ pub async fn cloud_list_trigger_firings(
 // ---------------------------------------------------------------------------
 
 /// List all configured Smee relays.
+///
+/// Read-only DB query — uses regular `require_auth` (not cloud auth) so
+/// users in offline mode can still see what relays exist. Create / update
+/// / delete commands stay cloud-gated since they interact with the
+/// smee.io forwarding service.
 #[tauri::command]
 pub async fn smee_relay_list(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<SmeeRelay>, AppError> {
-    require_cloud_auth(&state, "smee_relay_list").await?;
+    require_auth(&state).await?;
     smee_relay_repo::list(&state.db)
 }
 
@@ -1183,3 +1188,4 @@ pub async fn smee_relay_delete(
     state.smee_relay_notifier.notify();
     Ok(())
 }
+

@@ -1754,6 +1754,55 @@ export type Translations = {
       failed_to_create: string;
       build_failed: string;
     };
+    build_webhook_source: {
+      header: string;
+      description: string;
+      url_label: string;
+      url_placeholder: string;
+      url_invalid: string;
+      filter_label: string;
+      filter_placeholder: string;
+      filter_help: string;
+      create_channel: string;
+      attach_button: string;
+      clear: string;
+      chip_label: string;
+    };
+    build_reference: {
+      attach_label: string;
+      file_button: string;
+      url_button: string;
+      inline_button: string;
+      url_input_label: string;
+      inline_input_label: string;
+      inline_placeholder: string;
+      pasted_name: string;
+      attach_button: string;
+      cancel: string;
+      clear: string;
+    };
+    build_simulate: {
+      title: string;
+      subtitle: string;
+      no_use_cases: string;
+      select_capability: string;
+      input_label: string;
+      input_placeholder: string;
+      run_button: string;
+      running: string;
+      loading_artefacts: string;
+      artefacts_title: string;
+      no_artefacts: string;
+      messages_section: string;
+      memories_section: string;
+      no_reviews: string;
+      no_memories: string;
+      execution_id: string;
+      status_label: string;
+      error_label: string;
+      close: string;
+      open_button: string;
+    };
     workflow_upload: {
       build_hint: string;
       paste_placeholder: string;
