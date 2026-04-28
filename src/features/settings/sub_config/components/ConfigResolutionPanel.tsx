@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Layers, RefreshCw, Globe, FolderOpen, User, Minus } from 'lucide-react';
+import { Layers, RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle } from 'lucide-react';
 import { listPersonas, resolveEffectiveConfig } from '@/api/agents/personas';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
@@ -49,6 +49,10 @@ interface PersonaRow {
   persona: Persona;
   config: EffectiveModelConfig | null;
   loading: boolean;
+  /** Non-null when `resolveEffectiveConfig` rejected for this persona.
+   *  Distinct from `loading` so cells can render a visible failure
+   *  state instead of a perpetual loading-skeleton pulse. */
+  error: string | null;
 }
 
 const FIELDS: { key: keyof EffectiveModelConfig; label: string; mask?: boolean }[] = [
@@ -69,7 +73,7 @@ export default function ConfigResolutionPanel() {
     setGlobalLoading(true);
     try {
       const personas = await listPersonas();
-      const initial: PersonaRow[] = personas.map((p) => ({ persona: p, config: null, loading: true }));
+      const initial: PersonaRow[] = personas.map((p) => ({ persona: p, config: null, loading: true, error: null }));
       setRows(initial);
 
       const results = await Promise.allSettled(
@@ -78,11 +82,21 @@ export default function ConfigResolutionPanel() {
 
       setRows(personas.map((p, i) => {
         const r = results[i];
-        return {
-          persona: p,
-          config: r && r.status === 'fulfilled' ? r.value : null,
-          loading: false,
-        };
+        if (r && r.status === 'fulfilled') {
+          return { persona: p, config: r.value, loading: false, error: null };
+        }
+        // `r.status === 'rejected'`: the persona's effective config could not
+        // be resolved. Capture the reason so the cell can render an explicit
+        // failure state — without this distinction the row pulses identically
+        // to "still loading" and the user has no way to know the resolve
+        // dropped silently.
+        const reason = r && r.status === 'rejected' ? r.reason : new Error('Unknown error');
+        const message = reason instanceof Error
+          ? reason.message
+          : (typeof reason === 'object' && reason !== null && 'error' in reason)
+            ? String((reason as { error: string }).error)
+            : String(reason);
+        return { persona: p, config: null, loading: false, error: message };
       }));
     } catch {
       setRows([]);
@@ -160,8 +174,24 @@ export default function ConfigResolutionPanel() {
                   {row.config?.workspaceName ?? '--'}
                 </td>
                 {FIELDS.map((f) => {
-                  if (row.loading || !row.config) {
+                  if (row.loading) {
                     return <td key={f.key} className="px-3 py-2"><div className="h-3 w-16 bg-secondary/40 rounded animate-pulse" /></td>;
+                  }
+                  if (row.error || !row.config) {
+                    // First column of the failed row gets the labelled error;
+                    // subsequent columns render an em-dash so the user can see
+                    // the row is real but its config couldn't be resolved.
+                    if (f.key === FIELDS[0]!.key) {
+                      return (
+                        <td key={f.key} className="px-3 py-2" title={row.error ?? 'Config could not be resolved'}>
+                          <span className="inline-flex items-center gap-1 text-amber-400 typo-caption">
+                            <AlertTriangle className="w-3 h-3" />
+                            Failed to resolve
+                          </span>
+                        </td>
+                      );
+                    }
+                    return <td key={f.key} className="px-3 py-2"><span className="text-foreground italic typo-caption">--</span></td>;
                   }
                   const field = row.config[f.key] as ConfigField<string | number>;
                   return (
