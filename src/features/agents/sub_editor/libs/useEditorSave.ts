@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { useAgentStore } from "@/stores/agentStore";
+import { capturePersonaToken } from '@/lib/personas/personaToken';
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/OllamaCloudPresets';
 import { useTabSection } from './useTabSection';
@@ -47,21 +48,18 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
    *  original values. */
   const makeUndoEntry = useCallback(
     (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => {
-      const capturedPersonaId = selectedPersona?.id ?? null;
-      const stillForCapturedPersona = () =>
-        capturedPersonaId !== null &&
-        useAgentStore.getState().selectedPersona?.id === capturedPersonaId;
+      const token = capturePersonaToken(selectedPersona?.id ?? null);
       return {
         operation: op,
         restore: async () => {
-          if (!stillForCapturedPersona()) return;
+          if (!token.isStillCurrent()) return;
           const patch: Partial<PersonaDraft> = {};
           for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
           setDraft((d) => ({ ...d, ...patch }));
           setBaseline((b) => ({ ...b, ...patch }));
         },
         reapply: async () => {
-          if (!stillForCapturedPersona()) return;
+          if (!token.isStillCurrent()) return;
           const patch: Partial<PersonaDraft> = {};
           for (const k of keys) (patch as Record<string, unknown>)[k] = next[k];
           setDraft((d) => ({ ...d, ...patch }));
