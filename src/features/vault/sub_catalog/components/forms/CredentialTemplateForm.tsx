@@ -19,6 +19,36 @@ interface AuthVariant {
   auth_type_label: string;
 }
 
+/**
+ * Validate `metadata.auth_variants` from connector JSON before treating it
+ * as `AuthVariant[]`. The data is authored on the Rust side (or by AI-driven
+ * negotiation) and carried as an opaque blob — `Array.isArray` alone
+ * accepted `[42, "foo", null]`, after which `v.fields.includes(...)` would
+ * crash inside a `useMemo` and a partial variant would silently misfilter
+ * visible fields, exposing or hiding sensitive ones. Reject malformed
+ * input here and let the caller fall back to `null` so the form renders
+ * its non-variant path instead of crashing.
+ */
+function parseAuthVariants(raw: unknown): AuthVariant[] | null {
+  if (!Array.isArray(raw)) return null;
+  const out: AuthVariant[] = [];
+  for (const entry of raw) {
+    if (!entry || typeof entry !== 'object') return null;
+    const v = entry as Record<string, unknown>;
+    if (typeof v.id !== 'string') return null;
+    if (typeof v.label !== 'string') return null;
+    if (typeof v.auth_type_label !== 'string') return null;
+    if (!Array.isArray(v.fields) || !v.fields.every((f) => typeof f === 'string')) return null;
+    out.push({
+      id: v.id,
+      label: v.label,
+      auth_type_label: v.auth_type_label,
+      fields: v.fields as string[],
+    });
+  }
+  return out;
+}
+
 export interface CredentialTemplateFormProps {
   selectedConnector: ConnectorDefinition;
   credentialName: string;
@@ -75,8 +105,18 @@ export function CredentialTemplateForm({
   const metadata = parseConnectorMetadata(selectedConnector.metadata);
   const variants = useMemo<AuthVariant[] | null>(() => {
     if (!metadata.auth_variants) return null;
-    return metadata.auth_variants as AuthVariant[];
-  }, [metadata.auth_variants]);
+    const parsed = parseAuthVariants(metadata.auth_variants);
+    if (parsed === null) {
+      // Malformed connector metadata — log via silentCatch and fall back to
+      // the no-variant render path. Crashing the picker for one bad
+      // connector is worse than rendering it without auth-variant tabs.
+      silentCatch(`CredentialTemplateForm:parseAuthVariants[${selectedConnector.name}]`)(
+        new Error('connector metadata.auth_variants failed shape validation'),
+      );
+      return null;
+    }
+    return parsed;
+  }, [metadata.auth_variants, selectedConnector.name]);
 
   const [activeVariantId, setActiveVariantId] = useState<string | null>(
     variants?.[0]?.id ?? null,
