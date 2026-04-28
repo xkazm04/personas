@@ -36,7 +36,7 @@ export const OAUTH_FIELD = {
 
 // -- Credential flow discriminated union -------------------------
 
-import type { CredentialTemplateField, ConnectorDefinition } from '@/lib/types/types';
+import { parseConnectorMetadata, type CredentialTemplateField, type ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 
 /** Filter connector definitions to those with template_enabled metadata, optionally matching a search query. */
@@ -45,8 +45,7 @@ export function filterTemplateConnectors(
   searchQuery: string,
 ): ConnectorDefinition[] {
   return connectorDefinitions.filter((conn) => {
-    const metadata = conn.metadata as Record<string, unknown> | null;
-    if (!metadata) return false;
+    const metadata = parseConnectorMetadata(conn.metadata);
     if (metadata.template_enabled !== true) return false;
 
     const q = searchQuery.trim().toLowerCase();
@@ -61,13 +60,9 @@ export function filterTemplateConnectors(
 
 /** Build a CredentialDesignResult from a ConnectorDefinition template. */
 export function buildTemplateResult(template: ConnectorDefinition): CredentialDesignResult {
-  const metadata = (template.metadata ?? {}) as Record<string, unknown>;
-  const setupInstructions = typeof metadata.setup_instructions === 'string'
-    ? metadata.setup_instructions
-    : '';
-  const summary = typeof metadata.summary === 'string'
-    ? metadata.summary
-    : `${template.label} connector`;
+  const metadata = parseConnectorMetadata(template.metadata);
+  const setupInstructions = metadata.setup_instructions ?? '';
+  const summary = metadata.summary ?? `${template.label} connector`;
 
   return {
     match_existing: template.name,

@@ -4,7 +4,7 @@ import { ThemedConnectorIcon } from '@/features/shared/components/display/Connec
 import { openExternalUrl } from "@/api/system/system";
 
 import { BaseModal } from '@/lib/ui/BaseModal';
-import type { ConnectorDefinition } from '@/lib/types/types';
+import { parseConnectorMetadata, type ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   cliCaptureRun,
@@ -61,11 +61,11 @@ export function SetupGuideModal({ connector, onClose, onCliCaptured }: SetupGuid
     }
   };
 
-  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
-  const guide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
-  const docsUrl = typeof metadata.docs_url === 'string' ? metadata.docs_url : null;
-  const authLabel = typeof metadata.auth_type_label === 'string' ? metadata.auth_type_label : 'Credential';
-  const summary = typeof metadata.summary === 'string' ? metadata.summary : null;
+  const metadata = parseConnectorMetadata(connector.metadata);
+  const guide = metadata.setup_guide ?? null;
+  const docsUrl = metadata.docs_url ?? null;
+  const authLabel = metadata.auth_type_label ?? 'Credential';
+  const summary = metadata.summary ?? null;
 
   const handleOpenDocs = async () => {
     if (!docsUrl) return;

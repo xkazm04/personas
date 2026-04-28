@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plug } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import type { ConnectorDefinition } from '@/lib/types/types';
+import { parseConnectorMetadata, type ConnectorDefinition } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface IdleSuggestionsProps {
@@ -89,10 +89,8 @@ export function IdleSuggestions({
                 >
                   <div className="px-2.5 py-2 typo-body text-foreground">
                     {(() => {
-                      const meta = (conn.metadata ?? {}) as Record<string, unknown>;
-                      if (typeof meta.summary === 'string' && meta.summary.trim()) {
-                        return meta.summary;
-                      }
+                      const meta = parseConnectorMetadata(conn.metadata);
+                      if (meta.summary?.trim()) return meta.summary;
                       return `${conn.fields.length} fields`;
                     })()}
                   </div>

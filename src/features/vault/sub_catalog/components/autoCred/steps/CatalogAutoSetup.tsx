@@ -1,5 +1,5 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
-import type { ConnectorDefinition } from '@/lib/types/types';
+import { parseConnectorMetadata, type ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { useCredentialDesign } from '@/hooks/design/credential/useCredentialDesign';
 import { AutoCredPanel } from './AutoCredPanel';
@@ -21,9 +21,8 @@ interface CatalogAutoSetupProps {
 
 /** Build a synthetic CredentialDesignResult from a catalog ConnectorDefinition. */
 function buildDesignResult(connector: ConnectorDefinition): CredentialDesignResult {
-  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
-  const setupInstructions =
-    typeof metadata.setup_instructions === 'string' ? metadata.setup_instructions : '';
+  const metadata = parseConnectorMetadata(connector.metadata);
+  const setupInstructions = metadata.setup_instructions ?? '';
 
   return {
     match_existing: connector.name,
@@ -55,8 +54,8 @@ export function CatalogAutoSetup({ connector, onComplete, onCancel }: CatalogAut
     return <DesktopBridgeBlock connector={connector} onCancel={onCancel} />;
   }
 
-  const metadata = (connector.metadata ?? {}) as Record<string, unknown>;
-  const hasSetupInstructions = typeof metadata.setup_instructions === 'string' && metadata.setup_instructions.length > 0;
+  const metadata = parseConnectorMetadata(connector.metadata);
+  const hasSetupInstructions = (metadata.setup_instructions ?? '').length > 0;
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
   const [phase, setPhase] = useState<Phase>(hasSetupInstructions ? 'auto' : 'analyzing');
