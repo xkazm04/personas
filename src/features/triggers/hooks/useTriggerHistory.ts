@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
 import * as api from '@/api/agents/executions';
+import { validateTrigger } from '@/api/pipeline/triggers';
 
 export interface TriggerHistoryStats {
   totalRuns: number;
@@ -102,6 +103,28 @@ export function useTriggerHistory(
     setReplaying(execution.id);
     setReplayResult(null);
     try {
+      // Run the same validateTrigger gate testFire uses. Without this, replay
+      // would silently spawn a doomed execution for triggers whose webhook
+      // secret was rotated, polling endpoint went 404, file path no longer
+      // exists, or that have been disabled — defeating the inline failure
+      // signal a normal Test Fire would surface and (worst case) re-firing
+      // a paused trigger.
+      const validation = await validateTrigger(triggerId);
+      if (!mountedRef.current) return;
+      if (!validation.valid) {
+        const failedChecks = validation.checks
+          .filter((c) => !c.passed)
+          .map((c) => `${c.label}: ${c.message}`)
+          .join('; ');
+        setReplayResult({
+          id: execution.id,
+          success: false,
+          message: failedChecks
+            ? `Replay blocked — ${failedChecks}`
+            : 'Replay blocked: trigger validation failed',
+        });
+        return;
+      }
       const result = await api.executePersona(
         personaId,
         triggerId,
