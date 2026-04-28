@@ -2,7 +2,7 @@ import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle } from 'lucide
 import { useSystemStore } from "@/stores/systemStore";
 import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useMemo } from 'react';
-import { useHomeTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
 import WelcomeLayout from './WelcomeLayout';
 
@@ -22,7 +22,8 @@ const NAV_CARDS: NavCard[] = [
 export default function HomeWelcome() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const user = useAuthStore((s) => s.user);
-  const { t } = useHomeTranslation();
+  const { t: globalT } = useTranslation();
+  const t = globalT.home;
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
