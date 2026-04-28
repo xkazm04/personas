@@ -3,7 +3,7 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
-import { ROLE_PRESETS, type RolePreset } from './catalogRolePresets';
+import { ROLE_PRESETS, type RolePreset, assertRolePresetCategoriesValid } from './catalogRolePresets';
 import { useSystemStore } from '@/stores/systemStore';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
@@ -43,6 +43,18 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     for (const c of credentials) set.add(c.service_type);
     return set;
   }, [credentials]);
+
+  // Dev-mode contract assertion: every category referenced by ROLE_PRESETS
+  // must appear in at least one live connector. A Rust-side rename of
+  // `connector-categories.json` without an update to `catalogRolePresets.ts`
+  // would otherwise produce silent zero-result filters with no telemetry.
+  // The check console.warns once whenever the connector list shape changes.
+  useEffect(() => {
+    if (connectors.length === 0) return;
+    const live = new Set<string>();
+    for (const c of connectors) live.add(c.category);
+    assertRolePresetCategoriesValid(live);
+  }, [connectors]);
 
   const applyConnected = (list: ConnectorDefinition[], filter: ConnectedFilter) => {
     if (filter === 'connected') return list.filter((c) => ownedServiceTypes.has(c.name));
