@@ -4,6 +4,7 @@ import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { useTriggerOperations } from './useTriggerOperations';
 import { getWebhookUrl } from '@/lib/utils/platform/triggerConstants';
 import { useToastStore } from '@/stores/toastStore';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 /**
  * Manages all async/interaction state for a single trigger's detail drawer:
@@ -32,8 +33,8 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
   const confirmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // -- Clipboard --
-  const [copiedUrl, setCopiedUrl] = useState(false);
-  const [copiedCurl, setCopiedCurl] = useState(false);
+  const { copied: copiedUrl, copy: copyUrl } = useCopyToClipboard();
+  const { copied: copiedCurl, copy: copyCurl } = useCopyToClipboard();
 
   useEffect(() => {
     return () => {
@@ -143,25 +144,17 @@ export function useTriggerDetail(triggerId: string, personaId: string) {
 
   // -- Clipboard ----------------------------------------------------------
 
-  const copyWebhookUrl = useCallback(async (e: React.MouseEvent) => {
+  const copyWebhookUrl = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(getWebhookUrl(triggerId));
-      setCopiedUrl(true);
-      setTimeout(() => setCopiedUrl(false), 2000);
-    } catch { /* intentional: non-critical -- clipboard write best-effort */ }
-  }, [triggerId]);
+    copyUrl(getWebhookUrl(triggerId));
+  }, [triggerId, copyUrl]);
 
-  const copyCurlCommand = useCallback(async (e: React.MouseEvent) => {
+  const copyCurlCommand = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     const url = getWebhookUrl(triggerId);
     const cmd = `curl -X POST ${url} \\\n  -H "Content-Type: application/json" \\\n  -d '{"test": true}'`;
-    try {
-      await navigator.clipboard.writeText(cmd);
-      setCopiedCurl(true);
-      setTimeout(() => setCopiedCurl(false), 2000);
-    } catch { /* intentional: non-critical -- clipboard write best-effort */ }
-  }, [triggerId]);
+    copyCurl(cmd);
+  }, [triggerId, copyCurl]);
 
   const clearDryRunResult = useCallback(() => setDryRunResult(null), []);
   const clearDryRunError = useCallback(() => setDryRunError(null), []);

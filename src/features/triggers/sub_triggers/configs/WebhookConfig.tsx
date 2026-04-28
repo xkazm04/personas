@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Eye, EyeOff, Copy, CheckCircle2, RefreshCw } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 export interface WebhookConfigProps {
   hmacSecret: string;
@@ -11,7 +12,7 @@ export interface WebhookConfigProps {
 export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps) {
   const { t } = useTranslation();
   const [showHmacSecret, setShowHmacSecret] = useState(false);
-  const [copiedHmac, setCopiedHmac] = useState(false);
+  const { copied: copiedHmac, copy } = useCopyToClipboard();
 
   const generateSecret = useCallback(() => {
     const bytes = new Uint8Array(32);
@@ -20,15 +21,9 @@ export function WebhookConfig({ hmacSecret, setHmacSecret }: WebhookConfigProps)
     setShowHmacSecret(true);
   }, [setHmacSecret]);
 
-  const copyHmacSecret = async () => {
+  const copyHmacSecret = () => {
     if (!hmacSecret) return;
-    try {
-      await navigator.clipboard.writeText(hmacSecret);
-      setCopiedHmac(true);
-      setTimeout(() => setCopiedHmac(false), 2000);
-    } catch {
-      // intentional: non-critical -- clipboard write best-effort
-    }
+    copy(hmacSecret);
   };
 
   return (
