@@ -1,3 +1,15 @@
+/**
+ * Canonical home of `useToolImpactData` and `recommendationFromCoUsedTools`.
+ *
+ * Do NOT introduce a sibling copy at `sub_tools/useToolImpactData.ts` (i.e.
+ * one level up). A prior audit flagged exactly that shape — two hooks with
+ * the same name, divergent co-occurrence math, no declared source of truth,
+ * and consumers importing whichever path Vite happened to resolve first.
+ * The split is now resolved here in `libs/` and consumers import from this
+ * file. Any future refactor that wants to split this further should re-
+ * export FROM here, not duplicate it.
+ */
+
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
