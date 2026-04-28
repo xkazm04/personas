@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
 import { Clock, Calendar, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
@@ -22,12 +23,9 @@ interface Props {
 
 function CopyButton({ text, label }: { text: string; label?: string }) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => {
-    navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {});
-  };
+  const { copied, copy } = useCopyToClipboard();
   return (
-    <button onClick={handleCopy} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors" title={t.shared.execution_detail.copy}>
+    <button onClick={() => copy(text)} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-sm text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors" title={t.shared.execution_detail.copy}>
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
       {label && <span>{copied ? 'Copied' : label}</span>}
     </button>
