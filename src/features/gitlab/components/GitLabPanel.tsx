@@ -159,7 +159,13 @@ export default function GitLabPanel() {
               onDeployVersioned={deployPersonaVersioned}
               onDeploySuccess={handleDeploySuccess}
               onCreateFromTemplate={handleCreateFromTemplate}
-              gitlabTier="free"
+              // TODO: detect tier from GitLab via /api/v4/namespaces/:id or
+              // /license once the connection store carries that field. Until
+              // then default to "ultimate" so paying users aren't locked out
+              // of premium/ultimate templates the frontend gating cannot
+              // actually enforce — GitLab itself rejects unauthorised use,
+              // so the only effect of a wrong literal here is a bad UX.
+              gitlabTier="ultimate"
             />
           )}
           {activeTab === 'agents' && isConnected && (
