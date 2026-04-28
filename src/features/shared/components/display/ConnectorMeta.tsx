@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import {
   Plug,
@@ -278,7 +278,7 @@ export function getConnectorMeta(name: string): ConnectorMeta {
 }
 
 /**
- * Render a connector icon as a themed mask-image (local SVGs) or plain img (remote CDN).
+ * Render a connector icon as a themed mask-image (local SVGs only).
  *
  * Local SVGs use `fill="currentColor"` so we render them via CSS `mask-image`
  * with `backgroundColor` set to the brand color -- this keeps them readable on
@@ -286,7 +286,22 @@ export function getConnectorMeta(name: string): ConnectorMeta {
  *
  * Shared across ConnectorMeta and vault components via `ThemedConnectorIcon`.
  */
-const isLocalSvg = (url: string) => url.startsWith('/') && url.endsWith('.svg');
+const SAFE_ICON_URL_RE = /^\/icons\/connectors\/[a-z0-9-]+\.svg$/;
+
+/**
+ * Normalize a connector icon URL to a safe, bundled SVG path or `null`.
+ *
+ * Why: `BuiltinConnector.icon_url` is rendered via `<img src>` / `mask-image`
+ * and the DB row is mutable from any future migration or admin tool. Without
+ * a whitelist, a value like `javascript:alert(1)`, `data:image/svg+xml,...`,
+ * or `//evil.com/x.svg` would fire XSS or beacon out from the catalog as
+ * users browse, de-anonymizing local-first users. Restricting to bundled
+ * `/icons/connectors/<slug>.svg` paths blocks all three vectors.
+ */
+export function normalizeIconUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return SAFE_ICON_URL_RE.test(url) ? url : null;
+}
 
 /**
  * Compute relative luminance of a hex color (0 = black, 1 = white).
@@ -347,61 +362,51 @@ export function ThemedConnectorIcon({
   label,
   color,
   size = 'w-3.5 h-3.5',
-  onError,
 }: {
   url: string;
   label: string;
   color: string;
   size?: string;
-  onError?: () => void;
 }) {
   const themeId = useThemeStore((s) => s.themeId);
   const isLight = useMemo(() => THEMES.find((t) => t.id === themeId)?.isLight ?? false, [themeId]);
   const adjustedColor = useMemo(() => ensureContrast(color, isLight), [color, isLight]);
+  const safeUrl = normalizeIconUrl(url);
 
-  if (isLocalSvg(url)) {
-    return (
-      <span
-        role="img"
-        aria-label={label}
-        className={`${size} inline-block shrink-0`}
-        style={{
-          maskImage: `url(${url})`,
-          maskSize: 'contain',
-          maskRepeat: 'no-repeat',
-          maskPosition: 'center',
-          WebkitMaskImage: `url(${url})`,
-          WebkitMaskSize: 'contain',
-          WebkitMaskRepeat: 'no-repeat',
-          WebkitMaskPosition: 'center',
-          backgroundColor: adjustedColor,
-        }}
-      />
-    );
+  if (!safeUrl) {
+    return <Plug className={`${size} shrink-0`} aria-label={label} style={{ color: adjustedColor }} />;
   }
+
   return (
-    <img
-      src={url}
-      alt={label}
-      className={size}
-      onError={onError}
-      referrerPolicy="no-referrer"
-      crossOrigin="anonymous"
+    <span
+      role="img"
+      aria-label={label}
+      className={`${size} inline-block shrink-0`}
+      style={{
+        maskImage: `url(${safeUrl})`,
+        maskSize: 'contain',
+        maskRepeat: 'no-repeat',
+        maskPosition: 'center',
+        WebkitMaskImage: `url(${safeUrl})`,
+        WebkitMaskSize: 'contain',
+        WebkitMaskRepeat: 'no-repeat',
+        WebkitMaskPosition: 'center',
+        backgroundColor: adjustedColor,
+      }}
     />
   );
 }
 
 export function ConnectorIcon({ meta, size = 'w-3.5 h-3.5' }: { meta: ConnectorMeta; size?: string }) {
-  const [imgFailed, setImgFailed] = useState(false);
   const FallbackIcon = meta.Icon;
-  if (meta.iconUrl && !imgFailed) {
+  const safeUrl = normalizeIconUrl(meta.iconUrl);
+  if (safeUrl) {
     return (
       <ThemedConnectorIcon
-        url={meta.iconUrl}
+        url={safeUrl}
         label={meta.label}
         color={meta.color}
         size={size}
-        onError={() => setImgFailed(true)}
       />
     );
   }

@@ -15,13 +15,14 @@ function capitalize(s: string) {
 export function usePickerFilters(connectors: ConnectorDefinition[], credentials: CredentialMetadata[], searchTerm?: string) {
   // Consume any pending category filter set by another part of the app (e.g.
   // the template adoption modal redirecting to the catalog when a credential
-  // is missing). Read once on mount and clear so it doesn't re-apply later.
-  const pendingCategory = useSystemStore.getState().pendingCatalogCategoryFilter;
-  const [activeCategory, setActiveCategory] = useState<string | null>(pendingCategory);
+  // is missing). Read inside useEffect with empty deps so the mount-time
+  // snapshot is deterministic under concurrent rendering, and always clear
+  // unconditionally so a stale value can't survive an unmount/remount race.
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   useEffect(() => {
-    if (pendingCategory) {
-      useSystemStore.getState().setPendingCatalogCategoryFilter(null);
-    }
+    const pending = useSystemStore.getState().pendingCatalogCategoryFilter;
+    if (pending) setActiveCategory(pending);
+    useSystemStore.getState().setPendingCatalogCategoryFilter(null);
   }, []);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);
