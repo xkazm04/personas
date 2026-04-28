@@ -29,13 +29,23 @@ export interface OverviewSlice {
 
   // State -- executions
   globalExecutions: GlobalExecution[];
-  globalExecutionsTotal: number;
+  /** Pagination hint, NOT a row count — `true` when the most recent fetch
+   *  hit `globalExecutionsLimit`, suggesting there's more on the server. The
+   *  authoritative total lives on `globalExecutionCounts.total`. Previously
+   *  this field was a misnamed number `globalExecutionsTotal` set to
+   *  `merged.length + (rawCount >= limit ? 1 : 0)` — looking like a row
+   *  count but actually being a +1 sentinel; consumers wiring "X of Y" UIs
+   *  silently displayed wrong numbers. Renamed and retyped as a boolean to
+   *  make misuse a type error. */
+  globalExecutionsHasMore: boolean;
   globalExecutionsOffset: number;
   globalExecutionsWarning: string | null;
   globalExecutionsLimit: number;
   /** Precise server-side counts for the Activity filter badges (total /
    *  running / completed / failed). Updated independently from the paged
-   *  row list so the badges stay accurate regardless of what's loaded. */
+   *  row list so the badges stay accurate regardless of what's loaded.
+   *  This is the authoritative total — read `globalExecutionCounts.total`
+   *  for any "N of M" display, not `globalExecutionsHasMore`. */
   globalExecutionCounts: ExecutionCounts;
 
   // State -- reviews (local)
@@ -115,7 +125,7 @@ let fetchGlobalSeq = 0;
 export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
   globalExecutions: [],
-  globalExecutionsTotal: 0,
+  globalExecutionsHasMore: false,
   globalExecutionsOffset: 0,
   globalExecutionsWarning: null,
   globalExecutionsLimit: GLOBAL_PAGE_SIZE,
@@ -185,7 +195,7 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       const rawCount = rows.length;
       set({
         globalExecutions: merged,
-        globalExecutionsTotal: merged.length + (rawCount >= limit ? 1 : 0),
+        globalExecutionsHasMore: rawCount >= limit,
         globalExecutionsOffset: merged.length,
         globalExecutionsWarning: null,
       });

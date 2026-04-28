@@ -49,13 +49,12 @@ interface GlobalExecutionListProps {
 export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
   const { t, tx } = useTranslation();
   const {
-    globalExecutions, globalExecutionsTotal, globalExecutionsOffset,
+    globalExecutions, globalExecutionsHasMore,
     globalExecutionsWarning, fetchGlobalExecutions,
     globalExecutionCounts, fetchGlobalExecutionCounts,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
-    globalExecutionsTotal: s.globalExecutionsTotal,
-    globalExecutionsOffset: s.globalExecutionsOffset,
+    globalExecutionsHasMore: s.globalExecutionsHasMore,
     globalExecutionsWarning: s.globalExecutionsWarning,
     fetchGlobalExecutions: s.fetchGlobalExecutions,
     globalExecutionCounts: s.globalExecutionCounts,
@@ -163,7 +162,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     } finally { setIsRefreshing(false); }
   };
 
-  const hasMore = globalExecutionsOffset < globalExecutionsTotal;
+  const hasMore = globalExecutionsHasMore;
   const { parentRef, virtualizer } = useVirtualList(filteredExecutions, EXEC_ROW_HEIGHT);
 
   return (
@@ -172,7 +171,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
         icon={<Loader2 className="w-5 h-5 text-blue-400" />}
         iconColor="blue"
         title={t.overview.activity.title}
-        subtitle={globalExecutionsTotal !== 1 ? tx(t.overview.activity.recorded, { count: globalExecutionsTotal }) : tx(t.overview.activity.recorded_one, { count: globalExecutionsTotal })}
+        subtitle={globalExecutionCounts.total !== 1 ? tx(t.overview.activity.recorded, { count: globalExecutionCounts.total }) : tx(t.overview.activity.recorded_one, { count: globalExecutionCounts.total })}
         actions={
           <div className="flex items-center gap-2">
             {headerActions}
@@ -211,7 +210,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
             onChange={setFilter}
             badgeStyle="paren"
             layoutIdPrefix="execution-filter"
-            summary={tx(t.overview.activity.showing, { count: filteredExecutions.length, total: globalExecutionsTotal })}
+            summary={tx(t.overview.activity.showing, { count: filteredExecutions.length, total: globalExecutionCounts.total })}
           />
 
           {globalExecutionsWarning && (

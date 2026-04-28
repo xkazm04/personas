@@ -54,13 +54,17 @@ export default function DashboardHomeMissionControl() {
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
   const {
-    globalExecutions, globalExecutionsTotal, pendingReviewCount,
+    globalExecutions, globalExecutionCounts, pendingReviewCount,
     unreadMessageCount, memoryActions, executionDashboard, pipelineErrors,
     pipelineFetchedAt, setOverviewTab, dismissMemoryAction, setPipelineError,
     activeAlertCount,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
-    globalExecutionsTotal: s.globalExecutionsTotal,
+    // Use the authoritative server-side counts for any "total executions"
+    // display. The slice's `globalExecutionsHasMore` is a pagination hint,
+    // not a row count, and previously misnamed `globalExecutionsTotal` was
+    // being passed to UIs that wanted the real total.
+    globalExecutionCounts: s.globalExecutionCounts,
     pendingReviewCount: s.pendingReviewCount,
     unreadMessageCount: s.unreadMessageCount,
     memoryActions: s.memoryActions,
@@ -188,7 +192,7 @@ export default function DashboardHomeMissionControl() {
                 successRate={stats.successRate}
                 activeAgents={stats.activeAgents}
                 activeAlertCount={activeAlertCount}
-                totalExecutions={globalExecutionsTotal}
+                totalExecutions={globalExecutionCounts.total}
                 pendingReviews={pendingReviewCount}
                 points={executionDashboard?.daily_points ?? []}
               />
@@ -202,7 +206,7 @@ export default function DashboardHomeMissionControl() {
           <StatusTicker
             pipelineSources={Object.keys(pipelineFetchedAt).length}
             pipelineErrors={pipelineErrorCount}
-            totalExecutions={globalExecutionsTotal}
+            totalExecutions={globalExecutionCounts.total}
             lastSyncedLabel={lastSyncedLabel}
           />
 
