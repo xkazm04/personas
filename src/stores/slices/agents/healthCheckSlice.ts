@@ -9,6 +9,7 @@ import type { DryRunIssue, DryRunResult } from "@/features/agents/health/types";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { DesignContextData } from "@/lib/types/frontendTypes";
 import { inferIssueSeverity } from "@/lib/errorTaxonomy";
+import { silentCatch } from "@/lib/silentCatch";
 
 // -- Staleness threshold ----------------------------------------------
 
@@ -48,7 +49,7 @@ function mapOverallStatus(overall: string): DryRunResult['status'] {
   return 'partial';
 }
 
-async function checkSinglePersona(persona: Persona): Promise<PersonaHealthCheck | null> {
+async function checkSinglePersona(persona: Persona): Promise<PersonaHealthCheck> {
   const ctx = persona.design_context
     ? parseJsonOrDefault<DesignContextData | null>(persona.design_context, null)
     : null;
@@ -80,9 +81,36 @@ async function checkSinglePersona(persona: Persona): Promise<PersonaHealthCheck 
       result,
       checkedAt: new Date().toISOString(),
     };
-  } catch {
-    // intentional: individual persona health check failure is non-critical; caller aggregates via Promise.allSettled
-    return null;
+  } catch (err) {
+    // Per the policy doc in `useHealthCheck.ts`: an empty `catch {}` is never
+    // acceptable here. A failed sub-check must not silently make the persona
+    // vanish from the digest — the user would see "all healthy" while broken
+    // agents are simply absent. Route the error through silentCatch for a
+    // Sentry breadcrumb and return a partial-status check with an info-issue
+    // explaining the gap, so the persona still appears in the digest with a
+    // visible "score is incomplete" signal.
+    silentCatch(`healthCheckSlice:checkSinglePersona[${persona.id}]`)(err);
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return {
+      personaId: persona.id,
+      personaName: persona.name,
+      personaIcon: persona.icon,
+      personaColor: persona.color,
+      result: {
+        status: 'partial',
+        capabilities: [],
+        issues: [
+          {
+            id: `digest_${Date.now()}_${issueSeq++}`,
+            severity: 'info',
+            description: `Health sub-check did not run: ${errMsg}`,
+            proposal: null,
+            resolved: false,
+          },
+        ],
+      },
+      checkedAt: new Date().toISOString(),
+    };
   }
 }
 
