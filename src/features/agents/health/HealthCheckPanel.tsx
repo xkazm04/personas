@@ -260,10 +260,19 @@ function HealthWatchToggle() {
 
   useEffect(() => {
     if (!persona) return;
+    // Cancellation guard: managementFetch resolves asynchronously, and a
+    // persona switch (or unmount) before resolve would otherwise commit
+    // persona A's enabled flag onto persona B's view, or set state on an
+    // unmounted component (React warns; semantics drift either way).
+    let cancelled = false;
     managementFetch(`/api/settings/health-watch/${persona.id}`)
       .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.data?.enabled !== undefined) setEnabled(d.data.enabled); })
+      .then(d => {
+        if (cancelled) return;
+        if (d?.data?.enabled !== undefined) setEnabled(d.data.enabled);
+      })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [persona]);
 
   const toggle = async () => {

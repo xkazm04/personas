@@ -289,6 +289,12 @@
       "tool": "도구",
       "goal": "목표"
     },
+    "fleet": {
+      "executions_today": "오늘 실행",
+      "success_rate": "성공률",
+      "active_agents": "활성 에이전트",
+      "credentials": "자격 증명"
+    },
     "nav": {
       "overview": {
         "label": "개요",

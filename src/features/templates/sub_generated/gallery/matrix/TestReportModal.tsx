@@ -4,6 +4,7 @@
  */
 import { useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   X, CheckCircle2, XCircle, AlertTriangle, FileText,
   Zap, Clock, Shield, Key, Copy, Check, Plus,
@@ -537,8 +538,8 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
 
 function InlineCopyButton({ text }: { text: string }) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-  const handleCopy = () => { navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); };
+  const { copied, copy } = useCopyToClipboard();
+  const handleCopy = () => copy(text);
   return (
     <button type="button" onClick={handleCopy} className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] text-foreground hover:text-muted-foreground/70 hover:bg-secondary/30 transition-colors">
       {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}

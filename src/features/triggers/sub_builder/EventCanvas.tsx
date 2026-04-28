@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
@@ -6,9 +6,13 @@ import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { listEvents } from '@/api/overview/events';
 import { UnifiedRoutingView } from './layouts/UnifiedRoutingView';
 
-interface Props { allTriggers: PersonaTrigger[] }
+interface Props {
+  allTriggers: PersonaTrigger[];
+  /** Slot for content rendered into the page-level ContentHeader. */
+  setHeaderExtra?: (node: ReactNode) => void;
+}
 
-export function EventCanvas({ allTriggers: initialTriggers }: Props) {
+export function EventCanvas({ allTriggers: initialTriggers, setHeaderExtra }: Props) {
   const personas = useAgentStore(s => s.personas);
   const groups = usePipelineStore(s => s.groups);
   const [triggers, setTriggers] = useState<PersonaTrigger[]>(initialTriggers);
@@ -32,6 +36,7 @@ export function EventCanvas({ allTriggers: initialTriggers }: Props) {
       initialEvents={recentEvents}
       personas={personas}
       groups={groups}
+      setHeaderExtra={setHeaderExtra}
     />
   );
 }

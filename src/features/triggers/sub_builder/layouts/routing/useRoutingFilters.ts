@@ -6,7 +6,7 @@
  * are useMemo'd. No reducer, no context — the state fan-out is ~8 fields
  * and consumed in one place.
  */
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EventRow } from '../routingHelpers';
 import { buildActivityMap } from './activity';
@@ -51,11 +51,13 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
   );
   const [sortMode, setSortMode] = useState<SortMode>('activity');
 
-  const toggleClass = (c: ClassKey) => setVisibleClasses(prev => {
+  // Stable identity so consumers (e.g. RoutingView's setHeaderExtra effect)
+  // can use it as a dep without re-running every render.
+  const toggleClass = useCallback((c: ClassKey) => setVisibleClasses(prev => {
     const next = new Set(prev);
     if (next.has(c)) next.delete(c); else next.add(c);
     return next;
-  });
+  }), []);
 
   const activity = useMemo(() => buildActivityMap(recentEvents), [recentEvents]);
 

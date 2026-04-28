@@ -289,6 +289,12 @@
       "tool": "Alat",
       "goal": "Tujuan"
     },
+    "fleet": {
+      "executions_today": "Eksekusi Hari Ini",
+      "success_rate": "Tingkat Keberhasilan",
+      "active_agents": "Agen Aktif",
+      "credentials": "Kredensial"
+    },
     "nav": {
       "overview": {
         "label": "Ringkasan",

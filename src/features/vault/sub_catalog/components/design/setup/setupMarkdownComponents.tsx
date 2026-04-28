@@ -1,4 +1,4 @@
-import { useState, useCallback, type ReactNode } from 'react';
+import { useCallback, type ReactNode } from 'react';
 import type { Components } from 'react-markdown';
 import {
   Check,
@@ -7,22 +7,17 @@ import {
 } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 // -- Copy button -------------------------------------------------
 
 export function CopyButton({ text, className }: { text: string; className?: string }) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1500);
 
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // intentional: non-critical -- clipboard access denied
-    }
-  }, [text]);
+  const handleCopy = useCallback(() => {
+    copy(text);
+  }, [text, copy]);
 
   return (
     <button

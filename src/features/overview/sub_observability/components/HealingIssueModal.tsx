@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -30,7 +31,7 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
     return () => clearTimeout(timer);
   }, [resolved, onClose]);
 
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   const handleResolve = useCallback(async () => {
     if (resolving) return;
@@ -47,10 +48,8 @@ export default function HealingIssueModal({ issue, onResolve, onClose }: Healing
 
   const handleCopyFix = useCallback(() => {
     if (!issue.suggested_fix) return;
-    navigator.clipboard.writeText(issue.suggested_fix);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [issue.suggested_fix]);
+    copy(issue.suggested_fix);
+  }, [issue.suggested_fix, copy]);
 
   return (
     <BaseModal

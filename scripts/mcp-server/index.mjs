@@ -777,6 +777,99 @@ server.tool(
 );
 
 // ---------------------------------------------------------------------------
+// Tool: list_arena_models — static catalog of contenders that headless
+// callers can use without scraping the desktop app. Mirrors the frontend
+// ARENA_ROSTER so a one-line `start_arena_test` is possible without any
+// out-of-band knowledge.
+// ---------------------------------------------------------------------------
+const ARENA_MODEL_CATALOG = [
+  { id: "haiku",  provider: "anthropic", model: "haiku",  label: "Haiku",  tier: "budget"   },
+  { id: "sonnet", provider: "anthropic", model: "sonnet", label: "Sonnet", tier: "balanced" },
+  { id: "opus",   provider: "anthropic", model: "opus",   label: "Opus",   tier: "quality"  },
+  { id: "ollama:gemma4",  provider: "ollama", model: "gemma4",  label: "Gemma 4 (local)",  tier: "local", base_url: "http://localhost:11434" },
+  { id: "ollama:qwen3.5", provider: "ollama", model: "qwen3.5", label: "Qwen 3.5 (local)", tier: "local", base_url: "http://localhost:11434" },
+];
+
+server.tool(
+  "list_arena_models",
+  "List the model contenders that can be passed to start_arena_test. Each entry is shaped to match the start_arena_test 'models' array element.",
+  {},
+  async () => {
+    return { content: [{ type: "text", text: JSON.stringify(ARENA_MODEL_CATALOG, null, 2) }] };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Tool: arena_run_status — progress snapshot for a single arena run. Returns
+// the run row plus per-status result counts so callers can poll for
+// completion without pulling the full result set.
+// ---------------------------------------------------------------------------
+server.tool(
+  "arena_run_status",
+  "Get progress snapshot for a single arena run (status, scenarios completed/total, models tested). Use to poll until status is 'completed', 'failed', or 'cancelled'.",
+  { run_id: z.string().describe("Arena run ID") },
+  async ({ run_id }) => {
+    const d = await getDb();
+    const run = queryOne(d, `
+      SELECT id, persona_id, status, models_tested, scenarios_count, summary, error,
+             created_at, completed_at, progress_json, llm_summary
+      FROM lab_arena_runs WHERE id = ?
+    `, [run_id]);
+
+    if (!run) return notFound("Arena run", run_id);
+
+    const counts = {};
+    const countRows = query(d, `
+      SELECT status, COUNT(*) as count FROM lab_arena_results WHERE run_id = ? GROUP BY status
+    `, [run_id]);
+    for (const r of countRows) counts[r.status] = r.count;
+    const total = countRows.reduce((s, r) => s + r.count, 0);
+    const completed = counts.completed || 0;
+
+    return {
+      content: [{ type: "text", text: JSON.stringify({
+        run: {
+          id: run.id,
+          personaId: run.persona_id,
+          status: run.status,
+          modelsTested: safeJsonParse(run.models_tested),
+          scenariosCount: run.scenarios_count,
+          summary: run.summary,
+          error: run.error,
+          createdAt: run.created_at,
+          completedAt: run.completed_at,
+          progress: safeJsonParse(run.progress_json),
+          llmSummary: run.llm_summary,
+        },
+        resultCounts: counts,
+        resultsTotal: total,
+        resultsCompleted: completed,
+        terminal: run.status === "completed" || run.status === "failed" || run.status === "cancelled",
+      }, null, 2) }],
+    };
+  }
+);
+
+// ---------------------------------------------------------------------------
+// Tool: delete_arena_run — remove a finished arena run + its results. Cancels
+// any background task tied to the run before deleting (CASCADE clears the
+// results table). Mirrors the desktop app's deleteArenaRun store action.
+// ---------------------------------------------------------------------------
+server.tool(
+  "delete_arena_run",
+  "Delete an arena run and its results from history. Cancels the background task first if the run is still in progress.",
+  { run_id: z.string().describe("Arena run ID to delete") },
+  async ({ run_id }) => {
+    try {
+      const result = await apiCall("POST", `/api/lab/runs/${run_id}/delete`, {});
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    } catch (e) {
+      return errorResult(`Failed to delete: ${e.message}. Is the Personas app running?`);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
 // Tool: improve_prompt_from_results
 // ---------------------------------------------------------------------------
 server.tool(

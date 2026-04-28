@@ -76,6 +76,8 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/lab/arena/{persona_id}", post(start_arena))
         .route("/api/lab/matrix/{persona_id}", post(start_matrix))
         .route("/api/lab/cancel/{run_id}", post(cancel_lab_run))
+        .route("/api/lab/runs/{run_id}/delete", post(delete_lab_run))
+        .route("/api/lab/runs/{run_id}/status", get(get_lab_run_status))
         .route("/api/lab/improve/{persona_id}/{run_id}", post(improve_prompt))
         // Versions
         .route("/api/versions/{persona_id}", get(list_versions))
@@ -516,6 +518,106 @@ async fn cancel_lab_run(
     let _ = eval_repo::update_run_status(&state.pool, &run_id, LabRunStatus::Cancelled, None, None, None, Some(&now));
 
     ok_json(serde_json::json!({ "run_id": run_id, "status": "cancelled" }))
+}
+
+/// Cancel any active background task tied to the run, then delete the run row.
+/// CASCADE foreign keys remove the dependent results table. The handler probes
+/// each lab-run table because the route does not carry a type discriminator —
+/// only one delete will affect rows for any given id.
+async fn delete_lab_run(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    if state.process_registry.is_run_registered("test", &run_id) {
+        state.process_registry.cancel_run("test", &run_id);
+        // Brief grace window for the background task to notice + unregister.
+        for _ in 0..10 {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            if !state.process_registry.is_run_registered("test", &run_id) {
+                break;
+            }
+        }
+        state.process_registry.unregister_run("test", &run_id);
+    }
+
+    if let Ok(true) = arena_repo::delete_run(&state.pool, &run_id) {
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "arena" })).into_response();
+    }
+    if let Ok(true) = matrix_repo::delete_run(&state.pool, &run_id) {
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "matrix" })).into_response();
+    }
+    if let Ok(true) = ab_repo::delete_run(&state.pool, &run_id) {
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "ab" })).into_response();
+    }
+    if let Ok(true) = eval_repo::delete_run(&state.pool, &run_id) {
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "eval" })).into_response();
+    }
+
+    err_json(StatusCode::NOT_FOUND, "Lab run not found").into_response()
+}
+
+/// Read-only status snapshot for a lab arena run — the headless analogue of
+/// `arenaResultsMap` polling the UI uses. Returns the run row plus per-status
+/// counts of its results so a caller can show progress without pulling the
+/// full result set.
+async fn get_lab_run_status(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(run_id): Path<String>,
+) -> impl IntoResponse {
+    let conn = match state.pool.get() {
+        Ok(c) => c,
+        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    };
+
+    let run_row = conn.query_row(
+        "SELECT id, persona_id, status, models_tested, scenarios_count, summary, error,
+                created_at, completed_at, progress_json, llm_summary
+         FROM lab_arena_runs WHERE id = ?1",
+        rusqlite::params![run_id],
+        |row| {
+            Ok(serde_json::json!({
+                "id": row.get::<_, String>(0)?,
+                "persona_id": row.get::<_, String>(1)?,
+                "status": row.get::<_, String>(2)?,
+                "models_tested": row.get::<_, String>(3)?,
+                "scenarios_count": row.get::<_, i64>(4)?,
+                "summary": row.get::<_, Option<String>>(5)?,
+                "error": row.get::<_, Option<String>>(6)?,
+                "created_at": row.get::<_, String>(7)?,
+                "completed_at": row.get::<_, Option<String>>(8)?,
+                "progress_json": row.get::<_, Option<String>>(9)?,
+                "llm_summary": row.get::<_, Option<String>>(10)?,
+            }))
+        },
+    );
+
+    let run_value = match run_row {
+        Ok(v) => v,
+        Err(_) => return err_json(StatusCode::NOT_FOUND, "Arena run not found").into_response(),
+    };
+
+    let mut counts: HashMap<String, i64> = HashMap::new();
+    if let Ok(mut stmt) = conn.prepare(
+        "SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status",
+    ) {
+        let rows = stmt.query_map(rusqlite::params![run_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        });
+        if let Ok(rows) = rows {
+            for r in rows.flatten() {
+                counts.insert(r.0, r.1);
+            }
+        }
+    }
+    let total: i64 = counts.values().sum();
+    let completed = counts.get("completed").copied().unwrap_or(0);
+
+    ok_json(serde_json::json!({
+        "run": run_value,
+        "result_counts": counts,
+        "results_total": total,
+        "results_completed": completed,
+    })).into_response()
 }
 
 async fn improve_prompt(

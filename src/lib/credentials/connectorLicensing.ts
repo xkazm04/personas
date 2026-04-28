@@ -162,17 +162,21 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
 /**
  * Get the license tier for a connector.
  * Uses explicit overrides first, then falls back to metadata pricing_tier.
+ *
+ * Accepts either a raw `Record<string, unknown> | null` (legacy raw access
+ * to `connector.metadata`) or a parsed `ConnectorMetadata` (preferred). The
+ * field shape is identical at runtime — pricing_tier reads work either way.
  */
 export function getLicenseTier(
   connectorName: string,
-  metadata?: Record<string, unknown> | null,
+  metadata?: Record<string, unknown> | { pricing_tier?: string } | null,
 ): LicenseTier {
   if (LICENSE_OVERRIDES[connectorName]) {
     return LICENSE_OVERRIDES[connectorName];
   }
 
   // Fall back to metadata.pricing_tier
-  const pricing = metadata?.pricing_tier as string | undefined;
+  const pricing = (metadata as { pricing_tier?: string } | null | undefined)?.pricing_tier;
   switch (pricing) {
     case 'free':
     case 'freemium':

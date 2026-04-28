@@ -1,6 +1,6 @@
-import { silentCatch } from "@/lib/silentCatch";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Send, Trash2, ExternalLink, Check, X, Copy, Wand2, Loader2, CheckCircle2,
@@ -52,7 +52,7 @@ export function MessageDetailModal({ message, onClose, onDelete, onNavigate, has
   const [deliveries, setDeliveries] = useState<PersonaMessageDelivery[]>([]);
   const [deliveriesLoading, setDeliveriesLoading] = useState(true);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [copiedId, setCopiedId] = useState(false);
+  const { copied: copiedId, copy: copyId } = useCopyToClipboard();
   // Tracks which direction we're moving so the body content can slide in from
   // the matching side — gives the user a clear sense of forward/back motion.
   const [navDir, setNavDir] = useState<1 | -1>(1);
@@ -197,13 +197,7 @@ export function MessageDetailModal({ message, onClose, onDelete, onNavigate, has
         <>
           <div className="flex items-center gap-4 typo-body text-foreground mr-auto">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(msgId).then(() => {
-                  setCopiedId(true);
-                  setTimeout(() => setCopiedId(false), 2000);
-                }).catch(silentCatch("MessageDetailModal:copyId"));
-              }}
+              onClick={(e) => { e.stopPropagation(); copyId(msgId); }}
               className="inline-flex items-center gap-1 hover:text-muted-foreground transition-colors"
               title={msgId}
             >

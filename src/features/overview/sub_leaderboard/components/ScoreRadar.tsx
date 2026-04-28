@@ -97,7 +97,8 @@ export function ScoreRadar({ entries, size = 200 }: ScoreRadarProps) {
         );
       })}
 
-      {/* Axis labels */}
+      {/* Axis labels — promoted from 10px low-contrast to 11px on the
+          high-contrast foreground token for legibility on small panels. */}
       {AXES.map((label, i) => {
         const [x, y] = polarToCartesian(cx, cy, labelOffset, i);
         const textAnchor = x < cx - 5 ? 'end' : x > cx + 5 ? 'start' : 'middle';
@@ -109,7 +110,7 @@ export function ScoreRadar({ entries, size = 200 }: ScoreRadarProps) {
             textAnchor={textAnchor}
             dominantBaseline="central"
             dy={dy}
-            className="fill-muted-foreground/60 text-[10px]"
+            className="fill-foreground text-[11px] font-medium"
           >
             {label}
           </text>

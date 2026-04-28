@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { Copy, Check, Cloud, Unplug, AlertCircle, Clock, Hash, FolderOpen } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { X } from 'lucide-react';
@@ -22,17 +22,14 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
   const { t } = useTranslation();
-  const [copiedPayload, setCopiedPayload] = useState(false);
+  const { copied: copiedPayload, copy } = useCopyToClipboard();
   const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
   const sourceConfig = event.source_type ? SOURCE_ICONS[event.source_type] : null;
   const SourceIcon = sourceConfig?.icon;
 
   const handleCopy = () => {
     const text = (() => { try { return JSON.stringify(JSON.parse(event.payload!), null, 2); } catch { return event.payload!; } })();
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedPayload(true);
-      setTimeout(() => setCopiedPayload(false), 2000);
-    }).catch(() => { /* non-critical */ });
+    copy(text);
   };
 
   return (

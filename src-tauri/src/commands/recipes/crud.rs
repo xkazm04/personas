@@ -471,3 +471,138 @@ pub fn revert_recipe_version(
     require_auth_sync(&state)?;
     repo::revert_to_version(&state.db, &recipe_id, &version_id)
 }
+
+// ============================================================================
+// Tests
+//
+// These pin the contract documented in `docs/RECIPE-TEMPLATES.md`. Any change
+// to `render_template` or `validate_no_unreplaced_placeholders` must update
+// both the spec and these tests.
+// ============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::Value;
+
+    fn data(pairs: &[(&str, Value)]) -> HashMap<String, Value> {
+        pairs.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+    }
+
+    #[test]
+    fn render_template_substitutes_strings_without_quotes() {
+        let out = render_template("Hello {{name}}.", &data(&[("name", Value::String("Ada".into()))]));
+        assert_eq!(out, "Hello Ada.");
+    }
+
+    #[test]
+    fn render_template_renders_numbers_as_bare_decimals() {
+        let out = render_template(
+            "i={{i}} f={{f}}",
+            &data(&[
+                ("i", serde_json::json!(42)),
+                ("f", serde_json::json!(1.5)),
+            ]),
+        );
+        assert_eq!(out, "i=42 f=1.5");
+    }
+
+    #[test]
+    fn render_template_renders_bool_and_null_as_literals() {
+        let out = render_template(
+            "b={{b}} n={{n}}",
+            &data(&[("b", Value::Bool(true)), ("n", Value::Null)]),
+        );
+        assert_eq!(out, "b=true n=null");
+    }
+
+    #[test]
+    fn render_template_renders_arrays_and_objects_as_json() {
+        let out = render_template(
+            "a={{a}} o={{o}}",
+            &data(&[
+                ("a", serde_json::json!([1, 2, 3])),
+                ("o", serde_json::json!({"k": "v"})),
+            ]),
+        );
+        assert_eq!(out, "a=[1,2,3] o={\"k\":\"v\"}");
+    }
+
+    #[test]
+    fn render_template_leaves_missing_keys_as_placeholders() {
+        let out = render_template("Hello {{name}} {{missing}}.", &data(&[("name", Value::String("Ada".into()))]));
+        assert_eq!(out, "Hello Ada {{missing}}.");
+    }
+
+    #[test]
+    fn render_template_is_case_sensitive() {
+        let out = render_template(
+            "{{Name}} vs {{name}}",
+            &data(&[("name", Value::String("ada".into()))]),
+        );
+        assert_eq!(out, "{{Name}} vs ada");
+    }
+
+    #[test]
+    fn render_template_does_not_match_whitespace_inside_braces() {
+        // `{{ name }}` (with spaces) is NOT a valid placeholder and is left as-is.
+        let out = render_template("{{ name }}", &data(&[("name", Value::String("ada".into()))]));
+        assert_eq!(out, "{{ name }}");
+    }
+
+    #[test]
+    fn render_template_does_not_match_dots_or_hyphens() {
+        // `\w+` excludes `.` and `-`, so these tokens are literal text.
+        let out = render_template(
+            "{{user.name}} {{user-name}}",
+            &data(&[
+                ("user.name", Value::String("dotted".into())),
+                ("user-name", Value::String("hyphen".into())),
+            ]),
+        );
+        assert_eq!(out, "{{user.name}} {{user-name}}");
+    }
+
+    #[test]
+    fn render_template_does_not_recurse_into_substituted_braces() {
+        // If the substituted value itself contains `{{...}}`, those braces
+        // remain literal — the scan is single-pass.
+        let out = render_template(
+            "{{outer}}",
+            &data(&[
+                ("outer", Value::String("{{inner}}".into())),
+                ("inner", Value::String("nope".into())),
+            ]),
+        );
+        assert_eq!(out, "{{inner}}");
+    }
+
+    #[test]
+    fn render_template_treats_null_as_present_not_missing() {
+        // A key with Value::Null is rendered, NOT reported as missing.
+        let rendered = render_template("v={{v}}", &data(&[("v", Value::Null)]));
+        assert_eq!(rendered, "v=null");
+        assert!(validate_no_unreplaced_placeholders(&rendered).is_ok());
+    }
+
+    #[test]
+    fn validate_no_unreplaced_placeholders_passes_when_clean() {
+        assert!(validate_no_unreplaced_placeholders("no braces here").is_ok());
+        assert!(validate_no_unreplaced_placeholders("Hello Ada.").is_ok());
+    }
+
+    #[test]
+    fn validate_no_unreplaced_placeholders_lists_missing_keys_unique_and_ordered() {
+        let err = validate_no_unreplaced_placeholders("{{a}} {{b}} {{a}} {{c}}").unwrap_err();
+        let msg = format!("{:?}", err);
+        // Deduped, first-seen order: a, b, c
+        assert!(msg.contains("a, b, c"), "expected 'a, b, c' in error, got: {}", msg);
+    }
+
+    #[test]
+    fn validate_no_unreplaced_placeholders_ignores_invalid_token_shapes() {
+        // `{{ name }}` and `{{user.name}}` aren't placeholders, so they don't
+        // trigger missing-key errors.
+        assert!(validate_no_unreplaced_placeholders("{{ name }} {{user.name}}").is_ok());
+    }
+}

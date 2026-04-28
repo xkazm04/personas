@@ -117,6 +117,20 @@ export function ByomApiKeyManager() {
     const entry = entries[index];
     if (!entry) return;
     const value = entry.value.trim();
+    // URL fields (LiteLLM Base URL): validate before persisting. Without this,
+    // a typo'd URL ("htttp://...", missing scheme, raw host name) was saved as-is
+    // and every subsequent provider request failed silently with a generic
+    // network error — the user had no inline signal that the URL itself was
+    // malformed. We accept only http(s) so file:// or javascript: URLs can't
+    // reach the proxy code path either.
+    if (value && entry.def.isUrl) {
+      let parsed: URL | null = null;
+      try { parsed = new URL(value); } catch { parsed = null; }
+      if (!parsed || (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')) {
+        updateEntry(index, { connectionState: 'error' });
+        return;
+      }
+    }
     try {
       if (value) {
         await setAppSetting(entry.def.settingsKey, value);

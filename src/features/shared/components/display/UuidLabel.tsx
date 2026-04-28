@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { Tooltip } from './Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 interface UuidLabelProps {
   value: string;
@@ -10,14 +11,12 @@ interface UuidLabelProps {
 
 export function UuidLabel({ value, label }: UuidLabelProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard(1500);
 
   const handleCopy = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [value]);
+    copy(value);
+  }, [value, copy]);
 
   const display = label || value.slice(0, 8);
 

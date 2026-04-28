@@ -289,6 +289,12 @@
       "tool": "Outil",
       "goal": "Objectif"
     },
+    "fleet": {
+      "executions_today": "Exécutions Aujourd'hui",
+      "success_rate": "Taux de Réussite",
+      "active_agents": "Agents Actifs",
+      "credentials": "Identifiants"
+    },
     "nav": {
       "overview": {
         "label": "Vue d'ensemble",

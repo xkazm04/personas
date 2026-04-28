@@ -144,5 +144,11 @@ pub async fn invoke_tool_direct(
     require_privileged(&state, "invoke_tool_direct").await?;
     let tool = repo::get_definition_by_id(&state.db, &tool_id)?;
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    if !repo::is_tool_assigned(&state.db, &persona_id, &tool_id)? {
+        return Err(AppError::Forbidden(format!(
+            "Tool '{}' is not assigned to persona '{}'. Assign it before invoking.",
+            tool.name, persona.name
+        )));
+    }
     tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json, Some(&state.rate_limiter)).await
 }

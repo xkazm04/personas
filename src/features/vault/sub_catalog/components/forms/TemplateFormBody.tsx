@@ -1,6 +1,6 @@
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { Button } from '@/features/shared/components/buttons';
-import type { ConnectorDefinition, CredentialTemplateField } from '@/lib/types/types';
+import { parseConnectorMetadata, type ConnectorDefinition, type CredentialTemplateField } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AuthVariant {
@@ -70,7 +70,7 @@ export function TemplateFormBody({
   // for builtin connectors is already seeded by seed_builtin_credentials on every
   // boot (see 18-RESEARCH.md §CONN-02 + T-18-01). Calling onCreateCredential({})
   // here would either duplicate the row or error on unique-id violation.
-  const authType = (selectedConnector.metadata as Record<string, unknown> | null)?.auth_type;
+  const authType = parseConnectorMetadata(selectedConnector.metadata).auth_type;
   const isZeroConfig =
     variantFields.length === 0 && (authType === 'none' || authType === 'builtin');
 

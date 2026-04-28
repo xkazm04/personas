@@ -289,6 +289,12 @@
       "tool": "Инструмент",
       "goal": "Цель"
     },
+    "fleet": {
+      "executions_today": "Запуски сегодня",
+      "success_rate": "Успешность",
+      "active_agents": "Активные агенты",
+      "credentials": "Учётные данные"
+    },
     "nav": {
       "overview": {
         "label": "Обзор",

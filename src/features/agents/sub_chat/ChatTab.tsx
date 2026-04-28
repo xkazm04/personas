@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Send, ArrowDown, FlaskConical } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import { useExecutionStream } from '@/hooks/execution/useExecutionStream';
 import { useStructuredStream } from '@/hooks/execution/useStructuredStream';
 import { ChatBubble, StreamingBubble } from './ChatBubbles';
@@ -110,9 +111,14 @@ export function ChatTab() {
   // stuck true forever — locking the input. Two guards:
   //   1. Explicit clear when activeExecutionId transitions to null.
   //   2. 5-minute idle watchdog on streamTextLines growth while chatStreaming.
+  // Also clears chatTodos here: useStructuredStream filters by activeExecutionId,
+  // so once it goes null the subscription dies and any unprocessed TodoWrite
+  // emissions never arrive. Leaving the previous run's plan visible while
+  // input is unlocked for a brand-new prompt would conflate two executions
+  // in the user's mental model.
   useEffect(() => {
     if (chatStreaming && !activeExecutionId) {
-      useAgentStore.setState({ chatStreaming: false, isExecuting: false });
+      useAgentStore.setState({ chatStreaming: false, isExecuting: false, chatTodos: null });
     }
   }, [chatStreaming, activeExecutionId]);
 
@@ -158,9 +164,19 @@ export function ChatTab() {
       // Guard: bail if the user navigated away to a different persona while
       // the session was being created. The session still exists for the
       // original persona — just don't post this user message into it
-      // against a stale selection.
+      // against a stale selection. Surface a toast so the user knows their
+      // action was suppressed; previously this returned silently and the
+      // typed message stayed in the input with no explanation, leading to
+      // confused re-sends.
       const currentPersonaId = useAgentStore.getState().selectedPersona?.id ?? '';
-      if (currentPersonaId !== sendPersonaId) return;
+      if (currentPersonaId !== sendPersonaId) {
+        useToastStore.getState().addToast(
+          'Persona switched while creating the chat session — message not sent. Try again.',
+          'error',
+          4000,
+        );
+        return;
+      }
     }
     setInputValue('');
     sendMessage(sendPersonaId, sessionId, text);

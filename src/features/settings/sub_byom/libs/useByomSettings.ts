@@ -117,6 +117,20 @@ export function useByomSettings() {
 
   const handleSave = useCallback(async () => {
     if (saveInFlightRef.current) return;
+    // Refuse to save when the initial load failed (corrupt JSON OR a transient
+    // IPC error). Without this gate, the in-memory `policy` is `defaultPolicy()`
+    // — empty allow-lists, no routing/compliance rules, enabled:false — and
+    // saving it would silently overwrite the on-disk policy. BYOM controls
+    // which providers see persona secrets, so a policy wipe is a security
+    // regression. Force the user to reload the panel (which retries the load)
+    // before any write is permitted.
+    if (!loaded || corruptPolicyError !== null) {
+      useToastStore.getState().addToast(
+        'Cannot save: the stored BYOM policy could not be loaded. Reload the panel before saving to avoid overwriting the on-disk policy with an empty default.',
+        'error',
+      );
+      return;
+    }
     const errors = validateByomPolicy(policy).filter((w) => w.severity === 'error');
     if (errors.length > 0) {
       useToastStore.getState().addToast(
@@ -141,7 +155,7 @@ export function useByomSettings() {
       saveInFlightRef.current = false;
       setIsSaving(false);
     }
-  }, [policy]);
+  }, [policy, loaded, corruptPolicyError]);
 
   const handleReset = useCallback(async () => {
     try {

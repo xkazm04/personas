@@ -23,6 +23,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
@@ -377,10 +378,10 @@ export function VitalsConsole({
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
         <div className="w-full grid grid-cols-2 gap-3">
-          <StatTile icon={<Activity className="w-3.5 h-3.5" />} label="Runs" value={totalExecutions} format={formatCount} color="text-emerald-400" />
-          <StatTile icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" value={activeAgents} color="text-violet-400" />
-          <StatTile icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" value={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground/60'} />
-          <StatTile icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" value={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground/60'} />
+          <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
+          <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
+          <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground/60'} />
+          <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground/60'} />
         </div>
         {sparkline && (
           <div className="w-full pt-3 border-t border-primary/10">
@@ -426,22 +427,6 @@ function SuccessRing({ rate }: { rate: number }) {
         </div>
         <div className="typo-caption uppercase tracking-[0.25em] text-foreground/50 mt-1 font-mono">
           success
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function StatTile({
-  icon, label, value, format, color,
-}: { icon: React.ReactNode; label: string; value: number; format?: (v: number) => string; color: string }) {
-  return (
-    <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-3 py-2.5 flex items-center gap-2.5">
-      <span className={color}>{icon}</span>
-      <div className="flex-1 min-w-0">
-        <div className="typo-caption uppercase tracking-widest text-foreground/50 font-mono">{label}</div>
-        <div className={`font-mono text-xl tabular-nums ${color}`}>
-          <AnimatedCounter value={value} formatFn={format} />
         </div>
       </div>
     </div>

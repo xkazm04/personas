@@ -38,6 +38,8 @@ import { ArenaHistory } from './ArenaHistory';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
+import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
+import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 
 /* ------------------------------------------------------------------ */
 /* Model metadata — compact, data-concrete rather than heraldic       */
@@ -107,6 +109,67 @@ function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: num
     if (!best || wins > best.wins) best = { model, wins };
   }
   return best ? { ...best, total } : null;
+}
+
+/** Per-model rolling stats across every recorded arena result.
+ *  Surfaces in roster rows so a contender's *track record* is visible at
+ *  selection time, not buried in the chronicle. */
+type ModelStats = { avgScore: number; runs: number; avgCostUsd: number; avgDurationMs: number };
+
+function computeModelStats(resultsMap: Record<string, LabArenaResult[]>): Map<string, ModelStats> {
+  const acc = new Map<string, { score: number; cost: number; duration: number; count: number }>();
+  for (const results of Object.values(resultsMap)) {
+    for (const r of results) {
+      const ta = r.toolAccuracyScore ?? 0;
+      const oq = r.outputQualityScore ?? 0;
+      const pc = r.protocolCompliance ?? 0;
+      const comp = compositeScore(ta, oq, pc);
+      const cur = acc.get(r.modelId) ?? { score: 0, cost: 0, duration: 0, count: 0 };
+      cur.score += comp;
+      cur.cost += r.costUsd ?? 0;
+      cur.duration += r.durationMs ?? 0;
+      cur.count += 1;
+      acc.set(r.modelId, cur);
+    }
+  }
+  const out = new Map<string, ModelStats>();
+  for (const [id, s] of acc) {
+    if (s.count === 0) continue;
+    out.set(id, {
+      avgScore: Math.round(s.score / s.count),
+      runs: s.count,
+      avgCostUsd: s.cost / s.count,
+      avgDurationMs: s.duration / s.count,
+    });
+  }
+  return out;
+}
+
+/** Recent run trend: composite score of the winning model in each of the
+ *  last N runs (oldest → newest). Powers a sparkline in the chronicle. */
+function computeRecentTrend(runs: LabArenaRun[], resultsMap: Record<string, LabArenaResult[]>, n = 8): number[] {
+  const sorted = [...runs].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1)).slice(0, n).reverse();
+  const out: number[] = [];
+  for (const run of sorted) {
+    const results = resultsMap[run.id] ?? [];
+    let bestModelComp = 0;
+    const byModel = new Map<string, { ta: number; oq: number; pc: number; n: number }>();
+    for (const r of results) {
+      const cur = byModel.get(r.modelId) ?? { ta: 0, oq: 0, pc: 0, n: 0 };
+      cur.ta += r.toolAccuracyScore ?? 0;
+      cur.oq += r.outputQualityScore ?? 0;
+      cur.pc += r.protocolCompliance ?? 0;
+      cur.n += 1;
+      byModel.set(r.modelId, cur);
+    }
+    for (const { ta, oq, pc, n: cnt } of byModel.values()) {
+      if (cnt === 0) continue;
+      const comp = compositeScore(Math.round(ta / cnt), Math.round(oq / cnt), Math.round(pc / cnt));
+      if (comp > bestModelComp) bestModelComp = comp;
+    }
+    if (bestModelComp > 0) out.push(bestModelComp);
+  }
+  return out;
 }
 
 /* ================================================================== */
@@ -182,6 +245,31 @@ export function ArenaPanelLedger() {
   );
 
   const champion = useMemo(() => computeAllTimeChampion(arenaRuns), [arenaRuns]);
+  const modelStats = useMemo(() => computeModelStats(arenaResultsMap), [arenaResultsMap]);
+  const recentTrend = useMemo(() => computeRecentTrend(arenaRuns, arenaResultsMap), [arenaRuns, arenaResultsMap]);
+
+  // Match preview — tally cost & duration for the *selected* contenders × scenarios
+  const matchPreview = useMemo(() => {
+    let costPerScenario = 0;
+    let durationPerScenario = 0;
+    let countedModels = 0;
+    let knownModels = 0;
+    for (const id of selectedModels) {
+      const stat = modelStats.get(id);
+      if (stat) {
+        costPerScenario += stat.avgCostUsd;
+        durationPerScenario = Math.max(durationPerScenario, stat.avgDurationMs);
+        countedModels += 1;
+      }
+      knownModels += 1;
+    }
+    return {
+      estCostUsd: costPerScenario * Math.max(scenarioCount, 1),
+      estDurationMs: durationPerScenario * Math.max(scenarioCount, 1),
+      coveredModels: countedModels,
+      totalSelected: knownModels,
+    };
+  }, [selectedModels, scenarioCount, modelStats]);
 
   return (
     <div className="space-y-6">
@@ -214,6 +302,7 @@ export function ArenaPanelLedger() {
                 option={m}
                 selected={selectedModels.has(m.id)}
                 onToggle={() => toggleModel(m.id)}
+                stats={modelStats.get(m.id) ?? null}
               />
             ))}
           </div>
@@ -308,6 +397,17 @@ export function ArenaPanelLedger() {
         </div>
       )}
 
+      {/* Match preview — derives from history so users see a concrete projection */}
+      <MatchPreviewCard
+        contenders={contenderCount}
+        scenarios={scenarioCount}
+        duels={duelCount}
+        estCostUsd={matchPreview.estCostUsd}
+        estDurationMs={matchPreview.estDurationMs}
+        coveredModels={matchPreview.coveredModels}
+        totalSelected={matchPreview.totalSelected}
+      />
+
       {/* Launch bar */}
       <LedgerLaunchBar
         isRunning={isLabRunning}
@@ -330,6 +430,7 @@ export function ArenaPanelLedger() {
           </h4>
           <span className="typo-caption text-foreground/90">{arenaRuns.length} run{arenaRuns.length === 1 ? '' : 's'} logged</span>
         </div>
+        <ChronicleTrend trend={recentTrend} />
         <StandingChampionCard champion={champion} totalRuns={arenaRuns.length} />
         <ArenaHistory
           runs={arenaRuns}
@@ -391,11 +492,12 @@ function FormulaPiece({ n, label, highlight }: { n: number; label: string; highl
 }
 
 function LedgerRosterRow({
-  option, selected, onToggle,
+  option, selected, onToggle, stats,
 }: {
   option: ModelOption;
   selected: boolean;
   onToggle: () => void;
+  stats: ModelStats | null;
 }) {
   const meta = metaFor(option.id, option.provider);
   const Sigil = meta.sigil;
@@ -430,7 +532,21 @@ function LedgerRosterRow({
         <span className="typo-body-lg font-semibold text-foreground truncate block">{option.label}</span>
         <span className="typo-caption text-foreground/90 truncate block">{meta.providerTag}</span>
       </span>
-      {/* stats */}
+      {/* track record — derived from past arena results */}
+      <span className="flex flex-col items-end leading-none typo-data tabular-nums">
+        {stats ? (
+          <>
+            <span className={`font-bold ${scoreColor(stats.avgScore)}`}>{stats.avgScore}</span>
+            <span className="typo-caption text-foreground/90">{stats.runs} run{stats.runs === 1 ? '' : 's'}</span>
+          </>
+        ) : (
+          <>
+            <span className="font-semibold text-foreground/90">—</span>
+            <span className="typo-caption text-foreground/90">unproven</span>
+          </>
+        )}
+      </span>
+      {/* tier shorthand */}
       <span className="flex items-center gap-3 typo-data text-foreground/90 tabular-nums">
         <span className="flex flex-col items-end leading-none">
           <span className="font-semibold">{meta.costLabel}</span>
@@ -640,6 +756,147 @@ function StandingChampionCard({
         <span className="font-semibold tabular-nums">{champion.wins}</span>
         <span className="text-foreground/90">/</span>
         <span className="text-foreground/90 tabular-nums">{champion.total}</span>
+      </div>
+    </div>
+  );
+}
+
+/* Match preview — concrete projection of the next launch.
+ * Estimates lean on per-model averages from the chronicle, so they
+ * sharpen as more runs accumulate; before any runs, fall back to "—". */
+function MatchPreviewCard({
+  contenders, scenarios, duels, estCostUsd, estDurationMs, coveredModels, totalSelected,
+}: {
+  contenders: number;
+  scenarios: number;
+  duels: number;
+  estCostUsd: number;
+  estDurationMs: number;
+  coveredModels: number;
+  totalSelected: number;
+}) {
+  const hasEstimate = coveredModels > 0;
+  const partial = hasEstimate && coveredModels < totalSelected;
+  return (
+    <section className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <span className="typo-label text-foreground/90">Match preview</span>
+        <span className="typo-caption text-foreground/90">
+          {hasEstimate
+            ? partial ? `partial — ${coveredModels}/${totalSelected} models have history` : 'projection from chronicle'
+            : 'no projection — first run will calibrate'}
+        </span>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
+        <PreviewStat label="Contenders" value={`${contenders}`} />
+        <PreviewStat label="Scenarios"  value={`${scenarios}`} />
+        <PreviewStat label="Duels"       value={`${duels}`} highlight />
+        <PreviewStat
+          label="Est. duration"
+          value={hasEstimate ? formatDuration(estDurationMs) : '—'}
+          subtle={!hasEstimate}
+        />
+        <PreviewStat
+          label="Est. cost"
+          value={hasEstimate ? formatCostUsd(estCostUsd) : '—'}
+          subtle={!hasEstimate}
+        />
+      </div>
+    </section>
+  );
+}
+
+function PreviewStat({
+  label, value, highlight, subtle,
+}: { label: string; value: string; highlight?: boolean; subtle?: boolean }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="typo-label text-foreground/90">{label}</span>
+      <span className={`typo-data-lg tabular-nums ${
+        highlight ? 'text-primary'
+        : subtle  ? 'text-foreground/90'
+        :           'text-foreground'
+      }`}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function formatDuration(ms: number): string {
+  if (ms <= 0) return '—';
+  const sec = Math.round(ms / 1000);
+  if (sec < 60) return `~${sec}s`;
+  const min = Math.round(sec / 60);
+  return `~${min}m`;
+}
+
+function formatCostUsd(usd: number): string {
+  if (usd <= 0) return '—';
+  if (usd < 0.01) return '<$0.01';
+  if (usd < 1)    return `$${usd.toFixed(3)}`;
+  return `$${usd.toFixed(2)}`;
+}
+
+/* Recent-run trend sparkline — winning composite score per logged run. */
+function ChronicleTrend({ trend }: { trend: number[] }) {
+  if (trend.length < 2) return null;
+  const w = 240;
+  const h = 36;
+  const pad = 2;
+  const max = Math.max(...trend, 100);
+  const min = Math.min(...trend, 0);
+  const range = max - min || 1;
+  const stepX = (w - pad * 2) / Math.max(trend.length - 1, 1);
+  const pts = trend.map((v, i) => {
+    const x = pad + i * stepX;
+    const y = h - pad - ((v - min) / range) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+  const polyline = pts.join(' ');
+  const last = trend[trend.length - 1] ?? 0;
+  const first = trend[0] ?? 0;
+  const delta = last - first;
+  const deltaLabel = delta >= 0 ? `+${delta}` : `${delta}`;
+  return (
+    <div className="rounded-card border border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-4">
+      <div className="flex flex-col gap-0.5 flex-shrink-0">
+        <span className="typo-label text-foreground/90">Recent trend</span>
+        <span className="typo-caption text-foreground/90">{trend.length} run{trend.length === 1 ? '' : 's'}</span>
+      </div>
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="flex-1 h-9 max-w-[280px] text-primary"
+        aria-label="Recent winning composite scores"
+      >
+        <polyline
+          points={polyline}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        {pts.map((p, i) => {
+          const [x, y] = p.split(',').map(Number);
+          const isLast = i === pts.length - 1;
+          return (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={isLast ? 3 : 1.75}
+              fill="currentColor"
+              opacity={isLast ? 1 : 0.6}
+            />
+          );
+        })}
+      </svg>
+      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+        <span className={`typo-data-lg tabular-nums ${scoreColor(last)}`}>{last}</span>
+        <span className={`typo-caption tabular-nums ${delta >= 0 ? 'text-status-success' : 'text-status-warning'}`}>
+          {deltaLabel} vs first
+        </span>
       </div>
     </div>
   );

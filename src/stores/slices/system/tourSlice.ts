@@ -7,6 +7,44 @@ export type TourStepId = string;
 
 export type TourId = "getting-started" | "getting-started-simple" | "execution-observability" | "orchestration-events";
 
+/**
+ * The single source of truth for tour completion event keys.
+ *
+ * Tour completion is an invisible cross-file contract — a typo in any of
+ * these strings used to fail open (no compile error, no runtime warning;
+ * the step just never completed). Now both the producer side
+ * (`emitTourEvent` callers + `storeBusWiring`) and the consumer side
+ * (`TourStepDef.completeOn` + the timed-steps list in `GuidedTour`) share
+ * the same union, so a typo turns into a build error.
+ *
+ * To add a new event:
+ *   1. Add it to `TOUR_EVENTS` below.
+ *   2. Use it as `completeOn` on a step.
+ *   3. Emit it via `useSystemStore.getState().emitTourEvent('tour:my-key')`
+ *      or from `storeBusWiring.ts`.
+ */
+export const TOUR_EVENTS = [
+  // Getting Started
+  'tour:appearance-changed',
+  'tour:credentials-explored',
+  'tour:persona-promoted',
+  'tour:persona-draft-ready',
+  // Execution & Observability
+  'tour:dashboard-viewed',
+  'tour:activity-explored',
+  'tour:execution-complete',
+  'tour:messages-explored',
+  'tour:health-explored',
+  'tour:lab-explored',
+  // Orchestration & Events
+  'tour:events-viewed',
+  'tour:triggers-explored',
+  'tour:chaining-understood',
+  'tour:livestream-viewed',
+] as const;
+
+export type TourEventKey = (typeof TOUR_EVENTS)[number];
+
 export interface TourSubStepDef {
   id: string;
   label: string;
@@ -24,7 +62,7 @@ export interface TourStepDef {
     subTab?: string;
     subTabSetter?: string;
   };
-  completeOn: string;
+  completeOn: TourEventKey;
   subSteps: TourSubStepDef[];
   panelWidth?: number;
   highlightTestId?: string;
@@ -351,7 +389,7 @@ export interface TourSlice {
   startTour: (tourId?: TourId) => void;
   advanceTour: () => void;
   completeTourStep: (stepId: TourStepId) => void;
-  emitTourEvent: (eventKey: string) => void;
+  emitTourEvent: (eventKey: TourEventKey) => void;
   setTourCreatedPersona: (personaId: string) => void;
   dismissTour: () => void;
   finishTour: () => void;

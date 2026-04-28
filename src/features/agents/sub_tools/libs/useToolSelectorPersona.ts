@@ -45,6 +45,12 @@ export function useToolSelectorPersona() {
     return toolDefinitions.filter((td) => assignedToolIds.has(td.id));
   }, [assignedToolIds, toolDefinitions]);
 
+  /** Names of tools assigned to the current persona — used for co-occurrence
+   *  recommendations on unassigned tools. */
+  const assignedToolNames = useMemo(() => {
+    return new Set(assignedTools.map((t) => t.name));
+  }, [assignedTools]);
+
   return {
     selectedPersona,
     toolDefinitions,
@@ -54,5 +60,6 @@ export function useToolSelectorPersona() {
     personaId,
     assignedToolIds,
     assignedTools,
+    assignedToolNames,
   };
 }

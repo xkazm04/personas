@@ -114,6 +114,32 @@ export interface CredentialGraph {
   edges: GraphEdge[];
 }
 
+/**
+ * Deterministic precedence for credential→agent link types when a single
+ * (credential, persona) pair is reported via multiple paths. Lower index =
+ * stronger / preferred — `tool_connector` (live binding from the persona's
+ * config) outranks `event_trigger` (subscriptions) which outranks `audit_log`
+ * (historical observation only).
+ *
+ * The graph builder dedupes edges per `(source, target)` and keeps the
+ * dominant link, eliminating non-deterministic "via" labels in
+ * BlastRadiusPanel that previously depended on dependentsMap iteration order.
+ *
+ * Unknown link types are appended after all known ones (any precedence value
+ * ≥ this list's length), keeping the comparison total but conservative —
+ * a known link always wins over an unknown one.
+ */
+const LINK_TYPE_PRECEDENCE: readonly string[] = [
+  'tool_connector',
+  'event_trigger',
+  'audit_log',
+] as const;
+
+function linkTypeRank(linkType: string): number {
+  const idx = LINK_TYPE_PRECEDENCE.indexOf(linkType);
+  return idx === -1 ? LINK_TYPE_PRECEDENCE.length : idx;
+}
+
 // ---------------------------------------------------------------------------
 // Blast-radius analysis
 // ---------------------------------------------------------------------------
@@ -372,7 +398,20 @@ export function buildCredentialGraph(
   //    Agent node ids go through `toAgentNodeId` exclusively so
   //    `fromAgentNodeId` at read time can enforce the invariant and never
   //    silently fall back to the raw id.
+  //
+  //    Dedupe per (credential, persona): if the same persona depends on the
+  //    same credential through multiple link_types (e.g. both
+  //    `tool_connector` and `event_trigger`), keep the highest-precedence
+  //    one. Without this dedupe, the graph rendered duplicate edges and
+  //    `analyzeBlastRadius`'s `via` label was non-deterministic by
+  //    dependentsMap iteration order. Precedence order is documented in
+  //    LINK_TYPE_PRECEDENCE above.
   const agentNodes = new Map<string, GraphNode>();
+  // Track the dominant edge per (credId, agentNodeId) pair while we scan.
+  // Stores both the index in `edges` and the rank of the link_type that
+  // produced it, so we can compare without re-deriving link_type from the
+  // edge's label/style.
+  const dominantEdge = new Map<string, { index: number; rank: number }>();
   for (const [credId, deps] of dependentsMap) {
     for (const dep of deps) {
       if (!dep.persona_id) continue; // skip: orphaned dependents shouldn't poison the graph
@@ -388,13 +427,24 @@ export function buildCredentialGraph(
         });
       }
 
-      edges.push({
-        id: `${credId}->${agentNodeId}:${dep.link_type}`,
+      const candidateEdge: GraphEdge = {
+        id: `${credId}->${agentNodeId}`,
         source: credId,
         target: agentNodeId,
         label: dep.via_connector ?? dep.link_type,
         style: dep.link_type === 'tool_connector' ? 'solid' : 'dashed',
-      });
+      };
+      const candidateRank = linkTypeRank(dep.link_type);
+
+      const edgeKey = `${credId}->${agentNodeId}`;
+      const existing = dominantEdge.get(edgeKey);
+      if (existing === undefined) {
+        dominantEdge.set(edgeKey, { index: edges.length, rank: candidateRank });
+        edges.push(candidateEdge);
+      } else if (candidateRank < existing.rank) {
+        edges[existing.index] = candidateEdge;
+        existing.rank = candidateRank;
+      }
     }
   }
   for (const node of agentNodes.values()) {

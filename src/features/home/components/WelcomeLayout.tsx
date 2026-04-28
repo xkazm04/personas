@@ -1,9 +1,11 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
+import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import HeroHeader from './HeroHeader';
 import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
+import ResumeBanner from './ResumeBanner';
 import TourLauncher from '@/features/onboarding/components/TourLauncher';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -38,19 +40,13 @@ export default function WelcomeLayout({
 }: WelcomeLayoutProps) {
   const { t } = useTranslation();
   const wl = t.home.welcome_layout;
-  // Defer below-fold content to reduce initial DOM from ~666 to ~200 nodes.
-  // WebView2 renderer hangs when too many nodes are committed at once.
-  const [showBelowFold, setShowBelowFold] = useState(false);
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setShowBelowFold(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative">
       <HeroMesh preset="welcome" />
       <div className="flex-1 overflow-y-auto relative z-10">
         <div className="w-full px-6 py-4 space-y-4">
+          <ResumeBanner />
           <HeroHeader greeting={greeting} displayName={displayName} />
 
           <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
@@ -60,20 +56,20 @@ export default function WelcomeLayout({
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
           </div>
 
-          {showBelowFold && (
+          {/* Below-fold content deferred to keep initial DOM small. WebView2
+              hangs when too many nodes commit at once; `next-frame` runs as
+              soon as the first paint is on screen. */}
+          <DeferUntilIdle priority="next-frame">
             <SetupCards />
-          )}
-          {showBelowFold && (
-            <>
-              <SectionDivider label={quickNavLabel} />
-              <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 
-              <SectionDivider label={wl.language} />
-              <Suspense fallback={<SuspenseFallback />}>
-                <LanguageCards />
-              </Suspense>
-            </>
-          )}
+            <SectionDivider label={quickNavLabel} />
+            <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
+
+            <SectionDivider label={wl.language} />
+            <Suspense fallback={<SuspenseFallback />}>
+              <LanguageCards />
+            </Suspense>
+          </DeferUntilIdle>
         </div>
       </div>
     </div>

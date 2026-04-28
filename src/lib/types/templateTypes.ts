@@ -90,6 +90,74 @@ export function getPersonaSandboxPolicy(trustLevel: TemplateTrustLevel): Sandbox
 
 // -- Template Catalog -------------------------------------------------
 
+/**
+ * Persona block of a v3 template payload — the input shape authored in
+ * scripts/templates/<category>/<name>.json. Distinct from AgentIR
+ * (designTypes.ts), which is the OUTPUT of design analysis.
+ *
+ * Every field is optional because templates author what they need; the
+ * adoption / design pipeline fills in derived fields downstream.
+ */
+export interface TemplateV3Persona {
+  goal?: string;
+  identity?: { role?: string; description?: string };
+  voice?: { style?: string; output_format?: string; tone_adjustments?: string[] };
+  principles?: string[];
+  constraints?: string[];
+  decision_principles?: string[];
+  operating_instructions?: string;
+  tool_guidance?: string;
+  error_handling?: string;
+  examples?: unknown[];
+  tools?: string[];
+  connectors?: Array<{ name?: string; [k: string]: unknown }>;
+  // Forward-compat: templates may carry additional persona fields (verbosity_default,
+  // trigger_composition, message_composition, etc). Consumers that need them can
+  // narrow ad-hoc; explicit fields go here as they're used.
+  [k: string]: unknown;
+}
+
+/** A use-case entry within a v3 template payload. */
+export interface TemplateV3UseCase {
+  id?: string;
+  title?: string;
+  name?: string;
+  description?: string;
+  capability_summary?: string;
+  suggested_trigger?: { trigger_type?: string };
+  use_case_flow?: { nodes?: unknown; edges?: unknown };
+  [k: string]: unknown;
+}
+
+/**
+ * Top-level payload of a template catalog entry. Schema_version 3 nests
+ * structured fields under persona/use_cases; v2 entries fall back to
+ * flat suggested_connectors / suggested_triggers / use_case_flows arrays.
+ * seedTemplates.ts handles both shapes — both branches are preserved
+ * here so consumers can migrate gradually.
+ */
+export interface TemplateV3Payload {
+  // v3 ---------------------------------------------------------------
+  service_flow?: string[];
+  persona?: TemplateV3Persona;
+  use_cases?: TemplateV3UseCase[];
+
+  // v2 legacy fallbacks ---------------------------------------------
+  suggested_connectors?: Array<{ name: string }>;
+  suggested_triggers?: Array<{ trigger_type: string }>;
+  use_case_flows?: unknown[];
+
+  // Keep AgentIR-shaped fields readable when a template stores a fully-
+  // designed payload (some legacy generated templates do).
+  structured_prompt?: AgentIR['structured_prompt'];
+  suggested_tools?: string[];
+  full_prompt_markdown?: string;
+  summary?: string;
+
+  /** Forward-compat for keys not yet modeled. Consumers narrow as needed. */
+  [k: string]: unknown;
+}
+
 export interface TemplateCatalogEntry {
   id: string;
   name: string;
@@ -97,7 +165,12 @@ export interface TemplateCatalogEntry {
   icon: string;
   color: string;
   category: string[];
-  payload: AgentIR;
+  /**
+   * Was previously typed as AgentIR — that's the design-output shape, not
+   * the input shape templates actually carry. v3 templates store
+   * persona/use_cases; v2 templates store flat arrays. See TemplateV3Payload.
+   */
+  payload: TemplateV3Payload;
 }
 
 export interface N8nNode {

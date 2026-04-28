@@ -15,13 +15,14 @@ function capitalize(s: string) {
 export function usePickerFilters(connectors: ConnectorDefinition[], credentials: CredentialMetadata[], searchTerm?: string) {
   // Consume any pending category filter set by another part of the app (e.g.
   // the template adoption modal redirecting to the catalog when a credential
-  // is missing). Read once on mount and clear so it doesn't re-apply later.
-  const pendingCategory = useSystemStore.getState().pendingCatalogCategoryFilter;
-  const [activeCategory, setActiveCategory] = useState<string | null>(pendingCategory);
+  // is missing). Read inside useEffect with empty deps so the mount-time
+  // snapshot is deterministic under concurrent rendering, and always clear
+  // unconditionally so a stale value can't survive an unmount/remount race.
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   useEffect(() => {
-    if (pendingCategory) {
-      useSystemStore.getState().setPendingCatalogCategoryFilter(null);
-    }
+    const pending = useSystemStore.getState().pendingCatalogCategoryFilter;
+    if (pending) setActiveCategory(pending);
+    useSystemStore.getState().setPendingCatalogCategoryFilter(null);
   }, []);
   const [activePurpose, setActivePurpose] = useState<string | null>(null);
   const [activeLicense, setActiveLicense] = useState<string | null>(null);
@@ -57,7 +58,7 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
 
   const applyLicense = (list: ConnectorDefinition[], license: string | null) =>
     license
-      ? list.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === license)
+      ? list.filter((c) => getLicenseTier(c.name, c.metadata) === license)
       : list;
 
   const applyRole = (list: ConnectorDefinition[], role: RolePreset | null) =>
@@ -131,7 +132,7 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
   const licenseOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
     for (const c of licenseBase) {
-      const tier = getLicenseTier(c.name, c.metadata as Record<string, unknown> | null);
+      const tier = getLicenseTier(c.name, c.metadata);
       counts[tier] = (counts[tier] || 0) + 1;
     }
     const opts: ThemedSelectOption[] = [{ value: '', label: `All Licenses (${Object.keys(counts).length})` }];
@@ -147,7 +148,7 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     let result = connectors;
     if (activeCategory) result = result.filter((c) => c.category === activeCategory);
     if (activePurpose) result = result.filter((c) => getPurposeForConnector(c.name) === activePurpose);
-    if (activeLicense) result = result.filter((c) => getLicenseTier(c.name, c.metadata as Record<string, unknown> | null) === activeLicense);
+    if (activeLicense) result = result.filter((c) => getLicenseTier(c.name, c.metadata) === activeLicense);
     if (connectedFilter === 'connected') result = result.filter((c) => ownedServiceTypes.has(c.name));
     if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
     if (activeRole) {

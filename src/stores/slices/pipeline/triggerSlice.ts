@@ -156,7 +156,13 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
       if (!entry) return;
       entry.concurrentCount = Math.max(0, entry.concurrentCount - 1);
       entry.queueDepth = Math.max(0, entry.queueDepth - 1);
-      entry.isThrottled = entry.queueDepth > 0 || prev.isThrottled;
+      // Recompute throttle from real signals (queue + cooldown). The previous
+      // formula `queueDepth > 0 || prev.isThrottled` was sticky: once true it
+      // stayed true forever via the snapshot OR, so a trigger that briefly
+      // throttled then drained its queue would never clear back to "ready",
+      // permanently displaying "throttled" in the UI and (in some upstream
+      // call sites) refusing to fire again.
+      entry.isThrottled = entry.queueDepth > 0 || entry.cooldownUntil > Date.now();
     }));
   },
 

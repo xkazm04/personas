@@ -2,6 +2,7 @@
  * useDesignRunnerState -- state and handlers for DesignReviewRunner modal.
  */
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import type { RunProgress } from '@/hooks/design/template/useDesignReviews';
 import { parseListMdFormat, PREDEFINED_TEST_CASES, MIN_INSTRUCTION_LENGTH, type PredefinedTestCase, type CustomTemplateCase } from './designRunnerConstants';
 import type { TemplateSource } from '../sources/TemplateSourcePanel';
@@ -34,7 +35,7 @@ export function useDesignRunnerState({
   const triggerRef = useRef<HTMLElement | null>(null);
   const [mode, setMode] = useState<RunMode>('predefined');
   const [customCases, setCustomCases] = useState<CustomTemplateCase[]>([{ ...EMPTY_CASE }]);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const [batchTemplates, setBatchTemplates] = useState<TemplateSource[]>([]);
   const [batchCategoryFilter, setBatchCategoryFilter] = useState<string | null>(null);
 
@@ -153,9 +154,8 @@ export function useDesignRunnerState({
   }, [hasPersona, mode, batchCategoryFilter, batchTemplates, customCases, onStart]);
 
   const handleCopyLog = useCallback(() => {
-    const text = lines.join('\n');
-    navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  }, [lines]);
+    copy(lines.join('\n'));
+  }, [lines, copy]);
 
   const progressInfo = useMemo(() => {
     if (!runProgress) return null;

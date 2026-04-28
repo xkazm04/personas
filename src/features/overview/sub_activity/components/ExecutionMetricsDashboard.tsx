@@ -6,7 +6,8 @@ import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaS
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { SUMMARY_GRID } from '@/features/overview/utils/dashboardGrid';
-import { SummaryCard, AnomalyBadge } from './MetricsCards';
+import { AnomalyBadge } from './MetricsCards';
+import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
 
 interface ExecutionMetricsDashboardProps {
@@ -71,10 +72,10 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {/* Summary cards */}
       <div className={SUMMARY_GRID}>
-        <SummaryCard icon={Zap} label={t.overview.activity.total_executions} value={m.data.total_executions.toLocaleString()} color="blue" numericValue={m.data.total_executions} formatFn={(v) => Math.round(v).toLocaleString()} />
-        <SummaryCard icon={DollarSign} label={t.overview.activity.total_cost} value={fmtCost(m.data.total_cost)} color="violet" numericValue={m.data.total_cost} formatFn={fmtCost} />
-        <SummaryCard icon={CheckCircle} label={t.overview.activity.success_rate} value={`${m.overallSuccessRatePct.toFixed(1)}%`} color="emerald" numericValue={m.overallSuccessRatePct} formatFn={(v) => `${v.toFixed(1)}%`} />
-        <SummaryCard icon={Clock} label={t.overview.activity.avg_latency} value={fmtMs(m.data.avg_latency_ms)} color="amber" numericValue={m.data.avg_latency_ms} formatFn={fmtMs} />
+        <KpiTile icon={Zap} label={t.overview.activity.total_executions} color="blue" numericValue={m.data.total_executions} format={(v) => Math.round(v).toLocaleString()} />
+        <KpiTile icon={DollarSign} label={t.overview.activity.total_cost} color="violet" numericValue={m.data.total_cost} format={fmtCost} />
+        <KpiTile icon={CheckCircle} label={t.overview.activity.success_rate} color="emerald" numericValue={m.overallSuccessRatePct} format={(v) => `${v.toFixed(1)}%`} />
+        <KpiTile icon={Clock} label={t.overview.activity.avg_latency} color="amber" numericValue={m.data.avg_latency_ms} format={fmtMs} />
       </div>
 
       {/* Anomalies */}

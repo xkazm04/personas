@@ -147,6 +147,14 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     }
   };
 
+  // Schedule triggers silently never fire if neither cron nor interval is set
+  // (scheduler.rs::compute_next_from_config returns None). Disable Create until
+  // the user has supplied a non-empty value for the chosen mode.
+  const isScheduleInvalid =
+    triggerType === 'schedule' &&
+    ((scheduleMode === 'cron' && !cronExpression.trim()) ||
+      (scheduleMode === 'interval' && !interval.trim()));
+
   return (
     <div
       className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-4 space-y-4"
@@ -200,7 +208,13 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
 
       <div className="flex justify-end gap-2 pt-2">
         <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
-        <button onClick={handleAddTrigger} className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20">{t.triggers.add.create_trigger}</button>
+        <button
+          onClick={handleAddTrigger}
+          disabled={isScheduleInvalid}
+          className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+        >
+          {t.triggers.add.create_trigger}
+        </button>
       </div>
     </div>
   );

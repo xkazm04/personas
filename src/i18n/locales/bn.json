@@ -289,6 +289,12 @@
       "tool": "টুল",
       "goal": "লক্ষ্য"
     },
+    "fleet": {
+      "executions_today": "আজকের রান",
+      "success_rate": "সাফল্যের হার",
+      "active_agents": "সক্রিয় এজেন্ট",
+      "credentials": "ক্রেডেনশিয়াল"
+    },
     "nav": {
       "overview": {
         "label": "সারসংক্ষেপ",

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
+import { capturePersonaToken } from '@/lib/personas/personaToken';
 import type { ModelTestConfig } from '@/api/agents/tests';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { toastCatch } from "@/lib/silentCatch";
@@ -53,15 +54,14 @@ export function ModelABCompare() {
     if (!selectedPersona || !optA || !optB || modelA === modelB) return;
     setLastResults(null);
     const models: ModelTestConfig[] = [toTestConfig(optA), toTestConfig(optB)];
-    const startedFor = selectedPersona.id;
-    const runId = await startArena(startedFor, models);
+    const token = capturePersonaToken(selectedPersona.id);
+    const runId = await startArena(token.personaId!, models);
     if (!runId) return;
     // Persona may have changed during the await. Don't adopt the runId into a
     // different persona's UI — that would render persona A's prompts/results
     // inside persona B's editor and let the Cancel button send cancels for a
     // run B never started.
-    const currentId = useAgentStore.getState().selectedPersona?.id ?? null;
-    if (currentId !== startedFor) {
+    if (!token.isStillCurrent()) {
       void cancelArena(runId);
       return;
     }

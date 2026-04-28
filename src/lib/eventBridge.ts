@@ -455,6 +455,11 @@ const registry: EventRegistration[] = [
       const unlisten = await typedListen(
         EventName.NETWORK_SNAPSHOT_UPDATED,
         (payload) => {
+          // The snapshot push from the Rust side carries authoritative state
+          // for the snapshot endpoint, so it clears that endpoint's counter
+          // (and any aggregate error if no other endpoint is also failing).
+          // Other endpoints' counters are intentionally untouched — they
+          // recover only when their own poller succeeds.
           pending = {
             networkStatus: payload.status,
             connectionHealth: payload.health,
@@ -462,6 +467,7 @@ const registry: EventRegistration[] = [
             messagingMetrics: payload.messagingMetrics,
             connectionMetrics: payload.connectionMetrics,
             manifestSyncMetrics: payload.manifestSyncMetrics,
+            networkFailureCounts: {},
             networkConsecutiveFailures: 0,
             networkError: null,
           };

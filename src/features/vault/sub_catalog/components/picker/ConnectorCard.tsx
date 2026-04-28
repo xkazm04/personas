@@ -47,7 +47,7 @@ const labelVariants: Variants = {
 
 export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType }: ConnectorCardProps) {
   const authMethods = getAuthMethods(connector);
-  const tier = getLicenseTier(connector.name, connector.metadata as Record<string, unknown> | null);
+  const tier = getLicenseTier(connector.name, connector.metadata);
   const tierMeta = LICENSE_TIER_META[tier];
   const TierIcon = LICENSE_ICON[tier];
   const { shouldAnimate } = useMotion();

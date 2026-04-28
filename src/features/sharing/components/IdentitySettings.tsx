@@ -5,6 +5,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { InlineConfirm } from './InlineConfirm';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 export { IdentitySettings };
 export default function IdentitySettings() {
@@ -21,7 +22,7 @@ export default function IdentitySettings() {
 
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const [importInput, setImportInput] = useState('');
   const [importNotes, setImportNotes] = useState('');
   const [showImportForm, setShowImportForm] = useState(false);
@@ -47,9 +48,7 @@ export default function IdentitySettings() {
   const handleCopyCard = async () => {
     try {
       const card = await exportIdentityCard();
-      await navigator.clipboard.writeText(card);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      copy(card);
       addToast('Identity card copied to clipboard', 'success');
     } catch {
       addToast('Failed to export identity card', 'error');

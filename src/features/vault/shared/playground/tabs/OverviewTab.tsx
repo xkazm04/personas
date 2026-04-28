@@ -1,5 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Key, Pencil, Copy, Check } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
@@ -48,25 +49,15 @@ export function OverviewTab({
   const { t } = useTranslation();
   const sh = t.vault.shared;
   const [isEditing, setIsEditing] = useState(false);
-  const [copiedId, setCopiedId] = useState(false);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { copied: copiedId, copy } = useCopyToClipboard(1500);
 
   const updateCredential = useVaultStore((s) => s.updateCredential);
   // Picker dispatch — modal is rendered by global <ResourcePickerHost />.
   const { promptIfScoped } = usePostSaveResourcePicker();
 
-  const copyCredentialId = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(credential.id);
-      setCopiedId(true);
-      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-      copiedTimerRef.current = setTimeout(() => setCopiedId(false), 1500);
-    } catch { /* intentional: non-critical -- clipboard copy may be denied by browser */ }
-  }, [credential.id]);
-
-  useEffect(() => {
-    return () => { if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current); };
-  }, []);
+  const copyCredentialId = useCallback(() => {
+    copy(credential.id);
+  }, [credential.id, copy]);
 
   return (
     <div className="p-6 space-y-6">

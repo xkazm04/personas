@@ -51,13 +51,21 @@ vi.mock(
 const mockSetIsCreatingPersona = vi.fn();
 const mockCreatePersona = vi.fn().mockResolvedValue({ id: "draft-123" });
 
+const mockSystemState = {
+  setIsCreatingPersona: mockSetIsCreatingPersona,
+  resumeDraftId: null,
+  setResumeDraftId: vi.fn(),
+  setupGoal: null,
+  onboardingActive: false,
+  tourActive: false,
+  setSetupGoal: vi.fn(),
+  setEditorTab: vi.fn(),
+};
+
 vi.mock("@/stores/systemStore", () => ({
-  useSystemStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      setIsCreatingPersona: mockSetIsCreatingPersona,
-      resumeDraftId: null,
-      setResumeDraftId: vi.fn(),
-    }),
+  useSystemStore: Object.assign(
+    vi.fn((selector: (s: Record<string, unknown>) => unknown) => selector(mockSystemState)),
+    { getState: () => mockSystemState },
   ),
 }));
 

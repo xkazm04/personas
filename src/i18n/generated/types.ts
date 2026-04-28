@@ -253,6 +253,12 @@ export type Translations = {
     summary_stats: string;
     quick_navigation: string;
     platform_label: string;
+    fleet: {
+      executions_today: string;
+      success_rate: string;
+      active_agents: string;
+      credentials: string;
+    };
     roadmap: {
       title: string;
       subtitle: string;
@@ -1540,6 +1546,7 @@ export type Translations = {
       requires_cred: string;
       calls: string;
       impact_label: string;
+      recommended_because: string;
       removed: string;
       undo: string;
       general: string;
@@ -4702,6 +4709,10 @@ export type Translations = {
       issues_count_one: string;
       never: string;
       fail_count: string;
+      rotation_manage_all: string;
+      rotation_open_in_connections: string;
+      rotation_started_for: string;
+      rotation_failed_for: string;
     };
     saved_views: {
       errors: {

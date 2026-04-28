@@ -289,6 +289,13 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
           selectedPersona: deriveSelectedPersona(nextPersonas, state.selectedPersonaId, state.detailCache),
         };
       });
+      // Record this edit so the Home Resume banner can offer "Continue
+      // editing X" on next launch. localStorage write — best-effort, never
+      // throws back to the caller.
+      try {
+        const { markPersonaEdited } = await import("@/features/home/components/useResumeContext");
+        markPersonaEdited(id);
+      } catch { /* best-effort */ }
     } catch (err) {
       reportError(err, "Failed to update persona", set);
       throw err;

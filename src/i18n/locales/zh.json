@@ -289,6 +289,12 @@
       "tool": "工具",
       "goal": "目标"
     },
+    "fleet": {
+      "executions_today": "今日运行",
+      "success_rate": "成功率",
+      "active_agents": "活跃代理",
+      "credentials": "凭证"
+    },
     "nav": {
       "overview": {
         "label": "概览",

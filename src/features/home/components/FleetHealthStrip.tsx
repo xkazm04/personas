@@ -3,7 +3,7 @@ import { Activity, CheckCircle2, Bot, Key, type LucideIcon } from 'lucide-react'
 import { useSystemStore } from '@/stores/systemStore';
 import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
-import { useHomeTranslation } from '../i18n/useTranslation';
+import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import type { SidebarSection } from '@/lib/types/types';
 
@@ -85,7 +85,8 @@ function MetricPill({ icon: Icon, label, value, onClick, pulse, accentColor, ico
 export default function FleetHealthStrip() {
   const metrics = useFleetMetrics();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const { t } = useHomeTranslation();
+  const { t: globalT } = useTranslation();
+  const t = globalT.home;
 
   if (!metrics) return null;
 

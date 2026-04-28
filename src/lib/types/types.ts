@@ -146,6 +146,69 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
 }
 
 /**
+ * Optional UI/UX metadata stored alongside a connector's structural fields.
+ *
+ * Set in `src-tauri/src/db/builtin_connectors.rs` (Rust seeders) and read
+ * across the frontend catalog. Every key is OPTIONAL — connectors carry
+ * only the keys they need. The shape is documented here as the canonical
+ * frontend contract; if you add a new key to a Rust seeder, declare it
+ * here and update parseConnectorMetadata() so consumers get type-safety.
+ */
+export interface ConnectorMetadata {
+  /** e.g. 'oauth' | 'api_key' | 'builtin' | 'none' — drives form selection. */
+  auth_type?: string;
+  /** Friendly label shown next to the auth section ("Credential", "API Key"…). */
+  auth_type_label?: string;
+  /**
+   * Multi-method connectors (e.g. cloud APIs supporting both OAuth + API key).
+   * The exact shape varies per consumer (TemplateFormBody and
+   * CredentialTemplateForm declare their own local AuthVariant types) — kept
+   * as unknown[] here so callers cast to their local shape after the
+   * Array.isArray check that parseConnectorMetadata already performs.
+   */
+  auth_variants?: unknown[];
+  /** Markdown body shown in the SetupGuideModal. */
+  setup_guide?: string;
+  /** Markdown rendered inside the auto-setup wizard step. */
+  setup_instructions?: string;
+  /** External documentation link. */
+  docs_url?: string;
+  /** Short one-line summary shown on the catalog card. */
+  summary?: string;
+  /** When true, the connector exposes a `template_*` flow in design surfaces. */
+  template_enabled?: boolean;
+  /** Used by getLicenseTier — 'free' | 'freemium' | 'paid' | 'enterprise'. */
+  pricing_tier?: string;
+  /** Origin tag — e.g. 'cli' for credentials authored via the CLI panel. */
+  source?: string;
+}
+
+/**
+ * Coerce raw `connector.metadata` JSON into a typed ConnectorMetadata view.
+ *
+ * The Rust → TS bridge gives us `Record<string, unknown> | null`; this
+ * helper does the typeof checks once and exposes only the keys we know
+ * how to handle. Unknown keys are silently dropped (intentional — they
+ * become a follow-up to add to ConnectorMetadata when discovered).
+ */
+export function parseConnectorMetadata(raw: unknown): ConnectorMetadata {
+  if (!raw || typeof raw !== 'object') return {};
+  const m = raw as Record<string, unknown>;
+  const out: ConnectorMetadata = {};
+  if (typeof m.auth_type === 'string') out.auth_type = m.auth_type;
+  if (typeof m.auth_type_label === 'string') out.auth_type_label = m.auth_type_label;
+  if (Array.isArray(m.auth_variants)) out.auth_variants = m.auth_variants;
+  if (typeof m.setup_guide === 'string') out.setup_guide = m.setup_guide;
+  if (typeof m.setup_instructions === 'string') out.setup_instructions = m.setup_instructions;
+  if (typeof m.docs_url === 'string') out.docs_url = m.docs_url;
+  if (typeof m.summary === 'string') out.summary = m.summary;
+  if (typeof m.template_enabled === 'boolean') out.template_enabled = m.template_enabled;
+  if (typeof m.pricing_tier === 'string') out.pricing_tier = m.pricing_tier;
+  if (typeof m.source === 'string') out.source = m.source;
+  return out;
+}
+
+/**
  * Shared connector shape used by both builtin JSON definitions and
  * Rust-backed ConnectorDefinition.  Single source of truth for the
  * fields every connector must carry.

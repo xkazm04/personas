@@ -56,10 +56,46 @@ export function CircuitBreakerIndicator() {
     }
   }, []);
 
+  // Document-visibility-gated polling. The indicator is mounted at the
+  // dashboard top-bar regardless of whether the user is currently looking
+  // at the page; without this gate, a backgrounded window or hidden tab
+  // continued to fire getCircuitBreakerStatus IPC every 10s for the full
+  // session. document.hidden gating is preferred over useElementVisible
+  // here because the component returns null when healthy + no recent
+  // trips, so an element-attached IntersectionObserver would lose its
+  // host; document-level visibility works regardless of render state.
+  // Real-time CIRCUIT_BREAKER_GLOBAL_TRIPPED / CIRCUIT_BREAKER_TRANSITION
+  // listeners (separate effects below) still fire while hidden, so a trip
+  // that occurs off-screen still surfaces immediately on tab return.
   useEffect(() => {
+    let intervalId: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (intervalId !== null) return;
+      intervalId = setInterval(fetchStatus, POLL_INTERVAL_MS);
+    };
+    const stop = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
     fetchStatus();
-    const id = setInterval(fetchStatus, POLL_INTERVAL_MS);
-    return () => clearInterval(id);
+    if (typeof document === 'undefined' || !document.hidden) start();
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        // Refresh immediately on return so the user sees current state
+        // instead of a stale snapshot up to POLL_INTERVAL_MS old.
+        fetchStatus();
+        start();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [fetchStatus]);
 
   const triggerTripAttention = useCallback(() => {

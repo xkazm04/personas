@@ -59,7 +59,18 @@ export const DEFAULT_SENSORY_POLICY: SensoryPolicy = {
   maxAgeSecs: 600,
 };
 
-export const createAmbientContextSlice: StateCreator<SystemStore, [], [], AmbientContextSlice> = (set) => ({
+export const createAmbientContextSlice: StateCreator<SystemStore, [], [], AmbientContextSlice> = (set) => {
+  // Tracks the most recently *requested* personaId for each per-persona fetch.
+  // Each in-flight fetch captures its own personaId at start; on resolve, it
+  // commits to the store only if it still matches the latest request. This
+  // closes the race where a 5s interval-driven fetch for persona A resolves
+  // after the user has switched to B, otherwise overwriting B's snapshot/policy/
+  // rules with A's data.
+  let latestSnapshotPersonaId: string | null = null;
+  let latestPolicyPersonaId: string | null = null;
+  let latestRulesPersonaId: string | null = null;
+
+  return {
   ambientSnapshot: null,
   ambientEnabled: true,
   ambientPolicy: null,
@@ -72,10 +83,13 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   contextStreamStats: null,
 
   fetchAmbientSnapshot: async (personaId: string) => {
+    latestSnapshotPersonaId = personaId;
     try {
       const snapshot = await getAmbientContextSnapshot(personaId);
+      if (latestSnapshotPersonaId !== personaId) return;
       set({ ambientSnapshot: snapshot, ambientEnabled: snapshot.enabled });
     } catch (err) {
+      if (latestSnapshotPersonaId !== personaId) return;
       reportError(err, "Failed to fetch ambient context", set as (partial: { error: string }) => void, {
         severity: "state",
         stateUpdates: { ambientError: err instanceof Error ? err.message : String(err) },
@@ -106,6 +120,10 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   updateSensoryPolicy: async (personaId: string, policy: SensoryPolicy) => {
     try {
       await setAmbientSensoryPolicy(personaId, policy);
+      // Only commit if this is still the active persona. Otherwise the user
+      // switched mid-write and our optimistic local commit would shadow the
+      // newly-selected persona's actual policy.
+      if (latestPolicyPersonaId !== null && latestPolicyPersonaId !== personaId) return;
       set({ ambientPolicy: policy });
     } catch (err) {
       reportError(err, "Failed to update sensory policy", set as (partial: { error: string }) => void, {
@@ -115,10 +133,13 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   },
 
   fetchSensoryPolicy: async (personaId: string) => {
+    latestPolicyPersonaId = personaId;
     try {
       const policy = await getAmbientSensoryPolicy(personaId);
+      if (latestPolicyPersonaId !== personaId) return;
       set({ ambientPolicy: policy });
     } catch {
+      if (latestPolicyPersonaId !== personaId) return;
       set({ ambientPolicy: DEFAULT_SENSORY_POLICY });
     }
   },
@@ -126,6 +147,7 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   resetSensoryPolicy: async (personaId: string) => {
     try {
       await removeAmbientSensoryPolicy(personaId);
+      if (latestPolicyPersonaId !== null && latestPolicyPersonaId !== personaId) return;
       set({ ambientPolicy: DEFAULT_SENSORY_POLICY });
     } catch (err) {
       reportError(err, "Failed to reset sensory policy", set as (partial: { error: string }) => void, {
@@ -137,8 +159,10 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
   // Context Rules actions
 
   fetchContextRules: async (personaId: string) => {
+    latestRulesPersonaId = personaId;
     try {
       const rules = await listContextRules(personaId);
+      if (latestRulesPersonaId !== personaId) return;
       set({ contextRules: rules });
     } catch {
       // Silently fail
@@ -186,4 +210,5 @@ export const createAmbientContextSlice: StateCreator<SystemStore, [], [], Ambien
       // Silently fail
     }
   },
-});
+  };
+};

@@ -7,6 +7,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_TO_SERVICE_TYPE } from './automationSetupConstants';
 import { usePlatformData } from './usePlatformData';
+import { clampTimeoutSecs } from './useAutomationSetup';
 
 export function useAutomationSetupState(personaId: string, editAutomationId?: string | null) {
   const design = useAutomationDesign();
@@ -55,7 +56,11 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       setName(editAutomation.name);
       setDescription(editAutomation.description);
       setFallbackMode(editAutomation.fallbackMode);
-      setTimeoutSecs(Math.round(editAutomation.timeoutMs / 1000));
+      // Clamp to keep an out-of-range stored value (legacy row, manual DB
+      // edit, undefined timeoutMs producing NaN via /1000) from immediately
+      // re-deploying the same out-of-range value when the user clicks
+      // Deploy without changing the field.
+      setTimeoutSecs(clampTimeoutSecs(Math.round(editAutomation.timeoutMs / 1000)));
       if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
       if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
     }
@@ -80,7 +85,10 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       setName(design.result.name);
       setPlatform(design.result.platform);
       setInputSchema(design.result.input_schema || '');
-      setTimeoutSecs(design.result.timeout_secs || 30);
+      // Clamp the LLM-suggested timeout in case the model returns 0,
+      // a negative, or absurdly large value — clampTimeoutSecs handles
+      // NaN/Infinity by returning the default and clamps into [1, 3600].
+      setTimeoutSecs(clampTimeoutSecs(design.result.timeout_secs ?? 30));
       setFallbackMode(design.result.fallback_mode || 'connector');
     }
   }, [design.result]);
@@ -96,7 +104,10 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       ...design.result,
       name: name.trim(),
       input_schema: inputSchema.trim() || null,
-      timeout_secs: timeoutSecs,
+      // Final-line clamp before IPC: even if the local state is somehow
+      // out of range (manual DOM injection, race with design.result update,
+      // future prop-bypass), the backend never sees an invalid timeout.
+      timeout_secs: clampTimeoutSecs(timeoutSecs),
       fallback_mode: fallbackMode,
     };
     setLocalPhase('deploying');

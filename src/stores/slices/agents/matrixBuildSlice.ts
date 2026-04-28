@@ -401,13 +401,23 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
 /**
  * Pin the "next active session" policy when the current active session is
  * removed: pick the remaining session with the newest createdAt, breaking
- * ties by sessionId (lexicographic) for determinism. Returns null when no
- * sessions remain.
+ * ties by sessionId (lexicographic) for determinism.
+ *
+ * When `preferPersonaId` is supplied, ONLY sessions for that persona are
+ * considered. Without this scoping, removing one persona's failed session
+ * could flip the active editor to a different persona's draft (the editor
+ * mirrors the active session's scalars), so the user would silently see
+ * another persona's UI swap in. If no sessions remain for the preferred
+ * persona, returns null — the caller is expected to clear active state
+ * rather than fall back to an unrelated persona's draft.
  */
 function pickNextActiveSessionId(
   sessions: Record<string, BuildSessionState>,
+  preferPersonaId?: string,
 ): string | null {
-  const ids = Object.keys(sessions);
+  const ids = preferPersonaId
+    ? Object.keys(sessions).filter((id) => sessions[id]?.personaId === preferPersonaId)
+    : Object.keys(sessions);
   if (ids.length === 0) return null;
   ids.sort((a, b) => {
     const ca = sessions[a]?.createdAt ?? 0;
@@ -523,9 +533,15 @@ export const createMatrixBuildSlice: StateCreator<
 
   removeBuildSession: (sessionId) => {
     set((state) => {
+      const removed = state.buildSessions[sessionId];
       const { [sessionId]: _removed, ...rest } = state.buildSessions;
       const wasActive = state.activeBuildSessionId === sessionId;
-      const nextActiveId = wasActive ? pickNextActiveSessionId(rest) : state.activeBuildSessionId;
+      // Scope the next-active pick to the same persona as the session we
+      // just removed. Without this, a failed-launch cleanup that removes
+      // persona A's session could flip the editor to persona B's draft.
+      const nextActiveId = wasActive
+        ? pickNextActiveSessionId(rest, removed?.personaId)
+        : state.activeBuildSessionId;
       const nextActive = nextActiveId ? rest[nextActiveId] ?? null : null;
       return {
         buildSessions: rest,
@@ -1271,7 +1287,16 @@ export const createMatrixBuildSlice: StateCreator<
     }
 
     set((state) => {
-      // Create (or replace) the session in the map, and make it active
+      // Create (or replace) the session in the map, and make it active. When
+      // an in-state session for this id already exists, the transient
+      // lifecycle fields below (test/edit/v3 state, pendingAnswers) are NOT
+      // present on `PersistedBuildSession` but ARE valuable in-flight state
+      // the user is actively interacting with — wiping them on every
+      // re-hydration silently destroys mid-test results, draft answers, and
+      // the v3 clarifying question. Preserve them when an existing session
+      // is being re-hydrated; on first hydration (existing === undefined)
+      // the empty-session defaults remain correct.
+      const existing = state.buildSessions[session.id];
       const hydrated: BuildSessionState = {
         ...emptySessionState(session.personaId, session.id),
         phase: session.phase,
@@ -1291,6 +1316,20 @@ export const createMatrixBuildSlice: StateCreator<
         parserResultJson: state.buildParserResultJson,
         workflowName: state.buildWorkflowName,
         workflowPlatform: state.buildWorkflowPlatform,
+        ...(existing ? {
+          pendingAnswers: existing.pendingAnswers,
+          testId: existing.testId,
+          testPassed: existing.testPassed,
+          testOutputLines: existing.testOutputLines,
+          testError: existing.testError,
+          toolTestResults: existing.toolTestResults,
+          testSummary: existing.testSummary,
+          testConnectors: existing.testConnectors,
+          editState: existing.editState,
+          editDirty: existing.editDirty,
+          editingCellKey: existing.editingCellKey,
+          clarifyingQuestionV3: existing.clarifyingQuestionV3,
+        } : {}),
       };
       const nextSessions = { ...state.buildSessions, [session.id]: hydrated };
       return {

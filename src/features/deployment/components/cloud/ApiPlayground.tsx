@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { Send, Copy, Check, ChevronDown, ChevronRight, Terminal, Code2, Loader2 } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -59,7 +60,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<PlaygroundResponse | null>(null);
   const [snippetLang, setSnippetLang] = useState<SnippetLang>('curl');
-  const [copiedSnippet, setCopiedSnippet] = useState(false);
+  const { copied: copiedSnippet, copy: copySnippetText } = useCopyToClipboard();
   const [showSnippets, setShowSnippets] = useState(false);
   const abortRef = useRef(false);
 
@@ -110,10 +111,8 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
     : buildFetchSnippet(endpointUrl, body);
 
   const copySnippet = useCallback(() => {
-    navigator.clipboard.writeText(snippet);
-    setCopiedSnippet(true);
-    setTimeout(() => setCopiedSnippet(false), 2000);
-  }, [snippet]);
+    copySnippetText(snippet);
+  }, [snippet, copySnippetText]);
 
   if (!expanded) {
     return (

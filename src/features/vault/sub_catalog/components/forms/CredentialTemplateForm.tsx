@@ -3,7 +3,7 @@ import { CodebaseProjectPicker } from '@/features/vault/sub_catalog/components/f
 import { McpPrefilledForm } from '@/features/vault/sub_catalog/components/schemas/McpPrefilledForm';
 import { CliConnectionPanel } from '@/features/vault/sub_catalog/components/picker/CliConnectionPanel';
 import type { ConnectorDefinition, CredentialTemplateField, ConnectorAuthMethod } from '@/lib/types/types';
-import { getAuthMethods } from '@/lib/types/types';
+import { getAuthMethods, parseConnectorMetadata } from '@/lib/types/types';
 import { SetupGuideSection } from '@/features/vault/sub_credentials/components/forms/SetupGuideSection';
 import { TemplateFormHeader } from '@/features/vault/sub_credentials/components/forms/TemplateFormHeader';
 import { AuthMethodTabs } from '@/features/vault/sub_credentials/components/forms/AuthMethodTabs';
@@ -72,9 +72,9 @@ export function CredentialTemplateForm({
   onCliSaved,
 }: CredentialTemplateFormProps) {
   const { t } = useTranslation();
-  const metadata = (selectedConnector.metadata ?? {}) as Record<string, unknown>;
+  const metadata = parseConnectorMetadata(selectedConnector.metadata);
   const variants = useMemo<AuthVariant[] | null>(() => {
-    if (!Array.isArray(metadata.auth_variants)) return null;
+    if (!metadata.auth_variants) return null;
     return metadata.auth_variants as AuthVariant[];
   }, [metadata.auth_variants]);
 
@@ -141,7 +141,7 @@ export function CredentialTemplateForm({
     }
   };
 
-  const guide = typeof metadata.setup_guide === 'string' ? metadata.setup_guide : null;
+  const guide = metadata.setup_guide ?? null;
   const isAnyOAuth = !!isGoogleTemplate || !!isOAuthTemplate;
   const oauthDone = isAnyOAuth && !!oauthCompletedAt;
   const requiresHealthcheck = onHealthcheck != null;

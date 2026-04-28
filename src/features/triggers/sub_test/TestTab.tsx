@@ -5,7 +5,8 @@ import { listAllSubscriptions, listEvents, testEventFlow } from '@/api/overview/
 import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelector';
+import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { findTemplateByEventType } from '../sub_builder/libs/eventCanvasConstants';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 
@@ -96,17 +97,11 @@ export function TestTab() {
     didAutoPickRef.current = true;
   }, [recentEvents, personas, personaIdSet]);
 
-  const personaOptions = useMemo(() => personas
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => ({ value: p.id, label: p.name })),
-    [personas]);
-
-  const eventOptions = useMemo(() => {
-    if (!selectedPersonaId) return [] as { value: string; label: string }[];
+  const eventOptions = useMemo<ThemedSelectOption[]>(() => {
+    if (!selectedPersonaId) return [];
     const types = eventTypesByPersona.get(selectedPersonaId) ?? new Set<string>();
     const sorted = Array.from(types).sort();
-    const opts = sorted.map(et => {
+    const opts: ThemedSelectOption[] = sorted.map(et => {
       const tmpl = findTemplateByEventType(et);
       return { value: et, label: tmpl ? `${tmpl.label} · ${et}` : et };
     });
@@ -219,16 +214,13 @@ export function TestTab() {
             <label className="block typo-caption font-medium text-foreground mb-1.5">
               {t.triggers.test_source_persona_label}
             </label>
-            <ThemedSelect
+            <PersonaSelector
               value={selectedPersonaId}
-              onValueChange={handlePersonaChange}
-              wrapperClassName="w-full"
-            >
-              <option value="">{t.triggers.test_select_persona_placeholder}</option>
-              {personaOptions.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </ThemedSelect>
+              onChange={handlePersonaChange}
+              personas={personas}
+              showAll={false}
+              placeholder={t.triggers.test_select_persona_placeholder}
+            />
             <p className="typo-caption text-muted-foreground mt-1">{t.triggers.test_source_persona_help}</p>
           </div>
 
@@ -237,16 +229,13 @@ export function TestTab() {
               {t.triggers.test_output_event_label}
             </label>
             <ThemedSelect
+              filterable
+              options={eventOptions}
               value={selectedEventType}
               onValueChange={handleEventChange}
-              disabled={!hasPersona}
-              wrapperClassName="w-full"
-            >
-              <option value="">{t.triggers.test_select_event_placeholder}</option>
-              {eventOptions.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </ThemedSelect>
+              placeholder={t.triggers.test_select_event_placeholder}
+              wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
+            />
             <p className="typo-caption text-muted-foreground mt-1">{t.triggers.test_output_event_help}</p>
             {hasPersona && !eventOptionsAvailable && (
               <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">

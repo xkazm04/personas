@@ -84,10 +84,28 @@ fn parse_field(field: &str, min: u32, max: u32) -> Result<u64, String> {
                     .map_err(|_| format!("Invalid value: {}", pieces[0]))?;
                 (start, max)
             };
-            let mut v = range_min;
-            while v <= range_max {
+            // Reject pathological steps that exceed the range span. Without
+            // this guard, a step like `0/4294967295` survives validation and
+            // its `v += step` increment silently wraps u32 in release builds,
+            // pegging the scheduler thread in an infinite loop. The legal
+            // upper bound for a step is the field's range span — anything
+            // larger only ever fires the first value, which authors should
+            // express as a literal instead.
+            let span = range_max - range_min;
+            if step > span && span > 0 {
+                return Err(format!(
+                    "Step {step} exceeds range span {span} ({range_min}-{range_max})"
+                ));
+            }
+            // Iterate in u64 so the increment cannot wrap even if a future
+            // change relaxes the span check above. `range_max` is always
+            // ≤ 59, so the `1u64 << v` shift is safe.
+            let mut v = range_min as u64;
+            let max_u64 = range_max as u64;
+            let step_u64 = step as u64;
+            while v <= max_u64 {
                 bits |= 1u64 << v;
-                v += step;
+                v += step_u64;
             }
         } else if part.contains('-') {
             let (lo, hi) = parse_range_bounds(part, min, max)?;
@@ -550,6 +568,43 @@ mod tests {
         let from = Utc.with_ymd_and_hms(2026, 5, 9, 23, 0, 0).unwrap();
         let next = next_fire_time_in_tz(&s, from, tz).unwrap();
         assert_eq!(next, Utc.with_ymd_and_hms(2026, 5, 10, 0, 0, 0).unwrap());
+    }
+
+    // -- Pathological-step regression tests -------------------------------------
+
+    #[test]
+    fn test_step_overflow_u32_max_rejected() {
+        // u32::MAX as step would wrap `v += step` in release builds and
+        // infinite-loop the parser. Must reject at validation time.
+        assert!(parse_cron("0/4294967295 * * * *").is_err());
+        assert!(parse_cron("* */4294967295 * * *").is_err());
+    }
+
+    #[test]
+    fn test_step_exceeds_range_rejected() {
+        // Minutes range is 0-59 (span 59). Step 60 cannot legally generate
+        // multiple values within the range.
+        assert!(parse_cron("0/60 * * * *").is_err());
+        // Step exactly equal to the span fires only the first value, but
+        // we treat it as legal because `v += step` lands at range_max + 1
+        // and exits cleanly.
+        assert!(parse_cron("0/59 * * * *").is_ok());
+    }
+
+    #[test]
+    fn test_step_does_not_infinite_loop_on_large_step() {
+        // The historical bug: `*/100` for minutes (max 59) used to wrap.
+        // After the fix, this is rejected — but if it weren't, we'd just
+        // loop once. Belt-and-braces.
+        let res = parse_cron("*/100 * * * *");
+        assert!(res.is_err(), "step beyond range should be rejected");
+    }
+
+    #[test]
+    fn test_step_one_is_equivalent_to_wildcard() {
+        // Sanity: */1 should set all bits in the range.
+        let s = parse_cron("*/1 * * * *").unwrap();
+        assert_eq!(s.minutes.count_ones(), 60);
     }
 
     #[test]

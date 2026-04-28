@@ -7,13 +7,14 @@ import type { ToolImpactData } from '../libs/toolImpactTypes';
 import { isGeneralGroup } from '../libs/connectorGroupKey';
 
 export function ConnectorGroup({
-  connectorKey, tools, assignedToolIds, credentialTypeSet,
+  connectorKey, tools, assignedToolIds, assignedToolNames, credentialTypeSet,
   credentialLabel, usageByTool, impactDataMap,
   onToggleTool, onBulkToggle, onAddCredential,
 }: {
   connectorKey: string;
   tools: ToolDef[];
   assignedToolIds: Set<string>;
+  assignedToolNames: Set<string>;
   credentialTypeSet: Set<string>;
   credentialLabel: (credType: string) => string;
   usageByTool: Map<string, number>;
@@ -93,6 +94,7 @@ export function ConnectorGroup({
               missingCredential={missingCredential}
               usageByTool={usageByTool}
               impactData={impactDataMap.get(tool.name)}
+              assignedToolNames={assignedToolNames}
               onToggle={onToggleTool}
             />
           );

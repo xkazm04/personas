@@ -10,7 +10,7 @@ import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
-import { OverviewStatCard } from '@/features/overview/sub_observability/components/OverviewStatCard';
+import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
@@ -144,11 +144,11 @@ export default function KnowledgeGraphDashboard() {
         <div className="space-y-6 pb-6">
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <OverviewStatCard icon={Network} label="Total Patterns" numericValue={summary.total_entries} format={(n) => String(Math.round(n))} color="primary" />
-              <OverviewStatCard icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} format={(n) => String(Math.round(n))} subtitle="Learned tool chains" color="emerald" />
-              <OverviewStatCard icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} format={(n) => String(Math.round(n))} subtitle="Known error signatures" color="red" />
-              <OverviewStatCard icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} format={(n) => String(Math.round(n))} subtitle="Performance by model" color="violet" />
-              <OverviewStatCard icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} format={(n) => String(Math.round(n))} subtitle="Shared knowledge" color="cyan" />
+              <KpiTile density="card-rich" icon={Network} label="Total Patterns" numericValue={summary.total_entries} format={(n) => String(Math.round(n))} color="primary" />
+              <KpiTile density="card-rich" icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} format={(n) => String(Math.round(n))} subtitle="Learned tool chains" color="emerald" />
+              <KpiTile density="card-rich" icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} format={(n) => String(Math.round(n))} subtitle="Known error signatures" color="red" />
+              <KpiTile density="card-rich" icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} format={(n) => String(Math.round(n))} subtitle="Performance by model" color="violet" />
+              <KpiTile density="card-rich" icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} format={(n) => String(Math.round(n))} subtitle="Shared knowledge" color="cyan" />
             </div>
           )}
 

@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { startNlQuery, getNlQuerySnapshot, cancelNlQuery } from '@/api/vault/database/nlQuery';
 import type { ConversationTurn, NlQuerySnapshot } from '@/api/vault/database/nlQuery';
 import { ChatMessages, type ChatMessage } from './ChatMessages';
@@ -21,11 +22,10 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   const [input, setInput] = useState('');
   const [generating, setGenerating] = useState(false);
   const [activeQueryId, setActiveQueryId] = useState<string | null>(null);
-  const [copiedSql, setCopiedSql] = useState<string | null>(null);
+  const { copiedKey: copiedSql, copy: copySqlText } = useKeyedCopyFlag<string>(1500);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval>>(undefined);
-  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const dbType = getDatabaseType(serviceType);
 
@@ -137,11 +137,8 @@ export function ChatTab({ credentialId, language, serviceType }: ChatTabProps) {
   }, [credentialId, executeDbQuery]);
 
   const handleCopySql = useCallback((sql: string, msgId: string) => {
-    navigator.clipboard.writeText(sql).catch(() => {});
-    setCopiedSql(msgId);
-    clearTimeout(copyTimerRef.current);
-    copyTimerRef.current = setTimeout(() => setCopiedSql(null), 1500);
-  }, []);
+    copySqlText(msgId, sql);
+  }, [copySqlText]);
 
   const handleEditSql = useCallback((msgId: string, newSql: string) => {
     setMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, sql: newSql } : m)));

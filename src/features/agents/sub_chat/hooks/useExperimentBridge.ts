@@ -125,8 +125,38 @@ async function deliverExperimentResult(
 }
 
 // Track which run IDs we've already delivered results for (prevents duplicates
-// between event listener and polling)
+// between event listener and polling). Bounded with FIFO eviction so the set
+// doesn't grow without limit across long sessions, HMR, or many experiments.
+// Set iteration is insertion order, so the first .values() entry is the oldest.
+const DELIVERED_CACHE_LIMIT = 200;
 const deliveredRunIds = new Set<string>();
+
+/**
+ * First time the polling fallback observed each runId as "no longer active".
+ * Used to require a grace window before declaring "finished-unknown" — without
+ * this, a run that completes a microsecond before the poll fires would have
+ * its realtime "completed/failed" event locked out, because the poll would
+ * markDelivered() the runId before the listener saw the event. The grace gap
+ * between the first inactive observation and the eventual declaration MUST be
+ * large enough for the realtime channel to deliver under normal load. We pick
+ * 5_000 ms — comfortably longer than the typical event flush, smaller than
+ * the 30 s poll interval so legitimate "finished-unknown" delivery for runs
+ * with no realtime event is only delayed by ~one extra poll cycle.
+ */
+const INACTIVE_GRACE_MS = 5_000;
+const inactiveSinceMap = new Map<string, number>();
+
+function markDelivered(runId: string): void {
+  // Always clean up the grace-window entry — whichever mechanism delivered,
+  // we no longer need to wait on this runId.
+  inactiveSinceMap.delete(runId);
+  if (deliveredRunIds.has(runId)) return;
+  deliveredRunIds.add(runId);
+  if (deliveredRunIds.size > DELIVERED_CACHE_LIMIT) {
+    const oldest = deliveredRunIds.values().next().value;
+    if (oldest !== undefined) deliveredRunIds.delete(oldest);
+  }
+}
 
 // ── Hook ──────────────────────────────────────────────────────────────
 
@@ -160,7 +190,7 @@ export function useExperimentBridge() {
           const exp = experiments.find((e) => e.runId === runId && e.mode === mode);
           if (!exp) return;
 
-          deliveredRunIds.add(runId);
+          markDelivered(runId);
           await deliverExperimentResult(exp, phase as "completed" | "failed", payload.summary, payload.error);
         });
         unlistenRefs.current.push(unlisten);
@@ -199,23 +229,42 @@ export function useExperimentBridge() {
       }
 
       for (const exp of experiments) {
-        if (deliveredRunIds.has(exp.runId)) continue;
-        // If the run is no longer in the active list it has *terminated* —
+        if (deliveredRunIds.has(exp.runId)) {
+          inactiveSinceMap.delete(exp.runId);
+          continue;
+        }
+        if (activeRunIds.has(exp.runId)) {
+          // Still running — clear any stale grace-window entry from a
+          // previous restart-window glitch.
+          inactiveSinceMap.delete(exp.runId);
+          continue;
+        }
+        // The run is no longer in the active list it has *terminated* —
         // but 'not active' conflates 'completed', 'failed', and 'cancelled'.
         // We can't tell from the active-progress API alone, and the realtime
         // event listener (mechanism 1) is the authoritative source of phase.
-        // Deliver an ambiguous 'finished' message that points the user to the
-        // Lab tab instead of falsely claiming 'Experiment Complete: ...' for
-        // failed/cancelled runs (which is what the user sees today).
-        if (!activeRunIds.has(exp.runId)) {
-          deliveredRunIds.add(exp.runId);
-          await deliverExperimentResult(
-            exp,
-            "finished-unknown",
-            null,
-            undefined,
-          );
+        // Require a small grace window (INACTIVE_GRACE_MS) between the FIRST
+        // poll where we saw the run as inactive and the declaration, so a
+        // realtime "completed/failed" event arriving microseconds after a
+        // poll fires is not locked out by markDelivered. After the grace
+        // expires we deliver an ambiguous 'finished' message that points the
+        // user to the Lab tab — better than falsely claiming
+        // 'Experiment Complete: ...' for failed/cancelled runs.
+        const firstSeen = inactiveSinceMap.get(exp.runId);
+        if (firstSeen === undefined) {
+          inactiveSinceMap.set(exp.runId, Date.now());
+          continue;
         }
+        if (Date.now() - firstSeen < INACTIVE_GRACE_MS) {
+          continue; // Still inside the grace window — give realtime more time
+        }
+        markDelivered(exp.runId);
+        await deliverExperimentResult(
+          exp,
+          "finished-unknown",
+          null,
+          undefined,
+        );
       }
     };
 

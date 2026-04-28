@@ -12,6 +12,7 @@ const noLooseEventPayload = require("./eslint-rules/no-loose-event-payload.cjs")
 const noRawRadiusClasses = require("./eslint-rules/no-raw-radius-classes.cjs");
 const noLowContrastTextClasses = require("./eslint-rules/no-low-contrast-text-classes.cjs");
 const noHardcodedJsxText = require("./eslint-rules/no-hardcoded-jsx-text.cjs");
+const noUnmanagedEffectResources = require("./eslint-rules/no-unmanaged-effect-resources.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -34,6 +35,7 @@ export default tseslint.config(
           "no-raw-radius-classes": noRawRadiusClasses,
           "no-low-contrast-text-classes": noLowContrastTextClasses,
           "no-hardcoded-jsx-text": noHardcodedJsxText,
+          "no-unmanaged-effect-resources": noUnmanagedEffectResources,
         },
       },
     },
@@ -59,6 +61,10 @@ export default tseslint.config(
               group: ["**/sub_usage/charts/chartConstants", "@/features/overview/sub_usage/charts/chartConstants"],
               message: "Import chart constants from '@/features/overview/sub_usage/libs/chartConstants' — the charts/ copy is stale.",
             },
+            {
+              group: ["@/features/*/i18n/*", "**/features/*/i18n/*"],
+              message: "Feature-scoped i18n hooks were a half-finished migration; use the global '@/i18n/useTranslation' instead. Add new keys to src/i18n/locales/<lang>.json under the appropriate top-level section.",
+            },
           ],
         },
       ],
@@ -70,6 +76,7 @@ export default tseslint.config(
       "custom/no-raw-radius-classes": "warn",
       "custom/no-low-contrast-text-classes": "warn",
       "custom/no-hardcoded-jsx-text": "warn",
+      "custom/no-unmanaged-effect-resources": "warn",
     },
   },
   // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge

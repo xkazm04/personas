@@ -144,8 +144,15 @@ export function PersonaSettingsTab({
                   type="number"
                   value={Math.round(draft.timeout / 1000)}
                   onChange={(e) => {
-                    const raw = parseInt(e.target.value, 10) || 10;
-                    patch({ timeout: Math.min(raw, 1800) * 1000 });
+                    // Two-sided clamp: previously only the upper bound was enforced
+                    // (Math.min(raw, 1800)), which meant a user-typed sub-10s value
+                    // would persist all the way to the backend. The hint and the
+                    // <input min={10}/> both advertise 10s as the floor, so the
+                    // input was lying about its accepted range. Floor the parse
+                    // fallback at 10 too.
+                    const raw = parseInt(e.target.value, 10);
+                    const safe = Number.isFinite(raw) ? raw : 10;
+                    patch({ timeout: Math.min(Math.max(safe, 10), 1800) * 1000 });
                   }}
                   min={10}
                   max={1800}

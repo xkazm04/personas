@@ -3,6 +3,7 @@ import { Activity } from 'lucide-react';
 import { getCompositePartialMatch } from '@/api/pipeline/triggers';
 import type { PartialMatchResult } from '@/lib/bindings/PartialMatchResult';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useElementVisible } from '@/hooks/utility/useElementVisible';
 
 interface Props {
   triggerId: string;
@@ -11,8 +12,15 @@ interface Props {
 export function CompositePartialMatchIndicator({ triggerId }: Props) {
   const { t, tx } = useTranslation();
   const [result, setResult] = useState<PartialMatchResult | null>(null);
+  // Visibility-gated polling: a 4 s interval with no off-screen pause hammers
+  // IPC and the backend regardless of whether the user is looking at the
+  // indicator. Trigger lists can render dozens of these simultaneously; on
+  // low-battery laptops and locked screens the cumulative IPC churn is
+  // wasteful and was previously a real complaint.
+  const [containerRef, isVisible] = useElementVisible<HTMLDivElement>();
 
   useEffect(() => {
+    if (!isVisible) return;
     let cancelled = false;
     const load = () => {
       getCompositePartialMatch(triggerId).then((r) => {
@@ -22,9 +30,9 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
     load();
     const interval = setInterval(load, 4000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, [triggerId]);
+  }, [triggerId, isVisible]);
 
-  if (!result) return null;
+  if (!result) return <div ref={containerRef} aria-hidden />;
 
   const { conditionsMet, conditionsTotal, fired, suppressed, operator, conditionDetails } = result;
   const ratio = conditionsTotal > 0 ? conditionsMet / conditionsTotal : 0;
@@ -43,7 +51,7 @@ export function CompositePartialMatchIndicator({ triggerId }: Props) {
       : 'bg-secondary/30 border-border/30';
 
   return (
-    <div className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
+    <div ref={containerRef} className={`rounded-modal border p-2.5 space-y-2 ${bgColor}`}>
       <div className="flex items-center gap-1.5">
         <Activity className={`w-3.5 h-3.5 ${color}`} />
         <span className={`typo-body font-medium ${color}`}>

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Target, FileText, Shield, DollarSign, Clock, ArrowRight, MessageSquare, Lightbulb, ChevronDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trophy, Target, FileText, Shield, DollarSign, Clock, ArrowRight, MessageSquare, Lightbulb, ChevronDown, TrendingUp, TrendingDown, LayoutDashboard, Swords, GitCompare } from 'lucide-react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
@@ -11,6 +11,12 @@ import { AbResultsViewVersus } from './AbResultsViewVersus';
 import { AbResultsViewDiff } from './AbResultsViewDiff';
 
 export type AbVariant = 'baseline' | 'versus' | 'diff';
+
+const VARIANT_TABS: Array<{ id: AbVariant; label: string; subtitle: string; icon: typeof LayoutDashboard }> = [
+  { id: 'baseline', label: 'Baseline', subtitle: 'Scorecard dashboard', icon: LayoutDashboard },
+  { id: 'versus',   label: 'Versus',   subtitle: 'Tale of the tape',    icon: Swords },
+  { id: 'diff',     label: 'Diff',     subtitle: 'Code-review view',    icon: GitCompare },
+];
 
 export interface UserRatingEntry {
   rating: number;
@@ -34,7 +40,8 @@ interface Props {
   runId?: string;
   userRatings?: Record<string, UserRatingEntry>;
   onRate?: (scenarioName: string, versionId: string, rating: number, feedback?: string) => void;
-  variant?: AbVariant;
+  /** Initial variant — switcher state is owned internally so users can toggle inline. */
+  initialVariant?: AbVariant;
 }
 
 function scoreLabel(score: number): string {
@@ -138,11 +145,12 @@ const VERSION_COLORS = [
   { accent: 'violet', gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
 ] as const;
 
-export function AbResultsView({ results, runId: _runId, userRatings, onRate, variant = 'baseline' }: Props) {
+export function AbResultsView({ results, runId: _runId, userRatings, onRate, initialVariant = 'baseline' }: Props) {
   const { t } = useTranslation();
   const aggregation = useMemo(() => aggregateAbResults(results), [results]);
   const { versionAggs, matrix } = aggregation;
   const [selectedCell, setSelectedCell] = useState<SelectedCell | null>(null);
+  const [variant, setVariant] = useState<AbVariant>(initialVariant);
 
   if (results.length === 0) {
     return (
@@ -165,6 +173,33 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, var
 
   return (
     <div className="space-y-4">
+      <div className="flex items-center gap-1 pb-2 border-b border-primary/10" role="tablist" aria-label="Results view variant">
+        {VARIANT_TABS.map(({ id, label, subtitle, icon: Icon }) => {
+          const active = variant === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setVariant(id)}
+              data-testid={`ab-variant-${id}`}
+              className={`flex flex-col items-start gap-0.5 px-3 py-2 rounded-modal transition-colors border ${
+                active
+                  ? 'bg-primary/10 text-foreground border-primary/20'
+                  : 'text-foreground/80 hover:bg-secondary/30 border-transparent'
+              }`}
+            >
+              <span className="flex items-center gap-1.5 typo-body font-medium">
+                <Icon className="w-3.5 h-3.5" />
+                {label}
+              </span>
+              <span className="text-[10px] text-foreground/60 font-mono tracking-wide">{subtitle}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {variant === 'baseline' && <AbResultsViewBaseline {...variantProps} />}
       {variant === 'versus' && <AbResultsViewVersus {...variantProps} />}
       {variant === 'diff' && <AbResultsViewDiff {...variantProps} />}

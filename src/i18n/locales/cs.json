@@ -289,6 +289,12 @@
       "tool": "Nástroj",
       "goal": "Cíl"
     },
+    "fleet": {
+      "executions_today": "Spuštění dnes",
+      "success_rate": "Úspěšnost",
+      "active_agents": "Aktivní agenti",
+      "credentials": "Přihlašovací údaje"
+    },
     "nav": {
       "overview": {
         "label": "Přehled",

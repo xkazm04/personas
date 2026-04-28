@@ -38,6 +38,7 @@ fn validate_trigger_input(trigger_type: &str, config: Option<&str>) -> Result<()
     let mut errors = Vec::new();
     errors.extend(tv::validate_config_json(config));
     errors.extend(tv::validate_polling_url(trigger_type, config));
+    errors.extend(tv::validate_schedule_has_cron_or_interval(trigger_type, config));
     check(errors)
 }
 
@@ -116,7 +117,10 @@ pub fn update_trigger(
     if input.trigger_type.is_some() || input.config.is_some() {
         let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
-        check(tv::validate_polling_url(trigger_type, config))?;
+        let mut errors = Vec::new();
+        errors.extend(tv::validate_polling_url(trigger_type, config));
+        errors.extend(tv::validate_schedule_has_cron_or_interval(trigger_type, config));
+        check(errors)?;
         validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
     }
     repo::update(&state.db, &id, input)

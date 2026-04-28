@@ -164,13 +164,20 @@ export function parseEnvFile(content: string): ImportParseResult {
   const secrets: ImportedSecret[] = [];
   const errors: string[] = [];
 
-  for (const line of content.split('\n')) {
-    const trimmed = line.trim();
+  // Use a 1-based line counter so error messages can reference the line
+  // location WITHOUT echoing the line content. The previous error included
+  // the first 40 chars of the offending line, which leaked secret-shaped
+  // content (e.g. a JWT or API key accidentally pasted on a line that
+  // happened to omit the `=` separator) into the user-visible toast and
+  // the React error boundary's Sentry payload.
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const trimmed = lines[i]!.trim();
     if (!trimmed || trimmed.startsWith('#')) continue;
 
     const eqIndex = trimmed.indexOf('=');
     if (eqIndex === -1) {
-      errors.push(`Invalid line (no = sign): ${trimmed.slice(0, 40)}`);
+      errors.push(`Line ${i + 1}: missing '=' separator`);
       continue;
     }
 

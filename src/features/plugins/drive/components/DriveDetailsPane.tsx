@@ -21,25 +21,25 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
   if (!primary) {
     return (
-      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/60 px-5 py-4 flex flex-col gap-3">
+      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 px-5 py-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-cyan-300" />
-          <span className="typo-label typo-section-title">
+          <span className="typo-section-title">
             {t.plugins.drive.details_title}
           </span>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center px-4">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500/15 to-sky-500/5 border border-cyan-500/20 flex items-center justify-center mb-3">
-              <Info className="w-7 h-7 text-cyan-300/70" />
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-cyan-500/20 to-sky-500/5 border border-cyan-500/30 flex items-center justify-center mb-3">
+              <Info className="w-7 h-7 text-cyan-300" />
             </div>
-            <div className="typo-body text-foreground/90 max-w-[200px]">
+            <div className="typo-body text-foreground max-w-[200px]">
               Select a file or folder to see its details and inline preview.
             </div>
           </div>
         </div>
         <div className="pt-3 border-t border-primary/10">
-          <div className="typo-label text-foreground/90">
+          <div className="typo-label text-foreground">
             Location
           </div>
           <div className="mt-1 font-mono typo-body text-foreground break-all">
@@ -54,7 +54,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
   const Icon = visual.Icon;
 
   return (
-    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/60 flex flex-col overflow-hidden">
+    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 flex flex-col overflow-hidden">
       {/* Hero */}
       <div className="relative px-5 pt-5 pb-4 overflow-hidden">
         <div
@@ -63,7 +63,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
         />
         <div className="relative flex flex-col items-center text-center">
           <div
-            className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner`}
+            className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${visual.gradient} border border-primary/15 flex items-center justify-center shadow-inner`}
           >
             <Icon className={`w-10 h-10 ${visual.text}`} />
           </div>
@@ -71,7 +71,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             {multi ? `${entries.length} items selected` : primary.name}
           </div>
           {!multi && (
-            <div className="mt-1 typo-body text-foreground/90">
+            <div className="mt-1 typo-caption text-foreground uppercase tracking-wider">
               {primary.kind === "folder"
                 ? t.plugins.drive.folder_kind
                 : visual.label}
@@ -107,7 +107,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
                         /* ignore */
                       });
                   }}
-                  className="p-1 rounded text-foreground/90 hover:text-cyan-300 hover:bg-cyan-500/10 transition-colors flex-shrink-0"
+                  className="p-1 rounded text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors flex-shrink-0"
                   aria-label="Copy path"
                   title="Copy path"
                 >
@@ -119,13 +119,13 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
         )}
 
         {multi && (
-          <div className="rounded-card border border-primary/10 bg-secondary/30 p-3">
-            <div className="typo-label text-foreground/90">
+          <div className="rounded-card border border-primary/15 bg-secondary/30 p-3">
+            <div className="typo-label text-foreground">
               {t.plugins.drive.details_items}
             </div>
-            <div className="mt-1 typo-body text-foreground">
+            <div className="mt-1.5 typo-body text-foreground font-semibold tabular-nums">
               {entries.length}
-              <span className="ml-1.5 typo-body text-foreground/90">
+              <span className="ml-1.5 font-normal text-foreground">
                 • {driveFormatBytes(
                   entries.reduce(
                     (sum, e) => sum + (e.kind === "file" ? e.size : 0),
@@ -139,7 +139,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
         {!multi && primary.kind === "file" && (
           <div className="space-y-2">
-            <div className="typo-label text-foreground/90">
+            <div className="typo-label text-foreground">
               {t.plugins.drive.details_preview}
             </div>
             <FilePreview entry={primary} />
@@ -152,7 +152,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
 
 function DetailGrid({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/25 divide-y divide-primary/10 overflow-hidden">
+    <div className="rounded-card border border-primary/15 bg-secondary/30 divide-y divide-primary/10 overflow-hidden">
       {children}
     </div>
   );
@@ -166,8 +166,8 @@ function DetailRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="px-3 py-2">
-      <div className="typo-label text-foreground/90 mb-1">
+    <div className="px-3 py-2.5">
+      <div className="typo-label text-foreground mb-1.5">
         {label}
       </div>
       <div className="typo-body text-foreground break-words">{children}</div>
@@ -228,21 +228,21 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
 
   if (state === "loading") {
     return (
-      <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-4 text-center typo-body text-foreground/90">
+      <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-4 text-center typo-body text-foreground">
         {t.plugins.drive.loading}
       </div>
     );
   }
   if (state === "too_large") {
     return (
-      <div className="rounded-card border border-amber-500/25 bg-amber-500/10 px-3 py-3 typo-body text-amber-200">
+      <div className="rounded-card border border-amber-500/35 bg-amber-500/10 px-3 py-3 typo-body text-amber-100">
         {t.plugins.drive.preview_too_large}
       </div>
     );
   }
   if (state === "unsupported") {
     return (
-      <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
+      <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-3 typo-body text-foreground">
         {t.plugins.drive.preview_binary}
       </div>
     );
@@ -252,13 +252,13 @@ function FilePreview({ entry }: { entry: DriveEntry }) {
   }
   if (text !== null) {
     return (
-      <pre className="max-h-72 overflow-auto rounded-card border border-primary/10 bg-background/60 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
+      <pre className="max-h-72 overflow-auto rounded-card border border-primary/15 bg-background/70 p-3 typo-body font-mono text-foreground whitespace-pre-wrap break-words leading-relaxed">
         {text.slice(0, 4000)}
       </pre>
     );
   }
   return (
-    <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-3 typo-body text-foreground/90">
+    <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-3 typo-body text-foreground">
       {t.plugins.drive.preview_unavailable}
     </div>
   );

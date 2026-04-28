@@ -1,5 +1,6 @@
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useMemo, useRef, useCallback } from 'react';
 import { Code, Copy, Check } from 'lucide-react';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import hljs from 'highlight.js/lib/core';
 import json from 'highlight.js/lib/languages/json';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
@@ -18,7 +19,7 @@ interface DraftJsonTabProps {
 
 export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange }: DraftJsonTabProps) {
   const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const preRef = useRef<HTMLPreElement>(null);
 
@@ -36,11 +37,7 @@ export function DraftJsonTab({ draftJson, draftJsonError, disabled, onJsonChange
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(draftJson);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const handleCopy = () => copy(draftJson);
 
   // Synchronize scroll between textarea and pre
   const handleScroll = useCallback(() => {

@@ -26,42 +26,29 @@ export interface SeedReviewInput {
 }
 
 function templateToReviewInput(template: TemplateCatalogEntry, runId: string): SeedReviewInput {
-  const payload = template.payload as unknown as Record<string, unknown>;
+  const payload = template.payload;
 
   // v3 templates nest these inside persona / use_cases[]; fall back to the
   // flat v2 arrays when the v3 block isn't present.
-  const personaObj = (payload.persona && typeof payload.persona === 'object')
-    ? (payload.persona as Record<string, unknown>)
-    : null;
-  const useCases = Array.isArray(payload.use_cases)
-    ? (payload.use_cases as Array<Record<string, unknown>>)
-    : [];
+  const personaObj = payload.persona ?? null;
+  const useCases = payload.use_cases ?? [];
 
-  const v3Connectors = personaObj && Array.isArray(personaObj.connectors)
-    ? (personaObj.connectors as Array<{ name?: string }>)
-        .map((c) => c?.name ?? '')
-        .filter(Boolean)
+  const v3Connectors = personaObj?.connectors
+    ? personaObj.connectors.map((c) => c?.name ?? '').filter(Boolean)
     : [];
   const v3Triggers = useCases
-    .map((uc) => {
-      const trig = uc.suggested_trigger as { trigger_type?: string } | undefined;
-      return trig?.trigger_type ?? '';
-    })
+    .map((uc) => uc.suggested_trigger?.trigger_type ?? '')
     .filter(Boolean);
 
-  const legacyConnectors = Array.isArray(payload.suggested_connectors)
-    ? (payload.suggested_connectors as Array<{ name: string }>).map((c) => c.name)
-    : [];
-  const legacyTriggers = Array.isArray(payload.suggested_triggers)
-    ? (payload.suggested_triggers as Array<{ trigger_type: string }>).map((t) => t.trigger_type)
-    : [];
+  const legacyConnectors = payload.suggested_connectors?.map((c) => c.name) ?? [];
+  const legacyTriggers = payload.suggested_triggers?.map((t) => t.trigger_type) ?? [];
 
   const connectors = v3Connectors.length > 0 ? v3Connectors : legacyConnectors;
   const triggers = v3Triggers.length > 0 ? v3Triggers : legacyTriggers;
 
   const v3Flows = useCases
     .map((uc) => {
-      const flow = uc.use_case_flow as { nodes?: unknown; edges?: unknown } | undefined;
+      const flow = uc.use_case_flow;
       if (!flow || typeof flow !== 'object') return null;
       return {
         id: uc.id ?? null,
@@ -74,9 +61,7 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
     })
     .filter(Boolean);
 
-  const legacyFlows = Array.isArray(payload.use_case_flows)
-    ? payload.use_case_flows
-    : null;
+  const legacyFlows = payload.use_case_flows ?? null;
 
   const flows = v3Flows.length > 0 ? v3Flows : legacyFlows;
 

@@ -1,3 +1,15 @@
+/**
+ * Canonical home of `useToolImpactData` and `recommendationFromCoUsedTools`.
+ *
+ * Do NOT introduce a sibling copy at `sub_tools/useToolImpactData.ts` (i.e.
+ * one level up). A prior audit flagged exactly that shape — two hooks with
+ * the same name, divergent co-occurrence math, no declared source of truth,
+ * and consumers importing whichever path Vite happened to resolve first.
+ * The split is now resolved here in `libs/` and consumers import from this
+ * file. Any future refactor that wants to split this further should re-
+ * export FROM here, not duplicate it.
+ */
+
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -6,6 +18,31 @@ import type { ToolImpactData, ToolUseCaseRef, CoUsedTool } from './toolImpactTyp
 import { parseToolNames, parseUseCaseTitles } from './toolImpactTypes';
 
 export type { ToolImpactData, ToolUseCaseRef, CoUsedTool } from './toolImpactTypes';
+
+/**
+ * Pure helper: given a tool's pre-computed `coUsedTools` and the names of
+ * tools the persona already has, return the strongest co-used tool that's
+ * already assigned (highest co-occurrence count) — i.e. "Recommended because
+ * you have X". Returns `null` when there's no overlap, when the tool itself
+ * is already assigned, or when impact data is missing.
+ *
+ * Selection rule: `coUsedTools` is already sorted by co-occurrence count
+ * descending (see `useToolImpactData`), so the first match wins. This makes
+ * the recommendation deterministic across renders.
+ *
+ * Exported for reuse by ToolCard / GroupedToolRow / unit tests.
+ */
+export function recommendationFromCoUsedTools(
+  impact: ToolImpactData | undefined,
+  isAssigned: boolean,
+  assignedToolNames: Set<string>,
+): string | null {
+  if (isAssigned || !impact || impact.coUsedTools.length === 0) return null;
+  for (const co of impact.coUsedTools) {
+    if (assignedToolNames.has(co.toolName)) return co.toolName;
+  }
+  return null;
+}
 
 /**
  * Hook that computes impact analysis data for all tools.

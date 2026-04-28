@@ -130,8 +130,8 @@ function ListView({
         onClick={() => drive.setSort(column)}
         className={`flex items-center gap-1 py-2 typo-label transition-colors ${
           active
-            ? "text-cyan-300"
-            : "text-foreground/90 hover:text-foreground"
+            ? "text-cyan-200"
+            : "text-foreground hover:text-foreground"
         } ${className}`}
       >
         {label}
@@ -253,15 +253,15 @@ function ListView({
                   {entry.name}
                 </span>
               </div>
-              <div className="typo-body text-foreground/90 self-center tabular-nums">
+              <div className="typo-body text-foreground self-center tabular-nums">
                 {entry.kind === "folder" ? "—" : driveFormatBytes(entry.size)}
               </div>
-              <div className="typo-body text-foreground/90 self-center truncate">
+              <div className="typo-body text-foreground self-center truncate">
                 {entry.kind === "folder"
                   ? t.plugins.drive.folder_kind
                   : visualForEntry(entry).label}
               </div>
-              <div className="typo-body text-foreground/90 self-center tabular-nums">
+              <div className="typo-body text-foreground self-center tabular-nums">
                 {formatRelativeTime(entry.modified)}
               </div>
             </div>
@@ -463,13 +463,13 @@ function ColumnEntries({
             <FileChip entry={entry} size={22} />
             <span className="truncate flex-1">{entry.name}</span>
             {entry.kind === "folder" && (
-              <span className="text-foreground/90 typo-body">›</span>
+              <span className="text-foreground typo-body">›</span>
             )}
           </button>
         );
       })}
       {entries.length === 0 && (
-        <div className="px-3 py-6 typo-body text-foreground/90 italic text-center">
+        <div className="px-3 py-6 typo-body text-foreground italic text-center">
           Empty
         </div>
       )}
@@ -501,7 +501,7 @@ function AsyncColumnEntries(props: {
   }, [props.path]);
   if (!loaded) {
     return (
-      <div className="px-3 py-6 typo-body text-foreground/90 italic text-center">
+      <div className="px-3 py-6 typo-body text-foreground italic text-center">
         Loading...
       </div>
     );
@@ -525,8 +525,8 @@ function LoadingState() {
   const { t } = useTranslation();
   return (
     <div className="flex-1 flex items-center justify-center">
-      <div className="flex items-center gap-2 typo-body text-foreground/90">
-        <span className="w-3 h-3 rounded-full bg-cyan-500/60 animate-ping" />
+      <div className="flex items-center gap-2 typo-body text-foreground">
+        <span className="w-3 h-3 rounded-full bg-cyan-400 animate-ping" />
         {t.plugins.drive.loading}
       </div>
     </div>
@@ -555,11 +555,11 @@ function DriveEmptyState({
         <Sparkles className="absolute -top-1 -right-1 w-4 h-4 text-cyan-300 animate-pulse" />
       </div>
       <div className="space-y-1.5 max-w-sm">
-        <div className="typo-heading-sm typo-section-title">
+        <div className="typo-heading typo-section-title">
           {t.plugins.drive.empty_folder}
         </div>
         {isRoot && (
-          <p className="typo-body text-foreground/90">
+          <p className="typo-body text-foreground">
             {t.plugins.drive.empty_hint}
           </p>
         )}

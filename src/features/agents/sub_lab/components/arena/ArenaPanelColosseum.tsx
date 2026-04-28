@@ -197,7 +197,7 @@ export function ArenaPanelColosseum() {
   return (
     <div className="space-y-8">
       {/* ── ACT I : THE STAGE ────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-modal border border-primary/25 bg-gradient-to-b from-secondary/70 via-background/70 to-background/50 backdrop-blur-sm">
+      <div className="relative overflow-hidden rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/35 via-background/40 to-background/25">
         {/* Torches pinned to TOP CORNERS so they don't collide with side rails */}
         <Torch side="left"  lit={canLaunch} />
         <Torch side="right" lit={canLaunch} />
@@ -219,17 +219,24 @@ export function ArenaPanelColosseum() {
           />
 
           {/* CENTER : SVG scenery + persona + contender arc */}
-          <div className="relative min-h-[500px]">
+          <div className="relative min-h-[520px]">
             <StageScenery />
-            <div className="relative mx-auto h-[500px] w-full max-w-[760px]">
-              {/* Contender arc — widely spaced so banners do not crowd each other */}
+            <div className="relative mx-auto h-[520px] w-full max-w-[860px]">
+              {/* House crests — anchored to column bases, identifying the flanks */}
+              <HouseCrest side="left"  Icon={Sparkles} label="Anthropic" />
+              <HouseCrest side="right" Icon={HardDrive} label="Ollama" />
+
+              {/* Persona ground halo — radial light pooling under the standard */}
+              <PersonaGroundHalo arrayed={hasPrompt && hasTools} />
+
+              {/* Contender arc — banners hang from the top rope */}
               {ARENA_ROSTER.map((m, i) => {
                 const total = ARENA_ROSTER.length;
                 // Upper arc -160° → -20°, larger radius gives generous chord between adjacent banners
                 const deg = -160 + (i * 140) / Math.max(total - 1, 1);
                 const rad = (deg * Math.PI) / 180;
-                const rx = 320;
-                const ry = 86;
+                const rx = 350;
+                const ry = 90;
                 const x = Math.cos(rad) * rx;
                 const y = Math.sin(rad) * ry;
                 const isSelected = selectedModels.has(m.id);
@@ -489,65 +496,65 @@ function StageScenery() {
     >
       <defs>
         <radialGradient id="arena-sand" cx="50%" cy="76%" r="48%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.26)" />
-          <stop offset="55%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.08)" />
+          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.10)" />
+          <stop offset="55%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.03)" />
           <stop offset="100%" stopColor="transparent" />
         </radialGradient>
         <radialGradient id="arena-duel-ring" cx="50%" cy="50%" r="50%">
           <stop offset="70%" stopColor="transparent" />
-          <stop offset="92%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.22)" />
+          <stop offset="92%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.10)" />
           <stop offset="100%" stopColor="transparent" />
         </radialGradient>
         <linearGradient id="arena-sky" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.12)" />
-          <stop offset="70%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.02)" />
+          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.05)" />
+          <stop offset="70%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.01)" />
           <stop offset="100%" stopColor="transparent" />
         </linearGradient>
         <linearGradient id="arena-pillar" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.32)" />
-          <stop offset="100%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.02)" />
+          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.14)" />
+          <stop offset="100%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.01)" />
         </linearGradient>
         <filter id="arena-soft" x="-20%" y="-20%" width="140%" height="140%">
           <feGaussianBlur stdDeviation="1.5" />
         </filter>
       </defs>
 
-      {/* Sky wash */}
+      {/* Sky wash — subtle */}
       <rect x="0" y="0" width="800" height="290" fill="url(#arena-sky)" />
 
-      {/* Distant colonnade silhouettes — left & right flanks */}
-      <g opacity="0.55" filter="url(#arena-soft)">
+      {/* Distant colonnade silhouettes — softer */}
+      <g opacity="0.25" filter="url(#arena-soft)">
         {[50, 92, 134, 176, 218].map((x) => (
           <g key={`L-${x}`}>
             <rect x={x} y="80" width="14" height="170" fill="url(#arena-pillar)" />
-            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.25" />
-            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.25" />
+            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.18" />
+            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.18" />
           </g>
         ))}
         {[582, 624, 666, 708, 750].map((x) => (
           <g key={`R-${x}`}>
             <rect x={x} y="80" width="14" height="170" fill="url(#arena-pillar)" />
-            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.25" />
-            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.25" />
+            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.18" />
+            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.18" />
           </g>
         ))}
       </g>
 
-      {/* Connecting entablature / architrave band behind the colonnades */}
-      <rect x="20" y="70" width="760" height="4" fill="currentColor" opacity="0.2" />
-      <rect x="20" y="258" width="760" height="3" fill="currentColor" opacity="0.15" />
+      {/* Connecting entablature / architrave band behind the colonnades — quieter */}
+      <rect x="20" y="70" width="760" height="4" fill="currentColor" opacity="0.08" />
+      <rect x="20" y="258" width="760" height="3" fill="currentColor" opacity="0.06" />
 
-      {/* Stone tier rings (bleachers), concentric ellipses with radial spokes */}
+      {/* Stone tier rings (bleachers) — much softer so cards stand out */}
       <g stroke="currentColor" fill="none">
-        <ellipse cx="400" cy="430" rx="370" ry="140" strokeOpacity="0.06" />
-        <ellipse cx="400" cy="430" rx="320" ry="120" strokeOpacity="0.09" />
-        <ellipse cx="400" cy="430" rx="272" ry="100" strokeOpacity="0.13" />
-        <ellipse cx="400" cy="430" rx="228" ry="82"  strokeOpacity="0.18" />
-        <ellipse cx="400" cy="430" rx="190" ry="68"  strokeOpacity="0.24" />
+        <ellipse cx="400" cy="430" rx="370" ry="140" strokeOpacity="0.03" />
+        <ellipse cx="400" cy="430" rx="320" ry="120" strokeOpacity="0.04" />
+        <ellipse cx="400" cy="430" rx="272" ry="100" strokeOpacity="0.06" />
+        <ellipse cx="400" cy="430" rx="228" ry="82"  strokeOpacity="0.08" />
+        <ellipse cx="400" cy="430" rx="190" ry="68"  strokeOpacity="0.10" />
       </g>
 
-      {/* Radial sector seams (bleacher aisles) */}
-      <g stroke="currentColor" strokeOpacity="0.08" strokeWidth="1">
+      {/* Radial sector seams — barely there */}
+      <g stroke="currentColor" strokeOpacity="0.03" strokeWidth="1">
         {Array.from({ length: 10 }).map((_, i) => {
           const a = -Math.PI + (i * Math.PI) / 9;
           const x1 = 400 + Math.cos(a) * 190;
@@ -565,12 +572,12 @@ function StageScenery() {
       <ellipse cx="400" cy="430" rx="108" ry="38" fill="url(#arena-duel-ring)" />
       <ellipse
         cx="400" cy="430" rx="108" ry="38"
-        fill="none" stroke="currentColor" strokeOpacity="0.34"
+        fill="none" stroke="currentColor" strokeOpacity="0.16"
         strokeDasharray="3 5" strokeWidth="1"
       />
 
       {/* Center mark — crossed swords on sand */}
-      <g stroke="currentColor" strokeOpacity="0.22" strokeWidth="1.5" strokeLinecap="round">
+      <g stroke="currentColor" strokeOpacity="0.10" strokeWidth="1.5" strokeLinecap="round">
         <line x1="380" y1="418" x2="420" y2="442" />
         <line x1="420" y1="418" x2="380" y2="442" />
       </g>
@@ -604,6 +611,42 @@ function Torch({ side, lit }: { side: 'left' | 'right'; lit: boolean }) {
       <div className="h-10 w-2.5 rounded-b-sm bg-gradient-to-b from-primary/40 via-primary/20 to-primary/5 border-x border-primary/20" />
       <div className="h-1 w-5 rounded-sm bg-primary/30" />
     </div>
+  );
+}
+
+/* House crest — small medallion on the left/right column base, marking
+ * which faction's pillar it is. Decorative; not interactive. */
+function HouseCrest({ side, Icon, label }: { side: 'left' | 'right'; Icon: LucideIcon; label: string }) {
+  return (
+    <div
+      aria-hidden
+      className={`pointer-events-none absolute z-[5] ${side === 'left' ? 'left-2' : 'right-2'} bottom-12 flex flex-col items-center gap-1`}
+    >
+      <div className="relative w-10 h-10 rounded-full border-2 border-primary/35 bg-gradient-to-br from-primary/25 to-background/40 shadow-elevation-2 flex items-center justify-center">
+        <span aria-hidden className="absolute inset-1 rounded-full border border-primary/15" />
+        <Icon className="relative w-4 h-4 text-foreground/90" strokeWidth={1.75} />
+      </div>
+      <span className="typo-label text-foreground/85">{label}</span>
+    </div>
+  );
+}
+
+/* Soft halo on the sand around the persona standard — brighter when the
+ * champion is fully arrayed, dimmer otherwise. */
+function PersonaGroundHalo({ arrayed }: { arrayed: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className="pointer-events-none absolute left-1/2 top-[78%] -translate-x-1/2 -translate-y-1/2 z-0"
+      style={{
+        width: '320px',
+        height: '120px',
+        background: arrayed
+          ? 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(var(--color-primary-rgb,180,140,255),0.28) 0%, rgba(var(--color-primary-rgb,180,140,255),0.08) 50%, transparent 80%)'
+          : 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(var(--color-primary-rgb,180,140,255),0.10) 0%, transparent 70%)',
+        filter: 'blur(2px)',
+      }}
+    />
   );
 }
 
@@ -686,52 +729,57 @@ function ModelBanner({
       onClick={onToggle}
       style={style}
       aria-pressed={selected}
-      className="absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center w-[124px] focus:outline-none"
+      className="absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center w-[148px] focus:outline-none"
     >
-      {/* Pennant atop the banner — flutters up when selected */}
-      <div className="relative h-4 w-[18px]">
+      {/* Pennant atop the banner */}
+      <div className="relative h-4 w-[20px]">
         <div
           aria-hidden
           className={`absolute inset-x-0 top-0 h-4 transition-colors ${
-            selected ? 'bg-primary/70' : 'bg-primary/20 group-hover:bg-primary/35'
+            selected ? 'bg-primary' : 'bg-primary/55 group-hover:bg-primary/80'
           }`}
           style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)' }}
         />
-        <div className={`absolute left-1/2 -translate-x-1/2 top-0 h-4 w-px ${selected ? 'bg-primary/70' : 'bg-primary/30'}`} />
+        <div className={`absolute left-1/2 -translate-x-1/2 top-0 h-4 w-px ${selected ? 'bg-primary' : 'bg-primary/65'}`} />
       </div>
 
+      {/* Banner body — solid, well-defined, with full border + elevation */}
       <div
-        className={`relative w-[116px] px-2 pt-3 pb-6 transition-all ${
+        className={`relative w-[140px] px-3 pt-4 pb-7 border-2 rounded-card transition-all ${
           selected
-            ? 'bg-gradient-to-b from-primary/40 via-primary/20 to-primary/5 border-x-2 border-primary/55 shadow-elevation-3 shadow-primary/15'
-            : 'bg-gradient-to-b from-secondary/55 via-secondary/35 to-secondary/10 border-x-2 border-primary/15 opacity-85 group-hover:opacity-100 group-hover:border-primary/35 group-hover:shadow-elevation-2'
+            ? 'bg-primary/25 border-primary/70 shadow-elevation-3 shadow-primary/25 ring-1 ring-primary/30'
+            : 'bg-secondary/85 border-primary/35 shadow-elevation-2 group-hover:bg-secondary group-hover:border-primary/55 group-hover:shadow-elevation-3'
         }`}
-        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 85%, 50% 100%, 0 85%)' }}
       >
         {/* Sigil medallion */}
-        <div className={`relative mx-auto w-12 h-12 rounded-full flex items-center justify-center border ${
-          selected ? 'border-primary/60 bg-gradient-to-br from-primary/30 to-background/50 shadow-inner' : 'border-primary/20 bg-background/40'
+        <div className={`relative mx-auto w-14 h-14 rounded-full flex items-center justify-center border-2 ${
+          selected
+            ? 'border-primary bg-gradient-to-br from-primary/35 to-background/50'
+            : 'border-primary/45 bg-background/70'
         }`}>
-          <Sigil className={`w-6 h-6 ${selected ? 'text-foreground' : 'text-foreground/85'}`} strokeWidth={1.75} />
+          <Sigil className={`w-7 h-7 ${selected ? 'text-foreground' : 'text-foreground'}`} strokeWidth={1.75} />
         </div>
 
-        <p className={`typo-body font-semibold text-center mt-1.5 truncate ${selected ? 'text-foreground' : 'text-foreground'}`}>
+        {/* Model name */}
+        <p className="typo-body-lg font-semibold text-center mt-2 text-foreground truncate">
           {label}
         </p>
-        <p className={`typo-caption italic text-center truncate ${selected ? 'text-primary/85' : 'text-foreground/85'}`}>
+        {/* Epithet */}
+        <p className={`typo-caption italic text-center truncate mt-0.5 ${selected ? 'text-primary' : 'text-foreground/90'}`}>
           {heraldry.epithet}
         </p>
 
-        {/* Tiny cost / speed row — data-concrete under the name */}
-        <div className="flex items-center justify-center gap-2 mt-1.5">
+        {/* Cost / speed row */}
+        <div className="flex items-center justify-center gap-2 mt-2">
           <BannerPips level={heraldry.cost}  icon={Coins} active={selected} title="cost" />
-          <span className={`h-2 w-px ${selected ? 'bg-primary/40' : 'bg-primary/15'}`} />
+          <span className={`h-3 w-px ${selected ? 'bg-primary/55' : 'bg-primary/30'}`} />
           <BannerPips level={heraldry.speed} icon={Zap}   active={selected} title="speed" />
         </div>
       </div>
 
+      {/* Selection pin under banner */}
       {selected && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_10px_rgba(var(--color-primary-rgb,180,140,255),0.9)]" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_12px_rgba(var(--color-primary-rgb,180,140,255),1)]" />
       )}
     </button>
   );
@@ -740,14 +788,14 @@ function ModelBanner({
 function BannerPips({ level, icon: Icon, active, title }: { level: number; icon: LucideIcon; active: boolean; title: string }) {
   return (
     <span className="flex items-center gap-0.5" title={`${title}: ${level}/3`}>
-      <Icon className={`w-2.5 h-2.5 ${active ? 'text-primary' : 'text-foreground'}`} strokeWidth={2} />
+      <Icon className={`w-3 h-3 ${active ? 'text-primary' : 'text-foreground/90'}`} strokeWidth={2} />
       {[1, 2, 3].map((i) => (
         <span
           key={i}
-          className={`inline-block w-[5px] h-[5px] rounded-full ${
+          className={`inline-block w-[6px] h-[6px] rounded-full ${
             i <= level
-              ? active ? 'bg-primary' : 'bg-foreground/50'
-              : active ? 'bg-primary/20' : 'bg-foreground/15'
+              ? active ? 'bg-primary' : 'bg-foreground/85'
+              : active ? 'bg-primary/30' : 'bg-foreground/25'
           }`}
         />
       ))}

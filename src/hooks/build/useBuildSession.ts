@@ -310,6 +310,19 @@ export function useBuildSession(
           language,
         );
 
+        // Cancel-during-start guard. If cancelSession (or unmount cleanup) ran
+        // while we were awaiting startBuildSession, generationRef was bumped
+        // out from under us. Without this check, the backend session that
+        // just succeeded would still call markSessionActive / commit refs /
+        // createBuildSession into the store — producing a zombie session
+        // that the user already explicitly cancelled. Best-effort cancel the
+        // backend process and throw so callers see the cancellation as a
+        // failed start instead of a silent zombie.
+        if (generation !== generationRef.current) {
+          void cancelBuildSession(sessionId).catch(() => {/* backend gone or cancelled twice — fine */});
+          throw new Error("[useBuildSession] Start cancelled mid-flight");
+        }
+
         // Register this session as having a live Channel so EventBridge skips
         // its events. Per-session registration avoids the multi-instance bug
         // where unmounting one surface unregistered another's live Channel.

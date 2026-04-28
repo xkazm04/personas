@@ -6,7 +6,62 @@ import type { GitLabAgent } from '@/api/system/gitlab';
 // ---------------------------------------------------------------------------
 
 export type DeployTarget = 'cloud' | 'gitlab';
+
+/**
+ * Lifecycle status for a row in the unified deployment table.
+ *
+ * The dashboard merges heterogeneous sources (Personas Cloud, GitLab) into
+ * one column, so each variant has a contract that callers MUST honour to
+ * keep the dashboard consistent. Use {@link mapCloudStatus} or
+ * {@link mapGitlabStatus} — never invent these values inline.
+ *
+ * - `active` — the deployment is currently serving traffic / accepting
+ *   triggers. UI surfaces it as healthy green and exposes "Pause", "Test",
+ *   and "Open" actions. Cloud uses literal `"active"`; GitLab uses this
+ *   for any agent the API returned (GitLab has no paused/failed signal).
+ *
+ * - `paused` — the user (or a policy) has explicitly halted the deployment.
+ *   It is recoverable via "Resume". Distinct from `failed` because no
+ *   error condition exists. Currently only Cloud reports this.
+ *
+ * - `failed` — the backend reported a TERMINAL error: deployment crashed,
+ *   build failed, last invocation errored beyond retry. Requires user
+ *   action to recover (redeploy, rotate credentials, etc.). Cloud uses
+ *   literal `"failed"`; GitLab does not produce this today.
+ *
+ * - `unknown` — the source status string did not match any known variant.
+ *   This is a safety fallback for forward-compat (the cloud backend may
+ *   add new statuses like `"deploying"` or `"degraded"`) and surfaces in
+ *   the UI as a neutral grey badge with no actions. **Authors MUST NOT
+ *   collapse "deployment is broken" or "heartbeat missing" into `unknown`
+ *   — those are `failed`. Reserve `unknown` strictly for unrecognized
+ *   strings.**
+ */
 export type DeployStatus = 'active' | 'paused' | 'failed' | 'unknown';
+
+/**
+ * Map a Personas Cloud `CloudDeployment.status` string to a `DeployStatus`.
+ *
+ * The cloud API uses lowercase tokens. Only `"active"`, `"paused"`, and
+ * `"failed"` are recognized today; anything else (including null/undefined)
+ * collapses to `unknown` per the contract above.
+ */
+export function mapCloudStatus(raw: string | null | undefined): DeployStatus {
+  if (raw === 'active' || raw === 'paused' || raw === 'failed') return raw;
+  return 'unknown';
+}
+
+/**
+ * Map a GitLab agent record to a `DeployStatus`.
+ *
+ * GitLab's `/agents` endpoint returns rows only for live agents and provides
+ * no lifecycle field — every row is therefore treated as `active`. If a
+ * future API surface adds an explicit `status` field, extend this mapper
+ * (do NOT branch on it at call sites).
+ */
+export function mapGitlabStatus(_agent: unknown): DeployStatus {
+  return 'active';
+}
 
 export interface UnifiedDeployment {
   id: string;
