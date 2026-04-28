@@ -908,6 +908,7 @@ export type CommandName =
   | "suggest_topology"
   | "suggest_topology_llm"
   | "sync_peer_manifest"
+  | "synthesize_manual_review"
   | "synthesize_team_from_templates"
   | "system_health_check"
   | "tag_prompt_version"

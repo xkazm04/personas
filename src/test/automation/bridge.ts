@@ -825,6 +825,43 @@ const bridge: TestBridge = {
     }
   },
 
+  /** C8 — Phase D2 helper. Synthesizes a `manual_review` row + spawns the
+   *  auto_triage evaluator against an already-promoted persona, bypassing
+   *  the LLM-runtime nondeterminism around when a `request_review` action
+   *  is emitted. Backend command is gated by `#[cfg(feature =
+   *  "test-automation")]` so it never ships in production builds. See
+   *  `commands::testing::synthesize_review` for the semantics.
+   *
+   *  Args are positional (not packed into a single object) so the
+   *  bridge-exec dispatcher's `parseParamNames` + `resolveArgs` can map
+   *  Python's params dict by declared name. See bridge.ts:106-149 for the
+   *  rationale — single-object param signatures fall back to alphabetical
+   *  Object.values ordering, which scrambles arg positions. */
+  async synthesizeManualReview(
+    personaId: string,
+    useCaseId: string | null,
+    title: string,
+    description: string | null,
+    severity: string | null,
+    contextData: string | null,
+    suggestedActions: string[] | null,
+  ) {
+    try {
+      const result = await invoke('synthesize_manual_review', {
+        personaId,
+        useCaseId: useCaseId ?? null,
+        title,
+        description: description ?? null,
+        severity: severity ?? null,
+        contextData: contextData ?? null,
+        suggestedActions: suggestedActions ?? null,
+      }) as { reviewId: string; executionId: string };
+      return { success: true, ...result };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
   /** C7 webhook source: answer a clarifying_question that carried
    *  `accepts_webhook_source: true`, attaching a smee.io URL (and optional
    *  comma-separated event_filter). Backend appends a fenced WEBHOOK

@@ -1199,6 +1199,8 @@ pub fn run() {
             commands::design::build_sessions::save_adoption_answers,
             commands::design::build_simulate::simulate_build_draft,
             commands::design::build_simulate::get_simulation_artefacts,
+            #[cfg(feature = "test-automation")]
+            commands::testing::synthesize_review::synthesize_manual_review,
             // Design -- Conversations
             commands::design::conversations::list_design_conversations,
             commands::design::conversations::get_design_conversation,

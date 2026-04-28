@@ -15,3 +15,5 @@ pub mod artist;
 pub mod obsidian_brain;
 pub mod drive;
 pub mod live_roadmap;
+#[cfg(feature = "test-automation")]
+pub mod testing;
