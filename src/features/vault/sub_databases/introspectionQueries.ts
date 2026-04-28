@@ -62,6 +62,20 @@ function escapeMysqlIdent(value: string): string {
   return value.replace(/[\x00-\x1F\x7F]/g, '').replace(/`/g, '``');
 }
 
+/**
+ * Escape a string so Redis SCAN/KEYS treats it as a LITERAL prefix.
+ *
+ * Redis MATCH glob metacharacters: `* ? [ ]` (and `\` itself). Without
+ * escaping, a key prefix like `cache[v1]` is interpreted as a character
+ * class and silently mismatches; a key with a leading `*` or `?` matches
+ * far more than the user intended; backslash sequences eat the next
+ * character. Treat the supplied prefix as literal data and let the caller
+ * append `*` for prefix-match semantics.
+ */
+function escapeRedisGlob(value: string): string {
+  return value.replace(/[\\*?[\]]/g, '\\$&');
+}
+
 export function getListColumnsQuery(serviceType: string, tableName: string): string | null {
   // The introspection queries below match table_name as a STRING LITERAL
   // against the catalog (information_schema.columns / sqlite_master) — they
@@ -102,7 +116,10 @@ export function getSelectAllQuery(serviceType: string, tableName: string): strin
     case 'mysql':
       return `SELECT * FROM \`${escapeMysqlIdent(tableName)}\` LIMIT 100;`;
     case 'redis':
-      return `SCAN 0 MATCH ${tableName}* COUNT 100`;
+      // The user's `tableName` is a Redis key prefix; escape glob metas so
+      // `cache[v1]` doesn't get interpreted as a char class. The trailing
+      // `*` IS the prefix-match wildcard (intentional, post-escape).
+      return `SCAN 0 MATCH ${escapeRedisGlob(tableName)}* COUNT 100`;
     case 'convex':
       return `db.query("${escapeSqlStringLiteral(tableName)}").take(100)`;
     case 'sqlite':
