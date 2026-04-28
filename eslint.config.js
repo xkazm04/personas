@@ -61,6 +61,10 @@ export default tseslint.config(
               group: ["**/sub_usage/charts/chartConstants", "@/features/overview/sub_usage/charts/chartConstants"],
               message: "Import chart constants from '@/features/overview/sub_usage/libs/chartConstants' — the charts/ copy is stale.",
             },
+            {
+              group: ["@/features/*/i18n/*", "**/features/*/i18n/*"],
+              message: "Feature-scoped i18n hooks were a half-finished migration; use the global '@/i18n/useTranslation' instead. Add new keys to src/i18n/locales/<lang>.json under the appropriate top-level section.",
+            },
           ],
         },
       ],
