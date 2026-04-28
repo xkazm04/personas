@@ -3,11 +3,59 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("crypto");
 
+/**
+ * Public-key cache for hybrid IPC encryption.
+ *
+ * The backend session keypair can rotate without the frontend tearing down —
+ * Tauri-window reload that doesn't restart the renderer, vault re-key, panic
+ * recovery, or a keyring access denial that forces fallback re-init. Without
+ * detection, a stale `cachedPublicKey` would silently encrypt with an
+ * abandoned RSA key and the backend's decrypt would fail with a "Failed to
+ * encrypt sensitive data for IPC" error indistinguishable from a transient
+ * IPC fault.
+ *
+ * Strategy: cache the imported `CryptoKey` plus the raw PEM string and a
+ * fetch timestamp. On every encrypt, if the cache is older than
+ * `PUBLIC_KEY_REFRESH_INTERVAL_MS`, refetch the PEM (cheap IPC — backend
+ * just reads a static) and compare. Only re-import the heavy CryptoKey when
+ * the PEM actually changed. Backend rotation is detected within ~60s with no
+ * backend signalling required; if a `session-key-rotated` Tauri event is ever
+ * added, `clearCryptoCache()` continues to be the right hook.
+ *
+ * `clearCryptoCache()` is called on logout (the only event today that we
+ * trust to invalidate the key synchronously); callers may also invoke it on
+ * receiving any explicit rotation signal.
+ */
 let cachedPublicKey: CryptoKey | null = null;
+let cachedPem: string | null = null;
+let lastFetchAt = 0;
 
-/** Clear the cached session public key. Must be called on logout. */
+const PUBLIC_KEY_REFRESH_INTERVAL_MS = 60_000;
+
+/** Clear the cached session public key. Must be called on logout AND on any
+ *  explicit session-key rotation signal. */
 export function clearCryptoCache(): void {
   cachedPublicKey = null;
+  cachedPem = null;
+  lastFetchAt = 0;
+}
+
+async function getOrRefreshSessionPublicKey(): Promise<CryptoKey> {
+  const now = Date.now();
+  if (cachedPublicKey && now - lastFetchAt < PUBLIC_KEY_REFRESH_INTERVAL_MS) {
+    return cachedPublicKey;
+  }
+  const pem = await getSessionPublicKey();
+  if (cachedPublicKey && pem === cachedPem) {
+    // Same key as last time we checked; just renew the freshness stamp.
+    lastFetchAt = now;
+    return cachedPublicKey;
+  }
+  // PEM changed (or never fetched) — re-import as a fresh CryptoKey.
+  cachedPem = pem;
+  cachedPublicKey = await importPublicKey(pem);
+  lastFetchAt = now;
+  return cachedPublicKey;
 }
 
 /**
@@ -58,10 +106,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
  */
 export async function encryptWithSessionKey(data: string): Promise<string> {
   try {
-    if (!cachedPublicKey) {
-      const pem = await getSessionPublicKey();
-      cachedPublicKey = await importPublicKey(pem);
-    }
+    const publicKey = await getOrRefreshSessionPublicKey();
 
     // 1. Generate a random AES-256 key and 12-byte IV
     const aesKey = await window.crypto.subtle.generateKey(
@@ -84,7 +129,7 @@ export async function encryptWithSessionKey(data: string): Promise<string> {
     const rawAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
     const encryptedAesKey = await window.crypto.subtle.encrypt(
       { name: "RSA-OAEP" },
-      cachedPublicKey,
+      publicKey,
       rawAesKey,
     );
 
