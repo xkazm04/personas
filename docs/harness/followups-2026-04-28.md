@@ -1,5 +1,26 @@
 # Follow-ups — 2026-04-28
 
+## W4.3 deferred — KpiTile primitive extraction
+
+**Why deferred:** Plan was "extract KpiTile + migrate 5 overview consumers". After W1.7 deleted DashboardHeaderBadges, AnalyticsSummaryCards, and RealtimeStatsBar, only 3 consumers remain — but they are visually divergent in ways that make a single primitive non-trivial:
+
+| Component | Density | Colors | Trend | Sparkline | Animation | Special |
+|---|---|---|---|---|---|---|
+| `StatTile` (DashboardHomeMissionControl.tsx:435) | Console (font-mono dense) | tailwind class passed in directly | — | — | `AnimatedCounter` | — |
+| `SummaryCard` (sub_activity/MetricsCards.tsx:20) | Card (3-line layout) | 4-key color map (blue/emerald/violet/amber) split via `colorMap[c].split(' ')` | — | — | `AnimatedCounter` (optional) | — |
+| `OverviewStatCard` (sub_observability) | Card with gradient | 7-key color map + separate iconBgMap | TrendData with invertColor | `Sparkline` SVG, 7-key SPARKLINE_HEX | `useAnimatedNumber` | subtitle + subtitleColor |
+
+A unified primitive needs to support `density: 'console' | 'card'`, both color-map shapes (3 vs 7 colors with merged-or-separate icon background), optional trend + sparkline + subtitle slots, and pluggable animation primitives. ~150–200 LOC with non-trivial visual-regression risk on each migration.
+
+**Recommended for next session:** dedicated 4–5 commit wave:
+1. Design `KpiTile` in `src/features/overview/components/shared/KpiTile.tsx` with discriminated `density` prop. Document the full color set (merge the 4-color and 7-color tables; pick canonical token values). Preserve `AnimatedCounter` and `useAnimatedNumber` consumer choice via prop.
+2. Migrate `StatTile` (smallest delta).
+3. Migrate `SummaryCard` (covers 4-color map case).
+4. Migrate `OverviewStatCard` (full feature surface — trend, sparkline, subtitle).
+5. (Optional) Add visual regression test for the 3 surfaces if Storybook/Chromatic is wired up.
+
+
+
 ## W1.2 deferred — sub_executions duplicate trees migration
 
 **Why deferred from Wave 1:** The audit finding (`agent-chat-tool-runner.md` #1) framed this as a cleanup-by-deletion. Investigation showed it's actually a multi-step migration: the old `sub_executions/detail/` tree has live external consumers in three different feature trees:
