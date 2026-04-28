@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useCallback, useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
-import { silentCatch } from "@/lib/silentCatch";
 import { AlertTriangle, Clock, Copy, Check, CheckCircle2 } from 'lucide-react';
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -15,8 +15,7 @@ interface QueryResultTableProps {
 export function QueryResultTable({ result }: QueryResultTableProps) {
   const { t, tx } = useTranslation();
   const db = t.vault.databases;
-  const [copiedCell, setCopiedCell] = useState<string | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const { copiedKey: copiedCell, copy } = useKeyedCopyFlag<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const rowVirtualizer = useVirtualizer({
@@ -26,25 +25,9 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
     overscan: 10,
   });
 
-  const flashCopied = useCallback((key: string) => {
-    setCopiedCell(key);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setCopiedCell(null), 2000);
-  }, []);
-
-  // Cancel the 2s copy-flash timer if the modal closes while it's still
-  // pending. Without this, setCopiedCell fires on an unmounted component
-  // (React warning + a retention path holding the prior result set).
-  useEffect(
-    () => () => {
-      clearTimeout(timerRef.current);
-    },
-    [],
-  );
-
   const copyToClipboard = useCallback((text: string, key: string) => {
-    navigator.clipboard.writeText(text).then(() => flashCopied(key)).catch(silentCatch("QueryResultTable:copyToClipboard"));
-  }, [flashCopied]);
+    copy(key, text);
+  }, [copy]);
 
   const handleColumnClick = useCallback((col: string, colIdx: number) => {
     copyToClipboard(col, `col-${colIdx}`);

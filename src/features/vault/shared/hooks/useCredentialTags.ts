@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
 import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   getCredentialTags,
   buildMetadataWithTags,
@@ -12,9 +13,8 @@ export function useCredentialTags(credential: CredentialMetadata) {
   const [tagInput, setTagInput] = useState('');
   const [showTagInput, setShowTagInput] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [copiedCredentialId, setCopiedCredentialId] = useState(false);
+  const { copied: copiedCredentialId, copy } = useCopyToClipboard(1500);
   const tagInputRef = useRef<HTMLInputElement>(null);
-  const copiedCredentialIdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentTags = useMemo(() => getCredentialTags(credential), [credential]);
 
@@ -82,22 +82,13 @@ export function useCredentialTags(credential: CredentialMetadata) {
     }, 150);
   }, []);
 
-  const copyCredentialId = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(credential.id);
-      setCopiedCredentialId(true);
-      if (copiedCredentialIdTimerRef.current) clearTimeout(copiedCredentialIdTimerRef.current);
-      copiedCredentialIdTimerRef.current = setTimeout(() => setCopiedCredentialId(false), 1500);
-    } catch {
-      // intentional: non-critical -- clipboard copy may be denied by browser
-    }
-  }, [credential.id]);
+  const copyCredentialId = useCallback(() => {
+    copy(credential.id);
+  }, [credential.id, copy]);
 
-  useEffect(() => {
-    return () => {
-      if (copiedCredentialIdTimerRef.current) clearTimeout(copiedCredentialIdTimerRef.current);
-    };
-  }, []);
+  // Note: the previous useEffect cleanup of copiedCredentialIdTimerRef is
+  // gone — useCopyToClipboard owns unmount cleanup of the reset timer
+  // internally.
 
   return {
     currentTags,

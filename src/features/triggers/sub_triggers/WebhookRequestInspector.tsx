@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import {
   Radio, ChevronDown, ChevronRight, AlertTriangle,
   RefreshCw, RotateCcw, Terminal, Trash2, CheckCircle2, XCircle,
@@ -175,7 +176,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replayingId, setReplayingId] = useState<string | null>(null);
   const [replayResult, setReplayResult] = useState<{ id: string; success: boolean; message: string } | null>(null);
-  const [copiedCurlId, setCopiedCurlId] = useState<string | null>(null);
+  const { copiedKey: copiedCurlId, copy } = useKeyedCopyFlag<string>();
   const [clearing, setClearing] = useState(false);
 
   const fetch = useCallback(async () => {
@@ -214,9 +215,7 @@ export function WebhookRequestInspector({ triggerId }: WebhookRequestInspectorPr
   const handleCopyCurl = async (logId: string) => {
     try {
       const curl = await webhookRequestToCurl(logId);
-      await navigator.clipboard.writeText(curl);
-      setCopiedCurlId(logId);
-      setTimeout(() => setCopiedCurlId(null), 2000);
+      copy(logId, curl);
     } catch {
       // best-effort
     }

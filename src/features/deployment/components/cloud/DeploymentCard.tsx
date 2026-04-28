@@ -1,5 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConical, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CloudDeployment } from '@/api/system/cloud';
@@ -36,7 +37,7 @@ export function DeploymentCard({
 }: DeploymentCardProps) {
   const { t } = useTranslation();
   const dt = t.deployment.deploy_card;
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const endpointUrl = baseUrl ? `${baseUrl}/api/deployed/${d.slug}` : `/api/deployed/${d.slug}`;
@@ -49,9 +50,7 @@ export function DeploymentCard({
 
   const copyEndpoint = (slug: string) => {
     const url = baseUrl ? `${baseUrl}/api/deployed/${slug}` : `/api/deployed/${slug}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(slug);
-    setTimeout(() => setCopiedId(null), 2000);
+    copy(slug, url);
   };
 
   return (

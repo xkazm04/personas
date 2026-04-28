@@ -1,5 +1,5 @@
-import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Copy, Check, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from '@/stores/agentStore';
@@ -29,7 +29,7 @@ export function CloudWebhooksTab() {
 
   const [webhookRows, setWebhookRows] = useState<WebhookTriggerRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { copiedKey: copiedId, copy } = useKeyedCopyFlag<string>();
 
   // Create form state
   const [showCreate, setShowCreate] = useState(false);
@@ -97,12 +97,7 @@ export function CloudWebhooksTab() {
       .finally(() => setFiringsLoading(false));
   }, [selectedTriggerId]);
 
-  const handleCopy = (text: string, id: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopiedId(id);
-      setTimeout(() => setCopiedId(null), 2000);
-    }).catch(silentCatch("CloudWebhooksTab:copyToClipboard"));
-  };
+  const handleCopy = (text: string, id: string) => copy(id, text);
 
   const handleCreate = async () => {
     if (!createPersonaId) return;
