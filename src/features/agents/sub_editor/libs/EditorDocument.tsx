@@ -300,9 +300,38 @@ export function useEditorDirty(tab: string, isDirty: boolean, save?: () => Promi
     if (store) store.setTabDirty(tab, isDirty);
   }, [store, tab, isDirty]);
 
-  // registerSave / registerCancel do not call notify(), so updating during render is safe.
-  if (store && save) store.registerSave(tab, save);
-  if (store && cancel) store.registerCancel(tab, cancel);
+  // Hold the latest save/cancel callbacks in refs so the registry reads the
+  // current closure without each render re-mutating the store map. The store
+  // calls a stable trampoline that dereferences the ref at call time.
+  // Previously these were registered directly during render with the comment
+  // "registerSave/registerCancel do not call notify(), so updating during
+  // render is safe" — but under React 19 Concurrent rendering a discarded
+  // render would still leave the registry pointing at a closure that
+  // captured aborted state, so a subsequent saveAll could persist values
+  // the user never saw.
+  const saveRef = useRef(save);
+  const cancelRef = useRef(cancel);
+  saveRef.current = save;
+  cancelRef.current = cancel;
+
+  useEffect(() => {
+    if (!store) return;
+    if (save) {
+      store.registerSave(tab, () => {
+        const fn = saveRef.current;
+        return fn ? fn() : Promise.resolve();
+      });
+    }
+    if (cancel) {
+      store.registerCancel(tab, () => {
+        cancelRef.current?.();
+      });
+    }
+    // No teardown here — `unregister()` (returned below, called from the
+    // consuming component's unmount effect) is the canonical removal path.
+    // We don't unregister on tab/store-id changes mid-mount because
+    // setTabDirty's effect runs on the same deps and would race.
+  }, [store, tab, save !== undefined, cancel !== undefined]);
 
   // Cleanup on unmount -- wrapped in useCallback to stabilize
   const unregister = useCallback(() => {
