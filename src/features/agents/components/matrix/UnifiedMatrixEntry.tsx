@@ -110,7 +110,19 @@ export function UnifiedMatrixEntry() {
 
   // -- Local state --------------------------------------------------------
 
-  const [intentText, _setIntentText] = useState("");
+  // Bridge: when the user opens persona creation while onboarding/tour is
+  // active and they've already typed a goal in Home → SetupCards → GoalStep,
+  // pre-fill the intent textarea so they don't re-type it. The setupGoal is
+  // cleared once the persona is promoted (see handleViewPromotedAgent).
+  // Reading once via getState() is intentional — the goal only changes when
+  // the user typed in Home before clicking "Create persona", so we don't
+  // need to reactively sync.
+  const initialIntent = (() => {
+    const s = useSystemStore.getState();
+    const bridgeIsActive = s.onboardingActive || s.tourActive;
+    return bridgeIsActive && typeof s.setupGoal === 'string' ? s.setupGoal : '';
+  })();
+  const [intentText, _setIntentText] = useState(initialIntent);
   const intentTextRef = useRef(intentText);
   intentTextRef.current = intentText;
   const setIntentText = useCallback((v: string) => {
@@ -142,6 +154,11 @@ export function UnifiedMatrixEntry() {
       setIntentText('');
       setAgentName('');
       setDraftPersonaId(null);
+
+      // Bridge cleanup: the home stepper's setupGoal seeded this build's
+      // intent. Now that the agent is promoted, clear it so subsequent
+      // builds aren't pre-filled with a stale goal.
+      useSystemStore.getState().setSetupGoal('');
 
       // Navigate to the promoted agent
       useAgentStore.getState().selectPersona(personaId);

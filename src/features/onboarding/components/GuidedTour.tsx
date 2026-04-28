@@ -5,7 +5,7 @@ import { useThemeStore } from "@/stores/themeStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
-import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, getTourById, type TourEventKey } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection, EventBusTab } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
@@ -112,12 +112,21 @@ export default function GuidedTour() {
     navigateToStep(currentIndex);
   }, [currentIndex, tourActive, navigateToStep, isMinimized]);
 
-  // Auto-complete time-based steps for observability/events tours
+  // Auto-complete time-based steps for observability/events tours.
+  // The list is typed against TourEventKey so a typo is a compile error.
   useEffect(() => {
     if (!tourActive || !currentStep) return;
-    const timedSteps = ['tour:dashboard-viewed', 'tour:activity-explored', 'tour:messages-explored',
-      'tour:health-explored', 'tour:lab-explored', 'tour:events-viewed',
-      'tour:triggers-explored', 'tour:chaining-understood', 'tour:livestream-viewed'];
+    const timedSteps: readonly TourEventKey[] = [
+      'tour:dashboard-viewed',
+      'tour:activity-explored',
+      'tour:messages-explored',
+      'tour:health-explored',
+      'tour:lab-explored',
+      'tour:events-viewed',
+      'tour:triggers-explored',
+      'tour:chaining-understood',
+      'tour:livestream-viewed',
+    ];
     if (timedSteps.includes(currentStep.completeOn)) {
       const timer = setTimeout(() => useSystemStore.getState().emitTourEvent(currentStep.completeOn), 5000);
       return () => clearTimeout(timer);
