@@ -290,6 +290,12 @@
       "tool": "Tool",
       "goal": "Goal"
     },
+    "fleet": {
+      "executions_today": "Runs Today",
+      "success_rate": "Success Rate",
+      "active_agents": "Active Agents",
+      "credentials": "Credentials"
+    },
     "nav": {
       "overview": {
         "label": "Overview",

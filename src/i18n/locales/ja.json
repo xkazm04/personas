@@ -289,6 +289,12 @@
       "tool": "ツール",
       "goal": "目標"
     },
+    "fleet": {
+      "executions_today": "本日の実行",
+      "success_rate": "成功率",
+      "active_agents": "アクティブエージェント",
+      "credentials": "クレデンシャル"
+    },
     "nav": {
       "overview": {
         "label": "概要",

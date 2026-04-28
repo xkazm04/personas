@@ -289,6 +289,12 @@
       "tool": "الأداة",
       "goal": "الهدف"
     },
+    "fleet": {
+      "executions_today": "التشغيلات اليوم",
+      "success_rate": "معدل النجاح",
+      "active_agents": "الوكلاء النشطون",
+      "credentials": "بيانات الاعتماد"
+    },
     "nav": {
       "overview": {
         "label": "نظرة عامة",

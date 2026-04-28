@@ -289,6 +289,12 @@
       "tool": "Công cụ",
       "goal": "Mục tiêu"
     },
+    "fleet": {
+      "executions_today": "Chạy Hôm Nay",
+      "success_rate": "Tỷ Lệ Thành Công",
+      "active_agents": "Agent Hoạt Động",
+      "credentials": "Thông Tin Xác Thực"
+    },
     "nav": {
       "overview": {
         "label": "Tổng quan",

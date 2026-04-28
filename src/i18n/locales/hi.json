@@ -289,6 +289,12 @@
       "tool": "टूल",
       "goal": "लक्ष्य"
     },
+    "fleet": {
+      "executions_today": "आज के रन",
+      "success_rate": "सफलता दर",
+      "active_agents": "सक्रिय एजेंट",
+      "credentials": "क्रेडेंशियल"
+    },
     "nav": {
       "overview": {
         "label": "अवलोकन",

@@ -253,6 +253,12 @@ export type Translations = {
     summary_stats: string;
     quick_navigation: string;
     platform_label: string;
+    fleet: {
+      executions_today: string;
+      success_rate: string;
+      active_agents: string;
+      credentials: string;
+    };
     roadmap: {
       title: string;
       subtitle: string;
