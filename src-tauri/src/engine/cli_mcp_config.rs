@@ -95,10 +95,15 @@ pub fn install_mcp_sidecar(
         );
     }
 
+    // `alwaysLoad: true` skips the CLI's tool-search deferral so personas-mcp
+    // tools (`drive_*`, `personas_*`) are deterministically discoverable on
+    // every spawn. Field added in CLI 2.1.121; older CLIs ignore unknown
+    // server-config fields per the MCP schema, so this is safe across versions.
     let server_entry = serde_json::json!({
         "command": mcp_binary.display().to_string(),
         "args": ["--db-path", db_path.display().to_string()],
         "env": serde_json::Value::Object(env_map),
+        "alwaysLoad": true,
     });
 
     // Merge (or create) `mcpServers.personas`.
