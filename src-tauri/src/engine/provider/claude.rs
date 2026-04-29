@@ -54,25 +54,33 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.113 adds headless-mode fixes that affect personas directly:
-        // - 2.1.110: stdio MCP stray-line disconnect (regression from 2.1.105),
-        //   PreToolUse hook additionalContext loss on tool failure,
-        //   non-streaming fallback multi-minute hangs, MCP SSE hang on drop,
-        //   Bash tool timeout enforcement, TRACEPARENT/TRACESTATE support.
-        // - 2.1.111: headless stream-json init event now carries plugin_errors.
-        // - 2.1.113: MCP concurrent-call watchdog no longer disarmed by a sibling
-        //   call's message; compacting a resumed long-context session no longer
-        //   fails with "Extra usage is required for long context requests";
-        //   stalled subagents fail with a clear error after 10 minutes instead
-        //   of hanging; Bedrock Opus 4.7 no longer 400s on thinking config;
-        //   Bash `dangerouslyDisableSandbox` no longer bypasses the permission
-        //   prompt. CLI entry point now spawns a native binary via a per-platform
-        //   optional dep (transparent to personas — same binary name).
-        // Earlier 2.1.101 fixes (UTF-8 corruption, --dangerously-skip-permissions
-        // downgrade, team permission inheritance, 5-min API timeout, --resume
-        // context loss on large sessions, MCP outputSchema validation) still
-        // apply.
-        Some("2.1.113")
+        // CLI ≥ 2.1.123 — floor advances when a newer CLI fixes the wrapping
+        // contract personas depends on. Recent floors:
+        // - 2.1.121: `alwaysLoad: true` MCP server-config option (used by
+        //   `cli_mcp_config`); `--resume` corrupt-line skip + external-build
+        //   startup-crash fix; `--dangerously-skip-permissions` no longer
+        //   prompts for writes to `.claude/skills`, `.claude/agents`,
+        //   `.claude/commands`; invalid legacy enum values in `settings.json`
+        //   no longer invalidate the entire file.
+        // - 2.1.122: malformed `hooks` entry no longer invalidates the entire
+        //   `settings.json` (protects the `hooks_sidecar` + `cli_mcp_config`
+        //   sidecar pair); Vertex/Bedrock structured-output
+        //   `output_config: Extra inputs are not permitted` fix.
+        // - 2.1.123: OAuth 401 retry loop fix when
+        //   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` is set.
+        // Earlier floors still apply: 2.1.101 (UTF-8 corruption,
+        // `--dangerously-skip-permissions` downgrade, team permissions, 5-min
+        // API timeout, `--resume` large-session context loss, MCP outputSchema
+        // validation), 2.1.110 (stdio MCP stray-line disconnect, PreToolUse
+        // additionalContext loss, non-streaming hangs, MCP SSE hang on drop,
+        // Bash tool timeout, TRACEPARENT/TRACESTATE), 2.1.111 (init event
+        // `plugin_errors`), 2.1.113 (MCP concurrent-call watchdog, resumed
+        // long-context compact fix, subagent-stall clear error, Bedrock Opus
+        // 4.7 thinking-config fix, Bash `dangerouslyDisableSandbox` permission
+        // gate).
+        // The check is advisory: `provider::check_cli_version` returns an Err
+        // string below the floor; no caller turns that into a hard refusal.
+        Some("2.1.123")
     }
 }
 
@@ -155,6 +163,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.113");
+        assert_eq!(min.unwrap(), "2.1.123");
     }
 }
