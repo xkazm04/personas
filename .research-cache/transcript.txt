@@ -1,1349 +1,2470 @@
-[00:00:00] We're not just a distributor of other
-people's IP. We own our own IP.
-&gt;&gt; But how do you change the hearts and the
-minds of the broader US demographic with
-regards to artificial intelligence
-&gt;&gt; mythos? I think it's rumored to be the
-first 10 trillion parameter model.
-&gt;&gt; It's better to have your own chips and
-demand than not having your own chips.
-&gt;&gt; Where's the next big bottleneck? The
-next big bottleneck will be largely
-around
-&gt;&gt; is there some line in the sand, some
-benchmark you would determine Gemini is
-no longer safe to release publicly. We
-[00:00:32] have more demand than we can possibly
-meet from all the other AI labs.
-&gt;&gt; Thomas, what keeps you up at night?
-&gt;&gt; All right, Thomas, thank you for joining
-me today. We're at the Google Cloud
-Campus and I really appreciate your time
-today.
-&gt;&gt; Thanks for having me.
-&gt;&gt; I am super excited to talk to you. I
-have a bunch of questions for you.
-The first question I've been thinking
-about so much lately is TPU capacity.
-When you look at the other frontier labs
-like anthropic and open AI, all they
-talk about is being uh compute
-[00:01:03] constrained. M
-&gt;&gt; but then you see Google over here who
-you know you have the full stack you
-have your own chips but you're not only
-serving your own inference you're
-training you're selling inference uh you
-are also allowing some of your
-competitors to build on top of your own
-chips you're also selling your own chips
-how do you have so much capacity or how
-do you think about it whereas the other
-frontier labs can't seem to get enough
-&gt;&gt; if you think about what percentage of
-the world are we monetizing and in some
-places we monetize the tokens as the
-[00:01:37] token and the chip. In other places we
-monetize the token, somebody else's
-model but using a chip underneath it.
-And part of the reason is we go back
-many many years and we do long-term
-planning. And so when we saw this AI
-moment coming, we looked at a number of
-different factors to ensure we were not
-physically constrained. We diversified
-how many energy sources we had. We
-locked in real estate so we could build
-data centers. We changed how we
-manufacture data centers. We don't build
-them in construction. We shifted a lot
-more to manufacturing because
-[00:02:15] manufacturing can always do faster than
-you can do with construction. We reduced
-cycle time to deploy machines. All of
-that was stuff we've done and uh that
-helps us capacity wise. And then on the
-silicon side, we've always worked with
-Nvidia as a partner, but we've also
-wanted to build our own silicon and
-we've done it for for I think it's like
-11th year now or 12th year. Eighth
-generation TPU will be announced at our
-event.
-&gt;&gt; Yeah, we're going to talk about that.
-&gt;&gt; And so that's something we've got real
-art of doing over and over and over and
-[00:02:48] delivering that advantage over and over.
-And it's something we've delivered. And
-the interesting thing is we see demand
-now from not just from the AI labs but
-from other segments. You'll see Citadel
-for example in capital markets talking
-about how they using our TPUs. You'll
-see Department of Energy and high
-performance computing customers talk
-about it. So we're also seeing TPUs
-becoming more general purpose
-infrastructure, not just for AI
-algorithms. And so when you're looking
-at monetizing TPUs across all of the
-different avenues that you have to
-[00:03:22] allocate your compute, how how does it
-compare? Can you maybe if you want to
-share specific numbers, great. But if
-you're looking at just comparing and
-contrasting selling a TPU versus uh
-allowing anthropic or open AAI to serve
-their inference through your
-infrastructure versus your own Gemini
-models, h how do those different avenues
-compare? We balance investments across
-all these, you know, and we make great
-margins no matter which way we're
-selling it because we own our own IP.
-We're not just a distributor of other
-people's IP. I think that's helped us
-[00:03:55] and you've seen us improve both topline
-and operating margin. We've also moved
-TPUs now as for example when you look at
-capital markets. One of the things we
-find that's very interesting is that
-algorithmic trading was done using
-numerical computation which was largely
-done on traditional compute that's been
-constrained by the Moors law. The
-incremental improvement you see
-generation to generation is getting
-slower and so many of the top firms have
-seen the huge improvements they can get
-by shifting to inference. instead of
-doing computation using numerical
-[00:04:31] techniques if you shift to inference you
-can write the improvements you're seeing
-in inference time and as they've come in
-they want our machines in their venues
-where it's closer to where the exchanges
-are for example
-&gt;&gt; right
-&gt;&gt; so we've started taking TPUs and making
-available in other people's data center
-for some of our key customers and that's
-a slightly different uh business model
-and we have you know in in macro I would
-say diverse Diversification improves
-product because you see requirements
-from many places. Diversification in
-[00:05:06] monetization also helps us grow. I mean
-uh when we deal with supply chain
-vendors for example because we are using
-these chips not just for our own needs
-but also offering them a market they say
-well Google's demand is a sum total of a
-much larger pool and as a result we get
-favorable terms.
-&gt;&gt; I want to stick on this point for a
-moment longer. If compute demand is
-infinite, I mean even just for the R&amp;D
-side, why not why not just hoard the
-compute? Why not just keep it? And to
-put a finer point on it, if AGI is is
-really the goal that all of the AI labs
-[00:05:41] are heading toward towards and whoever
-hits it first and is able to scale it
-out
-&gt;&gt; wins, it seems like keeping the
-capacity, keeping it for yourself,
-keeping it for your own models is
-actually quite beneficial. What am I
-missing? You have to make money to fund
-all of this.
-&gt;&gt; Google makes a ton of money,
-&gt;&gt; but you have to keep generating cash
-flow to do it
-&gt;&gt; and this is one more lever for us to
-generate sufficient cash flow. And the
-amount we allocate to other people is
-[00:06:08] balanced always against our own needs
-and our own capital requirements. And
-you know, no matter which lab you're in,
-venture capital cannot fund you
-indefinitely. Yeah. And as compute costs
-grow, if you're running a loss leader
-business where you're losing money, uh,
-and you're not making enough money from
-inference and other techniques to cover
-the cost of training, as that gap gets
-wider, the number of sources you can go
-to gets smaller.
-&gt;&gt; I've been talking about how Google is in
-such a unique position. They have the
-cash cows,
-[00:06:40] &gt;&gt; they have the chips, they have the
-models. Uh do does does your Gemini team
-ever come to you and say like we don't
-have enough or I I I know I'm really
-stick on this point. It's just so wild
-for me to hear where where these other
-companies are just not able to keep up.
-&gt;&gt; There's always demand for these things
-and it'll
-&gt;&gt; I think for the next 10 years there will
-always be more demand than supply and
-that's a good place to be in if you have
-your own chip. If you don't, you're
-reselling other people's stuff. And in a
-capacity constraint environment, your
-[00:07:11] unit economics get more expensive. And
-in our case, because we control the
-chip, the unit economics remain
-attractive. So that is going to be an
-advantage for us because we own the
-silicon. So if you look at the whole pie
-of your TPUs of your compute
-infrastructure, can you talk a little
-bit about what the split is between
-training inference selling TPUs serving
-inference for other labs?
-&gt;&gt; BroadB brush I think we don't talk about
-the details so I'm not going to go
-through every element
-&gt;&gt; but broadbrush if you look in macro
-[00:07:45] cloud is about half of Alphabet's
-capital and it's growing because it's
-growing much faster as you know. So
-that's like a split and then on our side
-a significant part of our growth is
-coming from Gemini and our models and so
-you can use that as a rough
-approximation.
-&gt;&gt; Okay. You you mentioned data centers and
-building out data centers. Can you
-explain what the difference is between
-construction and manufacturing when
-you're talking about data centers?
-&gt;&gt; Yeah, it's just uh what is the unit at
-which you're deploying capacity. So you
-[00:08:18] could take for example
-a rack of machines, assemble it in a
-data center. You could take an entire
-row of machines and deploy it in a data
-center. The higher the grain at which
-you can deploy, the more you can
-preconstruct it, pre-est it in a central
-location, which means you're much faster
-in deployment. When you're planning
-deployment of a new data center, I
-you're probably more aware than anybody
-there's a pretty negative sentiment
-about data centers in the US
-specifically. I think it's 20%
-favorability. H
-[00:08:53] &gt;&gt; how do you think about that and and h
-how do you think the broader AI industry
-can start to change the opinion, change
-the sentiment around artificial
-intelligence and specifically deploying
-data centers which gives the US a
-strategic advantage. It's I tend to be
-very optimistic about AI in general. So,
-how do you think about that?
-&gt;&gt; What people are really concerned about
-on data centers is a couple of things.
-Number one, you know, will energy costs
-in my state or my county go up?
-&gt;&gt; Right?
-&gt;&gt; Second, will there be sufficient
-[00:09:26] employment in the local community in
-which the data center operates? And so,
-there's a couple of things that we're
-doing. First one is we're investing in
-behind the meter technology where we're
-not taking energy off the grid and we
-cross connect to the grid if the state
-wants it so that in case there's short
-supply on the grid our energy can fuel
-the grid. We're investing in alternate
-forms of energy because we think that
-the traditional mode of generate and
-distribute is not necessarily the only
-way that energy supply will come into
-the market. And so one of the things
-[00:10:01] we're we're looking at is can you reduce
-the unit cost of energy with new forms
-of energy delivery created by the demand
-for AI but then can serve the broader
-market. Third, we take a lot we pay a
-lot of attention to making sure the unit
-of energy we're consuming what's called
-PUE that we have the best in the
-industry. Meaning, if you need a 100
-megawatts of compute, how little
-incremental megawws do you need from the
-energy source so you're not wasting
-energy? And we're by far the most
-efficient at that in the world. And
-there's a thousand things that go into
-[00:10:39] that on thermodynamic exchange, how we
-do heating, all of that. Lastly, we're
-investing in the communities in which
-we're in. And to avoid the communities
-feeling like Google's deploying in one
-giant location, we distribute it in many
-places so that no individual state feels
-like we're becoming a big burden on
-their resources. And we've had a great
-track record. I travel to many many of
-our data centers. And when you go to the
-local economy and see the kids in the
-school systems and you see the employees
-who operate our data centers who are
-super important to us, how much economic
-[00:11:20] development we bring to those rural
-communities where, you know, we think
-that's part of our responsibility.
-&gt;&gt; That's fantastic. What about the broader
-sentiment and not the local community?
-Because when you go in, you create jobs,
-you're investing, you're not using the
-electricity and driving up the prices
-directly. Um, that's all wonderful, but
-how do you actually change the the
-hearts and the minds of the broader US
-demographic with regards to artificial
-intelligence? That's going to be a
-process, you know, and I think it's
-finding places where you can apply the
-[00:11:57] technology in a way that's good for
-society rather than just uh, you know,
-causing issues where people are worried
-about job displacement. I'll give you
-just a few examples of things,
-&gt;&gt; please.
-&gt;&gt; You'll see in our, you know, keynote a
-company called Signal. They do not talk
-about it. They're a health insurer based
-in Germany. They're the largest health
-insurer in Germany. They today deploy a
-lot of agents built on Gemini uh
-enterprise to to help their teams do
-work. Now the really interesting thing
-was there was a lot of anxiety when we
-[00:12:32] started the work with them that it would
-mean job displacement. They have not let
-go anybody and in fact what they found
-is the accuracy with which and the speed
-with which they can answer questions
-from people about
-uh am I eligible for this treatment or
-not. It's cut down from in some cases 23
-minutes to research an answer now to
-less than a few seconds. And so that's
-improved efficiency. It's improved
-quality of their customer care and
-they've not let go a single job. Uh we
-work for example with the American
-Society for Clinical Oncology. They're
-[00:13:13] the large the 51,000 members every
-oncologist in the United States. They
-wanted an application where AI was
-helping a doctor sitting down to deal
-with a patient to understand standard of
-care guidelines which is this person's
-come in they have breast cancer what's
-the guideline it turns out they're also
-diabetic I can't prescribe chemo if
-they're diabetic of this kind there's a
-lot these rules are incredibly
-complicated in many cases they overlap
-and they wanted some help on providing
-answers
-the answers have to be 100% correct.
-[00:13:51] &gt;&gt; You can have hallucination and we've
-helped them and it helps doctors take
-care of patients and the feedback from
-their membership has been incredibly
-rewarding to see. So there are lots of
-examples and we always say the most
-important thing for example is building
-a wealth advisor. So today, if you think
-of the average citizen, they get uh if
-you're a high netw worth person, you can
-go to a private bank and you have wealth
-management professional advise you. If
-you're an average person who doesn't
-have those financial resources, you may
-not get high quality advice. Cityroup is
-[00:14:27] building a wealth advisor. they're going
-to be showing it at the event
-which allows you to use our reasoning
-and task management capabilities in
-Gemini to advise people and also to help
-them take investment actions if they
-want. So these are examples of things
-that society is going to find
-beneficial. It takes time to get the
-balance between the AI is going to cause
-massive job displacement to also hear
-from this side of things and that's part
-of the journey we're on as a as a
-society.
-&gt;&gt; I I do agree. I think job displacement
-[00:15:04] in particular is is something the
-general population in the US is
-extremely worried about. Let me ask you
-directly for your organization, Google
-Cloud. Now that you're seeing your
-engineers and and other parts of your
-organization be more productive because
-of artificial intelligence, more
-automation, are you hiring? Are you
-letting go folks? Are you stable? Where
-where are you on that front?
-&gt;&gt; We're adding people for products and
-sales. We're hiring a lot of people in a
-goto market organization. We're hiring a
-lot of forward deployed engineers. And
-[00:15:36] in places where we're building new
-product, we're adding capability. like
-an example I will tell you here's an
-example of what people don't see a long
-time ago we said as models became more
-sophisticated
-in understanding code
-and second as models learn how to use
-computers to do tasks there are lots of
-things they can do amazingly well but
-one of the issues with understanding
-code is they can also find
-vulnerabilities in code
-&gt;&gt; and so enormous anxiety about cyber
-security vulnerabilities from some of
-[00:16:11] the new models.
-&gt;&gt; We're going to talk about that.
-&gt;&gt; Made a decision a long time ago to do
-three things. Number one,
-helping improve Gemini as a way to
-detect issues in code. And we have a lot
-of customers using it. Second, helping
-build a model that can repair code
-because if you're finding
-vulnerabilities very quickly, people may
-not be able to keep up. So, can a model
-assist you in fixing it? And we have new
-capability coming for that. When we
-acquired this company whiz, you'll see
-us showing new capability with whis and
-[00:16:44] it's really about continuous detection.
-&gt;&gt; Mhm.
-&gt;&gt; You know, people call it continuous red
-teaming. So, we're going to show three
-different types of agents. An agent that
-continually attacks you to make sure
-your vulnerabilities are being fixed and
-you don't get caught off guard, which
-you couldn't do before. an agent that
-prioritizes
-the issues that are being discovered so
-that you can get okay these are the ones
-I really need to fix and then a third
-one that helps you fix them.
-&gt;&gt; I'm glad to hear you're you're still
-[00:17:14] hiring.
-&gt;&gt; They're more productive and hiring.
-&gt;&gt; I I there are companies out there I
-think Block is the the big one. You know
-Jack Dorsey put out this blog post laid
-off half of their organization blamed AI
-or pointed at AI as the reason. What do
-you think the difference is between like
-how Google sees this productivity
-increase and is still increasing
-employment versus Block who said, "No,
-we're actually going to transform the
-company. We need we need half as many
-people and we're going to do things
-better." Where's the discrepancy there?
-[00:17:47] &gt;&gt; Every company has demand for its
-products and services and each CEO makes
-their own decisions. We're seeing plenty
-of demand and so we're investing.
-&gt;&gt; Let's talk about Nvidia for a moment. Um
-Jensen just did a podcast with Taresh
-and he talked about how uh Nvidia and
-their architecture is the cheapest on a
-per token basis overall total cost of
-ownership that's because of CUDA and
-MVLink networking tooling delivering
-better tokconomics. Can do do you agree
-with that assessment? Do you think
-Google is the best overall total cost of
-ownership? Uh and uh if not how does
-[00:18:24] Google catch up? We have a lot of
-customers who say we are the best total
-cost of ownership.
-&gt;&gt; I guess that was the answer, right?
-&gt;&gt; I mean the reality is if you're an AI
-lab, you choose the best platform. It's
-not just our own teams that use it. We
-have more demand than we can possibly
-meet from all the other AI labs. And so
-I would just tell you that uh they would
-not be asking for TPU if we were much
-more expensive.
-&gt;&gt; Is a big factor of what makes TPU
-special the speed? I've noticed the
-Gemini family of models is very fast and
-[00:18:58] as a speed maxi myself, I very much
-appreciate the speed and typically when
-you're looking at A6, they're
-specialized. They tend to be a lot
-faster than the generalized GPU. Like is
-that a selling point for a lot of AI
-labs or for your own customers or are
-they still saying quality all day?
-Quality quality. It's a combination I
-would say three core elements because I
-think it's not the chip, it's the
-system. A TPU system for example uh 8
-has 9600 chips. Uh 8i is I think 1152
-all on a single optical Taurus network.
-So there's incredibly high bandwidth,
-[00:19:42] super predictable latency across all the
-the the chips in a pod. And that gives
-you for example when you look at the
-speed with which we're able to take
-stuff out of the memory for processing
-and to put stuff back in memory it's
-extraordinarily efficient. Uh just to
-give you an example 8T the training chip
-can fit two pabytes of memory in a
-single system. Two pabytes is like 100
-times the size of all the Library of
-Congress digitized.
-&gt;&gt; Yeah.
-uh and because it's the super low
-latency network, your throughput from
-[00:20:18] memory into the chips themselves are
-extremely fast. Third, as as if you look
-above that layer uh from a programming
-stack point of view, uh you have a lot
-of tools that Google has built and given
-to the industry that's used for compiler
-optimization. for example, Jax, we've
-done great work with PyTorch, you know,
-XLA, Pathways, these are all technology
-that Google's built. And so to you put
-all of that together and even if you
-look at inference, VLM, there's a number
-of technologies that we super optimized.
-It's that whole stack that makes that
-TPU system so efficient and so powerful.
-[00:21:00] And you see that measure through what we
-call goodput. goodput is how much
-effective throughput are you seeing. We
-also made some decisions a long time ago
-like three four years ago for instance
-we saw that energy to your point earlier
-on energy was going to be short supply
-so we focused on optimizing
-the dollars per watt or tokens per watt
-and I think that's another element that
-you see a lot of people wanting. So you
-you've talked a little bit about
-planning and the TP remind me you said
-11 years.
-&gt;&gt; Yes.
-[00:21:35] &gt;&gt; 11 years ago.
-&gt;&gt; It's kind of wild to see that a decision
-made so long ago long in in the tech
-world has bared so much fruit in the
-last few years. Um how how much change
-how much variance in your planning
-happens based on what you're seeing in
-the market today? uh do do the decisions
-that you made years and years ago apply
-and they're just steadfast or are you
-having to change things constantly?
-&gt;&gt; I would say the the the history we have
-across the different layers of the stack
-has compounded over time. When we did
-TensorFlow, we realized you needed a
-[00:22:15] large scale distributed programming
-model for training and we built JS for
-example. That was something that was
-compounded on our history of learning
-from what people were trying with
-TensorFlow and needing a new
-distributed, you know, training model,
-right? So,
-&gt;&gt; some of these accumulate over time
-because we learn from what we're doing
-from prior and we're inc we're making
-new improvements. We're also incredibly
-attuned to the market, listening to
-customers, making decisions like people
-asked us why did you build 8i, you know,
-[00:22:48] the inference chip. It's because it's
-we've seen that as you eventually no
-matter how rich you are, you cannot fund
-training without making money on
-inference. And so you have to at least
-cover the cost of your training from a
-break even point of view over time. You
-can't just always depend on venture
-capitalists to fund you. Um and so we
-said there's going to be a big demand
-for inference. We knew what the factors
-we needed to optimize for inference and
-you know frankly the demand for the
-inference the 8i has been way way more
-than we expected.
-[00:23:25] &gt;&gt; Let's talk about the eighth gen chip. So
-this is the first time where you have
-split out two two different chips family
-but two different chips one for
-inference one for pre-training. Um first
-just confirm Ironwood
-was
-uh more built for inference.
-&gt;&gt; Ironwood was a mix chip. It was used for
-training and inference. Yeah, I think
-&gt;&gt; people people run for example inference
-there's a lot of donality to it during
-for like chat during the daytime people
-wake up and they ask a bunch of
-questions at night even some people
-[00:24:03] still sleep and so at that time a lot of
-people were using it spot for inference
-like post training a lot of people were
-doing on spot instances at night so it's
-a it's a general purpose chip uh with 8
-T is mostly for training. Some people
-are considering using it for inference.
-And I is primarily for inference,
-although people with smaller models also
-use it for training.
-&gt;&gt; Based on the fact that you decided to
-split the chips, what does that say
-about where the workloads are heading?
-What do you see today? And then what
-what do you think we're going to see
-[00:24:41] over the next, let's say, 5 years? Where
-are the major workloads going to be? So
-we you see that in the work we're doing
-with Gemini as much as in the silicon.
-So if you look at Gemini,
-we've seen sort of three phases if you
-will with the models. The first phase
-was where people were asking the model a
-set of questions
-and it was answering and you may iterate
-on it in a multi-turn but it was
-primarily uh kind of a a search chatbot
-like experience. So our Gemini
-enterprise product does provide the
-ability to do search and answer
-[00:25:22] questions. It also added deep research
-to do deep analysis. Mhm.
-&gt;&gt; Then the second phase came along where
-people used to use diffusion models
-primarily to create content
-uh like images, audio, video and then
-with 25 nano banana we added uh media in
-was always true but media out became
-part of the main model. And so we saw
-people from creative, for example, WPP,
-uh, a variety of CPG firms using Gemini
-Enterprise, our enterprise AI platform
-to create content.
-And, uh, and there's all kinds of
-content creation now going on with it.
-[00:26:06] &gt;&gt; Mhm.
-&gt;&gt; And then the models became really good
-at dealing with the abstractions of the
-world. And when I say abstraction the
-world, if you go to a company, the model
-has to be hooked into a variety of
-different systems. That is to talk to
-your CRM system to ask answer questions
-about customers. It may have to look at
-your supply chain and planning systems.
-And as the models became really good at
-dealing with those and the ultimate
-abstraction is abstracting the rest of
-the world as a computer because if you
-can talk to a computer the computer can
-[00:26:41] talk to everything because all these
-forms of software are just abstractions
-for how a computer can talk to it.
-&gt;&gt; Do do you think that is the ultimate
-abstraction of model being able to
-control computers computer use browser
-use
-&gt;&gt; but understanding the information that
-comes from those systems as well. It's
-not just I can talk to a computer but I
-need to be able to respond to the
-information the computer gives me. Do
-you see what I mean? And so
-&gt;&gt; that's then led to this notion of agent.
-An agent is uh you know a module let's
-[00:27:11] call it that that you can delegate tasks
-to. The agent describes itself as a set
-of skills and it knows how to operate a
-set of tools and then it can operate
-those including a computer and do tasks
-on your behalf. Now for us that allows
-people whether it's Xfinity using us for
-their you know to schedule and manage
-all their customer care. Uh Walmart
-using us for a variety of things in
-their organization from planning to
-scheduling. Bosch in manufacturing using
-us. Merc has talked about how they're
-using us for research and uh you know uh
-patient from the drug discovery out to
-[00:27:52] delivering uh to patients the whole
-cycle being automated and that's the
-next phase of evolution and so part of
-it is we're sort of co-designing as the
-skills of the model advance were able to
-broaden the set of things that can be
-done. tie it back to how that informed
-the decision to split up the two chips
-between inferencing and training.
-&gt;&gt; So if you look back when you asked
-search a quest the first phase
-&gt;&gt; there were a lot more input tokens than
-output tokens when you asked the model a
-set of questions cuz you would ask it a
-very complicated long described question
-[00:28:29] it would say this is the answer.
-Then when you came to
-uh content generation, you would give it
-a simple prompt. Create a video that
-shows my dog wearing a Superman cape and
-driving a car. And then it would take a
-while to generate the output tokens. So
-that generated a very different mix of
-tokens of the type of tokens.
-Multimodality
-was one big thing and then the volume of
-output tokens grew.
-Then you come along to agents. It
-informed chip design in three or four
-different ways. It informed us on how
-[00:29:06] long you need to maintain stuff in
-memory. So for example, how what kind of
-KV cache would you want because now
-you're delegating something that could
-run for 6 7 12 hours. You don't want to
-be shuffling things in and out as tokens
-because they get expensive. So that's
-one example of something. Second
-example,
-you want this to this system to operate
-a computer. By the way, that computer is
-a traditional classical compute machine.
-&gt;&gt; So when people asked us, how did that
-inform your chip effort? We not only
-work with Intel, we all have our own ARM
-[00:29:43] chips. And so we built that because we
-saw general purpose compute usage coming
-from these tools. When you run for
-inference an agent that does many many
-different steps, there are things about
-how you want to hold and pin objects in
-memory in the model so that the model
-runs things super efficiently because
-that can really optimize the cost of
-inference. There are many things we've
-done internally on how the chip can hold
-things in memory. Uh and then because
-people wanted even a practical example,
-people want inference in many locations
-because they want to manage latency
-[00:30:21] unlike training where you can put it in
-a few big locations.
-&gt;&gt; So a practical example is 8i can be run
-in nonwater cooled mode so that you can
-put it in many more locations because
-air cooling is still the primary thing
-in most data centers. So there's a lot
-of thought that goes into these
-decisions. I'm just giving you three
-simple examples to illustrate.
-&gt;&gt; Yeah, I I think the the agent piece is
-really interesting because it really
-changes the way that those tokens are
-actually used in practice.
-&gt;&gt; Um, obviously Nvidia talks a lot about
-[00:30:54] extreme code design. Google seems like
-they have extreme code design on every
-layer. Yes.
-&gt;&gt; Um, first talk about like with agentic
-usage, especially if you're doing a lot
-of read and writes to a hard drive or
-you you know there there's like a lot of
-pieces that you need to optimize for.
-What's the latest thing that you've
-optimized for in the TPU stack? And then
-where do you think the next big
-bottleneck is based on aic usage growth?
-&gt;&gt; So we look at the whole system all the
-time. Uh, couple examples. We're
-announcing two new storage solutions
-[00:31:28] next week.
-uh one is our managed luster solution.
-We've improved it to run 10 terabytes
-per second throughput. It is really
-designed for large scale training.
-&gt;&gt; So you can cross connected to a giant
-cluster
-and because you have large data sets,
-you can read them from the the large
-scale luster cluster now into a large
-training fleet for superefficient scale.
-So that's one. Second thing we
-introduced is a uh a new uh ultra low
-latency inference storage system uh
-called rapid storage. Uh and the idea is
-[00:32:12] you can centrally keep the information
-you want to inference on in uh cloud
-storage, but you can mount it close to
-where think of it as a forward proxy
-like thing wherever your inference chips
-are running. And so from your inference
-uh processor down to the storage system,
-rapid storage to fetch for inference,
-it's incredibly fast. uh it's 15
-terabytes per second. So you get ultra
-low latency. You want to optimize all
-this stuff on a common network backbone.
-So we're introducing a new form of
-networking called Virgo which gives you
-ultra low connectivity speed across a
-[00:32:55] giant cluster. Uh so there are many many
-other parts to the stack. We're also
-co-designing uh because of agents coming
-in. And the idea is to give people the
-most efficient cost structure to run
-agents with the best performance and
-quality.
-&gt;&gt; Where's the next big bottleneck?
-&gt;&gt; The next big bottleneck will be largely
-around when consumers use virtual
-machines. You know, they let's say I'm a
-consumer at home. I build an agent and
-the agent is going to schedule travel
-for me just hypothetically if you're
-going on vacation
-[00:33:30] &gt;&gt; and you ask it to do a bunch of tasks
-like go look up eight travel sites which
-are exposed as tools. You know this
-common thing now people call MCPs or
-APIs. Let's go find all the travel
-sites.
-Let's say it's booking a trip to Europe
-or to Southeast Asia. run that calculate
-for me the total cost and tell me my
-budget. Consumers cannot afford to have
-VMs running forever. It's extremely
-expensive as you know. So people will
-want to activate deactivate VMs whenever
-a task gets done and because they these
-these tools need local storage uh they
-[00:34:13] these virtual machines can be overs
-subscribed but you can also have local
-disk in from which you read and write
-super efficiently and so that's going to
-be a bottleneck because it's going to
-directly affect how widespread you can
-make this technology available because
-companies can pay for stuff. Obviously,
-the cheaper and more efficient, they can
-use more stuff, but if you want to bring
-this to consumers, you know, for them it
-gets expensive very quickly. And if you
-want to reach everybody, you're going to
-have to engineer the cost structure of
-these things. And having again that
-[00:34:48] ability to go across the layers from the
-agent down to Gemini down to the storage
-system and the compute systems that
-allows us to co-design. Thank you for
-sharing that. I want to talk about
-Anthropic a little bit. Anthropic is one
-of Google's customers.
-&gt;&gt; Yes,
-&gt;&gt; they are a unique company in a lot of
-ways.
-&gt;&gt; Claude is one of Google's biggest rivals
-at the same time. Yet, you are
-essentially their backbone for a lot of
-the training, a lot of the inference.
-How do you think about that decision?
-[00:35:20] And I know we touched on it earlier, but
-I want want to go into more detail. How
-do you think about powering anthropics
-models and then they are also competing
-with Google? Is that the AWS playbook
-where it's power everybody and we're
-just not going to play favorites or is
-it something different?
-&gt;&gt; Google's a platform company, you know,
-so when you're a platform company,
-different parts of your business compete
-with different players in the market.
-Some parts of your business may supply
-them and some part of the business may
-compete with them. And so we're
-[00:35:54] determined to be best-in-class in the
-models and we're very proud of what
-we've done not just with Gemini the
-model but also the whole tool chain that
-we're bringing around Gemini with our
-enterprise portfolio of tools. At the
-same time you know there are customers
-who want for example our TPUs and so
-Anthropic is an example of them and it's
-just part of being a platform company.
-It's the same way that people ask us how
-well do you optimize your model with
-Apple. Apple for example has signed a
-contract with us for the model as you
-know and so people go isn't that
-[00:36:30] competing with your Android platform and
-ecosystem. Yes. But that's part of being
-a platform company.
-&gt;&gt; Yeah. I think I'm I'm kind of stuck on
-the anthropic piece because I mean they
-are competing at the enterprise level
-where Apple is not. Yeah. I'm I'm just
-thinking you're you know you're you're
-powering them and then at a certain
-point we may get and although there's
-plenty of TPU capacity to go around
-right now as you said but at a certain
-point there might have to be a difficult
-decision. How do you make that decision
-of well can we give the capacity to an
-[00:37:03] anthropic or do we keep it for Gemini?
-Do we keep it for our own research? How
-do you make that decision?
-&gt;&gt; We have an executive team with Sundar
-and we discuss these and as any mature
-company we make those decisions. this
-difficult calls every day. For instance,
-we have demand not just from anthropic.
-So what percentage are even if you said
-there's X amount for Gemini and there's
-Y amount for the rest of the world. What
-amount do you give Anthropic versus the
-hundreds of other labs and other
-customers ask us for it? That's all
-complicated decisions that anybody has
-[00:37:37] to make. What I'll tell you is this.
-It's better to have your own chips and
-demand than not having your own chips.
-Yeah, well said. Mythos, you you kind of
-hinted at it a little bit. I think it's
-rumored to be the first 10 trillion
-parameter model. Is Google playing in
-the 10 trillion parameter model space
-yet? Are you are you close to it? Where
-are you in that in that life cycle?
-&gt;&gt; You'll see new stuff from us on Gemini
-uh with announcements coming both at
-next and soon after. I think on the the
-capability of the model, we're very
-proud of where Gemini is. I mean, it's
-[00:38:15] been state-of-the-art for a long time.
-We have a new version of Gemini coming
-very very soon. And from all the
-benchmarks we've seen, we've been very
-confident on that as well.
-&gt;&gt; So, hypothetically, if you think about a
-10 trillion parameter model based on
-what you oversee on the TPU side, is
-that even a feasible size to serve in
-the current state of the the the world?
-We've had a capability to do
-disagregated serving uh which allows us
-to scale very large dense models super
-well and that's been in place for a long
-time and so we're able we would not
-[00:38:49] design a model that we couldn't serve
-and so we're very confident of TPUs can
-serve the largest models in the world
-and most importantly our serving stack
-we use for disagregated serving by
-definition is the most efficient on TPU
-uh in of all the model providers in the
-industry. So we're very confident we can
-serve the largest models particularly
-the largest Gemini models.
-&gt;&gt; Does this mean that we're not seeing any
-slowdown on the scaling pre-training
-side? You're not feeling it at all cuz
-there was for a while in the industry
-people talking about pre-training as
-[00:39:23] slowing down now let's focus on RL let's
-focus on uh thinking time. You're not
-seeing that at all. We're we're not
-seeing that from the point of view of
-chip design or system design or lack of
-capacity or any of that.
-&gt;&gt; And then what about the underlying data?
-Are you seeing more
-uh an effective use of synthetic data?
-&gt;&gt; We are seeing I mean I'll give you two
-or three examples of things we are
-seeing. Historically, a lot of the data
-that was fed into models was
-unstructured data like text, audio,
-video, files, etc. Those continue to
-[00:40:00] grow. But the reality of those is like
-there are many elements in an enterprise
-context which make them actually really
-simple to deal with. When you ask a
-question to an agent and you have the
-agent respond and tell you, tell me the
-citation or where did you derive this
-answer from, it's easy if it's in a
-document because you can just show a
-link to that document. Now, just imagine
-you ask the model a question, tell me
-how much inventory we'll need to meet
-demand for this product.
-that is going to translate to a query on
-a system like an SAP system or some kind
-[00:40:38] of supply chain system that's
-dynamically going against a set of
-tables. So first being accurate on
-decomp decomposing that query into which
-table is it getting it from and showing
-the response like where is the citation
-like how do we get this how do I know
-the answer that you gave me is correct
-is a much more complicated problem and
-so because of the work we do in
-enterprise we're able to feed Gemini a
-lot more cycles into our uh you know uh
-trajectory optimization harness
-with structured data, complex things
-like complex fields. Have you ever seen
-[00:41:18] a you know when you talk about computer
-use in a browser use if you ever see an
-enterprise application with a thousand
-fields, drop- down lists, etc.,
-&gt;&gt; there's no consumer app that would ever
-have that complexity.
-&gt;&gt; So being in this space also allows us to
-teach our Gemini systems some of those
-things and put it into the harness. I I
-I let's let's continue on harnesses and
-agent coding in general. Um I I've been
-doing a lot of coding myself. There was
-kind of a viral tweet that went around
-about somebody who had a friend at
-Google who basically said Google isn't
-[00:41:56] on the frontier of agentic coding
-internally. What's your take on that? H
-how has Google adopted agentic coding?
-And especially again I have to bring up
-anthropic the rate at which they're
-shipping is incredible. How is Google
-adopting the frontier of a jet to
-coding? Today
-&gt;&gt; we have a lot of engineers using jet ski
-which is our internal coding harness and
-that feedback has been going directly to
-deep mind in the you know that
-reinforcement loop and it's improving
-quality of Gemini for coding every day
-and we have a lot of people in my
-[00:42:31] organization using it.
-&gt;&gt; One thing I've noticed I'm more
-productive than ever.
-&gt;&gt; I'm shipping so fast. I'm having so much
-fun doing it. I'm not reviewing every
-line of code.
-&gt;&gt; Actually, I'm reviewing very few lines
-of code.
-&gt;&gt; But Google can't do that. I have little
-toy projects. Google, you have high
-stakes
-&gt;&gt; uh projects and services and products
-that you're serving.
-&gt;&gt; How how can you both
-&gt;&gt; be on the frontier of agentic coding and
-[00:42:59] be produc producing so many lines of
-code, but also making sure that you're
-maintaining that quality. also make sure
-that you are actually reviewing every
-single line of code that gets deployed.
-&gt;&gt; So when we talk about software
-engineering productivity,
-we look at it slightly differently than
-is reported externally. So if you work
-in a in a company that builds products
-like Google does, the reality is that
-there are two or three examples of
-things that you find that are really
-important. like a senior engineer writes
-much more compact code than a junior
-[00:43:34] engineer. So we don't count how many
-lines of code as a measure because
-that's generally you know a a weaker
-engineer writes a lot more code to do
-the same task that a senior engineer
-does.
-&gt;&gt; It's kind of a cliche right over the
-years it's don't don't count lines of
-code but I think now more than ever it's
-just the shipping speed overall.
-&gt;&gt; Yeah. So it's how much functions do we
-add that's important.
-&gt;&gt; Yeah. The second thing we've always had
-a tradition at Google that when you go
-to check in code you need peer review
-[00:44:04] typically the peer review is done by
-senior managers right so and they become
-the bottleneck so we've introduced and
-people are using Gemini and we for
-example recently in cloud introduced it
-to scan for security vulnerabilities in
-code so it's not just that the tool is
-being used to generate code we're also
-using it to inspect code and that helps
-us Yet when the senior engineers come in
-for the review, a bunch of free work has
-been done. The third one is for the long
-term in any real software company the
-bulk of the time of the engineers where
-they find doing less productive work is
-[00:44:43] debugging issues.
-&gt;&gt; So we built a version of Gemini and one
-of the things we're going to show next
-week is you know what's the most complex
-computer in the world? The most complex
-computer in the world is a cloud. It
-makes a PC look like a toy. And so we've
-taken all of our cloud and exposes us
-tools to the model. And so now we're
-using Gemini to troubleshoot incidents
-happening. And so that's also helped us
-improve the speed with which people can
-function and in turn improve the quality
-of the model itself. So there's a number
-of dimensions that through which we look
-[00:45:22] at the issue. But as productivity
-increases and you're shipping more
-features more quickly, I know lines of
-code is not the measurement, but it's
-certainly an uh an output of this
-increased velocity.
-&gt;&gt; There comes a a point where you just
-cannot review every single line of code.
-And and then I think kind of if you
-think about abstracting and and going
-beyond that, there's a point at which
-humans are understanding the actual code
-less and less over time. Especially as
-you mentioned, if you're using AI to
-review the code to debug
-[00:45:55] &gt;&gt; so if you're having AI create code, AI
-review code,
-&gt;&gt; are we losing the core understanding of
-of code and the functionality being
-deployed?
-&gt;&gt; That's a risk that we have to manage as
-an industry. People talk about I'm going
-to give you a prompt and the prompt's
-going to generate a block of code
-&gt;&gt; and you don't need to understand the
-code because you understand the prompt.
-In reality for a complex system, the
-prompt will not explain all the
-potential behavior of the system,
-&gt;&gt; right?
-[00:46:27] &gt;&gt; Yeah.
-&gt;&gt; And so, for example, how do you deal
-with exceptions?
-uh and so that's something that I think
-every time you find this one area like
-some time ago people said you won't need
-all these soft engineers and then
-along comes the model and finds a lot of
-security vulnerabilities
-and just when we need a ton of software
-engineers to work with models like we're
-introducing a version of our model that
-can actually fix bugs a fixed security
-vulnerability specifically,
-&gt;&gt; but you still need a human to use the
-[00:47:05] tool and and focus on it. Sometimes the
-industry over rotates and so you say you
-don't need anybody just when you need
-it.
-&gt;&gt; Yeah. And so we we take a much longer
-term view of things and so we're
-constantly looking at for instance do
-you need a supervisor model to look at
-code in a different way to actually
-review the code and that's why when I
-said we still do peer review of the code
-and we're helping our senior engineers
-use the tool to do the reviews and then
-the question comes will the tool be
-self-aware enough if it generated the
-[00:47:42] code will it find an issue with code
-that it generated because it's not
-self-aware of certain patterns. That's
-something we're looking at approaches to
-solve. And so
-&gt;&gt; our goal has always been to make sure we
-have the best model is to apply it at
-scale. And in my team alone, we have
-thousands of people using it every
-single day. I mean, if you walk just
-over there to the campus, you can see
-people like six different windows open.
-one in which they're coding, one in
-which they're compiling, one in which
-they're, you know, deploying and testing
-[00:48:13] and another one where they've got a
-background job running to run code
-review. I mean that the whole there's a
-lot of people using the jet ski tool
-harness and it's part of just evolving
-how work is getting done.
-&gt;&gt; You touched on cyber security. Let's
-finish on that.
-uh Anthropic decided the Mythos model
-was too advanced in cyber security uh
-capabilities to release publicly at
-least not yet for Google. How do you
-think about that? What was your
-reaction? And then also is there some
-line in the sand, some benchmark that
-[00:48:46] you think or you would determine Gemini
-is no longer safe to release publicly?
-&gt;&gt; We're working through that on what would
-that line be? But our you know our issue
-has been so if mythos finds a set of
-issues what percentage of those issues
-could be found with an open source model
-and the reason I mention open source
-model is no matter how much you defend
-and you can say well I'll make sure
-closed source models don't fall in
-adversaries hands open source models for
-sure are going to be following
-adversaries
-&gt;&gt; and they're just getting better
-[00:49:18] &gt;&gt; and they're getting better so sooner or
-later
-&gt;&gt; some part of this it may not be all of
-the patterns but some part of it can be
-detected. So what should you do in
-response? And we are unique because
-we're a hyperscaler, we're a model
-provider, and we also have a cyber
-security organization. Both our Mandian
-team and WHIS. So we've done three
-practical things. If people are going to
-find issues using a model, you need to
-have a model help fix issues because
-they're going to find them way faster
-than humans can fix. So you need a model
-[00:49:55] to help fix and so we're working on
-something there. Second, if they're
-going to find issues with models,
-they're going to cause use the model and
-computer use to launch a large scale
-attack.
-&gt;&gt; And so to defend that, using like I'll
-red team my system once a month is not
-going to be sufficient. So introducing
-agents that can do continuous red
-teaming and agents that can actually
-help fix like for example it's one thing
-to fix the code. It's the second thing
-to find all the places the old code was
-running and remove it and then deploy
-[00:50:34] the new code that's been patched and
-updated. Right? So that's the second
-piece. And the third piece is there's so
-much code out there. What do I start
-with?
-&gt;&gt; Yeah. So again, that's another thing
-where we built tools to help people
-identify and prioritize what
-&gt;&gt; is it. Is this an argument for or
-against open- source software, not
-models, but software? If you're open
-source, your your your all your code is
-out there. It is ripe for models to go
-look at it, find vulnerabilities, and
-exploit them. Closed source, you don't
-[00:51:08] have that problem. But on the other
-hand, open source is going to get
-hardened much more quickly. What is your
-take on that? Is that an argument for or
-against?
-&gt;&gt; No, we we as Google use a ton of open
-source and we contribute a ton of open
-source. We're going to help the open
-source community using our tools to
-actually go fix these things.
-&gt;&gt; I'm just pointing out the reality of
-where things are is that adversaries are
-going to use the model and the first
-place they're going to try and scan is
-popular open source libraries
-[00:51:36] &gt;&gt; because that gives them the maximum
-surface area to try and attack. And so
-it's those are all elements where we
-think it's important to go and address
-and fix and we're in process with the
-rest of the industry. Thomas, last
-question for you. What keeps you up at
-night?
-&gt;&gt; We, you know, we're balancing so many
-things making sure we have to one part
-of your discussion. Do we have right
-tongue long-term plans for capital
-infrastructure for data centers networks
-enough of those lovely TPUs to go
-around? Second, are we constantly
-[00:52:12] pushing the domain problems the
-important problems? 3 years ago when we
-said we should solve the problem of as
-AI gets better, cyber is going to be
-definitely an area that's affected.
-&gt;&gt; Yeah. And when we made the offer to buy
-whiz, people asked like why would you
-guys be doing that? When we look at our
-Gemini enterprise platform, just to give
-you an example, between January and now
-our token count has jumped from 10
-billion a minute to 16 billion a minute.
-And the number of enterprise users of
-Gemini Enterprise has jumped by 40%
-sequentially. So, we're always looking
-[00:52:53] at are we solving the right problems for
-for customers and users and that's
-always the focus for us. And as long as
-we keep pushing aggressively on solving
-those problems and staying ahead of the
-market when the the technology is
-evolving so quickly that when something
-happens, you got to have solutions
-before that occurs to the most part. and
-our teams have done an amazing job and
-we're super proud of what they've done
-and looking forward to the event.
-&gt;&gt; Thomas, thank you so much. Really
-appreciate it.
+[00:00:07] [music]
+[00:00:14] Yeah, we good.
+[00:00:17] &gt;&gt; Okay, folks, we're at capacity. Let's
+[00:00:20] kick off. I don't want you waiting here
+[00:00:22] for 25 more minutes before we some
+[00:00:24] arbitrary deadline. So, welcome. My name
+[00:00:28] is Matt. Uh I'm a teacher and I suppose
+[00:00:31] now I teach AI. Um
+[00:00:35] we have a link up here if you've not
+[00:00:37] already been to this which is has the
+[00:00:39] exercises for the um stuff we're going
+[00:00:41] to do today. This is going to be around
+[00:00:43] two hours. So we might just sort of kick
+[00:00:44] off two hours from now. Is that right
+[00:00:46] Mike?
+[00:00:48] &gt;&gt; Yeah. Perfect. Um, and the theory behind
+[00:00:52] this talk or at least the thesis under
+[00:00:53] which I've been operating for the last
+[00:00:55] kind of six months or so is that
+[00:00:59] we all think that AI is a new paradigm,
+[00:01:01] right? AI is obviously changing a lot of
+[00:01:03] things. You guys are obviously
+[00:01:04] interested in this and that's why you've
+[00:01:05] come to this talk. And
+[00:01:09] I feel that
+[00:01:12] when we talk about AI being a new
+[00:01:14] paradigm, we forget that actually
+[00:01:17] software engineering fundamentals, the
+[00:01:19] stuff that's really crucial to working
+[00:01:21] with humans, also works super well with
+[00:01:24] AI. And this is what my keynote is on
+[00:01:27] tomorrow. Really, I'm going to sort of
+[00:01:28] be fleshing that out a lot more. And in
+[00:01:30] this workshop, I'm hopefully going to be
+[00:01:32] able to direct your attention to those
+[00:01:34] things and uh hopefully show you that
+[00:01:38] I'm right, but we'll see. Um, can I get
+[00:01:41] a quick heads up first? How many of you
+[00:01:44] guys um are coding have ever coded with
+[00:01:47] AI? Raise your hand if you've ever coded
+[00:01:48] with AI. Perfect. Okay. Uh, keep your
+[00:01:51] hand raised.
+[00:01:53] Uh, let's all uh share those armpits
+[00:01:56] with the world. Um,
+[00:01:58] how many of you code every day with AI?
+[00:02:01] Cool. Okay. Uh, ra keep your hand raised
+[00:02:04] if you've ever been frustrated with AI.
+[00:02:08] Okay. Very good. You can put your hands
+[00:02:10] down. Thank you for that show of
+[00:02:12] obedience. I really appreciate that. Um,
+[00:02:14] we are also being live streamed to the
+[00:02:15] Gilgood room as well. I've not uh did we
+[00:02:18] send someone up to the Gilgood room to
+[00:02:20] just check they're okay? Don't know. But
+[00:02:22] I see you. Uh, and there is a way that
+[00:02:25] you can participate which is we have the
+[00:02:27] um a Q&amp;A. We're going to be doing kind I
+[00:02:30] have a sort of hatred of Q&amp;As's because
+[00:02:31] they're not very democratic. The mostly
+[00:02:33] the sort of um most talkative people get
+[00:02:36] to um get to participate and share. And
+[00:02:39] so we're going to be going through this
+[00:02:41] um QA here. So why do we have to wait
+[00:02:43] till 3:45? The room is packed. The doors
+[00:02:45] are closed. 100% agree. And so if you
+[00:02:48] want to uh ask a question, we're going
+[00:02:50] to be I would like you to pile into this
+[00:02:52] async and then we can vote on each
+[00:02:53] other's questions and hopefully get the
+[00:02:55] best question surface so the for the
+[00:02:57] entire room to enjoy.
+[00:03:00] So I want to talk about first the kind
+[00:03:02] of weird constraints that LLMs have and
+[00:03:07] those weird constraints are sort of what
+[00:03:09] we have to base a lot of our work
+[00:03:11] around. Now,
+[00:03:14] there's a guy called Dex Hy who runs a
+[00:03:16] company called Human Layer, and he came
+[00:03:18] up with this idea, which is that
+[00:03:21] when you're working with LLMs, they have
+[00:03:24] a smart zone and a dumb zone. When
+[00:03:28] you're first kind of like working with
+[00:03:30] an LM and it's like you just started a
+[00:03:32] new conversation, you start from
+[00:03:34] nothing. That's when the LLM is going to
+[00:03:35] do its best work because in that
+[00:03:37] situation, the attention relationships
+[00:03:39] are the least strained. Every time you
+[00:03:41] add a token to an LLM, it's kind of like
+[00:03:44] you're adding a team to a football
+[00:03:45] league. You think of the number of
+[00:03:47] matches that get added every time you
+[00:03:50] add a team to a football league. It just
+[00:03:51] go scales quadratically. And that's
+[00:03:54] because you have attention relationships
+[00:03:55] going from essentially each token to the
+[00:03:58] other that are positional and the sort
+[00:04:00] of meaning of the individual token. And
+[00:04:02] so this means that by around sort of 40%
+[00:04:05] or around I would say around 100k is
+[00:04:08] kind of my new marker for this because
+[00:04:09] it doesn't matter whether you're using 1
+[00:04:11] million uh context window or 200k. It's
+[00:04:15] always going to be about this.
+[00:04:17] It starts to just get dumber. So as you
+[00:04:21] continually keep adding stuff to the
+[00:04:23] same context window, it just gets dumber
+[00:04:25] and dumber until it's making kind of
+[00:04:26] stupid decisions. Raise your hand if
+[00:04:28] that feels familiar to you. Yeah. Cool.
+[00:04:31] So this means that we kind of want to
+[00:04:34] size our tasks in a way that sticks
+[00:04:37] within the smart zone, right? We don't
+[00:04:39] want the AI to bite off more than it can
+[00:04:41] chew. And this goes back to old advice
+[00:04:44] like Martin Fowler in refactoring uh
+[00:04:46] like uh the pragmatic programmer talks
+[00:04:48] about this. Don't bite off more than you
+[00:04:50] can chew. Keep your tasks small so that
+[00:04:53] you as a developer, a human developer
+[00:04:55] don't freak out and don't start acting
+[00:04:57] and going into the dumb zone.
+[00:05:01] But how do you tackle big tasks? How do
+[00:05:04] you take a large task like I don't know
+[00:05:07] cloning a company or something or just
+[00:05:09] doing something crazy? And how do you
+[00:05:12] break it into small tasks so they all
+[00:05:13] fit into the dumb zone? One way of
+[00:05:16] course you could do is I mean kind of
+[00:05:18] what the AI companies maybe want you to
+[00:05:20] do or the natural way of doing it is
+[00:05:21] just keep going and going and going. You
+[00:05:23] end up in the dumb zone charging you
+[00:05:24] tons of tokens per request. You then
+[00:05:26] compact back down. We'll talk about
+[00:05:29] compacting properly in a minute. And you
+[00:05:31] keep going, keep going, keep going,
+[00:05:32] compact back down, keep going, keep
+[00:05:33] going, keep going. And I think that's
+[00:05:36] doesn't really work very well because
+[00:05:38] the more sediment, we'll talk about that
+[00:05:40] in a minute. So the theory here is then,
+[00:05:43] and this is what I was doing for a
+[00:05:44] while, is I would use these kind of
+[00:05:48] multi-phase plans where I would say,
+[00:05:50] okay, we have this sort of number four
+[00:05:53] thing here, this large large task. Let's
+[00:05:55] break it down into small sections so
+[00:05:57] that we can then kind of chunk it up and
+[00:05:59] do each little bit of work in the smart
+[00:06:01] zone. Raise your hand if you've ever
+[00:06:03] used a multi-phase plan before. Yeah,
+[00:06:06] really common practice, right? This is
+[00:06:08] kind of how we've been doing it.
+[00:06:09] Certainly, this is how I was doing it up
+[00:06:11] until December last year really.
+[00:06:14] And any developer worth their salt will
+[00:06:16] look at this and go, "This is a loop,
+[00:06:19] right? This is a loop. We've just got
+[00:06:21] phase one, phase two, phase three, phase
+[00:06:23] four. Why don't we just have phase n,
+[00:06:27] right?
+[00:06:29] Phase n where we essentially just say,
+[00:06:31] okay, we have, let's say, a plan
+[00:06:33] operating in the background and then we
+[00:06:35] just loop over the top of it and we go
+[00:06:37] through until it's complete. And this is
+[00:06:39] where um raise your hand if you've heard
+[00:06:41] of Ralph Wiggum as a software practice.
+[00:06:44] Okay, cool. Raise your hand if you've
+[00:06:45] not heard of Ralph Wigum as a software
+[00:06:46] practice. Actually, that's more like it.
+[00:06:48] Okay. So there's this idea called Ralph
+[00:06:50] Wigum uh which is kind of um sort of
+[00:06:52] based on this which is essentially
+[00:06:56] all you need to do is sort of specify
+[00:06:58] the end of the journey where you just
+[00:07:00] say okay we create a PRD a product
+[00:07:02] requirements document to say okay let's
+[00:07:05] describe where we're going and then we
+[00:07:07] just say to the AI just make a small
+[00:07:09] change make a small change that gets us
+[00:07:11] closer and closer to there and Ralph
+[00:07:14] works okay but I prefer a little bit
+[00:07:16] more structure so that's kind where we
+[00:07:18] got to in terms of thinking about the
+[00:07:21] smart zone. And that's kind of where I
+[00:07:23] want you to first start thinking about
+[00:07:25] here. Another weird constraint of LLM is
+[00:07:29] LLM are kind of like the guy from
+[00:07:30] Momento, right? They just continually
+[00:07:32] forget. They could just keep resetting
+[00:07:34] back to the base state. Let me pull up
+[00:07:36] this diagram.
+[00:07:38] I sort of I I I really should use
+[00:07:41] slides, but I just prefer just like
+[00:07:42] randomly scrolling around a infinite uh
+[00:07:45] TL draw canvas. Thank you, Steve.
+[00:07:48] Um,
+[00:07:49] so let's say another concept I want you
+[00:07:52] to have is that every session with an
+[00:07:53] LLM kind of goes through the same
+[00:07:55] stages. You have first of all the system
+[00:07:57] prompt here. This gray box here is
+[00:08:00] essentially the stuff that's always in
+[00:08:02] your context. You want this to be as
+[00:08:04] small as possible because if you have a
+[00:08:06] ton of stuff in here, if you have 250k
+[00:08:09] tokens, like I have seen people put in
+[00:08:11] there, then that you're just going to go
+[00:08:13] straight into the dumb zone without even
+[00:08:15] being able to do anything. So you want
+[00:08:17] this to be tiny. [snorts] You then go
+[00:08:20] into a kind of exploratory phase. This
+[00:08:22] blue is sort of where the coding agent
+[00:08:24] is going out and exploring the codebase.
+[00:08:26] Then you go into implementation and then
+[00:08:29] you go into testing and kind of making
+[00:08:31] sure that it works, running your
+[00:08:32] feedback loops and things like this.
+[00:08:34] Raise your hand if that feels familiar
+[00:08:36] based on what you've done. Yep. Sort of
+[00:08:38] the like the the main cornerstones of
+[00:08:40] any session. And when you clear the
+[00:08:43] context, you go right back to the system
+[00:08:45] prompt. Bof, you go right back there. So
+[00:08:48] you delete everything that's come
+[00:08:49] before.
+[00:08:51] And raise your hand if you've heard of
+[00:08:54] compacting as well. Yeah. Okay. There
+[00:08:56] are some people who've not heard of
+[00:08:57] compacting. So let's just quickly show
+[00:08:59] what that means. For instance, I've just
+[00:09:02] been having a little chat with my LLM.
+[00:09:06] Uh, I want to make sure we sort of, you
+[00:09:09] know, just cover the basics so we're all
+[00:09:10] sort of on the same wavelength here.
+[00:09:12] I've just been having a chat with my
+[00:09:13] LLM. I've been talking about a thing
+[00:09:15] that I want to build. How's the font
+[00:09:17] size? Should I bump it up? Folks in the
+[00:09:19] back. Bump bump bump bump bump.
+[00:09:24] I'm using claw code for this session,
+[00:09:25] but you don't need to use claw code. Uh,
+[00:09:28] in fact, it's often nice not to use claw
+[00:09:30] code. Um, so I've been having a chat
+[00:09:33] with the LM just sort of planning out
+[00:09:34] what I'm going to do next. It's asking
+[00:09:35] me a bunch of questions and I can I
+[00:09:38] highly recommend you do this. There's
+[00:09:40] this tiny little status line here that
+[00:09:43] tells me how many tokens I'm using. The
+[00:09:45] exact number of tokens I'm using. Um I
+[00:09:47] have a article on my website AI Hero if
+[00:09:50] you want to copy this. This is oh wow
+[00:09:53] that is that shakes doesn't it? Um, this
+[00:09:57] is essential information on every coding
+[00:09:59] session because you need to know exactly
+[00:10:01] how many tokens you're using so that you
+[00:10:02] know how close you are to the dump zone.
+[00:10:05] Absolutely essential. And so let's watch
+[00:10:07] it. So I've got two options. I can
+[00:10:09] either clear
+[00:10:12] and go back to nothing or I can compact.
+[00:10:15] And when I compact then it's going to
+[00:10:18] squeeze all of that conversation which
+[00:10:20] admittedly isn't very much into a much
+[00:10:22] smaller space. And this in diagram terms
+[00:10:26] kind of looks like this where you take
+[00:10:27] all of the information from the session
+[00:10:29] and you essentially create a history out
+[00:10:31] of it, a written record of what
+[00:10:33] happened.
+[00:10:36] And devs love compacting for some
+[00:10:38] reason, but I hate it. I much prefer my
+[00:10:42] AI to behave like the guy from Momento
+[00:10:45] because this state is always the same.
+[00:10:48] Always the same. Every time you do it,
+[00:10:49] you clear and you go back to the
+[00:10:51] beginning. And so if you're able to do
+[00:10:52] that and you're able to optimize for
+[00:10:53] that, then you're in a great spot.
+[00:10:56] So that's kind of the two things I want
+[00:10:58] you to think about with LLM, the two
+[00:10:59] constraints that we're working with.
+[00:11:01] They have a smart zone and a dumb zone.
+[00:11:04] And they're like the guy from Momento.
+[00:11:06] So let's take a look at the first
+[00:11:08] exercise. And I'm while I'm doing this,
+[00:11:11] the way I want this to work is I'm going
+[00:11:12] to sort of show you how um I'm going to
+[00:11:15] be sort of walking through it up here.
+[00:11:17] And I want you folks to be kind of like
+[00:11:19] tapping away and doing things as well.
+[00:11:21] So that was just a little lecture bit.
+[00:11:23] Let's now actually get and do some
+[00:11:24] coding. For anyone who arrived late or
+[00:11:26] anyone in the Gilgood room, uh go to
+[00:11:29] this link,
+[00:11:32] this link up here
+[00:11:35] to see the exercises and clone the repo.
+[00:11:38] You absolutely do not have to. You can
+[00:11:39] just watch me do it if you fancy it. But
+[00:11:41] let's go there myself and let's see what
+[00:11:42] exercises await us.
+[00:11:45] So essentially, I've built a um this is
+[00:11:48] from my course. This is a uh a course
+[00:11:52] management platform essentially a kind
+[00:11:54] of CMS for instructors for students and
+[00:11:56] this is what we're going to be building
+[00:11:57] a feature in. So I'm going to take you
+[00:12:00] from essentially the idea for the
+[00:12:02] feature all the way up to building a PRD
+[00:12:04] for the feature all the way up to
+[00:12:06] implementing the feature and hopefully
+[00:12:08] you can take inspiration from this
+[00:12:10] process and use it in your own work. So
+[00:12:15] uh let's kick off. episode.
+[00:12:17] We're going to start by using a skill
+[00:12:19] which is very close to my heart. It's
+[00:12:21] the grill me skill. And this grill me
+[00:12:24] skill is wonderfully small, wonderfully
+[00:12:28] tiny. And it helps prevent one of I
+[00:12:31] think the main issues when you're
+[00:12:32] working with an AI, which is
+[00:12:34] misalignment.
+[00:12:37] The uh the sort of silent idea that I'm
+[00:12:41] talking against here, that I'm arguing
+[00:12:43] against is the specs to code movement.
+[00:12:45] Has anyone heard of the specs to code
+[00:12:46] movement? Raise your hand. It's not
+[00:12:48] really a movement. I suppose it's just
+[00:12:49] sort of people saying specs to code. Um,
+[00:12:53] what it is is people say, okay, you can
+[00:12:55] write a program or you want to build an
+[00:12:57] app. The best way to build that app is
+[00:13:00] to take some specifications.
+[00:13:02] So to write some sort of like document
+[00:13:05] and then turn that document into code.
+[00:13:09] So just turn it into code. How do you do
+[00:13:10] that? You pass it to AI. if there's
+[00:13:13] something wrong with the resulting code.
+[00:13:14] You don't look at the code, you look
+[00:13:16] back at the specs, you change the specs
+[00:13:18] and you sort of just keep going like
+[00:13:20] this. This is kind of like vibe coding
+[00:13:22] by another name where you're essentially
+[00:13:24] ignoring the code. You don't need to
+[00:13:26] worry about the code. You just sort of
+[00:13:27] keep editing the specs and eventually
+[00:13:29] you just keep going. And I tried this. I
+[00:13:31] really tried it and it sucks. It doesn't
+[00:13:33] work because you need to keep a handle
+[00:13:36] on the code. You need to understand
+[00:13:38] what's in it. You need to shape it
+[00:13:39] because the code is your battleground.
+[00:13:41] And so
+[00:13:44] this again is where we're going. Let's
+[00:13:45] let's get some exercises. So what I'd
+[00:13:48] like you to do is go to this page, the
+[00:13:49] the grill me skill. And inside the repo
+[00:13:53] here, we have a Slack message
+[00:13:57] from our pal. Where is it? It's in the
+[00:14:00] root of the repo. And it's under
+[00:14:05] where is it?
+[00:14:07] Clientbrief.mmd.
+[00:14:09] It's a Slack message from Sarah Chin.
+[00:14:11] For some reason, the Claude always
+[00:14:12] chooses Sarah Chen as the name. I don't
+[00:14:13] know why. Um, it's saying that in
+[00:14:16] Cadence, our um course platform, our
+[00:14:20] retention numbers are not great.
+[00:14:21] Students sign up, do a few lessons, then
+[00:14:22] they drop off. I'd love to add some
+[00:14:24] gamification to the platform. And so,
+[00:14:27] when you're presented with an idea like
+[00:14:29] this, you need to find some way of
+[00:14:30] turning it into reality. Let's say Sarah
+[00:14:32] Chen is your client. You're on a tight
+[00:14:34] budget. You need to get this done fast.
+[00:14:35] How do you go and do it? Um, raise your
+[00:14:39] hand if you would. um enter plan mode
+[00:14:42] when you're doing this. Anyone a big
+[00:14:43] user of plan mode? Yep. Um let's
+[00:14:46] actually shout out quickly any other
+[00:14:48] ideas about what you would do with this
+[00:14:49] or raise your hand if you what would be
+[00:14:52] your first port of call.
+[00:14:54] &gt;&gt; Yeah,
+[00:14:55] &gt;&gt; sorry.
+[00:15:00] &gt;&gt; Yes, exactly. Let's imagine that Sarah
+[00:15:01] Chen's gone on hold. You have no idea,
+[00:15:03] right? Uh she's just posted this thing.
+[00:15:05] You need to action it before you go.
+[00:15:07] Well, my first protocol is I go for this
+[00:15:10] particular skill. I'm going to clear my
+[00:15:12] context.
+[00:15:15] I'm going to uh get rid of you. You
+[00:15:19] don't need to be there. And I'm going to
+[00:15:21] say
+[00:15:22] um I'm going to invoke a skill, which is
+[00:15:25] the grill me skill. Let's quickly check.
+[00:15:28] Raise your hands if you don't know what
+[00:15:30] this is.
+[00:15:32] Cool. Oh, sorry. Sorry. Let me be more
+[00:15:34] specific. Raise your hands if you don't
+[00:15:36] know what I'm doing here when I uh do a
+[00:15:39] forward slash and then type something.
+[00:15:42] Anyone everyone kind of understand what
+[00:15:43] that is? I'm invoking a skill. I'm
+[00:15:45] invoking the grill me skill. And what
+[00:15:48] I'm going to do is I'm going to say
+[00:15:49] grill me and I'm going to pass in the
+[00:15:51] client brief.
+[00:15:54] So now the LLM really has only a couple
+[00:15:58] of things here. It just has the skill
+[00:15:59] and it has the description of what I
+[00:16:01] want to do.
+[00:16:04] And this is virtually how I start every
+[00:16:06] piece of work with AI. And while it's
+[00:16:09] exploring the codebase,
+[00:16:11] I'm just going to show you what the
+[00:16:12] grill me skill does. So this is inside
+[00:16:15] the repo so you can check it out. It's
+[00:16:17] extremely short. Interview me
+[00:16:20] relentlessly about every aspect of this
+[00:16:22] plan until we reach a shared
+[00:16:23] understanding. Walk down each branch of
+[00:16:24] the design tree, resolving dependencies
+[00:16:27] one by one. For each question, provide
+[00:16:29] your recommended answer. Ask the
+[00:16:31] questions one at a time. uh blah blah
+[00:16:33] blah. What this does, and what I noticed
+[00:16:36] when I was working with AI, especially
+[00:16:38] in plan mode actually, is it would
+[00:16:42] really eagerly try to produce a plan for
+[00:16:44] me. It would say, "Okay, I think I've
+[00:16:46] got enough. I'm just goof plan."
+[00:16:49] And what I found was that
+[00:16:53] I was really trying to find the words
+[00:16:55] for this for for what I wanted instead
+[00:16:57] of that. And Frederick P. Brooks in the
+[00:17:00] design of design he has a great quote uh
+[00:17:03] talking about the design concept when
+[00:17:06] you're working on something new with
+[00:17:07] someone when you're uh all trying to
+[00:17:10] build something together
+[00:17:12] then there's this shared idea that's
+[00:17:14] shared between all participants and that
+[00:17:16] is the design concept and that's what I
+[00:17:18] realized I needed with Claude I needed
+[00:17:22] I needed to reach a shared understanding
+[00:17:25] I didn't need an asset I didn't need a
+[00:17:27] plan I needed to be on the same
+[00:17:28] wavelength as the AI as my agent. And
+[00:17:31] this is an extremely effective way of
+[00:17:33] doing it. So hopefully there we go.
+[00:17:35] Nice. It has done its exploration. First
+[00:17:38] of all, it's invoked a sub agent which
+[00:17:41] spent uh 97 93.7K tokens on Opus.
+[00:17:47] Um and it's asked me the first question.
+[00:17:51] Cool. We can see that even though the
+[00:17:52] sub agent burned a ton of tokens, I
+[00:17:55] haven't actually um uh increased my
+[00:17:58] token usage that much. Raise your hand
+[00:18:00] if you don't know what sub aents are.
+[00:18:02] It's an important question. Everyone
+[00:18:05] kind of clear what sub aents are? Okay,
+[00:18:06] I'll give a brief definition which is
+[00:18:08] that this this sub aents thing here,
+[00:18:10] this explore sub agents, it has
+[00:18:12] essentially gone and called another LLM
+[00:18:14] which has an isolated context window
+[00:18:18] and then that LLM has reported a summary
+[00:18:20] back. So a sub aent is kind of like a
+[00:18:22] delegation. You're delegating a task to
+[00:18:24] a sub agent. It goes eagerly does all
+[00:18:26] the thing, explores a ton of stuff and
+[00:18:28] then just drip feeds the important stuff
+[00:18:30] back up to the orchestrator agent to the
+[00:18:33] parent agent. So, okay. So, hopefully
+[00:18:36] you guys have seen the same thing. It's
+[00:18:37] done on explore. And we now have our
+[00:18:40] first question. Points economy. What
+[00:18:42] actions earn points and how much? Okay.
+[00:18:45] At this point, you can ask it, by the
+[00:18:47] way, questions to um deepen your
+[00:18:49] understanding of the repo. I obviously
+[00:18:50] know this repo really well because I
+[00:18:52] wrote it, but you might not um know
+[00:18:54] what's going on. So, let's say my
+[00:18:57] recommendation, keep it simple, twopoint
+[00:18:59] sources to start. What's so nice about
+[00:19:01] this is that not only does it give us a
+[00:19:03] question that kind of aligns us here, we
+[00:19:06] get a recommendation, too. And often
+[00:19:08] what I'll find is the AI's
+[00:19:09] recommendations are really good. And so
+[00:19:11] I'll just say skip video, watch events,
+[00:19:13] they're noisy and gameable. I agree.
+[00:19:16] Sarah's asked while keep lessons in the
+[00:19:17] bread and butter.
+[00:19:20] Yeah,
+[00:19:21] looks good, pal.
+[00:19:24] [snorts] Now, what I usually do is I
+[00:19:26] usually dictate to the AI. I'm usually
+[00:19:28] actually chatting to the AI instead of
+[00:19:30] uh typing here, but uh this is a
+[00:19:33] relatively new laptop and I couldn't get
+[00:19:34] my dictation software working on it um
+[00:19:37] because Windows is crap. Um
+[00:19:41] so should points be retroactive? There
+[00:19:43] are existing lessons progress records.
+[00:19:45] We're completing out timestamps. This is
+[00:19:47] a really nasty question, right? Should
+[00:19:49] we actually go back and backfill all of
+[00:19:51] the lesson progress events? This is a
+[00:19:53] kind of question that you need to be
+[00:19:55] aligned on if you're going to fulfill
+[00:19:56] the feature properly. This is not
+[00:19:58] something I considered and Sarah Chen
+[00:19:59] certainly didn't consider. Do I want it
+[00:20:02] to be retroactive? H. Let's actually do
+[00:20:05] a vote inside here. Should we go back
+[00:20:08] and backfill all the records? Raise your
+[00:20:09] hand if you think we should backfill all
+[00:20:10] the records.
+[00:20:13] Raise your hand if you think we
+[00:20:14] shouldn't backfill all the records.
+[00:20:17] There are a lot of uh fence sitters in
+[00:20:19] the room. I'm going to say,
+[00:20:22] you know, this is the kind of discussion
+[00:20:23] you're sort of having with the AI.
+[00:20:24] You're getting further aligned. Yes, I'm
+[00:20:25] just going to go with this
+[00:20:26] recommendation because I'm lazy.
+[00:20:31] Notice, too, how I'm able to keep in the
+[00:20:33] loop here with AI. I'm not, you know,
+[00:20:35] it's it's pinging me these questions
+[00:20:36] pretty quickly.
+[00:20:39] I'm not having to go off and check
+[00:20:40] Twitter or something. Levels. What's the
+[00:20:43] progression curve? Yeah, that looks
+[00:20:45] about right, for instance. Yes. Okay. So
+[00:20:48] hopefully you should be able to go and
+[00:20:49] um kind of work through this with the AI
+[00:20:52] [clears throat] and essentially try to
+[00:20:55] reach an alignment. And this grill me
+[00:20:57] skill this can last a long time. This
+[00:20:59] can I've had it ask me 40 questions.
+[00:21:01] I've had it ask me 80 questions. I've
+[00:21:03] had some people it asks a hundred
+[00:21:05] questions to literally you're sat there
+[00:21:07] for an hour chatting to the AI. And what
+[00:21:10] you end up with is essentially this
+[00:21:11] conversation history that works really
+[00:21:14] nicely and works really nicely as an
+[00:21:16] asset of the design concept that you're
+[00:21:18] creating. This can also function like
+[00:21:21] this. You can uh have a meeting with
+[00:21:23] someone who's a maybe a domain expert.
+[00:21:25] Maybe I have a meeting with Sarah. I
+[00:21:27] feed that meeting transcript into uh I
+[00:21:30] don't know Gemini meetings or whatever
+[00:21:32] you guys are using. You take that, you
+[00:21:35] feed it into a grilling session and you
+[00:21:36] grill through the assumptions that you
+[00:21:38] didn't have. So, this ends up being a
+[00:21:40] really nice kind of um a really nice way
+[00:21:43] of just taking inputs from the world and
+[00:21:46] then just turning and validating them.
+[00:21:49] So, okay,
+[00:21:51] let's see. I really want to get to the
+[00:21:53] end of this, but I also don't want to
+[00:21:54] just like be sat here talking to the AI
+[00:21:56] in front of you for uh a thousand days.
+[00:21:58] So, I'm just going to say yes.
+[00:22:03] Let's see what happens. So, I tell you
+[00:22:05] what. Um, while you guys sort of have a
+[00:22:07] little fiddle with this locally, let's
+[00:22:09] start a little Q&amp;A session now. And
+[00:22:13] let's see how's this going to work. Can
+[00:22:15] we keep the door closed? I'll turn up
+[00:22:16] the microphone. It's quite noisy. Uh,
+[00:22:20] let's see. Mike, can we uh Door closed?
+[00:22:23] Oh, it has been closed. Mark has
+[00:22:24] answered. Beautiful. So, what I'd like
+[00:22:27] you to do is there any air con? Yeah,
+[00:22:30] there is some air con. I think there is
+[00:22:32] some air con you guys aren't being lit
+[00:22:35] here. I'm being I'm being fried alive
+[00:22:37] here. Uh so what I'd like you to do is
+[00:22:40] go on to the slideo which you can join
+[00:22:42] here. Have a if if you're not taking the
+[00:22:44] exercise, go on to the slideo, have a
+[00:22:46] little fiddle and vote on some good
+[00:22:48] questions. I'm just going to chat to the
+[00:22:50] AI for a second uh until we reach a
+[00:22:53] stopping point. So do streaks earn
+[00:22:54] points?
+[00:22:56] Um, streaks are standalone.
+[00:23:06] Let's see what else it comes up with.
+[00:23:12] Where does gamification UI live? Let's
+[00:23:15] have it in the dashboard.
+[00:23:19] I'm just going to scan these and blast
+[00:23:20] through them basically. So, how we doing
+[00:23:22] with our slido?
+[00:23:24] Okay.
+[00:23:26] Have I tried specit open spec or
+[00:23:28] taskmaster instead of the grill me
+[00:23:30] skill? Do I find them more verbose or a
+[00:23:32] structured alternative? This is a great
+[00:23:33] question. So there are a ton of
+[00:23:35] different frameworks out there that
+[00:23:36] allow you to um sort of build up this
+[00:23:39] planning process for you. I personally
+[00:23:42] believe you at at this stage when
+[00:23:45] there's no clear winner, when there's no
+[00:23:46] kind of like one true way and when
+[00:23:48] things are changing all the time, you
+[00:23:50] need to own as much of your planning
+[00:23:52] stack as you possibly can. What I've
+[00:23:55] noticed and a lot of my students is
+[00:23:59] they tend to overuse a certain stack.
+[00:24:03] they get into trouble and they because
+[00:24:06] they don't own the stack and they don't
+[00:24:07] have observability over the whole thing,
+[00:24:09] they just go, "This isn't working. This
+[00:24:12] sucks." Whereas if um if you have
+[00:24:15] control over the whole thing, then at
+[00:24:17] least you know how to fix it or
+[00:24:19] potentially know how to fix it. So I'm
+[00:24:22] even though I'm sort of giving you uh a
+[00:24:26] stack basically, I believe in inversion
+[00:24:28] of control and you should be in control
+[00:24:30] of the stack.
+[00:24:32] So, can I press zero, please?
+[00:24:38] &gt;&gt; Sorry.
+[00:24:40] &gt;&gt; Sorry, that was a lot of sort of
+[00:24:41] mumbling. Can I
+[00:24:42] &gt;&gt; feedback? You have four options on the
+[00:24:44] bottom of you to hit dismiss.
+[00:24:48] &gt;&gt; Thank you.
+[00:24:50] I'm so sorry. [laughter]
+[00:24:51] Well, you didn't want to give Claude
+[00:24:53] good feedback. Why? What's wrong with
+[00:24:54] you?
+[00:24:58] Okay, cool.
+[00:24:59] Uh many of the questions asked by the
+[00:25:01] grill me skill are not necessarily
+[00:25:02] appropriate for a developer rather a PO
+[00:25:04] in larger teams who should use it. Yeah.
+[00:25:06] Um raise your hand if um you've ever
+[00:25:10] done pair programming. Anyone ever done
+[00:25:12] pair programming? Right. Keep put your
+[00:25:15] hands down and raise your hand again if
+[00:25:16] you've ever done a pair programming
+[00:25:18] session with an AI.
+[00:25:20] Right. How did it go? Was it good? You
+[00:25:23] enjoy it? I think pair programming
+[00:25:25] sessions with AI is a great idea because
+[00:25:27] you've got a third person in the room
+[00:25:28] who will relentlessly quiz you and ask
+[00:25:30] you questions. It should if you don't
+[00:25:32] know the answer, it should be you, the
+[00:25:33] domain expert and the AI in the same
+[00:25:35] room. If you have a question about
+[00:25:37] implementation, it should be you, a
+[00:25:39] fellow developer and the AI in the same
+[00:25:41] room. You know, you can be sort of
+[00:25:43] working through these questions in your
+[00:25:44] team. And I think actually we're going
+[00:25:47] to look at implementation in a bit and
+[00:25:49] we're going to see how you can make
+[00:25:50] implementation so much faster. And but I
+[00:25:54] think the really crucial decisions, the
+[00:25:55] ones you need humans for, you actually
+[00:25:57] need a lot of humans and it doesn't
+[00:25:59] really matter how many humans are in
+[00:26:01] there. You can actually throw a bunch
+[00:26:02] like a kind of like mob programming with
+[00:26:04] AI essentially.
+[00:26:07] Uh what's my favorite metaprompting
+[00:26:08] tool? I think I kind of answered that.
+[00:26:10] Uh there's no air con. Let's just live
+[00:26:12] with it. Uh, how do I use the
+[00:26:14] conversation as an asset after the grill
+[00:26:16] me session? Well, we're going to get
+[00:26:18] there.
+[00:26:20] Um, okay. So, I really want to
+[00:26:24] I want to speed this up sort of
+[00:26:25] artificially.
+[00:26:28] &gt;&gt; Just what
+[00:26:30] &gt;&gt; I This is the thing. So, someone just
+[00:26:32] said, "Okay, Ralph loop this." But this
+[00:26:33] is crucial because I can't loop over
+[00:26:36] this, right? I can't um I think of there
+[00:26:40] as being two types of tasks in the AI
+[00:26:42] age where you have human in the loop
+[00:26:45] tasks where a human needs to sit there
+[00:26:47] and do it which is this we are the human
+[00:26:51] in the loop with multiple humans in the
+[00:26:52] loop and there are AFK tasks there are
+[00:26:55] tasks where the human can be away from
+[00:26:56] the keyboard and it doesn't matter
+[00:26:58] implementation as we'll see can be
+[00:27:00] turned into an AFK task but planning
+[00:27:03] this alignment phase has to be human in
+[00:27:06] the loop has to be.
+[00:27:09] So, I've got to do it, unfortunately.
+[00:27:11] Um, I don't know. Uh, give me a long
+[00:27:16] list of all your recommendations.
+[00:27:20] I'm running a workshop right now,
+[00:27:24] so I artificially
+[00:27:26] need you to
+[00:27:28] pull more weight.
+[00:27:31] So, let's see what it does. Uh, let's
+[00:27:34] answer a couple more questions while
+[00:27:35] it's doing its thing.
+[00:27:37] What is my opinion on PMS or other
+[00:27:39] non-dev rolls vibe coding task?
+[00:27:45] Um, I'm going to return to this later. I
+[00:27:48] think I'm going to leave this
+[00:27:49] unanswered.
+[00:27:51] A bit of mystery.
+[00:27:53] I notice I'm not using the ask user
+[00:27:55] questions UI for grill me. Why? Um,
+[00:27:57] there's a specific uh UI that you can
+[00:28:00] bring up in claude code which I'll
+[00:28:02] answer this just quickly. uh ask me a
+[00:28:05] question using the ask user question
+[00:28:09] tool. [snorts] And this UI um is just
+[00:28:12] sort of broken in Claude and I really
+[00:28:14] hate it.
+[00:28:16] You notice I'm using Claude, but I don't
+[00:28:19] like Claude very much. Like you you
+[00:28:21] really are free with this method to
+[00:28:22] choose any um system you like. And this
+[00:28:24] is what the UI looks like. It's very
+[00:28:26] pleasing when you first encounter it,
+[00:28:27] but then you realize it is actually
+[00:28:28] broken in a ton of different ways.
+[00:28:32] All right, what did it come back with?
+[00:28:33] Oh, blime me.
+[00:28:35] Oh, no.
+[00:28:38] So,
+[00:28:40] while this is doing its thing, let me do
+[00:28:41] some teaching in the meantime. The plan
+[00:28:44] here is that we take our grill me skill
+[00:28:47] and we need to essentially find some way
+[00:28:49] of turning it into a destination.
+[00:28:53] We need to go down to the uh we
+[00:28:57] essentially need to we're figuring out
+[00:28:59] the shape of this. That's what we're
+[00:29:01] doing. figuring out the shape of the
+[00:29:03] tasks during the grilling session. And
+[00:29:06] in order to turn it into a bunch of
+[00:29:09] actionable actions for the AI, we
+[00:29:12] essentially need to figure out the
+[00:29:14] destination. We need to know where we're
+[00:29:15] going. We need to know the shape of this
+[00:29:17] entire thing. So I think of there as
+[00:29:19] being two essential documents that we
+[00:29:21] need. We need a document that documents
+[00:29:25] the destination.
+[00:29:27] Oh no,
+[00:29:29] it's so not bright enough. There we go.
+[00:29:33] Still not bright enough. There we go. We
+[00:29:35] need something to document the
+[00:29:36] destination and we need something to
+[00:29:39] document the journey. In other words, we
+[00:29:41] need something a document that's going
+[00:29:43] to figure out what this even looks like
+[00:29:46] in all of its user stories and figure
+[00:29:48] out a definition of done. And then we
+[00:29:50] need to figure out what the split looks
+[00:29:52] like. So that's where we're going to go
+[00:29:54] to next. So once we finish with the
+[00:29:56] grilling session.
+[00:29:59] Yeah, it looks great. Fantastic. I love
+[00:30:01] it. It answered it answered 22 of its
+[00:30:04] own questions. There you go. That's
+[00:30:05] quite representative of what a grilling
+[00:30:07] session looks like.
+[00:30:09] So at this point now I have used 25k
+[00:30:14] tokens and all of that or loads of that
+[00:30:17] stuff is gold. I want to keep that
+[00:30:19] around. I've I've got 25k great tokens
+[00:30:23] there. And what I want to do is kind of
+[00:30:25] summarize it in some kind of destination
+[00:30:27] document. So this is um the next
+[00:30:30] exercise where we're going to
+[00:30:35] uh we're going to write a product
+[00:30:37] requirements document. And the product
+[00:30:40] requirements document or the PRD is
+[00:30:43] essentially that's its function. It's
+[00:30:46] the destination document. And it sort of
+[00:30:48] doesn't matter what shape it is. I've
+[00:30:51] got a shape that I prefer and that I
+[00:30:53] quite like, but you can just choose your
+[00:30:55] own shape or whatever your company uses.
+[00:31:00] And all we're really doing is too
+[00:31:03] worried about that.
+[00:31:05] All we're really doing is summarizing
+[00:31:07] the design concept that we have so far.
+[00:31:10] And
+[00:31:12] the So let let's try this. So I'm going
+[00:31:15] to initiate this. I'm going to say zoom
+[00:31:17] all the way to the bottom. All I'm going
+[00:31:19] to do is just say write a PRD.
+[00:31:23] And we can take a look at that skill
+[00:31:24] now.
+[00:31:26] Write a PRD.
+[00:31:29] So this skill,
+[00:31:31] it does a few things. It first asks the
+[00:31:35] user for a long detailed description of
+[00:31:36] the problem. You can use write a PRD
+[00:31:38] without grilling first, but I just like
+[00:31:39] to grill first and then write the PRD
+[00:31:41] afterwards. Then you can um get it to
+[00:31:44] explore the repo, which we've kind of
+[00:31:46] already done. Then we get it to
+[00:31:49] interview the user relentlessly. So have
+[00:31:50] a kind of grilling session again. And
+[00:31:52] then we start um putting together a PRD
+[00:31:56] template. So this is available in the
+[00:31:57] repo if you want to check it out. And
+[00:31:59] essentially this is what it looks like.
+[00:32:01] We've got some problem statements, the
+[00:32:02] problem the user is facing, the solution
+[00:32:04] to the problem, and a set of user
+[00:32:06] stories. And these user stories sort of
+[00:32:08] define what this is. You know, as you
+[00:32:11] you guys have probably seen things like
+[00:32:12] this if you've been a developer at all.
+[00:32:14] um you know there are cucumber is a
+[00:32:16] language you can use to write these in
+[00:32:17] or we just sort of um uh write them
+[00:32:20] ourselves essentially. Then we have a
+[00:32:22] list of implementation decisions that
+[00:32:24] were made and a list of crucially
+[00:32:26] testing decisions too. So
+[00:32:31] I'm going to run this. Okay. And so it's
+[00:32:33] finished its thing. Ah
+[00:32:37] Windows let me close the thing. Thank
+[00:32:39] you. I don't know why I bought a Windows
+[00:32:41] laptop. I think I just I like the
+[00:32:43] challenge. Um
+[00:32:46] [clears throat] so the first thing that
+[00:32:47] it's going to give me are a set of
+[00:32:49] proposed modules it wants to modify.
+[00:32:54] Now there's a deep reason why I'm
+[00:32:55] thinking about this. So this is at this
+[00:32:58] stage we have an idea. We have sort of
+[00:33:02] speced out the idea. We've reached a
+[00:33:04] sort of understanding of what we're
+[00:33:06] trying to do. And then we need to start
+[00:33:09] thinking about the code because at this
+[00:33:11] point we need to this is not specs to
+[00:33:14] code. This is not where we're ignoring
+[00:33:16] the code. We actually keep the code in
+[00:33:18] mind throughout the whole process. And
+[00:33:21] the way I like to do this is I like to
+[00:33:23] just sort of think about a set of
+[00:33:24] proposed modules to modify. We're going
+[00:33:26] to return to this this idea of
+[00:33:29] continually designing your system and
+[00:33:31] keeping your system in mind. So it's
+[00:33:33] it's saying recommend test for the
+[00:33:34] gamification service is the only deep
+[00:33:36] module with meaningful logic. These
+[00:33:38] modules look right. Yeah, that's good.
+[00:33:44] And it's going to ping out a PRD.
+[00:33:48] Now for ease of setup, I've got it so
+[00:33:51] that it creates a set of issues locally.
+[00:33:54] So it's just going to create essentially
+[00:33:55] a PD inside this issues directory. But
+[00:33:59] the way I usually do it, and you can
+[00:34:02] check this out yourself, is you can go
+[00:34:04] to my um essentially what I consider my
+[00:34:06] work repo, which is
+[00:34:08] github.com/mattpocco/course
+[00:34:12] video manager up here. And in here, this
+[00:34:16] is essentially a app that I create um
+[00:34:19] that I use all the time to record my
+[00:34:21] videos and things like this. I think
+[00:34:22] I've recorded like I pulled down the
+[00:34:25] sets. I think I've recorded like a
+[00:34:26] thousand videos in here or something
+[00:34:27] nuts. Um, and you can see here that it's
+[00:34:30] got 744 closed issues. And this is
+[00:34:33] essentially all of the uh PRDs and all
+[00:34:36] of the implementation issues that I've
+[00:34:38] put into here. So, this is how I usually
+[00:34:39] like to do it. [clears throat]
+[00:34:42] So, that's what I'm doing with the There
+[00:34:45] we go. Yeah, I'm just going to say yes
+[00:34:47] and uh
+[00:34:49] and get that issue out. Let's see. It is
+[00:34:52] inside here. So, we got the problem
+[00:34:54] statement. people sign up for courses,
+[00:34:58] uh the solution, the user stories, uh 18
+[00:35:00] user stories, looks nice, some
+[00:35:02] implementation decisions, level
+[00:35:03] thresholds, etc. This is enough
+[00:35:05] information. We've kind of clarified
+[00:35:07] where we're going and what we're doing.
+[00:35:09] So that's what we do. We essentially
+[00:35:11] have a grilling session and we've
+[00:35:12] created an asset out of it. Now, raise
+[00:35:15] your hand. Should I be reviewing this
+[00:35:17] document? Raise your hand if you think I
+[00:35:20] should be reviewing the document.
+[00:35:22] Yeah, I don't I don't look at these. I
+[00:35:24] don't look at these. The reason I don't
+[00:35:27] look at these is because what am I
+[00:35:29] testing at this point? What am I like
+[00:35:31] when I read it?
+[00:35:33] What am I testing? What am I what are
+[00:35:34] the failure modes I'm trying to test
+[00:35:36] for? I know that LLMs are great at
+[00:35:38] summarization because they are they're
+[00:35:40] really good at summarization. I have
+[00:35:42] reached the same wavelength as the LLM,
+[00:35:45] right? Using the grill meme skill, we
+[00:35:46] have a shared design concept. So if I
+[00:35:48] have a shared design concept, all I'm
+[00:35:50] doing is I'm just essentially checking
+[00:35:53] the LLM's ability to summarize.
+[00:35:56] So I don't tend to read these.
+[00:36:00] Let's have let's have a Q&amp;A because I
+[00:36:02] can feel you guys are itching for it.
+[00:36:03] And then I think we might have like I
+[00:36:06] don't know just a five minute comfort
+[00:36:07] break just to rest my voice and so you
+[00:36:08] can catch up with the exercises for a
+[00:36:10] minute if that's all right. So let's
+[00:36:11] have a little Q&amp;A sesh. Uh, if I don't
+[00:36:15] like clawed code, which one do I
+[00:36:17] actually like? Um,
+[00:36:20] uh, have you ever heard the phrase, um,
+[00:36:23] uh, democracy is the worst way to run a
+[00:36:25] country apart from all the other ways?
+[00:36:27] That's how I feel about claw code.
+[00:36:30] Uh, we've answered that one.
+[00:36:33] Uh,
+[00:36:34] what's your thoughts on developers
+[00:36:36] needing to very deeply understand
+[00:36:37] Typescript now that fix the TS make no
+[00:36:40] mistakes exist? I don't understand the
+[00:36:42] phrasing of this but I think I
+[00:36:44] understand the meaning which is that
+[00:36:48] I believe that code is very important
+[00:36:50] and this is kind of going to feed
+[00:36:52] through the whole session and that bad
+[00:36:54] code bases make bad agents. If you have
+[00:36:57] a garbage codebase you're going to get
+[00:36:59] garbage out of the agent that's working
+[00:37:01] in that codebase. We'll talk more about
+[00:37:02] that in a bit. And so I think
+[00:37:04] understanding these tools very deeply,
+[00:37:06] understanding code deeply is going to
+[00:37:08] make you a much much better developer
+[00:37:10] and get more out of AI.
+[00:37:14] Uh, and that answers that question too.
+[00:37:16] Sweet.
+[00:37:19] Uh, get out of it. There you are.
+[00:37:24] Now that we have 1 million tokens
+[00:37:25] available, do we ever actually want to
+[00:37:27] take advantage of that?
+[00:37:30] I've noticed that the dumb zone has
+[00:37:31] become less dumb lately. Okay, great
+[00:37:33] question. This goes back to our kind of
+[00:37:35] initial idea on the dumb zone.
+[00:37:41] Uh
+[00:37:44] I um I recorded my Claude Code course
+[00:37:46] using a 200k context window and on the
+[00:37:49] day that I launched the course, they
+[00:37:50] announced the 1 million context window.
+[00:37:53] My take on this is that what Claude code
+[00:37:54] did is they essentially just did this.
+[00:37:58] They shipped a lot more dumb zone to you
+[00:38:01] essentially. Now, this is good for tasks
+[00:38:03] where you want to retrieve things from a
+[00:38:06] large context window. If you want to
+[00:38:07] pass five copies of War and Peace or
+[00:38:09] something to it, and you want to find
+[00:38:11] out all the things that uh
+[00:38:14] uh I can't remember a character from War
+[00:38:15] and Peace. Uh why did I start with that?
+[00:38:18] It's good for retrieval. It's less good
+[00:38:20] for coding. So, I consider that it is
+[00:38:24] about 100K at the moment is the smart
+[00:38:28] zone. the smart zone will get bigger and
+[00:38:30] that will be a really nice improvement.
+[00:38:33] So folks, we're going to take like a
+[00:38:34] five minute comfort break if that's all
+[00:38:36] right just for my voice and so maybe you
+[00:38:38] can have a little move around or
+[00:38:39] something or grab a drink. I can just
+[00:38:41] notice some sleepy eyes and I want to
+[00:38:42] make sure that we're awake for the next
+[00:38:44] bit if that's all right. So we'll take
+[00:38:46] five minutes and I'll see you back here
+[00:38:49] then. All right.
+[00:38:51] So we have our PR which I'm not going to
+[00:38:55] read a kind of destination document.
+[00:38:58] Let's quickly scan for any good
+[00:38:59] questions before we zoom ahead.
+[00:39:05] rediscovering the role of software
+[00:39:07] engineer in today's world. Top three
+[00:39:08] disciplines you recommend. Um, taekwondo
+[00:39:12] is good. I've heard I' have no idea how
+[00:39:13] to answer this question. Um, thank you
+[00:39:16] for asking it though. Um, top three
+[00:39:18] disciplines I recommend.
+[00:39:21] &gt;&gt; I mean, sorry,
+[00:39:22] &gt;&gt; plumbing.
+[00:39:23] &gt;&gt; Plumbing is a good one. Yeah. Yeah.
+[00:39:24] Yeah. I don't know if that's a
+[00:39:25] discipline. The plumbers I've hired are
+[00:39:27] not usually very disciplined. Um,
+[00:39:30] right.
+[00:39:32] So, okay, we now have our destination.
+[00:39:34] Okay. Um,
+[00:39:37] perfect.
+[00:39:39] So, how do we actually get to our
+[00:39:40] destination? How do we We have a sort of
+[00:39:42] vague PRD. How do we split it so that we
+[00:39:46] don't put things into the dump zone? In
+[00:39:49] other words, we have our number four.
+[00:39:50] How do we split it into this kind of
+[00:39:52] multi-phase plan? Well, probably what
+[00:39:54] you would do at this point is you would
+[00:39:55] say, "Okay, Claude, give me a
+[00:39:57] multi-phase plan that gets me to this
+[00:39:59] destination." Right? That sort of makes
+[00:40:01] sense. This is what we've been doing
+[00:40:02] before, but I have um a sort of better
+[00:40:04] way of doing it now, which is that
+[00:40:08] I like creating a canban board out of
+[00:40:12] this. Raise your hand if you don't know
+[00:40:14] what a canban board is.
+[00:40:17] Cool. Okay. A camon board is essentially
+[00:40:19] just a set of tickets that you put on
+[00:40:22] the wall that have blocking
+[00:40:23] relationships to each other. So, we're
+[00:40:25] going to see what it kind of looks like
+[00:40:26] here. This is how we've worked um as
+[00:40:30] developers for a long time, really since
+[00:40:31] agile came around. And what it does, we
+[00:40:35] can see it here. It has proposed that we
+[00:40:38] split this setup into um five different
+[00:40:42] tasks. Here we have the first one which
+[00:40:44] is the schema and the gamification
+[00:40:46] service. Yeah, that looks pretty good.
+[00:40:48] This is blocked by nothing. And we can
+[00:40:51] even see here that it's a it's given it
+[00:40:53] a type of AFK, too. Remember I talked
+[00:40:55] about human in the loop and AFK earlier.
+[00:40:57] This is an AFK task. This is something
+[00:40:58] we can just pass off to an agent to do
+[00:41:00] its thing. Streak tracking. Okay, that
+[00:41:02] looks good.
+[00:41:04] Uh then wire points and streaks into
+[00:41:07] lessons quiz completion. This is blocked
+[00:41:08] by one and two. Retroactive backfill.
+[00:41:11] This is blocked only by one. And then
+[00:41:14] this one here is blocked by all of the
+[00:41:16] tasks. Cool.
+[00:41:19] H. Now I consider this, you could say,
+[00:41:23] why don't we just make this sort of
+[00:41:25] generation of the issues? Why don't we
+[00:41:26] just hand that over to the AI? Why do I
+[00:41:28] need to be involved here? Right? Because
+[00:41:30] it's given us quite a good selection of
+[00:41:32] tools here. Why do I need to review this
+[00:41:34] and sort of figure out what's next? Now,
+[00:41:37] my take here is that this is really
+[00:41:40] cheap to do, like very quick to do once
+[00:41:42] I've done the PR. And I can immediately
+[00:41:44] see some issues here.
+[00:41:47] There's a really, really important
+[00:41:49] technique when you're kind of figuring
+[00:41:51] out what the shape of this journey
+[00:41:53] should look like. And
+[00:41:57] it sort of comes to this very classic
+[00:42:00] idea uh which comes from pragmatic
+[00:42:02] programmer called tracer bullets or
+[00:42:04] vertical slices.
+[00:42:07] and traceable. It's really transformed
+[00:42:09] the way I think about actually
+[00:42:11] getting AI to pick its own tasks.
+[00:42:14] Systems have layers, right? There are
+[00:42:17] layers in your system. These might be
+[00:42:19] different deployable units. You might
+[00:42:21] have a database that lives somewhere.
+[00:42:23] You might have an API that lives maybe
+[00:42:24] close to the database but in a separate
+[00:42:26] bit. You might have a front end that
+[00:42:27] lives somewhere totally different like a
+[00:42:29] CDN. Or within these deployable units,
+[00:42:32] you might have different layers within
+[00:42:34] those. In for instance the codebase that
+[00:42:36] we're working in, we have a ton of
+[00:42:38] different services servers. We have a
+[00:42:41] quiz service, a team service, user
+[00:42:43] service, coupon service, course service.
+[00:42:45] And these services have dependencies on
+[00:42:47] each other. So they're kind of like
+[00:42:48] individual layers. Well, what I noticed
+[00:42:53] is that AI loves to code horizontally.
+[00:42:57] So it loves to code layer by layer. So
+[00:43:00] in other words, in phase one, it will do
+[00:43:02] all of the database stuff, all of the
+[00:43:03] schema, all of the, you know, all the
+[00:43:06] stuff related to that unit. Then it will
+[00:43:08] go into phase two and do all of the API
+[00:43:10] stuff. Then it will add the front end on
+[00:43:12] top of that.
+[00:43:14] Does can anyone tell me what's wrong
+[00:43:16] with that picture? Why is that not a
+[00:43:18] good thing to do? Raise your hand if you
+[00:43:20] have an answer.
+[00:43:21] &gt;&gt; Yeah.
+&gt;&gt; Have the whole feedback loop.
+[00:43:23] &gt;&gt; Exactly. You don't get feedback on your
+[00:43:26] work until you've really started or
+[00:43:29] completed phase three.
+[00:43:32] So what you really need to do is you're
+[00:43:35] not until you get to phase three, you're
+[00:43:36] not actually testing that all the layers
+[00:43:38] work together.
+[00:43:41] You haven't got an integrated system
+[00:43:42] that you can test against. And so
+[00:43:45] instead you need to think about vertical
+[00:43:47] layers. You need to think about thin
+[00:43:49] slices of functionality that cross all
+[00:43:52] of the layers that you need to. And this
+[00:43:55] is a much better way to work, much
+[00:43:57] better way for the AI to work too
+[00:43:59] because it means at the end of phase one
+[00:44:01] or during phase one, it can get feedback
+[00:44:02] on its entire flow. So what this means
+[00:44:05] to me
+[00:44:07] is inside the PRD to issues skill up
+[00:44:11] here I have got break a PRD into
+[00:44:15] independently grabbable issues using
+[00:44:17] vertical slices traceable it's written
+[00:44:19] as local markdown [snorts] files we
+[00:44:21] first locate the PRD
+[00:44:23] uh again explore the codebase if this is
+[00:44:25] a fresh session we draft vertical slices
+[00:44:28] so we break the PRD into tracer bullet
+[00:44:30] issues a traceable bullet by the way is
+[00:44:33] Uh, essentially when you're like an
+[00:44:35] anti-aircraft gunner, it's quite a
+[00:44:37] violent idea actually, uh, and you're
+[00:44:40] looking up in the sky and it's night, if
+[00:44:42] you're just shooting normal bullets, you
+[00:44:43] have no idea what you're firing at,
+[00:44:45] right? You could just be, you know, you
+[00:44:46] see the plane, but you don't see where
+[00:44:47] your bullets are going. Tracer bullets
+[00:44:49] is they attach a tiny bit of
+[00:44:50] phosphoresence or phosphor or something
+[00:44:53] to make it glow as it goes. So, this
+[00:44:56] means that every sixth bullet or
+[00:44:57] something, you actually see a line in
+[00:44:58] the sky. So, you have feedback on where
+[00:45:01] you're aiming. So this is what this is
+[00:45:03] the idea here is that we increase our
+[00:45:05] level of feedback and we get near
+[00:45:07] instant feedback on what we're building
+[00:45:09] because without that the AI is kind of
+[00:45:11] coding blind until it reaches the later
+[00:45:13] phases. We've got some vertical slice
+[00:45:15] rules. We quiz the user and then we
+[00:45:17] create the issue files. So what I see
+[00:45:20] here is that even though I've I've told
+[00:45:24] it to do vertical slices, it's proposing
+[00:45:27] to
+[00:45:29] create the gamification service
+[00:45:32] first on its own. That's just one slice
+[00:45:35] there. And that to me feels like a
+[00:45:36] horizontal slice. What I want to see in
+[00:45:38] the first vertical slice especially is I
+[00:45:41] want to see the schema changes or some
+[00:45:42] schema changes. I want to see some new
+[00:45:45] service being created and I want a
+[00:45:47] minimal representation of that on the
+[00:45:48] front end. So I want it to go through
+[00:45:50] the vertical slices, not just the
+[00:45:52] horizontal. Does that make sense? Okay.
+[00:45:55] So I'm going to give the AI a
+[00:45:57] rollicking.
+[00:45:59] Uh bad boy. No,
+[00:46:02] I'm not going to waste tokens just being
+[00:46:04] just memeing. Um so the first slice is
+[00:46:08] too horizontal. I'll just start with
+[00:46:10] that and see if it picks it up. Does
+[00:46:12] that make sense as a concept? And I
+[00:46:14] think having that um what I really like
+[00:46:17] about going back to those old books is
+[00:46:20] that we are really trying to in this day
+[00:46:22] and age like get
+[00:46:25] uh verbalize best software practices in
+[00:46:28] English. And these books, 20-year-old
+[00:46:30] books have already done that. And it's
+[00:46:32] an absolute gold mine if you want to
+[00:46:34] throw that into prompts. But even with
+[00:46:35] that, it's not going to um not going to
+[00:46:37] do a perfect job each time. So, award
+[00:46:41] points for lesson completion visible on
+[00:46:43] dashboard. Yes, that's a beautiful
+[00:46:45] vertical slice because it's definitely a
+[00:46:48] big chunk of stuff. It's doing a lot of
+[00:46:49] stories there, but we're going to see
+[00:46:51] something visible at the end and the AI
+[00:46:53] will then just be able to add to that.
+[00:46:55] You see why that's preferable to the
+[00:46:56] first one. Cool. Uh, looks great.
+[00:47:01] So, we're getting closer now. And anyone
+[00:47:03] following at home as well, you're not at
+[00:47:05] home, but you get the idea. um we'll
+[00:47:08] hopefully see the same thing too and
+[00:47:09] start developing the same instincts.
+[00:47:11] Let's open up for questions just while
+[00:47:13] I'm sort of creating these GitHub issues
+[00:47:17] or not GitHub issues uh local issues.
+[00:47:20] When will I stop using Windows? Never.
+[00:47:22] What is your uh Okay, we'll get to that
+[00:47:24] later.
+[00:47:26] How does AI um decide when to stop
+[00:47:28] grilling? Because AI can ask
+[00:47:29] incessantly. Can we have a smarter way
+[00:47:31] to decide the stop point? Yeah, it does
+[00:47:33] tend to really um those grilling
+[00:47:35] sessions can be super intense. And the
+[00:47:37] thing about these skills is you can tune
+[00:47:38] them if you want to. If you feel like
+[00:47:40] the AI is just absolutely hammering you,
+[00:47:42] hammering you, hammering you, then you
+[00:47:43] can just tell it to just pull back a
+[00:47:46] little bit or get it to do, you know,
+[00:47:48] stop points and that kind of thing. So,
+[00:47:49] if that's a failure mode that you run
+[00:47:50] into a lot, then you just, you know,
+[00:47:52] change the skill.
+[00:47:55] Uh do I still use uh be extremely
+[00:47:57] concise, sacrifice grammar for the sake
+[00:47:58] of concision? Um there was a tip that I
+[00:48:01] gave folks um five months ago which is
+[00:48:05] that to basically increase the
+[00:48:07] readability of your plans. So when
+[00:48:09] you're using plan mode then you can put
+[00:48:11] it in your claw.md
+[00:48:13] and you can say okay yeah approve that.
+[00:48:17] Let's open up claw.md.
+[00:48:21] Do I have a claw.md? Maybe I don't. I I
+[00:48:23] really don't use clawd very much. I'm
+[00:48:25] just going to put a dummy inside here.
+[00:48:28] Um when no when talking to me
+[00:48:33] uh sacrifice grammar for the sake of
+[00:48:35] concision
+[00:48:40] and this um prompt was uh really useful
+[00:48:43] to me when I was reading the plans
+[00:48:45] because it meant that the plans would
+[00:48:46] come out and they would be very concise,
+[00:48:48] really nice, easy to read, often very uh
+[00:48:50] concise. But I've since dropped this
+[00:48:54] idea in preference to a grilling session
+[00:48:57] because what I noticed was it just I
+[00:48:59] didn't want to read the plans. I wanted
+[00:49:00] to get on the same wavelength as the
+[00:49:02] LLM. I wanted it to ask aggressive
+[00:49:03] questions to me. And when I stopped
+[00:49:05] reading the plans, I stopped needing
+[00:49:06] them to be concise. So I think of the
+[00:49:09] plans really in the destination document
+[00:49:11] as uh the end state. And I don't need
+[00:49:13] that end state to be concise. Hopefully
+[00:49:15] that answers your question.
+[00:49:19] Uh, what do I think will be the outcome
+[00:49:22] of the Mexican standoff of future roles
+[00:49:23] of PMS and other roles converging? Uh, I
+[00:49:26] have no idea. I'm not a pundit. I have
+[00:49:28] no idea.
+[00:49:30] Uh, okay. So, we should uh after a
+[00:49:34] couple of approvals
+[00:49:37] uh end up with a set of issues. Now,
+[00:49:40] these issues that we're creating,
+[00:49:43] they're designed to be independently
+[00:49:44] grabbable, which means that this canon
+[00:49:47] board ends up looking kind of like this
+[00:49:51] where you have
+[00:49:53] essentially a set of tickets with a
+[00:49:55] whole load of independent relationships.
+[00:49:57] So, this one needs to be done before
+[00:49:59] this one. This one needs to be done
+[00:50:00] before this one. And this one, let's say
+[00:50:03] we got another one over here. This one
+[00:50:05] needs to be done before this one. This
+[00:50:07] means that you can start to parallelize.
+[00:50:11] You can start to get agents working at
+[00:50:13] the same time on these tasks because
+[00:50:15] yeah, this one needs to be done first
+[00:50:18] and then these two
+[00:50:21] can be grabbed at the same time by
+[00:50:24] independent agents. Raise your hand if
+[00:50:26] you've done any kind of parallelization
+[00:50:28] work with agents. Okay, cool. So this
+[00:50:32] allows you um to turn those plans into
+[00:50:35] optimally kind of like into directed
+[00:50:38] asyclic graphs essentially where you
+[00:50:39] just are able to um essentially have
+[00:50:43] three phases here where you have phase
+[00:50:47] one.
+[00:50:49] Let me grab move that
+[00:50:51] uh above this line here you do this one.
+[00:50:56] Then phase two you do the two below it.
+[00:50:58] And then phase three you do this third
+[00:51:00] one. and add it onto there. And when you
+[00:51:03] think about there could be this could
+[00:51:05] this is a relatively simple plan but you
+[00:51:07] could have many different plans
+[00:51:08] operating all at once. It means that you
+[00:51:10] can do really nice parallelization and
+[00:51:12] we'll talk more about that in a bit. But
+[00:51:14] that's why I prefer a canon board set up
+[00:51:17] like this to a sequential plan because a
+[00:51:20] sequential plan can really only be
+[00:51:22] picked up by one agent. So this where
+[00:51:26] did it go? Over here.
+[00:51:29] Yeah, this plan here, this is really
+[00:51:32] only one loop, right? Only one agent can
+[00:51:35] work on these because we have numbered
+[00:51:36] phases and they're not parallelizable.
+[00:51:38] Does that make sense? Cool.
+[00:51:42] So, we've got our issues. Ah, come on.
+[00:51:44] Stop asking me for Oh, no. It's creating
+[00:51:46] them on GitHub. I really don't want
+[00:51:48] that.
+[00:51:49] Oh, no. You fool.
+[00:51:53] Create them in issues instead.
+[00:51:58] No, that's not precise enough. Uh, you
+[00:52:00] fool. Create them in local markdown
+[00:52:04] files instead referencing the local
+[00:52:08] version.
+[00:52:11] Sorry about this.
+[00:52:15] So, once we get to this point, we
+[00:52:17] [clears throat] have a bunch of issues
+[00:52:19] locally that we can start um looping
+[00:52:23] over and implementing. And it's at this
+[00:52:26] point that the human leaves the loop.
+[00:52:28] So, so far,
+[00:52:31] let me pull up a a proper overview of
+[00:52:33] this kind of flow that we're exploring
+[00:52:35] here.
+[00:52:37] So far,
+[00:52:40] we have taken an idea,
+[00:52:43] zoom this in a bit for the folks at the
+[00:52:44] back,
+[00:52:47] and we've grilled ourselves about the
+[00:52:49] idea.
+[00:52:51] We can skip over research and prototype,
+[00:52:52] but we've turned that into a PRD into a
+[00:52:54] destination document. We've then turned
+[00:52:57] that PRD into a canon board and all of
+[00:53:00] those steps are human reviewed. And now
+[00:53:05] the implementation stage, we step back
+[00:53:08] and we let an agent um work through that
+[00:53:10] camp board or multiple agents work
+[00:53:12] through the camp board.
+[00:53:15] Now, what this means is that yeah, we've
+[00:53:17] spent a lot of time planning here, but
+[00:53:19] it means that we've queued up a lot of
+[00:53:21] work for the agent. We can think of this
+[00:53:23] as kind of like the day shift and the
+[00:53:24] night shift. This is the day shift for
+[00:53:26] the human, right? Planning everything,
+[00:53:28] getting all the uh all the stuff ready
+[00:53:30] and then once we kick it over to the
+[00:53:32] night shift, the AI can just work AFK.
+[00:53:34] But what does that look like?
+[00:53:37] Well, so I'm just going to Oh, yeah.
+[00:53:40] Just allow it. It's perfect.
+[00:53:42] So this looks like if we head to the
+[00:53:45] next exercise
+[00:53:47] which is
+[00:53:51] uh in fact the last exercise here
+[00:53:52] running your AFK agent.
+[00:53:55] Now
+[00:53:57] I've called this uh Ralph really because
+[00:53:59] it is a it is essentially a Ralph loop
+[00:54:02] and this prompt here I want to walk
+[00:54:04] through this really closely.
+[00:54:06] The first thing it's doing here is we're
+[00:54:08] essentially going to run Claude and
+[00:54:10] we're going to basically try to
+[00:54:12] encourage it to work um completely AFK.
+[00:54:16] I'll show you what the sort of script
+[00:54:17] for this looks like in a minute, but you
+[00:54:19] say, okay, local issue files from issues
+[00:54:21] are provided at the start of context.
+[00:54:24] The way we do that is if you look inside
+[00:54:26] once.sh SH here inside the repo
+[00:54:29] we have
+[00:54:31] uh it's essentially just a bash script
+[00:54:34] where we grab all of the issues
+[00:54:37] &gt;&gt; [clears throat]
+&gt;&gt; um which are inside markdown files and
+[00:54:39] we cap them into a local variable. So
+[00:54:41] that issues variable contains all of the
+[00:54:43] issues that are in our entire backlog.
+[00:54:47] Then we grab the last five commits. I'll
+[00:54:50] explain why in a minute. And then we
+[00:54:52] grab the prompt and we just run claude
+[00:54:54] code with permission mode except edits
+[00:54:58] and then just essentially just pass it
+[00:55:00] all of the information. This is what the
+[00:55:02] implement looks like. So that's what a
+[00:55:05] very very simple version of this sort of
+[00:55:07] loop looks like. And of course this is
+[00:55:08] not a loop. This is just running it
+[00:55:10] once.
+[00:55:12] The loop is in the AFK version up here
+[00:55:15] which is uh a fair bit more complicated.
+[00:55:18] And the crucial part here is we're
+[00:55:20] running it in Docker sandbox as well. So
+[00:55:23] I I don't want you to install Docker on
+[00:55:25] your laptops because we're just going to
+[00:55:27] be like you need to download a special
+[00:55:28] image and we're going to tank the
+[00:55:30] conference Wi-Fi if we do that. So I I
+[00:55:32] am going to demo this to you, but you um
+[00:55:34] won't need to run this yourself. But
+[00:55:35] I'll talk through this in a minute. But
+[00:55:37] essentially this once loop here,
+[00:55:44] we're just essentially running one
+[00:55:46] version of the thing that we're going to
+[00:55:48] loop again and again and again. So this
+[00:55:50] is kind of like the human in the loop
+[00:55:51] version. And this is essential. Running
+[00:55:54] this again and again is essential
+[00:55:55] because you're going to see what the
+[00:55:56] agent does and see how it ends up
+[00:55:59] working. And any tuning that you need to
+[00:56:01] add to the prompt, then you can do that.
+[00:56:03] Let's go to the prompt.
+[00:56:09] so local issue files are being passed
+[00:56:11] in. You're going to work on the AFK
+[00:56:13] issues only. That makes sense. If all
+[00:56:16] AFK tasks are complete, output this no
+[00:56:18] more tasks thing. And then the next
+[00:56:20] thing, pick the next task. So
+[00:56:26] what we're doing here is we're
+[00:56:27] essentially running a backlog or
+[00:56:30] curating a backlog that our AFK agent is
+[00:56:32] going to pick up. That's the purpose of
+[00:56:34] all of these um setups in the beginning
+[00:56:38] in this uh all the way to this canon
+[00:56:41] board here. We're just essentially
+[00:56:42] creating a backlog of tasks for the
+[00:56:44] night shift to pick up and the night
+[00:56:48] shift this sort of Ralph prompt here.
+[00:56:50] It's got its own idea about what a good
+[00:56:53] task looks like. So next pick up I'm I
+[00:56:56] did talk about parallelization. I will
+[00:56:58] show you this later, but this is
+[00:56:59] essentially a sequential loop here.
+[00:57:01] we're just going to run one coding agent
+[00:57:03] at a time. This is a good way to just
+[00:57:04] sort of um get your feet wet
+[00:57:06] essentially.
+[00:57:08] So, it's prioritizing critical bug
+[00:57:10] fixes, development infrastructure, then
+[00:57:13] traceable bullets, then polishing quick
+[00:57:15] wins and refactors. And then we just
+[00:57:17] have a very simple kind of instruction
+[00:57:19] on how to complete the task. So, we
+[00:57:22] explore the repo, use TDD to complete
+[00:57:24] the task. I'll get to that later.
+[00:57:27] And we then run some feedback loops. So
+[00:57:30] let's let's just try this and let's just
+[00:57:31] see what happens. So good. It's created
+[00:57:34] the issue files. We should be good to
+[00:57:35] go. I'm going to cancel out of this. I
+[00:57:38] clear and I'm going to run
+[00:57:40] uh where is it? Ralph once.sh. And you
+[00:57:44] can feel free if you're following along
+[00:57:46] to do the same thing.
+[00:57:48] So we can see it's just running Claude
+[00:57:50] inside here with the prompt and with all
+[00:57:53] of the issues that have been passed in.
+[00:57:56] And while it's doing its thing,
+[00:57:59] you probably have some questions about
+[00:58:01] this setup and about the decisions that
+[00:58:03] I've made to essentially delegate all of
+[00:58:06] my coding to AI, right? So, let's let's
+[00:58:09] do a quick Q&amp;A while it's uh getting its
+[00:58:11] feet under.
+[00:58:14] Uh, okay.
+[00:58:17] I'm going to just
+[00:58:19] remove those.
+[00:58:23] How do you retain negative decisions?
+[00:58:25] things that you decided against and
+[00:58:26] ration when persisting the results from
+[00:58:28] the Grommy session. A great question.
+[00:58:31] That's a very simple answer which is the
+[00:58:33] in the PRD uh write a PRD section there
+[00:58:37] is a stuff at the bottom a section of
+[00:58:39] the things that are out of scope. So the
+[00:58:41] things we're not going to tackle in this
+[00:58:43] PRD which is very important for giving a
+[00:58:45] definition of done.
+[00:58:47] Feel free to ping on the slido if you've
+[00:58:49] got any more questions.
+[00:58:51] Uh what's my front end workflow? Okay,
+[00:58:53] that's a great question. I'm gonna I'm
+[00:58:55] gonna answer that in a minute, I think.
+[00:58:58] How to deal with agents producing more
+[00:59:00] code that we can review? How to properly
+[00:59:02] parallelize and use multiple agents in a
+[00:59:05] separate way? Okay, that's um there's
+[00:59:06] two questions there. Um raise your hand
+[00:59:10] if you feel like you're doing more code
+[00:59:12] review now than you used to.
+[00:59:16] Yeah, definitely. Um I don't think
+[00:59:19] there's a way to avoid this.
+[00:59:22] If we delegate all of our coding to
+[00:59:25] agents,
+[00:59:27] you notice that the implementation here
+[00:59:29] is really the only AFK bit. We then also
+[00:59:32] need to QA the work and code review the
+[00:59:34] work, right? And if we are running these
+[00:59:38] loops where it's essentially going to
+[00:59:40] implement four issues in one, it's hard
+[00:59:42] to pair that with the dictim that you
+[00:59:46] should keep pull requests small and
+[00:59:47] self-contained, right? like small
+[00:59:50] self-contained pull requests means
+[00:59:52] you're needing to do fewer loops or
+[00:59:55] shorter loops or something. Or maybe you
+[00:59:57] do like a big stack of PRs, but that
+[00:59:59] seems horrible as well. That's still
+[01:00:00] just more separated code to review. I
+[01:00:03] don't honestly know what the answer to
+[01:00:05] this yet. I think we just need to be
+[01:00:07] ready to be doing more code review
+[01:00:09] essentially, which is not fun. That's
+[01:00:11] not a fun thing to say. That's not like
+[01:00:12] I don't know. I don't feel good saying
+[01:00:14] that, but I do think it's probably the
+[01:00:17] the way things are going. It's a great
+[01:00:19] question.
+[01:00:23] can we grab a couple of questions from
+[01:00:25] the room as well? Let's not we won't do
+[01:00:27] the mic, but uh raise your hand if
+[01:00:28] you've got a question for me
+[01:00:29] immediately.
+[01:00:32] &gt;&gt; So, the approach looks very linear from
+[01:00:34] an idea to QA.
+[01:00:38] Of course, the real world is a lot more
+[01:00:39] messy. So you have all these ideas that
+[01:00:42] are in parallel and full picture and
+[01:00:46] while you're working on something else
+[01:00:48] comes in.
+[01:00:50] &gt;&gt; How do you deal with the messiness? How
+[01:00:51] do you feedback?
+[01:00:53] &gt;&gt; Great question. So the question was if
+[01:00:56] this all looks great if you're a solo
+[01:00:57] developer, but actually how do you
+[01:00:58] implement this in a team? How do you
+[01:01:00] gather team feedback on this? And my
+[01:01:03] answer to that is that if you have an
+[01:01:04] idea up there and essentially the sort
+[01:01:08] of journey from the idea to the
+[01:01:11] destination is something you need to
+[01:01:13] figure out with the team, right? So all
+[01:01:15] of this stuff up here, this is kind of
+[01:01:17] like team stuff, you know what I mean?
+[01:01:19] So if you have an idea and you do a
+[01:01:22] grilling session on it and you have a
+[01:01:23] question that you don't know how to
+[01:01:24] answer, then you need to loop in your
+[01:01:26] team as we described before. Then you
+[01:01:28] might need to go, okay, we just need to
+[01:01:30] build a prototype of this. We need to
+[01:01:32] actually hash this out. We need
+[01:01:33] something that the domain experts can
+[01:01:35] fiddle with. Oh, okay. We might need to
+[01:01:37] integrate a a third party library into
+[01:01:39] this. We might need to do some research.
+[01:01:41] We might need to actually kind of like
+[01:01:43] um ping this back and forth and find a
+[01:01:45] third party service that we can get the
+[01:01:47] most out of. We might need to go back
+[01:01:48] with the information that we gathered
+[01:01:50] there to the idea phase. So all the way
+[01:01:53] up to the sort of PRD and the journey,
+[01:01:55] that's something you need to involve
+[01:01:56] your team with. That's something where
+[01:01:58] these assets are going to be shared and
+[01:02:00] argued over and you're going to have
+[01:02:02] requests for comment on them and that
+[01:02:04] that loop is going to just keep grinding
+[01:02:06] and grinding until you figure out where
+[01:02:08] you're going. Once you figure out where
+[01:02:10] you're going, then you can start doing
+[01:02:12] the came on board the implementation.
+[01:02:13] But this is essentially super arguable
+[01:02:15] and the you'll be bouncing back and
+[01:02:17] forth between the phases. Does that make
+[01:02:18] sense? Yeah.
+[01:02:20] &gt;&gt; Would you not need a PR for your
+[01:02:22] prototype?
+[01:02:23] &gt;&gt; Say it again. Sorry.
+&gt;&gt; Would you not want to have a PR for your
+[01:02:25] prototype? The question was, do you want
+[01:02:27] to go through this whole session just to
+[01:02:29] sort of create a prototype? Do you not
+[01:02:30] need a PRD for your prototype as well?
+[01:02:32] Let's just quickly talk about prototypes
+[01:02:34] for a second. Um, there was a question
+[01:02:36] about how do you make this work for
+[01:02:37] front end?
+[01:02:39] Like how do you because front end is
+[01:02:41] like really sensitive to human eyes. You
+[01:02:43] need human eyes looking at the front end
+[01:02:45] all the time to make sure that it looks
+[01:02:47] good. AI doesn't really have any eyes.
+[01:02:50] It can look at code, but it front end is
+[01:02:54] multimodal. And so my experiences with
+[01:02:57] trying to plug AI into um let's say
+[01:03:01] agent browser or playright MCP to give
+[01:03:03] it you can give it tools to allow it to
+[01:03:06] look through a front end and sort of
+[01:03:07] look at images but in my experience the
+[01:03:10] um it's not very good at that yet and it
+[01:03:12] can't create a nice front end in a
+[01:03:15] mature codebase. It can sort of spit one
+[01:03:17] out. But what it can do is you say okay
+[01:03:20] uh I want some ideas on how uh this
+[01:03:22] front end might look. give me three
+[01:03:24] prototypes um that I can click between
+[01:03:27] in a throwaway uh throwaway route that I
+[01:03:30] can decide which one looks best and you
+[01:03:33] take the asset of that prototype and you
+[01:03:34] then feed it back into the grilling
+[01:03:36] session or you get feedback on it blah
+[01:03:38] blah blah blah blah answer your question
+[01:03:40] kind of thing the prototype is just you
+[01:03:42] know it's messy it's supposed to give
+[01:03:44] you feedback early on in the process so
+[01:03:46] that's a great way of working with front
+[01:03:47] end code great way of looking at
+[01:03:48] software architecture in general let's
+[01:03:50] go one more question yeah
+[01:03:51] &gt;&gt; yes [clears throat] in your system How
+[01:03:53] do you integrate respecting an
+[01:03:55] architecture a design with API contracts
+[01:03:59] and fitting with a larger system
+[01:04:02] security constraints? All kinds of
+[01:04:03] conraints like that.
+[01:04:04] &gt;&gt; Yeah, there's a lot in that question.
+[01:04:07] The question was how do you conform with
+[01:04:09] existing architecture? How do you do um
+[01:04:12] how do you make it conform to the code
+[01:04:13] standards like of your codebase or
+[01:04:16] &gt;&gt; Yeah. architecture design API security
+[01:04:19] rules that constraints your designs.
+[01:04:23] I'm going to answer that in a bit if
+[01:04:25] that's okay. So hopefully we have
+[01:04:28] started to get some stuff cooking.
+[01:04:31] It's just pinging on the explore phase
+[01:04:37] Tempted to just start running it AFK.
+[01:04:40] Maybe I will, maybe I won't. Um, what
+[01:04:44] it's essentially doing is it's exploring
+[01:04:46] the repo. It's going to then start
+[01:04:47] implementing based on what we wanted.
+[01:04:49] Let's actually have one more question
+[01:04:50] just while it's running. Yeah.
+[01:04:58] Yeah. So the question was why do you not
+[01:05:02] get AI to QA?
+[01:05:05] AI to QA. I just got jargon overload for
+[01:05:08] a second. Um why do you not get AI to uh
+[01:05:11] test its own code? Now of course you
+[01:05:14] absolutely can. And I think while it's
+[01:05:16] doing while it's cooking here, okay,
+[01:05:18] it's got a clear picture of the
+[01:05:20] codebase. It's assessing the issues.
+[01:05:22] It's doing issue O2 is the next task.
+[01:05:24] I'm again going to show you that in a
+[01:05:26] bit. I think the sort of uh because you
+[01:05:28] definitely should do an automated review
+[01:05:31] step as part of implementation. So you
+[01:05:34] have your implementation. You should
+[01:05:35] then because tokens are pretty cheap and
+[01:05:37] AI is actually really good at reviewing
+[01:05:39] stuff. You should get it to review its
+[01:05:41] own code before you then QA it. I found
+[01:05:43] that that catches a ton of different
+[01:05:45] bugs. And
+[01:05:48] the way that works is I will just do a
+[01:05:50] little diagram is if you have let's say
+[01:05:53] an implementation that's sort of like
+[01:05:54] used up a bunch of tokens in the smart
+[01:05:56] zone. If you get it to sort of try to do
+[01:06:00] its reviewing, it's going to be doing
+[01:06:02] the reviewing in the dumb zone. And so
+[01:06:05] the reviewer will be dumber than the
+[01:06:07] thing that actually implemented it. If
+[01:06:08] we imagine this is the uh let's be
+[01:06:11] consistent, that's the review. That's
+[01:06:14] the implementation.
+[01:06:15] Whereas, if you clear the context,
+[01:06:19] then you're essentially going to be able
+[01:06:22] to just review in the smart zone, which
+[01:06:24] is where you want to be.
+[01:06:27] Let's see how our implementation is
+[01:06:28] doing. Okay, good. It's generating a
+[01:06:31] migration. That looks pretty nice. We're
+[01:06:33] getting some code spitting out.
+[01:06:37] And while I'm sort of like, aha, here we
+[01:06:41] go. TDD.
+[01:06:43] Let's talk about TDD and then I think
+[01:06:45] we'll have a little another little
+[01:06:47] break. TDD I found is absolutely
+[01:06:50] essential for getting the most out of
+[01:06:52] agents. Uh raise your hand if uh you
+[01:06:54] know what TDD is. Cool. Okay. TDD is
+[01:06:58] testdriven development. What it's
+[01:06:59] essentially doing is it's doing a
+[01:07:02] something called red green refactor. And
+[01:07:04] if you look in the codebase, you'll be
+[01:07:05] able to find a um a skill which really
+[01:07:09] describes how to do red green refactor.
+[01:07:11] and teaches the AI how to do it. So what
+[01:07:14] it's doing is it's writing a failing
+[01:07:16] test first. So it's saying, okay, I've
+[01:07:19] broken down the idea of what I'm doing
+[01:07:21] and I'm just going to write a single
+[01:07:23] test that fails and then I need to make
+[01:07:26] the implementation pass. I have found
+[01:07:29] that first of all, this adds tests to
+[01:07:31] the codebase and this this tends to add
+[01:07:33] good tests to the codebase. And so we've
+[01:07:36] got this kind of gamification service.
+[01:07:38] It looks like it's using some existing
+[01:07:41] stuff to create a test database. Test
+[01:07:43] fails because the module doesn't exist
+[01:07:44] yet. Okay, we've confirmed red. And then
+[01:07:47] it goes and hopefully runs it and it
+[01:07:50] passes. I found that uh raise your hand
+[01:07:54] if you've ever had AI write bad tests.
+[01:07:58] Yeah, it tends to try to cheat at the
+[01:08:00] tests because it's sort of doing it in
+[01:08:03] layers. it will do the entire
+[01:08:04] implementation and then it will do the
+[01:08:06] entire test layer just below it. Uh I'm
+[01:08:09] just going to say yes, you're allowed to
+[01:08:10] use npxv text. And using this technique,
+[01:08:14] it generally is a lot harder to cheat
+[01:08:18] because it's sort of instrumenting the
+[01:08:21] code before it's then writing the code.
+[01:08:24] So I find that TDD is so so good for
+[01:08:27] places where you can pull it off. And in
+[01:08:29] fact, it's so good that I sort of warp
+[01:08:31] my whole uh technique around getting TDD
+[01:08:34] to work better. I can see some drooping
+[01:08:36] eyes. It is so hot in here. You can
+[01:08:39] imagine how hot it is up here. Let's
+[01:08:40] take another five minute comfort break.
+[01:08:41] Let's come back at quarter two. I think
+[01:08:46] have a nice generous one. And we'll be
+[01:08:48] back in about six, seven minutes and
+[01:08:50] I'll talk about how uh I think about
+[01:08:53] modules, think about constructing a
+[01:08:55] codebase to make this possible. I've
+[01:08:57] just been sort of fiddling with the AI
+[01:08:59] here and we have end up with some with a
+[01:09:01] commit. So we have something to test.
+[01:09:04] Issue number two is complete. Here's
+[01:09:06] what was done. This is kind of what it
+[01:09:08] looks like when a Ralph loop completes
+[01:09:10] is you end up with a little summary. Um
+[01:09:12] and we have now something we can QA
+[01:09:15] because we did the feedback loops or
+[01:09:17] because we did the tracer bullets
+[01:09:18] because we were uh said okay give us
+[01:09:21] something reviewable at the end of this
+[01:09:22] we can immediately go and QA it. Now,
+[01:09:24] there's nothing uh less exciting than
+[01:09:26] watching someone else QA something, but
+[01:09:29] hopefully we can have a little play.
+[01:09:31] Let's just check that it uh works at
+[01:09:33] all. In fact, before I go there, I just
+[01:09:36] want to sort of work through what just
+[01:09:38] happened, which is we see that it's
+[01:09:41] created some stuff on the dashboard
+[01:09:45] and it then ran the feedback loops. So,
+[01:09:47] it then ran the tests and the types.
+[01:09:51] Now TDD is obviously really important
+[01:09:53] and it's really important because these
+[01:09:55] feedback loops are essential to AI
+[01:09:59] essential to get AI to produce anything
+[01:10:01] reasonable because without this AI is
+[01:10:04] totally coding blind right you have to
+[01:10:07] have to um if if your codebase doesn't
+[01:10:10] have feedback loops you're never ever
+[01:10:13] ever going to get decent AI decent
+[01:10:15] output out of AI and often what you'll
+[01:10:18] find is that the quality of your
+[01:10:20] feedback back loops influences how good
+[01:10:23] your AI can code. Essentially, that is
+[01:10:24] the ceiling. So, if you're getting bad
+[01:10:27] outputs from your AI, you often need to
+[01:10:29] increase the quality of your feedback
+[01:10:31] loops. We'll talk about how to do that
+[01:10:33] in a minute.
+[01:10:35] Now, so it ran uh npm run test, npm ran
+[01:10:39] type check. It got one type error and it
+[01:10:41] needed to fix it with a nice bit of
+[01:10:43] TypeScript magic. Very good. Yeah. Typo
+[01:10:46] level thresholds number. Okay.
+[01:10:49] You see why I stopped teaching
+[01:10:50] Typescript because just AI knows
+[01:10:51] everything now. Um,
+[01:10:54] so and it ran the tests and it passed
+[01:10:57] and it's looking good. So we now end up
+[01:10:58] with 284 tests in this repo. Pretty
+[01:11:01] good.
+[01:11:03] I I do find uh front end really hard to
+[01:11:06] test here. We're essentially just
+[01:11:07] testing the service. So we've created a
+[01:11:10] gamification service if we look up here
+[01:11:13] and then we have a test for that
+[01:11:14] service. You can see the the service and
+[01:11:16] the test itself. Now, if I was doing
+[01:11:18] code review here, I would then go to re
+[01:11:20] I would first go to review the tests,
+[01:11:22] make sure the tests were testing
+[01:11:24] reasonable things and then go and kind
+[01:11:27] of review the code itself just to make
+[01:11:29] sure that it's it's not doing anything
+[01:11:31] too crazy, right? The essential thing is
+[01:11:33] I need to actually um look at the
+[01:11:35] dashboard. I'm going to log in as a
+[01:11:39] student. Oh, if it'll let me. Maybe it
+[01:11:41] won't let me. Come on, son. There we go.
+[01:11:44] Let's log in as Emma Wilson. Head into
+[01:11:47] courses.
+[01:11:49] Uh, let's say I've got an introduction
+[01:11:50] to TypeScript.
+[01:11:52] Continue learning.
+[01:11:54] Uh, yes, I completed this lesson.
+[01:11:57] Something went wrong. I imagine it's
+[01:11:59] because I don't have
+[01:12:02] uh SQLite error. I don't have the right
+[01:12:05] table. So, I need a table point events.
+[01:12:08] Point events is a strange table name.
+[01:12:09] I'm not sure quite what it was thinking
+[01:12:10] there. Uh, let's suspend. Let's run uh
+[01:12:14] npmdb migrate or push, I think.
+[01:12:19] Can't remember which one it was, but you
+[01:12:22] kind of get the idea, right? I I'm not
+[01:12:23] going to subject you to uh watching me
+[01:12:25] do QA because it's so dull. Um but at
+[01:12:28] this point, I would essentially go back
+[01:12:30] in. I would um let me open the project
+[01:12:33] back up.
+[01:12:35] Uh, and I would this this is a crucial
+[01:12:38] moment. Um, and it's so important to um
+[01:12:42] QA it manually here because QA Oh dear.
+[01:12:45] Oh dear. What's going wrong? There we
+[01:12:46] go. QA is how I then um impose my
+[01:12:51] uh opinions back onto the codebase, how
+[01:12:54] I impose my taste. What you'll often
+[01:12:56] find is that um there are teams out
+[01:12:59] there who are trying to automate
+[01:13:00] everything like every part of this
+[01:13:02] process and they will tend to
+[01:13:06] uh if you try to like automate the sort
+[01:13:08] of creation of the idea, automate uh the
+[01:13:11] QA, automate the research, automate the
+[01:13:13] prototype, you end up with uh apps that
+[01:13:16] I feel just lack taste and are bad.
+[01:13:22] maybe they just don't work or they they
+[01:13:24] don't even work as intended or there's
+[01:13:26] just no AI. You need a human touch when
+[01:13:28] you're building this stuff because
+[01:13:29] without that you just end up with slop
+[01:13:32] and we are not producing slop here.
+[01:13:33] We're trying to produce high quality
+[01:13:34] stuff and so that's what the QA is for.
+[01:13:39] So I'm going to do two things in this
+[01:13:42] final section which is I'm going to
+[01:13:44] first tell you how to
+[01:13:46] there's probably a question in your mind
+[01:13:48] here which is let's say I have a
+[01:13:50] codebase that I'm working on and it's a
+[01:13:53] bad codebase. It's a codebase that's
+[01:13:55] like really complicated uh that AI just
+[01:13:58] never does good work in and maybe
+[01:14:00] actually most humans that go into that
+[01:14:01] codebase don't do good work. How what
+[01:14:04] how do I improve that codebase? And the
+[01:14:07] second thing is I'll show you my setup
+[01:14:08] for parallelization.
+[01:14:10] So let's go with um bad code first.
+[01:14:14] Now where is it? Where's the diagram?
+[01:14:17] Here it is.
+[01:14:19] In his book um the philosophy of
+[01:14:22] software design, John Alistster talks
+[01:14:24] about
+[01:14:25] the ideal type of module.
+[01:14:29] And let's imagine that you have a
+[01:14:30] codebase that looks like this. Each of
+[01:14:32] these uh blocks here are individual
+[01:14:34] files. And these files export things
+[01:14:37] from them. You know, they have um things
+[01:14:39] that you pull from the files that you
+[01:14:41] then use in other things. And so you
+[01:14:42] might have these weird dependencies
+[01:14:44] where this file over here might rely on
+[01:14:46] this file or might rely on that file for
+[01:14:48] instance. Now, if these files are small
+[01:14:51] and they don't kind of ex like export
+[01:14:54] many things, then John would call these
+[01:14:57] shallow modules essentially where
+[01:14:59] they're not very um they kind of look
+[01:15:02] like uh this. If I actually no I can't
+[01:15:06] can't make a good diagram of it. They're
+[01:15:08] essentially lots and lots of small
+[01:15:09] chunks. Now this is hard for the AI to
+[01:15:12] navigate because it doesn't really
+[01:15:14] understand the dependencies between
+[01:15:15] everything. It can't work out where
+[01:15:16] everything is. You know it has to sort
+[01:15:18] of manually track through the entire
+[01:15:20] graph and go okay this relies on this
+[01:15:22] one relies on this one. This one relies
+[01:15:24] on this one.
+[01:15:26] And it's then also hard to test this as
+[01:15:28] well because where do you draw your test
+[01:15:29] boundaries here? Do you test each module
+[01:15:32] individually?
+[01:15:35] Like just literally draw a test
+[01:15:36] boundary. No, don't do that. Around this
+[01:15:39] one and then maybe another test boundary
+[01:15:42] around the next one and then the next
+[01:15:43] one
+[01:15:46] or should you sort of do big groups of
+[01:15:48] it? Should you say, okay, we're going to
+[01:15:50] test all of these related modules
+[01:15:51] together and just sort of, you know,
+[01:15:53] hope and pray that they work.
+[01:15:57] Now [sighs] this means that if I think
+[01:16:00] that bad tests mostly look like that
+[01:16:03] where the AI essentially tries to sort
+[01:16:05] of wrap every tiny function in its own
+[01:16:08] test boundary and then just sort of test
+[01:16:10] that those individually work. But what
+[01:16:13] that does is it means that when let's
+[01:16:15] say this module over here calls those
+[01:16:17] two. So it depends on both of these.
+[01:16:21] Then this module might misorder the
+[01:16:23] functions or there might be sort of
+[01:16:24] stuff inside that poor module that's
+[01:16:27] worth testing on its own. And if you
+[01:16:29] then wrap this in a test boundary, what
+[01:16:31] do you do? Do you mock the other two
+[01:16:32] modules? How does that work?
+[01:16:37] So actually figuring out how to um build
+[01:16:40] a codebase that is easy to test is
+[01:16:44] essential here because if our codebase
+[01:16:46] is easy to test then our code our
+[01:16:48] feedback loops are going to be better
+[01:16:50] and the AI is going to do better work in
+[01:16:52] our codebase. Does that make sense? So
+[01:16:54] what does a good codebase looks like?
+[01:16:56] Look like well not like that. It looks
+[01:17:00] like this
+[01:17:04] what John Asterhout calls deep modules.
+[01:17:07] Modules that have a little interface on
+[01:17:10] there that expose a small simple
+[01:17:11] interface that have a lot of
+[01:17:13] functionality inside them. Now
+[01:17:18] what this means is that these are easy
+[01:17:20] to test because you just let's say that
+[01:17:22] there's a dependency between this one
+[01:17:23] and this one. My arrow working? Yeah,
+[01:17:26] there we go.
+[01:17:29] Then
+[01:17:30] what you do is you just wrap a big test
+[01:17:32] boundary around that one module around
+[01:17:34] this one up here. And you're going to
+[01:17:36] catch a lot of good stuff
+[01:17:40] because there's lots of functionality
+[01:17:42] that you're testing and really the
+[01:17:44] caller, the person calling the module is
+[01:17:46] going to have a simple interface to work
+[01:17:47] from. So it's not not too tricky. That
+[01:17:50] makes sense. Deep modules versus shallow
+[01:17:52] modules. This is good. This shallow
+[01:17:55] version is bad. And what I find is that
+[01:17:58] unaided
+[01:18:00] um or if you don't
+[01:18:03] uh if you don't watch AI carefully, it's
+[01:18:06] going to produce a codebase that looks
+[01:18:07] like this. So you need to be really
+[01:18:09] really careful when you're directing it.
+[01:18:11] And that's why too is that if we look
+[01:18:13] inside the PD,
+[01:18:16] uh where is the PR gone? It's inside the
+[01:18:18] issues. It's inside the gamification
+[01:18:20] system. Uh not found. Of course, it's
+[01:18:23] not. Here it is.
+[01:18:25] Then I have
+[01:18:27] uh inside here data model the modules.
+[01:18:32] So it's specifically saying okay this
+[01:18:34] gamification service is a new deep
+[01:18:36] module which we're going to test around.
+[01:18:38] It's going to have this particular
+[01:18:41] interface and it's going to have um okay
+[01:18:44] we're modifying the progress service
+[01:18:46] too. We're modifying the lesson route
+[01:18:48] modifying the dashboard roots etc. So,
+[01:18:50] it's I'm being really specific about the
+[01:18:52] modules that I'm editing and I'm making
+[01:18:54] sure that I keep that module map in my
+[01:18:56] mind at all times throughout the
+[01:18:58] planning and then throughout the
+[01:18:59] implementation. That make sense? Very,
+[01:19:02] very useful. It's useful for one other
+[01:19:04] reason, too. Not only does it make your
+[01:19:05] app more testable, but you get to do a
+[01:19:08] little mental trick.
+[01:19:11] And I'm going to refill my water while
+[01:19:13] you wait for what that is.
+[01:19:17] Uh, let me
+[01:19:20] Let me get a question from you guys. So,
+[01:19:21] raise your hands if you feel like.
+[01:19:26] Uh, if you feel like you're working
+[01:19:28] harder than ever before with AI.
+[01:19:32] Yeah. Uh, raise your hands if you feel
+[01:19:35] like you know your codebase less well
+[01:19:38] than you used to.
+[01:19:40] Yeah.
+[01:19:43] This is a real thing. um because we're
+[01:19:45] moving fast, because we're delegating
+[01:19:47] more things, we end up losing a sense of
+[01:19:50] our codebase. And if we lose the sense
+[01:19:52] of our codebase, we're not going to be
+[01:19:55] able to improve it. And we're
+[01:19:56] essentially delegating the shape of it
+[01:19:57] to AI. I [snorts] don't think that's
+[01:20:00] good. But then how do we
+[01:20:03] how do we make it so that we can move
+[01:20:04] fast while still keeping enough space in
+[01:20:06] our brains? I think that this is a way
+[01:20:09] to do it because what you're doing here
+[01:20:12] is not only are you thinking about
+[01:20:14] creating big shapes in your codebase,
+[01:20:16] big services.
+[01:20:19] What I think you should do is design the
+[01:20:22] interface for these modules, but then
+[01:20:24] delegate the implementation.
+[01:20:27] In other words, these modules can become
+[01:20:29] like gray boxes where you just need to
+[01:20:31] know the shape of them. You need to know
+[01:20:33] what they do and sort of how they
+[01:20:34] behave, but you can delegate the
+[01:20:36] implementation of those modules. I found
+[01:20:38] this is really nice. I don't necessarily
+[01:20:40] need to co-review everything inside that
+[01:20:42] module. I don't necessarily need to know
+[01:20:44] everything of what it's doing. I just
+[01:20:46] need to know that it behaves a certain
+[01:20:47] way under certain conditions and that it
+[01:20:49] does its thing. So, it's kind of like,
+[01:20:52] okay, I've got a big overview of my
+[01:20:54] codebase and I understand kind of the
+[01:20:55] shapes inside it, understand what the
+[01:20:57] interfaces all do, but I can delegate
+[01:21:00] what's inside. I found that has been a
+[01:21:03] really nice way to retain my sense of
+[01:21:05] the codebase while preserving my sanity.
+[01:21:08] Make sense?
+[01:21:12] And so you might ask, how do I take a
+[01:21:14] codebase that looks like this and then
+[01:21:18] turn it into a codebase that looks like
+[01:21:20] this? How do I deepen the modules? Well,
+[01:21:23] we have hopefully it's in here. Pretty
+[01:21:25] sure it is. We have a skill and that
+[01:21:28] skill is called improve codebase
+[01:21:30] architecture.
+[01:21:32] Nice and direct.
+[01:21:35] Uh let's run it. What this skill is
+[01:21:38] going to do is it's essentially just
+[01:21:39] going to do a scan of our codebase and
+[01:21:41] looking for what's available here. And
+[01:21:43] feel free to run this yourself if you're
+[01:21:44] um uh running the exercises. And it's
+[01:21:49] exploring the architecture, exploring um
+[01:21:52] essentially how to work within this
+[01:21:53] codebase. and it's going to attempt to
+[01:21:57] uh find places to deepen the modules.
+[01:22:00] Pretty simple. One really cool um thing
+[01:22:04] that it found here is part of my uh part
+[01:22:07] of my course video manager app is a
+[01:22:09] video editor. A video editor built in
+[01:22:11] the browser, which is really hardcore.
+[01:22:13] Uh it's a decent bit of engineering. And
+[01:22:16] I wanted a way that I could wrap the
+[01:22:18] entire front end all the way to the back
+[01:22:21] end in like a single big module so that
+[01:22:23] I could test the fact that I press
+[01:22:25] something on the front end and it goes
+[01:22:26] all the way to the back end. And so I
+[01:22:28] found a way essentially by using a kind
+[01:22:30] of discriminated union between the two
+[01:22:32] types here by sort of I was able to use
+[01:22:35] this uh skill to essentially have a huge
+[01:22:39] great big module that just tested from
+[01:22:41] the outside or was testable from the
+[01:22:43] outside this video editor
+[01:22:45] infrastructure. And it meant that AI
+[01:22:47] could see the entire flow, could act on
+[01:22:49] the entire flow and test on the entire
+[01:22:51] flow. And honestly, it was just night
+[01:22:53] and day in terms of the uh ability of AI
+[01:22:56] to actually make changes because AI
+[01:22:57] working on a video editor is pretty
+[01:22:59] brutal if you don't give it good tests.
+[01:23:01] So that is honestly I if you take one
+[01:23:04] thing away from today, just try running
+[01:23:06] this skill on your repo and see what
+[01:23:08] happens. Let's go to slider. Let's ask a
+[01:23:11] uh check a couple of questions just
+[01:23:13] while this is running.
+[01:23:15] So let's see. Have you tried claude's
+[01:23:17] auto mode with claude enable auto mode?
+[01:23:19] Uh that way you can avoid many of the
+[01:23:20] obvious permission checks. We'll talk
+[01:23:21] about permission checks in a second. Do
+[01:23:24] I keep the markdown plans and issues for
+[01:23:27] later reference?
+[01:23:29] Okay, this is a great question. So
+[01:23:34] let's say that you uh have a great idea,
+[01:23:38] you turn it into a PR
+[01:23:40] raise and you then implement that PRD
+[01:23:43] and the PRD is essentially done. Raise
+[01:23:45] your hand if you keep that information
+[01:23:48] in the repo. So you turn it into a
+[01:23:49] markdown file. Raise your hand if you
+[01:23:51] want to keep that around.
+[01:23:53] Cool. Okay. And raise your hand if you
+[01:23:55] if you don't want to keep it around. If
+[01:23:57] you want to get rid of it as soon as
+[01:23:58] possible. Yeah. This is I think an
+[01:24:02] a question that doesn't have a clear
+[01:24:03] answer. What I'm really scared of
+[01:24:08] with any documentation decision is that
+[01:24:11] let's say that we have a PRD for this
+[01:24:13] gamification system. We keep it in the
+[01:24:14] repo. We go on, go on, go on. Let's say
+[01:24:17] a month later, we want some edits to the
+[01:24:19] gamification system. And we go in with
+[01:24:22] Claude and it finds this old PR and
+[01:24:24] says, "Yes, I found the original
+[01:24:26] documentation for the PRD system." Well,
+[01:24:28] it turns out that the actual code has
+[01:24:30] changed so much from the original PRD
+[01:24:32] that it's almost unrecognizable. The
+[01:24:33] names of things have changed. The um
+[01:24:35] file structure has changed. Even the
+[01:24:37] requirements may have changed. We might
+[01:24:38] have actually tested it with users. This
+[01:24:40] is dock rot where the documentation for
+[01:24:43] something is rotting away in your repo
+[01:24:46] and influencing claude badly or claude
+[01:24:49] agents badly. So I tend to not keep it
+[01:24:53] around. I tend to get rid of it. And for
+[01:24:55] me because my setup uses GitHub issues,
+[01:24:58] I just mark it as closed. It can fetch
+[01:25:00] it if it wants to, but it's got a visual
+[01:25:01] indicator that it's done. So I tend to
+[01:25:03] prefer ditching these.
+[01:25:07] Thoughts on the beads framework from
+[01:25:08] Steve? Uh I've not tested it, but it
+[01:25:11] seems like sort of um another way to
+[01:25:13] manage Canvan boards and issues. Seems
+[01:25:15] uh very good, but I've not tried it.
+[01:25:18] Um
+[01:25:20] [clears throat]
+[01:25:22] uh let me just quickly check the uh
+[01:25:24] setup here. Let's take a couple of
+[01:25:27] questions from the room. Anybody got any
+[01:25:29] questions at this point about anything
+[01:25:30] that we've covered so far, especially
+[01:25:31] this last bit? Yes.
+[01:25:40] like code. How about migrations? Like
+[01:25:43] with migration files, we can also squash
+[01:25:45] them off
+[01:25:47] &gt;&gt; like database migrations.
+[01:25:51] &gt;&gt; I don't know.
+[01:25:53] &gt;&gt; I hope that answers your question. I'm
+[01:25:54] so sorry. No, no, I think database
+[01:25:56] migrations are a different thing because
+[01:25:57] you have a sort of running record of
+[01:25:59] exactly what changed and it's more
+[01:26:01] deterministic and I think
+[01:26:04] yeah, it's an interesting analogy. I'm
+[01:26:06] not sure. Let's talk about it
+[01:26:07] afterwards.
+[01:26:08] That's a good way of saying I have no
+[01:26:11] &gt;&gt; Yeah. Yeah.
+[01:26:16] &gt;&gt; Sorry guys. Um I'm just trying to listen
+[01:26:18] to this guy's question.
+[01:26:30] &gt;&gt; Yeah. The question the question here is
+[01:26:33] um should I um in the sort of early
+[01:26:37] planning stage be trying to optimize the
+[01:26:39] plan? This is something I actually see a
+[01:26:41] lot of people doing and it's a really
+[01:26:43] good um idea. So when you
+[01:26:49] let's go back to the phases. So let's
+[01:26:51] say that you have all of these phases
+[01:26:53] here
+[01:26:55] and you uh you get to the point where
+[01:26:58] you've sort of figured out everything
+[01:26:59] with the LLM. you understand where
+[01:27:01] you're going. You've created this sort
+[01:27:02] of journey destination document here.
+[01:27:05] How do you then uh like should you then
+[01:27:09] try to optimize and optimize and
+[01:27:10] optimize that PRD until it's the perfect
+[01:27:12] PR you can possibly imagine? I don't
+[01:27:15] think there's a lot of value in that
+[01:27:18] because I think the journey is really
+[01:27:20] just sort of a hint of where you want to
+[01:27:22] go and the place that you need to be
+[01:27:24] putting the work is in QA and you can
+[01:27:27] sort of do that AFK I suppose but in my
+[01:27:29] experience you're not going to get a lot
+[01:27:30] of juice out of it like it's the the
+[01:27:33] thing that really matters is getting
+[01:27:34] alignment with the AI which is you do in
+[01:27:37] the grilling session initially.
+[01:27:40] Let's have one more question. You got
+[01:27:41] any more? Yeah. How do you get in your
+[01:27:44] workflow to get it to code the way you
+[01:27:46] want it to code? So by the time you get
+[01:27:48] to code review, it's at least familiar,
+[01:27:50] use the libraries you wanted to use.
+[01:27:52] &gt;&gt; Yeah. Um, we had this question before
+[01:27:54] actually, which was like uh how do you
+[01:27:56] uh enforce your coding standards on the
+[01:27:59] agent? Essentially, how do you get it to
+[01:28:00] code how you want it to code? Now,
+[01:28:03] there's essentially two different ways
+[01:28:04] of doing it. Um, you've got
+[01:28:09] Come on. Push
+[01:28:11] and you've got pull.
+[01:28:14] What do I mean by push and pull?
+[01:28:17] Um, push is where you push instructions
+[01:28:20] to the LLM. So you say, okay, if you put
+[01:28:23] something in claw.md,
+[01:28:25] uh, talk like a pirate, that instruction
+[01:28:28] is always going to be sent to the agent,
+[01:28:30] right? So that is a push action. You're
+[01:28:32] pushing tokens to it. Pull is where you
+[01:28:35] give the agent an opportunity to pull
+[01:28:38] more information.
+[01:28:42] that's for instance like skills. So a
+[01:28:44] skill is something that can sit in the
+[01:28:46] repo and it has a little description
+[01:28:47] header that says okay agent you may pull
+[01:28:50] this when you want to.
+[01:28:53] My thinking my current thinking about
+[01:28:55] code review and about coding standards
+[01:28:57] looks like this. when you have an
+[01:29:00] implement.
+[01:29:03] What's going on? There we go.
+[01:29:04] Implementer.
+[01:29:06] I'm going to make this less red in a
+[01:29:08] second. Um, then you want the coding
+[01:29:12] standards to be available via pull. If
+[01:29:15] it has a question, you want it to be
+[01:29:16] able to sort of answer it. But if you
+[01:29:18] then have an automated reviewer
+[01:29:21] afterwards, then you want it to push.
+[01:29:24] You want to push that information to the
+[01:29:25] reviewer. You want to say, "These are
+[01:29:27] our coding standards." um make sure that
+[01:29:29] this code um follows them. So if you
+[01:29:32] have skills for instance, then you want
+[01:29:34] to push that stuff to the reviewer so
+[01:29:36] the reviewer has both the code that's
+[01:29:38] written and the coding standards to
+[01:29:40] compare to.
+[01:29:42] Hopefully that answers your question. I
+[01:29:43] can show you an automated version of
+[01:29:44] this as well. Actually, um yeah, let's
+[01:29:47] do that now just while it's fresh in my
+[01:29:48] mind. I recently um spent
+[01:29:54] uh maybe a week or so uh building this
+[01:29:57] thing called Sand Castle. And Sand
+[01:29:59] Castle is a I was sort of unhappy with
+[01:30:02] the options out there for
+[01:30:05] um running agents AFK. And what this
+[01:30:07] does is it's essentially a TypeScript
+[01:30:10] library for running these loops. So you
+[01:30:12] have uh a run function that creates a
+[01:30:16] work tree um sandboxes it in a docker
+[01:30:19] container and then allows you to run a
+[01:30:22] prompt inside there. And in that work
+[01:30:24] tree then it's just a git branch and you
+[01:30:26] have that code and you can then merge it
+[01:30:28] later. If I open up
+[01:30:32] um there are some really really nice
+[01:30:35] ways of viewing this and it essentially
+[01:30:37] allows you to run these kind of
+[01:30:38] automated loops and allows you to
+[01:30:41] parallelize across multiple different
+[01:30:43] agents really simply. So I'll go into my
+[01:30:46] sand castle file go into main.ts here
+[01:30:48] and let's just walk through this.
+[01:30:51] So this is kind of like I showed you um
+[01:30:54] a sort of version of the Ralph loop
+[01:30:56] earlier. This is where we take it from
+[01:30:58] sequential into parallel.
+[01:31:01] We have here first of all a planner that
+[01:31:04] takes in it's has a plan prompt here
+[01:31:06] that looks at the backlog and chooses a
+[01:31:10] certain number of issues to work on in
+[01:31:12] parallel. Remember I showed you that
+[01:31:13] canon board where it had all the
+[01:31:14] blocking relationships. It works out all
+[01:31:16] of the phases. So this one will say okay
+[01:31:19] uh let's say we have uh you can ignore
+[01:31:21] all this glue code here. This is
+[01:31:23] essentially just a set of issues, GitHub
+[01:31:26] issues with a title and with a a branch
+[01:31:30] for you to work on. And then for each
+[01:31:34] issue, we create a sandbox
+[01:31:38] and then we run an implement in that
+[01:31:40] sandbox passing in the issue number,
+[01:31:42] issue title and the branch. This is like
+[01:31:43] the loop that we ran just before.
+[01:31:46] Then if it created some commits, we then
+[01:31:49] review those commits. This is
+[01:31:51] essentially the loop. What do we do with
+[01:31:54] those commits? We pass those into a
+[01:31:58] merger agent
+[01:32:01] which takes in a merge prompt, takes in
+[01:32:03] the branches that were created, takes in
+[01:32:04] the issues, and it just merges them in.
+[01:32:06] If there are any issues with the merge,
+[01:32:08] you know, with the types and tests and
+[01:32:09] that kind of thing, it solves them. And
+[01:32:11] this has been my uh flow for quite a
+[01:32:13] while now for working on most projects.
+[01:32:16] It works super super well. And uh yeah,
+[01:32:19] I recommend you check out sand castle if
+[01:32:20] you want to sort of learn more. And to
+[01:32:23] answer your question properly is that in
+[01:32:26] the reviewer
+[01:32:28] uh I would push the coding standards in
+[01:32:30] the implement I would allow it to pull.
+[01:32:33] And I'm actually using uh sonet for
+[01:32:35] implementation and opus for um reviewing
+[01:32:39] because I consider reviewing sort of I
+[01:32:40] need I need the smarts. Then
+[01:32:44] any question? Actually, let let me uh
+[01:32:46] before we do more questions, let's go
+[01:32:48] back here. Okay, where are we at? Okay,
+[01:32:53] we're sort of zooming everywhere in this
+[01:32:55] uh talk because I'm kind of having to
+[01:32:56] run things in parallel. So, let's go
+[01:32:58] back to the improved codebase
+[01:33:00] architecture. It has finally finished
+[01:33:01] running and it's found a bunch of
+[01:33:04] architectural improvement candidates. So
+[01:33:06] it's got essentially a cluster of
+[01:33:08] different modules that are all kind of
+[01:33:10] related that could probably be tested as
+[01:33:12] a unit. Got number one the quiz scoring
+[01:33:14] service. There's some reordering logic
+[01:33:17] extraction as well. It has arguments for
+[01:33:20] why they're coupled and it has a
+[01:33:22] dependency category as well. So local
+[01:33:23] substitutable in SQLite within memory
+[01:33:26] test DB
+[01:33:28] quiz scoring service currently has zero
+[01:33:30] test. This is the biggest gap. So this
+[01:33:32] is what it looks like when we come back
+[01:33:33] of uh improved codebase architecture.
+[01:33:39] So we have nominally kind of 17 minutes
+[01:33:43] left. I don't know about you, but I'm
+[01:33:45] knackered. [laughter]
+[01:33:47] Um I want to
+[01:33:50] let let me kind of sum up for you
+[01:33:52] because I think we're sort of reaching
+[01:33:54] the end of our stamina. I'm going to be
+[01:33:56] available for the full time if you want
+[01:33:57] to um come and ask me questions. Um, I
+[01:33:59] might do one more check of the slider,
+[01:34:00] but let's kind of sum up where we've got
+[01:34:02] to.
+[01:34:06] this is essentially the flow
+[01:34:10] where throughout this whole process,
+[01:34:12] we're bearing in mind the shape of our
+[01:34:14] codebase. This is not a specttocode
+[01:34:17] compiler. This is not an AI that's sort
+[01:34:19] of just like churning out code. We are
+[01:34:21] being very intentional with the kind of
+[01:34:23] modules and the shape of the codebase
+[01:34:24] that we want. We are making sure that we
+[01:34:26] are as aligned as possible by using the
+[01:34:29] grilling session by really hammering out
+[01:34:31] our idea. We're not overindexing into
+[01:34:34] the PRD. We're not trying to read every
+[01:34:35] part of it. We're not thinking too much
+[01:34:37] about it even. We're then just turning
+[01:34:39] that into a set of parallelizable issues
+[01:34:41] which can be worked on by agents in
+[01:34:42] parallel. We implement it and we QA and
+[01:34:46] code review the hell out of it and then
+[01:34:48] keep going back to that implementation.
+[01:34:50] One thing I didn't really mention is
+[01:34:51] that in the QA phase, what the QA phase
+[01:34:54] is for is creating more issues for that
+[01:34:56] canon board. So while it's implementing
+[01:34:59] even, you can be QAing the stuff and
+[01:35:00] going back adding more issues. And the
+[01:35:02] canon board just allows you to add
+[01:35:03] blocking issues kind of um sort of
+[01:35:06] infinitely really. And then once that's
+[01:35:08] all done, once you've got code that
+[01:35:09] you're happy with, once you've got work
+[01:35:10] that you're happy with, then you can
+[01:35:12] share it with your team and you can get
+[01:35:13] a full review. So this is kind of like
+[01:35:16] once you get here, this is kind of one
+[01:35:17] developer or maybe a couple of
+[01:35:18] developers sort of managing this and
+[01:35:21] then it's kind of up to you to figure
+[01:35:22] out how to merge it back in.
+[01:35:25] [sighs]
+[01:35:27] Of course, all of this can be customized
+[01:35:30] by you. This is just something that I
+[01:35:32] have found works. I'm not trying to like
+[01:35:34] sell you on a kind of approach here.
+[01:35:37] What I recommend if you take one thing
+[01:35:39] away from this session is that you
+[01:35:41] should head back you should head to
+[01:35:42] Amazon and just buy a ton of those old
+[01:35:44] books because I mean I just found it so
+[01:35:47] enlightening reading them. Uh you know
+[01:35:51] preai writing is always like a really
+[01:35:53] fun to read anyway and
+[01:35:56] I just on every single page I found that
+[01:35:58] there was something useful and something
+[01:36:00] interesting to to read. So thank you so
+[01:36:03] much. Thank you for putting up with the
+[01:36:04] heat. Um hopefully your body
+[01:36:05] temperatures will reset soon. Uh thank
+[01:36:08] you very much. [applause]

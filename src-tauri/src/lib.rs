@@ -1101,6 +1101,16 @@ pub fn run() {
             commands::execution::assertions::get_assertion_results_for_execution,
             commands::execution::assertions::get_assertion_result_history,
             commands::execution::policy_events::get_policy_events_for_execution,
+            // Execution -- Audit Incidents inbox (cross-source triage)
+            commands::execution::audit_incidents::list_audit_incidents,
+            commands::execution::audit_incidents::get_audit_incidents_summary,
+            commands::execution::audit_incidents::get_audit_incident,
+            commands::execution::audit_incidents::acknowledge_audit_incident,
+            commands::execution::audit_incidents::resolve_audit_incident,
+            commands::execution::audit_incidents::dismiss_audit_incident,
+            commands::execution::audit_incidents::reopen_audit_incident,
+            commands::execution::audit_incidents::bulk_acknowledge_audit_incidents,
+            commands::execution::audit_incidents::bulk_resolve_audit_incidents,
             // Execution -- Lab
             commands::execution::lab::lab_start_arena,
             commands::execution::lab::lab_list_arena_runs,

@@ -41,6 +41,25 @@ pub fn insert(
                 now,
             ],
         )?;
+        // Best-effort: promote errors into the incidents inbox. No-op unless
+        // PERSONAS_INCIDENTS_PROMOTION=1; only `result_status='error'` rows
+        // surface as incidents (see `audit_incidents_promoter::promote_tool_audit`).
+        if result_status == "error" {
+            let entry = ToolExecutionAuditEntry {
+                id: id.clone(),
+                tool_id: tool_id.to_string(),
+                tool_name: tool_name.to_string(),
+                tool_type: tool_type.to_string(),
+                persona_id: persona_id.map(|s| s.to_string()),
+                persona_name: persona_name.map(|s| s.to_string()),
+                credential_id: credential_id.map(|s| s.to_string()),
+                result_status: result_status.to_string(),
+                duration_ms: duration_ms.map(|d| d as i64),
+                error_message: error_message.map(|s| s.to_string()),
+                created_at: now.clone(),
+            };
+            crate::engine::audit_incidents_promoter::promote_tool_audit(pool, &entry);
+        }
         Ok(())
     })
 }

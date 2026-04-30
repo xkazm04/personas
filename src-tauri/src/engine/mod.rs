@@ -44,6 +44,7 @@ pub mod oauth_refresh_lock;
 pub mod healing;
 pub mod hooks_sidecar;
 pub mod claude_md_projection;
+pub mod audit_incidents_promoter;
 pub mod cli_mcp_config;
 pub mod healing_orchestrator;
 pub mod healing_timeline;

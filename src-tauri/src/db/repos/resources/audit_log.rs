@@ -33,8 +33,23 @@ pub fn insert(
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
             params![id, credential_id, credential_name, operation, persona_id, persona_name, sanitized_detail, now],
         )?;
-        Ok(())
 
+        // Best-effort: promote credential failures into the incidents inbox.
+        // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only failure-shaped
+        // operations surface (see `audit_incidents_promoter::promote_credential_audit`).
+        let entry = CredentialAuditEntry {
+            id: id.clone(),
+            credential_id: credential_id.to_string(),
+            credential_name: credential_name.to_string(),
+            operation: operation.to_string(),
+            persona_id: persona_id.map(|s| s.to_string()),
+            persona_name: persona_name.map(|s| s.to_string()),
+            detail: sanitized_detail.clone(),
+            created_at: now.clone(),
+        };
+        crate::engine::audit_incidents_promoter::promote_credential_audit(pool, &entry);
+
+        Ok(())
     })
 }
 

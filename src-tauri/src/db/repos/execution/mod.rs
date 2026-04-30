@@ -1,4 +1,5 @@
 pub mod assertions;
+pub mod audit_incidents;
 pub mod circuit_breaker;
 pub mod executions;
 pub mod healing;
