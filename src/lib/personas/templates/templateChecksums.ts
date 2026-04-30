@@ -26,6 +26,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/documentation-freshness-guardian.json': '000d6f8b16a8db17',
   'development/feature-flag-experiment-analyst.json': '00116bcbfa3da659',
   'development/feature-flag-governance-use-case.json': '0000986d711116e5',
+  'development/lean-codebase-sentinel.json': '00062e145953844b',
   'development/qa-guardian.json': '00045a4d8af01aa2',
   'development/real-time-database-watcher.json': '00101c6682c7f329',
   'development/self-evolving-codebase-memory.json': '000847cdc27d1efb',
