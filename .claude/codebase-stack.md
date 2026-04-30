@@ -295,7 +295,10 @@ The repo has a dedicated **`dev-tools` plugin** at `src/features/plugins/dev-too
 - `sub_lifecycle` — software lifecycle / goal constellation
 - `sub_projects` — project manager + GitHub repo selector + implementation log
 - `sub_runner` — task runner + self-healing panel + task output
-- `sub_scanner` — idea scanner + idea evolution
+- `sub_scanner` — idea scanner + idea evolution. **Two parallel idea sources** as of 2026-04-30:
+  - **LLM-driven** — `commands/infrastructure/idea_scanner.rs` spawns Claude CLI with scan-agent prompts (security-auditor, code-optimizer, etc.) loaded from `scan_agents.toml`. Slow, expensive, semantic, monthly-cadence-shape.
+  - **Deterministic** — `commands/infrastructure/static_scan.rs` spawns a user-configured static-analysis CLI (Fallow / Knip / jscpd / etc.) per-project (config in `dev_projects.static_scan_config`), parses its JSON output via a permissive multi-shape parser, and writes findings as `DevIdea` records. Fast, free, zero-LLM, per-commit-cadence-shape.
+  - **Both** write to the same `dev_ideas` table via `repo::create_idea`. Findings about the idea pipeline should route to whichever source matches the cadence/cost profile (or propose a third parallel source if the shape doesn't fit either). Added in `/research` run 2026-04-30 (Fallow walkthrough).
 - `sub_triage` — idea triage + effort/risk filter + triage rules
 
 DB tables owned by the plugin: `dev_projects`, `dev_context_groups`, `dev_contexts`, `dev_context_group_relationships`, `dev_ideas`, `dev_*` (others).
