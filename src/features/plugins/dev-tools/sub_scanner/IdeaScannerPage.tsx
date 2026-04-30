@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Lightbulb, Play,
   BrainCircuit,
+  Zap,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -12,6 +13,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { runStaticScan } from '@/api/devTools/devTools';
+import { toastCatch } from '@/lib/silentCatch';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
 } from '../constants/scanAgents';
@@ -34,7 +37,7 @@ import { matchAgentsToContext } from './ideaScannerHelpers';
 // ---------------------------------------------------------------------------
 
 export default function IdeaScannerPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { runScan } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation
@@ -59,6 +62,8 @@ export default function IdeaScannerPage() {
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
   const [autoScanRunning, setAutoScanRunning] = useState(false);
   const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
+  const [staticScanRunning, setStaticScanRunning] = useState(false);
+  const [staticScanStatus, setStaticScanStatus] = useState<string | null>(null);
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -238,6 +243,31 @@ export default function IdeaScannerPage() {
     }
   };
 
+  const handleRunStaticScan = useCallback(async () => {
+    if (!activeProjectId || staticScanRunning) return;
+    setStaticScanRunning(true);
+    setStaticScanStatus(t.plugins.dev_scanner.static_scan_running);
+    try {
+      const result = await runStaticScan(activeProjectId);
+      setStaticScanStatus(
+        tx(t.plugins.dev_scanner.static_scan_complete, { count: result.ideas_created }),
+      );
+      // Refresh ideas + scan history so the new findings + scan row appear immediately.
+      useSystemStore.getState().fetchIdeas(activeProjectId);
+      useSystemStore.getState().fetchScans(activeProjectId);
+      setTimeout(() => {
+        if (!mountedRef.current) return;
+        setStaticScanStatus(null);
+      }, 4000);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setStaticScanStatus(tx(t.plugins.dev_scanner.static_scan_failed, { error: msg }));
+      toastCatch('IdeaScannerPage:runStaticScan')(err);
+    } finally {
+      if (mountedRef.current) setStaticScanRunning(false);
+    }
+  }, [activeProjectId, staticScanRunning, t, tx]);
+
   const handleRunScan = useCallback(async () => {
     if (selectedAgents.size === 0) return;
     setScanProgress(5);
@@ -386,7 +416,21 @@ export default function IdeaScannerPage() {
           >
             {t.plugins.dev_scanner.auto_scan}
           </Button>
+          <Button
+            variant="accent"
+            accentColor="emerald"
+            size="sm"
+            icon={<Zap className="w-3.5 h-3.5" />}
+            disabled={isRunning || autoScanRunning || staticScanRunning || !activeProjectId}
+            loading={staticScanRunning}
+            onClick={handleRunStaticScan}
+          >
+            {t.plugins.dev_scanner.static_scan_btn}
+          </Button>
         </ActionRow>
+        {staticScanStatus && (
+          <p className="text-md text-foreground">{staticScanStatus}</p>
+        )}
 
         <div className="space-y-6">
           {/* Scan progress */}

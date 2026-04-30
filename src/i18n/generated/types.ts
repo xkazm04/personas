@@ -9231,6 +9231,11 @@ export type Translations = {
       run_scan_btn: string;
       results_header: string;
       scan_history_header: string;
+      static_scan_btn: string;
+      static_scan_no_config: string;
+      static_scan_running: string;
+      static_scan_complete: string;
+      static_scan_failed: string;
     };
     dev_triage: {
       auto_triage_rules: string;

@@ -9224,7 +9224,12 @@
       "idea_scanner_subtitle": "Run specialized agents to generate improvement ideas",
       "run_scan_btn": "Run Scan (",
       "results_header": "Results (",
-      "scan_history_header": "Scan History ("
+      "scan_history_header": "Scan History (",
+      "static_scan_btn": "Static Scan",
+      "static_scan_no_config": "No static-analysis CLI configured. Set one on this project first.",
+      "static_scan_running": "Running static scan…",
+      "static_scan_complete": "Static scan complete: {count} ideas added.",
+      "static_scan_failed": "Static scan failed: {error}"
     },
     "dev_triage": {
       "auto_triage_rules": "Auto-Triage Rules",
