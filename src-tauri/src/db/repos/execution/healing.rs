@@ -89,7 +89,15 @@ pub fn create(
             return Ok(None);
         }
 
-        Ok(Some(get_by_id(pool, &id)?))
+        let issue = get_by_id(pool, &id)?;
+
+        // Best-effort: promote significant healing issues into the inbox.
+        // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `status='open'`
+        // and severity ≥ medium surfaces (see
+        // `audit_incidents_promoter::promote_healing_issue`).
+        crate::engine::audit_incidents_promoter::promote_healing_issue(pool, &issue);
+
+        Ok(Some(issue))
     })
 }
 
@@ -394,10 +402,30 @@ pub fn create_audit_entry(
                 params![id, persona_id, execution_id, event_type, subsystem, message, detail, now],
             ) {
                 tracing::error!("Failed to write healing audit entry: {}", e);
+                return;
             }
         }
-        Err(e) => tracing::error!("Failed to get DB connection for healing audit: {}", e),
+        Err(e) => {
+            tracing::error!("Failed to get DB connection for healing audit: {}", e);
+            return;
+        }
     }
+
+    // Best-effort: promote unrecoverable healing events into the incidents
+    // inbox. No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `*_error` and
+    // `ai_heal_unknown_*` event types surface (see
+    // `audit_incidents_promoter::promote_healing_audit`).
+    let entry = HealingAuditEntry {
+        id,
+        persona_id: persona_id.map(|s| s.to_string()),
+        execution_id: execution_id.map(|s| s.to_string()),
+        event_type: event_type.to_string(),
+        subsystem: subsystem.to_string(),
+        message: message.to_string(),
+        detail: detail.map(|s| s.to_string()),
+        created_at: now,
+    };
+    crate::engine::audit_incidents_promoter::promote_healing_audit(pool, &entry);
 }
 
 /// List healing audit log entries, optionally filtered by persona_id.

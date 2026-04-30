@@ -34,6 +34,10 @@ pub fn insert(
                 entry.created_at,
             ],
         )?;
+        // Best-effort: promote provider failovers into the incidents inbox.
+        // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `was_failover=1`
+        // rows surface (see `audit_incidents_promoter::promote_provider_audit`).
+        crate::engine::audit_incidents_promoter::promote_provider_audit(pool, entry);
         Ok(())
     })
 }

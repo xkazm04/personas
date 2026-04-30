@@ -38,6 +38,23 @@ pub fn insert(
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![id, execution_id, persona_id, use_case_id, policy_kind, action, payload_title, reason, now],
         )?;
+
+        // Best-effort: promote dropped policy events into the incidents inbox.
+        // No-op unless PERSONAS_INCIDENTS_PROMOTION=1; only `action='dropped'`
+        // surfaces (see `audit_incidents_promoter::promote_policy_event`).
+        let event = PolicyEvent {
+            id: id.clone(),
+            execution_id: execution_id.to_string(),
+            persona_id: persona_id.to_string(),
+            use_case_id: use_case_id.map(|s| s.to_string()),
+            policy_kind: policy_kind.to_string(),
+            action: action.to_string(),
+            payload_title: payload_title.map(|s| s.to_string()),
+            reason: reason.map(|s| s.to_string()),
+            created_at: now.clone(),
+        };
+        crate::engine::audit_incidents_promoter::promote_policy_event(pool, &event);
+
         Ok(id)
     })
 }
