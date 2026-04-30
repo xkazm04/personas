@@ -16,6 +16,8 @@ import type { DevCompetitionSlot } from "@/lib/bindings/DevCompetitionSlot";
 import type { DevStrategyStats } from "@/lib/bindings/DevStrategyStats";
 import type { CompetitionSlotInput } from "@/lib/bindings/CompetitionSlotInput";
 import type { ScanAgentMeta } from "@/lib/bindings/ScanAgentMeta";
+import type { StaticScanConfig } from "@/lib/bindings/StaticScanConfig";
+import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 
 // ---------------------------------------------------------------------------
@@ -507,6 +509,22 @@ export const listScans = (projectId?: string, limit?: number) =>
   safeInvoke<DevScan[]>([], "dev_tools_list_scans", {
     projectId: projectId,
     limit: limit,
+  });
+
+// ============================================================================
+// Static Scan (deterministic CLI-driven sibling to LLM idea scanner)
+// ============================================================================
+
+export const setStaticScanConfig = (projectId: string, config: StaticScanConfig | null) =>
+  invoke<DevProject>("dev_tools_set_static_scan_config", {
+    projectId,
+    config,
+  });
+
+export const runStaticScan = (projectId: string, configOverride?: StaticScanConfig) =>
+  invoke<StaticScanResult>("dev_tools_run_static_scan", {
+    projectId,
+    configOverride: configOverride ?? null,
   });
 
 // ============================================================================
