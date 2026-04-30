@@ -15,15 +15,24 @@
 //! and the spawn behavior is unchanged. This lets the feature land in main
 //! without risking existing executions.
 //!
-//! ## Reactor (future)
+//! ## Reactor (post-execution)
 //!
-//! `drain_session_queue` reads + clears the queue file. A scheduled job can
-//! call this and feed the entries into `commands::core::memory_compile`. The
-//! reactor wiring is intentionally split out so the IPC-side and the
-//! runner-side can land independently.
+//! `drain_session_queue` reads + clears the queue file.
+//! `drain_and_record_session_memories` is the post-execution reactor that the
+//! runner calls after every persona run: it drains the queue and records each
+//! captured hook payload as a `working`-tier persona memory in category
+//! `context`. A separate maintenance pass (`compile_persona_memories`) can
+//! later promote these into structured wiki articles.
+//!
+//! The two-step shape (record raw → compile later) keeps post-execution work
+//! cheap (~one INSERT per hook fire) while preserving the option to upgrade
+//! the captured material into durable knowledge on a slower cadence.
 
 use std::path::{Path, PathBuf};
 
+use crate::db::models::CreatePersonaMemoryInput;
+use crate::db::repos::core::memories as mem_repo;
+use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Env var that gates the sidecar write. Unset → no-op.
@@ -150,11 +159,6 @@ fn build_settings_json(queue_path: &Path) -> Result<String, AppError> {
 /// success so future calls only see new entries. If the queue file does
 /// not exist (sidecar disabled or no events fired yet), returns an empty
 /// vec — never an error.
-///
-/// Intentionally `pub` but not yet called from a runtime scheduler — the
-/// reactor wiring lands in a follow-up change. `allow(dead_code)` keeps the
-/// lint quiet until then.
-#[allow(dead_code)]
 pub fn drain_session_queue(exec_dir: &Path) -> Result<Vec<String>, AppError> {
     let queue_path = exec_dir.join(QUEUE_SUBDIR).join(QUEUE_FILE);
     if !queue_path.exists() {
@@ -184,10 +188,105 @@ pub fn drain_session_queue(exec_dir: &Path) -> Result<Vec<String>, AppError> {
 
 /// Convenience: compute where the queue file lives without needing to
 /// reach across modules for the constants. Used by the test suite and
-/// will be used by the reactor in a follow-up change.
+/// available for future direct callers.
 #[allow(dead_code)]
 pub fn queue_path(exec_dir: &Path) -> PathBuf {
     exec_dir.join(QUEUE_SUBDIR).join(QUEUE_FILE)
+}
+
+/// Post-execution reactor: drain the queue file and persist each captured
+/// hook payload as a `working`-tier persona memory under category `context`.
+///
+/// Returns the number of memories created. Returns `Ok(0)` when:
+/// - the sidecar is disabled (`PERSONAS_HOOKS_SIDECAR` unset),
+/// - the queue file is empty or missing,
+/// - all entries fail to record (logged but not propagated).
+///
+/// Failures are intentionally non-fatal: memory capture is a best-effort side
+/// channel and must never break the execution that owns it.
+pub fn drain_and_record_session_memories(
+    pool: &DbPool,
+    exec_dir: &Path,
+    persona_id: &str,
+    execution_id: &str,
+) -> Result<i64, AppError> {
+    // Same env gate as install_sidecar — if the sidecar wasn't installed,
+    // there's nothing in the queue and we skip the I/O entirely.
+    if std::env::var(SIDECAR_ENV).ok().as_deref() != Some("1") {
+        return Ok(0);
+    }
+
+    let lines = drain_session_queue(exec_dir)?;
+    if lines.is_empty() {
+        return Ok(0);
+    }
+
+    let mut created: i64 = 0;
+    for line in &lines {
+        match record_session_capture(pool, persona_id, execution_id, line) {
+            Ok(()) => created += 1,
+            Err(e) => {
+                tracing::warn!(
+                    error = %e,
+                    persona_id = %persona_id,
+                    "hooks_sidecar: failed to record session capture — skipping line"
+                );
+            }
+        }
+    }
+
+    Ok(created)
+}
+
+/// Persist a single hook payload as a working-tier context memory.
+fn record_session_capture(
+    pool: &DbPool,
+    persona_id: &str,
+    execution_id: &str,
+    raw_line: &str,
+) -> Result<(), AppError> {
+    let payload: serde_json::Value = serde_json::from_str(raw_line)
+        .map_err(|e| AppError::Internal(format!("parse session_queue line: {e}")))?;
+
+    // Hook payload shape (as emitted by Claude Code):
+    //   { "session_id": "...", "transcript_path": "...", "hook_event_name": "Stop" }
+    // We extract the event name for tagging and keep the full JSON as content
+    // so a later `compile_persona_memories` pass has the raw material.
+    let hook_event = payload
+        .get("hook_event_name")
+        .and_then(|v| v.as_str())
+        .unwrap_or("session_capture");
+
+    let title = format!(
+        "Session capture ({hook_event}) — {}",
+        chrono::Utc::now().format("%Y-%m-%d %H:%M UTC")
+    );
+
+    // Pretty-print so the body is readable in the Memories UI without an
+    // extra rendering step.
+    let content = serde_json::to_string_pretty(&payload)
+        .unwrap_or_else(|_| raw_line.to_string());
+
+    let input = CreatePersonaMemoryInput {
+        persona_id: persona_id.to_string(),
+        title,
+        content,
+        category: Some("context".into()),
+        source_execution_id: Some(execution_id.to_string()),
+        importance: Some(2),
+        tags: Some(crate::db::models::Json(vec![
+            "session-capture".to_string(),
+            hook_event.to_string(),
+        ])),
+        use_case_id: None,
+    };
+
+    let memory = mem_repo::create(pool, input)?;
+    // Demote to `working` — these captures haven't proven valuable yet; the
+    // standard lifecycle (working → active at access_count >= 5, working →
+    // archive after 30 days unaccessed) gates which ones graduate.
+    let _ = mem_repo::update_tier(pool, &memory.id, "working");
+    Ok(())
 }
 
 #[cfg(test)]
@@ -254,5 +353,181 @@ mod tests {
         // Second call should yield nothing — file was truncated.
         let lines2 = drain_session_queue(tmp.path()).unwrap();
         assert!(lines2.is_empty());
+    }
+
+    /// End-to-end reactor: enabled env + populated queue → captures land in
+    /// `persona_memories` with category=context, tier=working, importance=2.
+    #[test]
+    fn drain_and_record_creates_working_tier_context_memories() {
+        use crate::db::init_test_db;
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::{memories as mem_repo, personas};
+
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::set_var(SIDECAR_ENV, "1");
+
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Drainer Agent".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join(".personas")).unwrap();
+        let qp = queue_path(tmp.path());
+        std::fs::write(
+            &qp,
+            r#"{"hook_event_name":"Stop","session_id":"sess-1","transcript_path":"/tmp/t.jsonl"}
+{"hook_event_name":"PreCompact","session_id":"sess-1","trigger":"auto"}
+"#,
+        )
+        .unwrap();
+
+        let exec_id = "exec-test-1";
+        let created =
+            drain_and_record_session_memories(&pool, tmp.path(), &persona.id, exec_id).unwrap();
+        std::env::remove_var(SIDECAR_ENV);
+
+        assert_eq!(created, 2, "both queue entries should land as memories");
+
+        let mems = mem_repo::get_by_execution(&pool, exec_id).unwrap();
+        assert_eq!(mems.len(), 2);
+        for m in &mems {
+            assert_eq!(m.category, "context");
+            assert_eq!(m.tier, "working");
+            assert_eq!(m.importance, 2);
+            assert!(m.title.starts_with("Session capture ("));
+            assert!(m.content.contains("hook_event_name"));
+            let tags = m.tags.as_ref().unwrap();
+            assert!(tags.0.contains(&"session-capture".to_string()));
+        }
+
+        // Queue file truncated — second drain is a no-op.
+        let again =
+            drain_and_record_session_memories(&pool, tmp.path(), &persona.id, exec_id).unwrap();
+        assert_eq!(again, 0);
+    }
+
+    /// Disabled env + populated queue → no I/O, no DB writes.
+    #[test]
+    fn drain_and_record_is_noop_when_disabled() {
+        use crate::db::init_test_db;
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::{memories as mem_repo, personas};
+
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::remove_var(SIDECAR_ENV);
+
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Disabled Agent".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join(".personas")).unwrap();
+        std::fs::write(
+            queue_path(tmp.path()),
+            r#"{"hook_event_name":"Stop"}"#,
+        )
+        .unwrap();
+
+        let created =
+            drain_and_record_session_memories(&pool, tmp.path(), &persona.id, "exec").unwrap();
+        assert_eq!(created, 0);
+
+        // Queue file untouched — no truncation when disabled.
+        let leftover = std::fs::read_to_string(queue_path(tmp.path())).unwrap();
+        assert!(leftover.contains("hook_event_name"));
+
+        let by_persona = mem_repo::get_by_persona(&pool, &persona.id, None).unwrap();
+        assert!(by_persona.is_empty(), "no memory writes when disabled");
+    }
+
+    /// Malformed JSON in one line should not block the others.
+    #[test]
+    fn drain_and_record_skips_malformed_lines() {
+        use crate::db::init_test_db;
+        use crate::db::models::CreatePersonaInput;
+        use crate::db::repos::core::{memories as mem_repo, personas};
+
+        let _guard = ENV_LOCK.lock().unwrap();
+        std::env::set_var(SIDECAR_ENV, "1");
+
+        let pool = init_test_db().unwrap();
+        let persona = personas::create(
+            &pool,
+            CreatePersonaInput {
+                name: "Resilient Agent".into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap();
+
+        let tmp = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(tmp.path().join(".personas")).unwrap();
+        std::fs::write(
+            queue_path(tmp.path()),
+            "not valid json\n{\"hook_event_name\":\"Stop\"}\n",
+        )
+        .unwrap();
+
+        let created =
+            drain_and_record_session_memories(&pool, tmp.path(), &persona.id, "exec-2").unwrap();
+        std::env::remove_var(SIDECAR_ENV);
+        assert_eq!(created, 1, "valid line should land; malformed line skipped");
+
+        let mems = mem_repo::get_by_execution(&pool, "exec-2").unwrap();
+        assert_eq!(mems.len(), 1);
     }
 }

@@ -1674,6 +1674,22 @@ pub async fn run_execution(
     logger.log(&format!("Duration: {duration_ms}ms"));
     logger.log("=== Persona Execution Finished ===");
 
+    // Reactor for the Claude Code hooks sidecar: drain any Stop / PreCompact
+    // payloads the CLI's native hooks dropped into `.personas/session_queue.jsonl`
+    // and persist them as working-tier `context` memories. Same env gate as
+    // the install side (`PERSONAS_HOOKS_SIDECAR=1`); a no-op otherwise. Failures
+    // are non-fatal — capture is best-effort.
+    match super::hooks_sidecar::drain_and_record_session_memories(
+        &pool,
+        &exec_dir,
+        &persona.id,
+        &execution_id,
+    ) {
+        Ok(0) => {}
+        Ok(n) => logger.log(&format!("[hooks] captured {n} session event(s) into persona_memories")),
+        Err(e) => logger.log(&format!("[hooks] reactor failed (non-fatal): {e}")),
+    }
+
     // Post-execution drive sync: compare the drive snapshot taken before
     // spawn to its current state and emit `drive.document.*` events for
     // every file that changed. Lets personas that write outputs through the
