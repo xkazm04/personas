@@ -253,12 +253,6 @@ export type Translations = {
     summary_stats: string;
     quick_navigation: string;
     platform_label: string;
-    fleet: {
-      executions_today: string;
-      success_rate: string;
-      active_agents: string;
-      credentials: string;
-    };
     roadmap: {
       title: string;
       subtitle: string;
@@ -301,6 +295,12 @@ export type Translations = {
       role: string;
       tool: string;
       goal: string;
+    };
+    fleet: {
+      executions_today: string;
+      success_rate: string;
+      active_agents: string;
+      credentials: string;
     };
     nav: {
       overview: {
@@ -1928,6 +1928,9 @@ export type Translations = {
       cancel_stream: string;
       stream_recovered: string;
       copy_failed: string;
+      quickadd_saved: string;
+      quickadd_failed: string;
+      quickadd_no_persona: string;
       experiments_running_one: string;
       experiments_running_other: string;
       you: string;

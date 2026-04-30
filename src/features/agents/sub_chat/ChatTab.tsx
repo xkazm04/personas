@@ -11,6 +11,7 @@ import { AdvisoryLaunchpad } from './AdvisoryLaunchpad';
 import { PlanPanel } from './PlanPanel';
 import { useExperimentBridge } from './hooks/useExperimentBridge';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createMemory } from '@/api/overview/memories';
 
 // Hysteresis: autoscroll is sticky (triggers when already close to bottom),
 // but the scroll-to-bottom button only appears after the user has clearly
@@ -153,6 +154,52 @@ export function ChatTab() {
   const handleSend = useCallback(async (directPrompt?: string) => {
     const text = (directPrompt ?? inputValue).trim();
     if (!text || chatStreaming || isExecuting) return;
+
+    // Claude-Code-style quick-add: input starting with `# ` is captured as a
+    // persona memory rather than sent to the LLM. The first line (after `# `)
+    // becomes the title; any remaining lines become the body. Bypasses the
+    // chat session entirely — no LLM round-trip, no message in history.
+    if (text.startsWith('# ')) {
+      const newlineIdx = text.indexOf('\n');
+      const titleRaw = (newlineIdx === -1 ? text.slice(2) : text.slice(2, newlineIdx)).trim();
+      const body = newlineIdx === -1 ? titleRaw : text.slice(newlineIdx + 1).trim();
+      if (!titleRaw) {
+        return; // bare `# ` — nothing to save, just ignore
+      }
+      if (!personaId) {
+        useToastStore.getState().addToast(
+          t.agents.chat.quickadd_no_persona,
+          'error',
+          4000,
+        );
+        return;
+      }
+      try {
+        await createMemory({
+          persona_id: personaId,
+          title: titleRaw,
+          content: body || titleRaw,
+          category: 'learned',
+          source_execution_id: null,
+          importance: 4,
+          tags: ['quickadd'],
+        });
+        setInputValue('');
+        useToastStore.getState().addToast(
+          tx(t.agents.chat.quickadd_saved, { title: titleRaw }),
+          'success',
+          3000,
+        );
+      } catch (err) {
+        useToastStore.getState().addToast(
+          `${t.agents.chat.quickadd_failed}: ${err}`,
+          'error',
+          4000,
+        );
+      }
+      return;
+    }
+
     // Snapshot the personaId at entry. If the user switches personas during
     // the async startNewSession await, we must NOT attach messages to the
     // newly-selected persona — that would leak content across histories.
@@ -180,7 +227,7 @@ export function ChatTab() {
     }
     setInputValue('');
     sendMessage(sendPersonaId, sessionId, text);
-  }, [inputValue, chatStreaming, isExecuting, activeChatSessionId, personaId, startNewSession, sendMessage]);
+  }, [inputValue, chatStreaming, isExecuting, activeChatSessionId, personaId, startNewSession, sendMessage, t, tx]);
 
   const handleNewSession = useCallback(async () => {
     if (personaId) {
