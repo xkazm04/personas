@@ -1987,6 +1987,9 @@ pub fn run() {
             commands::infrastructure::idea_scanner::dev_tools_run_scan,
             commands::infrastructure::idea_scanner::dev_tools_cancel_scan,
             commands::infrastructure::idea_scanner::dev_tools_get_idea_scan_status,
+            // Dev Tools -- Static Scan (deterministic CLI-driven sibling)
+            commands::infrastructure::static_scan::dev_tools_set_static_scan_config,
+            commands::infrastructure::static_scan::dev_tools_run_static_scan,
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,
             commands::infrastructure::dev_tools::dev_tools_get_task,
