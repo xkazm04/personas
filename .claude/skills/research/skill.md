@@ -405,6 +405,24 @@ The inline task plan should include:
 
 Record the commit SHAs in the Research note frontmatter (`commits: [<sha1>, <sha2>, ...]`) and in the Phase 11 final summary. The Research note replaces the handoff file as the canonical per-run artifact.
 
+**Option B-Design — Design-then-execute (when shape requires exploration)**
+Pick this when the user replies to Phase 8 with phrases like "propose approaches", "design first", "what are the options", "scan and propose", "three different approaches", or otherwise signals that the finding's shape is ambiguous and needs exploration before code lands. The shape is: explore → user picks → write a concrete design doc → **immediately execute** against it in the same session.
+
+Steps:
+1. **Scan once more.** Run a focused round of codebase evidence gathering beyond Phase 6 to ground the approaches in concrete file anchors. Do not skip this — without it, the approaches read as generic and the user cannot distinguish them.
+2. **Present 2-3 approaches** with tradeoff tables (✅ benefits / ⚠️ risks per approach) and effort estimates. Each approach must name actual file paths and existing infrastructure it would attach to or extend. Generic approaches that could apply to any codebase are a smell — the source-grounded option is the one the user picks.
+3. **Wait for the user's pick.** Do NOT proceed to design-doc writing on speculation; the user may refine the framing or merge approaches.
+4. **Write a co-located `DESIGN.md`** next to where the code will land (e.g. `src/features/<area>/<sub_feature>/DESIGN.md`), NOT in `.planning/handoffs/`. The co-location matters: a future session reading the code finds the design rationale next to it. If the location is genuinely ambiguous (multi-area changes), use `.planning/research/{date}-{slug}.md` instead.
+5. **Continue IMMEDIATELY to in-session execution** against the design. Do NOT stop at the design doc and ask for approval. The user already approved the approach in step 3; the design doc is the implementation contract, not a second decision gate.
+6. **Treat the design doc as a working artifact.** If implementation reveals a constraint that invalidates part of the design (e.g., the proposed schema conflicts with an existing index), AMEND the design doc inline and continue with the new shape. Don't pause for re-approval on minor adjustments — only pause if the change is structural enough that the user would have picked a different approach.
+7. **Atomic commits per PR step in the design's rollout plan.** A 5-PR rollout = 5 atomic commits. Validation runs per commit (cargo check / tsc / lint / locale parity), same rules as Option B.
+
+**Why this is its own option, not just a variant of B:** A regular Option B finding has a clear `file_path:line` anchor where the change lands. A B-Design finding starts with no clear anchor — the work is partly figuring out what to build. The exploration step is non-trivial (3+ tool calls of codebase scan), and writing the design doc is real work (typically ~1-2 KLOC of markdown). Wrapping it in a labeled option lets future runs reuse the pattern without re-discovering it.
+
+**Anti-pattern:** writing a design doc and stopping there ("design ready for review"). That fragments the work across sessions and re-introduces the merge-loss risk Phase 13 was designed to prevent. The 2026-04-17 split-session lesson applies here too — the design exploration and the implementation belong in one context window.
+
+**When this option does NOT apply:** if the user accepts a finding with a clear file anchor without asking for approaches, just run Option A or B. Don't volunteer an exploration round when none is needed.
+
 **Option B2 — Implementation-ready handoff plan (FALLBACK when in-session execution is impractical)**
 This was the old Option B default. It is now a fallback. Use ONLY when one of the "when in-session execution is NOT possible" conditions above is met. When written, use the structure from Option B above (Why this matters, Goal, Non-goals, Dependency graph, Per-task spec, Cross-cutting concerns, Final acceptance checklist, What to do if you get stuck, Out of band) and save to `.planning/handoffs/{YYYY-MM-DD}-{slug}.md`.
 
@@ -1203,6 +1221,37 @@ Every research run now ends with an explicit commit step. The design choices:
 - The learning-loop handoff has not been executed yet. Its non-goals section is extensive; the test-run guard is the load-bearing piece. Verify on the next run after execution whether the implementing CLI honored the guard or drifted. If drift happened, the non-goals format itself needs revising.
 - Three runs in a single day happened organically for the first time. How common is this going to be? If >1 run/day becomes routine, the Lessons-file append pattern becomes load-bearing. If it stays rare (days with multiple runs are the exception), the rule is good defensive practice but not a frequent hazard.
 - The `is_test_run` detection in personas' execution context may not exist as a clean signal. Task 0 of the handoff says "grep for existing test-run detection and reuse the same predicate; if ambiguous, default to TRUE (skip hooks)." Whether this predicate exists is unknown as of handoff-write time — the implementing CLI will have to discover it. If they come back saying "no such predicate exists," the handoff has a gap that needs filling with a fresh detection mechanism. Watch for this follow-up.
+
+### 2026-04-30 — Option B-Design (design-then-execute) added after PokeeClaw run
+
+**Context:** `/research` run on the PokeeClaw walkthrough produced an already-existed-heavy yield: 0 actionable findings + 8 catches + 1 weak finding (unified audit-log surface). The user accepted the weak finding's *spirit* but pushed back on the framing — *"we already have some variant of C in Overview module, new section there for Option B will be useful"* — and asked for **three different design approaches**, not a direct implementation.
+
+The skill at the time had no labeled handling for this shape. I improvised: Phase 6 evidence-gathering round 2, then a Phase 7-shaped output with three approaches and tradeoffs, then a co-located `DESIGN.md` at `src/features/overview/sub_incidents/DESIGN.md`. The user's next turn was *"continue with design and implementation within this session"* — confirming that stopping at the design doc was wrong by default. The design doc was meant to be the contract for execution, not a separate approval gate.
+
+**Pattern observed:**
+- Some accepted findings have a clear `file_path:line` anchor — Option A or B applies directly.
+- Some accepted findings need exploration first — multiple plausible designs, no obvious anchor, the user wants to choose between shapes before code lands.
+- The latter category was being shoehorned into Option D (record-only) or stalling at "design written, awaiting approval", both of which fragment the work.
+
+**Rule added: Option B-Design.** Triggers on user phrases like "propose approaches", "design first", "what are the options", "three different approaches", or "scan and propose". The shape is: scan-grounded approaches → user picks → co-located `DESIGN.md` → **immediate in-session execution** without a second approval turn. The design doc is the implementation contract, not a decision gate.
+
+**Why a labeled option vs. a sub-mode of Option B:** the exploration step (3+ tool calls + a tradeoff-shaped Phase 7 output) is non-trivial and easy to skip; the design doc is real work (typically 1-2 KLOC of markdown); the "co-located not in `.planning/handoffs/`" rule is non-obvious. Wrapping these in a named option means future runs reuse the pattern without re-discovering it. Skipping the labeling would mean the next "propose three approaches" request gets a different shape every time.
+
+**Co-location rule.** Design docs go next to the code they describe (`src/features/<area>/<sub>/DESIGN.md`), NOT in `.planning/handoffs/`. The 2026-04-17 demotion of handoff plans showed the cost of putting implementation contracts far from the code — they go stale silently. Co-location reverses that: a future maintainer reading the implementation finds the design next to it.
+
+**Working-artifact rule.** The design doc is allowed to be amended during implementation when a constraint surfaces (e.g., the proposed schema conflicts with an existing index). Only structural changes that would have made the user pick a different approach require pausing for re-approval; minor amendments happen inline and the implementation continues.
+
+**Rules considered but not added:**
+
+- "Always write a `DESIGN.md` for clusters of 3+ findings." Too aggressive — most clusters have a clear anchor and a design doc would be ceremony. The trigger has to be the user asking for it.
+- "Treat the design doc as a one-way contract — if implementation diverges, fail loudly." Too brittle — implementation always reveals constraints the design didn't see. The right rule is "amend inline, only escalate structural changes."
+- "Cap design doc length." Premature optimization. The PokeeClaw `DESIGN.md` was ~16 KB and that was the right size for a 7-source promoter + lifecycle + UI feature. A shorter doc would have left implementation gaps; a longer one would have been over-engineering.
+
+**Open questions for future runs:**
+
+- Will users start asking for "approaches" reflexively even when the finding has a clear anchor? If yes, the trigger phrases listed in Option B-Design need a "but only when the anchor isn't obvious" caveat. Watch the next 3-5 runs.
+- The PokeeClaw run's design doc had a 5-PR rollout plan. In-session execution against that plan = 5 atomic commits in one session. Will context budgets accommodate that on every B-Design run? If not, the option needs a "ship the first 1-2 PRs in-session, hand off the rest as todos via /gsd-add-todo" sub-rule.
+- Co-location implies the design doc gets git-tracked. Should we add a CI rule that flags `DESIGN.md` files older than 90 days as "stale design — verify or delete"? Out of scope for this iteration, but worth noting.
 
 ### 2026-04-17 — In-session execution becomes the Phase 8 default (handoff demoted to fallback)
 
