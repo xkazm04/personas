@@ -1828,6 +1828,48 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added last_heartbeat_at column to persona_executions");
     }
 
+    // -- audit_incidents: cross-source promoted incidents ------------------
+    // See `src/features/overview/sub_incidents/DESIGN.md` for the rollout
+    // plan and the per-source promotion rules. Stores rows promoted from
+    // 7 existing audit-shaped tables under a single triage lifecycle
+    // (open → acknowledged → resolved | dismissed). The dedup_key is
+    // `{source_table}:{source_id}` and is UNIQUE so concurrent inserts are
+    // idempotent under SQLite WAL.
+    let has_audit_incidents: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='audit_incidents'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_audit_incidents {
+        conn.execute_batch(
+            "CREATE TABLE IF NOT EXISTS audit_incidents (
+                id              TEXT PRIMARY KEY,
+                source_table    TEXT NOT NULL,
+                source_id       TEXT NOT NULL,
+                dedup_key       TEXT NOT NULL UNIQUE,
+                persona_id      TEXT,
+                persona_name    TEXT,
+                execution_id    TEXT,
+                severity        TEXT NOT NULL,
+                kind            TEXT NOT NULL,
+                title           TEXT NOT NULL,
+                detail          TEXT,
+                status          TEXT NOT NULL DEFAULT 'open',
+                acknowledged_at TEXT,
+                acknowledged_by TEXT,
+                resolved_at     TEXT,
+                resolution_note TEXT,
+                created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+            );
+            CREATE INDEX IF NOT EXISTS idx_ai_status   ON audit_incidents(status, created_at DESC);
+            CREATE INDEX IF NOT EXISTS idx_ai_persona  ON audit_incidents(persona_id, status);
+            CREATE INDEX IF NOT EXISTS idx_ai_severity ON audit_incidents(severity, status);
+            CREATE INDEX IF NOT EXISTS idx_ai_source   ON audit_incidents(source_table, source_id);"
+        )?;
+        tracing::info!("Created audit_incidents table (cross-source incidents inbox)");
+    }
+
     Ok(())
 }
 
