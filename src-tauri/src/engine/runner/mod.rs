@@ -634,6 +634,22 @@ pub async fn run_execution(
         Err(e) => logger.log(&format!("[hooks] sidecar install failed (non-fatal): {e}")),
     }
 
+    // Project tiered persona memories into exec_dir/CLAUDE.md so they survive
+    // Claude Code's /compact (which re-reads CLAUDE.md from disk).
+    // No-op unless PERSONAS_CLAUDE_MD_PROJECTION=1 — see claude_md_projection.rs.
+    // Runs in parallel with the system-prompt injection in `assemble_prompt`;
+    // the projection is the compaction-survival path.
+    match super::claude_md_projection::install_projection(
+        &pool,
+        &exec_dir,
+        &persona.id,
+        execution_use_case_id.as_deref(),
+    ) {
+        Ok(true) => logger.log("[projection] wrote tiered memories to exec_dir/.claude/persona-memory.md"),
+        Ok(false) => {} // disabled, no memories, or skipped
+        Err(e) => logger.log(&format!("[projection] CLAUDE.md projection failed (non-fatal): {e}")),
+    }
+
     // Snapshot the managed drive before the CLI runs so we can diff post-run
     // and fire `drive.document.*` events for files the persona produced.
     // The drive root is only available after at least one `drive_*` command
