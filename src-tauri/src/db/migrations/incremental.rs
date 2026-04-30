@@ -2042,6 +2042,15 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         "ALTER TABLE dev_projects ADD COLUMN monitoring_project_slug TEXT;"
     ).ok();
 
+    // -- dev_projects: static_scan_config -------------------------------------
+    // JSON envelope { tool: "fallow"|"knip"|..., command: [..argv..] } that
+    // configures which static-analysis CLI the static_scan runner spawns for
+    // this project. Sibling to the LLM-driven idea_scanner — see
+    // commands/infrastructure/static_scan.rs.
+    conn.execute_batch(
+        "ALTER TABLE dev_projects ADD COLUMN static_scan_config TEXT;"
+    ).ok();
+
     // ── Composition Workflows (persisted DAG definitions) ───────────────
     // Migrates workflows from frontend localStorage to backend SQLite.
     conn.execute_batch(

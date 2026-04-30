@@ -23,6 +23,7 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         github_url: row.get("github_url").unwrap_or(None),
         monitoring_credential_id: row.get("monitoring_credential_id").unwrap_or(None),
         monitoring_project_slug: row.get("monitoring_project_slug").unwrap_or(None),
+        static_scan_config: row.get("static_scan_config").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -320,6 +321,26 @@ pub fn delete_project(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM dev_projects WHERE id = ?1", params![id])?;
         Ok(rows > 0)
+    })
+}
+
+/// Set or clear the static-analysis CLI config JSON for a project. The shape
+/// is opaque to the repo — see `commands/infrastructure/static_scan.rs::ToolConfig`.
+/// Pass `None` to clear (disables the per-project static sweep).
+pub fn update_static_scan_config(
+    pool: &DbPool,
+    id: &str,
+    config_json: Option<&str>,
+) -> Result<DevProject, AppError> {
+    timed_query!("dev_projects", "dev_projects::update_static_scan_config", {
+        get_project_by_id(pool, id)?;
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_projects SET static_scan_config = ?1, updated_at = ?2 WHERE id = ?3",
+            params![config_json, now, id],
+        )?;
+        get_project_by_id(pool, id)
     })
 }
 

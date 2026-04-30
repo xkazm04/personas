@@ -17,6 +17,10 @@ pub struct DevProject {
     pub github_url: Option<String>,
     pub monitoring_credential_id: Option<String>,
     pub monitoring_project_slug: Option<String>,
+    /// JSON envelope `{ tool, command }` configuring the static-analysis CLI
+    /// the `static_scan` runner spawns for this project. None disables the
+    /// per-project sweep; the runner falls back to package-manager detection.
+    pub static_scan_config: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
