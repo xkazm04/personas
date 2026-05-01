@@ -750,6 +750,66 @@ pub fn preview_cron_schedule(
     })
 }
 
+/// Compute every cron fire time in `[start, end)`, evaluated in the supplied
+/// IANA timezone (or system-local when None). Used by the calendar UI which
+/// renders a windowed view of upcoming and past-projected fires.
+///
+/// Returns RFC3339 strings, sorted ascending. Capped at `max` (default 200,
+/// hard ceiling 1000). When the cron is invalid, returns an empty list — the
+/// caller distinguishes "no fires" from "invalid cron" via `preview_cron_schedule`
+/// which carries an error string.
+#[tauri::command]
+pub fn cron_fire_times_in_range(
+    state: State<'_, Arc<AppState>>,
+    cron_expression: String,
+    timezone: Option<String>,
+    start: String,
+    end: String,
+    max: Option<usize>,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    let cap = max.unwrap_or(200).min(1000);
+
+    let schedule = match crate::engine::cron::parse_cron(&cron_expression) {
+        Ok(s) => s,
+        Err(_) => return Ok(vec![]),
+    };
+
+    let start_utc: chrono::DateTime<chrono::Utc> = match start.parse::<chrono::DateTime<chrono::Utc>>() {
+        Ok(t) => t,
+        Err(e) => return Err(AppError::Internal(format!("invalid start RFC3339: {e}"))),
+    };
+    let end_utc: chrono::DateTime<chrono::Utc> = match end.parse::<chrono::DateTime<chrono::Utc>>() {
+        Ok(t) => t,
+        Err(e) => return Err(AppError::Internal(format!("invalid end RFC3339: {e}"))),
+    };
+    if end_utc <= start_utc {
+        return Ok(vec![]);
+    }
+
+    let tz = timezone.as_deref().and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+
+    let mut runs = Vec::with_capacity(cap.min(64));
+    // next_fire_time_* returns a time strictly after `from`. To include a fire
+    // exactly at `start`, we step `from` backward by one second on the first
+    // iteration so an equal-to-start time isn't missed.
+    let mut from = start_utc - chrono::Duration::seconds(1);
+    while runs.len() < cap {
+        let next = match tz {
+            Some(zone) => crate::engine::cron::next_fire_time_in_tz(&schedule, from, zone),
+            None => crate::engine::cron::next_fire_time_local(&schedule, from),
+        };
+        match next {
+            Some(t) if t < end_utc => {
+                runs.push(t.to_rfc3339());
+                from = t;
+            }
+            _ => break,
+        }
+    }
+    Ok(runs)
+}
+
 /// Convert a 5-field cron expression to a human-readable string.
 fn cron_to_human(expr: &str) -> String {
     let fields: Vec<&str> = expr.split_whitespace().collect();

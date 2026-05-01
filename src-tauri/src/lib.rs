@@ -1671,6 +1671,7 @@ pub fn run() {
             commands::tools::triggers::rename_event_type,
             commands::tools::triggers::get_webhook_status,
             commands::tools::triggers::preview_cron_schedule,
+            commands::tools::triggers::cron_fire_times_in_range,
             commands::tools::triggers::dry_run_trigger,
             commands::tools::triggers::list_cron_agents,
             // Tools -- Webhook Request Inspector

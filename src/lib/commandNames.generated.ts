@@ -762,6 +762,7 @@ export type CommandName =
   | "preview_bundle_import"
   | "preview_competitive_import"
   | "preview_cron_schedule"
+  | "cron_fire_times_in_range"
   | "preview_digest"
   | "preview_execution"
   | "preview_prompt"

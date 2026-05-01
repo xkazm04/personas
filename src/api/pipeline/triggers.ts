@@ -157,6 +157,30 @@ export const previewCronSchedule = (
   timezone?: string,
 ) => invoke<CronPreview>("preview_cron_schedule", { cronExpression, count, timezone });
 
+/**
+ * Compute every cron fire time within `[start, end)`, evaluated in the supplied
+ * IANA timezone (or system-local when undefined). Used by the calendar UI to
+ * render a windowed view of upcoming and past-projected fires.
+ *
+ * Returns RFC3339 strings, ascending. Returns an empty array when the cron
+ * expression is invalid (use `previewCronSchedule` for validation feedback).
+ *
+ * `max` defaults to 200, hard-capped at 1000 by the backend.
+ */
+export const cronFireTimesInRange = (
+  cronExpression: string,
+  timezone: string | undefined,
+  start: Date,
+  end: Date,
+  max?: number,
+) => invoke<string[]>("cron_fire_times_in_range", {
+  cronExpression,
+  timezone,
+  start: start.toISOString(),
+  end: end.toISOString(),
+  max,
+});
+
 // ============================================================================
 // Webhook Server
 // ============================================================================
