@@ -223,6 +223,9 @@ export function getWebhookUrl(triggerId: string): string {
 
 export interface ScheduleConfig extends Schedule {
   type: 'schedule';
+  /** Max catch-up executions to enqueue when the trigger is overdue. Undefined
+   *  or 1 = current fire-once-on-overdue behavior. Backend hard-caps at 100. */
+  max_backfill?: number;
   event_type?: string;
 }
 
@@ -476,6 +479,7 @@ export function parseTriggerConfig(
         cron: raw.cron as string | undefined,
         interval_seconds: raw.interval_seconds as number | undefined,
         timezone: raw.timezone as string | undefined,
+        max_backfill: raw.max_backfill as number | undefined,
         event_type: raw.event_type as string | undefined,
       };
     case 'polling':

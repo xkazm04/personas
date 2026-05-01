@@ -1454,6 +1454,7 @@ mod tests {
             cron: Some("*/15 * * * *".into()),
             interval_seconds: None,
             timezone: None,
+            max_backfill: None,
             event_type: None,
             payload: None,
         };
@@ -1520,6 +1521,7 @@ mod tests {
             cron: Some("0 * * * *".into()),
             interval_seconds: None,
             timezone: None,
+            max_backfill: None,
             event_type: None,
             payload: None,
         };

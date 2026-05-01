@@ -256,6 +256,14 @@ pub enum TriggerConfig {
         /// expression should be evaluated. When `None`, the system's local
         /// timezone is used.
         timezone: Option<String>,
+        /// Max number of catch-up executions to enqueue when the trigger is
+        /// overdue (e.g. after the app was offline through several scheduled
+        /// fire times). `None` or `Some(1)` = current "fire once on overdue"
+        /// behavior. The scheduler hard-caps backfill at 100 per tick
+        /// regardless of this value to prevent amplification after long
+        /// downtime.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        max_backfill: Option<u32>,
         event_type: Option<String>,
         payload: Option<serde_json::Value>,
     },
@@ -517,6 +525,10 @@ impl TriggerConfig {
                 cron: val.get("cron").and_then(|v| v.as_str()).map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
                 timezone: val.get("timezone").and_then(|v| v.as_str()).map(String::from),
+                max_backfill: val
+                    .get("max_backfill")
+                    .and_then(|v| v.as_u64())
+                    .and_then(|n| u32::try_from(n).ok()),
                 event_type,
                 payload,
             },
