@@ -116,7 +116,17 @@ export const BUTTON_VARIANTS: Record<'tryIt' | 'adopt' | 'delete', ButtonVariant
 };
 
 /** Review status colors -- derived from the unified STATUS_PALETTE. */
-export const STATUS_COLORS: Record<string, StatusToken> = {
+export type StatusColorKey =
+  | 'info'
+  | 'ai'
+  | 'rotation'
+  | 'success'
+  | 'warning'
+  | 'error'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+export const STATUS_COLORS: Record<StatusColorKey, StatusToken> = {
   info:     STATUS_PALETTE_EXTENDED.info,
   ai:       STATUS_PALETTE_EXTENDED.ai,
   rotation: STATUS_PALETTE_EXTENDED.rotation,

@@ -9,10 +9,10 @@ import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const INFO_STATUS = STATUS_COLORS.info!;
-const AI_STATUS = STATUS_COLORS.ai!;
-const SUCCESS_STATUS = STATUS_COLORS.success!;
-const WARNING_STATUS = STATUS_COLORS.warning!;
+const INFO_STATUS = STATUS_COLORS.info;
+const AI_STATUS = STATUS_COLORS.ai;
+const SUCCESS_STATUS = STATUS_COLORS.success;
+const WARNING_STATUS = STATUS_COLORS.warning;
 
 /** Convert a snake_case field key to a human-friendly label. */
 export function formatFieldLabel(key: string): string {

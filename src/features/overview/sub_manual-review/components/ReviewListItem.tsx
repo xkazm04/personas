@@ -106,7 +106,7 @@ interface InboxItemProps {
 }
 
 export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
-  const status = STATUS_COLORS[review.status] ?? STATUS_COLORS.pending!;
+  const status = STATUS_COLORS[review.status as keyof typeof STATUS_COLORS] ?? STATUS_COLORS.pending;
   const statusLabel = STATUS_LABELS[review.status] ?? 'Pending';
 
   return (
