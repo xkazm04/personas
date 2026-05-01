@@ -63,6 +63,12 @@ src-tauri/
 - Always use `invokeWithTimeout` from `@/lib/tauriInvoke` — never raw `invoke`
 - ESLint `no-restricted-imports` enforces this
 
+### ts-rs bindings (Rust → TypeScript types)
+- **Single source of truth: `src/lib/bindings/`.** ts-rs writes here directly via `TS_RS_EXPORT_DIR` set in `src-tauri/.cargo/config.toml`. There is no longer a parallel `src-tauri/bindings/` directory — that dual-copy + manual-sync trap was retired in the build-tooling architect run (2026-05-01).
+- **After adding `#[derive(TS)] #[ts(export)]` to a Rust struct**, run `cargo test --manifest-path src-tauri/Cargo.toml export_bindings` from the repo root. Commit the resulting new/changed files in `src/lib/bindings/`.
+- CI verifies via `git diff --quiet src/lib/bindings/` — a missing regen fails the build at `.github/workflows/ci.yml`'s binding-drift job.
+- New Tauri commands additionally need `node scripts/generate-command-names.mjs` (or just `npm run dev`/`npm run build` which trigger `predev`/`prebuild`).
+
 ### Styling
 - **Canonical reference: [`.claude/Design.md`](./Design.md)** — single source of truth for tokens, typography, color, spacing, radius, elevation, motion, and component primitives. Read it before adding any new UI surface or extending an existing one.
 - Semantic design tokens: `typo-*` for text sizes, `rounded-{interactive,input,card,modal}` for radii, `shadow-elevation-1..4` for depth, JS spacing tokens (`CARD_PADDING`, `SECTION_GAP`, ...) for layout

@@ -1,3 +1,12 @@
+# ts-rs binding output path. Default would be `src-tauri/bindings/`; redirect
+# to `src/lib/bindings/` (the frontend's canonical import path) so there's
+# one source of truth instead of two committed copies that drift. The path
+# is relative to CARGO_MANIFEST_DIR (= src-tauri/), so `../src/lib/bindings/`
+# resolves to repo-root-relative `src/lib/bindings/`. Future ts-rs invocations
+# (predev, prebuild, CI) write here directly — no manual copy step.
+[env]
+TS_RS_EXPORT_DIR = { value = "../src/lib/bindings", relative = true }
+
 # Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe)
 [target.aarch64-pc-windows-msvc]
 linker = "lld-link"

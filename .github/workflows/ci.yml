@@ -221,7 +221,12 @@ jobs:
             libjavascriptcoregtk-4.1-dev
 
       - name: Regenerate TypeScript bindings
-        run: cargo test --manifest-path src-tauri/Cargo.toml export_bindings 2>/dev/null || true
+        # ts-rs writes to src/lib/bindings/ via TS_RS_EXPORT_DIR set in
+        # src-tauri/.cargo/config.toml. The drift check below diffs that path.
+        # Fail loudly: if Rust compile errors prevent export, the binding-drift
+        # gate is meaningless. (Previously wrapped in `2>/dev/null || true`,
+        # which silently masked Rust-side breakage.)
+        run: cargo test --manifest-path src-tauri/Cargo.toml export_bindings
 
       - name: Check for binding drift
         run: |
