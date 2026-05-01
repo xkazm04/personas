@@ -14,7 +14,10 @@ import type { PersonaExecution } from '@/lib/types/types';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { listHealingIssues } from '@/api/overview/healing';
 import { getRetryChain } from '@/api/overview/healing';
+import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
+
+const logger = createLogger('healing-overlay');
 
 interface HealingOverlayProps {
   execution: PersonaExecution;
@@ -48,9 +51,15 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
     setLoading(true);
 
     Promise.all([
-      listHealingIssues(execution.persona_id).catch(() => [] as PersonaHealingIssue[]),
+      listHealingIssues(execution.persona_id).catch((err) => {
+        logger.warn('Failed to load healing issues', { error: err });
+        return [] as PersonaHealingIssue[];
+      }),
       execution.retry_of_execution_id || execution.retry_count > 0
-        ? getRetryChain(execution.id, execution.persona_id).catch(() => [] as PersonaExecution[])
+        ? getRetryChain(execution.id, execution.persona_id).catch((err) => {
+            logger.warn('Failed to load retry chain', { error: err });
+            return [] as PersonaExecution[];
+          })
         : Promise.resolve([] as PersonaExecution[]),
     ]).then(([allIssues, chain]) => {
       if (cancelled) return;
