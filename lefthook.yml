@@ -1,42 +1,28 @@
-# EXAMPLE USAGE:
+# Lefthook git hooks for personas-desktop
 #
-#   Refer for explanation to following link:
-#   https://lefthook.dev/configuration/
+# Hooks installed by `npm install` via the `prepare` script (lefthook install).
+# Disable for a single command with LEFTHOOK=0; uninstall with `lefthook uninstall`.
 #
-# pre-push:
-#   jobs:
-#     - name: packages audit
-#       tags:
-#         - frontend
-#         - security
-#       run: yarn audit
-#
-#     - name: gems audit
-#       tags:
-#         - backend
-#         - security
-#       run: bundle audit
-#
-# pre-commit:
-#   parallel: true
-#   jobs:
-#     - run: yarn eslint {staged_files}
-#       glob: "*.{js,ts,jsx,tsx}"
-#
-#     - name: rubocop
-#       glob: "*.rb"
-#       exclude:
-#         - config/application.rb
-#         - config/routes.rb
-#       run: bundle exec rubocop --force-exclusion -- {all_files}
-#
-#     - name: govet
-#       files: git ls-files -m
-#       glob: "*.go"
-#       run: go vet -- {files}
-#
-#     - script: "hello.js"
-#       runner: node
-#
-#     - script: "hello.go"
-#       runner: go run
+# Design principles:
+# - pre-commit must stay fast (<5s on a small commit) so it doesn't break flow
+# - hooks NEVER stash, restore, or rewrite the working tree (concurrent CLIs
+#   share the tree; mutating it would clobber other sessions' work)
+# - lint --fix is applied to staged files only; the developer re-stages if
+#   they want the auto-fixes included
+# - heavier validation (full type-check, i18n coverage) lives on pre-push so
+#   the local build feedback loop catches things before they reach CI
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: eslint-staged
+      glob: "*.{ts,tsx,js,cjs,mjs}"
+      run: npx eslint --no-warn-ignored --max-warnings 99999 {staged_files}
+
+pre-push:
+  jobs:
+    - name: typecheck
+      run: npx tsc --noEmit
+
+    - name: i18n-coverage
+      run: node scripts/i18n/check-coverage.mjs
