@@ -1797,6 +1797,7 @@ pub fn run() {
             commands::companion::companion_init,
             commands::companion::chat::companion_send_message,
             commands::companion::chat::companion_list_recent_messages,
+            commands::companion::chat::companion_reset_conversation,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

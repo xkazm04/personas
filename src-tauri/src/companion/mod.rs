@@ -9,6 +9,7 @@
 
 pub mod brain;
 pub mod disk;
+pub mod observability;
 pub mod prompt;
 pub mod session;
 pub mod templates;

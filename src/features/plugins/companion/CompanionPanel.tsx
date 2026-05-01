@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Send, X } from 'lucide-react';
+import { Bot, RotateCcw, Send, X } from 'lucide-react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useCompanionStore } from './companionStore';
 import {
   COMPANION_STREAM_EVENT,
   companionListRecentMessages,
+  companionResetConversation,
   companionSendMessage,
   type CompanionStreamEvent,
 } from '@/api/companion';
@@ -52,7 +54,18 @@ export default function CompanionPanel() {
           role="dialog"
           aria-label={t.plugins.companion.panel_label}
         >
-          <Header onClose={() => setState('collapsed')} />
+          <Header
+            onClose={() => setState('collapsed')}
+            onReset={async () => {
+              try {
+                await companionResetConversation(false);
+                const fresh = await companionListRecentMessages(50);
+                setMessages(fresh);
+              } catch (err: unknown) {
+                silentCatch('companion_reset_conversation')(err);
+              }
+            }}
+          />
           <Body
             initialized={initialized}
             initError={initError}
@@ -73,7 +86,13 @@ export default function CompanionPanel() {
   );
 }
 
-function Header({ onClose }: { onClose: () => void }) {
+function Header({
+  onClose,
+  onReset,
+}: {
+  onClose: () => void;
+  onReset: () => void;
+}) {
   const { t } = useTranslation();
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
@@ -93,13 +112,23 @@ function Header({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-      <button
-        onClick={onClose}
-        className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
-        aria-label={t.common.close}
-      >
-        <X className="w-4 h-4" />
-      </button>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={onReset}
+          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          aria-label={t.plugins.companion.reset}
+          title={t.plugins.companion.reset}
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onClose}
+          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          aria-label={t.common.close}
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </header>
   );
 }
@@ -266,16 +295,25 @@ function Bubble({
   children: React.ReactNode;
 }) {
   const isUser = role === 'user';
+  // User messages render as plain text (typically no markdown). Assistant
+  // messages render through MarkdownRenderer so headings, lists, code, and
+  // emphasis show properly. Streaming text also renders as markdown so
+  // partial content looks right as it grows.
+  const isString = typeof children === 'string';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        className={`max-w-[85%] rounded-card px-3.5 py-2.5 typo-body whitespace-pre-wrap break-words ${
+        className={`max-w-[85%] rounded-card px-3.5 py-2.5 typo-body break-words ${
           isUser
-            ? 'bg-primary/15 text-foreground'
+            ? 'bg-primary/15 text-foreground whitespace-pre-wrap'
             : 'bg-foreground/5 text-foreground'
-        } ${streaming ? 'animate-pulse' : ''}`}
+        } ${streaming ? 'opacity-90' : ''}`}
       >
-        {children}
+        {isUser || !isString ? (
+          children
+        ) : (
+          <MarkdownRenderer content={children as string} />
+        )}
       </div>
     </div>
   );

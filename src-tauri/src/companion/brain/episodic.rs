@@ -7,14 +7,19 @@
 //! consolidation can be rebuilt from the source log if it drifts.
 
 use std::fs;
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 use chrono::Utc;
 use rusqlite::params;
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
 
+use crate::companion::brain::embeddings;
 use crate::companion::disk;
 use crate::db::UserDbPool;
+#[cfg(feature = "ml")]
+use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
 /// Roles used in conversation episodes. Observation episodes (agent events
@@ -96,6 +101,35 @@ pub fn append_episode(
     )?;
 
     Ok(id)
+}
+
+/// Same as `append_episode`, but also embeds the content into the
+/// `companion_embedding` vec0 table. Embedding failure is logged but does
+/// NOT fail the episode write — the episode is persisted to disk + SQL
+/// index regardless. (We can always reindex later from disk.)
+#[cfg(feature = "ml")]
+pub async fn append_episode_and_embed(
+    pool: &UserDbPool,
+    embedder: &Arc<EmbeddingManager>,
+    session_id: &str,
+    role: EpisodeRole,
+    content: &str,
+) -> Result<String, AppError> {
+    let id = append_episode(pool, session_id, role, content)?;
+    if let Err(e) = embeddings::embed_and_store(pool, embedder, &id, content).await {
+        tracing::warn!(node_id = %id, error = %e, "companion embed_and_store failed (continuing)");
+    }
+    Ok(id)
+}
+
+#[cfg(not(feature = "ml"))]
+pub async fn append_episode_and_embed(
+    pool: &UserDbPool,
+    session_id: &str,
+    role: EpisodeRole,
+    content: &str,
+) -> Result<String, AppError> {
+    append_episode(pool, session_id, role, content)
 }
 
 /// Read the most recent episodes for a session, oldest-first (so they can

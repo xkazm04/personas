@@ -2,51 +2,115 @@
 //!
 //! Three layers, fed to Claude every turn:
 //!   1. Constitution — static character + voice + provenance contract.
-//!      Read from `~/.personas/companion-brain/constitution.md` (which is a
-//!      first-run copy of the embedded template).
-//!   2. Identity — evolving self-model from
-//!      `~/.personas/companion-brain/identity.md`. Edited by reflection
-//!      cycles and by the user directly.
-//!   3. Working context — last N=20 episodes oldest-first. This re-orients
-//!      Athena across CLI session restarts (the CLI's own --resume holds
-//!      the same context implicitly, but we still inject so the prompt is
-//!      self-sufficient if the resumed session has been auto-compacted).
+//!   2. Identity — evolving self-model from `identity.md`.
+//!   3. Working context — observability digest + retrieved memory.
 //!
-//! Phase 2 will extend (3) with hybrid retrieval (graph + vector + BM25)
-//! plus the observability digest.
+//! Phase 2: the working context now includes
+//!   - The observability digest (current state of the Personas app)
+//!   - Hybrid retrieval (recent + semantic, see brain::retrieval)
+//!
+//! Phase 3 will add provenance footers, BM25 fusion, and graph traversal.
 
 use std::fs;
+#[cfg(feature = "ml")]
+use std::sync::Arc;
 
 use crate::companion::brain::episodic;
+use crate::companion::brain::retrieval;
 use crate::companion::disk;
-use crate::db::UserDbPool;
+use crate::companion::observability;
+use crate::db::{DbPool, UserDbPool};
+#[cfg(feature = "ml")]
+use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
-const RECENT_TURNS_LIMIT: u32 = 20;
-
-/// Build the full system prompt for the companion's next CLI turn.
-pub fn build_system_prompt(pool: &UserDbPool, session_id: &str) -> Result<String, AppError> {
+/// Build the full system prompt.
+///
+/// `query` is the user's current message — used to seed retrieval. Pass
+/// an empty string for non-retrieval prompts (e.g., reflection cycles).
+#[cfg(feature = "ml")]
+pub async fn build_system_prompt(
+    user_db: &UserDbPool,
+    sys_db: &DbPool,
+    embedder: Option<&Arc<EmbeddingManager>>,
+    session_id: &str,
+    query: &str,
+) -> Result<String, AppError> {
     let root = disk::brain_root()?;
-
     let constitution =
         fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new());
-    let identity = fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
+    let identity =
+        fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
 
-    let recent = episodic::list_recent(pool, session_id, RECENT_TURNS_LIMIT).unwrap_or_default();
-    let mut transcript = String::new();
-    if !recent.is_empty() {
-        transcript.push_str("\n\n# Recent conversation (oldest first)\n\n");
-        for ep in &recent {
-            transcript.push_str(&format!("## {} — {}\n\n{}\n\n", ep.role, ep.created_at, ep.content));
-        }
+    // Observability — best-effort.
+    let observability_md = observability::build(sys_db)
+        .ok()
+        .as_ref()
+        .map(observability::format_for_prompt)
+        .unwrap_or_default();
+
+    // Retrieved memory.
+    let recalled = match embedder {
+        Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
+            .await
+            .unwrap_or_default(),
+        None => episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
+    };
+
+    let transcript = format_transcript(&recalled);
+
+    Ok(compose(&constitution, &identity, &observability_md, &transcript))
+}
+
+#[cfg(not(feature = "ml"))]
+pub async fn build_system_prompt(
+    user_db: &UserDbPool,
+    sys_db: &DbPool,
+    session_id: &str,
+    _query: &str,
+) -> Result<String, AppError> {
+    let root = disk::brain_root()?;
+    let constitution =
+        fs::read_to_string(root.join("constitution.md")).unwrap_or_else(|_| String::new());
+    let identity =
+        fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
+
+    let observability_md = observability::build(sys_db)
+        .ok()
+        .as_ref()
+        .map(observability::format_for_prompt)
+        .unwrap_or_default();
+
+    let recent = episodic::list_recent(user_db, session_id, 20).unwrap_or_default();
+    let transcript = format_transcript(&recent);
+
+    Ok(compose(&constitution, &identity, &observability_md, &transcript))
+}
+
+fn format_transcript(recalled: &[episodic::Episode]) -> String {
+    if recalled.is_empty() {
+        return String::new();
     }
+    let mut s = String::from("\n\n# Recalled conversation (oldest first)\n\n");
+    for ep in recalled {
+        s.push_str(&format!(
+            "## {} — {}\n\n{}\n\n",
+            ep.role, ep.created_at, ep.content
+        ));
+    }
+    s
+}
 
-    let mut out = String::with_capacity(constitution.len() + identity.len() + transcript.len() + 64);
-    out.push_str(&constitution);
+fn compose(constitution: &str, identity: &str, observability_md: &str, transcript: &str) -> String {
+    let mut out = String::with_capacity(
+        constitution.len() + identity.len() + observability_md.len() + transcript.len() + 128,
+    );
+    out.push_str(constitution);
     if !identity.is_empty() {
         out.push_str("\n\n# Identity (live, evolves)\n\n");
-        out.push_str(&identity);
+        out.push_str(identity);
     }
-    out.push_str(&transcript);
-    Ok(out)
+    out.push_str(observability_md);
+    out.push_str(transcript);
+    out
 }

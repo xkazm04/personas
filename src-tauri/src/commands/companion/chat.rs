@@ -36,9 +36,19 @@ pub async fn companion_send_message(
     message: String,
 ) -> Result<SendTurnResult, AppError> {
     require_auth(&state).await?;
-    let pool = Arc::new(state.user_db.clone());
-    let (user_episode_id, assistant_episode_id) =
-        session::send_turn(&app, pool, message).await?;
+    let user_db = Arc::new(state.user_db.clone());
+    let sys_db = Arc::new(state.db.clone());
+    #[cfg(feature = "ml")]
+    let embedder = state.embedding_manager.clone();
+    let (user_episode_id, assistant_episode_id) = session::send_turn(
+        &app,
+        user_db,
+        sys_db,
+        #[cfg(feature = "ml")]
+        embedder,
+        message,
+    )
+    .await?;
     Ok(SendTurnResult {
         user_episode_id,
         assistant_episode_id,
@@ -63,4 +73,23 @@ pub fn companion_list_recent_messages(
             created_at: e.created_at,
         })
         .collect())
+}
+
+/// Reset the companion conversation.
+///
+/// Always clears the persistent Claude CLI session id so the next turn
+/// starts a fresh server-side session. If `wipe_transcript` is true, also
+/// clears the SQL/FTS/vec0 indexes — Athena starts blank. Markdown
+/// episodes on disk are preserved either way (no-data-loss principle).
+#[tauri::command]
+pub fn companion_reset_conversation(
+    state: State<'_, Arc<AppState>>,
+    wipe_transcript: Option<bool>,
+) -> Result<(), AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::companion::session::clear_claude_session_id(&state.user_db, DEFAULT_SESSION_ID)?;
+    if wipe_transcript.unwrap_or(false) {
+        crate::companion::session::wipe_transcript(&state.user_db)?;
+    }
+    Ok(())
 }

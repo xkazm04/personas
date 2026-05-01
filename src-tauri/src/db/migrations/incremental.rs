@@ -1943,84 +1943,8 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_obsidian_sync_log_created ON obsidian_sync_log(created_at DESC);"
     )?;
 
-    // ── Companion Plugin (Athena): 5-tier cognitive brain ────────────
-    // Source of truth lives as markdown on disk at ~/.personas/companion-brain/.
-    // These tables are a SQL index over those files for fast lookup, plus
-    // runtime state (approvals, dev feedback, session pointer). The index
-    // is recoverable from disk if it ever drifts.
-    //
-    // The 384-dim vec0 virtual table (companion_embedding) is created at
-    // runtime by the companion module after sqlite-vec registration, mirroring
-    // how knowledge_bases provision their per-KB vec0 tables.
-    conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS companion_node (
-            id              TEXT PRIMARY KEY,
-            kind            TEXT NOT NULL,
-            file_path       TEXT NOT NULL,
-            content_hash    TEXT NOT NULL,
-            importance      INTEGER NOT NULL DEFAULT 3,
-            embedding_model TEXT,
-            embedding_dims  INTEGER,
-            body_excerpt    TEXT,
-            created_at      TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
-        );
-        CREATE INDEX IF NOT EXISTS idx_companion_node_kind ON companion_node(kind, created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_companion_node_importance ON companion_node(importance DESC, updated_at DESC);
-
-        CREATE TABLE IF NOT EXISTS companion_edge (
-            source_id  TEXT NOT NULL,
-            target_id  TEXT NOT NULL,
-            rel        TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            PRIMARY KEY (source_id, target_id, rel)
-        );
-        CREATE INDEX IF NOT EXISTS idx_companion_edge_target ON companion_edge(target_id, rel);
-
-        CREATE TABLE IF NOT EXISTS companion_provenance (
-            fact_id    TEXT NOT NULL,
-            episode_id TEXT NOT NULL,
-            PRIMARY KEY (fact_id, episode_id)
-        );
-        CREATE INDEX IF NOT EXISTS idx_companion_provenance_episode ON companion_provenance(episode_id);
-
-        CREATE VIRTUAL TABLE IF NOT EXISTS companion_fts USING fts5(node_id UNINDEXED, body, tags);
-
-        CREATE TABLE IF NOT EXISTS companion_approval (
-            id               TEXT PRIMARY KEY,
-            session_id       TEXT NOT NULL,
-            kind             TEXT NOT NULL,
-            payload          TEXT NOT NULL,
-            status           TEXT NOT NULL DEFAULT 'pending',
-            human_review_id  TEXT,
-            created_at       TEXT NOT NULL DEFAULT (datetime('now')),
-            resolved_at      TEXT
-        );
-        CREATE INDEX IF NOT EXISTS idx_companion_approval_status ON companion_approval(status, created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_companion_approval_session ON companion_approval(session_id, created_at DESC);
-
-        CREATE TABLE IF NOT EXISTS companion_dev_feedback (
-            id                    TEXT PRIMARY KEY,
-            parent_session_id     TEXT NOT NULL,
-            dev_session_id        TEXT,
-            triggering_message_id TEXT,
-            feedback_text         TEXT NOT NULL,
-            status                TEXT NOT NULL DEFAULT 'queued',
-            diff_path             TEXT,
-            pr_url                TEXT,
-            created_at            TEXT NOT NULL DEFAULT (datetime('now')),
-            resolved_at           TEXT
-        );
-        CREATE INDEX IF NOT EXISTS idx_companion_dev_feedback_status ON companion_dev_feedback(status, created_at DESC);
-
-        CREATE TABLE IF NOT EXISTS companion_session (
-            id                   TEXT PRIMARY KEY,
-            claude_session_id    TEXT,
-            constitution_version INTEGER NOT NULL DEFAULT 1,
-            last_active_at       TEXT NOT NULL DEFAULT (datetime('now')),
-            created_at           TEXT NOT NULL DEFAULT (datetime('now'))
-        );"
-    )?;
+    // Companion (Athena) tables live in the user database, not the system
+    // database. See `db::COMPANION_SCHEMA` and `db::init_user_db`.
 
     // -- MCP gateway membership ------------------------------------------------
     // Bundles multiple MCP-speaking credentials under one "gateway" credential so

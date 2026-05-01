@@ -34,6 +34,18 @@ export async function companionListRecentMessages(
   return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit });
 }
 
+/**
+ * Reset the companion conversation.
+ * - Always clears the persistent Claude CLI session id (next turn starts fresh).
+ * - If `wipeTranscript` is true, also clears the SQL transcript so Athena
+ *   sees an empty history. Markdown episodes on disk are preserved either way.
+ */
+export async function companionResetConversation(
+  wipeTranscript?: boolean,
+): Promise<void> {
+  return invoke<void>('companion_reset_conversation', { wipeTranscript });
+}
+
 /** Tauri event channel for streaming Claude CLI lines into the panel. */
 export const COMPANION_STREAM_EVENT = 'companion://stream';
 

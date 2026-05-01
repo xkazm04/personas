@@ -23,7 +23,9 @@ use tokio::time::timeout;
 
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::prompt;
-use crate::db::UserDbPool;
+use crate::db::{DbPool, UserDbPool};
+#[cfg(feature = "ml")]
+use crate::engine::embedder::EmbeddingManager;
 use crate::error::AppError;
 
 /// The single-instance companion session id (Phase 1).
@@ -69,13 +71,42 @@ pub enum StreamEventKind {
 /// persisted episodes.
 pub async fn send_turn(
     app: &AppHandle,
-    pool: Arc<UserDbPool>,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
     user_message: String,
 ) -> Result<(String, String), AppError> {
     let session_id = DEFAULT_SESSION_ID.to_string();
     let turn_id = format!("turn_{}", short_random());
 
-    let user_ep_id = episodic::append_episode(&pool, &session_id, EpisodeRole::User, &user_message)?;
+    // Persist the user turn (with embedding if embedder is available).
+    let user_ep_id = {
+        #[cfg(feature = "ml")]
+        {
+            match &embedder {
+                Some(emb) => {
+                    episodic::append_episode_and_embed(
+                        &user_db,
+                        emb,
+                        &session_id,
+                        EpisodeRole::User,
+                        &user_message,
+                    )
+                    .await?
+                }
+                None => episodic::append_episode(
+                    &user_db,
+                    &session_id,
+                    EpisodeRole::User,
+                    &user_message,
+                )?,
+            }
+        }
+        #[cfg(not(feature = "ml"))]
+        {
+            episodic::append_episode(&user_db, &session_id, EpisodeRole::User, &user_message)?
+        }
+    };
 
     emit(
         app,
@@ -88,26 +119,115 @@ pub async fn send_turn(
     );
 
     // Read the prior claude session id (if any) for --resume.
-    let claude_session_id = read_claude_session_id(&pool, &session_id)?;
+    let claude_session_id = read_claude_session_id(&user_db, &session_id)?;
 
-    let system_prompt = prompt::build_system_prompt(&pool, &session_id)?;
+    let system_prompt = {
+        #[cfg(feature = "ml")]
+        {
+            prompt::build_system_prompt(
+                &user_db,
+                &sys_db,
+                embedder.as_ref(),
+                &session_id,
+                &user_message,
+            )
+            .await?
+        }
+        #[cfg(not(feature = "ml"))]
+        {
+            prompt::build_system_prompt(&user_db, &sys_db, &session_id, &user_message).await?
+        }
+    };
 
-    let assistant_text =
-        match timeout(TURN_TIMEOUT, run_cli(app, &turn_id, &session_id, claude_session_id.as_deref(), &system_prompt, &user_message, &pool)).await {
-            Ok(Ok(text)) => text,
-            Ok(Err(e)) => {
-                emit_error(app, &session_id, &turn_id, &e.to_string());
-                return Err(e);
+    let assistant_text = match timeout(
+        TURN_TIMEOUT,
+        run_cli(
+            app,
+            &turn_id,
+            &session_id,
+            claude_session_id.as_deref(),
+            &system_prompt,
+            &user_message,
+            &user_db,
+        ),
+    )
+    .await
+    {
+        Ok(Ok(text)) => text,
+        // Self-heal: if Claude can't find the resumed session id (deleted,
+        // expired, or never existed), clear the stale pointer and retry
+        // once with a fresh session. Every prior episode is still in the
+        // system prompt via retrieval, so context isn't lost — only the
+        // CLI's internal session continuity is.
+        Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
+            tracing::warn!(
+                stale_id = ?claude_session_id,
+                "companion: --resume failed (stale session), retrying with fresh CLI session"
+            );
+            clear_claude_session_id(&user_db, &session_id)?;
+            match timeout(
+                TURN_TIMEOUT,
+                run_cli(
+                    app, &turn_id, &session_id, None, &system_prompt, &user_message, &user_db,
+                ),
+            )
+            .await
+            {
+                Ok(Ok(text)) => text,
+                Ok(Err(e2)) => {
+                    emit_error(app, &session_id, &turn_id, &e2.to_string());
+                    return Err(e2);
+                }
+                Err(_) => {
+                    let msg = "Turn exceeded 5-minute timeout (after session reset)";
+                    emit_error(app, &session_id, &turn_id, msg);
+                    return Err(AppError::Internal(msg.into()));
+                }
             }
-            Err(_) => {
-                let msg = "Turn exceeded 5-minute timeout";
-                emit_error(app, &session_id, &turn_id, msg);
-                return Err(AppError::Internal(msg.into()));
-            }
-        };
+        }
+        Ok(Err(e)) => {
+            emit_error(app, &session_id, &turn_id, &e.to_string());
+            return Err(e);
+        }
+        Err(_) => {
+            let msg = "Turn exceeded 5-minute timeout";
+            emit_error(app, &session_id, &turn_id, msg);
+            return Err(AppError::Internal(msg.into()));
+        }
+    };
 
-    let assistant_ep_id =
-        episodic::append_episode(&pool, &session_id, EpisodeRole::Assistant, &assistant_text)?;
+    let assistant_ep_id = {
+        #[cfg(feature = "ml")]
+        {
+            match &embedder {
+                Some(emb) => {
+                    episodic::append_episode_and_embed(
+                        &user_db,
+                        emb,
+                        &session_id,
+                        EpisodeRole::Assistant,
+                        &assistant_text,
+                    )
+                    .await?
+                }
+                None => episodic::append_episode(
+                    &user_db,
+                    &session_id,
+                    EpisodeRole::Assistant,
+                    &assistant_text,
+                )?,
+            }
+        }
+        #[cfg(not(feature = "ml"))]
+        {
+            episodic::append_episode(
+                &user_db,
+                &session_id,
+                EpisodeRole::Assistant,
+                &assistant_text,
+            )?
+        }
+    };
 
     emit(
         app,
@@ -138,6 +258,16 @@ async fn run_cli(
         argv.extend(["--resume".into(), sid.into()]);
     }
 
+    // Write the system prompt to a temp file. Inline `--system-prompt`
+    // works on small prompts but breaks at the OS arg-length limit
+    // (Windows ~32k); the prompt grows fast once retrieval kicks in.
+    // The file is removed after the CLI exits.
+    let prompt_file = write_temp_prompt(system_prompt)?;
+
+    // --system-prompt-file fully replaces Claude Code's default identity
+    // prompt. We avoid `--bare` because it disables OAuth/keychain auth
+    // and would force the user to set ANTHROPIC_API_KEY explicitly.
+    // Default Claude Code framework loads, but our prompt dominates.
     argv.extend([
         "-p".into(),
         "-".into(),
@@ -148,12 +278,17 @@ async fn run_cli(
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
         "claude-opus-4-7".into(),
-        "--append-system-prompt".into(),
-        system_prompt.into(),
+        "--system-prompt-file".into(),
+        prompt_file.to_string_lossy().to_string(),
     ]);
+
+    // Spawn from the user's home directory (or a benign fallback) so we
+    // don't auto-pick up the Personas project's CLAUDE.md as context.
+    let cwd = dirs::home_dir().unwrap_or_else(|| std::env::temp_dir());
 
     let mut child = Command::new(&cmd_program)
         .args(&argv)
+        .current_dir(&cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -177,6 +312,28 @@ async fn run_cli(
         .take()
         .ok_or_else(|| AppError::Internal("claude stdout missing".into()))?;
     let mut reader = BufReader::new(stdout).lines();
+
+    // Drain stderr concurrently into a buffer so we can include it in
+    // any failure message. Without this, exit-1 produces a useless
+    // "claude exited with status 1" with no diagnostic context.
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| AppError::Internal("claude stderr missing".into()))?;
+    let stderr_buf = Arc::new(tokio::sync::Mutex::new(String::new()));
+    let stderr_handle = {
+        let buf = stderr_buf.clone();
+        tokio::spawn(async move {
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                let mut g = buf.lock().await;
+                if !g.is_empty() {
+                    g.push('\n');
+                }
+                g.push_str(&line);
+            }
+        })
+    };
 
     let mut assistant_text = String::new();
     let mut new_claude_session_id: Option<String> = None;
@@ -231,9 +388,18 @@ async fn run_cli(
         .wait()
         .await
         .map_err(|e| AppError::Internal(format!("wait claude: {e}")))?;
+    let _ = stderr_handle.await;
+    let stderr_text = stderr_buf.lock().await.clone();
+    // Best-effort: clean up the temp prompt file. Failure is harmless.
+    let _ = std::fs::remove_file(&prompt_file);
     if !status.success() {
+        let trimmed = if stderr_text.len() > 600 {
+            format!("{}…", &stderr_text[..600])
+        } else {
+            stderr_text.clone()
+        };
         return Err(AppError::Internal(format!(
-            "claude exited with status {status}"
+            "claude exited with status {status}: {trimmed}"
         )));
     }
 
@@ -249,6 +415,51 @@ async fn run_cli(
     }
 
     Ok(assistant_text)
+}
+
+/// Was this CLI failure caused by an expired/missing --resume session id?
+/// We match liberally on the known message patterns the CLI emits so this
+/// keeps working across CLI version drift.
+fn is_stale_session_error(e: &AppError) -> bool {
+    let msg = e.to_string().to_lowercase();
+    msg.contains("no conversation found") || msg.contains("session id")
+        && (msg.contains("not found") || msg.contains("does not exist"))
+}
+
+/// Clear the persisted claude_session_id so the next turn starts a fresh
+/// CLI session. The episodic transcript is untouched — every prior turn is
+/// still on disk and re-enters the prompt via retrieval.
+pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE companion_session SET claude_session_id = NULL, last_active_at = datetime('now') WHERE id = ?1",
+        params![session_id],
+    )?;
+    Ok(())
+}
+
+/// Wipe the conversation transcript: clear `companion_node` (episode rows),
+/// the FTS index, and the vec0 index. The markdown source-of-truth on disk
+/// is preserved by design — episodic is append-only and recoverable. After
+/// wipe, the next turn sees an empty transcript but identity + observability
+/// still apply.
+pub fn wipe_transcript(pool: &UserDbPool) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    // Order matters: clear FTS first to avoid leaving orphan rows.
+    let _ = conn.execute_batch(
+        "DELETE FROM companion_fts;
+         DELETE FROM companion_node WHERE kind = 'episode';",
+    );
+    // Best-effort vec0 wipe — table is created lazily so may not exist yet.
+    let _ = conn.execute_batch("DELETE FROM companion_embedding");
+    Ok(())
+}
+
+fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
+    let path = std::env::temp_dir().join(format!("athena-prompt-{}.md", short_random()));
+    std::fs::write(&path, content)
+        .map_err(|e| AppError::Internal(format!("write prompt file: {e}")))?;
+    Ok(path)
 }
 
 fn base_cli_invocation() -> (String, Vec<String>) {

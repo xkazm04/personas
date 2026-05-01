@@ -172,6 +172,13 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         tracing::debug!("Knowledge base schema ensured in user database");
     }
 
+    // Companion (Athena) schema — per-user brain index + runtime state.
+    {
+        let conn = pool.get()?;
+        conn.execute_batch(COMPANION_SCHEMA)?;
+        tracing::debug!("Companion schema ensured in user database");
+    }
+
     // One-time backfill of kb_chunks_fts for installs that already have chunks
     // from before the FTS5 index existed. The triggers keep them in sync after
     // this. Skipped on fresh installs (chunk_count == 0) and idempotent (only
@@ -267,6 +274,88 @@ CREATE TRIGGER IF NOT EXISTS kb_chunks_fts_au AFTER UPDATE ON kb_chunks BEGIN
     INSERT INTO kb_chunks_fts(kb_chunks_fts, rowid, content) VALUES ('delete', old.rowid, old.content);
     INSERT INTO kb_chunks_fts(rowid, content) VALUES (new.rowid, new.content);
 END;
+"#;
+
+/// Schema for the Companion (Athena) plugin. Lives in the user database
+/// alongside knowledge bases — companion data is per-user and includes
+/// conversation history, brain index, approvals, and the persistent
+/// claude_session_id pointer.
+///
+/// Source of truth for memory is markdown on disk at
+/// `~/.personas/companion-brain/`. These tables are an index/cache plus
+/// runtime state; recoverable from disk if they ever drift.
+///
+/// The 384-dim vec0 virtual table (companion_embedding) is created at
+/// runtime by the companion module after sqlite-vec registration, mirroring
+/// how knowledge bases provision their per-KB vec0 tables.
+const COMPANION_SCHEMA: &str = r#"
+CREATE TABLE IF NOT EXISTS companion_node (
+    id              TEXT PRIMARY KEY,
+    kind            TEXT NOT NULL,
+    file_path       TEXT NOT NULL,
+    content_hash    TEXT NOT NULL,
+    importance      INTEGER NOT NULL DEFAULT 3,
+    embedding_model TEXT,
+    embedding_dims  INTEGER,
+    body_excerpt    TEXT,
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_node_kind ON companion_node(kind, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_node_importance ON companion_node(importance DESC, updated_at DESC);
+
+CREATE TABLE IF NOT EXISTS companion_edge (
+    source_id  TEXT NOT NULL,
+    target_id  TEXT NOT NULL,
+    rel        TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (source_id, target_id, rel)
+);
+CREATE INDEX IF NOT EXISTS idx_companion_edge_target ON companion_edge(target_id, rel);
+
+CREATE TABLE IF NOT EXISTS companion_provenance (
+    fact_id    TEXT NOT NULL,
+    episode_id TEXT NOT NULL,
+    PRIMARY KEY (fact_id, episode_id)
+);
+CREATE INDEX IF NOT EXISTS idx_companion_provenance_episode ON companion_provenance(episode_id);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS companion_fts USING fts5(node_id UNINDEXED, body, tags);
+
+CREATE TABLE IF NOT EXISTS companion_approval (
+    id               TEXT PRIMARY KEY,
+    session_id       TEXT NOT NULL,
+    kind             TEXT NOT NULL,
+    payload          TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'pending',
+    human_review_id  TEXT,
+    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_approval_status ON companion_approval(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_approval_session ON companion_approval(session_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS companion_dev_feedback (
+    id                    TEXT PRIMARY KEY,
+    parent_session_id     TEXT NOT NULL,
+    dev_session_id        TEXT,
+    triggering_message_id TEXT,
+    feedback_text         TEXT NOT NULL,
+    status                TEXT NOT NULL DEFAULT 'queued',
+    diff_path             TEXT,
+    pr_url                TEXT,
+    created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_dev_feedback_status ON companion_dev_feedback(status, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS companion_session (
+    id                   TEXT PRIMARY KEY,
+    claude_session_id    TEXT,
+    constitution_version INTEGER NOT NULL DEFAULT 1,
+    last_active_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at           TEXT NOT NULL DEFAULT (datetime('now'))
+);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
