@@ -6142,6 +6142,10 @@ export type Translations = {
       dynamic_no_credential: string;
       dynamic_load_failed: string;
       dynamic_unknown_error: string;
+      scope_persona_heading: string;
+      scope_capability_heading: string;
+      scope_connector_heading: string;
+      scope_unknown_subject: string;
       configure_your_persona: string;
       cancel: string;
       submit_all: string;

@@ -79,7 +79,7 @@ export function QuestionnaireFormGrid({
   onClose,
   inline = false,
 }: QuestionnaireFormGridProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const grouped = useMemo(() => groupByCategory(questions), [questions]);
   const categoryKeys = useMemo(() => Object.keys(grouped), [grouped]);
   // Phase C2 — scope sections (persona / capability:uc_x / connector:name).
@@ -203,12 +203,13 @@ export function QuestionnaireFormGrid({
                 const sectionGrouped = groupByCategory(section.questions);
                 const sectionKeys = Object.keys(sectionGrouped);
                 const answered = section.questions.filter((q) => !!userAnswers[q.id]).length;
+                const subject = section.subjectId ?? t.templates.adopt_modal.scope_unknown_subject;
                 const heading =
                   section.scope === 'persona'
-                    ? 'Persona setup'
+                    ? t.templates.adopt_modal.scope_persona_heading
                     : section.scope === 'capability'
-                      ? `Capability: ${section.subjectId ?? 'unknown'}`
-                      : `Connector: ${section.subjectId ?? 'unknown'}`;
+                      ? tx(t.templates.adopt_modal.scope_capability_heading, { subject })
+                      : tx(t.templates.adopt_modal.scope_connector_heading, { subject });
                 const accent =
                   section.scope === 'persona'
                     ? 'text-primary/90'
@@ -355,7 +356,7 @@ export function QuestionnaireFormGrid({
             {blockedCount > 0 && (
               <span className="text-xs text-status-error/80 flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" />
-                {t.templates.adopt_modal.blocked_blocking_submit.replace('{count}', String(blockedCount))}
+                {tx(t.templates.adopt_modal.blocked_blocking_submit, { count: blockedCount })}
               </span>
             )}
             <button
@@ -369,7 +370,7 @@ export function QuestionnaireFormGrid({
               }`}
             >
               <Send className="w-3.5 h-3.5" />
-              {allAnswered ? t.templates.adopt_modal.submit_all : t.templates.adopt_modal.submit_remaining.replace('{remaining}', String(remaining))}
+              {allAnswered ? t.templates.adopt_modal.submit_all : tx(t.templates.adopt_modal.submit_remaining, { remaining })}
             </button>
           </div>
         </div>
