@@ -102,9 +102,15 @@ export function ChatTab() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Auto-focus input when presets disappear (message sent)
+  // Auto-focus input when presets disappear (message sent). Bail if focus is
+  // already inside a meaningful element (e.g. the user is interacting with a
+  // chat bubble's copy button or selecting text) so we don't yank focus
+  // mid-action when streaming flips off.
   useEffect(() => {
-    if (messages.length > 0 && !chatStreaming) inputRef.current?.focus();
+    if (messages.length === 0 || chatStreaming) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.tagName !== 'HTML') return;
+    inputRef.current?.focus();
   }, [messages.length, chatStreaming]);
 
   // Recovery for stuck chatStreaming. Terminal events can be dropped (Tauri
