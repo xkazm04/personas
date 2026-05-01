@@ -5,5 +5,5 @@ export { ExecutionComparison } from './components/list/ExecutionComparison';
 export { ExecutionList } from './components/list/ExecutionList';
 export { ExecutionDetail } from './components/list/ExecutionDetail';
 export { TraceInspector } from './components/detail/TraceInspector';
-export { ExecutionInspector } from './components/detail/ExecutionInspector';
+export { InspectorTabs as ExecutionInspector } from './components/detail/InspectorTabs';
 export { ExecutionTerminal } from './components/runner/ExecutionTerminal';

@@ -9,7 +9,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { hasNonEmptyJson, type ErrorAction } from '../../libs/useExecutionDetail';
 import { ErrorDisplay } from './DetailHeader';
 import { DetailDataSections, DetailMemories, DetailLogSection } from './DetailMetadata';
-import { ExecutionInspector } from './ExecutionInspector';
+import { InspectorTabs } from './InspectorTabs';
 import { TraceInspector } from './TraceInspector';
 import { PipelineWaterfall } from '../replay/PipelineWaterfall';
 import { ReplaySandbox } from '../replay/ReplaySandbox';
@@ -101,7 +101,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
       ) : activeTab === 'trace' ? (
         <TraceInspector execution={execution} />
       ) : activeTab === 'inspector' && hasToolSteps ? (
-        <ExecutionInspector execution={execution} />
+        <InspectorTabs execution={execution} />
       ) : (
         <>
           {/* Status Overview */}
