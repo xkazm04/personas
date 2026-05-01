@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { Persona } from "@/lib/bindings/Persona";
+import type { EntityError } from "@/features/templates/sub_n8n/steps/confirm/n8nConfirmTypes";
 
 // ============================================================================
 // N8n Transform -- types
@@ -249,8 +250,21 @@ export const clearN8nTransformSnapshot = (transformId: string) =>
 export const cancelN8nTransform = (transformId: string) =>
   invoke<void>("cancel_n8n_transform", { transformId });
 
+/** Response shape of `confirm_n8n_persona_draft`. Mirrors the JSON returned
+ *  by `commands/design/n8n_transform/confirmation.rs` — kept in lockstep
+ *  with the Rust handler since it returns `serde_json::Value` rather than a
+ *  ts-rs typed struct. */
+export interface ConfirmDraftResponse {
+  persona: Persona;
+  triggers_created: number;
+  tools_created: number;
+  connectors_needing_setup: string[];
+  entity_errors: EntityError[];
+  import_transaction_id: string | null;
+}
+
 export const confirmN8nPersonaDraft = (draftJson: string, sessionId?: string | null) =>
-  invoke<{ persona: Persona }>("confirm_n8n_persona_draft", { draftJson, sessionId: sessionId });
+  invoke<ConfirmDraftResponse>("confirm_n8n_persona_draft", { draftJson, sessionId: sessionId });
 
 export const continueN8nTransform = (
   transformId: string,

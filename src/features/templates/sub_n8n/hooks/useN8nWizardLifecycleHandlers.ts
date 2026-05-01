@@ -5,7 +5,6 @@ import {
 } from '@/api/templates/n8nTransform';
 import { testN8nDraft } from '@/api/agents/tests';
 import { normalizeDraftFromUnknown, stringifyDraft } from './n8nTypes';
-import type { ConfirmResult } from '../steps/confirm/N8nConfirmStep';
 import type { WizardDeps } from './n8nWizardTypes';
 
 export function createLifecycleHandlers(deps: WizardDeps) {
@@ -43,15 +42,11 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       await fetchPersonas();
       selectPersona(response.persona.id);
 
-      const responseObj = response as Record<string, unknown>;
-      const rawErrors = Array.isArray(responseObj.entity_errors) ? responseObj.entity_errors : [];
       setConfirmResult({
-        triggersCreated: typeof responseObj.triggers_created === 'number' ? responseObj.triggers_created : 0,
-        toolsCreated: typeof responseObj.tools_created === 'number' ? responseObj.tools_created : 0,
-        connectorsNeedingSetup: Array.isArray(responseObj.connectors_needing_setup)
-          ? (responseObj.connectors_needing_setup as string[])
-          : [],
-        entityErrors: rawErrors as ConfirmResult['entityErrors'],
+        triggersCreated: response.triggers_created,
+        toolsCreated: response.tools_created,
+        connectorsNeedingSetup: response.connectors_needing_setup,
+        entityErrors: response.entity_errors,
       });
 
       dispatch({ type: 'CONFIRM_COMPLETED' });
