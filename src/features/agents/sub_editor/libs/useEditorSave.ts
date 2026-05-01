@@ -9,6 +9,16 @@ import { useDebouncedSaveGroup } from './useDebouncedSaveGroup';
 import { useEditorHistory, type UndoEntry } from './EditorDocument';
 import type { PersonaOperation } from '@/api/agents/personas';
 
+/** Pick a subset of fields from a draft, returned as a typed partial. Used to
+ *  derive setBaseline payloads from the same key arrays that drive dirty
+ *  detection — keeping field lists in lockstep with PersonaDraft via the
+ *  exhaustiveness check on SETTINGS_KEYS / MODEL_KEYS. */
+function pickKeys<K extends keyof PersonaDraft>(d: PersonaDraft, keys: readonly K[]): Pick<PersonaDraft, K> {
+  const out = {} as Pick<PersonaDraft, K>;
+  for (const k of keys) out[k] = d[k];
+  return out;
+}
+
 interface UseEditorSaveOptions {
   draft: PersonaDraft;
   baseline: PersonaDraft;
@@ -93,7 +103,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     // draft fields would silently overwrite persona B's freshly-loaded baseline,
     // and the undo entry would attach to B's history.
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
-    setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
+    setBaseline((prev) => ({ ...prev, ...pickKeys(d, SETTINGS_KEYS) }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
   }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
@@ -144,7 +154,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     await applyPersonaOp(savePersonaId, op);
     // Guard: bail if persona switched during the IPC await — see performSettingsSave.
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
-    setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns, promptCachePolicy: d.promptCachePolicy }));
+    setBaseline((prev) => ({ ...prev, ...pickKeys(d, MODEL_KEYS) }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
   }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
