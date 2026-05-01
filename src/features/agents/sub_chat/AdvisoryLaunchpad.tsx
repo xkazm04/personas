@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Send, Play, FlaskConical, Wand2, TrendingUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 // ── Advisory Preset Cards ──────────────────────────────────────────────
 
@@ -14,35 +15,39 @@ interface AdvisoryPreset {
   options?: { key: string; label: string; placeholder: string; defaultValue?: string }[];
 }
 
-const ADVISORY_PRESETS: AdvisoryPreset[] = [
-  {
-    id: 'improve', icon: <Wand2 className="w-5 h-5" />, label: 'Improve',
-    description: 'Describe what you want this agent to do better',
-    prompt: 'I want to improve this agent. Look at the execution history, knowledge patterns, and current prompt to understand what it does well and where it falls short. Then propose concrete changes that would improve its performance for my use case. For each proposed change, explain the expected impact and how we could test it.',
-    color: 'amber',
-    options: [{ key: 'goal', label: 'What should improve?', placeholder: 'e.g., Response tone is too robotic, needs to handle edge cases better, output format should be more structured...' }],
-  },
-  {
-    id: 'experiment', icon: <FlaskConical className="w-5 h-5" />, label: 'Experiment',
-    description: 'Test two approaches side-by-side',
-    prompt: 'I want to run an experiment to compare two approaches for this agent. Look at the current setup, then design a test that compares the current version against an improved variant. Use the Matrix test to generate the variant and run both against the same scenarios. Report which performs better and why.',
-    color: 'violet',
-    options: [{ key: 'hypothesis', label: 'What to test?', placeholder: 'e.g., Would adding examples improve output quality? Does a shorter prompt reduce hallucinations?' }],
-  },
-  {
-    id: 'analyze', icon: <TrendingUp className="w-5 h-5" />, label: 'Analyze',
-    description: 'Review performance trends and patterns',
-    prompt: 'Analyze this agent\'s recent performance. Look at execution history for success/failure trends, cost patterns, and duration changes. Check the knowledge graph for recurring failure patterns. Review assertion pass rates. Give me a clear picture of how this agent is performing and what the biggest opportunities for improvement are.',
-    color: 'emerald',
-  },
-  {
-    id: 'execute', icon: <Play className="w-5 h-5" />, label: 'Test Run',
-    description: 'Run the agent and evaluate the result',
-    prompt: 'Execute this agent now, then evaluate the output quality. Check if assertions pass, whether the response matches the use case expectations, and flag any issues you notice. Suggest specific improvements based on what you observe in this run.',
-    color: 'blue',
-    options: [{ key: 'input', label: 'Test input (optional)', placeholder: 'Custom input data for this test run...' }],
-  },
-];
+// Prompts are sent verbatim to the LLM, so they stay in English. Only the
+// labels/descriptions/option strings displayed to the user are translated.
+function buildAdvisoryPresets(t: Translations): AdvisoryPreset[] {
+  return [
+    {
+      id: 'improve', icon: <Wand2 className="w-5 h-5" />, label: t.agents.advisory.improve,
+      description: t.agents.advisory.improve_desc,
+      prompt: 'I want to improve this agent. Look at the execution history, knowledge patterns, and current prompt to understand what it does well and where it falls short. Then propose concrete changes that would improve its performance for my use case. For each proposed change, explain the expected impact and how we could test it.',
+      color: 'amber',
+      options: [{ key: 'goal', label: t.agents.advisory.improve_goal_label, placeholder: t.agents.advisory.improve_goal_placeholder }],
+    },
+    {
+      id: 'experiment', icon: <FlaskConical className="w-5 h-5" />, label: t.agents.advisory.experiment,
+      description: t.agents.advisory.experiment_desc,
+      prompt: 'I want to run an experiment to compare two approaches for this agent. Look at the current setup, then design a test that compares the current version against an improved variant. Use the Matrix test to generate the variant and run both against the same scenarios. Report which performs better and why.',
+      color: 'violet',
+      options: [{ key: 'hypothesis', label: t.agents.advisory.experiment_hypothesis_label, placeholder: t.agents.advisory.experiment_hypothesis_placeholder }],
+    },
+    {
+      id: 'analyze', icon: <TrendingUp className="w-5 h-5" />, label: t.agents.advisory.analyze,
+      description: t.agents.advisory.analyze_desc,
+      prompt: 'Analyze this agent\'s recent performance. Look at execution history for success/failure trends, cost patterns, and duration changes. Check the knowledge graph for recurring failure patterns. Review assertion pass rates. Give me a clear picture of how this agent is performing and what the biggest opportunities for improvement are.',
+      color: 'emerald',
+    },
+    {
+      id: 'execute', icon: <Play className="w-5 h-5" />, label: t.agents.advisory.test_run,
+      description: t.agents.advisory.test_run_desc,
+      prompt: 'Execute this agent now, then evaluate the output quality. Check if assertions pass, whether the response matches the use case expectations, and flag any issues you notice. Suggest specific improvements based on what you observe in this run.',
+      color: 'blue',
+      options: [{ key: 'input', label: t.agents.advisory.test_input_label, placeholder: t.agents.advisory.test_input_placeholder }],
+    },
+  ];
+}
 
 const COLOR_MAP: Record<string, { bg: string; border: string; text: string; hover: string }> = {
   amber:   { bg: 'bg-amber-500/8',   border: 'border-amber-500/20',   text: 'text-amber-400',   hover: 'hover:bg-amber-500/15 hover:border-amber-500/30' },
@@ -53,6 +58,7 @@ const COLOR_MAP: Record<string, { bg: string; border: string; text: string; hove
 
 export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string; onSend: (prompt: string) => void }) {
   const { t } = useTranslation();
+  const presets = useMemo(() => buildAdvisoryPresets(t), [t]);
   const [selectedPreset, setSelectedPreset] = useState<AdvisoryPreset | null>(null);
   const [optionValues, setOptionValues] = useState<Record<string, string>>({});
 
@@ -111,7 +117,7 @@ export function AdvisoryLaunchpad({ personaName, onSend }: { personaName: string
           <p className="typo-body text-foreground mt-1">{t.agents.advisory.how_can_improve}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 max-w-2xl mx-auto">
-          {ADVISORY_PRESETS.map((preset) => {
+          {presets.map((preset) => {
             const c = COLOR_MAP[preset.color] || COLOR_MAP['blue']!;
             const isSelected = selectedPreset?.id === preset.id;
             return (

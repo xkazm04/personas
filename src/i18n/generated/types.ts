@@ -1967,6 +1967,9 @@ export type Translations = {
       test_run: string;
       test_run_desc: string;
       test_input_label: string;
+      improve_goal_placeholder: string;
+      experiment_hypothesis_placeholder: string;
+      test_input_placeholder: string;
     };
     ops: {
       sessions: string;

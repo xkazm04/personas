@@ -1960,7 +1960,10 @@
       "analyze_desc": "Review performance trends and patterns",
       "test_run": "Test Run",
       "test_run_desc": "Run the agent and evaluate the result",
-      "test_input_label": "Test input (optional)"
+      "test_input_label": "Test input (optional)",
+      "improve_goal_placeholder": "e.g., Response tone is too robotic, needs to handle edge cases better, output format should be more structured...",
+      "experiment_hypothesis_placeholder": "e.g., Would adding examples improve output quality? Does a shorter prompt reduce hallucinations?",
+      "test_input_placeholder": "Custom input data for this test run..."
     },
     "ops": {
       "sessions": "Sessions",
