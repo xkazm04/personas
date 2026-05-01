@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Clock, Check, AlertTriangle } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
-import { previewConflicts } from '../libs/calendarHelpers';
+import { useConflictPreview } from '../libs/useCronPreview';
 import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
 import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -48,20 +48,17 @@ export default function FrequencyEditor({
   const previewDisplayTz = scheduleTz ?? (themeTimezone === 'local' ? undefined : themeTimezone === 'utc' ? 'UTC' : themeTimezone);
   const tzLabel = previewDisplayTz ? previewDisplayTz.split('/').pop()?.replace(/_/g, ' ') || previewDisplayTz : 'Local';
 
-  // Overlap detection: how many times in the next 7 days does this schedule conflict?
-  const overlapCount = useMemo(() => {
-    if (!existingEntries || existingEntries.length === 0) return 0;
-    if (mode === 'custom' && cronInput.trim()) {
-      return previewConflicts(existingEntries, cronInput.trim(), null, agent.trigger_id);
-    }
-    if (mode === 'preset' && intervalInput) {
-      const secs = parseInt(intervalInput, 10);
-      if (!isNaN(secs) && secs > 0) {
-        return previewConflicts(existingEntries, null, secs, agent.trigger_id);
-      }
-    }
-    return 0;
-  }, [existingEntries, cronInput, intervalInput, mode, agent.trigger_id]);
+  // Overlap detection: how many times in the next 7 days does this schedule
+  // conflict with existing schedules? Backend-driven so the count matches
+  // what the engine actually fires (tz/DST/step parsing all honored).
+  const candidateInterval = mode === 'preset' ? parseInt(intervalInput, 10) : NaN;
+  const { count: overlapCount } = useConflictPreview(
+    existingEntries,
+    mode === 'custom' ? cronInput.trim() : null,
+    !isNaN(candidateInterval) && candidateInterval > 0 ? candidateInterval : null,
+    scheduleTz,
+    agent.trigger_id,
+  );
 
   // Live preview for custom cron
   useEffect(() => {

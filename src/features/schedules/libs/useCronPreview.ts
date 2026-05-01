@@ -266,3 +266,120 @@ function generateIntervalFireTimes(
 // Kept until the `previewConflicts` migration to IPC; deleting CronAgent here
 // would force every consumer to re-import.
 export type { CronAgent };
+
+// -- conflict preview --------------------------------------------------------
+
+const CONFLICT_WINDOW_MS = 5 * 60_000;
+
+/**
+ * Count fire-time conflicts in the next 7 days between a candidate schedule
+ * and a list of existing entries. A conflict is two fires from different
+ * triggers that land within 5 minutes of each other.
+ *
+ * Backend-driven: candidate + each existing cron is resolved via
+ * cron_fire_times_in_range so the count matches what the engine actually
+ * fires (timezone, DST, and step semantics all honored). Interval triggers
+ * are computed locally because they are zone-agnostic.
+ *
+ * Returns 0 while the IPC fetches are in flight to avoid flashing a stale
+ * value; the loading flag lets the caller render a spinner if desired.
+ */
+export function useConflictPreview(
+  existingEntries: ScheduleEntry[] | undefined,
+  candidateCron: string | null,
+  candidateIntervalSeconds: number | null,
+  candidateTimezone: string | undefined,
+  excludeTriggerId?: string,
+): { count: number; loading: boolean } {
+  const [result, setResult] = useState<{ count: number; loading: boolean }>({ count: 0, loading: false });
+  const reqIdRef = useRef(0);
+
+  // Stable serialization of the existing-entry list for dep tracking. Only
+  // the schedule-shaping fields matter; ignore everything else so re-renders
+  // from health updates do not churn the IPC fetches.
+  const sig = (existingEntries ?? [])
+    .filter((e) => e.health !== 'paused' && e.agent.trigger_id !== excludeTriggerId)
+    .map((e) => `${e.agent.trigger_id}|${e.agent.cron_expression ?? ''}|${e.agent.interval_seconds ?? ''}|${e.agent.timezone ?? ''}|${e.agent.last_triggered_at ?? ''}`)
+    .join('::');
+
+  useEffect(() => {
+    const trimmedCandidateCron = candidateCron?.trim() ?? '';
+    if (!trimmedCandidateCron && (!candidateIntervalSeconds || candidateIntervalSeconds <= 0)) {
+      setResult({ count: 0, loading: false });
+      return;
+    }
+    if (!existingEntries || existingEntries.length === 0) {
+      setResult({ count: 0, loading: false });
+      return;
+    }
+    const myId = ++reqIdRef.current;
+    setResult({ count: 0, loading: true });
+
+    const now = new Date();
+    const end = new Date(now.getTime() + 7 * 24 * 3_600_000);
+
+    (async () => {
+      // Candidate fire times.
+      let candidateTimes: Date[] = [];
+      if (trimmedCandidateCron) {
+        try {
+          const isos = await cronFireTimesInRange(trimmedCandidateCron, candidateTimezone, now, end, 500);
+          candidateTimes = isos.map((s) => new Date(s));
+        } catch {
+          candidateTimes = [];
+        }
+      } else if (candidateIntervalSeconds && candidateIntervalSeconds > 0) {
+        candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, null, now, end);
+      }
+      if (candidateTimes.length === 0) {
+        if (myId === reqIdRef.current) setResult({ count: 0, loading: false });
+        return;
+      }
+
+      // Existing fire times — fetch in parallel.
+      const filtered = existingEntries.filter(
+        (e) => e.health !== 'paused' && (excludeTriggerId ? e.agent.trigger_id !== excludeTriggerId : true),
+      );
+      const existingArrays = await Promise.all(
+        filtered.map(async (entry) => {
+          const a = entry.agent;
+          if (a.cron_expression) {
+            try {
+              const isos = await cronFireTimesInRange(a.cron_expression, a.timezone ?? undefined, now, end, 500);
+              return isos.map((s) => new Date(s));
+            } catch {
+              return [] as Date[];
+            }
+          }
+          if (a.interval_seconds) {
+            return generateIntervalFireTimes(a.interval_seconds, a.last_triggered_at, now, end);
+          }
+          return [] as Date[];
+        }),
+      );
+      if (myId !== reqIdRef.current) return;
+      const existingTimes = existingArrays.flat().sort((a, b) => a.getTime() - b.getTime());
+      if (existingTimes.length === 0) {
+        setResult({ count: 0, loading: false });
+        return;
+      }
+
+      let conflicts = 0;
+      for (const ct of candidateTimes) {
+        const ctMs = ct.getTime();
+        for (const et of existingTimes) {
+          if (Math.abs(ctMs - et.getTime()) <= CONFLICT_WINDOW_MS) {
+            conflicts++;
+            break;
+          }
+        }
+      }
+      setResult({ count: conflicts, loading: false });
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- sig captures the
+  // shape of existingEntries; including the array directly would re-fetch on
+  // unrelated re-renders.
+  }, [sig, candidateCron, candidateIntervalSeconds, candidateTimezone, excludeTriggerId]);
+
+  return result;
+}
