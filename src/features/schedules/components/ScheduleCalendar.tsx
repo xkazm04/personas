@@ -7,12 +7,12 @@ import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import {
   type CalendarView,
   type CalendarEvent,
-  buildCalendarEvents,
   getWeekRange,
   getMonthRange,
   agentColor,
   detectConflicts,
 } from '../libs/calendarHelpers';
+import { useCalendarEvents } from '../libs/useCronPreview';
 import { WeekView } from './WeekView';
 import { MonthView } from './MonthView';
 interface ScheduleCalendarProps {
@@ -43,10 +43,10 @@ export default function ScheduleCalendar({
     [view, anchor],
   );
 
-  const events = useMemo(
-    () => buildCalendarEvents(entries, range.start, range.end),
-    [entries, range],
-  );
+  // Calendar fire times come from the backend so cron semantics (timezone,
+  // step parsing, DST) match what the engine actually fires. See
+  // engine/cron.rs and the cron_fire_times_in_range IPC.
+  const { events } = useCalendarEvents(entries, range.start, range.end);
 
   const conflicts = useMemo(() => detectConflicts(events), [events]);
   const totalConflicts = conflicts.byHourCell.size + conflicts.byDayCell.size;
