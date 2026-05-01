@@ -1,6 +1,6 @@
 /**
- * Modal picker shell — used by the Composer variant to open focused,
- * keyboard-first pickers for Schedule / Connectors / Events.
+ * ComposerPickerShell — modal picker shell used by the Composer variant to
+ * open focused, keyboard-first pickers for Schedule / Connectors / Events.
  *
  * Behavior:
  *   · Backdrop blur + click-outside to close
@@ -13,7 +13,7 @@ import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
-interface PickerShellProps {
+interface ComposerPickerShellProps {
   open: boolean;
   onClose: () => void;
   onApply?: () => void;
@@ -25,9 +25,9 @@ interface PickerShellProps {
   size?: "md" | "lg";
 }
 
-export function PickerShell({
+export function ComposerPickerShell({
   open, onClose, onApply, title, subtitle, icon, children, footer, size = "md",
-}: PickerShellProps) {
+}: ComposerPickerShellProps) {
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {

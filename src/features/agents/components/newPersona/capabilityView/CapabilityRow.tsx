@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { useAgentStore } from "@/stores/agentStore";
-import { RowHeader } from "./RowHeader";
-import { RowSummary } from "./RowSummary";
-import { RowTabs } from "./RowTabs";
+import { CapabilityRowHeader } from "./CapabilityRowHeader";
+import { CapabilityRowSummary } from "./CapabilityRowSummary";
+import { CapabilityRowTabs } from "./CapabilityRowTabs";
 
 interface Props {
   capabilityId: string;
@@ -23,17 +23,17 @@ export function CapabilityRow({ capabilityId }: Props) {
       data-expanded={expanded}
     >
       <div className="flex flex-col gap-3 p-4">
-        <RowHeader
+        <CapabilityRowHeader
           capability={capability}
           expanded={expanded}
           onToggleExpand={toggle}
         />
-        {!expanded ? <RowSummary capability={capability} /> : null}
+        {!expanded ? <CapabilityRowSummary capability={capability} /> : null}
       </div>
 
       {expanded ? (
         <div className="border-t border-border/20 p-4">
-          <RowTabs capability={capability} />
+          <CapabilityRowTabs capability={capability} />
         </div>
       ) : null}
     </article>

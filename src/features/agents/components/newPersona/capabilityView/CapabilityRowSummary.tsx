@@ -1,14 +1,14 @@
 import { Clock, ShieldCheck } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { CapabilityState } from "@/lib/types/buildTypes";
-import { Chip } from "./Chip";
-import { isResolved, resolutionProgress, triggerSummary } from "./helpers";
+import { CapabilityChip } from "./CapabilityChip";
+import { isResolved, resolutionProgress, triggerSummary } from "./capabilityHelpers";
 
 interface Props {
   capability: CapabilityState;
 }
 
-export function RowSummary({ capability }: Props) {
+export function CapabilityRowSummary({ capability }: Props) {
   const { t } = useTranslation();
   const { resolved, total } = resolutionProgress(capability);
   const pct = total > 0 ? Math.round((resolved / total) * 100) : 0;
@@ -38,7 +38,7 @@ export function RowSummary({ capability }: Props) {
         </span>
       </div>
 
-      <Chip
+      <CapabilityChip
         icon={<Clock className="h-3 w-3" />}
         label={t.matrix_v3.capability_row_field_trigger}
         value={triggerSummary(capability)}
@@ -47,7 +47,7 @@ export function RowSummary({ capability }: Props) {
         testId={`capability-chip-trigger-${capability.id}`}
         tone="primary"
       />
-      <Chip
+      <CapabilityChip
         icon={<ShieldCheck className="h-3 w-3" />}
         label={t.matrix_v3.capability_row_field_review}
         value={reviewMode ? reviewLabel : ""}

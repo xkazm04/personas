@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-interface ChipProps {
+interface CapabilityChipProps {
   icon?: ReactNode;
   label: string;
   value?: string;
@@ -10,7 +10,7 @@ interface ChipProps {
   tone?: "neutral" | "primary" | "warn";
 }
 
-export function Chip({
+export function CapabilityChip({
   icon,
   label,
   value,
@@ -18,7 +18,7 @@ export function Chip({
   placeholder,
   testId,
   tone = "neutral",
-}: ChipProps) {
+}: CapabilityChipProps) {
   const display = value || placeholder || "";
 
   const resolvedToneClasses: Record<typeof tone, string> = {

@@ -12,7 +12,7 @@ interface Props {
 
 const REVIEW_MODES = ["never", "on_low_confidence", "always"] as const;
 
-export function PoliciesPane({ capability }: Props) {
+export function CapabilityPoliciesPane({ capability }: Props) {
   const { t } = useTranslation();
   const patchCapability = useAgentStore((s) => s.patchCapability);
 

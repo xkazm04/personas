@@ -14,7 +14,7 @@ import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
 import { GlyphQuestionPanel } from "@/features/shared/glyph";
-import { GlyphFullLayout } from "@/features/agents/components/matrix/GlyphFullLayout";
+import { GlyphFullLayout } from "@/features/agents/components/glyph/GlyphFullLayout";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
   serializeQuickConfig,

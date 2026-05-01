@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Clock, Plug, ShieldCheck, Radio } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { CapabilityState } from "@/lib/types/buildTypes";
-import { TriggerPane } from "./panes/TriggerPane";
-import { ConnectorsPane } from "./panes/ConnectorsPane";
-import { PoliciesPane } from "./panes/PoliciesPane";
-import { EventsPane } from "./panes/EventsPane";
-import { isResolved } from "./helpers";
+import { CapabilityTriggerPane } from "./panes/CapabilityTriggerPane";
+import { CapabilityConnectorsPane } from "./panes/CapabilityConnectorsPane";
+import { CapabilityPoliciesPane } from "./panes/CapabilityPoliciesPane";
+import { CapabilityEventsPane } from "./panes/CapabilityEventsPane";
+import { isResolved } from "./capabilityHelpers";
 
 type TabKey = "trigger" | "connectors" | "policies" | "events";
 
@@ -14,7 +14,7 @@ interface Props {
   capability: CapabilityState;
 }
 
-export function RowTabs({ capability }: Props) {
+export function CapabilityRowTabs({ capability }: Props) {
   const { t } = useTranslation();
   const [active, setActive] = useState<TabKey>("trigger");
 
@@ -94,10 +94,10 @@ export function RowTabs({ capability }: Props) {
       </div>
 
       <div className="pt-1">
-        {active === "trigger" && <TriggerPane capability={capability} />}
-        {active === "connectors" && <ConnectorsPane capability={capability} />}
-        {active === "policies" && <PoliciesPane capability={capability} />}
-        {active === "events" && <EventsPane capability={capability} />}
+        {active === "trigger" && <CapabilityTriggerPane capability={capability} />}
+        {active === "connectors" && <CapabilityConnectorsPane capability={capability} />}
+        {active === "policies" && <CapabilityPoliciesPane capability={capability} />}
+        {active === "events" && <CapabilityEventsPane capability={capability} />}
       </div>
     </div>
   );

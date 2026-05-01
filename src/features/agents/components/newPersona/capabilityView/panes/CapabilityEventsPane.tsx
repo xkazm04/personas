@@ -6,7 +6,7 @@ interface Props {
   capability: CapabilityState;
 }
 
-export function EventsPane({ capability }: Props) {
+export function CapabilityEventsPane({ capability }: Props) {
   const { t } = useTranslation();
   const events = capability.event_subscriptions ?? [];
   const channels = capability.notification_channels ?? [];

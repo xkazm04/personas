@@ -7,7 +7,7 @@ interface Props {
   capability: CapabilityState;
 }
 
-export function ConnectorsPane({ capability }: Props) {
+export function CapabilityConnectorsPane({ capability }: Props) {
   const { t } = useTranslation();
   const patchCapability = useAgentStore((s) => s.patchCapability);
   const [draft, setDraft] = useState("");

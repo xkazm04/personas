@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useAgentStore } from "@/stores/agentStore";
-import { slugify } from "./helpers";
+import { slugify } from "./capabilityHelpers";
 
 interface Props {
   open: boolean;

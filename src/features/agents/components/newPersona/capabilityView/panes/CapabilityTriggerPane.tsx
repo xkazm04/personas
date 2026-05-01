@@ -6,7 +6,7 @@ interface Props {
   capability: CapabilityState;
 }
 
-export function TriggerPane({ capability }: Props) {
+export function CapabilityTriggerPane({ capability }: Props) {
   const { t } = useTranslation();
   const trig = capability.suggested_trigger;
 

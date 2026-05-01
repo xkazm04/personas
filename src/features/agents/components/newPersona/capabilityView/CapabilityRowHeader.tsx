@@ -9,7 +9,7 @@ interface Props {
   onToggleExpand: () => void;
 }
 
-export function RowHeader({ capability, expanded, onToggleExpand }: Props) {
+export function CapabilityRowHeader({ capability, expanded, onToggleExpand }: Props) {
   const { t } = useTranslation();
   const patchCapability = useAgentStore((s) => s.patchCapability);
   const removeCapability = useAgentStore((s) => s.removeCapability);
