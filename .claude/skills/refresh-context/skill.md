@@ -172,6 +172,29 @@ Notes:
 
 ---
 
+## Phase 3.5: Append Hand-Curated Overrides
+
+After the DB-derived groups are written and before the snapshot-meta footer is appended, check for `.claude/codebase-context-overrides.md` and append its content verbatim if present.
+
+The override file is git-tracked and contains context groups that must survive DB regeneration but are not (yet, or ever) populated by the Personas app's "Scan Codebase" feature. Examples: hand-authored taxonomy for shared/ primitives, cross-cutting layer descriptions, anything an LLM scanner would miss.
+
+```bash
+OVERRIDES=".claude/codebase-context-overrides.md"
+if [ -f "$OVERRIDES" ]; then
+  # Append a separator + the file contents to codebase-context.md.
+  printf '\n---\n\n' >> .claude/codebase-context.md
+  cat "$OVERRIDES" >> .claude/codebase-context.md
+fi
+```
+
+Behaviour notes:
+- If the file is missing, skip silently — overrides are optional.
+- The file content is appended **as-is**; the override file owns its own headings, banners, and HTML comments. Do not rewrite, normalize, or strip its content.
+- The leading `---` separator above mirrors the separator the renderer puts between groups in Phase 3, so the appended sections look native in `codebase-context.md`.
+- The override file's HTML comment documenting its role does not render in markdown, so it is safe to leave in the appended output.
+
+---
+
 ## Phase 4: Capture Git State for Staleness Detection
 
 Append a footer to the file with git state, used by `/research` to detect drift:
@@ -369,8 +392,10 @@ Codebase context refreshed.
   Git HEAD:        {short-sha}
 
   Files:
-    + .claude/codebase-context.md   (DB-derived feature map)
+    + .claude/codebase-context.md   (DB-derived feature map{if overrides applied:} + hand-curated overrides{end})
     + .claude/codebase-catalogs.md  (filesystem-derived inventories)
+    {if .claude/codebase-context-overrides.md exists:}
+    = .claude/codebase-context-overrides.md  (hand-curated overrides, appended above)
     {if exists:}
     = .claude/codebase-stack.md     (hand-curated, unchanged)
     {if missing:}
