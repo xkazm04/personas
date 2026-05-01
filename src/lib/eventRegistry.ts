@@ -18,6 +18,8 @@ import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEve
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { AuthStateResponse } from '@/lib/bindings/AuthStateResponse';
+import type { TestScenario } from '@/lib/bindings/TestScenario';
+import type { TestScores } from '@/lib/bindings/TestScores';
 
 // ---------------------------------------------------------------------------
 // Event name constants (keep in sync with Rust event_registry::event_name)
@@ -367,7 +369,15 @@ export interface BuildTestToolResultPayload {
   tested?: number;
 }
 
-/** Test run status (engine/test_runner.rs TestRunStatusEvent). */
+/**
+ * Test run status (engine/test_runner.rs TestRunStatusEvent).
+ *
+ * `scores` and `scenarios` use the ts-rs-generated types from Rust as the
+ * source of truth — previously they were declared inline and drifted from the
+ * Rust shape (TestScenario was missing 4 fields; TestScores nested keys had no
+ * binding). Other fields stay `T?` for compat with `mapRunStatusPayload`,
+ * which expects optional snake_case top-level keys.
+ */
 export interface TestRunStatusPayload {
   run_id: string;
   phase: string;
@@ -377,14 +387,10 @@ export interface TestRunStatusPayload {
   model_id?: string;
   scenario_name?: string;
   status?: string;
-  scores?: {
-    tool_accuracy?: number;
-    output_quality?: number;
-    protocol_compliance?: number;
-  };
+  scores?: TestScores | null;
   summary?: unknown;
   error?: string;
-  scenarios?: Array<{ name: string; input: string; expected_behavior?: string }>;
+  scenarios?: Array<TestScenario> | null;
   elapsed_ms?: number;
 }
 
