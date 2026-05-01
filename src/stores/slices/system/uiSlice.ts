@@ -174,7 +174,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setPluginTab: (tab) => set({ pluginTab: tab }),
   setDevToolsTab: (tab) => set({ devToolsTab: tab }),
   setResearchLabTab: (tab) => startTransition(() => set({ researchLabTab: tab })),
-  setEventBusTab: (tab) => set({ eventBusTab: tab }),
+  setEventBusTab: (tab) => startTransition(() => set({ eventBusTab: tab })),
   setContextScanActive: (active) => set({ contextScanActive: active }),
   setContextScanComplete: (complete) => set({ contextScanComplete: complete }),
   setPendingCatalogCategoryFilter: (category) => set({ pendingCatalogCategoryFilter: category }),
