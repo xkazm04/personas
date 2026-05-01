@@ -9,9 +9,7 @@ import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 import { NegotiatorIdlePhase, NegotiatorDonePhase, NegotiatorErrorPhase } from './NegotiatorPhases';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-
-const PHASE_VARIANTS = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 } };
-const PHASE_TRANSITION = { duration: 0.2 };
+import { PHASE_VARIANTS, PHASE_TRANSITION } from './negotiatorMotion';
 
 interface NegotiatorPanelProps {
   designResult: CredentialDesignResult;

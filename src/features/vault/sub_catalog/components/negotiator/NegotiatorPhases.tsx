@@ -1,14 +1,7 @@
 import { motion } from 'framer-motion';
 import { Loader2, Zap } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-
-const phaseVariants = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -8 },
-};
-
-const phaseTransition = { duration: 0.2 };
+import { PHASE_VARIANTS, PHASE_TRANSITION } from './negotiatorMotion';
 
 interface NegotiatorIdlePhaseProps {
   connectorLabel: string;
@@ -22,11 +15,11 @@ export function NegotiatorIdlePhase({ connectorLabel, authDetectLoading, onStart
   return (
     <motion.div
       key="neg-idle"
-      variants={phaseVariants}
+      variants={PHASE_VARIANTS}
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={phaseTransition}
+      transition={PHASE_TRANSITION}
       className="space-y-3"
     >
       <p className="typo-body text-foreground/90">
@@ -66,11 +59,11 @@ export function NegotiatorDonePhase({ capturedValuesCount, onFinish }: Negotiato
   return (
     <motion.div
       key="neg-done"
-      variants={phaseVariants}
+      variants={PHASE_VARIANTS}
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={phaseTransition}
+      transition={PHASE_TRANSITION}
       className="flex flex-col items-center py-6 gap-3"
     >
       <div className="w-10 h-10 rounded-full bg-emerald-500/15 flex items-center justify-center">
@@ -103,11 +96,11 @@ export function NegotiatorErrorPhase({ error, authDetectLoading, onRetry, onClos
   return (
     <motion.div
       key="neg-error"
-      variants={phaseVariants}
+      variants={PHASE_VARIANTS}
       initial="initial"
       animate="animate"
       exit="exit"
-      transition={phaseTransition}
+      transition={PHASE_TRANSITION}
       className="space-y-3"
     >
       <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-modal">
