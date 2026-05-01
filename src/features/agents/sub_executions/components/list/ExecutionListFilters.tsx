@@ -55,7 +55,7 @@ export function ExecutionListFilters({
         </Tooltip>
       )}
       {hasExecutions && (
-        <Tooltip content={showRaw ? 'Sensitive values are visible' : 'Sensitive values are masked'}>
+        <Tooltip content={showRaw ? e.sensitive_visible : e.sensitive_masked}>
           <button
             onClick={() => setShowRaw(!showRaw)}
             className={`${hasSimulations ? '' : 'ml-auto '}flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
@@ -110,7 +110,7 @@ export function ExecutionListFilters({
               onClick={onShowComparison}
               className="ml-2 px-2.5 py-1 typo-heading rounded-modal bg-primary/15 text-primary/80 border border-primary/20 hover:bg-primary/25 transition-colors"
             >
-              Compare
+              {e.compare}
             </button>
           )}
         </div>
