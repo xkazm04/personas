@@ -1042,6 +1042,101 @@ pub(crate) fn synthesize_trigger_fired_payload(
     serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
 }
 
+/// Hard ceiling on backfill events emitted per tick per trigger. Defends
+/// against amplification when a trigger configured with a large
+/// `max_backfill` was offline for a long time — without this cap, an
+/// every-minute trigger offline overnight would emit hundreds of events.
+const BACKFILL_HARD_CAP: usize = 100;
+
+/// Enumerate cron/interval slots that should have fired strictly between
+/// `last_fire` (exclusive) and `now` (inclusive), excluding the most-recent
+/// one (which the existing scheduler tick path will fire as the "current"
+/// event). Used by the backfill path to emit catch-up events for older slots
+/// that were missed during downtime.
+///
+/// Returns at most `BACKFILL_HARD_CAP` slots regardless of caller intent.
+fn compute_missed_backfill_slots(
+    cfg: &crate::db::models::TriggerConfig,
+    last_fire: chrono::DateTime<chrono::Utc>,
+    now: chrono::DateTime<chrono::Utc>,
+) -> Vec<chrono::DateTime<chrono::Utc>> {
+    use crate::db::models::TriggerConfig;
+    let mut slots: Vec<chrono::DateTime<chrono::Utc>> = Vec::new();
+    match cfg {
+        TriggerConfig::Schedule { cron: Some(expr), timezone, .. } => {
+            let Ok(schedule) = crate::engine::cron::parse_cron(expr) else { return slots };
+            let tz = timezone
+                .as_deref()
+                .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+            let mut from = last_fire;
+            while slots.len() < BACKFILL_HARD_CAP {
+                let next = match tz {
+                    Some(zone) => crate::engine::cron::next_fire_time_in_tz(&schedule, from, zone),
+                    None => crate::engine::cron::next_fire_time_local(&schedule, from),
+                };
+                match next {
+                    Some(t) if t <= now => {
+                        slots.push(t);
+                        from = t;
+                    }
+                    _ => break,
+                }
+            }
+        }
+        TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
+            if *secs == 0 {
+                return slots;
+            }
+            let interval = chrono::Duration::seconds(*secs as i64);
+            let mut t = last_fire + interval;
+            while t <= now && slots.len() < BACKFILL_HARD_CAP {
+                slots.push(t);
+                t += interval;
+            }
+        }
+        _ => {}
+    }
+    // Drop the most-recent slot — that one is fired by the existing
+    // mark_triggered + publish path. We're only emitting EXTRA catch-up
+    // events for the older missed slots.
+    if !slots.is_empty() {
+        slots.pop();
+    }
+    slots
+}
+
+/// Same as `synthesize_trigger_fired_payload` but injects a `backfill_slot`
+/// marker so consumers can distinguish catch-up events from the live one.
+fn synthesize_backfill_payload(
+    trigger: &crate::db::models::PersonaTrigger,
+    cfg: &crate::db::models::TriggerConfig,
+    slot_fired_at: &str,
+) -> String {
+    use crate::db::models::TriggerConfig;
+    let (cron, interval_seconds) = match cfg {
+        TriggerConfig::Schedule { cron, interval_seconds, .. } => {
+            (cron.clone(), *interval_seconds)
+        }
+        _ => (None, None),
+    };
+    let mut meta = serde_json::Map::new();
+    meta.insert("trigger_id".into(), serde_json::Value::String(trigger.id.clone()));
+    meta.insert("trigger_type".into(), serde_json::Value::String(trigger.trigger_type.clone()));
+    meta.insert("target_persona_id".into(), serde_json::Value::String(trigger.persona_id.clone()));
+    meta.insert("fired_at".into(), serde_json::Value::String(slot_fired_at.to_string()));
+    meta.insert("backfill_slot".into(), serde_json::Value::Bool(true));
+    if let Some(c) = cron {
+        meta.insert("cron".into(), serde_json::Value::String(c));
+    }
+    if let Some(iv) = interval_seconds {
+        meta.insert("interval_seconds".into(), serde_json::Value::Number(iv.into()));
+    }
+    if let Some(uc) = trigger.use_case_id.as_ref() {
+        meta.insert("use_case_id".into(), serde_json::Value::String(uc.clone()));
+    }
+    serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
+}
+
 /// Same as `trigger_scheduler_tick` but returns the number of triggers fired.
 /// Used by the startup overdue sweep to know how many were recovered.
 pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool) -> u32 {
@@ -1119,6 +1214,105 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 let next = sched_logic::compute_next_from_config(&cfg, now);
                 let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
+            }
+        }
+
+        // 2.5. Backfill catch-up: when max_backfill > 1 AND the trigger has
+        // an explicit last_triggered_at, emit catch-up events for any older
+        // missed slots strictly between (last_triggered_at, now]. The
+        // existing mark_triggered + publish path below handles the most-
+        // recent slot as the "live" fire — backfill only emits the EXTRAS.
+        let backfill_cap: usize = match &cfg {
+            crate::db::models::TriggerConfig::Schedule { max_backfill: Some(n), .. }
+                if trigger.trigger_type == "schedule" =>
+            {
+                (*n as usize).min(BACKFILL_HARD_CAP)
+            }
+            _ => 1,
+        };
+        if backfill_cap > 1 {
+            if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
+                if let Ok(last_dt) =
+                    chrono::DateTime::parse_from_rfc3339(last_iso)
+                {
+                    let last_utc = last_dt.with_timezone(&chrono::Utc);
+                    let mut missed = compute_missed_backfill_slots(&cfg, last_utc, now);
+                    // Cap to (cap - 1) extras; the live fire below counts
+                    // toward the user's intent. Drop the OLDEST when over.
+                    let extras_wanted = backfill_cap.saturating_sub(1);
+                    if missed.len() > extras_wanted {
+                        missed.drain(..(missed.len() - extras_wanted));
+                    }
+                    for slot in &missed {
+                        // Per-slot budget re-check so catch-up runs respect
+                        // the persona's monthly cap mid-loop.
+                        let exhausted: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
+                            conn.query_row(
+                                "SELECT COALESCE((
+                                    SELECT SUM(cost_usd)
+                                    FROM persona_executions
+                                    WHERE persona_id = ?1 AND created_at >= datetime('now', 'start of month')
+                                ), 0.0) >= max_budget_usd
+                                FROM personas
+                                WHERE id = ?1 AND max_budget_usd IS NOT NULL",
+                                rusqlite::params![trigger.persona_id],
+                                |row| row.get(0),
+                            ).map_err(|e| e.to_string())
+                        }).unwrap_or(false);
+                        if exhausted {
+                            tracing::warn!(
+                                persona_id = %trigger.persona_id,
+                                "Backfill halted mid-loop: budget exhausted"
+                            );
+                            break;
+                        }
+
+                        // Per-slot active-window check: don't emit catch-up
+                        // events for slots that fell outside the window.
+                        if !trigger.is_within_active_window(*slot) {
+                            tracing::debug!(
+                                trigger_id = %trigger.id,
+                                slot = %slot,
+                                "Backfill slot skipped — outside active window"
+                            );
+                            continue;
+                        }
+
+                        let slot_iso = slot.to_rfc3339();
+                        let payload = cfg.payload().or_else(|| {
+                            Some(synthesize_backfill_payload(&trigger, &cfg, &slot_iso))
+                        });
+                        let event_type = cfg.event_type().to_string();
+                        match event_repo::publish(
+                            pool,
+                            CreatePersonaEventInput {
+                                event_type,
+                                source_type: "trigger".into(),
+                                source_id: Some(trigger.id.clone()),
+                                target_persona_id: Some(trigger.persona_id.clone()),
+                                project_id: None,
+                                payload,
+                                use_case_id: trigger.use_case_id.clone(),
+                            },
+                        ) {
+                            Ok(_) => {
+                                tracing::debug!(
+                                    trigger_id = %trigger.id,
+                                    slot = %slot,
+                                    "Backfill event published"
+                                );
+                                scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
+                                fired += 1;
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    trigger_id = %trigger.id,
+                                    "Backfill publish failed: {}", e
+                                );
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1528,6 +1722,131 @@ mod tests {
         let json = synthesize_trigger_fired_payload(&trigger, &cfg, "2026-04-08T16:30:00Z");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
         assert_eq!(v["use_case_id"], "usecase-42");
+    }
+
+    // -- Backfill ----------------------------------------------------------
+
+    #[test]
+    fn test_backfill_interval_three_missed_drops_most_recent() {
+        // Interval 3600s (every hour). Last fired 09:00, now 12:30.
+        // Slots strictly after 09:00 and ≤ 12:30: 10:00, 11:00, 12:00.
+        // The function drops the MOST-RECENT slot (12:00) — that one is
+        // fired by the existing scheduler tick path. Returns [10:00, 11:00].
+        use crate::db::models::TriggerConfig;
+        use chrono::{TimeZone, Timelike};
+        let cfg = TriggerConfig::Schedule {
+            cron: None,
+            interval_seconds: Some(3600),
+            timezone: None,
+            max_backfill: Some(10),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        assert_eq!(slots.len(), 2, "expected [10:00, 11:00] (12:00 dropped)");
+        assert_eq!(slots[0].hour(), 10);
+        assert_eq!(slots[1].hour(), 11);
+    }
+
+    #[test]
+    fn test_backfill_interval_no_misses_returns_empty() {
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: None,
+            interval_seconds: Some(3600),
+            timezone: None,
+            max_backfill: Some(10),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        // Next slot is 13:00 — past `now`, so no missed slots.
+        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        assert!(slots.is_empty());
+    }
+
+    #[test]
+    fn test_backfill_cron_returns_extras_only() {
+        // Cron 0 * * * * (top of every hour). Last fired 09:00, now 12:30.
+        // Slots ≤ 12:30: 10:00, 11:00, 12:00. Function drops 12:00, returns
+        // [10:00, 11:00].
+        use crate::db::models::TriggerConfig;
+        use chrono::{TimeZone, Timelike};
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: Some("UTC".into()),
+            max_backfill: Some(10),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        assert_eq!(slots.len(), 2);
+        assert_eq!(slots[0].hour(), 10);
+        assert_eq!(slots[1].hour(), 11);
+    }
+
+    #[test]
+    fn test_backfill_hard_cap_protects_against_amplification() {
+        // Interval 60s (every minute). 4 hours of downtime = 240 missed
+        // slots. Hard cap is 100. Function returns at most 100 slots minus
+        // the most-recent (so 99 here — but the cap is on enumeration, not
+        // on the output, so we expect exactly cap-1 entries after the pop).
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Schedule {
+            cron: None,
+            interval_seconds: Some(60),
+            timezone: None,
+            max_backfill: Some(500),
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 8, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 0, 0).unwrap();
+        let slots = compute_missed_backfill_slots(&cfg, last, now);
+        // Internally the loop stops at BACKFILL_HARD_CAP=100 entries before
+        // popping the most-recent — so output is 99.
+        assert_eq!(slots.len(), 99);
+    }
+
+    #[test]
+    fn test_backfill_non_schedule_returns_empty() {
+        use crate::db::models::TriggerConfig;
+        use chrono::TimeZone;
+        let cfg = TriggerConfig::Manual {
+            event_type: None,
+            payload: None,
+        };
+        let last = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 9, 0, 0).unwrap();
+        let now = chrono::Utc.with_ymd_and_hms(2026, 5, 1, 12, 30, 0).unwrap();
+        assert!(compute_missed_backfill_slots(&cfg, last, now).is_empty());
+    }
+
+    #[test]
+    fn test_backfill_payload_marks_slot() {
+        use crate::db::models::TriggerConfig;
+        let trigger = make_trigger_for_test("t-bf-1", "p-x", "schedule");
+        let cfg = TriggerConfig::Schedule {
+            cron: Some("0 * * * *".into()),
+            interval_seconds: None,
+            timezone: None,
+            max_backfill: Some(5),
+            event_type: None,
+            payload: None,
+        };
+        let json = synthesize_backfill_payload(&trigger, &cfg, "2026-05-01T10:00:00Z");
+        let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(v["backfill_slot"], true, "backfill events must self-identify");
+        assert_eq!(v["fired_at"], "2026-05-01T10:00:00Z");
+        assert_eq!(v["cron"], "0 * * * *");
+        assert_eq!(v["trigger_id"], "t-bf-1");
     }
 
     #[test]
