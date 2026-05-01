@@ -79,11 +79,6 @@ export function EditorBody() {
       }
     }
   }, [saveAllTabs]);
-  const retryFailedTabs = useCallback(async () => {
-    // Re-run saveAllTabs — the previously-failed tabs are still dirty and
-    // will be retried; any newly-edited tabs get saved in the same pass.
-    await runSaveAll();
-  }, [runSaveAll]);
 
   // Global unsaved-changes guard for sidebar section navigation + window close
   const guard = useUnsavedGuard(isDirty, {
@@ -172,7 +167,7 @@ export function EditorBody() {
           </span>
           <button
             type="button"
-            onClick={() => void retryFailedTabs()}
+            onClick={() => void runSaveAll()}
             disabled={isSaving}
             className="px-2 py-1 typo-body rounded-card border border-red-500/30 text-red-300 hover:bg-red-500/10 disabled:opacity-40"
           >
