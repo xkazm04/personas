@@ -395,8 +395,12 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           chatMode: (latestCtx?.chatMode === 'agent' ? 'agent' : 'advisory') as ChatMode,
         });
       }
-    } catch {
-      // Silent failure - user can still start a new session
+    } catch (err) {
+      // The user can still start a new session, so don't block the UI — but
+      // do leave a breadcrumb. Without one, IPC timeouts / schema drift /
+      // backend errors here surface only as "no sessions appeared" with no
+      // way to diagnose.
+      reportError(err, "Failed to restore chat session", set);
     }
   },
 });
