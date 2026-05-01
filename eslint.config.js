@@ -14,6 +14,7 @@ const noLowContrastTextClasses = require("./eslint-rules/no-low-contrast-text-cl
 const noHardcodedJsxText = require("./eslint-rules/no-hardcoded-jsx-text.cjs");
 const noUnmanagedEffectResources = require("./eslint-rules/no-unmanaged-effect-resources.cjs");
 const noSilentCatch = require("./eslint-rules/no-silent-catch.cjs");
+const noDirectWhiteColors = require("./eslint-rules/no-direct-white-colors.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -38,6 +39,7 @@ export default tseslint.config(
           "no-hardcoded-jsx-text": noHardcodedJsxText,
           "no-unmanaged-effect-resources": noUnmanagedEffectResources,
           "no-silent-catch": noSilentCatch,
+          "no-direct-white-colors": noDirectWhiteColors,
         },
       },
     },
@@ -80,6 +82,48 @@ export default tseslint.config(
       "custom/no-hardcoded-jsx-text": "warn",
       "custom/no-unmanaged-effect-resources": "warn",
       "custom/no-silent-catch": "warn",
+      "custom/no-direct-white-colors": "warn",
+    },
+  },
+  // Shared design-system primitives may import Tauri IPC for nothing —
+  // they're presentational by contract. A "convenience" invoke() in shared/
+  // breaks layering for every consumer (testability, SSR-readiness, HMR).
+  // This is a strong-pattern enforcement (Architect/strong-patterns "Zero
+  // Tauri IPC calls in src/features/shared/").
+  // Shared design-system primitives shouldn't reach into Tauri runtime —
+  // they're presentational by contract. A "convenience" invoke()/event-listen
+  // in shared/ breaks layering for every consumer (testability, SSR-readiness,
+  // HMR). This is a strong-pattern enforcement (Architect/strong-patterns
+  // "Zero Tauri IPC calls in src/features/shared/").
+  //
+  // Set to `warn` for now — there are 3 known violations as of 2026-05-01
+  // (HealingToast, TitleBar, Sidebar) that genuinely tie shared shell chrome
+  // to Tauri runtime; those should be migrated to feature modules opportunistically.
+  {
+    files: ["src/features/shared/**/*.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          paths: [
+            {
+              name: "@tauri-apps/api/core",
+              importNames: ["invoke"],
+              message: "src/features/shared/ is the design-system layer — IPC calls don't belong here. Lift to a feature module that owns the data.",
+            },
+            {
+              name: "@/lib/tauriInvoke",
+              message: "src/features/shared/ is the design-system layer — IPC calls don't belong here. Lift to a feature module.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@tauri-apps/api/event", "@tauri-apps/api/window", "@tauri-apps/api/app"],
+              message: "src/features/shared/ is the design-system layer — Tauri runtime APIs don't belong here. Lift to a feature module.",
+            },
+          ],
+        },
+      ],
     },
   },
   // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge
