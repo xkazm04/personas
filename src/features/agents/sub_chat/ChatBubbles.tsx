@@ -5,6 +5,13 @@ import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 
+// JSON operation lines emitted by the advisory assistant (e.g. {"op": ...})
+// are dispatched server-side and stripped from the visible transcript.
+function isOperationLine(line: string): boolean {
+  const t = line.trim();
+  return t.startsWith('{"op"') || t.startsWith('{"op":');
+}
+
 // Fallback copy via a hidden textarea + document.execCommand('copy'). Used
 // when navigator.clipboard is unavailable (non-secure context, file://, some
 // Tauri webview configs) or rejects (permission / document-not-focused).
@@ -159,11 +166,7 @@ export function ChatBubble({ message, isGroupStart = true }: { message: ChatMess
 function stripOperationLines(text: string): string {
   return text
     .split('\n')
-    .filter((line) => {
-      const t = line.trim();
-      // Filter JSON operation lines emitted by the advisory assistant
-      return !t.startsWith('{"op"') && !t.startsWith('{"op":');
-    })
+    .filter((line) => !isOperationLine(line))
     .join('\n')
     .trim();
 }
@@ -185,10 +188,7 @@ function AssistantContent({ content }: { content: string }) {
 
 export function StreamingBubble({ textLines }: { textLines: string[] }) {
   const { t } = useTranslation();
-  const cleanLines = textLines.filter((l) => {
-    const t = l.trim();
-    return !t.startsWith('{"op"') && !t.startsWith('{"op":');
-  });
+  const cleanLines = textLines.filter((l) => !isOperationLine(l));
   const hasContent = cleanLines.some((l) => l.trim().length > 0);
 
   return (
