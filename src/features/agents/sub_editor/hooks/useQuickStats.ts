@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { listExecutions } from '@/api/agents/executions';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 
@@ -26,7 +27,10 @@ export function useQuickStats(personaId: string | undefined) {
     setLoading(true);
     listExecutions(personaId, 10)
       .then((list) => { if (!cancelled) setExecutions(list); })
-      .catch(() => { if (!cancelled) setExecutions([]); })
+      .catch((err) => {
+        silentCatch('useQuickStats:listExecutions')(err);
+        if (!cancelled) setExecutions([]);
+      })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [personaId]);
