@@ -316,7 +316,6 @@ pub struct PersonaDesignPattern {
     pub pattern_text: String,
     pub trigger_condition: String,
     pub confidence: i32,
-    pub source_review_ids: String,
     pub usage_count: i32,
     pub last_validated_at: Option<String>,
     pub is_active: bool,

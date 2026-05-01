@@ -50,7 +50,7 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaDesignReview> {
 
 row_mapper!(row_to_pattern -> PersonaDesignPattern {
     id, pattern_type, pattern_text, trigger_condition,
-    confidence, source_review_ids, usage_count,
+    confidence, usage_count,
     last_validated_at, is_active [bool], created_at,
 });
 
@@ -795,8 +795,8 @@ pub fn create_pattern(
     conn.execute(
         "INSERT INTO persona_design_patterns
          (id, pattern_type, pattern_text, trigger_condition, confidence,
-          source_review_ids, usage_count, is_active, created_at)
-         VALUES (?1,?2,?3,?4,?5,'[]',0,1,?6)",
+          usage_count, is_active, created_at)
+         VALUES (?1,?2,?3,?4,?5,0,1,?6)",
         params![id, pattern_type, pattern_text, trigger_condition, confidence, now],
     )?;
 
@@ -806,7 +806,6 @@ pub fn create_pattern(
         pattern_text: pattern_text.to_string(),
         trigger_condition: trigger_condition.to_string(),
         confidence,
-        source_review_ids: "[]".to_string(),
         usage_count: 0,
         last_validated_at: None,
         is_active: true,

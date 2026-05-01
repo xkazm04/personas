@@ -16,6 +16,19 @@ npx vite build           # Production frontend build
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
 
+### Build variants
+
+Tier-specific frontend bundles (env-var driven; backend always pulls full features):
+- `npm run build:starter` / `build:team` / `build:builder` — sets `VITE_APP_TIER` to gate UI features. CI validates all three tiers compile (added 2026-05-01 by build-tooling architect run).
+
+Tauri desktop installer variants (overlay configs in `src-tauri/`):
+- `npm run tauri:build` — canonical (`tauri.conf.json`); all targets, full features
+- `npm run tauri:build:lite` — `tauri.lite.conf.json`; nsis-only, `desktop` features (no ML/P2P) — fast iteration
+- `npm run tauri:build:stable` — `tauri.stable.conf.json`; nsis + msi, `desktop-full` features — Windows release
+
+Advisory pre-release scripts (manual, not CI-gated):
+- `npm run check:assets` — reports PNG → WebP compression savings via `scripts/optimize-assets.mjs --dry-run`. Run before bumping a release if asset weight matters.
+
 ## Architecture
 
 ```

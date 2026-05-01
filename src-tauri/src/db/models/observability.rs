@@ -98,7 +98,6 @@ pub struct PersonaMetricsSnapshot {
     #[ts(type = "number")]
     pub total_output_tokens: i64,
     pub avg_duration_ms: f64,
-    pub tools_used: Option<String>,
     #[ts(type = "number")]
     pub events_emitted: i64,
     #[ts(type = "number")]
