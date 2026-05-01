@@ -147,7 +147,22 @@ export function MatrixCellRenderer({
   /** Compact mode for pre-build state — minimized dimensions */
   compact?: boolean;
 }) {
-  // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline
+  const { t } = useTranslation();
+  const Watermark = cell.watermark;
+
+  // Track previous status to detect filling->resolved transition for typewriter effect
+  const prevStatusRef = useRef<CellBuildStatus | undefined>(undefined);
+  const justResolved = prevStatusRef.current === 'filling' && cellBuildStatus === 'resolved';
+  const typewriterActiveRef = useRef(false);
+  if (justResolved) {
+    typewriterActiveRef.current = true;
+  } else if (cellBuildStatus !== 'resolved') {
+    typewriterActiveRef.current = false;
+  }
+  prevStatusRef.current = cellBuildStatus;
+
+  // When cellBuildStatus is 'hidden' or 'revealed', render the ghosted outline.
+  // Branched after hooks so hook order is stable across status transitions.
   if (cellBuildStatus === 'hidden' || cellBuildStatus === 'revealed') {
     return (
       <GhostedCellRenderer
@@ -157,9 +172,6 @@ export function MatrixCellRenderer({
       />
     );
   }
-
-  const { t } = useTranslation();
-  const Watermark = cell.watermark;
 
   // Determine if we should use state-machine classes (only when cellBuildStatus is provided)
   const stateClasses = cellBuildStatus ? getCellStateClasses(cellBuildStatus) : null;
@@ -172,17 +184,6 @@ export function MatrixCellRenderer({
 
   const useEditRender = (isEditMode || isInlineEditing) && cell.editRender && !effectiveBuildLocked;
   const filledGlow = isEditMode && cell.filled;
-
-  // Track previous status to detect filling->resolved transition for typewriter effect
-  const prevStatusRef = useRef<CellBuildStatus | undefined>(undefined);
-  const justResolved = prevStatusRef.current === 'filling' && cellBuildStatus === 'resolved';
-  const typewriterActiveRef = useRef(false);
-  if (justResolved) {
-    typewriterActiveRef.current = true;
-  } else if (cellBuildStatus !== 'resolved') {
-    typewriterActiveRef.current = false;
-  }
-  prevStatusRef.current = cellBuildStatus;
 
   // Whether content should be visible (not hidden/revealed)
   const statusStr = cellBuildStatus as string;
