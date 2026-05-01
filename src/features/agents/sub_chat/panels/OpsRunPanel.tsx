@@ -49,7 +49,7 @@ export default function OpsRunPanel({ personaId }: { personaId: string }) {
   const handleExecute = useCallback(async () => {
     let sessionId = activeChatSessionId;
     if (!sessionId) {
-      sessionId = await startNewSession(personaId);
+      sessionId = await startNewSession();
       if (!sessionId) return;
     }
     sendMessage(personaId, sessionId, 'Execute this agent now. After execution, summarize the result.');

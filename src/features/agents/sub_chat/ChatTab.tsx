@@ -215,7 +215,7 @@ export function ChatTab() {
     const sendPersonaId = personaId;
     let sessionId = activeChatSessionId;
     if (!sessionId) {
-      sessionId = await startNewSession(sendPersonaId);
+      sessionId = await startNewSession();
       if (!sessionId) return;
       // Guard: bail if the user navigated away to a different persona while
       // the session was being created. The session still exists for the
@@ -244,7 +244,7 @@ export function ChatTab() {
         chatMessages: [], activeChatSessionId: null, chatSessionContext: null,
         chatStreaming: false, isExecuting: false, activeExecutionId: null, executionPersonaId: null,
       });
-      await startNewSession(personaId);
+      await startNewSession();
     }
   }, [personaId, startNewSession]);
 

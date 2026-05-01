@@ -53,7 +53,7 @@ export interface ChatSlice {
   consumeChatPreloaded: () => boolean;
   fetchChatSessions: (personaId: string) => Promise<void>;
   fetchChatMessages: (personaId: string, sessionId: string) => Promise<void>;
-  startNewChatSession: (personaId: string) => Promise<string>;
+  startNewChatSession: () => Promise<string>;
   sendChatMessage: (personaId: string, sessionId: string, content: string) => Promise<void>;
   clearChatSession: (personaId: string, sessionId: string) => Promise<void>;
   appendChatStreamLine: (line: string) => void;
@@ -147,7 +147,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     }
   },
 
-  startNewChatSession: async (_personaId) => {
+  startNewChatSession: async () => {
     // Sessions are derived from chat_messages grouped by session_id —
     // no backend call needed. The session materialises when the first message is sent.
     const sessionId = `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;

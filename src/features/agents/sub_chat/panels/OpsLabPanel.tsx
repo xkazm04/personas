@@ -59,7 +59,7 @@ export default function OpsLabPanel({ personaId }: { personaId: string }) {
   const handleQuickLaunch = useCallback(async (mode: string) => {
     let sessionId = activeChatSessionId;
     if (!sessionId) {
-      sessionId = await startNewSession(personaId);
+      sessionId = await startNewSession();
       if (!sessionId) return;
     }
     const prompts: Record<string, string> = {
