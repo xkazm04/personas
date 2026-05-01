@@ -12,9 +12,44 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
     match cfg {
         TriggerConfig::Schedule { cron: Some(cron_expr), timezone, .. } => {
             let schedule = cron::parse_cron(cron_expr).ok()?;
-            let next = match timezone.as_deref().and_then(|s| s.parse::<Tz>().ok()) {
+            let resolved_tz: Option<Tz> = match timezone.as_deref() {
+                None => None,
+                Some(raw) => match raw.parse::<Tz>() {
+                    Ok(tz) => Some(tz),
+                    Err(err) => {
+                        // The schedule has an explicit timezone string but it failed
+                        // to parse as IANA. Falling back to system-local means the
+                        // trigger will fire at the host machine's local hour, not
+                        // the user's intended zone — historical incident path
+                        // (see test_compute_next_schedule_with_timezone_summer at
+                        // line 75-89). Surface this as a warning, not silent.
+                        tracing::warn!(
+                            cron = %cron_expr,
+                            timezone_raw = %raw,
+                            error = %err,
+                            "schedule timezone failed to parse; falling back to system-local — trigger will fire at the host's local hour, not the intended zone"
+                        );
+                        None
+                    }
+                }
+            };
+            let next = match resolved_tz {
                 Some(tz) => cron::next_fire_time_in_tz(&schedule, now, tz)?,
-                None => cron::next_fire_time_local(&schedule, now)?,
+                None => {
+                    if timezone.is_none() {
+                        // No timezone authored — falls back to system Local. This
+                        // is the common case for triggers created before the TS
+                        // ScheduleConfig type carried a `timezone` field, so we
+                        // emit at debug to avoid flooding logs. Enable via
+                        // RUST_LOG=personas_desktop=debug to audit which triggers
+                        // are still on the implicit-local path.
+                        tracing::debug!(
+                            cron = %cron_expr,
+                            "schedule has no timezone set; falling back to system-local"
+                        );
+                    }
+                    cron::next_fire_time_local(&schedule, now)?
+                }
             };
             Some(next.to_rfc3339())
         }
