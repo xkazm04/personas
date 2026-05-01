@@ -4,6 +4,8 @@ import enBundle from './locales/en.json';
 import type { Translations } from './generated/types';
 import { buildPseudoBundle, isPseudoActive } from './pseudoLocale';
 
+export type { Translations };
+
 /**
  * Per-locale JSON modules, discovered by Vite's import.meta.glob.
  * Each locale is its own async chunk — only the active locale + English
@@ -99,6 +101,28 @@ export function interpolate(template: string, vars: Record<string, string | numb
   return template.replace(/\{(\w+)\}/g, (_, key: string) =>
     vars[key] !== undefined ? String(vars[key]) : `{${key}}`,
   );
+}
+
+/**
+ * Non-hook accessor for the current translation bundle. Use from non-React
+ * modules (Zustand store actions, IPC dispatch helpers, event listeners) where
+ * `useTranslation` isn't reachable. Reads the active language from i18nStore
+ * and returns the cached bundle, falling back to English while a non-English
+ * bundle is still being lazy-loaded.
+ *
+ * Honors the dev-only pseudo-locale toggle so non-React strings show up in
+ * the bracketed/accented form too — keeps coverage scans honest.
+ */
+export function getActiveTranslations(): Translations {
+  const { language } = useI18nStore.getState();
+  if (!cache.has(language)) {
+    preload(language);
+  }
+  let bundle = cache.get(language) ?? cache.get('en')!;
+  if (import.meta.env.DEV && isPseudoActive()) {
+    bundle = buildPseudoBundle(cache.get('en')!);
+  }
+  return bundle;
 }
 
 /**
