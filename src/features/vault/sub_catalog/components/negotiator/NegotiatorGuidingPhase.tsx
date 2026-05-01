@@ -16,7 +16,7 @@ interface NegotiatorGuidingPhaseProps {
   activeStepIndex: number;
   completedSteps: Set<number>;
   capturedValues: Record<string, string>;
-  stepHelp: { answer: string; stepIndex: number } | null;
+  stepHelp: { answer: string; stepIndex: number; isError?: boolean } | null;
   isLoadingHelp: boolean;
   /** Resolved visible steps from the step graph */
   visibleSteps: StepNode[];

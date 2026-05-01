@@ -70,7 +70,15 @@ const EMPTY_RESOLVED: ResolvedSteps = {
 // -- Hook --------------------------------------------------------
 
 export function useCredentialNegotiator(context?: NegotiatorContext) {
-  const [stepHelp, setStepHelp] = useState<{ answer: string; stepIndex: number } | null>(null);
+  /**
+   * The result for the most recently asked help question. `isError: true`
+   * means `answer` carries the raw backend error message — consumers
+   * should pipe it through `resolveErrorTranslated` rather than rendering
+   * it directly.
+   */
+  const [stepHelp, setStepHelp] = useState<
+    { answer: string; stepIndex: number; isError?: boolean } | null
+  >(null);
   const [isLoadingHelp, setIsLoadingHelp] = useState(false);
   const [fromPlaybook, setFromPlaybook] = useState(false);
   const serviceNameRef = useRef('');
@@ -226,8 +234,9 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       setStepHelp({ answer: result.answer, stepIndex: visibleIndex });
     } catch (err) {
       setStepHelp({
-        answer: `Failed to get help: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        answer: err instanceof Error ? err.message : String(err),
         stepIndex: visibleIndex,
+        isError: true,
       });
     } finally {
       setIsLoadingHelp(false);

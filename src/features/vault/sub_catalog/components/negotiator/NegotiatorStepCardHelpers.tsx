@@ -8,6 +8,7 @@ import { MOTION_TIMING } from '@/features/templates/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 const INFO_STATUS = STATUS_COLORS.info;
 const AI_STATUS = STATUS_COLORS.ai;
@@ -46,7 +47,7 @@ export interface NegotiatorStepCardProps {
   onSelect: () => void;
   onCaptureValue: (fieldKey: string, value: string) => void;
   onRequestHelp: (question: string) => void;
-  stepHelp: { answer: string; stepIndex: number } | null;
+  stepHelp: { answer: string; stepIndex: number; isError?: boolean } | null;
   isLoadingHelp: boolean;
 }
 export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, colorClasses, Icon, id }: {
@@ -121,7 +122,7 @@ export function CaptureFieldRow({ fieldKey, hint, stepIndex, capturedValue, onCa
 }
 export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp }: {
   stepIndex: number; onRequestHelp: (question: string) => void;
-  stepHelp: { answer: string; stepIndex: number } | null; isLoadingHelp: boolean;
+  stepHelp: { answer: string; stepIndex: number; isError?: boolean } | null; isLoadingHelp: boolean;
 }) {
   const { t } = useTranslation();
   const [helpQuestion, setHelpQuestion] = useState('');
@@ -173,7 +174,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
               </button>
             </div>
-            {stepHelp && stepHelp.stepIndex === stepIndex && (
+            {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (
               <div
                 className={`px-3 py-2 rounded-modal typo-body text-foreground ${AI_STATUS.bg} border ${AI_STATUS.border}`}
                 data-testid={`negotiator-step-${stepIndex}-help-answer`}
@@ -181,6 +182,20 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 {stepHelp.answer}
               </div>
             )}
+            {stepHelp && stepHelp.stepIndex === stepIndex && stepHelp.isError && (() => {
+              const translated = resolveErrorTranslated(t, stepHelp.answer);
+              return (
+                <div
+                  className="px-3 py-2 rounded-modal typo-body text-red-300 bg-red-500/10 border border-red-500/20 space-y-1"
+                  data-testid={`negotiator-step-${stepIndex}-help-error`}
+                >
+                  <div>{translated.message}</div>
+                  {translated.suggestion && (
+                    <div className="typo-body text-red-200/70">{translated.suggestion}</div>
+                  )}
+                </div>
+              );
+            })()}
           </motion.div>
         )}
       </AnimatePresence>
