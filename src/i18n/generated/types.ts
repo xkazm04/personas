@@ -9011,6 +9011,20 @@ export type Translations = {
       select_note: string;
       select_note_hint: string;
     };
+    companion: {
+      name: string;
+      role: string;
+      open_label: string;
+      panel_label: string;
+      initializing: string;
+      init_failed: string;
+      hello_phase_zero: string;
+      brain_at: string;
+      empty_transcript: string;
+      thinking: string;
+      composer_placeholder: string;
+      send: string;
+    };
     ocr: {
       title: string;
       subtitle: string;

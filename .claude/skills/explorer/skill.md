@@ -4,16 +4,55 @@ Wander a logical section of the personas codebase, surface exactly **10 items** 
 
 This skill is **personas-specific.** It uses `.claude/codebase-context.md` (refreshed by `/refresh-context`) as the natural area taxonomy, and the Obsidian vault for run records, coverage tracking, and cross-run learning.
 
+## Interaction conventions
+
+Built for parallel CLI control — every user prompt is single-keystroke answerable.
+
+- **Every prompt is a numbered menu.** Numeric input picks the option; **Enter** triggers the default; option `1. other → …` is the deviation lane (free text).
+- **Every phase output (intermediate or final) ends with a `Next?` block** of 2–5 numbered next-step actions. Replying with a digit advances the run without typing prose.
+- Long free-text answers are still accepted everywhere; the menu just makes the common case instant.
+
 ## Input
 
-Ask the user, in this order:
+Ask **two** numbered-menu questions, in this order. Numeric input picks the option; **Enter** picks the default; option `1. other → …` is the deviation lane and accepts free text.
 
-1. **"Area hint? (e.g. `vault`, `agents/sub_chat`, `i18n`, or `pick for me`)"**
-2. **"Category filter? (`quality` / `dx` / `ui` / `perf` / `bug` / `i18n` / `a11y` / `sec` / `any`) — defaults to `any`."**
+### Q1 — Area
+
+```
+Area? (Enter = pick for me)
+  1. other → type a hint (path fragment, keyword, or context id)
+  2. agents
+  3. vault
+  4. orchestration
+  5. triggers
+  6. execution
+  7. templates
+  8. deployment
+  9. platform
+  10. pick for me   ← default
+```
+
+Numeric options 2–9 map 1:1 to the 8 groups in `codebase-context.md` (`AI Agent Configuration`, `Credential & Integration Vault`, `Pipeline & Team Orchestration`, `Event & Trigger Automation`, `Execution & Observability`, `Template & Recipe Library`, `Deployment & Sharing`, `Platform Administration`). Option 1's free text falls through to the Phase 2a resolver (path fragment / keyword / exact context id). Option 10 / Enter triggers Phase 2b auto-pick.
+
+### Q2 — Category
+
+```
+Category? (Enter = any)
+  1. other → describe (free-form intent; layered onto an auto-picked category)
+  2. any            ← default
+  3. quality
+  4. dx
+  5. ui
+  6. perf
+  7. bug
+  8. i18n
+  9. a11y
+  10. sec
+```
 
 Wait for both answers. Don't ask anything else upfront — further questions only if a phase requires clarification.
 
-If the user replies just "go" or "wander" or types `/explorer` with no arguments, treat as "pick for me" + "any".
+If the user replies just "go" or "wander" or types `/explorer` with no arguments, treat as "pick for me" + "any" (Enter defaults for both).
 
 ---
 
@@ -154,7 +193,14 @@ Score each context by:
 
 Pick the top-scored context. If multiple tie, pick the one with the smaller file count (faster to scan, tighter feedback loop).
 
-Tell the user which area you picked and why (one short sentence). Allow them to override with "no, do X instead" before locking in.
+Tell the user which area you picked and why (one short sentence), then a `Next?` menu:
+
+```
+Next?
+  1. other → name a different area or context id
+  2. proceed with {picked-area}   ← default
+  3. abort
+```
 
 ### 2c. Category filter
 
@@ -346,8 +392,13 @@ Clusters:
 
 Ask the user:
 ```
-Which to action? Reply with numbers (e.g. "1, 3, 4"), "all", "none",
-or "ask" for a guided walkthrough item-by-item.
+Which to action? Reply with item numbers (e.g. "1, 3, 4").
+
+Shortcuts:
+  all     — accept every surfaced item
+  none    — accept nothing (still write the sweep note)
+  ask     — guided walkthrough item-by-item
+  Enter   — same as "none"   ← default
 ```
 
 For each accepted item, execute it **in this same session**. Same default as `/research`: discover → decide → implement → commit, all in one context window.
@@ -361,7 +412,8 @@ For each accepted item, execute it **in this same session**. Same default as `/r
    - TypeScript → `npx tsc --noEmit`
    - i18n → `node scripts/i18n/check-coverage.mjs`
    - Frontend → `npm run lint` (warnings OK; errors must be fixed)
-3. Commit atomically: `explorer: <short title>` + Co-Authored-By footer + body explaining the why.
+3. **Stage only the paths this item touched** — `git add path/one path/two`. Never `git add -A`, `git add .`, or `git add -u` (those would sweep up in-flight work from concurrent CLIs or the user's editor). If you can't list the paths you changed, stop and run `git diff --name-only` first.
+4. Commit atomically: `explorer: <short title>` + Co-Authored-By footer + body explaining the why.
 
 **2+ accepted items (Option B):**
 1. Print the inline plan (one paragraph per item: file, change shape, validation).
@@ -449,8 +501,11 @@ For the declined items, why did you skip them?
   [5] {title}
   ...
 
-You can answer per-item ("2: too vague, 5: already planned") or
-with a single reason. Type "skip" to move on.
+Reply per-item ("2: too vague, 5: already planned") or one overall reason.
+
+Shortcuts:
+  skip    — record "no reason given"
+  Enter   — same as "skip"   ← default
 ```
 
 ### 9b. Append to Lessons
@@ -498,9 +553,14 @@ I've seen this 3+ times — promote to permanent rule?
   "{distilled rule}"
 
 Source runs: [[2026-04-12-vault-credentials]], [[2026-04-20-overview-metrics]], [[2026-04-28-agents-editor]]
+
+Next?
+  1. promote to Patterns/explorer-preferences.md   ← default
+  2. snooze (re-ask after 3 more observations)
+  3. drop (don't promote, reset the counter)
 ```
 
-If the user agrees, append to `Patterns/explorer-preferences.md`.
+If the user picks 1, append to `Patterns/explorer-preferences.md`.
 
 ### 9f. Update coverage.md
 
@@ -550,7 +610,12 @@ Explorer run complete.
     {if pattern promoted:}
     ~ Obsidian/personas/Patterns/explorer-preferences.md
 
-  Next suggestion: {staleest unvisited area in same group, or "let coverage.md guide you"}
+  Next?
+    1. /explorer {staleest adjacent area}                ← default
+    2. /explorer {same area, different category}
+    3. /research {area}    (external-source companion run)
+    4. /architect resume   (drain backlog)
+    5. done
 ```
 
 If zero items were accepted, frame the run as a successful pass over a healthy area. The point is signal, not action.
@@ -561,5 +626,5 @@ If zero items were accepted, frame the run as a successful pass over a healthy a
 
 - **Pair with `/research`** — run `/explorer` after a research session that touched a specific area, to immediately surface adjacent gaps the research run didn't cover.
 - **Cadence** — daily or every-other-day is a reasonable rhythm. Coverage.md will tell you when the codebase is uniformly fresh and you should switch to `/architect` instead.
-- **Don't run while a heavy refactor is uncommitted.** Explorer commits atomically; an uncommitted refactor will get tangled. Stash or commit first.
+- **Coexist with uncommitted work.** Multiple CLIs and editor sessions share the working tree. Explorer never stashes, resets, or discards anything it didn't author. Each commit stages **only the specific paths** the explorer touched (`git add path/one path/two`); never `git add -A`, `git add .`, or `git add -u`. If an item's anchor file already has uncommitted changes from someone else, surface it: "this file already has changes — commit them first, or layer on top?" Default to layer-on-top if the user doesn't pick. Forbidden at all times: `git stash`, `git reset --hard`, `git restore`, `git checkout --` on paths the run didn't author, `git clean -f`.
 - **Drift signal** — if 3+ explorer runs in a row produce 0 accepted items, the calibration is off (severity bar too low, or area was wrong). Trigger a self-reflection: read the last 3 sweeps and ask the user "what shape would have actually been useful?"

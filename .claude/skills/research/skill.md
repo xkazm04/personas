@@ -121,7 +121,8 @@ Also check `codebase-catalogs.md` `Generated:` line if loaded; warn similarly if
 
 Read in order:
 1. `C:/Users/mkdol/Documents/Obsidian/personas/Patterns/user-preferences.md`
-2. The 3 most recent files in `C:/Users/mkdol/Documents/Obsidian/personas/Lessons/` (sorted by filename, descending)
+2. `C:/Users/mkdol/Documents/Obsidian/personas/Architect/strong-patterns.md` (if present) — these are the canonical shapes the codebase already does well. When a code-bucket finding's attachment point matches a strong pattern, prefer "extend the existing strong pattern" over "build something new" in Phase 6/7. Cite the strong pattern in the per-idea detail under an `Aligns with:` line.
+3. The 3 most recent files in `C:/Users/mkdol/Documents/Obsidian/personas/Lessons/` (sorted by filename, descending)
 
 These inform extraction priorities and what to deprioritize.
 
@@ -360,6 +361,7 @@ For each row:
     Evidence:     {file_path:line for code, similar templates for templates, etc.}
     Recommended:  {/add-template "..." | /add-credential "..." | edit {file}}
     Why it fits:  {which context group from snapshot it maps to}
+    Aligns with:  {strong-pattern wikilink + canonical example, if any — else omit line}
 ```
 
 ---

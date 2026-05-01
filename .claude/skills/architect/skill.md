@@ -6,15 +6,67 @@ This is the highest-risk, highest-payoff skill in the suite. It pairs with `/res
 
 This skill is **personas-specific.** It uses `.claude/codebase-context.md` and `.claude/codebase-stack.md` for taxonomy, and the Obsidian vault for a durable backlog of architectural decisions that span multiple sessions.
 
+## Interaction conventions
+
+Built for parallel CLI control — every user prompt is single-keystroke answerable.
+
+- **Every prompt is a numbered menu.** Numeric input picks the option; **Enter** triggers the default; option `1. other → …` is the deviation lane (free text).
+- **Every phase output (intermediate or final) ends with a `Next?` block** of 2–5 numbered next-step actions. Replying with a digit advances the run without typing prose.
+- Multi-finding triages use `<id>=<verdict-number>` syntax (e.g. `1=2 2=1 3=3`); `all=<n>` and `ask` shortcuts are always accepted.
+- Long free-text answers are still accepted everywhere; the menu just makes the common case instant.
+
 ## Input
 
-Three modes — pick one:
+Ask numbered-menu questions. Numeric input picks the option; **Enter** picks the default; option `1. other → …` is the deviation lane and accepts free text.
 
-1. **`scan` mode.** Ask: **"Theme to scan for? (e.g. `state-management`, `error-handling`, `ipc-boundary`, `data-modeling`, `testing-strategy`, `async-patterns`, `type-safety`, `build-tooling`, or a free-form one)"**. If the user replies "pick for me," consult `Architect/coverage.md` for the staleest theme. Theme is required for scan mode — no theme means shallow findings; refuse and re-ask if the user resists.
-2. **`area` mode.** User says "look at `<area>`" (e.g. `vault`, `agents/sub_chat`, `engine/scheduler`). Scan is bounded to that area but still cross-cutting within it. Same parallel-agent shape as scan mode.
-3. **`resume` mode.** User says "resume" or types `/architect resume`. Skip scanning. Read `Architect/backlog.md`, present pending decisions sorted by priority, let the user pick one to execute now.
+### Q1 — Mode
 
-If unclear, ask: **"`scan`, `area`, or `resume`?"**
+```
+Mode? (Enter = scan)
+  1. scan      — pick a theme, parallel-agent sweep        ← default
+  2. area      — bound the sweep to one area
+  3. resume    — drain the backlog (skip scanning)
+```
+
+`resume` skips the rest of Input — jump straight to Phase 9.
+
+### Q2a — Theme (scan mode)
+
+```
+Theme? (Enter = pick for me)
+  1. other → describe (free-form theme; angles auto-picked in Phase 3a)
+  2. state-management
+  3. error-handling
+  4. ipc-boundary
+  5. data-modeling
+  6. testing-strategy
+  7. async-patterns
+  8. type-safety
+  9. build-tooling
+  10. pick for me   ← default (uses Architect/coverage.md staleness)
+```
+
+Theme is required for scan mode — `pick for me` (option 10) is fine, but a one-word vague free-form theme yields shallow findings; if option 1's input is too thin, re-ask.
+
+### Q2b — Area (area mode)
+
+```
+Area? (Enter = pick for me)
+  1. other → type a hint (path fragment, keyword, or context id)
+  2. agents
+  3. vault
+  4. orchestration
+  5. triggers
+  6. execution
+  7. templates
+  8. deployment
+  9. platform
+  10. pick for me   ← default
+```
+
+Numeric options 2–9 map 1:1 to the 8 groups in `codebase-context.md` — same mapping as `/explorer`. Option 1's free text falls through to the existing area resolver. Scan is bounded to that area but still cross-cutting within it; same parallel-agent shape as scan mode.
+
+If the user's first message is ambiguous about mode (e.g. just `/architect`), present Q1; if they typed `resume` directly, skip to Phase 9.
 
 ---
 
@@ -342,14 +394,17 @@ These are not new findings — they're re-surfaced from prior runs. Phase 6 tria
 
 Ask the user:
 ```
-For each finding, decide:
-  - "execute now" — pick this one to implement in this session
-  - "queue" — accept as a backlog decision; defer execution
-  - "drop" — not worth pursuing
-  - "rework" — flagged something true but the proposed shape isn't right; you want a redo
+For each finding, pick a verdict:
+  1. execute now    — implement this one in this session
+  2. queue          — accept as backlog decision; defer       ← default
+  3. drop           — not worth pursuing
+  4. rework         — true gap, wrong proposed shape
 
-Reply per-number (e.g. "1: queue, 2: execute, 3: drop, 4: queue") or "ask"
-for a guided walkthrough.
+Reply with `<finding>=<verdict>`, space-separated. Examples:
+  "1=2 2=1 3=3 4=4"   →  finding 1 queued, 2 executed, 3 dropped, 4 reworked
+  "all=2"             →  queue everything
+  "ask"               →  guided walkthrough item-by-item
+  Enter               →  same as "all=2"   ← default
 ```
 
 The four-way triage matters: architect findings rarely all execute now, but they shouldn't all drop either. Most go to the queue.
@@ -363,17 +418,22 @@ For each verdict:
 
 Strong-pattern findings have a different triage:
 ```
-For strong patterns (new this run), decide:
-  - "codify" — proceed to Phase 7B; pick a vehicle (lint rule / docs / test guard) and ship it
-  - "note"   — record in strong-patterns.md but defer codification
-  - "drop"   — not actually as load-bearing as it looked; do NOT write to memory
+For strong patterns (new this run), pick a verdict:
+  1. codify   — proceed to Phase 7B; ship lint rule / docs / test guard
+  2. note     — record in strong-patterns.md but defer codification   ← default
+  3. drop     — not actually load-bearing; do NOT persist
+
+Reply `<finding>=<verdict>` (e.g. "4=2 7=1") or Enter for `all=2`.
 ```
 
-For aging strong patterns (from Phase 1d), the verdicts are:
+For aging strong patterns (from Phase 1d):
 ```
-  - "codify"   — same Phase 7B path; this is exactly what aging is meant to push toward
-  - "snooze"   — bump Last reviewed to today; won't surface as aging again for 30 days
-  - "drop"     — pattern no longer load-bearing (codebase moved on); remove from strong-patterns.md
+For aging strong patterns, pick a verdict:
+  1. codify    — same Phase 7B path (aging is meant to push toward this)   ← default
+  2. snooze    — bump Last reviewed to today; won't re-surface for 30 days
+  3. drop      — pattern no longer load-bearing; remove from strong-patterns.md
+
+Reply `<aging-id>=<verdict>` (e.g. "A1=1 A2=2") or Enter for `all=1`.
 ```
 
 Codification is on by default if the user picks `codify` for any pattern (new or aging). The "triage first, docs after" preference means `note` is a valid steady state, but aging review eventually nudges noted patterns toward action or honest acceptance that informal status is fine.
@@ -386,21 +446,26 @@ This is the high-rigor execution path. Architect changes default to a dedicated 
 
 ### 7a. Branch handling
 
+The default is **commit on top of the current branch.** This codebase is in a chaotic rapid-development phase where multiple CLIs and editors coexist on the same working tree; restrictive branching fights that, controlled chaos doesn't.
+
 Ask:
 ```
-Create a dedicated branch for this? (recommended: yes)
+Branch handling for this decision:
 
-  yes → branch name: architect/{slug}  ← suggested, edit if you want different
-  no  → commit on current branch (current: {git branch --show-current})
+  1. commit on current branch ({git branch --show-current})  ← default, recommended
+  2. switch to a new branch architect/{slug}                 ← only when clean separation matters
+                                                                (e.g. risky migration meant to be reviewed as a unit)
+
+Pick 1 or 2.
 ```
 
-Default to "yes" but the user said: in chaotic rapid-development phase, sometimes "no" is the right answer. Don't push back if they say no.
+Pick 2 ONLY when the user explicitly asks for it. Do not push toward branching; pushing toward branching when the user is mid-flight on other work creates conflict pain instead of avoiding it. The architect ADR is the artifact that gives the change its identity — not the branch.
 
-If yes, create the branch:
+If the user picks 2, create the branch:
 ```bash
 git switch -c architect/{slug}
 ```
-After the branch exists, every commit lands there until the user merges or asks to switch back.
+Note that this carries any uncommitted work in the tree onto the new branch, which is fine — switching branches with a dirty tree is non-destructive.
 
 ### 7b. Write the ADR first
 
@@ -455,17 +520,43 @@ related_scan: [[Architect/scans/{date}-{theme}]]
 
 ### 7c. Pre-flight checks
 
-Before commit 1, ensure baseline is clean:
-```bash
-# Run all from project root
-git status                    # working tree should be clean
-npx tsc --noEmit              # baseline TS errors recorded
-npm run lint                  # baseline warning count recorded
-cd src-tauri && cargo check && cd ..   # Rust baseline
-npm run test -- --run         # baseline test pass/fail recorded
-```
+**Do NOT require a clean working tree.** Concurrent CLIs run on the same tree; assuming a clean baseline is wrong, and acting on that assumption (stash, reset, checkout) destroys other people's work. Instead, **inspect, classify, and coexist**:
 
-Record the baseline numbers in the ADR's `## Pre-flight baseline` section before proceeding. Every later commit's validation compares to this baseline — `npm run lint` going from 10086 → 10089 warnings is a regression, not noise.
+1. **Inspect the tree:**
+   ```bash
+   git status --short
+   ```
+   Read every modified or untracked path.
+
+2. **Classify each path** as one of:
+   - **In-flight by someone else** — paths that have nothing to do with this architect decision. Leave them strictly alone for the rest of the run.
+   - **Pre-existing in your touch zone** — paths the decision will edit that already have uncommitted changes. Surface to the user:
+     ```
+     File X already has uncommitted changes. The architect decision wants to edit it.
+     Options:
+       1. commit those changes first (you do it; I'll re-inspect after)
+       2. let me commit on top of them (your changes stay; mine layer on)
+       3. abort — pick a different decision
+     ```
+     Default to option 2 if the user doesn't pick — commit-on-top is the principle.
+   - **Yours from this session** — paths only this session has authored. Normal.
+
+3. **Capture validation baselines:**
+   ```bash
+   npx tsc --noEmit              # baseline TS errors
+   npm run lint                  # baseline warning count
+   cd src-tauri && cargo check && cd ..
+   npm run test -- --run         # baseline test pass/fail
+   ```
+   Record the numbers in the ADR's `## Pre-flight baseline` section. Subsequent commits compare to this baseline — `npm run lint` going from 10086 → 10089 warnings is a regression caused by *you*, not the in-flight other-author work (whose net contribution to the baseline is captured in the snapshot you just took).
+
+**Forbidden during pre-flight (and at every later phase):**
+- `git stash` — never. Not even with `--keep-index`.
+- `git reset --hard`, `git reset --merge`, `git restore`, `git checkout --` on any path.
+- `git clean -f`, `git clean -fdx`.
+- `git add -A`, `git add .`, `git add -u` — always specify exact paths so you don't accidentally claim someone else's work.
+
+If the working tree contains a path that conflicts with your edits and the user doesn't want to commit it first, abort the decision and queue it back to the backlog with a `blocked: working-tree-conflict` note. Re-attempting later (when the conflict has cleared) is fine.
 
 ### 7d. Atomic commits per rollout step
 
@@ -473,10 +564,11 @@ For each step in the ADR's Rollout section:
 
 1. Apply the changes for that step.
 2. Run the validation listed for that step.
-3. **Compare to baseline** — TS errors must not increase, lint warnings must not exceed baseline + small rounding (5 max), tests must pass at the baseline rate.
+3. **Compare to baseline** — TS errors must not increase, lint warnings must not exceed baseline + small rounding (5 max), tests must pass at the baseline rate. Note: if the baseline already had non-zero errors/warnings from in-flight other-author work, those propagate forward — that's fine; the metric is *delta*, not absolute.
 4. If validation regresses → fix inline. Do NOT stack failing commits. Do NOT use `--no-verify` or `--amend`.
-5. Commit with `architect: <step title>` prefix, Co-Authored-By footer, body referencing the ADR by wikilink.
-6. Record the commit SHA in the ADR's Rollout section as you go.
+5. Stage **only the paths this step touched** — `git add path/one path/two`. Never `git add -A`, `git add .`, or `git add -u` — those would sweep up in-flight work from other CLIs or the user's editor. If you can't enumerate the paths, you don't know what you changed; stop and re-inspect with `git status --short` and `git diff --name-only`.
+6. Commit with `architect: <step title>` prefix, Co-Authored-By footer, body referencing the ADR by wikilink.
+7. Record the commit SHA in the ADR's Rollout section as you go.
 
 ### 7e. Final regression sweep
 
@@ -699,9 +791,17 @@ R/E/P = risk / effort / payoff.
 
 ### 9b. Pick one to execute
 
-Ask: "Which to execute now?" The user picks one number (or "open ADR N" to read the full decision before deciding).
+Ask:
+```
+Which to execute now? Reply with a decision number (1–{N}).
 
-If they pick `open`, read the ADR file and print it. Then re-ask.
+Shortcuts:
+  open N   — read the full ADR before deciding (re-asks after)
+  abort    — bail; nothing executes
+  Enter    — pick decision #1 (top-priority)   ← default
+```
+
+If they pick `open N`, read the ADR file and print it. Then re-ask.
 
 ### 9c. Refresh the ADR
 
@@ -730,7 +830,11 @@ For the dropped findings, why did you drop them?
   [3] {title}
   [5] {title}
 
-Per-item reasons or one overall reason. Type "skip" to move on.
+Per-item reasons or one overall reason.
+
+Shortcuts:
+  skip    — record "no reason given"
+  Enter   — same as "skip"   ← default
 ```
 
 ### 10b. Append to Lessons
@@ -881,10 +985,13 @@ Architect run complete.
     {if codebase-stack.md updated:}
     ~ .claude/codebase-stack.md
 
-  Next steps:
-    - {one concrete suggestion: "queue is at {Q} items; next /architect resume to ship one"}
-    - {if strong pattern was noted: "consider /explorer or manual session to codify '{strong}'"}
-    - {if branch was created: "merge architect/{slug} when ready"}
+  Next?
+    1. /architect resume     — execute next decision ({Q} pending)   ← default if Q > 0
+    2. /architect scan       — fill the queue with a new theme
+    3. /explorer             — daily wandering on adjacent area
+    4. /research             — external-source companion run
+    5. done
+    {if branch was created: also note "merge architect/{slug} when ready"}
 ```
 
 ---
@@ -893,7 +1000,7 @@ Architect run complete.
 
 - **Cadence** — once a week is plenty. Architect runs are heavy; the backlog absorbs the inventory and resume mode amortizes the work.
 - **Scan vs resume** — alternate. Scan to fill the queue, resume to drain it. A backlog of 20 pending items means the next session should be resume, not scan.
-- **Don't run while a heavy refactor is uncommitted on master.** Architect always wants a clean baseline. Stash or commit first.
+- **Coexist with uncommitted work.** Architect never requires a clean baseline. Concurrent CLIs and editor sessions all share the working tree; architect inspects what's there, edits only its own paths, and commits only those paths. If a path it wants to edit already has uncommitted changes, surface the conflict to the user (Phase 7c step 2). Never `git stash`, never `git reset --hard`, never `git checkout --` someone else's work. Branching is opt-in for clean separation, not a way to escape mess.
 - **The branch question is real** — say `no` when you're already on a topic branch and the change belongs there, or when the change is small enough that a feature branch is overkill. The default suggestion is `yes` because architect changes are typically not small, but the user's "no" is honored without pushback.
 - **Conflict signal** — if a finding contradicts a `strong-pattern` already in the vault, treat it as the most interesting finding of the run. Either the strong-pattern entry is stale (codebase moved on) or the new finding is wrong. Either way, the answer changes the model meaningfully.
 - **Drift signal** — if 3 consecutive scans on different themes produce backlog items but zero get executed via resume, the user is using architect as a brainstorming tool, not a shipping tool. Surface this in self-reflection: ask whether to lower the bar for execution or accept that the backlog is the artifact.

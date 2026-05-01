@@ -9005,6 +9005,20 @@
       "select_note": "Select a Note",
       "select_note_hint": "Choose a note from the tree on the left to preview its contents."
     },
+    "companion": {
+      "name": "Athena",
+      "role": "thinking partner",
+      "open_label": "Open Athena",
+      "panel_label": "Athena — companion panel",
+      "initializing": "Waking up…",
+      "init_failed": "Athena couldn't initialize",
+      "hello_phase_zero": "I'm here, but I haven't found my voice yet — chat lands in the next phase.",
+      "brain_at": "Brain seeded at",
+      "empty_transcript": "Say something. I'm listening.",
+      "thinking": "Thinking…",
+      "composer_placeholder": "Talk to Athena. Enter to send, Shift+Enter for a new line.",
+      "send": "Send"
+    },
     "ocr": {
       "title": "OCR",
       "subtitle": "Extract and compare text from images and documents",

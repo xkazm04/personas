@@ -2,6 +2,7 @@ pub mod background_job;
 pub mod bench;
 mod cloud;
 mod commands;
+mod companion;
 pub mod daemon;
 mod db;
 mod engine;
@@ -1792,6 +1793,10 @@ pub fn run() {
             commands::obsidian_brain::graph::obsidian_graph_write_meeting_note,
             commands::obsidian_brain::graph::obsidian_graph_start_watcher,
             commands::obsidian_brain::graph::obsidian_graph_stop_watcher,
+            // Companion (Athena)
+            commands::companion::companion_init,
+            commands::companion::chat::companion_send_message,
+            commands::companion::chat::companion_list_recent_messages,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

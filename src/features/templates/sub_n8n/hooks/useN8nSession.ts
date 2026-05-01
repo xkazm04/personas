@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useCallback, useRef, useEffect } from 'react';
 import {
   createN8nSession,
@@ -9,7 +9,6 @@ import {
   N8N_TRANSFORM_CONTEXT_KEY,
   type PersistedTransformContext,
 } from './n8nTypes';
-import { useToastStore } from '@/stores/toastStore';
 import type { N8nImportState, N8nImportAction } from './useN8nImportReducer';
 import type { SessionStatus } from '@/lib/bindings/SessionStatus';
 
@@ -117,23 +116,20 @@ export function useN8nSession(
       const freshId = latestStateRef.current.sessionId;
       if (!freshId) return;
       if (lastSyncedSliceRef.current && slicesEqual(lastSyncedSliceRef.current, freshSlice)) return;
-      void (async () => {
-        try {
-          await updateN8nSession(freshId, {
-            step: freshSlice.step,
-            status: freshSlice.status,
-            parserResult: freshSlice.parserResult,
-            draftJson: freshSlice.draftJson,
-            questionsJson: freshSlice.questionsJson,
-            userAnswers: freshSlice.userAnswers,
-            transformId: freshSlice.transformId,
-            error: freshSlice.error,
-          });
+      void updateN8nSession(freshId, {
+        step: freshSlice.step,
+        status: freshSlice.status,
+        parserResult: freshSlice.parserResult,
+        draftJson: freshSlice.draftJson,
+        questionsJson: freshSlice.questionsJson,
+        userAnswers: freshSlice.userAnswers,
+        transformId: freshSlice.transformId,
+        error: freshSlice.error,
+      })
+        .then(() => {
           lastSyncedSliceRef.current = freshSlice;
-        } catch {
-          // intentional: non-critical -- DB sync will be retried on next state change
-        }
-      })();
+        })
+        .catch(silentCatch("useN8nSession:debouncedDbSync"));
     }, DB_SYNC_DELAY);
 
     return () => {
@@ -175,8 +171,8 @@ export function useN8nSession(
           savedAt: Date.now(),
         };
         window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
-      } catch {
-        // intentional: non-critical -- localStorage cleanup
+      } catch (err) {
+        silentCatch("useN8nSession:debouncedLsSync")(err);
       }
     }, LS_SYNC_DELAY);
 
@@ -231,8 +227,8 @@ export function useN8nSession(
               savedAt: Date.now(),
             };
             window.localStorage.setItem(N8N_TRANSFORM_CONTEXT_KEY, JSON.stringify(context));
-          } catch {
-            // intentional: non-critical -- localStorage cleanup
+          } catch (err) {
+            silentCatch("useN8nSession:unmountFlushLsSync")(err);
           }
         }
       }
@@ -242,7 +238,8 @@ export function useN8nSession(
   // -- Manual operations --
 
   const clearPersistedContext = useCallback(() => {
-    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); } catch { /* intentional: non-critical -- localStorage cleanup */ }
+    try { window.localStorage.removeItem(N8N_TRANSFORM_CONTEXT_KEY); }
+    catch (err) { silentCatch("useN8nSession:clearPersistedContext")(err); }
   }, []);
 
   const create = useCallback(async (workflowName: string, rawJson: string): Promise<string | null> => {
@@ -251,8 +248,8 @@ export function useN8nSession(
       dispatch({ type: 'SESSION_CREATED', sessionId: session.id });
       sessionIdRef.current = session.id;
       return session.id;
-    } catch {
-      useToastStore.getState().addToast('Failed to create import session', 'error');
+    } catch (err) {
+      toastCatch("useN8nSession:createSession", "Failed to create import session")(err);
       return null;
     }
   }, [dispatch]);

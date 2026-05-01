@@ -69,6 +69,7 @@ const HealingToast = lazy(() => import("@/features/shared/components/feedback/He
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazy(() => import("@/features/gitlab/components/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
+const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 
 export default function App() {
   const [consented, setConsented] = useState(hasUserConsented);
@@ -185,6 +186,7 @@ export default function App() {
                 <CommandPalette />
                 <NotificationCenter />
                 <ShareLinkHandler />
+                <CompanionPanel />
               </Suspense>
             </>
           )}

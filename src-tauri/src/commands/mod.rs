@@ -13,6 +13,7 @@ pub mod ocr;
 pub mod signing;
 pub mod artist;
 pub mod obsidian_brain;
+pub mod companion;
 pub mod drive;
 pub mod live_roadmap;
 #[cfg(feature = "test-automation")]

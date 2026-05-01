@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from 'react';
 import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
@@ -7,6 +7,8 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useSystemStore } from '@/stores/systemStore';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
+
+const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';
@@ -285,8 +287,12 @@ export default function DesktopFooter() {
 
   return (
     <div role="contentinfo" className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-between px-4 h-8 border-t border-primary/10 bg-background">
-      {/* Left cluster: Collapse + Account + Theme + Network */}
+      {/* Left cluster: Companion + Collapse + Account + Theme + Network */}
       <div className="flex items-center gap-1.5">
+        <Suspense fallback={null}>
+          <CompanionFooterIcon />
+        </Suspense>
+        <div className="w-px h-4 bg-primary/10" />
         <CollapseFooterIcon />
         <div className="w-px h-4 bg-primary/10" />
         <AccountFooterIcon />
@@ -300,7 +306,7 @@ export default function DesktopFooter() {
         )}
       </div>
 
-      {/* Right: reserved for future status items */}
+      {/* Right cluster: reserved for future status items */}
       <div className="flex items-center gap-1.5" />
     </div>
   );
