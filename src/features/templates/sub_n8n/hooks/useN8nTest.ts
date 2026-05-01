@@ -42,21 +42,18 @@ export function useN8nTest(
     dispatch({ type: 'TEST_LINES', lines: testStreamLines });
   }, [testStreamLines, dispatch]);
 
-  // Sync test stream phase into reducer
+  // Sync test stream phase into reducer.
+  // The `failed` branch is owned by the onFailed callback above — it has the
+  // structured CLI message, fires synchronously, and dispatches both
+  // TEST_FAILED and SET_ADJUSTMENT. Duplicating that here would race the
+  // callback's structured message with the line-based fallback and the
+  // *worse* message would win whichever ran second.
   useEffect(() => {
     dispatch({ type: 'TEST_PHASE', phase: testStreamPhase });
     if (testStreamPhase === 'completed') {
       dispatch({ type: 'TEST_PASSED' });
     }
-    if (testStreamPhase === 'failed') {
-      const fallbackMessage = testStreamLines[testStreamLines.length - 1] || 'Test execution failed.';
-      dispatch({ type: 'TEST_FAILED', error: fallbackMessage });
-      dispatch({
-        type: 'SET_ADJUSTMENT',
-        text: `Fix: The test execution failed with: ${fallbackMessage.slice(0, 200)}. Please adjust the persona to fix this issue.`,
-      });
-    }
-  }, [testStreamPhase, testStreamLines, dispatch]);
+  }, [testStreamPhase, dispatch]);
 
   return { startTestStream, resetTestStream };
 }
