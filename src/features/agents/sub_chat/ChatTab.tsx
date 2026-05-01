@@ -44,7 +44,14 @@ export function ChatTab() {
   const personaId = selectedPersona?.id ?? '';
   const { textLines: streamTextLines } = useExecutionStream(personaId);
   const { pendingExperiments } = useExperimentBridge();
-  const healthDigest = useAgentStore((s) => s.healthDigest);
+  // Subscribe to the unresolved-issue count for this persona only. Selecting
+  // the whole healthDigest reference would re-render every time any persona's
+  // health changed; the primitive count is value-stable across unrelated
+  // updates and uses Object.is for the equality check.
+  const unresolvedIssueCount = useAgentStore((s) =>
+    s.healthDigest?.personas.find((p) => p.personaId === personaId)
+      ?.result.issues?.filter((i) => !i.resolved).length ?? 0,
+  );
   const chatTodos = useAgentStore((s) => s.chatTodos);
   const setChatTodos = useAgentStore((s) => s.setChatTodos);
 
@@ -56,14 +63,10 @@ export function ChatTab() {
   });
 
   // Compute badges for the ops sidebar icon rail
-  const opsBadges = useMemo((): OpsBadges => {
-    const personaHealth = healthDigest?.personas.find((p) => p.personaId === personaId);
-    const unresolvedIssues = personaHealth?.result.issues?.filter((i) => !i.resolved) ?? [];
-    return {
-      run: { active: isExecuting },
-      health: { issueCount: unresolvedIssues.length },
-    };
-  }, [isExecuting, healthDigest, personaId]);
+  const opsBadges = useMemo((): OpsBadges => ({
+    run: { active: isExecuting },
+    health: { issueCount: unresolvedIssueCount },
+  }), [isExecuting, unresolvedIssueCount]);
 
   // Restore session on mount. Skip the restore if a specific session has
   // already been populated by an upstream caller (e.g. ProcessActivityDrawer
