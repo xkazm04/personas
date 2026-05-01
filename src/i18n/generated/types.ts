@@ -1951,6 +1951,7 @@ export type Translations = {
       plan_status_completed: string;
       plan_collapse: string;
       plan_expand: string;
+      persona_switched_during_send: string;
     };
     advisory: {
       how_can_improve: string;

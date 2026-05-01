@@ -218,7 +218,7 @@ export function ChatTab() {
       const currentPersonaId = useAgentStore.getState().selectedPersona?.id ?? '';
       if (currentPersonaId !== sendPersonaId) {
         useToastStore.getState().addToast(
-          'Persona switched while creating the chat session — message not sent. Try again.',
+          t.agents.chat.persona_switched_during_send,
           'error',
           4000,
         );

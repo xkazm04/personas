@@ -1944,7 +1944,8 @@
       "plan_status_in_progress": "In progress",
       "plan_status_completed": "Completed",
       "plan_collapse": "Hide plan",
-      "plan_expand": "Show plan"
+      "plan_expand": "Show plan",
+      "persona_switched_during_send": "Persona switched while creating the chat session — message not sent. Try again."
     },
     "advisory": {
       "how_can_improve": "How can this agent work better for you?",
