@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity } from 'lucide-react';
+import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useAuthStore } from '@/stores/authStore';
+import { useToastStore } from '@/stores/toastStore';
+import { useAutoUpdater } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,9 +20,22 @@ export default function AccountSettings() {
 
   const [telemetryOn, setTelemetryOn] = useState(isTelemetryEnabled);
   const [telemetryChanged, setTelemetryChanged] = useState(false);
+  const { isChecking, checkForUpdate } = useAutoUpdater();
   const clearError = () => useAuthStore.setState({ error: null });
   const { t } = useTranslation();
   const s = t.settings.account;
+
+  const handleCheckForUpdate = async () => {
+    const outcome = await checkForUpdate();
+    const addToast = useToastStore.getState().addToast;
+    if (outcome === "update-available") {
+      addToast(s.updates_available_toast, 'success');
+    } else if (outcome === "up-to-date") {
+      addToast(s.updates_up_to_date, 'success');
+    } else {
+      addToast(s.updates_check_failed, 'error');
+    }
+  };
 
   return (
     <ContentBox>
@@ -75,6 +90,22 @@ export default function AccountSettings() {
               />
             </button>
           </div>
+        </div>
+
+        {/* Updates */}
+        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
+          <SectionHeading title={s.updates_title} icon={<Download className="text-blue-400" />} />
+          <p className="typo-body text-foreground leading-relaxed">
+            {s.updates_description}
+          </p>
+          <Button
+            variant="secondary"
+            icon={<RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />}
+            onClick={() => { void handleCheckForUpdate(); }}
+            disabled={isChecking}
+          >
+            {isChecking ? s.updates_checking : s.updates_check_button}
+          </Button>
         </div>
 
         <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">

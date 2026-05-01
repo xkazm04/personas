@@ -7161,7 +7161,14 @@
       "telemetry_on": "Crash reports and usage analytics are active.",
       "telemetry_off": "Telemetry is disabled. No data is sent to Sentry.",
       "telemetry_restart": "Restart the app for this change to take effect",
-      "telemetry_toggle_aria": "Toggle telemetry"
+      "telemetry_toggle_aria": "Toggle telemetry",
+      "updates_title": "Updates",
+      "updates_description": "Personas auto-checks for updates every six hours. Click below to check now.",
+      "updates_check_button": "Check for Updates",
+      "updates_checking": "Checking...",
+      "updates_up_to_date": "You're up to date",
+      "updates_available_toast": "Update available — see the banner at the top to install",
+      "updates_check_failed": "Couldn't check for updates. Try again in a moment."
     },
     "appearance_extra": {
       "simple": "Simple",

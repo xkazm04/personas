@@ -7168,6 +7168,13 @@ export type Translations = {
       telemetry_off: string;
       telemetry_restart: string;
       telemetry_toggle_aria: string;
+      updates_title: string;
+      updates_description: string;
+      updates_check_button: string;
+      updates_checking: string;
+      updates_up_to_date: string;
+      updates_available_toast: string;
+      updates_check_failed: string;
     };
     appearance_extra: {
       simple: string;
