@@ -478,11 +478,19 @@ function classifyChangeRisk(section: string, current: string, proposed: string):
     if (!current || current === "(empty)") return "medium";
     // If proposed is much shorter, could be destructive
     if (proposed.length < current.length * 0.3) return "high";
-    // If proposed is completely different (rough check: less than 20% overlap)
-    const currentWords = new Set(current.toLowerCase().split(/\s+/));
-    const proposedWords = proposed.toLowerCase().split(/\s+/);
-    const overlap = proposedWords.filter((w) => currentWords.has(w)).length;
-    const overlapRatio = proposedWords.length > 0 ? overlap / proposedWords.length : 0;
+    // Compare unique-word sets (Jaccard-ish): split on non-word boundaries so
+    // punctuation doesn't fuse tokens, then dedupe both sides. Counting raw
+    // duplicate occurrences would let "the the the" against "the foo" score
+    // 100% overlap; conversely, dropping a high-frequency token in the
+    // current text could artificially deflate the ratio.
+    const tokenize = (s: string) =>
+      new Set(s.toLowerCase().split(/\W+/).filter((w) => w.length > 0));
+    const currentWords = tokenize(current);
+    const proposedWords = tokenize(proposed);
+    if (proposedWords.size === 0) return "high";
+    let overlap = 0;
+    for (const w of proposedWords) if (currentWords.has(w)) overlap++;
+    const overlapRatio = overlap / proposedWords.size;
     if (overlapRatio < 0.2) return "high";
     return "medium";
   }
