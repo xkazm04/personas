@@ -31,7 +31,10 @@ export default defineConfig(async () => ({
   base: "./",
   plugins: [
     // Auto-regenerate template checksums and connector seed so DB seeding
-    // always works on any device after clone + build
+    // always works on any device after clone + build. Fail loud — predev/prebuild
+    // run the same scripts upstream, so a failure here is not a transient hiccup
+    // worth swallowing; it means codegen is genuinely broken and the build would
+    // otherwise ship with stale artifacts.
     {
       name: "catalog-codegen",
       buildStart() {
@@ -40,11 +43,7 @@ export default defineConfig(async () => ({
           "scripts/generate-template-checksums.mjs",
           "scripts/generate-connector-seed.mjs",
         ]) {
-          try {
-            execSync(`node ${script}`, { cwd, stdio: "pipe" });
-          } catch (e) {
-            console.warn(`[catalog-codegen] Failed to run ${script}:`, e);
-          }
+          execSync(`node ${script}`, { cwd, stdio: "inherit" });
         }
       },
     },
