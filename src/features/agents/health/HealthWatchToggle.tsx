@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Eye } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useToastStore } from '@/stores/toastStore';
 import { managementFetch } from '@/api/system/managementApiAuth';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function HealthWatchToggle() {
   const { t } = useTranslation();
   const persona = useAgentStore((s) => s.selectedPersona);
-  const addToast = useToastStore((s) => s.addToast);
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +24,7 @@ export function HealthWatchToggle() {
         if (cancelled) return;
         if (d?.data?.enabled !== undefined) setEnabled(d.data.enabled);
       })
-      .catch(() => {});
+      .catch(silentCatch('HealthWatchToggle:load'));
     return () => { cancelled = true; };
   }, [persona]);
 
@@ -38,15 +37,13 @@ export function HealthWatchToggle() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !enabled, interval_hours: 6, error_threshold: 30 }),
       });
-      if (r.ok) {
-        setEnabled(!enabled);
-      } else {
-        addToast(t.agents.settings_status.failed_health_watch, 'error');
-      }
-    } catch {
-      addToast(t.agents.settings_status.failed_health_watch, 'error');
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setEnabled(!enabled);
+    } catch (err) {
+      toastCatch('HealthWatchToggle:save', t.agents.settings_status.failed_health_watch)(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
