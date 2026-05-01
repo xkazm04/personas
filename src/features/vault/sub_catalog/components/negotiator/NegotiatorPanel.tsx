@@ -52,11 +52,16 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
   const matchingAuth = useMemo(() => {
     if (authDetections.length === 0) return [];
-    const label = designResult.connector.label.toLowerCase();
-    const name = (designResult.connector.name ?? '').toLowerCase();
+    // Normalize to lowercase + drop non-alphanumerics so "GitHub", "github",
+    // and "git-hub" all collapse to "github". Exact-equality after normalize
+    // avoids the bidirectional substring trap where "git" matched "github",
+    // "gitlab", and "git-anything".
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const label = normalize(designResult.connector.label);
+    const name = normalize(designResult.connector.name ?? '');
     return authDetections.filter((d) => {
-      const st = d.serviceType.toLowerCase();
-      return label.includes(st) || st.includes(label) || name.includes(st) || st.includes(name);
+      const st = normalize(d.serviceType);
+      return st === label || (name !== '' && st === name);
     });
   }, [authDetections, designResult.connector.label, designResult.connector.name]);
 
