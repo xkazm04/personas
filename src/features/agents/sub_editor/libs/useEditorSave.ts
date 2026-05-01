@@ -149,14 +149,12 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
   const handleSaveSettings = useDebouncedSaveGroup({
     draftRef,
-    baselineRef,
     keys: SETTINGS_KEYS,
     performSave: performSettingsSave,
   });
 
   const saveModelSettings = useDebouncedSaveGroup({
     draftRef,
-    baselineRef,
     keys: MODEL_KEYS,
     performSave: performModelSave,
   });

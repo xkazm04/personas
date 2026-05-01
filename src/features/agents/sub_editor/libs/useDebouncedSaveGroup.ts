@@ -5,9 +5,6 @@ import { draftChanged } from './PersonaDraft';
 interface SaveGroupOptions {
   /** Ref to always-current draft. */
   draftRef: React.RefObject<PersonaDraft>;
-  /** Ref to always-current baseline. Kept for callers; no longer consulted for
-   *  the post-await early-return check (see comment below). */
-  baselineRef: React.RefObject<PersonaDraft>;
   /** Key group used for dirty detection. */
   keys: readonly (keyof PersonaDraft)[];
   /** The actual save operation -- called with the current draft snapshot. */
@@ -24,7 +21,6 @@ interface SaveGroupOptions {
  */
 export function useDebouncedSaveGroup({
   draftRef,
-  baselineRef: _baselineRef,
   keys,
   performSave,
 }: SaveGroupOptions) {
