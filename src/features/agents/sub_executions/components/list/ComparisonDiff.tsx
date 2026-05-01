@@ -88,8 +88,8 @@ export function OutputDiffSection({
                       <div
                         key={i}
                         className={`grid grid-cols-[40px_40px_1fr] ${
-                          d.type === 'added' ? 'text-emerald-400 bg-emerald-500/5'
-                            : d.type === 'removed' ? 'text-red-400 bg-red-500/5'
+                          d.type === 'added' ? 'text-status-success bg-status-success/5'
+                            : d.type === 'removed' ? 'text-status-error bg-status-error/5'
                               : 'text-foreground'
                         }`}
                       >
@@ -144,7 +144,7 @@ export function JsonDiffSection({
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
         {diffs.length > 0 ? (
-          <span className="typo-body text-amber-400/70">
+          <span className="typo-body text-status-warning/70">
             {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
           </span>
         ) : (
@@ -163,8 +163,8 @@ export function JsonDiffSection({
                 {diffs.map((d, i) => (
                   <div key={i} className="grid grid-cols-[auto_1fr_1fr] gap-2 typo-code items-start">
                     <span className="text-foreground py-1">{d.path}</span>
-                    <div className="px-2 py-1 rounded bg-red-500/5 text-red-400/80 break-all">{d.left}</div>
-                    <div className="px-2 py-1 rounded bg-emerald-500/5 text-emerald-400/80 break-all">{d.right}</div>
+                    <div className="px-2 py-1 rounded bg-status-error/5 text-status-error/80 break-all">{d.left}</div>
+                    <div className="px-2 py-1 rounded bg-status-success/5 text-status-success/80 break-all">{d.right}</div>
                   </div>
                 ))}
               </div>

@@ -42,14 +42,14 @@ export function ExecutionListRow({
   const statusBadge = <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={tx(e.healing_retry, { count: execution.retry_count })}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20">
         <RefreshCw className="w-2.5 h-2.5" />#{execution.retry_count}
       </span>
     </Tooltip>
   ) : null;
   const simulatedBadge = execution.is_simulation ? (
     <Tooltip content={e.simulated_badge_tooltip}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-brand-purple/10 text-brand-purple border border-brand-purple/20">
         <FlaskConical className="w-2.5 h-2.5" />{e.simulated_badge}
       </span>
     </Tooltip>

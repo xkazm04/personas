@@ -45,7 +45,7 @@ export function ExecutionListFilters({
             onClick={() => setShowSimulations(!showSimulations)}
             className={`ml-auto flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showSimulations
-                ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
+                ? 'bg-brand-purple/10 text-brand-purple border border-brand-purple/20'
                 : 'text-foreground hover:text-muted-foreground/70 border border-transparent'
             }`}
           >
@@ -60,7 +60,7 @@ export function ExecutionListFilters({
             onClick={() => setShowRaw(!showRaw)}
             className={`${hasSimulations ? '' : 'ml-auto '}flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors ${
               showRaw
-                ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                ? 'bg-status-warning/10 text-status-warning border border-status-warning/20'
                 : 'text-foreground hover:text-muted-foreground/70 border border-transparent'
             }`}
           >
