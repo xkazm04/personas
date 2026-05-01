@@ -163,7 +163,7 @@ export function GuidingTips({ tips }: GuidingTipsProps) {
 
   return (
     <details className="group rounded-modal border border-primary/10 bg-secondary/20 px-4 py-2.5">
-      <summary className="cursor-pointer typo-body text-foreground hover:text-foreground transition-colors flex items-center gap-1.5">
+      <summary className="cursor-pointer typo-body text-foreground transition-colors flex items-center gap-1.5">
         <Lightbulb className="w-3 h-3" />
         {t.vault.negotiator.tips_heading}
       </summary>

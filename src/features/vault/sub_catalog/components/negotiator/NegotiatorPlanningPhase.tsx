@@ -36,7 +36,7 @@ export function NegotiatorPlanningPhase({ progressLines, onCancel }: NegotiatorP
               ) : (
                 <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               )}
-              <span className={`typo-body ${isLast ? 'text-foreground' : 'text-foreground'}`}>
+              <span className="typo-body text-foreground">
                 {line}
               </span>
             </div>
