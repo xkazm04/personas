@@ -12,6 +12,9 @@ import { ExecutionListRow } from './ExecutionListRow';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('execution-list');
 
 export function ExecutionList() {
   const { t } = useTranslation();
@@ -65,7 +68,8 @@ export function ExecutionList() {
         setCompareRight(chain[chain.length - 1]!.id);
         setCompareMode(true);
       }
-    } catch {
+    } catch (err) {
+      logger.warn('Failed to load retry chain', { error: err });
       useToastStore.getState().addToast(e.failed_to_load_chain, 'error');
     }
   }, [personaId]);
@@ -108,7 +112,7 @@ export function ExecutionList() {
         <h4 className="flex items-center gap-2.5 typo-heading text-foreground/90 tracking-wide">
           <span className="w-6 h-[2px] bg-gradient-to-r from-primary/50 to-accent/50 rounded-full" />
           <Clock className="w-3.5 h-3.5" />
-          History
+          {e.history}
         </h4>
         <ExecutionListFilters
           showRaw={showRaw} setShowRaw={setShowRaw}
