@@ -329,8 +329,8 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
           }
         }
       }
-    } catch {
-      set({ chatStreaming: false });
+    } catch (err) {
+      reportError(err, "Failed to finalize chat stream", set, { stateUpdates: { chatStreaming: false } });
     }
   },
 
