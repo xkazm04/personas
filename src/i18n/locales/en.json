@@ -658,6 +658,7 @@
       "clear_fork_point": "Clear fork point",
       "fork_after_step": "Fork after step {step}",
       "fork_input_parse_error": "Original input data could not be parsed — using empty input",
+      "scrubber_step_tooltip": "Step {step}: {tool}",
       "tool_steps": "Tool Steps",
       "no_tool_calls_recorded": "No tool calls recorded",
       "lines_count": "{visible}/{total} lines",

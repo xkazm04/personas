@@ -664,6 +664,7 @@ export type Translations = {
       clear_fork_point: string;
       fork_after_step: string;
       fork_input_parse_error: string;
+      scrubber_step_tooltip: string;
       tool_steps: string;
       no_tool_calls_recorded: string;
       lines_count: string;
