@@ -224,6 +224,11 @@ export interface ScheduleConfig {
   type: 'schedule';
   cron?: string;
   interval_seconds?: number;
+  /** IANA timezone (e.g. "America/New_York") in which the cron expression is
+   *  evaluated. When unset, the backend falls back to the host's system-local
+   *  zone — which is unreliable across machines and a known incident source
+   *  (see scheduler.rs:75-89 C5-handoff regression test). */
+  timezone?: string;
   event_type?: string;
 }
 
@@ -476,6 +481,7 @@ export function parseTriggerConfig(
         type: 'schedule',
         cron: raw.cron as string | undefined,
         interval_seconds: raw.interval_seconds as number | undefined,
+        timezone: raw.timezone as string | undefined,
         event_type: raw.event_type as string | undefined,
       };
     case 'polling':
