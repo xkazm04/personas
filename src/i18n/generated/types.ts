@@ -6133,6 +6133,9 @@ export type Translations = {
     adopt_modal: {
       adopt_template: string;
       loading_template: string;
+      discard_title: string;
+      discard_body: string;
+      discard_confirm: string;
       configure_your_persona: string;
       cancel: string;
       submit_all: string;

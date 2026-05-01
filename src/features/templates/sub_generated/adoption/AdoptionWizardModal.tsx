@@ -52,9 +52,9 @@ export default function AdoptionWizardModal({
     }
 
     setConfirmConfig({
-      title: 'Discard adoption progress?',
-      message: 'You have unsaved work in this adoption wizard. Closing now will discard your progress.',
-      confirmLabel: 'Discard & Close',
+      title: t.templates.adopt_modal.discard_title,
+      message: t.templates.adopt_modal.discard_body,
+      confirmLabel: t.templates.adopt_modal.discard_confirm,
       onConfirm: () => {
         setConfirmConfig(null);
         // Clean up the draft persona and build session — mirrors
@@ -78,7 +78,7 @@ export default function AdoptionWizardModal({
         setConfirmConfig(null);
       },
     });
-  }, [buildPhase, buildSessionId, onClose]);
+  }, [buildPhase, buildSessionId, onClose, t]);
 
   if (!isOpen || !review) return null;
 

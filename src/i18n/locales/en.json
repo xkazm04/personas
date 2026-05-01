@@ -6127,6 +6127,9 @@
     "adopt_modal": {
       "adopt_template": "Adopt Template",
       "loading_template": "Loading template into matrix...",
+      "discard_title": "Discard adoption progress?",
+      "discard_body": "You have unsaved work in this adoption wizard. Closing now will discard your progress.",
+      "discard_confirm": "Discard & Close",
       "configure_your_persona": "Configure Your Persona",
       "cancel": "Cancel",
       "submit_all": "Submit All",
