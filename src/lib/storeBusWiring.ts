@@ -54,7 +54,7 @@ export function initStoreBus(): void {
   storeBus.on('persona:selected', ({ personaId }) => {
     useSystemStore.getState().setEditorTab('activity');
     if (personaId) useSystemStore.setState({ sidebarSection: 'personas' });
-    useSystemStore.setState({ isCreatingPersona: false, resumeDraftId: null });
+    useSystemStore.setState({ isCreatingPersona: false });
   });
 
   // Network change (bundle import / share link import) — agentStore refreshes personas

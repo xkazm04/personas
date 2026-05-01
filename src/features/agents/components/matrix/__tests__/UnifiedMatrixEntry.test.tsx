@@ -53,8 +53,6 @@ const mockCreatePersona = vi.fn().mockResolvedValue({ id: "draft-123" });
 
 const mockSystemState = {
   setIsCreatingPersona: mockSetIsCreatingPersona,
-  resumeDraftId: null,
-  setResumeDraftId: vi.fn(),
   setupGoal: null,
   onboardingActive: false,
   tourActive: false,

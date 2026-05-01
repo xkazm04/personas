@@ -44,8 +44,6 @@ export interface UiSlice {
   showDesignNudge: boolean;
   showCloudNudge: boolean;
   isCreatingPersona: boolean;
-  /** Dormant field — preserved for legacy storeBus event handling until callers (storeBusWiring.ts, tests) are updated in a follow-up cleanup. */
-  resumeDraftId: string | null;
   autoStartDesignInstruction: string | null;
   rebuildActive: boolean;
   templateTestActive: boolean;
@@ -82,7 +80,6 @@ export interface UiSlice {
   setShowDesignNudge: (show: boolean) => void;
   setShowCloudNudge: (show: boolean) => void;
   setIsCreatingPersona: (creating: boolean) => void;
-  setResumeDraftId: (id: string | null) => void;
   setAutoStartDesignInstruction: (instruction: string | null) => void;
   setRebuildActive: (active: boolean) => void;
   setTemplateTestActive: (active: boolean) => void;
@@ -126,7 +123,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   showDesignNudge: false,
   showCloudNudge: false,
   isCreatingPersona: false,
-  resumeDraftId: null,
   autoStartDesignInstruction: null,
   rebuildActive: false,
   templateTestActive: false,
@@ -164,7 +160,6 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setShowDesignNudge: (show) => set({ showDesignNudge: show }),
   setShowCloudNudge: (show) => set({ showCloudNudge: show }),
   setIsCreatingPersona: (creating) => set({ isCreatingPersona: creating }),
-  setResumeDraftId: (id) => set({ resumeDraftId: id }),
   setAutoStartDesignInstruction: (instruction) => set({ autoStartDesignInstruction: instruction }),
   setRebuildActive: (active) => set({ rebuildActive: active }),
   setTemplateTestActive: (active) => set({ templateTestActive: active }),
