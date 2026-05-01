@@ -54,6 +54,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
   step: NegotiationStep; stepIndex: number; isActive: boolean; isCompleted: boolean;
   onSelect: () => void; colorClasses: string | undefined; Icon: typeof Globe; id?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <button id={id} onClick={onSelect} className="w-full flex items-center gap-3 px-4 py-3 text-left">
       <div
@@ -78,7 +79,7 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
           </span>
           {step.requires_human && (
             <span className="px-1.5 py-0.5 rounded typo-body font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
-              manual
+              {t.vault.negotiator_extra.manual_badge}
             </span>
           )}
         </div>
@@ -96,6 +97,7 @@ export function CaptureFieldRow({ fieldKey, hint, stepIndex, capturedValue, onCa
   fieldKey: string; hint: string; stepIndex: number;
   capturedValue: string; onCaptureValue: (fieldKey: string, value: string) => void;
 }) {
+  const { t, tx } = useTranslation();
   const label = formatFieldLabel(fieldKey);
   return (
     <motion.div
@@ -107,10 +109,10 @@ export function CaptureFieldRow({ fieldKey, hint, stepIndex, capturedValue, onCa
       <FieldCaptureRow
         source="negotiator"
         mode="editable"
-        label={`Paste: ${label}`}
+        label={tx(t.vault.negotiator_extra.paste_label, { label })}
         value={capturedValue || ''}
         onChange={(nextValue) => onCaptureValue(fieldKey, nextValue)}
-        placeholder={`Paste ${label} here...`}
+        placeholder={tx(t.vault.negotiator_extra.paste_placeholder, { label })}
         hint={hint}
         inputType="password"
         allowPaste
@@ -171,7 +173,7 @@ export function HelpSection({ stepIndex, onRequestHelp, stepHelp, isLoadingHelp 
                 className={`px-3 py-1.5 rounded-modal typo-body transition-colors disabled:opacity-40 hover:opacity-90 ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text}`}
                 data-testid={`negotiator-step-${stepIndex}-help-ask-btn`}
               >
-                {isLoadingHelp ? <LoadingSpinner size="xs" /> : 'Ask'}
+                {isLoadingHelp ? <LoadingSpinner size="xs" /> : t.vault.negotiator_extra.ask_button}
               </button>
             </div>
             {stepHelp && stepHelp.stepIndex === stepIndex && !stepHelp.isError && (

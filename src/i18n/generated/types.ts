@@ -3576,6 +3576,10 @@ export type Translations = {
       hide_help: string;
       ask_question: string;
       planning_description: string;
+      manual_badge: string;
+      paste_label: string;
+      paste_placeholder: string;
+      ask_button: string;
     };
     workspace_panel: {
       select_services: string;
@@ -9069,6 +9073,14 @@ export type Translations = {
       composer_placeholder: string;
       send: string;
       reset: string;
+      refresh_doctrine: string;
+      doctrine_up_to_date: string;
+      doctrine_refreshed: string;
+      doctrine_refresh_failed: string;
+      proposed_action: string;
+      action_params: string;
+      approve: string;
+      reject: string;
     };
     ocr: {
       title: string;

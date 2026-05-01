@@ -3569,7 +3569,11 @@
       "need_help": "Need help with this step?",
       "hide_help": "Hide help",
       "ask_question": "Ask a question about this step...",
-      "planning_description": "AI is analyzing the developer portal and generating a step-by-step provisioning plan..."
+      "planning_description": "AI is analyzing the developer portal and generating a step-by-step provisioning plan...",
+      "manual_badge": "manual",
+      "paste_label": "Paste: {label}",
+      "paste_placeholder": "Paste {label} here...",
+      "ask_button": "Ask"
     },
     "workspace_panel": {
       "select_services": "Select services to connect",
@@ -9062,7 +9066,15 @@
       "thinking": "Thinking…",
       "composer_placeholder": "Talk to Athena. Enter to send, Shift+Enter for a new line.",
       "send": "Send",
-      "reset": "Reset conversation"
+      "reset": "Reset conversation",
+      "refresh_doctrine": "Refresh Athena's docs",
+      "doctrine_up_to_date": "Athena's docs are up to date.",
+      "doctrine_refreshed": "Athena's docs refreshed",
+      "doctrine_refresh_failed": "Athena's docs refresh failed",
+      "proposed_action": "Athena proposes",
+      "action_params": "Parameters",
+      "approve": "Approve",
+      "reject": "Reject"
     },
     "ocr": {
       "title": "OCR",
