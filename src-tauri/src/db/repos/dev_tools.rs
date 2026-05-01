@@ -1,3 +1,5 @@
+use std::collections::{HashMap, HashSet};
+
 use rusqlite::{params, Row};
 
 use crate::db::models::{
@@ -598,16 +600,121 @@ pub fn list_goal_dependencies(
     })
 }
 
+/// Bulk-load every goal's status + outgoing dependency edges for a project.
+/// One query per table; in-memory join. Used by the auto-run scheduler so
+/// readiness evaluation does not fan out into N+1 `list_goal_dependencies`
+/// calls.
+pub fn list_goal_statuses_with_deps(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<HashMap<String, (String, Vec<String>)>, AppError> {
+    timed_query!(
+        "dev_goal_dependencies",
+        "dev_goal_dependencies::list_statuses_with_deps",
+        {
+            let conn = pool.get()?;
+
+            let mut goal_stmt =
+                conn.prepare("SELECT id, status FROM dev_goals WHERE project_id = ?1")?;
+            let mut map: HashMap<String, (String, Vec<String>)> = HashMap::new();
+            let goal_rows = goal_stmt.query_map(params![project_id], |row| {
+                Ok((row.get::<_, String>("id")?, row.get::<_, String>("status")?))
+            })?;
+            for r in goal_rows {
+                let (id, status) = r.map_err(AppError::Database)?;
+                map.insert(id, (status, Vec::new()));
+            }
+
+            let goal_ids: Vec<String> = map.keys().cloned().collect();
+            if !goal_ids.is_empty() {
+                let placeholders =
+                    std::iter::repeat_n("?", goal_ids.len()).collect::<Vec<_>>().join(",");
+                let sql = format!(
+                    "SELECT goal_id, depends_on_id FROM dev_goal_dependencies \
+                     WHERE goal_id IN ({placeholders}) AND dependency_type = 'blocks'"
+                );
+                let mut dep_stmt = conn.prepare(&sql)?;
+                let params: Vec<&dyn rusqlite::types::ToSql> =
+                    goal_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+                let dep_rows = dep_stmt.query_map(params.as_slice(), |row| {
+                    Ok((
+                        row.get::<_, String>("goal_id")?,
+                        row.get::<_, String>("depends_on_id")?,
+                    ))
+                })?;
+                for r in dep_rows {
+                    let (gid, dep) = r.map_err(AppError::Database)?;
+                    if let Some(entry) = map.get_mut(&gid) {
+                        entry.1.push(dep);
+                    }
+                }
+            }
+            Ok(map)
+        }
+    )
+}
+
+/// Reject a new dependency edge when adding it would create a cycle.
+/// Walks forward from `depends_on_id` (DFS over `blocks`-type edges) — if it
+/// can reach `goal_id`, the new edge would close a cycle.
+///
+/// Self-loops are rejected as the trivial cycle.
+pub fn check_goal_dependency_cycle(
+    pool: &DbPool,
+    goal_id: &str,
+    depends_on_id: &str,
+) -> Result<(), AppError> {
+    if goal_id == depends_on_id {
+        return Err(AppError::Validation(
+            "A goal cannot depend on itself".into(),
+        ));
+    }
+    timed_query!(
+        "dev_goal_dependencies",
+        "dev_goal_dependencies::cycle_check",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT depends_on_id FROM dev_goal_dependencies \
+                 WHERE goal_id = ?1 AND dependency_type = 'blocks'",
+            )?;
+
+            let mut visited: HashSet<String> = HashSet::new();
+            let mut stack: Vec<String> = vec![depends_on_id.to_string()];
+            while let Some(node) = stack.pop() {
+                if !visited.insert(node.clone()) {
+                    continue;
+                }
+                if node == goal_id {
+                    return Err(AppError::Validation(
+                        "Adding this dependency would create a cycle".into(),
+                    ));
+                }
+                let rows = stmt.query_map(params![node], |row| {
+                    row.get::<_, String>("depends_on_id")
+                })?;
+                for r in rows {
+                    stack.push(r.map_err(AppError::Database)?);
+                }
+            }
+            Ok(())
+        }
+    )
+}
+
 pub fn add_goal_dependency(
     pool: &DbPool,
     goal_id: &str,
     depends_on_id: &str,
     dependency_type: Option<&str>,
 ) -> Result<DevGoalDependency, AppError> {
+    let dep_type = dependency_type.unwrap_or("blocks");
+    if dep_type == "blocks" {
+        check_goal_dependency_cycle(pool, goal_id, depends_on_id)?;
+    }
     timed_query!("dev_goal_dependencies", "dev_goal_dependencies::add", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let dep_type = dependency_type.unwrap_or("blocks");
         let conn = pool.get()?;
         conn.execute(
             "INSERT INTO dev_goal_dependencies (id, goal_id, depends_on_id, dependency_type, created_at)
@@ -1498,6 +1605,81 @@ pub fn get_task_by_id(pool: &DbPool, id: &str) -> Result<DevTask, AppError> {
             }
             other => AppError::Database(other),
         })
+    })
+}
+
+/// Return up to `limit` queued tasks for `project_id` whose upstream goal
+/// chain is fully `completed` (or whose `goal_id` is NULL — orphan-ready).
+///
+/// Tasks whose upstream contains a `failed` or `cancelled` goal are
+/// **excluded** from the ready set; they remain `queued` in the DB until
+/// the user manually re-runs after fixing the upstream.
+///
+/// Sorted FIFO by `created_at`. Used by the auto-run scheduler.
+pub fn list_ready_tasks(
+    pool: &DbPool,
+    project_id: &str,
+    limit: usize,
+) -> Result<Vec<DevTask>, AppError> {
+    timed_query!("dev_tasks", "dev_tasks::list_ready_tasks", {
+        let goal_state = list_goal_statuses_with_deps(pool, project_id)?;
+
+        // Walks the upstream closure of `gid` and reports the *worst* status seen.
+        // Returns: "completed" if every upstream goal is completed (or gid has no
+        // upstream); "blocked" if any upstream is queued/in_progress; "failed" if
+        // any upstream is failed/cancelled.
+        fn upstream_state(
+            gid: &str,
+            map: &HashMap<String, (String, Vec<String>)>,
+        ) -> &'static str {
+            let mut visited: HashSet<String> = HashSet::new();
+            let mut stack: Vec<String> = vec![gid.to_string()];
+            let mut blocked = false;
+            while let Some(node) = stack.pop() {
+                if !visited.insert(node.clone()) {
+                    continue;
+                }
+                if let Some((status, deps)) = map.get(&node) {
+                    // The starting node's own status is irrelevant for readiness;
+                    // only its upstream matters. Skip it.
+                    if node != gid {
+                        match status.as_str() {
+                            "failed" | "cancelled" => return "failed",
+                            "completed" => {}
+                            _ => blocked = true,
+                        }
+                    }
+                    for d in deps {
+                        stack.push(d.clone());
+                    }
+                }
+            }
+            if blocked { "blocked" } else { "completed" }
+        }
+
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_tasks \
+             WHERE project_id = ?1 AND status = 'queued' \
+             ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map(params![project_id], row_to_task)?;
+
+        let mut out: Vec<DevTask> = Vec::new();
+        for r in rows {
+            let task = r.map_err(AppError::Database)?;
+            let ready = match task.goal_id.as_deref() {
+                None => true,
+                Some(gid) => upstream_state(gid, &goal_state) == "completed",
+            };
+            if ready {
+                out.push(task);
+                if out.len() >= limit {
+                    break;
+                }
+            }
+        }
+        Ok(out)
     })
 }
 

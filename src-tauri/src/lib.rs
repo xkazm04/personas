@@ -2002,6 +2002,8 @@ pub fn run() {
             commands::infrastructure::task_executor::dev_tools_execute_task,
             commands::infrastructure::task_executor::dev_tools_start_batch,
             commands::infrastructure::task_executor::dev_tools_cancel_task_execution,
+            commands::infrastructure::task_executor::dev_tools_start_auto_run,
+            commands::infrastructure::task_executor::dev_tools_cancel_auto_run,
             // Dev Tools -- Triage Rules
             commands::infrastructure::dev_tools::dev_tools_list_triage_rules,
             commands::infrastructure::dev_tools::dev_tools_create_triage_rule,

@@ -129,6 +129,10 @@ export const EventName = {
   TASK_EXEC_OUTPUT: 'task-exec-output',
   TASK_EXEC_COMPLETE: 'task-exec-complete',
 
+  // Auto-run scheduler
+  AUTO_RUN_STATUS: 'auto-run-status',
+  AUTO_RUN_COMPLETE: 'auto-run-complete',
+
   // Artist creative session
   ARTIST_SESSION_STATUS: 'artist-session-status',
   ARTIST_SESSION_OUTPUT: 'artist-session-output',
@@ -673,6 +677,18 @@ export interface EventPayloadMap {
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.TASK_EXEC_OUTPUT]: { job_id: string; line: string };
   [EventName.TASK_EXEC_COMPLETE]: { task_id: string; output_lines: number; context_warnings?: string[] };
+
+  // Auto-run scheduler
+  [EventName.AUTO_RUN_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.AUTO_RUN_COMPLETE]: {
+    run_id: string;
+    completed: number;
+    failed: number;
+    skipped: number;
+    iterations: number;
+    snapshot_size: number;
+    termination_reason: string;
+  };
 
   // Artist creative session (BackgroundJob pattern)
   [EventName.ARTIST_SESSION_STATUS]: { job_id: string; status: string; error?: string };

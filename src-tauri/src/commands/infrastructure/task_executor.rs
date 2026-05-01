@@ -35,6 +35,15 @@ static TASK_EXEC_JOBS: BackgroundJobManager<TaskExecExtra> = BackgroundJobManage
     event_name::TASK_EXEC_OUTPUT,
 );
 
+#[derive(Clone, Default)]
+struct AutoRunExtra;
+
+static AUTO_RUN_JOBS: BackgroundJobManager<AutoRunExtra> = BackgroundJobManager::new(
+    "auto-run lock poisoned",
+    event_name::AUTO_RUN_STATUS,
+    event_name::AUTO_RUN_STATUS, // no separate output stream; status doubles
+);
+
 // =============================================================================
 // Context gathering (with warning collection)
 // =============================================================================
@@ -823,4 +832,347 @@ async fn run_task_execution(
     );
 
     Ok(output_lines)
+}
+
+// =============================================================================
+// Auto-run scheduler — drains a project's pending backlog respecting
+// goal-DAG dependencies. See AUTO_RUN_DESIGN.md alongside this file.
+// =============================================================================
+
+#[derive(serde::Serialize, Clone)]
+struct AutoRunCompletePayload {
+    run_id: String,
+    completed: u32,
+    failed: u32,
+    skipped: u32,
+    iterations: u32,
+    snapshot_size: u32,
+    termination_reason: String,
+}
+
+/// Run one queued task to completion as part of an auto-run wave.
+/// Mirrors `dev_tools_start_batch`'s per-task body but is called by the
+/// scheduler from a `JoinSet`. Returns the final task status string.
+async fn run_one_task_for_auto(
+    app: tauri::AppHandle,
+    pool: crate::db::DbPool,
+    task_id: String,
+) -> String {
+    let task = match repo::get_task_by_id(&pool, &task_id) {
+        Ok(t) => t,
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                &app,
+                &task_id,
+                format!("[Error] Failed to read task: {e}"),
+            );
+            return "failed".to_string();
+        }
+    };
+
+    let project_id = match task.project_id.as_deref() {
+        Some(pid) => pid.to_string(),
+        None => {
+            TASK_EXEC_JOBS.emit_line(
+                &app,
+                &task_id,
+                "[Error] Task has no project_id".to_string(),
+            );
+            return "failed".to_string();
+        }
+    };
+
+    let project = match repo::get_project_by_id(&pool, &project_id) {
+        Ok(p) => p,
+        Err(e) => {
+            TASK_EXEC_JOBS.emit_line(
+                &app,
+                &task_id,
+                format!("[Error] Failed to read project: {e}"),
+            );
+            return "failed".to_string();
+        }
+    };
+
+    let ctx = gather_task_context(
+        &pool,
+        task.source_idea_id.as_deref(),
+        task.goal_id.as_deref(),
+        &project_id,
+    );
+    let context_warnings = ctx.warnings;
+
+    let prompt_text = build_task_prompt(
+        &task.title,
+        task.description.as_deref(),
+        ctx.idea,
+        ctx.goal,
+        ctx.codebase,
+        &task.depth,
+    );
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let _ = repo::update_task(
+        &pool,
+        &task_id,
+        None,
+        None,
+        Some("running"),
+        None,
+        Some(0),
+        None,
+        None,
+        Some(Some(&now)),
+        None,
+    );
+
+    let cancel_token = CancellationToken::new();
+    if TASK_EXEC_JOBS
+        .insert_running(task_id.clone(), cancel_token.clone(), TaskExecExtra)
+        .is_err()
+    {
+        return "failed".to_string();
+    }
+    TASK_EXEC_JOBS.set_status(&app, &task_id, "running", None);
+
+    for w in &context_warnings {
+        TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Warning] {w}"));
+    }
+
+    let worktree_name = extract_worktree_name(task.session_id.as_deref());
+    let result = tokio::select! {
+        _ = cancel_token.cancelled() => {
+            Err(AppError::Internal("Task execution cancelled by user".into()))
+        }
+        res = run_task_execution(
+            &app,
+            &task_id,
+            &pool,
+            &project.root_path,
+            prompt_text,
+            worktree_name,
+        ) => res
+    };
+
+    let completed_now = chrono::Utc::now().to_rfc3339();
+    let goal_id = task.goal_id.clone();
+    let final_status = match result {
+        Ok(line_count) => {
+            let _ = repo::update_task(
+                &pool,
+                &task_id,
+                None,
+                None,
+                Some("completed"),
+                None,
+                Some(100),
+                Some(line_count),
+                None,
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(&app, &task_id, "completed", None);
+            let _ = app.emit(
+                event_name::TASK_EXEC_COMPLETE,
+                json!({
+                    "task_id": task_id,
+                    "output_lines": line_count,
+                    "context_warnings": context_warnings,
+                }),
+            );
+            if let Some(ref gid) = goal_id {
+                let _ = repo::create_goal_signal(
+                    &pool,
+                    gid,
+                    "task_completed",
+                    Some(&task_id),
+                    Some(10),
+                    Some("Task completed (auto-run)"),
+                );
+            }
+            "completed".to_string()
+        }
+        Err(e) => {
+            let msg = format!("{e}");
+            let _ = repo::update_task(
+                &pool,
+                &task_id,
+                None,
+                None,
+                Some("failed"),
+                None,
+                None,
+                None,
+                Some(Some(&msg)),
+                None,
+                Some(Some(&completed_now)),
+            );
+            TASK_EXEC_JOBS.set_status(&app, &task_id, "failed", Some(msg.clone()));
+            TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Error] {msg}"));
+            if let Some(ref gid) = goal_id {
+                let _ = repo::create_goal_signal(
+                    &pool,
+                    gid,
+                    "task_failed",
+                    Some(&task_id),
+                    None,
+                    Some(&msg),
+                );
+            }
+            "failed".to_string()
+        }
+    };
+    final_status
+}
+
+#[tauri::command]
+pub async fn dev_tools_start_auto_run(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    project_id: String,
+    max_parallel: Option<usize>,
+    max_iterations: Option<u32>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+
+    let max_parallel = max_parallel.unwrap_or(2).clamp(1, 8);
+    let max_iterations = max_iterations.unwrap_or(50).clamp(1, 200);
+
+    // Take a snapshot of queued task IDs that exist at start. Tasks created
+    // during the run are NOT picked up — see AUTO_RUN_DESIGN.md non-goals.
+    let snapshot_ids: std::collections::HashSet<String> =
+        repo::list_tasks(&state.db, Some(&project_id), Some("queued"))?
+            .into_iter()
+            .map(|t| t.id)
+            .collect();
+    let snapshot_size = snapshot_ids.len();
+
+    let run_id = uuid::Uuid::new_v4().to_string();
+    let cancel_token = CancellationToken::new();
+    AUTO_RUN_JOBS.insert_running(run_id.clone(), cancel_token.clone(), AutoRunExtra)?;
+    AUTO_RUN_JOBS.set_status(&app, &run_id, "running", None);
+
+    let app_handle = app.clone();
+    let pool = state.db.clone();
+    let project_id_for_spawn = project_id.clone();
+    let run_id_for_spawn = run_id.clone();
+    let cancel_for_spawn = cancel_token.clone();
+
+    tokio::spawn(async move {
+        let mut iterations: u32 = 0;
+        let mut termination_reason = "exhausted".to_string();
+
+        if snapshot_size == 0 {
+            // Nothing to do — emit complete immediately.
+        } else {
+            'outer: while iterations < max_iterations {
+                if cancel_for_spawn.is_cancelled() {
+                    termination_reason = "cancelled".to_string();
+                    break;
+                }
+
+                let ready =
+                    match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel) {
+                        Ok(v) => v
+                            .into_iter()
+                            .filter(|t| snapshot_ids.contains(&t.id))
+                            .collect::<Vec<_>>(),
+                        Err(e) => {
+                            tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
+                            break;
+                        }
+                    };
+
+                if ready.is_empty() {
+                    break 'outer;
+                }
+
+                let mut join_set: tokio::task::JoinSet<String> = tokio::task::JoinSet::new();
+                for task in ready {
+                    let app_inner = app_handle.clone();
+                    let pool_inner = pool.clone();
+                    let tid = task.id.clone();
+                    join_set.spawn(async move {
+                        run_one_task_for_auto(app_inner, pool_inner, tid).await
+                    });
+                }
+                while let Some(_res) = join_set.join_next().await {
+                    // Per-task signals are already emitted inside run_one_task_for_auto.
+                }
+
+                iterations += 1;
+            }
+
+            if iterations >= max_iterations && !cancel_for_spawn.is_cancelled() {
+                termination_reason = "max_iterations".to_string();
+            }
+            if cancel_for_spawn.is_cancelled() {
+                termination_reason = "cancelled".to_string();
+            }
+        }
+
+        // Tally final state by re-reading task statuses for the snapshot set.
+        let mut completed = 0u32;
+        let mut failed = 0u32;
+        let mut skipped = 0u32;
+        for tid in &snapshot_ids {
+            if let Ok(t) = repo::get_task_by_id(&pool, tid) {
+                match t.status.as_str() {
+                    "completed" => completed += 1,
+                    "failed" => failed += 1,
+                    _ => skipped += 1,
+                }
+            }
+        }
+
+        let payload = AutoRunCompletePayload {
+            run_id: run_id_for_spawn.clone(),
+            completed,
+            failed,
+            skipped,
+            iterations,
+            snapshot_size: snapshot_size as u32,
+            termination_reason: termination_reason.clone(),
+        };
+        let _ = app_handle.emit(event_name::AUTO_RUN_COMPLETE, &payload);
+        AUTO_RUN_JOBS.set_status(
+            &app_handle,
+            &run_id_for_spawn,
+            if termination_reason == "cancelled" {
+                "cancelled"
+            } else {
+                "completed"
+            },
+            None,
+        );
+        crate::notifications::send(
+            &app_handle,
+            "Auto-Run Complete",
+            &format!(
+                "{completed} completed, {failed} failed, {skipped} skipped — {termination_reason}"
+            ),
+        );
+    });
+
+    Ok(json!({
+        "run_id": run_id,
+        "snapshot_size": snapshot_size,
+    }))
+}
+
+#[tauri::command]
+pub async fn dev_tools_cancel_auto_run(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    run_id: String,
+) -> Result<bool, AppError> {
+    require_auth(&state).await?;
+
+    if let Some(token) = AUTO_RUN_JOBS.get_cancel_token(&run_id)? {
+        token.cancel();
+        AUTO_RUN_JOBS.set_status(&app, &run_id, "cancelled", None);
+        Ok(true)
+    } else {
+        Ok(false)
+    }
 }

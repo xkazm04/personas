@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
-  Zap, Layers, Building2, AlertTriangle,
+  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -18,7 +18,22 @@ import { TaskOutputPanel } from './TaskOutputPanel';
 import { SelfHealingPanel } from './SelfHealingPanel';
 import { PrBridge } from './PrBridge';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
+import { startAutoRun, cancelAutoRun } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
+
+interface AutoRunState {
+  runId: string;
+  snapshotSize: number;
+  status: 'running' | 'cancelled' | 'completed';
+  result?: {
+    completed: number;
+    failed: number;
+    skipped: number;
+    iterations: number;
+    terminationReason: string;
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -373,6 +388,7 @@ export default function TaskRunnerPage() {
 
   const [showModal, setShowModal] = useState(false);
   const [taskWarnings, setTaskWarnings] = useState<Record<string, string[]>>({});
+  const [autoRun, setAutoRun] = useState<AutoRunState | null>(null);
 
   const activeProjectIdRef = useRef(activeProjectId);
   activeProjectIdRef.current = activeProjectId;
@@ -426,12 +442,59 @@ export default function TaskRunnerPage() {
       }, 500);
     });
 
+    const autoRunCompleteUn = listen<{
+      run_id: string;
+      completed: number;
+      failed: number;
+      skipped: number;
+      iterations: number;
+      snapshot_size: number;
+      termination_reason: string;
+    }>(EventName.AUTO_RUN_COMPLETE, (event) => {
+      const p = event.payload;
+      setAutoRun((prev) =>
+        prev && prev.runId === p.run_id
+          ? {
+              ...prev,
+              status: p.termination_reason === 'cancelled' ? 'cancelled' : 'completed',
+              result: {
+                completed: p.completed,
+                failed: p.failed,
+                skipped: p.skipped,
+                iterations: p.iterations,
+                terminationReason: p.termination_reason,
+              },
+            }
+          : prev,
+      );
+      const pid = activeProjectIdRef.current;
+      if (pid) useSystemStore.getState().fetchTasks(pid);
+      useOverviewStore.getState().processEnded('task_runner', 'completed');
+    });
+
     return () => {
       outputUn.then(fn => fn());
       statusUn.then(fn => fn());
       completeUn.then(fn => fn());
+      autoRunCompleteUn.then(fn => fn());
     };
   }, []);
+
+  const handleAutoRun = useCallback(async () => {
+    if (!activeProjectId || autoRun?.status === 'running') return;
+    try {
+      const { run_id, snapshot_size } = await startAutoRun(activeProjectId);
+      setAutoRun({ runId: run_id, snapshotSize: snapshot_size, status: 'running' });
+      useOverviewStore.getState().processStarted('task_runner', undefined, 'Auto-Run');
+    } catch (e) {
+      toastCatch('TaskRunnerPage:autoRun', t.plugins.dev_runner.auto_run_started)(e);
+    }
+  }, [activeProjectId, autoRun, t]);
+
+  const handleCancelAutoRun = useCallback(async () => {
+    if (!autoRun || autoRun.status !== 'running') return;
+    await cancelAutoRun(autoRun.runId);
+  }, [autoRun]);
 
   const completedCount = tasks.filter((t) => t.status === 'completed').length;
   const runningCount = tasks.filter((t) => t.status === 'running').length;
@@ -485,6 +548,16 @@ export default function TaskRunnerPage() {
             {t.plugins.dev_runner.start_batch}
           </Button>
           <Button
+            variant="accent"
+            accentColor="violet"
+            size="sm"
+            icon={<InfinityIcon className="w-3.5 h-3.5" />}
+            disabled={!activeProjectId || queuedCount === 0 || autoRun?.status === 'running'}
+            onClick={handleAutoRun}
+          >
+            {t.plugins.dev_runner.auto_run_all}
+          </Button>
+          <Button
             variant="danger"
             size="sm"
             icon={<XCircle className="w-3.5 h-3.5" />}
@@ -494,6 +567,48 @@ export default function TaskRunnerPage() {
             {t.plugins.dev_runner.cancel_all}
           </Button>
         </ActionRow>
+
+        {autoRun && (
+          <div className="border border-violet-500/25 rounded-card px-3 py-2 bg-violet-500/5 flex items-center gap-3 typo-caption">
+            {autoRun.status === 'running' ? (
+              <LoadingSpinner size="xs" />
+            ) : autoRun.status === 'cancelled' ? (
+              <Ban className="w-3.5 h-3.5 text-foreground" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            )}
+            <span className="text-violet-400 font-medium">
+              {autoRun.status === 'running'
+                ? t.plugins.dev_runner.auto_run_progress
+                : t.plugins.dev_runner.auto_run_complete}
+            </span>
+            <span className="text-foreground">
+              {autoRun.result
+                ? `${autoRun.result.completed}✓ ${autoRun.result.failed}✗ ${autoRun.result.skipped}↷ — ${autoRun.result.terminationReason}`
+                : `${autoRun.snapshotSize} ${t.plugins.dev_runner.auto_run_iterations}`}
+            </span>
+            {autoRun.status === 'running' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<X className="w-3.5 h-3.5" />}
+                onClick={handleCancelAutoRun}
+              >
+                {t.plugins.dev_runner.cancel_auto_run}
+              </Button>
+            )}
+            {autoRun.status !== 'running' && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<X className="w-3.5 h-3.5" />}
+                onClick={() => setAutoRun(null)}
+              >
+                {t.plugins.dev_runner.cancel_all}
+              </Button>
+            )}
+          </div>
+        )}
         <div className="space-y-5">
           {/* Batch progress header */}
           {totalCount > 0 && (

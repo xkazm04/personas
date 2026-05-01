@@ -9203,7 +9203,13 @@
       "percent_overall": "% overall",
       "task_queue": "Task Queue (",
       "no_tasks_queued": "No tasks in queue",
-      "no_tasks_queued_sub": "Create tasks manually or batch from accepted ideas."
+      "no_tasks_queued_sub": "Create tasks manually or batch from accepted ideas.",
+      "auto_run_all": "Auto-Run All",
+      "auto_run_progress": "Auto-Run in progress",
+      "auto_run_complete": "Auto-Run finished",
+      "auto_run_started": "Could not start Auto-Run",
+      "auto_run_iterations": "tasks queued",
+      "cancel_auto_run": "Cancel Auto-Run"
     },
     "dev_scanner": {
       "idea_evolution": "Idea Evolution",

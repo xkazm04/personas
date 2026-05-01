@@ -638,6 +638,18 @@ export const startBatchExecution = (taskIds: string[], maxParallel?: number) =>
 export const cancelTaskExecution = (taskId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_task_execution", { taskId });
 
+// -- Auto-Run scheduler -----------------------------------------------------
+
+export const startAutoRun = (projectId: string, maxParallel?: number, maxIterations?: number) =>
+  invoke<{ run_id: string; snapshot_size: number }>("dev_tools_start_auto_run", {
+    projectId,
+    maxParallel,
+    maxIterations,
+  });
+
+export const cancelAutoRun = (runId: string) =>
+  safeInvoke<boolean>(false, "dev_tools_cancel_auto_run", { runId });
+
 // ============================================================================
 // Cross-Project (Codebases connector)
 // ============================================================================

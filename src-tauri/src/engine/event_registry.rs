@@ -140,6 +140,10 @@ event_names! {
     TASK_EXEC_OUTPUT           => "task-exec-output",
     TASK_EXEC_COMPLETE         => "task-exec-complete",
 
+    // Auto-run scheduler (drains backlog respecting goal-DAG)
+    AUTO_RUN_STATUS            => "auto-run-status",
+    AUTO_RUN_COMPLETE          => "auto-run-complete",
+
     // Artist creative session
     ARTIST_SESSION_STATUS      => "artist-session-status",
     ARTIST_SESSION_OUTPUT      => "artist-session-output",
