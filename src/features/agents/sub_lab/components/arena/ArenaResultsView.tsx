@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Trophy, Target, FileText, Shield, DollarSign, Clock, TrendingUp, TrendingDown, Minus, MessageSquare, Lightbulb, ChevronDown } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
@@ -89,7 +89,9 @@ function collectTopRationale(results: LabArenaResult[], limit = 3): Array<{ scen
   const items: Array<{ scenario: string; model: string; rationale: string; score: number }> = [];
   for (const r of results) {
     if (r.rationale) {
-      const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
+      // Rows with no scoring signal sort last (-1) but stay visible — they
+      // still have a rationale worth showing.
+      const comp = compositeScoreFromRow(r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance) ?? -1;
       items.push({ scenario: r.scenarioName, model: r.modelId, rationale: parseVerdict(r.rationale), score: comp });
     }
   }
@@ -298,12 +300,12 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                   {models.map((mid) => {
                     const r = matrix[scenario]?.[mid];
                     if (!r) return <td key={mid} className={`px-3 py-2.5 text-center text-foreground ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>--</td>;
-                    const ta = r.toolAccuracyScore ?? 0;
-                    const oq = r.outputQualityScore ?? 0;
-                    const pc = r.protocolCompliance ?? 0;
-                    const comp = compositeScore(ta, oq, pc);
-                    const cost = r.costUsd ?? 0;
-                    const dur = r.durationMs ?? 0;
+                    const ta = r.toolAccuracyScore;
+                    const oq = r.outputQualityScore;
+                    const pc = r.protocolCompliance;
+                    const comp = compositeScoreFromRow(ta, oq, pc);
+                    const cost = r.costUsd;
+                    const dur = r.durationMs;
                     const isSelected = selectedCell?.scenario === scenario && selectedCell?.model === mid;
                     return (
                       <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>
@@ -315,11 +317,11 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                               : 'hover:bg-secondary/40'
                           }`}
                         >
-                          <span className={`typo-body-lg font-bold ${scoreColor(comp)}`}>{comp}</span>
+                          <span className={`typo-body-lg font-bold ${scoreColor(comp)}`}>{comp ?? '—'}</span>
                           <div className="flex gap-2 text-[10px] text-foreground">
-                            <span>TA {ta}</span>
-                            <span>OQ {oq}</span>
-                            <span>PC {pc}</span>
+                            <span>TA {ta ?? '—'}</span>
+                            <span>OQ {oq ?? '—'}</span>
+                            <span>PC {pc ?? '—'}</span>
                           </div>
                           <div className="flex gap-2 text-[9px] text-foreground">
                             <span>${cost.toFixed(4)}</span>

@@ -45,15 +45,17 @@ export function RegressionResultsView({ baselineResults, currentResults, baselin
       const cComp = compositeScore(curr.toolAccuracyScore, curr.outputQualityScore, curr.protocolCompliance);
       const delta = cComp - bComp;
 
+      // Both sides proven non-null by the guard above; the `?? 0` defenses
+      // here used to suggest nullability that doesn't exist post-guard.
       deltas.push({
         scenario: curr.scenarioName,
         model: curr.modelId,
         baselineComposite: bComp,
         currentComposite: cComp,
         delta,
-        deltaToolAccuracy: (curr.toolAccuracyScore ?? 0) - (baseline.toolAccuracyScore ?? 0),
-        deltaOutputQuality: (curr.outputQualityScore ?? 0) - (baseline.outputQualityScore ?? 0),
-        deltaProtocol: (curr.protocolCompliance ?? 0) - (baseline.protocolCompliance ?? 0),
+        deltaToolAccuracy: curr.toolAccuracyScore - baseline.toolAccuracyScore,
+        deltaOutputQuality: curr.outputQualityScore - baseline.outputQualityScore,
+        deltaProtocol: curr.protocolCompliance - baseline.protocolCompliance,
         verdict: delta > 0 ? 'improved' : delta < -threshold ? 'fail' : 'pass',
       });
     }

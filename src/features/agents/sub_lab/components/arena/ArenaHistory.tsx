@@ -5,7 +5,7 @@ import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { ExportReportButton } from '../shared/ExportReportButton';
 import { ArenaResultsView } from './ArenaResultsView';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -31,23 +31,25 @@ function parseModels(run: LabArenaRun): string[] {
 
 function computeWinnerScore(results: LabArenaResult[] | undefined): { ta: number; oq: number; pc: number; comp: number } | null {
   if (!results || results.length === 0) return null;
-  // Group by model, find best composite
-  const modelScores = new Map<string, { ta: number; oq: number; pc: number; count: number }>();
+  // Group by model, find best composite. Each metric is averaged independently
+  // over rows where it was scored — null is "not scored", not "scored zero".
+  interface PerModel { taSum: number; taCount: number; oqSum: number; oqCount: number; pcSum: number; pcCount: number; }
+  const modelScores = new Map<string, PerModel>();
   for (const r of results) {
-    if (!modelScores.has(r.modelId)) modelScores.set(r.modelId, { ta: 0, oq: 0, pc: 0, count: 0 });
+    if (!modelScores.has(r.modelId)) modelScores.set(r.modelId, { taSum: 0, taCount: 0, oqSum: 0, oqCount: 0, pcSum: 0, pcCount: 0 });
     const m = modelScores.get(r.modelId)!;
-    m.ta += r.toolAccuracyScore ?? 0;
-    m.oq += r.outputQualityScore ?? 0;
-    m.pc += r.protocolCompliance ?? 0;
-    m.count++;
+    if (r.toolAccuracyScore != null) { m.taSum += r.toolAccuracyScore; m.taCount++; }
+    if (r.outputQualityScore != null) { m.oqSum += r.outputQualityScore; m.oqCount++; }
+    if (r.protocolCompliance != null) { m.pcSum += r.protocolCompliance; m.pcCount++; }
   }
   let best: { ta: number; oq: number; pc: number; comp: number } | null = null;
   for (const [, m] of modelScores) {
-    const ta = Math.round(m.ta / m.count);
-    const oq = Math.round(m.oq / m.count);
-    const pc = Math.round(m.pc / m.count);
-    const comp = compositeScore(ta, oq, pc);
-    if (!best || comp > best.comp) best = { ta, oq, pc, comp };
+    const ta = m.taCount > 0 ? Math.round(m.taSum / m.taCount) : null;
+    const oq = m.oqCount > 0 ? Math.round(m.oqSum / m.oqCount) : null;
+    const pc = m.pcCount > 0 ? Math.round(m.pcSum / m.pcCount) : null;
+    const comp = compositeScoreFromRow(ta, oq, pc);
+    if (comp == null) continue;
+    if (!best || comp > best.comp) best = { ta: ta ?? 0, oq: oq ?? 0, pc: pc ?? 0, comp };
   }
   return best;
 }

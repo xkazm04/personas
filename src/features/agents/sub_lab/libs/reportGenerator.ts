@@ -4,7 +4,18 @@
  * Produces self-contained HTML reports (all styles inlined) or clipboard-
  * friendly markdown from existing result data. No backend changes required.
  */
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow } from '@/lib/eval/evalFramework';
+
+/** Average composite scores over a result array, excluding rows with no signal (all-null scores). */
+function avgCompositeScoreFromRows(arr: ReadonlyArray<{ toolAccuracyScore: number | null; outputQualityScore: number | null; protocolCompliance: number | null }>): number | null {
+  const comps: number[] = [];
+  for (const r of arr) {
+    const c = compositeScoreFromRow(r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance);
+    if (c != null) comps.push(c);
+  }
+  if (comps.length === 0) return null;
+  return Math.round(comps.reduce((sum, c) => sum + c, 0) / comps.length);
+}
 import { aggregateArenaResults, aggregateAbResults, aggregateMatrixResults } from './labAggregation';
 import { buildEvalGridData } from './evalAggregation';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
@@ -260,8 +271,8 @@ function scenarioTable(
     html += `<tr><td>${escHtml(sc)}</td>`;
     for (const col of columnKeys) {
       const r = matrix[sc]?.[col];
-      if (r) {
-        const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
+      const comp = r ? compositeScoreFromRow(r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance) : null;
+      if (comp != null) {
         html += `<td style="color:${scoreHexColor(comp)};font-weight:600">${comp}</td>`;
       } else {
         html += '<td style="color:var(--muted)">--</td>';
@@ -293,8 +304,8 @@ function abScenarioTable(
     html += `<tr><td>${escHtml(sc)}</td>`;
     for (const v of versionAggs) {
       const arr = matrix[sc]?.[v.versionId];
-      if (arr && arr.length > 0) {
-        const avgComp = Math.round(arr.reduce((sum, r) => sum + compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0), 0) / arr.length);
+      const avgComp = arr ? avgCompositeScoreFromRows(arr) : null;
+      if (avgComp != null) {
         html += `<td style="color:${scoreHexColor(avgComp)};font-weight:600">${avgComp}</td>`;
       } else {
         html += '<td style="color:var(--muted)">--</td>';
@@ -327,8 +338,8 @@ function evalScenarioTable(
     html += `<tr><td>${escHtml(sc)}</td>`;
     for (const v of versionAggs) {
       const arr = matrix[sc]?.[v.versionId];
-      if (arr && arr.length > 0) {
-        const avgComp = Math.round(arr.reduce((sum, r) => sum + compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0), 0) / arr.length);
+      const avgComp = arr ? avgCompositeScoreFromRows(arr) : null;
+      if (avgComp != null) {
         html += `<td style="color:${scoreHexColor(avgComp)};font-weight:600">${avgComp}</td>`;
       } else {
         html += '<td style="color:var(--muted)">--</td>';
@@ -360,8 +371,8 @@ function matrixScenarioTable(
     html += `<tr><td>${escHtml(sc)}</td>`;
     for (const v of variantAggs) {
       const arr = matrix[sc]?.[v.variant];
-      if (arr && arr.length > 0) {
-        const avgComp = Math.round(arr.reduce((sum, r) => sum + compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0), 0) / arr.length);
+      const avgComp = arr ? avgCompositeScoreFromRows(arr) : null;
+      if (avgComp != null) {
         html += `<td style="color:${scoreHexColor(avgComp)};font-weight:600">${avgComp}</td>`;
       } else {
         html += '<td style="color:var(--muted)">--</td>';

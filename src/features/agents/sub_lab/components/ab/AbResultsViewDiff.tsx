@@ -4,7 +4,7 @@
 // comments. Typography leans tabular & monospace where it carries meaning.
 import { useMemo } from 'react';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import type { AbVersionAggregate } from '../../libs/labAggregation';
 import type { AbVariantProps, SelectedCell } from './AbResultsView';
 import { FileDiff, MessageSquare, Lightbulb, GitPullRequest, Plus, Minus, Equal } from 'lucide-react';
@@ -175,11 +175,20 @@ function buildScenarioDiffs(
   });
 }
 
-function computeComposite(rows: LabAbResult[]): number {
-  const avgTA = rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / rows.length;
-  const avgOQ = rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / rows.length;
-  const avgPC = rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / rows.length;
-  return compositeScore(avgTA, avgOQ, avgPC);
+function computeComposite(rows: LabAbResult[]): number | null {
+  // Average each metric independently over rows where it was scored — null
+  // means "not scored", so it must NOT enter the average as 0.
+  let taSum = 0, taCount = 0, oqSum = 0, oqCount = 0, pcSum = 0, pcCount = 0;
+  for (const r of rows) {
+    if (r.toolAccuracyScore != null) { taSum += r.toolAccuracyScore; taCount++; }
+    if (r.outputQualityScore != null) { oqSum += r.outputQualityScore; oqCount++; }
+    if (r.protocolCompliance != null) { pcSum += r.protocolCompliance; pcCount++; }
+  }
+  return compositeScoreFromRow(
+    taCount > 0 ? taSum / taCount : null,
+    oqCount > 0 ? oqSum / oqCount : null,
+    pcCount > 0 ? pcSum / pcCount : null,
+  );
 }
 
 function ScoreCell({

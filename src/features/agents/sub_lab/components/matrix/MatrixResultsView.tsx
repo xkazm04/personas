@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check } from 'lucide-react';
 import type { LabMatrixResult } from '@/lib/bindings/LabMatrixResult';
 import type { LabMatrixRun } from '@/lib/bindings/LabMatrixRun';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { DraftDiffViewer } from '../shared/DraftDiffViewer';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
@@ -76,11 +76,21 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
                   const draftRows = matrix[scenario]?.['draft'] ?? [];
                   const calc = (rows: LabMatrixResult[]) => {
                     if (rows.length === 0) return null;
-                    const n = rows.length;
-                    return compositeScore(
-                      rows.reduce((s, r) => s + (r.toolAccuracyScore ?? 0), 0) / n,
-                      rows.reduce((s, r) => s + (r.outputQualityScore ?? 0), 0) / n,
-                      rows.reduce((s, r) => s + (r.protocolCompliance ?? 0), 0) / n,
+                    // Average each metric independently over rows where it was scored
+                    // (matches the labAggregation.ts policy — null = "not scored",
+                    // not "scored zero"). Then combine via the row-shape composite.
+                    const meanOf = (pick: (r: LabMatrixResult) => number | null): number | null => {
+                      let sum = 0, count = 0;
+                      for (const r of rows) {
+                        const v = pick(r);
+                        if (v != null) { sum += v; count++; }
+                      }
+                      return count > 0 ? sum / count : null;
+                    };
+                    return compositeScoreFromRow(
+                      meanOf((r) => r.toolAccuracyScore),
+                      meanOf((r) => r.outputQualityScore),
+                      meanOf((r) => r.protocolCompliance),
                     );
                   };
                   const currentScore = calc(currentRows);

@@ -85,6 +85,42 @@ export async function loadScoreWeightsOnce(): Promise<void> {
 // the IPC completes, then transparently switches to the seeded values.
 void loadScoreWeightsOnce();
 
+/**
+ * Compute the weighted composite score from a single result row's individual
+ * metric scores, when nulls are possible (the typical "raw lab result" case).
+ *
+ * Treats `null` as "this metric was not scored" — re-weights remaining metrics
+ * to sum to 1.0 instead of biasing the score toward zero. Returns `null` only
+ * when ALL THREE metrics are null (no signal at all).
+ *
+ * Use this anywhere you'd otherwise write
+ *   `compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0)`
+ * — that pattern silently treats unscored metrics as 0/100 score, which biases
+ * downstream averages and report exports.
+ */
+export function compositeScoreFromRow(
+  toolAccuracy: number | null,
+  outputQuality: number | null,
+  protocolCompliance: number | null,
+): number | null {
+  let weightedSum = 0;
+  let presentWeight = 0;
+  if (toolAccuracy != null) {
+    weightedSum += toolAccuracy * _toolAccuracy;
+    presentWeight += _toolAccuracy;
+  }
+  if (outputQuality != null) {
+    weightedSum += outputQuality * _outputQuality;
+    presentWeight += _outputQuality;
+  }
+  if (protocolCompliance != null) {
+    weightedSum += protocolCompliance * _protocolCompliance;
+    presentWeight += _protocolCompliance;
+  }
+  if (presentWeight === 0) return null;
+  return Math.round(weightedSum / presentWeight);
+}
+
 /** Compute the weighted composite score from individual metric scores. */
 export function compositeScore(
   toolAccuracy: number,

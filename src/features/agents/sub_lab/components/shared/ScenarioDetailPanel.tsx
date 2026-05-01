@@ -1,5 +1,5 @@
 import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
 import { LabEventStream } from './LabEventStream';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
@@ -54,7 +54,8 @@ function parseRationale(raw: string | null): { structured: StructuredRationale |
   return { structured: null, plain: raw };
 }
 
-function scoreLabel(score: number): string {
+function scoreLabel(score: number | null): string {
+  if (score == null) return 'Unscored';
   if (score >= 80) return 'Excellent';
   if (score >= 60) return 'Good';
   if (score >= 40) return 'Fair';
@@ -70,7 +71,15 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
   color: string;
   borderColor: string;
 }) {
-  const s = score ?? 0;
+  // Unscored metric — render an empty bar and "—" rather than collapsing to 0,
+  // which would visually conflate "not scored" with "scored zero".
+  const isUnscored = score == null;
+  const barWidth = isUnscored ? 0 : Math.max(score, 2);
+  const barClass = isUnscored
+    ? 'bg-secondary/40'
+    : score >= 80 ? 'bg-emerald-500/70'
+    : score >= 50 ? 'bg-amber-500/70'
+    : 'bg-red-500/60';
   return (
     <div className={`rounded-modal border ${borderColor} bg-background/30 overflow-hidden`}>
       <div className="flex items-center gap-3 px-3 py-2.5">
@@ -78,16 +87,16 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="typo-caption font-medium text-foreground">{label}</span>
-            <span className={`typo-caption font-semibold ${scoreColor(s)}`}>{scoreLabel(s)}</span>
+            <span className={`typo-caption font-semibold ${scoreColor(score)}`}>{scoreLabel(score)}</span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-primary/5 overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${s >= 80 ? 'bg-emerald-500/70' : s >= 50 ? 'bg-amber-500/70' : 'bg-red-500/60'}`}
-              style={{ width: `${Math.max(s, 2)}%` }}
+              className={`h-full rounded-full transition-all ${barClass}`}
+              style={{ width: `${barWidth}%` }}
             />
           </div>
         </div>
-        <span className={`typo-heading-lg font-bold tabular-nums ${scoreColor(s)}`}>{s}</span>
+        <span className={`typo-heading-lg font-bold tabular-nums ${scoreColor(score)}`}>{score ?? '—'}</span>
       </div>
       {rationale && (
         <div className="px-3 pb-2.5 -mt-0.5">
@@ -100,10 +109,10 @@ function ScoreCard({ label, icon: Icon, score, rationale, color, borderColor }: 
 
 export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, onRate, resultId, resultKind }: ScenarioDetailPanelProps) {
   const { t } = useTranslation();
-  const ta = result.toolAccuracyScore ?? 0;
-  const oq = result.outputQualityScore ?? 0;
-  const pc = result.protocolCompliance ?? 0;
-  const composite = compositeScore(ta, oq, pc);
+  const ta = result.toolAccuracyScore;
+  const oq = result.outputQualityScore;
+  const pc = result.protocolCompliance;
+  const composite = compositeScoreFromRow(ta, oq, pc);
 
   const { structured, plain } = parseRationale(result.rationale);
 
@@ -131,7 +140,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
 
         {/* Composite score header */}
         <div className="flex items-center gap-4 py-2">
-          <div className={`typo-hero font-black tracking-tight ${scoreColor(composite)}`}>{composite}</div>
+          <div className={`typo-hero font-black tracking-tight ${scoreColor(composite)}`}>{composite ?? '—'}</div>
           <div>
             <span className={`typo-heading font-semibold ${scoreColor(composite)}`}>{scoreLabel(composite)}</span>
             <p className="typo-caption text-foreground">Composite Score (TA 40% + OQ 40% + PC 20%)</p>

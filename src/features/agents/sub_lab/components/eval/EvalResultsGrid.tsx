@@ -1,7 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Grid3X3, ChevronDown, MessageSquare, Lightbulb } from 'lucide-react';
-import { compositeScore, scoreColor } from '@/lib/eval/evalFramework';
+import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { buildEvalGridData, type VersionAggregate } from '../../libs/evalAggregation';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
@@ -57,7 +57,8 @@ function collectTopInsights(results: LabEvalResult[], limit = 3): Array<{ label:
   for (const r of results) {
     if (r.rationale) {
       const verdict = parseVerdict(r.rationale);
-      const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
+      // Rows with no scoring signal still surface their verdict; sort them last.
+      const comp = compositeScoreFromRow(r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance) ?? -1;
       items.push({ label: `v${r.versionNumber} / ${r.modelId} — ${r.scenarioName}`, text: verdict, score: comp });
     }
   }
@@ -276,8 +277,10 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                       models.map((mId) => {
                         const r = scenarioMatrix[scenario]?.[vId]?.[mId];
                         if (!r) return <td key={`${vId}-${mId}`} className="px-3 py-2.5 text-center text-foreground">--</td>;
-                        const comp = compositeScore(r.toolAccuracyScore ?? 0, r.outputQualityScore ?? 0, r.protocolCompliance ?? 0);
+                        const comp = compositeScoreFromRow(r.toolAccuracyScore, r.outputQualityScore, r.protocolCompliance);
                         const isSelected = selectedCell?.scenario === scenario && selectedCell?.versionId === vId && selectedCell?.modelId === mId;
+                        // Unscored cell — surface "—" rather than a fake 0 verdict.
+                        const dotClass = comp == null ? 'bg-secondary/40' : comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40';
                         return (
                           <td key={`${vId}-${mId}`} className="px-3 py-1.5">
                             <button
@@ -286,8 +289,8 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                                 isSelected ? 'bg-primary/10 ring-1 ring-primary/25 shadow-elevation-1' : 'hover:bg-secondary/40'
                               }`}
                             >
-                              <div className={`w-2 h-2 rounded-full ${comp >= 60 ? 'bg-emerald-500/60' : comp >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />
-                              <span className={`typo-heading font-semibold ${scoreColor(comp)}`}>{comp}</span>
+                              <div className={`w-2 h-2 rounded-full ${dotClass}`} />
+                              <span className={`typo-heading font-semibold ${scoreColor(comp)}`}>{comp ?? '—'}</span>
                             </button>
                           </td>
                         );
