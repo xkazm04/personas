@@ -13,6 +13,7 @@ import type { Persona } from "@/lib/bindings/Persona";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { LabResultEvent } from "@/lib/bindings/LabResultEvent";
 import type { LabResultKind } from "@/lib/bindings/LabResultKind";
+import type { ScoreWeights } from "@/lib/bindings/ScoreWeights";
 import type { ModelTestConfig } from "./tests";
 
 // ============================================================================
@@ -182,3 +183,10 @@ export const labGetActiveProgress = (personaId: string) =>
 
 export const labGetResultEvents = (resultId: string, resultKind: LabResultKind) =>
   invoke<LabResultEvent[]>("lab_get_result_events", { resultId, resultKind });
+
+// ============================================================================
+// Score weights — single source of truth lives in src-tauri/src/engine/eval.rs
+// ============================================================================
+
+export const labGetScoreWeights = () =>
+  invoke<ScoreWeights>("lab_get_score_weights");

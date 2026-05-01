@@ -34,12 +34,56 @@ export interface CompositeEvalResult {
   individual: EvalResult[];
 }
 
-// -- Scoring weights (single source of truth) ------------------
-// Keep in sync with WEIGHT_* in src-tauri/src/engine/eval.rs
+// -- Scoring weights -------------------------------------------
+//
+// Single source of truth: `SCORE_WEIGHTS` in `src-tauri/src/engine/eval.rs`.
+// The constants below mirror the Rust defaults at commit time and are used
+// for static display (e.g. the strategy metadata table at the bottom of this
+// file). Runtime arithmetic in `compositeScore()` reads the module-scoped
+// mutables `_toolAccuracy`/`_outputQuality`/`_protocolCompliance`, which
+// `loadScoreWeightsOnce()` seeds from the Rust side at app startup so values
+// stay aligned even if the canonical Rust const ever drifts before the TS
+// constants are re-mirrored.
+//
+// Do not duplicate the values anywhere else in the frontend.
 
 export const WEIGHT_TOOL_ACCURACY = 0.4;
 export const WEIGHT_OUTPUT_QUALITY = 0.4;
 export const WEIGHT_PROTOCOL_COMPLIANCE = 0.2;
+
+let _toolAccuracy = WEIGHT_TOOL_ACCURACY;
+let _outputQuality = WEIGHT_OUTPUT_QUALITY;
+let _protocolCompliance = WEIGHT_PROTOCOL_COMPLIANCE;
+let _weightsLoadOnce: Promise<void> | null = null;
+
+/**
+ * Fetch authoritative weights from the Rust engine and overwrite the
+ * module-level cache. Idempotent — repeated calls share one IPC.
+ * Failures are silently ignored (the static constants stay in effect) because
+ * this is a precision tweak, not a correctness gate. Call it eagerly at app
+ * bootstrap; consumers of `compositeScore()` see the seeded values once the
+ * promise resolves.
+ */
+export async function loadScoreWeightsOnce(): Promise<void> {
+  if (_weightsLoadOnce) return _weightsLoadOnce;
+  _weightsLoadOnce = (async () => {
+    try {
+      const { labGetScoreWeights } = await import('@/api/agents/lab');
+      const w = await labGetScoreWeights();
+      _toolAccuracy = w.toolAccuracy;
+      _outputQuality = w.outputQuality;
+      _protocolCompliance = w.protocolCompliance;
+    } catch {
+      // Keep static values.
+    }
+  })();
+  return _weightsLoadOnce;
+}
+
+// Kick off the load at module eval. The promise is intentionally fire-and-
+// forget — `compositeScore()` works correctly with the static defaults until
+// the IPC completes, then transparently switches to the seeded values.
+void loadScoreWeightsOnce();
 
 /** Compute the weighted composite score from individual metric scores. */
 export function compositeScore(
@@ -48,9 +92,9 @@ export function compositeScore(
   protocolCompliance: number,
 ): number {
   return Math.round(
-    toolAccuracy * WEIGHT_TOOL_ACCURACY
-    + outputQuality * WEIGHT_OUTPUT_QUALITY
-    + protocolCompliance * WEIGHT_PROTOCOL_COMPLIANCE,
+    toolAccuracy * _toolAccuracy
+    + outputQuality * _outputQuality
+    + protocolCompliance * _protocolCompliance,
   );
 }
 

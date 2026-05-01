@@ -992,6 +992,16 @@ pub fn lab_get_ratings(
 // Per-result Event Stream — typed conversation captured during the CLI run
 // ============================================================================
 
+/// Return the canonical composite-score weights from `engine::eval::SCORE_WEIGHTS`.
+///
+/// Frontend `evalFramework.ts` calls this once at app startup so its
+/// `compositeScore()` mirror stays aligned with the Rust source of truth.
+/// This is the only IPC for getting weights — do not declare them anywhere else.
+#[tauri::command]
+pub fn lab_get_score_weights() -> Result<crate::engine::eval::ScoreWeights, AppError> {
+    Ok(crate::engine::eval::SCORE_WEIGHTS)
+}
+
 /// Fetch the captured stream events for a single lab result row.
 /// `result_kind` MUST be one of "eval" | "ab" | "arena" | "matrix" | "consensus".
 #[tauri::command]
