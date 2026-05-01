@@ -9,4 +9,8 @@ export type GlobalExecutionRow = { id: string, persona_id: string, trigger_id: s
 /**
  * `true` when the execution log file may be incomplete due to I/O errors.
  */
-log_truncated: boolean, persona_name: string | null, persona_icon: string | null, persona_color: string | null, };
+log_truncated: boolean, 
+/**
+ * Phase C3 — simulation runs are excluded from the default activity feed.
+ */
+is_simulation: boolean, persona_name: string | null, persona_icon: string | null, persona_color: string | null, };

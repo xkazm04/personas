@@ -13,4 +13,12 @@ import type { DesignUseCase } from "./DesignUseCase";
  * - `summary` -- optional human-readable summary (legacy compat)
  * - `connector_pipeline` -- chronological connector interaction sequence
  */
-export type DesignContextData = { designFiles: DesignFilesSection | null, credentialLinks: { [key in string]?: string } | null, useCases: Array<DesignUseCase> | null, summary: string | null, connectorPipeline: Array<ConnectorPipelineStep> | null, };
+export type DesignContextData = { designFiles: DesignFilesSection | null, credentialLinks: { [key in string]?: string } | null, useCases: Array<DesignUseCase> | null, summary: string | null, connectorPipeline: Array<ConnectorPipelineStep> | null, 
+/**
+ * Twin profile this persona is pinned to. When `Some`, the
+ * `builtin-twin` connector should resolve this id instead of the
+ * globally-active twin. Connector resolution wiring is a separate
+ * follow-up — for now this is a pure config field round-tripped
+ * through the design_context envelope.
+ */
+twinId: string | null, };

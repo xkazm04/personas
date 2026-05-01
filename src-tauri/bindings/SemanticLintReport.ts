@@ -7,17 +7,17 @@ import type { ProposedLink } from "./ProposedLink";
 /**
  * LLM-assisted semantic lint report. Complementary to `VaultLintReport`.
  */
-export type SemanticLintReport = { vaultPath: string,
+export type SemanticLintReport = { vaultPath: string, 
 /**
  * Number of notes fed to the LLM for analysis (may be less than the
  * total vault size if truncated to stay within the prompt budget).
  */
-scannedCount: bigint, inconsistencies: Array<Inconsistency>, missingPageCandidates: Array<MissingPageCandidate>, proposedLinks: Array<ProposedLink>,
+scannedCount: bigint, inconsistencies: Array<Inconsistency>, missingPageCandidates: Array<MissingPageCandidate>, proposedLinks: Array<ProposedLink>, 
 /**
  * Forward-looking research suggestions — gaps in vault substance the
  * LLM thinks would benefit from external investigation.
  */
-knowledgeGaps: Array<KnowledgeGap>,
+knowledgeGaps: Array<KnowledgeGap>, 
 /**
  * Raw CLI log lines captured during the Claude call (for debugging).
  */

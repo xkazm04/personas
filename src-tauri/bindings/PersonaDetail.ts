@@ -26,4 +26,11 @@ parameters: string | null,
  * Visibility to the external management HTTP API.
  * Defaults to `LocalOnly` so existing personas are not exposed.
  */
-gateway_exposure: PersonaGatewayExposure, created_at: string, updated_at: string, };
+gateway_exposure: PersonaGatewayExposure, 
+/**
+ * Lowercase template category (e.g. `"development"`, `"finance"`) derived
+ * by `infer_template_category` when the persona was created via template
+ * adoption. `None` for manually-created or pre-Phase-17 personas. Used by
+ * Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
+ */
+template_category: string | null, created_at: string, updated_at: string, };

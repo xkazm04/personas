@@ -4,4 +4,16 @@ import type { AssertionResult } from "./AssertionResult";
 /**
  * Summary of assertion results for a single execution.
  */
-export type ExecutionAssertionSummary = { executionId: string, total: number, passed: number, failed: number, results: Array<AssertionResult>, };
+export type ExecutionAssertionSummary = { executionId: string, total: number, passed: number, failed: number, 
+/**
+ * Subset of `failed` whose owning assertion had `severity: "critical"`.
+ * Drives the post-execution status downgrade from `Completed` →
+ * `Incomplete` so semantic blockers surface in the notification center.
+ */
+criticalFailures: number, 
+/**
+ * First critical-severity failure explanation — used as the execution's
+ * error message when a downgrade occurs. `None` when no critical
+ * assertion failed.
+ */
+firstCriticalFailure: string | null, results: Array<AssertionResult>, };

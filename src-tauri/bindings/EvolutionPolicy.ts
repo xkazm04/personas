@@ -29,6 +29,13 @@ improvementThreshold: number,
  */
 minExecutionsBetween: number, 
 /**
+ * Mutation strategy: "mechanical" (shuffle/drop/duplicate prompt
+ * segments, permute tools, jiggle timeout) or "critique" (LLM reads
+ * recent low-fitness traces and rewrites prompt segments). NULL or
+ * missing falls back to "mechanical" so legacy rows behave unchanged.
+ */
+mutationStrategy: string | null, 
+/**
  * Timestamp of last completed evolution cycle.
  */
 lastCycleAt: string | null, 

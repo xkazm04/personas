@@ -2,4 +2,4 @@
 import type { BuildPhase } from "./BuildPhase";
 import type { JsonValue } from "./serde_json/JsonValue";
 
-export type PersistedBuildSession = { id: string, personaId: string, phase: BuildPhase, resolvedCells: JsonValue, pendingQuestion: JsonValue | null, agentIr: JsonValue | null, intent: string, errorMessage: string | null, createdAt: string, };
+export type PersistedBuildSession = { id: string, personaId: string, phase: BuildPhase, resolvedCells: JsonValue, pendingQuestion: JsonValue | null, agentIr: JsonValue | null, adoptionAnswers: JsonValue | null, intent: string, errorMessage: string | null, createdAt: string, };

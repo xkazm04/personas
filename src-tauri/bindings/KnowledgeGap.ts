@@ -7,22 +7,22 @@
  * already mentioned but lacking a dedicated page) — a knowledge gap is
  * a hole in the *substance*, not the *organization*.
  */
-export type KnowledgeGap = {
+export type KnowledgeGap = { 
 /**
  * Short title of the gap area.
  */
-topic: string,
+topic: string, 
 /**
  * Vault-relative paths of notes that touch the topic shallowly or
  * where the gap is visible. Empty when the gap is a global
  * observation not tied to specific notes.
  */
-mentionedIn: Array<string>,
+mentionedIn: Array<string>, 
 /**
  * A concrete research question the user could investigate to close
  * the gap. Phrased as a question, not a topic.
  */
-suggestedQuestion: string,
+suggestedQuestion: string, 
 /**
  * One-line action suggestion (e.g. "web search for recent benchmarks",
  * "find a primary source on technique X", "deeper read of paper Y").
