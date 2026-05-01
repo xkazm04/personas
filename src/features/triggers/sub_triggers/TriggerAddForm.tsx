@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
+import { getDetectedTimezone } from './TimezoneSelect';
 import { TriggerQuickTemplates } from './TriggerQuickTemplates';
 import { TriggerCategorySelector } from './TriggerCategorySelector';
 import { TriggerTypeSelector } from './TriggerTypeSelector';
@@ -37,6 +38,11 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const [cronExpression, setCronExpression] = useState('');
   const [cronPreview, setCronPreview] = useState<CronPreview | null>(null);
   const [cronLoading, setCronLoading] = useState(false);
+  // Default to the user's detected IANA zone — this is the only safe default
+  // because the backend's "no timezone" fallback evaluates cron in the host
+  // machine's local time, which silently differs across dev environments
+  // (C5-handoff-2026-04-26 incident).
+  const [scheduleTimezone, setScheduleTimezone] = useState<string | undefined>(getDetectedTimezone());
   const [endpoint, setEndpoint] = useState('');
   const [selectedEventId, setSelectedEventId] = useState('');
   const [hmacSecret, setHmacSecret] = useState('');
@@ -58,10 +64,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const [validationError, setValidationError] = useState<string | null>(null);
   const cronDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchCronPreview = useCallback(async (expr: string) => {
+  const fetchCronPreview = useCallback(async (expr: string, tz?: string) => {
     if (!expr.trim()) { setCronPreview(null); return; }
     setCronLoading(true);
-    try { setCronPreview(await previewCronSchedule(expr.trim(), 5)); }
+    try { setCronPreview(await previewCronSchedule(expr.trim(), 5, tz)); }
     catch { setCronPreview(null); }
     finally { setCronLoading(false); }
   }, []);
@@ -69,14 +75,14 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   useEffect(() => {
     if (scheduleMode !== 'cron' || triggerType !== 'schedule') return;
     if (cronDebounceRef.current) clearTimeout(cronDebounceRef.current);
-    cronDebounceRef.current = setTimeout(() => { fetchCronPreview(cronExpression); }, 400);
+    cronDebounceRef.current = setTimeout(() => { fetchCronPreview(cronExpression, scheduleTimezone); }, 400);
     return () => { if (cronDebounceRef.current) clearTimeout(cronDebounceRef.current); };
-  }, [cronExpression, scheduleMode, triggerType, fetchCronPreview]);
+  }, [cronExpression, scheduleMode, triggerType, scheduleTimezone, fetchCronPreview]);
 
   const handleCronPreset = (expr: string) => {
     setCronExpression(expr);
     setValidationError(null);
-    fetchCronPreview(expr);
+    fetchCronPreview(expr, scheduleTimezone);
   };
 
   const applyTemplate = (templateId: string) => {
@@ -109,7 +115,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     if (o.interval !== undefined) setInterval(o.interval);
     if (o.cronExpression !== undefined) {
       setCronExpression(o.cronExpression);
-      fetchCronPreview(o.cronExpression);
+      fetchCronPreview(o.cronExpression, scheduleTimezone);
     }
     if (o.endpoint !== undefined) setEndpoint(o.endpoint);
     if (o.hmacSecret !== undefined) setHmacSecret(o.hmacSecret);
@@ -133,6 +139,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const handleAddTrigger = async () => {
     const result = buildTriggerConfig({
       triggerType, scheduleMode, interval, cronExpression, cronPreview,
+      scheduleTimezone,
       endpoint, selectedEventId, hmacSecret, listenEventType, sourceFilter,
       watchPaths, watchEvents, watchRecursive, globFilter,
       clipboardContentType, clipboardPattern, clipboardInterval,
@@ -187,7 +194,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             </div>
           </div>
           {scheduleMode === 'interval' && <IntervalConfig interval={interval} setInterval={setInterval} customInterval={customInterval} setCustomInterval={setCustomInterval} validationError={validationError} setValidationError={setValidationError} triggerType={triggerType} />}
-          {scheduleMode === 'cron' && <CronConfig cronExpression={cronExpression} setCronExpression={(v: string) => { setCronExpression(v); if (validationError) setValidationError(null); }} cronPreview={cronPreview} cronLoading={cronLoading} validationError={validationError} onPresetSelect={handleCronPreset} />}
+          {scheduleMode === 'cron' && <CronConfig cronExpression={cronExpression} setCronExpression={(v: string) => { setCronExpression(v); if (validationError) setValidationError(null); }} cronPreview={cronPreview} cronLoading={cronLoading} validationError={validationError} onPresetSelect={handleCronPreset} timezone={scheduleTimezone} setTimezone={setScheduleTimezone} />}
         </div>
       )}
 

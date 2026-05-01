@@ -1,6 +1,7 @@
 import { formatInterval } from '@/lib/utils/formatters';
 import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
+import { TimezoneSelect } from './TimezoneSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function IntervalConfig({
@@ -131,6 +132,8 @@ export function CronConfig({
   cronLoading,
   validationError,
   onPresetSelect,
+  timezone,
+  setTimezone,
 }: {
   cronExpression: string;
   setCronExpression: (v: string) => void;
@@ -138,6 +141,8 @@ export function CronConfig({
   cronLoading: boolean;
   validationError: string | null;
   onPresetSelect: (expr: string) => void;
+  timezone: string | undefined;
+  setTimezone: (tz: string | undefined) => void;
 }) {
   const { t } = useTranslation();
   const hasError = cronPreview && !cronPreview.valid;
@@ -213,8 +218,20 @@ export function CronConfig({
           <span>day</span>
           <span>month</span>
           <span>weekday</span>
-          <span className="ml-auto text-amber-400/60 typo-caption font-sans font-medium">{t.triggers.local_time}</span>
         </div>
+      </div>
+
+      {/* Timezone */}
+      <div>
+        <label htmlFor="cron-timezone" className="block typo-body font-medium text-foreground mb-1.5">
+          Timezone
+        </label>
+        <TimezoneSelect id="cron-timezone" value={timezone} onChange={setTimezone} />
+        <p className="typo-caption text-foreground mt-1">
+          The cron expression evaluates in this zone. Without a zone the backend
+          falls back to the host machine&rsquo;s local time, which can differ across
+          dev and prod environments.
+        </p>
       </div>
 
       {/* Next-runs timeline preview */}

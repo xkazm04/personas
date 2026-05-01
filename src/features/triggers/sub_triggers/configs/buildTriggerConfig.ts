@@ -7,6 +7,9 @@ export interface TriggerFormState {
   interval: string;
   cronExpression: string;
   cronPreview: CronPreview | null;
+  /** IANA zone for the cron expression (e.g. "America/New_York"). Undefined =
+   *  backend falls back to system-local. Only consulted for schedule triggers. */
+  scheduleTimezone?: string;
   endpoint: string;
   selectedEventId: string;
   hmacSecret: string;
@@ -43,6 +46,12 @@ export function buildTriggerConfig(s: TriggerFormState): BuildResult {
       const parsed = parseInt(s.interval);
       if (isNaN(parsed) || parsed < 60) return { ok: false, error: 'Interval must be at least 60 seconds.' };
       config.interval_seconds = parsed;
+    }
+    // Persist timezone for cron-mode schedules so the backend evaluates the
+    // expression in the user's intended zone instead of falling back to the
+    // host's system-local time (the C5-handoff-2026-04-26 incident path).
+    if (s.scheduleMode === 'cron' && s.scheduleTimezone) {
+      config.timezone = s.scheduleTimezone;
     }
   } else if (s.triggerType === 'polling') {
     const parsed = parseInt(s.interval);
