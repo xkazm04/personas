@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { LabQualityBadge } from '@/features/agents/sub_lab/components/shared/LabQualityBadge';
@@ -85,7 +85,9 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       await applyPersonaOp(selectedPersona.id, { kind: 'ToggleEnabled', enabled: nextEnabled });
       patch({ enabled: nextEnabled });
       setBaseline((prev) => ({ ...prev, enabled: nextEnabled }));
-    } catch { useToastStore.getState().addToast(t.agents.header.toggle_failed, 'error'); }
+    } catch (err) {
+      toastCatch('PersonaEditorHeader:toggleEnabled', t.agents.header.toggle_failed)(err);
+    }
   }, [selectedPersona, readiness, applyPersonaOp, patch, setBaseline, t]);
 
   if (!effective) return null;
