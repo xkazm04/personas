@@ -8,6 +8,7 @@ import { NegotiatorPlanningPhase } from './NegotiatorPlanningPhase';
 import { NegotiatorGuidingPhase } from './NegotiatorGuidingPhase';
 import { NegotiatorIdlePhase, NegotiatorDonePhase, NegotiatorErrorPhase } from './NegotiatorPhases';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 const PHASE_VARIANTS = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, exit: { opacity: 0, y: -8 } };
 const PHASE_TRANSITION = { duration: 0.2 };
@@ -44,7 +45,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
           }));
         setAuthDetections(mapped);
       })
-      .catch(() => {})
+      .catch(silentCatch('NegotiatorPanel:detectAuthenticatedServices'))
       .finally(() => {
         if (!cancelled) setAuthDetectLoading(false);
       });
