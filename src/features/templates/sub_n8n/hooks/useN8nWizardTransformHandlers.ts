@@ -19,10 +19,7 @@ export function createTransformHandlers(deps: WizardDeps) {
     transformLockRef.current = true;
 
     try {
-      const transformId =
-        typeof crypto !== 'undefined' && 'randomUUID' in crypto
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const transformId = crypto.randomUUID();
 
       const isAdjustment = !!state.adjustmentRequest.trim() || !!state.draft;
       const subPhase = isAdjustment ? 'generating' as const : 'asking' as const;
@@ -36,12 +33,9 @@ export function createTransformHandlers(deps: WizardDeps) {
 
       const previousDraftJson = state.draft ? stringifyDraft(state.draft) : state.draftJson.trim() || null;
 
-      let parserJson: string;
-      try {
-        parserJson = JSON.stringify(state.parsedResult);
-      } catch {
-        parserJson = '{}';
-      }
+      // parsedResult is the AgentIR shape from the workflow parser — a plain
+      // serializable record, no circular refs possible. Stringify directly.
+      const parserJson = JSON.stringify(state.parsedResult);
 
       const vaultState = useVaultStore.getState();
       const connectorsJson = JSON.stringify(

@@ -96,7 +96,8 @@ export function createLifecycleHandlers(deps: WizardDeps) {
       setN8nTransformActive(false);
       dispatch({ type: 'RESET' });
       if (fileInputRef.current) fileInputRef.current.value = '';
-    } catch {
+    } catch (err) {
+      silentCatch("LifecycleHandlers:resetFallback")(err);
       setN8nTransformActive(false);
       dispatch({ type: 'RESET' });
     }
