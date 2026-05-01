@@ -1,6 +1,7 @@
 import { Clock, Webhook, Play, Zap, Link, RefreshCw, Radio, FolderSearch, ClipboardPaste, AppWindow, Combine } from 'lucide-react';
 import { createLogger } from "@/lib/log";
 import { en, type Translations } from '@/i18n/en';
+import type { Schedule } from '@/lib/types/schedule';
 
 const logger = createLogger("trigger-constants");
 
@@ -220,15 +221,8 @@ export function getWebhookUrl(triggerId: string): string {
 
 // -- Typed trigger config discriminated union ----------------------------
 
-export interface ScheduleConfig {
+export interface ScheduleConfig extends Schedule {
   type: 'schedule';
-  cron?: string;
-  interval_seconds?: number;
-  /** IANA timezone (e.g. "America/New_York") in which the cron expression is
-   *  evaluated. When unset, the backend falls back to the host's system-local
-   *  zone — which is unreliable across machines and a known incident source
-   *  (see scheduler.rs:75-89 C5-handoff regression test). */
-  timezone?: string;
   event_type?: string;
 }
 
