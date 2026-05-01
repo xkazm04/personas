@@ -268,10 +268,11 @@ export function PersonaMatrix(props: PersonaMatrixProps) {
     store.setEditingCell(editingCellKey === cellKey ? null : cellKey);
   };
 
-  // Dirty handler for DimensionEditPanel
-  const handleEditDirty = () => {
+  // Dirty handler for DimensionEditPanel. useCallback so the cells useMemo
+  // (which depends on it) doesn't invalidate every render.
+  const handleEditDirty = useCallback(() => {
     useAgentStore.getState().markEditDirty();
-  };
+  }, []);
 
   // Extract protocol capabilities from build draft for cell badges
   const protocolCapabilities = useMemo(() => {
