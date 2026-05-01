@@ -19,12 +19,12 @@ export function detectAnomalies(entries: CredentialAuditEntry[]): TimelineEntry[
   const historicPersonas = new Set<string>();
   for (let i = historyEnd; i < entries.length; i++) {
     const e = entries[i];
-    if (e && e.persona_id) historicPersonas.add(e.persona_id);
+    if (e && e.personaId) historicPersonas.add(e.personaId);
   }
 
   return entries.map((entry, idx) => {
     const anomalies: AnomalyFlag[] = [];
-    const entryTime = new Date(entry.created_at);
+    const entryTime = new Date(entry.createdAt);
     const hour = entryTime.getUTCHours();
 
     // Off-hours access (midnight-5am UTC)
@@ -34,9 +34,9 @@ export function detectAnomalies(entries: CredentialAuditEntry[]): TimelineEntry[
 
     // New persona (not seen in historical entries)
     if (
-      entry.persona_id &&
+      entry.personaId &&
       historicPersonas.size > 0 &&
-      !historicPersonas.has(entry.persona_id) &&
+      !historicPersonas.has(entry.personaId) &&
       idx < historyEnd
     ) {
       anomalies.push({ type: 'new_persona', label: 'First access by this persona' });
@@ -46,7 +46,7 @@ export function detectAnomalies(entries: CredentialAuditEntry[]): TimelineEntry[
     if (idx < entries.length - 1) {
       let windowCount = 1;
       for (let j = idx + 1; j < entries.length; j++) {
-        const diff = entryTime.getTime() - new Date(entries[j]!.created_at).getTime();
+        const diff = entryTime.getTime() - new Date(entries[j]!.createdAt).getTime();
         if (diff <= 60_000) windowCount++;
         else break;
       }
@@ -59,7 +59,7 @@ export function detectAnomalies(entries: CredentialAuditEntry[]): TimelineEntry[
     if (entry.operation === 'decrypt' && idx < entries.length - 1) {
       const next = entries[idx + 1]!;
       if (next.operation === 'decrypt') {
-        const gap = entryTime.getTime() - new Date(next.created_at).getTime();
+        const gap = entryTime.getTime() - new Date(next.createdAt).getTime();
         if (gap < 5000 && gap >= 0 && entry.detail !== next.detail) {
           anomalies.push({ type: 'rapid_decrypt', label: 'Rapid decrypt from different source' });
         }

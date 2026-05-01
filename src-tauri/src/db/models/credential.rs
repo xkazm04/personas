@@ -6,6 +6,7 @@ use ts_rs::TS;
 // ============================================================================
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct PersonaCredential {
     pub id: String,
@@ -32,6 +33,7 @@ pub struct PersonaCredential {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CreateCredentialInput {
     pub name: String,
@@ -47,6 +49,7 @@ pub struct CreateCredentialInput {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct UpdateCredentialInput {
     pub name: Option<String>,

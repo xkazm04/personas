@@ -294,7 +294,7 @@ export function ExportSelectionModal({
         items: credentials.map((c) => ({
           id: c.id,
           name: c.name,
-          description: c.service_type,
+          description: c.serviceType,
         })),
       },
     ],

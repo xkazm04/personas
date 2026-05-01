@@ -251,7 +251,7 @@ function ConnectorChain({
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
             <Key className="w-3 h-3 text-emerald-400" />
             <span className="font-medium">{credentials[0]!.name}</span>
-            <span className="text-foreground/50 font-mono">({credentials[0]!.service_type})</span>
+            <span className="text-foreground/50 font-mono">({credentials[0]!.serviceType})</span>
           </span>
         ) : (
           <div className="inline-flex items-center gap-1">
@@ -262,7 +262,7 @@ function ConnectorChain({
               className="px-1.5 py-0.5 typo-caption bg-secondary/40 border border-primary/10 rounded-card text-foreground"
             >
               {credentials.map((c) => (
-                <option key={c.id} value={c.id}>{c.name} ({c.service_type})</option>
+                <option key={c.id} value={c.id}>{c.name} ({c.serviceType})</option>
               ))}
             </select>
           </div>
@@ -306,7 +306,7 @@ function MonitoringChain({
           <span className="inline-flex items-center gap-1 typo-caption text-foreground">
             <Key className="w-3 h-3 text-emerald-400" />
             <span className="font-medium">{credential.name}</span>
-            <span className="text-foreground/50 font-mono">({credential.service_type})</span>
+            <span className="text-foreground/50 font-mono">({credential.serviceType})</span>
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 typo-caption text-amber-400">
@@ -591,7 +591,7 @@ export default function ProjectOverviewPage() {
   // platform_type — covers user-renamed credentials and OAuth-imported ones
   // where the legacy matcher would otherwise leak past the filter.
   const isGitHubCred = (c: PersonaCredential) => {
-    if (c.service_type === 'github' || c.service_type === 'github_actions') return true;
+    if (c.serviceType === 'github' || c.serviceType === 'github_actions') return true;
     if (!c.metadata) return false;
     try {
       const meta = JSON.parse(c.metadata);
@@ -599,7 +599,7 @@ export default function ProjectOverviewPage() {
     } catch { return false; }
   };
   const isGitLabCred = (c: PersonaCredential) => {
-    if (c.service_type === 'gitlab') return true;
+    if (c.serviceType === 'gitlab') return true;
     if (!c.metadata) return false;
     try {
       const meta = JSON.parse(c.metadata);
@@ -607,7 +607,7 @@ export default function ProjectOverviewPage() {
     } catch { return false; }
   };
   const repoCreds = credentials.filter((c) => isGitHubCred(c) || isGitLabCred(c));
-  const sentryCreds = credentials.filter((c) => c.service_type === 'sentry');
+  const sentryCreds = credentials.filter((c) => c.serviceType === 'sentry');
 
   // Fetch repo stats
   const loadRepoStats = useCallback(async () => {

@@ -1,5 +1,4 @@
-import { matchCredentialToConnector } from './connectorMatching';
-import type { PersonaCredential } from '@/lib/types/types';
+import { matchCredentialToConnector, type CredentialLike } from './connectorMatching';
 
 export type ConnectorHealth = 'ready' | 'missing' | 'failed';
 
@@ -18,12 +17,12 @@ export interface ConnectorHealthInput {
 export function buildConnectorRailItems(
   connectors: ConnectorHealthInput[] | null | undefined,
   credentialLinks: Record<string, string>,
-  credentials: PersonaCredential[],
+  credentials: CredentialLike[],
 ): ConnectorRailItem[] {
   if (!connectors || connectors.length === 0) return [];
 
   // Pre-build credential-by-id map to avoid O(N*M) lookups
-  const credentialsById = new Map<string, PersonaCredential>();
+  const credentialsById = new Map<string, CredentialLike>();
   for (const cred of credentials) credentialsById.set(cred.id, cred);
 
   return connectors.map((connector) => {

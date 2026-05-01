@@ -29,7 +29,7 @@ export function useOcr() {
   }, [refresh]);
 
   const geminiCredential = credentials.find(
-    (c) => c.service_type === "google_gemini",
+    (c) => c.serviceType === "google_gemini",
   );
 
   return {

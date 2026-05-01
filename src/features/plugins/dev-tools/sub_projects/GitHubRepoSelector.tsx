@@ -50,7 +50,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
       try {
         const credentials = await listCredentials();
         const ghCred = credentials.find(
-          (c) => c.service_type === 'github' || c.service_type === 'github_actions',
+          (c) => c.serviceType === 'github' || c.serviceType === 'github_actions',
         );
         if (!ghCred) { setLoading(false); return; }
 

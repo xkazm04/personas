@@ -3,6 +3,7 @@ use ts_rs::TS;
 
 /// A single entry in the immutable credential audit log.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CredentialAuditEntry {
     pub id: String,
@@ -18,6 +19,7 @@ pub struct CredentialAuditEntry {
 
 /// Aggregated usage stats for a single credential.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub struct CredentialUsageStats {
     pub credential_id: String,

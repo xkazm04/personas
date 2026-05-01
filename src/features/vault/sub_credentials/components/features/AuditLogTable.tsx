@@ -95,10 +95,10 @@ export function AuditLogTable({ auditLog }: { auditLog: CredentialAuditEntry[] }
                     </span>
                   </td>
                   <td className="px-3 py-1.5 typo-caption text-foreground truncate max-w-[300px]">
-                    {entry.persona_name ? `by ${entry.persona_name}` : entry.detail ?? ''}
+                    {entry.personaName ? `by ${entry.personaName}` : entry.detail ?? ''}
                   </td>
                   <td className="px-3 py-1.5 typo-caption text-foreground tabular-nums text-right whitespace-nowrap">
-                    {formatRelativeTime(entry.created_at, '')}
+                    {formatRelativeTime(entry.createdAt, '')}
                   </td>
                 </tr>
               );

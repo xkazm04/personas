@@ -49,6 +49,7 @@ function credentialRecord(o: Partial<CredentialMetadata> = {}): CredentialMetada
     id: 'c-1',
     name: 'Gmail',
     service_type: 'gmail',
+    serviceType: 'gmail',
     metadata: null,
     healthcheck_last_success: true,
     healthcheck_last_message: null,

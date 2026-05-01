@@ -29,15 +29,12 @@ export function analyzeCredentialGaps(
   credentials: CredentialMetadata[],
   selectedConnectorNames?: Set<string>,
 ): CredentialGapResult {
-  // Adapt CredentialMetadata[] to the PersonaCredential shape expected by matchCredentialToConnector
+  // Adapt CredentialMetadata[] (snake_case) to CredentialLike (camelCase serviceType)
+  // expected by matchCredentialToConnector.
   const asPersonaCreds = credentials.map((c) => ({
     id: c.id,
     name: c.name,
-    service_type: c.service_type,
-    metadata: c.metadata,
-    last_used_at: c.last_used_at,
-    created_at: c.created_at,
-    updated_at: c.updated_at,
+    serviceType: c.service_type,
   }));
 
   let readyCount = 0;

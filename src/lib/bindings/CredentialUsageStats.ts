@@ -3,12 +3,12 @@
 /**
  * Aggregated usage stats for a single credential.
  */
-export type CredentialUsageStats = { credential_id: string, total_accesses: number, distinct_personas: number, last_accessed_at: string | null, first_accessed_at: string | null, 
+export type CredentialUsageStats = { credentialId: string, totalAccesses: number, distinctPersonas: number, lastAccessedAt: string | null, firstAccessedAt: string | null, 
 /**
  * Accesses in the last 24 hours.
  */
-accesses_last_24h: number, 
+accessesLast24h: number, 
 /**
  * Accesses in the last 7 days.
  */
-accesses_last_7d: number, };
+accessesLast7d: number, };

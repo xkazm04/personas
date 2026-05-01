@@ -1,6 +1,6 @@
 import { Star } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PersonaCredential } from '@/lib/types/types';
+import type { CredentialLike } from './connectorMatching';
 
 // ============================================================================
 // Types
@@ -8,8 +8,8 @@ import type { PersonaCredential } from '@/lib/types/types';
 
 export interface CredentialPickerProps {
   isOpen: boolean;
-  matchingCreds: PersonaCredential[];
-  otherCreds: PersonaCredential[];
+  matchingCreds: CredentialLike[];
+  otherCreds: CredentialLike[];
   totalCredentials: number;
   onLinkCredential: (credentialId: string, credentialName: string) => void;
 }
@@ -47,7 +47,7 @@ export function CredentialPicker({
                     <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="typo-body text-foreground truncate">{cred.name}</p>
-                      <p className="typo-body text-foreground">{cred.service_type}</p>
+                      <p className="typo-body text-foreground">{cred.serviceType}</p>
                     </div>
                   </button>
                 ))}
@@ -69,7 +69,7 @@ export function CredentialPicker({
                     <div className="w-3 h-3 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
                       <p className="typo-body text-foreground truncate">{cred.name}</p>
-                      <p className="typo-body text-foreground">{cred.service_type}</p>
+                      <p className="typo-body text-foreground">{cred.serviceType}</p>
                     </div>
                   </button>
                 ))}

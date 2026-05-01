@@ -63,6 +63,14 @@ export interface CredentialMetadata {
   id: string;
   name: string;
   service_type: string;
+  /**
+   * camelCase mirror of `service_type`. Lets `CredentialMetadata[]` satisfy
+   * `CredentialLike[]` (and structural callers that read `serviceType`)
+   * without renaming all 80+ snake-case read sites in one go. Both fields
+   * carry the same value; remove one when the broader CredentialMetadata
+   * → bindings migration lands.
+   */
+  serviceType: string;
   metadata: string | null;
   healthcheck_last_success: boolean | null;
   healthcheck_last_message: string | null;
@@ -118,17 +126,15 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     ? parsedMetadata.usage_count
     : 0;
 
-  // Parse scoped_resources blob — newer Rust field; ts-rs binding may not
-  // include it until cargo test regenerates. Read defensively.
-  const rawScoped = (c as unknown as { scoped_resources?: string | null }).scoped_resources;
-  const scopedResources = rawScoped
-    ? parseJsonOrDefault<CredentialMetadata['scopedResources']>(rawScoped, null)
+  const scopedResources = c.scopedResources
+    ? parseJsonOrDefault<CredentialMetadata['scopedResources']>(c.scopedResources, null)
     : null;
 
   return {
     id: c.id,
     name: c.name,
-    service_type: c.service_type,
+    service_type: c.serviceType,
+    serviceType: c.serviceType,
     metadata: c.metadata,
     healthcheck_last_success: lastSuccess,
     healthcheck_last_message: lastMessage,
@@ -138,10 +144,10 @@ export function toCredentialMetadata(c: PersonaCredential): CredentialMetadata {
     oauth_last_refresh_at: oauthLastRefreshAt,
     oauth_token_expires_at: oauthTokenExpiresAt,
     usage_count: usageCount,
-    last_used_at: c.last_used_at,
+    last_used_at: c.lastUsedAt,
     scopedResources,
-    created_at: c.created_at,
-    updated_at: c.updated_at,
+    created_at: c.createdAt,
+    updated_at: c.updatedAt,
   };
 }
 

@@ -1,9 +1,8 @@
 import { Link, CheckCircle2, XCircle, AlertCircle, Activity, Plus, ChevronDown, Wrench } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import type { PersonaCredential } from '@/lib/types/types';
 import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
-import { rankCredentialsForConnector } from './connectorMatching';
+import { rankCredentialsForConnector, type CredentialLike } from './connectorMatching';
 import {
   getStatusKey,
   STATUS_CONFIG,
@@ -18,7 +17,7 @@ import { CredentialPicker } from './CredentialPicker';
 export interface ConnectorRowProps {
   status: ConnectorStatus;
   tools: { name: string; description?: string | null }[];
-  credentials: PersonaCredential[];
+  credentials: CredentialLike[];
   isLinking: boolean;
   onToggleLink: () => void;
   onTest: () => void;

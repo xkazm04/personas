@@ -71,15 +71,15 @@ export function CredentialAuditTimeline({ credentialId }: CredentialAuditTimelin
           <>
             <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Activity className="w-3 h-3" />
-              {tx(al.total_accesses, { count: stats.total_accesses })}
+              {tx(al.total_accesses, { count: stats.totalAccesses })}
             </span>
             <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Users className="w-3 h-3" />
-              {tx(stats.distinct_personas === 1 ? al.personas_one : al.personas_other, { count: stats.distinct_personas })}
+              {tx(stats.distinctPersonas === 1 ? al.personas_one : al.personas_other, { count: stats.distinctPersonas })}
             </span>
             <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
               <Clock className="w-3 h-3" />
-              {tx(al.accesses_24h, { count: stats.accesses_last_24h })}
+              {tx(al.accesses_24h, { count: stats.accessesLast24h })}
             </span>
           </>
         )}

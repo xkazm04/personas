@@ -91,7 +91,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
       allCreds.filter(
         (c) =>
           c.id !== credential.id &&
-          c.service_type !== 'mcp_gateway' &&
+          c.serviceType !== 'mcp_gateway' &&
           !memberIds.has(c.id),
       ),
     [allCreds, credential.id, memberIds],
@@ -271,7 +271,7 @@ export function GatewayMembersModal({ credential, onClose }: GatewayMembersModal
                         <option value="">{gw.pick_credential}</option>
                         {eligibleCreds.map((c) => (
                           <option key={c.id} value={c.id}>
-                            {c.name} ({c.service_type})
+                            {c.name} ({c.serviceType})
                           </option>
                         ))}
                       </select>

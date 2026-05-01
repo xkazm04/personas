@@ -23,9 +23,11 @@ export function useCredentialTags(credential: CredentialMetadata) {
     try {
       const updatedRaw = await credApi.updateCredential(credential.id, {
         name: null,
-        service_type: null,
-        encrypted_data: null,
+        serviceType: null,
+        encryptedData: null,
+        iv: null,
         metadata,
+        sessionEncryptedData: null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({

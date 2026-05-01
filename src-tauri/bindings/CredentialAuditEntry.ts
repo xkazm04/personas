@@ -3,8 +3,8 @@
 /**
  * A single entry in the immutable credential audit log.
  */
-export type CredentialAuditEntry = { id: string, credential_id: string, credential_name: string, 
+export type CredentialAuditEntry = { id: string, credentialId: string, credentialName: string, 
 /**
  * Operation type: "decrypt", "create", "update", "delete", "healthcheck"
  */
-operation: string, persona_id: string | null, persona_name: string | null, detail: string | null, created_at: string, };
+operation: string, personaId: string | null, personaName: string | null, detail: string | null, createdAt: string, };

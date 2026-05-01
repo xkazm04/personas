@@ -71,9 +71,9 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
     );
   }
 
-  const hasActivity = stats && stats.total_accesses > 0;
-  const unusedDays = stats?.last_accessed_at
-    ? Math.floor((Date.now() - new Date(stats.last_accessed_at).getTime()) / 86400000)
+  const hasActivity = stats && stats.totalAccesses > 0;
+  const unusedDays = stats?.lastAccessedAt
+    ? Math.floor((Date.now() - new Date(stats.lastAccessedAt).getTime()) / 86400000)
     : null;
 
   return (
@@ -105,22 +105,22 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             <StatCard
               icon={<Activity className={`w-3.5 h-3.5 ${INFO_STATUS.text}`} />}
               label={it.total_accesses}
-              value={stats.total_accesses.toString()}
+              value={stats.totalAccesses.toString()}
             />
             <StatCard
               icon={<Users className={`w-3.5 h-3.5 ${AI_STATUS.text}`} />}
               label={it.distinct_personas}
-              value={stats.distinct_personas.toString()}
+              value={stats.distinctPersonas.toString()}
             />
             <StatCard
               icon={<Clock className={`w-3.5 h-3.5 ${WARNING_STATUS.text}`} />}
               label={it.last_24h}
-              value={stats.accesses_last_24h.toString()}
+              value={stats.accessesLast24h.toString()}
             />
             <StatCard
               icon={<Shield className={`w-3.5 h-3.5 ${SUCCESS_STATUS.text}`} />}
               label={it.last_7d}
-              value={stats.accesses_last_7d.toString()}
+              value={stats.accessesLast7d.toString()}
             />
           </div>
 
@@ -137,10 +137,10 @@ export function CredentialIntelligence({ credentialId }: CredentialIntelligenceP
             </div>
           )}
 
-          {stats.first_accessed_at && (
+          {stats.firstAccessedAt && (
             <div className="typo-body text-foreground space-y-0.5">
-              <div>{tx(it.first_accessed, { timestamp: formatTimestamp(stats.first_accessed_at, 'Never') })}</div>
-              <div>{tx(it.last_accessed, { timestamp: formatTimestamp(stats.last_accessed_at, 'Never') })}</div>
+              <div>{tx(it.first_accessed, { timestamp: formatTimestamp(stats.firstAccessedAt, 'Never') })}</div>
+              <div>{tx(it.last_accessed, { timestamp: formatTimestamp(stats.lastAccessedAt, 'Never') })}</div>
             </div>
           )}
         </div>

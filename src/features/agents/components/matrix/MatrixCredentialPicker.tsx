@@ -9,7 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface CredentialItem {
   id: string;
   name: string;
-  service_type: string;
+  serviceType: string;
 }
 
 interface MatrixCredentialPickerProps {
@@ -52,7 +52,7 @@ export function MatrixCredentialPicker({
                   <Star className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
                   <span className="text-[11px] text-foreground truncate">{cred.name}</span>
                   <span className="text-[10px] text-foreground ml-auto flex-shrink-0">
-                    {cred.service_type}
+                    {cred.serviceType}
                   </span>
                 </button>
               ))}
@@ -76,7 +76,7 @@ export function MatrixCredentialPicker({
                   <div className="w-3 h-3 flex-shrink-0" />
                   <span className="text-[11px] text-foreground truncate">{cred.name}</span>
                   <span className="text-[10px] text-foreground ml-auto flex-shrink-0">
-                    {cred.service_type}
+                    {cred.serviceType}
                   </span>
                 </button>
               ))}

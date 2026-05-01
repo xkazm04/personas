@@ -76,12 +76,12 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
 
       const created = await createCredential({
         name: input.name,
-        service_type: input.service_type,
-        encrypted_data: "", // Sent as session_encrypted_data instead
+        serviceType: input.service_type,
+        encryptedData: "", // Sent as sessionEncryptedData instead
         iv: "",
         metadata: null,
-        session_encrypted_data,
-        healthcheck_passed: input.healthcheck_passed ?? null,
+        sessionEncryptedData: session_encrypted_data,
+        healthcheckPassed: input.healthcheck_passed ?? null,
       });
       // Optimistic: append the returned credential instead of re-fetching the full list
       const credMeta = toCredMeta(created);
@@ -105,11 +105,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
 
       const updated = await updateCredential(id, {
         name: input.name ?? null,
-        service_type: input.service_type ?? null,
-        encrypted_data: null,
+        serviceType: input.service_type ?? null,
+        encryptedData: null,
         iv: null,
         metadata: null,
-        session_encrypted_data: session_encrypted_data ?? null,
+        sessionEncryptedData: session_encrypted_data ?? null,
       });
       // Optimistic: replace the updated credential in-place instead of re-fetching
       const credMeta = toCredMeta(updated);

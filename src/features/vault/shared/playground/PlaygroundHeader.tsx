@@ -36,9 +36,11 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
     try {
       const updatedRaw = await credApi.updateCredential(credential.id, {
         name: trimmed,
-        service_type: null,
-        encrypted_data: null,
+        serviceType: null,
+        encryptedData: null,
+        iv: null,
         metadata: null,
+        sessionEncryptedData: null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({
@@ -58,9 +60,11 @@ export function PlaygroundHeader({ credential, connector, onClose }: PlaygroundH
     try {
       const updatedRaw = await credApi.updateCredential(credential.id, {
         name: null,
-        service_type: null,
-        encrypted_data: null,
+        serviceType: null,
+        encryptedData: null,
+        iv: null,
         metadata,
+        sessionEncryptedData: null,
       });
       const updated = toCredentialMetadata(updatedRaw);
       useVaultStore.setState((s) => ({

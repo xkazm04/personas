@@ -1,4 +1,11 @@
-import type { PersonaCredential } from '@/lib/types/types';
+/**
+ * Structural credential shape used by connector-matching. Accepts either
+ * `CredentialLike` (camelCase wire shape) or any frontend type that
+ * mirrors `serviceType`. Callers passing `CredentialMetadata` (snake_case
+ * `service_type`) must map at the call site until that derived type is
+ * also migrated.
+ */
+export type CredentialLike = { id: string; name: string; serviceType: string };
 
 /** Minimum connector name length for fuzzy (prefix / substring) matching. */
 const MIN_FUZZY_LENGTH = 4;
@@ -16,11 +23,11 @@ const MIN_FUZZY_LENGTH = 4;
  * names like "api", "db", or "http".
  */
 export function matchCredentialToConnector(
-  credentials: PersonaCredential[],
+  credentials: CredentialLike[],
   connectorName: string,
-): PersonaCredential | null {
+): CredentialLike | null {
   // 1. Exact service_type match
-  const exact = credentials.find((c) => c.service_type === connectorName);
+  const exact = credentials.find((c) => c.serviceType === connectorName);
   if (exact) return exact;
 
   if (connectorName.length < MIN_FUZZY_LENGTH) return null;
@@ -28,8 +35,8 @@ export function matchCredentialToConnector(
   // 2. Prefix match (either direction) -- only if unambiguous (single match)
   const prefixMatches = credentials.filter(
     (c) =>
-      c.service_type.startsWith(connectorName) ||
-      connectorName.startsWith(c.service_type),
+      c.serviceType.startsWith(connectorName) ||
+      connectorName.startsWith(c.serviceType),
   );
   if (prefixMatches.length === 1) return prefixMatches[0]!;
 
@@ -48,13 +55,13 @@ export function matchCredentialToConnector(
  * for a credential picker dropdown.
  */
 export function rankCredentialsForConnector(
-  credentials: PersonaCredential[],
+  credentials: CredentialLike[],
   connectorName: string,
-): { matching: PersonaCredential[]; others: PersonaCredential[] } {
+): { matching: CredentialLike[]; others: CredentialLike[] } {
   const lower = connectorName.toLowerCase();
 
-  const matching: PersonaCredential[] = [];
-  const others: PersonaCredential[] = [];
+  const matching: CredentialLike[] = [];
+  const others: CredentialLike[] = [];
 
   const fuzzyEligible = connectorName.length >= MIN_FUZZY_LENGTH;
 
@@ -64,8 +71,8 @@ export function rankCredentialsForConnector(
         credentials
           .filter(
             (c) =>
-              c.service_type.startsWith(connectorName) ||
-              connectorName.startsWith(c.service_type),
+              c.serviceType.startsWith(connectorName) ||
+              connectorName.startsWith(c.serviceType),
           )
           .map((c) => c.id),
       )
@@ -73,7 +80,7 @@ export function rankCredentialsForConnector(
   const prefixUnambiguous = prefixHits.size === 1;
 
   for (const cred of credentials) {
-    const isExact = cred.service_type === connectorName;
+    const isExact = cred.serviceType === connectorName;
     const isPrefix = prefixUnambiguous && prefixHits.has(cred.id);
     const isNameMatch = fuzzyEligible && cred.name.toLowerCase().includes(lower);
 

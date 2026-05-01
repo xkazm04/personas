@@ -67,18 +67,18 @@ export function ExecutionsTab({ credentialId, createdAt }: ExecutionsTabProps) {
                     {entry.operation}
                   </span>
                   <div className="flex-1 min-w-0 typo-body text-foreground truncate">
-                    {entry.persona_name && (
-                      <span className="text-foreground">{entry.persona_name}</span>
+                    {entry.personaName && (
+                      <span className="text-foreground">{entry.personaName}</span>
                     )}
                     {entry.detail && (
-                      <span className="text-foreground">{entry.persona_name ? ' · ' : ''}{entry.detail}</span>
+                      <span className="text-foreground">{entry.personaName ? ' · ' : ''}{entry.detail}</span>
                     )}
-                    {!entry.persona_name && !entry.detail && (
+                    {!entry.personaName && !entry.detail && (
                       <span className="text-foreground italic">--</span>
                     )}
                   </div>
                   <span className="typo-body text-foreground shrink-0">
-                    {formatTimestamp(entry.created_at, '')}
+                    {formatTimestamp(entry.createdAt, '')}
                   </span>
                 </div>
               );
