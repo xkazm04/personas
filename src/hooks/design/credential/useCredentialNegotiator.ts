@@ -128,7 +128,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
 
   const start = useCallback(async (
     serviceName: string,
-    connector: Record<string, unknown>,
+    connector: CredentialDesignConnector,
     fieldKeys: string[],
   ) => {
     serviceNameRef.current = serviceName;
@@ -153,7 +153,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
     // Cache the connector definition as a recipe for future reuse
     void saveRecipeFromDesign({
       match_existing: null,
-      connector: connector as unknown as CredentialDesignConnector,
+      connector,
       setup_instructions: '',
       summary: '',
     }, 'negotiator').catch((err) => { logger.warn('Failed to cache recipe from negotiator (non-critical)', { error: err }); });
@@ -169,7 +169,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
         }))
       : undefined;
 
-    await flow.start(serviceName, connector, fieldKeys, authForBackend);
+    await flow.start(serviceName, connector as unknown as Record<string, unknown>, fieldKeys, authForBackend);
   }, [flow.start, flow.setResult, flow.setPhase, sp.reset, authServices]);
 
   // completeStep operates on visible indices -- translates to original for refs/playbook

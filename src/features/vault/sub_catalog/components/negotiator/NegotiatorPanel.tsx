@@ -73,7 +73,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
     const fieldKeys = designResult.connector.fields.map((f) => f.key);
     negotiator.start(
       designResult.connector.label,
-      designResult.connector as unknown as Record<string, unknown>,
+      designResult.connector,
       fieldKeys,
     );
   };
