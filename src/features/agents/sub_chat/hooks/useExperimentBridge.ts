@@ -119,8 +119,11 @@ async function deliverExperimentResult(
       personaId: exp.personaId,
       workingMemory: remaining.length > 0 ? serializeExperiments(remaining) : null,
     }).catch(() => {/* best effort */});
-  } catch {
-    // Message creation failed — non-critical
+  } catch (err) {
+    // Non-critical: the result is in the lab tab regardless. But keep a
+    // breadcrumb — silent failure here makes "experiment results vanished"
+    // bug reports impossible to diagnose.
+    console.warn('[experiment-bridge] failed to deliver result for run', exp.runId, err);
   }
 }
 
