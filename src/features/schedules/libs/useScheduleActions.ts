@@ -54,6 +54,12 @@ export function useScheduleActions() {
     agent: CronAgent,
     newCron: string | null,
     newIntervalSeconds: number | null,
+    /** When the schedule is cron-mode, the IANA zone for evaluation.
+     *  - undefined: keep the existing config.timezone (or absence) untouched.
+     *  - string: overwrite config.timezone.
+     *  - null sentinel via empty string is NOT supported here — use the value
+     *    "" only to mean "remove the field" if needed in a future revision. */
+    newTimezone?: string,
   ) => {
     setState((s) => ({ ...s, editing: agent.trigger_id }));
     try {
@@ -81,9 +87,19 @@ export function useScheduleActions() {
       if (newCron) {
         configObj.cron = newCron;
         delete configObj.interval_seconds;
+        // Caller-supplied tz wins over existing; otherwise leave whatever is in
+        // baseConfig.timezone alone so a tz-edit does not require re-supplying it.
+        if (newTimezone !== undefined) {
+          if (newTimezone) configObj.timezone = newTimezone;
+          else delete configObj.timezone;
+        }
       } else if (newIntervalSeconds) {
         configObj.interval_seconds = newIntervalSeconds;
         delete configObj.cron;
+        // Interval-mode schedules don't use timezone (firing N seconds apart
+        // is zone-agnostic). Clear it so a Schedule that flipped from cron→interval
+        // doesn't leave a stale tz field that confuses readers.
+        delete configObj.timezone;
       }
 
       await updateTrigger(agent.trigger_id, agent.persona_id, {
@@ -129,9 +145,9 @@ export function useScheduleActions() {
 
   // -- Preview Cron --------------------------------------------------------
 
-  const previewCron = useCallback(async (expression: string) => {
+  const previewCron = useCallback(async (expression: string, timezone?: string) => {
     try {
-      const preview = await previewCronSchedule(expression, 5);
+      const preview = await previewCronSchedule(expression, 5, timezone);
       setState((s) => ({ ...s, cronPreview: preview }));
       return preview;
     } catch {

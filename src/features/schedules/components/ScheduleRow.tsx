@@ -18,8 +18,8 @@ interface ScheduleRowProps {
   isEditing: boolean;
   onManualExecute: () => void;
   onToggleEnabled: () => void;
-  onUpdateFrequency: (cron: string | null, intervalSeconds: number | null) => void;
-  onPreviewCron: (expression: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
+  onUpdateFrequency: (cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
+  onPreviewCron: (expression: string, timezone?: string) => Promise<import('@/api/pipeline/triggers').CronPreview | null>;
 }
 
 export default function ScheduleRow({
@@ -167,8 +167,8 @@ export default function ScheduleRow({
           agent={agent}
           currentSchedule={schedule}
           existingEntries={existingEntries}
-          onSave={(cron, interval) => {
-            onUpdateFrequency(cron, interval);
+          onSave={(cron, interval, tz) => {
+            onUpdateFrequency(cron, interval, tz);
             setShowFreqEditor(false);
           }}
           onCancel={() => setShowFreqEditor(false)}

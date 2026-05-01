@@ -161,7 +161,7 @@ export default function ScheduleTimeline() {
         isEditing={actionState.editing === entry.agent.trigger_id}
         onManualExecute={() => manualExecute(entry.agent)}
         onToggleEnabled={() => toggleEnabled(entry.agent)}
-        onUpdateFrequency={(cron, interval) => updateFrequency(entry.agent, cron, interval)}
+        onUpdateFrequency={(cron, interval, tz) => updateFrequency(entry.agent, cron, interval, tz)}
         onPreviewCron={previewCron}
       />
     ));

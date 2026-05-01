@@ -4,6 +4,7 @@ import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
 import { previewConflicts } from '../libs/calendarHelpers';
+import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
 import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -11,9 +12,9 @@ interface FrequencyEditorProps {
   agent: CronAgent;
   currentSchedule: string;
   existingEntries?: ScheduleEntry[];
-  onSave: (cron: string | null, intervalSeconds: number | null) => void;
+  onSave: (cron: string | null, intervalSeconds: number | null, timezone?: string) => void;
   onCancel: () => void;
-  onPreviewCron: (expression: string) => Promise<CronPreview | null>;
+  onPreviewCron: (expression: string, timezone?: string) => Promise<CronPreview | null>;
 }
 
 export default function FrequencyEditor({
@@ -34,8 +35,18 @@ export default function FrequencyEditor({
   );
   const [preview, setPreview] = useState<CronPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const timezone = useThemeStore((s) => s.timezone);
-  const tzLabel = timezone === 'local' ? 'Local' : timezone === 'utc' ? 'UTC' : timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
+  // Initialize from the trigger's persisted zone if any; otherwise default to
+  // the user's detected zone so a save persists a tz instead of leaving the
+  // field None and inheriting the system-local fallback.
+  const [scheduleTz, setScheduleTz] = useState<string | undefined>(
+    agent.timezone ?? getDetectedTimezone(),
+  );
+  const themeTimezone = useThemeStore((s) => s.timezone);
+  // Display label for the cron preview's "next runs" column. We render in the
+  // schedule's own zone (scheduleTz) when set, otherwise the user's app-theme
+  // pref, otherwise system local.
+  const previewDisplayTz = scheduleTz ?? (themeTimezone === 'local' ? undefined : themeTimezone === 'utc' ? 'UTC' : themeTimezone);
+  const tzLabel = previewDisplayTz ? previewDisplayTz.split('/').pop()?.replace(/_/g, ' ') || previewDisplayTz : 'Local';
 
   // Overlap detection: how many times in the next 7 days does this schedule conflict?
   const overlapCount = useMemo(() => {
@@ -60,12 +71,12 @@ export default function FrequencyEditor({
     }
     const timer = setTimeout(async () => {
       setPreviewLoading(true);
-      const result = await onPreviewCron(cronInput.trim());
+      const result = await onPreviewCron(cronInput.trim(), scheduleTz);
       setPreview(result);
       setPreviewLoading(false);
     }, 400);
     return () => clearTimeout(timer);
-  }, [cronInput, mode, onPreviewCron]);
+  }, [cronInput, mode, scheduleTz, onPreviewCron]);
 
   const handlePresetSelect = (cron: string) => {
     setCronInput(cron);
@@ -74,9 +85,13 @@ export default function FrequencyEditor({
 
   const handleSave = () => {
     if (mode === 'custom' && cronInput.trim()) {
-      onSave(cronInput.trim(), null);
+      // Always pass the picker value (even if undefined for "system local")
+      // so the saved config is explicit about its zone choice.
+      onSave(cronInput.trim(), null, scheduleTz);
     } else if (intervalInput) {
-      onSave(null, parseInt(intervalInput, 10));
+      // Interval mode is zone-agnostic; pass undefined and let the merge clear
+      // any stale tz field from a prior cron-mode config.
+      onSave(null, parseInt(intervalInput, 10), undefined);
     }
   };
 
@@ -166,6 +181,14 @@ export default function FrequencyEditor({
                 placeholder="*/15 * * * *"
                 className="w-full px-3 py-2 typo-code font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
               />
+              <div className="flex items-center gap-2">
+                <label className="typo-caption text-foreground shrink-0">Timezone</label>
+                <TimezoneSelect
+                  value={scheduleTz}
+                  onChange={setScheduleTz}
+                  className="flex-1 px-2 py-1 typo-code bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 focus-visible:outline-none focus-visible:border-primary/30"
+                />
+              </div>
               {/* Preview */}
               {previewLoading && (
                 <p className="typo-caption text-foreground">{t.schedules.previewing}</p>
@@ -184,11 +207,9 @@ export default function FrequencyEditor({
                           <p className="text-foreground text-[10px] uppercase tracking-wider">{t.schedules.next_runs} ({tzLabel})</p>
                           {preview.next_runs.slice(0, 3).map((run, i) => (
                             <p key={i} className="font-mono text-[11px] text-foreground">
-                              {timezone === 'utc'
-                                ? new Date(run).toLocaleString(undefined, { timeZone: 'UTC' })
-                                : timezone !== 'local'
-                                  ? new Date(run).toLocaleString(undefined, { timeZone: timezone })
-                                  : new Date(run).toLocaleString()
+                              {previewDisplayTz
+                                ? new Date(run).toLocaleString(undefined, { timeZone: previewDisplayTz })
+                                : new Date(run).toLocaleString()
                               }
                             </p>
                           ))}

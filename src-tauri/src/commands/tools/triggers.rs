@@ -1287,6 +1287,10 @@ pub struct CronAgent {
     pub trigger_id: String,
     pub cron_expression: Option<String>,
     pub interval_seconds: Option<u64>,
+    /// IANA timezone the cron is evaluated in. None means the backend falls
+    /// back to system-local — surfaced here so the schedule UI can render the
+    /// trigger's actual zone instead of guessing from the user's app theme.
+    pub timezone: Option<String>,
     pub trigger_enabled: bool,
     pub last_triggered_at: Option<String>,
     pub next_trigger_at: Option<String>,
@@ -1335,16 +1339,17 @@ pub fn list_cron_agents(
 
     let rows = stmt.query_map([&cutoff], |row| {
         let config_json: Option<String> = row.get("trigger_config")?;
-        let (cron_expression, interval_seconds) = config_json
+        let (cron_expression, interval_seconds, timezone) = config_json
             .as_deref()
             .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
             .map(|v| {
                 (
                     v.get("cron").and_then(|c| c.as_str().map(String::from)),
                     v.get("interval_seconds").and_then(|i| i.as_u64()),
+                    v.get("timezone").and_then(|t| t.as_str().map(String::from)),
                 )
             })
-            .unwrap_or((None, None));
+            .unwrap_or((None, None, None));
 
         let description = cron_expression
             .as_deref()
@@ -1365,6 +1370,7 @@ pub fn list_cron_agents(
             trigger_id: row.get("trigger_id")?,
             cron_expression,
             interval_seconds,
+            timezone,
             trigger_enabled: row.get::<_, i32>("trigger_enabled")? != 0,
             last_triggered_at: row.get("last_triggered_at")?,
             next_trigger_at: row.get("next_trigger_at")?,
@@ -1453,6 +1459,7 @@ pub fn seed_mock_cron_agent(
         trigger_id,
         cron_expression: Some(cron_expr.to_string()),
         interval_seconds: None,
+        timezone: None,
         trigger_enabled: true,
         last_triggered_at: Some(now_str.clone()),
         next_trigger_at: Some(next),
