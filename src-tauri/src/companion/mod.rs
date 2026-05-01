@@ -9,6 +9,7 @@
 
 pub mod brain;
 pub mod disk;
+pub mod dispatcher;
 pub mod observability;
 pub mod prompt;
 pub mod session;

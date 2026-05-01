@@ -46,6 +46,70 @@ export async function companionResetConversation(
   return invoke<void>('companion_reset_conversation', { wipeTranscript });
 }
 
+export interface DoctrineIngestSummary {
+  filesSeen: number;
+  filesMissing: number;
+  chunksInserted: number;
+  chunksUpdated: number;
+  chunksUnchanged: number;
+  chunksDeleted: number;
+  errors: string[];
+}
+
+/**
+ * Re-run doctrine ingestion. Idempotent — unchanged chunks are skipped.
+ * Useful when curated docs change and Athena should pick up the latest
+ * without an app restart.
+ */
+export async function companionReingestDoctrine(): Promise<DoctrineIngestSummary> {
+  return invoke<DoctrineIngestSummary>('companion_reingest_doctrine');
+}
+
+// ── Phase 3: actions + approvals ───────────────────────────────────────
+
+export interface PendingApproval {
+  id: string;
+  action: string;
+  rationale: string;
+  paramsJson: string;
+  humanReviewId: string | null;
+  createdAt: string;
+}
+
+export interface ApprovalOutcome {
+  id: string;
+  status: 'approved' | 'rejected';
+  message: string;
+}
+
+export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
+  return invoke<PendingApproval[]>('companion_list_pending_approvals');
+}
+
+export async function companionApproveAction(
+  approvalId: string,
+): Promise<ApprovalOutcome> {
+  return invoke<ApprovalOutcome>('companion_approve_action', { approvalId });
+}
+
+export async function companionRejectAction(
+  approvalId: string,
+  reason?: string,
+): Promise<ApprovalOutcome> {
+  return invoke<ApprovalOutcome>('companion_reject_action', { approvalId, reason });
+}
+
+/** Tauri event channel emitted when a turn produces new approval rows. */
+export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
+
+/** Payload for COMPANION_APPROVALS_EVENT — array of newly-created approvals. */
+export interface CreatedApproval {
+  id: string;
+  action: string;
+  paramsJson: string;
+  rationale: string;
+}
+
 /** Tauri event channel for streaming Claude CLI lines into the panel. */
 export const COMPANION_STREAM_EVENT = 'companion://stream';
 

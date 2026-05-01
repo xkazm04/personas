@@ -6,6 +6,7 @@
 //! compiles cleanly.
 
 pub mod consolidation;
+pub mod doctrine;
 pub mod embeddings;
 pub mod episodic;
 pub mod graph;

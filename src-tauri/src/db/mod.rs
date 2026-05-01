@@ -151,6 +151,15 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
 
     tracing::info!(path = %db_path.display(), "Initializing user data database");
 
+    // Register sqlite-vec as an auto-extension BEFORE the pool exists.
+    // Pools opened before registration hold connections that lack vec0
+    // (auto-extensions only apply to NEW connections). This bites the
+    // companion's first-boot ingest because its small pool's connections
+    // are all opened during migrations below — pre-registration would
+    // mean "no such module: vec0" from any vec query on those connections.
+    #[cfg(feature = "ml")]
+    crate::engine::vector_store::ensure_vec_registered_pub();
+
     let manager = SqliteConnectionManager::file(&db_path);
     let pool = Pool::builder()
         .max_size(2)

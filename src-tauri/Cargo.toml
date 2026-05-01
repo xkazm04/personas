@@ -121,9 +121,20 @@ ammonia = "4"
 bytemuck = "1"
 
 # Vector Knowledge Base (Phase 1: sqlite-vec + local embeddings)
+#
+# IMPORTANT — keep ort's `load-dynamic` feature OFF. fastembed's default
+# `ort-download-binaries` already pulls in a prebuilt onnxruntime that
+# the build script wires up at link time. Adding `load-dynamic` here
+# flips ort into runtime-DLL-lookup mode, which then panics at boot
+# because nothing has placed `onnxruntime.dll` next to the exe (the
+# panic surfaces as `An error occurred while attempting to load the
+# ONNX Runtime binary at onnxruntime.dll: ...`). If the binary size
+# becomes a problem and load-dynamic is wanted back, the fix is to
+# also bundle onnxruntime.dll as a Tauri resource and ensure it lands
+# next to personas-desktop.exe in both dev and prod builds.
 sqlite-vec = { version = "0.1", optional = true }
 fastembed = { version = "4", optional = true }
-ort = { version = "2.0.0-rc.9", features = ["load-dynamic"], optional = true }
+ort = { version = "2.0.0-rc.9", optional = true }
 
 # P2P / Identity (Phase 1: Invisible Apps)
 ed25519-dalek = { version = "2", features = ["serde", "zeroize", "rand_core"], optional = true }

@@ -53,10 +53,31 @@ pub fn ensure_initialized() -> Result<PathBuf, AppError> {
         fs::create_dir_all(root.join(sub))?;
     }
 
-    // Constitution: write fresh on every init iff missing. Once on disk it's
-    // user-owned; we never overwrite it from the embedded copy. Constitution
-    // upgrades are deliberate edits — see CONSTITUTION_VERSION in templates.
-    write_if_absent(&root.join("constitution.md"), CONSTITUTION_MD)?;
+    // Constitution: write fresh iff missing. Once on disk it's user-owned;
+    // we never overwrite arbitrary edits from the embedded copy.
+    //
+    // BUT: when a known-marker section is missing on disk, we treat that
+    // as a pre-upgrade copy and replace once. This lets us roll out new
+    // canonical sections (like the doctrine paragraph) without bricking
+    // existing installs. Users who customize will get a `.bak` of their
+    // version next to it.
+    // Marker-based upgrade: if the on-disk constitution is missing any of
+    // the canonical sections, we replace it (after backing up the old
+    // version once). New section markers added here will reach existing
+    // installs on the next app start.
+    let const_path = root.join("constitution.md");
+    const REQUIRED_MARKERS: &[&str] =
+        &["# Reference docs", "# Proposing actions", "update_identity"];
+    let needs_upgrade = std::fs::read_to_string(&const_path)
+        .map(|c| !REQUIRED_MARKERS.iter().all(|m| c.contains(m)))
+        .unwrap_or(false);
+    if needs_upgrade {
+        let _ = std::fs::copy(&const_path, root.join("constitution.bak.md"));
+        std::fs::write(&const_path, CONSTITUTION_MD)?;
+        tracing::info!("companion: upgraded constitution.md (new sections added; old saved as constitution.bak.md)");
+    } else {
+        write_if_absent(&const_path, CONSTITUTION_MD)?;
+    }
 
     // Identity: substitute the creation timestamp, then write iff missing.
     let now = Utc::now().to_rfc3339();

@@ -1,18 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, RotateCcw, Send, X } from 'lucide-react';
+import { BookOpen, Bot, RotateCcw, Send, X } from 'lucide-react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useCompanionStore } from './companionStore';
 import {
+  COMPANION_APPROVALS_EVENT,
   COMPANION_STREAM_EVENT,
+  companionListPendingApprovals,
   companionListRecentMessages,
+  companionReingestDoctrine,
   companionResetConversation,
   companionSendMessage,
   type CompanionStreamEvent,
+  type CreatedApproval,
 } from '@/api/companion';
+import { ApprovalCard } from './ApprovalCard';
+import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -31,6 +37,7 @@ export default function CompanionPanel() {
   const streaming = useCompanionStore((s) => s.streaming);
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
+  const approvals = useCompanionStore((s) => s.approvals);
 
   const setMessages = useCompanionStore((s) => s.setMessages);
   const appendMessage = useCompanionStore((s) => s.appendMessage);
@@ -38,6 +45,8 @@ export default function CompanionPanel() {
   const appendStreamingText = useCompanionStore((s) => s.appendStreamingText);
   const resetStreamingText = useCompanionStore((s) => s.resetStreamingText);
   const setSendError = useCompanionStore((s) => s.setSendError);
+  const setApprovals = useCompanionStore((s) => s.setApprovals);
+  const removeApproval = useCompanionStore((s) => s.removeApproval);
 
   const isOpen = state === 'open';
 
@@ -65,6 +74,28 @@ export default function CompanionPanel() {
                 silentCatch('companion_reset_conversation')(err);
               }
             }}
+            onRefreshDoctrine={async () => {
+              const addToast = useToastStore.getState().addToast;
+              try {
+                const summary = await companionReingestDoctrine();
+                const changed =
+                  summary.chunksInserted +
+                  summary.chunksUpdated +
+                  summary.chunksDeleted;
+                addToast(
+                  changed === 0
+                    ? t.plugins.companion.doctrine_up_to_date
+                    : `${t.plugins.companion.doctrine_refreshed} (+${summary.chunksInserted} / ~${summary.chunksUpdated} / -${summary.chunksDeleted})`,
+                  'success',
+                );
+              } catch (err: unknown) {
+                addToast(
+                  `${t.plugins.companion.doctrine_refresh_failed}: ${err instanceof Error ? err.message : String(err)}`,
+                  'error',
+                );
+                silentCatch('companion_reingest_doctrine')(err);
+              }
+            }}
           />
           <Body
             initialized={initialized}
@@ -73,12 +104,15 @@ export default function CompanionPanel() {
             streaming={streaming}
             streamingText={streamingText}
             sendError={sendError}
+            approvals={approvals}
             setMessages={setMessages}
             appendMessage={appendMessage}
             setStreaming={setStreaming}
             appendStreamingText={appendStreamingText}
             resetStreamingText={resetStreamingText}
             setSendError={setSendError}
+            setApprovals={setApprovals}
+            removeApproval={removeApproval}
           />
         </motion.div>
       )}
@@ -89,9 +123,11 @@ export default function CompanionPanel() {
 function Header({
   onClose,
   onReset,
+  onRefreshDoctrine,
 }: {
   onClose: () => void;
   onReset: () => void;
+  onRefreshDoctrine: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -113,6 +149,14 @@ function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={onRefreshDoctrine}
+          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          aria-label={t.plugins.companion.refresh_doctrine}
+          title={t.plugins.companion.refresh_doctrine}
+        >
+          <BookOpen className="w-4 h-4" />
+        </button>
         <button
           onClick={onReset}
           className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
@@ -140,12 +184,15 @@ interface BodyProps {
   streaming: boolean;
   streamingText: string;
   sendError: string | null;
+  approvals: ReturnType<typeof useCompanionStore.getState>['approvals'];
   setMessages: (m: BodyProps['messages']) => void;
   appendMessage: (m: BodyProps['messages'][number]) => void;
   setStreaming: (v: boolean) => void;
   appendStreamingText: (s: string) => void;
   resetStreamingText: () => void;
   setSendError: (e: string | null) => void;
+  setApprovals: (a: BodyProps['approvals']) => void;
+  removeApproval: (id: string) => void;
 }
 
 function Body(props: BodyProps) {
@@ -156,16 +203,19 @@ function Body(props: BodyProps) {
     streaming,
     streamingText,
     sendError,
+    approvals,
     setMessages,
     appendMessage,
     setStreaming,
     appendStreamingText,
     resetStreamingText,
     setSendError,
+    setApprovals,
+    removeApproval,
   } = props;
   const { t } = useTranslation();
 
-  // Initial transcript fetch — once init is done.
+  // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
   useEffect(() => {
     if (!initialized || fetchedRef.current) return;
@@ -173,7 +223,10 @@ function Body(props: BodyProps) {
     companionListRecentMessages(50)
       .then((msgs) => setMessages(msgs))
       .catch(silentCatch('companion_list_recent_messages'));
-  }, [initialized, setMessages]);
+    companionListPendingApprovals()
+      .then((list) => setApprovals(list))
+      .catch(silentCatch('companion_list_pending_approvals'));
+  }, [initialized, setMessages, setApprovals]);
 
   // Subscribe to streaming events from the backend.
   useEffect(() => {
@@ -203,6 +256,33 @@ function Body(props: BodyProps) {
       unlisten?.();
     };
   }, [appendStreamingText, setSendError]);
+
+  // Subscribe to approval-creation events. Each event payload is the
+  // array of approvals created in the just-finished turn — we refetch
+  // canonical pending list to stay in sync (handles edge cases like an
+  // approval that finalized in a different surface mid-stream).
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let cancelled = false;
+    listen<CreatedApproval[]>(COMPANION_APPROVALS_EVENT, () => {
+      if (cancelled) return;
+      companionListPendingApprovals()
+        .then((list) => setApprovals(list))
+        .catch(silentCatch('companion_list_pending_approvals'));
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
+      })
+      .catch(silentCatch('companion_approvals_listen'));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [setApprovals]);
 
   // Auto-scroll on new content.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -274,6 +354,20 @@ function Body(props: BodyProps) {
             {streamingText || t.plugins.companion.thinking}
           </Bubble>
         )}
+        {approvals.map((a) => (
+          <ApprovalCard
+            key={a.id}
+            approval={a}
+            onResolved={(id) => {
+              removeApproval(id);
+              // Pull the canonical transcript so the system episode the
+              // backend just logged (action outcome) shows up.
+              companionListRecentMessages(50)
+                .then((msgs) => setMessages(msgs))
+                .catch(silentCatch('companion_list_recent_messages'));
+            }}
+          />
+        ))}
         {sendError && (
           <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
             {sendError}

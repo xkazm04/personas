@@ -1,22 +1,21 @@
 //! System-prompt composition for the companion's CLI session.
 //!
-//! Three layers, fed to Claude every turn:
+//! Layers fed to Claude every turn:
 //!   1. Constitution — static character + voice + provenance contract.
 //!   2. Identity — evolving self-model from `identity.md`.
-//!   3. Working context — observability digest + retrieved memory.
+//!   3. Observability digest — current state of the Personas app.
+//!   4. Recalled conversation — episodes via hybrid retrieval.
+//!   5. Reference (doctrine) — relevant chunks of the curated app docs.
 //!
-//! Phase 2: the working context now includes
-//!   - The observability digest (current state of the Personas app)
-//!   - Hybrid retrieval (recent + semantic, see brain::retrieval)
-//!
-//! Phase 3 will add provenance footers, BM25 fusion, and graph traversal.
+//! The two recall sections are kept distinct so Athena can tell us-history
+//! ("we discussed X") from canonical reference ("the docs say X").
 
 use std::fs;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
-use crate::companion::brain::episodic;
-use crate::companion::brain::retrieval;
+use crate::companion::brain::episodic::{self, Episode};
+use crate::companion::brain::retrieval::{self, DoctrineHit, Recall};
 use crate::companion::disk;
 use crate::companion::observability;
 use crate::db::{DbPool, UserDbPool};
@@ -42,24 +41,31 @@ pub async fn build_system_prompt(
     let identity =
         fs::read_to_string(root.join("identity.md")).unwrap_or_else(|_| String::new());
 
-    // Observability — best-effort.
     let observability_md = observability::build(sys_db)
         .ok()
         .as_ref()
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
-    // Retrieved memory.
-    let recalled = match embedder {
+    let recall = match embedder {
         Some(emb) => retrieval::retrieve(user_db, emb, session_id, query)
             .await
             .unwrap_or_default(),
-        None => episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
+        None => Recall {
+            episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
+            doctrine: Vec::new(),
+        },
     };
 
-    let transcript = format_transcript(&recalled);
+    let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
 
-    Ok(compose(&constitution, &identity, &observability_md, &transcript))
+    Ok(compose(
+        &constitution,
+        &identity,
+        &observability_md,
+        &recall,
+        &onboarding_md,
+    ))
 }
 
 #[cfg(not(feature = "ml"))]
@@ -81,18 +87,28 @@ pub async fn build_system_prompt(
         .map(observability::format_for_prompt)
         .unwrap_or_default();
 
-    let recent = episodic::list_recent(user_db, session_id, 20).unwrap_or_default();
-    let transcript = format_transcript(&recent);
+    let recall = Recall {
+        episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
+        doctrine: Vec::new(),
+    };
 
-    Ok(compose(&constitution, &identity, &observability_md, &transcript))
+    let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
+
+    Ok(compose(
+        &constitution,
+        &identity,
+        &observability_md,
+        &recall,
+        &onboarding_md,
+    ))
 }
 
-fn format_transcript(recalled: &[episodic::Episode]) -> String {
-    if recalled.is_empty() {
+fn format_episodes(episodes: &[Episode]) -> String {
+    if episodes.is_empty() {
         return String::new();
     }
     let mut s = String::from("\n\n# Recalled conversation (oldest first)\n\n");
-    for ep in recalled {
+    for ep in episodes {
         s.push_str(&format!(
             "## {} — {}\n\n{}\n\n",
             ep.role, ep.created_at, ep.content
@@ -101,9 +117,37 @@ fn format_transcript(recalled: &[episodic::Episode]) -> String {
     s
 }
 
-fn compose(constitution: &str, identity: &str, observability_md: &str, transcript: &str) -> String {
+fn format_doctrine(doctrine: &[DoctrineHit]) -> String {
+    if doctrine.is_empty() {
+        return String::new();
+    }
+    let mut s = String::from(
+        "\n\n# Reference — Personas docs (cite by path when you draw on these)\n\n",
+    );
+    for d in doctrine {
+        s.push_str(&format!("## From `{}`\n\n{}\n\n", d.file_path, d.content));
+    }
+    s
+}
+
+fn compose(
+    constitution: &str,
+    identity: &str,
+    observability_md: &str,
+    recall: &Recall,
+    onboarding_md: &str,
+) -> String {
+    let episodes_md = format_episodes(&recall.episodes);
+    let doctrine_md = format_doctrine(&recall.doctrine);
+
     let mut out = String::with_capacity(
-        constitution.len() + identity.len() + observability_md.len() + transcript.len() + 128,
+        constitution.len()
+            + identity.len()
+            + observability_md.len()
+            + episodes_md.len()
+            + doctrine_md.len()
+            + onboarding_md.len()
+            + 128,
     );
     out.push_str(constitution);
     if !identity.is_empty() {
@@ -111,6 +155,68 @@ fn compose(constitution: &str, identity: &str, observability_md: &str, transcrip
         out.push_str(identity);
     }
     out.push_str(observability_md);
-    out.push_str(transcript);
+    out.push_str(&episodes_md);
+    out.push_str(&doctrine_md);
+    // Onboarding sits at the very end so its instructions are the last
+    // thing Athena reads before forming a reply — most recency-weighted.
+    out.push_str(onboarding_md);
     out
+}
+
+/// Detect a fresh-install state (no prior conversation + identity.md is
+/// still placeholder-shaped) and return a focused interview-mode addendum.
+/// Empty string in normal operation.
+fn onboarding_addendum_if_needed(identity: &str, episodes: &[episodic::Episode]) -> String {
+    let no_episodes = episodes.is_empty();
+    // Identity is "fresh" if it still contains the placeholder bullets we
+    // seed it with. Once Athena writes a real identity (or the user edits
+    // it), those markers disappear.
+    let identity_is_placeholder = identity.contains("(seeded from intake interview)")
+        || identity.contains("(rhythms, patterns, what flow looks like for him)");
+    if !no_episodes || !identity_is_placeholder {
+        return String::new();
+    }
+    String::from(
+        r#"
+
+# ONBOARDING MODE — first conversation
+
+This is Michal's first conversation with you. His identity layer is still
+just placeholders. Your job in this conversation is to run a real intake
+interview that produces a foundation worth building on. Be present and
+warm — this is the start of a long working relationship, not a form to
+fill out.
+
+The interview has five phases. Don't rush. One phase per turn unless he
+asks you to move faster.
+
+1. **Orientation** (1 turn) — introduce yourself briefly. Be honest about
+   what you are and how the relationship works (the constitution is your
+   reference, you have a brain that grows over time, every fact you'll
+   remember about him will be cited). Then ask what he'd like to be
+   called and what's on his mind today.
+2. **His work** (2-3 turns) — what is he building. Who for. What does
+   "shipping" look like. What's the *current* phase. Don't accept vague
+   answers; press gently for specifics. The texture matters more than
+   the bullet points.
+3. **His patterns** (2-3 turns) — when does he ship vs. stall. What kind
+   of nudge helps when he's stuck. What *doesn't* help (the things that
+   feel patronizing or generic). When does he go to sleep.
+4. **Boundaries** (1-2 turns) — anything off-limits to discuss; quiet
+   hours for proactive nudges; how he wants the "execute with approval"
+   flow to feel for him specifically (more pre-amble or less; cite IDs
+   or describe in prose).
+5. **Identity draft** (1 turn) — synthesize what you heard into a fresh
+   identity.md. Show him the draft *in your reply* (in plain markdown,
+   not a code block) and emit:
+
+       OP: {"op": "propose_action", "action": "update_identity", "params": {"content": "<the full new identity.md content>"}, "rationale": "first-pass identity from our intake — please review and approve"}
+
+   The approval card lets him review and approve the write. If he wants
+   changes, iterate before approving.
+
+Do NOT emit propose_action for any other action during onboarding —
+keep this conversation focused on the interview itself.
+"#,
+    )
 }

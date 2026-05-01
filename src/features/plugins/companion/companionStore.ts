@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
+import type { PendingApproval } from '@/api/companion';
 
 export interface CompanionMessage {
   id: string;
@@ -33,6 +34,11 @@ interface CompanionStore {
   appendStreamingText: (chunk: string) => void;
   resetStreamingText: () => void;
   setSendError: (err: string | null) => void;
+
+  // Phase 3: approvals
+  approvals: PendingApproval[];
+  setApprovals: (a: PendingApproval[]) => void;
+  removeApproval: (id: string) => void;
 }
 
 export const useCompanionStore = create<CompanionStore>((set) => ({
@@ -58,4 +64,9 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
     set((s) => ({ streamingText: s.streamingText + chunk })),
   resetStreamingText: () => set({ streamingText: '' }),
   setSendError: (sendError) => set({ sendError }),
+
+  approvals: [],
+  setApprovals: (approvals) => set({ approvals }),
+  removeApproval: (id) =>
+    set((s) => ({ approvals: s.approvals.filter((a) => a.id !== id) })),
 }));

@@ -34,6 +34,10 @@ pub const DEFAULT_SESSION_ID: &str = "default";
 /// Tauri event channel that streams every CLI line to the frontend.
 pub const STREAM_EVENT: &str = "companion://stream";
 
+/// Tauri event channel for approval-card creation (Phase 3). Fires once
+/// per turn that produced any new approvals.
+pub const APPROVALS_EVENT: &str = "companion://approvals";
+
 /// Hard ceiling per turn — Opus is slow but should never sit forever.
 const TURN_TIMEOUT: Duration = Duration::from_secs(300);
 
@@ -196,6 +200,33 @@ pub async fn send_turn(
         }
     };
 
+    // Phase 3: extract any `{"op":...}` proposals from Athena's reply,
+    // persist them as approval rows, and strip them from the displayed
+    // text. The episode stores the cleaned text — what the user sees in
+    // the chat — so future turns' transcript is clean too.
+    let dispatched = match crate::companion::dispatcher::dispatch(
+        &user_db,
+        &session_id,
+        &assistant_text,
+    ) {
+        Ok(d) => d,
+        Err(e) => {
+            tracing::warn!(error = %e, "companion dispatcher failed; using raw text");
+            crate::companion::dispatcher::Dispatched {
+                cleaned_text: assistant_text.clone(),
+                approvals: Vec::new(),
+                warnings: vec![format!("dispatcher error: {e}")],
+            }
+        }
+    };
+    let display_text = if dispatched.cleaned_text.trim().is_empty() {
+        // The whole reply was ops with no prose. Don't render an empty
+        // bubble — replace with a tiny placeholder.
+        "(proposing actions — see cards below)".to_string()
+    } else {
+        dispatched.cleaned_text.clone()
+    };
+
     let assistant_ep_id = {
         #[cfg(feature = "ml")]
         {
@@ -206,7 +237,7 @@ pub async fn send_turn(
                         emb,
                         &session_id,
                         EpisodeRole::Assistant,
-                        &assistant_text,
+                        &display_text,
                     )
                     .await?
                 }
@@ -214,7 +245,7 @@ pub async fn send_turn(
                     &user_db,
                     &session_id,
                     EpisodeRole::Assistant,
-                    &assistant_text,
+                    &display_text,
                 )?,
             }
         }
@@ -224,10 +255,16 @@ pub async fn send_turn(
                 &user_db,
                 &session_id,
                 EpisodeRole::Assistant,
-                &assistant_text,
+                &display_text,
             )?
         }
     };
+
+    if !dispatched.approvals.is_empty() {
+        if let Err(e) = app.emit(APPROVALS_EVENT, &dispatched.approvals) {
+            tracing::warn!(error = %e, "companion approvals event emit failed");
+        }
+    }
 
     emit(
         app,

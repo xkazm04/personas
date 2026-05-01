@@ -17,6 +17,14 @@ use crate::error::AppError;
 /// Safe to call multiple times — only the first call takes effect.
 static INIT_VEC: Once = Once::new();
 
+/// Public entry point for callers (e.g., db::init) that need to ensure
+/// sqlite-vec is registered *before* a connection pool is created. Pools
+/// opened before this call hold connections that lack vec0; that's why
+/// we register globally as early as possible during app boot.
+pub fn ensure_vec_registered_pub() {
+    ensure_vec_registered()
+}
+
 fn ensure_vec_registered() {
     INIT_VEC.call_once(|| {
         // SAFETY: sqlite3_vec_init has the signature expected by sqlite3_auto_extension

@@ -1795,9 +1795,13 @@ pub fn run() {
             commands::obsidian_brain::graph::obsidian_graph_stop_watcher,
             // Companion (Athena)
             commands::companion::companion_init,
+            commands::companion::companion_reingest_doctrine,
             commands::companion::chat::companion_send_message,
             commands::companion::chat::companion_list_recent_messages,
             commands::companion::chat::companion_reset_conversation,
+            commands::companion::approvals::companion_list_pending_approvals,
+            commands::companion::approvals::companion_approve_action,
+            commands::companion::approvals::companion_reject_action,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,
