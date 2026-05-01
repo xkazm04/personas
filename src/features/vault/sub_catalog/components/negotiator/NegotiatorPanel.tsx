@@ -74,6 +74,23 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
 
   const negotiator = useCredentialNegotiator(negotiatorContext);
 
+  // Phase → header subtitle. Centralized so adding a new phase requires
+  // touching one place, not a 5-branch JSX ternary chain.
+  const phaseSubtitle = (() => {
+    switch (negotiator.phase) {
+      case 'idle':
+        return authDetectLoading ? negx.checking_auth : negx.auto_provisioning;
+      case 'planning':
+        return negx.generating_plan;
+      case 'guiding':
+        return tx(neg.provisioning_label, { label: designResult.connector.label });
+      case 'done':
+        return neg.captured;
+      case 'error':
+        return neg.error_title;
+    }
+  })();
+
   const handleStart = () => {
     const fieldKeys = designResult.connector.fields.map((f) => f.key);
     negotiator.start(
@@ -105,13 +122,7 @@ export function NegotiatorPanel({ designResult, onComplete, onClose, prefilledVa
             </div>
             <div>
               <h3 className="typo-heading font-bold tracking-tight text-foreground">{negx.panel_title}</h3>
-              <p className="typo-body text-foreground">
-                {negotiator.phase === 'idle' && (authDetectLoading ? negx.checking_auth : negx.auto_provisioning)}
-                {negotiator.phase === 'planning' && negx.generating_plan}
-                {negotiator.phase === 'guiding' && tx(neg.provisioning_label, { label: designResult.connector.label })}
-                {negotiator.phase === 'done' && neg.captured}
-                {negotiator.phase === 'error' && neg.error_title}
-              </p>
+              <p className="typo-body text-foreground">{phaseSubtitle}</p>
             </div>
           </div>
           <button
