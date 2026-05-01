@@ -156,7 +156,7 @@ export function useCredentialNegotiator(context?: NegotiatorContext) {
       connector: connector as unknown as CredentialDesignConnector,
       setup_instructions: '',
       summary: '',
-    }, 'negotiator').catch((err) => { logger.warn('Failed to cache recipe from negotiator (non-critical)', { error: String(err) }); });
+    }, 'negotiator').catch((err) => { logger.warn('Failed to cache recipe from negotiator (non-critical)', { error: err }); });
 
     // Convert AuthDetectionInfo[] to plain records for the backend invoke
     const authForBackend = authServices.length > 0
