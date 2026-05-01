@@ -2,7 +2,11 @@ import { useEffect, useId, useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const COLOR_PRESETS = [
+/** Persona color palette shown in the picker grid. The first entry doubles as
+ *  `DEFAULT_PERSONA_COLOR` — the fallback for new personas and the sentinel the
+ *  AI transform pipeline replaces with a random pick. Importers should reach
+ *  for the named exports rather than copying the array. */
+export const COLOR_PRESETS = [
   '#8b5cf6', // violet
   '#6366f1', // indigo
   '#3b82f6', // blue
@@ -13,7 +17,9 @@ const COLOR_PRESETS = [
   '#ef4444', // red
   '#ec4899', // pink
   '#a855f7', // purple
-];
+] as const;
+
+export const DEFAULT_PERSONA_COLOR = COLOR_PRESETS[0];
 
 const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 

@@ -1,5 +1,6 @@
 import type { ModelProfile, ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
 import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { DEFAULT_PERSONA_COLOR } from '@/features/shared/components/forms/ColorPicker';
 
 /**
  * Default execution timeout for a new persona, in milliseconds.
@@ -105,7 +106,7 @@ export function buildDraft(persona: { name: string; description?: string | null;
     name: persona.name,
     description: persona.description || '',
     icon: persona.icon || '',
-    color: persona.color || '#8b5cf6',
+    color: persona.color || DEFAULT_PERSONA_COLOR,
     maxConcurrent: persona.max_concurrent ?? 1,
     // 3 minutes. Previous default was ~16.6 min (1_000_000 ms), which was
     // effectively "no timeout" — hung model calls or runaway tool loops held

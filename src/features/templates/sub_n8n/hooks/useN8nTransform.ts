@@ -11,6 +11,7 @@ import {
   getN8nTransformSnapshot,
 } from '@/api/templates/n8nTransform';
 import type { N8nPersonaDraft, StreamingSection, SectionKind, SectionValidation } from '@/api/templates/n8nTransform';
+import { COLOR_PRESETS, DEFAULT_PERSONA_COLOR } from '@/features/shared/components/forms/ColorPicker';
 import {
   normalizeDraft,
   normalizeDraftFromUnknown,
@@ -19,12 +20,6 @@ import {
   type PersistedTransformContext,
 } from './n8nTypes';
 import type { N8nImportAction, TransformQuestion } from './useN8nImportReducer';
-
-// Color presets -- synced with ColorPicker.tsx
-const COLOR_PRESETS = [
-  '#8b5cf6', '#6366f1', '#3b82f6', '#06b6d4', '#10b981',
-  '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7',
-];
 
 export interface N8nTransformApi {
   /** Current transform run ID from the CLI stream */
@@ -154,11 +149,11 @@ export function useN8nTransform(
       }
 
       let completedDraft = normalizeDraft(normalized);
-      // Apply a random color if the transform didn't set one
-      if (!completedDraft.color || completedDraft.color === '#8b5cf6') {
+      // Apply a random color if the transform didn't set one (or left the default)
+      if (!completedDraft.color || completedDraft.color === DEFAULT_PERSONA_COLOR) {
         completedDraft = {
           ...completedDraft,
-          color: COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)] ?? '#8b5cf6',
+          color: COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)] ?? DEFAULT_PERSONA_COLOR,
         };
       }
       dispatch({ type: 'TRANSFORM_COMPLETED', draft: completedDraft });
