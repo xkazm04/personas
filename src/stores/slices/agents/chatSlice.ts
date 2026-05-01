@@ -419,15 +419,20 @@ function setupChatExecListeners(
   set: SetFn,
   get: GetFn,
 ) {
-  // Clean up any previous listeners
+  // Clean up any previous listeners. If the previous setup's IIFE is still
+  // pending (await listen in flight), this flips its closure-local `aborted`
+  // flag so it will unlisten as soon as each await resolves rather than
+  // attaching orphaned listeners that fire forever.
   chatExecCleanup?.();
   chatExecCleanup = null;
 
   let unlistenOutput: (() => void) | null = null;
   let unlistenStatus: (() => void) | null = null;
   let finalized = false;
+  let aborted = false;
 
   const cleanup = () => {
+    aborted = true;
     unlistenOutput?.();
     unlistenStatus?.();
     unlistenOutput = null;
@@ -441,14 +446,18 @@ function setupChatExecListeners(
     const { isTerminalState } = await import("@/lib/execution/executionState");
     const { classifyLine } = await import("@/lib/utils/terminalColors");
 
-    unlistenOutput = await listen<{ execution_id: string; line: string }>(
+    if (aborted) return;
+    const out = await listen<{ execution_id: string; line: string }>(
       EventName.EXECUTION_OUTPUT,
       (event) => {
         if (event.payload.execution_id !== executionId || finalized) return;
         get().appendExecutionOutput(event.payload.line);
       },
     );
-    unlistenStatus = await listen<{ execution_id: string; status: string }>(
+    if (aborted) { out(); return; }
+    unlistenOutput = out;
+
+    const status = await listen<{ execution_id: string; status: string }>(
       EventName.EXECUTION_STATUS,
       (event) => {
         if (event.payload.execution_id !== executionId || finalized) return;
@@ -463,6 +472,8 @@ function setupChatExecListeners(
         chatExecCleanup = null;
       },
     );
+    if (aborted) { status(); return; }
+    unlistenStatus = status;
   })();
 
   chatExecCleanup = cleanup;
