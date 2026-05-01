@@ -3,11 +3,23 @@ import { useAgentStore } from '@/stores/agentStore';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { silentCatch } from '@/lib/silentCatch';
+import { usePanelRunState } from '../../libs/usePanelRunState';
 
 export const REG_DEFAULT_THRESHOLD = 5;
 
+/**
+ * Shared state hook for the Regression panel and its variants.
+ *
+ * Wraps `usePanelRunState` (the canonical lab run-state primitive) so model
+ * selection, effort selection, and use-case filtering propagate consistently
+ * with AB / Arena / Eval / Matrix. Adds Regression-specific state:
+ *   - baselinePin / threshold / selectedVersion (delta computation)
+ *   - regressionRunId (run-id capture; not aliased to activeRunId because a
+ *     regression run intentionally overrides the panel's activeRunId scope)
+ *   - running (in-flight UI guard, distinct from `activeRunId` which is set
+ *     only AFTER startEval resolves)
+ */
 export function useRegressionPanelState() {
-  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const baselinePin = useAgentStore((s) => s.baselinePin);
   const loadBaseline = useAgentStore((s) => s.loadBaseline);
   const promptVersions = useAgentStore((s) => s.promptVersions);
@@ -15,25 +27,27 @@ export function useRegressionPanelState() {
   const evalResultsMap = useAgentStore((s) => s.evalResultsMap);
   const fetchEvalRuns = useAgentStore((s) => s.fetchEvalRuns);
   const fetchEvalResults = useAgentStore((s) => s.fetchEvalResults);
+  const cancelEval = useAgentStore((s) => s.cancelEval);
   const startEval = useAgentStore((s) => s.startEval);
   const isLabRunning = useAgentStore((s) => s.isLabRunning);
   const setLabMode = useAgentStore((s) => s.setLabMode);
 
+  const panel = usePanelRunState({
+    fetchRuns: (pid) => { fetchVersions(pid); fetchEvalRuns(pid); },
+    fetchResults: fetchEvalResults,
+    cancelRun: cancelEval,
+  });
+
+  const personaId = panel.selectedPersona?.id;
+
   const [threshold, setThreshold] = useState(REG_DEFAULT_THRESHOLD);
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
-  const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set());
   const [running, setRunning] = useState(false);
   const [regressionRunId, setRegressionRunId] = useState<string | null>(null);
 
-  const personaId = selectedPersona?.id;
-
   useEffect(() => {
-    if (personaId) {
-      loadBaseline(personaId);
-      fetchVersions(personaId);
-      fetchEvalRuns(personaId);
-    }
-  }, [personaId, loadBaseline, fetchVersions, fetchEvalRuns]);
+    if (personaId) loadBaseline(personaId);
+  }, [personaId, loadBaseline]);
 
   useEffect(() => {
     if (!selectedVersionId && promptVersions.length > 0) {
@@ -79,35 +93,29 @@ export function useRegressionPanelState() {
     [promptVersions, selectedVersionId],
   );
 
-  const toggleModel = useCallback((id: string) => {
-    setSelectedModels((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
   const handleRunRegression = useCallback(async () => {
-    if (!personaId || !baselinePin || !selectedVersionId || selectedModels.size === 0) return;
+    if (!personaId || !baselinePin || !selectedVersionId || panel.selectedModels.size === 0) return;
     setRunning(true);
     try {
-      const models = selectedModelsToConfigs(selectedModels);
+      const models = selectedModelsToConfigs(panel.selectedModels);
       const versionIds = [baselinePin.versionId, selectedVersionId];
       const runId = await startEval(personaId, versionIds, models);
-      if (runId) setRegressionRunId(runId);
+      if (runId) {
+        setRegressionRunId(runId);
+        panel.setActiveRunId(runId);
+      }
     } finally {
       setRunning(false);
     }
-  }, [personaId, baselinePin, selectedVersionId, selectedModels, startEval]);
+  }, [personaId, baselinePin, selectedVersionId, panel, startEval]);
 
   return {
+    ...panel,
     personaId,
     baselinePin,
     promptVersions,
     selectedVersionId, setSelectedVersionId,
     selectedVersion,
-    selectedModels, toggleModel,
     threshold, setThreshold,
     running,
     isLabRunning,
