@@ -1,10 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import * as Sentry from "@sentry/react";
+import { silentCatch } from "@/lib/silentCatch";
 
 export interface UpdateInfo {
   version: string;
   body: string | null;
 }
+
+/** Outcome of a manual check — used by Settings UI for toast feedback. */
+export type CheckOutcome = "update-available" | "up-to-date" | "failed";
 
 export function useAutoUpdater() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -14,8 +19,8 @@ export function useAutoUpdater() {
   const [error, setError] = useState<string | null>(null);
   const updateRef = useRef<Update | null>(null);
 
-  const checkForUpdate = useCallback(async () => {
-    if (isChecking) return;
+  const checkForUpdate = useCallback(async (): Promise<CheckOutcome> => {
+    if (isChecking) return "up-to-date";
     setIsChecking(true);
     setError(null);
     try {
@@ -27,9 +32,22 @@ export function useAutoUpdater() {
           body: update.body ?? null,
         });
         setUpdateAvailable(true);
+        Sentry.addBreadcrumb({
+          category: "update",
+          message: `Update available: v${update.version}`,
+          level: "info",
+        });
+        return "update-available";
       }
-    } catch {
-      // intentional: non-critical -- update endpoint may not be configured yet
+      Sentry.addBreadcrumb({
+        category: "update",
+        message: "No update available",
+        level: "info",
+      });
+      return "up-to-date";
+    } catch (err) {
+      silentCatch("useAutoUpdater:check")(err);
+      return "failed";
     } finally {
       setIsChecking(false);
     }
@@ -38,13 +56,31 @@ export function useAutoUpdater() {
   const installUpdate = useCallback(async () => {
     const update = updateRef.current;
     if (!update) return;
+    const installVersion = update.version;
     setIsInstalling(true);
     setError(null);
+    Sentry.addBreadcrumb({
+      category: "update",
+      message: `Update install started: v${installVersion}`,
+      level: "info",
+    });
     try {
       await update.downloadAndInstall();
+      // downloadAndInstall typically relaunches the app; this breadcrumb only
+      // fires if install completed without an immediate restart.
+      Sentry.addBreadcrumb({
+        category: "update",
+        message: `Update install completed: v${installVersion}`,
+        level: "info",
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to install update");
+      const message = err instanceof Error ? err.message : "Failed to install update";
+      setError(message);
       setIsInstalling(false);
+      Sentry.captureException(err, {
+        tags: { event: "update.install.failed" },
+        extra: { version: installVersion },
+      });
     }
   }, []);
 
@@ -55,16 +91,12 @@ export function useAutoUpdater() {
   }, []);
 
   useEffect(() => {
-    // Check after a 5-second delay on mount
-    const initialTimeout = setTimeout(() => {
-      checkForUpdate();
-    }, 5000);
-
-    // Then check every 6 hours
+    // Check after a 5-second delay on mount, then every 6 hours.
+    // Outcome is intentionally ignored — checkForUpdate already routes
+    // failures through silentCatch and successes through Sentry breadcrumbs.
+    const initialTimeout = setTimeout(() => { void checkForUpdate(); }, 5000);
     const interval = setInterval(
-      () => {
-        checkForUpdate();
-      },
+      () => { void checkForUpdate(); },
       6 * 60 * 60 * 1000,
     );
 

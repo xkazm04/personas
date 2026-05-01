@@ -156,6 +156,8 @@
     "update_available": "Update available: v{version}",
     "install_and_restart": "Install & Restart",
     "installing": "Installing...",
+    "update_install_failed": "Update install failed",
+    "update_install_retry": "Retry",
     "expand_sidebar": "Expand sidebar",
     "collapse_sidebar": "Collapse sidebar",
     "network_settings": "Network settings",
@@ -9052,7 +9054,8 @@
       "empty_transcript": "Say something. I'm listening.",
       "thinking": "Thinking…",
       "composer_placeholder": "Talk to Athena. Enter to send, Shift+Enter for a new line.",
-      "send": "Send"
+      "send": "Send",
+      "reset": "Reset conversation"
     },
     "ocr": {
       "title": "OCR",
