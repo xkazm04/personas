@@ -17,8 +17,8 @@ module.exports = {
     messages: {
       missingBaseModal:
         'This file uses role="dialog" but does not import BaseModal. ' +
-        'Use the shared BaseModal component from @/lib/ui/BaseModal for consistent ' +
-        'focus trap, Escape key handling, and backdrop dismiss behavior.',
+        'Use the shared BaseModal component from @/features/shared/components/modals (or @/lib/ui/BaseModal) ' +
+        'for consistent focus trap, Escape key handling, and backdrop dismiss behavior.',
     },
     schema: [],
   },
@@ -29,11 +29,28 @@ module.exports = {
     return {
       ImportDeclaration(node) {
         const source = node.source.value;
+        if (typeof source !== 'string') return;
         if (
-          typeof source === 'string' &&
-          (source.includes('BaseModal') || source.includes('lib/ui/BaseModal'))
+          source.includes('BaseModal') ||
+          source.includes('lib/ui/BaseModal') ||
+          source.includes('features/shared/components/modals') ||
+          source === '@/features/shared'
         ) {
           importsBaseModal = true;
+          return;
+        }
+        // Catch named imports of BaseModal regardless of source path
+        if (Array.isArray(node.specifiers)) {
+          for (const spec of node.specifiers) {
+            if (
+              spec.type === 'ImportSpecifier' &&
+              spec.imported &&
+              spec.imported.name === 'BaseModal'
+            ) {
+              importsBaseModal = true;
+              return;
+            }
+          }
         }
       },
       JSXAttribute(node) {
