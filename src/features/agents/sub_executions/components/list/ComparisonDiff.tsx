@@ -5,6 +5,9 @@ import { useToastStore } from '@/stores/toastStore';
 import { diffLines, jsonDiff } from '../../libs/comparisonHelpers';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('comparison-diff');
 
 export function OutputDiffSection({
   leftId,
@@ -31,7 +34,8 @@ export function OutputDiffSection({
       ]);
       setLogLeft(l);
       setLogRight(r);
-    } catch {
+    } catch (err) {
+      logger.warn('Failed to load comparison logs', { error: err });
       useToastStore.getState().addToast(e.failed_to_load_logs, 'error');
     } finally {
       setLoading(false);
@@ -124,7 +128,7 @@ export function JsonDiffSection({
   leftData: string | null;
   rightData: string | null;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const e = t.agents.executions;
   const [expanded, setExpanded] = useState(false);
   const diffs = useMemo(() => jsonDiff(leftData, rightData), [leftData, rightData]);
@@ -140,7 +144,9 @@ export function JsonDiffSection({
         {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         {label}
         {diffs.length > 0 ? (
-          <span className="typo-body text-amber-400/70">{diffs.length} diff{diffs.length > 1 ? 's' : ''}</span>
+          <span className="typo-body text-amber-400/70">
+            {tx(diffs.length === 1 ? e.diff_count_one : e.diff_count_other, { count: diffs.length })}
+          </span>
         ) : (
           <span className="typo-body text-foreground">{e.identical}</span>
         )}
