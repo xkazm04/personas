@@ -5,7 +5,6 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { Bot, RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useToastStore } from "@/stores/toastStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
@@ -24,9 +23,7 @@ import { usePersonaSwitchGuard } from '../hooks/usePersonaSwitchGuard';
 import { useEditorKeyboard } from '../hooks/useEditorKeyboard';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('EditorBody');
+import { toastCatch } from '@/lib/silentCatch';
 
 export function EditorBody() {
   const { t } = useTranslation();
@@ -122,12 +119,11 @@ export function EditorBody() {
       }
       setShowDeleteConfirm(false);
     } catch (err) {
-      logger.error("Failed to delete persona", { error: err instanceof Error ? err.message : String(err) });
       const msg = err instanceof Error ? err.message : String(err);
-      useToastStore.getState().addToast(t.agents.editor_ui.delete_failed.replace('{message}', msg), 'error');
+      toastCatch('EditorBody:deletePersona', t.agents.editor_ui.delete_failed.replace('{message}', msg))(err);
       // Keep the delete confirmation dialog open so the user can retry
     }
-  }, [selectedPersona, deletePersona, setShowDeleteConfirm]);
+  }, [selectedPersona, deletePersona, setShowDeleteConfirm, t]);
 
   if (!selectedPersona) {
     return (
