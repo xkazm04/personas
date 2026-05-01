@@ -61,16 +61,16 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
       )}
 
       {node.error_message && (
-        <div className="px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/15">
-          <div className="typo-code font-mono uppercase tracking-wider text-red-400/60 mb-1">{t.templates.diagram.error_label}</div>
-          <p className="typo-body text-red-400/90 leading-relaxed">{node.error_message}</p>
+        <div className="px-3 py-2 rounded-modal bg-status-error/10 border border-status-error/15">
+          <div className="typo-code font-mono uppercase tracking-wider text-status-error/60 mb-1">{t.templates.diagram.error_label}</div>
+          <p className="typo-body text-status-error/90 leading-relaxed">{node.error_message}</p>
         </div>
       )}
 
       {requestData && (
         <div>
-          <div className="typo-code font-mono uppercase tracking-wider text-blue-400/50 mb-1">{t.templates.diagram.request_label}</div>
-          <pre className="typo-code text-blue-300/70 bg-blue-500/5 border border-blue-500/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="typo-code font-mono uppercase tracking-wider text-status-info/50 mb-1">{t.templates.diagram.request_label}</div>
+          <pre className="typo-code text-status-info/70 bg-status-info/5 border border-status-info/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof requestData === 'string' ? requestData : JSON.stringify(requestData, null, 2)}
           </pre>
         </div>
@@ -78,8 +78,8 @@ export default function NodePopover({ node, onClose }: NodePopoverProps) {
 
       {responseData && (
         <div>
-          <div className="typo-code font-mono uppercase tracking-wider text-emerald-400/50 mb-1">{t.templates.diagram.response_label}</div>
-          <pre className="typo-code text-emerald-300/70 bg-emerald-500/5 border border-emerald-500/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
+          <div className="typo-code font-mono uppercase tracking-wider text-status-success/50 mb-1">{t.templates.diagram.response_label}</div>
+          <pre className="typo-code text-status-success/70 bg-status-success/5 border border-status-success/10 rounded-modal px-3 py-2 max-h-28 overflow-auto whitespace-pre-wrap break-words font-mono leading-relaxed">
             {typeof responseData === 'string' ? responseData : JSON.stringify(responseData, null, 2)}
           </pre>
         </div>
