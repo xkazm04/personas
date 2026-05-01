@@ -16,6 +16,7 @@ import { listHealingIssues } from '@/api/overview/healing';
 import { getRetryChain } from '@/api/overview/healing';
 import { createLogger } from '@/lib/log';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 const logger = createLogger('healing-overlay');
 
@@ -250,6 +251,7 @@ export function HealingOverlay({ execution, currentMs, totalMs }: HealingOverlay
 }
 
 function SeverityBadge({ severity }: { severity: string }) {
+  const { t } = useTranslation();
   const cls = severity === 'critical'
     ? 'bg-red-500/20 text-red-400 border-red-500/30'
     : severity === 'high'
@@ -260,7 +262,7 @@ function SeverityBadge({ severity }: { severity: string }) {
 
   return (
     <span className={`px-1.5 py-0.5 text-[10px] font-mono uppercase rounded border shrink-0 ${cls}`}>
-      {severity}
+      {tokenLabel(t, 'severity', severity)}
     </span>
   );
 }
