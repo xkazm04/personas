@@ -24,6 +24,7 @@ interface UseEditorSaveOptions {
 
 export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingPersonaId, suppressModelSave = false }: UseEditorSaveOptions) {
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const selectedPersonaId = selectedPersona?.id;
   const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
   const { pushUndo } = useEditorHistory();
 
@@ -48,7 +49,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
    *  original values. */
   const makeUndoEntry = useCallback(
     (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => {
-      const token = capturePersonaToken(selectedPersona?.id ?? null);
+      const token = capturePersonaToken(selectedPersonaId ?? null);
       return {
         operation: op,
         restore: async () => {
@@ -67,12 +68,12 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
         },
       };
     },
-    [selectedPersona, setDraft, setBaseline],
+    [selectedPersonaId, setDraft, setBaseline],
   );
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
-    if (!selectedPersona) return;
-    const savePersonaId = selectedPersona.id;
+    if (!selectedPersonaId) return;
+    const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
     const op: PersonaOperation = {
       kind: 'UpdateSettings',
@@ -94,11 +95,11 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, name: d.name, description: d.description, icon: d.icon, color: d.color, maxConcurrent: d.maxConcurrent, timeout: d.timeout, enabled: d.enabled, sensitive: d.sensitive }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
-  }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
+  }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
-    if (!selectedPersona) return;
-    const savePersonaId = selectedPersona.id;
+    if (!selectedPersonaId) return;
+    const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
 
     let profile: string | null;
@@ -145,7 +146,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, selectedModel: d.selectedModel, selectedProvider: d.selectedProvider, baseUrl: d.baseUrl, authToken: d.authToken, customModelName: d.customModelName, maxBudget: d.maxBudget, maxTurns: d.maxTurns, promptCachePolicy: d.promptCachePolicy }));
     pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
-  }, [selectedPersona, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
+  }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const handleSaveSettings = useDebouncedSaveGroup({
     draftRef,
@@ -166,7 +167,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     mode: 'debounced',
     delay: 800,
     deps: [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled, draft.sensitive],
-    enabled: !!selectedPersona && !pendingPersonaId,
+    enabled: !!selectedPersonaId && !pendingPersonaId,
   });
 
   const { isSaving: isSavingModel, lastError: modelError } = useTabSection({
@@ -176,7 +177,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     mode: 'debounced',
     delay: 800,
     deps: [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns, draft.promptCachePolicy],
-    enabled: !!selectedPersona && !pendingPersonaId && !suppressModelSave,
+    enabled: !!selectedPersonaId && !pendingPersonaId && !suppressModelSave,
   });
 
   const isSaving = isSavingSettings || isSavingModel;
