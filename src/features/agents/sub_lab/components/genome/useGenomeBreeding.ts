@@ -6,10 +6,8 @@ import type { FitnessObjective } from '@/lib/bindings/FitnessObjective';
 import type { GenomeBreedingRun } from '@/lib/bindings/GenomeBreedingRun';
 import type { GenomeBreedingResult } from '@/lib/bindings/GenomeBreedingResult';
 import type { PersonaGenome } from '@/lib/bindings/PersonaGenome';
-import { toastCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { log } from '@/lib/log';
-import { errMsg } from '@/stores/storeTypes';
 
 export function useGenomeBreeding() {
   const personas = useAgentStore((s) => s.personas);
@@ -44,7 +42,7 @@ export function useGenomeBreeding() {
 
   const loadRuns = useCallback(async () => {
     const data = await genomeApi.listBreedingRuns().catch((e) => {
-      log.warn('genome', 'listBreedingRuns failed', { error: errMsg(e, 'Failed to list breeding runs') });
+      toastCatch('lab:genome-list-runs', 'Failed to load breeding runs')(e);
       return [] as GenomeBreedingRun[];
     });
     setRuns(data);
@@ -53,7 +51,7 @@ export function useGenomeBreeding() {
 
   const loadResults = useCallback(async (runId: string) => {
     const data = await genomeApi.getBreedingResults(runId).catch((e) => {
-      log.warn('genome', 'getBreedingResults failed', { error: errMsg(e, 'Failed to get breeding results') });
+      toastCatch('lab:genome-load-results', 'Failed to load breeding results')(e);
       return [] as GenomeBreedingResult[];
     });
     setResults(data);
@@ -111,7 +109,10 @@ export function useGenomeBreeding() {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       pollRef.current = setInterval(async () => {
-        const updated = await genomeApi.listBreedingRuns().catch(() => [] as GenomeBreedingRun[]);
+        const updated = await genomeApi.listBreedingRuns().catch((e) => {
+          silentCatch('lab:genome-poll-runs')(e);
+          return [] as GenomeBreedingRun[];
+        });
         if (!mountedRef.current) return;
         setRuns(updated);
         const current = updated.find((r) => r.id === run.id);

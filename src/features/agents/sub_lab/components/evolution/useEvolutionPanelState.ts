@@ -6,6 +6,7 @@ import type { EvolutionPolicy } from '@/lib/bindings/EvolutionPolicy';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
 import type { FitnessObjective } from '@/lib/bindings/FitnessObjective';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 export interface EvolutionPanelState {
   personaId: string | undefined;
@@ -149,7 +150,10 @@ export function useEvolutionPanelState(): EvolutionPanelState {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
       pollRef.current = setInterval(async () => {
-        const updated = await evolutionApi.listCycles(personaId, 1).catch(() => []);
+        const updated = await evolutionApi.listCycles(personaId, 1).catch((e) => {
+          silentCatch('lab:evolution-poll-cycles')(e);
+          return [] as EvolutionCycle[];
+        });
         if (updated.length > 0 && (updated[0]!.status === 'completed' || updated[0]!.status === 'failed')) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;

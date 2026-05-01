@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
+import { silentCatch } from '@/lib/silentCatch';
 
 export const REG_DEFAULT_THRESHOLD = 5;
 
@@ -49,11 +50,19 @@ export function useRegressionPanelState() {
   }, [promptVersions, baselinePin, selectedVersionId]);
 
   useEffect(() => {
-    if (baselinePin?.runId) fetchEvalResults(baselinePin.runId);
+    if (baselinePin?.runId) {
+      void Promise.resolve(fetchEvalResults(baselinePin.runId)).catch(
+        silentCatch('lab:regression-baseline-results'),
+      );
+    }
   }, [baselinePin?.runId, fetchEvalResults]);
 
   useEffect(() => {
-    if (regressionRunId) fetchEvalResults(regressionRunId);
+    if (regressionRunId) {
+      void Promise.resolve(fetchEvalResults(regressionRunId)).catch(
+        silentCatch('lab:regression-current-results'),
+      );
+    }
   }, [regressionRunId, fetchEvalResults]);
 
   const baselineResults: LabEvalResult[] = useMemo(
