@@ -31,7 +31,7 @@ export function ExecutionListRow({
   isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
   onRowClick, onCopyId, onRerun, onAutoCompareRetry,
 }: ExecutionListRowProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
   const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
@@ -88,7 +88,7 @@ export function ExecutionListRow({
           <Tooltip content={e.output_tokens}><span>{formatTokens(execution.output_tokens)}</span></Tooltip>
         </div>
         <div className={`${compareMode ? 'col-span-1' : 'col-span-2'} flex items-center gap-2`}>
-          <span className="typo-code text-foreground/90">{formatCost(execution.cost_usd, { precision: 4 })}</span>
+          <span className="typo-code text-foreground/90">{formatCost(execution.cost_usd, { precision: 4, language })}</span>
           {!compareMode && <CostSparkline costs={executions.slice(execIdx, Math.min(executions.length, execIdx + 10)).map((e) => e.cost_usd).reverse()} />}
         </div>
       </div>
@@ -134,7 +134,7 @@ export function ExecutionListRow({
                 <div><span className="text-foreground typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
                 <div><span className="text-foreground typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
                 <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
-                <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">{formatCost(execution.cost_usd, { precision: 4 })}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">{formatCost(execution.cost_usd, { precision: 4, language })}</p></div>
                 <div><span className="text-foreground typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
               </div>
               {execution.input_data && (

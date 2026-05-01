@@ -41,25 +41,37 @@ export function formatRelativeTime(
  */
 export function formatCost(
   usd: number | null | undefined,
-  opts?: { precision?: 2 | 4 | 'auto' },
+  opts?: { precision?: 2 | 4 | 'auto'; language?: string },
 ): string {
   const precision = opts?.precision ?? 2;
+  const language = opts?.language ?? 'en';
+  // Costs are USD-denominated (LLM provider currency); only number
+  // formatting is locale-aware (decimal separator, grouping). UI callers
+  // should pass `language` from useTranslation() so non-English locales
+  // see e.g. "0,0042 $" in fr-FR instead of "$0.0042".
+  const fmt = (amount: number, digits: number) =>
+    new Intl.NumberFormat(language, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
+    }).format(amount);
 
-  if (usd == null) return precision === 2 ? '$0.00' : '\u2014';
+  if (usd == null) return precision === 2 ? fmt(0, 2) : '\u2014';
   if (precision === 2) {
-    if (usd === 0) return '$0.00';
-    if (usd < 0.01) return '<$0.01';
-    return `$${usd.toFixed(2)}`;
+    if (usd === 0) return fmt(0, 2);
+    if (usd < 0.01) return `<${fmt(0.01, 2)}`;
+    return fmt(usd, 2);
   }
   if (precision === 4) {
-    if (usd < 0.001) return '<$0.001';
-    return `$${usd.toFixed(4)}`;
+    if (usd < 0.001) return `<${fmt(0.001, 3)}`;
+    return fmt(usd, 4);
   }
   // 'auto'
-  if (usd < 0.001) return '<$0.001';
-  if (usd < 0.01) return `$${usd.toFixed(4)}`;
-  if (usd < 1) return `$${usd.toFixed(3)}`;
-  return `$${usd.toFixed(2)}`;
+  if (usd < 0.001) return `<${fmt(0.001, 3)}`;
+  if (usd < 0.01) return fmt(usd, 4);
+  if (usd < 1) return fmt(usd, 3);
+  return fmt(usd, 2);
 }
 
 // -- Badge color maps ----------------------------------------------------
