@@ -200,46 +200,14 @@ function n8nImportReducer(state: N8nImportState, action: N8nImportAction): N8nIm
     return handleSessionLoaded(action.payload);
   }
 
-  // Delegate to sub-reducers -- each handles its own slice
-  const nav = navigationReducer({ step: state.step }, action, state);
-  const transform = transformReducer({
-    questions: state.questions,
-    userAnswers: state.userAnswers,
-    transformSubPhase: state.transformSubPhase,
-    transforming: state.transforming,
-    backgroundTransformId: state.backgroundTransformId,
-    snapshotEpoch: state.snapshotEpoch,
-    adjustmentRequest: state.adjustmentRequest,
-    transformPhase: state.transformPhase,
-    transformLines: state.transformLines,
-    streamingSections: state.streamingSections,
-    draft: state.draft,
-    draftJson: state.draftJson,
-    draftJsonError: state.draftJsonError,
-  }, action);
-  const test = testReducer({
-    testStatus: state.testStatus,
-    testError: state.testError,
-    testRunId: state.testRunId,
-    testLines: state.testLines,
-    testPhase: state.testPhase,
-  }, action);
-  const session = sessionReducer({
-    sessionId: state.sessionId,
-    rawWorkflowJson: state.rawWorkflowJson,
-    workflowName: state.workflowName,
-    platform: state.platform,
-    error: state.error,
-    sessionWarning: state.sessionWarning,
-    parsedResult: state.parsedResult,
-    selectedToolIndices: state.selectedToolIndices,
-    selectedTriggerIndices: state.selectedTriggerIndices,
-    selectedConnectorNames: state.selectedConnectorNames,
-    confirming: state.confirming,
-    created: state.created,
-    platformNeedsConfirmation: state.platformNeedsConfirmation,
-    detectedConfidence: state.detectedConfidence,
-  }, action, state);
+  // Delegate to sub-reducers — each reads only the keys it cares about
+  // (its slice type is a strict subset of N8nImportState by construction).
+  // The final spread re-applies each slice in order; later slices win on
+  // any key collision, so the spread order matches sub-reducer authority.
+  const nav = navigationReducer(state, action, state);
+  const transform = transformReducer(state, action);
+  const test = testReducer(state, action);
+  const session = sessionReducer(state, action, state);
 
   return {
     ...nav,
