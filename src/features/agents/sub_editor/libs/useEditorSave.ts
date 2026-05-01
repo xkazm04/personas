@@ -166,7 +166,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     save: handleSaveSettings,
     mode: 'debounced',
     delay: 800,
-    deps: [draft.name, draft.description, draft.icon, draft.color, draft.maxConcurrent, draft.timeout, draft.enabled, draft.sensitive],
+    deps: SETTINGS_KEYS.map((k) => draft[k]),
     enabled: !!selectedPersonaId && !pendingPersonaId,
   });
 
@@ -176,7 +176,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     save: saveModelSettings,
     mode: 'debounced',
     delay: 800,
-    deps: [draft.selectedModel, draft.selectedProvider, draft.baseUrl, draft.authToken, draft.customModelName, draft.maxBudget, draft.maxTurns, draft.promptCachePolicy],
+    deps: MODEL_KEYS.map((k) => draft[k]),
     enabled: !!selectedPersonaId && !pendingPersonaId && !suppressModelSave,
   });
 
