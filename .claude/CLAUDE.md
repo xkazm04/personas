@@ -61,6 +61,7 @@ src-tauri/
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
 - `silentCatch()` for background errors (Sentry + console only)
 - `resolveError()` from `src/lib/errors/errorRegistry.ts` maps raw errors to friendly messages
+- ESLint rule `custom/no-silent-catch` warns on empty `catch {}` blocks — the next person debugging in production needs a Sentry breadcrumb, not a comment.
 
 ---
 

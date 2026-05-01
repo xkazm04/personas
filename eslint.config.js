@@ -13,6 +13,7 @@ const noRawRadiusClasses = require("./eslint-rules/no-raw-radius-classes.cjs");
 const noLowContrastTextClasses = require("./eslint-rules/no-low-contrast-text-classes.cjs");
 const noHardcodedJsxText = require("./eslint-rules/no-hardcoded-jsx-text.cjs");
 const noUnmanagedEffectResources = require("./eslint-rules/no-unmanaged-effect-resources.cjs");
+const noSilentCatch = require("./eslint-rules/no-silent-catch.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -36,6 +37,7 @@ export default tseslint.config(
           "no-low-contrast-text-classes": noLowContrastTextClasses,
           "no-hardcoded-jsx-text": noHardcodedJsxText,
           "no-unmanaged-effect-resources": noUnmanagedEffectResources,
+          "no-silent-catch": noSilentCatch,
         },
       },
     },
@@ -77,6 +79,7 @@ export default tseslint.config(
       "custom/no-low-contrast-text-classes": "warn",
       "custom/no-hardcoded-jsx-text": "warn",
       "custom/no-unmanaged-effect-resources": "warn",
+      "custom/no-silent-catch": "warn",
     },
   },
   // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge
