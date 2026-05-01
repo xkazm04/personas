@@ -54,8 +54,16 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.123 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.126 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floors:
+        // - 2.1.126: stale `/plugin` Uninstall state no longer reports
+        //   "Enabled" (sidecar pair stays consistent across plugin churn);
+        //   `--dangerously-skip-permissions` now bypasses prompts for writes
+        //   to `.claude/`, `.git/`, `.vscode/`, shell config files — see
+        //   `Patterns/descoped-reopenable.md` 2026-05-01 entry for the
+        //   sandbox-erosion threat model recorded against this run.
+        //   Versions 2.1.124 and 2.1.125 were skipped upstream — all changes
+        //   batched into 2.1.126.
         // - 2.1.121: `alwaysLoad: true` MCP server-config option (used by
         //   `cli_mcp_config`); `--resume` corrupt-line skip + external-build
         //   startup-crash fix; `--dangerously-skip-permissions` no longer
@@ -68,19 +76,11 @@ impl CliProvider for ClaudeProvider {
         //   `output_config: Extra inputs are not permitted` fix.
         // - 2.1.123: OAuth 401 retry loop fix when
         //   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` is set.
-        // Earlier floors still apply: 2.1.101 (UTF-8 corruption,
-        // `--dangerously-skip-permissions` downgrade, team permissions, 5-min
-        // API timeout, `--resume` large-session context loss, MCP outputSchema
-        // validation), 2.1.110 (stdio MCP stray-line disconnect, PreToolUse
-        // additionalContext loss, non-streaming hangs, MCP SSE hang on drop,
-        // Bash tool timeout, TRACEPARENT/TRACESTATE), 2.1.111 (init event
-        // `plugin_errors`), 2.1.113 (MCP concurrent-call watchdog, resumed
-        // long-context compact fix, subagent-stall clear error, Bedrock Opus
-        // 4.7 thinking-config fix, Bash `dangerouslyDisableSandbox` permission
-        // gate).
+        // Earlier floors elided — see git history of this file for the full
+        // 2.1.101 / 2.1.110 / 2.1.111 / 2.1.113 narrative if needed.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.123")
+        Some("2.1.126")
     }
 }
 
@@ -163,6 +163,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.123");
+        assert_eq!(min.unwrap(), "2.1.126");
     }
 }
