@@ -9,6 +9,7 @@ import {
   getTriggerHealthMap,
   validateTrigger,
   previewCronSchedule,
+  cronFireTimesInRange,
   getWebhookStatus,
   dryRunTrigger,
   listCronAgents,
@@ -63,6 +64,25 @@ describe("api/pipeline/triggers", () => {
     const preview = { valid: true, description: "Every hour", next_runs: [], error: null };
     mockInvoke("preview_cron_schedule", preview);
     expect(await previewCronSchedule("0 * * * *", 3)).toEqual(preview);
+  });
+
+  it("cronFireTimesInRange returns RFC3339 strings within window", async () => {
+    const runs = [
+      "2026-05-01T09:00:00Z",
+      "2026-05-02T09:00:00Z",
+      "2026-05-03T09:00:00Z",
+    ];
+    mockInvoke("cron_fire_times_in_range", runs);
+    const start = new Date("2026-05-01T00:00:00Z");
+    const end = new Date("2026-05-04T00:00:00Z");
+    expect(await cronFireTimesInRange("0 9 * * *", "America/New_York", start, end)).toEqual(runs);
+  });
+
+  it("cronFireTimesInRange tolerates undefined timezone (system-local fallback)", async () => {
+    mockInvoke("cron_fire_times_in_range", []);
+    const start = new Date("2026-05-01T00:00:00Z");
+    const end = new Date("2026-05-02T00:00:00Z");
+    expect(await cronFireTimesInRange("invalid-cron", undefined, start, end)).toEqual([]);
   });
 
   it("getWebhookStatus returns status", async () => {
