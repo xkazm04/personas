@@ -4,6 +4,7 @@ import { discoverConnectorResources, type DiscoveredItem } from '@/api/templates
 import type { PersonaConnectorSlot, TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { createLogger } from '@/lib/log';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
+import { useTranslation } from '@/i18n/useTranslation';
 
 const logger = createLogger('dynamic-question-options');
 
@@ -60,6 +61,7 @@ export function useDynamicQuestionOptions(
   retry: (questionId: string) => void;
 } {
   const credentials = useVaultStore((s) => s.credentials);
+  const { t, tx } = useTranslation();
 
   // Map of question id → stable dependency key; changing the key triggers a refetch.
   const [retryCounters, setRetryCounters] = useState<Record<string, number>>({});
@@ -112,7 +114,7 @@ export function useDynamicQuestionOptions(
             ...prev,
             [q.id]: {
               ...EMPTY_STATE,
-              error: 'Misconfigured: source=scope requires from_scope + from_credential_question',
+              error: t.templates.adopt_modal.dynamic_misconfigured_scope,
             },
           }));
           continue;
@@ -143,7 +145,7 @@ export function useDynamicQuestionOptions(
             loading: false,
             ready: items.length > 0,
             error: items.length === 0
-              ? `Open the ${credServiceType} credential and pick at least one ${fromScope}`
+              ? tx(t.templates.adopt_modal.dynamic_pick_resource, { service: credServiceType, resource: fromScope })
               : null,
             items,
             waitingOnParent: false,
@@ -201,8 +203,8 @@ export function useDynamicQuestionOptions(
         const errorMsg = items.length > 0
           ? null
           : requiresResource && scopeFilteredOut > 0
-            ? `Connect a ${category} credential and pick at least one ${requiresResource}`
-            : `No healthy ${category} credential connected`;
+            ? tx(t.templates.adopt_modal.dynamic_connect_with_resource, { category, resource: requiresResource })
+            : tx(t.templates.adopt_modal.dynamic_no_credential, { category });
         setStateByQuestion((prev) => ({
           ...prev,
           [q.id]: {
@@ -231,7 +233,7 @@ export function useDynamicQuestionOptions(
             ...prev,
             [q.id]: {
               ...EMPTY_STATE,
-              error: `No healthy ${src.service_type} credential connected`,
+              error: tx(t.templates.adopt_modal.dynamic_no_credential, { category: src.service_type }),
             },
           };
         });
@@ -286,7 +288,7 @@ export function useDynamicQuestionOptions(
           // Tauri serializes AppError as `{error: string, kind: string}` —
           // prefer the `error` field, fall back to `message`, then stringify.
           const extractMessage = (e: unknown): string => {
-            if (!e) return 'Unknown error';
+            if (!e) return t.templates.adopt_modal.dynamic_unknown_error;
             if (typeof e === 'string') return e;
             if (typeof e === 'object') {
               const obj = e as Record<string, unknown>;
@@ -313,7 +315,7 @@ export function useDynamicQuestionOptions(
             [q.id]: {
               loading: false,
               ready: false,
-              error: message || 'Failed to load options',
+              error: message || t.templates.adopt_modal.dynamic_load_failed,
               items: [],
               waitingOnParent: false,
             },
@@ -321,7 +323,10 @@ export function useDynamicQuestionOptions(
         });
     }
     // Intentionally depends on retryCounters so retry() re-fires the effect.
-  }, [questions, userAnswers, credentialByService, retryCounters]);
+    // t/tx come from the i18n provider with stable identity but are listed
+    // here for exhaustive-deps conformance.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, userAnswers, credentialByService, retryCounters, t, tx]);
 
   const retry = (questionId: string) => {
     setRetryCounters((prev) => ({ ...prev, [questionId]: (prev[questionId] ?? 0) + 1 }));

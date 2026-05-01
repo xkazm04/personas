@@ -6136,6 +6136,12 @@ export type Translations = {
       discard_title: string;
       discard_body: string;
       discard_confirm: string;
+      dynamic_misconfigured_scope: string;
+      dynamic_pick_resource: string;
+      dynamic_connect_with_resource: string;
+      dynamic_no_credential: string;
+      dynamic_load_failed: string;
+      dynamic_unknown_error: string;
       configure_your_persona: string;
       cancel: string;
       submit_all: string;
