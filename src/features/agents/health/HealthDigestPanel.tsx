@@ -14,6 +14,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
 import { STATUS_CONFIG } from './statusConfig';
+import { GRADE_COLORS } from './gradeColors';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -25,18 +26,13 @@ import { formatTimestamp } from '@/lib/utils/formatters';
 function CompactScoreRing({ score }: { score: HealthScore }) {
   const radius = 18;
   const circumference = 2 * Math.PI * radius;
-  const strokeColor = {
-    healthy: '#10B981',
-    degraded: '#F59E0B',
-    unhealthy: '#EF4444',
-  }[score.grade];
 
   return (
     <div className="relative w-12 h-12 flex-shrink-0">
       <svg className="w-full h-full -rotate-90" viewBox="0 0 40 40" aria-hidden="true" role="presentation">
         <circle cx="20" cy="20" r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary/10" />
         <circle className="animate-fade-in"
-          cx="20" cy="20" r={radius} fill="none" stroke={strokeColor} strokeWidth="3"
+          cx="20" cy="20" r={radius} fill="none" stroke={GRADE_COLORS[score.grade].strokeHex} strokeWidth="3"
           strokeLinecap="round" strokeDasharray={circumference}
         />
       </svg>
