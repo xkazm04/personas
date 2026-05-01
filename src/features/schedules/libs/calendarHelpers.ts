@@ -1,5 +1,4 @@
 import type { CronAgent } from '@/lib/bindings/CronAgent';
-import type { ScheduleEntry } from './scheduleHelpers';
 
 // -- Calendar types ----------------------------------------------------------
 
@@ -43,19 +42,6 @@ function addDays(d: Date, n: number): Date {
   return r;
 }
 
-/**
- * Re-anchored day step that constructs a fresh local-midnight Date for the
- * day `n` calendar days after `d`. Use this when you need a stable midnight
- * across DST transitions — `setDate(+n)` preserves the time-of-day in local
- * wall-clock terms but DST boundaries can leave the cursor at 01:00 instead
- * of 00:00 if the original date sat in the missing hour. Always re-construct
- * via `new Date(y, m, d+n)` and the underlying epoch lands on midnight local
- * regardless of whether the day in question is 23, 24, or 25 hours long.
- */
-function nextLocalMidnight(d: Date, n: number): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
-}
-
 export function isSameDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear()
     && a.getMonth() === b.getMonth()
@@ -83,222 +69,18 @@ export function getMonthRange(anchor: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
-// -- Cron fire time generator ------------------------------------------------
-
-/**
- * Generate fire times for a cron expression within [start, end).
- * Handles common cron patterns. Returns sorted Date array.
- */
-export function generateCronFireTimes(
-  cron: string,
-  start: Date,
-  end: Date,
-  maxResults = 200,
-): Date[] {
-  const parts = cron.trim().split(/\s+/);
-  if (parts.length < 5) return [];
-
-  const minutes = parseCronField(parts[0]!, 0, 59);
-  const hours = parseCronField(parts[1]!, 0, 23);
-  const daysOfMonth = parseCronField(parts[2]!, 1, 31);
-  const months = parseCronField(parts[3]!, 1, 12);
-  const daysOfWeek = parseCronField(parts[4]!, 0, 6);
-
-  if (!minutes || !hours || !daysOfMonth || !months || !daysOfWeek) return [];
-
-  const results: Date[] = [];
-  const cursor = new Date(start);
-  cursor.setSeconds(0, 0);
-
-  // Step minute-by-minute is too slow for month view; step by candidate minutes
-  // Instead iterate day-by-day, then hour, then minute
-  const dayStart = startOfDay(cursor);
-  const endMs = end.getTime();
-
-  // Use nextLocalMidnight (constructor-based) instead of addDays (setDate-based)
-  // so the day cursor re-anchors to local midnight every iteration. setDate(+1)
-  // preserves the time field in local wall-clock terms, but a DST transition
-  // can leave it at 01:00 instead of 00:00 — t.setHours(h, m, 0, 0) below
-  // would then emit fire times that skip or duplicate around the transition
-  // week. Re-deriving from dayStart + dayOffset always lands on a fresh
-  // midnight regardless of whether the day is 23, 24, or 25 hours long.
-  let dayOffset = 0;
-  for (let d = dayStart; d.getTime() < endMs && results.length < maxResults; d = nextLocalMidnight(dayStart, ++dayOffset)) {
-    const month1 = d.getMonth() + 1; // 1-indexed
-    if (!months.has(month1)) continue;
-
-    const dom = d.getDate();
-    const dow = d.getDay();
-
-    // POSIX cron: when both day-of-month and day-of-week are restricted
-    // (non-wildcard), fire if EITHER matches (OR semantics).
-    const domRestricted = daysOfMonth.size < 31;
-    const dowRestricted = daysOfWeek.size < 7;
-    const dayOk = domRestricted && dowRestricted
-      ? daysOfMonth.has(dom) || daysOfWeek.has(dow)
-      : domRestricted
-        ? daysOfMonth.has(dom)
-        : dowRestricted
-          ? daysOfWeek.has(dow)
-          : true;
-    if (!dayOk) continue;
-
-    for (const h of hours) {
-      for (const m of minutes) {
-        const t = new Date(d);
-        t.setHours(h, m, 0, 0);
-        if (t.getTime() >= start.getTime() && t.getTime() < endMs) {
-          results.push(t);
-          if (results.length >= maxResults) return results;
-        }
-      }
-    }
-  }
-
-  return results;
-}
-
-/**
- * Generate fire times for an interval-based schedule.
- */
-export function generateIntervalFireTimes(
-  intervalSeconds: number,
-  anchorIso: string | null,
-  start: Date,
-  end: Date,
-  maxResults = 200,
-): Date[] {
-  if (intervalSeconds <= 0) return [];
-  const intervalMs = intervalSeconds * 1000;
-
-  // Anchor from last triggered time, or start of range
-  let cursor = anchorIso ? new Date(anchorIso).getTime() : start.getTime();
-
-  // Walk forward to at least start
-  if (cursor < start.getTime()) {
-    const steps = Math.ceil((start.getTime() - cursor) / intervalMs);
-    cursor += steps * intervalMs;
-  }
-
-  const results: Date[] = [];
-  const endMs = end.getTime();
-  while (cursor < endMs && results.length < maxResults) {
-    results.push(new Date(cursor));
-    cursor += intervalMs;
-  }
-  return results;
-}
-
-// -- Parse single cron field (e.g., "*/5", "1-5", "0,30", "*") ---------------
-
-function parseCronField(field: string, min: number, max: number): Set<number> | null {
-  const result = new Set<number>();
-  // Helper: reject anything outside the field's domain. Previously single
-  // values and N-M ranges were added without bounds checking, so a typoed
-  // cron like '0 25 * * *' emitted phantom calendar events at 25:00 (rolled
-  // by setHours into the next day). Now any out-of-range value invalidates
-  // the entire field — matching the backend's stricter parser.
-  const inRange = (v: number): boolean => Number.isInteger(v) && v >= min && v <= max;
-
-  for (const part of field.split(',')) {
-    const trimmed = part.trim();
-
-    // Wildcard: *
-    if (trimmed === '*') {
-      for (let i = min; i <= max; i++) result.add(i);
-      continue;
-    }
-
-    // Step: */N, N-M/S, or N/S (bare start/step)
-    const stepMatch = trimmed.match(/^(\*|(\d+)(?:-(\d+))?)\/(\d+)$/);
-    if (stepMatch) {
-      const step = parseInt(stepMatch[4]!, 10);
-      if (isNaN(step) || step <= 0) return null;
-      let rangeStart: number;
-      let rangeEnd: number;
-      if (stepMatch[1] === '*') {
-        rangeStart = min;
-        rangeEnd = max;
-      } else if (stepMatch[3] !== undefined) {
-        rangeStart = parseInt(stepMatch[2]!, 10);
-        rangeEnd = parseInt(stepMatch[3]!, 10);
-      } else {
-        // N/S — start at N, step to field max (mirrors Rust parse_field)
-        rangeStart = parseInt(stepMatch[2]!, 10);
-        rangeEnd = max;
-      }
-      if (!inRange(rangeStart) || !inRange(rangeEnd) || rangeStart > rangeEnd) return null;
-      for (let i = rangeStart; i <= rangeEnd; i += step) result.add(i);
-      continue;
-    }
-
-    // Range: N-M
-    const rangeMatch = trimmed.match(/^(\d+)-(\d+)$/);
-    if (rangeMatch) {
-      const rStart = parseInt(rangeMatch[1]!, 10);
-      const rEnd = parseInt(rangeMatch[2]!, 10);
-      if (!inRange(rStart) || !inRange(rEnd) || rStart > rEnd) return null;
-      for (let i = rStart; i <= rEnd; i++) result.add(i);
-      continue;
-    }
-
-    // Single value
-    const val = parseInt(trimmed, 10);
-    if (isNaN(val) || !inRange(val)) return null;
-    result.add(val);
-  }
-
-  return result.size > 0 ? result : null;
-}
-
-// -- Build calendar events from schedule entries -----------------------------
-
-export function buildCalendarEvents(
-  entries: ScheduleEntry[],
-  start: Date,
-  end: Date,
-): CalendarEvent[] {
-  const events: CalendarEvent[] = [];
-  const now = new Date();
-
-  for (const entry of entries) {
-    const { agent } = entry;
-    if (entry.health === 'paused') continue;
-
-    let fireTimes: Date[] = [];
-
-    if (agent.cron_expression) {
-      fireTimes = generateCronFireTimes(agent.cron_expression, start, end);
-    } else if (agent.interval_seconds) {
-      fireTimes = generateIntervalFireTimes(
-        agent.interval_seconds,
-        agent.last_triggered_at,
-        start,
-        end,
-      );
-    }
-
-    for (const time of fireTimes) {
-      const isPast = time.getTime() < now.getTime();
-      events.push({
-        id: `${agent.trigger_id}-${time.getTime()}`,
-        agentId: agent.persona_id,
-        agentName: agent.persona_name,
-        agentIcon: agent.persona_icon,
-        agentColor: agent.persona_color,
-        triggerId: agent.trigger_id,
-        time,
-        kind: isPast
-          ? (entry.health === 'failing' ? 'past-failure' : 'past-success')
-          : 'projected',
-      });
-    }
-  }
-
-  return events.sort((a, b) => a.time.getTime() - b.time.getTime());
-}
-
 // -- Build week grid (hour slots per day) ------------------------------------
+//
+// Cron parsing and fire-time generation live in the Rust backend
+// (engine/cron.rs). Frontend code requests fire times via the
+// `cron_fire_times_in_range` IPC and the useCalendarEvents /
+// useConflictPreview hooks in `useCronPreview.ts`. The previous
+// client-side `parseCronField` + `generateCronFireTimes` +
+// `buildCalendarEvents` + `previewConflicts` were deleted on
+// 2026-05-01 because they re-implemented cron with semantics that
+// drifted from the engine (e.g. accepting `*/100 * * * *` as a valid
+// minute step where the engine rejects it). Architect ADR:
+// 2026-05-01-schedules-tz-frontend-honor.
 
 export function buildWeekGrid(
   anchor: Date,
@@ -463,55 +245,7 @@ export function detectConflicts(events: CalendarEvent[]): {
   return { byEventId, byHourCell, byDayCell };
 }
 
-/**
- * Check whether a candidate cron/interval schedule would conflict with
- * existing entries. Returns the number of conflicts in the next 7 days.
- */
-export function previewConflicts(
-  existingEntries: ScheduleEntry[],
-  candidateCron: string | null,
-  candidateIntervalSeconds: number | null,
-  excludeTriggerId?: string,
-): number {
-  const now = new Date();
-  const end = new Date(now.getTime() + 7 * 24 * 3_600_000);
-
-  // Generate candidate fire times
-  let candidateTimes: Date[] = [];
-  if (candidateCron) {
-    candidateTimes = generateCronFireTimes(candidateCron, now, end);
-  } else if (candidateIntervalSeconds && candidateIntervalSeconds > 0) {
-    candidateTimes = generateIntervalFireTimes(candidateIntervalSeconds, null, now, end);
-  }
-  if (candidateTimes.length === 0) return 0;
-
-  // Generate existing fire times (excluding the agent being edited)
-  const existingTimes: Date[] = [];
-  for (const entry of existingEntries) {
-    if (entry.health === 'paused') continue;
-    if (excludeTriggerId && entry.agent.trigger_id === excludeTriggerId) continue;
-    const { agent } = entry;
-    if (agent.cron_expression) {
-      existingTimes.push(...generateCronFireTimes(agent.cron_expression, now, end));
-    } else if (agent.interval_seconds) {
-      existingTimes.push(...generateIntervalFireTimes(agent.interval_seconds, agent.last_triggered_at, now, end));
-    }
-  }
-  if (existingTimes.length === 0) return 0;
-
-  existingTimes.sort((a, b) => a.getTime() - b.getTime());
-
-  // Count candidate times that fall within CONFLICT_WINDOW_MS of any existing time
-  let conflicts = 0;
-  for (const ct of candidateTimes) {
-    const ctMs = ct.getTime();
-    for (const et of existingTimes) {
-      if (Math.abs(ctMs - et.getTime()) <= CONFLICT_WINDOW_MS) {
-        conflicts++;
-        break; // count each candidate time at most once
-      }
-    }
-  }
-
-  return conflicts;
-}
+// `previewConflicts` was deleted on 2026-05-01 along with the client-side
+// cron parser. Callers (FrequencyEditor) now use the `useConflictPreview`
+// hook in `useCronPreview.ts` which fetches fire times via the
+// `cron_fire_times_in_range` IPC.
