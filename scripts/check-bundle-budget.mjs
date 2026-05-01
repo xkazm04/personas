@@ -5,8 +5,14 @@
  * Reads all .js files in dist/assets/ and fails if any chunk exceeds
  * the configured budget. Designed to run in CI after `npm run build`.
  *
- * Usage:  node scripts/check-bundle-budget.mjs [--max-chunk-kb=500] [--max-total-kb=4000]
+ * Usage:  node scripts/check-bundle-budget.mjs [--max-chunk-kb=850] [--max-total-kb=5000]
  * Exit:   0 = within budget, 1 = over budget
+ *
+ * Defaults match the CI thresholds (.github/workflows/ci.yml). The main
+ * index chunk is ~778 KB (systemStore + agentStore + Sidebar); 500 KB was
+ * an aspirational historical default that didn't reflect real bundle
+ * shape. Aligned 2026-05-01 by build-tooling architect run so local +
+ * CI stay in lockstep.
  */
 
 import { readdirSync, statSync } from "fs";
@@ -19,7 +25,7 @@ function flag(name, fallback) {
   return found ? Number(found.split("=")[1]) : fallback;
 }
 
-const MAX_CHUNK_KB = flag("max-chunk-kb", 500);
+const MAX_CHUNK_KB = flag("max-chunk-kb", 850);
 const MAX_TOTAL_KB = flag("max-total-kb", 5000);
 const ASSETS_DIR = join(process.cwd(), "dist", "assets");
 

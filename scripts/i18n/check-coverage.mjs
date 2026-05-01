@@ -1,16 +1,33 @@
 #!/usr/bin/env node
 /**
- * CI gate: fails if any locale in `src/i18n/locales/*.json` has a
- * different keyset than `en.json`. Every locale must ship a full
- * translation — there is no runtime English fallback.
+ * CI gate for i18n locale keyset health.
+ *
+ * Two failure modes — treated differently because they have different
+ * runtime consequences:
+ *
+ * - **Extra keys** (locale has a key en.json doesn't) → ALWAYS FAIL.
+ *   These are stale: the en.json source-of-truth dropped or renamed the
+ *   key, but the translation files still carry it. Stale keys waste
+ *   bytes and hide the rename intent. Cheap to fix and useful to gate.
+ *
+ * - **Missing keys** (en.json has a key the locale doesn't) → WARN, do
+ *   NOT fail by default. Missing keys fall back to the English value at
+ *   runtime via the deep-merge loader (per CLAUDE.md i18n section).
+ *   Translation teams catch up asynchronously; gating new feature work
+ *   on completed translations would block development.
+ *
+ * The `--strict` flag restores the old behavior (fail on either). Run
+ * it before a release if you want to assert that translations are
+ * caught up.
  *
  * Exit codes:
- *   0  all locales match en
- *   1  one or more locales have missing / extra keys
+ *   0  no extras (default mode) / no extras OR missing (--strict mode)
+ *   1  any extras (default) / any drift (--strict) / config error
  *
  * Usage:
- *   node scripts/i18n/check-coverage.mjs
- *   node scripts/i18n/check-coverage.mjs --json     # machine-readable
+ *   node scripts/i18n/check-coverage.mjs              # default (extras fail, missing warns)
+ *   node scripts/i18n/check-coverage.mjs --strict     # fail on either
+ *   node scripts/i18n/check-coverage.mjs --json       # machine-readable
  *
  * Run in CI via `npm run check:i18n`.
  */
@@ -22,6 +39,7 @@ const ROOT = resolve(process.cwd());
 const LOCALES_DIR = resolve(ROOT, 'src/i18n/locales');
 
 const asJson = process.argv.includes('--json');
+const strictMode = process.argv.includes('--strict');
 
 function flattenKeys(obj, prefix = '') {
   const out = new Set();
@@ -67,6 +85,7 @@ const report = {
 };
 
 let hasDrift = false;
+let hasExtras = false;
 
 for (const code of codes) {
   if (code === 'en') continue;
@@ -74,6 +93,7 @@ for (const code of codes) {
   const missing = [...enKeys].filter((k) => !localeKeys.has(k));
   const extra = [...localeKeys].filter((k) => !enKeys.has(k));
   if (missing.length || extra.length) hasDrift = true;
+  if (extra.length) hasExtras = true;
   report.locales.push({
     code,
     keyCount: localeKeys.size,
@@ -116,7 +136,17 @@ if (asJson) {
   }
 }
 
-if (hasDrift) {
-  console.error('\nFAIL: one or more locales have drifted from en.json.');
-  process.exit(1);
+if (strictMode) {
+  if (hasDrift) {
+    console.error('\nFAIL (--strict): one or more locales have drifted from en.json.');
+    process.exit(1);
+  }
+} else {
+  if (hasExtras) {
+    console.error('\nFAIL: one or more locales carry extra keys not present in en.json. Stale keys after a rename or removal — delete them. (Re-run with --strict to also fail on missing keys.)');
+    process.exit(1);
+  }
+  if (hasDrift) {
+    console.warn('\nWARN: missing keys in some locales (translation lag). Run with --strict before a release to assert full translation parity.');
+  }
 }

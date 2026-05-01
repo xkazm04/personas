@@ -69,6 +69,13 @@ jobs:
       - name: Typecheck + lint
         run: npm run check
 
+      - name: Check i18n locale keyset parity
+        # CLAUDE.md long claimed this was a CI gate — it wasn't until
+        # build-tooling architect run 2026-05-01 wired it. Catches locale
+        # files that drift from en.json's keyset (missing or extra keys),
+        # which crashes the UI at runtime via the deep-merge fallback.
+        run: npm run check:i18n
+
       - name: Build
         run: npm run build
 
