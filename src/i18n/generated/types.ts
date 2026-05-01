@@ -6491,6 +6491,27 @@ export type Translations = {
       add_key: string;
       key_added: string;
       add_key_for: string;
+      latency_fast: string;
+      latency_ok: string;
+      latency_slow: string;
+      status_passed: string;
+      status_skipped_builtin: string;
+      status_needs_credential: string;
+      status_failed: string;
+      verified_default: string;
+      skipped_builtin_default: string;
+      credential_missing_default: string;
+      fail_default: string;
+      http_hint_auth: string;
+      http_hint_not_found: string;
+      http_hint_rate_limited: string;
+      http_hint_service_error: string;
+      friendly_auth_failed: string;
+      friendly_endpoint_not_found: string;
+      friendly_rate_limited: string;
+      friendly_service_error: string;
+      friendly_timeout: string;
+      friendly_missing_credentials: string;
     };
   };
   triggers: {

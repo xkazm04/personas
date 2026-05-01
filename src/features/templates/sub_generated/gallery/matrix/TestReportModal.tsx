@@ -23,7 +23,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 // ---------------------------------------------------------------------------
 
 export function TestReportModal({ results, summary, onClose, onCredentialAdded }: { results: ToolTestResult[]; summary?: string | null; onClose: () => void; onCredentialAdded?: () => void }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
   useClickOutside(modalRef, true, onClose);
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
@@ -58,9 +58,9 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
             <div>
               <h2 className="typo-body-lg font-semibold text-foreground/90">{t.templates.test_report.title}</h2>
               <div className="flex items-center gap-3 mt-1">
-                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{passedCount} passed</span>}
-                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{failedCount} failed</span>}
-                {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{skippedCount} skipped</span>}
+                {passedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-emerald-400/90 font-medium"><CheckCircle2 className="w-3 h-3" />{tx(t.templates.test_report.passed, { count: passedCount })}</span>}
+                {failedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-red-400/90 font-medium"><XCircle className="w-3 h-3" />{tx(t.templates.test_report.failed, { count: failedCount })}</span>}
+                {skippedCount > 0 && <span className="inline-flex items-center gap-1 typo-caption text-foreground"><AlertTriangle className="w-3 h-3" />{tx(t.templates.test_report.skipped, { count: skippedCount })}</span>}
               </div>
               {results.length > 0 && (
                 <div className="flex gap-0.5 mt-2 h-1.5 w-48 rounded-full overflow-hidden bg-secondary/30">
@@ -92,7 +92,7 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 text-primary/60 flex-shrink-0" />
-                <span className="text-[13px] font-medium text-foreground">Overview</span>
+                <span className="text-[13px] font-medium text-foreground">{t.templates.test_report.overview}</span>
               </button>
               {results.map((r) => (
                 <ToolTab key={r.tool_name} result={r} isActive={selectedTool === r.tool_name} onClick={() => setSelectedTool(r.tool_name)} />
@@ -104,7 +104,7 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
           <div className="flex-1 flex flex-col min-h-0">
             <div className="px-5 py-2.5 border-b border-primary/5 bg-secondary/10">
               <h3 className="text-[10px] font-semibold text-foreground uppercase tracking-wider">
-                {selectedTool ? selectedTool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : 'Analysis'}
+                {selectedTool ? selectedTool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : t.templates.test_report.analysis}
               </h3>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-5">
@@ -126,6 +126,7 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
 // ---------------------------------------------------------------------------
 
 function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isActive: boolean; onClick: () => void }) {
+  const { t } = useTranslation();
   const statusIcon = r.status === 'passed'
     ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
     : r.status === 'skipped'
@@ -139,7 +140,7 @@ function ToolTab({ result: r, isActive, onClick }: { result: ToolTestResult; isA
   const labelSource = r.connector && r.connector.length > 0 ? r.connector : r.tool_name;
   const label = labelSource.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const latencyLabel = r.latency_ms != null && r.latency_ms > 0
-    ? r.latency_ms < 500 ? 'Fast' : r.latency_ms < 2000 ? 'OK' : 'Slow'
+    ? r.latency_ms < 500 ? t.templates.test_report.latency_fast : r.latency_ms < 2000 ? t.templates.test_report.latency_ok : t.templates.test_report.latency_slow
     : null;
   const latencyColor = r.latency_ms != null
     ? r.latency_ms < 500 ? 'text-emerald-400/50' : r.latency_ms < 2000 ? 'text-amber-400/50' : 'text-red-400/50'
@@ -403,7 +404,7 @@ function ResultCards({ passed, failed, credentialMissing, skipped }: { passed: T
         <div className="rounded-modal border border-red-500/15 bg-red-500/5 px-4 py-3">
           <div className="flex items-center gap-2 mb-2"><XCircle className="w-4 h-4 text-red-400" /><h4 className="text-xs font-semibold text-red-400 uppercase tracking-wider">{t.templates.test_report.connection_failed}</h4></div>
           <div className="space-y-1">{failed.map((r) => {
-            const hint = r.http_status ? httpStatusHint(r.http_status) : null;
+            const hint = r.http_status ? httpStatusHint(t, r.http_status) : null;
             return <div key={r.tool_name} className="text-sm"><span className="text-foreground">{toolLabel(r)}</span>{hint && <span className="text-red-400/50 ml-1.5 text-xs">{hint}</span>}</div>;
           })}</div>
         </div>
@@ -457,7 +458,7 @@ function MarkdownLine({ text }: { text: string }) {
 // ---------------------------------------------------------------------------
 
 function ToolDetailView({ result, sections }: { result: ToolTestResult; sections: ReturnType<typeof parseReportSections> | null }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const isPassed = result.status === 'passed';
   const isSkipped = result.status === 'skipped';
   // Prefer the connector name (the credential subject — e.g. "alpha vantage")
@@ -468,12 +469,12 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
 
   const toolSummaryLine = sections?.results.split('\n').find((line) => line.toLowerCase().includes(toolLabel.toLowerCase())) ?? null;
   const fallbackDescription = isPassed
-    ? result.output_preview || 'Connection verified successfully.'
+    ? result.output_preview || t.templates.test_report.verified_default
     : isSkipped
-    ? result.error || 'This tool uses built-in capabilities and does not require an external API connection to test.'
+    ? result.error || t.templates.test_report.skipped_builtin_default
     : result.status === 'credential_missing'
-    ? `**${subject}** needs credentials. Open the **Keys** section to add or refresh them.`
-    : result.error ? formatErrorForUser(result.error, result.http_status) : 'Could not connect to the service.';
+    ? tx(t.templates.test_report.credential_missing_default, { subject })
+    : result.error ? formatErrorForUser(t, result.error, result.http_status) : t.templates.test_report.fail_default;
 
   return (
     <div className="space-y-4">
@@ -483,7 +484,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
         {isPassed ? <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" /> : isSkipped ? <Zap className="w-5 h-5 text-foreground flex-shrink-0" /> : result.status === 'credential_missing' ? <Key className="w-5 h-5 text-amber-400 flex-shrink-0" /> : <XCircle className="w-5 h-5 text-red-400 flex-shrink-0" />}
         <div className="flex-1">
           <span className={`typo-heading font-semibold ${isPassed ? 'text-emerald-400' : isSkipped ? 'text-foreground' : result.status === 'credential_missing' ? 'text-amber-400' : 'text-red-400'}`}>
-            {isPassed ? 'Passed' : isSkipped ? 'Skipped (Built-in)' : result.status === 'credential_missing' ? 'Needs Credential' : 'Failed'}
+            {isPassed ? t.templates.test_report.status_passed : isSkipped ? t.templates.test_report.status_skipped_builtin : result.status === 'credential_missing' ? t.templates.test_report.status_needs_credential : t.templates.test_report.status_failed}
           </span>
           {result.http_status && (
             <span className={`text-[10px] font-mono ml-2 px-1.5 py-0.5 rounded ${result.http_status >= 200 && result.http_status < 300 ? 'bg-emerald-500/10 text-emerald-400/70' : 'bg-red-500/10 text-red-400/70'}`}>
@@ -503,7 +504,7 @@ function ToolDetailView({ result, sections }: { result: ToolTestResult; sections
         )}
       </div>
 
-      {result.connector && <div><h4 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-1">Service</h4><p className="typo-body text-foreground">{result.connector}</p></div>}
+      {result.connector && <div><h4 className="typo-label font-semibold text-foreground uppercase tracking-wider mb-1">{t.templates.test_report.service}</h4><p className="typo-body text-foreground">{result.connector}</p></div>}
 
       {result.output_preview && isPassed && (
         <div>
@@ -573,21 +574,23 @@ function FormattedPreview({ text }: { text: string }) {
 // Utility functions
 // ---------------------------------------------------------------------------
 
-function httpStatusHint(status: number): string | null {
-  if (status === 401 || status === 403) return 'Authentication issue';
-  if (status === 404) return 'Endpoint not found';
-  if (status === 429) return 'Rate limited';
-  if (status >= 500) return 'Service error';
+type TestReportTranslations = ReturnType<typeof useTranslation>['t'];
+
+function httpStatusHint(t: TestReportTranslations, status: number): string | null {
+  if (status === 401 || status === 403) return t.templates.test_report.http_hint_auth;
+  if (status === 404) return t.templates.test_report.http_hint_not_found;
+  if (status === 429) return t.templates.test_report.http_hint_rate_limited;
+  if (status >= 500) return t.templates.test_report.http_hint_service_error;
   return null;
 }
 
-function formatErrorForUser(error: string, httpStatus?: number): string {
-  if (httpStatus === 401 || httpStatus === 403) return 'Authentication failed. Your credentials may have expired. Go to **Keys** to refresh them.';
-  if (httpStatus === 404) return 'The API endpoint could not be found. The service configuration may need updating.';
-  if (httpStatus === 429) return 'The service rate-limited the request. This is temporary — try again in a few minutes.';
-  if (httpStatus && httpStatus >= 500) return 'The service is currently experiencing issues. This is not a problem with your agent — try again later.';
-  if (error.includes('timed out')) return 'The connection timed out. The service may be slow or unavailable right now.';
-  if (error.includes('credential') || error.includes('Credential')) return 'Missing credentials. Go to **Keys** to add the required service credentials.';
+function formatErrorForUser(t: TestReportTranslations, error: string, httpStatus?: number): string {
+  if (httpStatus === 401 || httpStatus === 403) return t.templates.test_report.friendly_auth_failed;
+  if (httpStatus === 404) return t.templates.test_report.friendly_endpoint_not_found;
+  if (httpStatus === 429) return t.templates.test_report.friendly_rate_limited;
+  if (httpStatus && httpStatus >= 500) return t.templates.test_report.friendly_service_error;
+  if (error.includes('timed out')) return t.templates.test_report.friendly_timeout;
+  if (error.includes('credential') || error.includes('Credential')) return t.templates.test_report.friendly_missing_credentials;
   if (error.length > 200) return error.slice(0, 200) + '...';
   return error;
 }
