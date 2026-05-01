@@ -75,6 +75,11 @@ scripts/templates/_debug/
 # Temporary scratch files
 tmp/
 
+# /research skill Phase 2a YouTube cache (per-run scratch — see
+# .claude/skills/research/skill.md Phase 2a; runs are expected to clean up
+# after parsing, but this gitignore keeps stragglers out of git status)
+.research-cache/
+
 # Planning docs (GSD)
 .planning/
 

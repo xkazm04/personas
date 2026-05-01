@@ -168,7 +168,19 @@ Parse the resulting `.vtt` file:
 
 If no `.vtt` was produced (some videos have transcripts disabled), report the issue and ask the user to paste the transcript manually or provide an alternative source.
 
-After parsing, delete the cache file. Keep only the cleaned text in working memory.
+**Cleanup (MANDATORY, scoped to THIS run's video id):** as soon as the cleaned text is in working memory, delete the cache files this run created. Do this before Phase 3 starts — not at the end of the run, where a mid-run failure or context exhaustion would leave strays.
+
+```bash
+# Replace <id> with the actual video id used in --output above. Glob covers
+# both the .vtt and any .clean.txt / .cleaned.txt sibling some scripts emit.
+rm -f .research-cache/<id>.* 2>/dev/null
+```
+
+Rules for the cleanup:
+- **Scope strictly to this run's id.** Never sweep `.research-cache/*` blindly — that races with any parallel research run on the same machine and could delete another run's working files.
+- **Idempotent on failure.** If the rm fails (locked file, etc.), log it as a `cache_cleanup_skipped` note in the Lessons block but continue — leaving cache is not a run-blocking error.
+- **Verify in Phase 11.** The final summary's "Files updated" block should include `Cache: cleaned` (or list the residue path if cleanup failed) so the user has a one-line signal that this run did not pollute `.research-cache/`.
+- **`.research-cache/` is gitignored** (see repo `.gitignore`). Stragglers from old or interrupted runs no longer surface in `git status`, but they DO accumulate on disk — `/research` runs are the only legitimate cleaner. Don't rely on git status to remind you.
 
 ### 2b. Other URL
 Use `WebFetch` with a prompt asking for the article body, stripped of nav/footer/ads.
@@ -668,6 +680,7 @@ Research run complete.
 
   Source-type yield:  {expected vs actual for this source type — see Phase 3 calibration table}
   Snapshot freshness: {fresh | stale by N commits — consider /refresh-context}
+  Cache:              {cleaned | n/a (Phase 2b/c source) | residue at .research-cache/<id>.* — see Lessons cache_cleanup_skipped note}
   Commit: {filled in by Phase 13 — short SHA + subject, or skip reason}
 ```
 
@@ -1007,6 +1020,7 @@ This gives the user one line to verify the whole run is safely captured in git b
 - **Phase 13 is mandatory.** Every research run ends with a commit unless there are no changes OR the user explicitly opted out. "I'll commit manually later" is not a valid skip reason — on 2026-04-11 "later" became "lost work from a bad merge". Git is the recovery mechanism.
 - **Phase 13 stages files explicitly.** Never `git add -A` / `git add .` — always `git add <path>` per file to avoid sweeping up secrets or drift from other sessions.
 - **Phase 13 never bypasses hooks.** No `--no-verify`, no `--no-gpg-sign`. If a pre-commit hook fails, fix the underlying issue and create a new commit.
+- **Phase 2a cache cleanup is mandatory.** The `.research-cache/<id>.*` files are per-run scratch; delete them as soon as the cleaned text is in working memory (see Phase 2a). Do NOT defer to end-of-run — a mid-run failure leaves them behind. Scope the `rm` strictly to this run's id; never sweep the whole directory blindly (collides with parallel runs). Phase 11 must report `Cache: cleaned` (or the residue path) so the user has a verification signal. The 2026-05-01 maintenance commit hardening this rule was prompted by ~20 stray cache files accumulating across prior runs that all silently skipped this step.
 
 ---
 
@@ -1297,3 +1311,27 @@ Failures must be fixed inline before moving to the next task. No stacking failin
 - Does the in-session execution default work for truly large clusters (10+ tasks spanning multiple domains)? The 2026-04-17 evening run had 6 tasks. A larger cluster might need to fall back to Option B2 for context reasons. Watch for the first 10+ task cluster.
 - When execution breaks partway through, is an atomic "commit what worked, handoff what didn't" clean enough? Current phrasing says so, but the shape of the mid-execution fallback hasn't been tested. Watch for the first real mid-execution blocker.
 - Does the new default change what users *ask* for? Users who previously expected handoff output may now ask for it explicitly. If most runs start with "just execute, don't write a plan" the rule is working. If most runs start with "write a plan first", the demotion was wrong.
+
+### 2026-05-01 — Phase 2a cache-cleanup contract hardened (after ~20 stray files surfaced)
+
+**Context:** During the post-run housekeeping of the 2026-05-01 Claude-Code-2-1-124-to-126 run, `git status` revealed 20+ stale `.research-cache/*.{vtt,clean.txt,cleaned.txt}` files accumulated across earlier runs. The skill's Phase 2a already said *"After parsing, delete the cache file. Keep only the cleaned text in working memory."* — but as one buried sentence, runs were silently skipping it. Fourteen prior runs failed to enforce it; the directory had been growing for weeks. Most of the strays were tracked in git (committed historically before `.research-cache/` was gitignored), so the cleanup commit was non-trivial.
+
+**Rules added / strengthened:**
+
+- **Phase 2a cleanup is now a labeled block, not a single sentence.** Replaced the one-liner with a bash snippet (`rm -f .research-cache/<id>.* 2>/dev/null`) plus four explicit sub-rules: scope strictly to this run's id (never sweep blindly — collides with parallel runs), idempotent on failure (log to Lessons as `cache_cleanup_skipped` and continue), verify in Phase 11, gitignore is the safety net not the primary mechanism. The visibility upgrade (own bash block + bullet list) makes the rule hard to miss.
+- **Phase 11 final-summary template now includes a `Cache:` line.** Three values: `cleaned` (Phase 2a ran successfully), `n/a` (Phase 2b/c source — no cache was created), or `residue at .research-cache/<id>.*` (cleanup failed, see Lessons). Adding it to the template means future runs that omit the rm will produce a visibly-wrong final summary.
+- **Safety Rules entry added.** "Phase 2a cache cleanup is mandatory" with a one-line summary of why (the 2026-05-01 finding of 20 strays). Sits next to the Phase 13 entries since both are mandatory end-of-something steps.
+- **`.research-cache/` added to `.gitignore`.** Future cache files won't pollute `git status`. This is defense-in-depth, not the primary mechanism — disk accumulation still happens if Phase 2a doesn't run.
+
+**Rules considered but not added:**
+
+- "Sweep `.research-cache/*` blindly at the start of every run." Rejected — collides with any parallel `/research` invocation on the same machine. The id-scoped `rm` is enough; if the user has stray files from old runs, they can sweep manually (which is what 2026-05-01 did).
+- "Add a Stop hook in `.claude/settings.json` that runs `rm -rf .research-cache/`." Rejected for the same parallel-run reason, and because hook-based cleanup hides the responsibility from the skill (the 2026-04-17 hooks-vs-runtime-state lesson applies — make the cleanup *part of the skill*, not external infra).
+- "Have Phase 13 stage the cache cleanup as part of the research commit." Rejected — `.research-cache/` is now gitignored, so deletions are local-only. Including the directory in Phase 13's explicit-add list would re-pollute the commit with sweep activity.
+- "Block Phase 11 if cache files remain." Too brittle. The skill already has a `cache_cleanup_skipped` Lessons note path; turning it into a hard block would interrupt runs for a non-blocking failure mode.
+
+**Open questions for future runs:**
+
+- Will the gitignore + the labeled Phase 2a block be enough to keep the directory clean over the next 5-10 runs? If a sweep is needed again, the failure mode wasn't visibility — it was something else (race, working-dir confusion, etc.) and the rule needs another iteration.
+- Does the `Cache:` line in Phase 11 actually fire for Phase 2b/c sources? Today only Phase 2a creates files; if Phase 2b WebFetch ever caches body text, the `n/a` value would become wrong.
+- Should `transcript.txt` (no run-id prefix, observed in the 2026-05-01 sweep) be a documented anti-pattern? It was created by some prior run that mis-named its output. If it appears again, codify "all cache files MUST be `<id>.<ext>` — never bare names".
