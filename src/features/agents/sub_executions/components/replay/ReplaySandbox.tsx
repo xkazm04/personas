@@ -5,6 +5,9 @@ import { useReplayTimeline } from '@/hooks/execution/useReplayTimeline';
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { getExecutionLog } from '@/api/agents/executions';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('replay-sandbox');
 import { TimelineScrubber, ReplayTerminalPanel } from './ReplayControls';
 import { ReplayToolPanel } from './ReplayToolPanel';
 import { ReplayTransport } from './ReplayTransport';
@@ -32,7 +35,7 @@ export function ReplaySandbox({ execution }: ReplaySandboxProps) {
       .then((content) => {
         if (!cancelled) setLogContent(content);
       })
-      .catch(() => {})
+      .catch((err) => { logger.warn('Failed to load execution log', { error: err }); })
       .finally(() => {
         if (!cancelled) setLogLoading(false);
       });
