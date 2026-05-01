@@ -13,6 +13,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { SEVERITY_STYLES } from '@/lib/utils/designTokens';
 import { isTimestampStale } from '@/stores/slices/agents/healthCheckSlice';
+import { STATUS_CONFIG } from './statusConfig';
 import type { DryRunIssue, PersonaHealthCheck, HealthScore } from './types';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -61,12 +62,7 @@ function PersonaDigestRow({
   const infos = check.result.issues.filter((i: DryRunIssue) => i.severity === 'info').length;
   const totalIssues = errors + warnings + infos;
 
-  const severityClass =
-    check.result.status === 'blocked'
-      ? 'border-l-[3px] border-l-red-500 shadow-elevation-1 bg-red-500/[0.03]'
-      : check.result.status === 'partial'
-      ? 'border-l-2 border-l-amber-500'
-      : 'border-l-2 border-l-transparent';
+  const severityClass = STATUS_CONFIG[check.result.status].rowBorderClass;
   const nameClass =
     check.result.status === 'blocked'
       ? 'typo-body font-semibold text-foreground truncate'
@@ -117,10 +113,7 @@ function PersonaDigestRow({
       </div>
 
       {/* Status indicator */}
-      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-        check.result.status === 'ready' ? 'bg-emerald-400' :
-        check.result.status === 'blocked' ? 'bg-red-400' : 'bg-amber-400'
-      }`} />
+      <div className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CONFIG[check.result.status].dotClass}`} />
 
       <ChevronRight className="w-4 h-4 text-foreground group-hover:text-muted-foreground/60 transition-colors" />
     </button>

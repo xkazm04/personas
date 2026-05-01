@@ -1,13 +1,13 @@
 import { useCallback, useState, useEffect } from 'react';
 import {
   CheckCircle2,
-  AlertTriangle,
   XCircle,
   Activity,
   RefreshCw,
   Clock,
   Eye,
 } from 'lucide-react';
+import { STATUS_CONFIG } from './statusConfig';
 import { Button } from '@/features/shared/components/buttons';
 import { useAgentStore } from "@/stores/agentStore";
 import { managementFetch } from '@/api/system/managementApiAuth';
@@ -188,12 +188,16 @@ export function HealthCheckPanel({ healthCheck }: HealthCheckPanelProps) {
           <div className="flex items-center gap-2 mb-1">
             <ScoreBadge score={score} />
             <div className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card typo-caption font-medium ${statusTokens.bg} ${statusTokens.text} border ${statusTokens.border}`}>
-              {dryRun.status === 'ready' ? <CheckCircle2 className="w-3 h-3" /> : dryRun.status === 'blocked' ? <XCircle className="w-3 h-3" /> : <AlertTriangle className="w-3 h-3" />}
-              {dryRun.status === 'ready'
-                ? t.agents.health_check.status_ready
-                : dryRun.status === 'blocked'
-                  ? t.agents.health_check.status_blocked
-                  : t.agents.health_check.status_partial}
+              {(() => {
+                const cfg = STATUS_CONFIG[dryRun.status];
+                const StatusIcon = cfg.icon;
+                return (
+                  <>
+                    <StatusIcon className="w-3 h-3" />
+                    {t.agents.health_check[cfg.labelKey]}
+                  </>
+                );
+              })()}
             </div>
           </div>
           <p className="typo-body text-foreground">
