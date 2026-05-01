@@ -11,7 +11,6 @@ import { useToastStore } from '@/stores/toastStore';
 export interface ScheduleActionState {
   executing: string | null;   // trigger_id currently being executed
   editing: string | null;     // trigger_id being frequency-edited
-  recovering: string | null;  // trigger_id being batch-recovered
   cronPreview: CronPreview | null;
 }
 
@@ -22,7 +21,6 @@ export function useScheduleActions() {
   const [state, setState] = useState<ScheduleActionState>({
     executing: null,
     editing: null,
-    recovering: null,
     cronPreview: null,
   });
 
@@ -156,35 +154,10 @@ export function useScheduleActions() {
     }
   }, []);
 
-  // -- Batch Recovery ------------------------------------------------------
-
-  const batchRecover = useCallback(async (agents: CronAgent[]) => {
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const agent of agents) {
-      if (isBudgetBlocked(agent.persona_id)) {
-        failed++;
-        continue;
-      }
-      setState((s) => ({ ...s, recovering: agent.trigger_id }));
-      try {
-        await executePersona(agent.persona_id, agent.trigger_id);
-        succeeded++;
-      } catch {
-        failed++;
-      }
-    }
-
-    setState((s) => ({ ...s, recovering: null }));
-    await fetchCronAgents();
-
-    if (failed === 0) {
-      addToast(`Recovered ${succeeded} skipped execution${succeeded !== 1 ? 's' : ''}`, 'success');
-    } else {
-      addToast(`Recovered ${succeeded}, failed ${failed}`, 'error');
-    }
-  }, [fetchCronAgents, addToast]);
+  // batchRecover was removed when the scheduler gained automatic backfill
+  // (max_backfill field on the schedule trigger config). Catch-up now
+  // happens server-side; users no longer need a "recover N missed runs"
+  // button. See Architect ADR 2026-05-01-schedules-overdue-backfill.
 
   return {
     state,
@@ -192,6 +165,5 @@ export function useScheduleActions() {
     updateFrequency,
     toggleEnabled,
     previewCron,
-    batchRecover,
   } as const;
 }

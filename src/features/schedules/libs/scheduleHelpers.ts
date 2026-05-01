@@ -17,14 +17,6 @@ export interface ScheduleEntry {
   failureRate: number;
 }
 
-export interface SkippedExecution {
-  agent: CronAgent;
-  missedAt: Date;
-  missedCount: number;
-}
-
-export type RecoveryPolicy = 'recover' | 'skip' | 'ask';
-
 // -- Schedule parsing --------------------------------------------------------
 
 export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
@@ -112,97 +104,10 @@ export function groupByTimeWindow(entries: ScheduleEntry[]): TimeGroup[] {
     .map((label) => ({ label, entries: buckets.get(label)! }));
 }
 
-// -- Skipped execution detection ---------------------------------------------
-
-/**
- * Detect agents whose last_triggered_at + interval has passed, meaning
- * they likely missed executions while the app was offline.
- */
-/** Cap how far back the skipped-execution detector looks. Without this, an
- *  agent imported from another machine (or a fresh install where the trigger
- *  was created with last_triggered_at set well in the past) reports thousands
- *  of "missed" runs — and clicking Recover All blasts that many real
- *  executions through the queue, blowing token budgets. 24h is the longest
- *  window that's plausibly useful for "missed while the app was closed". */
-const SKIPPED_LOOKBACK_MS = 24 * 60 * 60 * 1000;
-
-export function detectSkippedExecutions(agents: CronAgent[]): SkippedExecution[] {
-  const now = Date.now();
-  const skipped: SkippedExecution[] = [];
-
-  for (const agent of agents) {
-    if (!agent.trigger_enabled || !agent.persona_enabled) continue;
-
-    const intervalMs = agent.interval_seconds
-      ? agent.interval_seconds * 1000
-      : estimateIntervalFromCron(agent.cron_expression);
-
-    if (!intervalMs || intervalMs <= 0) continue;
-
-    const lastRun = agent.last_triggered_at
-      ? new Date(agent.last_triggered_at).getTime()
-      : null;
-
-    if (!lastRun) continue;
-
-    // Compute "effective last run" as max(actual lastRun, lookback window).
-    // An imported agent or fresh install can have lastRun set months ago;
-    // floor(elapsed / intervalMs) would then be in the thousands. Capping
-    // elapsed to the 24h lookback bounds the recommended-recovery count to
-    // something the user could plausibly want to actually run.
-    const effectiveLastRun = Math.max(lastRun, now - SKIPPED_LOOKBACK_MS);
-    const elapsed = now - effectiveLastRun;
-    if (elapsed > intervalMs * 1.5) {
-      const missedCount = Math.floor(elapsed / intervalMs) - 1;
-      if (missedCount > 0) {
-        skipped.push({
-          agent,
-          missedAt: new Date(effectiveLastRun + intervalMs),
-          missedCount: Math.min(missedCount, 100), // cap display
-        });
-      }
-    }
-  }
-
-  return skipped.sort((a, b) => b.missedCount - a.missedCount);
-}
-
-/**
- * Rough estimate of interval from common cron patterns.
- * Returns ms or null if unrecognizable.
- */
-function estimateIntervalFromCron(cron: string | null): number | null {
-  if (!cron) return null;
-  const parts = cron.trim().split(/\s+/);
-  if (parts.length < 5) return null;
-
-  const min = parts[0];
-  const hour = parts[1];
-  const dom = parts[2];
-
-  if (!min || !hour || !dom) return null;
-
-  // */N * * * * -> every N minutes
-  if (min.startsWith('*/') && hour === '*' && dom === '*') {
-    const n = parseInt(min.slice(2), 10);
-    if (!isNaN(n)) return n * 60_000;
-  }
-
-  // 0 */N * * * -> every N hours
-  if (min === '0' && hour.startsWith('*/') && dom === '*') {
-    const n = parseInt(hour.slice(2), 10);
-    if (!isNaN(n)) return n * 3_600_000;
-  }
-
-  // 0 N * * * -> daily (specific hour)
-  if (min !== '*' && hour !== '*' && dom === '*') {
-    return 24 * 3_600_000;
-  }
-
-  return null;
-}
-
 // -- Cron presets -------------------------------------------------------------
+// (detectSkippedExecutions and the SkippedExecution / RecoveryPolicy types
+// were removed when the scheduler gained automatic max_backfill catch-up.
+// Architect ADR: 2026-05-01-schedules-overdue-backfill.)
 
 export const CRON_PRESETS = [
   { label: 'Every 5 min', cron: '*/5 * * * *' },

@@ -43,6 +43,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   // machine's local time, which silently differs across dev environments
   // (C5-handoff-2026-04-26 incident).
   const [scheduleTimezone, setScheduleTimezone] = useState<string | undefined>(getDetectedTimezone());
+  const [scheduleMaxBackfill, setScheduleMaxBackfill] = useState<number | undefined>(undefined);
   const [endpoint, setEndpoint] = useState('');
   const [selectedEventId, setSelectedEventId] = useState('');
   const [hmacSecret, setHmacSecret] = useState('');
@@ -139,7 +140,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const handleAddTrigger = async () => {
     const result = buildTriggerConfig({
       triggerType, scheduleMode, interval, cronExpression, cronPreview,
-      scheduleTimezone,
+      scheduleTimezone, scheduleMaxBackfill,
       endpoint, selectedEventId, hmacSecret, listenEventType, sourceFilter,
       watchPaths, watchEvents, watchRecursive, globFilter,
       clipboardContentType, clipboardPattern, clipboardInterval,
@@ -194,7 +195,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
             </div>
           </div>
           {scheduleMode === 'interval' && <IntervalConfig interval={interval} setInterval={setInterval} customInterval={customInterval} setCustomInterval={setCustomInterval} validationError={validationError} setValidationError={setValidationError} triggerType={triggerType} />}
-          {scheduleMode === 'cron' && <CronConfig cronExpression={cronExpression} setCronExpression={(v: string) => { setCronExpression(v); if (validationError) setValidationError(null); }} cronPreview={cronPreview} cronLoading={cronLoading} validationError={validationError} onPresetSelect={handleCronPreset} timezone={scheduleTimezone} setTimezone={setScheduleTimezone} />}
+          {scheduleMode === 'cron' && <CronConfig cronExpression={cronExpression} setCronExpression={(v: string) => { setCronExpression(v); if (validationError) setValidationError(null); }} cronPreview={cronPreview} cronLoading={cronLoading} validationError={validationError} onPresetSelect={handleCronPreset} timezone={scheduleTimezone} setTimezone={setScheduleTimezone} maxBackfill={scheduleMaxBackfill} setMaxBackfill={setScheduleMaxBackfill} />}
         </div>
       )}
 

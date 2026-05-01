@@ -13,7 +13,6 @@ import {
   parseScheduleEntry,
   sortByNextRun,
   groupByTimeWindow,
-  detectSkippedExecutions,
   type ScheduleEntry,
   type TimeGroup,
 } from '../libs/scheduleHelpers';
@@ -22,7 +21,6 @@ import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipelin
 import { seedMockCronAgent } from '@/api/pipeline/triggers';
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
-import SkippedRecoveryPanel from './SkippedRecoveryPanel';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
@@ -62,7 +60,6 @@ export default function ScheduleTimeline() {
     updateFrequency,
     toggleEnabled,
     previewCron,
-    batchRecover,
   } = useScheduleActions();
 
   // Unified refresh: initial load, 30s poll, and OVERDUE_TRIGGERS_FIRED all
@@ -132,7 +129,6 @@ export default function ScheduleTimeline() {
 
   const sorted = useMemo(() => sortByNextRun(entries), [entries]);
   const grouped = useMemo(() => groupByTimeWindow(sorted), [sorted]);
-  const skipped = useMemo(() => detectSkippedExecutions(cronAgents), [cronAgents]);
 
   const activeCount = entries.filter((e) => e.health !== 'paused').length;
   const pausedCount = entries.filter((e) => e.health === 'paused').length;
@@ -281,17 +277,11 @@ export default function ScheduleTimeline() {
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Skipped execution recovery */}
-            {viewMode !== 'calendar' && (
-              <SkippedRecoveryPanel
-                skipped={skipped}
-                recoveringId={actionState.recovering}
-                onBatchRecover={batchRecover}
-                onManualExecute={(agent) => manualExecute(agent)}
-              />
-            )}
-
             {/* Main schedule view */}
+            {/* Skipped-execution recovery was removed when the scheduler
+             *  gained automatic backfill (max_backfill on the schedule
+             *  trigger config). Catch-up now happens server-side; the
+             *  UI no longer needs to fake what the backend doesn't do. */}
             {viewMode === 'calendar' ? (
               <Suspense fallback={<div className="flex items-center justify-center py-12 text-foreground"><LoadingSpinner className="mr-2" />{t.schedules.loading_calendar}</div>}>
                 <ScheduleCalendar entries={entries} />

@@ -10,6 +10,10 @@ export interface TriggerFormState {
   /** IANA zone for the cron expression (e.g. "America/New_York"). Undefined =
    *  backend falls back to system-local. Only consulted for schedule triggers. */
   scheduleTimezone?: string;
+  /** Catch-up cap when the trigger fires past several scheduled slots during
+   *  downtime. Undefined or 1 = current fire-once-on-overdue behavior; the
+   *  scheduler hard-caps at 100 regardless. */
+  scheduleMaxBackfill?: number;
   endpoint: string;
   selectedEventId: string;
   hmacSecret: string;
@@ -52,6 +56,11 @@ export function buildTriggerConfig(s: TriggerFormState): BuildResult {
     // host's system-local time (the C5-handoff-2026-04-26 incident path).
     if (s.scheduleMode === 'cron' && s.scheduleTimezone) {
       config.timezone = s.scheduleTimezone;
+    }
+    // Persist max_backfill when the user opted in to catch-up. Default omitted
+    // so existing fire-once-on-overdue behavior is preserved by absence.
+    if (s.scheduleMaxBackfill !== undefined && s.scheduleMaxBackfill > 1) {
+      config.max_backfill = Math.min(Math.floor(s.scheduleMaxBackfill), 100);
     }
   } else if (s.triggerType === 'polling') {
     const parsed = parseInt(s.interval);

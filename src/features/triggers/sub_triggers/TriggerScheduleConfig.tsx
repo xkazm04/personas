@@ -134,6 +134,8 @@ export function CronConfig({
   onPresetSelect,
   timezone,
   setTimezone,
+  maxBackfill,
+  setMaxBackfill,
 }: {
   cronExpression: string;
   setCronExpression: (v: string) => void;
@@ -143,6 +145,8 @@ export function CronConfig({
   onPresetSelect: (expr: string) => void;
   timezone: string | undefined;
   setTimezone: (tz: string | undefined) => void;
+  maxBackfill: number | undefined;
+  setMaxBackfill: (n: number | undefined) => void;
 }) {
   const { t } = useTranslation();
   const hasError = cronPreview && !cronPreview.valid;
@@ -231,6 +235,35 @@ export function CronConfig({
           The cron expression evaluates in this zone. Without a zone the backend
           falls back to the host machine&rsquo;s local time, which can differ across
           dev and prod environments.
+        </p>
+      </div>
+
+      {/* Max backfill */}
+      <div>
+        <label htmlFor="cron-max-backfill" className="block typo-body font-medium text-foreground mb-1.5">
+          Catch-up after downtime
+        </label>
+        <select
+          id="cron-max-backfill"
+          value={maxBackfill ?? 1}
+          onChange={(e) => {
+            const n = parseInt(e.target.value, 10);
+            setMaxBackfill(Number.isFinite(n) && n > 1 ? n : undefined);
+          }}
+          className="px-3 py-2 bg-background/50 border border-primary/15 rounded-modal typo-body text-foreground focus-visible:border-primary/40 focus-ring transition-all"
+        >
+          <option value={1}>Off &mdash; fire once when overdue (default)</option>
+          <option value={3}>Up to 3 catch-up runs</option>
+          <option value={5}>Up to 5 catch-up runs</option>
+          <option value={10}>Up to 10 catch-up runs</option>
+          <option value={25}>Up to 25 catch-up runs</option>
+          <option value={100}>Up to 100 catch-up runs (max)</option>
+        </select>
+        <p className="typo-caption text-foreground mt-1">
+          When the scheduler comes back online after several missed slots,
+          this many catch-up executions are emitted in addition to the live
+          one. Each respects the persona&rsquo;s budget gate. Backend hard-caps
+          at 100 per tick.
         </p>
       </div>
 
