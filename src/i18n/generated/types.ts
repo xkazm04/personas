@@ -8282,15 +8282,8 @@ export type Translations = {
     tab_mosaic: string;
     tab_console: string;
     tab_inbox: string;
-    tab_mosaic_hint: string;
-    tab_console_hint: string;
-    tab_inbox_hint: string;
     switch_to_power: string;
     open_settings: string;
-    wiring_next_phase: string;
-    wiring_mosaic_hint: string;
-    wiring_console_hint: string;
-    wiring_inbox_hint: string;
     greeting_morning: string;
     greeting_afternoon: string;
     greeting_evening: string;
@@ -8329,10 +8322,6 @@ export type Translations = {
     console_inbox_feed_label: string;
     console_empty_feed_title: string;
     console_empty_feed_body: string;
-    console_relative_just_now: string;
-    console_relative_m_ago: string;
-    console_relative_h_ago: string;
-    console_relative_d_ago: string;
     modes: {
       simple_title: string;
       simple_subtitle: string;
@@ -8355,17 +8344,14 @@ export type Translations = {
     };
     inbox: {
       header_title: string;
-      header_subtitle: string;
       kind_approval: string;
       kind_message: string;
       kind_health: string;
       kind_output: string;
       filter_all: string;
       filter_needs_me: string;
-      filter_search: string;
       empty_title: string;
       empty_body: string;
-      today_label: string;
       item_count: string;
       of_label: string;
       nav_hint: string;

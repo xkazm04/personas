@@ -25,10 +25,8 @@
  * in English — but having the schema in place lets locale files diverge
  * without another migration.
  *
- * The legacy `simple_mode.console_relative_*` keys from Phase 08 are still
- * present in `en.json` for backwards compatibility but are DEPRECATED: new
- * callers should rely on the Translations-arg form below, which reads from
- * the `inbox` subsection. Do not extend the `console_relative_*` set.
+ * The legacy `simple_mode.console_relative_*` keys from Phase 08 were retired
+ * in 2026-05; the canonical path is `simple_mode.inbox.relative_*`.
  *
  * API
  * ---
