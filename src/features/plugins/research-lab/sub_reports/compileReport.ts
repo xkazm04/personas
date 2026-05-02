@@ -19,7 +19,7 @@ export function compileReport(args: CompileArgs): string {
     case 'experiment_report': return compileExperimentReport(args);
     case 'full_paper': return compileFullPaper(args);
     case 'executive_summary': return compileExecutiveSummary(args);
-    default: return compileDefault(args);
+    default: return compileFullPaper(args);
   }
 }
 
@@ -41,7 +41,11 @@ function renderSourceList(sources: ResearchSource[]): string {
     list.push(s);
     byYear.set(year, list);
   });
-  const years = [...byYear.keys()].sort((a, b) => (a < b ? 1 : -1));
+  const years = [...byYear.keys()].sort((a, b) => {
+    if (a === 'Undated') return 1;
+    if (b === 'Undated') return -1;
+    return Number(b) - Number(a);
+  });
   return years.map((year) => {
     const list = byYear.get(year)!;
     const entries = list.map((s) => {
@@ -212,6 +216,3 @@ function compileExecutiveSummary(args: CompileArgs): string {
   ].join('\n');
 }
 
-function compileDefault(args: CompileArgs): string {
-  return compileFullPaper(args);
-}
