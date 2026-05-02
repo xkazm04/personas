@@ -9,6 +9,7 @@ import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
 
 /* ------------------------------------------------------------------ *
  *  Console — "Deployment Matrix"
@@ -16,18 +17,19 @@ import { useTwinTranslation } from '../i18n/useTwinTranslation';
  *  status, actions. Quick filters and inline add row.
  * ------------------------------------------------------------------ */
 
-const CHANNEL_TYPES = [
-  { id: 'discord', label: 'Discord', dot: 'bg-indigo-400', text: 'text-indigo-300', serviceType: 'discord' },
-  { id: 'slack', label: 'Slack', dot: 'bg-cyan-400', text: 'text-cyan-300', serviceType: 'slack' },
-  { id: 'email', label: 'Email', dot: 'bg-amber-400', text: 'text-amber-300', serviceType: 'gmail' },
-  { id: 'telegram', label: 'Telegram', dot: 'bg-sky-400', text: 'text-sky-300', serviceType: 'telegram' },
-  { id: 'sms', label: 'SMS', dot: 'bg-emerald-400', text: 'text-emerald-300', serviceType: 'twilio-sms' },
-  { id: 'teams', label: 'Teams', dot: 'bg-violet-400', text: 'text-violet-300', serviceType: 'microsoft-teams' },
-  { id: 'whatsapp', label: 'WhatsApp', dot: 'bg-green-400', text: 'text-green-300', serviceType: 'whatsapp' },
-] as const;
+const CHANNEL_TYPES = DEPLOYMENT_CHANNELS.map((c) => ({
+  id: c.id,
+  label: c.label,
+  dot: paletteOf(c).dot,
+  text: paletteOf(c).text,
+  serviceType: c.serviceType ?? c.id,
+}));
 
 function getChannelMeta(type: string) {
-  return CHANNEL_TYPES.find((c) => c.id === type) ?? { id: type, label: type, dot: 'bg-foreground/20', text: 'text-foreground/65', serviceType: type };
+  const found = CHANNEL_TYPES.find((c) => c.id === type);
+  if (found) return found;
+  const meta = getDeploymentChannelMeta(type);
+  return { id: meta.id, label: meta.label, dot: paletteOf(meta).dot, text: paletteOf(meta).text, serviceType: meta.serviceType ?? type };
 }
 
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({ value: ct.id, label: ct.label }));

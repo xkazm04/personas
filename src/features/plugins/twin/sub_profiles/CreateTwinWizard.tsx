@@ -8,6 +8,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
+import { DEPLOYMENT_CHANNELS } from '../_shared/channels';
 
 /**
  * Four-step wizard for creating a twin with a chronological onboarding
@@ -23,15 +24,14 @@ import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
  *                       newly-created twin already active.
  */
 
-const CHANNEL_TYPES = [
-  { id: 'discord', label: 'Discord', serviceMatch: 'discord' },
-  { id: 'slack', label: 'Slack', serviceMatch: 'slack' },
-  { id: 'email', label: 'Email', serviceMatch: 'gmail' },
-  { id: 'telegram', label: 'Telegram', serviceMatch: 'telegram' },
-  { id: 'sms', label: 'SMS', serviceMatch: 'twilio' },
-  { id: 'teams', label: 'Teams', serviceMatch: 'microsoft-teams' },
-  { id: 'whatsapp', label: 'WhatsApp', serviceMatch: 'whatsapp' },
-] as const;
+// Wizard's `serviceMatch` is the substring matched against credential.service_type.
+// Pre-consolidation it diverged from Channels variants on 'sms' (twilio vs
+// twilio-sms) and would have silently failed credential matching.
+const CHANNEL_TYPES = DEPLOYMENT_CHANNELS.map((c) => ({
+  id: c.id,
+  label: c.label,
+  serviceMatch: c.serviceType ?? c.id,
+}));
 
 export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
   const { t } = useTwinTranslation();

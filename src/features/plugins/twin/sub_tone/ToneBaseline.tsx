@@ -7,17 +7,19 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { CoachMark } from '../CoachMark';
+import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
 
-const WELL_KNOWN_CHANNELS = [
-  { id: 'generic', label: 'Generic (default)', color: 'text-violet-400', bg: 'bg-violet-500/10' },
-  { id: 'discord', label: 'Discord', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  { id: 'slack', label: 'Slack', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-  { id: 'email', label: 'Email', color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  { id: 'sms', label: 'SMS', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  { id: 'voice', label: 'Voice', color: 'text-rose-400', bg: 'bg-rose-500/10' },
-] as const;
+// Baseline-specific label override: 'Generic' renders as 'Generic (default)'
+// to make the fallback semantics obvious in the collapsed-card list view.
+const BASELINE_LABEL_OVERRIDES: Record<string, string> = { generic: 'Generic (default)' };
+const WELL_KNOWN_CHANNELS = TONE_CHANNELS.map((c) => ({
+  id: c.id,
+  label: BASELINE_LABEL_OVERRIDES[c.id] ?? c.label,
+  color: paletteOf(c).textBaseline,
+  bg: paletteOf(c).bg,
+}));
 
 interface ToneForm { voiceDirectives: string; examplesJson: string; constraintsJson: string; lengthHint: string; }
 const EMPTY_FORM: ToneForm = { voiceDirectives: '', examplesJson: '', constraintsJson: '', lengthHint: '' };

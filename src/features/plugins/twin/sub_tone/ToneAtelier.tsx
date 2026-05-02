@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { TONE_CHANNELS, paletteOf, type ChannelPalette } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
 
@@ -16,22 +17,20 @@ import type { TwinChannelKind } from '@/api/enums';
  *  parsed examples as speech bubbles. Decorative wave in the header.
  * ------------------------------------------------------------------ */
 
-const CHANNELS = [
-  { id: 'generic', label: 'Generic', stroke: 'violet', from: 'from-violet-500/30', to: 'to-fuchsia-500/15', dot: 'bg-violet-400' },
-  { id: 'discord', label: 'Discord', stroke: 'indigo', from: 'from-indigo-500/30', to: 'to-violet-500/15', dot: 'bg-indigo-400' },
-  { id: 'slack', label: 'Slack', stroke: 'cyan', from: 'from-cyan-500/30', to: 'to-sky-500/15', dot: 'bg-cyan-400' },
-  { id: 'email', label: 'Email', stroke: 'amber', from: 'from-amber-500/30', to: 'to-orange-500/15', dot: 'bg-amber-400' },
-  { id: 'sms', label: 'SMS', stroke: 'emerald', from: 'from-emerald-500/30', to: 'to-teal-500/15', dot: 'bg-emerald-400' },
-  { id: 'voice', label: 'Voice', stroke: 'rose', from: 'from-rose-500/30', to: 'to-pink-500/15', dot: 'bg-rose-400' },
-] as const;
+const CHANNELS = TONE_CHANNELS;
 
-const CHANNEL_TINT: Record<string, { ring: string; text: string; glow: string }> = {
-  violet: { ring: 'ring-violet-500/40', text: 'text-violet-300', glow: 'shadow-[0_0_24px_rgba(167,139,250,0.18)]' },
-  indigo: { ring: 'ring-indigo-500/40', text: 'text-indigo-300', glow: 'shadow-[0_0_24px_rgba(129,140,248,0.18)]' },
-  cyan: { ring: 'ring-cyan-500/40', text: 'text-cyan-300', glow: 'shadow-[0_0_24px_rgba(34,211,238,0.18)]' },
-  amber: { ring: 'ring-amber-500/40', text: 'text-amber-300', glow: 'shadow-[0_0_24px_rgba(251,191,36,0.18)]' },
-  emerald: { ring: 'ring-emerald-500/40', text: 'text-emerald-300', glow: 'shadow-[0_0_24px_rgba(52,211,153,0.18)]' },
-  rose: { ring: 'ring-rose-500/40', text: 'text-rose-300', glow: 'shadow-[0_0_24px_rgba(244,114,182,0.18)]' },
+// Atelier-specific extras: ring + glow per palette. Glows are precomputed
+// rgba literals so they survive Tailwind's JIT (which can't expand
+// dynamic arbitrary-value classes).
+const ATELIER_EXTRAS: Record<ChannelPalette, { ring: string; glow: string }> = {
+  violet: { ring: 'ring-violet-500/40', glow: 'shadow-[0_0_24px_rgba(167,139,250,0.18)]' },
+  indigo: { ring: 'ring-indigo-500/40', glow: 'shadow-[0_0_24px_rgba(129,140,248,0.18)]' },
+  cyan: { ring: 'ring-cyan-500/40', glow: 'shadow-[0_0_24px_rgba(34,211,238,0.18)]' },
+  amber: { ring: 'ring-amber-500/40', glow: 'shadow-[0_0_24px_rgba(251,191,36,0.18)]' },
+  sky: { ring: 'ring-sky-500/40', glow: 'shadow-[0_0_24px_rgba(56,189,248,0.18)]' },
+  emerald: { ring: 'ring-emerald-500/40', glow: 'shadow-[0_0_24px_rgba(52,211,153,0.18)]' },
+  green: { ring: 'ring-green-500/40', glow: 'shadow-[0_0_24px_rgba(74,222,128,0.18)]' },
+  rose: { ring: 'ring-rose-500/40', glow: 'shadow-[0_0_24px_rgba(244,114,182,0.18)]' },
 };
 
 interface ToneForm { voiceDirectives: string; examplesJson: string; constraintsJson: string; lengthHint: string; }
@@ -107,8 +106,9 @@ export default function ToneAtelier() {
 
   if (!activeTwinId) return <TwinEmptyState icon={Mic} title={t.tone.title} />;
 
-  const active = CHANNELS.find((c) => c.id === activeChannel) ?? CHANNELS[0];
-  const tint = CHANNEL_TINT[active.stroke] ?? CHANNEL_TINT.violet!;
+  const active = CHANNELS.find((c) => c.id === activeChannel) ?? CHANNELS[0]!;
+  const palette = paletteOf(active);
+  const extras = ATELIER_EXTRAS[active.palette];
   const form = getForm(active.id);
   const exists = hasTone(active.id);
   const examples = parseExamples(form.examplesJson);
@@ -118,19 +118,19 @@ export default function ToneAtelier() {
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Header band with sound-wave decoration ──────────────────── */}
       <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
-        <div className={`absolute inset-0 bg-gradient-to-r ${active.from} ${active.to} opacity-90 transition-colors duration-500`} />
+        <div className={`absolute inset-0 bg-gradient-to-r ${palette.tint} opacity-90 transition-colors duration-500`} />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-background/85" />
         {/* Decorative waveform */}
         <svg className="absolute inset-0 w-full h-full opacity-30 pointer-events-none" viewBox="0 0 1200 120" preserveAspectRatio="none">
-          <path d="M0,60 Q 50,30 100,60 T 200,60 T 300,60 T 400,60 T 500,60 T 600,60 T 700,60 T 800,60 T 900,60 T 1000,60 T 1100,60 T 1200,60" stroke="currentColor" strokeWidth="1" fill="none" className={tint.text} />
-          <path d="M0,60 Q 50,80 100,60 T 200,60 T 300,60 T 400,60 T 500,60 T 600,60 T 700,60 T 800,60 T 900,60 T 1000,60 T 1100,60 T 1200,60" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" className={tint.text} />
+          <path d="M0,60 Q 50,30 100,60 T 200,60 T 300,60 T 400,60 T 500,60 T 600,60 T 700,60 T 800,60 T 900,60 T 1000,60 T 1100,60 T 1200,60" stroke="currentColor" strokeWidth="1" fill="none" className={palette.text} />
+          <path d="M0,60 Q 50,80 100,60 T 200,60 T 300,60 T 400,60 T 500,60 T 600,60 T 700,60 T 800,60 T 900,60 T 1000,60 T 1100,60 T 1200,60" stroke="currentColor" strokeWidth="1" fill="none" opacity="0.5" className={palette.text} />
         </svg>
         <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">
-          <div className={`relative w-11 h-11 rounded-full bg-card/60 border ${tint.ring.replace('ring-', 'border-')} flex items-center justify-center ${tint.glow}`}>
-            <Mic className={`w-5 h-5 ${tint.text}`} />
+          <div className={`relative w-11 h-11 rounded-full bg-card/60 border ${extras.ring.replace('ring-', 'border-')} flex items-center justify-center ${extras.glow}`}>
+            <Mic className={`w-5 h-5 ${palette.text}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className={`text-[10px] uppercase tracking-[0.22em] ${tint.text} font-medium`}>Voice Studio</p>
+            <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}>Voice Studio</p>
             <h1 className="typo-heading-lg text-foreground/95">{t.tone.title}</h1>
             <p className="typo-caption text-foreground/65 mt-0.5">{t.tone.subtitle}</p>
           </div>
@@ -152,7 +152,7 @@ export default function ToneAtelier() {
           <div className="px-4 py-4 space-y-1.5">
             <p className="text-[10px] uppercase tracking-[0.2em] text-foreground/55 font-medium mb-2">channels</p>
             {CHANNELS.map((c) => {
-              const t2 = CHANNEL_TINT[c.stroke];
+              const cPalette = paletteOf(c);
               const has = hasTone(c.id);
               const isActive = c.id === active.id;
               return (
@@ -161,18 +161,18 @@ export default function ToneAtelier() {
                   onClick={() => setActiveChannel(c.id)}
                   className={`w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-card border transition-all ${
                     isActive
-                      ? `border-violet-500/30 bg-gradient-to-r ${c.from} ${c.to}`
+                      ? `border-violet-500/30 bg-gradient-to-r ${cPalette.tint}`
                       : 'border-transparent hover:border-primary/15 hover:bg-secondary/30'
                   }`}
                 >
                   <div className={`w-7 h-7 rounded-card bg-card/60 border border-primary/15 flex items-center justify-center flex-shrink-0`}>
-                    <Mic className={`w-3.5 h-3.5 ${t2?.text ?? 'text-foreground/65'}`} />
+                    <Mic className={`w-3.5 h-3.5 ${cPalette.text}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="typo-caption font-medium text-foreground">{c.label}</p>
                     <p className="text-[10px] text-foreground/55">{c.id === 'generic' ? 'default fallback' : has ? 'overrides generic' : 'falls back to generic'}</p>
                   </div>
-                  <span className={`w-1.5 h-1.5 rounded-full ${has ? c.dot : 'bg-foreground/15'}`} />
+                  <span className={`w-1.5 h-1.5 rounded-full ${has ? cPalette.dot : 'bg-foreground/15'}`} />
                 </button>
               );
             })}
@@ -196,17 +196,17 @@ export default function ToneAtelier() {
                 className="px-4 md:px-6 xl:px-8 py-6 max-w-[1100px] mx-auto space-y-5"
               >
                 {/* Stage header */}
-                <div className={`relative rounded-card border ${tint.ring.replace('ring-', 'border-')} bg-gradient-to-br ${active.from} ${active.to} p-5 ${tint.glow}`}>
+                <div className={`relative rounded-card border ${extras.ring.replace('ring-', 'border-')} bg-gradient-to-br ${palette.tint} p-5 ${extras.glow}`}>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-card bg-card/60 border border-primary/15 flex items-center justify-center">
-                      <Mic className={`w-5 h-5 ${tint.text}`} />
+                      <Mic className={`w-5 h-5 ${palette.text}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-[10px] uppercase tracking-[0.22em] ${tint.text} font-medium`}>active stage</p>
+                      <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}>active stage</p>
                       <h2 className="typo-section-title">{active.label}</h2>
                     </div>
                     {exists ? (
-                      <span className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full ${tint.text} bg-card/60 border ${tint.ring.replace('ring-', 'border-')}`}>configured</span>
+                      <span className={`px-2.5 py-0.5 text-[10px] font-medium rounded-full ${palette.text} bg-card/60 border ${extras.ring.replace('ring-', 'border-')}`}>configured</span>
                     ) : (
                       <span className="px-2.5 py-0.5 text-[10px] font-medium rounded-full text-foreground/55 bg-secondary/40 border border-primary/10">{t.tone.fallsBackToGeneric}</span>
                     )}
@@ -214,7 +214,7 @@ export default function ToneAtelier() {
                 </div>
 
                 {/* Voice directives — hero card */}
-                <Section icon={Sparkles} label={t.tone.voiceDirectives} accent={tint.text}>
+                <Section icon={Sparkles} label={t.tone.voiceDirectives} accent={palette.text}>
                   <textarea
                     rows={5}
                     placeholder={t.tone.voiceDirectivesPlaceholder.replace('{channel}', active.label)}
@@ -225,10 +225,10 @@ export default function ToneAtelier() {
                 </Section>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Section icon={Ruler} label={t.tone.lengthHint} accent={tint.text}>
+                  <Section icon={Ruler} label={t.tone.lengthHint} accent={palette.text}>
                     <input type="text" placeholder={t.tone.lengthHintPlaceholder} value={form.lengthHint} onChange={(e) => setForm(active.id, { lengthHint: e.target.value })} className={INPUT_FIELD} />
                   </Section>
-                  <Section icon={ListChecks} label={t.tone.constraints} accent={tint.text}>
+                  <Section icon={ListChecks} label={t.tone.constraints} accent={palette.text}>
                     <input type="text" placeholder={t.tone.constraintsPlaceholder} value={form.constraintsJson} onChange={(e) => setForm(active.id, { constraintsJson: e.target.value })} className={`${INPUT_FIELD} font-mono`} />
                     {constraints.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 mt-2">
@@ -241,7 +241,7 @@ export default function ToneAtelier() {
                 </div>
 
                 {/* Examples — speech bubbles */}
-                <Section icon={Quote} label={t.tone.exampleMessages} accent={tint.text}>
+                <Section icon={Quote} label={t.tone.exampleMessages} accent={palette.text}>
                   <textarea
                     rows={3}
                     placeholder={t.tone.exampleMessagesPlaceholder}
@@ -256,9 +256,9 @@ export default function ToneAtelier() {
                         {examples.map((ex, i) => (
                           <div key={i} className="flex items-end gap-2">
                             <div className="w-6 h-6 rounded-full bg-card/60 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                              <MessageCircle className={`w-3 h-3 ${tint.text}`} />
+                              <MessageCircle className={`w-3 h-3 ${palette.text}`} />
                             </div>
-                            <div className={`max-w-[80%] px-3 py-2 rounded-card rounded-bl-sm bg-gradient-to-br ${active.from} ${active.to} border border-primary/10`}>
+                            <div className={`max-w-[80%] px-3 py-2 rounded-card rounded-bl-sm bg-gradient-to-br ${palette.tint} border border-primary/10`}>
                               <p className="typo-body text-foreground/90 leading-relaxed">{ex}</p>
                             </div>
                           </div>

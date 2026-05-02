@@ -5,6 +5,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
 
@@ -14,14 +15,7 @@ import type { TwinChannelKind } from '@/api/enums';
  *  constraints, examples, status. Inline edit via click-to-expand.
  * ------------------------------------------------------------------ */
 
-const CHANNELS = [
-  { id: 'generic', label: 'Generic', dot: 'bg-violet-400', tag: 'text-violet-300' },
-  { id: 'discord', label: 'Discord', dot: 'bg-indigo-400', tag: 'text-indigo-300' },
-  { id: 'slack', label: 'Slack', dot: 'bg-cyan-400', tag: 'text-cyan-300' },
-  { id: 'email', label: 'Email', dot: 'bg-amber-400', tag: 'text-amber-300' },
-  { id: 'sms', label: 'SMS', dot: 'bg-emerald-400', tag: 'text-emerald-300' },
-  { id: 'voice', label: 'Voice', dot: 'bg-rose-400', tag: 'text-rose-300' },
-] as const;
+const CHANNELS = TONE_CHANNELS;
 
 interface ToneForm { voiceDirectives: string; examplesJson: string; constraintsJson: string; lengthHint: string; }
 const EMPTY: ToneForm = { voiceDirectives: '', examplesJson: '', constraintsJson: '', lengthHint: '' };
@@ -164,7 +158,7 @@ export default function ToneConsole() {
                     <td className="pl-4 md:pl-6 xl:pl-8 pr-3 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <ChevronDown className={`w-3.5 h-3.5 text-foreground/55 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                        <span className={`w-2 h-2 rounded-full ${exists ? c.dot : 'bg-foreground/20'}`} />
+                        <span className={`w-2 h-2 rounded-full ${exists ? paletteOf(c).dot : 'bg-foreground/20'}`} />
                         <span className="typo-card-label">{c.label}</span>
                         {c.id === 'generic' && <span className="text-[9px] uppercase tracking-wider text-foreground/45">default</span>}
                       </div>
@@ -189,7 +183,7 @@ export default function ToneConsole() {
                     </td>
                     <td className="pr-4 md:pr-6 xl:pr-8 pl-3 py-2.5 text-right">
                       {exists ? (
-                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 ${c.tag} border border-violet-500/25`}>configured</span>
+                        <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/15 ${paletteOf(c).text} border border-violet-500/25`}>configured</span>
                       ) : (
                         <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-secondary/40 text-foreground/55">{c.id === 'generic' ? '—' : 'fallback'}</span>
                       )}

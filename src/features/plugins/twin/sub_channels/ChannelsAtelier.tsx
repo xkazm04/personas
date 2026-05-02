@@ -10,6 +10,7 @@ import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Antenna Grid"
@@ -18,18 +19,21 @@ import { useTwinTranslation } from '../i18n/useTwinTranslation';
  *  signal-wave decoration.
  * ------------------------------------------------------------------ */
 
-const CHANNEL_TYPES = [
-  { id: 'discord', label: 'Discord', tint: 'from-indigo-500/30 to-violet-500/15', stroke: 'indigo', dot: 'bg-indigo-400', text: 'text-indigo-300', serviceType: 'discord' },
-  { id: 'slack', label: 'Slack', tint: 'from-cyan-500/30 to-sky-500/15', stroke: 'cyan', dot: 'bg-cyan-400', text: 'text-cyan-300', serviceType: 'slack' },
-  { id: 'email', label: 'Email', tint: 'from-amber-500/30 to-orange-500/15', stroke: 'amber', dot: 'bg-amber-400', text: 'text-amber-300', serviceType: 'gmail' },
-  { id: 'telegram', label: 'Telegram', tint: 'from-sky-500/30 to-blue-500/15', stroke: 'sky', dot: 'bg-sky-400', text: 'text-sky-300', serviceType: 'telegram' },
-  { id: 'sms', label: 'SMS', tint: 'from-emerald-500/30 to-teal-500/15', stroke: 'emerald', dot: 'bg-emerald-400', text: 'text-emerald-300', serviceType: 'twilio-sms' },
-  { id: 'teams', label: 'Teams', tint: 'from-violet-500/30 to-fuchsia-500/15', stroke: 'violet', dot: 'bg-violet-400', text: 'text-violet-300', serviceType: 'microsoft-teams' },
-  { id: 'whatsapp', label: 'WhatsApp', tint: 'from-green-500/30 to-emerald-500/15', stroke: 'green', dot: 'bg-green-400', text: 'text-green-300', serviceType: 'whatsapp' },
-] as const;
+const CHANNEL_TYPES = DEPLOYMENT_CHANNELS.map((c) => ({
+  id: c.id,
+  label: c.label,
+  tint: paletteOf(c).tint,
+  stroke: c.palette,
+  dot: paletteOf(c).dot,
+  text: paletteOf(c).text,
+  serviceType: c.serviceType ?? c.id,
+}));
 
 function getChannelMeta(type: string) {
-  return CHANNEL_TYPES.find((c) => c.id === type) ?? { id: type, label: type, tint: 'from-violet-500/15 to-fuchsia-500/10', stroke: 'violet', dot: 'bg-foreground/20', text: 'text-foreground/65', serviceType: type };
+  const found = CHANNEL_TYPES.find((c) => c.id === type);
+  if (found) return found;
+  const meta = getDeploymentChannelMeta(type);
+  return { id: meta.id, label: meta.label, tint: paletteOf(meta).tint, stroke: meta.palette, dot: paletteOf(meta).dot, text: paletteOf(meta).text, serviceType: meta.serviceType ?? type };
 }
 
 const channelOptions: ThemedSelectOption[] = CHANNEL_TYPES.map((ct) => ({ value: ct.id, label: ct.label }));
