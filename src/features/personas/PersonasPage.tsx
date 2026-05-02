@@ -27,7 +27,7 @@ const DesignReviewsPage = lazy(() => import('@/features/templates/components/Des
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
 const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
-const GitLabPanel = lazy(() => import('@/features/gitlab/components/GitLabPanel'));
+const GitLabPanel = lazy(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
 const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));

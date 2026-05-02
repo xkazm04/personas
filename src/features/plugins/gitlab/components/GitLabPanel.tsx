@@ -7,12 +7,12 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
-import { GitLabConnectionForm } from '@/features/gitlab/components/GitLabConnectionForm';
-import { GitLabAgentList } from '@/features/gitlab/components/GitLabAgentList';
-import { GitLabDeployModal } from '@/features/gitlab/components/GitLabDeployModal';
-import { GitLabPipelineViewer } from '@/features/gitlab/components/GitLabPipelineViewer';
-import { GitOpsVersionHistory } from '@/features/gitlab/components/GitOpsVersionHistory';
-import { DeploymentHistoryTab } from '@/features/gitlab/components/DeploymentHistoryTab';
+import { GitLabConnectionForm } from '@/features/plugins/gitlab/components/GitLabConnectionForm';
+import { GitLabAgentList } from '@/features/plugins/gitlab/components/GitLabAgentList';
+import { GitLabDeployModal } from '@/features/plugins/gitlab/components/GitLabDeployModal';
+import { GitLabPipelineViewer } from '@/features/plugins/gitlab/components/GitLabPipelineViewer';
+import { GitOpsVersionHistory } from '@/features/plugins/gitlab/components/GitOpsVersionHistory';
+import { DeploymentHistoryTab } from '@/features/plugins/gitlab/components/DeploymentHistoryTab';
 import type { CiCdTemplate } from '../data/cicdTemplates';
 import { useTranslation } from '@/i18n/useTranslation';
 
