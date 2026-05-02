@@ -19,6 +19,7 @@ interface EngineCapabilityBadgeProps {
  */
 export function EngineCapabilityBadge({ operation, compact = false }: EngineCapabilityBadgeProps) {
   const { t, tx } = useTranslation();
+  const s = t.settings.engine;
   const { isEnabled, loaded } = useEngineCapabilities();
   const engineSetting = useAppSetting('cli_engine', 'claude_code');
 
@@ -27,6 +28,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
   const activeEngine = (engineSetting.value || 'claude_code') as CliEngine;
   const provider = PROVIDERS.find((p) => p.id === activeEngine);
   const capable = isEnabled(operation, activeEngine);
+  const providerLabel = provider?.shortLabel ?? activeEngine;
 
   if (compact) {
     return (
@@ -36,18 +38,14 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
             : 'bg-amber-500/10 text-amber-400 border-amber-500/20'
         }`}
-        title={
-          capable
-            ? `${provider?.shortLabel ?? activeEngine} is verified for this operation`
-            : `${provider?.shortLabel ?? activeEngine} may produce unparseable output for this operation`
-        }
+        title={tx(capable ? s.engine_verified_title : s.engine_unparseable_title, { provider: providerLabel })}
       >
         {capable ? (
           <Check className="w-2.5 h-2.5" />
         ) : (
           <AlertTriangle className="w-2.5 h-2.5" />
         )}
-        {provider?.shortLabel ?? activeEngine}
+        {providerLabel}
       </span>
     );
   }
@@ -58,7 +56,7 @@ export function EngineCapabilityBadge({ operation, compact = false }: EngineCapa
     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border-b border-amber-500/20 text-[11px] text-amber-400">
       <AlertTriangle className="w-3 h-3 flex-shrink-0" />
       <span>
-        {tx(t.settings.engine.engine_not_capable, { provider: provider?.shortLabel ?? activeEngine })}
+        {tx(s.engine_not_capable, { provider: providerLabel })}
       </span>
     </div>
   );

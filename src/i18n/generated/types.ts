@@ -7314,6 +7314,11 @@ export type Translations = {
       op_recipe_execution_description: string;
       op_query_debug_label: string;
       op_query_debug_description: string;
+      op_unsupported_title: string;
+      op_disable_title: string;
+      op_enable_title: string;
+      engine_verified_title: string;
+      engine_unparseable_title: string;
     };
     ambient: {
       title: string;

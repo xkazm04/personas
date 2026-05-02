@@ -7307,7 +7307,12 @@
       "op_recipe_execution_label": "Recipe Execution",
       "op_recipe_execution_description": "Run automation recipes with prompt templates and input schemas",
       "op_query_debug_label": "Query Debug",
-      "op_query_debug_description": "Fix broken SQL in ```sql code blocks -- rejects JS/TS/Python output"
+      "op_query_debug_description": "Fix broken SQL in ```sql code blocks -- rejects JS/TS/Python output",
+      "op_unsupported_title": "{label} is not supported by {provider} -- failed integration tests",
+      "op_disable_title": "Disable {label} for {provider}",
+      "op_enable_title": "Enable {label} for {provider}",
+      "engine_verified_title": "{provider} is verified for this operation",
+      "engine_unparseable_title": "{provider} may produce unparseable output for this operation"
     },
     "ambient": {
       "title": "Ambient Context Fusion",

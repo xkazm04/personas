@@ -2,6 +2,7 @@ import { Check, X, Minus, Lock } from 'lucide-react';
 import { PROVIDERS, DEFAULT_CAPABILITIES } from '../libs/engineCapabilities';
 import type { CliOperation } from '../libs/engineCapabilities';
 import type { CliEngine } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface OperationRowProps {
   operation: CliOperation;
@@ -20,6 +21,8 @@ export function OperationRow({
   isEnabled,
   onToggle,
 }: OperationRowProps) {
+  const { t, tx } = useTranslation();
+  const s = t.settings.engine;
   return (
     <tr className="border-b border-primary/5 hover:bg-primary/[0.02] transition-colors">
       <td className="py-2.5 pr-4">
@@ -46,7 +49,7 @@ export function OperationRow({
               <div className="flex justify-center">
                 <span
                   className="w-6 h-6 rounded bg-rose-500/10 border border-rose-500/20 flex items-center justify-center cursor-not-allowed"
-                  title={`${label} is not supported by ${p.shortLabel} -- failed integration tests`}
+                  title={tx(s.op_unsupported_title, { label, provider: p.shortLabel })}
                 >
                   <Lock className="w-2.5 h-2.5 text-rose-400/40" />
                 </span>
@@ -60,7 +63,7 @@ export function OperationRow({
                       ? 'bg-emerald-500/20 border-emerald-500/30 hover:bg-emerald-500/30'
                       : 'bg-rose-500/10 border-rose-500/20 hover:bg-rose-500/20'
                   }`}
-                  title={`${enabled ? 'Disable' : 'Enable'} ${label} for ${p.shortLabel}`}
+                  title={tx(enabled ? s.op_disable_title : s.op_enable_title, { label, provider: p.shortLabel })}
                 >
                   {enabled ? (
                     <Check className="w-3 h-3 text-emerald-400" />
