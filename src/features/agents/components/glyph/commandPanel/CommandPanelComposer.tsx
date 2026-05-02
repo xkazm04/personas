@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
 import type { CommandPanelProps } from "./types";
-import { CommandPanelHeader } from "./CommandPanelHeader";
 import { CommandPanelFooter } from "./CommandPanelFooter";
 import { CommandPanelComposeStep } from "./CommandPanelComposeStep";
 import {
@@ -88,8 +87,6 @@ export function CommandPanelComposer({
             background: "linear-gradient(90deg, var(--color-primary, #60a5fa), transparent)",
           }}
         />
-
-        <CommandPanelHeader />
 
         <CommandPanelComposeStep
           draft={draft}

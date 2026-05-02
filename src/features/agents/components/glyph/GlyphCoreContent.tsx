@@ -71,7 +71,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
           Click to Begin
         </span>
         <span className="typo-caption text-foreground/45 max-w-[220px] leading-snug">
-          Describe your agent — its sigil will weave here.
+          Describe your persona
         </span>
       </motion.button>
     );

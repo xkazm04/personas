@@ -150,7 +150,21 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
 
   return (
     <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1" data-testid="build-layout-glyph-full">
-      <div className="flex flex-col items-center gap-5 pb-14 pt-4">
+      {/* Wizard surface — fixed 900px min-width so the layout stays
+          breathable on narrower viewports + a subtle grid background
+          gives the canvas its own identity (was blending into the page
+          background before). The outer flex centers it horizontally;
+          the inner column stacks topbar, sigil, answer card, etc. */}
+      <div className="flex flex-col items-center pb-14 pt-4">
+        <div
+          className="min-w-[900px] w-full max-w-[1400px] flex flex-col items-center gap-5 rounded-modal"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), " +
+              "linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        >
         <GlyphTopBar
           agentName={agentName}
           onAgentNameChange={onAgentNameChange}
@@ -221,6 +235,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             <span>{buildError}</span>
           </div>
         )}
+        </div>
       </div>
 
       {/* Intent composer overlay — summoned by clicking the centre of the
