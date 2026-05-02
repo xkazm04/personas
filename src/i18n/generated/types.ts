@@ -8317,6 +8317,7 @@ export type Translations = {
     tile_last_run_label: string;
     tile_needs_setup: string;
     tile_active: string;
+    unknown_assistant: string;
     connections_strip_label: string;
     connections_add_more: string;
     connections_unhealthy: string;

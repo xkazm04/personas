@@ -8311,6 +8311,7 @@
     "tile_last_run_label": "last run",
     "tile_needs_setup": "needs setup",
     "tile_active": "active",
+    "unknown_assistant": "Unknown assistant",
     "connections_strip_label": "Connected services",
     "connections_add_more": "add",
     "connections_unhealthy": "reconnect",

@@ -21,6 +21,7 @@ import { useMemo } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import type { Persona } from '@/lib/bindings/Persona';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 
@@ -43,10 +44,14 @@ interface PersonaSummary {
   personaColor: string | null;
 }
 
-function resolvePersonaFromIndex(index: Map<string, Persona>, personaId: string): PersonaSummary {
+function resolvePersonaFromIndex(
+  index: Map<string, Persona>,
+  personaId: string,
+  unknownLabel: string,
+): PersonaSummary {
   const p = index.get(personaId);
   return {
-    personaName: p?.name ?? 'Unknown assistant',
+    personaName: p?.name ?? unknownLabel,
     personaIcon: p?.icon ?? null,
     personaColor: p?.color ?? null,
   };
@@ -61,6 +66,8 @@ function resolvePersonaFromIndex(index: Map<string, Persona>, personaId: string)
  * memories) do not re-compute the inbox.
  */
 export function useUnifiedInbox(): UnifiedInboxItem[] {
+  const { t } = useTranslation();
+  const unknownLabel = t.simple_mode.unknown_assistant;
   const { manualReviews, messages, healingIssues } = useOverviewStore(
     useShallow((s) => ({
       manualReviews: s.manualReviews,
@@ -75,7 +82,8 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
     // and 50 inbox items, this avoids up to ~1000 linear scans per rebuild.
     const personaIndex = new Map<string, Persona>();
     if (Array.isArray(personas)) for (const p of personas) personaIndex.set(p.id, p);
-    const resolve = (id: string): PersonaSummary => resolvePersonaFromIndex(personaIndex, id);
+    const resolve = (id: string): PersonaSummary =>
+      resolvePersonaFromIndex(personaIndex, id, unknownLabel);
 
     const approvals = manualReviews
       .filter((r) => r.status === 'pending')
@@ -101,5 +109,5 @@ export function useUnifiedInbox(): UnifiedInboxItem[] {
     return [...approvals, ...regularMessages, ...outputs, ...healing]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, MAX_ITEMS);
-  }, [manualReviews, messages, healingIssues, personas]);
+  }, [manualReviews, messages, healingIssues, personas, unknownLabel]);
 }
