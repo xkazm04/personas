@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HardDrive } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
@@ -70,7 +70,18 @@ export default function DrivePage() {
 
   // ---------------------------------------------------------------------
   // Keyboard shortcuts
+  //
+  // `drive` is a fresh object literal every render (it's the return of
+  // useDrive()) and `handleOpen` is recreated whenever drive changes — so
+  // listing them in the effect's dep array would re-attach the document
+  // listener on every render. Instead, route both through refs that we
+  // update each render, and attach the listener once on mount.
   // ---------------------------------------------------------------------
+  const driveRef = useRef(drive);
+  driveRef.current = drive;
+  const handleOpenRef = useRef(handleOpen);
+  handleOpenRef.current = handleOpen;
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       // Ignore when typing inside an input/textarea.
@@ -84,38 +95,39 @@ export default function DrivePage() {
         return;
       }
 
+      const drv = driveRef.current;
       const mod = e.ctrlKey || e.metaKey;
 
       if (mod && e.key.toLowerCase() === "a") {
         e.preventDefault();
-        drive.selectAll();
+        drv.selectAll();
         return;
       }
       if (mod && e.key.toLowerCase() === "c") {
         e.preventDefault();
-        drive.copySelection();
+        drv.copySelection();
         return;
       }
       if (mod && e.key.toLowerCase() === "x") {
         e.preventDefault();
-        drive.cutSelection();
+        drv.cutSelection();
         return;
       }
       if (mod && e.key.toLowerCase() === "v") {
         e.preventDefault();
-        drive.pasteHere();
+        drv.pasteHere();
         return;
       }
       if (e.key === "Delete" || e.key === "Backspace") {
-        if (drive.selection.size > 0) {
+        if (drv.selection.size > 0) {
           e.preventDefault();
-          setDialog({ kind: "delete", paths: Array.from(drive.selection) });
+          setDialog({ kind: "delete", paths: Array.from(drv.selection) });
         }
         return;
       }
       if (e.key === "F2") {
-        const first = Array.from(drive.selection)[0];
-        const entry = drive.visibleEntries.find((ent) => ent.path === first);
+        const first = Array.from(drv.selection)[0];
+        const entry = drv.visibleEntries.find((ent) => ent.path === first);
         if (entry) {
           e.preventDefault();
           setDialog({ kind: "rename", entry });
@@ -123,36 +135,36 @@ export default function DrivePage() {
         return;
       }
       if (e.key === "Enter") {
-        const first = Array.from(drive.selection)[0];
-        const entry = drive.visibleEntries.find((ent) => ent.path === first);
+        const first = Array.from(drv.selection)[0];
+        const entry = drv.visibleEntries.find((ent) => ent.path === first);
         if (entry) {
           e.preventDefault();
-          handleOpen(entry);
+          handleOpenRef.current(entry);
         }
         return;
       }
       if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        if (drive.visibleEntries.length === 0) return;
+        if (drv.visibleEntries.length === 0) return;
         e.preventDefault();
-        const current = Array.from(drive.selection)[0];
-        const idx = drive.visibleEntries.findIndex((ent) => ent.path === current);
+        const current = Array.from(drv.selection)[0];
+        const idx = drv.visibleEntries.findIndex((ent) => ent.path === current);
         const next =
           e.key === "ArrowDown"
-            ? Math.min(drive.visibleEntries.length - 1, idx + 1)
+            ? Math.min(drv.visibleEntries.length - 1, idx + 1)
             : Math.max(0, idx - 1);
-        const target = drive.visibleEntries[next >= 0 ? next : 0];
-        if (target) drive.selectOnly(target.path);
+        const target = drv.visibleEntries[next >= 0 ? next : 0];
+        if (target) drv.selectOnly(target.path);
       }
       if (e.key === "ArrowLeft" && !mod) {
-        drive.goUp();
+        drv.goUp();
       }
       if (e.key === "Escape") {
-        drive.clearSelection();
+        drv.clearSelection();
       }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [drive, handleOpen]);
+  }, []);
 
   // ---------------------------------------------------------------------
   // Context menu + dialog actions
