@@ -84,8 +84,11 @@ SCENARIOS = {
         # 3 collectors + 1 digest assembler. Rule D (capability-granularity for
         # chained producer/publisher pipelines) makes the LLM legitimately split
         # the assembler out of the collectors — verified live in C6 Phase A.2.
+        # The collectors fire on schedule; the assembler is event_listener
+        # (listens for the collectors' `*.brief.ready` emits). All three are
+        # acceptable trigger kinds for this scenario.
         "expected_use_cases": 4,
-        "expected_trigger_kinds": {"schedule"},
+        "expected_trigger_kinds": {"schedule", "event", "event_listener"},
         # Categories accepted; LLM may pick `project_management` for Linear,
         # `code_repository` for GitHub, `calendar` for Calendar.
         "expected_connector_categories": {
@@ -450,25 +453,50 @@ def step_inspect_persona(persona_id: str) -> dict:
             uc_titles=[uc.get("title") for uc in use_cases],
         )
 
-    # Per-UC: trigger kind matches the scenario expectation
+    # Per-UC: trigger kind matches the scenario expectation. The post-promote
+    # IR shape evolved during C5-C8 — `useCases[i].suggested_trigger` is no
+    # longer populated; trigger info lives on the persona-level `triggers[]`
+    # array (created from the IR's top-level triggers via the promote
+    # pipeline) and each row carries a `use_case_id` linking it to a UC.
+    # Probe that array first; fall back to any-trigger-matching when the
+    # link is absent (e.g. legacy IRs).
     expected_trigger_kinds = SCENARIO["expected_trigger_kinds"]
+    any_matching_kind = any(
+        (t.get("trigger_type") in expected_trigger_kinds) for t in triggers
+    )
     for uc in use_cases:
-        sug = uc.get("suggested_trigger") or {}
-        kind = sug.get("trigger_type") if isinstance(sug, dict) else None
-        if kind in expected_trigger_kinds:
+        uc_id = uc.get("id")
+        # Triggers explicitly linked to this UC via use_case_id.
+        uc_triggers = [t for t in triggers if t.get("use_case_id") == uc_id]
+        kinds = [t.get("trigger_type") for t in uc_triggers]
+        if any(k in expected_trigger_kinds for k in kinds):
             record(
                 "acceptance.uc_trigger",
                 "ok",
-                uc_id=uc.get("id"),
-                trigger=kind,
+                uc_id=uc_id,
+                triggers=kinds,
+                source="use_case_id link",
+            )
+        elif not uc_triggers and any_matching_kind:
+            # Soft pass: no explicit per-UC link but the persona has at least
+            # one trigger of an expected kind. Common when the LLM emits a
+            # single shared schedule trigger for all UCs and doesn't fan it
+            # out per capability.
+            record(
+                "acceptance.uc_trigger",
+                "ok",
+                uc_id=uc_id,
+                triggers=[t.get("trigger_type") for t in triggers],
+                source="persona-level shared trigger",
             )
         else:
             record(
                 "acceptance.uc_trigger",
                 "fail",
-                uc_id=uc.get("id"),
-                trigger=kind,
+                uc_id=uc_id,
+                triggers=kinds,
                 expected_one_of=sorted(expected_trigger_kinds),
+                all_persona_triggers=[t.get("trigger_type") for t in triggers],
             )
 
     # Per-UC: at least one connector category matches scenario expectation
