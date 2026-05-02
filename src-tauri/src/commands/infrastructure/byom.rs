@@ -52,8 +52,7 @@ pub fn set_byom_policy(
 #[tauri::command]
 pub fn delete_byom_policy(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    crate::db::repos::core::settings::delete(&state.db, crate::engine::byom::BYOM_POLICY_KEY)?;
-    Ok(())
+    ByomPolicy::delete(&state.db)
 }
 
 /// Validate a BYOM policy without saving it. Returns structured warnings with severity.

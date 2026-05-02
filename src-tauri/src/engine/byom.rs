@@ -188,6 +188,15 @@ impl ByomPolicy {
         Ok(Some(policy))
     }
 
+    /// Delete the BYOM policy (revert to default: all providers allowed).
+    /// `settings::delete` returns whether a row existed; we discard that
+    /// signal because absence-after-delete is the same observable state
+    /// regardless of prior presence.
+    pub fn delete(pool: &crate::db::DbPool) -> Result<(), crate::error::AppError> {
+        crate::db::repos::core::settings::delete(pool, BYOM_POLICY_KEY)?;
+        Ok(())
+    }
+
     /// Save the BYOM policy to the settings DB.
     ///
     /// Runs validation before saving. Error-level warnings block the save.
