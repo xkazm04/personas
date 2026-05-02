@@ -5,18 +5,9 @@ import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { SqlEditor } from '../SqlEditor';
 import { useQuerySafeMode } from '../hooks/useQuerySafeMode';
+import { extractErrorMessage } from '../safeModeUtils';
 import { ConsoleOutput } from './ConsoleOutput';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
-
-/** Extract a human-readable error message from a Tauri IPC error. */
-function extractErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === 'object' && err !== null && 'error' in err) {
-    return String((err as Record<string, unknown>).error);
-  }
-  if (typeof err === 'string') return err;
-  try { return JSON.stringify(err); } catch { /* intentional: non-critical -- JSON stringify fallback */ return 'Unknown error'; }
-}
 
 interface ConsoleTabProps {
   credentialId: string;
