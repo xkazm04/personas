@@ -104,7 +104,7 @@ export function DesktopDiscoveryStep({
               }`}
             >
               <div className="w-9 h-9 rounded-card bg-secondary/50 border border-primary/10 flex items-center justify-center flex-shrink-0">
-                <Monitor className="w-4.5 h-4.5 text-foreground" />
+                <Monitor className="w-[18px] h-[18px] text-foreground" />
               </div>
 
               <div className="flex-1 min-w-0">

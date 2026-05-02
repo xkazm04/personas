@@ -72,7 +72,7 @@ export default function OnboardingOverlay() {
       <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-modal bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
-            <Sparkles className="w-4.5 h-4.5 text-violet-400" />
+            <Sparkles className="w-[18px] h-[18px] text-violet-400" />
           </div>
           <div>
             <h2 id="onboarding-overlay-title" className="typo-heading text-foreground/90">
