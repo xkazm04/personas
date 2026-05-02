@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
 import { Check, Globe, Palette, Sun, Type, Sparkles } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
-import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
+import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -314,7 +314,7 @@ export default function AppearanceSettings() {
             <div className="grid grid-cols-3 gap-3">
               {brightnessLevels.map((level, i) => {
                 const isActive = brightness === level.id;
-                const iconOpacity = i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100';
+                const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
                 return (
                   <Button
                     variant="ghost"

@@ -40,6 +40,9 @@ export const LIGHT_BRIGHTNESS_LEVELS: BrightnessDef[] = [
   { id: 'high', label: 'Standard',  description: 'Full brightness', value: 1.0 },
 ];
 
+/** Tailwind opacity utilities for brightness-level icon glyphs, indexed alongside *_BRIGHTNESS_LEVELS. */
+export const BRIGHTNESS_ICON_OPACITY_BY_INDEX = ['opacity-40', 'opacity-70', 'opacity-100'] as const;
+
 /** Resolve the numeric filter value for a given level + theme mode. */
 export function brightnessValue(level: BrightnessLevel, isLight: boolean): number {
   const levels = isLight ? LIGHT_BRIGHTNESS_LEVELS : DARK_BRIGHTNESS_LEVELS;

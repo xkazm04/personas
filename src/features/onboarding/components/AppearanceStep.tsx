@@ -1,5 +1,5 @@
 import { Check, Sparkles, Sun, Type, Languages } from 'lucide-react';
-import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
+import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, TextScale, BrightnessLevel } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -204,7 +204,7 @@ export function AppearanceStep() {
         <div className="grid grid-cols-3 gap-2">
           {brightnessLevels.map((level, i) => {
             const isActive = brightness === level.id;
-            const iconOpacity = i === 0 ? 'opacity-40' : i === 1 ? 'opacity-70' : 'opacity-100';
+            const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
             return (
               <button
                 key={level.id}
