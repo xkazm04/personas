@@ -96,8 +96,8 @@ export default function KnowledgeBaseline() {
                           </div>
                           {isPending ? (
                             <div className="flex items-center gap-1 flex-shrink-0">
-                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} className="p-1.5 rounded-interactive text-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"><CheckCircle2 className="w-4 h-4" /></button>
-                              <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"><XCircle className="w-4 h-4" /></button>
+                              <button onClick={() => handleReview(mem.id, true)} disabled={isReviewing} aria-label={t.knowledge.approveTitle} title={t.knowledge.approveTitle} className="p-1.5 rounded-interactive text-foreground hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors"><CheckCircle2 className="w-4 h-4" /></button>
+                              <button onClick={() => handleReview(mem.id, false)} disabled={isReviewing} aria-label={t.knowledge.rejectTitle} title={t.knowledge.rejectTitle} className="p-1.5 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors"><XCircle className="w-4 h-4" /></button>
                             </div>
                           ) : (
                             <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full border flex-shrink-0 ${mem.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' : 'bg-red-500/15 text-red-400 border-red-500/25'}`}>{mem.status}</span>
@@ -136,7 +136,7 @@ export default function KnowledgeBaseline() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="typo-caption text-foreground font-medium">{isOut ? 'Sent' : 'Received'}</span>
+                              <span className="typo-caption text-foreground font-medium">{isOut ? t.knowledge.sent : t.knowledge.received}</span>
                               <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-secondary/40 text-foreground">{comm.channel}</span>
                               {comm.contact_handle && <span className="typo-caption text-foreground">{comm.contact_handle}</span>}
                               <span className="typo-caption text-foreground ml-auto">{new Date(comm.occurred_at).toLocaleString()}</span>

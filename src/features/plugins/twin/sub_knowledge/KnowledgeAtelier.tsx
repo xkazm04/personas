@@ -234,7 +234,7 @@ export default function KnowledgeAtelier() {
                             </div>
                             <div className={`flex-1 min-w-0 max-w-[88%] p-3 rounded-card border ${isOut ? 'bg-violet-500/8 border-violet-500/15 rounded-tr-sm' : 'bg-cyan-500/5 border-cyan-500/15 rounded-tl-sm'}`}>
                               <div className="flex items-center gap-2 flex-wrap mb-1">
-                                <span className="typo-caption font-medium text-foreground/85">{isOut ? 'Sent' : 'Received'}</span>
+                                <span className="typo-caption font-medium text-foreground/85">{isOut ? t.knowledge.sent : t.knowledge.received}</span>
                                 <span className="px-1.5 py-0.5 text-[9px] uppercase tracking-wider rounded-full bg-card/60 text-foreground/65 border border-primary/10">{comm.channel}</span>
                                 {comm.contact_handle && <span className="typo-caption text-foreground/55 truncate">· {comm.contact_handle}</span>}
                                 <span className="typo-caption text-foreground/45 ml-auto tabular-nums">{new Date(comm.occurred_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
