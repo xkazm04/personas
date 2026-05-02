@@ -22,7 +22,7 @@
  * A credential is considered "connected" only when
  * `healthcheck_last_success === true`. A null value means "unknown / never
  * tested" — we treat unknown as NOT ok because we can't prove the credential
- * works. This matches HealthStatusBar.tsx's conservative reading.
+ * works. This is intentionally conservative.
  *
  * `runsToday` reads the last element of `executionDashboard.daily_points`.
  * If the dashboard hasn't been fetched yet, or the array is empty, we fall
