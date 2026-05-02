@@ -5,6 +5,7 @@
 //! - **Compliance rules**: block specific providers for sensitive workflows
 //! - **Cost routing**: map task complexity levels to specific providers/models
 //! - **Audit logging**: record which provider handled each execution
+//!   (implementation lives in `db::repos::execution::provider_audit`)
 //!
 //! The BYOM policy is stored as a JSON blob in `app_settings` under the key
 //! `byom_policy`. When no policy is configured, all providers are allowed
@@ -466,11 +467,6 @@ impl ByomPolicy {
         }
     }
 }
-
-// =============================================================================
-// Helpers
-// =============================================================================
-
 
 #[cfg(test)]
 mod tests {
