@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2 } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
@@ -82,6 +82,18 @@ export function ByomApiKeyManager() {
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const s = t.settings.byom;
+
+  // Per-row timer ids so a Test→navigate-away→remount sequence (or rapid
+  // re-clicking the same row) doesn't leave dangling setTimeouts that
+  // setState after unmount.
+  const testTimersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  useEffect(() => {
+    const timers = testTimersRef.current;
+    return () => {
+      for (const id of timers.values()) clearTimeout(id);
+      timers.clear();
+    };
+  }, []);
 
   // Load all key values in a single bulk IPC instead of N parallel invokes.
   const settingsKeys = useMemo(() => PROVIDER_KEYS.map((def) => def.settingsKey), []);
@@ -173,9 +185,17 @@ export function ByomApiKeyManager() {
       logSecretSafeError('test', entry.def.settingsKey, err);
       updateEntry(index, { connectionState: 'error' });
     }
-    setTimeout(() => {
+    // Clear any prior timer for this row so rapid re-clicks don't stack
+    // (the second click would otherwise reset to 'idle' after the FIRST
+    // timer's remaining duration, not a fresh 4s).
+    const timers = testTimersRef.current;
+    const existing = timers.get(index);
+    if (existing) clearTimeout(existing);
+    const timerId = setTimeout(() => {
+      timers.delete(index);
       updateEntry(index, { connectionState: 'idle' });
     }, 4000);
+    timers.set(index, timerId);
   }, [entries, updateEntry]);
 
   if (loading) {
