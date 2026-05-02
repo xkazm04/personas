@@ -8364,6 +8364,7 @@
       "details_label": "Details",
       "suggested_label": "Suggested",
       "suggested_hint": "press 1–{n}",
+      "notes_label": "Notes",
       "notes_placeholder": "Add a note — why this decision? (optional)",
       "notes_hint": "Your notes help tune future decisions",
       "notes_send_hint": "enter to send",

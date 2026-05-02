@@ -8370,6 +8370,7 @@ export type Translations = {
       details_label: string;
       suggested_label: string;
       suggested_hint: string;
+      notes_label: string;
       notes_placeholder: string;
       notes_hint: string;
       notes_send_hint: string;

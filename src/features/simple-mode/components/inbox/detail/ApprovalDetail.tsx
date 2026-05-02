@@ -164,7 +164,7 @@ export function ApprovalDetail({ item, notes, onNotesChange }: ApprovalDetailPro
         <section>
           <label className="block">
             <span className="typo-label uppercase tracking-wider text-foreground/40 block mb-2">
-              {inb.notes_placeholder}
+              {inb.notes_label}
             </span>
             <textarea
               value={notes}
