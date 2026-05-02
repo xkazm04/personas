@@ -77,7 +77,8 @@ pub struct RoutingRule {
     pub name: String,
     /// Task complexity level that triggers this rule.
     pub task_complexity: TaskComplexity,
-    /// Provider to route to (as engine kind string: "claude_code", "codex_cli", etc.).
+    /// Provider to route to (as engine kind string parseable into `EngineKind`,
+    /// e.g. `"claude_code"`).
     pub provider: String,
     /// Optional model override (e.g., "claude-haiku-4-5-20251001").
     pub model: Option<String>,
@@ -493,7 +494,7 @@ mod tests {
     fn test_disabled_policy_allows_all() {
         let policy = ByomPolicy {
             enabled: false,
-            blocked_providers: vec!["codex_cli".into()],
+            blocked_providers: vec!["claude_code".into()],
             ..Default::default()
         };
         let decision = policy.evaluate(&[], None);
@@ -671,11 +672,11 @@ mod tests {
     fn test_validate_compliance_rule_blocked_provider() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["codex_cli".into()],
+            blocked_providers: vec!["claude_code".into()],
             compliance_rules: vec![ComplianceRule {
                 name: "DataSov".into(),
                 workflow_tags: vec!["eu".into()],
-                allowed_providers: vec!["codex_cli".into()],
+                allowed_providers: vec!["claude_code".into()],
                 enabled: true,
             }],
             ..Default::default()
@@ -710,11 +711,11 @@ mod tests {
     fn test_validate_routing_rule_blocked_provider_is_error() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["codex_cli".into()],
+            blocked_providers: vec!["claude_code".into()],
             routing_rules: vec![RoutingRule {
                 name: "Blocked route".into(),
                 task_complexity: TaskComplexity::Simple,
-                provider: "codex_cli".into(),
+                provider: "claude_code".into(),
                 model: None,
                 enabled: true,
             }],
@@ -754,7 +755,7 @@ mod tests {
     fn test_validate_clean_policy_no_warnings() {
         let policy = ByomPolicy {
             enabled: true,
-            allowed_providers: vec!["claude_code".into(), "codex_cli".into()],
+            allowed_providers: vec!["claude_code".into()],
             compliance_rules: vec![ComplianceRule {
                 name: "HIPAA".into(),
                 workflow_tags: vec!["hipaa".into()],
@@ -778,11 +779,11 @@ mod tests {
     fn test_has_blocking_errors() {
         let policy = ByomPolicy {
             enabled: true,
-            blocked_providers: vec!["codex_cli".into()],
+            blocked_providers: vec!["claude_code".into()],
             compliance_rules: vec![ComplianceRule {
                 name: "Bad".into(),
                 workflow_tags: vec!["test".into()],
-                allowed_providers: vec!["codex_cli".into()],
+                allowed_providers: vec!["claude_code".into()],
                 enabled: true,
             }],
             ..Default::default()
