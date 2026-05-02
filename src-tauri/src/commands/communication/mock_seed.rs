@@ -50,13 +50,17 @@ pub const MOCK_EVENT_TEMPLATES: &[MockEventTemplate] = &[
 // ---------------------------------------------------------------------------
 // Mock message templates
 // ---------------------------------------------------------------------------
+// pending: consumed by `seed_mock_messages`; that command is currently
+// unwired in invoke_handler so the cascade flags the constants as unused.
 
+#[allow(dead_code)]
 pub struct MockMessageTemplate {
     pub title: &'static str,
     pub content: &'static str,
     pub priority: &'static str,
 }
 
+#[allow(dead_code)]
 pub const MOCK_MESSAGE_TEMPLATES: &[MockMessageTemplate] = &[
     MockMessageTemplate {
         title: "Build completed successfully",

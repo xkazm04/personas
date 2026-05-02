@@ -10,4 +10,5 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 
 /// Bumped when CONSTITUTION_MD changes in a way that affects behavior.
 /// Persisted with each session so cross-version behavior is auditable.
+#[allow(dead_code)] // pending: read by session-init when version-pinning ships
 pub const CONSTITUTION_VERSION: u32 = 1;

@@ -12,6 +12,13 @@
 //! Prerequisites:
 //! - Supabase Google provider must be configured with `drive.file` scope
 //! - User must authenticate via `login_with_google_drive` (separate re-auth with scope)
+//!
+//! NOTE: This module is currently dormant. The Tauri commands that wire its
+//! functions (`obsidian_drive_*` in `mod.rs`) are themselves unwired in
+//! `lib.rs`'s `invoke_handler`. The `#![allow]` suppresses the dead-code/
+//! private-interface warnings until the feature is enabled — re-evaluate
+//! once `obsidian_drive_*` commands are registered.
+#![allow(dead_code, private_interfaces)]
 
 use std::collections::HashMap;
 use std::path::Path;

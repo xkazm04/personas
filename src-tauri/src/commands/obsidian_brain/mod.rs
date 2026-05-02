@@ -1229,8 +1229,11 @@ pub async fn obsidian_brain_semantic_lint_vault(
 }
 
 // ── Phase 6: Google Drive Cloud Sync ────────────────────────────────────
+// pending: companion of `drive.rs`. These commands need to be registered in
+// `lib.rs`'s `invoke_handler` once the Drive sync UI ships.
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn obsidian_drive_status(
     state: State<'_, Arc<AppState>>,
 ) -> Result<drive::DriveStatus, AppError> {
@@ -1248,6 +1251,7 @@ pub async fn obsidian_drive_status(
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn obsidian_drive_push_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1290,6 +1294,7 @@ pub async fn obsidian_drive_push_sync(
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn obsidian_drive_pull_sync(
     state: State<'_, Arc<AppState>>,
     folder_names: Option<Vec<String>>,
@@ -1334,6 +1339,7 @@ pub async fn obsidian_drive_pull_sync(
 /// Extract the Google provider token from auth state.
 /// This is the raw Google access token (not the Supabase JWT),
 /// obtained when the user authenticates with the `drive.file` scope.
+#[allow(dead_code)] // pending: only called from obsidian_drive_* commands above (also dormant)
 async fn get_google_provider_token(state: &Arc<AppState>) -> Result<String, AppError> {
     let auth = state.auth.read().await;
     auth.google_provider_token

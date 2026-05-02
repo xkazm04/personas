@@ -313,6 +313,8 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
         if !(0.0..=1.0).contains(&o.position_x()) || !(0.0..=1.0).contains(&o.position_y()) {
             return violation("I7", format!("overlay {id} position out of [0,1]"), Some(&id));
         }
+        // OverlayStage is single-variant today; pattern stays for future variants.
+        #[allow(irrefutable_let_patterns)]
         if let OverlayStage::Image(img) = o {
             let src = source_by_id.get(&img.source_id).ok_or_else(|| InvariantViolation {
                 code: "I4",

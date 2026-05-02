@@ -43,6 +43,7 @@ impl EpisodeRole {
 
 /// One persisted conversation turn.
 #[derive(Debug, Clone)]
+#[allow(dead_code)] // session_id and file_path populated for future filtering / vault paths
 pub struct Episode {
     pub id: String,
     pub session_id: String,

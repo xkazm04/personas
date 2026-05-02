@@ -181,6 +181,7 @@ pub struct DirectorReport {
 
 /// Context a single persona is evaluated against. Assembled by
 /// `gather_context`, consumed by a `DirectorEvaluator` impl.
+#[allow(dead_code)] // recent_executions_limit / failure_count / avg_cost_usd / memory_count populated for evaluators that don't read them yet
 pub struct PersonaEvaluationContext {
     pub persona: Persona,
     pub recent_executions_limit: usize,

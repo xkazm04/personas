@@ -3,6 +3,7 @@ pub mod claude;
 use crate::db::DbPool;
 use crate::db::models::Persona;
 use super::types::{CliArgs, ModelProfile, StreamLineType};
+#[allow(unused_imports)] // pending: re-emit engine-fallback event from this module
 use tauri::Emitter;
 
 // =============================================================================
@@ -15,6 +16,7 @@ pub enum PromptDelivery {
     /// Write prompt to stdin, then close (Claude Code).
     Stdin,
     /// Prompt is embedded as a positional argument (Codex: `exec "<prompt>"`).
+    #[allow(dead_code)] // pending: Codex provider currently uses Stdin; PositionalArg lands ahead of consumer
     PositionalArg,
     /// Prompt is passed via a flag (Codex: `-p "<prompt>"`).
     #[allow(dead_code)]
@@ -202,6 +204,7 @@ pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
 /// Like [`load_engine_kind`] but emits an `engine-fallback` event to the
 /// frontend when an unrecognized engine setting triggers the ClaudeCode
 /// fallback, so the user sees a toast notification.
+#[allow(dead_code)] // pending: wire from engine startup once fallback toast is desired
 pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::ExecutionEventEmitter) -> EngineKind {
     use super::event_registry::event_name;
 
@@ -227,9 +230,9 @@ pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::Exe
 // =============================================================================
 // CLI version check
 // =============================================================================
+// pending: wired from engine startup once minimum-version gating goes live.
 
-/// Parse a version string like "2.1.101" into a comparable tuple of numbers.
-/// Returns `None` if parsing fails.
+#[allow(dead_code)]
 fn parse_version_tuple(version: &str) -> Option<Vec<u64>> {
     let parts: Vec<u64> = version
         .split('.')
@@ -244,6 +247,7 @@ fn parse_version_tuple(version: &str) -> Option<Vec<u64>> {
 
 /// Compare two dot-separated version strings numerically.
 /// Returns true if `actual` >= `minimum`.
+#[allow(dead_code)]
 pub fn version_gte(actual: &str, minimum: &str) -> bool {
     let Some(a) = parse_version_tuple(actual) else {
         return false;
@@ -270,6 +274,7 @@ pub fn version_gte(actual: &str, minimum: &str) -> bool {
 /// - "claude v2.1.101"
 /// - "claude-code 2.1.98"
 /// - "2.1.101"
+#[allow(dead_code)]
 pub fn extract_version(output: &str) -> Option<String> {
     let line = output.lines().next()?.trim();
     // Try to find a version-like pattern: digits.digits[.digits...]
@@ -285,6 +290,7 @@ pub fn extract_version(output: &str) -> Option<String> {
 /// Run `<binary> --version` with a timeout, parse the version, compare against
 /// the provider's minimum. Returns `Ok(version_string)` if OK or no version
 /// could be determined, `Err(warning_message)` if below minimum.
+#[allow(dead_code)]
 pub async fn check_cli_version(
     binary_path: &str,
     minimum: &str,

@@ -1384,7 +1384,9 @@ pub fn list_cron_agents(
 }
 
 // -- Dev seed: mock schedule trigger -------------------------------------------
+// pending: seed command unwired in invoke_handler; cascade flags the table.
 
+#[allow(dead_code)]
 const MOCK_CRON_EXPRESSIONS: &[&str] = &[
     "*/5 * * * *",   // every 5 minutes
     "0 * * * *",     // every hour

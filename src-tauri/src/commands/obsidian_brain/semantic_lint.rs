@@ -113,6 +113,7 @@ struct RawKnowledgeGap {
 ///
 /// Returns `(summaries, total_scanned_on_disk)`. The returned summaries may
 /// be a subset if the vault has more notes than the LLM budget allows.
+#[allow(private_interfaces)] // NoteSummary is a module-internal helper; visibility intentionally narrower than the function
 pub fn build_vault_summary(vault_path: &Path) -> Result<(Vec<NoteSummary>, i64), AppError> {
     if !vault_path.exists() || !vault_path.is_dir() {
         return Err(AppError::Validation(format!(

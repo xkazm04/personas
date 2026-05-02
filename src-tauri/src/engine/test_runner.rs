@@ -1579,6 +1579,7 @@ pub async fn run_arena_test(
 /// then compute agreement rate across samples. Uses the standard lab loop with
 /// N identical "sample" variants pointing to the same persona config.
 #[allow(clippy::too_many_arguments)]
+#[allow(dead_code)] // pending: consensus mode unwired in commands::execution; standard lab loop is the only entry today
 pub async fn run_consensus_test(
     app: AppHandle,
     pool: DbPool,
@@ -1640,6 +1641,7 @@ pub async fn run_consensus_test(
 
 /// Compute agreement rate: for each scenario, check how many samples agree
 /// on the dominant output quality bucket (high/medium/low). Returns 0.0-1.0.
+#[allow(dead_code)] // pending: helper for run_consensus_test (also dormant)
 fn compute_agreement_rate(results: &[crate::db::models::LabConsensusResult]) -> f64 {
     use std::collections::HashMap;
 
@@ -1675,6 +1677,7 @@ fn compute_agreement_rate(results: &[crate::db::models::LabConsensusResult]) -> 
 }
 
 /// Build summary for consensus mode — reports per-scenario agreement.
+#[allow(dead_code)] // pending: helper for run_consensus_test (also dormant)
 fn build_consensus_summary(
     tracker: &HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
     models: &[TestModelConfig],

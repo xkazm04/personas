@@ -120,6 +120,9 @@ pub async fn artist_check_local_whisper() -> Result<bool, AppError> {
     cmd.arg("--help");
     #[cfg(windows)]
     {
+        // tokio::process::Command provides creation_flags inherently on Windows;
+        // the std trait import is a no-op but kept for parity with stdlib examples.
+        #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }
@@ -163,6 +166,7 @@ async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, App
         .arg("False");
     #[cfg(windows)]
     {
+        #[allow(unused_imports)]
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000);
     }

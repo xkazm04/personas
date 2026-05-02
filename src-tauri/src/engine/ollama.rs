@@ -3,6 +3,11 @@
 //! Calls Ollama's HTTP API directly instead of spawning a CLI process.
 //! This enables local model execution for personas without requiring
 //! Claude Code CLI (which only supports Anthropic models).
+//!
+//! NOTE: This module is dormant — the runner currently always spawns the
+//! Claude Code CLI. The `#![allow]` defers the warnings until an
+//! Ollama-backed dispatch path is wired through `engine::runner`.
+#![allow(dead_code)]
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;

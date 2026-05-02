@@ -41,6 +41,7 @@ pub trait ExecutionEventEmitter: Send + Sync {
     /// Has a `Self: Sized` bound, so it is only callable on concrete types
     /// — not through `&dyn ExecutionEventEmitter`. Use `emit_json` when you
     /// hold a trait object.
+    #[allow(dead_code)] // pending: callers currently route through emit_json on the trait object
     fn emit<P: Serialize>(&self, event: &str, payload: &P)
     where
         Self: Sized,

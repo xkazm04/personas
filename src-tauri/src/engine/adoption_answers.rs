@@ -166,6 +166,7 @@ pub fn inject_configuration_section(ir: &mut AgentIr, answers: &AdoptionAnswers)
 
 /// Extract the connector→service_type map from adoption answers.
 /// Used by credential resolution to prefer user-selected credentials.
+#[allow(dead_code)] // pending: credential resolution path doesn't consult adoption answers yet
 pub fn extract_credential_bindings(answers: &AdoptionAnswers) -> HashMap<String, String> {
     answers.credential_bindings.clone()
 }

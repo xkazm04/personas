@@ -266,6 +266,7 @@ fn store_google_provider_refresh_token(_token: &str) -> Result<(), AppError> {
 }
 
 #[cfg(feature = "desktop")]
+#[allow(dead_code)] // pending: companion of Google Drive sync (drive.rs), unwired
 fn load_google_provider_refresh_token() -> Option<String> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_GOOGLE_PROVIDER_REFRESH).ok()?;
     entry.get_password().ok()
@@ -484,6 +485,7 @@ pub async fn login_with_google(
 /// If the user has already granted basic Google sign-in, Google shows an
 /// incremental consent screen for just the Drive scope.
 #[tauri::command]
+#[allow(dead_code)] // pending: companion of Google Drive sync (drive.rs); registers in invoke_handler when feature ships
 pub async fn login_with_google_drive(
     app: tauri::AppHandle,
     state: tauri::State<'_, Arc<AppState>>,
@@ -570,6 +572,7 @@ pub async fn login_with_google_drive(
 
 /// Check whether a Google Drive provider token is available.
 #[tauri::command]
+#[allow(dead_code)] // pending: companion of Google Drive sync (drive.rs); registers in invoke_handler when feature ships
 pub async fn get_google_drive_status(
     state: tauri::State<'_, Arc<AppState>>,
 ) -> Result<bool, AppError> {

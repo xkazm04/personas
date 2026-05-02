@@ -19,6 +19,12 @@
 //! goal — no clobber between parallel members — at the granularity that
 //! Personas actually controls (the spawn boundary, via `CliArgs.cwd`).
 //!
+//! NOTE: This module ships ahead of consumers. Until a team-execution path
+//! actually instantiates `WorkspaceCoordinator`, every item here reads as
+//! dead code. The `#![allow]` defers the warnings — re-evaluate when team
+//! executions go live.
+#![allow(dead_code)]
+//!
 //! # Lifecycle
 //!
 //! ```text

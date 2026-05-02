@@ -344,6 +344,7 @@ pub struct ModelProfile {
 pub mod providers {
     pub const OLLAMA: &str = "ollama";
     pub const LITELLM: &str = "litellm";
+    #[allow(dead_code)] // pending: matches the "custom" provider option in the settings UI; not yet branched on in dispatch
     pub const CUSTOM: &str = "custom";
 }
 

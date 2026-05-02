@@ -733,6 +733,9 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     // sequentially; we preserve that ordering for byte-parity.
     let mut image_input_idx: HashMap<String, usize> = HashMap::new();
     for overlay in plan.overlays.iter() {
+        // Currently OverlayStage has only the Image variant; the `if let` is
+        // forward-compatible with future variants (e.g. Video, Text).
+        #[allow(irrefutable_let_patterns)]
         if let OverlayStage::Image(img) = overlay {
             let Some(source) = plan.sources.iter().find(|s| s.id() == img.source_id) else {
                 continue;
@@ -811,6 +814,9 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     // ---- Step 4: image overlays ----
     let mut overlay_counter = 0usize;
     for overlay in plan.overlays.iter() {
+        // Currently OverlayStage has only the Image variant; the `let...else`
+        // is forward-compatible with future variants.
+        #[allow(irrefutable_let_patterns)]
         let OverlayStage::Image(img) = overlay else {
             continue;
         };

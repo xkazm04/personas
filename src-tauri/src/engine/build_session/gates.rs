@@ -241,6 +241,7 @@ pub(super) fn gate_seed_for_intent(intent: &str) -> CapabilityGates {
 /// (typically from `engine::api_proxy::cached_connector_keywords`) so any
 /// connector added via the catalog UI participates in keyword matching
 /// without a code edit.
+#[allow(dead_code)] // pending: build session still uses the static-keyword variant
 pub(super) fn gate_seed_for_intent_with_registry(
     intent: &str,
     registry_keywords: &[String],

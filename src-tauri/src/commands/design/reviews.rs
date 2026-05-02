@@ -967,7 +967,10 @@ pub fn add_review_message(
 }
 
 // -- Dev Seed: create a mock manual review --------------------
+// pending: consumed by `seed_mock_manual_review` (also unwired in
+// invoke_handler); the cascade flags the constants as unused.
 
+#[allow(dead_code)]
 const MOCK_TITLES: &[&str] = &[
     "Verify email notification content before sending",
     "Review generated API response schema",
@@ -979,6 +982,7 @@ const MOCK_TITLES: &[&str] = &[
     "Confirm deletion of stale records",
 ];
 
+#[allow(dead_code)]
 const MOCK_DESCRIPTIONS: &[&str] = &[
     "The generated output contains customer-facing content that should be reviewed for tone and accuracy before delivery.",
     "This action involves modifying production data. Please verify the changes are correct before approving.",
@@ -987,14 +991,17 @@ const MOCK_DESCRIPTIONS: &[&str] = &[
     "A scheduled task completed with warnings. Please review the output and decide whether to proceed.",
 ];
 
+#[allow(dead_code)]
 const MOCK_SEVERITIES: &[&str] = &["info", "warning", "critical"];
 
+#[allow(dead_code)]
 const MOCK_ACTIONS: &[&str] = &[
     r#"["Approve and send","Edit content first","Reject and regenerate"]"#,
     r#"["Accept changes","Request revision","Escalate to admin"]"#,
     r#"["Confirm","Skip this step","Add manual override"]"#,
 ];
 
+#[allow(dead_code)]
 const MOCK_CONTEXT: &[&str] = &[
     r#"{"source":"email-pipeline","recipients":3,"confidence":0.87}"#,
     r#"{"records_affected":42,"estimated_cost":"$12.50","region":"us-east-1"}"#,

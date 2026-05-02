@@ -248,6 +248,10 @@ fn split_path_anchor(file_path: &str) -> (&str, &str) {
 /// Returns the section from its `## ` line through the start of the next
 /// `## `. For `intro`, returns everything before the first `## `.
 fn extract_section(md: &str, anchor: &str) -> Option<String> {
+    // current_heading is updated as a side effect during scanning but the
+    // function returns the buffered body; the heading itself is not surfaced
+    // to callers today.
+    #[allow(unused_assignments)]
     let mut current_heading = String::new();
     let mut current_anchor = "intro".to_string();
     let mut buf: Vec<&str> = Vec::new();
