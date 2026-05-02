@@ -25,6 +25,8 @@ function SkillCard({
   selected: boolean;
   onClick: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   return (
     <button
       onClick={onClick}
@@ -49,7 +51,7 @@ function SkillCard({
         <div className="flex items-center gap-1.5 shrink-0">
           {skill.referenceFileCount > 0 && (
             <span className="text-[9px] text-foreground bg-primary/5 rounded-full px-1.5 py-0.5">
-              {skill.referenceFileCount} ref{skill.referenceFileCount !== 1 ? 's' : ''}
+              {tx(skill.referenceFileCount === 1 ? dt.skills_ref_count_one : dt.skills_ref_count_other, { count: skill.referenceFileCount })}
             </span>
           )}
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
@@ -64,7 +66,8 @@ function SkillCard({
 // ---------------------------------------------------------------------------
 
 export default function SkillBrowserPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const addToast = useToastStore((s) => s.addToast);
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,11 +90,11 @@ export default function SkillBrowserPage() {
       const list = await devApi.listSkills();
       setSkills(list);
     } catch {
-      addToast('Failed to load skills. Make sure a project with .claude/skills/ exists.', 'error');
+      addToast(dt.skills_load_failed_toast, 'error');
     } finally {
       setLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, dt]);
 
   useEffect(() => { fetchSkills(); }, [fetchSkills]);
 
@@ -108,11 +111,11 @@ export default function SkillBrowserPage() {
       setFileContent('');
       setEditContent('');
       setLoadFailed(true);
-      addToast(`Failed to read ${skill.name}/${fileName}`, 'error');
+      addToast(tx(dt.skills_read_failed_toast, { skill: skill.name, file: fileName }), 'error');
     } finally {
       setFileLoading(false);
     }
-  }, [addToast]);
+  }, [addToast, dt, tx]);
 
   const handleSelectSkill = useCallback((skill: SkillEntry) => {
     setSelectedSkill(skill);
@@ -127,13 +130,13 @@ export default function SkillBrowserPage() {
       await devApi.writeSkillFile(selectedSkill.name, activeFile, editContent);
       setFileContent(editContent);
       setEditing(false);
-      addToast(`Saved ${selectedSkill.name}/${activeFile}`, 'success');
+      addToast(tx(dt.skills_save_success_toast, { skill: selectedSkill.name, file: activeFile }), 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Save failed', 'error');
+      addToast(err instanceof Error ? err.message : dt.skills_save_failed_toast, 'error');
     } finally {
       setSaving(false);
     }
-  }, [selectedSkill, activeFile, editContent, addToast]);
+  }, [selectedSkill, activeFile, editContent, addToast, dt, tx]);
 
   // Filtered skills
   const filtered = search
@@ -153,8 +156,8 @@ export default function SkillBrowserPage() {
       <ContentHeader
         icon={<BookOpen className="w-5 h-5 text-primary" />}
         iconColor="primary"
-        title={t.plugins.dev_tools.skills_title}
-        subtitle={`${skills.length} skill${skills.length !== 1 ? 's' : ''} installed`}
+        title={dt.skills_title}
+        subtitle={tx(skills.length === 1 ? dt.skills_subtitle_one : dt.skills_subtitle_other, { count: skills.length })}
       />
 
       <ContentBody>

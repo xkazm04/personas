@@ -8855,6 +8855,14 @@ export type Translations = {
       file_empty: string;
       file_load_failed: string;
       file_load_failed_hint: string;
+      skills_load_failed_toast: string;
+      skills_read_failed_toast: string;
+      skills_save_success_toast: string;
+      skills_save_failed_toast: string;
+      skills_subtitle_one: string;
+      skills_subtitle_other: string;
+      skills_ref_count_one: string;
+      skills_ref_count_other: string;
       effort: string;
       risk: string;
       quick_wins: string;
