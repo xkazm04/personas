@@ -9302,7 +9302,10 @@
       "competition_cancelled_cleaning": "Competition cancelled — cleaning up worktrees in background.",
       "background_cleanup_issue": "Background cleanup issue: {error}",
       "competition_deleted": "Competition deleted",
-      "competition_delete_failed": "Delete failed"
+      "competition_delete_failed": "Delete failed",
+      "readiness_ready": "Ready to run. Dev Clone will scan, propose, and build on approval.",
+      "readiness_partial": "Partially configured. Click Auto-Setup to fill the gaps.",
+      "readiness_not_configured": "Not configured yet. Adopt Dev Clone and run Auto-Setup."
     },
     "dev_projects": {
       "active_goals": "active goals",

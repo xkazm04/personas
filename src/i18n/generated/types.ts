@@ -9309,6 +9309,9 @@ export type Translations = {
       background_cleanup_issue: string;
       competition_deleted: string;
       competition_delete_failed: string;
+      readiness_ready: string;
+      readiness_partial: string;
+      readiness_not_configured: string;
     };
     dev_projects: {
       active_goals: string;

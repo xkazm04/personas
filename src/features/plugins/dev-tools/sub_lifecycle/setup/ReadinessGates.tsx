@@ -16,6 +16,7 @@ interface ReadinessGatesProps {
 
 export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
   const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   return (
     <div className={`rounded-card border p-4 ${
       qualityScore >= 85
@@ -35,10 +36,10 @@ export function ReadinessGates({ gates, qualityScore }: ReadinessGatesProps) {
           </h3>
           <p className="typo-body text-foreground mt-0.5">
             {qualityScore >= 85
-              ? 'Ready to run. Dev Clone will scan, propose, and build on approval.'
+              ? dl.readiness_ready
               : qualityScore >= 55
-              ? 'Partially configured. Click Auto-Setup to fill the gaps.'
-              : 'Not configured yet. Adopt Dev Clone and run Auto-Setup.'}
+              ? dl.readiness_partial
+              : dl.readiness_not_configured}
           </p>
         </div>
         <div className="shrink-0">
