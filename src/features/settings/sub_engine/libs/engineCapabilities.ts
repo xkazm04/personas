@@ -129,7 +129,16 @@ export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
 /** Settings key for the persisted capability map */
 export const CAPABILITY_SETTING_KEY = 'engine_capabilities';
 
-/** Merge saved overrides with defaults (handles new operations added after save) */
+/**
+ * Merge saved overrides with defaults.
+ *
+ * Iterates the canonical CLI_OPERATIONS list (not Object.keys(saved)), so
+ * any saved entry whose op.id no longer exists in CLI_OPERATIONS is silently
+ * dropped. This is intentional defense against stale schema (a removed
+ * operation shouldn't reanimate via storage), but the silent drop hides
+ * downgrade-then-upgrade losses — if you remove an operation, ship a
+ * migration if the user's choice for that op should carry forward.
+ */
 export function mergeCapabilities(saved: Partial<EngineCapabilityMap>): EngineCapabilityMap {
   const result = { ...DEFAULT_CAPABILITIES };
   for (const op of CLI_OPERATIONS) {
@@ -151,21 +160,22 @@ export function isOperationEnabled(
   return map[operation]?.[provider] ?? false;
 }
 
-/** Get the best available provider for an operation (prefers Claude, then first enabled) */
+/**
+ * Get the best available provider for an operation.
+ *
+ * Single-provider state since Codex removal — PROVIDERS contains only
+ * `claude_code`. The previous implementation had a fallback `for (const p of
+ * PROVIDERS)` loop after the explicit Claude check, which iterated exactly
+ * one element that was already returned by the check above. Restore the
+ * loop if PROVIDERS gains entries.
+ */
 export function getPreferredProvider(
   map: EngineCapabilityMap,
   operation: CliOperation,
   installedProviders: Set<CliEngine>,
 ): CliEngine | null {
-  // Prefer Claude
   if (isOperationEnabled(map, operation, 'claude_code', installedProviders)) {
     return 'claude_code';
-  }
-  // Fall back to first enabled
-  for (const p of PROVIDERS) {
-    if (isOperationEnabled(map, operation, p.id, installedProviders)) {
-      return p.id;
-    }
   }
   return null;
 }
