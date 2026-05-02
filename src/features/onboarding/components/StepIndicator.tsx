@@ -22,21 +22,12 @@ export function useSteps() {
   ];
 }
 
-/** @deprecated Use `useSteps()` for i18n support. Kept for backward-compatible imports. */
-export const STEPS: { key: OnboardingStep; label: string; icon: typeof FlaskConical }[] = [
-  { key: 'appearance', label: 'Look & Feel', icon: Palette },
-  { key: 'discover', label: 'Desktop', icon: Monitor },
-  { key: 'pick-template', label: 'Pick Template', icon: FlaskConical },
-  { key: 'adopt', label: 'Set Up Agent', icon: Download },
-  { key: 'execute', label: 'First Run', icon: Play },
-];
-
 export function StepIndicator({
   steps,
   currentStep,
   completedSteps,
 }: {
-  steps: typeof STEPS;
+  steps: ReturnType<typeof useSteps>;
   currentStep: OnboardingStep;
   completedSteps: Record<OnboardingStep, boolean>;
 }) {
