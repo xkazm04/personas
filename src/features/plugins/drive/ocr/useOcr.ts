@@ -28,9 +28,18 @@ export function useOcr() {
     refresh();
   }, [refresh]);
 
-  const geminiCredential = credentials.find(
+  // When multiple Gemini credentials exist (e.g. personal + work), prefer the
+  // most-recently-updated one so the user gets predictable behavior instead of
+  // whichever the DB returns first. Falls back to natural order when timestamps
+  // tie or are absent.
+  const geminiCredentials = credentials.filter(
     (c) => c.serviceType === "google_gemini",
   );
+  const geminiCredential = geminiCredentials.length > 0
+    ? [...geminiCredentials].sort((a, b) =>
+        (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""),
+      )[0]
+    : undefined;
 
   return {
     loading,
