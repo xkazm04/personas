@@ -6,7 +6,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
 import { getActiveTourSteps, getTourById, type TourEventKey } from '@/stores/slices/system/tourSlice';
-import type { SidebarSection, EventBusTab } from '@/lib/types/types';
+import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,9 +20,11 @@ export default function GuidedTour() {
   const completedSteps = useSystemStore((s) => s.tourStepCompleted);
   const subStepIndex = useSystemStore((s) => s.tourSubStepIndex);
   const advanceTour = useSystemStore((s) => s.advanceTour);
+  const goToTourStep = useSystemStore((s) => s.goToTourStep);
   const dismissTour = useSystemStore((s) => s.dismissTour);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
+  const setEventBusTab = useSystemStore((s) => s.setEventBusTab);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
   const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
   const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
@@ -81,7 +83,7 @@ export default function GuidedTour() {
           } else if (step.nav.subTabSetter === 'setOverviewTab') {
             setOverviewTab(step.nav.subTab as Parameters<typeof setOverviewTab>[0]);
           } else if (step.nav.subTabSetter === 'setEventBusTab') {
-            useSystemStore.setState({ eventBusTab: step.nav.subTab as EventBusTab });
+            setEventBusTab(step.nav.subTab as Parameters<typeof setEventBusTab>[0]);
           }
         }, 100);
       }
@@ -104,7 +106,7 @@ export default function GuidedTour() {
         scheduleTourTimeout(() => setHighlightTestId(firstSubHighlight), 300);
       }
     },
-    [tourId, setSidebarSection, setSettingsTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId, scheduleTourTimeout],
+    [tourId, setSidebarSection, setSettingsTab, setEventBusTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId, scheduleTourTimeout],
   );
 
   useEffect(() => {
@@ -141,7 +143,7 @@ export default function GuidedTour() {
     if (currentIndex > 0) useSystemStore.setState({ tourCurrentStepIndex: currentIndex - 1, tourSubStepIndex: 0 });
   };
   const handleJump = (index: number) => {
-    useSystemStore.setState({ tourCurrentStepIndex: index, tourSubStepIndex: 0 });
+    goToTourStep(index);
   };
 
   if (!tourActive || !currentStep || !tourDef) return null;

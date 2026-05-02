@@ -388,6 +388,8 @@ export interface TourSlice {
 
   startTour: (tourId?: TourId) => void;
   advanceTour: () => void;
+  /** Jump directly to a step index, resetting sub-step + highlight. Out-of-range indices are ignored. */
+  goToTourStep: (index: number) => void;
   completeTourStep: (stepId: TourStepId) => void;
   emitTourEvent: (eventKey: TourEventKey) => void;
   setTourCreatedPersona: (personaId: string) => void;
@@ -498,6 +500,18 @@ export const createTourSlice: StateCreator<
         tourCurrentStepIndex: nextIndex,
         tourSubStepIndex: 0,
         tourHighlightTestId: steps[nextIndex]?.highlightTestId ?? null,
+      });
+      persistCurrentTour();
+    },
+
+    goToTourStep: (index: number) => {
+      const s = get();
+      const steps = getActiveTourSteps(s.tourActiveTourId);
+      if (index < 0 || index >= steps.length) return;
+      set({
+        tourCurrentStepIndex: index,
+        tourSubStepIndex: 0,
+        tourHighlightTestId: steps[index]?.highlightTestId ?? null,
       });
       persistCurrentTour();
     },
