@@ -132,6 +132,7 @@ export type Translations = {
     select_persona: string;
     all_personas: string;
     search_ellipsis: string;
+    search: string;
     no_personas_matching: string;
     drop_file_here: string;
     attach: string;
@@ -9224,6 +9225,14 @@ export type Translations = {
       goals_tab_no_goals: string;
       goal_constellation: string;
       sync_to_obsidian: string;
+      tab_setup: string;
+      tab_goals: string;
+      tab_competitions: string;
+      adopt_first_period: string;
+      auto_setup_complete: string;
+      setup_failed: string;
+      triggers_removed: string;
+      teardown_failed: string;
     };
     dev_projects: {
       active_goals: string;

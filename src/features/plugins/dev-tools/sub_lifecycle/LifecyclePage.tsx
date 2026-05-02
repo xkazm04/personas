@@ -23,10 +23,10 @@ import { CompetitionsTab } from './tabs/CompetitionsTab';
 
 type LifecycleTab = 'setup' | 'goals' | 'competitions';
 
-const TABS: { id: LifecycleTab; label: string; icon: typeof Settings }[] = [
-  { id: 'setup', label: 'Lifecycle Setup', icon: Settings },
-  { id: 'goals', label: 'Goal Constellation', icon: Target },
-  { id: 'competitions', label: 'Competitions', icon: Swords },
+const TAB_DEFS: { id: LifecycleTab; labelKey: 'tab_setup' | 'tab_goals' | 'tab_competitions'; icon: typeof Settings }[] = [
+  { id: 'setup', labelKey: 'tab_setup', icon: Settings },
+  { id: 'goals', labelKey: 'tab_goals', icon: Target },
+  { id: 'competitions', labelKey: 'tab_competitions', icon: Swords },
 ];
 
 const REVIEW_APPROVED_EVENT = 'review_decision.approved';
@@ -47,7 +47,8 @@ function parseListenerConfig(trigger: PersonaTrigger, event: string): boolean {
 // ---------------------------------------------------------------------------
 
 export default function LifecyclePage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
@@ -85,29 +86,29 @@ export default function LifecyclePage() {
   const allConfigured = Boolean(devClone && hasApproved && hasRejected && hasSchedule);
 
   const handleAutoSetup = useCallback(async () => {
-    if (!devClone) { addToast('Adopt Dev Clone first.', 'error'); return; }
+    if (!devClone) { addToast(dl.adopt_first_period, 'error'); return; }
     setConfiguring(true);
     try {
       let n = 0;
       if (!hasApproved) { await createTrigger({ persona_id: devClone.id, trigger_type: 'event_listener', config: JSON.stringify({ listen_event_type: REVIEW_APPROVED_EVENT }), enabled: true, use_case_id: null }); n++; }
       if (!hasRejected) { await createTrigger({ persona_id: devClone.id, trigger_type: 'event_listener', config: JSON.stringify({ listen_event_type: REVIEW_REJECTED_EVENT }), enabled: true, use_case_id: null }); n++; }
       if (!hasSchedule) { await createTrigger({ persona_id: devClone.id, trigger_type: 'schedule', config: JSON.stringify({ cron: '0 * * * *', event_type: 'dev_clone.hourly_scan', payload: JSON.stringify({ mode: 'backlog_scan' }) }), enabled: true, use_case_id: null }); n++; }
-      addToast(`Auto-setup complete: ${n} trigger(s) created.`, 'success');
+      addToast(tx(dl.auto_setup_complete, { n }), 'success');
       await refresh();
-    } catch (err) { addToast(err instanceof Error ? err.message : 'Setup failed', 'error'); }
+    } catch (err) { addToast(err instanceof Error ? err.message : dl.setup_failed, 'error'); }
     finally { setConfiguring(false); }
-  }, [devClone, hasApproved, hasRejected, hasSchedule, addToast, refresh]);
+  }, [devClone, hasApproved, hasRejected, hasSchedule, addToast, refresh, dl, tx]);
 
   const handleTeardown = useCallback(async () => {
     if (!devClone) return;
     setConfiguring(true);
     try {
       for (const tr of triggers) await deleteTrigger(tr.id, devClone.id);
-      addToast('All Dev Clone triggers removed.', 'success');
+      addToast(dl.triggers_removed, 'success');
       await refresh();
-    } catch (err) { addToast(err instanceof Error ? err.message : 'Teardown failed', 'error'); }
+    } catch (err) { addToast(err instanceof Error ? err.message : dl.teardown_failed, 'error'); }
     finally { setConfiguring(false); }
-  }, [devClone, triggers, addToast, refresh]);
+  }, [devClone, triggers, addToast, refresh, dl]);
 
   return (
     <ContentBox>
@@ -118,7 +119,7 @@ export default function LifecyclePage() {
       >
         {/* Tab menu below header */}
         <div className="flex items-center gap-1 mt-3">
-          {TABS.map((tabItem) => {
+          {TAB_DEFS.map((tabItem) => {
             const Icon = tabItem.icon;
             return (
               <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
@@ -128,7 +129,7 @@ export default function LifecyclePage() {
                     : 'text-foreground hover:bg-secondary/40 hover:text-foreground border border-transparent'
                 }`}>
                 <Icon className="w-4 h-4" />
-                {tabItem.label}
+                {dl[tabItem.labelKey]}
               </button>
             );
           })}
@@ -137,13 +138,13 @@ export default function LifecyclePage() {
 
       <ContentBody centered>
         <ActionRow left={<LifecycleProjectPicker />}>
-          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={loading}>Refresh</Button>
+          <Button variant="secondary" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={refresh} disabled={loading}>{t.common.refresh}</Button>
           {allConfigured ? (
-            <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>Teardown</Button>
+            <Button variant="danger" size="sm" onClick={handleTeardown} loading={configuring}>{t.plugins.dev_tools.teardown}</Button>
           ) : (
             <Button variant="accent" accentColor="violet" size="sm" icon={<Zap className="w-3.5 h-3.5" />}
               onClick={handleAutoSetup} loading={configuring} disabled={!devClone}
-              disabledReason={!devClone ? 'Adopt Dev Clone first' : undefined}>{t.plugins.dev_tools.auto_setup}</Button>
+              disabledReason={!devClone ? t.plugins.dev_tools.adopt_first : undefined}>{t.plugins.dev_tools.auto_setup}</Button>
           )}
         </ActionRow>
 
