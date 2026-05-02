@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Zap } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatElapsed } from '@/lib/utils/formatters';
-import { PHASE_META, dotColor, type PhaseEntry } from '../../libs/runnerHelpers';
+import { PHASE_META, dotColor, type PhaseEntry } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface RunnerPhaseTimelineProps {

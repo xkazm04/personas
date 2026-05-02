@@ -8,8 +8,8 @@ import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { classifyLine, parseSummaryLine } from '@/lib/utils/terminalColors';
 import type { TerminalEmptyState } from '@/features/shared/components/terminal/TerminalBody';
 import { useExecutionList } from './useExecutionList';
-import type { HealingEventPayload, PhaseEntry } from './runnerHelpers';
-import { detectPhaseFromLine, PHASE_META } from './runnerHelpers';
+import type { HealingEventPayload, PhaseEntry } from '../runnerTypes';
+import { detectPhaseFromLine, PHASE_META } from '../runnerTypes';
 
 const EMPTY_LINES: string[] = [];
 

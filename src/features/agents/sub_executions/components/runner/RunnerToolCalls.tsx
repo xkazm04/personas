@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { Clock, RotateCw, ShieldAlert, ExternalLink } from 'lucide-react';
-import type { HealingEventPayload } from '../../libs/runnerHelpers';
+import type { HealingEventPayload } from '../../runnerTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** Inline Healing Notification Card */
