@@ -75,7 +75,7 @@ export default function EngineSettings() {
                       return (
                         <th key={p.id} className="py-2 px-2 text-center font-medium min-w-[90px]">
                           <div className="flex flex-col items-center gap-0.5">
-                            <span className={installed ? 'text-foreground' : 'text-foreground'}>
+                            <span className="text-foreground">
                               {p.shortLabel}
                             </span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
