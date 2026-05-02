@@ -31,6 +31,9 @@ interface GlyphCoreContentProps {
    *  surface — the form opens on demand instead of being rendered
    *  inline above the sigil. */
   onComposeStart?: () => void;
+  /** test_complete only: opens the test-report modal so the user can
+   *  see the full CLI output and the unclamped error message. */
+  onShowReport?: () => void;
 }
 
 export function GlyphCoreContent(props: GlyphCoreContentProps) {

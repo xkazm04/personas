@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
+import { GlyphTestReportPanel } from "./GlyphTestReportPanel";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
@@ -44,6 +45,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [refining, setRefining] = useState(false);
   const [showSimulate, setShowSimulate] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   // The intent composer is now a click-to-summon overlay. The center of
   // the sigil acts as the affordance during the pre-build state; users
   // who want to retry after a failed/cancelled build can re-open it the
@@ -204,6 +206,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             overlay={summaryOverlay}
             answerCard={answerCard}
             onComposeStart={isCompose ? handleComposeStart : undefined}
+            onShowReport={() => setShowReport(true)}
           />
         )}
 
@@ -271,6 +274,13 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
         onClose={() => setShowSimulate(false)}
         sessionId={buildSessionId}
         draft={buildDraft}
+      />
+      <GlyphTestReportPanel
+        isOpen={showReport}
+        onClose={() => setShowReport(false)}
+        testPassed={testPassed}
+        testError={testError}
+        testOutputLines={testOutputLines}
       />
     </div>
   );

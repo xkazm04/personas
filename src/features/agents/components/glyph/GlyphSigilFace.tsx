@@ -51,6 +51,9 @@ interface GlyphSigilFaceProps {
   /** Forwarded to GlyphCoreContent's pre-build branch. The center hint
    *  is a click-to-summon affordance that opens the intent overlay. */
   onComposeStart?: () => void;
+  /** Forwarded to GlyphCoreContent's test_complete branch. Opens the
+   *  test-report modal showing the full CLI output + error detail. */
+  onShowReport?: () => void;
 }
 
 /** The sigil column. Always mounted — the glyph is the default surface
@@ -65,7 +68,7 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
     refining, setRefining, completenessPct,
     testOutputLines, testPassed, testError,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
-    onShowSimulate, buildSessionId, overlay, answerCard, onComposeStart,
+    onShowSimulate, buildSessionId, overlay, answerCard, onComposeStart, onShowReport,
   } = props;
 
   return (
@@ -109,6 +112,7 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
             onShowSimulate={onShowSimulate}
             buildSessionId={buildSessionId}
             onComposeStart={onComposeStart}
+            onShowReport={onShowReport}
           />
         </AnimatePresence>
       </GlyphSigilCanvas>
