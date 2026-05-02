@@ -8762,6 +8762,10 @@ export type Translations = {
       create_task: string;
       partial_context: string;
       context_warnings_title: string;
+      context_scan_ready_title: string;
+      context_scan_ready_body: string;
+      context_scan_failed_title: string;
+      context_scan_failed_body: string;
       campaign: string;
       deep_build: string;
       idea_evolution: string;

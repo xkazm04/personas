@@ -3,6 +3,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useOverviewStore } from '@/stores/overviewStore';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
   isPermissionGranted,
   requestPermission,
@@ -16,6 +17,7 @@ import {
  * async return of scanCodebase (which returns immediately with a scan_id).
  */
 export function useContextScanBackground() {
+  const { t, tx } = useTranslation();
   const setContextScanActive = useSystemStore((s) => s.setContextScanActive);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const scanCodebase = useSystemStore((s) => s.scanCodebase);
@@ -23,6 +25,7 @@ export function useContextScanBackground() {
   const pendingProjectName = useRef<string | null>(null);
 
   const notifyCompletion = useCallback(async (projectName: string, success: boolean) => {
+    const dt = t.plugins.dev_tools;
     try {
       let granted = await isPermissionGranted();
       if (!granted) {
@@ -31,16 +34,17 @@ export function useContextScanBackground() {
       }
       if (granted) {
         sendNotification({
-          title: success ? 'Context Map Ready' : 'Context Scan Failed',
-          body: success
-            ? `Codebase scan for "${projectName}" completed. Context map is ready to explore.`
-            : `Codebase scan for "${projectName}" failed. Check the Context Map for details.`,
+          title: success ? dt.context_scan_ready_title : dt.context_scan_failed_title,
+          body: tx(
+            success ? dt.context_scan_ready_body : dt.context_scan_failed_body,
+            { projectName },
+          ),
         });
       }
     } catch {
       // Notification permission denied or unavailable -- silently ignore
     }
-  }, []);
+  }, [t, tx]);
 
   // Listen for scan completion event from backend
   useEffect(() => {
