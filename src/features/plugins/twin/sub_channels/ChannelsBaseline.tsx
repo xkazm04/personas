@@ -6,6 +6,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { toastCatch } from '@/lib/silentCatch';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
@@ -75,6 +76,8 @@ export default function ChannelsBaseline() {
   const createChannel = useSystemStore((s) => s.createTwinChannel);
   const updateChannel = useSystemStore((s) => s.updateTwinChannel);
   const deleteChannel = useSystemStore((s) => s.deleteTwinChannel);
+  const tones = useSystemStore((s) => s.twinTones);
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);
   const fetchCredentials = useVaultStore((s) => s.fetchCredentials);
 
@@ -110,17 +113,19 @@ export default function ChannelsBaseline() {
     catch (err: unknown) { setFormError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to create channel'); }
     finally { setSubmitting(false); }
   };
-  const handleToggle = async (ch: TwinChannel) => { try { await updateChannel(ch.id, { isActive: !ch.is_active }); } catch { /* noop */ } };
+  const handleToggle = async (ch: TwinChannel) => {
+    try { await updateChannel(ch.id, { isActive: !ch.is_active }); }
+    catch (err) { toastCatch('ChannelsBaseline:toggle')(err); }
+  };
   const handleDelete = async (ch: TwinChannel) => {
     const label = ch.label ?? `${ch.channel_type} channel`;
     if (!confirm(t.channels.removeConfirm.replace('{label}', label))) return;
-    try { await deleteChannel(ch.id); } catch { /* noop */ }
+    try { await deleteChannel(ch.id); }
+    catch (err) { toastCatch('ChannelsBaseline:delete')(err); }
   };
 
   if (!activeTwinId) return <TwinEmptyState icon={Radio} title={t.channels.title} />;
 
-  const tones = useSystemStore.getState().twinTones;
-  const setTwinTab = useSystemStore.getState().setTwinTab;
   const channelsWithoutTone = channels
     .filter((ch) => ch.is_active)
     .map((ch) => ch.channel_type)
