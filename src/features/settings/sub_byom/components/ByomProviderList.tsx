@@ -6,6 +6,16 @@ import { SectionHeading } from '@/features/shared/components/layout/SectionHeadi
 import { ProviderSparkline } from './ProviderSparkline';
 import { useTranslation } from '@/i18n/useTranslation';
 
+// Centralized sparkline colors so a future palette migration touches one site.
+// These are raw Tailwind 500-shade hex values — there is no theme-aware CSS
+// variable for them today; if the brand palette shifts the values must be
+// updated here (or graduate to CSS custom properties in src/styles/).
+const SPARKLINE_COLORS = {
+  executions: '#10b981', // emerald-500
+  cost: '#8b5cf6',       // violet-500
+  duration: '#f59e0b',   // amber-500
+} as const;
+
 interface ByomProviderListProps {
   policy: ByomPolicy;
   usageStats: ProviderUsageStats[];
@@ -59,6 +69,8 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
   costLabel,
   avgDurationLabel,
 }: ProviderUsageCardProps) {
+  const { t, tx } = useTranslation();
+  const s = t.settings.byom;
   const formattedCost = useMemo(
     () => `$${stat.total_cost_usd.toFixed(4)}`,
     [stat.total_cost_usd],
@@ -79,7 +91,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <div className="typo-body font-medium text-foreground">{stat.execution_count}</div>
           <ProviderSparkline
             data={trends?.executions ?? []}
-            color="#10b981"
+            color={SPARKLINE_COLORS.executions}
             label="daily"
           />
         </div>
@@ -88,7 +100,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <div className="typo-body font-medium text-foreground">{formattedCost}</div>
           <ProviderSparkline
             data={trends?.cost ?? []}
-            color="#8b5cf6"
+            color={SPARKLINE_COLORS.cost}
             label="daily"
           />
         </div>
@@ -97,13 +109,15 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
           <div className="typo-body font-medium text-foreground">{formattedDuration}</div>
           <ProviderSparkline
             data={trends?.duration ?? []}
-            color="#f59e0b"
+            color={SPARKLINE_COLORS.duration}
             label="daily"
           />
         </div>
       </div>
       {stat.failover_count > 0 && (
-        <div className="typo-caption text-amber-400 mt-2">{stat.failover_count} failovers</div>
+        <div className="typo-caption text-amber-400 mt-2">
+          {tx(stat.failover_count === 1 ? s.failover_one : s.failover_other, { count: stat.failover_count })}
+        </div>
       )}
     </div>
   );
@@ -119,7 +133,7 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
     setTestResults((prev) => ({ ...prev, [providerId]: { state: 'testing' } }));
     try {
       const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Connection test timed out (5s)')), 5000),
+        setTimeout(() => reject(new Error(s.test_timed_out)), 5000),
       );
       const result = await Promise.race([testProviderConnection(providerId), timeout]);
       setTestResults((prev) => ({
@@ -131,11 +145,11 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
         ...prev,
         [providerId]: {
           state: 'fail',
-          result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: err instanceof Error ? err.message : 'IPC call failed' },
+          result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: err instanceof Error ? err.message : s.test_ipc_failed },
         },
       }));
     }
-  }, []);
+  }, [s]);
 
   return (
     <div className="space-y-4">
@@ -260,7 +274,7 @@ function TestConnectionButton({
             {s.testing}
           </span>
         ) : (
-          'Test Connection'
+          s.test_connection
         )}
       </button>
 
@@ -269,7 +283,7 @@ function TestConnectionButton({
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.78 4.97a.75.75 0 00-1.06 0L7 8.69 5.28 6.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06z" />
           </svg>
-          {result?.version ?? 'Reachable'}
+          {result?.version ?? s.reachable}
           {result?.latency_ms != null && (
             <span className="text-foreground ml-1">{result.latency_ms}ms</span>
           )}
@@ -281,7 +295,7 @@ function TestConnectionButton({
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.03 4.97a.75.75 0 00-1.06 0L8 6.94 6.03 4.97a.75.75 0 10-1.06 1.06L6.94 8 4.97 9.97a.75.75 0 001.06 1.06L8 9.06l1.97 1.97a.75.75 0 001.06-1.06L9.06 8l1.97-1.97a.75.75 0 000-1.06z" />
           </svg>
-          {result?.error ?? 'Unreachable'}
+          {result?.error ?? s.unreachable}
         </span>
       )}
     </div>

@@ -7344,10 +7344,13 @@ export type Translations = {
       executions: string;
       cost: string;
       avg_duration: string;
-      failovers: string;
+      failover_one: string;
+      failover_other: string;
       no_trend_data: string;
       test_connection: string;
       testing: string;
+      test_timed_out: string;
+      test_ipc_failed: string;
       reachable: string;
       unreachable: string;
       api_key_title: string;
