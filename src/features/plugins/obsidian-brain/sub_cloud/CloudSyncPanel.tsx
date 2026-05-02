@@ -24,7 +24,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function CloudSyncPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const setDriveConnected = useSystemStore((s) => s.setObsidianDriveConnected);
@@ -235,7 +235,7 @@ export default function CloudSyncPanel() {
                 />
               </div>
               <p className="typo-caption text-foreground">
-                {driveFileCount} files synced to Drive
+                {tx(t.plugins.obsidian_brain.files_synced_to_drive, { count: driveFileCount })}
                 {driveEmail && driveEmail !== user?.email && ` · ${driveEmail}`}
               </p>
             </div>

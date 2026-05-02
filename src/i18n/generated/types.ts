@@ -9135,6 +9135,7 @@ export type Translations = {
       meeting_attendees_placeholder: string;
       meeting_body_placeholder: string;
       save_meeting_note: string;
+      files_synced_to_drive: string;
     };
     companion: {
       name: string;
