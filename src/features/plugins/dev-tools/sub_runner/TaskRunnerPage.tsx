@@ -105,11 +105,22 @@ function StatusBadge({ status }: { status: TaskStatus }) {
 // Task Creation Modal
 // ---------------------------------------------------------------------------
 
-const DEPTH_OPTIONS = [
+type DepthColor = 'emerald' | 'amber' | 'violet';
+
+// Static class bundles so Tailwind's JIT can detect every class at build time.
+// `ring-${color}-500/40` style template strings are invisible to the JIT and
+// silently produce no styles, so the depth-selector highlight stayed blank.
+const DEPTH_COLOR_CLASSES: Record<DepthColor, { selectedRing: string; selectedIcon: string }> = {
+  emerald: { selectedRing: 'ring-2 ring-emerald-500/40 border-emerald-500/40', selectedIcon: 'text-emerald-400' },
+  amber:   { selectedRing: 'ring-2 ring-amber-500/40 border-amber-500/40',     selectedIcon: 'text-amber-400'   },
+  violet:  { selectedRing: 'ring-2 ring-violet-500/40 border-violet-500/40',   selectedIcon: 'text-violet-400'  },
+};
+
+const DEPTH_OPTIONS: { value: string; label: string; icon: typeof Zap; description: string; color: DepthColor }[] = [
   { value: 'quick', label: 'Quick', icon: Zap, description: 'Execute directly, minimal planning', color: 'emerald' },
   { value: 'campaign', label: 'Campaign', icon: Layers, description: 'Break into subtasks, multiple deliverables', color: 'amber' },
   { value: 'deep_build', label: 'Deep Build', icon: Building2, description: 'Full research, planning, and implementation', color: 'violet' },
-] as const;
+];
 
 function TaskModal({
   open,
@@ -183,7 +194,8 @@ function TaskModal({
                 {DEPTH_OPTIONS.map((opt) => {
                   const Icon = opt.icon;
                   const selected = depth === opt.value;
-                  const ring = selected ? `ring-2 ring-${opt.color}-500/40 border-${opt.color}-500/40` : 'border-primary/10 hover:border-primary/20';
+                  const tw = DEPTH_COLOR_CLASSES[opt.color];
+                  const ring = selected ? tw.selectedRing : 'border-primary/10 hover:border-primary/20';
                   return (
                     <button
                       key={opt.value}
@@ -191,8 +203,8 @@ function TaskModal({
                       onClick={() => setDepth(opt.value)}
                       className={`flex flex-col items-center gap-1.5 p-3 rounded-modal border bg-secondary/30 transition-all ${ring}`}
                     >
-                      <Icon className={`w-4 h-4 ${selected ? `text-${opt.color}-400` : 'text-foreground'}`} />
-                      <span className={`typo-caption font-medium ${selected ? 'text-foreground' : 'text-foreground'}`}>{opt.label}</span>
+                      <Icon className={`w-4 h-4 ${selected ? tw.selectedIcon : 'text-foreground'}`} />
+                      <span className="typo-caption font-medium text-foreground">{opt.label}</span>
                     </button>
                   );
                 })}
