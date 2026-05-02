@@ -6,6 +6,7 @@ import { GlyphHeroSigil } from "./GlyphHeroSigil";
 import { GlyphPetalIcons } from "./GlyphPetalIcons";
 import { GlyphOrbitProgress } from "./GlyphOrbitProgress";
 import { DIM_LABEL } from "./glyphLayoutHelpers";
+import { useBuildingPetalSweep } from "./useBuildingPetalSweep";
 
 interface GlyphSigilCanvasProps {
   size: number;
@@ -31,6 +32,11 @@ export function GlyphSigilCanvas({
   size, petalStates, hoveredDim, activeDim, onHoverDim, onClickDim,
   dimmed = false, showOrbit = false, children, overlay,
 }: GlyphSigilCanvasProps) {
+  // Sequential petal-lighting sweep during the building phase. Tied to
+  // `showOrbit` (== isBuildingOnly upstream) so the sweep starts when
+  // the orbit starts and stops when the orbit fast-forwards — petals
+  // return to idle in the same beat the orbit fades. See issue #2.
+  const sweepDim = useBuildingPetalSweep(showOrbit);
   return (
     <div className="relative" style={{ width: size, height: size }}>
       <GlyphHeroSigil
@@ -48,6 +54,7 @@ export function GlyphSigilCanvas({
         hoveredDim={hoveredDim}
         activeDim={activeDim}
         dimmed={dimmed}
+        sweepDim={sweepDim}
       />
 
       {/* Orbit handles its own exit choreography (fast-forward to 360° +
