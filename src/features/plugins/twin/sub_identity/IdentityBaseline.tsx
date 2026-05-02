@@ -8,23 +8,7 @@ import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { CoachMark } from '../CoachMark';
-
-type Gender = 'male' | 'female' | 'neutral';
-const GENDER_ICONS: Record<Gender, string> = { male: '♂', female: '♀', neutral: '⚧' };
-
-function genderFromPronouns(pronouns: string | null): Gender {
-  if (!pronouns) return 'neutral';
-  const p = pronouns.toLowerCase();
-  if (p.includes('he/') || p === 'male') return 'male';
-  if (p.includes('she/') || p === 'female') return 'female';
-  return 'neutral';
-}
-
-function genderToPronouns(g: Gender): string {
-  if (g === 'male') return 'male';
-  if (g === 'female') return 'female';
-  return 'neutral';
-}
+import { genderDef, genderFromPronouns, pronounsFromGender, type Gender } from '../_shared/gender';
 
 interface BioGeneratorPanelProps {
   name: string;
@@ -115,7 +99,7 @@ export default function IdentityBaseline() {
         name: name.trim(),
         bio: bio.trim() || null,
         role: role.trim() || null,
-        pronouns: genderToPronouns(gender),
+        pronouns: pronounsFromGender(gender),
         obsidianSubpath: obsidianSubpath.trim() || undefined,
       });
       setDirty(false);
@@ -165,7 +149,7 @@ export default function IdentityBaseline() {
                       : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
                   }`}
                 >
-                  <span className="typo-heading-lg">{GENDER_ICONS[g.id]}</span>
+                  <span className="typo-heading-lg">{genderDef(g.id).glyph}</span>
                   <span className="typo-caption">{g.label}</span>
                 </button>
               ))}

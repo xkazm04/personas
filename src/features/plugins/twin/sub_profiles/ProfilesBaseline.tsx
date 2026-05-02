@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
+import { genderDefFromPronouns } from '../_shared/gender';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import { CoachMark } from '../CoachMark';
@@ -19,14 +20,6 @@ interface DraftForm {
 }
 
 const EMPTY_DRAFT: DraftForm = { name: '', role: '' };
-
-function genderSigilFromPronouns(pronouns: string | null): { glyph: string; color: string } {
-  if (!pronouns) return { glyph: '⚧', color: 'text-violet-400/70' };
-  const p = pronouns.toLowerCase();
-  if (p.includes('he/') || p === 'male') return { glyph: '♂', color: 'text-sky-400/80' };
-  if (p.includes('she/') || p === 'female') return { glyph: '♀', color: 'text-rose-400/80' };
-  return { glyph: '⚧', color: 'text-violet-400/70' };
-}
 
 function languagesFromString(raw: string | null): string[] {
   if (!raw) return [];
@@ -158,7 +151,7 @@ export default function ProfilesBaseline() {
 
               const dash = dashboards[profile.id];
               const readiness = dash?.readiness;
-              const sigil = genderSigilFromPronouns(profile.pronouns ?? null);
+              const sigil = genderDefFromPronouns(profile.pronouns ?? null);
               const languages = languagesFromString(profile.languages ?? null);
               const ring = readiness ? readinessColor(readiness.score) : readinessColor(0);
 

@@ -7,6 +7,7 @@ import * as twinApi from '@/api/twin/twin';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
 
 /**
  * Four-step wizard for creating a twin with a chronological onboarding
@@ -22,8 +23,6 @@ import { useTwinTranslation } from '../i18n/useTwinTranslation';
  *                       newly-created twin already active.
  */
 
-type Gender = 'male' | 'female' | 'neutral';
-
 const CHANNEL_TYPES = [
   { id: 'discord', label: 'Discord', serviceMatch: 'discord' },
   { id: 'slack', label: 'Slack', serviceMatch: 'slack' },
@@ -33,12 +32,6 @@ const CHANNEL_TYPES = [
   { id: 'teams', label: 'Teams', serviceMatch: 'microsoft-teams' },
   { id: 'whatsapp', label: 'WhatsApp', serviceMatch: 'whatsapp' },
 ] as const;
-
-function pronounsFromGender(g: Gender): string {
-  if (g === 'male') return 'male';
-  if (g === 'female') return 'female';
-  return 'neutral';
-}
 
 export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
   const { t } = useTwinTranslation();
@@ -199,22 +192,18 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
               <div className="space-y-1.5">
                 <span className="typo-caption text-foreground font-medium">{t.identity.gender}</span>
                 <div className="flex items-center gap-2">
-                  {(['male', 'female', 'neutral'] as const).map((g) => {
-                    const labelMap = { male: t.identity.genderMale, female: t.identity.genderFemale, neutral: t.identity.genderNeutral };
-                    const glyph = g === 'male' ? '♂' : g === 'female' ? '♀' : '⚧';
-                    return (
-                      <button
-                        key={g}
-                        onClick={() => setGender(g)}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-interactive border transition-colors ${
-                          gender === g ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
-                        }`}
-                      >
-                        <span className="typo-body-lg">{glyph}</span>
-                        <span className="typo-caption">{labelMap[g]}</span>
-                      </button>
-                    );
-                  })}
+                  {GENDERS.map((g) => (
+                    <button
+                      key={g.id}
+                      onClick={() => setGender(g.id)}
+                      className={`flex items-center gap-2 px-3 py-1.5 rounded-interactive border transition-colors ${
+                        gender === g.id ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' : 'text-foreground border-primary/10 hover:bg-secondary/40 hover:text-foreground'
+                      }`}
+                    >
+                      <span className="typo-body-lg">{g.glyph}</span>
+                      <span className="typo-caption">{t.identity[g.labelKey]}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </>

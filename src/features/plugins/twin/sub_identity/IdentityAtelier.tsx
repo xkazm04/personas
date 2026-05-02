@@ -7,6 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
+import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../_shared/gender';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Manuscript"
@@ -14,27 +15,6 @@ import { useTwinTranslation } from '../i18n/useTwinTranslation';
  *  manuscript preview of the prompt on the right that re-renders as the
  *  user writes. Inspired by writing-app split layouts.
  * ------------------------------------------------------------------ */
-
-type Gender = 'male' | 'female' | 'neutral';
-
-const GENDER_DEFS: { id: Gender; glyph: string; tint: string }[] = [
-  { id: 'male', glyph: '♂', tint: 'from-sky-400/30 to-blue-400/30' },
-  { id: 'female', glyph: '♀', tint: 'from-rose-400/30 to-pink-400/30' },
-  { id: 'neutral', glyph: '⚧', tint: 'from-violet-400/30 to-fuchsia-400/30' },
-];
-
-function genderFromPronouns(pronouns: string | null): Gender {
-  if (!pronouns) return 'neutral';
-  const p = pronouns.toLowerCase();
-  if (p.includes('he/') || p === 'male') return 'male';
-  if (p.includes('she/') || p === 'female') return 'female';
-  return 'neutral';
-}
-function genderToPronouns(g: Gender): string {
-  if (g === 'male') return 'male';
-  if (g === 'female') return 'female';
-  return 'neutral';
-}
 
 export default function IdentityAtelier() {
   const { t } = useTwinTranslation();
@@ -90,7 +70,7 @@ export default function IdentityAtelier() {
         name: name.trim(),
         bio: bio.trim() || null,
         role: role.trim() || null,
-        pronouns: genderToPronouns(gender),
+        pronouns: pronounsFromGender(gender),
         obsidianSubpath: obsidianSubpath.trim() || undefined,
       });
       setDirty(false);
@@ -112,7 +92,7 @@ export default function IdentityAtelier() {
 
   if (!activeTwin) return <TwinEmptyState icon={User} title={t.identity.title} />;
 
-  const genderTint = GENDER_DEFS.find((g) => g.id === gender)?.tint ?? GENDER_DEFS[2]!.tint;
+  const genderTint = genderDef(gender).tint;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -161,9 +141,9 @@ export default function IdentityAtelier() {
 
               <Field label={t.identity.gender} className="mt-4">
                 <div className="flex items-center gap-2">
-                  {GENDER_DEFS.map((g) => {
+                  {GENDERS.map((g) => {
                     const isActive = g.id === gender;
-                    const label = g.id === 'male' ? t.identity.genderMale : g.id === 'female' ? t.identity.genderFemale : t.identity.genderNeutral;
+                    const label = t.identity[g.labelKey];
                     return (
                       <button
                         key={g.id}

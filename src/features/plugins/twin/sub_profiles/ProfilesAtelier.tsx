@@ -9,6 +9,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
+import { genderDefFromPronouns } from '../_shared/gender';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
@@ -24,14 +25,6 @@ import type { MilestoneStatus } from '../useTwinReadiness';
 
 interface DraftForm { name: string; role: string }
 const EMPTY_DRAFT: DraftForm = { name: '', role: '' };
-
-function genderSigil(pronouns: string | null): { glyph: string; tint: string } {
-  if (!pronouns) return { glyph: '⚧', tint: 'from-violet-400/30 to-fuchsia-400/30' };
-  const p = pronouns.toLowerCase();
-  if (p.includes('he/') || p === 'male') return { glyph: '♂', tint: 'from-sky-400/30 to-blue-400/30' };
-  if (p.includes('she/') || p === 'female') return { glyph: '♀', tint: 'from-rose-400/30 to-pink-400/30' };
-  return { glyph: '⚧', tint: 'from-violet-400/30 to-fuchsia-400/30' };
-}
 
 function languagesFrom(raw: string | null): string[] {
   if (!raw) return [];
@@ -345,7 +338,7 @@ interface HeroCardProps {
 function HeroCard(props: HeroCardProps) {
   const { profile, isActive, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
   const { t } = useTwinTranslation();
-  const sigil = genderSigil(profile.pronouns ?? null);
+  const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;
 
@@ -446,7 +439,7 @@ type SatelliteCardProps = Omit<HeroCardProps, 'isActive'>;
 function SatelliteCard(props: SatelliteCardProps) {
   const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
   const { t } = useTwinTranslation();
-  const sigil = genderSigil(profile.pronouns ?? null);
+  const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;
 
