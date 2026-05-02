@@ -177,7 +177,7 @@ export default function GuidedTour() {
             </div>
             <div>
               <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
-              <p className="text-[11px] text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+              <p className="typo-caption text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
             </div>
           </div>
           <div className="flex items-center gap-1">

@@ -75,7 +75,7 @@ export function TourPanelBody({
             <div
               key={sub.id}
               data-testid={`tour-substep-${sub.id}`}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-card text-[11px] transition-all ${
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption transition-all ${
                 i < subStepIndex
                   ? 'bg-emerald-500/10 text-emerald-400'
                   : i === subStepIndex
@@ -164,7 +164,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
       {/* Sub-step hints as checklist */}
       {step.subSteps.length > 0 && (
         <div className="space-y-2">
-          <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.what_to_explore}</span>
+          <span className="typo-caption text-foreground uppercase tracking-wider">{t.onboarding.what_to_explore}</span>
           {step.subSteps.map((sub, i) => (
             <div
               key={sub.id}
@@ -190,7 +190,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
       )}
 
       {/* Step auto-completion notice */}
-      <p className="text-[11px] text-foreground italic text-center">
+      <p className="typo-caption text-foreground italic text-center">
         {t.onboarding.auto_complete_hint}
       </p>
     </div>
