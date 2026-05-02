@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
@@ -133,16 +133,20 @@ export function useTwinReadiness(): TwinReadiness {
   const twinVoiceProfile = useSystemStore((s) => s.twinVoiceProfile);
   const twinPendingMemories = useSystemStore((s) => s.twinPendingMemories);
 
-  const profile = activeTwinId ? twinProfiles.find((p) => p.id === activeTwinId) : null;
-  // Only count tones/channels/memories that belong to the active twin. The
-  // slices may still hold rows from a previously-active twin while a fetch
-  // is in flight.
-  const scopedTones = profile ? twinTones.filter((t) => t.twin_id === profile.id) : [];
-  const scopedChannels = profile ? twinChannels.filter((c) => c.twin_id === profile.id) : [];
-  const scopedMemories = profile ? twinPendingMemories.filter((m) => m.twin_id === profile.id) : [];
-  const scopedVoice = twinVoiceProfile && profile && twinVoiceProfile.twin_id === profile.id ? twinVoiceProfile : null;
-
-  return deriveReadiness(profile, scopedTones, scopedChannels, scopedVoice, scopedMemories);
+  // Subscribers like TwinSelector re-render on every store touch; without
+  // memoization, every render synthesizes a fresh readiness object whose
+  // child references (counts, milestone strings) cascade into the SLOTS map.
+  return useMemo(() => {
+    const profile = activeTwinId ? twinProfiles.find((p) => p.id === activeTwinId) : null;
+    // Only count tones/channels/memories that belong to the active twin. The
+    // slices may still hold rows from a previously-active twin while a fetch
+    // is in flight.
+    const scopedTones = profile ? twinTones.filter((t) => t.twin_id === profile.id) : [];
+    const scopedChannels = profile ? twinChannels.filter((c) => c.twin_id === profile.id) : [];
+    const scopedMemories = profile ? twinPendingMemories.filter((m) => m.twin_id === profile.id) : [];
+    const scopedVoice = twinVoiceProfile && profile && twinVoiceProfile.twin_id === profile.id ? twinVoiceProfile : null;
+    return deriveReadiness(profile, scopedTones, scopedChannels, scopedVoice, scopedMemories);
+  }, [activeTwinId, twinProfiles, twinTones, twinChannels, twinVoiceProfile, twinPendingMemories]);
 }
 
 /**
