@@ -139,7 +139,35 @@ export const PHASE_LABELS: Record<SessionState, string> = {
 
 // -- Rich message URL splitting ------------------------------------------
 
+/**
+ * Canonical URL-extraction regex (markdown-aware).
+ *
+ * Matches `http://` or `https://` followed by any run of non-whitespace
+ * characters, *stopping* before common markdown trailing punctuation
+ * (`)`, `>`, `]`, `"`, `'`, `` ` ``, `*`, `_`) so embedded URLs in markdown
+ * prose don't pick up surrounding bracket/emphasis chars.
+ *
+ * Three earlier inline copies used the looser `/https?:\/\/[^\s)]+/` —
+ * which is fine for plain text but produced false positives in markdown
+ * setup-instructions. Wave 5 unified all four call sites onto this regex.
+ *
+ * Has the `g` flag for use with `matchAll` / `exec` loops. Reset
+ * `lastIndex` (or use `URL_PATTERN_SOURCE` / `extractFirstUrl`) for
+ * one-shot first-match extraction.
+ */
 export const URL_REGEX = /https?:\/\/[^\s)>\]"'`*_]+/g;
+
+/**
+ * Extract the first URL from `text`, or `null` if none/empty.
+ *
+ * Uses {@link URL_REGEX}'s pattern in non-global mode so it stops at the
+ * first match without sharing `lastIndex` state.
+ */
+export function extractFirstUrl(text?: string | null): string | null {
+  if (!text) return null;
+  const match = text.match(/https?:\/\/[^\s)>\]"'`*_]+/);
+  return match ? match[0] : null;
+}
 
 export interface TextPart {
   text: string;

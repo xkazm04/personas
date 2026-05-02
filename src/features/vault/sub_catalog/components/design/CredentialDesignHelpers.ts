@@ -17,11 +17,10 @@ export const HINT_COLORS: Record<string, string> = {
   'Datadog API key': '#632CA6',
 };
 
-export function extractFirstUrl(text?: string): string | null {
-  if (!text) return null;
-  const match = text.match(/https?:\/\/[^\s)]+/i);
-  return match ? match[0] : null;
-}
+// `extractFirstUrl` hoisted to autoCredHelpers (Wave 5 consolidation).
+// Uses the markdown-aware URL_REGEX so embedded URLs don't pick up trailing
+// markdown punctuation.
+export { extractFirstUrl } from '@/features/vault/sub_catalog/components/autoCred/helpers/autoCredHelpers';
 
 // -- OAuth field-name constants ----------------------------------
 // Canonical keys injected by OAuth flows. Import these instead of

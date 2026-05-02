@@ -1,5 +1,6 @@
 import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
+import { extractFirstUrl } from './autoCredHelpers';
 
 /** Phases the auto-credential session moves through */
 export type AutoCredPhase =
@@ -178,12 +179,8 @@ export function buildConnectorContext(result: CredentialDesignResult): AutoCredC
     helpText: f.helpText,
   }));
 
-  // Extract docs URL from setup_instructions (first URL found)
-  let docsUrl: string | null = null;
-  if (result.setup_instructions) {
-    const match = result.setup_instructions.match(/https?:\/\/[^\s)]+/);
-    if (match) docsUrl = match[0];
-  }
+  // Extract docs URL from setup_instructions (first URL found, markdown-aware)
+  const docsUrl: string | null = extractFirstUrl(result.setup_instructions ?? null);
 
   // Universal mode: pass through service URL and description
   const universal = result as unknown as Record<string, unknown>;
