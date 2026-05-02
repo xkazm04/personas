@@ -3,36 +3,8 @@ import { Activity, AlertTriangle, XCircle, Info, RotateCcw, Loader2 } from 'luci
 import { useAgentStore } from '@/stores/agentStore';
 import { useShallow } from 'zustand/react/shallow';
 import { computeHealthScore } from '@/features/agents/health/useHealthCheck';
-import type { HealthScore } from '@/features/agents/health/types';
+import { ScoreRing } from '@/features/agents/health/HealthScoreDisplay';
 import { useTranslation } from '@/i18n/useTranslation';
-
-function MiniScoreRing({ score }: { score: HealthScore }) {
-  const radius = 28;
-  const circumference = 2 * Math.PI * radius;
-  const progress = score.value / 100;
-  const strokeColor = {
-    healthy: '#10B981',
-    degraded: '#F59E0B',
-    unhealthy: '#EF4444',
-  }[score.grade];
-
-  return (
-    <div className="relative w-16 h-16 flex-shrink-0">
-      <svg className="w-full h-full -rotate-90" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r={radius} fill="none" stroke="currentColor" strokeWidth="3" className="text-primary/10" />
-        <circle
-          cx="32" cy="32" r={radius} fill="none" stroke={strokeColor} strokeWidth="3"
-          strokeLinecap="round" strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - progress)}
-          className="transition-all duration-700"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="typo-heading font-bold text-foreground/90">{score.value}</span>
-      </div>
-    </div>
-  );
-}
 
 // Grade labels now come from i18n
 
@@ -91,7 +63,7 @@ export default function OpsHealthPanel({ personaId }: { personaId: string }) {
       {/* Score display */}
       {score ? (
         <div className="flex items-center gap-3">
-          <MiniScoreRing score={score} />
+          <ScoreRing score={score} size="md" animated />
           <div>
             <p className={`text-sm font-semibold ${GRADE_COLORS[score.grade] ?? 'text-foreground'}`}>
               {GRADE_LABELS[score.grade] ?? score.grade}
