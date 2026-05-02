@@ -7242,6 +7242,22 @@ export type Translations = {
       ambient_phase_day: string;
       ambient_phase_dusk: string;
       ambient_phase_night: string;
+      tz_label_local: string;
+      tz_description_local: string;
+      tz_label_utc: string;
+      tz_description_utc: string;
+      tz_label_us_eastern: string;
+      tz_description_us_eastern: string;
+      tz_label_us_central: string;
+      tz_description_us_central: string;
+      tz_label_us_pacific: string;
+      tz_description_us_pacific: string;
+      tz_label_london: string;
+      tz_description_london: string;
+      tz_label_prague: string;
+      tz_description_prague: string;
+      tz_label_tokyo: string;
+      tz_description_tokyo: string;
     };
     notifications: {
       title: string;

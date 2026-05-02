@@ -90,15 +90,27 @@ const ThemeSwatch = memo(function ThemeSwatch({ theme, active, onSelect }: { the
   );
 });
 
-const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: string }> = [
-  { value: 'local', label: 'Local', description: 'Browser timezone' },
-  { value: 'utc', label: 'UTC', description: 'Coordinated Universal Time' },
-  { value: 'America/New_York', label: 'US Eastern', description: 'ET (UTC-5/-4)' },
-  { value: 'America/Chicago', label: 'US Central', description: 'CT (UTC-6/-5)' },
-  { value: 'America/Los_Angeles', label: 'US Pacific', description: 'PT (UTC-8/-7)' },
-  { value: 'Europe/London', label: 'London', description: 'GMT/BST (UTC+0/+1)' },
-  { value: 'Europe/Prague', label: 'Prague', description: 'CET (UTC+1/+2)' },
-  { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
+// IANA timezone values are technical identifiers (passed verbatim to date
+// formatters); only the display label and description translate. Keys live
+// under t.settings.appearance.tz_{label,description}_*.
+type TimezoneLabelKey =
+  | 'tz_label_local' | 'tz_label_utc' | 'tz_label_us_eastern'
+  | 'tz_label_us_central' | 'tz_label_us_pacific' | 'tz_label_london'
+  | 'tz_label_prague' | 'tz_label_tokyo';
+type TimezoneDescriptionKey =
+  | 'tz_description_local' | 'tz_description_utc' | 'tz_description_us_eastern'
+  | 'tz_description_us_central' | 'tz_description_us_pacific' | 'tz_description_london'
+  | 'tz_description_prague' | 'tz_description_tokyo';
+
+const TIMEZONE_OPTIONS: Array<{ value: string; labelKey: TimezoneLabelKey; descriptionKey: TimezoneDescriptionKey }> = [
+  { value: 'local', labelKey: 'tz_label_local', descriptionKey: 'tz_description_local' },
+  { value: 'utc', labelKey: 'tz_label_utc', descriptionKey: 'tz_description_utc' },
+  { value: 'America/New_York', labelKey: 'tz_label_us_eastern', descriptionKey: 'tz_description_us_eastern' },
+  { value: 'America/Chicago', labelKey: 'tz_label_us_central', descriptionKey: 'tz_description_us_central' },
+  { value: 'America/Los_Angeles', labelKey: 'tz_label_us_pacific', descriptionKey: 'tz_description_us_pacific' },
+  { value: 'Europe/London', labelKey: 'tz_label_london', descriptionKey: 'tz_description_london' },
+  { value: 'Europe/Prague', labelKey: 'tz_label_prague', descriptionKey: 'tz_description_prague' },
+  { value: 'Asia/Tokyo', labelKey: 'tz_label_tokyo', descriptionKey: 'tz_description_tokyo' },
 ];
 
 type AppearanceLabels = ReturnType<typeof useTranslation>['t']['settings']['appearance'];
@@ -283,10 +295,10 @@ export default function AppearanceSettings() {
                     }`}
                   >
                     <span className={`text-sm font-medium ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>
-                      {tz.label}
+                      {s[tz.labelKey]}
                     </span>
                     <span className="text-[11px] text-foreground">
-                      {tz.description}
+                      {s[tz.descriptionKey]}
                     </span>
                     {isActive && (
                       <div className="absolute top-2 right-2">
