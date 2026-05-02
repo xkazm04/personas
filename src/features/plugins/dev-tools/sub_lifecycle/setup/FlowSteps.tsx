@@ -3,7 +3,10 @@ import {
   ClipboardCheck, Brain, Play, Clock, RefreshCw, Zap,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+
+type TxFn = (template: string, vars: Record<string, string | number>) => string;
 
 type StepColor = 'violet' | 'blue' | 'amber' | 'emerald' | 'red';
 
@@ -33,15 +36,18 @@ export function buildFlowSteps(
   hasApprovedListener: boolean,
   hasRejectedListener: boolean,
   goalCount: number,
+  t: Translations,
+  tx: TxFn,
 ): FlowStep[] {
+  const dl = t.plugins.dev_lifecycle;
   return [
-    { id: 'persona', label: 'Dev Clone Persona', description: devClone ? `"${devClone.name}" ready` : 'Adopt from bundled template', icon: Bot, color: 'violet', status: devClone ? 'configured' : 'idle' },
-    { id: 'schedule', label: 'Hourly Scan', description: hasScheduleTrigger ? 'Cron trigger active (0 * * * *)' : 'Periodic codebase analysis', icon: Clock, color: 'blue', status: hasScheduleTrigger ? 'active' : 'idle' },
-    { id: 'goals', label: 'Goals', description: `${goalCount} goal(s) in project`, icon: Target, color: 'amber', status: goalCount > 0 ? 'configured' : 'idle' },
-    { id: 'review', label: 'Human Review', description: 'Tasks proposed for approval', icon: ClipboardCheck, color: 'emerald', status: 'configured' },
-    { id: 'approved', label: 'Approval → Build', description: hasApprovedListener ? 'Event listener active' : 'Triggers Dev Clone build cycle', icon: Play, color: 'emerald', status: hasApprovedListener ? 'active' : 'idle' },
-    { id: 'rejected', label: 'Rejection → Recompose', description: hasRejectedListener ? 'Event listener active' : 'Triggers recomposition with feedback', icon: RefreshCw, color: 'red', status: hasRejectedListener ? 'active' : 'idle' },
-    { id: 'memory', label: 'Memory Learning', description: 'Decisions auto-saved as learned memories', icon: Brain, color: 'violet', status: 'configured' },
+    { id: 'persona', label: dl.flow_persona_label, description: devClone ? tx(dl.flow_persona_ready, { name: devClone.name }) : dl.flow_persona_idle, icon: Bot, color: 'violet', status: devClone ? 'configured' : 'idle' },
+    { id: 'schedule', label: dl.flow_schedule_label, description: hasScheduleTrigger ? dl.flow_schedule_active : dl.flow_schedule_idle, icon: Clock, color: 'blue', status: hasScheduleTrigger ? 'active' : 'idle' },
+    { id: 'goals', label: dl.flow_goals_label, description: tx(dl.flow_goals_count, { count: goalCount }), icon: Target, color: 'amber', status: goalCount > 0 ? 'configured' : 'idle' },
+    { id: 'review', label: dl.flow_review_label, description: dl.flow_review_desc, icon: ClipboardCheck, color: 'emerald', status: 'configured' },
+    { id: 'approved', label: dl.flow_approved_label, description: hasApprovedListener ? dl.flow_approved_active : dl.flow_approved_idle, icon: Play, color: 'emerald', status: hasApprovedListener ? 'active' : 'idle' },
+    { id: 'rejected', label: dl.flow_rejected_label, description: hasRejectedListener ? dl.flow_rejected_active : dl.flow_rejected_idle, icon: RefreshCw, color: 'red', status: hasRejectedListener ? 'active' : 'idle' },
+    { id: 'memory', label: dl.flow_memory_label, description: dl.flow_memory_desc, icon: Brain, color: 'violet', status: 'configured' },
   ];
 }
 
@@ -102,7 +108,7 @@ export function TriggerList({ triggers }: { triggers: PersonaTrigger[] }) {
                 trigger.enabled ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25'
                 : 'bg-red-500/15 text-red-400 border-red-500/25'
               }`}>
-                {trigger.enabled ? 'enabled' : 'disabled'}
+                {trigger.enabled ? t.plugins.dev_lifecycle.flow_trigger_enabled : t.plugins.dev_lifecycle.flow_trigger_disabled}
               </span>
             </div>
           );
