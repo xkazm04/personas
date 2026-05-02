@@ -4,9 +4,10 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
+import { capturePersonaToken } from '@/lib/personas/personaToken';
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { silentCatch } from "@/lib/silentCatch";
-import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults } from '../../libs/compareHelpers';
+import { ALL_COMPARE_MODELS, toTestConfig, aggregateResults, aggregateResultsDetailed } from '../../libs/compareHelpers';
 import { ModelDropdown } from './ModelDropdown';
 import { ComparisonResults } from './CompareResultsTable';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -52,13 +53,14 @@ export function ModelABCompare() {
     if (!selectedPersona || !optA || !optB || modelA === modelB) return;
     setLastResults(null);
     const models: ModelTestConfig[] = [toTestConfig(optA), toTestConfig(optB)];
-    const startedFor = selectedPersona.id;
-    const runId = await startArena(startedFor, models);
+    const token = capturePersonaToken(selectedPersona.id);
+    const runId = await startArena(token.personaId!, models);
     if (!runId) return;
-    // Persona may have changed during the await — never adopt this runId into
-    // a different persona's UI (would leak prompts/results across workspaces).
-    const currentId = useAgentStore.getState().selectedPersona?.id ?? null;
-    if (currentId !== startedFor) {
+    // Persona may have changed during the await. Don't adopt the runId into a
+    // different persona's UI — that would render persona A's prompts/results
+    // inside persona B's editor and let the Cancel button send cancels for a
+    // run B never started.
+    if (!token.isStillCurrent()) {
       void cancelArena(runId);
       return;
     }
@@ -69,11 +71,44 @@ export function ModelABCompare() {
     if (activeRunId) {
       await cancelArena(activeRunId);
       setActiveRunId(null);
+      // Also clear any lingering progress/results so the UI doesn't stall
+      // on a stale progress bar after cancel.
+      setLastResults(null);
     }
   }, [activeRunId, cancelArena]);
 
+  // Reset run state whenever the selected persona changes. Without this,
+  // a run started under persona A would continue streaming results into
+  // this component after the user navigated to persona B — causing the
+  // new persona's UI to render the old persona's comparison output (and
+  // potentially leak sensitive prompts across workspaces).
+  const personaId = selectedPersona?.id ?? null;
+  useEffect(() => {
+    setActiveRunId((prevId) => {
+      // Best-effort cancel of any in-flight run before we drop the handle,
+      // so the backend stops burning budget for a run nobody is watching.
+      if (prevId) void cancelArena(prevId);
+      return null;
+    });
+    setLastResults(null);
+    setExpanded(false);
+  }, [personaId, cancelArena]);
+
   const metricsA = useMemo(() => lastResults ? aggregateResults(lastResults, modelA) : null, [lastResults, modelA]);
   const metricsB = useMemo(() => lastResults ? aggregateResults(lastResults, modelB) : null, [lastResults, modelB]);
+  // Distinguish "run hasn't started" (empty) from "run produced no results
+  // for this model" (missing) — the latter typically means the dispatch or
+  // execution for that model failed, and we should say so rather than
+  // rendering a generic "no data" placeholder.
+  const missingModels = useMemo(() => {
+    if (!lastResults || lastResults.length === 0) return [];
+    const mA = aggregateResultsDetailed(lastResults, modelA);
+    const mB = aggregateResultsDetailed(lastResults, modelB);
+    const out: string[] = [];
+    if (mA.status === 'missing') out.push(modelA);
+    if (mB.status === 'missing') out.push(modelB);
+    return out;
+  }, [lastResults, modelA, modelB]);
 
   const hasPrompt = !!selectedPersona?.structured_prompt || !!selectedPersona?.system_prompt;
   const canRun = hasPrompt && modelA !== modelB && !isLabRunning;
@@ -126,6 +161,14 @@ export function ModelABCompare() {
                 <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-amber-500/10 border border-amber-500/20">
                   <AlertCircle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
                   <span className="typo-body text-amber-400/90">{mc.select_different_models}</span>
+                </div>
+              )}
+              {missingModels.length > 0 && (
+                <div className="flex items-start gap-2 px-3 py-2 rounded-modal bg-red-500/10 border border-red-500/20">
+                  <AlertCircle className="w-3.5 h-3.5 text-red-400 mt-0.5 flex-shrink-0" />
+                  <span className="typo-body text-red-300/90">
+                    {`Model ${missingModels.join(', ')} produced no results — run may have failed.`}
+                  </span>
                 </div>
               )}
 
