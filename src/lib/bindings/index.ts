@@ -27,7 +27,6 @@ export type { ContextRule } from "./ContextRule";
 export type { ContextRuleMatch } from "./ContextRuleMatch";
 export type { ContextStreamStats } from "./ContextStreamStats";
 export type { ConnectorDefinition } from "./ConnectorDefinition";
-export type { ContractReport } from "./ContractReport";
 export type { Continuation } from "./Continuation";
 export type { CreateConnectorDefinitionInput } from "./CreateConnectorDefinitionInput";
 export type { DbPerfSnapshot } from "./DbPerfSnapshot";
