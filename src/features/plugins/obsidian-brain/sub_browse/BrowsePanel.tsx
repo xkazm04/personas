@@ -128,8 +128,11 @@ export default function BrowsePanel() {
 
   const openInObsidian = useCallback(() => {
     if (!selectedPath || !vaultName) return;
-    const fileName = selectedPath.split(/[/\\]/).pop()?.replace('.md', '') ?? '';
-    window.location.href = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(fileName)}`;
+    // Send the full vault-relative path (with normalized forward slashes,
+    // .md stripped) so Obsidian opens the exact note. Sending only the
+    // basename ambiguously matched any same-named file in the vault.
+    const filePath = selectedPath.replace(/\\/g, '/').replace(/\.md$/, '');
+    window.location.href = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}`;
   }, [selectedPath, vaultName]);
 
   const selectedFileName = useMemo(
