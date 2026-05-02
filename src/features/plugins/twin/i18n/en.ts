@@ -5,6 +5,19 @@ export const en = {
       createFirst: 'Create a twin first so personas have an identity to speak as.',
       createTwin: 'Create Twin',
       selectTwin: 'Select a twin...',
+      progressGroupLabel: 'Twin setup progress',
+    },
+    // Prototype variant tab strip — wraps each subtab in Atelier/Console/Baseline
+    // alternatives. Will be removed once a winner is picked per subtab; see the
+    // /architect handoff for variant culling.
+    variantTabs: {
+      prototype: 'Prototype',
+      atelier: 'Atelier',
+      atelierHint: 'Atmospheric studio · gradient bands · decorative accents',
+      console: 'Console',
+      consoleHint: 'Dense ledger · KPI tiles · keyboard-first',
+      baseline: 'Baseline',
+      baselineHint: 'Current shipped layout for reference',
     },
     emptyState: {
       subtitle: 'You need an active twin to use this tab.',

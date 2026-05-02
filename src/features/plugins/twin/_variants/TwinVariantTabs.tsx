@@ -1,5 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Sparkles, Terminal, Archive } from 'lucide-react';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 export type TwinVariantId = 'atelier' | 'console' | 'baseline';
 
@@ -9,12 +10,6 @@ interface VariantDef {
   hint: string;
   icon: typeof Sparkles;
 }
-
-const VARIANTS: VariantDef[] = [
-  { id: 'atelier', label: 'Atelier', hint: 'Atmospheric studio · gradient bands · decorative accents', icon: Sparkles },
-  { id: 'console', label: 'Console', hint: 'Dense ledger · KPI tiles · keyboard-first', icon: Terminal },
-  { id: 'baseline', label: 'Baseline', hint: 'Current shipped layout for reference', icon: Archive },
-];
 
 interface TwinVariantTabsProps {
   /** ID used to namespace localStorage so each page remembers its own pick. */
@@ -34,6 +29,7 @@ interface TwinVariantTabsProps {
  * collapsed and only the chosen variant remains.
  */
 export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelier' }: TwinVariantTabsProps) {
+  const { t } = useTwinTranslation();
   const [variant, setVariant] = useState<TwinVariantId>(() => {
     try {
       const raw = localStorage.getItem(`twin-variant:${storageKey}`);
@@ -49,6 +45,12 @@ export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelie
     try { localStorage.setItem(`twin-variant:${storageKey}`, id); } catch { /* ignore */ }
   };
 
+  const VARIANTS: VariantDef[] = useMemo(() => [
+    { id: 'atelier', label: t.variantTabs.atelier, hint: t.variantTabs.atelierHint, icon: Sparkles },
+    { id: 'console', label: t.variantTabs.console, hint: t.variantTabs.consoleHint, icon: Terminal },
+    { id: 'baseline', label: t.variantTabs.baseline, hint: t.variantTabs.baselineHint, icon: Archive },
+  ], [t]);
+
   const active = VARIANTS.find((v) => v.id === variant) ?? VARIANTS[0]!;
 
   return (
@@ -56,7 +58,7 @@ export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelie
       {/* Slim variant strip — tucked above the page body */}
       <div className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40 backdrop-blur">
         <span className="text-[10px] uppercase tracking-[0.18em] text-foreground/55 font-medium mr-1 hidden sm:inline">
-          Prototype
+          {t.variantTabs.prototype}
         </span>
         <div className="flex items-center gap-1 rounded-full border border-primary/15 bg-secondary/30 p-0.5">
           {VARIANTS.map((v) => {

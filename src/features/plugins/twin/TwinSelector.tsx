@@ -110,7 +110,7 @@ export function TwinSelector() {
         {nameBlock}
 
         {/* Progress strip — 6 milestones, clickable */}
-        <div className="flex items-center gap-1 flex-wrap" role="group" aria-label="Twin setup progress">
+        <div className="flex items-center gap-1 flex-wrap" role="group" aria-label={t.selector.progressGroupLabel}>
           {SLOTS.map((slot) => {
             const status = readiness[slot.statusKey];
             const cls = statusClasses(status);
