@@ -21,29 +21,16 @@ import type { StaticScanResult } from "@/lib/bindings/StaticScanResult";
 import type { TriageRule } from "@/lib/bindings/TriageRule";
 
 // ---------------------------------------------------------------------------
-// Safe invoke: returns fallback when backend commands are not yet compiled.
+// Safe invoke helper — hoisted to `@/lib/utils/tauri/safeInvoke` (Wave 5).
+//
+// FIX: the inline copy here previously used `msg.includes("not found")`,
+// which matched real `dev_tools_*` "context not found" / "project not found"
+// errors and silently coerced them into empty fallbacks (0 contexts, 0
+// projects). The shared helper uses an anchored `Command "<name>" not found`
+// regex so only the genuine "command isn't registered" Tauri error triggers
+// the fallback path.
 // ---------------------------------------------------------------------------
-
-function isCommandNotFound(err: unknown): boolean {
-  // Prefer structured kind from Tauri errors
-  if (typeof err === 'object' && err !== null && 'kind' in err) {
-    return (err as { kind: string }).kind === 'not_found';
-  }
-  const msg = typeof err === "string" ? err : err instanceof Error ? err.message
-    : typeof err === "object" && err !== null && "error" in err ? String((err as { error: string }).error)
-    : String(err);
-  return msg.includes("not found") || msg.includes("Command") && msg.includes("not found");
-}
-
-/** Invoke that silently returns `fallback` when the Tauri command doesn't exist. */
-async function safeInvoke<T>(fallback: T, ...args: Parameters<typeof invoke<T>>): Promise<T> {
-  try {
-    return await invoke<T>(...args);
-  } catch (err) {
-    if (isCommandNotFound(err)) return fallback;
-    throw err;
-  }
-}
+import { safeInvoke } from "@/lib/utils/tauri/safeInvoke";
 
 // Re-export binding types for convenience
 export type { DevProject } from "@/lib/bindings/DevProject";

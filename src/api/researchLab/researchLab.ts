@@ -175,47 +175,9 @@ export interface ResearchDashboardStats {
 }
 
 // ---------------------------------------------------------------------------
-// Safe invoke helper
+// Safe invoke helper — hoisted to `@/lib/utils/tauri/safeInvoke` (Wave 5).
 // ---------------------------------------------------------------------------
-
-/**
- * True iff `err` is specifically Tauri's "the IPC command isn't registered"
- * failure — i.e. the backend doesn't implement this research-lab command yet.
- *
- * Historical bug: the previous implementation tested `msg.includes("not found")`,
- * which matched ANY error containing "not found" ("project not found",
- * "source not found", "vault path not found", "host not found"). All of
- * those were silently swallowed as "command missing, return fallback",
- * producing a "0 projects" UI when the backend was genuinely erroring.
- *
- * We now only match on:
- *   1. An AppError-shaped object with `kind === 'not_found'`, or
- *   2. Tauri's canonical `Command "<name>" not found` shape (exact regex).
- *
- * Substring checks on "not found" are never safe — real resource-not-found
- * errors must propagate, not be coerced into an empty list.
- */
-const TAURI_COMMAND_NOT_FOUND_RE =
-  /^Command [^"]*"[\w_]+"[^"]* not found(?:\.|$)/i;
-
-function isCommandNotFound(err: unknown): boolean {
-  if (typeof err === 'object' && err !== null && 'kind' in err) {
-    return (err as { kind: string }).kind === 'not_found';
-  }
-  const msg = typeof err === "string" ? err : err instanceof Error ? err.message
-    : typeof err === "object" && err !== null && "error" in err ? String((err as { error: string }).error)
-    : String(err);
-  return TAURI_COMMAND_NOT_FOUND_RE.test(msg.trim());
-}
-
-async function safeInvoke<T>(fallback: T, ...args: Parameters<typeof invoke<T>>): Promise<T> {
-  try {
-    return await invoke<T>(...args);
-  } catch (err) {
-    if (isCommandNotFound(err)) return fallback;
-    throw err;
-  }
-}
+import { safeInvoke } from "@/lib/utils/tauri/safeInvoke";
 
 // ---------------------------------------------------------------------------
 // Projects
