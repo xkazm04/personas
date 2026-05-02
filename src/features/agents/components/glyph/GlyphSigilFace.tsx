@@ -37,7 +37,17 @@ interface GlyphSigilFaceProps {
   onViewAgent: () => void;
   onShowSimulate: () => void;
   buildSessionId: string | null;
+  /** Small popup overlay rendered as a centered scrim *inside* the
+   *  sigil canvas — used for the dimension summary card (a tooltip-
+   *  sized info popover that can sit on top of petals without
+   *  obscuring them in any meaningful way). */
   overlay: React.ReactNode;
+  /** Larger card rendered as a sibling *below* the sigil canvas — used
+   *  for the active answer card. Lives outside the canvas so the petal
+   *  ring stays fully clickable; a wider card here doesn't block the
+   *  user from clicking another lit glyph to switch questions. Null
+   *  when no question is active. */
+  answerCard?: React.ReactNode;
   /** Forwarded to GlyphCoreContent's pre-build branch. The center hint
    *  is a click-to-summon affordance that opens the intent overlay. */
   onComposeStart?: () => void;
@@ -55,7 +65,7 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
     refining, setRefining, completenessPct,
     testOutputLines, testPassed, testError,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
-    onShowSimulate, buildSessionId, overlay, onComposeStart,
+    onShowSimulate, buildSessionId, overlay, answerCard, onComposeStart,
   } = props;
 
   return (
@@ -102,6 +112,15 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
           />
         </AnimatePresence>
       </GlyphSigilCanvas>
+
+      {/* Answer card — rendered below the sigil so the petal ring stays
+          fully clickable. Lit glyphs can be tapped to switch active
+          question without the card eating the click. */}
+      {answerCard && (
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-[34rem] px-2">{answerCard}</div>
+        </div>
+      )}
 
       {isRefining && !activeDim && (
         <motion.span
