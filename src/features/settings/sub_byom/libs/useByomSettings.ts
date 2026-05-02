@@ -21,6 +21,20 @@ import type {
 } from '@/api/system/byom';
 import { validateByomPolicy, type PolicyWarning } from './byomHelpers';
 
+function groupByRuleIndex(
+  warnings: PolicyWarning[],
+  kind: 'routing' | 'compliance',
+): Map<number, PolicyWarning[]> {
+  const map = new Map<number, PolicyWarning[]>();
+  for (const w of warnings) {
+    if (w.ruleType !== kind) continue;
+    const existing = map.get(w.ruleIndex) ?? [];
+    existing.push(w);
+    map.set(w.ruleIndex, existing);
+  }
+  return map;
+}
+
 /** Shallow-equal comparison for ByomPolicy objects. */
 function policyEqual(a: ByomPolicy, b: ByomPolicy): boolean {
   if (a.enabled !== b.enabled) return false;
@@ -243,29 +257,8 @@ export function useByomSettings() {
   const policyWarnings = useMemo(() => validateByomPolicy(policy), [policy]);
   const hasBlockingErrors = useMemo(() => policyWarnings.some((w) => w.severity === 'error'), [policyWarnings]);
 
-  const routingWarnings = useMemo(() => {
-    const map = new Map<number, PolicyWarning[]>();
-    for (const w of policyWarnings) {
-      if (w.ruleType === 'routing') {
-        const existing = map.get(w.ruleIndex) ?? [];
-        existing.push(w);
-        map.set(w.ruleIndex, existing);
-      }
-    }
-    return map;
-  }, [policyWarnings]);
-
-  const complianceWarnings = useMemo(() => {
-    const map = new Map<number, PolicyWarning[]>();
-    for (const w of policyWarnings) {
-      if (w.ruleType === 'compliance') {
-        const existing = map.get(w.ruleIndex) ?? [];
-        existing.push(w);
-        map.set(w.ruleIndex, existing);
-      }
-    }
-    return map;
-  }, [policyWarnings]);
+  const routingWarnings = useMemo(() => groupByRuleIndex(policyWarnings, 'routing'), [policyWarnings]);
+  const complianceWarnings = useMemo(() => groupByRuleIndex(policyWarnings, 'compliance'), [policyWarnings]);
 
   return {
     policy,
