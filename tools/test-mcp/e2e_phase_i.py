@@ -756,6 +756,7 @@ def main() -> None:
             "log": log,
         }
         if args.report:
+            Path(args.report).parent.mkdir(parents=True, exist_ok=True)
             Path(args.report).write_text(json.dumps(summary, indent=2))
             print(f"\nWrote {args.report}")
         else:
