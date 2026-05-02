@@ -8532,6 +8532,10 @@ export type Translations = {
       error_prefix: string;
       items_selected: string;
       items_total: string;
+      items_selected_summary: string;
+      details_empty_hint: string;
+      details_location: string;
+      copy_path_tooltip: string;
       signatures_button: string;
       ctx_sign_file: string;
       ctx_verify_file: string;

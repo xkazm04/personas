@@ -9,7 +9,7 @@ import {
   driveParentPath,
   type DriveEntry,
 } from "@/api/drive";
-import { toastCatch } from "@/lib/silentCatch";
+import { silentCatch, toastCatch } from "@/lib/silentCatch";
 
 import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
@@ -168,8 +168,8 @@ export default function DrivePage() {
     async (entry: DriveEntry) => {
       try {
         await navigator.clipboard.writeText(entry.path);
-      } catch {
-        /* clipboard blocked */
+      } catch (err) {
+        silentCatch("drive:copy-path")(err);
       }
     },
     [],

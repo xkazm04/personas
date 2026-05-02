@@ -15,7 +15,7 @@ const TEXT_PREVIEW_MAX_BYTES = 256 * 1024; // 256 KB
 const IMAGE_MIME_PREFIX = "image/";
 
 export function DriveDetailsPane({ entries, currentPath }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const primary = entries[0] ?? null;
   const multi = entries.length > 1;
 
@@ -34,13 +34,13 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
               <Info className="w-7 h-7 text-cyan-300" />
             </div>
             <div className="typo-body text-foreground max-w-[200px]">
-              Select a file or folder to see its details and inline preview.
+              {t.plugins.drive.details_empty_hint}
             </div>
           </div>
         </div>
         <div className="pt-3 border-t border-primary/10">
           <div className="typo-label text-foreground">
-            Location
+            {t.plugins.drive.details_location}
           </div>
           <div className="mt-1 font-mono typo-body text-foreground break-all">
             {currentPath || "/"}
@@ -68,7 +68,9 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             <Icon className={`w-10 h-10 ${visual.text}`} />
           </div>
           <div className="mt-3 typo-body typo-card-label break-all px-1 leading-tight">
-            {multi ? `${entries.length} items selected` : primary.name}
+            {multi
+              ? tx(t.plugins.drive.items_selected_summary, { count: entries.length })
+              : primary.name}
           </div>
           {!multi && (
             <div className="mt-1 typo-caption text-foreground uppercase tracking-wider">
@@ -103,13 +105,11 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
                   onClick={() => {
                     navigator.clipboard
                       .writeText(primary.path || "/")
-                      .catch(() => {
-                        /* ignore */
-                      });
+                      .catch(silentCatch("drive:copy-path"));
                   }}
                   className="p-1 rounded text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors flex-shrink-0"
-                  aria-label="Copy path"
-                  title="Copy path"
+                  aria-label={t.plugins.drive.copy_path_tooltip}
+                  title={t.plugins.drive.copy_path_tooltip}
                 >
                   <Copy className="w-3 h-3" />
                 </button>
@@ -277,8 +277,8 @@ function ImagePreviewBlob({ entry }: { entry: DriveEntry }) {
         });
         current = URL.createObjectURL(blob);
         setUrl(current);
-      } catch {
-        /* ignore */
+      } catch (err) {
+        silentCatch("drive:image-preview")(err);
       }
     });
     return () => {

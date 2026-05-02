@@ -113,12 +113,16 @@ export function useSigning() {
       const candidate = `${drivePath}.sig.json`;
       try {
         await driveStat(candidate);
-      } catch {
+      } catch (err) {
+        // Sidecar absence is the common path; log at silent level so we keep
+        // breadcrumbs without surfacing toast noise on every verify attempt.
+        silentCatch("signing:sidecar-stat")(err);
         return null;
       }
       try {
         return await driveReadText(candidate);
-      } catch {
+      } catch (err) {
+        silentCatch("signing:sidecar-read")(err);
         return null;
       }
     },

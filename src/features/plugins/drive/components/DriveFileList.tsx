@@ -3,6 +3,7 @@ import { ChevronUp, ChevronDown, FolderOpen, Sparkles } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
 import { driveFormatBytes, driveList } from "@/api/drive";
+import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { visualForEntry, formatRelativeTime } from "../designTokens";
@@ -170,8 +171,8 @@ function ListView({
           const dst = target.path ? `${target.path}/${name}` : name;
           await drive.move(p, dst);
         }
-      } catch {
-        /* ignore bad payload */
+      } catch (err) {
+        silentCatch("drive:drop-payload")(err);
       }
     },
     [drive],
