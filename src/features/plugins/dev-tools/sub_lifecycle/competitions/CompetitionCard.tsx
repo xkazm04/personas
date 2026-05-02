@@ -49,7 +49,8 @@ function BaselineHealth({ json }: { json: string }) {
 }
 
 export function CompetitionCard({ competition, onRefresh }: { competition: DevCompetition; onRefresh: () => void }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const addToast = useToastStore((s) => s.addToast);
   const [detail, setDetail] = useState<CompetitionDetail | null>(null);
   const [expanded, setExpanded] = useState(false);
@@ -86,8 +87,8 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
       await pickCompetitionWinner(competition.id, pendingWinnerTaskId, null, winnerInsightText.trim() || null);
       addToast(
         winnerInsightText.trim()
-          ? 'Winner selected. Insight saved to Dev Clone memory.'
-          : 'Winner selected. Merge the winning branch when ready.',
+          ? dl.winner_insight_saved
+          : dl.winner_merge_when_ready,
         'success',
       );
       useOverviewStore.getState().processEnded('competition', 'completed', competition.id);
@@ -95,9 +96,9 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
       setWinnerInsightText('');
       onRefresh();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to pick winner', 'error');
+      addToast(err instanceof Error ? err.message : dl.failed_to_pick_winner, 'error');
     } finally { setPicking(null); }
-  }, [competition.id, pendingWinnerTaskId, winnerInsightText, addToast, onRefresh]);
+  }, [competition.id, pendingWinnerTaskId, winnerInsightText, addToast, onRefresh, dl]);
 
   const [optimisticCancelled, setOptimisticCancelled] = useState(false);
 
@@ -106,24 +107,24 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
     setOptimisticCancelled(true);
     setExpanded(false);
     useOverviewStore.getState().processEnded('competition', 'cancelled', competition.id);
-    addToast('Competition cancelled — cleaning up worktrees in background.', 'success');
+    addToast(dl.competition_cancelled_cleaning, 'success');
     onRefresh();
 
     // Background cleanup (worktree removal, task cancellation)
     cancelCompetition(competition.id).catch((err) => {
-      addToast(`Background cleanup issue: ${err instanceof Error ? err.message : 'unknown'}`, 'error');
+      addToast(tx(dl.background_cleanup_issue, { error: err instanceof Error ? err.message : dl.unknown_error }), 'error');
     });
-  }, [competition.id, addToast, onRefresh]);
+  }, [competition.id, addToast, onRefresh, dl, tx]);
 
   const handleDelete = useCallback(async () => {
     try {
       await deleteCompetition(competition.id);
-      addToast('Competition deleted', 'success');
+      addToast(dl.competition_deleted, 'success');
       onRefresh();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Delete failed', 'error');
+      addToast(err instanceof Error ? err.message : dl.competition_delete_failed, 'error');
     }
-  }, [competition.id, addToast, onRefresh]);
+  }, [competition.id, addToast, onRefresh, dl]);
 
   const effectiveStatus = optimisticCancelled ? 'cancelled' : competition.status;
   const badge = statusBadge(effectiveStatus);
@@ -213,17 +214,17 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
               )}
               <div className="flex items-center justify-between pt-2">
                 <Button variant="ghost" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} onClick={loadDetail}>
-                  Refresh
+                  {t.common.refresh}
                 </Button>
                 <div className="flex items-center gap-2">
                   {isFinished && (
                     <Button variant="ghost" size="sm" icon={<Trash2 className="w-3.5 h-3.5" />} onClick={handleDelete}>
-                      Delete
+                      {t.common.delete}
                     </Button>
                   )}
                   {!isFinished && (
                     <Button variant="danger" size="sm" icon={<Ban className="w-3.5 h-3.5" />} onClick={handleCancel}>
-                      Cancel
+                      {t.common.cancel}
                     </Button>
                   )}
                 </div>

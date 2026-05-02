@@ -20,7 +20,8 @@ interface NewCompetitionModalProps {
 export function NewCompetitionModal({
   open, onClose, projectId, onCreated, previousWinnerGenes,
 }: NewCompetitionModalProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const addToast = useToastStore((s) => s.addToast);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -43,7 +44,7 @@ export function NewCompetitionModal({
   );
 
   const handleCreate = useCallback(async () => {
-    if (!title.trim()) { addToast('Task title is required', 'error'); return; }
+    if (!title.trim()) { addToast(dl.task_title_required, 'error'); return; }
     setCreating(true);
     try {
       const slots: CompetitionSlotInput[] = strategies.map((s) => ({
@@ -55,9 +56,9 @@ export function NewCompetitionModal({
       const taskIds = result.slots.map((s) => s.task_id);
       if (taskIds.length > 0) {
         try { await startBatchExecution(taskIds, taskIds.length); }
-        catch (e) { addToast(`Batch start failed: ${e instanceof Error ? e.message : 'unknown'}`, 'error'); }
+        catch (e) { addToast(tx(dl.batch_start_failed, { error: e instanceof Error ? e.message : dl.unknown_error }), 'error'); }
       }
-      addToast(`Competition started with ${slots.length} competitors`, 'success');
+      addToast(tx(dl.competition_started_count, { count: slots.length }), 'success');
       useOverviewStore.getState().processStarted(
         'competition', result.competition.id,
         `Competition: ${title.trim()} (${slots.length} competitors)`,
@@ -65,9 +66,9 @@ export function NewCompetitionModal({
       );
       onCreated(); onClose();
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed', 'error');
+      addToast(err instanceof Error ? err.message : dl.competition_failed, 'error');
     } finally { setCreating(false); }
-  }, [title, description, strategies, projectId, addToast, onCreated, onClose]);
+  }, [title, description, strategies, projectId, addToast, onCreated, onClose, dl, tx]);
 
   return (
     <BaseModal isOpen={open} onClose={onClose} titleId="new-competition-title" size="lg">
