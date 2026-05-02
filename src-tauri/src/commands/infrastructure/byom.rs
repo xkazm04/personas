@@ -1,3 +1,16 @@
+//! BYOM IPC commands.
+//!
+//! **Auth tiers used in this file:**
+//! - `require_auth_sync` — policy CRUD (get/set/delete/validate). The BYOM
+//!   policy is account-wide configuration; any authenticated session may read
+//!   or write it.
+//! - `require_privileged_sync` — provider audit log views. The audit log
+//!   exposes per-execution provider routing and per-persona usage history;
+//!   it's treated as sensitive activity data and gated behind the privileged
+//!   tier.
+//! - `require_auth_sync` (also) — `test_provider_connection`, since probing
+//!   binary availability is non-sensitive.
+
 use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
