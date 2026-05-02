@@ -38,12 +38,15 @@ interface GlyphSigilFaceProps {
   onShowSimulate: () => void;
   buildSessionId: string | null;
   overlay: React.ReactNode;
+  /** Forwarded to GlyphCoreContent's pre-build branch. The center hint
+   *  is a click-to-summon affordance that opens the intent overlay. */
+  onComposeStart?: () => void;
 }
 
-/** The sigil column when the glyph face is shown (i.e. not Edit). Mounts
- *  only once compose is complete — wraps the canvas with phase-aware
- *  decorations: the hint strip during refine, the legend when no dim is
- *  active, and the live CLI strip during builds. */
+/** The sigil column. Always mounted — the glyph is the default surface
+ *  and the center adapts per phase: pre-build = clickable "begin"
+ *  affordance that summons the intent overlay; building = orbit + petal
+ *  sweep; awaiting = pending pulse on affected petal; etc. */
 export function GlyphSigilFace(props: GlyphSigilFaceProps) {
   const {
     size, petalStates, hoveredDim, activeDim, onHoverDim, onClickDim,
@@ -52,79 +55,75 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
     refining, setRefining, completenessPct,
     testOutputLines, testPassed, testError,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
-    onShowSimulate, buildSessionId, overlay,
+    onShowSimulate, buildSessionId, overlay, onComposeStart,
   } = props;
 
   return (
-    <AnimatePresence>
-      {!isCompose && (
-        <motion.div
-          key="sigil"
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.92 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col items-center gap-5"
+    <motion.div
+      key="sigil"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col items-center gap-5"
+    >
+      <GlyphSigilCanvas
+        size={size}
+        petalStates={petalStates}
+        hoveredDim={hoveredDim}
+        activeDim={activeDim}
+        onHoverDim={onHoverDim}
+        onClickDim={onClickDim}
+        dimmed={isBuildingOnly}
+        showOrbit={isBuildingOnly}
+        overlay={overlay}
+      >
+        <AnimatePresence mode="wait">
+          <GlyphCoreContent
+            isPreBuild={isCompose}
+            isBuilding={isBuilding}
+            buildPhase={buildPhase}
+            hasDesignResult={hasDesignResult}
+            refining={refining}
+            setRefining={setRefining}
+            completenessPct={completenessPct}
+            pendingQuestions={pendingQuestions}
+            testOutputLines={testOutputLines}
+            testPassed={testPassed}
+            testError={testError}
+            onStartTest={onStartTest}
+            onPromote={onPromote}
+            onPromoteForce={onPromoteForce}
+            onRejectTest={onRejectTest}
+            onRefine={onRefine}
+            onViewAgent={onViewAgent}
+            onShowSimulate={onShowSimulate}
+            buildSessionId={buildSessionId}
+            onComposeStart={onComposeStart}
+          />
+        </AnimatePresence>
+      </GlyphSigilCanvas>
+
+      {isRefining && !activeDim && (
+        <motion.span
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="typo-caption text-foreground/55 italic"
         >
-          <GlyphSigilCanvas
-            size={size}
-            petalStates={petalStates}
-            hoveredDim={hoveredDim}
-            activeDim={activeDim}
-            onHoverDim={onHoverDim}
-            onClickDim={onClickDim}
-            dimmed={isBuildingOnly}
-            showOrbit={isBuildingOnly}
-            overlay={overlay}
-          >
-            <AnimatePresence mode="wait">
-              <GlyphCoreContent
-                isPreBuild={isCompose}
-                isBuilding={isBuilding}
-                buildPhase={buildPhase}
-                hasDesignResult={hasDesignResult}
-                refining={refining}
-                setRefining={setRefining}
-                completenessPct={completenessPct}
-                pendingQuestions={pendingQuestions}
-                testOutputLines={testOutputLines}
-                testPassed={testPassed}
-                testError={testError}
-                onStartTest={onStartTest}
-                onPromote={onPromote}
-                onPromoteForce={onPromoteForce}
-                onRejectTest={onRejectTest}
-                onRefine={onRefine}
-                onViewAgent={onViewAgent}
-                onShowSimulate={onShowSimulate}
-                buildSessionId={buildSessionId}
-              />
-            </AnimatePresence>
-          </GlyphSigilCanvas>
-
-          {isRefining && !activeDim && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="typo-caption text-foreground/55 italic"
-            >
-              Tap a glowing leaf to answer.
-            </motion.span>
-          )}
-
-          {!activeDim && !isBuildingOnly && (
-            <GlyphLegend
-              petalStates={petalStates}
-              onSelectDim={(d) => onClickDim(d)}
-              onHoverDim={onHoverDim}
-            />
-          )}
-
-          {isBuilding && cliOutputLines && cliOutputLines.length > 0 && (
-            <GlyphActivityStrip lines={cliOutputLines} />
-          )}
-        </motion.div>
+          Tap a glowing leaf to answer.
+        </motion.span>
       )}
-    </AnimatePresence>
+
+      {!activeDim && !isBuildingOnly && (
+        <GlyphLegend
+          petalStates={petalStates}
+          onSelectDim={(d) => onClickDim(d)}
+          onHoverDim={onHoverDim}
+        />
+      )}
+
+      {isBuilding && cliOutputLines && cliOutputLines.length > 0 && (
+        <GlyphActivityStrip lines={cliOutputLines} />
+      )}
+    </motion.div>
   );
 }
