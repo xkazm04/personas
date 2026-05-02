@@ -50,7 +50,11 @@ export function GlyphSigilCanvas({
         dimmed={dimmed}
       />
 
-      {showOrbit && <GlyphOrbitProgress size={size} />}
+      {/* Orbit handles its own exit choreography (fast-forward to 360° +
+          fade) when `active` flips false, so it stays mounted long
+          enough to play the completion animation. Returns null once the
+          fade is done — no explicit unmount needed from the parent. */}
+      <GlyphOrbitProgress size={size} active={showOrbit} />
 
       <div
         className="absolute flex flex-col items-center justify-center text-center"
