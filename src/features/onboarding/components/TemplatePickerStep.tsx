@@ -40,7 +40,7 @@ export function TemplatePickerStep({
     return (
       <div className="text-center py-16">
         <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
-        <p className="typo-body text-foreground">Could not load starter templates.</p>
+        <p className="typo-body text-foreground">{t.onboarding.templates_load_error}</p>
         {loadState.error && (
           <p className="typo-body text-foreground/70 mt-1">{loadState.error}</p>
         )}
@@ -49,7 +49,7 @@ export function TemplatePickerStep({
           className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Retry
+          {t.onboarding.retry}
         </button>
       </div>
     );
@@ -66,7 +66,7 @@ export function TemplatePickerStep({
           className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          Retry
+          {t.onboarding.retry}
         </button>
       </div>
     );
