@@ -1,9 +1,14 @@
 import type { CliEngine } from '@/lib/types/types';
 import type { TaskComplexity, ByomPolicy } from '@/api/system/byom';
 
+// PROVIDER_OPTIONS is the single source of truth for which engines are
+// selectable in the BYOM UI. Each entry's `id` must be a value the Rust
+// `EngineKind::ALL` recognizes — otherwise the FE will say a provider is
+// "known" while the BE flags it as "unknown" on save (see Rust
+// `engine::byom::ByomPolicy::validate`). Add new providers here in lockstep
+// with new EngineKind variants, never one-sided.
 export const PROVIDER_OPTIONS: { id: CliEngine; label: string }[] = [
   { id: 'claude_code', label: 'Claude Code' },
-  { id: 'ollama', label: 'Ollama (local)' },
 ];
 
 const KNOWN_PROVIDERS = new Set<string>(PROVIDER_OPTIONS.map((p) => p.id));
@@ -14,10 +19,10 @@ export const COMPLEXITY_OPTIONS: { id: TaskComplexity; label: string; descriptio
   { id: 'critical', label: 'Critical', description: 'Architecture changes, security work' },
 ];
 
-export const ENGINE_LABELS: Record<string, string> = {
-  claude_code: 'Claude Code',
-  ollama: 'Ollama',
-};
+/** Lookup map derived from PROVIDER_OPTIONS — keep them in sync by construction. */
+export const ENGINE_LABELS: Record<string, string> = Object.fromEntries(
+  PROVIDER_OPTIONS.map((p) => [p.id, p.label]),
+);
 
 // =============================================================================
 // Inline policy validation (mirrors ByomPolicy::validate() in byom.rs)
