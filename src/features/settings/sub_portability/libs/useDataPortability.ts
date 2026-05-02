@@ -9,6 +9,7 @@ import {
   importCredentials,
 } from '@/api/system/dataPortability';
 import { errMsg } from '@/stores/storeTypes';
+import { useTranslation } from '@/i18n/useTranslation';
 import type {
   ExportStats,
   PortabilityImportResult,
@@ -18,6 +19,8 @@ import type {
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
 export function useDataPortability() {
+  const { t } = useTranslation();
+  const s = t.settings.portability;
   const [stats, setStats] = useState<ExportStats | null>(null);
   const [statsStatus, setStatsStatus] = useState<Status>('idle');
 
@@ -60,7 +63,7 @@ export function useDataPortability() {
       setExportStatus(saved ? 'success' : 'idle');
     } catch (e) {
       silentCatch("useDataPortability:exportFull")(e);
-      setErrorMsg(errMsg(e, "Export failed"));
+      setErrorMsg(errMsg(e, s.export_failed));
       setExportStatus('error');
     }
   }, [exportStatus]);
@@ -80,7 +83,7 @@ export function useDataPortability() {
       if (saved) setShowExportModal(false);
     } catch (e) {
       silentCatch("useDataPortability:exportSelective")(e);
-      setErrorMsg(errMsg(e, "Selective export failed"));
+      setErrorMsg(errMsg(e, s.selective_export_failed));
       setExportStatus('error');
     }
   }, [exportStatus]);
@@ -101,7 +104,7 @@ export function useDataPortability() {
       }
     } catch (e) {
       silentCatch("useDataPortability:importPortabilityBundle")(e);
-      setErrorMsg(errMsg(e, "Import failed"));
+      setErrorMsg(errMsg(e, s.import_failed));
       setImportStatus('error');
     }
   }, [importStatus]);
@@ -109,7 +112,7 @@ export function useDataPortability() {
   const handleCredExport = useCallback(async () => {
     if (credExportStatus === 'loading') return;
     if (credExportPassphrase.length < 8) {
-      setErrorMsg('Passphrase must be at least 8 characters');
+      setErrorMsg(s.passphrase_too_short);
       return;
     }
     setCredExportStatus('loading');
@@ -123,7 +126,7 @@ export function useDataPortability() {
       }
     } catch (e) {
       silentCatch("useDataPortability:exportCredentials")(e);
-      setErrorMsg(errMsg(e, "Credential export failed"));
+      setErrorMsg(errMsg(e, s.cred_export_failed));
       setCredExportStatus('error');
     }
   }, [credExportPassphrase, credExportStatus]);
@@ -134,11 +137,11 @@ export function useDataPortability() {
     // the stored passphrase belongs to that pass and a silent re-run would double-import.
     if (credImportFilePath) return;
     if (!credImportPassphrase) {
-      setErrorMsg('Please enter the passphrase used during export');
+      setErrorMsg(s.please_enter_passphrase);
       return;
     }
     if (credImportPassphrase.length < 8) {
-      setErrorMsg('Passphrase must be at least 8 characters');
+      setErrorMsg(s.passphrase_too_short);
       return;
     }
     setCredImportStatus('loading');
@@ -163,7 +166,7 @@ export function useDataPortability() {
       }
     } catch (e) {
       silentCatch("useDataPortability:importCredentials")(e);
-      setErrorMsg(errMsg(e, "Credential import failed"));
+      setErrorMsg(errMsg(e, s.cred_import_failed));
       setCredImportStatus('error');
     }
   }, [credImportPassphrase, credImportStatus, credImportFilePath]);
@@ -171,7 +174,7 @@ export function useDataPortability() {
   const handleCredImportWithResolutions = useCallback(async (resolutions: Record<string, string>) => {
     if (credImportStatus === 'loading') return;
     if (!credImportFilePath) {
-      setErrorMsg('No import file available — please start the import again');
+      setErrorMsg(s.no_import_file);
       return;
     }
     setCredImportStatus('loading');
@@ -189,7 +192,7 @@ export function useDataPortability() {
       }
     } catch (e) {
       silentCatch("useDataPortability:importCredentials")(e);
-      setErrorMsg(errMsg(e, "Credential import failed"));
+      setErrorMsg(errMsg(e, s.cred_import_failed));
       setCredImportStatus('error');
     }
   }, [credImportPassphrase, credImportStatus, credImportFilePath]);

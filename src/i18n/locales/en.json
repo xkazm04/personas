@@ -7483,7 +7483,14 @@
       "cred_import_complete": "Credential Import Complete",
       "cred_imported": "{count} imported",
       "cred_skipped": ", {count} skipped",
-      "cred_replaced": ", {count} replaced"
+      "cred_replaced": ", {count} replaced",
+      "please_enter_passphrase": "Please enter the passphrase used during export",
+      "no_import_file": "No import file available -- please start the import again",
+      "export_failed": "Export failed",
+      "selective_export_failed": "Selective export failed",
+      "import_failed": "Import failed",
+      "cred_export_failed": "Credential export failed",
+      "cred_import_failed": "Credential import failed"
     },
     "config": {
       "title": "Config Resolution",

@@ -7490,6 +7490,13 @@ export type Translations = {
       cred_imported: string;
       cred_skipped: string;
       cred_replaced: string;
+      please_enter_passphrase: string;
+      no_import_file: string;
+      export_failed: string;
+      selective_export_failed: string;
+      import_failed: string;
+      cred_export_failed: string;
+      cred_import_failed: string;
     };
     config: {
       title: string;

@@ -50,7 +50,7 @@ export function CredentialPortability({
   onCredImportWithResolutions,
 }: CredentialPortabilityProps) {
   const [resolutions, setResolutions] = useState<Record<string, ConflictAction>>({});
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const s = t.settings.portability;
   const conflicts = credImportResult?.conflicts ?? [];
   const hasConflicts = conflicts.length > 0;
@@ -105,11 +105,11 @@ export function CredentialPortability({
               <button onClick={onCredExport} disabled={credExportStatus === 'loading'}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 hover:bg-amber-500/15 transition-colors disabled:opacity-50">
                 {credExportStatus === 'loading' ? <LoadingSpinner /> : <Download className="w-4 h-4" />}
-                Export
+                {s.export}
               </button>
               <button onClick={() => { setShowCredExportInput(false); setCredExportPassphrase(''); }}
                 className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors">
-                Cancel
+                {s.cancel}
               </button>
             </div>
           )}
@@ -131,7 +131,7 @@ export function CredentialPortability({
           ) : (
             <div className="flex items-center gap-2">
               <input
-                type="password" placeholder="Passphrase" value={credImportPassphrase}
+                type="password" placeholder={s.passphrase_label} value={credImportPassphrase}
                 onChange={(e) => setCredImportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredImport()}
                 className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30 w-56"
@@ -140,11 +140,11 @@ export function CredentialPortability({
               <button onClick={onCredImport} disabled={credImportStatus === 'loading'}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-card typo-body font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors disabled:opacity-50">
                 {credImportStatus === 'loading' ? <LoadingSpinner /> : <Upload className="w-4 h-4" />}
-                Import
+                {s.import_label}
               </button>
               <button onClick={() => { setShowCredImportInput(false); setCredImportPassphrase(''); }}
                 className="typo-caption text-foreground hover:text-muted-foreground/80 transition-colors">
-                Cancel
+                {s.cancel}
               </button>
             </div>
           )}
@@ -171,7 +171,7 @@ export function CredentialPortability({
                 <div className="flex items-center gap-1">
                   {(['skip', 'keep_both', 'replace'] as const).map((action) => {
                     const isActive = resolutions[c.name] === action;
-                    const labels: Record<ConflictAction, string> = { skip: 'Skip', keep_both: 'Keep Both', replace: 'Replace' };
+                    const labels: Record<ConflictAction, string> = { skip: s.skip, keep_both: s.keep_both, replace: s.replace };
                     const colors: Record<ConflictAction, string> = {
                       skip: isActive ? 'bg-muted-foreground/20 text-foreground border-muted-foreground/30' : 'text-foreground',
                       keep_both: isActive ? 'bg-blue-500/15 text-blue-400 border-blue-500/25' : 'text-foreground',
@@ -212,9 +212,9 @@ export function CredentialPortability({
             {s.cred_import_complete}
           </div>
           <p className="typo-body text-foreground">
-            {credImportResult.created} imported
-            {credImportResult.skipped > 0 && `, ${credImportResult.skipped} skipped`}
-            {credImportResult.replaced > 0 && `, ${credImportResult.replaced} replaced`}
+            {tx(s.cred_imported, { count: credImportResult.created })}
+            {credImportResult.skipped > 0 && tx(s.cred_skipped, { count: credImportResult.skipped })}
+            {credImportResult.replaced > 0 && tx(s.cred_replaced, { count: credImportResult.replaced })}
           </p>
           {credImportResult.warnings.length > 0 && (
             <div className="mt-2 space-y-1">
