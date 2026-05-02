@@ -1,9 +1,13 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Music, Plus, Volume2 } from 'lucide-react';
+import { Music, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Button } from '@/features/shared/components/buttons';
 import type { AudioClip } from './types';
 import TimelineClip from './TimelineClip';
+import MediaLaneShell, {
+  STANDARD_LANE_LAYOUT,
+  addButtonLeftPx,
+  type LaneTheme,
+} from './MediaLaneShell';
 import { useAudioWaveform, WAVEFORM_BUCKETS } from './hooks/useAudioWaveform';
 
 interface AudioLaneProps {
@@ -17,6 +21,18 @@ interface AudioLaneProps {
   hideHeader?: boolean;
   hideAdd?: boolean;
 }
+
+const AUDIO_THEME: LaneTheme = {
+  headerBg: 'bg-blue-500/10',
+  headerBorder: 'border-blue-500/20',
+  headerText: 'text-blue-400',
+  countBadgeBg: 'bg-blue-500/10',
+  countBadgeText: 'text-blue-400/60',
+  iconText: 'text-blue-400',
+  laneBg: 'bg-blue-500/[0.02]',
+  emptyHintBorder: 'border-blue-500/15',
+  emptyHintText: 'text-blue-400/30',
+};
 
 function AudioLaneImpl({
   items,
@@ -61,70 +77,39 @@ function AudioLaneImpl({
   );
 
   return (
-    <div className="flex flex-col">
-      {/* Lane header */}
-      {!hideHeader && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border-b border-blue-500/20">
-          <Music className="w-3.5 h-3.5 text-blue-400" />
-          <span className="typo-label text-blue-400">
-            {t.media_studio.layer_audio}
-          </span>
-          {items.length > 0 && (
-            <span className="ml-auto text-md text-blue-400/60 bg-blue-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
-              {items.length}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Clips area */}
-      <div className="relative h-14 bg-blue-500/[0.02] border-b border-primary/10">
-        {/* Empty lane hint */}
-        {items.length === 0 && (
-          <div className="absolute inset-1 rounded-card border border-dashed border-blue-500/15 flex items-center justify-center">
-            <span className="text-md text-blue-400/30">{t.media_studio.empty_lane}</span>
-          </div>
-        )}
-        {items.map((clip) => (
-          <TimelineClip
-            key={clip.id}
-            id={clip.id}
-            startTime={clip.startTime}
-            duration={clip.duration}
-            zoom={zoom}
-            scrollX={scrollX}
-            isSelected={clip.id === selectedId}
-            className="top-1 h-12 rounded-card bg-blue-500/15 border border-blue-500/20 hover:bg-blue-500/25"
-            selectedClassName="top-1 h-12 rounded-card bg-blue-500/30 border-2 border-blue-400 ring-1 ring-blue-400/40"
-            onClick={() => onSelect(clip.id)}
-            onMove={(newStart) => handleMove(clip.id, newStart)}
-            onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}
-            onTrimRight={(delta) => handleTrimRight(clip.id, clip, delta)}
-          >
-            <AudioClipBody clip={clip} />
-
-          </TimelineClip>
-        ))}
-
-        {/* Add button */}
-        {!hideAdd && (
-          <div
-            className="absolute top-1 h-12 flex items-center"
-            style={{
-              left: `${items.length > 0
-                ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
-                : 8
-              }px`,
-            }}
-          >
-            <Button variant="ghost" size="xs" onClick={onAdd}>
-              <Plus className="w-3.5 h-3.5" />
-              {t.media_studio.add_audio}
-            </Button>
-          </div>
-        )}
-      </div>
-    </div>
+    <MediaLaneShell
+      itemCount={items.length}
+      hideHeader={hideHeader}
+      hideAdd={hideAdd}
+      onAdd={onAdd}
+      Icon={Music}
+      labelText={t.media_studio.layer_audio}
+      emptyText={t.media_studio.empty_lane}
+      addButtonText={t.media_studio.add_audio}
+      addButtonLeftPx={addButtonLeftPx(items, zoom, scrollX)}
+      theme={AUDIO_THEME}
+      layout={STANDARD_LANE_LAYOUT}
+    >
+      {items.map((clip) => (
+        <TimelineClip
+          key={clip.id}
+          id={clip.id}
+          startTime={clip.startTime}
+          duration={clip.duration}
+          zoom={zoom}
+          scrollX={scrollX}
+          isSelected={clip.id === selectedId}
+          className="top-1 h-12 rounded-card bg-blue-500/15 border border-blue-500/20 hover:bg-blue-500/25"
+          selectedClassName="top-1 h-12 rounded-card bg-blue-500/30 border-2 border-blue-400 ring-1 ring-blue-400/40"
+          onClick={() => onSelect(clip.id)}
+          onMove={(newStart) => handleMove(clip.id, newStart)}
+          onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}
+          onTrimRight={(delta) => handleTrimRight(clip.id, clip, delta)}
+        >
+          <AudioClipBody clip={clip} />
+        </TimelineClip>
+      ))}
+    </MediaLaneShell>
   );
 }
 
