@@ -6,7 +6,7 @@ import { driveFormatBytes, driveList } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
-import { visualForEntry, formatRelativeTime } from "../designTokens";
+import { visualForEntry, formatRelativeTime, kindLabel } from "../designTokens";
 
 interface Props {
   drive: UseDriveResult;
@@ -111,7 +111,7 @@ function ListView({
   onRenameRequest: _onRenameRequest,
   onNewFolder,
 }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
 
   const SortHeader = ({
@@ -260,10 +260,10 @@ function ListView({
               <div className="typo-body text-foreground self-center truncate">
                 {entry.kind === "folder"
                   ? t.plugins.drive.folder_kind
-                  : visualForEntry(entry).label}
+                  : kindLabel(t, visualForEntry(entry))}
               </div>
               <div className="typo-body text-foreground self-center tabular-nums">
-                {formatRelativeTime(entry.modified)}
+                {formatRelativeTime(entry.modified, t, tx)}
               </div>
             </div>
           );

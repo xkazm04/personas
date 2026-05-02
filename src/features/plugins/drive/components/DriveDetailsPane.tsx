@@ -4,7 +4,7 @@ import { Copy, Info } from "lucide-react";
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
-import { visualForEntry } from "../designTokens";
+import { visualForEntry, kindLabel } from "../designTokens";
 
 interface Props {
   entries: DriveEntry[];
@@ -76,7 +76,7 @@ export function DriveDetailsPane({ entries, currentPath }: Props) {
             <div className="mt-1 typo-caption text-foreground uppercase tracking-wider">
               {primary.kind === "folder"
                 ? t.plugins.drive.folder_kind
-                : visual.label}
+                : kindLabel(t, visual)}
             </div>
           )}
         </div>
