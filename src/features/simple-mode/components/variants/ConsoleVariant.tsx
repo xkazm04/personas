@@ -57,7 +57,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 
 import { SimpleEmptyState } from '../SimpleEmptyState';
 import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
-import { useIllustration } from '../../hooks/useIllustration';
+import { useIllustration, hashId } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
 import type { Tone } from '../../_shared/inboxTone';
@@ -68,15 +68,6 @@ import { formatRelativeTime } from '../../utils/formatRelativeTime';
 // ---------------------------------------------------------------------------
 
 const TONES: readonly Tone[] = ['amber', 'violet', 'emerald', 'rose', 'gold'] as const;
-
-/** Simple cumulative char-code hash; stable across runs. Mirror of useIllustration's hashId. */
-function hashId(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) {
-    h = ((h << 5) - h + id.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h);
-}
 
 /**
  * Deterministic tone for a persona tile. Hashes the persona id and indexes

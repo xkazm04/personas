@@ -130,9 +130,11 @@ const KEYWORD_MAP: Array<[keywords: string[], category: IllustrationCategory]> =
 
 /**
  * Simple cumulative char-code hash. Stable across runs and engines.
- * Returns a non-negative integer.
+ * Returns a non-negative integer. Exported so other Simple-mode surfaces
+ * (e.g. ConsoleVariant's persona-tile tone selection) can derive
+ * deterministic visual choices from the same hash without re-implementing.
  */
-function hashId(id: string): number {
+export function hashId(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) {
     h = ((h << 5) - h + id.charCodeAt(i)) | 0;
