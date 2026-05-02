@@ -51,6 +51,7 @@ import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
+import type { Tone } from '../../_shared/inboxTone';
 
 // ---------------------------------------------------------------------------
 // Hero selection
@@ -96,9 +97,6 @@ export function pickHero(items: readonly UnifiedInboxItem[]): UnifiedInboxItem |
 // ---------------------------------------------------------------------------
 // Tone selection per inbox kind
 // ---------------------------------------------------------------------------
-
-/** The five Simple-mode palette tones (Phase 11). */
-type Tone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 
 /**
  * Map an inbox item to its Simple-mode accent tone. Critical-severity

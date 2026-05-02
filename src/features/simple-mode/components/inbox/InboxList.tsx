@@ -20,10 +20,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { useIllustration } from '../../hooks/useIllustration';
 import type { UnifiedInboxItem } from '../../types';
+import type { Tone } from '../../_shared/inboxTone';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
 type SimpleModeT = Translations['simple_mode'];
-type Tone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 
 // formatRelativeTime (Phase 15-01) takes the full Translations bundle so it
 // can resolve plural-aware keys under simple_mode.inbox.relative_*. We thread

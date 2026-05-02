@@ -33,9 +33,10 @@ import { useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 
 import type { UnifiedInboxItem } from '../types';
+import type { Tone } from '../_shared/inboxTone';
 
 /** Tones are constrained to the Phase 11 closed palette. `null` = no accent. */
-export type ActionTone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold' | null;
+export type ActionTone = Tone | null;
 
 /** i18n key type — narrow to the Inbox subsection so consumers get autocomplete. */
 export type InboxActionLabelKey =

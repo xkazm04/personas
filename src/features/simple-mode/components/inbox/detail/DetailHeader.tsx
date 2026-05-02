@@ -18,9 +18,8 @@ import { useAgentStore } from '@/stores/agentStore';
 
 import { useIllustration } from '../../../hooks/useIllustration';
 import type { UnifiedInboxItem } from '../../../types';
+import type { Tone } from '../../../_shared/inboxTone';
 import { formatRelativeTime } from '../../../utils/formatRelativeTime';
-
-type Tone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 
 export interface DetailHeaderProps {
   item: UnifiedInboxItem;

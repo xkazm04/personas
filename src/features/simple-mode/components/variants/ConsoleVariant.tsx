@@ -60,14 +60,12 @@ import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
+import type { Tone } from '../../_shared/inboxTone';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
 // ---------------------------------------------------------------------------
 // Tone selection
 // ---------------------------------------------------------------------------
-
-/** The five Simple-mode palette tones (Phase 11). */
-type Tone = 'amber' | 'violet' | 'emerald' | 'rose' | 'gold';
 
 const TONES: readonly Tone[] = ['amber', 'violet', 'emerald', 'rose', 'gold'] as const;
 
