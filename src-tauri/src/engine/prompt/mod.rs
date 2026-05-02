@@ -14,8 +14,7 @@ pub use capabilities::{
     render_active_capabilities, render_generation_policy_lines,
 };
 pub use cli_args::{
-    apply_provider_env, build_cli_args, build_cli_args_with_trace, build_resume_cli_args,
-    build_resume_cli_args_with_trace, DEFAULT_EFFORT,
+    apply_provider_env, build_cli_args, build_resume_cli_args,
 };
 pub use resume_prompt::assemble_resume_prompt;
 pub use variables::replace_variables;
@@ -30,7 +29,6 @@ use templates::{
     PROTOCOL_USER_MESSAGE,
 };
 
-use super::types::{CliArgs, ModelProfile};
 use crate::db::models::{LlmUsageHint, Persona, PersonaToolDefinition};
 #[cfg(test)]
 use crate::db::models::{PersonaTrustLevel, PersonaTrustOrigin};

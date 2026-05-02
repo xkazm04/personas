@@ -403,7 +403,7 @@ fn deliver_v2_channels(
                     credential_id: ch.credential_id.clone(),
                     config,
                 };
-                let app = app.clone();
+                let _app = app.clone();
                 let title = title.to_string();
                 let body = body.to_string();
                 tokio::spawn(async move {

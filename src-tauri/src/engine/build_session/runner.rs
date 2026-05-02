@@ -14,22 +14,17 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::ipc::Channel;
-use tauri::Emitter;
 use tokio::sync::mpsc;
 
 use crate::db::models::{
-    BuildEvent, BuildPhase, BuildSession, UpdateBuildSession, UserAnswer,
+    BuildEvent, BuildPhase, UpdateBuildSession, UserAnswer,
 };
 use crate::db::repos::core::build_sessions as build_session_repo;
-use crate::db::repos::resources::connectors as connector_repo;
-use crate::db::repos::resources::credentials as credential_repo;
 use crate::db::DbPool;
-use crate::error::AppError;
 use crate::notifications;
 use crate::ActiveProcessRegistry;
 
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
-use super::super::event_registry::event_name;
 use super::super::types::CliArgs;
 use super::SessionHandle;
 use super::gates::{
@@ -39,7 +34,7 @@ use super::gates::{
 };
 use super::parser::{
     map_capability_field_to_legacy_dimension, map_persona_field_to_legacy_dimension,
-    parse_build_line, parse_json_object,
+    parse_build_line,
 };
 use super::events::{
     cleanup_session, dual_emit, emit_error, emit_session_status,

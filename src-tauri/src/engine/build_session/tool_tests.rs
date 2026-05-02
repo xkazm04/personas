@@ -9,12 +9,9 @@
 //! persona events fired. The promote pipeline happens in a separate command
 //! once the user approves the test results.
 
-use std::collections::HashMap;
-use std::time::Duration;
 
 use tauri::Emitter;
 
-use crate::db::models::Json;
 use crate::db::DbPool;
 use crate::error::AppError;
 

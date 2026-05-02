@@ -2,7 +2,6 @@
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 
-use super::variables::replace_variables;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Advisory Assistant
