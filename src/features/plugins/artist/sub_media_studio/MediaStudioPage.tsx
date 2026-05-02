@@ -22,6 +22,12 @@ import CompositionPreview from './CompositionPreview';
 import TimelinePanel from './TimelinePanel';
 import PlaybackControls from './PlaybackControls';
 
+/** End of the latest item on a single-lane track — where a new clip should
+ *  drop in so it lands after everything already on that lane. */
+function nextStartTime<T extends { startTime: number; duration: number }>(items: T[]): number {
+  return items.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0);
+}
+
 export default function MediaStudioPage() {
   const { t } = useTranslation();
   const { status: ffmpegStatus, checking: ffmpegChecking, recheck: ffmpegRecheck } = useFfmpegDetect();
@@ -118,10 +124,7 @@ export default function MediaStudioPage() {
   useEffect(() => {
     if (pendingAssets.length === 0) return;
     const queue = consumeMediaStudioAssets();
-    let cursor = imageItemsRef.current.reduce(
-      (end, c) => Math.max(end, c.startTime + c.duration),
-      0,
-    );
+    let cursor = nextStartTime(imageItemsRef.current);
     (async () => {
       for (const asset of queue) {
         let width: number | null = null;
@@ -176,7 +179,7 @@ export default function MediaStudioPage() {
               id: crypto.randomUUID(),
               type: 'video',
               label,
-              startTime: videoItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+              startTime: nextStartTime(videoItems),
               duration: probe.duration,
               filePath,
               trimStart: 0,
@@ -192,7 +195,7 @@ export default function MediaStudioPage() {
               id: crypto.randomUUID(),
               type: 'audio',
               label,
-              startTime: audioItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+              startTime: nextStartTime(audioItems),
               duration: probe.duration,
               filePath,
               trimStart: 0,
@@ -205,7 +208,7 @@ export default function MediaStudioPage() {
               id: crypto.randomUUID(),
               type: 'image',
               label,
-              startTime: imageItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+              startTime: nextStartTime(imageItems),
               duration: 5,
               filePath,
               width: probe.width,
@@ -242,7 +245,7 @@ export default function MediaStudioPage() {
       id: crypto.randomUUID(),
       type: 'video',
       label: fileName,
-      startTime: videoItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+      startTime: nextStartTime(videoItems),
       duration: probe.duration,
       filePath: probe.filePath,
       trimStart: 0,
@@ -264,7 +267,7 @@ export default function MediaStudioPage() {
       id: crypto.randomUUID(),
       type: 'audio',
       label: fileName,
-      startTime: audioItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+      startTime: nextStartTime(audioItems),
       duration: probe.duration,
       filePath: probe.filePath,
       trimStart: 0,
@@ -280,7 +283,7 @@ export default function MediaStudioPage() {
       id: crypto.randomUUID(),
       type: 'text',
       label: 'Beat',
-      startTime: textItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+      startTime: nextStartTime(textItems),
       duration: 3,
       text: '',
     };
@@ -295,7 +298,7 @@ export default function MediaStudioPage() {
       id: crypto.randomUUID(),
       type: 'image',
       label: fileName,
-      startTime: imageItems.reduce((end, c) => Math.max(end, c.startTime + c.duration), 0),
+      startTime: nextStartTime(imageItems),
       duration: 5,
       filePath: probe.filePath,
       width: probe.width,
