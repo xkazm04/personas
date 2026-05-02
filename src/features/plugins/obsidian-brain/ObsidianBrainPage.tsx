@@ -35,22 +35,22 @@ export default function ObsidianBrainPage() {
         subtitle={t.plugins.obsidian_brain.subtitle}
         actions={
           <div className="flex items-center gap-1">
-            {tabs.map((t) => {
-              const Icon = t.icon;
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
               return (
                 <button
-                  key={t.id}
-                  onClick={() => setObsidianBrainTab(t.id)}
+                  key={tab.id}
+                  onClick={() => setObsidianBrainTab(tab.id)}
                   className={`flex items-center gap-2 px-3.5 py-1.5 rounded-card typo-caption font-medium transition-colors focus-ring ${
-                    obsidianBrainTab === t.id
+                    obsidianBrainTab === tab.id
                       ? 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
                       : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 border border-transparent'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
-                  {t.label}
-                  {t.id === 'sync' && pendingConflicts > 0 && (
-                    <span className="ml-0.5 px-1.5 py-0.5 text-[10px] font-medium rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  {tab.label}
+                  {tab.id === 'sync' && pendingConflicts > 0 && (
+                    <span className="ml-0.5 px-1.5 py-0.5 typo-caption font-medium rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
                       {pendingConflicts}
                     </span>
                   )}

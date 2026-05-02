@@ -209,13 +209,13 @@ export default function SyncPanel() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <p className="typo-caption text-blue-400/70">App Version</p>
-                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
+                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.appContent.slice(0, 500)}{c.appContent.length > 500 ? '...' : ''}
                     </pre>
                   </div>
                   <div className="space-y-1">
                     <p className="typo-caption text-violet-400/70">Vault Version</p>
-                    <pre className="text-[11px] text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
+                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.vaultContent.slice(0, 500)}{c.vaultContent.length > 500 ? '...' : ''}
                     </pre>
                   </div>

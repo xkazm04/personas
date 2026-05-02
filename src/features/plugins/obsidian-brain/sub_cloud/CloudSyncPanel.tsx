@@ -76,7 +76,7 @@ export default function CloudSyncPanel() {
     setConnecting(true);
     try {
       await loginWithGoogleDrive();
-      addToast('Google Drive authorization started — complete in the popup', 'success');
+      addToast('Authorizing Google Drive — finish in the browser window', 'success');
     } catch (e) {
       addToast(`Drive connection failed: ${e}`, 'error');
     } finally {
