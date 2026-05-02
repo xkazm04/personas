@@ -4,9 +4,12 @@
 > with the canonical flow steps and current status for each scenario.
 >
 > **Companion file: `test-scenarios.xlsx`** — same data in a
-> manual-comparison grid (2 columns per scenario: flow step + status).
-> Open it side-by-side with the desktop app to walk a scenario by hand
-> and spot any false-green claims.
+> manual-comparison grid. Each scenario block carries: a title row, a
+> summary row, the **exact `INTENT` prompt** the driver passes to
+> `startBuildFromIntent` (so you can paste it into the desktop app and
+> walk the build by hand), then the flow steps + status + notes
+> columns. Open it side-by-side with the desktop app to spot any
+> false-green claims.
 >
 > Regenerate the xlsx with:
 > ```bash
