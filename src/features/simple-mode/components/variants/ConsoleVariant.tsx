@@ -61,6 +61,7 @@ import { useIllustration, hashId } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
 import type { Tone } from '../../_shared/inboxTone';
+import { firstGrapheme } from '../../_shared/grapheme';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
 // ---------------------------------------------------------------------------
@@ -625,17 +626,5 @@ function ConnectionChip({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
-
-/** Extract the first grapheme from a string (safe for emoji ZWJ sequences). */
-function firstGrapheme(s: string): string {
-  if (!s) return '';
-  const arr = Array.from(s);
-  return arr[0] ?? '';
-}
-
-// Relative-time helper extracted to `../../utils/formatRelativeTime` in
-// Phase 09 so the Inbox variant (Task 4) can render the same labels. See
-// that file for bucketing rules.
+// Relative-time helper lives in `../../utils/formatRelativeTime` so the
+// Inbox variant can render the same labels. See that file for bucketing rules.

@@ -52,6 +52,7 @@ import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
 import type { Tone } from '../../_shared/inboxTone';
+import { firstGrapheme } from '../../_shared/grapheme';
 
 // ---------------------------------------------------------------------------
 // Hero selection
@@ -606,16 +607,5 @@ function ConnectionChip({
       {isOk ? <Check className="w-3 h-3 simple-accent-emerald-text" /> : null}
     </div>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Utilities
-// ---------------------------------------------------------------------------
-
-/** Extract the first grapheme from a string (safe for emoji ZWJ sequences). */
-function firstGrapheme(s: string): string {
-  if (!s) return '';
-  const arr = Array.from(s);
-  return arr[0] ?? '';
 }
 
