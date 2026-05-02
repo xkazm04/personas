@@ -8766,6 +8766,8 @@ export type Translations = {
       context_scan_ready_body: string;
       context_scan_failed_title: string;
       context_scan_failed_body: string;
+      dev_clone_adopted_toast: string;
+      dev_clone_adopt_failed_toast: string;
       campaign: string;
       deep_build: string;
       idea_evolution: string;

@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { instantAdoptTemplate } from '@/api/templates/templateAdopt';
 import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 
 // Import the Dev Clone template JSON directly — templateIndex already imports it.
@@ -15,6 +16,7 @@ import devCloneTemplate from '../../../../../scripts/templates/development/dev-c
  * registers its tools, and wires its triggers in a single backend transaction.
  */
 export function useDevCloneAdoption() {
+  const { t, tx } = useTranslation();
   const [adopting, setAdopting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const addToast = useToastStore((s) => s.addToast);
@@ -32,17 +34,17 @@ export function useDevCloneAdoption() {
       // Refresh the agent store so the new persona appears in lists.
       await fetchPersonas().catch(() => { /* non-fatal */ });
 
-      addToast('Dev Clone persona adopted successfully.', 'success');
+      addToast(t.plugins.dev_tools.dev_clone_adopted_toast, 'success');
       return result.persona;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      addToast(`Dev Clone adoption failed: ${msg}`, 'error');
+      addToast(tx(t.plugins.dev_tools.dev_clone_adopt_failed_toast, { error: msg }), 'error');
       return null;
     } finally {
       setAdopting(false);
     }
-  }, [addToast, fetchPersonas]);
+  }, [addToast, fetchPersonas, t, tx]);
 
   return { adoptDevClone, adopting, error };
 }

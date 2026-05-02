@@ -27,7 +27,7 @@ export function useCreativeSession() {
   const finalizeCreativeSession = useSystemStore((s) => s.finalizeCreativeSession);
 
   const sendPrompt = useCallback(async (userPrompt: string, tools: string[]) => {
-    const newId = `creative-${Date.now()}`;
+    const newId = `creative-${crypto.randomUUID()}`;
     setSessionId(newId);
     setRunning(true);
     // Seed session history with the first line before any streaming output

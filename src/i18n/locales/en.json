@@ -8760,6 +8760,8 @@
       "context_scan_ready_body": "Codebase scan for \"{projectName}\" completed. Context map is ready to explore.",
       "context_scan_failed_title": "Context Scan Failed",
       "context_scan_failed_body": "Codebase scan for \"{projectName}\" failed. Check the Context Map for details.",
+      "dev_clone_adopted_toast": "Dev Clone persona adopted successfully.",
+      "dev_clone_adopt_failed_toast": "Dev Clone adoption failed: {error}",
       "campaign": "Campaign",
       "deep_build": "Deep Build",
       "idea_evolution": "Idea Evolution",
