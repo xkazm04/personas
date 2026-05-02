@@ -12,6 +12,7 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 export function useArtistAssets() {
   const { t, tx } = useTranslation();
@@ -23,17 +24,10 @@ export function useArtistAssets() {
 
   const loadAssets = useCallback(async (assetType?: string) => {
     setLoading(true);
-    try {
-      const list = await artistListAssets(assetType);
-      setAssets(list);
-    } catch (err) {
-      useToastStore.getState().addToast(
-        err instanceof Error ? err.message : String(err),
-        'error',
-      );
-    } finally {
-      setLoading(false);
-    }
+    await artistListAssets(assetType)
+      .then(setAssets)
+      .catch(toastCatch('useArtistAssets:loadAssets'));
+    setLoading(false);
   }, []);
 
   const scanAndImport = useCallback(async (folder: string) => {
@@ -55,43 +49,30 @@ export function useArtistAssets() {
       );
       await loadAssets();
     } catch (err) {
-      useToastStore.getState().addToast(
-        err instanceof Error ? err.message : String(err),
-        'error',
-      );
+      toastCatch('useArtistAssets:scanAndImport')(err);
     } finally {
       setScanning(false);
     }
   }, [loadAssets, t, tx]);
 
   const deleteAsset = useCallback(async (id: string) => {
-    try {
-      await artistDeleteAsset(id);
-      setAssets((prev) => prev.filter((a) => a.id !== id));
-    } catch (err) {
-      useToastStore.getState().addToast(
-        err instanceof Error ? err.message : String(err),
-        'error',
-      );
-    }
+    await artistDeleteAsset(id)
+      .then(() => setAssets((prev) => prev.filter((a) => a.id !== id)))
+      .catch(toastCatch('useArtistAssets:deleteAsset'));
   }, []);
 
   const updateTags = useCallback(async (id: string, tags: string) => {
-    try {
-      const updated = await artistUpdateTags(id, tags);
-      setAssets((prev) => prev.map((a) => (a.id === id ? updated : a)));
-    } catch (err) {
-      useToastStore.getState().addToast(
-        err instanceof Error ? err.message : String(err),
-        'error',
-      );
-    }
+    await artistUpdateTags(id, tags)
+      .then((updated) => setAssets((prev) => prev.map((a) => (a.id === id ? updated : a))))
+      .catch(toastCatch('useArtistAssets:updateTags'));
   }, []);
 
   // Initialize default folder
   useEffect(() => {
     if (!artistFolder) {
-      artistGetDefaultFolder().then(setArtistFolder).catch(() => {});
+      artistGetDefaultFolder()
+        .then(setArtistFolder)
+        .catch(silentCatch('useArtistAssets:getDefaultFolder'));
     }
   }, [artistFolder, setArtistFolder]);
 
