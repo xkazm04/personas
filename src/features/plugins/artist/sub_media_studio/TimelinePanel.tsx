@@ -4,6 +4,7 @@ import {
   useCallback,
   useRef,
   useEffect,
+  type ReactNode,
   type WheelEvent,
   type PointerEvent,
   type MouseEvent,
@@ -47,6 +48,8 @@ const RULER_HEIGHT = 28;
 const LANE_HEIGHTS = { text: 41, image: 49, video: 57, audio: 57 } as const;
 
 type LaneKey = 'text' | 'image' | 'video' | 'audio';
+
+const LANE_KEYS: readonly LaneKey[] = ['text', 'image', 'video', 'audio'];
 
 // Tailwind 4 JIT scans source for literal class names — dynamic template
 // strings like `bg-${color}-500/5` never get compiled. Every color shade used
@@ -425,75 +428,75 @@ function TimelinePanelImpl({
               <TimelineRuler zoom={zoom} duration={totalDuration} />
             </div>
 
-            {/* Lanes */}
-            {!collapsedLanes.has('text') && (
-              <TextLane
-                items={textItems}
-                zoom={zoom}
-                scrollX={0}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                onAdd={onAddText}
-                onUpdate={onUpdate}
-                videoClips={videoItems}
-                hideHeader
-                hideAdd
-              />
-            )}
-            {collapsedLanes.has('text') && (
-              <div className="h-5 border-b border-primary/10 bg-amber-500/5" />
-            )}
-
-            {!collapsedLanes.has('image') && (
-              <ImageLane
-                items={imageItems}
-                zoom={zoom}
-                scrollX={0}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                onAdd={onAddImage}
-                onUpdate={onUpdate}
-                hideHeader
-                hideAdd
-              />
-            )}
-            {collapsedLanes.has('image') && (
-              <div className="h-5 border-b border-primary/10 bg-emerald-500/5" />
-            )}
-
-            {!collapsedLanes.has('video') && (
-              <VideoLane
-                items={videoItems}
-                zoom={zoom}
-                scrollX={0}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                onAdd={onAddVideo}
-                onUpdate={onUpdate}
-                hideHeader
-                hideAdd
-              />
-            )}
-            {collapsedLanes.has('video') && (
-              <div className="h-5 border-b border-primary/10 bg-rose-500/5" />
-            )}
-
-            {!collapsedLanes.has('audio') && (
-              <AudioLane
-                items={audioItems}
-                zoom={zoom}
-                scrollX={0}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                onAdd={onAddAudio}
-                onUpdate={onUpdate}
-                hideHeader
-                hideAdd
-              />
-            )}
-            {collapsedLanes.has('audio') && (
-              <div className="h-5 border-b border-primary/10 bg-blue-500/5" />
-            )}
+            {/* Lanes — each lane is either rendered expanded or as a thin
+                collapsed stripe in its lane color. */}
+            {(() => {
+              const expanded: Record<LaneKey, ReactNode> = {
+                text: (
+                  <TextLane
+                    items={textItems}
+                    zoom={zoom}
+                    scrollX={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAdd={onAddText}
+                    onUpdate={onUpdate}
+                    videoClips={videoItems}
+                    hideHeader
+                    hideAdd
+                  />
+                ),
+                image: (
+                  <ImageLane
+                    items={imageItems}
+                    zoom={zoom}
+                    scrollX={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAdd={onAddImage}
+                    onUpdate={onUpdate}
+                    hideHeader
+                    hideAdd
+                  />
+                ),
+                video: (
+                  <VideoLane
+                    items={videoItems}
+                    zoom={zoom}
+                    scrollX={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAdd={onAddVideo}
+                    onUpdate={onUpdate}
+                    hideHeader
+                    hideAdd
+                  />
+                ),
+                audio: (
+                  <AudioLane
+                    items={audioItems}
+                    zoom={zoom}
+                    scrollX={0}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAdd={onAddAudio}
+                    onUpdate={onUpdate}
+                    hideHeader
+                    hideAdd
+                  />
+                ),
+              };
+              return LANE_KEYS.map((lane) =>
+                collapsedLanes.has(lane) ? (
+                  <div
+                    key={lane}
+                    className={`h-5 border-b border-primary/10 ${LANE_META[lane].classes.collapsedStripe}`}
+                  />
+                ) : (
+                  <div key={lane}>{expanded[lane]}</div>
+                ),
+              );
+            })()}
 
             {/* Playhead line — imperatively positioned */}
             <div
