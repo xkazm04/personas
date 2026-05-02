@@ -245,9 +245,9 @@ function MosaicHeader({ t, tx, summary }: MosaicHeaderProps) {
   return (
     <header className="px-8 pt-6 pb-4 flex items-end justify-between gap-6 shrink-0">
       <div>
-        <h1 className="typo-hero simple-display text-foreground">
+        <h2 className="typo-hero simple-display text-foreground">
           {greeting}, {name}.
-        </h1>
+        </h2>
       </div>
       <div className="flex items-center gap-4 text-right">
         <SummaryMetric

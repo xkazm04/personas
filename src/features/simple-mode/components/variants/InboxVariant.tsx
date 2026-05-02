@@ -427,7 +427,7 @@ function InboxEmptyState({ inb }: { inb: InboxT }) {
       <div className="w-14 h-14 rounded-3xl border simple-accent-emerald-border simple-accent-emerald-soft flex items-center justify-center">
         <Check className="w-7 h-7 simple-accent-emerald-text" />
       </div>
-      <h1 className="typo-heading simple-display text-foreground">{inb.empty_title}</h1>
+      <h2 className="typo-heading simple-display text-foreground">{inb.empty_title}</h2>
       <p className="typo-body-lg text-foreground/70 max-w-md">{inb.empty_body}</p>
     </div>
   );

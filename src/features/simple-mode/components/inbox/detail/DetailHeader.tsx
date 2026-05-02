@@ -82,7 +82,7 @@ export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
           </span>
         </div>
 
-        <h1 className="typo-hero simple-display text-foreground">{item.title}</h1>
+        <h2 className="typo-hero simple-display text-foreground">{item.title}</h2>
       </div>
     </header>
   );

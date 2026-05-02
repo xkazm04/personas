@@ -195,9 +195,9 @@ function StatusRail({ t, tx, summary }: StatusRailProps) {
     <header className="px-6 py-4 border-b border-foreground/10 bg-background/40 flex items-center gap-4 shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         <Sparkles className="w-4 h-4 simple-accent-violet-text shrink-0" />
-        <h1 className="typo-heading simple-display text-foreground truncate">
+        <h2 className="typo-heading simple-display text-foreground truncate">
           {greeting}, {name}.
-        </h1>
+        </h2>
       </div>
 
       <div className="flex items-center gap-2 flex-1 justify-end flex-wrap">

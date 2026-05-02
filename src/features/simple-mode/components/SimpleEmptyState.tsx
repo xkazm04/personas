@@ -35,9 +35,9 @@ export function SimpleEmptyState({ onCreate }: SimpleEmptyStateProps) {
       <div className="w-16 h-16 rounded-3xl border simple-accent-violet-border simple-accent-violet-soft flex items-center justify-center">
         <Sparkles className="w-8 h-8 simple-accent-violet-text" />
       </div>
-      <h1 className="typo-hero simple-display text-foreground">
+      <h2 className="typo-hero simple-display text-foreground">
         {s.empty_assistant_grid_title}
-      </h1>
+      </h2>
       <p className="typo-body-lg text-foreground/70 max-w-md">
         {s.empty_assistant_grid_body}
       </p>
