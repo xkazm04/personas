@@ -14,8 +14,10 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface RoleDef {
   id: string;
-  label: string;
-  subtitle: string;
+  /** i18n key under `home.setup.*` for the role label (e.g. "role_office_rat"). */
+  labelKey: 'role_office_rat' | 'role_developer' | 'role_manager';
+  /** i18n key under `home.setup.*` for the role subtitle. */
+  subtitleKey: 'role_office_rat_hint' | 'role_developer_hint' | 'role_manager_hint';
   illustration: string;
   accentColor: string;
   tools: string[]; // keys into CONNECTOR_META
@@ -24,24 +26,24 @@ interface RoleDef {
 const ROLES: RoleDef[] = [
   {
     id: 'office-rat',
-    label: 'Office Rat',
-    subtitle: 'Non-technical user',
+    labelKey: 'role_office_rat',
+    subtitleKey: 'role_office_rat_hint',
     illustration: '/illustrations/roles/office-rat.svg',
     accentColor: '#F59E0B',
     tools: ['google_workspace', 'microsoft_excel', 'notion'],
   },
   {
     id: 'developer',
-    label: 'Developer',
-    subtitle: 'Technical user',
+    labelKey: 'role_developer',
+    subtitleKey: 'role_developer_hint',
     illustration: '/illustrations/roles/developer.svg',
     accentColor: '#06B6D4',
     tools: ['github', 'azure_devops', 'desktop_docker'],
   },
   {
     id: 'manager',
-    label: 'Manager',
-    subtitle: 'Planning & coordination',
+    labelKey: 'role_manager',
+    subtitleKey: 'role_manager_hint',
     illustration: '/illustrations/roles/manager.svg',
     accentColor: '#8B5CF6',
     tools: ['cal_com', 'google_workspace', 'jira'],
@@ -53,9 +55,9 @@ const ROLES: RoleDef[] = [
 /* ------------------------------------------------------------------ */
 
 const STEPS = [
-  { id: 'role' as const, icon: User, label: 'Role' },
-  { id: 'tool' as const, icon: Wrench, label: 'Tool' },
-  { id: 'goal' as const, icon: Target, label: 'Goal' },
+  { id: 'role' as const, icon: User, labelKey: 'role' as const },
+  { id: 'tool' as const, icon: Wrench, labelKey: 'tool' as const },
+  { id: 'goal' as const, icon: Target, labelKey: 'goal' as const },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -63,6 +65,8 @@ const STEPS = [
 /* ------------------------------------------------------------------ */
 
 function StepIndicator({ current, completed }: { current: number; completed: Record<string, boolean> }) {
+  const { t } = useTranslation();
+  const setup = t.home.setup;
   return (
     <div className="flex items-center gap-2">
       {STEPS.map((step, i) => {
@@ -83,7 +87,7 @@ function StepIndicator({ current, completed }: { current: number; completed: Rec
               }`}
             >
               {done ? <Check className="w-3 h-3" /> : <step.icon className="w-3 h-3" />}
-              {step.label}
+              {setup[step.labelKey]}
             </div>
           </div>
         );
@@ -101,6 +105,7 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
   const { isStarter: isSimple } = useTier();
   const { t } = useTranslation();
   const ss = t.home.setup_stepper;
+  const setup = t.home.setup;
   const visibleRoles = isSimple ? ROLES.filter((r) => r.id === 'office-rat') : ROLES;
   return (
     <div className="space-y-6">
@@ -110,13 +115,18 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
       </div>
       <div className={`grid gap-4 ${isSimple ? 'grid-cols-1 max-w-xs mx-auto' : 'grid-cols-3'}`}>
         {visibleRoles.map((role) => {
-          const isSelected = selected === role.label;
+          // The store persists the localized role label; comparison is consistent
+          // within a single locale. Locale-switching after setup is an existing
+          // pre-condition issue tracked separately.
+          const label = setup[role.labelKey];
+          const subtitle = setup[role.subtitleKey];
+          const isSelected = selected === label;
           return (
             <motion.button
               key={role.id}
               whileHover={{ y: -4 }}
               whileTap={{ scale: 0.97 }}
-              onClick={() => onSelect(role.label)}
+              onClick={() => onSelect(label)}
               className={`group relative flex flex-col items-center text-center rounded-modal border-2 p-5 transition-all duration-300 cursor-pointer ${
                 isSelected
                   ? 'border-primary/40 bg-primary/8 shadow-elevation-3'
@@ -130,15 +140,15 @@ function RoleStep({ selected, onSelect }: { selected: string | null; onSelect: (
               >
                 <img
                   src={role.illustration}
-                  alt={role.label}
+                  alt={label}
                   className="w-full h-full"
                   style={{ filter: isDark ? 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' : 'drop-shadow(0 2px 8px rgba(0,0,0,0.1)) brightness(0.7) contrast(1.2)' }}
                 />
               </div>
 
               {/* Label */}
-              <span className="typo-body-lg font-bold text-foreground">{role.label}</span>
-              <span className="typo-body text-foreground mt-0.5">{role.subtitle}</span>
+              <span className="typo-body-lg font-bold text-foreground">{label}</span>
+              <span className="typo-body text-foreground mt-0.5">{subtitle}</span>
 
               {/* Selection indicator */}
               {isSelected && (
@@ -171,11 +181,11 @@ function ToolStep({
   selected: string | null;
   onSelect: (tool: string) => void;
 }) {
-  const roleDef = ROLES.find((r) => r.label === role);
-  const tools = roleDef?.tools ?? [];
-
   const { t } = useTranslation();
   const ss = t.home.setup_stepper;
+  const setup = t.home.setup;
+  const roleDef = ROLES.find((r) => setup[r.labelKey] === role);
+  const tools = roleDef?.tools ?? [];
 
   return (
     <div className="space-y-6">
@@ -405,8 +415,10 @@ interface CardMeta {
   id: 'role' | 'tool' | 'goal';
   stepIndex: number;
   icon: typeof User;
-  defaultTitle: string;
-  description: string;
+  /** i18n key under `home.setup.*` for the default title (when no value selected). */
+  defaultTitleKey: 'step_role' | 'step_tool' | 'step_goal';
+  /** i18n key under `home.setup.*` for the descriptive helper text. */
+  descriptionKey: 'step_role_hint' | 'step_tool_hint' | 'step_goal_hint';
   gradFrom: string;
   gradTo: string;
   glowColor: string;
@@ -419,8 +431,8 @@ const CARD_DEFS: CardMeta[] = [
     id: 'role',
     stepIndex: 0,
     icon: User,
-    defaultTitle: 'Your Role',
-    description: 'Tell us your role so we can tailor the experience.',
+    defaultTitleKey: 'step_role',
+    descriptionKey: 'step_role_hint',
     gradFrom: 'from-violet-500/8',
     gradTo: 'to-purple-500/4',
     glowColor: 'bg-violet-500/20',
@@ -431,8 +443,8 @@ const CARD_DEFS: CardMeta[] = [
     id: 'tool',
     stepIndex: 1,
     icon: Wrench,
-    defaultTitle: 'Favorite Tool',
-    description: 'Pick the first connector you want to integrate.',
+    defaultTitleKey: 'step_tool',
+    descriptionKey: 'step_tool_hint',
     gradFrom: 'from-cyan-500/8',
     gradTo: 'to-blue-500/4',
     glowColor: 'bg-cyan-500/20',
@@ -443,8 +455,8 @@ const CARD_DEFS: CardMeta[] = [
     id: 'goal',
     stepIndex: 2,
     icon: Target,
-    defaultTitle: 'Automation Goal',
-    description: 'Describe what you would like to automate first.',
+    defaultTitleKey: 'step_goal',
+    descriptionKey: 'step_goal_hint',
     gradFrom: 'from-amber-500/8',
     gradTo: 'to-orange-500/4',
     glowColor: 'bg-amber-500/20',
@@ -470,10 +482,11 @@ function SetupCardItem({
   const { t } = useTranslation();
   const setup = t.home.setup;
   const completed = value !== null;
-  const displayTitle = card.id === 'role' && value ? value : card.defaultTitle;
+  const displayTitle = card.id === 'role' && value ? value : setup[card.defaultTitleKey];
 
-  // For role card, find the role's illustration
-  const roleDef = card.id === 'role' && value ? ROLES.find((r) => r.label === value) : null;
+  // For role card, find the role's illustration. Match the persisted role label
+  // against the localized labels (consistent within a single locale session).
+  const roleDef = card.id === 'role' && value ? ROLES.find((r) => setup[r.labelKey] === value) : null;
 
   return (
     <motion.button
@@ -502,7 +515,7 @@ function SetupCardItem({
           className={`absolute inset-0 flex items-center justify-center ${card.iconText} transition-all duration-500 pointer-events-none ${hovered && !locked ? 'opacity-100' : 'opacity-90'}`}
         >
           {roleDef ? (
-            <img src={roleDef.illustration} alt={roleDef.label} className="w-20 h-20 opacity-80" />
+            <img src={roleDef.illustration} alt={setup[roleDef.labelKey]} className="w-20 h-20 opacity-80" />
           ) : (
             <card.icon className="w-16 h-16" strokeWidth={1} />
           )}
@@ -545,7 +558,7 @@ function SetupCardItem({
             ? card.id === 'tool'
               ? setup.select_role_first
               : setup.select_tool_first
-            : card.description}
+            : setup[card.descriptionKey]}
         </p>
       </div>
     </motion.button>
