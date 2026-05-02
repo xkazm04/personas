@@ -27,12 +27,11 @@ export default function AdminSettings() {
 
   const handleForceStart = () => {
     resetTour();
-    setTimeout(() => {
-      // After reset, startTour guard checks tourCompleted/tourDismissed.
-      // Since we just reset, those are false, so we can start directly.
-      useSystemStore.getState().startTour();
-      setSidebarSection('home');
-    }, 50);
+    // resetTour and startTour are both synchronous Zustand set() calls;
+    // startTour's guard reads tourCompleted/tourDismissed which were just
+    // cleared in the same tick.
+    useSystemStore.getState().startTour();
+    setSidebarSection('home');
   };
 
   const handleReset = () => {
