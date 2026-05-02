@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, ArrowLeft, ArrowRight, Sparkles, User, Radio, GraduationCap, Wand2, Link as LinkIcon, FileText, ChevronRight } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -38,6 +38,26 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
   const createTwinProfile = useSystemStore((s) => s.createTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const credentials = useVaultStore((s) => s.credentials);
+
+  // a11y: capture the element that opened the wizard so we can restore focus
+  // on close (otherwise focus drops to <body> and SR/keyboard users lose
+  // their place in the page). Plus: register Escape handler at the document
+  // level so it works regardless of which control inside the modal has focus.
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      previouslyFocusedRef.current?.focus?.();
+    };
+  }, [onClose]);
 
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [submitting, setSubmitting] = useState(false);
@@ -143,7 +163,13 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="twin-wizard-title">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="twin-wizard-title"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="w-full max-w-xl rounded-card border border-violet-500/20 bg-card shadow-elevation-3 max-h-[90vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10">
