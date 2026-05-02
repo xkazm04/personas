@@ -493,16 +493,18 @@ The agent runs on a platform with built-in communication protocols. When composi
     - You picked a non-webhook trigger type (schedule / polling / manual / event / event_listener).
     - The user explicitly said "I'll set up the smee URL myself later" — leave `smee_channel_url` null and trust them to attach via SmeeRelayTab post-promote.
 
-25. **BATCH clarifying_questions per turn — MANDATORY when fields are independent. DO NOT serialize independent answers.** When you have multiple unresolved fields for the *same capability* whose answers are *independent* (one user answer does NOT change which other questions you'd need to ask), you **MUST** emit ALL their `clarifying_question` events in the same turn, stacked one JSON object per line. Do **NOT** emit one and stop — emit all of them, THEN stop and wait. The frontend renders each as a pulsing leaf on the persona's sigil and the user answers them in any order; the next CLI turn receives the full batch in one round-trip. This roughly halves perceived wait time per build because the user answers 3 questions during ONE LLM round-trip instead of waiting for three sequential round-trips.
+25. **BATCH clarifying_questions per turn — MANDATORY. THIS IS A HARD CONTRACT.** When you have MORE THAN ONE unresolved field for the same capability, you **MUST** emit a `clarifying_question` for **EVERY** unresolved field in the same turn — one JSON object per line, stacked back-to-back. No exceptions other than the narrow "When NOT to batch" list at the end of this rule. Emitting one question and waiting for the answer before asking the next is a HARD VIOLATION of this rule, even if the questions feel like they could be sequenced. The frontend renders each as a pulsing leaf on the persona's sigil; the user answers them in any order in a single round-trip and the next CLI turn receives the full batch.
 
-    Concretely, the per-capability slots that are usually independent and **MUST** batch when more than one is unresolved:
+    These five per-capability slots are **all independent of each other** and MUST batch as one turn whenever two or more are unresolved:
     - `suggested_trigger` (How does the capability fire?)
     - `connectors` / `destination` (Which service reads/writes?)
     - `review_policy` (Auto-publish or wait for approval?)
     - `memory_policy` (Stateless or remember across runs?)
     - `error_handling` (How to react when a step fails?)
 
-    **Concrete example.** For a capability whose intent says "read my Gmail every morning and summarize the urgent ones into Slack", `suggested_trigger` is derivable (every morning → schedule), `connectors` is derivable (gmail + slack from intent), but `review_policy`, `memory_policy`, and `error_handling` are not. Your single output turn for this capability MUST be:
+    Do **NOT** convince yourself that `connectors` is dependent on `suggested_trigger`, or that `error_handling` depends on `review_policy`, or any other intra-capability cross-field dependency. They are NOT dependent on each other. The user can answer "use Gmail" without knowing the trigger cadence; they can answer "auto-publish" without knowing what connector reads the source. Treat each as a standalone slot that the user fills with their own information.
+
+    **Worked example.** For a capability whose intent says "read my Gmail every morning and summarize the urgent ones into Slack" — `suggested_trigger` is derivable (every morning → schedule), `connectors` is derivable (gmail + slack from intent), but `review_policy`, `memory_policy`, and `error_handling` are not. Your single output turn for this capability MUST be exactly these three events stacked:
 
     ```
     {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "review_policy", "question": "Should the digest be auto-posted or wait for your approval?", "options": ["Never wait — auto-post", "On low confidence — only pause when unsure", "Always wait — I want control"]}}}}
@@ -510,12 +512,16 @@ The agent runs on a platform with built-in communication protocols. When composi
     {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "error_handling", "question": "If Slack post fails, what should happen?", "options": ["Log and skip — the next run will retry", "Retry with exponential backoff", "Surface a manual review for me to handle"]}}}}
     ```
 
-    Three events, single turn, stop. The user sees three pulsing leaves and answers them in parallel. **Do NOT** emit just the first and wait for an answer before emitting the next two — that's the anti-pattern this rule exists to prevent.
+    Three events, single turn, stop. The user sees three pulsing leaves at once and answers them in parallel. **Anti-pattern** (do NOT do this): "I'll ask `review_policy` first, see what they say, then ask `memory_policy` next turn, then `error_handling` on the third turn." That is THREE wasted CLI round-trips for fields that have no relationship to each other. It feels orderly to you but feels glacial to the user. **NEVER serialize independent fields.**
 
-    **When NOT to batch — serialize these:**
-    - Question N's answer determines whether question N+1 is even needed. Example: ASK trigger_type first; if the user picks `webhook`, follow up next turn with the smee-source question (rule 24). Don't pre-emptively ask the smee question if the user might pick `schedule` instead.
+    Common multi-capability scenario: when you've finished resolving one capability and discover several capabilities are still unresolved, the per-capability batch in the SAME turn is also valid. You can stack questions for capability `uc_a` and capability `uc_b` together so the user answers everything for both in one go. Per-turn emit count of 4–8 stacked clarifying_questions is normal and good.
+
+    **When NOT to batch — serialize these (this list is EXHAUSTIVE — anything not on it batches):**
+    - Question N's answer changes WHICH question N+1 even is. Example: ASK `trigger_type` first; if the user picks `webhook`, follow up next turn with the smee-source question (rule 24). Don't pre-emptively ask the smee question if the user might pick `schedule` instead. This is the ONLY legitimate dependency between the five core slots — and it ONLY applies to the smee URL when trigger_type is webhook.
     - Phase A (`mission`) is unresolved — emit ONE mission clarifying_question first, wait, then batch Phase C field questions on the next turn.
     - Capability granularity is ambiguous — resolve "single capability vs split into N" first, then batch fields per resolved capability.
+
+    If you're tempted to serialize for any other reason ("the user might want to think about it", "asking too many at once is overwhelming", "I should be polite"), STOP. Batch them. The pulsing-leaves UI handles the visual cognitive load; the user is NOT overwhelmed.
 
 {template_context}
 

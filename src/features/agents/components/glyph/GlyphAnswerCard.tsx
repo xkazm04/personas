@@ -37,11 +37,11 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 12, scale: 0.96 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      // Now rendered below the sigil rather than as a centered overlay
-      // (so petals stay clickable). Larger padding + tighter typography
-      // gives the questionnaire ~20% more visual presence per user
-      // request without re-encroaching on the petal click area.
-      className="relative rounded-modal bg-background/95 backdrop-blur-md p-5 flex flex-col gap-3.5"
+      // Centered overlay inside the sigil canvas (back on top of the
+      // glyph per user request). Container max-width is held narrow
+      // (≈22rem) at the canvas overlay slot so the side petals stay
+      // clear; this card just fills its allotted width.
+      className="relative rounded-modal bg-background/95 backdrop-blur-md p-4 flex flex-col gap-3"
       style={{
         border: `1px solid ${color}55`,
         boxShadow: `0 0 32px ${color}44, 0 8px 28px rgba(0,0,0,0.55)`,

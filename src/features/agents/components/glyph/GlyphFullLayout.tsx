@@ -128,24 +128,22 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const closeActiveDim = () => setActiveDim(null);
   const onClickDim = (d: GlyphDimension) => setActiveDim((prev) => (prev === d ? null : d));
 
-  // Two slots, two positionings:
-  //   - `summaryOverlay` is the small dimension-summary popup. Tooltip-
-  //     sized; fine to render as an overlay inside the sigil canvas.
-  //   - `answerCard` is the larger Q&A surface. Rendered as a sibling
-  //     BELOW the canvas so the petal ring remains fully clickable —
-  //     critical for rule-25 batching where multiple lit glyphs need to
-  //     be tapped to switch questions, and for closing the current card
-  //     by clicking its own dim again.
-  const summaryOverlay = activeDim && !activeQuestion
-    ? <GlyphDimensionSummaryCard
-        activeDim={activeDim}
-        summary={activeDimSummary}
-        isPreBuild={isCompose}
-        onClose={closeActiveDim}
-      />
-    : null;
-  const answerCard = activeDim && activeQuestion
-    ? <GlyphAnswerCard question={activeQuestion} onAnswer={onAnswer} onClose={closeActiveDim} />
+  // Both card variants render as a centered overlay INSIDE the sigil
+  // canvas. The overlay's inner max-width is narrowed (~22rem = 352px)
+  // so the card stays in the central area between the petal ring (side
+  // petals are at iconR=217 from a 320 center → x ≈ 103 / 537; a 352px-
+  // wide card centered spans ±176, fully clear of petals on either
+  // side). User can tap any lit petal to switch active question without
+  // the card eating the click.
+  const overlay = activeDim
+    ? activeQuestion
+      ? <GlyphAnswerCard question={activeQuestion} onAnswer={onAnswer} onClose={closeActiveDim} />
+      : <GlyphDimensionSummaryCard
+          activeDim={activeDim}
+          summary={activeDimSummary}
+          isPreBuild={isCompose}
+          onClose={closeActiveDim}
+        />
     : null;
 
   return (
@@ -222,8 +220,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             onViewAgent={onViewAgent}
             onShowSimulate={() => setShowSimulate(true)}
             buildSessionId={buildSessionId}
-            overlay={summaryOverlay}
-            answerCard={answerCard}
+            overlay={overlay}
             onComposeStart={isCompose ? handleComposeStart : undefined}
             onShowReport={() => setShowReport(true)}
           />
