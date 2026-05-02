@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
     "drive_label": "Drive",
     "drive_desc": "পরিচালিত স্থানীয় ফাইলসিস্টেম যেখানে এজেন্টরা এক্সপোর্ট সংরক্ষণ করে। Finder-শৈলীর UI-তে ফাইল ব্রাউজ করুন; অ্যাপ আপগ্রেডে টিকে থাকে।",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "এজেন্ট এক্সপোর্টের জন্য পরিচালিত স্থানীয় ফাইলসিস্টেম",

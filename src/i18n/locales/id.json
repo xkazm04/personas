@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Hubungkan brankas Obsidian Anda untuk pengambilan pengetahuan, penelusuran catatan, dan sinkronisasi.",
     "drive_label": "Drive",
     "drive_desc": "Sistem file lokal terkelola tempat agen menyimpan hasil ekspor. Jelajahi file dengan UI gaya Finder; bertahan dari peningkatan aplikasi.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Sistem file lokal terkelola untuk ekspor agen",

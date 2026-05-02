@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Kết nối vault Obsidian để truy xuất kiến thức, duyệt ghi chú và đồng bộ.",
     "drive_label": "Drive",
     "drive_desc": "Hệ thống tệp cục bộ được quản lý nơi các tác nhân lưu các bản xuất. Duyệt tệp trong giao diện kiểu Finder; tồn tại qua các bản nâng cấp ứng dụng.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Hệ thống tệp cục bộ được quản lý cho xuất tác nhân",

@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "ربط خزنة Obsidian الخاصة بك لاسترجاع المعرفة وتصفح الملاحظات والمزامنة.",
     "drive_label": "Drive",
     "drive_desc": "نظام ملفات محلي مُدار يحفظ الوكلاء فيه الصادرات. استعرض الملفات بواجهة شبيهة بـ Finder؛ يبقى بعد تحديثات التطبيق.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "نظام ملفات محلي مُدار لصادرات الوكلاء",

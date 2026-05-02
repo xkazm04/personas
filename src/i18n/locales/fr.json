@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Connectez votre coffre-fort Obsidian pour la récupération de connaissances, la navigation dans les notes et la synchronisation.",
     "drive_label": "Google Drive",
     "drive_desc": "Accédez à vos fichiers Google Drive depuis vos agents",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Système de fichiers local géré pour les exports d'agents",

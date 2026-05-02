@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
     "drive_label": "드라이브",
     "drive_desc": "에이전트가 내보내기를 저장하는 관리형 로컬 파일시스템. Finder 스타일 UI에서 파일을 탐색하세요. 앱 업그레이드 후에도 유지됩니다.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "드라이브",
       "subtitle": "에이전트 내보내기를 위한 관리형 로컬 파일시스템",

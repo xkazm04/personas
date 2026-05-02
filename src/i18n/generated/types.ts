@@ -8547,6 +8547,10 @@ export type Translations = {
     obsidian_brain_desc: string;
     drive_label: string;
     drive_desc: string;
+    research_lab_label: string;
+    research_lab_desc: string;
+    twin_label: string;
+    twin_desc: string;
     drive: {
       title: string;
       subtitle: string;

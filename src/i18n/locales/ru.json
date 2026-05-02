@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Подключите хранилище Obsidian для поиска знаний, просмотра заметок и синхронизации.",
     "drive_label": "Drive",
     "drive_desc": "Управляемая локальная файловая система, куда агенты сохраняют экспорты. Просматривайте файлы в UI как в Finder; сохраняется при обновлениях приложения.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Управляемая локальная файловая система для экспортов агентов",

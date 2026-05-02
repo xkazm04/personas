@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Propoj svůj Obsidian vault pro získávání znalostí, procházení poznámek a synchronizaci.",
     "drive_label": "Drive",
     "drive_desc": "Spravovaný lokální souborový systém, kam agenti ukládají exporty. Procházej soubory v UI ve stylu Finderu; přežívá upgrady aplikace.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Spravovaný lokální souborový systém pro exporty agentů",

@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Conecta tu vault de Obsidian para recuperación de conocimiento, exploración de notas y sincronización.",
     "drive_label": "Drive",
     "drive_desc": "Sistema de archivos local administrado donde los agentes guardan exportaciones. Explora archivos en una UI estilo Finder; sobrevive actualizaciones de la app.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Sistema de archivos local administrado para exportaciones de agentes",

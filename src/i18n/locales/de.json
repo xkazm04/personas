@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "Obsidian-Tresor für Wissensabruf, Notizen-Browsing und Synchronisation verbinden.",
     "drive_label": "Drive",
     "drive_desc": "Verwaltetes lokales Dateisystem, in dem Agenten Exporte speichern. Dateien im Finder-Stil durchsuchen; überlebt App-Updates.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Verwaltetes lokales Dateisystem für Agent-Exporte",

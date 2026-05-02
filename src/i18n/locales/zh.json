@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "连接 Obsidian 保险库以进行知识检索、笔记浏览和同步。",
     "drive_label": "Drive",
     "drive_desc": "代理保存导出内容的托管本地文件系统。以 Finder 风格界面浏览文件；跨应用升级保留。",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "代理导出的托管本地文件系统",

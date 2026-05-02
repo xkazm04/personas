@@ -7861,6 +7861,10 @@
     "obsidian_brain_desc": "ज्ञान पुनर्प्राप्ति, नोट ब्राउज़िंग, और सिंक के लिए अपना Obsidian vault कनेक्ट करें।",
     "drive_label": "Drive",
     "drive_desc": "प्रबंधित स्थानीय फ़ाइलसिस्टम जहाँ एजेंट exports सहेजते हैं। Finder-शैली UI में फ़ाइलें ब्राउज़ करें; ऐप upgrade में बचा रहता है।",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "एजेंट exports के लिए प्रबंधित स्थानीय फ़ाइलसिस्टम",

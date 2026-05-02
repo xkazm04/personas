@@ -8541,6 +8541,10 @@
     "obsidian_brain_desc": "Connect your Obsidian vault for knowledge retrieval, note browsing, and sync.",
     "drive_label": "Drive",
     "drive_desc": "Managed local filesystem where agents save exports. Browse files in a Finder-style UI; survives app upgrades.",
+    "research_lab_label": "Research Lab",
+    "research_lab_desc": "Academic paper search and hypothesis tracking",
+    "twin_label": "Twin",
+    "twin_desc": "Build a digital twin — identity, voice, channels, and curated memory that personas can adopt.",
     "drive": {
       "title": "Drive",
       "subtitle": "Managed local filesystem for agent exports",
