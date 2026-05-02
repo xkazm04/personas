@@ -9367,6 +9367,24 @@ export type Translations = {
       static_scan_running: string;
       static_scan_complete: string;
       static_scan_failed: string;
+      idea_scan_completed_title: string;
+      idea_scan_ready_with_count: string;
+      idea_scan_ready_no_count: string;
+      idea_scan_partial_title: string;
+      idea_scan_partial_summary: string;
+      idea_scan_failed_title: string;
+      idea_scan_failed_default: string;
+      auto_scan_loading_contexts: string;
+      auto_scan_no_contexts: string;
+      auto_scan_in_progress: string;
+      auto_scan_failed_status: string;
+      auto_scan_completed_status: string;
+      select_all_btn: string;
+      clear_all_btn: string;
+      no_results_yet: string;
+      no_ideas_match_filter: string;
+      ideas_count_one: string;
+      ideas_count_other: string;
     };
     dev_triage: {
       auto_triage_rules: string;

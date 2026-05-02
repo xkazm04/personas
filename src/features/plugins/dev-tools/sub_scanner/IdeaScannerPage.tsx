@@ -38,6 +38,7 @@ import { matchAgentsToContext } from './ideaScannerHelpers';
 
 export default function IdeaScannerPage() {
   const { t, tx } = useTranslation();
+  const ds = t.plugins.dev_scanner;
   const { runScan } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation
@@ -123,10 +124,10 @@ export default function IdeaScannerPage() {
       center.addProcessNotification({
         processType: 'idea-scan',
         status: 'success',
-        title: 'Idea Scan Completed',
+        title: ds.idea_scan_completed_title,
         summary: ideaCount > 0
-          ? `Generated ideas are ready for triage. Total ideas in backlog: ${ideaCount}.`
-          : 'Scan completed. Open the page to see new ideas.',
+          ? tx(ds.idea_scan_ready_with_count, { count: ideaCount })
+          : ds.idea_scan_ready_no_count,
         redirectSection: 'plugins',
         redirectTab: 'idea-scanner',
       });
@@ -134,8 +135,8 @@ export default function IdeaScannerPage() {
       center.addProcessNotification({
         processType: 'idea-scan',
         status: 'warning',
-        title: 'Idea Scan (partial)',
-        summary: 'Scan exceeded the timeout but partial results were saved. Click Open to review what was generated.',
+        title: ds.idea_scan_partial_title,
+        summary: ds.idea_scan_partial_summary,
         redirectSection: 'plugins',
         redirectTab: 'idea-scanner',
       });
@@ -143,8 +144,8 @@ export default function IdeaScannerPage() {
       center.addProcessNotification({
         processType: 'idea-scan',
         status: 'failed',
-        title: 'Idea Scan Failed',
-        summary: errorMessage ?? 'The idea scan failed before any ideas were generated. Try again or check the logs.',
+        title: ds.idea_scan_failed_title,
+        summary: errorMessage ?? ds.idea_scan_failed_default,
         redirectSection: 'plugins',
         redirectTab: 'idea-scanner',
       });
@@ -158,7 +159,7 @@ export default function IdeaScannerPage() {
       });
       setScanProgress(0);
     }, 800);
-  }, []);
+  }, [ds, tx]);
 
   const finalizeScanRef = useRef(finalizeScan);
   useEffect(() => { finalizeScanRef.current = finalizeScan; });
@@ -292,7 +293,7 @@ export default function IdeaScannerPage() {
     if (!activeProjectId || autoScanRunning) return;
 
     setAutoScanRunning(true);
-    setAutoScanStatus('Loading contexts...');
+    setAutoScanStatus(ds.auto_scan_loading_contexts);
     useOverviewStore.getState().processStarted(
       'auto_scan',
       undefined,
@@ -306,7 +307,7 @@ export default function IdeaScannerPage() {
       const ctxList = useSystemStore.getState().contexts;
 
       if (ctxList.length === 0) {
-        setAutoScanStatus('No contexts found. Run Context Map scan first.');
+        setAutoScanStatus(ds.auto_scan_no_contexts);
         setAutoScanRunning(false);
         useOverviewStore.getState().processEnded('auto_scan', 'failed');
         return;
@@ -316,7 +317,12 @@ export default function IdeaScannerPage() {
       for (const ctx of ctxList) {
         if (!mountedRef.current) break;
         const matchedAgents = matchAgentsToContext(ctx);
-        setAutoScanStatus(`Scanning "${ctx.name}" (${matchedAgents.length} agents) — ${completed + 1}/${ctxList.length}`);
+        setAutoScanStatus(tx(ds.auto_scan_in_progress, {
+          name: ctx.name,
+          matched: matchedAgents.length,
+          done: completed + 1,
+          total: ctxList.length,
+        }));
         setScanProgress(Math.round((completed / ctxList.length) * 90) + 5);
 
         try {
@@ -338,7 +344,7 @@ export default function IdeaScannerPage() {
 
       if (!mountedRef.current) return;
 
-      setAutoScanStatus(`Completed! Scanned ${ctxList.length} contexts.`);
+      setAutoScanStatus(tx(ds.auto_scan_completed_status, { total: ctxList.length }));
       setScanProgress(100);
       useOverviewStore.getState().processEnded('auto_scan', 'completed');
 
@@ -353,11 +359,11 @@ export default function IdeaScannerPage() {
         setAutoScanRunning(false);
       }, 2000);
     } catch {
-      setAutoScanStatus('Auto-scan failed');
+      setAutoScanStatus(ds.auto_scan_failed_status);
       setAutoScanRunning(false);
       useOverviewStore.getState().processEnded('auto_scan', 'failed');
     }
-  }, [activeProjectId, autoScanRunning, fetchContexts, runScan]);
+  }, [activeProjectId, autoScanRunning, fetchContexts, runScan, ds, tx]);
 
   // Group agents by category
   const agentsByCategory = useMemo(() => {
@@ -392,7 +398,7 @@ export default function IdeaScannerPage() {
             size="sm"
             onClick={toggleAll}
           >
-            {selectedAgents.size === SCAN_AGENTS.length ? 'Clear All' : 'Select All'}
+            {selectedAgents.size === SCAN_AGENTS.length ? ds.clear_all_btn : ds.select_all_btn}
           </Button>
           <Button
             variant="accent"
@@ -498,7 +504,7 @@ export default function IdeaScannerPage() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
-                {t.plugins.dev_scanner.results_header}{ideas.length} idea{ideas.length !== 1 ? 's' : ''})
+                {ds.results_header}{ideas.length} {ideas.length === 1 ? ds.ideas_count_one : ds.ideas_count_other})
               </h3>
               {/* Category filter tabs */}
               <div className="flex items-center gap-1">
@@ -532,8 +538,8 @@ export default function IdeaScannerPage() {
                 <Lightbulb className="w-8 h-8 text-foreground mx-auto mb-2" />
                 <p className="text-md text-foreground">
                   {ideas.length === 0
-                    ? 'No scan results yet. Select agents above and run a scan.'
-                    : 'No ideas match this filter.'}
+                    ? ds.no_results_yet
+                    : ds.no_ideas_match_filter}
                 </p>
               </div>
             ) : (
