@@ -9,6 +9,7 @@ import { useCreativeConnectors } from '../hooks/useCreativeConnectors';
 import { useSystemStore } from '@/stores/systemStore';
 import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
 import CreativeSessionHistory from './CreativeSessionHistory';
 
 export default function CreativeStudioPanel() {
@@ -56,13 +57,6 @@ export default function CreativeStudioPanel() {
 // Environment Status — collapsible, with connector detection + MCP start
 // ---------------------------------------------------------------------------
 
-interface ConnectorInfoType {
-  id: string;
-  name: string;
-  connected: boolean;
-  healthy: boolean;
-}
-
 function EnvironmentStatus({
   status,
   checking,
@@ -76,7 +70,7 @@ function EnvironmentStatus({
   installing: boolean;
   onCheck: () => void;
   onInstall: () => void;
-  connectors: ConnectorInfoType[];
+  connectors: ConnectorInfo[];
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
@@ -251,7 +245,7 @@ function CreativeSessionChat({
   connectors,
 }: {
   blenderReady: boolean;
-  connectors: ConnectorInfoType[];
+  connectors: ConnectorInfo[];
 }) {
   const { t } = useTranslation();
   const { running, output, sendPrompt, cancel, clear } = useCreativeSession();
