@@ -271,7 +271,10 @@ export default function ContextMapPage() {
     })();
 
     return () => { cancelled = true; };
-  }, []);
+    // Mount-time resync; t/tx flow into finalizeContextScan if a stale scan
+    // resolves on first paint. Re-running on language switch is acceptable —
+    // the activeScanId guard avoids work when no scan is pending.
+  }, [t, tx]);
 
   useEffect(() => { fetchContextMap(); }, []);
 
