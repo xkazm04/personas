@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   Check,
   ArrowRight,
@@ -14,6 +15,47 @@ import { ExecutionStep } from './ExecutionStep';
 import { StepIndicator, useSteps } from './StepIndicator';
 import { useOnboardingState } from './useOnboardingState';
 import { useTranslation } from '@/i18n/useTranslation';
+
+type OnboardingButtonTone = 'violet' | 'emerald';
+
+const ONBOARDING_BUTTON_TONE: Record<OnboardingButtonTone, string> = {
+  violet:
+    'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25',
+  emerald:
+    'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25',
+};
+
+interface OnboardingActionButtonProps {
+  onClick: () => void;
+  tone: OnboardingButtonTone;
+  children: ReactNode;
+  disabled?: boolean;
+  title?: string;
+}
+
+/**
+ * Footer action button shared by every step's continue/finish CTA. Keeps the
+ * tone-table in one place so a future palette nudge doesn't need to chase
+ * five hand-rolled className strings across the file.
+ */
+function OnboardingActionButton({
+  onClick,
+  tone,
+  children,
+  disabled,
+  title,
+}: OnboardingActionButtonProps) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${ONBOARDING_BUTTON_TONE[tone]}`}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function OnboardingOverlay() {
   const {
@@ -157,47 +199,41 @@ export default function OnboardingOverlay() {
 
         <div className="flex items-center gap-2">
           {onboardingStep === 'appearance' && (
-            <button
-              onClick={handleNextFromAppearance}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
-            >
+            <OnboardingActionButton onClick={handleNextFromAppearance} tone="violet">
               {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </OnboardingActionButton>
           )}
 
           {onboardingStep === 'discover' && (
-            <button
+            <OnboardingActionButton
               onClick={handleNextFromDiscover}
+              tone="violet"
               disabled={isScanning}
               title={isScanning ? t.onboarding.scanning_tooltip : undefined}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.onboarding.continue_button}
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </OnboardingActionButton>
           )}
 
           {onboardingStep === 'pick-template' && (
-            <button
+            <OnboardingActionButton
               onClick={handleNextFromPick}
+              tone="violet"
               disabled={!onboardingSelectedReviewId || templates.length === 0 || isAdopting}
               title={!onboardingSelectedReviewId ? t.onboarding.select_template_tooltip : undefined}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {t.onboarding.adopt_button}
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </OnboardingActionButton>
           )}
 
           {onboardingStep === 'execute' && onboardingStepCompleted['execute'] && (
-            <button
-              onClick={handleFinish}
-              className="flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
-            >
+            <OnboardingActionButton onClick={handleFinish} tone="emerald">
               <Check className="w-4 h-4" />
               {t.onboarding.done_button}
-            </button>
+            </OnboardingActionButton>
           )}
         </div>
       </div>
