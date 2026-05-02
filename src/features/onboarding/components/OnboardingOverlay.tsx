@@ -139,7 +139,7 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'execute' && onboardingCreatedPersonaId && (
               <ExecutionStep
                 personaId={onboardingCreatedPersonaId}
-                personaName={createdPersona?.name ?? 'Your Agent'}
+                personaName={createdPersona?.name ?? t.onboarding.your_agent_fallback}
                 onComplete={handleExecutionComplete}
               />
             )}

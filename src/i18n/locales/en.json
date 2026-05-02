@@ -7700,6 +7700,7 @@
     "adopt_button": "Set Up Agent",
     "continue_button": "Continue",
     "done_button": "Done",
+    "your_agent_fallback": "Your Agent",
     "scanning_tooltip": "Scanning your desktop apps...",
     "select_template_tooltip": "Select a template first",
     "step_appearance": "Look & Feel",

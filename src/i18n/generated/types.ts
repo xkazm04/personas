@@ -7706,6 +7706,7 @@ export type Translations = {
     adopt_button: string;
     continue_button: string;
     done_button: string;
+    your_agent_fallback: string;
     scanning_tooltip: string;
     select_template_tooltip: string;
     step_appearance: string;
