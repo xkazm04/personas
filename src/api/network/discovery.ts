@@ -84,23 +84,6 @@ export interface NetworkSnapshot {
   manifestSyncMetrics: ManifestSyncMetrics;
 }
 
-export interface NetworkConfig {
-  port: number;
-  auto_connect: boolean;
-  max_peers: number;
-  health_check_interval_secs: number;
-  manifest_sync_interval_secs: number;
-  stale_peer_timeout_secs: number;
-}
-
-export interface AgentEnvelope {
-  id: string;
-  source_persona_id: string;
-  target_persona_id: string;
-  payload: number[];
-  timestamp: string;
-}
-
 // ============================================================================
 // Discovery
 // ============================================================================
@@ -117,9 +100,6 @@ export const connectToPeer = (peerId: string) =>
 
 export const disconnectPeer = (peerId: string) =>
   invoke<void>("disconnect_peer", { peerId });
-
-export const getConnectionStatus = (peerId: string) =>
-  invoke<ConnectionState>("get_connection_status", { peerId });
 
 // ============================================================================
 // Manifest Sync
@@ -146,30 +126,3 @@ export const getNetworkSnapshot = () =>
 
 export const getMessagingMetrics = () =>
   invoke<MessagingMetrics>("get_messaging_metrics");
-
-// ============================================================================
-// Agent Messaging
-// ============================================================================
-
-export const sendAgentMessage = (
-  targetPeer: string,
-  sourcePersona: string,
-  targetPersona: string,
-  payload: number[]
-) =>
-  invoke<void>("send_agent_message", {
-    targetPeer,
-    sourcePersona,
-    targetPersona,
-    payload,
-  });
-
-export const getReceivedMessages = (personaId: string) =>
-  invoke<AgentEnvelope[]>("get_received_messages", { personaId });
-
-// ============================================================================
-// Network Config
-// ============================================================================
-
-export const setNetworkConfig = (config: NetworkConfig) =>
-  invoke<void>("set_network_config", { config });

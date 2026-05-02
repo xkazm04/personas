@@ -54,16 +54,6 @@ export interface BundleImportResult {
   errors: string[];
 }
 
-export interface BundleVerification {
-  signature_valid: boolean;
-  signer_peer_id: string;
-  signer_display_name: string;
-  signer_trusted: boolean;
-  resource_count: number;
-  bundle_hash: string;
-  created_at: string;
-}
-
 // ============================================================================
 // Types (clipboard)
 // ============================================================================
@@ -102,13 +92,6 @@ export const applyBundleFromClipboard = (base64Data: string, options: BundleImpo
   invoke<BundleImportResult>("apply_bundle_from_clipboard", { base64Data, options });
 
 // ============================================================================
-// Verify
-// ============================================================================
-
-export const verifyBundle = (filePath: string) =>
-  invoke<BundleVerification>("verify_bundle", { filePath });
-
-// ============================================================================
 // Share Link
 // ============================================================================
 
@@ -121,15 +104,6 @@ export interface ShareLinkResult {
   expires_at: string;
 }
 
-export interface ResolvedShareLink {
-  http_url: string;
-  token: string;
-  peer_id: string;
-  bundle_hash: string;
-  resource_count: number;
-  host: string;
-}
-
 export const createShareLink = (resourceIds: string[]) =>
   invoke<ShareLinkResult>("create_share_link", { resourceIds });
 
@@ -138,6 +112,3 @@ export const previewShareLink = (url: string) =>
 
 export const importFromShareLink = (url: string, options: BundleImportOptions) =>
   invoke<BundleImportResult>("import_from_share_link", { url, options });
-
-export const resolveShareDeepLink = (url: string) =>
-  invoke<ResolvedShareLink>("resolve_share_deep_link", { url });

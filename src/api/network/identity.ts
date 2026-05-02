@@ -27,12 +27,6 @@ export interface TrustedPeer {
   notes: string | null;
 }
 
-export interface UpdateTrustedPeerInput {
-  display_name?: string | null;
-  trust_level?: TrustLevel | null;
-  notes?: string | null;
-}
-
 // ============================================================================
 // Local Identity
 // ============================================================================
@@ -55,9 +49,6 @@ export const listTrustedPeers = () =>
 
 export const importTrustedPeer = (identityCard: string, notes?: string) =>
   invoke<TrustedPeer>("import_trusted_peer", { identityCard, notes });
-
-export const updateTrustedPeer = (peerId: string, input: UpdateTrustedPeerInput) =>
-  invoke<TrustedPeer>("update_trusted_peer", { peerId, input });
 
 export const revokePeerTrust = (peerId: string) =>
   invoke<boolean>("revoke_peer_trust", { peerId });

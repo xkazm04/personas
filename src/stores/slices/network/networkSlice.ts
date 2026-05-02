@@ -99,7 +99,6 @@ export interface NetworkSlice {
   // Exposure actions
   fetchExposedResources: () => Promise<void>;
   createExposedResource: (input: exposureApi.CreateExposedResourceInput) => Promise<ExposedResource>;
-  updateExposedResource: (id: string, input: exposureApi.UpdateExposedResourceInput) => Promise<void>;
   deleteExposedResource: (id: string) => Promise<void>;
 
   // Provenance actions
@@ -245,16 +244,6 @@ export const createNetworkSlice: StateCreator<SystemStore, [], [], NetworkSlice>
       return resource;
     } catch (err) {
       reportError(err, "Failed to expose resource", set);
-      throw err;
-    }
-  },
-
-  updateExposedResource: async (id, input) => {
-    try {
-      await exposureApi.updateExposedResource(id, input);
-      await get().fetchExposedResources();
-    } catch (err) {
-      reportError(err, "Failed to update exposed resource", set);
       throw err;
     }
   },
