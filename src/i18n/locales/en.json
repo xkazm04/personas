@@ -1824,7 +1824,9 @@
     "onboarding": {
       "setup_complete": "Setup {score}% complete",
       "steps_done": "{completed}/{total} steps done",
-      "dismiss_checklist": "Dismiss checklist"
+      "dismiss_checklist": "Dismiss checklist",
+      "expand_checklist": "Expand checklist",
+      "collapse_checklist": "Collapse checklist"
     },
     "template_picker": {
       "title": "Choose a Template",

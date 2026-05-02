@@ -1831,6 +1831,8 @@ export type Translations = {
       setup_complete: string;
       steps_done: string;
       dismiss_checklist: string;
+      expand_checklist: string;
+      collapse_checklist: string;
     };
     template_picker: {
       title: string;

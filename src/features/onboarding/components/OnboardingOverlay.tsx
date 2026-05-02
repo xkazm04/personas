@@ -84,6 +84,7 @@ export default function OnboardingOverlay() {
         <button
           onClick={dismissOnboarding}
           className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
+          aria-label={t.onboarding.skip_tooltip}
           title={t.onboarding.skip_tooltip}
         >
           <X className="w-4 h-4" />

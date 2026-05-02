@@ -116,12 +116,15 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
         <button
           onClick={() => setExpanded(!expanded)}
           className="p-1 rounded-card hover:bg-primary/10 text-foreground transition-colors"
+          aria-label={expanded ? t.agents.onboarding.collapse_checklist : t.agents.onboarding.expand_checklist}
+          aria-expanded={expanded}
         >
           {expanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
         <button
           onClick={handleDismiss}
           className="p-1 rounded-card hover:bg-primary/10 text-foreground transition-colors"
+          aria-label={t.agents.onboarding.dismiss_checklist}
           title={t.agents.onboarding.dismiss_checklist}
         >
           <X className="w-3.5 h-3.5" />

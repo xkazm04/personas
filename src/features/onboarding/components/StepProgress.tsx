@@ -35,6 +35,8 @@ export function StepProgress({
                   ? 'bg-emerald-500/10 border border-emerald-500/20'
                   : 'bg-secondary/30 border border-primary/10 hover:bg-secondary/50'
             }`}
+            aria-label={step.title}
+            aria-current={isCurrent ? 'step' : undefined}
             title={step.title}
           >
             {isCompleted ? (
