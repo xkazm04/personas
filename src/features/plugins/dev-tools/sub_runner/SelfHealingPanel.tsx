@@ -26,21 +26,28 @@ const PATTERN_ICON_CLASSES: Record<PatternColor, string> = {
   primary: 'text-primary',
 };
 
+type PatternLabelKey =
+  | 'fp_test_failure_label' | 'fp_build_error_label' | 'fp_timeout_label'
+  | 'fp_dependency_label' | 'fp_permission_label' | 'fp_unknown_label';
+type PatternActionKey =
+  | 'fp_test_failure_action' | 'fp_build_error_action' | 'fp_timeout_action'
+  | 'fp_dependency_action' | 'fp_permission_action' | 'fp_unknown_action';
+
 interface FailurePattern {
   type: 'test_failure' | 'build_error' | 'timeout' | 'dependency' | 'permission' | 'unknown';
-  label: string;
+  labelKey: PatternLabelKey;
+  actionKey: PatternActionKey;
   icon: typeof AlertTriangle;
   color: PatternColor;
   autoFixable: boolean;
-  suggestedAction: string;
 }
 
-const FAILURE_PATTERNS: { pattern: RegExp; result: Omit<FailurePattern, 'autoFixable'> & { autoFixable: boolean } }[] = [
-  { pattern: /test.*fail|assertion.*error|expect.*receive/i, result: { type: 'test_failure', label: 'Test Failure', icon: XCircle, color: 'red', autoFixable: true, suggestedAction: 'Re-scan affected context and regenerate implementation with test constraints' } },
-  { pattern: /compile.*error|build.*fail|syntax.*error|type.*error/i, result: { type: 'build_error', label: 'Build Error', icon: AlertTriangle, color: 'orange', autoFixable: true, suggestedAction: 'Analyze error output, fix syntax/type issues, retry build' } },
-  { pattern: /timeout|timed?\s*out|deadline.*exceed/i, result: { type: 'timeout', label: 'Timeout', icon: RefreshCw, color: 'amber', autoFixable: false, suggestedAction: 'Increase timeout or break task into smaller units' } },
-  { pattern: /dependency|package.*not found|module.*not found|import.*error/i, result: { type: 'dependency', label: 'Dependency Issue', icon: Shield, color: 'violet', autoFixable: true, suggestedAction: 'Install missing dependencies and retry' } },
-  { pattern: /permission|access.*denied|forbidden|unauthorized/i, result: { type: 'permission', label: 'Permission Issue', icon: Shield, color: 'red', autoFixable: false, suggestedAction: 'Check credentials and access rights' } },
+const FAILURE_PATTERNS: { pattern: RegExp; result: FailurePattern }[] = [
+  { pattern: /test.*fail|assertion.*error|expect.*receive/i, result: { type: 'test_failure', labelKey: 'fp_test_failure_label', actionKey: 'fp_test_failure_action', icon: XCircle, color: 'red', autoFixable: true } },
+  { pattern: /compile.*error|build.*fail|syntax.*error|type.*error/i, result: { type: 'build_error', labelKey: 'fp_build_error_label', actionKey: 'fp_build_error_action', icon: AlertTriangle, color: 'orange', autoFixable: true } },
+  { pattern: /timeout|timed?\s*out|deadline.*exceed/i, result: { type: 'timeout', labelKey: 'fp_timeout_label', actionKey: 'fp_timeout_action', icon: RefreshCw, color: 'amber', autoFixable: false } },
+  { pattern: /dependency|package.*not found|module.*not found|import.*error/i, result: { type: 'dependency', labelKey: 'fp_dependency_label', actionKey: 'fp_dependency_action', icon: Shield, color: 'violet', autoFixable: true } },
+  { pattern: /permission|access.*denied|forbidden|unauthorized/i, result: { type: 'permission', labelKey: 'fp_permission_label', actionKey: 'fp_permission_action', icon: Shield, color: 'red', autoFixable: false } },
 ];
 
 function analyzeFailure(task: DevTask): FailurePattern {
@@ -48,7 +55,7 @@ function analyzeFailure(task: DevTask): FailurePattern {
   for (const { pattern, result } of FAILURE_PATTERNS) {
     if (pattern.test(searchText)) return result;
   }
-  return { type: 'unknown', label: 'Unknown Failure', icon: AlertTriangle, color: 'primary', autoFixable: false, suggestedAction: 'Manual investigation required' };
+  return { type: 'unknown', labelKey: 'fp_unknown_label', actionKey: 'fp_unknown_action', icon: AlertTriangle, color: 'primary', autoFixable: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -73,7 +80,8 @@ interface SelfHealingPanelProps {
 }
 
 export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dr = t.plugins.dev_runner;
   const tasks = useSystemStore((s) => s.tasks);
   const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const addToast = useToastStore((s) => s.addToast);
@@ -94,7 +102,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
   const handleHealTask = useCallback(async (task: DevTask, pattern: FailurePattern) => {
     const existing = attempts.find((a) => a.taskId === task.id);
     if (existing && existing.retryCount >= existing.maxRetries) {
-      addToast(`Max retries reached for "${task.title}"`, 'error');
+      addToast(tx(dr.heal_max_retries, { title: task.title }), 'error');
       return;
     }
 
@@ -118,11 +126,11 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
     // Record signal on goal if linked
     if (task.goal_id) {
       await recordGoalSignal(task.goal_id, 'auto_heal_attempt', undefined,
-        `Self-healing: retrying "${task.title}" (${pattern.label})`);
+        tx(dr.heal_signal_log, { title: task.title, pattern: dr[pattern.labelKey] }));
     }
 
     onRetryTask(task.id);
-  }, [attempts, addToast, onRetryTask, recordGoalSignal]);
+  }, [attempts, addToast, onRetryTask, recordGoalSignal, dr, tx]);
 
   const handleHealAll = useCallback(async () => {
     for (const { task, pattern } of autoFixable) {
@@ -140,11 +148,11 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
           <Heart className="w-4 h-4 text-red-400" />
           <h3 className="text-md font-medium text-primary">{t.plugins.dev_runner.self_healing}</h3>
           <span className="rounded-full px-2 py-0.5 text-md font-medium bg-red-500/15 text-red-400 border border-red-500/25">
-            {failedTasks.length} failed
+            {tx(dr.heal_chip_failed, { count: failedTasks.length })}
           </span>
           {autoFixable.length > 0 && (
             <span className="rounded-full px-2 py-0.5 text-md font-medium bg-amber-500/15 text-amber-400 border border-amber-500/25">
-              {autoFixable.length} auto-fixable
+              {tx(dr.heal_chip_auto_fixable, { count: autoFixable.length })}
             </span>
           )}
         </div>
@@ -183,9 +191,9 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
               <div className="flex-1 min-w-0">
                 <p className="text-md text-foreground truncate">{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-md text-foreground">{pattern.label}</span>
+                  <span className="text-md text-foreground">{dr[pattern.labelKey]}</span>
                   <ArrowRight className="w-3 h-3 text-foreground" />
-                  <span className="text-md text-foreground">{pattern.suggestedAction}</span>
+                  <span className="text-md text-foreground">{dr[pattern.actionKey]}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -194,8 +202,9 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
                     attempt.status === 'healed' ? 'text-emerald-400' :
                     attempt.status === 'healing' ? 'text-amber-400' : 'text-red-400'
                   }`}>
-                    {attempt.status === 'healing' ? `Retry ${attempt.retryCount}/${attempt.maxRetries}` :
-                     attempt.status === 'healed' ? 'Healed' : `Failed (${attempt.retryCount}/${attempt.maxRetries})`}
+                    {attempt.status === 'healing' ? tx(dr.heal_status_retrying, { retry: attempt.retryCount, max: attempt.maxRetries }) :
+                     attempt.status === 'healed' ? dr.heal_status_healed :
+                     tx(dr.heal_status_failed, { retry: attempt.retryCount, max: attempt.maxRetries })}
                   </span>
                 )}
                 {pattern.autoFixable && (!attempt || attempt.retryCount < attempt.maxRetries) && (
@@ -205,7 +214,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
                     icon={<Lightbulb className="w-3.5 h-3.5" />}
                     onClick={() => handleHealTask(task, pattern)}
                   >
-                    Heal
+                    {dr.heal_btn}
                   </Button>
                 )}
               </div>
