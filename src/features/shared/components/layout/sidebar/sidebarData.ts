@@ -94,6 +94,7 @@ export const eventBusItems: SubNavItem[] = [
 export const templateItems: SubNavItem[] = [
   { id: 'n8n', label: 'n8n Import', icon: Upload, minTier: TIERS.TEAM },
   { id: 'generated', label: 'Generated', icon: List },
+  { id: 'recipes', label: 'Recipes', icon: Sparkles },
 ];
 
 export const artistItems: SubNavItem[] = [

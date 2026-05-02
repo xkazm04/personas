@@ -389,7 +389,7 @@ export type DesignSubTab = "design" | "prompt" | "connectors";
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
-export type TemplateTab = "n8n" | "generated";
+export type TemplateTab = "n8n" | "generated" | "recipes";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "quality-gates";
 export type DevToolsTab = "overview" | "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills";

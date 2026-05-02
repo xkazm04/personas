@@ -14,6 +14,11 @@ interface ListboxProps {
   ariaLabel?: string;
   /** Additional classes on the root container. */
   className?: string;
+  /** Override classes on the popup menu container. Use when the default
+   *  `glass-sm`/`z-50` semi-transparent style causes collisions — e.g. when
+   *  the trigger lives inside scrollable content where the menu can land
+   *  over neighbouring tiles. Pass a fully-opaque background + higher z. */
+  menuClassName?: string;
 }
 
 export function Listbox({
@@ -23,6 +28,7 @@ export function Listbox({
   onSelectFocused,
   ariaLabel,
   className,
+  menuClassName,
 }: ListboxProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
@@ -65,7 +71,10 @@ export function Listbox({
       {renderTrigger({ isOpen: open, toggle })}
       {open && (
           <div
-            className="animate-fade-slide-in absolute top-full mt-1 left-0 right-0 glass-sm rounded-xl shadow-elevation-3 z-50 overflow-hidden"
+            className={
+              menuClassName
+                ?? 'animate-fade-slide-in absolute top-full mt-1 left-0 right-0 glass-sm rounded-xl shadow-elevation-3 z-50 overflow-hidden'
+            }
             role="listbox"
             aria-label={ariaLabel}
           >
