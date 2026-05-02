@@ -48,7 +48,18 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
 
-  const isCompose = !isBuilding && !hasDesignResult;
+  // "Compose" = the pre-launch state where the intent textarea is shown.
+  // We must exclude every phase that represents an active build session,
+  // not just the two `isBuilding` covers (analyzing|resolving). Without
+  // the awaiting_input/initializing exclusions, a clarifying question
+  // landing flips the layout back to the init form because isBuilding
+  // toggles false while the user waits to answer. Failed/cancelled
+  // intentionally fall through so users can retry from the same surface.
+  const isCompose =
+    !isBuilding
+    && !hasDesignResult
+    && buildPhase !== "awaiting_input"
+    && buildPhase !== "initializing";
   const hasPending = (pendingQuestions?.length ?? 0) > 0;
   const isRefining = isBuilding && hasPending;
   const isBuildingOnly = isBuilding && !hasPending;
