@@ -12,9 +12,6 @@ export const en = {
       beginner: 'Beginner',
       intermediate: 'Intermediate',
       advanced: 'Advanced',
-      quickSetup: 'Quick Setup',
-      moderateSetup: 'Moderate Setup',
-      involvedSetup: 'Involved Setup',
       /** Used in the combined badge: "Beginner · ~5 min" */
       minuteShort: '~{minutes}m',
       /** Used in the modal badge: "Beginner · ~5 min setup" */
