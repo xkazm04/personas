@@ -90,17 +90,17 @@ export default function SetupPanel() {
     setTesting(true);
     try {
       const result = await obsidianBrainTestConnection(vaultPath);
+      // Keep the test result purely local. The "Connected" success card below
+      // reads `connectionResult.valid` directly. Flipping global obsidianConnected
+      // / obsidianVaultName here used to leak: switching tabs after a successful
+      // test (without Save) made every consumer believe the vault was active.
       setConnectionResult(result);
-      if (result.valid) {
-        setObsidianConnected(true);
-        setObsidianVaultName(result.vaultName);
-      }
     } catch (e) {
       addToast(`Connection test failed: ${e}`, 'error');
     } finally {
       setTesting(false);
     }
-  }, [vaultPath, addToast, setObsidianConnected, setObsidianVaultName]);
+  }, [vaultPath, addToast]);
 
   const saveConfig = useCallback(async () => {
     if (!vaultPath || !connectionResult?.valid) {
@@ -122,6 +122,7 @@ export default function SetupPanel() {
       saveConfigToList(config);
       setObsidianVaultPath(vaultPath);
       setObsidianVaultName(connectionResult.vaultName);
+      setObsidianConnected(true);
       // Re-fetch gated connectors so obsidian_memory becomes visible elsewhere
       void fetchConnectorDefinitions();
       addToast('Obsidian Brain configuration saved', 'success');
@@ -130,7 +131,7 @@ export default function SetupPanel() {
     } finally {
       setSaving(false);
     }
-  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, fetchConnectorDefinitions]);
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected, fetchConnectorDefinitions]);
 
   return (
     <div className="flex gap-4 py-2">
