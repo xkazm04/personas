@@ -392,11 +392,36 @@ def step_answer_dimensions() -> None:
 
 def step_test_and_promote() -> dict:
     print("\n[4/6] Test + promote draft")
-    test = bridge("triggerBuildTest", {}, 60)
-    if test.get("success"):
-        record("test_build_draft", "ok", report_keys=list((test.get("report") or {}).keys()))
+
+    # UnifiedMatrixEntry auto-fires `triggerBuildTest` once the build
+    # reaches draft_ready with no pending questions (saves the user a
+    # click). When step_answer_dimensions returns at `test_complete`,
+    # the test has already run end-to-end. Calling `triggerBuildTest`
+    # again from `test_complete` flips phase back to `testing` (a valid
+    # transition) and starts a fresh test — but the driver doesn't have
+    # the patience to wait for the second one and ends up trying to
+    # promote while still in `testing`, which is an invalid transition.
+    # Probe state first; only trigger if we landed at `draft_ready`.
+    # /state is GET (see test_automation.rs route table) — using post()
+    # would 405 and leave current_phase=None, skipping the guard.
+    try:
+        state = get("/state")
+    except Exception:
+        state = {}
+    current_phase = state.get("buildPhase") if isinstance(state, dict) else None
+    if current_phase == "test_complete":
+        record(
+            "test_build_draft",
+            "info",
+            note="auto-test already completed before this step ran; skipping manual trigger",
+            phase=current_phase,
+        )
     else:
-        record("test_build_draft", "info", error=test.get("error"))
+        test = bridge("triggerBuildTest", {}, 60)
+        if test.get("success"):
+            record("test_build_draft", "ok", report_keys=list((test.get("report") or {}).keys()))
+        else:
+            record("test_build_draft", "info", error=test.get("error"))
 
     promote = bridge("promoteBuildDraft", {}, 60)
     if not promote.get("success"):

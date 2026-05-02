@@ -30,6 +30,7 @@ docs/concepts/persona-capabilities/
 ├── 10-deferred-backlog.md           intentionally deferred items
 ├── 11-build-wizard.md               CURRENT-STATE reference for the build wizard layer (post-C5b/C6/C7/C8)
 ├── 12-test-scenarios.md             Phase A-K driver inventory + status
+├── 13-rapid-validation-personas.md  20 one-sentence personas (R01-R20) for breadth-at-scale smoke + module verification
 ├── test-scenarios.xlsx              manual-comparison checklist (regenerated from generate_test_scenarios_xlsx.py)
 │
 │   Template authoring contract (consolidated — v3 / v3.1 / v3.2 in one doc)

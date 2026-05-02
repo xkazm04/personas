@@ -68,6 +68,12 @@ step_cleanup()              # deleteAgent unless --no-persona-cleanup
 | **J** | **Documentation archiver (webhook + reference)** | 2 | **ok (C8 — verified 2026-04-28: all 5 gates green, smee_relays auto-bind verified)** | `e2e_phase_j.py` |
 | **K** | **Video narration (build-shape)** | 1 | **ok (C8 — verified 2026-04-28: gemini + elevenlabs landed, manual trigger). Runtime blocked on ElevenLabs TTS impl + ffmpeg connector exposure.** | `e2e_phase_k.py` |
 
+> **Companion suite — rapid validation**: `13-rapid-validation-personas.md`
+> defines 20 simple one-sentence personas (R01..R20) for breadth-at-scale
+> smoke testing, with module verification gates for Messages + Human
+> Review. Use it once the Phase A-K shape coverage is green to confirm
+> the wizard holds up under realistic load.
+
 ---
 
 ## Status legend
