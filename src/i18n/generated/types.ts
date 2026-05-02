@@ -7527,6 +7527,17 @@ export type Translations = {
       agent: string;
       loading_agents: string;
       no_agents: string;
+      source_agent_label: string;
+      source_workspace_label: string;
+      source_global_label: string;
+      source_default_label: string;
+      field_model: string;
+      field_provider: string;
+      field_budget: string;
+      field_turns: string;
+      field_cache: string;
+      failed_to_resolve: string;
+      config_could_not_be_resolved: string;
     };
     quality_gates: {
       title: string;

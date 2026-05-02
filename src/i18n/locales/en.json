@@ -7520,7 +7520,18 @@
       "overrides_inherited": "Overrides inherited",
       "agent": "Agent",
       "loading_agents": "Loading agents...",
-      "no_agents": "No agents found"
+      "no_agents": "No agents found",
+      "source_agent_label": "Agent",
+      "source_workspace_label": "Workspace",
+      "source_global_label": "Global",
+      "source_default_label": "--",
+      "field_model": "Model",
+      "field_provider": "Provider",
+      "field_budget": "Budget",
+      "field_turns": "Turns",
+      "field_cache": "Cache",
+      "failed_to_resolve": "Failed to resolve",
+      "config_could_not_be_resolved": "Config could not be resolved"
     },
     "quality_gates": {
       "title": "Quality Gates",

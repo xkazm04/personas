@@ -14,20 +14,24 @@ const SOURCE_ICON: Record<ConfigSource, typeof Globe> = {
   default: Minus,
 };
 
-const SOURCE_STYLE: Record<ConfigSource, { color: string; bg: string; label: string }> = {
-  agent:     { color: 'text-violet-400',            bg: 'bg-violet-500/10', label: 'Agent' },
-  workspace: { color: 'text-blue-400',              bg: 'bg-blue-500/10',   label: 'Workspace' },
-  global:    { color: 'text-emerald-400',           bg: 'bg-emerald-500/10', label: 'Global' },
-  default:   { color: 'text-foreground',   bg: 'bg-secondary/30',  label: '--' },
+type SourceLabelKey = 'source_agent_label' | 'source_workspace_label' | 'source_global_label' | 'source_default_label';
+
+const SOURCE_STYLE: Record<ConfigSource, { color: string; bg: string; labelKey: SourceLabelKey }> = {
+  agent:     { color: 'text-violet-400',            bg: 'bg-violet-500/10',  labelKey: 'source_agent_label' },
+  workspace: { color: 'text-blue-400',              bg: 'bg-blue-500/10',    labelKey: 'source_workspace_label' },
+  global:    { color: 'text-emerald-400',           bg: 'bg-emerald-500/10', labelKey: 'source_global_label' },
+  default:   { color: 'text-foreground',            bg: 'bg-secondary/30',   labelKey: 'source_default_label' },
 };
 
 function SourceBadge({ source, isOverridden }: { source: ConfigSource; isOverridden: boolean }) {
+  const { t } = useTranslation();
+  const s = t.settings.config;
   const style = SOURCE_STYLE[source];
   const Icon = SOURCE_ICON[source];
   return (
     <span className={`inline-flex items-center gap-0.5 px-1 py-px rounded text-[10px] font-medium uppercase tracking-wider ${style.color} ${style.bg}`}>
       <Icon className="w-2.5 h-2.5" />
-      {style.label}
+      {s[style.labelKey]}
       {isOverridden && source === 'agent' && (
         <span className="w-1 h-1 rounded-full bg-amber-400 flex-shrink-0" />
       )}
@@ -55,12 +59,14 @@ interface PersonaRow {
   error: string | null;
 }
 
-const FIELDS: { key: keyof EffectiveModelConfig; label: string; mask?: boolean }[] = [
-  { key: 'model', label: 'Model' },
-  { key: 'provider', label: 'Provider' },
-  { key: 'maxBudgetUsd', label: 'Budget' },
-  { key: 'maxTurns', label: 'Turns' },
-  { key: 'promptCachePolicy', label: 'Cache' },
+type FieldLabelKey = 'field_model' | 'field_provider' | 'field_budget' | 'field_turns' | 'field_cache';
+
+const FIELDS: { key: keyof EffectiveModelConfig; labelKey: FieldLabelKey; mask?: boolean }[] = [
+  { key: 'model', labelKey: 'field_model' },
+  { key: 'provider', labelKey: 'field_provider' },
+  { key: 'maxBudgetUsd', labelKey: 'field_budget' },
+  { key: 'maxTurns', labelKey: 'field_turns' },
+  { key: 'promptCachePolicy', labelKey: 'field_cache' },
 ];
 
 export default function ConfigResolutionPanel() {
@@ -146,7 +152,7 @@ export default function ConfigResolutionPanel() {
               <th className="text-left px-3 py-2 font-medium text-foreground">{s.agent}</th>
               <th className="text-left px-3 py-2 font-medium text-foreground">{s.workspace_level}</th>
               {FIELDS.map((f) => (
-                <th key={f.key} className="text-left px-3 py-2 font-medium text-foreground">{f.label}</th>
+                <th key={f.key} className="text-left px-3 py-2 font-medium text-foreground">{s[f.labelKey]}</th>
               ))}
             </tr>
           </thead>
@@ -183,10 +189,10 @@ export default function ConfigResolutionPanel() {
                     // the row is real but its config couldn't be resolved.
                     if (f.key === FIELDS[0]!.key) {
                       return (
-                        <td key={f.key} className="px-3 py-2" title={row.error ?? 'Config could not be resolved'}>
+                        <td key={f.key} className="px-3 py-2" title={row.error ?? s.config_could_not_be_resolved}>
                           <span className="inline-flex items-center gap-1 text-amber-400 typo-caption">
                             <AlertTriangle className="w-3 h-3" />
-                            Failed to resolve
+                            {s.failed_to_resolve}
                           </span>
                         </td>
                       );
