@@ -1,11 +1,15 @@
 import { memo, useCallback } from 'react';
-import { Film, Plus, Blend, Moon } from 'lucide-react';
+import { Film, Blend, Moon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Button } from '@/features/shared/components/buttons';
 import { formatDurationHuman } from '../utils/format';
 import { useVideoThumbnails } from './hooks/useVideoThumbnails';
 import type { VideoClip } from './types';
 import TimelineClip from './TimelineClip';
+import MediaLaneShell, {
+  STANDARD_LANE_LAYOUT,
+  addButtonLeftPx,
+  type LaneTheme,
+} from './MediaLaneShell';
 
 interface VideoLaneProps {
   items: VideoClip[];
@@ -18,6 +22,18 @@ interface VideoLaneProps {
   hideHeader?: boolean;
   hideAdd?: boolean;
 }
+
+const VIDEO_THEME: LaneTheme = {
+  headerBg: 'bg-rose-500/10',
+  headerBorder: 'border-rose-500/20',
+  headerText: 'text-rose-400',
+  countBadgeBg: 'bg-rose-500/10',
+  countBadgeText: 'text-rose-400/60',
+  iconText: 'text-rose-400',
+  laneBg: 'bg-rose-500/[0.02]',
+  emptyHintBorder: 'border-rose-500/15',
+  emptyHintText: 'text-rose-400/30',
+};
 
 function VideoLaneImpl({
   items,
@@ -62,87 +78,56 @@ function VideoLaneImpl({
   );
 
   return (
-    <div className="flex flex-col">
-      {/* Lane header */}
-      {!hideHeader && (
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border-b border-rose-500/20">
-          <Film className="w-3.5 h-3.5 text-rose-400" />
-          <span className="typo-label text-rose-400">
-            {t.media_studio.layer_video}
-          </span>
-          {items.length > 0 && (
-            <span className="ml-auto text-md text-rose-400/60 bg-rose-500/10 rounded-full px-1.5 py-0.5 tabular-nums">
-              {items.length}
-            </span>
-          )}
-        </div>
-      )}
-
-      {/* Clips area */}
-      <div className="relative h-14 bg-rose-500/[0.02] border-b border-primary/10">
-        {/* Empty lane hint */}
-        {items.length === 0 && (
-          <div className="absolute inset-1 rounded-card border border-dashed border-rose-500/15 flex items-center justify-center">
-            <span className="text-md text-rose-400/30">{t.media_studio.empty_lane}</span>
-          </div>
-        )}
-        {/* Transition indicators between clips */}
-        {items.map((clip) => {
-          if (clip.transition === 'cut' || clip.transitionDuration === 0) return null;
-          const x = clip.startTime * zoom - scrollX;
-          const Icon = clip.transition === 'crossfade' ? Blend : Moon;
-          return (
-            <div
-              key={`tr-${clip.id}`}
-              className="absolute top-0 flex items-center justify-center z-20 pointer-events-none"
-              style={{ left: `${x - 8}px`, width: '16px', height: '100%' }}
-            >
-              <div className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
-                <Icon className="w-2.5 h-2.5 text-violet-400" />
-              </div>
-            </div>
-          );
-        })}
-        {items.map((clip) => (
-          <TimelineClip
-            key={clip.id}
-            id={clip.id}
-            startTime={clip.startTime}
-            duration={clip.duration}
-            zoom={zoom}
-            scrollX={scrollX}
-            isSelected={clip.id === selectedId}
-            className="top-1 h-12 rounded-card bg-rose-500/15 border border-rose-500/20 hover:bg-rose-500/25"
-            selectedClassName="top-1 h-12 rounded-card bg-rose-500/30 border-2 border-rose-400 ring-1 ring-rose-400/40"
-            onClick={() => onSelect(clip.id)}
-            onMove={(newStart) => handleMove(clip.id, newStart)}
-            onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}
-            onTrimRight={(delta) => handleTrimRight(clip.id, clip, delta)}
-          >
-            <VideoClipBody clip={clip} />
-
-          </TimelineClip>
-        ))}
-
-        {/* Add button */}
-        {!hideAdd && (
+    <MediaLaneShell
+      itemCount={items.length}
+      hideHeader={hideHeader}
+      hideAdd={hideAdd}
+      onAdd={onAdd}
+      Icon={Film}
+      labelText={t.media_studio.layer_video}
+      emptyText={t.media_studio.empty_lane}
+      addButtonText={t.media_studio.add_video}
+      addButtonLeftPx={addButtonLeftPx(items, zoom, scrollX)}
+      theme={VIDEO_THEME}
+      layout={STANDARD_LANE_LAYOUT}
+    >
+      {/* Transition indicators between clips — VideoLane only */}
+      {items.map((clip) => {
+        if (clip.transition === 'cut' || clip.transitionDuration === 0) return null;
+        const x = clip.startTime * zoom - scrollX;
+        const Icon = clip.transition === 'crossfade' ? Blend : Moon;
+        return (
           <div
-            className="absolute top-1 h-12 flex items-center"
-            style={{
-              left: `${items.length > 0
-                ? Math.max(...items.map((c) => (c.startTime + c.duration) * zoom - scrollX)) + 8
-                : 8
-              }px`,
-            }}
+            key={`tr-${clip.id}`}
+            className="absolute top-0 flex items-center justify-center z-20 pointer-events-none"
+            style={{ left: `${x - 8}px`, width: '16px', height: '100%' }}
           >
-            <Button variant="ghost" size="xs" onClick={onAdd}>
-              <Plus className="w-3.5 h-3.5" />
-              {t.media_studio.add_video}
-            </Button>
+            <div className="w-5 h-5 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+              <Icon className="w-2.5 h-2.5 text-violet-400" />
+            </div>
           </div>
-        )}
-      </div>
-    </div>
+        );
+      })}
+      {items.map((clip) => (
+        <TimelineClip
+          key={clip.id}
+          id={clip.id}
+          startTime={clip.startTime}
+          duration={clip.duration}
+          zoom={zoom}
+          scrollX={scrollX}
+          isSelected={clip.id === selectedId}
+          className="top-1 h-12 rounded-card bg-rose-500/15 border border-rose-500/20 hover:bg-rose-500/25"
+          selectedClassName="top-1 h-12 rounded-card bg-rose-500/30 border-2 border-rose-400 ring-1 ring-rose-400/40"
+          onClick={() => onSelect(clip.id)}
+          onMove={(newStart) => handleMove(clip.id, newStart)}
+          onTrimLeft={(delta) => handleTrimLeft(clip.id, clip, delta)}
+          onTrimRight={(delta) => handleTrimRight(clip.id, clip, delta)}
+        >
+          <VideoClipBody clip={clip} />
+        </TimelineClip>
+      ))}
+    </MediaLaneShell>
   );
 }
 
