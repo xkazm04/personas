@@ -32,7 +32,7 @@ const PHASE_ORDER: ProjectStatus[] = [
 ];
 
 export default function ResearchProjectListAtelier() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const projects = useSystemStore((s) => s.researchProjects);
   const fetchProjects = useSystemStore((s) => s.fetchResearchProjects);
   const deleteProject = useSystemStore((s) => s.deleteResearchProject);
@@ -114,7 +114,7 @@ export default function ResearchProjectListAtelier() {
       <AtelierBand
         t={t}
         title={t.research_lab.projects}
-        subtitle={`Atelier · ${visibleProjects.length} ${t.research_lab.projects.toLowerCase()}`}
+        subtitle={tx(t.research_lab.atelier_subtitle, { count: visibleProjects.length, label: t.research_lab.projects.toLowerCase() })}
         onCreate={() => { setEditing(null); setShowForm(true); }}
       />
 
@@ -246,7 +246,7 @@ function ProjectHero({
 
       <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
         <span className="typo-caption text-foreground/55">
-          Updated {new Date(project.updatedAt).toLocaleDateString()}
+          {`${t.research_lab.updated_prefix.replace('{date}', new Date(project.updatedAt).toLocaleDateString())}`}
         </span>
         <div className="flex items-center gap-2 flex-wrap">
           {project.obsidianVaultPath && (
@@ -287,7 +287,7 @@ function ProjectHero({
             onClick={onOpen}
             className="flex items-center gap-1.5 px-4 py-2 rounded-interactive typo-caption bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
           >
-            Open
+            {t.research_lab.open_action}
             <ExternalLink className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -307,7 +307,7 @@ function PhaseTrack({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-[0.2em] text-foreground/55">Phase</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-foreground/55">{t.research_lab.phase}</span>
         <span className="typo-caption text-foreground/85">
           {projectStatusLabel(t, status)}
         </span>
@@ -390,9 +390,9 @@ function DomainRail({
   return (
     <aside className="hidden lg:flex w-56 flex-shrink-0 flex-col border-r border-border/40 px-3 py-6 gap-1 overflow-y-auto">
       <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 px-2 mb-2">
-        Domains
+        {t.research_lab.domains}
       </p>
-      <RailItem label="All projects" count={totalProjects} selected={selected === null} onClick={() => onSelect(null)} />
+      <RailItem label={t.research_lab.all_projects} count={totalProjects} selected={selected === null} onClick={() => onSelect(null)} />
       {entries.map(([domain, count]) => (
         <RailItem
           key={domain}
@@ -440,7 +440,7 @@ function ChronologyThread({
   return (
     <aside className="hidden xl:flex w-72 flex-shrink-0 flex-col border-l border-border/40 px-4 py-6 gap-3 overflow-y-auto">
       <p className="text-xs uppercase tracking-[0.2em] text-foreground/55 mb-1">
-        Recent
+        {t.research_lab.recent}
       </p>
       <div className="relative space-y-2">
         {visible.length > 0 && (

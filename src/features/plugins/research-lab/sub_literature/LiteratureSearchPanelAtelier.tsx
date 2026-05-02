@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import type { Translations } from '@/i18n/en';
 import type { ResearchSource } from '@/api/researchLab/researchLab';
@@ -22,6 +21,7 @@ import {
   type SourceType, SOURCE_TYPES,
 } from '../_shared/tokens';
 import { NoActiveProject } from '../_shared/EmptyState';
+import { useIngestSource } from '../_shared/useIngestSource';
 
 const AddSourceForm = lazy(() => import('./AddSourceForm'));
 const ArxivSearchModal = lazy(() => import('./ArxivSearchModal'));
@@ -32,15 +32,13 @@ export default function LiteratureSearchPanelAtelier() {
   const sources = useSystemStore((s) => s.researchSources);
   const fetchSources = useSystemStore((s) => s.fetchResearchSources);
   const deleteSource = useSystemStore((s) => s.deleteResearchSource);
-  const updateSourceStatus = useSystemStore((s) => s.updateSourceStatus);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
-  const addToast = useToastStore((s) => s.addToast);
 
   const [showAdd, setShowAdd] = useState(false);
   const [showArxiv, setShowArxiv] = useState(false);
   const [typeFilter, setTypeFilter] = useState<SourceType | null>(null);
   const [heroId, setHeroId] = useState<string | null>(null);
-  const [ingesting, setIngesting] = useState<string | null>(null);
+  const { ingestingId: ingesting, ingest } = useIngestSource('LiteratureAtelier');
 
   useEffect(() => {
     if (activeProjectId) fetchSources(activeProjectId);
@@ -70,18 +68,8 @@ export default function LiteratureSearchPanelAtelier() {
   const indexedCount = sources.filter((s) => s.status === 'indexed').length;
   const pendingCount = sources.filter((s) => s.status === 'pending').length;
 
-  const handleIngest = async (id: string) => {
-    setIngesting(id);
-    try {
-      await updateSourceStatus(id, 'ingesting');
-      await updateSourceStatus(id, 'indexed');
-      addToast(t.research_lab.source_indexed, 'success');
-    } catch (err) {
-      await updateSourceStatus(id, 'failed').catch(() => {});
-      toastCatch('LiteratureAtelier:ingest')(err);
-    } finally {
-      setIngesting(null);
-    }
+  const handleIngest = (id: string) => {
+    void ingest(id);
   };
 
   const handleDelete = async (id: string) => {

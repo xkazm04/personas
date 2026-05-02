@@ -46,7 +46,7 @@ function buildPhases(t: Translations): Phase[] {
 }
 
 export default function ResearchDashboard() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const stats = useSystemStore((s) => s.researchDashboardStats);
   const fetchStats = useSystemStore((s) => s.fetchResearchDashboardStats);
   const projects = useSystemStore((s) => s.researchProjects);
@@ -106,7 +106,7 @@ export default function ResearchDashboard() {
                 {t.research_lab.dashboard}
               </span>
               <span className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-                Research pipeline
+                {t.research_lab.pipeline_subtitle}
               </span>
             </div>
           </div>
@@ -114,7 +114,7 @@ export default function ResearchDashboard() {
           <div className="hidden sm:flex items-center gap-5 typo-caption text-foreground tabular-nums">
             <Counter label={t.research_lab.projects} value={totalProjects} />
             <Counter label={t.research_lab.active} value={activeProjects} />
-            <Counter label="completion" value={`${completionPct}%`} accent />
+            <Counter label={t.research_lab.completion} value={`${completionPct}%`} accent />
           </div>
           <button
             onClick={() => setResearchLabTab('projects')}
@@ -168,10 +168,10 @@ export default function ResearchDashboard() {
             <div className="mt-10 pt-6 border-t border-border/40">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs uppercase tracking-[0.2em] text-foreground/60">
-                  Domains
+                  {t.research_lab.domains}
                 </h3>
                 <span className="typo-caption text-foreground/60 tabular-nums">
-                  {projects.length} total
+                  {tx(t.research_lab.projects_total, { count: projects.length })}
                 </span>
               </div>
               <DomainStrip

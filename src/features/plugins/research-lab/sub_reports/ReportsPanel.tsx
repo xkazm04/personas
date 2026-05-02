@@ -112,8 +112,8 @@ export default function ReportsPanel() {
                   <button
                     onClick={(e) => { e.stopPropagation(); setPreviewing(r); }}
                     className="p-1 rounded hover:bg-primary/10 text-primary hover:text-primary transition-colors"
-                    title="Preview"
-                    aria-label="Preview"
+                    title={t.research_lab.preview_action}
+                    aria-label={t.research_lab.preview_action}
                   >
                     <Eye className="w-3.5 h-3.5" />
                   </button>

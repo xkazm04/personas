@@ -13,7 +13,7 @@ interface Props {
 }
 
 export default function ArxivSearchModal({ projectId, onClose }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const createSource = useSystemStore((s) => s.createResearchSource);
   const updateSourceStatus = useSystemStore((s) => s.updateSourceStatus);
   const addToast = useToastStore((s) => s.addToast);
@@ -37,7 +37,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
     try {
       const rows = await searchArxiv({ query: query.trim(), maxResults: 20, signal: ctrl.signal });
       setResults(rows);
-      if (rows.length === 0) addToast('No results', 'success');
+      if (rows.length === 0) addToast(t.research_lab.no_results, 'success');
     } catch (err) {
       if ((err as Error).name === 'AbortError') return;
       toastCatch("ArxivSearchModal:search")(err);
@@ -88,7 +88,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
           toastCatch("ArxivSearchModal:addOne")(err);
         }
       }
-      addToast(`Added ${added} sources`, 'success');
+      addToast(tx(t.research_lab.added_sources_count, { count: added }), 'success');
       onClose();
     } finally {
       setAdding(false);
@@ -97,10 +97,10 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
 
   return (
     <ResearchLabFormModal
-      title="arXiv search"
+      title={t.research_lab.arxiv_search_title}
       onClose={onClose}
       onSubmit={handleSubmit}
-      submitLabel={`Add ${selected.size || ''}`.trim()}
+      submitLabel={tx(t.research_lab.add_count, { count: selected.size })}
       submitDisabled={selected.size === 0}
       saving={adding}
     >
@@ -117,8 +117,8 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
                 runSearch();
               }
             }}
-            placeholder="e.g. transformer reasoning chain-of-thought"
-            className="flex-1 bg-transparent text-foreground typo-body outline-none placeholder:text-foreground"
+            placeholder={t.research_lab.arxiv_query_placeholder}
+            className="flex-1 bg-transparent text-foreground typo-body outline-none placeholder:text-foreground/40"
             autoFocus
           />
         </div>
@@ -129,19 +129,21 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
           className="px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
         >
           {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-          {t.common.search_ellipsis.replace('…', '') || 'Search'}
+          {t.common.search}
         </button>
       </div>
 
       {results.length > 0 && (
         <div className="flex items-center justify-between">
-          <p className="typo-caption text-foreground">{results.length} results</p>
+          <p className="typo-caption text-foreground">
+            {tx(results.length === 1 ? t.research_lab.results_count_one : t.research_lab.results_count_other, { count: results.length })}
+          </p>
           <button
             type="button"
             onClick={selectAll}
             className="typo-caption text-primary hover:text-primary"
           >
-            {selected.size === results.length ? 'Deselect all' : 'Select all'}
+            {selected.size === results.length ? t.research_lab.deselect_all : t.research_lab.select_all}
           </button>
         </div>
       )}
@@ -168,7 +170,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
                   {isSelected && <Check className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />}
                 </div>
                 <p className="typo-caption text-foreground mt-1">
-                  {r.authors || 'Anon.'}{r.year ? ` · ${r.year}` : ''}
+                  {r.authors || t.research_lab.anon_author}{r.year ? ` · ${r.year}` : ''}
                   {r.doi ? ` · doi:${r.doi}` : ''}
                 </p>
                 {r.summary && (
@@ -203,7 +205,7 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
 
         {!loading && results.length === 0 && query === '' && (
           <p className="typo-caption text-foreground text-center py-8">
-            Type a query and press Enter to search arXiv.
+            {t.research_lab.arxiv_search_hint}
           </p>
         )}
       </div>

@@ -40,7 +40,7 @@ function buildPrompt(project: ResearchProject, sourceTitles: string[], instructi
 }
 
 export default function GenerateHypothesesModal({ project, onClose }: Props) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const sources = useSystemStore((s) => s.researchSources);
   const createHypothesis = useSystemStore((s) => s.createResearchHypothesis);
@@ -80,12 +80,12 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
         onStatus: (s) => setStatus(s),
       });
       if (!passed || !output) {
-        addToast('Generation did not complete', 'error');
+        addToast(t.research_lab.generation_did_not_complete, 'error');
         return;
       }
       const statements = parseHypothesesOutput(output);
       if (statements.length === 0) {
-        addToast('No hypotheses parsed from output', 'error');
+        addToast(t.research_lab.no_hypotheses_parsed, 'error');
         return;
       }
       setCandidates(statements.slice(0, 20).map((text) => ({ text, selected: true })));
@@ -118,7 +118,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
           toastCatch("GenerateHypotheses:createOne")(err);
         }
       }
-      addToast(`Created ${created} hypotheses`, 'success');
+      addToast(tx(t.research_lab.created_hypotheses, { count: created }), 'success');
       onClose();
     } finally {
       setBusy(false);
@@ -137,16 +137,16 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
   if (candidates) {
     return (
       <ResearchLabFormModal
-        title={`${t.research_lab.generate_hypotheses} — ${candidates.length} candidates`}
+        title={`${t.research_lab.generate_hypotheses} — ${tx(t.research_lab.candidates_count, { count: candidates.length })}`}
         onClose={onClose}
         onSubmit={handleAccept}
-        submitLabel={`Accept ${selectedCount}`}
+        submitLabel={tx(t.research_lab.accept_count, { count: selectedCount })}
         submitDisabled={selectedCount === 0}
         saving={busy}
       >
         <div className="flex items-center justify-between">
           <p className="typo-caption text-foreground">
-            Review before saving. Uncheck any you don't want; edit text in place.
+            {t.research_lab.review_before_saving_action}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -154,14 +154,14 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
               onClick={toggleAll}
               className="typo-caption text-primary hover:text-primary"
             >
-              {candidates.every((c) => c.selected) ? 'Deselect all' : 'Select all'}
+              {candidates.every((c) => c.selected) ? t.research_lab.deselect_all : t.research_lab.select_all}
             </button>
             <button
               type="button"
               onClick={() => setCandidates(null)}
               className="flex items-center gap-1 typo-caption text-foreground hover:text-foreground"
             >
-              <RotateCcw className="w-3 h-3" /> Re-run
+              <RotateCcw className="w-3 h-3" /> {t.research_lab.re_run_action}
             </button>
           </div>
         </div>
@@ -184,7 +184,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
                 className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
                   c.selected ? 'bg-primary/40 text-background' : 'border border-border/40 text-transparent'
                 }`}
-                aria-label={c.selected ? 'Deselect' : 'Select'}
+                aria-label={c.selected ? t.research_lab.deselect_aria : t.research_lab.select_aria}
               >
                 {c.selected ? <Check className="w-3 h-3" /> : null}
               </button>
@@ -204,7 +204,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
                   setCandidates((prev) => (prev ? prev.filter((_, j) => j !== i) : prev))
                 }
                 className="p-1 rounded text-foreground hover:text-red-400 flex-shrink-0"
-                aria-label="Remove"
+                aria-label={t.research_lab.remove_aria}
               >
                 <XIcon className="w-3.5 h-3.5" />
               </button>
@@ -244,10 +244,10 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
       />
 
       <TextAreaField
-        label="Custom instructions (optional)"
+        label={t.research_lab.custom_instructions_label}
         value={instructions}
         onChange={setInstructions}
-        placeholder="e.g. Focus on prompt-engineering hypotheses, 7 total."
+        placeholder={t.research_lab.custom_instructions_placeholder}
         rows={3}
       />
 
@@ -255,7 +255,7 @@ export default function GenerateHypothesesModal({ project, onClose }: Props) {
         <div className="flex items-center gap-2 typo-caption text-foreground">
           <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <Lightbulb className="w-3.5 h-3.5" />
-          <span>{status || 'running'}…</span>
+          <span>{status || t.research_lab.running_status}…</span>
         </div>
       )}
     </ResearchLabFormModal>

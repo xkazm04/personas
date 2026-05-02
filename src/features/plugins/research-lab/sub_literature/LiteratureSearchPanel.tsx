@@ -3,11 +3,11 @@ import { BookOpen, ExternalLink, Trash2, Database, Search } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { useToastStore } from '@/stores/toastStore';
 import { SectionHeader } from '../_shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
 import { PrototypeTabs } from '../_shared/PrototypeTabs';
 import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../_shared/tokens';
+import { useIngestSource } from '../_shared/useIngestSource';
 import LiteratureSearchPanelAtelier from './LiteratureSearchPanelAtelier';
 import LiteratureSearchPanelWorkbench from './LiteratureSearchPanelWorkbench';
 
@@ -36,27 +36,14 @@ function LiteratureSearchPanelBaseline() {
   const deleteSource = useSystemStore((s) => s.deleteResearchSource);
   const setResearchLabTab = useSystemStore((s) => s.setResearchLabTab);
 
-  const updateSourceStatus = useSystemStore((s) => s.updateSourceStatus);
-  const addToast = useToastStore((s) => s.addToast);
-
   const [showAddForm, setShowAddForm] = useState(false);
   const [showArxiv, setShowArxiv] = useState(false);
   const [filter, setFilter] = useState('');
-  const [ingestingId, setIngestingId] = useState<string | null>(null);
+  const { ingestingId, ingest } = useIngestSource('LiteratureSearchPanel');
 
-  const handleIngest = async (e: React.MouseEvent, sourceId: string) => {
+  const handleIngest = (e: React.MouseEvent, sourceId: string) => {
     e.stopPropagation();
-    setIngestingId(sourceId);
-    try {
-      await updateSourceStatus(sourceId, 'ingesting');
-      await updateSourceStatus(sourceId, 'indexed');
-      addToast(t.research_lab.source_indexed, 'success');
-    } catch (err) {
-      await updateSourceStatus(sourceId, 'failed').catch(() => {});
-      toastCatch("LiteratureSearchPanel:ingest")(err);
-    } finally {
-      setIngestingId(null);
-    }
+    void ingest(sourceId);
   };
 
   useEffect(() => {
@@ -117,7 +104,7 @@ function LiteratureSearchPanelBaseline() {
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder={t.research_lab.filter_sources_placeholder}
-          className="w-full px-3 py-2 rounded-card bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground focus:outline-none focus:border-primary/40"
+          className="w-full px-3 py-2 rounded-card bg-secondary/50 border border-border/30 text-foreground typo-body placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
         />
       )}
 
