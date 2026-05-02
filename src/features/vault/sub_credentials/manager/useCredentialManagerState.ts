@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 import { useUndoDelete } from '@/features/vault/shared/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
@@ -60,14 +59,6 @@ export function useCredentialManagerState() {
     createCredential,
     fetchCredentials,
   });
-
-  // Wizard was removed — close the provisioning wizard store if it was open
-  const wizardPhase = useProvisioningWizardStore((s) => s.phase);
-  useEffect(() => {
-    if (wizardPhase !== 'closed') {
-      useProvisioningWizardStore.getState().close();
-    }
-  }, [wizardPhase]);
 
   // Sync unified search to FSM when in catalog view
   useEffect(() => {

@@ -8,7 +8,6 @@ import { useOverviewStore } from "@/stores/overviewStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
-import { useProvisioningWizardStore } from '@/stores/provisioningWizardStore';
 
 import SidebarSubNav from './SidebarSubNav';
 import type { SubNavBadge } from './SidebarSubNav';
@@ -174,7 +173,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
                 accentColor="violet"
                 size="md"
                 icon={<Sparkles className="w-3 h-3" />}
-                onClick={() => useProvisioningWizardStore.getState().open(true)}
+                onClick={() => navigate('add-new')}
               >
                 {t.shared.sidebar_extra.ai_setup_wizard}
               </Button>
