@@ -3,7 +3,6 @@ import {
   Download,
   ChevronRight,
   Bot,
-  Users,
   Key,
   KeyRound,
   Info,
@@ -15,16 +14,15 @@ import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { listPersonas } from '@/api/agents/personas';
-import { listTeams } from '@/api/pipeline/teams';
 import { listCredentials } from '@/api/vault/credentials';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import { useTranslation } from '@/i18n/useTranslation';
 
-// Teams export is intentionally hidden from the UI but kept wired in the backend
-// payload — enable by adding 'teams' to VISIBLE_CATEGORY_KEYS.
-const VISIBLE_CATEGORY_KEYS = new Set(['personas', 'credentials']);
+// Teams export is currently not exposed in the UI. The onExport prop still
+// carries `teamIds: string[]` so callers (and the backend payload) keep their
+// signature; this modal passes [] for that arg. When teams ship, re-add a
+// Teams category here and populate selectedTeamIds.
 
 // ---------------------------------------------------------------------------
 // Types
@@ -218,12 +216,10 @@ export function ExportSelectionModal({
   exporting,
 }: ExportSelectionModalProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
-  const [teams, setTeams] = useState<PersonaTeam[]>([]);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
-  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [selectedCredentialIds, setSelectedCredentialIds] = useState<Set<string>>(new Set());
   const [exportPassphrase, setExportPassphrase] = useState('');
   const { t, tx } = useTranslation();
@@ -234,22 +230,17 @@ export function ExportSelectionModal({
     if (!isOpen) return;
     setLoading(true);
     setExportPassphrase('');
-    Promise.all([listPersonas(), listTeams(), listCredentials()])
-      .then(([p, t, c]) => {
+    Promise.all([listPersonas(), listCredentials()])
+      .then(([p, c]) => {
         setPersonas(p);
-        setTeams(t);
         setCredentials(c);
-        // Select all by default. Teams are hidden from the UI, so they stay empty
-        // and won't be included in the exported bundle.
+        // Select all by default.
         setSelectedPersonaIds(new Set(p.map((x) => x.id)));
-        setSelectedTeamIds(new Set());
         setSelectedCredentialIds(new Set(c.map((x) => x.id)));
       })
       .finally(() => setLoading(false));
   }, [isOpen]);
 
-  // Build category configs. Teams stays in the array so backend wiring keeps
-  // working, but it's filtered out of the rendered list via VISIBLE_CATEGORY_KEYS.
   const categories: CategoryConfig[] = useMemo(
     () => [
       {
@@ -274,19 +265,6 @@ export function ExportSelectionModal({
         })),
       },
       {
-        key: 'teams',
-        label: 'Teams',
-        icon: <Users className="w-4 h-4" />,
-        color: 'bg-blue-500/15 text-blue-400',
-        items: teams.map((t) => ({
-          id: t.id,
-          name: t.name,
-          description: t.description,
-          icon: t.icon,
-          color: t.color,
-        })),
-      },
-      {
         key: 'credentials',
         label: 'Credentials',
         icon: <Key className="w-4 h-4" />,
@@ -298,18 +276,12 @@ export function ExportSelectionModal({
         })),
       },
     ],
-    [personas, teams, credentials],
-  );
-
-  const visibleCategories = useMemo(
-    () => categories.filter((c) => VISIBLE_CATEGORY_KEYS.has(c.key)),
-    [categories],
+    [personas, credentials],
   );
 
   // Selection helpers
   const stateMap: Record<string, [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>]> = {
     personas: [selectedPersonaIds, setSelectedPersonaIds],
-    teams: [selectedTeamIds, setSelectedTeamIds],
     credentials: [selectedCredentialIds, setSelectedCredentialIds],
   };
 
@@ -323,7 +295,7 @@ export function ExportSelectionModal({
         setSelected(new Set(items.map((i) => i.id)));
       }
     },
-    [selectedPersonaIds, selectedTeamIds, selectedCredentialIds],
+    [selectedPersonaIds, selectedCredentialIds],
   );
 
   const toggleItem = useCallback(
@@ -337,12 +309,10 @@ export function ExportSelectionModal({
       }
       setSelected(next);
     },
-    [selectedPersonaIds, selectedTeamIds, selectedCredentialIds],
+    [selectedPersonaIds, selectedCredentialIds],
   );
 
-  // Global select/deselect all. Teams are excluded from these totals because the
-  // category is hidden from the UI — counting them would produce confusing math
-  // (e.g. "0 of 5 selected" with no rows visible).
+  // Global select/deselect all.
   const totalItems = personas.length + credentials.length;
   const totalSelected = selectedPersonaIds.size + selectedCredentialIds.size;
   const allGlobalSelected = totalItems > 0 && totalSelected === totalItems;
@@ -361,7 +331,7 @@ export function ExportSelectionModal({
   const handleExport = () => {
     onExport(
       Array.from(selectedPersonaIds),
-      Array.from(selectedTeamIds),
+      [], // teams not exposed in this modal; see top-of-file comment
       Array.from(selectedCredentialIds),
       exportPassphrase.length >= 8 ? exportPassphrase : undefined,
     );
@@ -425,7 +395,7 @@ export function ExportSelectionModal({
 
             {/* Category sections */}
             <div className="space-y-3">
-              {visibleCategories.map((cat) => (
+              {categories.map((cat) => (
                 <CategorySection
                   key={cat.key}
                   config={cat}
