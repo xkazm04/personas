@@ -15,6 +15,7 @@
 import { AlertCircle, Heart, Lightbulb } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 import type { UnifiedInboxItem } from '../../../types';
 import { DetailHeader } from './DetailHeader';
@@ -48,7 +49,7 @@ export function HealthDetail({ item }: HealthDetailProps) {
             ].join(' ')}
           >
             <AlertCircle className="w-3.5 h-3.5" />
-            <span className="truncate">{item.severity}</span>
+            <span className="truncate">{tokenLabel(t, 'severity', item.severity)}</span>
           </span>
         </div>
 
