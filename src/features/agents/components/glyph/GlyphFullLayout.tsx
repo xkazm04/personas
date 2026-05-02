@@ -53,17 +53,15 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
 
-  // "Compose" = no active build session has progressed beyond pre-launch.
-  // Drives the center-of-sigil affordance: click → opens the intent
-  // overlay. Failed / cancelled fall through so users can retry; once a
-  // session is initializing/analyzing/resolving/awaiting_input or has
-  // produced a draft, the affordance flips off and the center adopts
-  // its phase-specific content.
-  const isCompose =
-    !isBuilding
-    && !hasDesignResult
-    && buildPhase !== "awaiting_input"
-    && buildPhase !== "initializing";
+  // "Compose" = no active build session yet. The authoritative signal
+  // is `buildSessionId === null` — buildPhase alone is unreliable
+  // because the Zustand slice can leave it on "initializing" when no
+  // session exists (default value, or stale state after a session was
+  // removed). Using buildSessionId means: any active or pending session
+  // → not compose; no session → compose, regardless of phase. Also
+  // guards against `hasDesignResult` true on a hydrated promoted
+  // persona — that's not a fresh-build state either.
+  const isCompose = buildSessionId === null && !hasDesignResult;
   const hasPending = (pendingQuestions?.length ?? 0) > 0;
   const isRefining = isBuilding && hasPending;
   const isBuildingOnly = isBuilding && !hasPending;
