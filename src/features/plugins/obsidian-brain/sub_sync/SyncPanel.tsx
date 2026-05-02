@@ -55,11 +55,19 @@ export default function SyncPanel() {
     setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
   }, [personas]);
 
+  const deselectAll = useCallback(() => {
+    setSelectedPersonaIds(new Set());
+  }, []);
+
   const pushSync = useCallback(async () => {
     setPushing(true);
     setSyncRunning(true);
     try {
-      const ids = selectedPersonaIds.size > 0 ? [...selectedPersonaIds] : undefined;
+      // Always send the explicit selection. Per @/api/obsidianBrain contract,
+      // `undefined` means "sync ALL personas" — sending it here when the user
+      // could have actively deselected everything would silently overwrite
+      // their vault. The API short-circuits an empty array to a no-op result.
+      const ids = [...selectedPersonaIds];
       const result = await obsidianBrainPushSync(ids);
       setPushResult(result);
       setLastSyncAt(new Date().toISOString());
@@ -94,13 +102,16 @@ export default function SyncPanel() {
   const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {
       await obsidianBrainResolveConflict(conflict, resolution);
-      setConflicts((prev) => prev.filter((c) => c.id !== conflict.id));
-      setPendingConflicts(Math.max(0, conflicts.length - 1));
+      setConflicts((prev) => {
+        const next = prev.filter((c) => c.id !== conflict.id);
+        setPendingConflicts(next.length);
+        return next;
+      });
       addToast(`Conflict resolved (${resolution})`, 'success');
     } catch (e) {
       addToast(`Resolution failed: ${e}`, 'error');
     }
-  }, [conflicts.length, addToast, setPendingConflicts]);
+  }, [addToast, setPendingConflicts]);
 
   if (!connected) {
     return (
@@ -133,11 +144,14 @@ export default function SyncPanel() {
           <div className="flex gap-3">
             <button
               onClick={pushSync}
-              disabled={pushing || pulling}
+              disabled={pushing || pulling || selectedPersonaIds.size === 0}
               className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
+              title={selectedPersonaIds.size === 0 ? 'Select at least one persona to push' : undefined}
             >
               {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
-              {pushing ? 'Pushing...' : 'Push to Vault'}
+              {pushing
+                ? 'Pushing...'
+                : `Push ${selectedPersonaIds.size} ${selectedPersonaIds.size === 1 ? 'Persona' : 'Personas'}`}
             </button>
             <button
               onClick={pullSync}
@@ -153,9 +167,18 @@ export default function SyncPanel() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <p className="typo-label text-foreground/90">Select personas to push</p>
-              <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
-                Select all
-              </button>
+              <div className="flex items-center gap-2">
+                <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
+                  Select all
+                </button>
+                <button
+                  onClick={deselectAll}
+                  disabled={selectedPersonaIds.size === 0}
+                  className="typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring rounded px-1.5 py-0.5 disabled:opacity-40"
+                >
+                  Deselect all
+                </button>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {personas.map((p) => (
