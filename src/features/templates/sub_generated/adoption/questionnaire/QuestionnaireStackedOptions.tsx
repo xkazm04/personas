@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check } from 'lucide-react';
-import { MOTION } from '../../../animationPresets';
+import { MOTION } from '@/lib/utils/animation/animationPresets';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { QuestionnaireNormalizedOption } from './types';
 

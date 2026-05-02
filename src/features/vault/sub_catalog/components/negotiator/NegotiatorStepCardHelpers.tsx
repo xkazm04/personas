@@ -4,7 +4,7 @@ import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
   ShieldCheck, Copy, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNegotiator';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
+import { MOTION_TIMING } from '@/lib/utils/animation/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { FieldCaptureRow } from '@/features/vault/sub_credentials/components/forms/FieldCaptureRow';
 import { useTranslation } from '@/i18n/useTranslation';

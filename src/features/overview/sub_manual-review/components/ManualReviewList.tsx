@@ -16,7 +16,7 @@ import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/rev
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { BulkActionBar } from './BulkActionBar';
-import { dashboardItem } from '@/features/templates/animationPresets';
+import { dashboardItem } from '@/lib/utils/animation/animationPresets';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
 

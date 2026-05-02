@@ -2,7 +2,7 @@ import { CheckCircle, AlertTriangle, XCircle, Lightbulb, type LucideIcon } from 
 import { motion, type Variants } from 'framer-motion';
 import type { DesignTestResult } from '@/lib/types/designTypes';
 import { FEASIBILITY_COLORS } from '@/lib/utils/designTokens';
-import { useTemplateMotion, REDUCED_FRAMER } from '@/features/templates/animationPresets';
+import { useTemplateMotion, REDUCED_FRAMER } from '@/lib/utils/animation/animationPresets';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const listContainer: Variants = {

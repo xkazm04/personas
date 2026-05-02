@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
-import { useTemplateMotion } from '@/features/templates/animationPresets';
+import { useTemplateMotion } from '@/lib/utils/animation/animationPresets';
 import { useTemplateCardData } from '../useTemplateCardData';
 import { TemplateCardHeader } from './TemplateCardHeader';
 import { TemplateCardBody } from './TemplateCardBody';

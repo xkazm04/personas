@@ -6,7 +6,7 @@ import {
   StepHeader,
 } from '@/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers';
 import type { NegotiatorStepCardProps } from '@/features/vault/sub_catalog/components/negotiator/NegotiatorStepCardHelpers';
-import { MOTION_TIMING } from '@/features/templates/animationPresets';
+import { MOTION_TIMING } from '@/lib/utils/animation/animationPresets';
 import { StepExpandedContent } from './StepActions';
 
 export function NegotiatorStepCard({

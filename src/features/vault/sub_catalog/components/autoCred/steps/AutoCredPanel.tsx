@@ -5,7 +5,7 @@ import { createLogger } from '@/lib/log';
 
 const logger = createLogger('auto-cred');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { TRANSITION_SLOW } from '@/features/templates/animationPresets';
+import { TRANSITION_SLOW } from '@/lib/utils/animation/animationPresets';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
