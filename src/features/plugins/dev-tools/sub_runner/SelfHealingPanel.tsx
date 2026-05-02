@@ -13,11 +13,24 @@ import type { DevTask } from '@/lib/bindings/DevTask';
 // Failure pattern analysis
 // ---------------------------------------------------------------------------
 
+type PatternColor = 'red' | 'orange' | 'amber' | 'violet' | 'primary';
+
+// Static class bundles so Tailwind's JIT can detect every class at build time.
+// `text-${color}-400` template strings are invisible to the JIT and silently
+// produce no styles, so the failure-row icons stayed unstyled.
+const PATTERN_ICON_CLASSES: Record<PatternColor, string> = {
+  red:     'text-red-400',
+  orange:  'text-orange-400',
+  amber:   'text-amber-400',
+  violet:  'text-violet-400',
+  primary: 'text-primary',
+};
+
 interface FailurePattern {
   type: 'test_failure' | 'build_error' | 'timeout' | 'dependency' | 'permission' | 'unknown';
   label: string;
   icon: typeof AlertTriangle;
-  color: string;
+  color: PatternColor;
   autoFixable: boolean;
   suggestedAction: string;
 }
@@ -166,7 +179,7 @@ export function SelfHealingPanel({ onRetryTask }: SelfHealingPanelProps) {
           const attempt = attempts.find((a) => a.taskId === task.id);
           return (
             <div key={task.id} className="flex items-center gap-3 px-4 py-3">
-              <Icon className={`w-4 h-4 text-${pattern.color}-400 flex-shrink-0`} />
+              <Icon className={`w-4 h-4 ${PATTERN_ICON_CLASSES[pattern.color]} flex-shrink-0`} />
               <div className="flex-1 min-w-0">
                 <p className="text-md text-foreground truncate">{task.title}</p>
                 <div className="flex items-center gap-2 mt-0.5">

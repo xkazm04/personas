@@ -5,12 +5,25 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
+type StepColor = 'violet' | 'blue' | 'amber' | 'emerald' | 'red';
+
+// Static class bundles so Tailwind's JIT can detect every class at build time.
+// `bg-${color}-500/15` style template strings are invisible to the JIT and
+// silently produce no styles, so the icon tiles stayed unstyled.
+const STEP_COLOR_CLASSES: Record<StepColor, { tile: string; icon: string }> = {
+  violet:  { tile: 'bg-violet-500/15 border-violet-500/25',   icon: 'text-violet-400'  },
+  blue:    { tile: 'bg-blue-500/15 border-blue-500/25',       icon: 'text-blue-400'    },
+  amber:   { tile: 'bg-amber-500/15 border-amber-500/25',     icon: 'text-amber-400'   },
+  emerald: { tile: 'bg-emerald-500/15 border-emerald-500/25', icon: 'text-emerald-400' },
+  red:     { tile: 'bg-red-500/15 border-red-500/25',         icon: 'text-red-400'     },
+};
+
 export interface FlowStep {
   id: string;
   label: string;
   description: string;
   icon: typeof Bot;
-  color: string;
+  color: StepColor;
   status: 'idle' | 'configured' | 'active' | 'error';
 }
 
@@ -50,8 +63,8 @@ export function FlowStepsList({ steps }: { steps: FlowStep[] }) {
             : step.status === 'configured' ? 'bg-primary/5'
             : 'bg-card/20 opacity-75'
           }`}>
-            <div className={`w-8 h-8 rounded-interactive bg-${step.color}-500/15 border border-${step.color}-500/25 flex items-center justify-center flex-shrink-0`}>
-              <Icon className={`w-4 h-4 text-${step.color}-400`} />
+            <div className={`w-8 h-8 rounded-interactive border ${STEP_COLOR_CLASSES[step.color].tile} flex items-center justify-center flex-shrink-0`}>
+              <Icon className={`w-4 h-4 ${STEP_COLOR_CLASSES[step.color].icon}`} />
             </div>
             <span className="typo-card-label shrink-0">{step.label}</span>
             <span className="typo-body text-foreground shrink-0">·</span>
