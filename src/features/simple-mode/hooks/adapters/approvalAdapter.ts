@@ -4,12 +4,7 @@
  */
 import type { ManualReviewItem } from '@/lib/types/types';
 import { normalizeSeverity, type UnifiedInboxItem } from '../../types';
-
-interface PersonaSummary {
-  personaName: string;
-  personaIcon: string | null;
-  personaColor: string | null;
-}
+import type { PersonaSummary } from './types';
 
 export function adaptApproval(
   review: ManualReviewItem,

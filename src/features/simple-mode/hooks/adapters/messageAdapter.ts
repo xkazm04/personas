@@ -5,12 +5,7 @@
  */
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { type Severity, type UnifiedInboxItem } from '../../types';
-
-interface PersonaSummary {
-  personaName: string;
-  personaIcon: string | null;
-  personaColor: string | null;
-}
+import type { PersonaSummary } from './types';
 
 function priorityToSeverity(priority: unknown): Severity {
   if (typeof priority !== 'string') return 'info';

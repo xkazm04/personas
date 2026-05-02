@@ -4,12 +4,7 @@
  */
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { normalizeSeverity, type UnifiedInboxItem } from '../../types';
-
-interface PersonaSummary {
-  personaName: string;
-  personaIcon: string | null;
-  personaColor: string | null;
-}
+import type { PersonaSummary } from './types';
 
 export function adaptHealing(
   issue: PersonaHealingIssue,

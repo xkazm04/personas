@@ -33,16 +33,11 @@ import {
   adaptOutput,
   isMessageOutput,
 } from './adapters';
+import type { PersonaSummary } from './adapters/types';
 
 /** Maximum items returned after merge + sort. Simple mode is a quick-scan
  *  surface; deeper history lives in Power mode. */
 const MAX_ITEMS = 50;
-
-interface PersonaSummary {
-  personaName: string;
-  personaIcon: string | null;
-  personaColor: string | null;
-}
 
 function resolvePersonaFromIndex(
   index: Map<string, Persona>,

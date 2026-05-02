@@ -17,12 +17,7 @@
  */
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
 import type { UnifiedInboxItem } from '../../types';
-
-interface PersonaSummary {
-  personaName: string;
-  personaIcon: string | null;
-  personaColor: string | null;
-}
+import type { PersonaSummary } from './types';
 
 /**
  * Locked keyword list for the output heuristic fallback.
