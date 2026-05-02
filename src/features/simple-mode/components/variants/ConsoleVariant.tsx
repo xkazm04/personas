@@ -469,49 +469,54 @@ interface InboxRowProps {
 
 function InboxRow({ t, tFull, item, onClick }: InboxRowProps) {
   const tone = toneForInbox(item);
-  // Phase 09 will promote these to real per-item actions; for now they share
-  // the row's fall-through to the Inbox tab but stop the row's onClick so the
-  // button itself is visibly actionable (still routes to Inbox today).
+  // Quick action buttons are siblings of the row-click button, not children —
+  // nesting <button> inside <button> is invalid HTML and confuses screen readers.
   const onAction = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     onClick();
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-foreground/[0.04] transition-colors"
-    >
-      <div
-        className={[
-          'w-7 h-7 rounded-2xl border flex items-center justify-center shrink-0',
-          `simple-accent-${tone}-border`,
-          `simple-accent-${tone}-soft`,
-          `simple-accent-${tone}-text`,
-        ].join(' ')}
+    <div className="flex items-stretch hover:bg-foreground/[0.04] transition-colors">
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex-1 min-w-0 text-left px-4 py-3 flex items-start gap-3"
       >
-        <KindIcon kind={item.kind} />
-      </div>
+        <div
+          className={[
+            'w-7 h-7 rounded-2xl border flex items-center justify-center shrink-0',
+            `simple-accent-${tone}-border`,
+            `simple-accent-${tone}-soft`,
+            `simple-accent-${tone}-text`,
+          ].join(' ')}
+        >
+          <KindIcon kind={item.kind} />
+        </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="typo-body simple-display text-foreground truncate">
-          {item.title}
+        <div className="flex-1 min-w-0">
+          <div className="typo-body simple-display text-foreground truncate">
+            {item.title}
+          </div>
+          <div className="typo-caption text-foreground/55 flex items-center gap-1.5">
+            <span className="italic truncate">{item.personaName}</span>
+            <span className="text-foreground/30">·</span>
+            <span className="shrink-0">{formatRelativeTime(item.createdAt, tFull)}</span>
+          </div>
         </div>
-        <div className="typo-caption text-foreground/55 flex items-center gap-1.5">
-          <span className="italic truncate">{item.personaName}</span>
-          <span className="text-foreground/30">·</span>
-          <span className="shrink-0">{formatRelativeTime(item.createdAt, tFull)}</span>
-        </div>
-      </div>
+      </button>
 
       {item.kind === 'approval' ? (
-        <QuickActionButton tone="amber" label={t.hero_cta_review} onClick={onAction} />
+        <div className="flex items-center pr-4">
+          <QuickActionButton tone="amber" label={t.hero_cta_review} onClick={onAction} />
+        </div>
       ) : null}
       {item.severity === 'critical' && item.kind !== 'approval' ? (
-        <QuickActionButton tone="rose" label={t.hero_cta_fix} onClick={onAction} />
+        <div className="flex items-center pr-4">
+          <QuickActionButton tone="rose" label={t.hero_cta_fix} onClick={onAction} />
+        </div>
       ) : null}
-    </button>
+    </div>
   );
 }
 
