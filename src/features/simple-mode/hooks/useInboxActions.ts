@@ -142,13 +142,16 @@ export function useInboxActions(item: UnifiedInboxItem | null): InboxActions {
         };
 
       case 'output':
-        // Output items are reserved (see types.ts); the hook still returns a
-        // usable action so future emission lands cleanly.
+        // Output items wrap PersonaMessage rows (see outputAdapter.ts); their
+        // `source` is the underlying message id, so mark-as-read calls the
+        // same store action as the message branch.
         return {
           primary: {
             labelKey: 'action_mark_read',
             tone: 'emerald',
-            run: async () => {},
+            run: async () => {
+              await markMessageAsRead(item.source);
+            },
           },
           secondary: null,
           tertiary: null,
