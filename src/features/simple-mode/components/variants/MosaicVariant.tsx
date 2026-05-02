@@ -200,7 +200,7 @@ export default function MosaicVariant() {
           onCreateAssistant={startOnboarding}
         />
         {secondary.map((item) => (
-          <SecondaryTile key={item.id} t={t.simple_mode} item={item} />
+          <SecondaryTile key={item.id} item={item} />
         ))}
         {personaSlots.map((p) => (
           <PersonaTile key={p.id} t={t.simple_mode} persona={p} />
@@ -441,7 +441,6 @@ function HeroIcon({ kind, tone }: { kind: UnifiedInboxItem['kind']; tone: Tone }
 // ---------------------------------------------------------------------------
 
 interface SecondaryTileProps {
-  t: TMap;
   item: UnifiedInboxItem;
 }
 
