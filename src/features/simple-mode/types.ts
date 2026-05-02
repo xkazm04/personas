@@ -11,9 +11,8 @@ export type Severity = 'critical' | 'warning' | 'info';
 
 /** Discriminant tag for the `UnifiedInboxItem` tagged union.
  *
- *  Note: `'output'` is reserved for Phase 07 (Mosaic variant) and is not
- *  emitted by `useUnifiedInbox` yet. It is included in the union so renderers
- *  can pattern-match exhaustively against a stable shape. */
+ *  `'output'` items are emitted by `useUnifiedInbox` via `outputAdapter`; see
+ *  `./hooks/adapters/outputAdapter.ts` for the classification rules. */
 export type InboxKind = 'approval' | 'message' | 'output' | 'health';
 
 /** Fields common to every inbox item regardless of `kind`. */
@@ -66,7 +65,7 @@ export type UnifiedInboxItem =
       kind: 'output';
       data: {
         executionId: string;
-        /** Sketch shape for Phase 07 to populate. Phase 06 does NOT emit these items. */
+        /** First 200 chars of the message body for card-face display. */
         summary: string;
       };
     })
