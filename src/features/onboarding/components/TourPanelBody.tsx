@@ -181,7 +181,7 @@ function GenericStepContent({ step, subStepIndex, colors }: {
                   i === subStepIndex ? `${colors.accent} ${colors.subtle}` : 'border-primary/15'
                 }`} />
               )}
-              <p className={`text-sm leading-relaxed ${i <= subStepIndex ? 'text-foreground' : 'text-foreground'}`}>
+              <p className="text-sm leading-relaxed text-foreground">
                 {sub.hint}
               </p>
             </div>
