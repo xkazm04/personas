@@ -47,7 +47,13 @@ export default function TrainingBaseline() {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const savedCount = questions.filter((q) => q.saved).length;
-  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, [currentIdx]);
+  // Only scroll once the interview is live; in 'topic' phase scrollRef is null
+  // anyway, but `block: 'nearest'` keeps the active question stable when it's
+  // already in view rather than re-centering on every advance.
+  useEffect(() => {
+    if (phase !== 'interview') return;
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [currentIdx, phase]);
   useEffect(() => {
     if (!activeTwinId) { setGroundingFacts([]); return; }
     twinApi.listPendingMemories(activeTwinId, 'approved').then((mems) => {
@@ -244,7 +250,7 @@ export default function TrainingBaseline() {
                 <div className="max-w-2xl mx-auto flex gap-2 items-end">
                   <textarea ref={answerRef} value={answerDraft} onChange={(e) => setAnswerDraft(e.target.value)} onKeyDown={handleKeyDown}
                     placeholder={t.training.answerPlaceholder} disabled={saving || followupLoading || summarizing} rows={1} autoFocus
-                    className="flex-1 resize-none rounded-card border border-primary/10 bg-background px-4 py-3 typo-body text-foreground placeholder:text-foreground focus-ring disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
+                    className="flex-1 resize-none rounded-card border border-primary/10 bg-background px-4 py-3 typo-body text-foreground placeholder:text-foreground/45 focus-ring disabled:opacity-50 min-h-[44px] max-h-[160px] transition-colors"
                     onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 160) + 'px'; }} />
                   {isOnFollowup && (
                     <button onClick={() => void handleSkipFollowup()} disabled={saving || followupLoading}
