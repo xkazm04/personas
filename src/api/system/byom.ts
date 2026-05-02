@@ -8,6 +8,12 @@ import type { ProviderAuditEntry } from "@/lib/bindings/ProviderAuditEntry";
 import type { ProviderUsageStats } from "@/lib/bindings/ProviderUsageStats";
 import type { ProviderUsageTimeseries } from "@/lib/bindings/ProviderUsageTimeseries";
 import type { ProviderConnectionResult } from "@/lib/bindings/ProviderConnectionResult";
+// Aliased to `RustPolicyWarning` to disambiguate from `PolicyWarning` in
+// `features/settings/sub_byom/libs/byomHelpers.ts`, which is a richer
+// frontend-only shape (adds `ruleType` + `ruleIndex` for per-rule UI
+// highlighting). Both shapes share `severity` + `message`. If the local
+// shape graduates into the canonical Rust binding, this alias collapses
+// and consumers can import `PolicyWarning` directly.
 import type { PolicyWarning as RustPolicyWarning } from "@/lib/bindings/PolicyWarning";
 import type { PolicyWarningSeverity } from "@/lib/bindings/PolicyWarningSeverity";
 export type { TaskComplexity, RoutingRule, ComplianceRule, ByomPolicy, ProviderAuditEntry, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult, RustPolicyWarning, PolicyWarningSeverity };
