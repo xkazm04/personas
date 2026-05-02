@@ -1,6 +1,5 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback } from 'react';
-import * as Sentry from "@sentry/react";
 import {
   getExportStats,
   exportFull,
@@ -46,7 +45,10 @@ export function useDataPortability() {
         setStats(s);
         setStatsStatus('success');
       })
-      .catch(() => setStatsStatus('error'));
+      .catch((err) => {
+        silentCatch("useDataPortability:getExportStats")(err);
+        setStatsStatus('error');
+      });
   }, []);
 
   const handleExportFull = useCallback(async (passphrase?: string) => {
@@ -57,7 +59,7 @@ export function useDataPortability() {
       const saved = await exportFull(passphrase);
       setExportStatus(saved ? 'success' : 'idle');
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:exportFull")(e);
       setErrorMsg(errMsg(e, "Export failed"));
       setExportStatus('error');
     }
@@ -77,7 +79,7 @@ export function useDataPortability() {
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:exportSelective")(e);
       setErrorMsg(errMsg(e, "Selective export failed"));
       setExportStatus('error');
     }
@@ -98,7 +100,7 @@ export function useDataPortability() {
         setImportStatus('idle');
       }
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:importPortabilityBundle")(e);
       setErrorMsg(errMsg(e, "Import failed"));
       setImportStatus('error');
     }
@@ -120,7 +122,7 @@ export function useDataPortability() {
         setCredExportPassphrase('');
       }
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:exportCredentials")(e);
       setErrorMsg(errMsg(e, "Credential export failed"));
       setCredExportStatus('error');
     }
@@ -160,7 +162,7 @@ export function useDataPortability() {
         setCredImportStatus('idle');
       }
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:importCredentials")(e);
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
@@ -186,7 +188,7 @@ export function useDataPortability() {
         setCredImportStatus('idle');
       }
     } catch (e) {
-      Sentry.captureException(e);
+      silentCatch("useDataPortability:importCredentials")(e);
       setErrorMsg(errMsg(e, "Credential import failed"));
       setCredImportStatus('error');
     }
