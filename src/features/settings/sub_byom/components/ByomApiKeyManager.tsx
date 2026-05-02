@@ -16,37 +16,46 @@ function logSecretSafeError(op: string, settingsKey: string, err: unknown): void
 }
 
 /** Definition of a provider API key entry that maps to a backend settings_key. */
+type ProviderLabelKey =
+  | 'provider_ollama_label'
+  | 'provider_litellm_base_url_label'
+  | 'provider_litellm_master_key_label';
+type ProviderDescriptionKey =
+  | 'provider_ollama_description'
+  | 'provider_litellm_base_url_description'
+  | 'provider_litellm_master_key_description';
+
 interface ProviderKeyDef {
   /** The settings key used in the app_settings table. */
   settingsKey: string;
-  /** Human-readable provider name. */
-  label: string;
-  /** Description shown below the label. */
-  description: string;
+  /** i18n key on t.settings.byom for the provider label. */
+  labelKey: ProviderLabelKey;
+  /** i18n key on t.settings.byom for the description shown below the label. */
+  descriptionKey: ProviderDescriptionKey;
   /** Whether this is a URL field rather than a secret key. */
   isUrl?: boolean;
-  /** Placeholder text for the input. */
+  /** Placeholder text — technical example, not translated. */
   placeholder: string;
 }
 
 const PROVIDER_KEYS: ProviderKeyDef[] = [
   {
     settingsKey: 'ollama_api_key',
-    label: 'Ollama',
-    description: 'Cloud API key for Ollama-hosted models (Qwen3, GLM-5, Kimi K2.5)',
+    labelKey: 'provider_ollama_label',
+    descriptionKey: 'provider_ollama_description',
     placeholder: 'sk-...',
   },
   {
     settingsKey: 'litellm_base_url',
-    label: 'LiteLLM Base URL',
-    description: 'Proxy base URL for LiteLLM-compatible endpoints',
+    labelKey: 'provider_litellm_base_url_label',
+    descriptionKey: 'provider_litellm_base_url_description',
     isUrl: true,
     placeholder: 'http://localhost:4000',
   },
   {
     settingsKey: 'litellm_master_key',
-    label: 'LiteLLM Master Key',
-    description: 'Authentication key for LiteLLM proxy',
+    labelKey: 'provider_litellm_master_key_label',
+    descriptionKey: 'provider_litellm_master_key_description',
     placeholder: 'sk-...',
   },
 ];
@@ -267,7 +276,7 @@ function KeyEntryRow({
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground">{entry.def.label}</span>
+          <span className="typo-body font-medium text-foreground">{s[entry.def.labelKey]}</span>
           <ConnectionBadge state={entry.connectionState} />
         </div>
         <div className="flex items-center gap-1.5">
@@ -281,7 +290,7 @@ function KeyEntryRow({
               {entry.connectionState === 'testing' ? (
                 <span className="flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Testing
+                  {s.testing}
                 </span>
               ) : (
                 s.verify
@@ -300,7 +309,7 @@ function KeyEntryRow({
         </div>
       </div>
 
-      <p className="typo-caption text-foreground">{entry.def.description}</p>
+      <p className="typo-caption text-foreground">{s[entry.def.descriptionKey]}</p>
 
       {/* Value display / editor */}
       {entry.editing ? (
@@ -323,14 +332,14 @@ function KeyEntryRow({
             onClick={onSave}
             disabled={!isDirty}
             className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
-            title="Save"
+            title={s.save_key_title}
           >
             <Check className="w-4 h-4" />
           </button>
           <button
             onClick={onCancel}
             className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/50 transition-all"
-            title="Cancel"
+            title={s.cancel_key_title}
           >
             <X className="w-4 h-4" />
           </button>
@@ -357,7 +366,7 @@ function KeyEntryRow({
                 onToggleReveal();
               }}
               className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
-              title={entry.revealed ? 'Hide' : 'Reveal'}
+              title={entry.revealed ? s.hide_key : s.reveal_key}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>

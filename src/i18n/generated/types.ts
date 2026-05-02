@@ -7360,6 +7360,16 @@ export type Translations = {
       save: string;
       stored: string;
       error: string;
+      hide_key: string;
+      reveal_key: string;
+      save_key_title: string;
+      cancel_key_title: string;
+      provider_ollama_label: string;
+      provider_ollama_description: string;
+      provider_litellm_base_url_label: string;
+      provider_litellm_base_url_description: string;
+      provider_litellm_master_key_label: string;
+      provider_litellm_master_key_description: string;
       routing_title: string;
       routing_hint: string;
       routing_empty: string;
