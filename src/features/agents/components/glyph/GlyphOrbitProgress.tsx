@@ -66,17 +66,22 @@ export function GlyphOrbitProgress({
   }, [active, mode]);
 
   // ── Drive the arc + comet imperatively per mode ───────────────────────
-  // Imperative control lets the "completing" tween pick up from whatever
-  // mid-cycle position the loading loop reached, instead of jumping back
-  // to the start of the sweep when the prop changes.
+  // Loading uses keyframe arrays — single-target with `repeat: Infinity`
+  // can no-op after the first cycle (framer-motion treats loop 2's
+  // "current" as the previous loop's destination → tweens 0→0). The
+  // explicit [from, to] keyframes guarantee each cycle redraws the arc
+  // from invisible to full.
+  //
+  // Completing uses a single target so the tween picks up from the
+  // current mid-cycle value and races to 360° in 400ms.
   useEffect(() => {
     if (mode === "loading") {
       void arcControls.start({
-        strokeDashoffset: 0,
+        strokeDashoffset: [circumference, 0],
         transition: { duration, ease: "linear", repeat: Infinity },
       });
       void cometControls.start({
-        rotate: 270,
+        rotate: [-90, 270],
         transition: { duration, ease: "linear", repeat: Infinity },
       });
     } else if (mode === "completing") {
@@ -89,7 +94,7 @@ export function GlyphOrbitProgress({
         transition: { duration: COMPLETION_DURATION_S, ease: [0.16, 1, 0.3, 1] },
       });
     }
-  }, [mode, duration, arcControls, cometControls]);
+  }, [mode, duration, arcControls, cometControls, circumference]);
 
   if (mode === "off") return null;
 
