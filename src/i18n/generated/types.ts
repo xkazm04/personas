@@ -7294,6 +7294,26 @@ export type Translations = {
       defaults_heading: string;
       defaults_description: string;
       engine_not_capable: string;
+      op_persona_execution_label: string;
+      op_persona_execution_description: string;
+      op_design_analysis_label: string;
+      op_design_analysis_description: string;
+      op_credential_design_label: string;
+      op_credential_design_description: string;
+      op_credential_healthcheck_label: string;
+      op_credential_healthcheck_description: string;
+      op_n8n_transform_label: string;
+      op_n8n_transform_description: string;
+      op_template_adopt_label: string;
+      op_template_adopt_description: string;
+      op_test_generation_label: string;
+      op_test_generation_description: string;
+      op_healing_analysis_label: string;
+      op_healing_analysis_description: string;
+      op_recipe_execution_label: string;
+      op_recipe_execution_description: string;
+      op_query_debug_label: string;
+      op_query_debug_description: string;
     };
     ambient: {
       title: string;

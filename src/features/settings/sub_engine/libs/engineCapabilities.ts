@@ -25,63 +25,37 @@ export type CliOperation =
   | 'recipe_execution'
   | 'query_debug';
 
+/** i18n keys on t.settings.engine for each operation's display strings.
+ *  Per-op since labels and descriptions translate independently of the
+ *  CliOperation id (which is a backend identifier). */
+export type CliOperationLabelKey =
+  | 'op_persona_execution_label' | 'op_design_analysis_label' | 'op_credential_design_label'
+  | 'op_credential_healthcheck_label' | 'op_n8n_transform_label' | 'op_template_adopt_label'
+  | 'op_test_generation_label' | 'op_healing_analysis_label' | 'op_recipe_execution_label'
+  | 'op_query_debug_label';
+export type CliOperationDescriptionKey =
+  | 'op_persona_execution_description' | 'op_design_analysis_description' | 'op_credential_design_description'
+  | 'op_credential_healthcheck_description' | 'op_n8n_transform_description' | 'op_template_adopt_description'
+  | 'op_test_generation_description' | 'op_healing_analysis_description' | 'op_recipe_execution_description'
+  | 'op_query_debug_description';
+
 export interface CliOperationMeta {
   id: CliOperation;
-  label: string;
-  description: string;
+  labelKey: CliOperationLabelKey;
+  descriptionKey: CliOperationDescriptionKey;
 }
 
 export const CLI_OPERATIONS: CliOperationMeta[] = [
-  {
-    id: 'persona_execution',
-    label: 'Persona Execution',
-    description: 'Protocol-compliant output with outcome_assessment, user_message, agent_memory',
-  },
-  {
-    id: 'design_analysis',
-    label: 'Persona Design',
-    description: 'Structured prompts from persona briefs -- DESIGN_OUTPUT_SCHEMA JSON',
-  },
-  {
-    id: 'credential_design',
-    label: 'Credential Design',
-    description: 'Connector definitions with fields, healthchecks -- CREDENTIAL_DESIGN_OUTPUT_SCHEMA',
-  },
-  {
-    id: 'credential_healthcheck',
-    label: 'Credential Healthcheck',
-    description: 'API healthcheck endpoint design with {{field_key}} placeholders',
-  },
-  {
-    id: 'n8n_transform',
-    label: 'N8N Transform',
-    description: 'TRANSFORM_QUESTIONS or section-delimited persona from n8n workflows',
-  },
-  {
-    id: 'template_adopt',
-    label: 'Template Adoption',
-    description: 'TRANSFORM_QUESTIONS or persona JSON from template definitions',
-  },
-  {
-    id: 'test_generation',
-    label: 'Test Scenario Generation',
-    description: 'TestScenario[] with mock tools, expected_tool_sequence, edge cases',
-  },
-  {
-    id: 'healing_analysis',
-    label: 'Healing Diagnosis',
-    description: 'Root-cause analysis from error logs and connector failures',
-  },
-  {
-    id: 'recipe_execution',
-    label: 'Recipe Execution',
-    description: 'Run automation recipes with prompt templates and input schemas',
-  },
-  {
-    id: 'query_debug',
-    label: 'Query Debug',
-    description: 'Fix broken SQL in ```sql code blocks -- rejects JS/TS/Python output',
-  },
+  { id: 'persona_execution',      labelKey: 'op_persona_execution_label',      descriptionKey: 'op_persona_execution_description' },
+  { id: 'design_analysis',        labelKey: 'op_design_analysis_label',        descriptionKey: 'op_design_analysis_description' },
+  { id: 'credential_design',      labelKey: 'op_credential_design_label',      descriptionKey: 'op_credential_design_description' },
+  { id: 'credential_healthcheck', labelKey: 'op_credential_healthcheck_label', descriptionKey: 'op_credential_healthcheck_description' },
+  { id: 'n8n_transform',          labelKey: 'op_n8n_transform_label',          descriptionKey: 'op_n8n_transform_description' },
+  { id: 'template_adopt',         labelKey: 'op_template_adopt_label',         descriptionKey: 'op_template_adopt_description' },
+  { id: 'test_generation',        labelKey: 'op_test_generation_label',        descriptionKey: 'op_test_generation_description' },
+  { id: 'healing_analysis',       labelKey: 'op_healing_analysis_label',       descriptionKey: 'op_healing_analysis_description' },
+  { id: 'recipe_execution',       labelKey: 'op_recipe_execution_label',       descriptionKey: 'op_recipe_execution_description' },
+  { id: 'query_debug',            labelKey: 'op_query_debug_label',            descriptionKey: 'op_query_debug_description' },
 ];
 
 // ===========================================================================

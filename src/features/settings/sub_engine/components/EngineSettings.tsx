@@ -96,8 +96,8 @@ export default function EngineSettings() {
                     <OperationRow
                       key={op.id}
                       operation={op.id}
-                      label={op.label}
-                      description={op.description}
+                      label={s[op.labelKey]}
+                      description={s[op.descriptionKey]}
                       installedProviders={installedProviders}
                       isEnabled={isEnabled}
                       onToggle={toggle}
