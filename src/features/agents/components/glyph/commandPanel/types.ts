@@ -15,4 +15,8 @@ export interface CommandPanelProps {
   onKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement | HTMLInputElement>) => void;
   /** Optional — when absent, the variant hides the quick-setup area. */
   onQuickConfigChange?: (c: QuickConfigState) => void;
+  /** True while the build session is actively running (analyzing/resolving).
+   *  Drives the submit button's spinner so a click feels acknowledged
+   *  immediately, not after the layout finally swaps out of compose. */
+  isBuilding?: boolean;
 }

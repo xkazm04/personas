@@ -131,6 +131,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
                 launchDisabled={launchDisabled}
                 onKeyDown={handleLaunchKey}
                 onQuickConfigChange={onQuickConfigChange}
+                isBuilding={isBuilding}
               />
             </motion.div>
           )}

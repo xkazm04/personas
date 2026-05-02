@@ -27,6 +27,7 @@ import { ComposerEventPickerModal } from "./composer/ComposerEventPickerModal";
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
+  isBuilding,
 }: CommandPanelProps) {
   const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
   const [frequency, setFrequency] = useState<Frequency | null>(null);
@@ -105,7 +106,11 @@ export function CommandPanelComposer({
           onOpenTools={() => setToolsOpen(true)}
         />
 
-        <CommandPanelFooter launchDisabled={launchDisabled} onLaunch={onLaunch} />
+        <CommandPanelFooter
+          launchDisabled={launchDisabled}
+          onLaunch={onLaunch}
+          isBuilding={isBuilding}
+        />
       </motion.div>
 
       <ComposerSchedulePickerModal
