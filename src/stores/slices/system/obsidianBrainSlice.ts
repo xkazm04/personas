@@ -2,15 +2,6 @@ import type { StateCreator } from "zustand";
 import type { SystemStore } from "../../storeTypes";
 import type { ObsidianBrainTab } from "@/lib/types/types";
 
-export interface SyncLogEntryUI {
-  id: string;
-  syncType: string;
-  entityType: string;
-  action: string;
-  details: string | null;
-  createdAt: string;
-}
-
 export interface ObsidianBrainSlice {
   obsidianBrainTab: ObsidianBrainTab;
   obsidianVaultPath: string | null;
@@ -19,7 +10,6 @@ export interface ObsidianBrainSlice {
   obsidianSyncRunning: boolean;
   obsidianLastSyncAt: string | null;
   obsidianPendingConflicts: number;
-  obsidianSyncLog: SyncLogEntryUI[];
 
   // Google Drive cloud sync state
   obsidianDriveConnected: boolean;
@@ -38,9 +28,6 @@ export interface ObsidianBrainSlice {
   setObsidianSyncRunning: (running: boolean) => void;
   setObsidianLastSyncAt: (at: string | null) => void;
   setObsidianPendingConflicts: (count: number) => void;
-  appendObsidianSyncLog: (entry: SyncLogEntryUI) => void;
-  setObsidianSyncLog: (log: SyncLogEntryUI[]) => void;
-  clearObsidianSyncLog: () => void;
 
   // Google Drive actions
   setObsidianDriveConnected: (connected: boolean) => void;
@@ -51,8 +38,6 @@ export interface ObsidianBrainSlice {
   setObsidianDriveFileCount: (count: number) => void;
 }
 
-const MAX_LOG_ENTRIES = 200;
-
 export const createObsidianBrainSlice: StateCreator<SystemStore, [], [], ObsidianBrainSlice> = (set) => ({
   obsidianBrainTab: "setup" as ObsidianBrainTab,
   obsidianVaultPath: null,
@@ -61,7 +46,6 @@ export const createObsidianBrainSlice: StateCreator<SystemStore, [], [], Obsidia
   obsidianSyncRunning: false,
   obsidianLastSyncAt: null,
   obsidianPendingConflicts: 0,
-  obsidianSyncLog: [],
 
   // Google Drive defaults
   obsidianDriveConnected: false,
@@ -79,12 +63,6 @@ export const createObsidianBrainSlice: StateCreator<SystemStore, [], [], Obsidia
   setObsidianSyncRunning: (running) => set({ obsidianSyncRunning: running }),
   setObsidianLastSyncAt: (at) => set({ obsidianLastSyncAt: at }),
   setObsidianPendingConflicts: (count) => set({ obsidianPendingConflicts: count }),
-  appendObsidianSyncLog: (entry) =>
-    set((s) => ({
-      obsidianSyncLog: [entry, ...s.obsidianSyncLog].slice(0, MAX_LOG_ENTRIES),
-    })),
-  setObsidianSyncLog: (log) => set({ obsidianSyncLog: log }),
-  clearObsidianSyncLog: () => set({ obsidianSyncLog: [] }),
 
   // Google Drive actions
   setObsidianDriveConnected: (connected) => set({ obsidianDriveConnected: connected }),
