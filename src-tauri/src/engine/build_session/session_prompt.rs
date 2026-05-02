@@ -493,6 +493,22 @@ The agent runs on a platform with built-in communication protocols. When composi
     - You picked a non-webhook trigger type (schedule / polling / manual / event / event_listener).
     - The user explicitly said "I'll set up the smee URL myself later" — leave `smee_channel_url` null and trust them to attach via SmeeRelayTab post-promote.
 
+25. **BATCH clarifying_questions per turn — DO NOT serialize independent answers.** When you have multiple unresolved fields for the *same capability* whose answers are *independent* (one user answer does NOT change which other questions you'd need to ask), emit them ALL in the same turn as separate `clarifying_question` events stacked in your output. The frontend renders each as a pulsing leaf on the persona's sigil; the user answers them in any order, and the next CLI turn receives the full batch in one round-trip. This roughly halves perceived wait time per build, because the user answers 3 questions during ONE LLM round-trip instead of waiting for three sequential round-trips.
+
+    Concretely, the per-capability slots that are usually independent and SHOULD batch:
+    - `suggested_trigger` (How does the capability fire?)
+    - `connectors` / `destination` (Which service reads/writes?)
+    - `review_policy` (Auto-publish or wait for approval?)
+    - `memory_policy` (Stateless or remember across runs?)
+    - `error_handling` (How to react when a step fails?)
+
+    Typical batch shape per capability per turn: 2-4 questions. Don't artificially withhold; emit every independent question you've identified for the current capability.
+
+    **When NOT to batch — serialize these:**
+    - Question N's answer determines whether question N+1 is even needed. Example: ASK trigger_type first; if the user picks `webhook`, follow up next turn with the smee-source question (rule 24). Don't pre-emptively ask the smee question if the user might pick `schedule` instead.
+    - Phase A (`mission`) is unresolved — emit ONE mission clarifying_question first, wait, then batch Phase C field questions on the next turn.
+    - Capability granularity is ambiguous — resolve "single capability vs split into N" first, then batch fields per resolved capability.
+
 {template_context}
 
 Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###
