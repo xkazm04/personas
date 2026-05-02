@@ -25,12 +25,12 @@ interface BuildArgs {
 }
 
 const KIND_COLORS: Record<GraphNodeKind, string> = {
-  project: '#8b5cf6',    // violet
-  source:  '#3b82f6',    // blue
-  hypothesis: '#a855f7', // purple
-  experiment: '#10b981', // emerald
-  finding: '#06b6d4',    // cyan
-  report: '#ec4899',     // pink
+  project: 'rgb(139 92 246)',    // violet-500 (theme-stable across light/dark)
+  source: 'rgb(59 130 246)',     // blue-500
+  hypothesis: 'rgb(168 85 247)', // purple-500
+  experiment: 'rgb(16 185 129)', // emerald-500
+  finding: 'rgb(6 182 212)',     // cyan-500
+  report: 'rgb(236 72 153)',     // pink-500
 };
 
 const COLUMN_X: Record<GraphNodeKind, number> = {
@@ -68,8 +68,8 @@ export function buildGraph(args: BuildArgs): { nodes: Node<GraphNodeData>[]; edg
       type: 'default',
       animated: false,
       label,
-      style: { stroke: 'rgba(255,255,255,0.18)', strokeWidth: 1 },
-      labelStyle: { fill: 'rgba(255,255,255,0.5)', fontSize: 10 },
+      style: { stroke: 'rgb(var(--color-foreground) / 0.18)', strokeWidth: 1 },
+      labelStyle: { fill: 'rgb(var(--color-foreground) / 0.5)', fontSize: 10 },
     });
   };
 

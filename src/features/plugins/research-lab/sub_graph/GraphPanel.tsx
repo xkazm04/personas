@@ -164,7 +164,7 @@ export default function GraphPanel() {
               />
               <MiniMap
                 className="!bg-secondary/40 !border-primary/15 !rounded-modal"
-                maskColor="rgba(0,0,0,0.3)"
+                maskColor="rgb(var(--color-background) / 0.6)"
                 nodeColor={(n) => (n.data as GraphNodeData).color}
               />
             </ReactFlow>
