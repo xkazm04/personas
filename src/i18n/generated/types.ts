@@ -8429,6 +8429,22 @@ export type Translations = {
     retry: string;
     no_project_selected: string;
     select_project_hint: string;
+    monitoring_linked_toast: string;
+    monitoring_link_failed_toast: string;
+    credential_label: string;
+    org_slug_label: string;
+    org_label: string;
+    project_label: string;
+    discovering_orgs: string;
+    no_orgs_found: string;
+    select_organization: string;
+    pick_org_first: string;
+    loading_projects: string;
+    no_projects_in_org: string;
+    select_project_option: string;
+    sentry_discovery_failed: string;
+    try_auto_discovery: string;
+    enter_slugs_manually: string;
   };
   plugins: {
     title: string;
@@ -9749,6 +9765,7 @@ export type Translations = {
     anon_author: string;
     arxiv_search_hint: string;
     preview_action: string;
+    recent: string;
   };
   event_types: {
     webhook_received_label: string;

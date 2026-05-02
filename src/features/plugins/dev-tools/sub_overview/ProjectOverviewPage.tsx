@@ -344,7 +344,7 @@ function SentryProjectPicker({
   projectId: string;
   onLinked: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const po = t.project_overview;
   const addToast = useToastStore((s) => s.addToast);
 
@@ -414,9 +414,9 @@ function SentryProjectPicker({
         monitoringProjectSlug: `${orgSlug}/${projectSlug}`,
       });
       onLinked();
-      addToast('Monitoring linked', 'success');
+      addToast(po.monitoring_linked_toast, 'success');
     } catch {
-      addToast('Failed to link monitoring', 'error');
+      addToast(po.monitoring_link_failed_toast, 'error');
     } finally {
       setSaving(false);
     }
@@ -428,7 +428,7 @@ function SentryProjectPicker({
 
       {credentials.length > 1 && (
         <div className="space-y-1">
-          <label className="typo-caption text-foreground/70">Credential</label>
+          <label className="typo-caption text-foreground/70">{po.credential_label}</label>
           <select
             value={selectedCredId}
             onChange={(e) => setSelectedCredId(e.target.value)}
@@ -444,7 +444,7 @@ function SentryProjectPicker({
       {manualMode ? (
         <>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">Organization slug</label>
+            <label className="typo-caption text-foreground/70">{po.org_slug_label}</label>
             <input
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value.trim())}
@@ -453,7 +453,7 @@ function SentryProjectPicker({
             />
           </div>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">Project slug</label>
+            <label className="typo-caption text-foreground/70">{po.project_slug}</label>
             <input
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value.trim())}
@@ -465,7 +465,7 @@ function SentryProjectPicker({
       ) : (
         <>
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">Organization</label>
+            <label className="typo-caption text-foreground/70">{po.org_label}</label>
             <select
               value={orgSlug}
               onChange={(e) => setOrgSlug(e.target.value)}
@@ -473,7 +473,7 @@ function SentryProjectPicker({
               className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
             >
               <option value="" disabled>
-                {loadingOrgs ? 'Discovering organizations…' : orgs.length === 0 ? 'No orgs found' : 'Select an organization'}
+                {loadingOrgs ? po.discovering_orgs : orgs.length === 0 ? po.no_orgs_found : po.select_organization}
               </option>
               {orgs.map((o) => (
                 <option key={o.slug} value={o.slug}>{o.name} ({o.slug})</option>
@@ -482,7 +482,7 @@ function SentryProjectPicker({
           </div>
 
           <div className="space-y-1">
-            <label className="typo-caption text-foreground/70">Project</label>
+            <label className="typo-caption text-foreground/70">{po.project_label}</label>
             <select
               value={projectSlug}
               onChange={(e) => setProjectSlug(e.target.value)}
@@ -490,7 +490,7 @@ function SentryProjectPicker({
               className="w-full px-3 py-2 typo-caption bg-secondary/40 border border-primary/10 rounded-modal text-foreground disabled:opacity-60"
             >
               <option value="" disabled>
-                {!orgSlug ? 'Pick an organization first' : loadingProjects ? 'Loading projects…' : projects.length === 0 ? 'No projects in this org' : 'Select a project'}
+                {!orgSlug ? po.pick_org_first : loadingProjects ? po.loading_projects : projects.length === 0 ? po.no_projects_in_org : po.select_project_option}
               </option>
               {projects.map((p) => (
                 <option key={p.slug} value={p.slug}>{p.name} ({p.slug})</option>
@@ -505,7 +505,7 @@ function SentryProjectPicker({
           <AlertCircle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="typo-caption text-foreground break-words">
-              Sentry discovery failed: {discoveryError}
+              {tx(po.sentry_discovery_failed, { error: discoveryError })}
             </p>
             <p className="typo-caption text-foreground/60 mt-1">
               Enter the slugs manually below — find them in your Sentry URL: <span className="font-mono">sentry.io/organizations/<b>your-org</b>/projects/<b>your-project</b>/</span>
@@ -523,7 +523,7 @@ function SentryProjectPicker({
         }}
         className="typo-caption text-foreground/70 hover:text-foreground underline-offset-2 hover:underline"
       >
-        {manualMode ? 'Try auto-discovery again' : 'Enter slugs manually instead'}
+        {manualMode ? po.try_auto_discovery : po.enter_slugs_manually}
       </button>
 
 
