@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as twinApi from '@/api/twin/twin';
+import { silentCatch } from '@/lib/silentCatch';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
@@ -19,12 +20,18 @@ export interface ProfileDashboardData {
  * live in component state so the Profiles grid can render per-card chips
  * without mutating the global store (which is scoped to the active twin).
  *
- * Re-runs when the set of profile IDs changes; skips profiles it has
- * already loaded in the current mount.
+ * Lifecycle note: once a profile is loaded it isn't re-fetched until the
+ * set of profile IDs changes (add/remove) or the component remounts. The
+ * active twin's data is kept fresh via `useHydrateActiveTwin` in TwinPage;
+ * non-active grid cards may show stale chips after sub-tab edits until the
+ * Profiles tab is re-entered.
  */
 export function useProfileDashboards(profiles: TwinProfile[]): Record<string, ProfileDashboardData> {
   const [data, setData] = useState<Record<string, ProfileDashboardData>>({});
-  const inFlightRef = useRef<Set<string>>(new Set());
+  // Synchronous gate so multiple loop iterations in the same effect tick
+  // don't all start fetches for the same profile before setData lands.
+  // Reading from `data` here would race because setState is async.
+  const loadedRef = useRef<Set<string>>(new Set());
 
   // Normalize profile IDs for a stable dependency key
   const profileIds = useMemo(() => profiles.map((p) => p.id).sort().join('|'), [profiles]);
@@ -33,8 +40,8 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
     let cancelled = false;
 
     const loadOne = async (profile: TwinProfile) => {
-      if (inFlightRef.current.has(profile.id)) return;
-      inFlightRef.current.add(profile.id);
+      if (loadedRef.current.has(profile.id)) return;
+      loadedRef.current.add(profile.id);
 
       // Mark as loading with an empty-derived readiness so the card can render something immediately.
       setData((prev) => ({
@@ -46,11 +53,6 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
         },
       }));
 
-      let tones: TwinTone[] = [];
-      let channels: TwinChannel[] = [];
-      let voice: TwinVoiceProfile | null = null;
-      let memories: TwinPendingMemory[] = [];
-
       const results = await Promise.allSettled([
         twinApi.listTones(profile.id),
         twinApi.listChannels(profile.id),
@@ -58,12 +60,22 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
         twinApi.listPendingMemories(profile.id, 'approved'),
       ]);
 
-      if (results[0].status === 'fulfilled') tones = results[0].value;
-      if (results[1].status === 'fulfilled') channels = results[1].value;
-      if (results[2].status === 'fulfilled') voice = results[2].value;
-      if (results[3].status === 'fulfilled') memories = results[3].value;
-
       if (cancelled) return;
+
+      // Surface failed legs as Sentry breadcrumbs — without this, dashboards
+      // silently degrade to "empty=0%" with no signal in production.
+      const tones: TwinTone[] = results[0].status === 'fulfilled'
+        ? results[0].value
+        : (silentCatch('useProfileDashboards:listTones')(results[0].reason), []);
+      const channels: TwinChannel[] = results[1].status === 'fulfilled'
+        ? results[1].value
+        : (silentCatch('useProfileDashboards:listChannels')(results[1].reason), []);
+      const voice: TwinVoiceProfile | null = results[2].status === 'fulfilled'
+        ? results[2].value
+        : (silentCatch('useProfileDashboards:getVoiceProfile')(results[2].reason), null);
+      const memories: TwinPendingMemory[] = results[3].status === 'fulfilled'
+        ? results[3].value
+        : (silentCatch('useProfileDashboards:listPendingMemories')(results[3].reason), []);
 
       const readiness = deriveReadiness(profile, tones, channels, voice, memories);
       const channelTypes = Array.from(new Set(channels.filter((c) => c.is_active).map((c) => c.channel_type)));
@@ -75,11 +87,17 @@ export function useProfileDashboards(profiles: TwinProfile[]): Record<string, Pr
     };
 
     for (const p of profiles) {
-      if (!data[p.id]) void loadOne(p);
+      void loadOne(p);
     }
 
     return () => {
       cancelled = true;
+      // Drop IDs no longer in the active list so a re-add triggers a fresh
+      // fetch. IDs still present remain marked-loaded — see lifecycle note above.
+      const stillPresent = new Set(profiles.map((p) => p.id));
+      for (const id of loadedRef.current) {
+        if (!stillPresent.has(id)) loadedRef.current.delete(id);
+      }
     };
   }, [profileIds]);
 
