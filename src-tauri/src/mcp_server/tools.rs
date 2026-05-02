@@ -184,6 +184,263 @@ fn handle_drive_list(args: &Value) -> Result<String, String> {
     serde_json::to_string_pretty(&entries).map_err(|e| format!("Serialize error: {e}"))
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Codebase context tools — read-only access to the `dev_contexts` map produced
+// by `dev_tools_scan_codebase`. Lets external assistants (and personas itself
+// when running through Claude Code) query the live context map directly
+// instead of parsing the .claude/codebase-context.md snapshot, which goes
+// stale between scans. Read-only because the in-process MCP only carries a
+// SQLite handle, not AppState — mutations stay on the Tauri command surface.
+// Inspired by graphify's `serve.py` (graph.json exposed as MCP); personas's
+// equivalent of graph.json is the dev_contexts table.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Resolve a project_id from optional project_id / project_root args.
+/// Falls back to the first project in the table if neither is supplied — the
+/// common case is a single-project install.
+fn resolve_context_project(
+    conn: &rusqlite::Connection,
+    args: &Value,
+) -> Result<String, String> {
+    if let Some(pid) = args.get("project_id").and_then(|v| v.as_str()) {
+        return Ok(pid.to_string());
+    }
+    if let Some(root) = args.get("project_root").and_then(|v| v.as_str()) {
+        return conn
+            .query_row(
+                "SELECT id FROM dev_projects WHERE root_path = ?1",
+                rusqlite::params![root],
+                |row| row.get::<_, String>(0),
+            )
+            .map_err(|e| format!("No project with root_path={root}: {e}"));
+    }
+    conn.query_row(
+        "SELECT id FROM dev_projects ORDER BY created_at LIMIT 1",
+        [],
+        |row| row.get::<_, String>(0),
+    )
+    .map_err(|e| format!("No projects registered: {e}"))
+}
+
+fn handle_context_list_groups(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let conn = pool.get()?;
+    let project_id = resolve_context_project(&conn, args)?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT g.id, g.project_id, p.name, g.name, g.color, g.group_type, g.position,
+                    (SELECT COUNT(*) FROM dev_contexts c WHERE c.group_id = g.id) AS context_count
+             FROM dev_context_groups g
+             JOIN dev_projects p ON p.id = g.project_id
+             WHERE g.project_id = ?1
+             ORDER BY g.position ASC, g.name ASC",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+    let rows = stmt
+        .query_map(rusqlite::params![project_id], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "project_id": row.get::<_, String>(1)?,
+                "project_name": row.get::<_, String>(2)?,
+                "name": row.get::<_, String>(3)?,
+                "color": row.get::<_, String>(4)?,
+                "group_type": row.get::<_, Option<String>>(5)?,
+                "position": row.get::<_, i64>(6)?,
+                "context_count": row.get::<_, i64>(7)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+    let groups: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&groups).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_context_search_by_keyword(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .ok_or("query is required")?;
+    if query.trim().is_empty() {
+        return Err("query must not be empty".into());
+    }
+    let limit = args
+        .get("limit")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(20)
+        .clamp(1, 100);
+
+    let conn = pool.get()?;
+    let project_id = resolve_context_project(&conn, args)?;
+
+    // Match against name, description, and the JSON-stringified keywords column.
+    // LIKE on the JSON blob is fine for this scale (dozens of contexts per
+    // project) — no FTS table needed, and the JSON contains tokens verbatim.
+    let pattern = format!("%{}%", query.replace('%', "\\%").replace('_', "\\_"));
+    let mut stmt = conn
+        .prepare(
+            "SELECT c.id, c.name, c.description, c.file_paths, c.keywords,
+                    c.entry_points, c.api_surface, c.cross_refs, c.tech_stack,
+                    g.name AS group_name, g.color AS group_color
+             FROM dev_contexts c
+             LEFT JOIN dev_context_groups g ON g.id = c.group_id
+             WHERE c.project_id = ?1
+               AND (c.name LIKE ?2 ESCAPE '\\'
+                    OR c.description LIKE ?2 ESCAPE '\\'
+                    OR c.keywords LIKE ?2 ESCAPE '\\')
+             ORDER BY c.name ASC
+             LIMIT ?3",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+    let rows = stmt
+        .query_map(rusqlite::params![project_id, pattern, limit], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "description": row.get::<_, Option<String>>(2)?,
+                "file_paths": row.get::<_, Option<String>>(3)?,
+                "keywords": row.get::<_, Option<String>>(4)?,
+                "entry_points": row.get::<_, Option<String>>(5)?,
+                "api_surface": row.get::<_, Option<String>>(6)?,
+                "cross_refs": row.get::<_, Option<String>>(7)?,
+                "tech_stack": row.get::<_, Option<String>>(8)?,
+                "group_name": row.get::<_, Option<String>>(9)?,
+                "group_color": row.get::<_, Option<String>>(10)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+    let matches: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&matches).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_context_get_by_file_path(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let file_path = args
+        .get("file_path")
+        .and_then(|v| v.as_str())
+        .ok_or("file_path is required")?;
+    if file_path.trim().is_empty() {
+        return Err("file_path must not be empty".into());
+    }
+    let conn = pool.get()?;
+    let project_id = resolve_context_project(&conn, args)?;
+
+    // Match the JSON array element exactly: the column stores e.g.
+    // `["src/foo.ts","src/bar.ts"]`, so a quoted-string LIKE is anchored by
+    // the surrounding double-quotes. Avoids matching "src/foo.ts.bak".
+    let needle = format!(
+        "%\"{}\"%",
+        file_path.replace('\\', "/").replace('%', "\\%").replace('_', "\\_")
+    );
+    let mut stmt = conn
+        .prepare(
+            "SELECT c.id, c.name, c.description, c.file_paths, c.keywords,
+                    g.name AS group_name, g.color AS group_color
+             FROM dev_contexts c
+             LEFT JOIN dev_context_groups g ON g.id = c.group_id
+             WHERE c.project_id = ?1 AND c.file_paths LIKE ?2 ESCAPE '\\'
+             ORDER BY c.name ASC",
+        )
+        .map_err(|e| format!("Query error: {e}"))?;
+    let rows = stmt
+        .query_map(rusqlite::params![project_id, needle], |row| {
+            Ok(json!({
+                "id": row.get::<_, String>(0)?,
+                "name": row.get::<_, String>(1)?,
+                "description": row.get::<_, Option<String>>(2)?,
+                "file_paths": row.get::<_, Option<String>>(3)?,
+                "keywords": row.get::<_, Option<String>>(4)?,
+                "group_name": row.get::<_, Option<String>>(5)?,
+                "group_color": row.get::<_, Option<String>>(6)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?;
+    let matches: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
+    serde_json::to_string_pretty(&matches).map_err(|e| format!("Serialize error: {e}"))
+}
+
+fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let context_name = args.get("context_name").and_then(|v| v.as_str());
+    let context_id = args.get("context_id").and_then(|v| v.as_str());
+    if context_name.is_none() && context_id.is_none() {
+        return Err("Either context_name or context_id is required".into());
+    }
+
+    let conn = pool.get()?;
+    let project_id = resolve_context_project(&conn, args)?;
+
+    // 1. Resolve the source context.
+    let (src_id, src_name, cross_refs_json): (String, String, Option<String>) =
+        if let Some(id) = context_id {
+            conn.query_row(
+                "SELECT id, name, cross_refs FROM dev_contexts WHERE id = ?1 AND project_id = ?2",
+                rusqlite::params![id, project_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                    ))
+                },
+            )
+            .map_err(|e| format!("Context {id} not found: {e}"))?
+        } else {
+            let n = context_name.unwrap();
+            conn.query_row(
+                "SELECT id, name, cross_refs FROM dev_contexts WHERE name = ?1 AND project_id = ?2",
+                rusqlite::params![n, project_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                    ))
+                },
+            )
+            .map_err(|e| format!("Context name='{n}' not found: {e}"))?
+        };
+
+    // 2. Parse cross_refs (JSON array of context names).
+    let neighbor_names: Vec<String> = cross_refs_json
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+        .unwrap_or_default();
+
+    // 3. Hydrate each neighbor name into a context summary. Names that don't
+    // match a real context (LLM hallucinations are common in the cross_refs
+    // field) are flagged with `resolved: false` so the caller can see them.
+    let mut neighbors: Vec<Value> = Vec::with_capacity(neighbor_names.len());
+    for name in &neighbor_names {
+        match conn.query_row(
+            "SELECT c.id, c.name, c.description, c.file_paths, g.name AS group_name, g.color
+             FROM dev_contexts c
+             LEFT JOIN dev_context_groups g ON g.id = c.group_id
+             WHERE c.name = ?1 AND c.project_id = ?2",
+            rusqlite::params![name, project_id],
+            |row| {
+                Ok(json!({
+                    "resolved": true,
+                    "id": row.get::<_, String>(0)?,
+                    "name": row.get::<_, String>(1)?,
+                    "description": row.get::<_, Option<String>>(2)?,
+                    "file_paths": row.get::<_, Option<String>>(3)?,
+                    "group_name": row.get::<_, Option<String>>(4)?,
+                    "group_color": row.get::<_, Option<String>>(5)?,
+                }))
+            },
+        ) {
+            Ok(v) => neighbors.push(v),
+            Err(_) => neighbors.push(json!({
+                "resolved": false,
+                "name": name,
+                "note": "cross_ref points at a context that does not exist (likely LLM hallucination)",
+            })),
+        }
+    }
+
+    Ok(serde_json::to_string_pretty(&json!({
+        "self": { "id": src_id, "name": src_name },
+        "neighbors": neighbors,
+    }))
+    .map_err(|e| format!("Serialize error: {e}"))?)
+}
+
 /// Return the list of available MCP tools with their schemas.
 pub fn list_tools() -> Vec<Value> {
     vec![
@@ -359,6 +616,57 @@ pub fn list_tools() -> Vec<Value> {
                 }
             }
         }),
+        json!({
+            "name": "context_list_groups",
+            "description": "List the codebase context groups for a registered dev project (output of dev_tools_scan_codebase). Use this before context_search_by_keyword to orient on the project's domain decomposition.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "project_id": { "type": "string", "description": "Optional dev project UUID. If omitted, project_root is used; if both are omitted, the first registered project is used." },
+                    "project_root": { "type": "string", "description": "Optional absolute path to the project root (must match dev_projects.root_path)." }
+                }
+            }
+        }),
+        json!({
+            "name": "context_search_by_keyword",
+            "description": "Search the codebase context map by keyword across name, description, and keywords fields. Returns matching contexts with file_paths, entry_points, and group info. Prefer this over grep for architecture questions.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Search term (matched as substring against name, description, and keywords)" },
+                    "project_id": { "type": "string", "description": "Optional dev project UUID." },
+                    "project_root": { "type": "string", "description": "Optional absolute path to the project root." },
+                    "limit": { "type": "integer", "description": "Max contexts to return (1-100, default 20)" }
+                },
+                "required": ["query"]
+            }
+        }),
+        json!({
+            "name": "context_get_by_file_path",
+            "description": "Find which context(s) own a given file path. Useful for orienting before editing — answers 'what feature does this file belong to?'. Returns an empty array if no context claims the file.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "file_path": { "type": "string", "description": "Project-relative file path (forward slashes, e.g. 'src/features/agents/sub_chat/ChatTab.tsx')" },
+                    "project_id": { "type": "string", "description": "Optional dev project UUID." },
+                    "project_root": { "type": "string", "description": "Optional absolute path to the project root." }
+                },
+                "required": ["file_path"]
+            }
+        }),
+        json!({
+            "name": "context_neighbors",
+            "description": "Resolve a context's cross_refs into full context summaries. Cross_refs is an LLM-inferred list of related context names; this tool hydrates them and flags unresolvable entries as likely hallucinations. Pass either context_id or context_name.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context_id": { "type": "string", "description": "Optional context UUID — preferred if known." },
+                    "context_name": { "type": "string", "description": "Context name (kebab-case, e.g. 'agent-chat-interface'). Used when context_id is omitted." },
+                    "project_id": { "type": "string", "description": "Optional dev project UUID (used when resolving by context_name)." },
+                    "project_root": { "type": "string", "description": "Optional absolute path to the project root." }
+                }
+            }
+        }),
     ]
 }
 
@@ -381,6 +689,10 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "drive_write_text" => handle_drive_write_text(args),
         "drive_read_text" => handle_drive_read_text(args),
         "drive_list" => handle_drive_list(args),
+        "context_list_groups" => handle_context_list_groups(args, pool),
+        "context_search_by_keyword" => handle_context_search_by_keyword(args, pool),
+        "context_get_by_file_path" => handle_context_get_by_file_path(args, pool),
+        "context_neighbors" => handle_context_neighbors(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
