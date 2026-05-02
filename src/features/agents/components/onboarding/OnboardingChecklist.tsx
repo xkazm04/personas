@@ -12,12 +12,27 @@ interface ProgressRingProps {
   strokeWidth?: number;
 }
 
+/**
+ * Stroke colors for the onboarding progress ring. Hex literals because the SVG
+ * `stroke` attribute can't take Tailwind utility classes; tracking them here
+ * keeps the choice named and visible to grep when the palette evolves.
+ */
+const RING_STROKE = {
+  /** emerald-400 — fully complete */
+  complete: '#34d399',
+  /** violet-400 — half or more done */
+  inProgress: '#a78bfa',
+  /** amber-400 — early progress */
+  early: '#fbbf24',
+} as const;
+
 export function ProgressRing({ score, size = 24, strokeWidth = 2.5 }: ProgressRingProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (score / 100) * circumference;
 
-  const color = score === 100 ? '#34d399' : score >= 50 ? '#a78bfa' : '#fbbf24';
+  const color =
+    score === 100 ? RING_STROKE.complete : score >= 50 ? RING_STROKE.inProgress : RING_STROKE.early;
 
   return (
     <svg width={size} height={size} className="flex-shrink-0 -rotate-90">
