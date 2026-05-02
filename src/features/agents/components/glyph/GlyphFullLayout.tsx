@@ -8,7 +8,12 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
-import { GlyphTestReportPanel } from "./GlyphTestReportPanel";
+// Reuse the legacy 8-dim Matrix view's test-report modal — the rich
+// split-pane viewer with structured ToolTestResult cards on the left
+// and parsed LLM summary sections on the right (with credential-add
+// flow integration). The Glyph variant gets parity automatically; no
+// reason to maintain a parallel report surface.
+import { TestReportModal } from "@/features/templates/sub_generated/gallery/matrix/TestReportModal";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
@@ -33,7 +38,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     pendingQuestions, onAnswer, agentName, onAgentNameChange,
     hasDesignResult, glyphRows,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
-    buildError, testOutputLines, testPassed, testError, cliOutputLines,
+    buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
     onQuickConfigChange,
   } = props;
 
@@ -275,13 +280,13 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
         sessionId={buildSessionId}
         draft={buildDraft}
       />
-      <GlyphTestReportPanel
-        isOpen={showReport}
-        onClose={() => setShowReport(false)}
-        testPassed={testPassed}
-        testError={testError}
-        testOutputLines={testOutputLines}
-      />
+      {showReport && (
+        <TestReportModal
+          results={toolTestResults ?? []}
+          summary={testSummary ?? null}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }

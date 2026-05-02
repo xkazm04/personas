@@ -539,6 +539,8 @@ export function UnifiedMatrixEntry() {
           testOutputLines={build.buildTestOutputLines}
           testPassed={build.buildTestPassed}
           testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
           cliOutputLines={build.outputLines}
           onQuickConfigChange={handleQuickConfigChange}
           onViewAgent={handleViewPromotedAgent}
