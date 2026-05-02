@@ -7,6 +7,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import {
   FolderOpen, X, Plus, Pencil, Search, CheckCircle2,
 } from 'lucide-react';
@@ -125,21 +126,19 @@ export function ProjectModal({
     handleClose();
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-        className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      >
-        <div
-          className="animate-fade-slide-in bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-elevation-4"
-          onClick={(e) => e.stopPropagation()}
-        >
+    <BaseModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      titleId="dev-tools-project-modal-title"
+      size="sm"
+      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4"
+    >
+      <div>
           {step === 'form' ? (
             <>
               <div className="flex items-center justify-between mb-5">
-                <h2 className="typo-section-title">
+                <h2 id="dev-tools-project-modal-title" className="typo-section-title">
                   {isEdit ? t.plugins.dev_projects.edit_project : t.plugins.dev_projects.new_project}
                 </h2>
                 <Button variant="ghost" size="icon-sm" onClick={handleClose}>
@@ -277,7 +276,7 @@ export function ProjectModal({
               </div>
             </>
           )}
-        </div>
       </div>
+    </BaseModal>
   );
 }

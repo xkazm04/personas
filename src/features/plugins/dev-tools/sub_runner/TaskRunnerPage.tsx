@@ -20,6 +20,7 @@ import { PrBridge } from './PrBridge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch } from '@/lib/silentCatch';
+import { BaseModal } from '@/lib/ui/BaseModal';
 import { startAutoRun, cancelAutoRun } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
 
@@ -150,19 +151,17 @@ function TaskModal({
     onClose();
   };
 
-  if (!open) return null;
-
   return (
-    <div
-        className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <div
-          className="animate-fade-slide-in bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-md shadow-elevation-4"
-          onClick={(e) => e.stopPropagation()}
-        >
+    <BaseModal
+      isOpen={open}
+      onClose={onClose}
+      titleId="dev-tools-new-task-title"
+      size="sm"
+      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4"
+    >
+      <div>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="typo-section-title">{t.plugins.dev_tools.new_task}</h2>
+            <h2 id="dev-tools-new-task-title" className="typo-section-title">{t.plugins.dev_tools.new_task}</h2>
             <Button variant="ghost" size="icon-sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>
@@ -245,8 +244,8 @@ function TaskModal({
               {t.plugins.dev_runner.create_task}
             </Button>
           </div>
-        </div>
       </div>
+    </BaseModal>
   );
 }
 
