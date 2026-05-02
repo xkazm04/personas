@@ -173,7 +173,7 @@ export interface ConnectorMetadata {
    * Array.isArray check that parseConnectorMetadata already performs.
    */
   auth_variants?: unknown[];
-  /** Markdown body shown in the SetupGuideModal. */
+  /** Markdown body shown in the SetupGuideSection. */
   setup_guide?: string;
   /** Markdown rendered inside the auto-setup wizard step. */
   setup_instructions?: string;
