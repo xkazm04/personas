@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { silentCatch } from '@/lib/silentCatch';
+import { useTwinTranslation } from '../i18n/useTwinTranslation';
 
 export interface KbInfo {
   id: string;
@@ -21,6 +23,7 @@ export interface KbInfo {
  * five mutation handlers (refresh/load/create/bind/unbind).
  */
 export function useBrainConnection() {
+  const { t } = useTwinTranslation();
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const bindTwinKnowledgeBase = useSystemStore((s) => s.bindTwinKnowledgeBase);
@@ -80,9 +83,7 @@ export function useBrainConnection() {
       const msg = typeof err === 'object' && err !== null && 'error' in err
         ? String((err as { error: string }).error)
         : String(err);
-      setCreateError(msg.includes('vec0')
-        ? 'Vector extension (vec0) not available. Use "Link Existing" to connect a knowledge base created from the Credentials page.'
-        : msg);
+      setCreateError(msg.includes('vec0') ? t.brain.vec0Unavailable : msg);
     } finally { setCreating(false); }
   };
 
@@ -95,7 +96,9 @@ export function useBrainConnection() {
       const kb = await invoke<KbInfo>('get_knowledge_base', { kbId: id });
       setKbInfo(kb);
       lastLoadedKbId.current = id;
-    } catch { /* next render */ }
+    } catch (err) {
+      silentCatch('useBrainConnection:handleBind:get_knowledge_base')(err);
+    }
   };
 
   const handleUnbind = async () => {

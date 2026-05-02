@@ -171,6 +171,7 @@ export const en = {
       brainStep3: 'Approved memories get indexed into the knowledge base',
       brainStep4: 'Next time, recall_memory finds relevant context via semantic search',
       brainStep5: 'Obsidian notes (if connected) can be manually ingested too',
+      vec0Unavailable: 'Vector extension (vec0) not available. Use "Link Existing" to connect a knowledge base created from the Credentials page.',
     },
     knowledge: {
       title: 'Knowledge',
