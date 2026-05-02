@@ -3,7 +3,7 @@ import { Play, Download, Save, Check, Database } from 'lucide-react';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import { SchemaParseErrorBanner } from '../../shared/SchemaParseErrorBanner';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import { updateRecipe } from '@/api/templates/recipes';
+import { updateRecipe } from '@/api/recipes/recipes';
 import type { InputField } from './recipeTestHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 

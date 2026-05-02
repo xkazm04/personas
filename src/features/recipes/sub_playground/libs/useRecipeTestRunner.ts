@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
 import { useRecipeExecution } from '@/hooks/design/template/useRecipeExecution';
-import * as api from '@/api/templates/recipes';
+import * as api from '@/api/recipes/recipes';
 
 export function useRecipeTestRunner(recipe: RecipeDefinition) {
   const [running, setRunning] = useState(false);

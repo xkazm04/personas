@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/templates/design';
+import { startDesignAnalysis, refineDesign, cancelDesignAnalysis, compileFromIntent } from '@/api/design/design';
 import { useAgentStore } from "@/stores/agentStore";
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from "@/lib/silentCatch";

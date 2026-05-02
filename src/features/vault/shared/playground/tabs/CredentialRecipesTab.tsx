@@ -5,7 +5,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
 import { Button } from '@/features/shared/components/buttons';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import * as recipeApi from '@/api/templates/recipes';
+import * as recipeApi from '@/api/recipes/recipes';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { useRecipeGenerator } from '@/hooks/design/template/useRecipeGenerator';

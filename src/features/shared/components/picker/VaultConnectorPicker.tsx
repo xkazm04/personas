@@ -24,7 +24,7 @@ import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
-import type { DiscoveredItem } from '@/api/templates/discovery';
+import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { CredentialPickerCards } from './CredentialPickerCards';
 import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
 

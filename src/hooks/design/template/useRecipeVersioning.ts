@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
-import { startRecipeVersioning, cancelRecipeVersioning } from '@/api/templates/recipes';
+import { startRecipeVersioning, cancelRecipeVersioning } from '@/api/recipes/recipes';
 import { EventName } from '@/lib/eventRegistry';
 import type { RecipeVersionDraft } from '@/lib/bindings/RecipeVersionDraft';
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
-import { discoverConnectorResources, type DiscoveredItem } from '@/api/templates/discovery';
+import { discoverConnectorResources, type DiscoveredItem } from '@/api/discovery/discovery';
 import type { PersonaConnectorSlot, TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { createLogger } from '@/lib/log';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';

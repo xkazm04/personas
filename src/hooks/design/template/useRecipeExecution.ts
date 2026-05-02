@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAiArtifactTask } from '../core/useAiArtifactTask';
-import { startRecipeExecution, cancelRecipeExecution } from '@/api/templates/recipes';
+import { startRecipeExecution, cancelRecipeExecution } from '@/api/recipes/recipes';
 import { EventName } from '@/lib/eventRegistry';
 
 // -- Types -------------------------------------------------------

@@ -22,7 +22,7 @@
  */
 import { useMemo } from 'react';
 import { Check } from 'lucide-react';
-import type { DiscoveredItem } from '@/api/templates/discovery';
+import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { BUILTIN_CONNECTORS } from '@/lib/credentials/builtinConnectors';
 
 export interface CredentialPickerCardsProps {

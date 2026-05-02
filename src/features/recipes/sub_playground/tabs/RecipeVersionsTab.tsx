@@ -5,7 +5,7 @@ import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
 import { useToastStore } from '@/stores/toastStore';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import type { RecipeVersion } from '@/lib/bindings/RecipeVersion';
-import * as recipeApi from '@/api/templates/recipes';
+import * as recipeApi from '@/api/recipes/recipes';
 import { useRecipeVersioning } from '@/hooks/design/template/useRecipeVersioning';
 import { EstimatedProgressBar } from '@/features/shared/components/progress/EstimatedProgressBar';
 import { TerminalStrip } from '@/features/shared/components/terminal/TerminalStrip';

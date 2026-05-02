@@ -8,7 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { RecipeBookIllustration } from '../../shared/RecipeBookIllustration';
-import * as recipeApi from '@/api/templates/recipes';
+import * as recipeApi from '@/api/recipes/recipes';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeListProps {

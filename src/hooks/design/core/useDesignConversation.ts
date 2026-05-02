@@ -6,7 +6,7 @@ import {
   appendSingleDesignMessage,
   updateDesignConversationStatus,
   deleteDesignConversation,
-} from '@/api/templates/design';
+} from '@/api/design/design';
 import type {
   DesignConversation,
   DesignConversationMessage,

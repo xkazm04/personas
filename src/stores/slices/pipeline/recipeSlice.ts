@@ -4,7 +4,7 @@ import { reportError } from "../../storeTypes";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import type { CreateRecipeInput } from "@/lib/bindings/CreateRecipeInput";
 import type { UpdateRecipeInput } from "@/lib/bindings/UpdateRecipeInput";
-import { createRecipe, deleteRecipe, getPersonaRecipes, linkRecipeToPersona, listRecipes, unlinkRecipeFromPersona, updateRecipe } from "@/api/templates/recipes";
+import { createRecipe, deleteRecipe, getPersonaRecipes, linkRecipeToPersona, listRecipes, unlinkRecipeFromPersona, updateRecipe } from "@/api/recipes/recipes";
 
 
 export interface RecipeSlice {

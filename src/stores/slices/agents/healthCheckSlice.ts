@@ -1,7 +1,7 @@
 import type { StateCreator } from "zustand";
 import type { AgentStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import { testDesignFeasibility } from "@/api/templates/design";
+import { testDesignFeasibility } from "@/api/design/design";
 import { parseJsonOrDefault } from "@/lib/utils/parseJson";
 import {
   computeHealthScore,
