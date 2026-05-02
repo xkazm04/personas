@@ -1,7 +1,5 @@
 import {
   Bot,
-  Workflow,
-  TrendingDown,
   ArrowRightLeft,
   CheckCircle2,
   XCircle,
@@ -65,41 +63,6 @@ export function AffectedPersonas({ personas }: AffectedPersonasProps) {
   );
 }
 
-interface AffectedWorkflowsProps {
-  workflows: SimulationResult['affectedWorkflows'];
-}
-
-export function AffectedWorkflows({ workflows }: AffectedWorkflowsProps) {
-  const { t, tx } = useTranslation();
-  const dep = t.vault.dependencies;
-  if (workflows.length === 0) return null;
-
-  return (
-    <div>
-      <div className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-        <Workflow className="w-3 h-3" />
-        {tx(dep.workflows_would_break, { count: workflows.length })}
-      </div>
-      <div className="space-y-1 max-h-[100px] overflow-y-auto">
-        {workflows.map((wf) => (
-          <div
-            key={wf.workflowId}
-            className="flex items-center gap-2 px-2 py-1.5 rounded-card bg-red-500/5 border border-red-500/10"
-          >
-            <TrendingDown className="w-3 h-3 text-red-400/60 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="typo-caption text-foreground block truncate">{wf.workflowName}</span>
-              <span className="text-[10px] text-foreground">
-                {tx(dep.nodes_broken, { broken: wf.brokenNodeLabels.length, total: wf.totalNodes })}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 interface FailoverSuggestionsProps {
   suggestions: SimulationResult['failoverSuggestions'];
 }
@@ -152,9 +115,6 @@ export function MitigationSummary({ simulation }: MitigationSummaryProps) {
       <ul className="typo-caption text-foreground space-y-0.5 list-disc list-inside">
         {simulation.failoverSuggestions.some((f) => f.healthOk === true) && (
           <li>{dep.mitigation_failover}</li>
-        )}
-        {simulation.affectedWorkflows.length > 0 && (
-          <li>{dep.mitigation_pause}</li>
         )}
         {simulation.estimatedDailyExecutionsLost > 10 && (
           <li>{dep.mitigation_schedule}</li>

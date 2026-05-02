@@ -83,7 +83,7 @@ export function CredentialRelationshipGraph() {
     if (!simulationMode || !selectedNodeId) return null;
     const node = graph.nodes.find((n) => n.id === selectedNodeId);
     if (!node || node.kind !== 'credential') return null;
-    return simulateRevocation(selectedNodeId, graph, [], healthSignals, credentials);
+    return simulateRevocation(selectedNodeId, graph, healthSignals, credentials);
   }, [simulationMode, selectedNodeId, graph, healthSignals, credentials]);
 
   const stats = useMemo(() => {

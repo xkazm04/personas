@@ -1,6 +1,5 @@
 import type { CredentialMetadata, ConnectorDefinition, Persona, CredentialEvent } from '@/lib/types/types';
 import type { CredentialDependent } from '@/lib/bindings/CredentialDependent';
-import type { Workflow } from '@/lib/types/compositionTypes';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 
 // ---------------------------------------------------------------------------
@@ -206,14 +205,6 @@ export function analyzeBlastRadius(
 // Revocation simulation (chaos-engineering inspired)
 // ---------------------------------------------------------------------------
 
-export interface AffectedWorkflow {
-  workflowId: string;
-  workflowName: string;
-  brokenNodeIds: string[];
-  brokenNodeLabels: string[];
-  totalNodes: number;
-}
-
 export interface FailoverSuggestion {
   credentialId: string;
   credentialName: string;
@@ -236,26 +227,25 @@ export interface SimulationResult {
     grade: string;
   }[];
 
-  // Broken workflows
-  affectedWorkflows: AffectedWorkflow[];
-
   // Impact metrics
   totalAffectedPersonas: number;
-  totalAffectedWorkflows: number;
   estimatedDailyExecutionsLost: number;
   estimatedDailyRevenueLost: number; // $ based on burn rate of affected personas
 
   // Failover suggestions
   failoverSuggestions: FailoverSuggestion[];
 
-  // Severity (extends blast radius severity with workflow awareness)
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  // Severity matches blast-radius bucket. The previous `'critical'` branch
+  // was driven by an `affectedWorkflows` collection that was always empty
+  // (the only caller passed `workflows: []`), so the workflow-aware severity
+  // and panel were unreachable. Fold severity back to the blast-radius bucket
+  // until a real workflow source is wired in.
+  severity: 'low' | 'medium' | 'high';
 }
 
 export function simulateRevocation(
   credentialId: string,
   graph: CredentialGraph,
-  workflows: Workflow[],
   healthSignals: PersonaHealthSignal[],
   allCredentials: CredentialMetadata[],
 ): SimulationResult | null {
@@ -294,26 +284,7 @@ export function simulateRevocation(
     }
   }
 
-  // 2. Find affected workflows — any workflow containing a persona node that would break
-  const affectedPersonaIds = new Set(affectedPersonas.map((p) => p.id));
-  const affectedWorkflows: AffectedWorkflow[] = [];
-  for (const wf of workflows) {
-    if (!wf.enabled) continue;
-    const brokenNodes = wf.nodes.filter(
-      (n) => n.kind === 'persona' && n.personaId && affectedPersonaIds.has(n.personaId),
-    );
-    if (brokenNodes.length > 0) {
-      affectedWorkflows.push({
-        workflowId: wf.id,
-        workflowName: wf.name,
-        brokenNodeIds: brokenNodes.map((n) => n.id),
-        brokenNodeLabels: brokenNodes.map((n) => n.label),
-        totalNodes: wf.nodes.filter((n) => n.kind === 'persona').length,
-      });
-    }
-  }
-
-  // 3. Impact metrics
+  // 2. Impact metrics
   const estimatedDailyExecutionsLost = affectedPersonas.reduce(
     (sum, p) => sum + Math.round(p.recentExecutions / 7),
     0,
@@ -323,7 +294,7 @@ export function simulateRevocation(
     0,
   );
 
-  // 4. Failover suggestions — same service_type credentials that aren't this one
+  // 3. Failover suggestions — same service_type credentials that aren't this one
   const failoverSuggestions: FailoverSuggestion[] = allCredentials
     .filter((c) => c.id !== credentialId && c.service_type === serviceType)
     .map((c) => ({
@@ -333,25 +304,16 @@ export function simulateRevocation(
       healthOk: c.healthcheck_last_success,
     }));
 
-  // 5. Severity: `critical` if any workflow breaks, otherwise fall back to the
-  //    shared blast-radius bucket (see BLAST_RADIUS_THRESHOLDS).
-  const severity: SimulationResult['severity'] =
-    affectedWorkflows.length > 0
-      ? 'critical'
-      : severityForAgentCount(affectedPersonas.length);
-
   return {
     credentialId,
     credentialName: credNode.label,
     serviceType,
     affectedPersonas,
-    affectedWorkflows,
     totalAffectedPersonas: affectedPersonas.length,
-    totalAffectedWorkflows: affectedWorkflows.length,
     estimatedDailyExecutionsLost,
     estimatedDailyRevenueLost: Math.round(estimatedDailyRevenueLost * 100) / 100,
     failoverSuggestions,
-    severity,
+    severity: severityForAgentCount(affectedPersonas.length),
   };
 }
 

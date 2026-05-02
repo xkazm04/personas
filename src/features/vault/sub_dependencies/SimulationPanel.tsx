@@ -5,7 +5,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { escapeHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import {
   AffectedPersonas,
-  AffectedWorkflows,
   FailoverSuggestions,
   MitigationSummary,
 } from './SimulationControls';
@@ -20,7 +19,6 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
   const dep = t.vault.dependencies;
   const sev = getSeverityStyles(t)[simulation.severity];
 
-  const workflowPlural = simulation.totalAffectedWorkflows !== 1 ? 's' : '';
   const personaPlural = simulation.totalAffectedPersonas !== 1 ? 's' : '';
   const safeCredentialName = escapeHtml(simulation.credentialName);
 
@@ -48,10 +46,6 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <div className="text-[10px] text-foreground">{dep.personas_affected}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
-            <div className="typo-heading-lg font-semibold text-foreground/90">{simulation.totalAffectedWorkflows}</div>
-            <div className="text-[10px] text-foreground">{dep.workflows_broken}</div>
-          </div>
-          <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
             <div className="typo-heading-lg font-semibold text-foreground/90">{simulation.estimatedDailyExecutionsLost}</div>
             <div className="text-[10px] text-foreground">{dep.daily_execs_lost}</div>
           </div>
@@ -65,19 +59,7 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
 
         {/* Scenario description */}
         <div className="typo-caption text-foreground leading-relaxed px-1">
-          {simulation.severity === 'critical' ? (
-            <span
-              dangerouslySetInnerHTML={{
-                __html: tx(dep.sim_critical, {
-                  credentialName: `<strong class="text-fuchsia-400">${safeCredentialName}</strong>`,
-                  workflows: `<strong class="text-red-400">${simulation.totalAffectedWorkflows}</strong>`,
-                  workflowPlural,
-                  personas: simulation.totalAffectedPersonas,
-                  personaPlural,
-                }),
-              }}
-            />
-          ) : simulation.severity === 'high' ? (
+          {simulation.severity === 'high' ? (
             <span
               dangerouslySetInnerHTML={{
                 __html: tx(dep.sim_high, {
@@ -101,7 +83,6 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
         </div>
 
         <AffectedPersonas personas={simulation.affectedPersonas} />
-        <AffectedWorkflows workflows={simulation.affectedWorkflows} />
         <FailoverSuggestions suggestions={simulation.failoverSuggestions} />
         <MitigationSummary simulation={simulation} />
       </div>
