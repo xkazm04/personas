@@ -92,14 +92,12 @@ export default function GraphPanel() {
     return () => {
       if (debounceTimer) clearTimeout(debounceTimer);
       if (unlisten) unlisten();
-    };
-  }, [connected, activeVaultPath, loadStats]);
-
-  useEffect(() => {
-    return () => {
+      // Stop the watcher on every unmount AND on vault switch — otherwise
+      // each (connected, activeVaultPath) change starts a fresh backend
+      // watcher without stopping the previous one.
       void obsidianGraphStopWatcher().catch(() => {});
     };
-  }, []);
+  }, [connected, activeVaultPath, loadStats]);
 
   const runSearch = useCallback(async () => {
     if (!query.trim()) {
