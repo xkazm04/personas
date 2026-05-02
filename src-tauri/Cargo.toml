@@ -41,7 +41,11 @@ ml = ["dep:sqlite-vec", "dep:fastembed", "dep:ort"]
 p2p = ["dep:ed25519-dalek", "dep:bs58", "dep:mdns-sd", "dep:quinn", "dep:rcgen", "dep:rmp-serde"]
 # mobile feature is activated automatically by Tauri v2 when targeting Android/iOS
 mobile = []
-# Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing
+# Enables test automation HTTP server on localhost:17320 for MCP-driven UI testing.
+# Declares xcap+image directly (rather than depending on `desktop`) so the test
+# server can be built standalone for headless CI test runs without the full
+# desktop UI stack. The duplication with `desktop`'s deps is intentional —
+# Cargo unions feature dep sets when both are enabled.
 test-automation = ["dep:xcap", "dep:image"]
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.

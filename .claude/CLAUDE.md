@@ -16,15 +16,19 @@ npx vite build           # Production frontend build
 node scripts/i18n/check-coverage.mjs   # i18n coverage report (CI gate)
 ```
 
-### Build variants
+### Build & packaging
 
-Tier-specific frontend bundles (env-var driven; backend always pulls full features):
-- `npm run build:starter` / `build:team` / `build:builder` — sets `VITE_APP_TIER` to gate UI features. CI validates all three tiers compile (added 2026-05-01 by build-tooling architect run).
+End-to-end build documentation lives in **[`docs/BUILD.md`](../docs/BUILD.md)**
+(architecture differences, ARM64 vs x64 on Windows, codegen pipeline,
+profiles, ONNX bundling). For Android setup, see [`docs/ANDROID-BUILD.md`](../docs/ANDROID-BUILD.md).
 
-Tauri desktop installer variants (overlay configs in `src-tauri/`):
-- `npm run tauri:build` — canonical (`tauri.conf.json`); all targets, full features
-- `npm run tauri:build:lite` — `tauri.lite.conf.json`; nsis-only, `desktop` features (no ML/P2P) — fast iteration
-- `npm run tauri:build:stable` — `tauri.stable.conf.json`; nsis + msi, `desktop-full` features — Windows release
+Quick reference of the most common scripts:
+- Tier-specific frontend bundles: `npm run build:starter` / `build:team` / `build:builder`. Locally validate all three with `npm run check:tiers` (CI also runs this).
+- Tauri installers: `npm run tauri:build` (canonical) / `tauri:build:lite` (fast nsis-only with `desktop` features) / `tauri:build:stable` (nsis + msi, `desktop-full`).
+- Tauri dev: `npm run tauri:dev` / `tauri:dev:lite` / `tauri:dev:stable` / `tauri:dev:test` (the last enables `--features test-automation`, HTTP server on :17320).
+- Cache recovery (use after switching Rust hosts or seeing `lld-link: machine type x64 conflicts with arm64`): `npm run clean:ort` (surgical, ~5 min recompile) or `npm run clean:rust` (nuclear, ~10+ min). `predev` auto-detects host-triple drift via `scripts/check-build-cache.mjs`.
+
+Codegen now runs in parallel via `scripts/run-codegen.mjs` (per-task 60s timeout, override with `CODEGEN_TIMEOUT_MS`). `predev` and `prebuild` both go through it.
 
 Advisory pre-release scripts (manual, not CI-gated):
 - `npm run check:assets` — reports PNG → WebP compression savings via `scripts/optimize-assets.mjs --dry-run`. Run before bumping a release if asset weight matters.
