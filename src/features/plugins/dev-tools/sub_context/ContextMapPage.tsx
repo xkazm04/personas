@@ -18,6 +18,7 @@ import ScanOverlay from './ScanOverlay';
 import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
 
 // ---------------------------------------------------------------------------
 // Completion handler — shared by event listener + resync polling.
@@ -33,12 +34,20 @@ interface ContextScanFinalize {
   errorMessage?: string;
 }
 
-function finalizeContextScan(args: ContextScanFinalize, clearLines: () => void) {
+type TxFn = (template: string, vars: Record<string, string | number>) => string;
+
+function finalizeContextScan(
+  args: ContextScanFinalize,
+  clearLines: () => void,
+  t: Translations,
+  tx: TxFn,
+) {
   const { outcome, groupsCreated, contextsCreated, filesMapped, errorMessage } = args;
+  const dt = t.plugins.dev_tools;
   const pid = useSystemStore.getState().activeProjectId;
   const projectName = pid
-    ? useSystemStore.getState().projects.find((p) => p.id === pid)?.name ?? 'Unknown project'
-    : 'Unknown project';
+    ? useSystemStore.getState().projects.find((p) => p.id === pid)?.name ?? dt.context_scan_unknown_project
+    : dt.context_scan_unknown_project;
 
   // Always re-fetch when there's any chance work was committed (success or warning).
   if ((outcome === 'success' || outcome === 'warning') && pid) {
@@ -56,28 +65,28 @@ function finalizeContextScan(args: ContextScanFinalize, clearLines: () => void) 
   const center = useNotificationCenterStore.getState();
   if (outcome === 'success') {
     const counts = [
-      groupsCreated != null ? `${groupsCreated} groups` : null,
-      contextsCreated != null ? `${contextsCreated} contexts` : null,
-      filesMapped != null ? `${filesMapped} files` : null,
+      groupsCreated != null ? tx(dt.context_scan_count_groups, { count: groupsCreated }) : null,
+      contextsCreated != null ? tx(dt.context_scan_count_contexts, { count: contextsCreated }) : null,
+      filesMapped != null ? tx(dt.context_scan_count_files, { count: filesMapped }) : null,
     ].filter(Boolean).join(', ');
     center.addProcessNotification({
       processType: 'context-scan',
       status: 'success',
-      title: `Context Map Ready — ${projectName}`,
-      summary: counts ? `Generated ${counts}.` : 'Codebase scan completed successfully.',
+      title: tx(dt.context_scan_notif_ready_title, { projectName }),
+      summary: counts ? tx(dt.context_scan_notif_ready_summary, { counts }) : dt.context_scan_notif_ready_summary_default,
       redirectSection: 'plugins',
       redirectTab: 'context-map',
     });
   } else if (outcome === 'warning') {
     const counts = [
-      groupsCreated != null ? `${groupsCreated} groups` : null,
-      contextsCreated != null ? `${contextsCreated} contexts` : null,
+      groupsCreated != null ? tx(dt.context_scan_count_groups, { count: groupsCreated }) : null,
+      contextsCreated != null ? tx(dt.context_scan_count_contexts, { count: contextsCreated }) : null,
     ].filter(Boolean).join(', ');
     center.addProcessNotification({
       processType: 'context-scan',
       status: 'warning',
-      title: `Context Map (partial) — ${projectName}`,
-      summary: `Scan exceeded the timeout but ${counts || 'partial results'} were saved. Click Open to review what was generated.`,
+      title: tx(dt.context_scan_notif_partial_title, { projectName }),
+      summary: tx(dt.context_scan_notif_partial_summary, { counts: counts || dt.context_scan_notif_partial_summary_default }),
       redirectSection: 'plugins',
       redirectTab: 'context-map',
     });
@@ -85,8 +94,8 @@ function finalizeContextScan(args: ContextScanFinalize, clearLines: () => void) 
     center.addProcessNotification({
       processType: 'context-scan',
       status: 'failed',
-      title: `Context Map Failed — ${projectName}`,
-      summary: errorMessage ?? 'The codebase scan failed before any contexts were created. Try again or check the logs.',
+      title: tx(dt.context_scan_notif_failed_title, { projectName }),
+      summary: errorMessage ?? dt.context_scan_notif_failed_default,
       redirectSection: 'plugins',
       redirectTab: 'context-map',
     });
@@ -106,7 +115,7 @@ function finalizeContextScan(args: ContextScanFinalize, clearLines: () => void) 
 // ---------------------------------------------------------------------------
 
 export default function ContextMapPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const { fetchContextMap, createContextGroup, scanCodebase } = useDevToolsActions();
 
   const storeGroups = useSystemStore((s) => s.contextGroups);
@@ -147,14 +156,14 @@ export default function ContextMapPage() {
     if (ungrouped.length > 0) {
       result.push({
         id: '__ungrouped__',
-        name: 'Ungrouped',
+        name: t.plugins.dev_tools.context_scan_ungrouped,
         color: 'amber',
         contexts: ungrouped.map((c) => toItem(c, '__ungrouped__')),
       });
     }
 
     return result;
-  }, [storeGroups, storeContexts]);
+  }, [storeGroups, storeContexts, t]);
 
   // Listen for Tauri streaming events — registered ONCE on mount.
   // Reads activeScanId from the store at event time so the listener is stable
@@ -180,17 +189,17 @@ export default function ContextMapPage() {
           // If it never arrives within 3s, finalize without counts.
           setTimeout(() => {
             if (useSystemStore.getState().activeScanId === currentScanId) {
-              finalizeContextScan({ outcome: 'success' }, () => setScanLines([]));
+              finalizeContextScan({ outcome: 'success' }, () => setScanLines([]), t, tx);
             }
           }, 3000);
         } else if (status === 'completed_with_warning') {
           setTimeout(() => {
             if (useSystemStore.getState().activeScanId === currentScanId) {
-              finalizeContextScan({ outcome: 'warning', errorMessage: error }, () => setScanLines([]));
+              finalizeContextScan({ outcome: 'warning', errorMessage: error }, () => setScanLines([]), t, tx);
             }
           }, 3000);
         } else if (status === 'failed' || status === 'cancelled') {
-          finalizeContextScan({ outcome: 'failed', errorMessage: error }, () => setScanLines([]));
+          finalizeContextScan({ outcome: 'failed', errorMessage: error }, () => setScanLines([]), t, tx);
         }
       }
     }).then((fn) => { statusUnlisten = fn; });
@@ -216,6 +225,8 @@ export default function ContextMapPage() {
             errorMessage: event.payload.error,
           },
           () => setScanLines([]),
+          t,
+          tx,
         );
       }
     }).then((fn) => { completeUnlisten = fn; });
@@ -225,7 +236,10 @@ export default function ContextMapPage() {
       statusUnlisten?.();
       completeUnlisten?.();
     };
-  }, []); // empty deps — register once on mount
+    // t/tx flow into finalizeContextScan; re-register on language switch so
+    // mid-scan completion notifications use the active locale. Cost is one
+    // listener swap per language change.
+  }, [t, tx]);
 
   // On mount: if a scan is already active in the store, poll its real status.
   // This handles the case where the user navigated away during a scan and
@@ -246,11 +260,11 @@ export default function ContextMapPage() {
           setScanLines(result.lines);
         }
         if (result.status === 'completed') {
-          finalizeContextScan({ outcome: 'success' }, () => setScanLines([]));
+          finalizeContextScan({ outcome: 'success' }, () => setScanLines([]), t, tx);
         } else if (result.status === 'completed_with_warning') {
-          finalizeContextScan({ outcome: 'warning', errorMessage: result.error }, () => setScanLines([]));
+          finalizeContextScan({ outcome: 'warning', errorMessage: result.error }, () => setScanLines([]), t, tx);
         } else if (result.status === 'failed' || result.status === 'cancelled' || result.status === 'not_found') {
-          finalizeContextScan({ outcome: 'failed', errorMessage: result.error }, () => setScanLines([]));
+          finalizeContextScan({ outcome: 'failed', errorMessage: result.error }, () => setScanLines([]), t, tx);
         }
         // else: still running — listener will catch the event
       } catch { /* ignore */ }
@@ -280,14 +294,16 @@ export default function ContextMapPage() {
     useNotificationCenterStore.getState().addProcessNotification({
       processType: 'context-scan',
       status: 'canceled',
-      title: `Context Map Cancelled${activeProject?.name ? ` — ${activeProject.name}` : ''}`,
-      summary: 'Codebase scan was cancelled by the user.',
+      title: tx(t.plugins.dev_tools.context_scan_notif_cancelled_title, {
+        projectName: activeProject?.name ?? t.plugins.dev_tools.context_scan_unknown_project,
+      }),
+      summary: t.plugins.dev_tools.context_scan_notif_cancelled_summary,
       redirectSection: 'plugins',
       redirectTab: 'context-map',
     });
     useSystemStore.setState({ codebaseScanPhase: 'idle', activeScanId: null });
     setScanLines([]);
-  }, [activeScanId, activeProject?.name]);
+  }, [activeScanId, activeProject?.name, t, tx]);
 
   const handleCreateGroup = (name: string, color: string) => {
     createContextGroup({ name, color });
