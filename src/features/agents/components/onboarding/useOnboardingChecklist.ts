@@ -1,9 +1,18 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 
+/** i18n key under `t.agents.onboarding.checklist.*` for each checklist row. */
+export type ChecklistLabelKey =
+  | 'configure_prompt'
+  | 'select_model'
+  | 'assign_tool'
+  | 'link_connector'
+  | 'create_trigger'
+  | 'run_first_test';
+
 export interface ChecklistItem {
   id: string;
-  label: string;
+  labelKey: ChecklistLabelKey;
   done: boolean;
   /** Editor tab to navigate to for this item */
   tab?: string;
@@ -49,12 +58,12 @@ export function useOnboardingChecklist(personaId: string | undefined): Onboardin
     const hasTestRun = !!lastRun;
 
     const items: ChecklistItem[] = [
-      { id: 'prompt', label: 'Configure prompt', done: hasPrompt, tab: 'prompt' },
-      { id: 'model', label: 'Select model', done: hasModel, tab: 'use-cases' },
-      { id: 'tools', label: 'Assign a tool', done: hasTools, tab: 'connectors' },
-      { id: 'connector', label: 'Link a connector', done: hasConnector, tab: 'connectors' },
-      { id: 'trigger', label: 'Create a trigger', done: hasTrigger, tab: 'connectors' },
-      { id: 'test', label: 'Run first test', done: hasTestRun, tab: 'lab' },
+      { id: 'prompt', labelKey: 'configure_prompt', done: hasPrompt, tab: 'prompt' },
+      { id: 'model', labelKey: 'select_model', done: hasModel, tab: 'use-cases' },
+      { id: 'tools', labelKey: 'assign_tool', done: hasTools, tab: 'connectors' },
+      { id: 'connector', labelKey: 'link_connector', done: hasConnector, tab: 'connectors' },
+      { id: 'trigger', labelKey: 'create_trigger', done: hasTrigger, tab: 'connectors' },
+      { id: 'test', labelKey: 'run_first_test', done: hasTestRun, tab: 'lab' },
     ];
 
     const completed = items.filter((i) => i.done).length;

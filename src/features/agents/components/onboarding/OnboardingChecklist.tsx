@@ -150,7 +150,7 @@ export function OnboardingBanner({ personaId }: { personaId: string }) {
                 <Circle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
               )}
               <span className={`typo-body flex-1 ${item.done ? 'line-through' : ''}`}>
-                {item.label}
+                {t.agents.onboarding.checklist[item.labelKey]}
               </span>
             </button>
           ))}

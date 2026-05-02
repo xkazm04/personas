@@ -1826,7 +1826,16 @@
       "steps_done": "{completed}/{total} steps done",
       "dismiss_checklist": "Dismiss checklist",
       "expand_checklist": "Expand checklist",
-      "collapse_checklist": "Collapse checklist"
+      "collapse_checklist": "Collapse checklist",
+      "score_complete": "{score}% setup complete",
+      "checklist": {
+        "configure_prompt": "Configure prompt",
+        "select_model": "Select model",
+        "assign_tool": "Assign a tool",
+        "link_connector": "Link a connector",
+        "create_trigger": "Create a trigger",
+        "run_first_test": "Run first test"
+      }
     },
     "template_picker": {
       "title": "Choose a Template",

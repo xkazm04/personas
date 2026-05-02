@@ -1833,6 +1833,15 @@ export type Translations = {
       dismiss_checklist: string;
       expand_checklist: string;
       collapse_checklist: string;
+      score_complete: string;
+      checklist: {
+        configure_prompt: string;
+        select_model: string;
+        assign_tool: string;
+        link_connector: string;
+        create_trigger: string;
+        run_first_test: string;
+      };
     };
     template_picker: {
       title: string;
