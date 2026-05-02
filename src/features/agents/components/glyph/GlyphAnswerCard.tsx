@@ -37,10 +37,16 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 12, scale: 0.96 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      className="relative rounded-modal bg-card-bg p-4 flex flex-col gap-3"
+      // The card sits on top of the live glyph (orbit, petal sweep,
+      // pulsing pending leaves). `bg-card-bg` is ~5% opacity by design —
+      // fine for cards in normal layout flow, but unreadable as an
+      // overlay against the animated content below. Use `bg-background`
+      // at 95% + a moderate backdrop-blur so anything still visible
+      // through the seam is softened, not distracting.
+      className="relative rounded-modal bg-background/95 backdrop-blur-md p-4 flex flex-col gap-3"
       style={{
         border: `1px solid ${color}55`,
-        boxShadow: `0 0 32px ${color}44, 0 8px 28px rgba(0,0,0,0.45)`,
+        boxShadow: `0 0 32px ${color}44, 0 8px 28px rgba(0,0,0,0.55)`,
       }}
     >
       <div
