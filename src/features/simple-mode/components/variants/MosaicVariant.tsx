@@ -145,13 +145,6 @@ export default function MosaicVariant() {
   const setViewMode = useSystemStore((s) => s.setViewMode);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
-  // Zero-persona state: nothing to render; the whole surface becomes a
-  // welcome card with a CTA into the onboarding flow. Shared with Console
-  // via `SimpleEmptyState` (Phase 08 extraction).
-  if (personas.length === 0) {
-    return <SimpleEmptyState onCreate={startOnboarding} />;
-  }
-
   const hero = useMemo(() => pickHero(inbox), [inbox]);
   const secondary = useMemo(() => {
     if (!hero) return inbox.slice(0, 3);
@@ -176,6 +169,13 @@ export default function MosaicVariant() {
     }
     return out;
   }, [hero, secondary, personas]);
+
+  // Zero-persona state: welcome card with onboarding CTA. Shared with Console
+  // via `SimpleEmptyState`. Placed below the memos to keep hook order stable
+  // across renders regardless of persona count (rules-of-hooks).
+  if (personas.length === 0) {
+    return <SimpleEmptyState onCreate={startOnboarding} />;
+  }
 
   const onHeroAction = () => {
     // Phase 09 will wire this to an in-surface detail pane; for now we just
