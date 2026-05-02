@@ -60,7 +60,7 @@ import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration, hashId } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
-import type { Tone } from '../../_shared/inboxTone';
+import { toneForInboxItem, type Tone } from '../../_shared/inboxTone';
 import { firstGrapheme } from '../../_shared/grapheme';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
@@ -80,19 +80,6 @@ function toneForPersona(p: Persona): Tone {
   return TONES[idx] ?? 'gold';
 }
 
-/** Per-kind inbox tone — same mapping Mosaic uses; keeps the two variants in sync. */
-function toneForInbox(item: UnifiedInboxItem): Tone {
-  switch (item.kind) {
-    case 'approval':
-      return 'amber';
-    case 'message':
-      return 'violet';
-    case 'output':
-      return 'emerald';
-    case 'health':
-      return item.severity === 'critical' ? 'rose' : 'gold';
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Default export — composes the whole variant.
@@ -458,7 +445,7 @@ interface InboxRowProps {
 }
 
 function InboxRow({ t, tFull, item, onClick }: InboxRowProps) {
-  const tone = toneForInbox(item);
+  const tone = toneForInboxItem(item);
   // Quick action buttons are siblings of the row-click button, not children —
   // nesting <button> inside <button> is invalid HTML and confuses screen readers.
   const onAction = (e: MouseEvent<HTMLButtonElement>) => {

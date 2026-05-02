@@ -51,7 +51,7 @@ import { useUnifiedInbox } from '../../hooks/useUnifiedInbox';
 import { useIllustration } from '../../hooks/useIllustration';
 import { useSimpleSummary, type SimpleSummary } from '../../hooks/useSimpleSummary';
 import type { UnifiedInboxItem } from '../../types';
-import type { Tone } from '../../_shared/inboxTone';
+import { toneForInboxItem, type Tone } from '../../_shared/inboxTone';
 import { firstGrapheme } from '../../_shared/grapheme';
 
 // ---------------------------------------------------------------------------
@@ -98,24 +98,6 @@ export function pickHero(items: readonly UnifiedInboxItem[]): UnifiedInboxItem |
 // ---------------------------------------------------------------------------
 // Tone selection per inbox kind
 // ---------------------------------------------------------------------------
-
-/**
- * Map an inbox item to its Simple-mode accent tone. Critical-severity
- * health issues are rose; everything else follows the per-kind chart
- * documented in the plan.
- */
-function toneFor(item: UnifiedInboxItem): Tone {
-  switch (item.kind) {
-    case 'approval':
-      return 'amber';
-    case 'message':
-      return 'violet';
-    case 'output':
-      return 'emerald';
-    case 'health':
-      return item.severity === 'critical' ? 'rose' : 'gold';
-  }
-}
 
 /** CTA label key per hero kind (approval → Review, message → Read, etc.). */
 function heroCtaKey(
@@ -363,7 +345,7 @@ function HeroTile({ t, tFull, item, onAction, onCreateAssistant }: HeroTileProps
     );
   }
 
-  const tone = toneFor(item);
+  const tone = toneForInboxItem(item);
   const ctaLabel = t[heroCtaKey(item.kind)];
 
   return (
@@ -445,7 +427,7 @@ interface SecondaryTileProps {
 }
 
 function SecondaryTile({ item }: SecondaryTileProps) {
-  const tone = toneFor(item);
+  const tone = toneForInboxItem(item);
   return (
     <div
       className={[

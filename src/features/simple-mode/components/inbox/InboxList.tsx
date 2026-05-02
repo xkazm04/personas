@@ -20,7 +20,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 import { useIllustration } from '../../hooks/useIllustration';
 import type { UnifiedInboxItem } from '../../types';
-import type { Tone } from '../../_shared/inboxTone';
+import { toneForInboxItem, type Tone } from '../../_shared/inboxTone';
 import { formatRelativeTime } from '../../utils/formatRelativeTime';
 
 type SimpleModeT = Translations['simple_mode'];
@@ -42,26 +42,12 @@ export interface InboxListProps {
   onFilterChange: (next: FilterKey) => void;
 }
 
-/** Per-kind tone — same mapping Mosaic and Console use; keeps the trio in sync. */
-function toneForKind(item: UnifiedInboxItem): Tone {
-  switch (item.kind) {
-    case 'approval':
-      return 'amber';
-    case 'message':
-      return 'violet';
-    case 'output':
-      return 'emerald';
-    case 'health':
-      return item.severity === 'critical' ? 'rose' : 'gold';
-  }
-}
-
 /** Severity → tone for the small left-rail dot. Overrides the kind tone when
  *  severity is critical/warning so the dot draws attention independently. */
 function toneForSeverity(item: UnifiedInboxItem): Tone {
   if (item.severity === 'critical') return 'rose';
   if (item.severity === 'warning') return 'gold';
-  return toneForKind(item);
+  return toneForInboxItem(item);
 }
 
 export function InboxList({
@@ -219,7 +205,7 @@ function InboxRow({
 function PersonaThumb({ item }: { item: UnifiedInboxItem }) {
   const personas = useAgentStore((sx) => sx.personas);
   const persona = personas.find((p) => p.id === item.personaId) ?? null;
-  const tone = toneForKind(item);
+  const tone = toneForInboxItem(item);
 
   // useIllustration requires a persona-like with id + (optional) hints.
   // Pass a minimal stub when persona is missing so hashId stays stable.
