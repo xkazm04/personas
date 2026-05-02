@@ -1,5 +1,5 @@
 import { DollarSign, Clock, Hash } from 'lucide-react';
-import { formatMs, formatCost } from './ReplayHelpers';
+import { formatMs, formatCost } from '../libs/useReplayState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** Cost accumulator panel. */

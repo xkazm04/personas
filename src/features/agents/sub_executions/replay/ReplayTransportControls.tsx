@@ -8,7 +8,7 @@ import {
   GitFork,
   X,
 } from 'lucide-react';
-import { SPEED_OPTIONS } from './ReplayHelpers';
+import { SPEED_OPTIONS } from '../libs/useReplayState';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 

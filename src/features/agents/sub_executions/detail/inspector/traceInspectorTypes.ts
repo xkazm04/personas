@@ -1,6 +1,12 @@
-import type { TraceSpan } from '@/lib/bindings/TraceSpan';
 import type { SpanType } from '@/lib/bindings/SpanType';
 import { SYSTEM_OPERATION_CONFIG } from '../../libs/traceHelpers';
+
+// Re-export the canonical UnifiedSpan-based tree helpers + SpanNode type
+// from libs/traceHelpers so the inspector and SystemTraceViewer share one
+// implementation. (Earlier, this file shipped a parallel TraceSpan-based
+// copy of buildSpanTree/flattenTree/SpanNode that drifted.)
+export type { SpanNode } from '../../libs/traceHelpers';
+export { buildSpanTree, flattenTree } from '../../libs/traceHelpers';
 
 // ============================================================================
 // Span type config
@@ -31,57 +37,4 @@ const FALLBACK_CONFIG = { label: 'Unknown', color: 'text-gray-400', bg: 'bg-gray
 /** Get config for any span type (engine, pipeline, or system operation). */
 export function getSpanTypeConfig(spanType: string): { label: string; color: string; bg: string; border: string } {
   return SPAN_TYPE_CONFIG[spanType] ?? FALLBACK_CONFIG;
-}
-
-// ============================================================================
-// Tree node type
-// ============================================================================
-
-export interface SpanNode {
-  span: TraceSpan;
-  children: SpanNode[];
-  depth: number;
-}
-
-export function buildSpanTree(spans: TraceSpan[]): SpanNode[] {
-  const byId = new Map<string, SpanNode>();
-  const roots: SpanNode[] = [];
-
-  // Create nodes
-  for (const span of spans) {
-    byId.set(span.span_id, { span, children: [], depth: 0 });
-  }
-
-  // Wire parent-child
-  for (const span of spans) {
-    const node = byId.get(span.span_id)!;
-    if (span.parent_span_id) {
-      const parent = byId.get(span.parent_span_id);
-      if (parent) {
-        node.depth = parent.depth + 1;
-        parent.children.push(node);
-        continue;
-      }
-    }
-    roots.push(node);
-  }
-
-  // Sort children by start_ms
-  const sortChildren = (node: SpanNode) => {
-    node.children.sort((a, b) => a.span.start_ms - b.span.start_ms);
-    node.children.forEach(sortChildren);
-  };
-  roots.forEach(sortChildren);
-
-  return roots;
-}
-
-export function flattenTree(nodes: SpanNode[]): SpanNode[] {
-  const result: SpanNode[] = [];
-  const walk = (node: SpanNode) => {
-    result.push(node);
-    node.children.forEach(walk);
-  };
-  nodes.forEach(walk);
-  return result;
 }

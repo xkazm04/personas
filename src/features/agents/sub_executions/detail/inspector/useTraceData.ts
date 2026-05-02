@@ -2,15 +2,37 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import type { ExecutionTrace } from '@/lib/bindings/ExecutionTrace';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import type { UnifiedTrace, UnifiedSpan, UnifiedSpanType } from '@/lib/execution/pipeline';
+import { mergeBackendSpans } from '@/lib/execution/pipeline';
 import { getExecutionTrace } from '@/api/agents/executions';
+import { useAgentStore } from '@/stores/agentStore';
 import { buildSpanTree, flattenTree } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
+
+/** Convert backend ExecutionTrace spans into UnifiedSpan format. */
+function convertBackendSpans(spans: TraceSpan[]): UnifiedSpan[] {
+  return spans.map((s) => ({
+    span_id: s.span_id,
+    parent_span_id: s.parent_span_id,
+    span_type: s.span_type as UnifiedSpanType,
+    name: s.name,
+    start_ms: s.start_ms,
+    end_ms: s.end_ms,
+    duration_ms: s.duration_ms,
+    cost_usd: s.cost_usd,
+    error: s.error,
+    metadata: s.metadata as Record<string, unknown> | null,
+  }));
+}
 
 export function useTraceData(executionId: string, personaId: string) {
   const [trace, setTrace] = useState<ExecutionTrace | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [collapsedSpans, setCollapsedSpans] = useState<Set<string>>(new Set());
+
+  // Pipeline trace from store -- merged with backend trace when execution matches.
+  const pipelineTrace = useAgentStore((s) => s.pipelineTrace);
 
   // Fetch trace data
   useEffect(() => {
@@ -33,7 +55,7 @@ export function useTraceData(executionId: string, personaId: string) {
       });
 
     return () => { cancelled = true; };
-  }, [executionId]);
+  }, [executionId, personaId]);
 
   // Listen for live trace updates (complete trace emitted on finish)
   useEffect(() => {
@@ -80,41 +102,73 @@ export function useTraceData(executionId: string, personaId: string) {
     });
   }, []);
 
-  // Build tree + visible flat list
-  const { visibleNodes, totalMs } = useMemo(() => {
-    if (!trace) return { visibleNodes: [] as SpanNode[], totalMs: 0 };
+  // Merge pipeline trace + backend trace into a single unified trace for the
+  // tree/waterfall view. When pipeline trace is present, backend engine
+  // spans are nested under their owning pipeline stage span.
+  const unifiedTrace = useMemo<UnifiedTrace | null>(() => {
+    const hasPipeline = pipelineTrace && pipelineTrace.executionId === executionId;
+    const hasBackend = trace && trace.spans.length > 0;
 
-    const tree = buildSpanTree(trace.spans);
+    if (hasPipeline && hasBackend) {
+      return mergeBackendSpans(pipelineTrace, trace.spans);
+    }
+    if (hasPipeline) {
+      return pipelineTrace;
+    }
+    if (hasBackend) {
+      return {
+        executionId: trace.execution_id,
+        spans: convertBackendSpans(trace.spans),
+        startedAt: 0,
+        completedAt: trace.total_duration_ms ?? undefined,
+      };
+    }
+    return null;
+  }, [pipelineTrace, trace, executionId]);
+
+  // Build tree + visible flat list from unified trace
+  const { visibleNodes, totalMs } = useMemo(() => {
+    if (!unifiedTrace) return { visibleNodes: [] as SpanNode[], totalMs: 0 };
+
+    const tree = buildSpanTree(unifiedTrace.spans);
     const allFlat = flattenTree(tree);
 
-    // Filter out collapsed children
     const isAncestorCollapsed = (node: SpanNode): boolean => {
       let currentParentId = node.span.parent_span_id;
       while (currentParentId) {
         if (collapsedSpans.has(currentParentId)) return true;
-        const parent = trace.spans.find(s => s.span_id === currentParentId);
+        const parent = unifiedTrace.spans.find(s => s.span_id === currentParentId);
         currentParentId = parent?.parent_span_id ?? null;
       }
       return false;
     };
 
     const visible = allFlat.filter(n => !isAncestorCollapsed(n));
-    const total = trace.total_duration_ms ?? 0;
+
+    // Prefer backend total_duration_ms when available (richest signal),
+    // fall back to unified trace timing, then to max(end_ms).
+    let total = trace?.total_duration_ms ?? 0;
+    if (!total && unifiedTrace.completedAt && unifiedTrace.startedAt) {
+      total = unifiedTrace.completedAt - unifiedTrace.startedAt;
+    }
+    if (!total) {
+      total = Math.max(0, ...unifiedTrace.spans.map(s => s.end_ms ?? s.start_ms + (s.duration_ms ?? 0)));
+    }
 
     return { visibleNodes: visible, totalMs: total };
-  }, [trace, collapsedSpans]);
+  }, [unifiedTrace, collapsedSpans, trace]);
 
   // Children lookup for expand/collapse icons
   const childrenMap = useMemo(() => {
-    if (!trace) return new Map<string, boolean>();
+    if (!unifiedTrace) return new Map<string, boolean>();
     const map = new Map<string, boolean>();
-    for (const span of trace.spans) {
+    for (const span of unifiedTrace.spans) {
       if (span.parent_span_id) {
         map.set(span.parent_span_id, true);
       }
     }
     return map;
-  }, [trace]);
+  }, [unifiedTrace]);
 
-  return { trace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap };
+  return { trace, unifiedTrace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap };
 }

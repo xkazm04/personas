@@ -1,8 +1,8 @@
-import type { TraceSpan } from '@/lib/bindings/TraceSpan';
+import type { UnifiedSpan } from '@/lib/execution/pipeline';
 import { formatDuration } from '@/lib/utils/formatters';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 
-export function WaterfallBar({ span, totalMs }: { span: TraceSpan; totalMs: number }) {
+export function WaterfallBar({ span, totalMs }: { span: UnifiedSpan; totalMs: number }) {
   if (!totalMs || totalMs === 0) return null;
 
   const leftPct = (span.start_ms / totalMs) * 100;

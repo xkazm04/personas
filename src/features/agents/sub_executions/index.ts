@@ -1,9 +1,5 @@
 export { PersonaRunner } from './components/runner/PersonaRunner';
-export { PipelineWaterfall } from './components/replay/PipelineWaterfall';
-export { ReplaySandbox } from './components/replay/ReplaySandbox';
 export { ExecutionComparison } from './components/list/ExecutionComparison';
 export { ExecutionList } from './components/list/ExecutionList';
 export { ExecutionDetail } from './detail/ExecutionDetail';
-export { TraceInspector } from './components/detail/TraceInspector';
-export { InspectorTabs as ExecutionInspector } from './components/detail/InspectorTabs';
 export { ExecutionTerminal } from './components/runner/ExecutionTerminal';

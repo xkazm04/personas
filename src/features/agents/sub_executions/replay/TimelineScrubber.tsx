@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import type { ToolCallStep } from '@/hooks/execution/useReplayTimeline';
-import { formatMs } from './ReplayHelpers';
+import { formatMs } from '../libs/useReplayState';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 

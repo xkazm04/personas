@@ -15,8 +15,17 @@ interface TraceInspectorProps {
 export function TraceInspector({ execution }: TraceInspectorProps) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
-  const { trace, loading, error, collapsedSpans, toggleSpan, visibleNodes, totalMs, childrenMap } =
-    useTraceData(execution.id, execution.persona_id);
+  const {
+    trace,
+    unifiedTrace,
+    loading,
+    error,
+    collapsedSpans,
+    toggleSpan,
+    visibleNodes,
+    totalMs,
+    childrenMap,
+  } = useTraceData(execution.id, execution.persona_id);
 
   if (loading) {
     return (
@@ -34,7 +43,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     );
   }
 
-  if (!trace || trace.spans.length === 0) {
+  if (!unifiedTrace || unifiedTrace.spans.length === 0) {
     return (
       <div className="text-center py-10">
         <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
@@ -46,9 +55,14 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
     );
   }
 
+  // TraceSummary requires a full ExecutionTrace shape (input_tokens / evicted_span_count).
+  // When only the live pipelineTrace is available (no backend trace yet), skip the
+  // summary panel rather than fabricating fields.
+  const showSummary = trace !== null;
+
   return (
     <div className="space-y-4">
-      <TraceSummary trace={trace} />
+      {showSummary && trace && <TraceSummary trace={trace} />}
 
       {/* Time axis header */}
       <div className="rounded-modal border border-primary/20 bg-secondary/30 overflow-hidden">
@@ -81,13 +95,13 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
       </div>
 
       {/* Error details */}
-      {trace.spans.some(s => s.error) && (
+      {unifiedTrace.spans.some(s => s.error) && (
         <div className="space-y-2">
           <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <AlertCircle className="w-2.5 h-2.5 text-red-400" />
             {e.errors}
           </div>
-          {trace.spans
+          {unifiedTrace.spans
             .filter(s => s.error)
             .map((span) => {
               const config = getSpanTypeConfig(span.span_type);
