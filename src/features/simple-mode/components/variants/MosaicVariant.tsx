@@ -319,6 +319,20 @@ interface HeroTileProps {
 }
 
 function HeroTile({ t, tFull, item, onAction, onCreateAssistant }: HeroTileProps) {
+  const inb = t.inbox;
+  const kindLabelFor = (kind: UnifiedInboxItem['kind']): string => {
+    switch (kind) {
+      case 'approval':
+        return inb.kind_approval;
+      case 'message':
+        return inb.kind_message;
+      case 'health':
+        return inb.kind_health;
+      case 'output':
+        return inb.kind_output;
+    }
+  };
+
   if (item === null) {
     // Populated personas, but no inbox activity — warm welcome instead of
     // silence. Still prompts to create another assistant.
@@ -390,7 +404,7 @@ function HeroTile({ t, tFull, item, onAction, onCreateAssistant }: HeroTileProps
 
       <div className="space-y-1">
         <div className={`typo-label uppercase tracking-wider simple-accent-${tone}-text`}>
-          {item.kind}
+          {kindLabelFor(item.kind)}
         </div>
         <div className="typo-heading-lg simple-display text-foreground">{item.title}</div>
         <p className="typo-body text-foreground/70 line-clamp-2">{item.body}</p>

@@ -11,6 +11,8 @@
  */
 import { MessageSquare } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
+
 import type { UnifiedInboxItem } from '../../../types';
 import { DetailHeader } from './DetailHeader';
 
@@ -19,12 +21,14 @@ export interface MessageDetailProps {
 }
 
 export function MessageDetail({ item }: MessageDetailProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col min-h-0 overflow-auto">
       <DetailHeader
         item={item}
         kindIcon={<MessageSquare className="w-3.5 h-3.5" />}
         kindTone="violet"
+        kindLabel={t.simple_mode.inbox.kind_message}
       />
 
       <div className="px-6 pb-6">

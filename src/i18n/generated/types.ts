@@ -8356,6 +8356,10 @@ export type Translations = {
     inbox: {
       header_title: string;
       header_subtitle: string;
+      kind_approval: string;
+      kind_message: string;
+      kind_health: string;
+      kind_output: string;
       filter_all: string;
       filter_needs_me: string;
       filter_search: string;

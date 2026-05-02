@@ -27,9 +27,11 @@ export interface DetailHeaderProps {
   /** Icon rendered inside the kind badge (e.g. <ShieldCheck className="w-3.5 h-3.5" />). */
   kindIcon: ReactNode;
   kindTone: Tone;
+  /** Translated label for the kind badge — caller resolves from t.simple_mode.inbox.kind_*. */
+  kindLabel: string;
 }
 
-export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
+export function DetailHeader({ item, kindIcon, kindTone, kindLabel }: DetailHeaderProps) {
   // `t` is the full Translations bundle — passed straight through to
   // formatRelativeTime which reads plural-aware keys from
   // `t.simple_mode.inbox.relative_*` (Phase 15-01).
@@ -71,7 +73,7 @@ export function DetailHeader({ item, kindIcon, kindTone }: DetailHeaderProps) {
             ].join(' ')}
           >
             {kindIcon}
-            <span className="truncate">{item.kind}</span>
+            <span className="truncate">{kindLabel}</span>
           </span>
           <span className="typo-caption text-foreground/50 italic truncate">
             {item.personaName}

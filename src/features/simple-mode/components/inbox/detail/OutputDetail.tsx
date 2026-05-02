@@ -36,6 +36,7 @@ export function OutputDetail({ item }: OutputDetailProps) {
         item={item}
         kindIcon={<FileOutput className="w-3.5 h-3.5" />}
         kindTone="emerald"
+        kindLabel={inb.kind_output}
       />
       <div className="flex-1 overflow-auto px-6 py-5">
         <section className="rounded-2xl border border-foreground/10 bg-foreground/[0.02] p-5">

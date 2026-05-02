@@ -8350,6 +8350,10 @@
     "inbox": {
       "header_title": "Your inbox",
       "header_subtitle": "Decide what to do with the output of your assistants",
+      "kind_approval": "Approval",
+      "kind_message": "Message",
+      "kind_health": "Health",
+      "kind_output": "Output",
       "filter_all": "All",
       "filter_needs_me": "Needs me",
       "filter_search": "Search",

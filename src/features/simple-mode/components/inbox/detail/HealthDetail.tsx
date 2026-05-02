@@ -35,6 +35,7 @@ export function HealthDetail({ item }: HealthDetailProps) {
         item={item}
         kindIcon={<Heart className="w-3.5 h-3.5" />}
         kindTone={tone}
+        kindLabel={inb.kind_health}
       />
 
       <div className="px-6 pb-6 flex flex-col gap-4">
