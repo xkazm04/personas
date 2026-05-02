@@ -3,8 +3,7 @@
 This folder uses a `sub_<concern>/` naming convention to split the sprawling
 agent feature into per-concern modules. The convention is implicit in the
 directory layout but was previously undocumented, causing duplicated logic
-(notably credential-availability gating appearing in both `sub_tools` and
-`sub_connectors`).
+across closely-related sub-modules.
 
 Use this map before adding a file: if the concern already has a home, put it
 there. If it legitimately spans two modules, the shared helper belongs in
@@ -22,8 +21,7 @@ there. If it legitimately spans two modules, the shared helper belongs in
 
 | Module                  | Owns                                                                          | Does NOT own                                                                      |
 | ----------------------- | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `sub_tools`             | Per-agent tool selector, tool grouping, tool-credential **gating UX**, undo.  | Credential CRUD itself — that's `features/vault`. Connector metadata discovery.   |
-| `sub_connectors`        | Agent↔connector bindings, automation setup (n8n/Zapier/GitHub Actions).       | Credential storage; per-tool credential-requirement checks (those live next to the tool list in `sub_tools`). |
+| `sub_connectors`        | Agent↔connector bindings, automation setup (n8n/Zapier/GitHub Actions), per-agent tool list (rendered via `ToolsSection` inside the connectors tab). | Credential storage — that's `features/vault`.                                      |
 | `sub_use_cases`         | Use-case cards, editing, activation toggles in the agent editor.              | Free-form chat; execution history.                                                |
 | `sub_chat`              | Chat tab UI: bubbles, composer, streaming render.                             | Session storage/event bus.                                                        |
 | `sub_activity`          | Activity matrix, per-execution drill-down.                                    | Top-level observability charts (those live in `features/overview`).               |
@@ -41,13 +39,6 @@ outside the agent editor too. Hook modules (`useHealthCheck`, `useHealthDigestSc
 live at the top level so non-agent-editor surfaces can import them without
 reaching into a `sub_` module. `sub_health/` is strictly the editor-tab's render
 layer plus its adaptors.
-
-## Why tool-credential gating is in `sub_tools` not `sub_connectors`
-
-A tool without a credential is still a tool in the selector — it just renders
-with a disabled check + an "Add credential" CTA. The UX decision is about
-**how the tool looks in the list**, which `sub_tools` owns. The credential
-LOOKUP data still comes from the vault store, shared by both modules.
 
 ## When adding a new `sub_` module
 
