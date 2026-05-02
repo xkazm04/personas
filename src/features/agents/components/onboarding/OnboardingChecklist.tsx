@@ -49,9 +49,13 @@ export function ProgressRing({ score, size = 24, strokeWidth = 2.5 }: ProgressRi
 // -- Sidebar Score Ring ----------------------------------------------
 
 export function SidebarScoreRing({ score }: { score: number }) {
+  const { t, tx } = useTranslation();
   if (score >= 100) return null;
   return (
-    <div className="relative flex-shrink-0" title={`${score}% setup complete`}>
+    <div
+      className="relative flex-shrink-0"
+      title={tx(t.agents.onboarding.score_complete, { score })}
+    >
       <ProgressRing score={score} size={18} strokeWidth={2} />
       <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-foreground rotate-90">
         {score}
