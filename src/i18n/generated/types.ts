@@ -7786,6 +7786,13 @@ export type Translations = {
     connect_once_hint: string;
     describe_intent: string;
     example_intents_label: string;
+    example_intent_1: string;
+    example_intent_2: string;
+    example_intent_3: string;
+    coach_substep_describe: string;
+    coach_substep_answer: string;
+    coach_substep_review: string;
+    coach_substep_promote: string;
     intent_field_hint: string;
     analyzing_hint: string;
     questions_waiting_one: string;

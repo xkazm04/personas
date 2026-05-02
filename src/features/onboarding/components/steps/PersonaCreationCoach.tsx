@@ -4,10 +4,10 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const SUB_STEPS = [
-  { id: 'enter-intent', label: 'Describe', icon: PenLine },
-  { id: 'answer-questions', label: 'Answer', icon: MessageSquare },
-  { id: 'review-draft', label: 'Review', icon: Sparkles },
-  { id: 'test-promote', label: 'Promote', icon: Rocket },
+  { id: 'enter-intent', labelKey: 'coach_substep_describe', icon: PenLine },
+  { id: 'answer-questions', labelKey: 'coach_substep_answer', icon: MessageSquare },
+  { id: 'review-draft', labelKey: 'coach_substep_review', icon: Sparkles },
+  { id: 'test-promote', labelKey: 'coach_substep_promote', icon: Rocket },
 ] as const;
 
 const MATRIX_DIMENSIONS = [
@@ -21,11 +21,7 @@ const MATRIX_DIMENSIONS = [
   { key: 'events', labelKey: 'dim_events', descKey: 'dim_events_desc', color: '#14b8a6' },
 ] as const;
 
-const EXAMPLE_INTENTS = [
-  'Monitor GitHub PRs and summarize weekly activity',
-  'Scrape job postings and send daily digest to Slack',
-  'Analyze customer feedback and update Notion database',
-];
+const EXAMPLE_INTENT_KEYS = ['example_intent_1', 'example_intent_2', 'example_intent_3'] as const;
 
 interface Props {
   subStepIndex: number;
@@ -71,7 +67,7 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
               }`}
             >
               {isComplete ? <Check className="w-2.5 h-2.5 flex-shrink-0" /> : <step.icon className="w-2.5 h-2.5 flex-shrink-0" />}
-              <span className="truncate">{step.label}</span>
+              <span className="truncate">{t.onboarding[step.labelKey]}</span>
             </div>
           );
         })}
@@ -99,9 +95,9 @@ export default function PersonaCreationCoach({ subStepIndex }: Props) {
           </p>
           <div className="space-y-1.5">
             <span className="text-[11px] text-foreground uppercase tracking-wider">{t.onboarding.example_intents_label}</span>
-            {EXAMPLE_INTENTS.map((intent, i) => (
-              <div key={i} className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/10 typo-body text-emerald-300/70">
-                "{intent}"
+            {EXAMPLE_INTENT_KEYS.map((key) => (
+              <div key={key} className="px-3 py-2 rounded-card bg-emerald-500/5 border border-emerald-500/10 typo-body text-emerald-300/70">
+                "{t.onboarding[key]}"
               </div>
             ))}
           </div>
