@@ -1,16 +1,30 @@
 import type { BuildPhase } from '@/lib/types/buildTypes';
+import type { Translations } from '@/i18n/generated/types';
 
-/** Human-readable cell key labels. */
-export const CELL_FRIENDLY_NAMES: Record<string, string> = {
-  'use-cases': 'Tasks',
-  'connectors': 'Apps & Services',
-  'triggers': 'When It Runs',
-  'human-review': 'Human Review',
-  'memory': 'Memory',
-  'error-handling': 'Error Handling',
-  'messages': 'Messages',
-  'events': 'Events',
-};
+/**
+ * Cell-key → translated label resolver.
+ *
+ * The matrix uses kebab-case cell keys (e.g. `'use-cases'`, `'human-review'`)
+ * for state plumbing, while user-visible labels live under
+ * `t.templates.matrix.dim_*`. This helper bridges the two so the component
+ * keeps using cell keys but UI strings flow through i18n.
+ *
+ * Replaces the previous `CELL_FRIENDLY_NAMES` constant which hardcoded English.
+ */
+export function getCellFriendlyName(t: Translations, cellKey: string): string {
+  const matrix = t.templates.matrix;
+  switch (cellKey) {
+    case 'use-cases': return matrix.dim_tasks;
+    case 'connectors': return matrix.dim_apps;
+    case 'triggers': return matrix.dim_schedule;
+    case 'human-review': return matrix.dim_review;
+    case 'memory': return matrix.dim_memory;
+    case 'error-handling': return matrix.dim_errors;
+    case 'messages': return matrix.dim_messages;
+    case 'events': return matrix.dim_events;
+    default: return cellKey;
+  }
+}
 
 /** LaunchOrb lifecycle glow mapping. */
 export const ORB_GLOW_CLASSES: Record<string, string> = {

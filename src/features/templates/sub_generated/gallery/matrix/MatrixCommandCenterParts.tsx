@@ -19,8 +19,8 @@ import { TestReportModal } from './TestReportModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Import constants used locally + re-export for backward compatibility
-import { CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES, type BuildPhase } from './matrixBuildConstants';
-export { CELL_FRIENDLY_NAMES, ORB_GLOW_CLASSES } from './matrixBuildConstants';
+import { getCellFriendlyName, ORB_GLOW_CLASSES, type BuildPhase } from './matrixBuildConstants';
+export { getCellFriendlyName, ORB_GLOW_CLASSES } from './matrixBuildConstants';
 export type { BuildPhase } from './matrixBuildConstants';
 
 interface PromptSection { key: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; content: string; }
@@ -149,11 +149,11 @@ export function ActiveBuildProgress({
         .filter(([, status]) => status === 'highlighted')
         .map(([key]) => key)
     : [];
-  const highlightedCells = highlightedCellKeys.map((key) => CELL_FRIENDLY_NAMES[key] ?? key);
+  const highlightedCells = highlightedCellKeys.map((key) => getCellFriendlyName(t, key));
   const activeCells = cellStates
     ? Object.entries(cellStates)
         .filter(([, status]) => status === 'filling' || status === 'pending')
-        .map(([key]) => CELL_FRIENDLY_NAMES[key] ?? key)
+        .map(([key]) => getCellFriendlyName(t, key))
     : [];
   const resolvedCells = cellStates
     ? Object.values(cellStates).filter((s) => s === 'resolved' || s === 'updated').length
@@ -327,7 +327,7 @@ export function CreationPostGeneration({
   return (
     <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
       <span className="text-xs font-semibold text-foreground tracking-wide uppercase">
-        {editingCellKey ? tx(t.templates.matrix.editing_cell, { cell: CELL_FRIENDLY_NAMES[editingCellKey] ?? editingCellKey }) : t.templates.matrix.draft_ready_label}
+        {editingCellKey ? tx(t.templates.matrix.editing_cell, { cell: getCellFriendlyName(t, editingCellKey) }) : t.templates.matrix.draft_ready_label}
       </span>
 
       {/* Apply/Discard bar when edits are pending */}
