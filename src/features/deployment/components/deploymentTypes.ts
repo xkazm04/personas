@@ -106,8 +106,8 @@ export function targetBadge(t: DeployTarget) {
   return { label: 'GitLab', cls: 'bg-orange-500/10 border-orange-500/20 text-orange-400', target: 'gitlab' as const };
 }
 
-import { formatRelativeTime } from '@/lib/utils/formatters';
-export const timeAgo = (iso: string | null) => formatRelativeTime(iso, 'Never');
+// `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
+export { timeAgo } from '@/lib/utils/formatters';
 
 export function compareValues(a: UnifiedDeployment, b: UnifiedDeployment, key: SortKey, dir: SortDir): number {
   let cmp = 0;

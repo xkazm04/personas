@@ -35,5 +35,5 @@ export function statusColor(status: string) {
   }
 }
 
-import { formatRelativeTime } from '@/lib/utils/formatters';
-export const timeAgo = (iso: string | null) => formatRelativeTime(iso, 'Never');
+// `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
+export { timeAgo } from '@/lib/utils/formatters';

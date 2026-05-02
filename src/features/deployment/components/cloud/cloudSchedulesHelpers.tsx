@@ -66,10 +66,8 @@ export function healthBadge(status: string | null) {
   return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><AlertTriangle className="w-2.5 h-2.5" />{status}</span>;
 }
 
-import { formatRelativeTime } from '@/lib/utils/formatters';
-export const timeAgo = (iso: string | null) => formatRelativeTime(iso, 'Never');
-
-export { formatCost } from '@/lib/utils/formatters';
+// `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
+export { timeAgo, formatCost } from '@/lib/utils/formatters';
 
 export function parseConfig(configStr: string | null): Record<string, unknown> {
   return parseJsonOrDefault<Record<string, unknown>>(configStr, {});

@@ -31,6 +31,17 @@ export function formatRelativeTime(
 }
 
 /**
+ * Convenience wrapper: relative time with `'Never'` as the null/invalid fallback.
+ *
+ * Used pervasively in deployment-side UI (last_invoked_at, last_triggered_at,
+ * fired_at, etc.) where the absence of a date should read as "never happened"
+ * rather than the generic dash. Hoisted here in Wave 5 — was previously
+ * redefined inline in 4 different deployment helpers, one of which had drifted
+ * to use the bare `'-'` fallback.
+ */
+export const timeAgo = (iso: string | null): string => formatRelativeTime(iso, 'Never');
+
+/**
  * Format a USD cost with configurable precision.
  *
  * @param usd        The cost in US dollars.

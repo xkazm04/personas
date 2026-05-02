@@ -10,9 +10,8 @@ export function statusIcon(status: string) {
   }
 }
 
-export { formatDuration } from '@/lib/utils/formatters';
-
-export { formatCost } from '@/lib/utils/formatters';
-
-import { formatRelativeTime } from '@/lib/utils/formatters';
-export const timeAgo = (iso: string | null) => formatRelativeTime(iso);
+// `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).
+// Note: this file previously used `formatRelativeTime(iso)` with the bare '-'
+// fallback — drifted from the other 3 deployment helpers that fell back to
+// 'Never'. Fixed to use the canonical 'Never'-fallback variant.
+export { formatDuration, formatCost, timeAgo } from '@/lib/utils/formatters';
