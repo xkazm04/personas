@@ -91,7 +91,7 @@ export function ModeComparisonCard({
         )}
       </div>
 
-      <ul className={`mt-3 space-y-1.5 ${compact ? 'text-[12px]' : ''}`}>
+      <ul className={`mt-3 space-y-1.5 ${compact ? 'typo-caption' : ''}`}>
         {bullets.map((b, i) => (
           <li key={i} className="flex items-start gap-2">
             <Check
