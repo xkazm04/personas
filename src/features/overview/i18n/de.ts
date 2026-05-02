@@ -1,47 +1,13 @@
 // TODO(i18n-de): translate from English placeholders. Structure must match en.ts exactly.
 export const de = {
   overview: {
-    anomaly: {
-      severity_unusual: "Ungew\u00f6hnlich",
-      severity_high: "Hoch",
-      severity_extreme: "Extrem",
-      above_normal: "\u00fcber normal",
-      cost_anomalies_detected: "{count} Kostenanomalien erkannt",
-      cost_spike: "Kostenanstieg",
-      above_avg: "\u00fcber dem Durchschnitt",
-      top_executions: "Wichtigste Ausf\u00fchrungen:",
-      sigma_tooltip: "{value}\u03c3 Standardabweichungen vom gleitenden Durchschnitt",
-    },
     trend: {
       up: "Anstieg",
       down: "Rückgang",
       stable: "Stabil — keine wesentliche Änderung",
       vs_previous: "im Vergleich zum Vorzeitraum",
     },
-    eventLog: {
-      title: "Ereignisprotokoll",
-      entries: "Eintr\u00e4ge",
-      new_events: "{count} neue Ereignisse",
-      new_badge: "neu",
-      no_events: "Noch keine Ereignisse",
-      no_matches: "Keine Ereignisse entsprechen der Abfrage",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Abfragesyntax",
-      query_example: "z.B. status:failed source:webhook deploy",
-      structured_badge: "strukturiert",
-      tail_on: "Live-Tail aktiv \u2014 klicken zum Stoppen",
-      tail_off: "Live-Tail aktivieren \u2014 an neueste Ereignisse anheften",
-      tail_active: "Live-Tail \u2014 gefilterte Ereignisse werden gestreamt",
-      collapse_sidebar: "Ereignisprotokoll einklappen",
-      expand_sidebar: "Ereignisprotokoll ausklappen",
-    },
-    reviewFocus: {
-      progress_of: "{current} von {total} ausstehend",
-      processed_count: "{count} bearbeitet",
-      all_caught_up: "Alles erledigt!",
-      no_pending_reviews: "Keine ausstehenden Reviews.",
-      queue_cleared: "Sie haben die gesamte Warteschlange geleert",
-    },
+
     emptyState: {
       metrics_title: "Ihre Agenten wurden noch nicht ausgeführt",
       metrics_subtitle: "Ausführungsmetriken wie Kosten, Latenz und Erfolgsrate erscheinen hier, sobald Ihre Agenten mit der Verarbeitung beginnen.",
@@ -97,9 +63,6 @@ export const de = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Ansicht konnte nicht gespeichert werden. Erneut versuchen.",
     },
   },
 };

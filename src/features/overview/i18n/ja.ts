@@ -1,47 +1,13 @@
 // TODO(i18n-ja): translate from English placeholders. Structure must match en.ts exactly.
 export const ja = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u7570\u5e38",
-      severity_high: "\u9ad8",
-      severity_extreme: "\u6975\u7aef",
-      above_normal: "\u901a\u5e38\u4ee5\u4e0a",
-      cost_anomalies_detected: "{count}\u4ef6\u306e\u30b3\u30b9\u30c8\u7570\u5e38\u3092\u691c\u51fa",
-      cost_spike: "\u30b3\u30b9\u30c8\u6025\u4e0a\u6607",
-      above_avg: "\u5e73\u5747\u4ee5\u4e0a",
-      top_executions: "\u4e3b\u306a\u5b9f\u884c:",
-      sigma_tooltip: "\u79fb\u52d5\u5e73\u5747\u304b\u3089{value}\u03c3\u6a19\u6e96\u504f\u5dee",
-    },
     trend: {
       up: "上昇",
       down: "下降",
       stable: "安定 — 大きな変化なし",
       vs_previous: "前期間と比較",
     },
-    eventLog: {
-      title: "\u30a4\u30d9\u30f3\u30c8\u30ed\u30b0",
-      entries: "\u4ef6",
-      new_events: "{count}\u4ef6\u306e\u65b0\u3057\u3044\u30a4\u30d9\u30f3\u30c8",
-      new_badge: "\u65b0\u898f",
-      no_events: "\u30a4\u30d9\u30f3\u30c8\u306f\u307e\u3060\u3042\u308a\u307e\u305b\u3093",
-      no_matches: "\u30af\u30a8\u30ea\u306b\u4e00\u81f4\u3059\u308b\u30a4\u30d9\u30f3\u30c8\u304c\u3042\u308a\u307e\u305b\u3093",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u30af\u30a8\u30ea\u69cb\u6587",
-      query_example: "\u4f8b: status:failed source:webhook deploy",
-      structured_badge: "\u69cb\u9020\u5316",
-      tail_on: "\u30e9\u30a4\u30d6\u30c6\u30fc\u30eb\u6709\u52b9 \u2014 \u30af\u30ea\u30c3\u30af\u3067\u505c\u6b62",
-      tail_off: "\u30e9\u30a4\u30d6\u30c6\u30fc\u30eb\u3092\u6709\u52b9\u5316 \u2014 \u6700\u65b0\u30a4\u30d9\u30f3\u30c8\u306b\u56fa\u5b9a",
-      tail_active: "\u30e9\u30a4\u30d6\u30c6\u30fc\u30eb \u2014 \u30d5\u30a3\u30eb\u30bf\u30fc\u6e08\u307f\u30a4\u30d9\u30f3\u30c8\u3092\u30b9\u30c8\u30ea\u30fc\u30df\u30f3\u30b0\u4e2d",
-      collapse_sidebar: "\u30a4\u30d9\u30f3\u30c8\u30ed\u30b0\u3092\u6298\u308a\u305f\u305f\u3080",
-      expand_sidebar: "\u30a4\u30d9\u30f3\u30c8\u30ed\u30b0\u3092\u5c55\u958b",
-    },
-    reviewFocus: {
-      progress_of: "{total}件中{current}件が保留中",
-      processed_count: "{count}件処理済み",
-      all_caught_up: "すべて完了！",
-      no_pending_reviews: "保留中のレビューはありません。",
-      queue_cleared: "キュー全体をクリアしました",
-    },
+
     emptyState: {
       metrics_title: "エージェントはまだ実行されていません",
       metrics_subtitle: "エージェントが処理を開始すると、コスト、レイテンシ、成功率などの実行メトリクスがここに表示されます。",
@@ -97,9 +63,6 @@ export const ja = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "ビューを保存できませんでした。もう一度お試しください。",
     },
   },
 };

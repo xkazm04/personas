@@ -1,47 +1,13 @@
 // TODO(i18n-zh): translate from English placeholders. Structure must match en.ts exactly.
 export const zh = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u5f02\u5e38",
-      severity_high: "\u8f83\u9ad8",
-      severity_extreme: "\u6781\u7aef",
-      above_normal: "\u9ad8\u4e8e\u6b63\u5e38",
-      cost_anomalies_detected: "\u68c0\u6d4b\u5230 {count} \u4e2a\u6210\u672c\u5f02\u5e38",
-      cost_spike: "\u6210\u672c\u98d9\u5347",
-      above_avg: "\u9ad8\u4e8e\u5e73\u5747",
-      top_executions: "\u4e3b\u8981\u6267\u884c:",
-      sigma_tooltip: "\u8ddd\u79bb\u6eda\u52a8\u5e73\u5747\u503c {value}\u03c3 \u6807\u51c6\u5dee",
-    },
     trend: {
       up: "上升",
       down: "下降",
       stable: "稳定 — 无显著变化",
       vs_previous: "与上一周期对比",
     },
-    eventLog: {
-      title: "\u4e8b\u4ef6\u65e5\u5fd7",
-      entries: "\u6761\u76ee",
-      new_events: "{count} \u4e2a\u65b0\u4e8b\u4ef6",
-      new_badge: "\u65b0",
-      no_events: "\u6682\u65e0\u4e8b\u4ef6",
-      no_matches: "\u6ca1\u6709\u5339\u914d\u67e5\u8be2\u7684\u4e8b\u4ef6",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u67e5\u8be2\u8bed\u6cd5",
-      query_example: "\u4f8b\u5982 status:failed source:webhook deploy",
-      structured_badge: "\u7ed3\u6784\u5316",
-      tail_on: "\u5b9e\u65f6\u8ffd\u8e2a\u5df2\u542f\u7528 \u2014 \u70b9\u51fb\u505c\u6b62",
-      tail_off: "\u542f\u7528\u5b9e\u65f6\u8ffd\u8e2a \u2014 \u9489\u4f4f\u6700\u65b0\u4e8b\u4ef6",
-      tail_active: "\u5b9e\u65f6\u8ffd\u8e2a \u2014 \u6d41\u5f0f\u8fc7\u6ee4\u4e8b\u4ef6",
-      collapse_sidebar: "\u6536\u8d77\u4e8b\u4ef6\u65e5\u5fd7",
-      expand_sidebar: "\u5c55\u5f00\u4e8b\u4ef6\u65e5\u5fd7",
-    },
-    reviewFocus: {
-      progress_of: "{total} 条待处理中的第 {current} 条",
-      processed_count: "已处理 {count} 条",
-      all_caught_up: "全部处理完毕！",
-      no_pending_reviews: "没有待处理的审核。",
-      queue_cleared: "您已清空整个队列",
-    },
+
     emptyState: {
       metrics_title: "您的代理尚未运行",
       metrics_subtitle: "代理开始处理后，执行指标（如成本、延迟和成功率）将显示在此处。",
@@ -97,9 +63,6 @@ export const zh = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "无法保存视图，请重试。",
     },
   },
 };

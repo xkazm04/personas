@@ -1,47 +1,13 @@
 // TODO(i18n-bn): translate from English placeholders. Structure must match en.ts exactly.
 export const bn = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u0985\u09b8\u09cd\u09ac\u09be\u09ad\u09be\u09ac\u09bf\u0995",
-      severity_high: "\u0989\u099a\u09cd\u099a",
-      severity_extreme: "\u099a\u09b0\u09ae",
-      above_normal: "\u09b8\u09cd\u09ac\u09be\u09ad\u09be\u09ac\u09bf\u0995\u09c7\u09b0 \u0989\u09aa\u09b0\u09c7",
-      cost_anomalies_detected: "{count}\u099f\u09bf \u0996\u09b0\u099a\u09c7\u09b0 \u09ac\u09bf\u09b8\u0999\u09cd\u0997\u09a4\u09bf \u09b6\u09a8\u09be\u0995\u09cd\u09a4 \u09b9\u09af\u09bc\u09c7\u099b\u09c7",
-      cost_spike: "\u0996\u09b0\u099a \u09ac\u09c3\u09a6\u09cd\u09a7\u09bf",
-      above_avg: "\u0997\u09a1\u09bc\u09c7\u09b0 \u0989\u09aa\u09b0\u09c7",
-      top_executions: "\u09aa\u09cd\u09b0\u09a7\u09be\u09a8 \u09a8\u09bf\u09b0\u09cd\u09ac\u09be\u09b9:",
-      sigma_tooltip: "\u09b0\u09cb\u09b2\u09bf\u0982 \u0997\u09a1\u09bc \u09a5\u09c7\u0995\u09c7 {value}\u03c3 \u09b8\u09cd\u099f\u09cd\u09af\u09be\u09a8\u09cd\u09a1\u09be\u09b0\u09cd\u09a1 \u09a1\u09c7\u09ad\u09bf\u09af\u09bc\u09c7\u09b6\u09a8",
-    },
     trend: {
       up: "বৃদ্ধি",
       down: "হ্রাস",
       stable: "স্থিতিশীল — কোনো উল্লেখযোগ্য পরিবর্তন নেই",
       vs_previous: "পূর্ববর্তী সময়ের তুলনায়",
     },
-    eventLog: {
-      title: "\u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09b2\u0997",
-      entries: "\u098f\u09a8\u09cd\u099f\u09cd\u09b0\u09bf",
-      new_events: "{count}\u099f\u09bf \u09a8\u09a4\u09c1\u09a8 \u0987\u09ad\u09c7\u09a8\u09cd\u099f",
-      new_badge: "\u09a8\u09a4\u09c1\u09a8",
-      no_events: "\u098f\u0996\u09a8\u0993 \u0995\u09cb\u09a8\u09cb \u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09a8\u09c7\u0987",
-      no_matches: "\u0986\u09aa\u09a8\u09be\u09b0 \u0995\u09cb\u09af\u09bc\u09c7\u09b0\u09bf\u09b0 \u09b8\u09be\u09a5\u09c7 \u0995\u09cb\u09a8\u09cb \u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09ae\u09c7\u09b2\u09c7\u09a8\u09bf",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u0995\u09cb\u09af\u09bc\u09c7\u09b0\u09bf \u09b8\u09bf\u09a8\u09cd\u099f\u09cd\u09af\u09be\u0995\u09cd\u09b8",
-      query_example: "\u09af\u09c7\u09ae\u09a8 status:failed source:webhook deploy",
-      structured_badge: "\u0997\u09a0\u09a8\u09ae\u09c2\u09b2\u0995",
-      tail_on: "\u09b2\u09be\u0987\u09ad \u099f\u09c7\u0987\u09b2 \u09b8\u0995\u09cd\u09b0\u09bf\u09af\u09bc \u2014 \u09a5\u09be\u09ae\u09be\u09a4\u09c7 \u0995\u09cd\u09b2\u09bf\u0995 \u0995\u09b0\u09c1\u09a8",
-      tail_off: "\u09b2\u09be\u0987\u09ad \u099f\u09c7\u0987\u09b2 \u09b8\u0995\u09cd\u09b7\u09ae \u0995\u09b0\u09c1\u09a8 \u2014 \u09a8\u09a4\u09c1\u09a8\u09a4\u09ae \u0987\u09ad\u09c7\u09a8\u09cd\u099f\u09c7 \u09aa\u09bf\u09a8 \u0995\u09b0\u09c1\u09a8",
-      tail_active: "\u09b2\u09be\u0987\u09ad \u099f\u09c7\u0987\u09b2 \u2014 \u09ab\u09bf\u09b2\u09cd\u099f\u09be\u09b0 \u0995\u09b0\u09be \u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09b8\u09cd\u099f\u09cd\u09b0\u09bf\u09ae\u09bf\u0982",
-      collapse_sidebar: "\u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09b2\u0997 \u09b8\u0982\u0995\u09c1\u099a\u09bf\u09a4 \u0995\u09b0\u09c1\u09a8",
-      expand_sidebar: "\u0987\u09ad\u09c7\u09a8\u09cd\u099f \u09b2\u0997 \u09ac\u09bf\u09b8\u09cd\u09a4\u09be\u09b0\u09bf\u09a4 \u0995\u09b0\u09c1\u09a8",
-    },
-    reviewFocus: {
-      progress_of: "{total}টির মধ্যে {current}টি মুলতুবি",
-      processed_count: "{count}টি প্রক্রিয়াকৃত",
-      all_caught_up: "সব শেষ!",
-      no_pending_reviews: "কোনো মুলতুবি পর্যালোচনা নেই।",
-      queue_cleared: "আপনি পুরো সারি খালি করেছেন",
-    },
+
     emptyState: {
       metrics_title: "আপনার এজেন্টগুলি এখনও চালানো হয়নি",
       metrics_subtitle: "আপনার এজেন্টগুলি প্রক্রিয়াকরণ শুরু করলে খরচ, বিলম্ব এবং সফলতার হারের মতো নির্বাহ মেট্রিক্স এখানে দেখা যাবে।",
@@ -97,9 +63,6 @@ export const bn = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "ভিউ সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।",
     },
   },
 };

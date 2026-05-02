@@ -1,47 +1,13 @@
 // TODO(i18n-ru): translate from English placeholders. Structure must match en.ts exactly.
 export const ru = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u041d\u0435\u043e\u0431\u044b\u0447\u043d\u043e",
-      severity_high: "\u0412\u044b\u0441\u043e\u043a\u043e",
-      severity_extreme: "\u041a\u0440\u0438\u0442\u0438\u0447\u043d\u043e",
-      above_normal: "\u0432\u044b\u0448\u0435 \u043d\u043e\u0440\u043c\u044b",
-      cost_anomalies_detected: "\u041e\u0431\u043d\u0430\u0440\u0443\u0436\u0435\u043d\u043e {count} \u0430\u043d\u043e\u043c\u0430\u043b\u0438\u0439 \u0441\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u0438",
-      cost_spike: "\u0421\u043a\u0430\u0447\u043e\u043a \u0441\u0442\u043e\u0438\u043c\u043e\u0441\u0442\u0438",
-      above_avg: "\u0432\u044b\u0448\u0435 \u0441\u0440\u0435\u0434\u043d\u0435\u0433\u043e",
-      top_executions: "\u041e\u0441\u043d\u043e\u0432\u043d\u044b\u0435 \u0437\u0430\u043f\u0443\u0441\u043a\u0438:",
-      sigma_tooltip: "{value}\u03c3 \u0441\u0442\u0430\u043d\u0434\u0430\u0440\u0442\u043d\u044b\u0445 \u043e\u0442\u043a\u043b\u043e\u043d\u0435\u043d\u0438\u0439 \u043e\u0442 \u0441\u043a\u043e\u043b\u044c\u0437\u044f\u0449\u0435\u0433\u043e \u0441\u0440\u0435\u0434\u043d\u0435\u0433\u043e",
-    },
     trend: {
       up: "Рост",
       down: "Снижение",
       stable: "Стабильно — без значительных изменений",
       vs_previous: "по сравнению с предыдущим периодом",
     },
-    eventLog: {
-      title: "\u0416\u0443\u0440\u043d\u0430\u043b \u0441\u043e\u0431\u044b\u0442\u0438\u0439",
-      entries: "\u0437\u0430\u043f\u0438\u0441\u0435\u0439",
-      new_events: "{count} \u043d\u043e\u0432\u044b\u0445 \u0441\u043e\u0431\u044b\u0442\u0438\u0439",
-      new_badge: "\u043d\u043e\u0432\u043e\u0435",
-      no_events: "\u0421\u043e\u0431\u044b\u0442\u0438\u0439 \u043f\u043e\u043a\u0430 \u043d\u0435\u0442",
-      no_matches: "\u041d\u0435\u0442 \u0441\u043e\u0431\u044b\u0442\u0438\u0439, \u0441\u043e\u043e\u0442\u0432\u0435\u0442\u0441\u0442\u0432\u0443\u044e\u0449\u0438\u0445 \u0437\u0430\u043f\u0440\u043e\u0441\u0443",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u0421\u0438\u043d\u0442\u0430\u043a\u0441\u0438\u0441 \u0437\u0430\u043f\u0440\u043e\u0441\u0430",
-      query_example: "\u043d\u0430\u043f\u0440. status:failed source:webhook deploy",
-      structured_badge: "\u0441\u0442\u0440\u0443\u043a\u0442\u0443\u0440\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0439",
-      tail_on: "\u041f\u043e\u0442\u043e\u043a\u043e\u0432\u043e\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435 \u0430\u043a\u0442\u0438\u0432\u043d\u043e \u2014 \u043d\u0430\u0436\u043c\u0438\u0442\u0435 \u0434\u043b\u044f \u043e\u0441\u0442\u0430\u043d\u043e\u0432\u043a\u0438",
-      tail_off: "\u0412\u043a\u043b\u044e\u0447\u0438\u0442\u044c \u043f\u043e\u0442\u043e\u043a\u043e\u0432\u043e\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435 \u2014 \u043f\u0440\u0438\u043a\u0440\u0435\u043f\u0438\u0442\u044c \u043a \u043d\u043e\u0432\u0435\u0439\u0448\u0438\u043c",
-      tail_active: "\u041f\u043e\u0442\u043e\u043a\u043e\u0432\u043e\u0435 \u043e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u043d\u0438\u0435 \u2014 \u0441\u0442\u0440\u0438\u043c \u043e\u0442\u0444\u0438\u043b\u044c\u0442\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0445 \u0441\u043e\u0431\u044b\u0442\u0438\u0439",
-      collapse_sidebar: "\u0421\u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b \u0441\u043e\u0431\u044b\u0442\u0438\u0439",
-      expand_sidebar: "\u0420\u0430\u0437\u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0436\u0443\u0440\u043d\u0430\u043b \u0441\u043e\u0431\u044b\u0442\u0438\u0439",
-    },
-    reviewFocus: {
-      progress_of: "{current} из {total} ожидающих",
-      processed_count: "{count} обработано",
-      all_caught_up: "Всё готово!",
-      no_pending_reviews: "Нет ожидающих проверок.",
-      queue_cleared: "Вы очистили всю очередь",
-    },
+
     emptyState: {
       metrics_title: "Ваши агенты ещё не запускались",
       metrics_subtitle: "Метрики выполнения — стоимость, задержка и процент успеха — появятся здесь после запуска агентов.",
@@ -97,9 +63,6 @@ export const ru = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Не удалось сохранить представление. Попробуйте снова.",
     },
   },
 };

@@ -10,6 +10,7 @@ import {
   KNOWN_STATUSES,
   isFilterActive,
 } from '../../libs/eventBusFilterTypes';
+import { EVENT_TYPE_LABELS } from '../../libs/visualizationHelpers';
 
 interface PersonaOption { id: string; name: string; }
 
@@ -26,13 +27,6 @@ interface EventBusFilterBarProps {
   filteredCount: number;
   totalCount: number;
 }
-
-const EVENT_TYPE_LABELS: Record<string, string> = {
-  webhook_received: 'Webhook', execution_completed: 'Execution', persona_action: 'Action',
-  credential_event: 'Credential', task_created: 'Task', test_event: 'Test', custom: 'Custom',
-  deploy_started: 'Deploy Started', deploy_succeeded: 'Deploy OK', deploy_failed: 'Deploy Failed',
-  agent_undeployed: 'Undeployed', credential_provisioned: 'Cred Provisioned',
-};
 
 const STATUS_COLORS: Record<string, string> = {
   pending: '#f59e0b', processing: '#06b6d4', completed: '#22c55e', processed: '#22c55e', failed: '#ef4444',

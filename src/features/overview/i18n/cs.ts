@@ -1,47 +1,13 @@
 // TODO(i18n-cs): translate from English placeholders. Structure must match en.ts exactly.
 export const cs = {
   overview: {
-    anomaly: {
-      severity_unusual: "Neobvykl\u00e9",
-      severity_high: "Vysok\u00e9",
-      severity_extreme: "Extr\u00e9mn\u00ed",
-      above_normal: "nad norm\u00e1lem",
-      cost_anomalies_detected: "Zji\u0161t\u011bno {count} n\u00e1kladov\u00fdch anomali\u00ed",
-      cost_spike: "N\u00e1r\u016fst n\u00e1klad\u016f",
-      above_avg: "nad pr\u016fm\u011brem",
-      top_executions: "Hlavn\u00ed proveden\u00ed:",
-      sigma_tooltip: "{value}\u03c3 standardn\u00edch odchylek od klouzav\u00e9ho pr\u016fm\u011bru",
-    },
     trend: {
       up: "Nárůst",
       down: "Pokles",
       stable: "Stabilní — žádná výrazná změna",
       vs_previous: "oproti předchozímu období",
     },
-    eventLog: {
-      title: "Protokol ud\u00e1lost\u00ed",
-      entries: "z\u00e1znam\u016f",
-      new_events: "{count} nov\u00fdch ud\u00e1lost\u00ed",
-      new_badge: "nov\u00e9",
-      no_events: "\u017d\u00e1dn\u00e9 ud\u00e1losti",
-      no_matches: "\u017d\u00e1dn\u00e9 ud\u00e1losti neodpov\u00eddaj\u00ed dotazu",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Syntaxe dotazu",
-      query_example: "nap\u0159. status:failed source:webhook deploy",
-      structured_badge: "strukturovan\u00fd",
-      tail_on: "\u017div\u00fd proud aktivn\u00ed \u2014 klikn\u011bte pro zastaven\u00ed",
-      tail_off: "Zapnout \u017eiv\u00fd proud \u2014 p\u0159ipnout k nejnov\u011bj\u0161\u00edm",
-      tail_active: "\u017div\u00fd proud \u2014 streamov\u00e1n\u00ed filtrovan\u00fdch ud\u00e1lost\u00ed",
-      collapse_sidebar: "Sbalit protokol ud\u00e1lost\u00ed",
-      expand_sidebar: "Rozbalit protokol ud\u00e1lost\u00ed",
-    },
-    reviewFocus: {
-      progress_of: "{current} z {total} čekajících",
-      processed_count: "{count} zpracováno",
-      all_caught_up: "Vše hotovo!",
-      no_pending_reviews: "Žádné čekající revize.",
-      queue_cleared: "Vyprázdnili jste celou frontu",
-    },
+
     emptyState: {
       metrics_title: "Vaši agenti zatím nebyli spuštěni",
       metrics_subtitle: "Metriky provádění jako náklady, latence a úspěšnost se zde zobrazí, jakmile vaši agenti začnou zpracovávat.",
@@ -97,9 +63,6 @@ export const cs = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Zobrazení se nepodařilo uložit. Zkuste to znovu.",
     },
   },
 };

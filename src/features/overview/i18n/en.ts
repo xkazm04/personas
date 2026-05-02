@@ -1,46 +1,12 @@
 export const en = {
   overview: {
-    anomaly: {
-      severity_unusual: "Unusual",
-      severity_high: "High",
-      severity_extreme: "Extreme",
-      above_normal: "above normal",
-      cost_anomalies_detected: "{count} cost anomal{plural} detected",
-      cost_spike: "Cost spike",
-      above_avg: "above avg",
-      top_executions: "Top executions:",
-      sigma_tooltip: "{value}\u03c3 standard deviations from rolling average",
-    },
     trend: {
       up: "Up",
       down: "Down",
       stable: "Stable — no significant change",
       vs_previous: "vs previous period",
     },
-    eventLog: {
-      title: "Event Log",
-      entries: "entries",
-      new_events: "{count} new events",
-      new_badge: "new",
-      no_events: "No events yet",
-      no_matches: "No events match your query",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Query syntax",
-      query_example: "e.g. status:failed source:webhook deploy",
-      structured_badge: "structured",
-      tail_on: "Live tail active \u2014 click to stop",
-      tail_off: "Enable live tail \u2014 pin to newest events",
-      tail_active: "Live tail \u2014 streaming filtered events",
-      collapse_sidebar: "Collapse event log",
-      expand_sidebar: "Expand event log",
-    },
-    reviewFocus: {
-      progress_of: "{current} of {total} pending",
-      processed_count: "{count} processed",
-      all_caught_up: "All caught up!",
-      no_pending_reviews: "No pending reviews to process.",
-      queue_cleared: "You cleared the entire queue",
-    },
+
     emptyState: {
       metrics_title: "Your agents haven't run yet",
       metrics_subtitle: "Execution metrics like cost, latency, and success rate will appear here once your agents start processing.",
@@ -101,9 +67,6 @@ export const en = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Could not save the view. Try again.",
     },
   },
 };

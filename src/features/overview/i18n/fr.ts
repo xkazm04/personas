@@ -1,47 +1,13 @@
 // TODO(i18n-fr): translate from English placeholders. Structure must match en.ts exactly.
 export const fr = {
   overview: {
-    anomaly: {
-      severity_unusual: "Inhabituel",
-      severity_high: "\u00c9lev\u00e9",
-      severity_extreme: "Extr\u00eame",
-      above_normal: "au-dessus de la normale",
-      cost_anomalies_detected: "{count} anomalie{plural} de co\u00fbt d\u00e9tect\u00e9e{plural}",
-      cost_spike: "Pic de co\u00fbt",
-      above_avg: "au-dessus de la moyenne",
-      top_executions: "Ex\u00e9cutions principales :",
-      sigma_tooltip: "{value}\u03c3 \u00e9carts-types par rapport \u00e0 la moyenne mobile",
-    },
     trend: {
       up: "Hausse",
       down: "Baisse",
       stable: "Stable — pas de changement significatif",
       vs_previous: "vs période précédente",
     },
-    eventLog: {
-      title: "Journal d'\u00e9v\u00e9nements",
-      entries: "entr\u00e9es",
-      new_events: "{count} nouveaux \u00e9v\u00e9nements",
-      new_badge: "nouveau",
-      no_events: "Aucun \u00e9v\u00e9nement pour le moment",
-      no_matches: "Aucun \u00e9v\u00e9nement ne correspond \u00e0 la requ\u00eate",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Syntaxe de requ\u00eate",
-      query_example: "ex. status:failed source:webhook deploy",
-      structured_badge: "structur\u00e9",
-      tail_on: "Suivi en direct actif \u2014 cliquez pour arr\u00eater",
-      tail_off: "Activer le suivi en direct \u2014 \u00e9pingler aux \u00e9v\u00e9nements les plus r\u00e9cents",
-      tail_active: "Suivi en direct \u2014 diffusion des \u00e9v\u00e9nements filtr\u00e9s",
-      collapse_sidebar: "R\u00e9duire le journal d'\u00e9v\u00e9nements",
-      expand_sidebar: "D\u00e9plier le journal d'\u00e9v\u00e9nements",
-    },
-    reviewFocus: {
-      progress_of: "{current} sur {total} en attente",
-      processed_count: "{count} traitées",
-      all_caught_up: "Tout est à jour !",
-      no_pending_reviews: "Aucune révision en attente.",
-      queue_cleared: "Vous avez vidé toute la file",
-    },
+
     emptyState: {
       metrics_title: "Vos agents n'ont pas encore été exécutés",
       metrics_subtitle: "Les métriques d'exécution comme le coût, la latence et le taux de succès apparaîtront ici une fois vos agents en activité.",
@@ -97,9 +63,6 @@ export const fr = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Impossible d'enregistrer la vue. Réessayez.",
     },
   },
 };

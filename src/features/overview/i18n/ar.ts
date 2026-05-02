@@ -1,47 +1,13 @@
 // TODO(i18n-ar): translate from English placeholders. Structure must match en.ts exactly.
 export const ar = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u063a\u064a\u0631 \u0639\u0627\u062f\u064a",
-      severity_high: "\u0645\u0631\u062a\u0641\u0639",
-      severity_extreme: "\u0634\u062f\u064a\u062f",
-      above_normal: "\u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0645\u0639\u062a\u0627\u062f",
-      cost_anomalies_detected: "\u062a\u0645 \u0627\u0643\u062a\u0634\u0627\u0641 {count} \u0634\u0630\u0648\u0630 \u0641\u064a \u0627\u0644\u062a\u0643\u0644\u0641\u0629",
-      cost_spike: "\u0627\u0631\u062a\u0641\u0627\u0639 \u0641\u064a \u0627\u0644\u062a\u0643\u0644\u0641\u0629",
-      above_avg: "\u0623\u0639\u0644\u0649 \u0645\u0646 \u0627\u0644\u0645\u062a\u0648\u0633\u0637",
-      top_executions: "\u0623\u0647\u0645 \u0627\u0644\u062a\u0646\u0641\u064a\u0630\u0627\u062a:",
-      sigma_tooltip: "{value}\u03c3 \u0627\u0646\u062d\u0631\u0627\u0641\u0627\u062a \u0645\u0639\u064a\u0627\u0631\u064a\u0629 \u0639\u0646 \u0627\u0644\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0645\u062a\u062d\u0631\u0643",
-    },
     trend: {
       up: "ارتفاع",
       down: "انخفاض",
       stable: "مستقر — لا تغيير ملحوظ",
       vs_previous: "مقارنة بالفترة السابقة",
     },
-    eventLog: {
-      title: "\u0633\u062c\u0644 \u0627\u0644\u0623\u062d\u062f\u0627\u062b",
-      entries: "\u0625\u062f\u062e\u0627\u0644\u0627\u062a",
-      new_events: "{count} \u0623\u062d\u062f\u0627\u062b \u062c\u062f\u064a\u062f\u0629",
-      new_badge: "\u062c\u062f\u064a\u062f",
-      no_events: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u062d\u062f\u0627\u062b \u0628\u0639\u062f",
-      no_matches: "\u0644\u0627 \u062a\u0648\u062c\u062f \u0623\u062d\u062f\u0627\u062b \u0645\u0637\u0627\u0628\u0642\u0629 \u0644\u0644\u0627\u0633\u062a\u0639\u0644\u0627\u0645",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u0635\u064a\u063a\u0629 \u0627\u0644\u0627\u0633\u062a\u0639\u0644\u0627\u0645",
-      query_example: "\u0645\u062b\u0627\u0644 status:failed source:webhook deploy",
-      structured_badge: "\u0645\u0647\u064a\u0643\u0644",
-      tail_on: "\u0627\u0644\u0628\u062b \u0627\u0644\u0645\u0628\u0627\u0634\u0631 \u0646\u0634\u0637 \u2014 \u0627\u0646\u0642\u0631 \u0644\u0644\u0625\u064a\u0642\u0627\u0641",
-      tail_off: "\u062a\u0641\u0639\u064a\u0644 \u0627\u0644\u0628\u062b \u0627\u0644\u0645\u0628\u0627\u0634\u0631 \u2014 \u062a\u062b\u0628\u064a\u062a \u0639\u0644\u0649 \u0623\u062d\u062f\u062b \u0627\u0644\u0623\u062d\u062f\u0627\u062b",
-      tail_active: "\u0627\u0644\u0628\u062b \u0627\u0644\u0645\u0628\u0627\u0634\u0631 \u2014 \u0628\u062b \u0627\u0644\u0623\u062d\u062f\u0627\u062b \u0627\u0644\u0645\u0641\u0644\u062a\u0631\u0629",
-      collapse_sidebar: "\u0637\u064a \u0633\u062c\u0644 \u0627\u0644\u0623\u062d\u062f\u0627\u062b",
-      expand_sidebar: "\u0641\u062a\u062d \u0633\u062c\u0644 \u0627\u0644\u0623\u062d\u062f\u0627\u062b",
-    },
-    reviewFocus: {
-      progress_of: "{current} من {total} معلّقة",
-      processed_count: "تمت معالجة {count}",
-      all_caught_up: "تم الانتهاء من الكل!",
-      no_pending_reviews: "لا توجد مراجعات معلّقة للمعالجة.",
-      queue_cleared: "لقد أنهيت قائمة الانتظار بالكامل",
-    },
+
     emptyState: {
       metrics_title: "لم يتم تشغيل وكلائك بعد",
       metrics_subtitle: "ستظهر مقاييس التنفيذ مثل التكلفة والتأخير ومعدل النجاح هنا بمجرد بدء وكلائك بالعمل.",
@@ -97,9 +63,6 @@ export const ar = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "تعذّر حفظ العرض. حاول مجددًا.",
     },
   },
 };

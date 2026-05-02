@@ -1,47 +1,13 @@
 // TODO(i18n-ko): translate from English placeholders. Structure must match en.ts exactly.
 export const ko = {
   overview: {
-    anomaly: {
-      severity_unusual: "\ube44\uc815\uc0c1",
-      severity_high: "\ub192\uc74c",
-      severity_extreme: "\uadf9\ub2e8",
-      above_normal: "\uc815\uc0c1 \uc774\uc0c1",
-      cost_anomalies_detected: "{count}\uac74\uc758 \ube44\uc6a9 \uc774\uc0c1 \uac10\uc9c0",
-      cost_spike: "\ube44\uc6a9 \uae09\ub4f1",
-      above_avg: "\ud3c9\uade0 \uc774\uc0c1",
-      top_executions: "\uc8fc\uc694 \uc2e4\ud589:",
-      sigma_tooltip: "\uc774\ub3d9 \ud3c9\uade0\uc5d0\uc11c {value}\u03c3 \ud45c\uc900 \ud3b8\ucc28",
-    },
     trend: {
       up: "상승",
       down: "하락",
       stable: "안정 — 유의미한 변화 없음",
       vs_previous: "이전 기간 대비",
     },
-    eventLog: {
-      title: "\uc774\ubca4\ud2b8 \ub85c\uadf8",
-      entries: "\uac74",
-      new_events: "{count}\uac1c\uc758 \uc0c8 \uc774\ubca4\ud2b8",
-      new_badge: "\uc0c8\ub85c\uc6b4",
-      no_events: "\uc544\uc9c1 \uc774\ubca4\ud2b8\uac00 \uc5c6\uc2b5\ub2c8\ub2e4",
-      no_matches: "\ucffc\ub9ac\uc640 \uc77c\uce58\ud558\ub294 \uc774\ubca4\ud2b8\uac00 \uc5c6\uc2b5\ub2c8\ub2e4",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\ucffc\ub9ac \uad6c\ubb38",
-      query_example: "\uc608: status:failed source:webhook deploy",
-      structured_badge: "\uad6c\uc870\ud654",
-      tail_on: "\ub77c\uc774\ube0c \ud14c\uc77c \ud65c\uc131 \u2014 \ud074\ub9ad\ud558\uc5ec \uc911\uc9c0",
-      tail_off: "\ub77c\uc774\ube0c \ud14c\uc77c \ud65c\uc131\ud654 \u2014 \ucd5c\uc2e0 \uc774\ubca4\ud2b8\uc5d0 \uace0\uc815",
-      tail_active: "\ub77c\uc774\ube0c \ud14c\uc77c \u2014 \ud544\ud130\ub9c1\ub41c \uc774\ubca4\ud2b8 \uc2a4\ud2b8\ub9ac\ubc0d \uc911",
-      collapse_sidebar: "\uc774\ubca4\ud2b8 \ub85c\uadf8 \uc811\uae30",
-      expand_sidebar: "\uc774\ubca4\ud2b8 \ub85c\uadf8 \ud3bc\uce58\uae30",
-    },
-    reviewFocus: {
-      progress_of: "{total}개 중 {current}개 대기 중",
-      processed_count: "{count}개 처리됨",
-      all_caught_up: "모두 완료!",
-      no_pending_reviews: "대기 중인 리뷰가 없습니다.",
-      queue_cleared: "전체 대기열을 비웠습니다",
-    },
+
     emptyState: {
       metrics_title: "에이전트가 아직 실행되지 않았습니다",
       metrics_subtitle: "에이전트가 처리를 시작하면 비용, 지연 시간, 성공률 등의 실행 지표가 여기에 표시됩니다.",
@@ -97,9 +63,6 @@ export const ko = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "뷰를 저장할 수 없습니다. 다시 시도해 주세요.",
     },
   },
 };

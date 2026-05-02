@@ -1,47 +1,13 @@
 // TODO(i18n-id): translate from English placeholders. Structure must match en.ts exactly.
 export const id = {
   overview: {
-    anomaly: {
-      severity_unusual: "Tidak biasa",
-      severity_high: "Tinggi",
-      severity_extreme: "Ekstrem",
-      above_normal: "di atas normal",
-      cost_anomalies_detected: "{count} anomali biaya terdeteksi",
-      cost_spike: "Lonjakan biaya",
-      above_avg: "di atas rata-rata",
-      top_executions: "Eksekusi utama:",
-      sigma_tooltip: "{value}\u03c3 deviasi standar dari rata-rata bergulir",
-    },
     trend: {
       up: "Naik",
       down: "Turun",
       stable: "Stabil — tidak ada perubahan signifikan",
       vs_previous: "vs periode sebelumnya",
     },
-    eventLog: {
-      title: "Log Peristiwa",
-      entries: "entri",
-      new_events: "{count} peristiwa baru",
-      new_badge: "baru",
-      no_events: "Belum ada peristiwa",
-      no_matches: "Tidak ada peristiwa yang cocok dengan kueri",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Sintaks kueri",
-      query_example: "mis. status:failed source:webhook deploy",
-      structured_badge: "terstruktur",
-      tail_on: "Live tail aktif \u2014 klik untuk berhenti",
-      tail_off: "Aktifkan live tail \u2014 sematkan ke peristiwa terbaru",
-      tail_active: "Live tail \u2014 streaming peristiwa terfilter",
-      collapse_sidebar: "Tutup log peristiwa",
-      expand_sidebar: "Buka log peristiwa",
-    },
-    reviewFocus: {
-      progress_of: "{current} dari {total} tertunda",
-      processed_count: "{count} diproses",
-      all_caught_up: "Semua selesai!",
-      no_pending_reviews: "Tidak ada tinjauan tertunda.",
-      queue_cleared: "Anda telah mengosongkan seluruh antrean",
-    },
+
     emptyState: {
       metrics_title: "Agen Anda belum dijalankan",
       metrics_subtitle: "Metrik eksekusi seperti biaya, latensi, dan tingkat keberhasilan akan muncul di sini setelah agen Anda mulai memproses.",
@@ -97,9 +63,6 @@ export const id = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Tidak dapat menyimpan tampilan. Coba lagi.",
     },
   },
 };

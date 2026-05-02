@@ -1,47 +1,13 @@
 // TODO(i18n-es): translate from English placeholders. Structure must match en.ts exactly.
 export const es = {
   overview: {
-    anomaly: {
-      severity_unusual: "Inusual",
-      severity_high: "Alto",
-      severity_extreme: "Extremo",
-      above_normal: "por encima de lo normal",
-      cost_anomalies_detected: "{count} anomal\u00eda{plural} de costo detectada{plural}",
-      cost_spike: "Pico de costo",
-      above_avg: "sobre el promedio",
-      top_executions: "Ejecuciones principales:",
-      sigma_tooltip: "{value}\u03c3 desviaciones est\u00e1ndar del promedio m\u00f3vil",
-    },
     trend: {
       up: "Subida",
       down: "Bajada",
       stable: "Estable — sin cambios significativos",
       vs_previous: "vs periodo anterior",
     },
-    eventLog: {
-      title: "Registro de eventos",
-      entries: "entradas",
-      new_events: "{count} eventos nuevos",
-      new_badge: "nuevo",
-      no_events: "A\u00fan no hay eventos",
-      no_matches: "Ning\u00fan evento coincide con la consulta",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "Sintaxis de consulta",
-      query_example: "ej. status:failed source:webhook deploy",
-      structured_badge: "estructurado",
-      tail_on: "Cola en vivo activa \u2014 haz clic para detener",
-      tail_off: "Activar cola en vivo \u2014 fijar a los eventos m\u00e1s recientes",
-      tail_active: "Cola en vivo \u2014 transmitiendo eventos filtrados",
-      collapse_sidebar: "Contraer registro de eventos",
-      expand_sidebar: "Expandir registro de eventos",
-    },
-    reviewFocus: {
-      progress_of: "{current} de {total} pendientes",
-      processed_count: "{count} procesadas",
-      all_caught_up: "¡Todo al día!",
-      no_pending_reviews: "No hay revisiones pendientes.",
-      queue_cleared: "Has vaciado toda la cola",
-    },
+
     emptyState: {
       metrics_title: "Tus agentes aún no se han ejecutado",
       metrics_subtitle: "Las métricas de ejecución como costo, latencia y tasa de éxito aparecerán aquí cuando tus agentes comiencen a procesar.",
@@ -97,9 +63,6 @@ export const es = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "No se pudo guardar la vista. Inténtalo de nuevo.",
     },
   },
 };

@@ -1,47 +1,13 @@
 // TODO(i18n-vi): translate from English placeholders. Structure must match en.ts exactly.
 export const vi = {
   overview: {
-    anomaly: {
-      severity_unusual: "B\u1ea5t th\u01b0\u1eddng",
-      severity_high: "Cao",
-      severity_extreme: "C\u1ef1c \u0111oan",
-      above_normal: "tr\u00ean m\u1ee9c b\u00ecnh th\u01b0\u1eddng",
-      cost_anomalies_detected: "Ph\u00e1t hi\u1ec7n {count} b\u1ea5t th\u01b0\u1eddng chi ph\u00ed",
-      cost_spike: "Chi ph\u00ed t\u0103ng \u0111\u1ed9t bi\u1ebfn",
-      above_avg: "tr\u00ean trung b\u00ecnh",
-      top_executions: "Th\u1ef1c thi ch\u00ednh:",
-      sigma_tooltip: "{value}\u03c3 \u0111\u1ed9 l\u1ec7ch chu\u1ea9n t\u1eeb trung b\u00ecnh \u0111\u1ed9ng",
-    },
     trend: {
       up: "Tăng",
       down: "Giảm",
       stable: "Ổn định — không có thay đổi đáng kể",
       vs_previous: "so với kỳ trước",
     },
-    eventLog: {
-      title: "Nh\u1eadt k\u00fd s\u1ef1 ki\u1ec7n",
-      entries: "m\u1ee5c",
-      new_events: "{count} s\u1ef1 ki\u1ec7n m\u1edbi",
-      new_badge: "m\u1edbi",
-      no_events: "Ch\u01b0a c\u00f3 s\u1ef1 ki\u1ec7n n\u00e0o",
-      no_matches: "Kh\u00f4ng c\u00f3 s\u1ef1 ki\u1ec7n n\u00e0o ph\u00f9 h\u1ee3p v\u1edbi truy v\u1ea5n",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "C\u00fa ph\u00e1p truy v\u1ea5n",
-      query_example: "v\u00ed d\u1ee5 status:failed source:webhook deploy",
-      structured_badge: "c\u00f3 c\u1ea5u tr\u00fac",
-      tail_on: "Live tail \u0111ang ho\u1ea1t \u0111\u1ed9ng \u2014 nh\u1ea5p \u0111\u1ec3 d\u1eebng",
-      tail_off: "B\u1eadt live tail \u2014 ghim v\u00e0o s\u1ef1 ki\u1ec7n m\u1edbi nh\u1ea5t",
-      tail_active: "Live tail \u2014 \u0111ang stream s\u1ef1 ki\u1ec7n \u0111\u00e3 l\u1ecdc",
-      collapse_sidebar: "Thu g\u1ecdn nh\u1eadt k\u00fd s\u1ef1 ki\u1ec7n",
-      expand_sidebar: "M\u1edf r\u1ed9ng nh\u1eadt k\u00fd s\u1ef1 ki\u1ec7n",
-    },
-    reviewFocus: {
-      progress_of: "{current} trong {total} đang chờ",
-      processed_count: "{count} đã xử lý",
-      all_caught_up: "Đã xong tất cả!",
-      no_pending_reviews: "Không có đánh giá nào đang chờ.",
-      queue_cleared: "Bạn đã xóa toàn bộ hàng đợi",
-    },
+
     emptyState: {
       metrics_title: "Các agent của bạn chưa được chạy",
       metrics_subtitle: "Các chỉ số thực thi như chi phí, độ trễ và tỷ lệ thành công sẽ xuất hiện ở đây khi agent bắt đầu xử lý.",
@@ -97,9 +63,6 @@ export const vi = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "Không thể lưu chế độ xem. Vui lòng thử lại.",
     },
   },
 };

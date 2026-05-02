@@ -1,47 +1,13 @@
 // TODO(i18n-hi): translate from English placeholders. Structure must match en.ts exactly.
 export const hi = {
   overview: {
-    anomaly: {
-      severity_unusual: "\u0905\u0938\u093e\u092e\u093e\u0928\u094d\u092f",
-      severity_high: "\u0909\u091a\u094d\u091a",
-      severity_extreme: "\u0905\u0924\u094d\u092f\u0927\u093f\u0915",
-      above_normal: "\u0938\u093e\u092e\u093e\u0928\u094d\u092f \u0938\u0947 \u0905\u0927\u093f\u0915",
-      cost_anomalies_detected: "{count} \u0932\u093e\u0917\u0924 \u0935\u093f\u0938\u0902\u0917\u0924\u093f \u092a\u093e\u0908 \u0917\u0908",
-      cost_spike: "\u0932\u093e\u0917\u0924 \u092e\u0947\u0902 \u0909\u091b\u093e\u0932",
-      above_avg: "\u0914\u0938\u0924 \u0938\u0947 \u0905\u0927\u093f\u0915",
-      top_executions: "\u092a\u094d\u0930\u092e\u0941\u0916 \u0928\u093f\u0937\u094d\u092a\u093e\u0926\u0928:",
-      sigma_tooltip: "\u0930\u094b\u0932\u093f\u0902\u0917 \u0914\u0938\u0924 \u0938\u0947 {value}\u03c3 \u092e\u093e\u0928\u0915 \u0935\u093f\u091a\u0932\u0928",
-    },
     trend: {
       up: "वृद्धि",
       down: "गिरावट",
       stable: "स्थिर — कोई महत्वपूर्ण बदलाव नहीं",
       vs_previous: "पिछली अवधि की तुलना में",
     },
-    eventLog: {
-      title: "\u0918\u091f\u0928\u093e \u0932\u0949\u0917",
-      entries: "\u092a\u094d\u0930\u0935\u093f\u0937\u094d\u091f\u093f\u092f\u093e\u0901",
-      new_events: "{count} \u0928\u0908 \u0918\u091f\u0928\u093e\u090f\u0901",
-      new_badge: "\u0928\u092f\u093e",
-      no_events: "\u0905\u092d\u0940 \u0915\u094b\u0908 \u0918\u091f\u0928\u093e \u0928\u0939\u0940\u0902",
-      no_matches: "\u0906\u092a\u0915\u0947 \u0915\u094d\u0935\u0947\u0930\u0940 \u0938\u0947 \u0915\u094b\u0908 \u0918\u091f\u0928\u093e \u092e\u0947\u0932 \u0928\u0939\u0940\u0902 \u0916\u093e\u0924\u0940",
-      query_placeholder: "status:failed source:webhook /regex/ \u2026",
-      query_syntax: "\u0915\u094d\u0935\u0947\u0930\u0940 \u0938\u093f\u0902\u091f\u0948\u0915\u094d\u0938",
-      query_example: "\u0909\u0926\u093e. status:failed source:webhook deploy",
-      structured_badge: "\u0938\u0902\u0930\u091a\u093f\u0924",
-      tail_on: "\u0932\u093e\u0907\u0935 \u091f\u0947\u0932 \u0938\u0915\u094d\u0930\u093f\u092f \u2014 \u0930\u094b\u0915\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u0915\u094d\u0932\u093f\u0915 \u0915\u0930\u0947\u0902",
-      tail_off: "\u0932\u093e\u0907\u0935 \u091f\u0947\u0932 \u0938\u0915\u094d\u0937\u092e \u0915\u0930\u0947\u0902 \u2014 \u0928\u0935\u0940\u0928\u0924\u092e \u0918\u091f\u0928\u093e\u0913\u0902 \u092a\u0930 \u092a\u093f\u0928 \u0915\u0930\u0947\u0902",
-      tail_active: "\u0932\u093e\u0907\u0935 \u091f\u0947\u0932 \u2014 \u092b\u093c\u093f\u0932\u094d\u091f\u0930 \u0915\u0940 \u0917\u0908 \u0918\u091f\u0928\u093e\u0913\u0902 \u0915\u093e \u0938\u094d\u091f\u094d\u0930\u0940\u092e\u093f\u0902\u0917",
-      collapse_sidebar: "\u0918\u091f\u0928\u093e \u0932\u0949\u0917 \u0938\u0902\u0915\u094d\u0937\u093f\u092a\u094d\u0924 \u0915\u0930\u0947\u0902",
-      expand_sidebar: "\u0918\u091f\u0928\u093e \u0932\u0949\u0917 \u0935\u093f\u0938\u094d\u0924\u093e\u0930\u093f\u0924 \u0915\u0930\u0947\u0902",
-    },
-    reviewFocus: {
-      progress_of: "{total} में से {current} लंबित",
-      processed_count: "{count} संसाधित",
-      all_caught_up: "सब हो गया!",
-      no_pending_reviews: "कोई लंबित समीक्षा नहीं।",
-      queue_cleared: "आपने पूरी कतार खाली कर दी",
-    },
+
     emptyState: {
       metrics_title: "आपके एजेंट अभी तक नहीं चले हैं",
       metrics_subtitle: "एजेंट प्रोसेसिंग शुरू करने के बाद लागत, विलंबता और सफलता दर जैसे निष्पादन मेट्रिक्स यहाँ दिखाई देंगे।",
@@ -97,9 +63,6 @@ export const hi = {
       action_retry: "Retry",
       action_check_connection: "Check Connection",
       action_open_settings: "Open Settings",
-    },
-    savedViews: {
-      save_failed: "व्यू सहेजा नहीं जा सका। पुनः प्रयास करें।",
     },
   },
 };
