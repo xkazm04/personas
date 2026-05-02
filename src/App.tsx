@@ -67,7 +67,7 @@ const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSp
 const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
 const HealingToast = lazy(() => import("@/features/shared/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
-const NotificationCenter = lazy(() => import("@/features/gitlab/components/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
+const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 

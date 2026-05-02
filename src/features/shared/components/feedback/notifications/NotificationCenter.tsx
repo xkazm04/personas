@@ -3,7 +3,7 @@ import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, CheckCheck, Trash2
 import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { StatusIcon, statusBg } from './pipelineHelpers';
+import { StatusIcon, statusBg } from '@/features/gitlab/components/pipelineHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
 
