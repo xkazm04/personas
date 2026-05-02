@@ -17,7 +17,6 @@ interface AssetCardProps {
 
 export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: AssetCardProps) {
   const { t } = useTranslation();
-  const [hovering, setHovering] = useState(false);
   const [editingTags, setEditingTags] = useState(false);
   const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
   const setArtistTab = useSystemStore((s) => s.setArtistTab);
@@ -39,8 +38,6 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
   return (
     <div
       className="group relative rounded-modal border border-primary/8 bg-card/40 overflow-hidden transition-all hover:border-rose-500/20 hover:shadow-elevation-3 hover:shadow-rose-500/5 cursor-pointer"
-      onMouseEnter={() => setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
       onClick={onClick}
     >
       {/* Thumbnail area */}
@@ -60,43 +57,42 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
           </div>
         )}
 
-        {/* Hover overlay */}
-        {hovering && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 transition-opacity">
+        {/* Hover overlay — gated via CSS group-hover so the parent doesn't
+            need to re-render on every pointer enter/leave. */}
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(asset.id);
+            }}
+            className="p-2 rounded-card bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+            title={t.plugins.artist.delete}
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setEditingTags(true);
+            }}
+            className="p-2 rounded-card bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+            title={t.plugins.artist.edit_tags}
+          >
+            <Tag className="w-4 h-4" />
+          </button>
+          {isImage && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(asset.id);
+                sendToMediaStudio();
               }}
-              className="p-2 rounded-card bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-              title={t.plugins.artist.delete}
+              className="p-2 rounded-card bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
+              title={t.plugins.artist.send_to_media_studio}
             >
-              <Trash2 className="w-4 h-4" />
+              <Film className="w-4 h-4" />
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditingTags(true);
-              }}
-              className="p-2 rounded-card bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-              title={t.plugins.artist.edit_tags}
-            >
-              <Tag className="w-4 h-4" />
-            </button>
-            {isImage && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  sendToMediaStudio();
-                }}
-                className="p-2 rounded-card bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
-                title={t.plugins.artist.send_to_media_studio}
-              >
-                <Film className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Info */}
