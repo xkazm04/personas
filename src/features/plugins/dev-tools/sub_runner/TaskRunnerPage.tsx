@@ -18,6 +18,7 @@ import { TaskOutputPanel } from './TaskOutputPanel';
 import { SelfHealingPanel } from './SelfHealingPanel';
 import { PrBridge } from './PrBridge';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch } from '@/lib/silentCatch';
 import { startAutoRun, cancelAutoRun } from '@/api/devTools/devTools';
 import type { DevTask } from '@/lib/bindings/DevTask';
@@ -74,29 +75,30 @@ function progressToPhase(progress: number, status: TaskStatus): TaskPhase {
 // Status + Phase styling
 // ---------------------------------------------------------------------------
 
-const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Clock; label: string; className: string; pulse?: boolean }> = {
-  queued: { icon: Clock, label: 'Queued', className: 'bg-primary/10 text-foreground border-primary/15' },
-  running: { icon: Loader2, label: 'Running', className: 'bg-blue-500/15 text-blue-400 border-blue-500/25', pulse: true },
-  completed: { icon: CheckCircle2, label: 'Completed', className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
-  failed: { icon: AlertCircle, label: 'Failed', className: 'bg-red-500/15 text-red-400 border-red-500/25' },
-  cancelled: { icon: Ban, label: 'Cancelled', className: 'bg-primary/10 text-foreground border-primary/10' },
+const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Clock; className: string; pulse?: boolean }> = {
+  queued: { icon: Clock, className: 'bg-primary/10 text-foreground border-primary/15' },
+  running: { icon: Loader2, className: 'bg-blue-500/15 text-blue-400 border-blue-500/25', pulse: true },
+  completed: { icon: CheckCircle2, className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' },
+  failed: { icon: AlertCircle, className: 'bg-red-500/15 text-red-400 border-red-500/25' },
+  cancelled: { icon: Ban, className: 'bg-primary/10 text-foreground border-primary/10' },
 };
 
-const PHASE_CONFIG: Record<TaskPhase, { label: string; color: string; range: [number, number] }> = {
-  analyzing: { label: 'Analyzing', color: 'bg-blue-400', range: [0, 15] },
-  planning: { label: 'Planning', color: 'bg-indigo-400', range: [15, 30] },
-  implementing: { label: 'Implementing', color: 'bg-violet-400', range: [30, 60] },
-  validating: { label: 'Validating', color: 'bg-amber-400', range: [60, 85] },
-  complete: { label: 'Complete', color: 'bg-emerald-400', range: [85, 100] },
+const PHASE_CONFIG: Record<TaskPhase, { color: string; range: [number, number] }> = {
+  analyzing: { color: 'bg-blue-400', range: [0, 15] },
+  planning: { color: 'bg-indigo-400', range: [15, 30] },
+  implementing: { color: 'bg-violet-400', range: [30, 60] },
+  validating: { color: 'bg-amber-400', range: [60, 85] },
+  complete: { color: 'bg-emerald-400', range: [85, 100] },
 };
 
 function StatusBadge({ status }: { status: TaskStatus }) {
+  const { t } = useTranslation();
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 typo-caption font-medium border ${cfg.className}`}>
       <Icon className={`w-3 h-3 ${cfg.pulse ? 'animate-spin' : ''}`} />
-      {cfg.label}
+      {tokenLabel(t, 'execution', status)}
     </span>
   );
 }
@@ -309,7 +311,7 @@ function TaskCard({
         {(task.status === 'running' || task.status === 'completed') && (
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-[10px] text-foreground font-medium">
-              {phaseCfg.label}
+              {tokenLabel(t, 'task_phase', task.phase)}
             </span>
             <div className="w-24 h-1.5 bg-primary/10 rounded-full overflow-hidden">
               <div

@@ -8370,6 +8370,13 @@ export type Translations = {
       no_credential: string;
       testing: string;
     };
+    task_phase: {
+      analyzing: string;
+      planning: string;
+      implementing: string;
+      validating: string;
+      complete: string;
+    };
     test: {
       generating: string;
       running: string;

@@ -126,6 +126,7 @@
     "select_persona": "Select persona",
     "all_personas": "All Personas",
     "search_ellipsis": "Search...",
+    "search": "Search",
     "no_personas_matching": "No personas matching \"{query}\"",
     "drop_file_here": "Drop file here",
     "attach": "Attach",
@@ -8363,6 +8364,13 @@
       "failed": "Failed",
       "no_credential": "No Credential",
       "testing": "Testing"
+    },
+    "task_phase": {
+      "analyzing": "Analyzing",
+      "planning": "Planning",
+      "implementing": "Implementing",
+      "validating": "Validating",
+      "complete": "Complete"
     },
     "test": {
       "generating": "Generating",
