@@ -261,13 +261,24 @@ fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
         } else {
             slugify(heading)
         };
-        let file_path = format!("{rel_path}#{anchor}");
         // Soft-cap: if a section exceeds the cap, split on H3, then on
-        // hard byte boundaries.
-        for piece in split_oversized(&content, CHUNK_SOFT_CAP_BYTES) {
+        // hard byte boundaries. Each piece gets a UNIQUE upsert key with
+        // a `-pN` suffix on the anchor — without this, all pieces of an
+        // oversized section share a single key and overwrite each other
+        // on every ingest pass (visible as a stable ~N "updated" count
+        // that never converges to zero).
+        let pieces = split_oversized(&content, CHUNK_SOFT_CAP_BYTES);
+        let multi = pieces.len() > 1;
+        for (idx, piece) in pieces.into_iter().enumerate() {
+            let piece_anchor = if multi {
+                format!("{anchor}-p{}", idx + 1)
+            } else {
+                anchor.clone()
+            };
+            let file_path = format!("{rel_path}#{piece_anchor}");
             let hash = sha256_hex(&piece);
             out.push(DoctrineChunk {
-                file_path: file_path.clone(),
+                file_path,
                 heading: heading.to_string(),
                 content: piece,
                 content_hash: hash,

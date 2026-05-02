@@ -2,44 +2,71 @@ use rusqlite::Connection;
 
 use crate::error::AppError;
 
+struct IncrementalMigration {
+    id: &'static str,
+    description: &'static str,
+    already_applied: fn(&Connection) -> Result<bool, AppError>,
+    apply: fn(&Connection) -> Result<(), AppError>,
+}
+
+fn run_step(conn: &Connection, migration: IncrementalMigration) -> Result<(), AppError> {
+    if (migration.already_applied)(conn)? {
+        return Ok(());
+    }
+
+    (migration.apply)(conn)?;
+    tracing::info!(
+        migration_id = migration.id,
+        "Applied incremental migration: {}",
+        migration.description,
+    );
+    Ok(())
+}
+
+fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool, AppError> {
+    let mut stmt = conn.prepare(&format!(
+        "SELECT COUNT(*) FROM pragma_table_info('{}') WHERE name = ?1",
+        table.replace('\'', "''"),
+    ))?;
+    let count = stmt.query_row([column], |row| row.get::<_, i64>(0))?;
+    Ok(count > 0)
+}
+
 /// Incremental migrations for columns added after the initial schema.
 /// Uses "ADD COLUMN ... IF NOT EXISTS" equivalent via PRAGMA table_info check.
 pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     // Add tool_steps column to persona_executions (Feature 3: Execution Inspector)
-    let has_tool_steps: bool = conn
-        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_executions') WHERE name = 'tool_steps'")?
-        .query_row([], |row| row.get::<_, i64>(0))
-        .map(|c| c > 0)
-        .unwrap_or(false);
-
-    if !has_tool_steps {
-        conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
-        tracing::info!("Added tool_steps column to persona_executions");
-    }
+    run_step(conn, IncrementalMigration {
+        id: "persona_executions.tool_steps",
+        description: "Add tool_steps column to persona_executions",
+        already_applied: |conn| has_column(conn, "persona_executions", "tool_steps"),
+        apply: |conn| {
+            conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN tool_steps TEXT;")?;
+            Ok(())
+        },
+    })?;
 
     // Add typed circuit-breaker flag to healing issues
-    let has_is_circuit_breaker: bool = conn
-        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_healing_issues') WHERE name = 'is_circuit_breaker'")?
-        .query_row([], |row| row.get::<_, i64>(0))
-        .map(|c| c > 0)
-        .unwrap_or(false);
-
-    if !has_is_circuit_breaker {
-        conn.execute_batch("ALTER TABLE persona_healing_issues ADD COLUMN is_circuit_breaker INTEGER NOT NULL DEFAULT 0;")?;
-        tracing::info!("Added is_circuit_breaker column to persona_healing_issues");
-    }
+    run_step(conn, IncrementalMigration {
+        id: "persona_healing_issues.is_circuit_breaker",
+        description: "Add typed circuit-breaker flag to healing issues",
+        already_applied: |conn| has_column(conn, "persona_healing_issues", "is_circuit_breaker"),
+        apply: |conn| {
+            conn.execute_batch("ALTER TABLE persona_healing_issues ADD COLUMN is_circuit_breaker INTEGER NOT NULL DEFAULT 0;")?;
+            Ok(())
+        },
+    })?;
 
     // Add use_case_flows column to persona_design_reviews
-    let has_use_case_flows: bool = conn
-        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_design_reviews') WHERE name = 'use_case_flows'")?
-        .query_row([], |row| row.get::<_, i64>(0))
-        .map(|c| c > 0)
-        .unwrap_or(false);
-
-    if !has_use_case_flows {
-        conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN use_case_flows TEXT;")?;
-        tracing::info!("Added use_case_flows column to persona_design_reviews");
-    }
+    run_step(conn, IncrementalMigration {
+        id: "persona_design_reviews.use_case_flows",
+        description: "Add use_case_flows column to persona_design_reviews",
+        already_applied: |conn| has_column(conn, "persona_design_reviews", "use_case_flows"),
+        apply: |conn| {
+            conn.execute_batch("ALTER TABLE persona_design_reviews ADD COLUMN use_case_flows TEXT;")?;
+            Ok(())
+        },
+    })?;
 
     // Add retry lineage columns to persona_executions (Healing: autonomous retry)
     let has_retry_of: bool = conn

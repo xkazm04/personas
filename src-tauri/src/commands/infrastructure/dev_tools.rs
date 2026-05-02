@@ -2,6 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 pub mod workspace;
+mod triage;
 
 use crate::db::models::{
     DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup, DevContextGroupRelationship,
@@ -872,7 +873,7 @@ pub fn dev_tools_run_triage_rules(
     // 3. Evaluate rules against each idea (first matching rule wins)
     for idea in &ideas {
         for rule in &enabled_rules {
-            if evaluate_triage_conditions(&rule.conditions, idea) {
+            if triage::evaluate_conditions(&rule.conditions, idea) {
                 let new_status = if rule.action == "accept" {
                     "accepted"
                 } else {
@@ -907,61 +908,6 @@ pub fn dev_tools_run_triage_rules(
     }
 
     Ok(serde_json::json!({ "applied": enabled_rules.len(), "ideas_affected": ideas_affected }))
-}
-
-/// Evaluate triage rule conditions against a single idea.
-/// Conditions are JSON: [{ "field": "effort|impact|risk|category|scan_type", "op": "lt|gt|eq|in", "value": ... }]
-/// All conditions must match (AND logic).
-fn evaluate_triage_conditions(
-    conditions_json: &str,
-    idea: &DevIdea,
-) -> bool {
-    let conditions: Vec<serde_json::Value> = match serde_json::from_str(conditions_json) {
-        Ok(c) => c,
-        Err(_) => return false,
-    };
-
-    conditions.iter().all(|cond| {
-        let field = cond.get("field").and_then(|f| f.as_str()).unwrap_or("");
-        let op = cond.get("op").and_then(|o| o.as_str()).unwrap_or("");
-        let value = cond.get("value");
-
-        match field {
-            "effort" => compare_numeric(idea.effort.unwrap_or(0), op, value),
-            "impact" => compare_numeric(idea.impact.unwrap_or(0), op, value),
-            "risk" => compare_numeric(idea.risk.unwrap_or(0), op, value),
-            "category" => compare_string(Some(&idea.category), op, value),
-            "scan_type" => compare_string(Some(&idea.scan_type), op, value),
-            _ => false,
-        }
-    })
-}
-
-fn compare_numeric(field_value: i32, op: &str, value: Option<&serde_json::Value>) -> bool {
-    let target = value.and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-    match op {
-        "lt" => field_value < target,
-        "gt" => field_value > target,
-        "eq" => field_value == target,
-        "lte" => field_value <= target,
-        "gte" => field_value >= target,
-        _ => false,
-    }
-}
-
-fn compare_string(field_value: Option<&str>, op: &str, value: Option<&serde_json::Value>) -> bool {
-    let field_str = field_value.unwrap_or("");
-    match op {
-        "eq" => value
-            .and_then(|v| v.as_str())
-            .map(|s| s == field_str)
-            .unwrap_or(false),
-        "in" => value
-            .and_then(|v| v.as_array())
-            .map(|arr| arr.iter().any(|item| item.as_str() == Some(field_str)))
-            .unwrap_or(false),
-        _ => false,
-    }
 }
 
 // ============================================================================

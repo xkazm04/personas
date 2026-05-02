@@ -3,9 +3,39 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 /**
  * Initialize the companion-brain disk layout (idempotent).
  * Returns the absolute path to ~/.personas/companion-brain/.
+ *
+ * Singleton dedupe via `globalThis`: callers from StrictMode double-effects,
+ * HMR re-evaluations (which reset module-level state!), or component
+ * remounts all share the same promise instead of firing parallel
+ * `companion_init` invocations (each of which spawns its own background
+ * doctrine ingest). The cache is keyed on globalThis so it survives Vite
+ * HMR replacing this module — module-level `let` would NOT survive.
+ *
+ * This matches the project's "globalThis for HMR-surviving singletons"
+ * convention (see CLAUDE.md). Manual re-ingest goes through
+ * `companionReingestDoctrine` rather than re-running init.
  */
+const COMPANION_INIT_KEY = '__personas_companion_init__';
+type GlobalSlot = { promise: Promise<string> | null };
+function initSlot(): GlobalSlot {
+  const g = globalThis as unknown as Record<string, GlobalSlot>;
+  if (!g[COMPANION_INIT_KEY]) {
+    g[COMPANION_INIT_KEY] = { promise: null };
+  }
+  return g[COMPANION_INIT_KEY];
+}
+
 export async function companionInit(): Promise<string> {
-  return invoke<string>('companion_init');
+  const slot = initSlot();
+  if (slot.promise) return slot.promise;
+  slot.promise = invoke<string>('companion_init').catch((err) => {
+    // Allow retry on failure so the user can recover by closing/reopening
+    // the panel after fixing the underlying issue. Successful inits stay
+    // cached for the lifetime of the page.
+    slot.promise = null;
+    throw err;
+  });
+  return slot.promise;
 }
 
 export interface SendTurnResult {

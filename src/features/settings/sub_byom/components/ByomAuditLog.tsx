@@ -25,8 +25,8 @@ function formatCost(value: number | null): string {
   return value != null ? `$${value.toFixed(4)}` : '-';
 }
 
-function formatDuration(ms: number | null): string {
-  return ms != null ? `${Math.round(ms / 1000)}s` : '-';
+function formatDuration(ms: number | bigint | null): string {
+  return ms != null ? `${Math.round(Number(ms) / 1000)}s` : '-';
 }
 
 interface AuditRowProps {

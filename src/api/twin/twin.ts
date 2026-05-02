@@ -170,6 +170,7 @@ function validateKeyFactsJson(value: string | undefined): string | undefined {
   } catch (e) {
     throw new Error(
       `twin: keyFactsJson is not valid JSON (${e instanceof Error ? e.message : String(e)})`,
+      { cause: e },
     );
   }
   return value;

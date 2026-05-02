@@ -1782,6 +1782,9 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_push_goals,
             commands::obsidian_brain::obsidian_brain_lint_vault,
             commands::obsidian_brain::obsidian_brain_semantic_lint_vault,
+            commands::obsidian_brain::obsidian_drive_status,
+            commands::obsidian_brain::obsidian_drive_push_sync,
+            commands::obsidian_brain::obsidian_drive_pull_sync,
             // Obsidian Brain — Graph (Obsidian Memory connector)
             commands::obsidian_brain::graph::obsidian_graph_search,
             commands::obsidian_brain::graph::obsidian_graph_outgoing_links,
@@ -1808,6 +1811,8 @@ pub fn run() {
             commands::infrastructure::auth::logout,
             commands::infrastructure::auth::refresh_session,
             commands::infrastructure::auth::clear_pending_oauth,
+            commands::infrastructure::auth::login_with_google_drive,
+            commands::infrastructure::auth::get_google_drive_status,
             // Infrastructure -- System
             commands::infrastructure::system::system_health_check,
             commands::infrastructure::system::health_check_local,

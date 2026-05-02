@@ -2,4 +2,27 @@
 import type { ComplianceRule } from "./ComplianceRule";
 import type { RoutingRule } from "./RoutingRule";
 
-export type ByomPolicy = { enabled: boolean, allowed_providers: string[], blocked_providers: string[], routing_rules: RoutingRule[], compliance_rules: ComplianceRule[], };
+/**
+ * Top-level BYOM policy configuration.
+ */
+export type ByomPolicy = { 
+/**
+ * Whether BYOM policy enforcement is enabled.
+ */
+enabled: boolean, 
+/**
+ * Providers that are allowed for use. Empty = all allowed.
+ */
+allowed_providers: Array<string>, 
+/**
+ * Providers that are explicitly blocked (takes precedence over allowed).
+ */
+blocked_providers: Array<string>, 
+/**
+ * Cost-based routing rules. Evaluated in order; first match wins.
+ */
+routing_rules: Array<RoutingRule>, 
+/**
+ * Compliance restrictions keyed by workflow tag.
+ */
+compliance_rules: Array<ComplianceRule>, };

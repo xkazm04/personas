@@ -7,6 +7,7 @@
 mod env;
 mod globals;
 mod credentials;
+mod stages;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -40,6 +41,7 @@ use super::provider::{self, PromptDelivery};
 
 use self::credentials::inject_design_context_credentials;
 use self::globals::{default_result, resolve_global_provider_settings};
+use self::stages::RunnerStage;
 
 /// Default per-execution stream timeout when `persona.timeout_ms <= 0`.
 ///
@@ -81,11 +83,11 @@ pub async fn run_execution(
     // Covers setup, workspace resolution, model parsing, and credential resolution.
     let validate_stage = trace.start_span(
         SpanType::PipelineStage,
-        "Pipeline: Validate",
+        RunnerStage::Validate.label(),
         None,
         Some(serde_json::json!({
-            "pipeline_stage": "validate",
-            "boundary": "Command -> DB reads",
+            "pipeline_stage": RunnerStage::Validate.key(),
+            "boundary": RunnerStage::Validate.boundary(),
         })),
     );
 
@@ -455,11 +457,11 @@ pub async fn run_execution(
     // Covers prompt assembly, provider failover, and CLI process spawn.
     let spawn_engine_stage = trace.start_span(
         SpanType::PipelineStage,
-        "Pipeline: Spawn Engine",
+        RunnerStage::SpawnEngine.label(),
         None,
         Some(serde_json::json!({
-            "pipeline_stage": "spawn_engine",
-            "boundary": "Engine -> Tokio task",
+            "pipeline_stage": RunnerStage::SpawnEngine.key(),
+            "boundary": RunnerStage::SpawnEngine.boundary(),
         })),
     );
 
@@ -1047,11 +1049,11 @@ pub async fn run_execution(
     // (PID registration was done immediately after spawn above.)
     let stream_output_stage = trace.start_span(
         SpanType::PipelineStage,
-        "Pipeline: Stream Output",
+        RunnerStage::StreamOutput.label(),
         None,
         Some(serde_json::json!({
-            "pipeline_stage": "stream_output",
-            "boundary": "Runner -> Tauri events",
+            "pipeline_stage": RunnerStage::StreamOutput.key(),
+            "boundary": RunnerStage::StreamOutput.boundary(),
         })),
     );
 
@@ -1638,11 +1640,11 @@ pub async fn run_execution(
     // circuit breaker recording, audit logging, trace finalization, and status emit.
     let finalize_stage = trace.start_span(
         SpanType::PipelineStage,
-        "Pipeline: Finalize Status",
+        RunnerStage::FinalizeStatus.label(),
         None,
         Some(serde_json::json!({
-            "pipeline_stage": "finalize_status",
-            "boundary": "Runner -> DB + events",
+            "pipeline_stage": RunnerStage::FinalizeStatus.key(),
+            "boundary": RunnerStage::FinalizeStatus.boundary(),
         })),
     );
 

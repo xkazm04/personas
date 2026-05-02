@@ -158,6 +158,7 @@ export const EventName = {
   // Background monitoring
   OVERDUE_TRIGGERS_FIRED: 'overdue-triggers-fired',
   ZOMBIE_EXECUTIONS_DETECTED: 'zombie-executions-detected',
+  EXECUTIONS_SILENT_DETECTED: 'executions-silent-detected',
   AUTO_ROLLBACK_TRIGGERED: 'auto-rollback-triggered',
   SUBSCRIPTION_CRASHED: 'subscription-crashed',
 
@@ -177,6 +178,7 @@ export const EventName = {
   // Pipeline
   PIPELINE_STATUS: 'pipeline-status',
   PIPELINE_CYCLE_WARNING: 'pipeline-cycle-warning',
+  PIPELINE_APPROVAL_NEEDED: 'pipeline-approval-needed',
 
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
@@ -193,6 +195,9 @@ export const EventName = {
 
   // Engine fallback (unrecognized engine setting)
   ENGINE_FALLBACK: 'engine-fallback',
+
+  // CLI version warning (provider CLI below minimum required version)
+  CLI_VERSION_WARNING: 'cli-version-warning',
 
   // Persona health (push-based summary refresh signal from backend)
   PERSONA_HEALTH_CHANGED: 'persona-health-changed',
@@ -521,6 +526,24 @@ export interface PipelineCycleWarningPayload {
   cycle_member_ids: string[];
 }
 
+/** Pipeline node approval gate request (engine/pipeline_executor.rs json!). */
+export interface PipelineApprovalNeededPayload {
+  run_id: string;
+  team_id: string;
+  member_id: string;
+  persona_name: string;
+  predecessor_output: unknown;
+}
+
+/** CLI version warning payloads are emitted by backend provider probes. */
+export interface CliVersionWarningPayload {
+  provider?: string;
+  detected?: string;
+  required?: string;
+  message?: string;
+  [key: string]: unknown;
+}
+
 /** TitleBar notification from persona message delivery (notifications.rs TitlebarNotificationPayload). */
 export interface TitlebarNotificationPayload {
   personaId: string;
@@ -723,6 +746,11 @@ export interface EventPayloadMap {
   // Background monitoring
   [EventName.OVERDUE_TRIGGERS_FIRED]: { trigger_ids: string[] };
   [EventName.ZOMBIE_EXECUTIONS_DETECTED]: { zombie_ids: string[]; count: number };
+  [EventName.EXECUTIONS_SILENT_DETECTED]: {
+    execution_ids: string[];
+    count: number;
+    cutoff_secs: number;
+  };
   [EventName.AUTO_ROLLBACK_TRIGGERED]: {
     personaId: string;
     personaName: string;
@@ -753,6 +781,7 @@ export interface EventPayloadMap {
   // Pipeline
   [EventName.PIPELINE_STATUS]: PipelineStatusPayload;
   [EventName.PIPELINE_CYCLE_WARNING]: PipelineCycleWarningPayload;
+  [EventName.PIPELINE_APPROVAL_NEEDED]: PipelineApprovalNeededPayload;
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {
@@ -796,6 +825,7 @@ export interface EventPayloadMap {
     requested: string;
     actual: string;
   };
+  [EventName.CLI_VERSION_WARNING]: CliVersionWarningPayload;
 
   // Persona health
   [EventName.PERSONA_HEALTH_CHANGED]: {
