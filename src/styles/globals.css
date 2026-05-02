@@ -170,6 +170,8 @@
   --status-processing: var(--status-processing-raw);
   --status-neutral: var(--status-neutral-raw);
   --btn-primary: #0e7490;
+  --btn-primary-fg: #ffffff;
+  --btn-danger-fg: #ffffff;
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-blur: 12px;
   --glass-border: rgba(255, 255, 255, 0.06);
@@ -258,6 +260,8 @@
   --color-brand-rose: var(--brand-rose);
 
   --color-btn-primary: var(--btn-primary);
+  --color-btn-primary-fg: var(--btn-primary-fg);
+  --color-btn-danger-fg: var(--btn-danger-fg);
 
   /* Semantic status colors */
   --color-status-success: var(--status-success);

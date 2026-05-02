@@ -17,13 +17,13 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'ic
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'brightness-lock bg-btn-primary text-white hover:bg-btn-primary/90 shadow-elevation-1 hover:shadow-elevation-2 active:scale-[0.98]',
+    'brightness-lock bg-btn-primary text-btn-primary-fg hover:bg-btn-primary/90 shadow-elevation-1 hover:shadow-elevation-2 active:scale-[0.98]',
   secondary:
     'border border-border bg-secondary/40 text-foreground/90 hover:bg-secondary/70 hover:border-border/80 active:scale-[0.98]',
   ghost:
     'text-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
   danger:
-    'brightness-lock bg-red-600/90 text-white hover:bg-red-600 border border-red-500/30 shadow-elevation-1 active:scale-[0.98]',
+    'brightness-lock bg-red-600/90 text-btn-danger-fg hover:bg-red-600 border border-red-500/30 shadow-elevation-1 active:scale-[0.98]',
   accent:
     'border text-foreground/90 active:scale-[0.98]',
   link:

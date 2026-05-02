@@ -176,7 +176,7 @@ export function DataGrid<T>({
                   }`}
                 >
                   {selectAll && (
-                    <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
+                    <svg className="w-3 h-3 text-btn-primary-fg" viewBox="0 0 12 12" fill="none">
                       <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   )}
