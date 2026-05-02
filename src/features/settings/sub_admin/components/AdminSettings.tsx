@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Shield, Map, RotateCcw, Play, Trash2, Check, AlertTriangle, ScrollText } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from "@/stores/systemStore";
 import { TOUR_STEPS } from '@/stores/slices/system/tourSlice';
-import { hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
+import { CONSENT_KEY, hasUserConsented, resetUserConsent } from '@/features/shared/components/overlays/FirstUseConsentModal';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export default function AdminSettings() {
@@ -23,6 +23,16 @@ export default function AdminSettings() {
   const { t } = useTranslation();
   const s = t.settings.admin;
 
+  // Clear pending confirm-flag auto-revert timers on unmount so they don't
+  // setState after unmount (and don't fire after a re-click that would have
+  // reset the flag on its own).
+  const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const consentResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+    if (consentResetTimerRef.current) clearTimeout(consentResetTimerRef.current);
+  }, []);
+
   const completedCount = TOUR_STEPS.filter((s) => tourStepCompleted[s.id]).length;
 
   const handleForceStart = () => {
@@ -37,8 +47,16 @@ export default function AdminSettings() {
   const handleReset = () => {
     if (!confirmReset) {
       setConfirmReset(true);
-      setTimeout(() => setConfirmReset(false), 3000);
+      if (resetTimerRef.current) clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = setTimeout(() => {
+        resetTimerRef.current = null;
+        setConfirmReset(false);
+      }, 3000);
       return;
+    }
+    if (resetTimerRef.current) {
+      clearTimeout(resetTimerRef.current);
+      resetTimerRef.current = null;
     }
     resetTour();
     setConfirmReset(false);
@@ -97,7 +115,7 @@ export default function AdminSettings() {
                 <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                   <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.current_step}</p>
                   <p className="typo-body font-medium text-foreground">
-                    {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? 'N/A' : '--'}
+                    {tourActive ? TOUR_STEPS[tourCurrentStepIndex]?.title ?? s.tour_step_unavailable : '--'}
                   </p>
                 </div>
               </div>
@@ -212,7 +230,7 @@ export default function AdminSettings() {
             <div className="px-5 py-4 space-y-4">
               <div className="rounded-card bg-secondary/20 border border-primary/8 p-3">
                 <p className="text-[11px] uppercase tracking-wider text-foreground mb-1">{s.storage_key}</p>
-                <p className="typo-code font-mono text-foreground">__personas_user_consent_accepted</p>
+                <p className="typo-code font-mono text-foreground">{CONSENT_KEY}</p>
               </div>
 
               <div className="flex items-center gap-2 pt-1">
@@ -220,8 +238,16 @@ export default function AdminSettings() {
                   onClick={() => {
                     if (!confirmConsentReset) {
                       setConfirmConsentReset(true);
-                      setTimeout(() => setConfirmConsentReset(false), 3000);
+                      if (consentResetTimerRef.current) clearTimeout(consentResetTimerRef.current);
+                      consentResetTimerRef.current = setTimeout(() => {
+                        consentResetTimerRef.current = null;
+                        setConfirmConsentReset(false);
+                      }, 3000);
                       return;
+                    }
+                    if (consentResetTimerRef.current) {
+                      clearTimeout(consentResetTimerRef.current);
+                      consentResetTimerRef.current = null;
                     }
                     resetUserConsent();
                     setConsentStatus(false);

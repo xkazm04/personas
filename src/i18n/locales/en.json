@@ -7431,7 +7431,8 @@
       "consent_not_accepted": "Not accepted",
       "storage_key": "Storage Key",
       "reset_consent": "Reset Consent",
-      "reload_modal": "Reload to Show Modal"
+      "reload_modal": "Reload to Show Modal",
+      "tour_step_unavailable": "N/A"
     },
     "portability": {
       "title": "Data Portability",

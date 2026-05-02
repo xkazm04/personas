@@ -7438,6 +7438,7 @@ export type Translations = {
       storage_key: string;
       reset_consent: string;
       reload_modal: string;
+      tour_step_unavailable: string;
     };
     portability: {
       title: string;

@@ -19,7 +19,10 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import { setTelemetryEnabled } from '@/lib/telemetryPreference';
 
-const CONSENT_KEY = '__personas_user_consent_accepted';
+/** localStorage key for first-use consent acceptance. Exported so admin /
+ *  diagnostic surfaces (e.g. AdminSettings storage-key display) can render
+ *  the authoritative literal without re-declaring it. */
+export const CONSENT_KEY = '__personas_user_consent_accepted';
 const CONSENT_VERSION = '3';
 
 export function hasUserConsented(): boolean {
