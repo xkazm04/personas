@@ -1,96 +1,18 @@
-import { useEffect, useState, useRef } from 'react';
 import { Brain, Database, Link, Unlink, FolderTree, RefreshCw, AlertCircle } from 'lucide-react';
-import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
-import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { CoachMark } from '../CoachMark';
-
-interface KbInfo {
-  id: string;
-  name: string;
-  document_count: number;
-  chunk_count: number;
-  status: string;
-}
+import { useBrainConnection } from './useBrainConnection';
 
 export default function BrainBaseline() {
   const { t } = useTwinTranslation();
-  const twinProfiles = useSystemStore((s) => s.twinProfiles);
-  const activeTwinId = useSystemStore((s) => s.activeTwinId);
-  const bindTwinKnowledgeBase = useSystemStore((s) => s.bindTwinKnowledgeBase);
-  const unbindTwinKnowledgeBase = useSystemStore((s) => s.unbindTwinKnowledgeBase);
-  const fetchTwinProfiles = useSystemStore((s) => s.fetchTwinProfiles);
-
-  const activeTwin = twinProfiles.find((tw) => tw.id === activeTwinId);
-  const kbId = activeTwin?.knowledge_base_id ?? null;
-
-  const [kbInfo, setKbInfo] = useState<KbInfo | null>(null);
-  const [allKbs, setAllKbs] = useState<KbInfo[]>([]);
-  const [kbLoading, setKbLoading] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
-  const [pickMode, setPickMode] = useState(false);
-  const lastLoadedKbId = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!kbId) { setKbInfo(null); lastLoadedKbId.current = null; return; }
-    if (kbId === lastLoadedKbId.current) return;
-    lastLoadedKbId.current = kbId;
-    setKbLoading(true);
-    invoke<KbInfo>("get_knowledge_base", { kbId })
-      .then((kb) => setKbInfo(kb))
-      .catch(() => setKbInfo(null))
-      .finally(() => setKbLoading(false));
-  }, [kbId]);
-
-  const refreshKb = () => {
-    if (!kbId) return;
-    lastLoadedKbId.current = null;
-    setKbLoading(true);
-    invoke<KbInfo>("get_knowledge_base", { kbId })
-      .then((kb) => { setKbInfo(kb); lastLoadedKbId.current = kbId; })
-      .catch(() => setKbInfo(null))
-      .finally(() => setKbLoading(false));
-  };
-
-  const loadAllKbs = async () => {
-    try { setAllKbs(await invoke<KbInfo[]>("list_knowledge_bases")); } catch { setAllKbs([]); }
-  };
-
-  const handleCreateKb = async () => {
-    if (!activeTwinId || !activeTwin) return;
-    setCreating(true);
-    setCreateError(null);
-    try {
-      const kb = await invoke<KbInfo>("create_knowledge_base", { name: `${activeTwin.name} Brain`, description: `Knowledge base for twin: ${activeTwin.name}` });
-      await bindTwinKnowledgeBase(activeTwinId, kb.id);
-      await fetchTwinProfiles();
-      setKbInfo(kb);
-      lastLoadedKbId.current = kb.id;
-    } catch (err) {
-      const msg = typeof err === 'object' && err !== null && 'error' in err ? String((err as { error: string }).error) : String(err);
-      setCreateError(msg.includes('vec0') ? 'Vector extension (vec0) not available. Use "Link Existing" to connect a knowledge base created from the Credentials page.' : msg);
-    } finally { setCreating(false); }
-  };
-
-  const handleBind = async (id: string) => {
-    if (!activeTwinId) return;
-    await bindTwinKnowledgeBase(activeTwinId, id);
-    await fetchTwinProfiles();
-    setPickMode(false);
-    try { const kb = await invoke<KbInfo>("get_knowledge_base", { kbId: id }); setKbInfo(kb); lastLoadedKbId.current = id; } catch { /* next render */ }
-  };
-
-  const handleUnbind = async () => {
-    if (!activeTwinId) return;
-    await unbindTwinKnowledgeBase(activeTwinId);
-    await fetchTwinProfiles();
-    setKbInfo(null);
-    lastLoadedKbId.current = null;
-  };
+  const {
+    activeTwin, activeTwinId,
+    kbInfo, allKbs, kbLoading, createError, creating, pickMode, setPickMode,
+    refreshKb, loadAllKbs, handleCreateKb, handleBind, handleUnbind,
+  } = useBrainConnection();
 
   if (!activeTwinId) return <TwinEmptyState icon={Brain} title={t.brain.title} />;
 
