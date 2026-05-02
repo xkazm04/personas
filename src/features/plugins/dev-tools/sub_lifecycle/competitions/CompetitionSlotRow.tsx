@@ -37,7 +37,8 @@ export function CompetitionSlotRow({
   onPickWinner,
   picking,
 }: CompetitionSlotRowProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const [expandedDiff, setExpandedDiff] = useState<string | 'loading' | null>(null);
   const [server, setServer] = useState<{ port: number; pid: number; url: string } | null>(null);
   const [serverLoading, setServerLoading] = useState(false);
@@ -48,19 +49,19 @@ export function CompetitionSlotRow({
     try {
       const result = await startSlotServer(slot.id);
       setServer({ port: result.port, pid: result.pid, url: result.url });
-      addToast(`Dev server started on port ${result.port}`, 'success');
+      addToast(tx(dt.slot_dev_server_started, { port: result.port }), 'success');
     } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to start server', 'error');
+      addToast(err instanceof Error ? err.message : dt.slot_dev_server_failed, 'error');
     } finally { setServerLoading(false); }
-  }, [slot.id, addToast]);
+  }, [slot.id, addToast, dt, tx]);
 
   const handleStopServer = useCallback(async () => {
     try {
       await stopSlotServer(slot.id);
       setServer(null);
-      addToast('Dev server stopped', 'success');
+      addToast(dt.slot_dev_server_stopped, 'success');
     } catch { setServer(null); }
-  }, [slot.id, addToast]);
+  }, [slot.id, addToast, dt]);
 
   const taskStatus = task?.status ?? 'unknown';
   const isDq = slot.disqualified;
@@ -75,11 +76,11 @@ export function CompetitionSlotRow({
     setExpandedDiff('loading');
     try {
       const diffText = await getCompetitionSlotDiff(slot.id);
-      setExpandedDiff(diffText || '(empty diff)');
+      setExpandedDiff(diffText || dt.slot_empty_diff);
     } catch (err) {
-      setExpandedDiff(`Error: ${err instanceof Error ? err.message : 'failed to load diff'}`);
+      setExpandedDiff(tx(dt.slot_load_diff_error, { error: err instanceof Error ? err.message : dt.slot_load_diff_failed }));
     }
-  }, [expandedDiff, slot.id]);
+  }, [expandedDiff, slot.id, dt, tx]);
 
   const handleBrowse = useCallback(async () => {
     try {
@@ -129,9 +130,9 @@ export function CompetitionSlotRow({
             )}
             {diffStats && (
               <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium bg-primary/10 text-foreground border border-primary/20">
-                <FileDiff className="w-3 h-3" /> {diffStats.files_changed} files
-                <span className="text-emerald-400 ml-1">+{diffStats.lines_added}</span>
-                <span className="text-red-400">{diffStats.lines_removed}</span>
+                <FileDiff className="w-3 h-3" /> {tx(dt.slot_files_count, { count: diffStats.files_changed })}
+                <span className="text-emerald-400 ml-1">{tx(dt.slot_lines_added, { count: diffStats.lines_added })}</span>
+                <span className="text-red-400">{tx(dt.slot_lines_removed, { count: diffStats.lines_removed })}</span>
               </span>
             )}
             {qScore && (
@@ -141,9 +142,15 @@ export function CompetitionSlotRow({
                   : qScore.total >= 70 ? 'bg-amber-500/10 border-amber-500/25'
                   : 'bg-red-500/10 border-red-500/25'
                 } ${qualityColor(qScore.total)}`}
-                title={`Build: ${qScore.build}/25 · Tests: ${qScore.tests}/30 · Lint: ${qScore.lint}/20 · Review: ${qScore.review}/15 · Completion: ${qScore.completion}/10`}
+                title={tx(dt.slot_qscore_tooltip, {
+                  build: qScore.build,
+                  tests: qScore.tests,
+                  lint: qScore.lint,
+                  review: qScore.review,
+                  completion: qScore.completion,
+                })}
               >
-                Q: {qScore.total}/100
+                {tx(dt.slot_qscore_label, { total: qScore.total })}
               </span>
             )}
           </div>
@@ -159,7 +166,9 @@ export function CompetitionSlotRow({
               </span>
             )}
             {taskStatus === 'failed' && (
-              <span className="typo-caption text-red-400">Failed{task?.error ? `: ${task.error}` : ''}</span>
+              <span className="typo-caption text-red-400">
+                {task?.error ? tx(dt.slot_failed_with_error, { error: task.error }) : dt.slot_failed_status}
+              </span>
             )}
             {taskStatus !== 'completed' && taskStatus !== 'failed' && taskStatus !== 'running' && (
               <span className="typo-caption text-foreground">{t.plugins.dev_tools.status_label} {taskStatus}</span>
@@ -173,9 +182,9 @@ export function CompetitionSlotRow({
           {taskStatus === 'completed' && diffStats && (
             <div className="mt-1.5 flex items-center gap-2 flex-wrap typo-caption text-foreground">
               <span className="text-foreground">{t.plugins.dev_tools.achievements_label}</span>
-              <span>Modified {diffStats.files_changed} file{diffStats.files_changed !== 1 ? 's' : ''}</span>
-              <span className="text-emerald-400">+{diffStats.lines_added} lines</span>
-              <span className="text-red-400">{diffStats.lines_removed} lines</span>
+              <span>{tx(diffStats.files_changed === 1 ? dt.slot_modified_files_one : dt.slot_modified_files_other, { count: diffStats.files_changed })}</span>
+              <span className="text-emerald-400">{tx(dt.slot_lines_added, { count: diffStats.lines_added })}</span>
+              <span className="text-red-400">{tx(dt.slot_lines_removed, { count: diffStats.lines_removed })}</span>
               {task?.output_lines != null && task.output_lines > 0 && (
                 <span>{task.output_lines} {t.plugins.dev_tools.output_lines}</span>
               )}
@@ -191,7 +200,7 @@ export function CompetitionSlotRow({
             loading={serverLoading}
             title={t.plugins.dev_lifecycle.start_dev_server_title}
           >
-            Preview
+            {dt.slot_btn_preview}
           </Button>
         )}
         {server && (
@@ -201,7 +210,7 @@ export function CompetitionSlotRow({
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-emerald-400 hover:bg-emerald-500/10 transition-colors"
-              title={`Open ${server.url}`}
+              title={tx(dt.slot_btn_open_url, { url: server.url })}
             >
               <ExternalLink className="w-3 h-3" />
               :{server.port}
@@ -213,7 +222,7 @@ export function CompetitionSlotRow({
               onClick={handleStopServer}
               title={t.plugins.dev_lifecycle.stop_dev_server_title}
             >
-              Stop
+              {dt.slot_btn_stop}
             </Button>
           </>
         )}
@@ -225,7 +234,7 @@ export function CompetitionSlotRow({
             onClick={handleBrowse}
             title={t.plugins.dev_lifecycle.open_worktree_title}
           >
-            Browse
+            {dt.slot_btn_browse}
           </Button>
         )}
         {taskStatus === 'completed' && (
@@ -235,7 +244,7 @@ export function CompetitionSlotRow({
             icon={expandedDiff ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             onClick={handleToggleDiff}
           >
-            {expandedDiff ? 'Hide' : 'Diff'}
+            {expandedDiff ? dt.slot_btn_hide : dt.slot_btn_diff}
           </Button>
         )}
         {!isFinished && taskStatus === 'completed' && !isDq && (
