@@ -138,7 +138,6 @@ export type ManualReviewSeverity = "info" | "warning" | "critical";
 
 export type PersonaEventType = "execution_completed" | "execution_failed" | "manual_review" | "user_message" | "persona_action" | "emit_event" | "custom";
 export type PersonaEventSourceType = "persona" | "user" | "system" | "scheduler";
-export type PersonaEventStatus = "pending" | "processed" | "failed";
 
 // -- Credential Service Types -------------------------------------------
 
