@@ -7660,6 +7660,8 @@ export type Translations = {
     waiting_for_output: string;
     execution_failed: string;
     loading_templates: string;
+    templates_load_error: string;
+    retry: string;
     no_templates: string;
     no_templates_hint: string;
     pick_template_heading: string;
@@ -9527,6 +9529,15 @@ export type Translations = {
       no_ideas_match_filter: string;
       ideas_count_one: string;
       ideas_count_other: string;
+      level_effort: string;
+      level_impact: string;
+      level_risk: string;
+      history_col_agents: string;
+      history_col_status: string;
+      history_col_ideas: string;
+      history_col_tokens: string;
+      history_col_duration: string;
+      history_col_when: string;
     };
     dev_triage: {
       auto_triage_rules: string;

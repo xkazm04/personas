@@ -172,6 +172,8 @@ export function ScanProgress({
 // ---------------------------------------------------------------------------
 
 export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
+  const { t } = useTranslation();
+  const ds = t.plugins.dev_scanner;
   const { staggerDelay } = useMotion();
   const catTw = CATEGORY_TW[idea.category] ?? DEFAULT_CATEGORY_TW;
   const agent = SCAN_AGENTS.find((a) => a.key === idea.agentKey);
@@ -198,9 +200,9 @@ export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
         <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
           {catLabel}
         </span>
-        <LevelBadge label="Effort" value={idea.effort} />
-        <LevelBadge label="Impact" value={idea.impact} />
-        <LevelBadge label="Risk" value={idea.risk} />
+        <LevelBadge label={ds.level_effort} value={idea.effort} />
+        <LevelBadge label={ds.level_impact} value={idea.impact} />
+        <LevelBadge label={ds.level_risk} value={idea.risk} />
       </div>
     </motion.div>
   );
@@ -223,19 +225,20 @@ export interface ScanHistoryEntry {
 
 export function ScanHistoryTable({ history }: { history: ScanHistoryEntry[] }) {
   const { t } = useTranslation();
+  const ds = t.plugins.dev_scanner;
   if (history.length === 0) {
-    return <p className="text-md text-foreground">{t.plugins.dev_scanner.no_previous_scans}</p>;
+    return <p className="text-md text-foreground">{ds.no_previous_scans}</p>;
   }
   return (
     <div className="border border-primary/10 rounded-modal overflow-hidden">
       {/* Table header */}
       <div className="grid grid-cols-[1fr_0.6fr_0.5fr_0.7fr_0.5fr_0.5fr] gap-2 px-3 py-2 bg-primary/5 border-b border-primary/10 text-md font-medium text-primary uppercase tracking-wider">
-        <span>Agents</span>
-        <span>Status</span>
-        <span>Ideas</span>
-        <span>Tokens</span>
-        <span>Duration</span>
-        <span>When</span>
+        <span>{ds.history_col_agents}</span>
+        <span>{ds.history_col_status}</span>
+        <span>{ds.history_col_ideas}</span>
+        <span>{ds.history_col_tokens}</span>
+        <span>{ds.history_col_duration}</span>
+        <span>{ds.history_col_when}</span>
       </div>
       {history.map((entry) => {
         const agentKeys = entry.agentTypes.split(',');

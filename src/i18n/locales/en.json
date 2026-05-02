@@ -7654,6 +7654,8 @@
     "waiting_for_output": "Waiting for output...",
     "execution_failed": "Failed to start execution",
     "loading_templates": "Loading templates...",
+    "templates_load_error": "Could not load starter templates.",
+    "retry": "Retry",
     "no_templates": "No starter templates found.",
     "no_templates_hint": "Generate templates first from the Templates section.",
     "pick_template_heading": "Pick a starter template",
@@ -9520,7 +9522,16 @@
       "no_results_yet": "No scan results yet. Select agents above and run a scan.",
       "no_ideas_match_filter": "No ideas match this filter.",
       "ideas_count_one": "idea",
-      "ideas_count_other": "ideas"
+      "ideas_count_other": "ideas",
+      "level_effort": "Effort",
+      "level_impact": "Impact",
+      "level_risk": "Risk",
+      "history_col_agents": "Agents",
+      "history_col_status": "Status",
+      "history_col_ideas": "Ideas",
+      "history_col_tokens": "Tokens",
+      "history_col_duration": "Duration",
+      "history_col_when": "When"
     },
     "dev_triage": {
       "auto_triage_rules": "Auto-Triage Rules",
