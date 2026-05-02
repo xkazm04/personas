@@ -89,9 +89,6 @@ export interface UseDriveResult {
   recentlyWritten: Set<string>;
 }
 
-const LIST_KEY_ROOT = "__root__";
-const cacheKey = (path: string) => path || LIST_KEY_ROOT;
-
 /**
  * Master hook for the Drive Finder UI. Owns navigation history, entry cache,
  * selection, clipboard, sort/filter/view preferences, and all mutations. The
@@ -119,6 +116,17 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   );
 
   const lastAnchorRef = useRef<string | null>(null);
+  const flashTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+
+  // Clear any pending flash timers on unmount so they don't setState on a
+  // dead component (~1.2s window after a mutation).
+  useEffect(() => {
+    const timers = flashTimersRef.current;
+    return () => {
+      timers.forEach((id) => clearTimeout(id));
+      timers.clear();
+    };
+  }, []);
 
   const refresh = useCallback(() => {
     setLoading(true);
@@ -162,14 +170,16 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // Navigation
   const navigate = useCallback(
     (path: string) => {
-      setHistory((h) => {
-        const truncated = h.slice(0, historyIndex + 1);
-        if (truncated[truncated.length - 1] === path) return truncated;
-        return [...truncated, path];
-      });
-      setHistoryIndex((i) => i + 1);
+      // Navigating to the current path is a no-op — don't push history or
+      // advance the index. Without this guard the index would drift past the
+      // array length when a user clicks the current breadcrumb (or any code
+      // path that re-navigates to the same location).
+      const truncated = history.slice(0, historyIndex + 1);
+      if (truncated[truncated.length - 1] === path) return;
+      setHistory([...truncated, path]);
+      setHistoryIndex(truncated.length);
     },
-    [historyIndex],
+    [history, historyIndex],
   );
 
   const goBack = useCallback(() => {
@@ -194,14 +204,22 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   }, []);
 
   const toggleSelect = useCallback((path: string, additive: boolean) => {
+    let added = true;
     setSelection((prev) => {
       if (!additive) return new Set([path]);
       const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
+      if (next.has(path)) {
+        next.delete(path);
+        added = false;
+      } else {
+        next.add(path);
+      }
       return next;
     });
-    lastAnchorRef.current = path;
+    // Only update the anchor when the path was added (or replaced the selection).
+    // Anchoring on a deselect would make the next shift-click measure range from
+    // the just-removed item — surprising behavior.
+    if (added) lastAnchorRef.current = path;
   }, []);
 
   const selectRange = useCallback(
@@ -287,13 +305,15 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const flashWrite = useCallback((path: string) => {
     setRecentlyWritten((prev) => new Set(prev).add(path));
-    setTimeout(() => {
+    const id = setTimeout(() => {
+      flashTimersRef.current.delete(id);
       setRecentlyWritten((prev) => {
         const next = new Set(prev);
         next.delete(path);
         return next;
       });
     }, 1200);
+    flashTimersRef.current.add(id);
   }, []);
 
   const pasteHere = useCallback(async () => {
@@ -402,9 +422,6 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
   // Derived flags
   const canGoBack = historyIndex > 0;
   const canGoForward = historyIndex < history.length - 1;
-
-  // Silence unused-var warning — kept for potential local caching later.
-  void cacheKey;
 
   return {
     currentPath,
