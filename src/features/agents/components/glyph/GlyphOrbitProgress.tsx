@@ -1,4 +1,3 @@
-import { useAnimation } from "framer-motion";
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
@@ -23,7 +22,16 @@ const FADE_DURATION_S = 0.2;
  *  Faint dashed track + brighter arc that grows from 0° to 360° over
  *  `duration` seconds, then loops. When the build resolves early, the
  *  component fast-forwards the arc to 360° in 400ms, fades, and unmounts
- *  — feels like a video-game loading bar topping out, not a hard cut. */
+ *  — feels like a video-game loading bar topping out, not a hard cut.
+ *
+ *  Implementation note: we drive the arc + comet via declarative motion
+ *  props (not `useAnimation` controls) and force a remount of the
+ *  `motion.circle` / `motion.div` whenever mode changes by including
+ *  `mode` in the React `key`. This guarantees a fresh animation cycle
+ *  starts from the keyframe[0] value every time loading kicks off — the
+ *  imperative controls path was leaving the arc snapped to its
+ *  destination value (0) on mode transitions, producing the
+ *  "full from the start" bug. */
 export function GlyphOrbitProgress({
   size,
   duration = 60,
@@ -34,14 +42,8 @@ export function GlyphOrbitProgress({
   const circumference = 2 * Math.PI * radius;
 
   const [mode, setMode] = useState<OrbitMode>(active ? "loading" : "off");
-  const arcControls = useAnimation();
-  const cometControls = useAnimation();
   const completionTimerRef = useRef<number | null>(null);
 
-  // ── Mode transitions driven by `active` ───────────────────────────────
-  // On active flipping false from `loading`, schedule a completion + fade
-  // sequence then unmount. Reverting active true mid-completion cancels
-  // the timer and resumes loading.
   useEffect(() => {
     if (active && mode !== "loading") {
       setMode("loading");
@@ -65,46 +67,31 @@ export function GlyphOrbitProgress({
     };
   }, [active, mode]);
 
-  // ── Drive the arc + comet imperatively per mode ───────────────────────
-  // Loading uses keyframe arrays — single-target with `repeat: Infinity`
-  // can no-op after the first cycle (framer-motion treats loop 2's
-  // "current" as the previous loop's destination → tweens 0→0). The
-  // explicit [from, to] keyframes guarantee each cycle redraws the arc
-  // from invisible to full.
-  //
-  // Completing uses a single target so the tween picks up from the
-  // current mid-cycle value and races to 360° in 400ms.
-  useEffect(() => {
-    if (mode === "loading") {
-      void arcControls.start({
-        strokeDashoffset: [circumference, 0],
-        transition: { duration, ease: "linear", repeat: Infinity },
-      });
-      void cometControls.start({
-        rotate: [-90, 270],
-        transition: { duration, ease: "linear", repeat: Infinity },
-      });
-    } else if (mode === "completing") {
-      void arcControls.start({
-        strokeDashoffset: 0,
-        transition: { duration: COMPLETION_DURATION_S, ease: [0.16, 1, 0.3, 1] },
-      });
-      void cometControls.start({
-        rotate: 270,
-        transition: { duration: COMPLETION_DURATION_S, ease: [0.16, 1, 0.3, 1] },
-      });
-    }
-  }, [mode, duration, arcControls, cometControls, circumference]);
-
   if (mode === "off") return null;
 
   const wrapperOpacity = mode === "completing" ? 0 : 1;
-  // Fade kicks in only after the arc completes — without the delay the
-  // arc finish animation is invisible behind a parallel opacity tween.
   const wrapperTransition =
     mode === "completing"
       ? { duration: FADE_DURATION_S, delay: COMPLETION_DURATION_S, ease: "linear" as const }
       : { duration: 0.2, ease: "linear" as const };
+
+  // Declarative animation per mode. The keyframe array `[circumference, 0]`
+  // forces each loop iteration to start from invisible (circumference) and
+  // finish at full (0). For completing mode, a single target (0) lets
+  // framer-motion interpolate smoothly from whatever value the loading
+  // mode left behind.
+  const arcAnimate =
+    mode === "loading"
+      ? { strokeDashoffset: [circumference, 0] }
+      : { strokeDashoffset: 0 };
+  const arcTransition =
+    mode === "loading"
+      ? { duration, ease: "linear" as const, repeat: Infinity, repeatType: "loop" as const }
+      : { duration: COMPLETION_DURATION_S, ease: [0.16, 1, 0.3, 1] as const };
+
+  const cometAnimate =
+    mode === "loading" ? { rotate: [-90, 270] } : { rotate: 270 };
+  const cometTransition = arcTransition;
 
   return (
     <motion.div
@@ -124,8 +111,12 @@ export function GlyphOrbitProgress({
           strokeWidth={1}
           strokeDasharray="2 6"
         />
-        {/* Progress arc */}
+        {/* Progress arc — keyed by mode so each loading start is a fresh
+            mount with the keyframe[0] (=circumference, invisible) as
+            initial. Without the key remount, switching back from
+            completing → off → loading would skip the initial state. */}
         <motion.circle
+          key={`arc-${mode}`}
           cx={center} cy={center} r={radius}
           fill="none"
           stroke="rgba(96,165,250,0.55)"
@@ -133,17 +124,20 @@ export function GlyphOrbitProgress({
           strokeLinecap="round"
           strokeDasharray={circumference}
           initial={{ strokeDashoffset: circumference }}
-          animate={arcControls}
+          animate={arcAnimate}
+          transition={arcTransition}
           style={{ transformOrigin: `${center}px ${center}px`, transform: "rotate(-90deg)" }}
           filter="drop-shadow(0 0 6px rgba(96,165,250,0.6))"
         />
       </svg>
-      {/* Comet head — bright dot riding the arc tip */}
+      {/* Comet head — bright dot riding the arc tip. Same key-remount trick. */}
       <motion.div
+        key={`comet-${mode}`}
         className="absolute"
         style={{ width: size, height: size, left: 0, top: 0, transformOrigin: `${center}px ${center}px` }}
         initial={{ rotate: -90 }}
-        animate={cometControls}
+        animate={cometAnimate}
+        transition={cometTransition}
       >
         <span
           className="absolute rounded-full bg-primary"

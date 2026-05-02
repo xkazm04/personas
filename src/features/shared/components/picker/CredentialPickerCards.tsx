@@ -76,7 +76,11 @@ export function CredentialPickerCards({
   return (
     <div
       role={multi ? 'group' : 'radiogroup'}
-      className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"
+      // Fixed 2-column grid — connector display labels (Notion, Google
+      // Calendar, Personal GitLab Account, ElevenLabs Voice Library, …)
+      // need horizontal room. Earlier 3-/4-col responsive widening
+      // truncated names mid-word at the typical answer-card width.
+      className="grid grid-cols-2 gap-2"
     >
       {items.map((item) => {
         // `value` is the connector's service_type; the icon + canonical
