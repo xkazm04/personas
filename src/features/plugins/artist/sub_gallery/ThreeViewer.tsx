@@ -1,10 +1,11 @@
-import { Suspense, useEffect, useMemo, useRef } from 'react';
+import { Component, Suspense, useEffect, useMemo, useRef, type ErrorInfo, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, Stage, Bounds } from '@react-three/drei';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Box, Loader2 } from 'lucide-react';
 import * as THREE from 'three';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 type LightingPreset = 'studio' | 'outdoor' | 'soft';
 
@@ -100,14 +101,13 @@ function ErrorFallback({ error }: { error: Error }) {
  * throw on failure; `<Canvas>` needs an error boundary to keep the whole
  * Gallery3D modal from tearing.
  */
-import { Component, type ReactNode, type ErrorInfo } from 'react';
 class ViewerErrorBoundary extends Component<{ children: ReactNode; fallback: (err: Error) => ReactNode }, { error: Error | null }> {
   state = { error: null as Error | null };
   static getDerivedStateFromError(error: Error) {
     return { error };
   }
-  componentDidCatch(_err: Error, _info: ErrorInfo) {
-    // keep silent — rendered fallback already tells the user
+  componentDidCatch(err: Error, _info: ErrorInfo) {
+    silentCatch('ThreeViewer:gltfLoad')(err);
   }
   render() {
     if (this.state.error) return this.props.fallback(this.state.error);
