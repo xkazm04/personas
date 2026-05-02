@@ -1,8 +1,8 @@
 /**
  * Shared types and preset constants for matrix edit cells.
  */
-import type { SuggestedTrigger } from '@/lib/types/designTypes';
-import { Clock, Webhook, MousePointerClick, Radio, Activity } from 'lucide-react';
+// TRIGGER_ICONS re-exported from canonical home (Wave 5 consolidation).
+export { TRIGGER_ICONS } from '@/features/shared/glyph/triggers';
 
 // -- Public interface --------------------------------------------------
 
@@ -79,11 +79,4 @@ export const MESSAGE_PRESETS = [
 ] as const;
 
 // -- Trigger icons -----------------------------------------------------
-
-export const TRIGGER_ICONS: Record<SuggestedTrigger['trigger_type'], typeof Clock> = {
-  schedule: Clock,
-  webhook: Webhook,
-  manual: MousePointerClick,
-  polling: Radio,
-  event: Activity,
-};
+// Re-exported at top of this file from `@/features/shared/glyph/triggers`.

@@ -7,7 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { MatrixEditState, MatrixEditCallbacks } from './matrixEditTypes';
-import { TRIGGER_ICONS } from './matrixEditTypes';
+import { triggerIcon } from '@/features/shared/glyph/triggers';
 import { getTriggerTypeLabel } from '@/lib/utils/platform/triggerConstants';
 
 // -- Trigger Popup -----------------------------------------------------
@@ -29,7 +29,7 @@ function TriggerPopup({
   const popupRef = useRef<HTMLDivElement>(null);
   useClickOutside(popupRef, true, onClose);
 
-  const Icon = TRIGGER_ICONS[trigger.trigger_type];
+  const Icon = triggerIcon(trigger.trigger_type);
   const isSchedule = trigger.trigger_type === 'schedule';
   const isWebhook = trigger.trigger_type === 'webhook';
   const isPolling = trigger.trigger_type === 'polling';
@@ -143,7 +143,7 @@ export function TriggerEditCell({ designResult, editState, callbacks }: TriggerE
   return (
     <div className="space-y-2 w-full">
       {uniqueTriggers.slice(0, 3).map(({ trigger, index }) => {
-        const Icon = TRIGGER_ICONS[trigger.trigger_type];
+        const Icon = triggerIcon(trigger.trigger_type);
         const config = editState.triggerConfigs[index] ?? {};
         const isSchedule = trigger.trigger_type === 'schedule';
         const hasConfig = isSchedule || trigger.trigger_type === 'webhook' || trigger.trigger_type === 'polling';

@@ -1,16 +1,5 @@
-import {
-  Clock,
-  Webhook,
-  MousePointerClick,
-  Radio,
-} from 'lucide-react';
-
-export const TRIGGER_ICONS: Record<string, typeof Clock> = {
-  schedule: Clock,
-  webhook: Webhook,
-  manual: MousePointerClick,
-  polling: Radio,
-};
+// TRIGGER_ICONS hoisted to `@/features/shared/glyph/triggers` (Wave 5 consolidation).
+export { TRIGGER_ICONS } from '@/features/shared/glyph/triggers';
 
 export const PREVIEW_DELAY_MS = 300;
 

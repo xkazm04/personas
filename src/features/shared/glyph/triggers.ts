@@ -1,11 +1,33 @@
-import { Calendar, Webhook, Mouse, Radio, Eye, Zap, Clock } from 'lucide-react';
+import { Webhook, Radio, Eye, Zap, Clock, MousePointerClick, Activity } from 'lucide-react';
 import type { Translations } from '@/i18n/en';
 import type { GlyphTrigger } from './types';
 import { humanizeCron } from './cron';
 
-const TRIGGER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  schedule: Calendar, webhook: Webhook, manual: Mouse, polling: Clock,
-  event_listener: Radio, file_watcher: Eye, app_focus: Eye,
+/**
+ * Canonical mapping from trigger-type string → Lucide icon component.
+ *
+ * This is the single source of truth for trigger icons across the app
+ * (template cards, persona matrix, dimension edit panel, glyph renderer).
+ * If you need to render a trigger icon, import {@link triggerIcon} from here.
+ *
+ * Reconciled icon choices (Wave 5 consolidation):
+ *  - schedule    → Clock              (was Calendar in glyph; Clock in 3 other copies)
+ *  - polling     → Radio              (was Clock in glyph; Radio in 3 other copies)
+ *  - manual      → MousePointerClick  (was Mouse in glyph; MousePointerClick elsewhere)
+ *  - event       → Activity           (matrix/dimension copies)
+ *  - event_listener → Activity        (glyph used Radio; unified with `event`)
+ *  - webhook     → Webhook
+ *  - file_watcher / app_focus → Eye
+ */
+export const TRIGGER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  schedule: Clock,
+  webhook: Webhook,
+  manual: MousePointerClick,
+  polling: Radio,
+  event: Activity,
+  event_listener: Activity,
+  file_watcher: Eye,
+  app_focus: Eye,
 };
 
 export function triggerIcon(type: string) {

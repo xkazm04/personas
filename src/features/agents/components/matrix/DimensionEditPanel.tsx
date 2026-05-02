@@ -9,9 +9,10 @@
  */
 import { useState } from "react";
 import {
-  Plus, X, ArrowLeftRight, Clock, Webhook, Radio, MousePointerClick, Activity,
+  Plus, X, ArrowLeftRight, Activity,
   KeyRound, ExternalLink, Check, AlertTriangle, Plug, Key,
 } from "lucide-react";
+import { TRIGGER_ICONS } from "@/features/shared/glyph/triggers";
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -358,14 +359,6 @@ interface TriggerCardData {
   config?: Record<string, string>;
   description?: string;
 }
-
-const TRIGGER_ICONS: Record<string, typeof Clock> = {
-  schedule: Clock,
-  polling: Radio,
-  webhook: Webhook,
-  manual: MousePointerClick,
-  event: Activity,
-};
 
 const TRIGGER_COLORS: Record<string, string> = {
   schedule: "text-amber-400 bg-amber-500/10 border-amber-500/20",
