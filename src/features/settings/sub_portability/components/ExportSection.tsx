@@ -94,7 +94,7 @@ export function ExportSection({
               onChange={(e) => setImportPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleImport()}
               className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body
-                text-foreground/90 placeholder:text-foreground outline-none
+                text-foreground/90 placeholder:text-foreground/45 outline-none
                 focus-visible:border-blue-500/30 w-56"
               autoFocus
             />

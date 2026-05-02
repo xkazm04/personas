@@ -124,7 +124,7 @@ export function ByomApiKeyManager() {
     // malformed. We accept only http(s) so file:// or javascript: URLs can't
     // reach the proxy code path either.
     if (value && entry.def.isUrl) {
-      let parsed: URL | null = null;
+      let parsed: URL | null;
       try { parsed = new URL(value); } catch { parsed = null; }
       if (!parsed || (parsed.protocol !== 'http:' && parsed.protocol !== 'https:')) {
         updateEntry(index, { connectionState: 'error' });
@@ -291,7 +291,7 @@ function KeyEntryRow({
             onChange={(e) => onChange(e.target.value)}
             placeholder={entry.def.placeholder}
             className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/40
+              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
               font-mono"
             autoFocus
             onKeyDown={(e) => {

@@ -118,7 +118,7 @@ export function ByomComplianceRules({ rules, warnings, onAdd, onUpdate, onRemove
                           })
                         }
                         placeholder={s.workflow_tags_placeholder}
-                        className="w-full typo-body p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground"
+                        className="w-full typo-body p-2 rounded-card border border-primary/15 bg-secondary/40 text-foreground outline-none placeholder:text-foreground/45"
                       />
                     </div>
                     <div>

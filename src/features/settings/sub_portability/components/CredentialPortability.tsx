@@ -99,7 +99,7 @@ export function CredentialPortability({
                 value={credExportPassphrase}
                 onChange={(e) => setCredExportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredExport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground outline-none focus-visible:border-amber-500/30 w-56"
+                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-amber-500/30 w-56"
                 autoFocus
               />
               <button onClick={onCredExport} disabled={credExportStatus === 'loading'}
@@ -134,7 +134,7 @@ export function CredentialPortability({
                 type="password" placeholder="Passphrase" value={credImportPassphrase}
                 onChange={(e) => setCredImportPassphrase(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && onCredImport()}
-                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground outline-none focus-visible:border-blue-500/30 w-56"
+                className="px-3 py-2 rounded-card border border-primary/15 bg-secondary/20 typo-body text-foreground/90 placeholder:text-foreground/45 outline-none focus-visible:border-blue-500/30 w-56"
                 autoFocus
               />
               <button onClick={onCredImport} disabled={credImportStatus === 'loading'}

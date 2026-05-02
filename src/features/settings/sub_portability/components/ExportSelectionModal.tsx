@@ -419,7 +419,7 @@ export function ExportSelectionModal({
                 value={exportPassphrase}
                 onChange={(e) => setExportPassphrase(e.target.value)}
                 className={`px-3 py-2 rounded-card border bg-secondary/20 typo-body
-                  text-foreground/90 placeholder:text-foreground outline-none w-full
+                  text-foreground/90 placeholder:text-foreground/45 outline-none w-full
                   ${!passphraseValid
                     ? 'border-red-500/30 focus-visible:border-red-500/50'
                     : 'border-primary/10 focus-visible:border-amber-500/30'

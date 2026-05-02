@@ -288,7 +288,7 @@ export function AmbientContextPanel() {
                 onChange={(e) => setFilterInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddFilter()}
                 placeholder={s.focus_filter_placeholder}
-                className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
+                className="flex-1 px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
               />
               <button
                 onClick={handleAddFilter}
@@ -348,7 +348,7 @@ export function AmbientContextPanel() {
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
                 placeholder={s.rule_name_placeholder}
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
+                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
               />
 
               <div className="space-y-1">
@@ -374,7 +374,7 @@ export function AmbientContextPanel() {
                 value={ruleSummaryContains}
                 onChange={(e) => setRuleSummaryContains(e.target.value)}
                 placeholder={s.summary_contains_placeholder}
-                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
+                className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
               />
 
               <div className="grid grid-cols-2 gap-2">
@@ -382,13 +382,13 @@ export function AmbientContextPanel() {
                   value={rulePathGlob}
                   onChange={(e) => setRulePathGlob(e.target.value)}
                   placeholder={s.file_glob_placeholder}
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
+                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
                 />
                 <input
                   value={ruleAppFilter}
                   onChange={(e) => setRuleAppFilter(e.target.value)}
                   placeholder={s.app_filter_placeholder}
-                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground"
+                  className="px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground placeholder:text-foreground/45"
                 />
               </div>
 
