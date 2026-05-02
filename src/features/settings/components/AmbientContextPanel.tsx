@@ -25,22 +25,20 @@ const ACTION_LABEL_KEYS: Record<ContextAction, 'action_trigger' | 'action_emit' 
 
 export function AmbientContextPanel() {
   const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
-  const {
-    ambientSnapshot,
-    ambientEnabled,
-    ambientPolicy,
-    fetchAmbientSnapshot,
-    toggleAmbientEnabled,
-    fetchSensoryPolicy,
-    updateSensoryPolicy,
-    resetSensoryPolicy,
-    contextRules,
-    contextStreamStats,
-    fetchContextRules,
-    addContextRule,
-    removeContextRule,
-    fetchContextStreamStats,
-  } = useSystemStore();
+  const ambientSnapshot = useSystemStore((s) => s.ambientSnapshot);
+  const ambientEnabled = useSystemStore((s) => s.ambientEnabled);
+  const ambientPolicy = useSystemStore((s) => s.ambientPolicy);
+  const fetchAmbientSnapshot = useSystemStore((s) => s.fetchAmbientSnapshot);
+  const toggleAmbientEnabled = useSystemStore((s) => s.toggleAmbientEnabled);
+  const fetchSensoryPolicy = useSystemStore((s) => s.fetchSensoryPolicy);
+  const updateSensoryPolicy = useSystemStore((s) => s.updateSensoryPolicy);
+  const resetSensoryPolicy = useSystemStore((s) => s.resetSensoryPolicy);
+  const contextRules = useSystemStore((s) => s.contextRules);
+  const contextStreamStats = useSystemStore((s) => s.contextStreamStats);
+  const fetchContextRules = useSystemStore((s) => s.fetchContextRules);
+  const addContextRule = useSystemStore((s) => s.addContextRule);
+  const removeContextRule = useSystemStore((s) => s.removeContextRule);
+  const fetchContextStreamStats = useSystemStore((s) => s.fetchContextStreamStats);
 
   const [localPolicy, setLocalPolicy] = useState<SensoryPolicy>(DEFAULT_SENSORY_POLICY);
   const [filterInput, setFilterInput] = useState('');
