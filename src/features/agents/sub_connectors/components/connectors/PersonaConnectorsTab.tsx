@@ -7,7 +7,6 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ToolsSection } from './ToolsSection';
 import { AutomationsSection } from '../automation/AutomationsSection';
 import { AutomationSetupModal } from '../automation/AutomationSetupModal';
-// UseCaseSubscriptionsSection removed
 import { AgentCredentialDemands } from './AgentCredentialDemands';
 import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
 import { silentCatch } from "@/lib/silentCatch";
