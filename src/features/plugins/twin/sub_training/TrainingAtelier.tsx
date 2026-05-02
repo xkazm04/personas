@@ -133,7 +133,7 @@ export default function TrainingAtelier() {
                     className={INPUT_FIELD}
                   />
                   <Button onClick={() => session.customTopic.trim() && session.generateQuestions(session.customTopic.trim())} disabled={session.generating || !session.customTopic.trim()} size="sm" variant="accent" accentColor="violet">
-                    {session.generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                    {session.generating ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
                   </Button>
                 </div>
                 {session.generating && <p className="typo-caption text-violet-300 mt-3 animate-pulse">{t.training.generatingQuestions}</p>}
@@ -253,8 +253,8 @@ export default function TrainingAtelier() {
                   </button>
                 )}
                 <button onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing}
-                  className="flex-shrink-0 w-12 h-12 rounded-card bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white flex items-center justify-center hover:shadow-elevation-2 transition-shadow disabled:opacity-30 disabled:cursor-not-allowed">
-                  {session.saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                  className="flex-shrink-0 w-12 h-12 rounded-card bg-gradient-to-br from-violet-500 to-fuchsia-500 text-primary-foreground flex items-center justify-center hover:shadow-elevation-2 transition-shadow disabled:opacity-30 disabled:cursor-not-allowed">
+                  {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
                 </button>
               </div>
               <p className="text-[10px] text-foreground/55 mt-1.5 text-center select-none uppercase tracking-wider max-w-3xl mx-auto">

@@ -200,7 +200,7 @@ export default function TrainingBaseline() {
                   onKeyDown={(e) => { if (e.key === 'Enter' && customTopic.trim()) generateQuestions(customTopic.trim()); }}
                   className={INPUT_FIELD} />
                 <Button onClick={() => customTopic.trim() && generateQuestions(customTopic.trim())} disabled={generating || !customTopic.trim()} size="sm">
-                  {generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  {generating ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Sparkles className="w-4 h-4" />}
                 </Button>
               </div>
               {generating && <p className="typo-caption text-violet-400 mt-4 animate-pulse">{t.training.generatingQuestions}</p>}
@@ -259,8 +259,8 @@ export default function TrainingBaseline() {
                     </button>
                   )}
                   <button onClick={() => void handleSubmitAnswer()} disabled={!answerDraft.trim() || saving || followupLoading || summarizing}
-                    className="flex-shrink-0 w-10 h-10 rounded-card bg-violet-500 text-white flex items-center justify-center hover:bg-violet-500/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                    {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                    className="flex-shrink-0 w-10 h-10 rounded-card bg-violet-500 text-primary-foreground flex items-center justify-center hover:bg-violet-500/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                    {saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
                 </div>
                 <p className="text-md text-foreground mt-1.5 text-center select-none max-w-2xl mx-auto">{t.training.enterToSubmit}</p>

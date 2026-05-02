@@ -125,7 +125,7 @@ export default function TrainingConsole() {
                     className={INPUT_FIELD}
                   />
                   <Button onClick={() => session.customTopic.trim() && session.generateQuestions(session.customTopic.trim())} disabled={session.generating || !session.customTopic.trim()} size="sm" variant="accent" accentColor="violet">
-                    {session.generating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Sparkles className="w-3.5 h-3.5 mr-1.5" />generate</>}
+                    {session.generating ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <><Sparkles className="w-3.5 h-3.5 mr-1.5" />generate</>}
                   </Button>
                 </div>
                 {session.generating && <p className="typo-caption text-violet-300 mt-2 animate-pulse">{t.training.generatingQuestions}</p>}
@@ -250,8 +250,8 @@ export default function TrainingConsole() {
                     </button>
                   )}
                   <button onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing}
-                    className="flex-shrink-0 w-11 h-11 rounded-card bg-violet-500 text-white flex items-center justify-center hover:bg-violet-500/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-                    {session.saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                    className="flex-shrink-0 w-11 h-11 rounded-card bg-violet-500 text-primary-foreground flex items-center justify-center hover:bg-violet-500/90 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                    {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
                   </button>
                 </div>
                 <div className="flex items-center gap-3 mt-2 text-[10px] text-foreground/55">
