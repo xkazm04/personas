@@ -101,12 +101,14 @@ const TIMEZONE_OPTIONS: Array<{ value: string; label: string; description: strin
   { value: 'Asia/Tokyo', label: 'Tokyo', description: 'JST (UTC+9)' },
 ];
 
+type AppearanceLabels = ReturnType<typeof useTranslation>['t']['settings']['appearance'];
+
 function ThemingSection({ themeId, setTheme, darkThemes, lightThemes, labels }: {
   themeId: ThemeId;
   setTheme: (id: ThemeId) => void;
   darkThemes: ThemeDefinition[];
   lightThemes: ThemeDefinition[];
-  labels: { theming: string; default_tab: string; custom_tab: string; dark: string; light: string };
+  labels: Pick<AppearanceLabels, 'theming' | 'default_tab' | 'custom_tab' | 'dark' | 'light'>;
 }) {
   const [themeTab, setThemeTab] = useState<'default' | 'custom'>('default');
   return (
