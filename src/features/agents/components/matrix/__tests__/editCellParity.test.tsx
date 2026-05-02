@@ -94,6 +94,7 @@ vi.mock("lucide-react", () => {
     MousePointerClick: Icon,
     Radio: Icon,
     Activity: Icon,
+    Eye: Icon,
     RefreshCw: Icon,
     Play: Icon,
     Zap: Icon,
