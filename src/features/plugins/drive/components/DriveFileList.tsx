@@ -485,9 +485,19 @@ function AsyncColumnEntries(props: {
   onOpen: (entry: DriveEntry) => void;
   onContextMenu: (entry: DriveEntry | null, x: number, y: number) => void;
 }) {
-  const [entries, setEntries] = useState<DriveEntry[]>([]);
-  const [loaded, setLoaded] = useState(false);
+  // Seed from useDrive's path cache so columns the user has already navigated
+  // through render synchronously instead of flashing a Loading state and
+  // round-tripping to the backend.
+  const cached = props.drive.cachedEntriesFor(props.path);
+  const [entries, setEntries] = useState<DriveEntry[]>(cached ?? []);
+  const [loaded, setLoaded] = useState(cached !== null);
   useEffect(() => {
+    const seed = props.drive.cachedEntriesFor(props.path);
+    if (seed) {
+      setEntries(seed);
+      setLoaded(true);
+      return;
+    }
     let cancelled = false;
     driveList(props.path)
       .then((list) => {
@@ -499,7 +509,7 @@ function AsyncColumnEntries(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.path]);
+  }, [props.path, props.drive]);
   if (!loaded) {
     return (
       <div className="px-3 py-6 typo-body text-foreground italic text-center">

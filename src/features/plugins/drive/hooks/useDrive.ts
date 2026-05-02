@@ -87,6 +87,14 @@ export interface UseDriveResult {
 
   // Highlight recent writes for ~1.2s
   recentlyWritten: Set<string>;
+
+  /**
+   * Read previously-loaded entries for a path without re-fetching. Used by
+   * the columns view to avoid a fresh IPC call for every parent column the
+   * user has already navigated through. Returns null if the path was never
+   * cached (caller should fall back to driveList).
+   */
+  cachedEntriesFor: (path: string) => DriveEntry[] | null;
 }
 
 /**
@@ -117,6 +125,10 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const lastAnchorRef = useRef<string | null>(null);
   const flashTimersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
+  // Cache of path → entries observed via refresh(). Lets the columns view
+  // re-render parent columns from memory instead of re-issuing driveList per
+  // visited level. Mutations invalidate touched paths.
+  const pathCacheRef = useRef<Map<string, DriveEntry[]>>(new Map());
 
   // Clear any pending flash timers on unmount so they don't setState on a
   // dead component (~1.2s window after a mutation).
@@ -134,6 +146,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     driveList(currentPath)
       .then((list) => {
         setEntries(list);
+        pathCacheRef.current.set(currentPath, list);
       })
       .catch((e) => {
         setError(e instanceof Error ? e.message : String(e));
@@ -141,6 +154,10 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       })
       .finally(() => setLoading(false));
   }, [currentPath]);
+
+  const cachedEntriesFor = useCallback((path: string): DriveEntry[] | null => {
+    return pathCacheRef.current.get(path) ?? null;
+  }, []);
 
   const refreshTree = useCallback(() => {
     driveListTree("", 4)
@@ -474,5 +491,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     refreshStorage,
 
     recentlyWritten,
+
+    cachedEntriesFor,
   };
 }
