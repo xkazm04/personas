@@ -148,6 +148,7 @@ function FilterChip({
       <button
         type="button"
         onClick={onClick}
+        aria-pressed={true}
         className="typo-caption px-2.5 py-1 rounded-full border simple-accent-amber-border simple-accent-amber-soft simple-accent-amber-text"
       >
         {label}
@@ -158,6 +159,7 @@ function FilterChip({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={false}
       className="typo-caption px-2.5 py-1 rounded-full border border-foreground/10 bg-foreground/[0.02] text-foreground/60 hover:text-foreground/80 hover:border-foreground/20 transition-colors"
     >
       {label}
