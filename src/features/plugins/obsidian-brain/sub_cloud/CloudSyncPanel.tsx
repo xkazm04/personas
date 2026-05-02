@@ -159,10 +159,9 @@ export default function CloudSyncPanel() {
         <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
           <User className="w-7 h-7 text-blue-400/80" />
         </div>
-        <p className="typo-heading-lg typo-section-title mb-1.5">Sign in to enable cloud sync</p>
+        <p className="typo-heading-lg typo-section-title mb-1.5">{t.plugins.obsidian_brain.sign_in_required}</p>
         <p className="typo-body text-foreground/90 max-w-md text-center mb-6">
-          Sign in with your Google account to back up your vault to your own Google Drive
-          (15 GB free). Files are stored under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
+          {t.plugins.obsidian_brain.sign_in_hint}
         </p>
         <button
           onClick={loginWithGoogle}
@@ -174,7 +173,7 @@ export default function CloudSyncPanel() {
           ) : (
             <Globe className="w-4 h-4" />
           )}
-          {authLoading ? 'Signing in...' : 'Sign in with Google'}
+          {authLoading ? t.plugins.obsidian_brain.connecting : t.plugins.obsidian_brain.connect_google_drive}
         </button>
       </div>
     );
@@ -245,9 +244,7 @@ export default function CloudSyncPanel() {
           {!driveConnected && (
             <div className="px-4 py-3 rounded-modal bg-blue-500/5 border border-blue-500/15">
               <p className="typo-body text-foreground/90">
-                Connect Google Drive to back up your vault across devices. Files are stored in your own
-                Google Drive under <code className="text-blue-400/80">Personas/ObsidianSync/</code>.
-                Free alternative to Obsidian Sync ($4/month).
+                {t.plugins.obsidian_brain.drive_info}
               </p>
             </div>
           )}

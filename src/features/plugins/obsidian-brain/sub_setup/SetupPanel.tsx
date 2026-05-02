@@ -20,7 +20,7 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
 
 export default function SetupPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
   const setObsidianVaultName = useSystemStore((s) => s.setObsidianVaultName);
@@ -153,7 +153,7 @@ export default function SetupPanel() {
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-secondary/40 text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             >
               <FolderOpen className="w-4 h-4" />
-              Browse
+              {t.plugins.obsidian_brain.browse_button}
             </button>
           </div>
 
@@ -212,8 +212,8 @@ export default function SetupPanel() {
               <div>
                 {connectionResult.valid ? (
                   <>
-                    <p className="typo-heading text-emerald-400">Connected to &ldquo;{connectionResult.vaultName}&rdquo;</p>
-                    <p className="typo-caption text-foreground">{connectionResult.noteCount} notes found</p>
+                    <p className="typo-heading text-emerald-400">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
+                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
                   <p className="typo-heading text-red-400">{connectionResult.error}</p>
@@ -282,7 +282,7 @@ export default function SetupPanel() {
       </div>
 
       <SavedConfigsSidebar
-        emptyHint="Save a vault configuration to see it here. You can switch between vaults anytime."
+        emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_setup}
       />
     </div>
   );

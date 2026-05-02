@@ -135,7 +135,7 @@ export default function SyncPanel() {
       {/* Active Vault */}
       {activeVaultName && (
         <div className="flex items-center gap-2 px-1">
-          <span className="typo-caption text-foreground">Active vault:</span>
+          <span className="typo-caption text-foreground">{t.plugins.obsidian_brain.active_vault_label}</span>
           <span className="typo-caption text-violet-300">{activeVaultName}</span>
         </div>
       )}
@@ -175,9 +175,9 @@ export default function SyncPanel() {
                 <button
                   onClick={deselectAll}
                   disabled={selectedPersonaIds.size === 0}
-                  className="typo-caption text-foreground/60 hover:text-foreground transition-colors focus-ring rounded px-1.5 py-0.5 disabled:opacity-40"
+                  className="typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded px-1.5 py-0.5 disabled:opacity-40"
                 >
-                  Deselect all
+                  {t.plugins.obsidian_brain.deselect_all}
                 </button>
               </div>
             </div>
@@ -293,7 +293,7 @@ export default function SyncPanel() {
       </div>
 
       <SavedConfigsSidebar
-        emptyHint="No saved vaults yet. Set one up in the Setup tab."
+        emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_other}
       />
     </div>
   );

@@ -161,7 +161,7 @@ export default function BrowsePanel() {
         {/* Selected vault header */}
         {vaultName && (
           <div className="px-2 pb-2 mb-2 border-b border-primary/10">
-            <p className="typo-label text-foreground/90">Vault</p>
+            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.vault_label}</p>
             <p className="typo-heading text-violet-300 truncate" title={vaultPath ?? undefined}>{vaultName}</p>
           </div>
         )}
@@ -236,7 +236,7 @@ export default function BrowsePanel() {
       </div>
 
       <SavedConfigsSidebar
-        emptyHint="No saved vaults yet. Set one up in the Setup tab."
+        emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_other}
       />
     </div>
   );

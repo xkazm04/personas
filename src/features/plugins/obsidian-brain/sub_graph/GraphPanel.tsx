@@ -12,6 +12,7 @@ import {
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import {
@@ -34,6 +35,7 @@ import { listen } from '@tauri-apps/api/event';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 
 export default function GraphPanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -173,8 +175,8 @@ export default function GraphPanel() {
       <div className="flex-1 flex items-center justify-center py-20">
         <EmptyState
           icon={AlertTriangle}
-          title="No Vault Connected"
-          subtitle="Set up an Obsidian vault in the Setup tab first to unlock graph operations."
+          title={t.plugins.obsidian_brain.no_vault_connected}
+          subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
         />
@@ -186,19 +188,19 @@ export default function GraphPanel() {
     <div className="flex gap-4 py-2">
       <div className="flex-1 min-w-0 max-w-3xl space-y-5">
         {/* Stats */}
-        <SectionCard title="Vault Stats" subtitle="Graph metrics across all notes in the active vault">
+        <SectionCard title={t.plugins.obsidian_brain.vault_stats} subtitle={t.plugins.obsidian_brain.vault_stats_subtitle}>
           {statsLoading && !stats ? (
             <div className="flex items-center justify-center py-6">
-              <LoadingSpinner size="md" label="Reading vault..." />
+              <LoadingSpinner size="md" label={t.plugins.obsidian_brain.reading_vault} />
             </div>
           ) : stats ? (
             <div className="grid grid-cols-5 gap-3">
               {[
-                { label: 'Notes', value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
-                { label: 'Links', value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
-                { label: 'Orphans', value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
-                { label: 'MOCs', value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
-                { label: 'Daily Notes', value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
+                { label: t.plugins.obsidian_brain.stat_notes, value: stats.totalNotes, icon: Network, color: 'text-violet-300' },
+                { label: t.plugins.obsidian_brain.stat_links, value: stats.totalLinks, icon: GitBranch, color: 'text-blue-300' },
+                { label: t.plugins.obsidian_brain.stat_orphans, value: stats.orphanCount, icon: AlertTriangle, color: 'text-amber-300' },
+                { label: t.plugins.obsidian_brain.stat_mocs, value: stats.mocCount, icon: Compass, color: 'text-emerald-300' },
+                { label: t.plugins.obsidian_brain.stat_daily_notes, value: stats.dailyNoteCount, icon: CalendarDays, color: 'text-fuchsia-300' },
               ].map((s) => {
                 const Icon = s.icon;
                 return (
@@ -214,12 +216,12 @@ export default function GraphPanel() {
               })}
             </div>
           ) : (
-            <p className="typo-caption text-foreground py-2">No stats yet.</p>
+            <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.no_stats_yet}</p>
           )}
         </SectionCard>
 
         {/* Search */}
-        <SectionCard title="Search Vault" subtitle="Substring search over note titles and bodies">
+        <SectionCard title={t.plugins.obsidian_brain.search_vault} subtitle={t.plugins.obsidian_brain.search_vault_subtitle}>
           <div className="space-y-3">
             <div className="flex gap-2">
               <div className="relative flex-1">
@@ -231,7 +233,7 @@ export default function GraphPanel() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') runSearch();
                   }}
-                  placeholder="Search your vault..."
+                  placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
                   className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
                 />
               </div>
@@ -241,7 +243,7 @@ export default function GraphPanel() {
                 className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {searching ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
-                Search
+                {t.plugins.obsidian_brain.search}
               </button>
             </div>
 
@@ -254,7 +256,7 @@ export default function GraphPanel() {
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <p className="typo-heading typo-card-label truncate">{hit.title}</p>
-                      <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">score {hit.score}</span>
+                      <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">{t.plugins.obsidian_brain.score_label} {hit.score}</span>
                     </div>
                     <p className="typo-caption text-foreground line-clamp-2">{hit.snippet}</p>
                   </div>
@@ -262,16 +264,16 @@ export default function GraphPanel() {
               </div>
             )}
             {!searching && query.trim() && searchHits.length === 0 && (
-              <p className="typo-caption text-foreground">No matches.</p>
+              <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
             )}
           </div>
         </SectionCard>
 
         {/* Orphans + MOCs */}
         <div className="grid grid-cols-2 gap-4">
-          <SectionCard collapsible title={`Orphan Notes (${orphans.length})`} subtitle="No incoming links" storageKey="obsidian-graph-orphans">
+          <SectionCard collapsible title={`${t.plugins.obsidian_brain.orphan_notes_title} (${orphans.length})`} subtitle={t.plugins.obsidian_brain.orphan_notes_subtitle} storageKey="obsidian-graph-orphans">
             {orphans.length === 0 ? (
-              <p className="typo-caption text-foreground py-2">No orphan notes — every note is linked from somewhere.</p>
+              <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.orphan_notes_empty}</p>
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {orphans.map((o) => (
@@ -283,9 +285,9 @@ export default function GraphPanel() {
             )}
           </SectionCard>
 
-          <SectionCard collapsible title={`Maps of Content (${mocs.length})`} subtitle="Notes that link out heavily" storageKey="obsidian-graph-mocs">
+          <SectionCard collapsible title={`${t.plugins.obsidian_brain.mocs_title} (${mocs.length})`} subtitle={t.plugins.obsidian_brain.mocs_subtitle} storageKey="obsidian-graph-mocs">
             {mocs.length === 0 ? (
-              <p className="typo-caption text-foreground py-2">No MOCs detected — try lowering the link threshold.</p>
+              <p className="typo-caption text-foreground py-2">{t.plugins.obsidian_brain.mocs_empty}</p>
             ) : (
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {mocs.map((m) => (
@@ -300,14 +302,14 @@ export default function GraphPanel() {
         </div>
 
         {/* Daily Journal */}
-        <SectionCard title="Quick Journal" subtitle="Append a section to today's daily note">
+        <SectionCard title={t.plugins.obsidian_brain.quick_journal} subtitle={t.plugins.obsidian_brain.quick_journal_subtitle}>
           <div className="space-y-3">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={journalSection}
                 onChange={(e) => setJournalSection(e.target.value)}
-                placeholder="Section heading"
+                placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
                 className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
               />
               <button
@@ -316,13 +318,13 @@ export default function GraphPanel() {
                 className="ml-auto flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {journalSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
-                Append to Today
+                {t.plugins.obsidian_brain.append_to_today}
               </button>
             </div>
             <textarea
               value={journalBody}
               onChange={(e) => setJournalBody(e.target.value)}
-              placeholder="What happened? What did you learn? Drop it here and it ends up in today's daily note."
+              placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
               rows={4}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
             />
@@ -330,13 +332,13 @@ export default function GraphPanel() {
         </SectionCard>
 
         {/* Meeting Note */}
-        <SectionCard title="Capture Meeting" subtitle="Write a structured meeting note under Meetings/">
+        <SectionCard title={t.plugins.obsidian_brain.capture_meeting} subtitle={t.plugins.obsidian_brain.capture_meeting_subtitle}>
           <div className="space-y-3">
             <input
               type="text"
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
-              placeholder="Meeting title"
+              placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
             />
             <div className="relative">
@@ -345,14 +347,14 @@ export default function GraphPanel() {
                 type="text"
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
-                placeholder="Attendees, comma-separated (becomes [[wikilinks]])"
+                placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
                 className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
               />
             </div>
             <textarea
               value={meetingBody}
               onChange={(e) => setMeetingBody(e.target.value)}
-              placeholder="Agenda, decisions, action items..."
+              placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
               className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
             />
@@ -362,14 +364,14 @@ export default function GraphPanel() {
               className="flex items-center gap-2 px-5 py-2 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {meetingSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Users className="w-4 h-4" />}
-              Save Meeting Note
+              {t.plugins.obsidian_brain.save_meeting_note}
             </button>
           </div>
         </SectionCard>
       </div>
 
       <SavedConfigsSidebar
-        emptyHint="No saved vaults yet. Set one up in the Setup tab."
+        emptyHint={t.plugins.obsidian_brain.saved_vaults_empty_hint_other}
       />
     </div>
   );

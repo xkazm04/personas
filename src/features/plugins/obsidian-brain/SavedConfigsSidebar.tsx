@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { BookMarked, Check, Trash2 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -16,6 +17,7 @@ interface SavedConfigsSidebarProps {
 }
 
 export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfigsSidebarProps) {
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const activePath = useSystemStore((s) => s.obsidianVaultPath);
   const setObsidianVaultPath = useSystemStore((s) => s.setObsidianVaultPath);
@@ -33,22 +35,22 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
         setObsidianVaultName(config.vaultName);
         setObsidianConnected(true);
         void fetchConnectorDefinitions();
-        addToast(`Switched to "${config.vaultName}"`, 'success');
+        addToast(tx(t.plugins.obsidian_brain.vault_switched_to, { name: config.vaultName }), 'success');
         onSelect?.(config);
       } catch (e) {
-        addToast(`Failed to activate vault: ${e}`, 'error');
+        addToast(tx(t.plugins.obsidian_brain.vault_activate_failed, { error: String(e) }), 'error');
       }
     },
-    [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath, fetchConnectorDefinitions],
+    [addToast, onSelect, setObsidianConnected, setObsidianVaultName, setObsidianVaultPath, fetchConnectorDefinitions, t, tx],
   );
 
   const removeConfig = useCallback(
     (e: React.MouseEvent, config: ObsidianVaultConfig) => {
       e.stopPropagation();
       remove(config.vaultPath);
-      addToast(`Removed "${config.vaultName}" from saved vaults`, 'success');
+      addToast(tx(t.plugins.obsidian_brain.vault_removed_from_saved, { name: config.vaultName }), 'success');
     },
-    [addToast, remove],
+    [addToast, remove, t, tx],
   );
 
   return (
@@ -56,7 +58,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
       <div className="flex items-center gap-2 mb-3 px-1">
         <BookMarked className="w-3.5 h-3.5 text-violet-400/70" />
         <p className="typo-label typo-section-title">
-          Saved Vaults
+          {t.plugins.obsidian_brain.saved_vaults}
         </p>
         {configs.length > 0 && (
           <span className="ml-auto typo-caption text-foreground/90">{configs.length}</span>
@@ -65,7 +67,7 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
 
       {configs.length === 0 ? (
         <p className="typo-caption text-foreground px-1 py-2 leading-relaxed">
-          {emptyHint ?? 'Connect and save a vault to see it here.'}
+          {emptyHint ?? t.plugins.obsidian_brain.saved_vaults_empty_hint}
         </p>
       ) : (
         <div className="space-y-1.5 overflow-y-auto">
@@ -101,8 +103,8 @@ export default function SavedConfigsSidebar({ onSelect, emptyHint }: SavedConfig
                 <button
                   onClick={(e) => removeConfig(e, cfg)}
                   className="absolute top-1.5 right-1.5 p-1 rounded-input opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500/10 text-foreground hover:text-red-400 focus-ring"
-                  title={`Remove ${cfg.vaultName}`}
-                  aria-label={`Remove ${cfg.vaultName}`}
+                  title={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
+                  aria-label={tx(t.plugins.obsidian_brain.remove_vault_aria, { name: cfg.vaultName })}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
