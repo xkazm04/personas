@@ -2308,6 +2308,26 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON lab_result_events(result_kind, result_id, event_index);"
     )?;
 
+    // -- Dev Tools: per-file content-hash cache for incremental rescan ----------
+    // Populated by `commands/infrastructure/context_generation.rs` after a
+    // successful scan. On the next scan, `commands/infrastructure/incremental_scan.rs`
+    // diffs the live file tree against this table and feeds the LLM only the
+    // {added, modified, deleted} delta — unchanged regions short-circuit. PK is
+    // (project_id, file_path) because file_path is unique per project but the
+    // same relative path may exist in multiple projects.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS dev_context_file_hashes (
+            project_id          TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            file_path           TEXT NOT NULL,
+            sha256              TEXT NOT NULL,
+            size_bytes          INTEGER NOT NULL DEFAULT 0,
+            last_extracted_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (project_id, file_path)
+        );
+        CREATE INDEX IF NOT EXISTS idx_dev_context_file_hashes_project
+            ON dev_context_file_hashes(project_id);"
+    )?;
+
     // -- Research Lab plugin: defensive column ALTERs ---------------------------
     // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
     // initial.rs. If a legacy DB has any of these tables with a drifted column

@@ -1980,6 +1980,7 @@ pub fn run() {
             commands::infrastructure::context_generation::dev_tools_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
+            commands::infrastructure::incremental_scan::dev_tools_compute_scan_delta,
             // Dev Tools -- Context Group Relationships
             commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
             commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,

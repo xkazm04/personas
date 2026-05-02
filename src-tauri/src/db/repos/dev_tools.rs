@@ -908,6 +908,78 @@ pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
 }
 
 // ============================================================================
+// Per-file content-hash cache (incremental rescan)
+// ============================================================================
+
+/// Return all cached file hashes for a project as a `{file_path: sha256}` map.
+/// Populated by `commands/infrastructure/context_generation.rs` after a successful
+/// scan; consumed by `commands/infrastructure/incremental_scan.rs` to compute
+/// the delta {added, modified, deleted} against the live filesystem.
+pub fn get_file_hashes(pool: &DbPool, project_id: &str) -> Result<HashMap<String, String>, AppError> {
+    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::get_file_hashes", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT file_path, sha256 FROM dev_context_file_hashes WHERE project_id = ?1",
+        )?;
+        let rows = stmt.query_map(params![project_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?;
+        let mut map = HashMap::new();
+        for row in rows {
+            let (path, sha) = row.map_err(AppError::Database)?;
+            map.insert(path, sha);
+        }
+        Ok(map)
+    })
+}
+
+/// Replace the entire file-hash cache for a project in a single transaction.
+/// Called after a successful scan so the next scan can compute a delta. The
+/// caller passes the full live snapshot — anything not present is removed
+/// (deleted files won't accumulate as stale rows).
+pub fn replace_file_hashes(
+    pool: &DbPool,
+    project_id: &str,
+    entries: &[(String, String, i64)], // (file_path, sha256, size_bytes)
+) -> Result<usize, AppError> {
+    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::replace_file_hashes", {
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+        tx.execute(
+            "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
+            params![project_id],
+        )?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut written = 0usize;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT INTO dev_context_file_hashes (project_id, file_path, sha256, size_bytes, last_extracted_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5)",
+            )?;
+            for (path, sha, size) in entries {
+                stmt.execute(params![project_id, path, sha, size, now])?;
+                written += 1;
+            }
+        }
+        tx.commit()?;
+        Ok(written)
+    })
+}
+
+/// Drop all cached file hashes for a project (e.g. on project delete or a
+/// "force full rescan" user action). Returns the number of rows removed.
+pub fn clear_file_hashes(pool: &DbPool, project_id: &str) -> Result<usize, AppError> {
+    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::clear_file_hashes", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
+            params![project_id],
+        )?;
+        Ok(n)
+    })
+}
+
+// ============================================================================
 // Contexts
 // ============================================================================
 

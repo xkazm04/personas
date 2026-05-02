@@ -8,6 +8,7 @@ pub mod context_generation;
 pub mod dev_tools;
 pub mod director;
 pub mod idea_scanner;
+pub mod incremental_scan;
 pub mod static_scan;
 pub mod task_executor;
 pub mod gitlab;
