@@ -2,15 +2,18 @@ import { useMemo } from 'react';
 import { User, Bot, CheckCircle2, Clock, AlertCircle, Target } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 
 // ---------------------------------------------------------------------------
 // Lane definitions
 // ---------------------------------------------------------------------------
 
+type LaneLabelKey = 'your_turn' | 'agents_turn' | 'done';
+
 interface Lane {
   id: string;
-  label: string;
+  labelKey: LaneLabelKey;
   icon: typeof User;
   iconColor: string;
   borderColor: string;
@@ -21,7 +24,7 @@ interface Lane {
 const LANES: Lane[] = [
   {
     id: 'your_turn',
-    label: 'Your Turn',
+    labelKey: 'your_turn',
     icon: User,
     iconColor: 'text-amber-400',
     borderColor: 'border-amber-500/25',
@@ -30,7 +33,7 @@ const LANES: Lane[] = [
   },
   {
     id: 'agent_turn',
-    label: "Agent's Turn",
+    labelKey: 'agents_turn',
     icon: Bot,
     iconColor: 'text-blue-400',
     borderColor: 'border-blue-500/25',
@@ -39,7 +42,7 @@ const LANES: Lane[] = [
   },
   {
     id: 'done',
-    label: 'Done',
+    labelKey: 'done',
     icon: CheckCircle2,
     iconColor: 'text-emerald-400',
     borderColor: 'border-emerald-500/25',
@@ -94,21 +97,22 @@ function GoalCard({ goal }: { goal: DevGoal }) {
   );
 }
 
-function StatusChip({ status }: { status: string }) {
-  const config: Record<string, { label: string; className: string }> = {
-    pending: { label: 'Pending', className: 'text-foreground border-primary/15 bg-primary/5' },
-    review: { label: 'Review', className: 'text-amber-400 border-amber-500/25 bg-amber-500/10' },
-    blocked: { label: 'Blocked', className: 'text-red-400 border-red-500/25 bg-red-500/10' },
-    in_progress: { label: 'In Progress', className: 'text-blue-400 border-blue-500/25 bg-blue-500/10' },
-    running: { label: 'Running', className: 'text-blue-400 border-blue-500/25 bg-blue-500/10' },
-    completed: { label: 'Done', className: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' },
-    done: { label: 'Done', className: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10' },
-  };
-  const c = config[status] ?? { label: status, className: 'text-foreground border-primary/15 bg-primary/5' };
+const STATUS_CHIP_CLASSES: Record<string, string> = {
+  pending: 'text-foreground border-primary/15 bg-primary/5',
+  review: 'text-amber-400 border-amber-500/25 bg-amber-500/10',
+  blocked: 'text-red-400 border-red-500/25 bg-red-500/10',
+  in_progress: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
+  running: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
+  completed: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
+  done: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
+};
 
+function StatusChip({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const className = STATUS_CHIP_CLASSES[status] ?? 'text-foreground border-primary/15 bg-primary/5';
   return (
-    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${c.className}`}>
-      {c.label}
+    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${className}`}>
+      {tokenLabel(t, 'goal_state', status)}
     </span>
   );
 }
@@ -119,6 +123,7 @@ function StatusChip({ status }: { status: string }) {
 
 export default function GoalKanban() {
   const { t } = useTranslation();
+  const dt = t.plugins.dev_tools;
   const goals = useSystemStore((s) => s.goals);
 
   const laneGoals = useMemo(() => {
@@ -158,7 +163,7 @@ export default function GoalKanban() {
             <div className="flex items-center gap-2 mb-3">
               <Icon className={`w-4 h-4 ${lane.iconColor}`} />
               <span className="typo-section-title">
-                {lane.label}
+                {dt[lane.labelKey]}
               </span>
               <span className="ml-auto text-[10px] text-foreground bg-primary/10 rounded-full px-1.5 py-0.5 font-medium">
                 {items.length}

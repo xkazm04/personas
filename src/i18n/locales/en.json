@@ -8372,6 +8372,15 @@
       "validating": "Validating",
       "complete": "Complete"
     },
+    "goal_state": {
+      "pending": "Pending",
+      "review": "Review",
+      "blocked": "Blocked",
+      "in_progress": "In Progress",
+      "running": "Running",
+      "completed": "Done",
+      "done": "Done"
+    },
     "test": {
       "generating": "Generating",
       "running": "Running",

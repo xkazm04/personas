@@ -8378,6 +8378,15 @@ export type Translations = {
       validating: string;
       complete: string;
     };
+    goal_state: {
+      pending: string;
+      review: string;
+      blocked: string;
+      in_progress: string;
+      running: string;
+      completed: string;
+      done: string;
+    };
     test: {
       generating: string;
       running: string;
