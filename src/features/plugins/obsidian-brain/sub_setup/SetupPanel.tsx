@@ -137,7 +137,7 @@ export default function SetupPanel() {
     <div className="flex gap-4 py-2">
       <div className="flex-1 min-w-0 max-w-2xl space-y-5">
       {/* Vault Connection */}
-      <SectionCard collapsible title="Vault Connection" subtitle="Connect to an Obsidian vault for bidirectional sync" storageKey="obsidian-setup-vault">
+      <SectionCard collapsible title={t.plugins.obsidian_brain.vault_connection} subtitle={t.plugins.obsidian_brain.vault_connection_subtitle} storageKey="obsidian-setup-vault">
         <div className="space-y-4">
           <div className="flex gap-2">
             <button
@@ -146,7 +146,7 @@ export default function SetupPanel() {
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {detecting ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
-              {detecting ? 'Detecting...' : 'Auto-Detect Vaults'}
+              {detecting ? t.plugins.obsidian_brain.detecting : t.plugins.obsidian_brain.auto_detect}
             </button>
             <button
               onClick={browseFolder}
@@ -160,7 +160,7 @@ export default function SetupPanel() {
           {/* Detected vaults */}
           {visibleDetectedVaults.length > 0 && (
             <div className="space-y-1.5">
-              <p className="typo-label text-foreground/90">Detected vaults:</p>
+              <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.detected_vaults}</p>
               {visibleDetectedVaults.map((v) => (
                 <button
                   key={v.path}
@@ -193,7 +193,7 @@ export default function SetupPanel() {
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
-              Test
+              {t.plugins.obsidian_brain.test}
             </button>
           </div>
 
@@ -225,13 +225,13 @@ export default function SetupPanel() {
       </SectionCard>
 
       {/* Sync Options */}
-      <SectionCard collapsible title="Sync Options" subtitle="Choose what data to synchronize" storageKey="obsidian-setup-sync">
+      <SectionCard collapsible title={t.plugins.obsidian_brain.sync_options} subtitle={t.plugins.obsidian_brain.sync_options_subtitle} storageKey="obsidian-setup-sync">
         <div className="space-y-3">
           {[
-            { label: 'Memories', desc: 'Persona memories with category, importance, and tags', checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
-            { label: 'Persona Profiles', desc: 'System prompts, config, and design context', checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
-            { label: 'Connectors', desc: 'Connector definitions and service documentation', checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
-            { label: 'Auto-Sync', desc: 'Automatically push changes when memories are created', checked: autoSync, onChange: () => setAutoSync(!autoSync) },
+            { label: t.plugins.obsidian_brain.memories, desc: t.plugins.obsidian_brain.memories_desc, checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
+            { label: t.plugins.obsidian_brain.persona_profiles, desc: t.plugins.obsidian_brain.persona_profiles_desc, checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
+            { label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
+            { label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
           ].map((opt) => (
             <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors">
               <div className="min-w-0">
@@ -245,13 +245,13 @@ export default function SetupPanel() {
       </SectionCard>
 
       {/* Folder Mapping */}
-      <SectionCard collapsible title="Folder Structure" subtitle="Customize how data is organized in your vault" storageKey="obsidian-setup-folders" defaultCollapsed>
+      <SectionCard collapsible title={t.plugins.obsidian_brain.folder_structure} subtitle={t.plugins.obsidian_brain.folder_structure_subtitle} storageKey="obsidian-setup-folders" defaultCollapsed>
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {[
-              { label: 'Personas Folder', value: personasFolder, onChange: setPersonasFolder },
-              { label: 'Memories Subfolder', value: memoriesFolder, onChange: setMemoriesFolder },
-              { label: 'Connectors Folder', value: connectorsFolder, onChange: setConnectorsFolder },
+              { label: t.plugins.obsidian_brain.personas_folder, value: personasFolder, onChange: setPersonasFolder },
+              { label: t.plugins.obsidian_brain.memories_subfolder, value: memoriesFolder, onChange: setMemoriesFolder },
+              { label: t.plugins.obsidian_brain.connectors_folder, value: connectorsFolder, onChange: setConnectorsFolder },
             ].map((field) => (
               <div key={field.label} className="space-y-1.5">
                 <label className="typo-label text-foreground/90">{field.label}</label>
@@ -277,7 +277,7 @@ export default function SetupPanel() {
         className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40 focus-ring"
       >
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}
-        {saving ? 'Saving...' : 'Save Configuration'}
+        {saving ? t.plugins.obsidian_brain.saving : t.plugins.obsidian_brain.save_configuration}
       </button>
       </div>
 

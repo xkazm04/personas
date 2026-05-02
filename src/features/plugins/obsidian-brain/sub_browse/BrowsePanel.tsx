@@ -145,8 +145,8 @@ export default function BrowsePanel() {
       <div className="flex-1 flex items-center justify-center py-20">
         <EmptyState
           icon={AlertTriangle}
-          title="No Vault Connected"
-          subtitle="Set up an Obsidian vault in the Setup tab first."
+          title={t.plugins.obsidian_brain.no_vault_connected}
+          subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
         />
@@ -189,11 +189,11 @@ export default function BrowsePanel() {
                 <TreeItem key={child.path} node={child} depth={0} onSelect={selectNote} selectedPath={selectedPath} filter={filter} />
               ))}
               {tree.children.length === 0 && (
-                <p className="typo-caption text-foreground p-4">Vault is empty</p>
+                <p className="typo-caption text-foreground p-4">{t.plugins.obsidian_brain.vault_empty}</p>
               )}
             </div>
           ) : (
-            <p className="typo-caption text-foreground p-4">Failed to load</p>
+            <p className="typo-caption text-foreground p-4">{t.plugins.obsidian_brain.failed_to_load}</p>
           )}
         </div>
       </div>
@@ -209,7 +209,7 @@ export default function BrowsePanel() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Open in Obsidian
+                {t.plugins.obsidian_brain.open_in_obsidian}
               </button>
             </div>
             {loadingNote ? (
@@ -226,8 +226,8 @@ export default function BrowsePanel() {
           <div className="flex-1 flex items-center justify-center py-20">
             <EmptyState
               icon={FileText}
-              title="Select a Note"
-              subtitle="Choose a note from the tree on the left to preview its contents."
+              title={t.plugins.obsidian_brain.select_note}
+              subtitle={t.plugins.obsidian_brain.select_note_hint}
               iconColor="text-violet-400/80"
               iconContainerClassName="bg-violet-500/10 border-violet-500/20"
             />

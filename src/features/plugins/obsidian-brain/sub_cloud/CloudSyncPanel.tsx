@@ -3,6 +3,7 @@ import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, Check
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAuthStore } from '@/stores/authStore';
@@ -23,6 +24,7 @@ function formatBytes(bytes: number): string {
 }
 
 export default function CloudSyncPanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const setDriveConnected = useSystemStore((s) => s.setObsidianDriveConnected);
@@ -133,8 +135,8 @@ export default function CloudSyncPanel() {
       <div className="flex-1 flex items-center justify-center py-20">
         <EmptyState
           icon={AlertTriangle}
-          title="No Vault Connected"
-          subtitle="Set up a local Obsidian vault in the Setup tab first, then connect Google Drive for cloud backup."
+          title={t.plugins.obsidian_brain.no_vault_connected}
+          subtitle={t.plugins.obsidian_brain.no_vault_cloud_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
         />
@@ -181,7 +183,7 @@ export default function CloudSyncPanel() {
   return (
     <div className="max-w-2xl space-y-5 py-2">
       {/* Account & Connection */}
-      <SectionCard title="Google Drive Connection">
+      <SectionCard title={t.plugins.obsidian_brain.google_drive_connection}>
         <div className="space-y-4">
           {/* User info */}
           {user && (
@@ -200,7 +202,7 @@ export default function CloudSyncPanel() {
               {driveConnected ? (
                 <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 typo-caption">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  Drive Connected
+                  {t.plugins.obsidian_brain.drive_connected}
                 </span>
               ) : (
                 <button
@@ -209,7 +211,7 @@ export default function CloudSyncPanel() {
                   className="flex items-center gap-2 px-4 py-2 rounded-card bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-50 focus-ring"
                 >
                   {connecting ? <LoadingSpinner size="sm" /> : <LogIn className="w-4 h-4" />}
-                  {connecting ? 'Connecting...' : 'Connect Google Drive'}
+                  {connecting ? t.plugins.obsidian_brain.connecting : t.plugins.obsidian_brain.connect_google_drive}
                 </button>
               )}
             </div>
@@ -221,7 +223,7 @@ export default function CloudSyncPanel() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <HardDrive className="w-4 h-4 text-foreground" />
-                  <span className="typo-label text-foreground/90">Storage</span>
+                  <span className="typo-label text-foreground/90">{t.plugins.obsidian_brain.storage}</span>
                 </div>
                 <span className="typo-caption text-foreground tabular-nums">
                   {formatBytes(driveStorageUsed)} / {formatBytes(driveStorageLimit)}
@@ -254,7 +256,7 @@ export default function CloudSyncPanel() {
 
       {/* Sync Actions */}
       {driveConnected && (
-        <SectionCard title="Cloud Sync">
+        <SectionCard title={t.plugins.obsidian_brain.cloud_sync}>
           <div className="space-y-4">
             <div className="flex gap-3">
               <button
@@ -263,7 +265,7 @@ export default function CloudSyncPanel() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
-                {pushing ? 'Pushing...' : 'Push to Drive'}
+                {pushing ? t.plugins.obsidian_brain.pushing : t.plugins.obsidian_brain.push_to_drive}
               </button>
               <button
                 onClick={pullFromDrive}
@@ -271,13 +273,12 @@ export default function CloudSyncPanel() {
                 className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
               >
                 {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
-                {pulling ? 'Pulling...' : 'Pull from Drive'}
+                {pulling ? t.plugins.obsidian_brain.pulling : t.plugins.obsidian_brain.pull_from_drive}
               </button>
             </div>
 
             <p className="typo-caption text-foreground">
-              Push uploads local vault changes to Google Drive. Pull downloads remote changes to your local vault.
-              Only files that have changed since the last sync are transferred.
+              {t.plugins.obsidian_brain.push_pull_hint}
             </p>
           </div>
         </SectionCard>
@@ -287,7 +288,7 @@ export default function CloudSyncPanel() {
       {lastResult && (
         <SectionCard status={lastResult.errors.length > 0 ? 'warning' : 'success'}>
           <div className="space-y-2">
-            <p className="typo-label text-foreground/90">Last Sync Result</p>
+            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.last_sync_result}</p>
             <div className="flex gap-4 typo-body">
               {lastResult.uploaded > 0 && <span className="text-blue-400">{lastResult.uploaded} uploaded</span>}
               {lastResult.downloaded > 0 && <span className="text-emerald-400">{lastResult.downloaded} downloaded</span>}
@@ -308,15 +309,15 @@ export default function CloudSyncPanel() {
 
       {/* Info card */}
       {!driveConnected && (
-        <SectionCard title="How it works" status="info">
+        <SectionCard title={t.plugins.obsidian_brain.how_it_works} status="info">
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 rounded-card bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
                 <span className="typo-caption text-blue-400 font-medium">1</span>
               </div>
               <div>
-                <p className="typo-heading typo-card-label">Connect Google Drive</p>
-                <p className="typo-caption text-foreground">Grant Personas access to create files in your Drive. Only the app&apos;s own folder is accessible.</p>
+                <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step1_title}</p>
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.step1_desc}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -324,8 +325,8 @@ export default function CloudSyncPanel() {
                 <span className="typo-caption text-blue-400 font-medium">2</span>
               </div>
               <div>
-                <p className="typo-heading typo-card-label">Push your vault</p>
-                <p className="typo-caption text-foreground">Vault notes are uploaded as markdown files to Drive. Only changed files are synced (content-hash comparison).</p>
+                <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step2_title}</p>
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.step2_desc}</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -333,8 +334,8 @@ export default function CloudSyncPanel() {
                 <span className="typo-caption text-blue-400 font-medium">3</span>
               </div>
               <div>
-                <p className="typo-heading typo-card-label">Sync across devices</p>
-                <p className="typo-caption text-foreground">Pull on another device to download. Your 15 GB free Google Drive storage is more than enough for thousands of notes.</p>
+                <p className="typo-heading typo-card-label">{t.plugins.obsidian_brain.step3_title}</p>
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.step3_desc}</p>
               </div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle,
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -19,6 +20,7 @@ import {
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 
 export default function SyncPanel() {
+  const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -118,8 +120,8 @@ export default function SyncPanel() {
       <div className="flex-1 flex items-center justify-center py-20">
         <EmptyState
           icon={AlertTriangle}
-          title="No Vault Connected"
-          subtitle="Set up an Obsidian vault in the Setup tab first."
+          title={t.plugins.obsidian_brain.no_vault_connected}
+          subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
         />
@@ -139,19 +141,18 @@ export default function SyncPanel() {
       )}
 
       {/* Sync Actions */}
-      <SectionCard title="Sync Actions">
+      <SectionCard title={t.plugins.obsidian_brain.sync_actions}>
         <div className="space-y-4">
           <div className="flex gap-3">
             <button
               onClick={pushSync}
               disabled={pushing || pulling || selectedPersonaIds.size === 0}
               className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors disabled:opacity-40 focus-ring"
-              title={selectedPersonaIds.size === 0 ? 'Select at least one persona to push' : undefined}
             >
               {pushing ? <LoadingSpinner size="sm" /> : <ArrowUpFromLine className="w-4 h-4" />}
               {pushing
-                ? 'Pushing...'
-                : `Push ${selectedPersonaIds.size} ${selectedPersonaIds.size === 1 ? 'Persona' : 'Personas'}`}
+                ? t.plugins.obsidian_brain.pushing
+                : `${t.plugins.obsidian_brain.push_to_vault} (${selectedPersonaIds.size})`}
             </button>
             <button
               onClick={pullSync}
@@ -159,17 +160,17 @@ export default function SyncPanel() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors disabled:opacity-40 focus-ring"
             >
               {pulling ? <LoadingSpinner size="sm" /> : <ArrowDownToLine className="w-4 h-4" />}
-              {pulling ? 'Pulling...' : 'Pull from Vault'}
+              {pulling ? t.plugins.obsidian_brain.pulling : t.plugins.obsidian_brain.pull_from_vault}
             </button>
           </div>
 
           {/* Persona Selection */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="typo-label text-foreground/90">Select personas to push</p>
+              <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.select_personas_push}</p>
               <div className="flex items-center gap-2">
                 <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
-                  Select all
+                  {t.plugins.obsidian_brain.select_all}
                 </button>
                 <button
                   onClick={deselectAll}
@@ -195,7 +196,7 @@ export default function SyncPanel() {
                 </button>
               ))}
               {personas.length === 0 && (
-                <p className="typo-caption text-foreground">No personas found</p>
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_personas_found}</p>
               )}
             </div>
           </div>
@@ -206,7 +207,7 @@ export default function SyncPanel() {
       {pushResult && (
         <SectionCard status="success">
           <div className="space-y-1">
-            <p className="typo-label text-foreground/90">Last Push Result</p>
+            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.last_push_result}</p>
             <div className="flex gap-4 typo-body">
               <span className="text-emerald-400">{pushResult.created} created</span>
               <span className="text-blue-400">{pushResult.updated} updated</span>
@@ -231,13 +232,13 @@ export default function SyncPanel() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <p className="typo-caption text-blue-400/70">App Version</p>
+                    <p className="typo-caption text-blue-400/70">{t.plugins.obsidian_brain.app_version}</p>
                     <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.appContent.slice(0, 500)}{c.appContent.length > 500 ? '...' : ''}
                     </pre>
                   </div>
                   <div className="space-y-1">
-                    <p className="typo-caption text-violet-400/70">Vault Version</p>
+                    <p className="typo-caption text-violet-400/70">{t.plugins.obsidian_brain.vault_version}</p>
                     <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
                       {c.vaultContent.slice(0, 500)}{c.vaultContent.length > 500 ? '...' : ''}
                     </pre>
@@ -245,13 +246,13 @@ export default function SyncPanel() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
-                    Keep App
+                    {t.plugins.obsidian_brain.keep_app}
                   </button>
                   <button onClick={() => resolveConflict(c, 'use_vault')} className="px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring">
-                    Keep Vault
+                    {t.plugins.obsidian_brain.keep_vault}
                   </button>
                   <button onClick={() => resolveConflict(c, 'skip')} className="px-3 py-1.5 rounded-card typo-caption bg-secondary/30 text-foreground border border-primary/10 hover:bg-secondary/50 transition-colors focus-ring">
-                    Skip
+                    {t.plugins.obsidian_brain.skip}
                   </button>
                 </div>
               </div>
@@ -261,9 +262,9 @@ export default function SyncPanel() {
       )}
 
       {/* Sync Log */}
-      <SectionCard collapsible title="Sync Log" storageKey="obsidian-sync-log" defaultCollapsed={syncLog.length === 0}>
+      <SectionCard collapsible title={t.plugins.obsidian_brain.sync_log} storageKey="obsidian-sync-log" defaultCollapsed={syncLog.length === 0}>
         {syncLog.length === 0 ? (
-          <p className="typo-body text-foreground py-4">No sync activity yet. Push or pull to start.</p>
+          <p className="typo-body text-foreground py-4">{t.plugins.obsidian_brain.no_sync_activity}</p>
         ) : (
           <div className="space-y-1 max-h-80 overflow-y-auto">
             {syncLog.map((entry) => (
