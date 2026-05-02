@@ -146,6 +146,7 @@ export const en = {
     brain: {
       title: 'Brain',
       subtitle: 'The twin\'s memory has two layers: an Obsidian vault for human-readable notes and a knowledge base for semantic recall.',
+      eyebrowAtelier: 'Cortex',
       obsidianVault: 'Obsidian Vault',
       optional: 'Optional',
       obsidianDescription: 'Human-readable notes you can browse and edit directly in Obsidian.',
@@ -198,6 +199,7 @@ export const en = {
     profiles: {
       title: 'Twin Profiles',
       subtitle: 'Each twin is a digital identity that personas adopt via the Twin connector.',
+      eyebrowAtelier: 'Twin Atelier',
       newTwin: 'New Twin',
       namePlaceholder: 'Name (e.g. Founder Twin)',
       rolePlaceholder: 'Role (e.g. Indie Dev)',

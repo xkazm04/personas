@@ -3,6 +3,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { useBrainConnection } from './useBrainConnection';
+import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
+import { BrainDecoration } from '../_shared/decorations';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Cortex"
@@ -23,28 +25,23 @@ export default function BrainAtelier() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      {/* ── Header band — brain illustration + KPI ───────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/8 to-cyan-500/8" />
-        <BrainHaloSvg />
-        <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">
-          <div className="relative w-12 h-12 rounded-full bg-violet-500/15 border border-violet-400/40 flex items-center justify-center">
-            <Brain className="w-5 h-5 text-violet-300" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">Cortex</p>
-            <h1 className="typo-heading-lg text-foreground/95">{t.brain.title} — {activeTwin?.name ?? ''}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.brain.subtitle}</p>
-          </div>
-          <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
-            <Stat label="docs" value={kbInfo?.document_count ?? '—'} accent={kbBound ? 'violet' : 'amber'} />
+      <TwinHeaderBand
+        accent="violet"
+        icon={<Brain className="w-5 h-5 text-violet-300" />}
+        eyebrow={t.brain.eyebrowAtelier}
+        title={`${t.brain.title} — ${activeTwin?.name ?? ''}`}
+        subtitle={t.brain.subtitle}
+        decoration={<BrainDecoration />}
+        kpis={
+          <>
+            <Stat label={t.brain.documents} value={kbInfo?.document_count ?? '—'} accent={kbBound ? 'violet' : 'amber'} />
             <span className="w-px h-6 bg-primary/15" />
-            <Stat label="chunks" value={kbInfo?.chunk_count ?? '—'} />
+            <Stat label={t.brain.chunks} value={kbInfo?.chunk_count ?? '—'} />
             <span className="w-px h-6 bg-primary/15" />
             <Stat label="status" value={kbInfo?.status ?? 'unbound'} accent={kbReady ? 'emerald' : 'amber'} />
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* ── Body ─────────────────────────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
@@ -175,38 +172,6 @@ export default function BrainAtelier() {
 }
 
 /* ── Sub-components ────────────────────────────────────────────── */
-
-function BrainHaloSvg() {
-  return (
-    <svg className="absolute inset-0 w-full h-full opacity-25 pointer-events-none" viewBox="0 0 600 200" preserveAspectRatio="xMaxYMid slice">
-      <defs>
-        <linearGradient id="brain-stroke" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.6" />
-          <stop offset="50%" stopColor="#22d3ee" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="#f472b6" stopOpacity="0.5" />
-        </linearGradient>
-      </defs>
-      <g transform="translate(440 100)" stroke="url(#brain-stroke)" fill="none" strokeWidth="0.7">
-        <circle r="80" />
-        <circle r="60" />
-        <circle r="40" />
-        <circle r="20" />
-        <line x1="-80" y1="0" x2="80" y2="0" />
-        <line x1="0" y1="-80" x2="0" y2="80" />
-        <line x1="-56" y1="-56" x2="56" y2="56" />
-        <line x1="-56" y1="56" x2="56" y2="-56" />
-      </g>
-      <g fill="#a78bfa">
-        {[...Array(20)].map((_, i) => {
-          const a = (i / 20) * 2 * Math.PI;
-          const x = 440 + Math.cos(a) * 80;
-          const y = 100 + Math.sin(a) * 80;
-          return <circle key={i} cx={x} cy={y} r={1.5} opacity={0.6} />;
-        })}
-      </g>
-    </svg>
-  );
-}
 
 interface LayerProps {
   index: string;

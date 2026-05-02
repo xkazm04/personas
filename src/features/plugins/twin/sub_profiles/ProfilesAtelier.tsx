@@ -10,6 +10,8 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTwinTranslation } from '../i18n/useTwinTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
 import { genderDefFromPronouns } from '../_shared/gender';
+import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
+import { ConstellationDecoration } from '../_shared/decorations';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
@@ -151,51 +153,28 @@ export default function ProfilesAtelier() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
-      {/* ── Header band — gradient + halo + roster KPIs ─────────────────── */}
-      <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10">
-        <div className="absolute inset-0 bg-gradient-to-r from-violet-500/15 via-fuchsia-500/8 to-transparent" />
-        <div className="absolute inset-0 opacity-40 pointer-events-none">
-          <svg viewBox="0 0 800 200" className="w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <radialGradient id="atelier-glow" cx="20%" cy="50%" r="40%">
-                <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#a78bfa" stopOpacity="0" />
-              </radialGradient>
-            </defs>
-            <rect width="800" height="200" fill="url(#atelier-glow)" />
-            {[...Array(12)].map((_, i) => (
-              <circle key={i} cx={120 + i * 55} cy={30 + (i % 3) * 50} r={1.4 + (i % 4) * 0.6} fill="#a78bfa" opacity={0.35 - (i % 5) * 0.05} />
-            ))}
-          </svg>
-        </div>
-        <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">
-          <div className="relative w-11 h-11 rounded-full bg-violet-500/20 border border-violet-400/40 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-violet-300" />
-            <motion.span
-              aria-hidden
-              className="absolute inset-0 rounded-full border border-violet-400/40"
-              animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeOut' }}
-            />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-[0.22em] text-violet-300/80 font-medium">Twin Atelier</p>
-            <h1 className="typo-heading-lg text-foreground/95">{t.profiles.title}</h1>
-            <p className="typo-caption text-foreground/65 mt-0.5">{t.profiles.subtitle}</p>
-          </div>
-          {/* KPI strip */}
-          <div className="hidden md:flex items-center gap-5 px-4 py-2 rounded-full border border-primary/15 bg-card/40 backdrop-blur">
+      <TwinHeaderBand
+        accent="violet"
+        icon={<Sparkles className="w-5 h-5 text-violet-300" />}
+        eyebrow={t.profiles.eyebrowAtelier}
+        title={t.profiles.title}
+        subtitle={t.profiles.subtitle}
+        decoration={<ConstellationDecoration />}
+        kpis={
+          <>
             <KpiCell label={t.profiles.title} value={agg.twins} accent="violet" />
-            <KpiCell label="readiness" value={`${agg.avgReadiness}%`} accent={agg.avgReadiness >= 80 ? 'emerald' : agg.avgReadiness >= 40 ? 'amber' : 'violet'} />
-            <KpiCell label="channels" value={agg.channelsActive} accent="violet" />
-            <KpiCell label="memories" value={agg.memoriesApproved} accent="violet" />
-          </div>
+            <KpiCell label={t.progress.readiness} value={`${agg.avgReadiness}%`} accent={agg.avgReadiness >= 80 ? 'emerald' : agg.avgReadiness >= 40 ? 'amber' : 'violet'} />
+            <KpiCell label={t.progress.channels} value={agg.channelsActive} accent="violet" />
+            <KpiCell label={t.progress.memories} value={agg.memoriesApproved} accent="violet" />
+          </>
+        }
+        actions={
           <Button onClick={() => setWizardOpen(true)} size="sm" variant="accent" accentColor="violet">
             <Plus className="w-4 h-4 mr-1.5" />
             {t.profiles.newTwin}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Body — hero card + satellite grid ──────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-y-auto">
