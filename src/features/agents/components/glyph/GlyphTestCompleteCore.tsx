@@ -3,6 +3,7 @@ import {
   CheckCircle2, AlertCircle, Rocket, ThumbsDown, RefreshCw, FlaskConical, ScrollText,
 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { GlyphCapabilityPreview } from "./GlyphCapabilityPreview";
 
 interface GlyphTestCompleteCoreProps {
   testPassed?: boolean | null;
@@ -53,6 +54,11 @@ export function GlyphTestCompleteCore({
             )}
           </>
         )}
+        {/* A-grade Phase 5: surface the capability split before promote so
+         *  the user consents to the LLM's structural choice instead of
+         *  inheriting it. Read-only for v1; split/merge edits tracked
+         *  separately. Renders nothing when no capabilities have landed. */}
+        <GlyphCapabilityPreview />
         <div className="mt-1 flex items-center gap-1.5 flex-wrap justify-center">
           <button
             type="button"
