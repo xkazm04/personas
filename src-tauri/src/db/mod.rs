@@ -140,8 +140,70 @@ pub fn init_db(
         seed_builtin_connectors(&conn)?;
     }
 
+    // Defense-in-depth: scrub orphan rows whose parent persona is gone.
+    //
+    // The personas table has `ON DELETE CASCADE` declared on `build_sessions`,
+    // `persona_tools`, `persona_triggers`, etc. The pool's connection
+    // customizer sets `PRAGMA foreign_keys = ON` on every acquire, so the
+    // cascade SHOULD fire for any delete that goes through the pool. We've
+    // still observed orphans accumulate in real installs — likely from runs
+    // that errored mid-flight before reaching `delete_persona`, or from
+    // code paths that bypassed the repo. A one-shot sweep on init cleans
+    // up the pre-existing accumulation and guards against future drift.
+    //
+    // No-ops on a clean install (zero orphans → zero rows deleted).
+    {
+        let conn = pool.get()?;
+        cleanup_orphan_rows(&conn);
+    }
+
     tracing::info!("Database initialized successfully");
     Ok(pool)
+}
+
+/// Scrub rows whose parent persona no longer exists. Runs once on init
+/// after migrations + seeds. Best-effort: a failure is logged but does not
+/// block startup. Tables covered are the ones with `ON DELETE CASCADE`
+/// declared on `personas.id` — see `db/migrations/schema.rs` and
+/// `incremental.rs` for the full FK list.
+fn cleanup_orphan_rows(conn: &rusqlite::Connection) {
+    const ORPHAN_TABLES: &[&str] = &[
+        "build_sessions",
+        "persona_tools",
+        "persona_triggers",
+        "persona_event_subscriptions",
+        "persona_executions",
+        "persona_memories",
+        "persona_messages",
+        "persona_healing_issues",
+        "persona_manual_reviews",
+        "persona_metrics_snapshots",
+        "persona_test_runs",
+        "persona_versions",
+    ];
+    let mut total: i64 = 0;
+    for table in ORPHAN_TABLES {
+        let sql = format!(
+            "DELETE FROM {table} WHERE persona_id IS NOT NULL \
+             AND persona_id NOT IN (SELECT id FROM personas)"
+        );
+        match conn.execute(&sql, []) {
+            Ok(rows) if rows > 0 => {
+                tracing::info!(table, rows_deleted = rows, "Scrubbed orphan rows");
+                total += rows as i64;
+            }
+            Ok(_) => {} // clean — no log spam
+            Err(e) => {
+                // Non-fatal — table may not exist yet on a fresh install
+                // (rare; the migrations above should have created them all)
+                // or the column name may differ. Log and skip.
+                tracing::debug!(table, error = %e, "Orphan sweep skipped table");
+            }
+        }
+    }
+    if total > 0 {
+        tracing::info!(total_orphans_deleted = total, "Startup orphan cleanup complete");
+    }
 }
 
 /// Initialize the user-facing database: a separate SQLite file (`personas_data.db`)
