@@ -3807,6 +3807,36 @@ export type Translations = {
       none_configured: string;
       required_badge: string;
     };
+    design_helpers: {
+      save_disabled_google_oauth: string;
+      save_disabled_provider_oauth_with_hc: string;
+      save_disabled_provider_oauth: string;
+      save_disabled_api_key: string;
+      oauth_hint_google: string;
+      oauth_hint_provider: string;
+      hc_timeout_friendly: string;
+      hc_timeout_suggestion: string;
+      hc_dns_friendly: string;
+      hc_dns_suggestion: string;
+      hc_refused_friendly: string;
+      hc_refused_suggestion: string;
+      hc_unreachable_friendly: string;
+      hc_unreachable_suggestion: string;
+      hc_401_friendly: string;
+      hc_401_suggestion: string;
+      hc_403_friendly: string;
+      hc_403_suggestion: string;
+      hc_404_friendly: string;
+      hc_404_suggestion: string;
+      hc_429_friendly: string;
+      hc_429_suggestion: string;
+      hc_5xx_friendly: string;
+      hc_5xx_suggestion: string;
+      hc_4xx_friendly: string;
+      hc_4xx_suggestion: string;
+      hc_skipped_friendly: string;
+      hc_skipped_suggestion: string;
+    };
     design_phases: {
       saving: string;
       elapsed_label: string;

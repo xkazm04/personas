@@ -4,9 +4,9 @@ import { translateHealthcheckMessage } from '@/features/vault/sub_catalog/compon
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function HealthcheckResultDisplay({ success, message }: { success: boolean; message: string }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
-  const translated = useMemo(() => translateHealthcheckMessage(message), [message]);
+  const translated = useMemo(() => translateHealthcheckMessage(message, t, tx), [message, t, tx]);
   const hasDifferentRaw = translated.raw !== translated.friendly;
   const hasSuggestion = translated.suggestion.length > 0;
 

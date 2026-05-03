@@ -98,8 +98,9 @@ interface StatusResultProps {
 }
 
 export function StatusResult({ status, onClearLinkError }: StatusResultProps) {
+  const { t, tx } = useTranslation();
   const translated = status.result && !status.result.success
-    ? translateHealthcheckMessage(status.result.message)
+    ? translateHealthcheckMessage(status.result.message, t, tx)
     : null;
 
   return (

@@ -158,7 +158,7 @@ export function PreviewPhase() {
         oauthConsentDisabled={isAuthorizingOAuth}
         isAuthorizingOAuth={isAuthorizingOAuth}
         oauthPollingMessage={oauthStatusMessage}
-        oauthConsentHint={getOAuthConsentHint(credentialFlow)}
+        oauthConsentHint={getOAuthConsentHint(credentialFlow, t, tx)}
         oauthConsentSuccessBadge={oauthConsentCompletedAt
           ? tx(t.vault.body.consent_completed, { name: providerLabel, time: oauthConsentCompletedAt })
           : undefined}
@@ -169,7 +169,7 @@ export function PreviewPhase() {
         healthcheckResult={healthcheckResult}
         isSaving={isSaving}
         saveDisabled={!canSaveCredential || isSaving}
-        saveDisabledReason={getSaveDisabledReason(credentialFlow)}
+        saveDisabledReason={getSaveDisabledReason(credentialFlow, t, tx)}
         onCancel={onReset}
       />
 

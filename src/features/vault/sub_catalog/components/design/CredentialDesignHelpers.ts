@@ -37,6 +37,10 @@ export const OAUTH_FIELD = {
 
 import { parseConnectorMetadata, type CredentialTemplateField, type ConnectorDefinition } from '@/lib/types/types';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
+import type { Translations } from '@/i18n/en';
+
+/** Shape of `tx` returned by useTranslation — interpolates {placeholders}. */
+type TxFn = (template: string, vars: Record<string, string | number>) => string;
 
 /** Filter connector definitions to those with template_enabled metadata, optionally matching a search query. */
 export function filterTemplateConnectors(
@@ -178,27 +182,29 @@ export function getProviderLabel(flow: CredentialFlow): string {
 }
 
 /** User-facing explanation for why save is disabled. */
-export function getSaveDisabledReason(flow: CredentialFlow): string {
+export function getSaveDisabledReason(flow: CredentialFlow, t: Translations, tx: TxFn): string {
+  const dh = t.vault.design_helpers;
   switch (flow.kind) {
     case 'google_oauth':
-      return 'Save is unlocked after Google consent returns a refresh token.';
+      return dh.save_disabled_google_oauth;
     case 'provider_oauth':
       if (PROVIDERS_WITH_HEALTHCHECK.has(flow.providerId.toLowerCase())) {
-        return `Save is unlocked after ${flow.providerLabel} authorization and connection test succeed.`;
+        return tx(dh.save_disabled_provider_oauth_with_hc, { label: flow.providerLabel });
       }
-      return `Save is unlocked after ${flow.providerLabel} authorization completes.`;
+      return tx(dh.save_disabled_provider_oauth, { label: flow.providerLabel });
     case 'api_key':
-      return 'Save is locked until Test Connection succeeds for the current credential values.';
+      return dh.save_disabled_api_key;
   }
 }
 
 /** OAuth consent hint displayed below the consent button. */
-export function getOAuthConsentHint(flow: CredentialFlow): string | undefined {
+export function getOAuthConsentHint(flow: CredentialFlow, t: Translations, tx: TxFn): string | undefined {
+  const dh = t.vault.design_helpers;
   switch (flow.kind) {
     case 'google_oauth':
-      return 'One click consent using app-managed Google OAuth. You can uncheck permissions on the consent screen.';
+      return dh.oauth_hint_google;
     case 'provider_oauth':
-      return `Enter your ${flow.providerLabel} OAuth client credentials above, then click to authorize.`;
+      return tx(dh.oauth_hint_provider, { label: flow.providerLabel });
     case 'api_key':
       return undefined;
   }
@@ -244,80 +250,45 @@ function extractHttpStatus(raw: string): number | null {
 }
 
 /** Translate raw backend healthcheck messages into user-friendly guidance. */
-export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck {
+export function translateHealthcheckMessage(raw: string, t: Translations, tx: TxFn): TranslatedHealthcheck {
+  const dh = t.vault.design_helpers;
   const status = extractHttpStatus(raw);
 
   // Connection / network errors
   if (raw.includes('request failed:')) {
     if (raw.includes('timed out') || raw.includes('timeout')) {
-      return {
-        friendly: 'Could not reach the service -- the request timed out.',
-        suggestion: 'Check that the URL is correct and the service is online. Your firewall or proxy may be blocking the connection.',
-        raw,
-      };
+      return { friendly: dh.hc_timeout_friendly, suggestion: dh.hc_timeout_suggestion, raw };
     }
     if (raw.includes('dns') || raw.includes('resolve')) {
-      return {
-        friendly: 'Could not reach the service -- the hostname could not be resolved.',
-        suggestion: 'Double-check the service URL for typos. Make sure you have an active internet connection.',
-        raw,
-      };
+      return { friendly: dh.hc_dns_friendly, suggestion: dh.hc_dns_suggestion, raw };
     }
     if (raw.includes('connection refused')) {
-      return {
-        friendly: 'Connection refused by the service.',
-        suggestion: 'The service may be down or the URL/port may be incorrect. Verify the endpoint address.',
-        raw,
-      };
+      return { friendly: dh.hc_refused_friendly, suggestion: dh.hc_refused_suggestion, raw };
     }
-    return {
-      friendly: 'Could not reach the service -- check the URL.',
-      suggestion: 'Verify your internet connection and that the service endpoint is correct.',
-      raw,
-    };
+    return { friendly: dh.hc_unreachable_friendly, suggestion: dh.hc_unreachable_suggestion, raw };
   }
 
   // HTTP status codes
   if (status) {
     switch (status) {
       case 401:
-        return {
-          friendly: 'Your credentials appear to be invalid or expired.',
-          suggestion: 'Double-check the API key or token -- make sure you copied the full value without extra spaces.',
-          raw,
-        };
+        return { friendly: dh.hc_401_friendly, suggestion: dh.hc_401_suggestion, raw };
       case 403:
-        return {
-          friendly: 'Your credentials lack the required permissions.',
-          suggestion: 'The key is valid but does not have access to this endpoint. Check your API key\'s scopes or role assignments.',
-          raw,
-        };
+        return { friendly: dh.hc_403_friendly, suggestion: dh.hc_403_suggestion, raw };
       case 404:
-        return {
-          friendly: 'The healthcheck endpoint was not found.',
-          suggestion: 'This usually means the generated test URL is wrong -- not a problem with your credentials. Try saving anyway if you trust the key.',
-          raw,
-        };
+        return { friendly: dh.hc_404_friendly, suggestion: dh.hc_404_suggestion, raw };
       case 429:
-        return {
-          friendly: 'Too many requests -- the service is rate-limiting you.',
-          suggestion: 'Wait a moment and try again. This doesn\'t necessarily mean your credentials are wrong.',
-          raw,
-        };
+        return { friendly: dh.hc_429_friendly, suggestion: dh.hc_429_suggestion, raw };
       case 500:
       case 502:
       case 503:
       case 504:
-        return {
-          friendly: 'The service returned a server error.',
-          suggestion: 'This is likely a temporary issue on the provider\'s side. Try again in a few minutes.',
-          raw,
-        };
+        return { friendly: dh.hc_5xx_friendly, suggestion: dh.hc_5xx_suggestion, raw };
       default:
         if (status >= 400 && status < 500) {
           return {
-            friendly: `The service rejected the request (HTTP ${status}).`,
-            suggestion: 'Verify your credentials and ensure the API key has the correct permissions.',
+            friendly: tx(dh.hc_4xx_friendly, { status }),
+            suggestion: dh.hc_4xx_suggestion,
             raw,
           };
         }
@@ -326,26 +297,14 @@ export function translateHealthcheckMessage(raw: string): TranslatedHealthcheck 
 
   // Skip message
   if (raw.includes('skipped automatic healthcheck')) {
-    return {
-      friendly: 'Automatic testing was skipped for this service.',
-      suggestion: 'You can save the credential and test it manually by running your agent.',
-      raw,
-    };
+    return { friendly: dh.hc_skipped_friendly, suggestion: dh.hc_skipped_suggestion, raw };
   }
 
-  // Local validation message
-  if (raw.includes('Run Test Connection')) {
-    return {
-      friendly: raw,
-      suggestion: '',
-      raw,
-    };
+  // Local validation message — passes through untouched (already translated upstream)
+  if (raw.includes('Run Test Connection') || raw === t.vault.credential_forms.healthcheck_required) {
+    return { friendly: raw, suggestion: '', raw };
   }
 
   // Fallback
-  return {
-    friendly: raw,
-    suggestion: '',
-    raw,
-  };
+  return { friendly: raw, suggestion: '', raw };
 }

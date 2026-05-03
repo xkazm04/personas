@@ -43,7 +43,7 @@ export function ConnectorRow({
   const statusKey = getStatusKey(status);
   const config = STATUS_CONFIG[statusKey];
   const translated = status.result && !status.result.success
-    ? translateHealthcheckMessage(status.result.message)
+    ? translateHealthcheckMessage(status.result.message, t, tx)
     : null;
 
   const { matching: matchingCreds, others: otherCreds } = rankCredentialsForConnector(credentials, status.name);

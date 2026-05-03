@@ -9,7 +9,7 @@ interface ConnectorHealthRailProps {
 }
 
 export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }: ConnectorHealthRailProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   if (connectorRailItems.length === 0) return null;
 
   return (
@@ -44,7 +44,7 @@ export function ConnectorHealthRail({ connectorRailItems, readyConnectorCount }:
               ? <XCircle className="w-3 h-3 text-red-400 flex-shrink-0" />
               : <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />;
           const translated = item.errorMessage
-            ? translateHealthcheckMessage(item.errorMessage)
+            ? translateHealthcheckMessage(item.errorMessage, t, tx)
             : null;
 
           return (
