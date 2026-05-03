@@ -233,22 +233,8 @@ export function useCredentialHealth(target: CredentialHealthTarget) {
 
 // -- Static helpers (read cache without subscribing) -------------------
 
-export function getHealthResult(key: string): HealthResult | null {
-  return resultCache.get(key) ?? null;
-}
-
 /** Write a result into the shared module cache (e.g. from bulk healthcheck). */
 export function setHealthResultStatic(key: string, result: HealthResult): void {
   resultCache.set(key, result);
-  resultCache.notify();
-}
-
-export function isHealthChecking(key: string): boolean {
-  return (loadingRefCounts.get(key) ?? 0) > 0;
-}
-
-export function resetHealthCache() {
-  resultCache.clear();
-  loadingRefCounts.clear();
   resultCache.notify();
 }
