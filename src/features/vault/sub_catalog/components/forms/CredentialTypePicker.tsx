@@ -1,6 +1,9 @@
 import { ArrowLeft, Radar, Globe } from 'lucide-react';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { Translations } from '@/i18n/en';
+
+type TypePickerLabelKey = keyof Translations['vault']['type_picker'];
 
 interface CredentialTypePickerProps {
   onSelectAiGuide: () => void;
@@ -13,39 +16,46 @@ interface CredentialTypePickerProps {
   onBack: () => void;
 }
 
-const TYPES = [
+const TYPES: Array<{
+  id: string;
+  testId: string;
+  labelKey: TypePickerLabelKey;
+  color: string;
+  illustration: string;
+  devOnly?: boolean;
+}> = [
   {
     id: 'ai-guide',
     testId: 'vault-pick-ai-connector',
-    label: 'AI Guide',
+    labelKey: 'tile_ai_guide',
     color: '#8B5CF6',
     illustration: '/vault-icons/ai-guide-nobg.png',
   },
   {
     id: 'mcp',
     testId: 'vault-pick-mcp',
-    label: 'MCP',
+    labelKey: 'tile_mcp',
     color: '#06B6D4',
     illustration: '/vault-icons/mcp-nobg.png',
   },
   {
     id: 'custom',
     testId: 'vault-pick-custom',
-    label: 'Custom API',
+    labelKey: 'tile_custom_api',
     color: '#F59E0B',
     illustration: '/vault-icons/custom-api-nobg.png',
   },
   {
     id: 'database',
     testId: 'vault-pick-database',
-    label: 'Database',
+    labelKey: 'tile_database',
     color: '#10B981',
     illustration: '/vault-icons/database-nobg.png',
   },
   ...(import.meta.env.DEV ? [{
-    id: 'desktop' as const,
+    id: 'desktop',
     testId: 'vault-pick-desktop',
-    label: 'Desktop App',
+    labelKey: 'tile_desktop_app' as const,
     color: '#D4A017',
     illustration: '/vault-icons/desktop-nobg.png',
     devOnly: true,
@@ -92,8 +102,9 @@ export function CredentialTypePicker({
       </div>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: IS_MOBILE ? '1fr' : 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-        {TYPES.filter((t) => !IS_MOBILE || t.id !== 'desktop').map((type) => {
-          const isDev = 'devOnly' in type && type.devOnly;
+        {TYPES.filter((type) => !IS_MOBILE || type.id !== 'desktop').map((type) => {
+          const isDev = type.devOnly === true;
+          const label = t.vault.type_picker[type.labelKey];
           return (
             <button
               key={type.id}
@@ -105,13 +116,13 @@ export function CredentialTypePicker({
               <div className="flex flex-col items-center py-4 px-3 gap-2">
                 <img
                   src={type.illustration}
-                  alt={type.label}
+                  alt={label}
                   className="w-16 h-16 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all"
                   draggable={false}
                 />
                 <div className="flex items-center gap-1.5">
-                  <h4 className="typo-body font-medium text-foreground">{type.label}</h4>
-                  {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">DEV</span>}
+                  <h4 className="typo-body font-medium text-foreground">{label}</h4>
+                  {isDev && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-400 border border-amber-400/25 font-medium">{t.vault.type_picker.dev_badge}</span>}
                 </div>
               </div>
             </button>

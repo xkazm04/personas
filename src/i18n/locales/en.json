@@ -2763,7 +2763,13 @@
       "workspace_connect": "Workspace Connect",
       "workspace_connect_hint": "One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically",
       "auto_discover": "Auto-Discover Credentials",
-      "auto_discover_hint": "Scan your filesystem for existing API keys, AWS profiles, env vars, and more"
+      "auto_discover_hint": "Scan your filesystem for existing API keys, AWS profiles, env vars, and more",
+      "tile_ai_guide": "AI Guide",
+      "tile_mcp": "MCP",
+      "tile_custom_api": "Custom API",
+      "tile_database": "Database",
+      "tile_desktop_app": "Desktop App",
+      "dev_badge": "DEV"
     },
     "body": {
       "authorizing": "Authorizing with {name}...",

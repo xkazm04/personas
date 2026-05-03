@@ -2770,6 +2770,12 @@ export type Translations = {
       workspace_connect_hint: string;
       auto_discover: string;
       auto_discover_hint: string;
+      tile_ai_guide: string;
+      tile_mcp: string;
+      tile_custom_api: string;
+      tile_database: string;
+      tile_desktop_app: string;
+      dev_badge: string;
     };
     body: {
       authorizing: string;
