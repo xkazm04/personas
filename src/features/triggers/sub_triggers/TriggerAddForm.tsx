@@ -6,6 +6,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
 import { getDetectedTimezone } from './TimezoneSelect';
 import { TriggerQuickTemplates } from './TriggerQuickTemplates';
@@ -159,7 +160,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     try {
       const createError = await onCreateTrigger(triggerType, result.config);
       if (createError) {
-        setValidationError(createError);
+        setValidationError(resolveErrorTranslated(t, createError).message);
       }
     } finally {
       setIsCreating(false);
