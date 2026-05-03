@@ -5,6 +5,7 @@ import {
   type CompositeCondition, type TriggerCategory,
 } from '@/lib/utils/platform/triggerConstants';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
+import { silentCatch } from '@/lib/silentCatch';
 import { IntervalConfig, CronConfig } from './TriggerScheduleConfig';
 import { getDetectedTimezone } from './TimezoneSelect';
 import { TriggerQuickTemplates } from './TriggerQuickTemplates';
@@ -69,7 +70,10 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     if (!expr.trim()) { setCronPreview(null); return; }
     setCronLoading(true);
     try { setCronPreview(await previewCronSchedule(expr.trim(), 5, tz)); }
-    catch { setCronPreview(null); }
+    catch (err) {
+      silentCatch('TriggerAddForm:previewCronSchedule')(err);
+      setCronPreview(null);
+    }
     finally { setCronLoading(false); }
   }, []);
 
