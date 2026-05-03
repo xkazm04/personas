@@ -5,7 +5,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
-import { CostSparkline } from './ExecutionListItem';
+import { CostSparkline } from './CostSparkline';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionListRowProps {
