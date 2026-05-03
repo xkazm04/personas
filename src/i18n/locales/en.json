@@ -3829,7 +3829,16 @@
       "hc_4xx_friendly": "The service rejected the request (HTTP {status}).",
       "hc_4xx_suggestion": "Verify your credentials and ensure the API key has the correct permissions.",
       "hc_skipped_friendly": "Automatic testing was skipped for this service.",
-      "hc_skipped_suggestion": "You can save the credential and test it manually by running your agent."
+      "hc_skipped_suggestion": "You can save the credential and test it manually by running your agent.",
+      "tip_too_short": "Your description was quite short. Try being more specific -- e.g. \"GitHub personal access token\" instead of \"GitHub\".",
+      "tip_missing_credential_type": "Include the credential type -- e.g. \"API key\", \"OAuth\", \"bot token\", or \"secret key\".",
+      "tip_specific_service": "Mention the specific service or product name clearly (e.g. \"Stripe\" rather than \"payment processor\").",
+      "tip_simpler_description": "Try a simpler, more targeted description to speed up analysis.",
+      "tip_internet_check": "Check your internet connection -- the AI needs to reach Anthropic servers.",
+      "tip_install_cli": "Install the Claude CLI: https://docs.anthropic.com/en/docs/claude-code",
+      "tip_restart_app": "After installing, restart the app and try again.",
+      "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
+      "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
     },
     "design_phases": {
       "saving": "Saving credential...",

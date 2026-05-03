@@ -1,5 +1,7 @@
 import { AlertTriangle, Lightbulb, RefreshCw, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import type { Translations } from '@/i18n/en';
 
 interface ErrorPhaseProps {
   error: string | null;
@@ -8,54 +10,37 @@ interface ErrorPhaseProps {
   onStartOver: () => void;
 }
 
-/** Map raw backend errors to user-friendly messages. */
-function friendlyError(raw: string | null): string {
-  if (!raw) return 'An unexpected error occurred.';
-
-  if (raw.includes('Failed to extract connector design'))
-    return 'The AI could not generate a valid connector from your description.';
-  if (raw.includes('timed out'))
-    return 'The request took too long and was stopped. This can happen with very broad requests.';
-  if (raw.includes('Claude CLI not found'))
-    return 'Claude CLI is not installed on this system.';
-  if (raw.includes('CLAUDECODE environment variable'))
-    return 'A conflicting environment variable is blocking the CLI. Restart the app to fix this automatically.';
-  if (raw.includes('Claude CLI exited with error'))
-    return 'The AI backend returned an unexpected error.';
-
-  return raw;
-}
-
 /** Produce 2-3 contextual recovery tips based on error + instruction. */
-function recoveryTips(error: string | null, instruction: string | undefined): string[] {
+function recoveryTips(error: string | null, instruction: string | undefined, t: Translations): string[] {
   const tips: string[] = [];
+  const dh = t.vault.design_helpers;
   const raw = error ?? '';
   const input = (instruction ?? '').toLowerCase();
 
   if (raw.includes('Failed to extract connector design') || raw.includes('Failed to generate')) {
     if (input.length < 10) {
-      tips.push('Your description was quite short. Try being more specific -- e.g. "GitHub personal access token" instead of "GitHub".');
+      tips.push(dh.tip_too_short);
     }
     if (!input.includes('api') && !input.includes('key') && !input.includes('token') && !input.includes('oauth') && !input.includes('secret')) {
-      tips.push('Include the credential type -- e.g. "API key", "OAuth", "bot token", or "secret key".');
+      tips.push(dh.tip_missing_credential_type);
     }
-    tips.push('Mention the specific service or product name clearly (e.g. "Stripe" rather than "payment processor").');
+    tips.push(dh.tip_specific_service);
   }
 
   if (raw.includes('timed out')) {
-    tips.push('Try a simpler, more targeted description to speed up analysis.');
-    tips.push('Check your internet connection -- the AI needs to reach Anthropic servers.');
+    tips.push(dh.tip_simpler_description);
+    tips.push(dh.tip_internet_check);
   }
 
   if (raw.includes('Claude CLI not found')) {
-    tips.push('Install the Claude CLI: https://docs.anthropic.com/en/docs/claude-code');
-    tips.push('After installing, restart the app and try again.');
+    tips.push(dh.tip_install_cli);
+    tips.push(dh.tip_restart_app);
   }
 
   // Generic fallback
   if (tips.length === 0) {
-    tips.push('Try rephrasing your request with the service name and credential type.');
-    tips.push('If the issue persists, try a simpler description first, then add details.');
+    tips.push(dh.tip_rephrase);
+    tips.push(dh.tip_simpler_first);
   }
 
   return tips;
@@ -64,8 +49,13 @@ function recoveryTips(error: string | null, instruction: string | undefined): st
 export function ErrorPhase({ error, instruction, onRetry, onStartOver }: ErrorPhaseProps) {
   const { t } = useTranslation();
   const dm = t.vault.design_modal;
-  const friendly = friendlyError(error);
-  const tips = recoveryTips(error, instruction);
+  // Friendly message + suggestion come from the i18n error registry. The
+  // 6 patterns this component used to map by hand (Failed to extract,
+  // timed out, Claude CLI not found, CLAUDECODE env, Claude CLI exited,
+  // generic fallback) are already covered by ERROR_KEY_MAP in
+  // src/i18n/useTranslatedError.ts.
+  const { message: friendly } = resolveErrorTranslated(t, error);
+  const tips = recoveryTips(error, instruction, t);
   const hasInstruction = Boolean(instruction?.trim());
 
   return (

@@ -3836,6 +3836,15 @@ export type Translations = {
       hc_4xx_suggestion: string;
       hc_skipped_friendly: string;
       hc_skipped_suggestion: string;
+      tip_too_short: string;
+      tip_missing_credential_type: string;
+      tip_specific_service: string;
+      tip_simpler_description: string;
+      tip_internet_check: string;
+      tip_install_cli: string;
+      tip_restart_app: string;
+      tip_rephrase: string;
+      tip_simpler_first: string;
     };
     design_phases: {
       saving: string;
