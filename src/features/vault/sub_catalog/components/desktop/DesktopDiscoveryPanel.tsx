@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
 import { createLogger } from '@/lib/log';
 
@@ -67,10 +67,17 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
     void scanMcpServers();
   }, [scanApps, scanMcpServers]);
 
+  // Latest-selection-wins guard: if the user clicks app A then quickly clicks
+  // app B before A's fetch resolves, A's response can land after B's and
+  // clobber the manifest. Compare against the in-flight selection before
+  // committing the result.
+  const inflightSelectionRef = useRef<string | null>(null);
   const handleSelectApp = async (connectorName: string) => {
     setSelectedApp(connectorName);
+    inflightSelectionRef.current = connectorName;
     try {
       const m = await getDesktopConnectorManifest(connectorName);
+      if (inflightSelectionRef.current !== connectorName) return;
       setManifest(m);
     } catch (e) {
       logger.error('Failed to get manifest', { error: String(e) });
