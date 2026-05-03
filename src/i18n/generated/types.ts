@@ -3961,6 +3961,11 @@ export type Translations = {
       step_guided_extract: string;
       step_browser_review: string;
       step_guided_review: string;
+      err_no_adapter: string;
+      err_no_adapter_hint: string;
+      err_browser_session_failed: string;
+      err_healthcheck_failed: string;
+      err_save_failed: string;
       setup_context: string;
       review_extracted: string;
       review_extracted_hint: string;

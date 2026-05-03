@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useMemo } from 'react';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import { useVaultStore } from "@/stores/vaultStore";
+import { useTranslation } from '@/i18n/useTranslation';
 import type {
   AutoCredPhase,
   BrowserLogEntry,
@@ -50,6 +51,8 @@ interface UseAutoCredSessionOptions {
 }
 
 export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
+  const { t } = useTranslation();
+  const ace = t.vault.auto_cred_extra;
   const adapter = options?.adapter ?? null;
   const abortRef = useRef<AbortController | null>(null);
 
@@ -93,8 +96,8 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     if (!adapter) {
       setError({
         kind: 'spawn_failed',
-        message: 'No adapter configured',
-        guidance: 'Auto-Setup requires the Playwright MCP adapter. Please set up credentials manually.',
+        message: ace.err_no_adapter,
+        guidance: ace.err_no_adapter_hint,
         retryable: false,
         context: null,
       });
@@ -147,7 +150,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         setPhase('consent');
         return;
       }
-      const raw = err instanceof Error ? err.message : 'Browser session failed';
+      const raw = err instanceof Error ? err.message : ace.err_browser_session_failed;
       setError(parseAutoCredError(raw));
       // Stay in browser-error so the terminal log remains visible
       setPhase('browser-error');
@@ -173,7 +176,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       const result = await healthcheckPreview(designResult.connector.name, extractedValues);
       setHealthResult(result);
     } catch (err) {
-      setHealthResult({ success: false, message: err instanceof Error ? err.message : 'Healthcheck failed' });
+      setHealthResult({ success: false, message: err instanceof Error ? err.message : ace.err_healthcheck_failed });
     }
   }, [designResult, extractedValues, healthcheckPreview]);
 
@@ -200,7 +203,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       setPhase('done');
       return { id, serviceType: designResult.connector.name, healthcheckPassed };
     } catch (err) {
-      setError(parseAutoCredError(err instanceof Error ? err.message : 'Failed to save credential'));
+      setError(parseAutoCredError(err instanceof Error ? err.message : ace.err_save_failed));
       setPhase('error');
       return null;
     } finally {
