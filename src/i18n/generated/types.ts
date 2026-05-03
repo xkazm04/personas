@@ -3982,6 +3982,10 @@ export type Translations = {
       phase_working: string;
       phase_action_required: string;
       phase_opening_url: string;
+      guidance_timeout: string;
+      guidance_cli_not_found: string;
+      guidance_api_billing: string;
+      guidance_default: string;
       setup_context: string;
       review_extracted: string;
       review_extracted_hint: string;

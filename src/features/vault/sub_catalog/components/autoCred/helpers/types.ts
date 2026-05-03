@@ -2,6 +2,7 @@ import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { extractFirstUrl } from './autoCredHelpers';
 import { silentCatch } from '@/lib/silentCatch';
+import type { Translations } from '@/i18n/en';
 
 /** Phases the auto-credential session moves through */
 export type AutoCredPhase =
@@ -108,8 +109,13 @@ export interface SessionContext {
   last_assistant_text: string | null;
 }
 
-/** Parse backend error string -- returns structured info or wraps raw string */
-export function parseAutoCredError(raw: string): AutoCredErrorInfo {
+/** Parse backend error string -- returns structured info or wraps raw string.
+ *
+ * Accepts `t` so the substring-matched guidance strings come from i18n
+ * rather than being hardcoded English. The substring-matching logic stays
+ * local — these are auto-setup-specific patterns (Anthropic API/CLI/timeout)
+ * that don't belong in the generic `useTranslatedError` registry. */
+export function parseAutoCredError(raw: string, t: Translations): AutoCredErrorInfo {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
@@ -119,19 +125,20 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
     silentCatch('parseAutoCredError:jsonParse')(err);
   }
 
+  const ace = t.vault.auto_cred_extra;
   // Derive a better guidance message from the raw error text
   const lower = raw.toLowerCase();
   let guidance: string;
   if (lower.includes('timed out')) {
-    guidance = 'The session timed out. The service may be slow or require manual interaction.';
+    guidance = ace.guidance_timeout;
   } else if (lower.includes('not found') || lower.includes('cli not found')) {
-    guidance = 'Claude CLI is not installed or not accessible. Install it and try again.';
+    guidance = ace.guidance_cli_not_found;
   } else if (lower.includes('api key') || lower.includes('credit') || lower.includes('billing')) {
-    guidance = 'There may be an issue with your API key or billing. Check your Anthropic account.';
+    guidance = ace.guidance_api_billing;
   } else if (raw.length > 30) {
     guidance = raw;
   } else {
-    guidance = 'The session failed unexpectedly. Check the session log for details, or set up the credential manually.';
+    guidance = ace.guidance_default;
   }
 
   return {

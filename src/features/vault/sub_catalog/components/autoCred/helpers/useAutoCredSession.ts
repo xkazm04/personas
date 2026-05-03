@@ -152,7 +152,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
         return;
       }
       const raw = err instanceof Error ? err.message : ace.err_browser_session_failed;
-      setError(parseAutoCredError(raw));
+      setError(parseAutoCredError(raw, t));
       // Stay in browser-error so the terminal log remains visible
       setPhase('browser-error');
     }
@@ -204,7 +204,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
       setPhase('done');
       return { id, serviceType: designResult.connector.name, healthcheckPassed };
     } catch (err) {
-      setError(parseAutoCredError(err instanceof Error ? err.message : ace.err_save_failed));
+      setError(parseAutoCredError(err instanceof Error ? err.message : ace.err_save_failed, t));
       setPhase('error');
       return null;
     } finally {
