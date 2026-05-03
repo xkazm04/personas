@@ -50,12 +50,13 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   }, [open]);
 
   // Capture auto-setup result when design completes
+  const orchResult = orch.contextValue?.result;
   useEffect(() => {
-    if (autoSetupPending && orch.phase === 'preview' && orch.contextValue?.result) {
-      setAutoSetupResult(orch.contextValue.result);
+    if (autoSetupPending && orch.phase === 'preview' && orchResult) {
+      setAutoSetupResult(orchResult);
       setAutoSetupPending(false);
     }
-  }, [autoSetupPending, orch.phase, orch.contextValue]);
+  }, [autoSetupPending, orch.phase, orchResult]);
 
   const handleClose = () => {
     if (orch.phase === 'analyzing') orch.cancel();
