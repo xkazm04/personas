@@ -6,6 +6,7 @@ import {
   type DesktopConnectorManifest,
 } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface CapabilityApprovalCardProps {
   manifest: DesktopConnectorManifest;
@@ -18,6 +19,7 @@ interface CapabilityApprovalCardProps {
 export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, approving }: CapabilityApprovalCardProps) {
   const { t } = useTranslation();
   const dd = t.vault.desktop_discovery;
+  const caps = dd.capabilities;
   return (
     <div
       className="animate-fade-slide-in overflow-hidden"
@@ -52,8 +54,8 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
                   }`}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="typo-caption font-medium text-foreground">{info.label}</p>
-                  <p className="typo-caption text-foreground">{info.description}</p>
+                  <p className="typo-caption font-medium text-foreground">{caps[info.labelKey]}</p>
+                  <p className="typo-caption text-foreground">{caps[info.descriptionKey]}</p>
                 </div>
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
@@ -64,7 +66,7 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
                         : 'bg-emerald-500/10 text-emerald-400'
                   }`}
                 >
-                  {info.risk}
+                  {tokenLabel(t, 'capability_risk', info.risk)}
                 </span>
               </div>
             );

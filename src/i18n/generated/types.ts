@@ -3766,6 +3766,24 @@ export type Translations = {
       app_running: string;
       env_var_one: string;
       env_var_other: string;
+      capabilities: {
+        file_read_label: string;
+        file_read_description: string;
+        file_write_label: string;
+        file_write_description: string;
+        process_spawn_label: string;
+        process_spawn_description: string;
+        network_local_label: string;
+        network_local_description: string;
+        clipboard_read_label: string;
+        clipboard_read_description: string;
+        notify_label: string;
+        notify_description: string;
+        env_read_label: string;
+        env_read_description: string;
+        system_api_label: string;
+        system_api_description: string;
+      };
     };
     picker_section: {
       no_connectors: string;
@@ -9041,6 +9059,11 @@ export type Translations = {
       high: string;
       medium: string;
       low: string;
+    };
+    capability_risk: {
+      low: string;
+      medium: string;
+      high: string;
     };
     goal_state: {
       pending: string;

@@ -3759,7 +3759,25 @@
       "app_installed": "Installed",
       "app_running": "Running",
       "env_var_one": "{count} env var",
-      "env_var_other": "{count} env vars"
+      "env_var_other": "{count} env vars",
+      "capabilities": {
+        "file_read_label": "File Read",
+        "file_read_description": "Read files from your filesystem",
+        "file_write_label": "File Write",
+        "file_write_description": "Create or modify files on your filesystem",
+        "process_spawn_label": "Launch Apps",
+        "process_spawn_description": "Launch desktop applications",
+        "network_local_label": "Local Network",
+        "network_local_description": "Connect to services running on your machine",
+        "clipboard_read_label": "Clipboard",
+        "clipboard_read_description": "Read your clipboard contents",
+        "notify_label": "Notifications",
+        "notify_description": "Send desktop notifications",
+        "env_read_label": "Environment",
+        "env_read_description": "Read environment variables",
+        "system_api_label": "System API",
+        "system_api_description": "Use OS APIs to control applications"
+      }
     },
     "picker_section": {
       "no_connectors": "No connectors found",
@@ -9035,6 +9053,11 @@
       "high": "High",
       "medium": "Medium",
       "low": "Low"
+    },
+    "capability_risk": {
+      "low": "low",
+      "medium": "medium",
+      "high": "high"
     },
     "goal_state": {
       "pending": "Pending",

@@ -4,52 +4,55 @@ import type { DiscoveredApp } from "@/lib/bindings/DiscoveredApp";
 import type { ImportedMcpServer } from "@/lib/bindings/ImportedMcpServer";
 import type { DesktopCapability } from "@/lib/bindings/DesktopCapability";
 import type { DesktopConnectorManifest } from "@/lib/bindings/DesktopConnectorManifest";
+import type { Translations } from "@/i18n/en";
 export type { DiscoveredApp, ImportedMcpServer, DesktopCapability, DesktopConnectorManifest };
 
 // -- Capability metadata ------------------------------------------------
 
+type CapabilityLabelKey = keyof Translations["vault"]["desktop_discovery"]["capabilities"];
+
 export const CAPABILITY_INFO: Record<
   DesktopCapability,
-  { label: string; description: string; risk: "low" | "medium" | "high" }
+  { labelKey: CapabilityLabelKey; descriptionKey: CapabilityLabelKey; risk: "low" | "medium" | "high" }
 > = {
   file_read: {
-    label: "File Read",
-    description: "Read files from your filesystem",
+    labelKey: "file_read_label",
+    descriptionKey: "file_read_description",
     risk: "low",
   },
   file_write: {
-    label: "File Write",
-    description: "Create or modify files on your filesystem",
+    labelKey: "file_write_label",
+    descriptionKey: "file_write_description",
     risk: "high",
   },
   process_spawn: {
-    label: "Launch Apps",
-    description: "Launch desktop applications",
+    labelKey: "process_spawn_label",
+    descriptionKey: "process_spawn_description",
     risk: "high",
   },
   network_local: {
-    label: "Local Network",
-    description: "Connect to services running on your machine",
+    labelKey: "network_local_label",
+    descriptionKey: "network_local_description",
     risk: "medium",
   },
   clipboard_read: {
-    label: "Clipboard",
-    description: "Read your clipboard contents",
+    labelKey: "clipboard_read_label",
+    descriptionKey: "clipboard_read_description",
     risk: "medium",
   },
   notify: {
-    label: "Notifications",
-    description: "Send desktop notifications",
+    labelKey: "notify_label",
+    descriptionKey: "notify_description",
     risk: "low",
   },
   env_read: {
-    label: "Environment",
-    description: "Read environment variables",
+    labelKey: "env_read_label",
+    descriptionKey: "env_read_description",
     risk: "low",
   },
   system_api: {
-    label: "System API",
-    description: "Use OS APIs to control applications",
+    labelKey: "system_api_label",
+    descriptionKey: "system_api_description",
     risk: "high",
   },
 };
