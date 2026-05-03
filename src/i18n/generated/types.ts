@@ -3810,6 +3810,8 @@ export type Translations = {
     design_phases: {
       saving: string;
       elapsed_label: string;
+      negotiator_start: string;
+      test_connection_hint: string;
       credential_created: string;
       step_connecting: string;
       step_connecting_desc: string;

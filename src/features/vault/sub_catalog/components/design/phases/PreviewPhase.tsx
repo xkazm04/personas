@@ -99,7 +99,7 @@ export function PreviewPhase() {
                 onClick={() => setShowNegotiator(true)}
                 className={`shrink-0 px-3 py-1.5 rounded-modal typo-body font-medium transition-colors ${AI_STATUS.bg} ${AI_STATUS.border} ${AI_STATUS.text} hover:opacity-90`}
               >
-                Start
+                {dp.negotiator_start}
               </button>
             </div>
           ) : (
@@ -128,7 +128,7 @@ export function PreviewPhase() {
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
-          placeholder={`${result.connector.label} Credential`}
+          placeholder={tx(t.vault.credential_forms.credential_suffix, { name: result.connector.label })}
           className="w-full px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground typo-body placeholder-muted-foreground/30 focus-ring focus-visible:border-primary/40 transition-all"
         />
       </div>
@@ -153,17 +153,17 @@ export function PreviewPhase() {
         onSave={onSave}
         onOAuthConsent={isOAuthFlow(credentialFlow) ? onOAuthConsent : undefined}
         oauthConsentLabel={isAuthorizingOAuth
-          ? `Authorizing with ${providerLabel}...`
-          : `Authorize with ${providerLabel}`}
+          ? tx(t.vault.body.authorizing, { name: providerLabel })
+          : tx(t.vault.body.authorize_with, { name: providerLabel })}
         oauthConsentDisabled={isAuthorizingOAuth}
         isAuthorizingOAuth={isAuthorizingOAuth}
         oauthPollingMessage={oauthStatusMessage}
         oauthConsentHint={getOAuthConsentHint(credentialFlow)}
         oauthConsentSuccessBadge={oauthConsentCompletedAt
-          ? `${providerLabel} consent completed at ${oauthConsentCompletedAt}`
+          ? tx(t.vault.body.consent_completed, { name: providerLabel, time: oauthConsentCompletedAt })
           : undefined}
         onHealthcheck={showsHealthcheck(credentialFlow) ? onHealthcheck : undefined}
-        testHint="Run Test Connection to let Claude choose the best endpoint for this service and verify your entered credentials dynamically."
+        testHint={dp.test_connection_hint}
         onValuesChanged={onValuesChanged}
         isHealthchecking={isHealthchecking}
         healthcheckResult={healthcheckResult}
