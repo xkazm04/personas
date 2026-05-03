@@ -9,6 +9,7 @@ import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { LICENSE_ICON } from './connectorCardConstants';
 import type { RecipeIndicator } from './useRecipeIndicators';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface ConnectorCardProps {
   connector: ConnectorDefinition;
@@ -46,6 +47,8 @@ const labelVariants: Variants = {
 };
 
 export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType }: ConnectorCardProps) {
+  const { t, tx } = useTranslation();
+  const ps = t.vault.picker_section;
   const authMethods = getAuthMethods(connector);
   const tier = getLicenseTier(connector.name, connector.metadata);
   const tierMeta = LICENSE_TIER_META[tier];
@@ -76,7 +79,7 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
       <motion.span
         variants={badgeSubtle}
         className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-card border ${tierMeta.bgClass} ${tierMeta.borderClass}`}
-        title={`${tierMeta.label} license`}
+        title={tx(ps.tier_license_tooltip, { tier: tierMeta.label })}
       >
         <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
       </motion.span>
@@ -107,7 +110,7 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
           className="absolute bottom-1.5 left-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-orange-500/10 border-orange-500/20 text-orange-400"
         >
           <Monitor className="w-2.5 h-2.5" />
-          Local
+          {ps.desktop_bridge_badge}
         </motion.span>
       )}
 
@@ -116,10 +119,13 @@ export function ConnectorCard({ connector, isOwned, recipeIndicator, onPickType 
         <motion.span
           variants={badgeStrong}
           className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-          title={`Verified setup — used ${recipeIndicator.usageCount} ${recipeIndicator.usageCount === 1 ? 'time' : 'times'}`}
+          title={tx(
+            recipeIndicator.usageCount === 1 ? ps.recipe_used_one : ps.recipe_used_other,
+            { count: recipeIndicator.usageCount },
+          )}
         >
           <BadgeCheck className="w-2.5 h-2.5" />
-          {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : 'Cached'}
+          {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : ps.recipe_cached}
         </motion.span>
       )}
 

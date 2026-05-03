@@ -3660,7 +3660,12 @@
       "open_setup_page": "Open {label} setup page",
       "role_developer": "Developer",
       "role_support": "Support",
-      "role_manager": "Manager"
+      "role_manager": "Manager",
+      "tier_license_tooltip": "{tier} license",
+      "desktop_bridge_badge": "Local",
+      "recipe_cached": "Cached",
+      "recipe_used_one": "Verified setup — used {count} time",
+      "recipe_used_other": "Verified setup — used {count} times"
     },
     "cli_capture": {
       "cta": "Import from local CLI",

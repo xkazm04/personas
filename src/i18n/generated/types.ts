@@ -3667,6 +3667,11 @@ export type Translations = {
       role_developer: string;
       role_support: string;
       role_manager: string;
+      tier_license_tooltip: string;
+      desktop_bridge_badge: string;
+      recipe_cached: string;
+      recipe_used_one: string;
+      recipe_used_other: string;
     };
     cli_capture: {
       cta: string;
