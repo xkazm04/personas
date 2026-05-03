@@ -29,16 +29,6 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
-  // Close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [open]);
-
   // Reset when modal opens
   useEffect(() => {
     if (open) {
