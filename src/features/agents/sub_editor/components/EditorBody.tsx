@@ -100,11 +100,13 @@ export function EditorBody() {
   const { isStarter } = useTier();
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   useEffect(() => {
-    if (isStarter && (editorTab === 'activity' || editorTab === 'matrix' || editorTab === 'lab')) {
-      setEditorTab('use-cases');
-    }
-    // Legacy persisted state: the matrix tab was removed; bounce users to use-cases.
+    // The matrix tab was removed; bounce everyone (legacy persisted state) to use-cases.
     if (editorTab === 'matrix') {
+      setEditorTab('use-cases');
+      return;
+    }
+    // Starter tier hides activity / lab; redirect those too.
+    if (isStarter && (editorTab === 'activity' || editorTab === 'lab')) {
       setEditorTab('use-cases');
     }
   }, [isStarter, editorTab, setEditorTab]);
