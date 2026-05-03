@@ -7,6 +7,7 @@ import type { SchemaFormConfig } from './schemaFormTypes';
 import { sanitize } from './schemaFormTypes';
 import { ExtraFieldRenderer } from './ExtraFieldRenderers';
 import { SchemaFormHeader, SchemaNameField, SchemaSubTypeSelector } from './SchemaFormFields';
+import { silentCatch } from '@/lib/silentCatch';
 
 // Re-export types and configs for backwards compatibility
 export type { SchemaSubType, ExtraFieldDef, SchemaFormConfig } from './schemaFormTypes';
@@ -152,7 +153,11 @@ export function CredentialSchemaForm({
       if (createdConnectorId) {
         try {
           await deleteConnectorDefinition(createdConnectorId);
-        } catch { /* intentional: non-critical -- rollback is best-effort */ }
+        } catch (rollbackErr) {
+          // Rollback is best-effort — but we still want a Sentry breadcrumb so
+          // an orphaned connector after a save failure isn't invisible.
+          silentCatch('CredentialSchemaForm:rollbackConnector')(rollbackErr);
+        }
       }
       setError(err instanceof Error ? err.message : `Failed to save ${config.title.toLowerCase()}`);
     }
