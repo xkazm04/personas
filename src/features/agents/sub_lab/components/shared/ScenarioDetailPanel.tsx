@@ -1,8 +1,12 @@
+import { useEffect, useState } from 'react';
 import { Target, FileText, Shield, Lightbulb, MessageSquare, X, ChevronDown, Zap } from 'lucide-react';
 import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { UserRating } from './UserRating';
 import { LabEventStream } from './LabEventStream';
+import { labGetToolCalls } from '@/api/agents/lab';
+import { silentCatch } from '@/lib/silentCatch';
 import type { LabResultKind } from '@/lib/bindings/LabResultKind';
+import type { LabToolCall } from '@/lib/bindings/LabToolCall';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScenarioResult {
@@ -115,6 +119,31 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
   const composite = compositeScoreFromRow(ta, oq, pc);
 
   const { structured, plain } = parseRationale(result.rationale);
+
+  // Tool calls now come from the lab_tool_calls child table via IPC. The
+  // legacy result.toolCallsExpected/Actual JSON-string fields are still on
+  // the row during the dual-write phase but the canonical render uses the
+  // child-table query so post-cutover data still displays correctly.
+  // ADR: 2026-05-02-lab-tool-calls-child-table.
+  const [toolCalls, setToolCalls] = useState<LabToolCall[] | null>(null);
+  useEffect(() => {
+    if (!resultId || !resultKind) {
+      setToolCalls(null);
+      return;
+    }
+    let cancelled = false;
+    labGetToolCalls(resultId, resultKind)
+      .then((rows) => {
+        if (!cancelled) setToolCalls(rows);
+      })
+      .catch(silentCatch('labGetToolCalls'));
+    return () => {
+      cancelled = true;
+    };
+  }, [resultId, resultKind]);
+
+  const expectedCalls = (toolCalls ?? []).filter((c) => c.variant === 'expected');
+  const actualCalls = (toolCalls ?? []).filter((c) => c.variant === 'actual');
 
   return (
     <div className="border border-primary/15 rounded-modal bg-gradient-to-b from-secondary/20 to-background/30 overflow-hidden">
@@ -236,7 +265,7 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
         )}
 
         {/* Tool calls */}
-        {(result.toolCallsExpected || result.toolCallsActual) && (
+        {(expectedCalls.length > 0 || actualCalls.length > 0) && (
           <details className="group">
             <summary className="flex items-center gap-1.5 typo-label font-semibold text-foreground uppercase tracking-wider cursor-pointer hover:text-muted-foreground/80">
               <ChevronDown className="w-3 h-3 transition-transform group-open:rotate-180" />
@@ -244,15 +273,19 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
             </summary>
             <div className="mt-2 grid grid-cols-2 gap-3">
               <div>
-                <span className="typo-caption text-foreground block mb-1">Expected</span>
+                <span className="typo-caption text-foreground block mb-1">{t.agents.lab.expected_label}</span>
                 <pre className="typo-caption text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-                  {result.toolCallsExpected ?? t.agents.lab.none_specified}
+                  {expectedCalls.length > 0
+                    ? expectedCalls.map((c) => c.toolName).join('\n')
+                    : t.agents.lab.none_specified}
                 </pre>
               </div>
               <div>
-                <span className="typo-caption text-foreground block mb-1">Actual</span>
+                <span className="typo-caption text-foreground block mb-1">{t.agents.lab.actual_label}</span>
                 <pre className="typo-caption text-foreground bg-background/50 rounded-card p-2 border border-primary/5 max-h-[120px] overflow-y-auto whitespace-pre-wrap">
-                  {result.toolCallsActual ?? t.agents.lab.none_label}
+                  {actualCalls.length > 0
+                    ? actualCalls.map((c) => c.toolName).join('\n')
+                    : t.agents.lab.none_label}
                 </pre>
               </div>
             </div>
