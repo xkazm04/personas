@@ -6,7 +6,7 @@ import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types'
 export const QUICK_START_SERVICES = ['openai', 'slack', 'github', 'linear'] as const;
 
 export type HealthFilter = 'all' | 'healthy' | 'failing' | 'untested';
-export type SortKey = 'name' | 'created' | 'last-used' | 'health';
+export type SortKey = 'name' | 'type' | 'created' | 'last-used' | 'health';
 
 export function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -24,6 +24,7 @@ export function healthFilterLabel(f: HealthFilter): string {
 export function sortLabel(s: SortKey): string {
   switch (s) {
     case 'name': return 'Name';
+    case 'type': return 'Type';
     case 'created': return 'Created';
     case 'last-used': return 'Last used';
     case 'health': return 'Health status';
@@ -46,14 +47,31 @@ export interface GroupedCredentials {
   items: { credential: CredentialMetadata; connector?: ConnectorDefinition }[];
 }
 
+export interface CredentialFilterOptions {
+  searchTerm?: string;
+  selectedTags?: string[];
+  healthFilter?: HealthFilter;
+  /** Connector category filter; empty string = all categories. */
+  categoryFilter?: string;
+  /** Sort direction; defaults to 'asc' for name/type, 'desc' for created/last-used, asc for health. */
+  sortDirection?: 'asc' | 'desc';
+  sortKey: SortKey;
+}
+
 export function filterAndSortCredentials(
   credentials: CredentialMetadata[],
-  searchTerm: string | undefined,
-  selectedTags: string[],
-  healthFilter: HealthFilter,
-  sortKey: SortKey,
+  options: CredentialFilterOptions,
   getConnectorForType: (type: string) => ConnectorDefinition | undefined,
 ): CredentialMetadata[] {
+  const {
+    searchTerm,
+    selectedTags = [],
+    healthFilter = 'all',
+    categoryFilter = '',
+    sortDirection,
+    sortKey,
+  } = options;
+
   let result = credentials;
 
   // Text search
@@ -77,6 +95,14 @@ export function filterAndSortCredentials(
     });
   }
 
+  // Category filter (post-lookup against connector definition)
+  if (categoryFilter) {
+    result = result.filter((cred) => {
+      const conn = getConnectorForType(cred.service_type);
+      return (conn?.category || 'other') === categoryFilter;
+    });
+  }
+
   // Health filter
   if (healthFilter !== 'all') {
     result = result.filter((cred) => {
@@ -88,17 +114,26 @@ export function filterAndSortCredentials(
   }
 
   // Sort
+  const dir = sortDirection === 'desc' ? -1 : 1;
   const sorted = [...result];
   sorted.sort((a, b) => {
     switch (sortKey) {
       case 'name':
-        return a.name.localeCompare(b.name);
+        return dir * a.name.localeCompare(b.name);
+      case 'type': {
+        const aLabel = getConnectorForType(a.service_type)?.label || a.service_type;
+        const bLabel = getConnectorForType(b.service_type)?.label || b.service_type;
+        return dir * aLabel.localeCompare(bLabel);
+      }
       case 'created':
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        // Default for "created" remains newest-first when no explicit direction provided.
+        return sortDirection === undefined
+          ? new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          : dir * (new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
       case 'last-used': {
         const aTime = a.last_used_at ? new Date(a.last_used_at).getTime() : 0;
         const bTime = b.last_used_at ? new Date(b.last_used_at).getTime() : 0;
-        return bTime - aTime;
+        return sortDirection === undefined ? bTime - aTime : dir * (aTime - bTime);
       }
       case 'health': {
         const toResult = (m: CredentialMetadata) =>
@@ -107,7 +142,7 @@ export function filterAndSortCredentials(
             : null;
         const scoreA = computeHealthScore(toResult(a), null).score;
         const scoreB = computeHealthScore(toResult(b), null).score;
-        return scoreA - scoreB;
+        return dir * (scoreA - scoreB);
       }
       default:
         return 0;

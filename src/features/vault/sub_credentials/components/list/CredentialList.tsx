@@ -1,15 +1,16 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { type CredentialListProps, capitalize } from './credentialListTypes';
+import { type CredentialListProps, type SortKey, type HealthFilter, capitalize } from './credentialListTypes';
 import { useCredentialListFilters } from './useCredentialListFilters';
 import { EmptyStateView } from './EmptyStateView';
 import { type CredRow, useCredentialColumns } from './CredentialListColumns';
 import { CredentialDetailModals } from './CredentialDetailModals';
 import { useTranslation } from '@/i18n/useTranslation';
 
-type SortDir = 'asc' | 'desc';
+const SORT_KEYS: ReadonlySet<string> = new Set(['name', 'type', 'created', 'last-used', 'health']);
+const HEALTH_FILTERS: ReadonlySet<string> = new Set(['', 'healthy', 'failing', 'untested']);
 
 export function CredentialList({
   credentials,
@@ -31,15 +32,18 @@ export function CredentialList({
     selectedIsDatabase,
     filteredCredentials,
     getConnectorForType,
+    healthFilter,
+    setHealthFilter,
+    categoryFilter,
+    setCategoryFilter,
+    sortKey,
+    setSortKey,
+    sortDirection,
+    setSortDirection,
   } = useCredentialListFilters(credentials, connectorDefinitions, searchTerm);
 
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [healthFilter, setHealthFilter] = useState('');
-  const [sortKey, setSortKey] = useState<string | null>('name');
-  const [sortDir, setSortDir] = useState<SortDir>('asc');
-
-  // Build rows with connector info
-  const allRows: CredRow[] = useMemo(
+  // Build rows from the hook's already-filtered+sorted credentials list.
+  const displayRows: CredRow[] = useMemo(
     () => filteredCredentials.map((c) => ({
       credential: c,
       connector: getConnectorForType(c.service_type),
@@ -47,11 +51,12 @@ export function CredentialList({
     [filteredCredentials, getConnectorForType],
   );
 
-  // Derive categories for filter
+  // Derive categories from the unfiltered set so the dropdown stays stable
+  // when the user toggles a category.
   const categoryOptions = useMemo(() => {
     const cats = new Set<string>();
-    for (const r of allRows) {
-      cats.add(r.connector?.category || 'other');
+    for (const c of credentials) {
+      cats.add(getConnectorForType(c.service_type)?.category || 'other');
     }
     return [
       { value: '', label: `All Categories (${cats.size})` },
@@ -60,7 +65,7 @@ export function CredentialList({
         label: capitalize(c),
       })),
     ];
-  }, [allRows]);
+  }, [credentials, getConnectorForType]);
 
   const healthOptions = useMemo(() => [
     { value: '', label: 'All Health' },
@@ -69,47 +74,22 @@ export function CredentialList({
     { value: 'untested', label: 'Untested' },
   ], []);
 
-  // Apply local filters + sort
-  const displayRows = useMemo(() => {
-    let rows = allRows;
-    if (categoryFilter) {
-      rows = rows.filter((r) => (r.connector?.category || 'other') === categoryFilter);
-    }
-    if (healthFilter) {
-      rows = rows.filter((r) => {
-        const s = r.credential.healthcheck_last_success;
-        if (healthFilter === 'untested') return s === null;
-        if (healthFilter === 'healthy') return s === true;
-        if (healthFilter === 'failing') return s === false;
-        return true;
-      });
-    }
-    if (sortKey) {
-      const dir = sortDir === 'asc' ? 1 : -1;
-      rows = [...rows].sort((a, b) => {
-        switch (sortKey) {
-          case 'name':
-            return dir * a.credential.name.localeCompare(b.credential.name);
-          case 'type':
-            return dir * (a.connector?.label || a.credential.service_type).localeCompare(b.connector?.label || b.credential.service_type);
-          case 'created':
-            return dir * (new Date(a.credential.created_at).getTime() - new Date(b.credential.created_at).getTime());
-          default:
-            return 0;
-        }
-      });
-    }
-    return rows;
-  }, [allRows, categoryFilter, healthFilter, sortKey, sortDir]);
+  // The DataGrid's column-filter controls expose plain string state. Convert
+  // the empty-string "all" sentinel to/from the hook's HealthFilter union.
+  const healthFilterStr = healthFilter === 'all' ? '' : healthFilter;
+  const setHealthFilterStr = useCallback((v: string) => {
+    setHealthFilter(HEALTH_FILTERS.has(v) ? ((v || 'all') as HealthFilter) : 'all');
+  }, [setHealthFilter]);
 
   const handleSort = useCallback((key: string) => {
+    if (!SORT_KEYS.has(key)) return;
     if (sortKey === key) {
-      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortKey(key);
-      setSortDir('asc');
+      setSortKey(key as SortKey);
+      setSortDirection('asc');
     }
-  }, [sortKey]);
+  }, [sortKey, sortDirection, setSortKey, setSortDirection]);
 
   const columns = useCredentialColumns({
     isSimple,
@@ -118,8 +98,8 @@ export function CredentialList({
     categoryFilter,
     setCategoryFilter,
     healthOptions,
-    healthFilter,
-    setHealthFilter,
+    healthFilter: healthFilterStr,
+    setHealthFilter: setHealthFilterStr,
     onDelete,
   });
 
@@ -147,7 +127,7 @@ export function CredentialList({
         getRowKey={(row) => row.credential.id}
         onRowClick={(row) => { if (!pendingDeleteIds.has(row.credential.id)) setSelectedId(row.credential.id); }}
         sortKey={sortKey}
-        sortDirection={sortDir}
+        sortDirection={sortDirection}
         onSort={handleSort}
         pageSize={25}
         emptyTitle={t.vault.credential_list.no_match}

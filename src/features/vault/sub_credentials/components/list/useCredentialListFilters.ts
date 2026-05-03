@@ -17,7 +17,9 @@ export function useCredentialListFilters(
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [openDropdown, setOpenDropdown] = useState<'health' | 'sort' | null>(null);
 
   const allTags = useMemo(() => collectAllTags(credentials), [credentials]);
@@ -76,8 +78,12 @@ export function useCredentialListFilters(
   }, [connectorMap, googleFallbackConnector]);
 
   const filteredCredentials = useMemo(
-    () => filterAndSortCredentials(credentials, searchTerm, selectedTags, healthFilter, sortKey, getConnectorForType),
-    [credentials, searchTerm, selectedTags, healthFilter, sortKey, getConnectorForType],
+    () => filterAndSortCredentials(
+      credentials,
+      { searchTerm, selectedTags, healthFilter, categoryFilter, sortKey, sortDirection },
+      getConnectorForType,
+    ),
+    [credentials, searchTerm, selectedTags, healthFilter, categoryFilter, sortKey, sortDirection, getConnectorForType],
   );
 
   const selectedCredential = selectedId ? credentials.find((c) => c.id === selectedId) : undefined;
@@ -95,7 +101,9 @@ export function useCredentialListFilters(
     selectedId, setSelectedId,
     selectedTags, selectedCredential, selectedConnector, selectedIsDatabase,
     healthFilter, setHealthFilter,
+    categoryFilter, setCategoryFilter,
     sortKey, setSortKey,
+    sortDirection, setSortDirection,
     openDropdown, setOpenDropdown,
     allTags, hasFilters,
     toggleTag, clearFilters,
