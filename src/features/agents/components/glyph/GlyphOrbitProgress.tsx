@@ -3,8 +3,14 @@ import { useEffect, useRef, useState } from "react";
 
 interface GlyphOrbitProgressProps {
   size: number;
-  /** Seconds for one full revolution. Defaults to 60s — matches the user's
-   *  expectation that early build feedback is gradual rather than frantic. */
+  /** Seconds for one full revolution. Defaults to 180s (3 min) — the
+   *  build can legitimately take 1-3 minutes for non-trivial intents,
+   *  and a 60s loop completing several times before the build lands
+   *  reads as "stuck" even when the LLM is actively working. A longer
+   *  cycle keeps the visual cue honest: motion = work, no motion =
+   *  stalled. The orbit fast-forwards to 360° on completion regardless
+   *  of how far through the cycle it was, so this doesn't penalise
+   *  builds that finish quickly. */
   duration?: number;
   /** When true, run the slow loop. When false, transition through a
    *  brief "completing" state (arc rushes to 360°, comet to 0°, both
@@ -33,7 +39,7 @@ const FADE_DURATION_S = 0.2;
  *  interpolation from-current-value is what we actually want. */
 export function GlyphOrbitProgress({
   size,
-  duration = 60,
+  duration = 180,
   active = true,
 }: GlyphOrbitProgressProps) {
   const center = size / 2;

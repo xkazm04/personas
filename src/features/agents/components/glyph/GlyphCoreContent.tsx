@@ -93,6 +93,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
   }
 
   if (isBuilding) {
+    const hasPending = !!pendingQuestions && pendingQuestions.length > 0;
     return (
       <motion.div
         key="building"
@@ -105,8 +106,17 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         </div>
         <div className="flex items-center gap-1.5 typo-caption text-foreground/60 uppercase tracking-[0.18em]">
           <Loader2 className="w-3 h-3 animate-spin" />
-          {pendingQuestions && pendingQuestions.length > 0 ? "Awaiting your answer" : "Weaving intent"}
+          {hasPending ? "Awaiting your answer" : "Weaving intent"}
         </div>
+        {/* Backgroundability hint — surfaces only when the LLM is doing
+            work the user can't help with. We don't show this while
+            answers are pending (the user IS the bottleneck) or in any
+            other phase. Stays subtle: muted text, max-w cap, no chrome. */}
+        {!hasPending && (
+          <span className="mt-2 typo-caption text-foreground/45 text-center max-w-[220px] leading-snug">
+            You can use the app freely while this builds — the draft will keep working in the background.
+          </span>
+        )}
       </motion.div>
     );
   }

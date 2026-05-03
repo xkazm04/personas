@@ -23,7 +23,9 @@
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
 import { useAgentStore } from "@/stores/agentStore";
 import type { PersistedBuildSession } from "@/lib/types/buildTypes";
-import { appLogger } from "@/lib/logger";
+import { createLogger } from "@/lib/log";
+
+const log = createLogger("buildSessionBootstrap");
 
 /**
  * List every non-terminal build session and hydrate each into the store.
@@ -43,7 +45,7 @@ export async function bootstrapActiveBuildSessions(): Promise<void> {
       { personaId: null },
     );
   } catch (err) {
-    appLogger.warn("bootstrapActiveBuildSessions: list_build_sessions failed", {
+    log.warn("bootstrapActiveBuildSessions: list_build_sessions failed", {
       error: err instanceof Error ? err.message : String(err),
     });
     return;
@@ -57,14 +59,14 @@ export async function bootstrapActiveBuildSessions(): Promise<void> {
       store.hydrateBuildSession(session);
     } catch (err) {
       // A bad session row should not break the rest of the list.
-      appLogger.warn("bootstrapActiveBuildSessions: failed to hydrate session", {
+      log.warn("bootstrapActiveBuildSessions: failed to hydrate session", {
         sessionId: session.id,
         error: err instanceof Error ? err.message : String(err),
       });
     }
   }
 
-  appLogger.info("bootstrapActiveBuildSessions: hydrated active drafts", {
+  log.info("bootstrapActiveBuildSessions: hydrated active drafts", {
     count: sessions.length,
   });
 }
