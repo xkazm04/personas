@@ -33,8 +33,9 @@ pub struct PersonaTestResult {
     pub provider: String,
     pub status: String,
     pub output_preview: Option<String>,
-    pub tool_calls_expected: Option<Json<Vec<String>>>,
-    pub tool_calls_actual: Option<Json<Vec<String>>>,
+    // tool_calls_expected/actual moved to the lab_tool_calls child table —
+    // fetched separately via labGetToolCalls IPC. ADR:
+    // 2026-05-02-lab-tool-calls-child-table.
     #[ts(type = "number | null")]
     pub tool_accuracy_score: Option<i32>,
     #[ts(type = "number | null")]

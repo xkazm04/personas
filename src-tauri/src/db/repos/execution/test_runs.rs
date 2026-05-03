@@ -31,8 +31,6 @@ fn row_to_result(row: &rusqlite::Row) -> rusqlite::Result<PersonaTestResult> {
         provider: row.get("provider")?,
         status: row.get("status")?,
         output_preview: row.get("output_preview")?,
-        tool_calls_expected: row.get("tool_calls_expected")?,
-        tool_calls_actual: row.get("tool_calls_actual")?,
         tool_accuracy_score: row.get("tool_accuracy_score")?,
         output_quality_score: row.get("output_quality_score")?,
         protocol_compliance: row.get("protocol_compliance")?,

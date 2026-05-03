@@ -4,8 +4,6 @@ export interface LabResultBase {
   provider: string;
   status: string;
   outputPreview: string | null;
-  toolCallsExpected: string[] | null;
-  toolCallsActual: string[] | null;
   toolAccuracyScore: number | null;
   outputQualityScore: number | null;
   protocolCompliance: number | null;

@@ -591,8 +591,9 @@ CREATE TABLE IF NOT EXISTS persona_test_results (
     provider              TEXT NOT NULL DEFAULT 'anthropic',
     status                TEXT NOT NULL DEFAULT 'pending',
     output_preview        TEXT,
-    tool_calls_expected   TEXT,
-    tool_calls_actual     TEXT,
+    -- tool_calls_expected/actual JSON columns retired in lab_tool_calls ADR
+    -- (2026-05-02-lab-tool-calls-child-table). Replaced by the lab_tool_calls
+    -- child table; legacy DBs get the columns dropped by an incremental ALTER.
     tool_accuracy_score   INTEGER,
     output_quality_score  INTEGER,
     protocol_compliance   INTEGER,
@@ -755,8 +756,7 @@ CREATE TABLE IF NOT EXISTS lab_arena_results (
     provider              TEXT NOT NULL DEFAULT 'anthropic',
     status                TEXT NOT NULL DEFAULT 'pending',
     output_preview        TEXT,
-    tool_calls_expected   TEXT,
-    tool_calls_actual     TEXT,
+    -- tool_calls_expected/actual retired in lab_tool_calls ADR — see persona_test_results note above.
     tool_accuracy_score   INTEGER,
     output_quality_score  INTEGER,
     protocol_compliance   INTEGER,
@@ -803,8 +803,7 @@ CREATE TABLE IF NOT EXISTS lab_ab_results (
     provider              TEXT NOT NULL DEFAULT 'anthropic',
     status                TEXT NOT NULL DEFAULT 'pending',
     output_preview        TEXT,
-    tool_calls_expected   TEXT,
-    tool_calls_actual     TEXT,
+    -- tool_calls_expected/actual retired in lab_tool_calls ADR — see persona_test_results note above.
     tool_accuracy_score   INTEGER,
     output_quality_score  INTEGER,
     protocol_compliance   INTEGER,
@@ -849,8 +848,7 @@ CREATE TABLE IF NOT EXISTS lab_matrix_results (
     provider              TEXT NOT NULL DEFAULT 'anthropic',
     status                TEXT NOT NULL DEFAULT 'pending',
     output_preview        TEXT,
-    tool_calls_expected   TEXT,
-    tool_calls_actual     TEXT,
+    -- tool_calls_expected/actual retired in lab_tool_calls ADR — see persona_test_results note above.
     tool_accuracy_score   INTEGER,
     output_quality_score  INTEGER,
     protocol_compliance   INTEGER,

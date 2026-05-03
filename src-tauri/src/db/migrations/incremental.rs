@@ -321,8 +321,12 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
              SELECT id, persona_id, status, models_tested, scenarios_count, summary, error, created_at, completed_at
              FROM persona_test_runs;
 
-             INSERT OR IGNORE INTO lab_arena_results (id, run_id, scenario_name, model_id, provider, status, output_preview, tool_calls_expected, tool_calls_actual, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at)
-             SELECT id, test_run_id, scenario_name, model_id, provider, status, output_preview, tool_calls_expected, tool_calls_actual, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at
+             -- tool_calls_expected/actual omitted: the lab_tool_calls ADR
+             -- drops those columns from both source and dest tables. Tool
+             -- calls for any persona_test_results rows that still have JSON
+             -- data are picked up separately by backfill_lab_tool_calls.
+             INSERT OR IGNORE INTO lab_arena_results (id, run_id, scenario_name, model_id, provider, status, output_preview, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at)
+             SELECT id, test_run_id, scenario_name, model_id, provider, status, output_preview, tool_accuracy_score, output_quality_score, protocol_compliance, input_tokens, output_tokens, cost_usd, duration_ms, error_message, created_at
              FROM persona_test_results;"
         )?;
         tracing::info!("Migrated {} test runs to lab_arena_runs", old_test_count);
@@ -392,8 +396,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 provider              TEXT NOT NULL DEFAULT 'anthropic',
                 status                TEXT NOT NULL DEFAULT 'pending',
                 output_preview        TEXT,
-                tool_calls_expected   TEXT,
-                tool_calls_actual     TEXT,
+                -- tool_calls_expected/actual retired in lab_tool_calls ADR.
                 tool_accuracy_score   INTEGER,
                 output_quality_score  INTEGER,
                 protocol_compliance   INTEGER,
@@ -2042,8 +2045,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             provider             TEXT NOT NULL DEFAULT '',
             status               TEXT NOT NULL DEFAULT 'pending',
             output_preview       TEXT,
-            tool_calls_expected  TEXT,
-            tool_calls_actual    TEXT,
+            -- tool_calls_expected/actual retired in lab_tool_calls ADR.
             tool_accuracy_score  INTEGER,
             output_quality_score INTEGER,
             protocol_compliance  INTEGER,
@@ -2393,8 +2395,42 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_lab_tool_calls_tool ON lab_tool_calls(tool_name);"
     )?;
     backfill_lab_tool_calls(conn)?;
+    drop_legacy_tool_calls_columns(conn);
 
     Ok(())
+}
+
+/// Drop the legacy `tool_calls_expected/actual` JSON columns from the 5 lab
+/// result tables and `persona_test_results` now that `lab_tool_calls` is the
+/// canonical source. Idempotent: each `ALTER TABLE ... DROP COLUMN` is wrapped
+/// in `let _ =` so the duplicate-no-such-column error on re-run is the
+/// success path. SQLite 3.35+ supports DROP COLUMN natively (rusqlite 0.38
+/// bundles a newer version), so no table-recreate-and-rename is needed.
+///
+/// Tables that don't exist yet on a fresh DB are no-ops: the ALTER will fail
+/// silently and the swallowed error is the only signal — but the table will
+/// be created with the new (column-less) shape by initial.rs / incremental
+/// migrations, so the end state is correct either way.
+///
+/// ADR: 2026-05-02-lab-tool-calls-child-table.
+fn drop_legacy_tool_calls_columns(conn: &Connection) {
+    let drops: &[&str] = &[
+        "ALTER TABLE lab_arena_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE lab_arena_results DROP COLUMN tool_calls_actual",
+        "ALTER TABLE lab_ab_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE lab_ab_results DROP COLUMN tool_calls_actual",
+        "ALTER TABLE lab_matrix_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE lab_matrix_results DROP COLUMN tool_calls_actual",
+        "ALTER TABLE lab_consensus_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE lab_consensus_results DROP COLUMN tool_calls_actual",
+        "ALTER TABLE lab_eval_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE lab_eval_results DROP COLUMN tool_calls_actual",
+        "ALTER TABLE persona_test_results DROP COLUMN tool_calls_expected",
+        "ALTER TABLE persona_test_results DROP COLUMN tool_calls_actual",
+    ];
+    for sql in drops {
+        let _ = conn.execute_batch(sql);
+    }
 }
 
 /// Backfill `lab_tool_calls` from the legacy JSON-array columns on the 5 lab
@@ -2434,6 +2470,22 @@ fn backfill_lab_tool_calls(conn: &Connection) -> Result<(), AppError> {
             .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1")?
             .query_row([table], |row| row.get(0))?;
         if table_exists == 0 {
+            continue;
+        }
+
+        // Skip tables whose legacy columns were already dropped on a
+        // prior run. This happens when the first backfill found zero
+        // legacy rows (so `lab_tool_calls` stayed empty), then the
+        // drop_legacy_tool_calls_columns step removed the columns. On
+        // every subsequent startup the empty-`lab_tool_calls` guard
+        // above doesn't fire, and the SELECT below would otherwise
+        // panic with "no such column: tool_calls_expected".
+        let column_exists: i64 = conn
+            .prepare(&format!(
+                "SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name='tool_calls_expected'"
+            ))?
+            .query_row([], |row| row.get(0))?;
+        if column_exists == 0 {
             continue;
         }
 

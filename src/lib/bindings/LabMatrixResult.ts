@@ -9,8 +9,6 @@ export interface LabMatrixResult {
   provider: string;
   status: LabRunStatus;
   outputPreview: string | null;
-  toolCallsExpected: string | null;
-  toolCallsActual: string | null;
   toolAccuracyScore: number | null;
   outputQualityScore: number | null;
   protocolCompliance: number | null;

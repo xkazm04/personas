@@ -31,8 +31,6 @@ function evalResult(versionId: string, versionNumber: number, o: ResultOverrides
     provider: 'anthropic',
     status: 'completed',
     outputPreview: null,
-    toolCallsExpected: null,
-    toolCallsActual: null,
     toolAccuracyScore: pick(o, 'ta', 80),
     outputQualityScore: pick(o, 'oq', 70),
     protocolCompliance: pick(o, 'pc', 60),

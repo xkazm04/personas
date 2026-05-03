@@ -79,8 +79,9 @@ pub struct LabResultBase {
     pub provider: String,
     pub status: String,
     pub output_preview: Option<String>,
-    pub tool_calls_expected: Option<Json<Vec<String>>>,
-    pub tool_calls_actual: Option<Json<Vec<String>>>,
+    // tool_calls_expected/actual moved to the lab_tool_calls child table —
+    // fetched separately via labGetToolCalls IPC. ADR:
+    // 2026-05-02-lab-tool-calls-child-table.
     #[ts(type = "number | null")]
     pub tool_accuracy_score: Option<i32>,
     #[ts(type = "number | null")]
@@ -131,8 +132,6 @@ pub fn row_to_lab_result_base(row: &rusqlite::Row) -> rusqlite::Result<LabResult
         provider: row.get("provider")?,
         status: row.get("status")?,
         output_preview: row.get("output_preview")?,
-        tool_calls_expected: row.get("tool_calls_expected")?,
-        tool_calls_actual: row.get("tool_calls_actual")?,
         tool_accuracy_score: row.get("tool_accuracy_score")?,
         output_quality_score: row.get("output_quality_score")?,
         protocol_compliance: row.get("protocol_compliance")?,
