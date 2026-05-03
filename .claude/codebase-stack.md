@@ -430,9 +430,17 @@ npm run build:builder   # builder tier
 - Two SQLite files, both in `%APPDATA%/com.personas.desktop/`:
   - `personas.db` — operational data (personas, executions, triggers, credentials, etc.)
   - `personas_data.db` — user-facing data (vaults, knowledge bases) — separate pool
-- Migrations: `src-tauri/src/db/migrations.rs` (single file, IF NOT EXISTS pattern). 100+ migrations as of 2026.
+- Migrations: `src-tauri/src/db/migrations/` (split: `schema.rs` for the canonical CREATE TABLE bundle, `initial.rs` to apply it, `incremental.rs` for column/table additions, `fk_hygiene.rs` for FK retrofits). 100+ migrations as of 2026.
 - Repository pattern: `src-tauri/src/db/repos/{group}/{entity}.rs` returns typed models from `src-tauri/src/db/models/`.
 - Update hook registered to push DB changes through the event bus to the frontend.
+
+### Schema FK convention (load-bearing)
+- `PRAGMA foreign_keys = ON` is enforced globally on every connection (`db/mod.rs:83-86`). Every parent-child column pair MUST declare an explicit `REFERENCES parent(id) ON DELETE <CASCADE|SET NULL>` clause; the policy is not optional.
+- **CASCADE** for owned children whose lifetime ends with the parent (memories, messages, healing_issues, metrics_snapshots, prompt_versions, message_deliveries, pipeline_runs).
+- **SET NULL** for nullable references that should outlive their target (event recipients, optional handoff pointers).
+- **No FK** only when the column is polymorphic (e.g., `persona_events.source_id` whose referent type depends on `source_type`). Document the polymorphism in a SQL comment next to the column so future scans don't flag it as an oversight.
+- Adding a FK to an existing table requires the `recreate_with_fk` helper in `migrations/fk_hygiene.rs` — SQLite has no `ALTER TABLE ADD CONSTRAINT`. The helper handles idempotency, orphan cleanup, row-count assertion, and `pragma_foreign_key_check` verification.
+- Established by [[Architect/decisions/2026-05-02-fk-hygiene-cascade]] (8 tables retrofitted, 5 manual cleanup lines collapsed).
 
 ### Error handling
 - `AppError` enum in `src-tauri/src/error.rs` — all command results return `Result<T, AppError>`.
