@@ -22,7 +22,6 @@ interface CredentialDesignModalBodyProps {
   handleImportComplete: () => void;
   autoSetupResult: CredentialDesignResult | null;
   setAutoSetupResult: (v: CredentialDesignResult | null) => void;
-  autoSetupPending: boolean;
   handleKeyDown: (e: React.KeyboardEvent) => void;
   handleAutoSetup: () => void;
   handleClose: () => void;
@@ -46,7 +45,6 @@ export function CredentialDesignModalBody({
   handleImportComplete,
   autoSetupResult,
   setAutoSetupResult,
-  autoSetupPending: _autoSetupPending,
   handleKeyDown,
   handleAutoSetup,
   handleClose,

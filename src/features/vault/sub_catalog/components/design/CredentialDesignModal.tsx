@@ -62,7 +62,6 @@ export function CredentialDesignModal({ open, embedded = false, initialInstructi
         handleImportComplete={modal.handleImportComplete}
         autoSetupResult={modal.autoSetupResult}
         setAutoSetupResult={modal.setAutoSetupResult}
-        autoSetupPending={modal.autoSetupPending}
         handleKeyDown={modal.handleKeyDown}
         handleAutoSetup={modal.handleAutoSetup}
         handleClose={modal.handleClose}
