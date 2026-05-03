@@ -3594,6 +3594,7 @@ export type Translations = {
       start_scan: string;
       checking_env: string;
       importing: string;
+      import_progress: string;
       scan_again: string;
       back_to_vault: string;
       already_in_vault: string;

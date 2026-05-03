@@ -71,7 +71,7 @@ interface ForagingImportingProps {
 }
 
 export function ForagingImporting({ forage }: ForagingImportingProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const forg = t.vault.foraging;
   return (
     <div
@@ -84,7 +84,7 @@ export function ForagingImporting({ forage }: ForagingImportingProps) {
           {forg.importing}
         </p>
         <p className="typo-body text-foreground">
-          {forage.imported.size} of {forage.selected.size} complete
+          {tx(forg.import_progress, { done: forage.imported.size, total: forage.selected.size })}
         </p>
       </div>
       {forage.scanResult && (
@@ -171,7 +171,7 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
         <p className="typo-body font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
         <p className="typo-body text-red-400/70 mt-1">{translated.message}</p>
         {translated.suggestion && (
-          <p className="typo-body text-foreground/70 mt-1">{translated.suggestion}</p>
+          <p className="typo-body text-foreground mt-1">{translated.suggestion}</p>
         )}
       </div>
       <div className="flex items-center justify-center gap-2">

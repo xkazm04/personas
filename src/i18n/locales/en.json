@@ -3588,6 +3588,7 @@
       "start_scan": "Start Scan",
       "checking_env": "Checking environment variables, config files, and dev tool credentials",
       "importing": "Importing credentials to vault...",
+      "import_progress": "{done} of {total} complete",
       "scan_again": "Scan again",
       "back_to_vault": "Back to vault",
       "already_in_vault": "Already in vault",
