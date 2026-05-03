@@ -1,5 +1,6 @@
 {
   "common": {
+    "unknown_error": "Unknown error",
     "loading": "Loading...",
     "saving": "Saving...",
     "deleting": "Deleting...",
@@ -7280,6 +7281,7 @@
     "dry_run_result_title": "Dry Run Result",
     "all_checks_passed": "All checks passed",
     "validation_failed": "Validation failed",
+    "validation_failed_with_details": "Validation failed — {failures}",
     "simulated_event": "Simulated Event",
     "matched_subscriptions_title": "Matched Subscriptions",
     "no_subscriptions_activated": "No subscriptions would be activated",

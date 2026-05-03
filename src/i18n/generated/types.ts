@@ -6,6 +6,7 @@
 
 export type Translations = {
   common: {
+    unknown_error: string;
     loading: string;
     saving: string;
     deleting: string;
@@ -7286,6 +7287,7 @@ export type Translations = {
     dry_run_result_title: string;
     all_checks_passed: string;
     validation_failed: string;
+    validation_failed_with_details: string;
     simulated_event: string;
     matched_subscriptions_title: string;
     no_subscriptions_activated: string;

@@ -5,6 +5,7 @@ import { dryRunTrigger, validateTrigger } from "@/api/pipeline/triggers";
 
 import type { DryRunResult } from "@/api/pipeline/triggers";
 import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
+import { useTranslation } from "@/i18n/useTranslation";
 
 // --- Result types --------------------------------------------------------
 
@@ -29,6 +30,7 @@ export interface TestFireResult {
  * inline message, ignore, ...).
  */
 export function useTriggerOperations(personaId: string) {
+  const { t, tx } = useTranslation();
   const storeCreate = usePipelineStore((s) => s.createTrigger);
   const storeUpdate = usePipelineStore((s) => s.updateTrigger);
   const storeDelete = usePipelineStore((s) => s.deleteTrigger);
@@ -50,10 +52,10 @@ export function useTriggerOperations(personaId: string) {
         });
         return { ok: true };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [personaId, storeCreate],
+    [personaId, storeCreate, t.common.unknown_error],
   );
 
   // -- Toggle -------------------------------------------------------------
@@ -64,10 +66,10 @@ export function useTriggerOperations(personaId: string) {
         await storeUpdate(personaId, triggerId, { enabled: !currentEnabled });
         return { ok: true };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [personaId, storeUpdate],
+    [personaId, storeUpdate, t.common.unknown_error],
   );
 
   // -- Delete -------------------------------------------------------------
@@ -78,10 +80,10 @@ export function useTriggerOperations(personaId: string) {
         await storeDelete(personaId, triggerId);
         return { ok: true };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [personaId, storeDelete],
+    [personaId, storeDelete, t.common.unknown_error],
   );
 
   // -- Validate -----------------------------------------------------------
@@ -99,10 +101,10 @@ export function useTriggerOperations(personaId: string) {
         }
         return { ok: true, data: { valid: true, failures: "" } };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [],
+    [t.common.unknown_error],
   );
 
   // -- Test Fire (validate -> execute) -------------------------------------
@@ -117,15 +119,19 @@ export function useTriggerOperations(personaId: string) {
             .filter((c) => !c.passed)
             .map((c) => `${c.label}: ${c.message}`)
             .join("; ");
-          return { ok: false, data: { validationFailures: failedChecks }, error: `Validation failed -- ${failedChecks}` };
+          return {
+            ok: false,
+            data: { validationFailures: failedChecks },
+            error: tx(t.triggers.validation_failed_with_details, { failures: failedChecks }),
+          };
         }
         const execution = await executePersona(pid, triggerId);
         return { ok: true, data: { execution } };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [personaId],
+    [personaId, tx, t.triggers.validation_failed_with_details, t.common.unknown_error],
   );
 
   // -- Dry Run ------------------------------------------------------------
@@ -136,10 +142,10 @@ export function useTriggerOperations(personaId: string) {
         const result = await dryRunTrigger(triggerId);
         return { ok: true, data: result };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [],
+    [t.common.unknown_error],
   );
 
   // -- Activity log -------------------------------------------------------
@@ -150,10 +156,10 @@ export function useTriggerOperations(personaId: string) {
         const execs = await listExecutionsByTrigger(triggerId, 10);
         return { ok: true, data: execs };
       } catch (err) {
-        return { ok: false, error: errStr(err) };
+        return { ok: false, error: errStr(err, t.common.unknown_error) };
       }
     },
-    [],
+    [t.common.unknown_error],
   );
 
   return {
@@ -169,9 +175,9 @@ export function useTriggerOperations(personaId: string) {
 
 // --- Helpers -------------------------------------------------------------
 
-function errStr(err: unknown): string {
+function errStr(err: unknown, fallback: string): string {
   if (err instanceof Error) return err.message;
   if (typeof err === "object" && err !== null && "error" in err)
     return String((err as Record<string, unknown>).error);
-  return "Unknown error";
+  return fallback;
 }
