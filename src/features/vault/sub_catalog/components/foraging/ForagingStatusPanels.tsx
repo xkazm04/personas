@@ -10,6 +10,7 @@ import { ForagingResultCard } from './ForagingResultCard';
 import { Button } from '@/features/shared/components/buttons';
 import type { useCredentialForaging } from '@/hooks/design/credential/useCredentialForaging';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 type Forage = ReturnType<typeof useCredentialForaging>;
 
@@ -159,6 +160,7 @@ interface ForagingErrorProps {
 
 export function ForagingError({ forage, onBack }: ForagingErrorProps) {
   const { t } = useTranslation();
+  const translated = resolveErrorTranslated(t, forage.error);
   return (
     <div
       key="error"
@@ -167,7 +169,10 @@ export function ForagingError({ forage, onBack }: ForagingErrorProps) {
       <AlertTriangle className="w-8 h-8 text-red-400 mx-auto" />
       <div>
         <p className="typo-body font-medium text-foreground/90">{t.vault.foraging.scan_failed}</p>
-        <p className="typo-body text-red-400/70 mt-1">{forage.error}</p>
+        <p className="typo-body text-red-400/70 mt-1">{translated.message}</p>
+        {translated.suggestion && (
+          <p className="typo-body text-foreground/70 mt-1">{translated.suggestion}</p>
+        )}
       </div>
       <div className="flex items-center justify-center gap-2">
         <Button
