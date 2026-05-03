@@ -190,7 +190,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
               </button>
               <button type="button" onClick={() => { setScheduleMode('cron'); setValidationError(null); }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-body font-medium transition-all border ${scheduleMode === 'cron' ? 'bg-amber-500/15 text-amber-400 border-amber-500/30' : 'bg-secondary/30 text-foreground border-border/30 hover:text-muted-foreground hover:bg-secondary/50'}`}>
-                <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule_mode_label}
+                <CalendarClock className="w-3.5 h-3.5" /> {t.triggers.schedule.mode_cron}
               </button>
             </div>
           </div>
