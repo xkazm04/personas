@@ -20,6 +20,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_healing_issues(conn)?;
     migrate_persona_metrics_snapshots(conn)?;
     migrate_persona_prompt_versions(conn)?;
+    migrate_pipeline_runs(conn)?;
     Ok(())
 }
 
@@ -147,6 +148,37 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_pipeline_runs(conn: &Connection) -> Result<(), AppError> {
+    // pipeline_runs is the only FK target in this sweep that points at
+    // persona_teams rather than personas. teams.rs::delete already does a
+    // manual cleanup so orphans aren't expected; the FK still adds defense
+    // in depth (third-party SQL writes, future code paths).
+    recreate_with_fk(
+        conn,
+        "pipeline_runs",
+        1,
+        &[
+            "DELETE FROM pipeline_runs \
+             WHERE team_id NOT IN (SELECT id FROM persona_teams);",
+        ],
+        "CREATE TABLE pipeline_runs_new (
+            id              TEXT PRIMARY KEY,
+            team_id         TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            status          TEXT NOT NULL DEFAULT 'running',
+            node_statuses   TEXT NOT NULL DEFAULT '[]',
+            input_data      TEXT,
+            started_at      TEXT NOT NULL DEFAULT (datetime('now')),
+            completed_at    TEXT,
+            error_message   TEXT
+        );",
+        "id, team_id, status, node_statuses, input_data, started_at, completed_at, error_message",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_pr_team ON pipeline_runs(team_id);",
+            "CREATE INDEX IF NOT EXISTS idx_pr_status ON pipeline_runs(status);",
+        ],
+    )
+}
 
 fn migrate_persona_prompt_versions(conn: &Connection) -> Result<(), AppError> {
     // Prompt version history is meaningless once the persona is gone.
