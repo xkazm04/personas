@@ -120,15 +120,6 @@ export function useCredentialForaging() {
     [scanResult, selected, imported],
   );
 
-  const reset = useCallback(() => {
-    setPhase("idle");
-    setScanResult(null);
-    setSelected(new Set());
-    setImported(new Map());
-    setImportingIds(new Set());
-    setError(null);
-  }, []);
-
   return {
     phase,
     scanResult,
@@ -141,6 +132,5 @@ export function useCredentialForaging() {
     selectAll,
     selectNone,
     importSelected,
-    reset,
   };
 }
