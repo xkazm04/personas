@@ -59,19 +59,11 @@ export const CAPABILITY_INFO: Record<
 export const discoverDesktopApps = () =>
   invoke<DiscoveredApp[]>("discover_desktop_apps", {});
 
-export const discoverDesktopClis = () =>
-  invoke<DiscoveredApp[]>("discover_desktop_clis", {});
-
 export const importClaudeMcpServers = () =>
   invoke<ImportedMcpServer[]>("import_claude_mcp_servers", {});
 
 export const getDesktopConnectorManifest = (connectorName: string) =>
   invoke<DesktopConnectorManifest | null>("get_desktop_connector_manifest", {
-    connectorName,
-  });
-
-export const getPendingDesktopCapabilities = (connectorName: string) =>
-  invoke<DesktopCapability[]>("get_pending_desktop_capabilities", {
     connectorName,
   });
 
@@ -83,12 +75,6 @@ export const approveDesktopCapabilities = (
     connectorName,
     capabilities,
   });
-
-export const revokeDesktopApprovals = (connectorName: string) =>
-  invoke<void>("revoke_desktop_approvals", { connectorName });
-
-export const isDesktopConnectorApproved = (connectorName: string) =>
-  invoke<boolean>("is_desktop_connector_approved", { connectorName });
 
 export const registerImportedMcpServer = (
   server: ImportedMcpServer,
