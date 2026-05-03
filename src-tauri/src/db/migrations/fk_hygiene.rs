@@ -21,6 +21,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_metrics_snapshots(conn)?;
     migrate_persona_prompt_versions(conn)?;
     migrate_pipeline_runs(conn)?;
+    migrate_persona_events(conn)?;
     Ok(())
 }
 
@@ -148,6 +149,56 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_events(conn: &Connection) -> Result<(), AppError> {
+    // Only target_persona_id gets a FK. source_id is polymorphic — its
+    // referent depends on source_type ('persona', 'trigger', 'system', ...)
+    // and SQL FKs can't model that. The manual `DELETE persona_events
+    // WHERE source_id = ?1` block in personas.rs::delete still handles the
+    // persona-source case after this migration; the deletion-cascade for
+    // target_persona_id moves to the FK as SET NULL (events outlive their
+    // recipient — the row stays, the link goes null).
+    //
+    // No orphan cleanup needed: SET NULL already handles existing rows
+    // pointing at non-existent personas (PRAGMA foreign_key_check rejects
+    // those, but in our case any current target_persona_id pointing at a
+    // missing persona just gets the SET NULL treatment when the original
+    // persona was already deleted by the manual cleanup). To be safe we
+    // null out any currently-orphaned target_persona_id references before
+    // declaring the FK.
+    recreate_with_fk(
+        conn,
+        "persona_events",
+        1,
+        &[
+            "UPDATE persona_events SET target_persona_id = NULL \
+             WHERE target_persona_id IS NOT NULL \
+               AND target_persona_id NOT IN (SELECT id FROM personas);",
+        ],
+        "CREATE TABLE persona_events_new (
+            id                 TEXT PRIMARY KEY,
+            project_id         TEXT NOT NULL DEFAULT 'default',
+            event_type         TEXT NOT NULL,
+            source_type        TEXT NOT NULL,
+            source_id          TEXT,
+            target_persona_id  TEXT REFERENCES personas(id) ON DELETE SET NULL,
+            payload            TEXT,
+            payload_iv         TEXT,
+            status             TEXT NOT NULL DEFAULT 'pending',
+            error_message      TEXT,
+            processed_at       TEXT,
+            created_at         TEXT NOT NULL
+        );",
+        "id, project_id, event_type, source_type, source_id, target_persona_id, payload, payload_iv, status, error_message, processed_at, created_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_pev_status ON persona_events(status);",
+            "CREATE INDEX IF NOT EXISTS idx_pev_project ON persona_events(project_id);",
+            "CREATE INDEX IF NOT EXISTS idx_pev_type ON persona_events(event_type);",
+            "CREATE INDEX IF NOT EXISTS idx_pev_target ON persona_events(target_persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_pev_created ON persona_events(created_at DESC);",
+        ],
+    )
+}
 
 fn migrate_pipeline_runs(conn: &Connection) -> Result<(), AppError> {
     // pipeline_runs is the only FK target in this sweep that points at
