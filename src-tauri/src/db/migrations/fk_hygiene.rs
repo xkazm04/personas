@@ -17,6 +17,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_memories(conn)?;
     migrate_persona_messages(conn)?;
     migrate_persona_message_deliveries(conn)?;
+    migrate_persona_healing_issues(conn)?;
     Ok(())
 }
 
@@ -144,6 +145,43 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_healing_issues(conn: &Connection) -> Result<(), AppError> {
+    // Healing issues are persona-scoped diagnostics. Once the persona is
+    // gone there's nothing to heal, so CASCADE is correct. Nullable
+    // execution_id stays unconstrained — issues open during a long-running
+    // execution can be reviewed after the execution row is purged.
+    recreate_with_fk(
+        conn,
+        "persona_healing_issues",
+        1,
+        &[
+            "DELETE FROM persona_healing_issues \
+             WHERE persona_id NOT IN (SELECT id FROM personas);",
+        ],
+        "CREATE TABLE persona_healing_issues_new (
+            id          TEXT PRIMARY KEY,
+            persona_id  TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            execution_id TEXT,
+            title       TEXT NOT NULL,
+            description TEXT NOT NULL,
+            is_circuit_breaker INTEGER NOT NULL DEFAULT 0,
+            severity    TEXT NOT NULL DEFAULT 'low',
+            category    TEXT NOT NULL DEFAULT 'config',
+            suggested_fix TEXT,
+            auto_fixed  INTEGER NOT NULL DEFAULT 0,
+            status      TEXT NOT NULL DEFAULT 'open',
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            resolved_at TEXT
+        );",
+        "id, persona_id, execution_id, title, description, is_circuit_breaker, severity, category, suggested_fix, auto_fixed, status, created_at, resolved_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_phi_persona ON persona_healing_issues(persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_phi_status ON persona_healing_issues(status);",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_phi_persona_execution ON persona_healing_issues(persona_id, execution_id) WHERE execution_id IS NOT NULL;",
+        ],
+    )
+}
 
 fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError> {
     // Worst case in the FK-hygiene scope per the ADR: NO FK *and* no
