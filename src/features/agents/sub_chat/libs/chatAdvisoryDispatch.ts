@@ -35,6 +35,18 @@ export interface AdvisoryResult {
 // ── Extraction ─────────────────────────────────────────────────────────
 
 /**
+ * Detect whether a single line marks the start of an advisory operation JSON
+ * object. Shared with chat rendering (ChatBubbles) so the two stay aligned —
+ * the canonical multi-line accumulator/dedup logic still lives in
+ * `extractOperations`, but the per-line predicate must agree on what
+ * "an op line" looks like or stripped lines and dispatched lines drift apart.
+ */
+export function isOperationStart(line: string): boolean {
+  const t = line.trim();
+  return t.startsWith('{"op"') || t.startsWith('{"op":');
+}
+
+/**
  * Sanitize a JSON string that may contain raw control characters inside string values.
  * LLMs sometimes emit literal newlines/tabs inside JSON string fields instead of
  * proper escape sequences (\n, \t). This breaks JSON.parse.
@@ -93,7 +105,7 @@ export function extractOperations(text: string): AdvisoryOperation[] {
     if (inCodeBlock) continue;
 
     // Start accumulating if this line begins an operation
-    if (trimmed.startsWith('{"op"') || trimmed.startsWith('{"op":')) {
+    if (isOperationStart(trimmed)) {
       accumulator = trimmed;
     } else if (accumulator) {
       // Continue accumulating a multi-line JSON operation

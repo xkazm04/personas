@@ -4,13 +4,13 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
+import { isOperationStart } from './libs/chatAdvisoryDispatch';
 
 // JSON operation lines emitted by the advisory assistant (e.g. {"op": ...})
 // are dispatched server-side and stripped from the visible transcript.
-function isOperationLine(line: string): boolean {
-  const t = line.trim();
-  return t.startsWith('{"op"') || t.startsWith('{"op":');
-}
+// The predicate is imported from chatAdvisoryDispatch so the strip rule
+// can never drift away from the dispatch rule.
+const isOperationLine = isOperationStart;
 
 // Fallback copy via a hidden textarea + document.execCommand('copy'). Used
 // when navigator.clipboard is unavailable (non-secure context, file://, some
