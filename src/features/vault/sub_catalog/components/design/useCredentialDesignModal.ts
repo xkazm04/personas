@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useCredentialDesignOrchestrator } from '@/features/vault/sub_catalog/components/design/useCredentialDesignOrchestrator';
 import { useSystemStore } from "@/stores/systemStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -29,9 +29,6 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
-  const dialogRef = useRef<HTMLDivElement>(null);
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-
   // Close on Escape
   useEffect(() => {
     if (!open) return;
@@ -42,35 +39,9 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
     return () => window.removeEventListener('keydown', handleKey);
   }, [open]);
 
-  // Focus trap
-  const handleFocusTrap = useCallback((e: React.KeyboardEvent) => {
-    if (e.key !== 'Tab' || !dialogRef.current) return;
-
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-    );
-    if (focusable.length === 0) return;
-
-    const first = focusable[0]!;
-    const last = focusable[focusable.length - 1]!;
-
-    if (e.shiftKey) {
-      if (document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      }
-    } else {
-      if (document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    }
-  }, []);
-
   // Reset when modal opens
   useEffect(() => {
     if (open) {
-      returnFocusRef.current = document.activeElement as HTMLElement | null;
       orch.resetAll();
       setShowTemplates(false);
       setTemplateSearch('');
@@ -86,22 +57,6 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
         orch.start(initialInstruction.trim());
       }
     }
-  }, [open]);
-
-  // Focus dialog when opened with initial instruction
-  useEffect(() => {
-    if (!open || !initialInstruction?.trim()) return;
-    const frame = requestAnimationFrame(() => {
-      dialogRef.current?.focus();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [open, initialInstruction]);
-
-  // Restore focus on close
-  useEffect(() => {
-    if (open) return;
-    returnFocusRef.current?.focus();
-    returnFocusRef.current = null;
   }, [open]);
 
   // Capture auto-setup result when design completes
@@ -167,8 +122,6 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
 
   return {
     orch,
-    dialogRef,
-    handleFocusTrap,
     handleClose,
     handleViewCredential,
     handleKeyDown,
