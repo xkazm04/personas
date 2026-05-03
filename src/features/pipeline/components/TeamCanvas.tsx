@@ -13,7 +13,6 @@ import {
   useCanvasReducer,
   TeamToolbar,
 } from '@/features/pipeline/sub_canvas';
-import type { StickyNoteCategory } from '@/features/pipeline/sub_canvas';
 import TeamList from './TeamList';
 import CanvasFlowLayer from './canvas/CanvasFlowLayer';
 import CanvasOverlays from './canvas/CanvasOverlays';
@@ -55,23 +54,14 @@ export default function TeamCanvas() {
   });
 
   // -- Build sticky note nodes ----------------------------------------
-  const handleUpdateNote = useCallback((id: string, text: string, category: StickyNoteCategory) => {
-    dispatch({ type: 'UPDATE_STICKY_NOTE', id, text, category });
-  }, [dispatch]);
-
-  const handleDeleteNote = useCallback((id: string) => {
-    dispatch({ type: 'DELETE_STICKY_NOTE', id });
-    setNodes((prev) => prev.filter((n) => n.id !== id));
-  }, [dispatch, setNodes]);
-
   const stickyNodes = useMemo<Node[]>(() =>
     cs.stickyNotes.map((n) => ({
       id: n.id, type: 'stickyNote' as const,
       position: { x: n.x, y: n.y },
-      data: { text: n.text, category: n.category, onUpdate: handleUpdateNote, onDelete: handleDeleteNote },
+      data: { text: n.text, category: n.category, onUpdate: handlers.handleUpdateNote, onDelete: handlers.handleDeleteNote },
       dragHandle: '.cursor-grab',
     })),
-  [cs.stickyNotes, handleUpdateNote, handleDeleteNote]);
+  [cs.stickyNotes, handlers.handleUpdateNote, handlers.handleDeleteNote]);
 
   // -- Sync derived + sticky nodes into React Flow --------------------
   useEffect(() => {
