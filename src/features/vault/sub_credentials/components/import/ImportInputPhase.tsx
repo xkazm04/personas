@@ -1,5 +1,5 @@
 import { ArrowLeft, Upload, Terminal } from 'lucide-react';
-import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
+import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImportInputPhaseProps {

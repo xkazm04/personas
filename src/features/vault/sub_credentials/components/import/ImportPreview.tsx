@@ -6,7 +6,7 @@ import {
   type SecretServiceMapping,
   type SyncConfig,
   groupByService,
-} from './importTypes';
+} from './importHelpers';
 import { ImportSyncConfig } from './ImportSyncConfig';
 import { useTranslation } from '@/i18n/useTranslation';
 

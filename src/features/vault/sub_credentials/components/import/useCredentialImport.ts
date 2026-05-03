@@ -9,7 +9,7 @@ import {
   type SecretServiceMapping,
   type SyncConfig,
   type ImportPhase,
-} from './importTypes';
+} from './importHelpers';
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 
 export interface CredentialImportState {

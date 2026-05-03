@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { RefreshCw } from 'lucide-react';
-import type { ImportSourceId, SyncConfig } from './importTypes';
+import type { ImportSourceId, SyncConfig } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ImportSyncConfigProps {

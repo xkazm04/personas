@@ -1,5 +1,5 @@
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
-import { IMPORT_SOURCES, type ImportSourceId } from './importTypes';
+import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
