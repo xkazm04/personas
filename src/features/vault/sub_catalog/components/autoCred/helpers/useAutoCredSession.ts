@@ -51,8 +51,9 @@ interface UseAutoCredSessionOptions {
 }
 
 export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ace = t.vault.auto_cred_extra;
+  const credentialSuffix = t.vault.credential_forms.credential_suffix;
   const adapter = options?.adapter ?? null;
   const abortRef = useRef<AbortController | null>(null);
 
@@ -80,14 +81,14 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     setPhase('consent');
     setLogs([]);
     setExtractedValues({});
-    setCredentialName(`${result.connector.label} Credential`);
+    setCredentialName(tx(credentialSuffix, { name: result.connector.label }));
     setError(null);
     setIsPartial(false);
     setHealthResult(null);
     setIsSaving(false);
     setDiscoveredFields(null);
     setDiscoveredConnector(null);
-  }, []);
+  }, [tx, credentialSuffix]);
 
   /** User consented -- start browser automation */
   const startBrowser = useCallback(async () => {
@@ -194,7 +195,7 @@ export function useAutoCredSession(options?: UseAutoCredSessionOptions) {
     try {
       const healthcheckPassed = healthResult?.success === true;
       const id = await createCredential({
-        name: credentialName.trim() || `${designResult.connector.label} Credential`,
+        name: credentialName.trim() || tx(credentialSuffix, { name: designResult.connector.label }),
         service_type: designResult.connector.name,
         data: extractedValues,
         healthcheck_passed: healthcheckPassed,
