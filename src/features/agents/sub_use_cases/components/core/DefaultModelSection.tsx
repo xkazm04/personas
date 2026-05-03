@@ -4,7 +4,7 @@ import type { PersonaDraft } from '@/features/agents/sub_editor';
 import { ModelSelector } from '@/features/agents/sub_model_config';
 import type { CustomModelConfig } from '@/features/agents/sub_model_config';
 import type { ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
-import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { isOllamaCloudValue, OLLAMA_CLOUD_PRESETS } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { useEffectiveConfig } from '@/features/agents/sub_model_config/hooks/useEffectiveConfig';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { useTranslation } from '@/i18n/useTranslation';

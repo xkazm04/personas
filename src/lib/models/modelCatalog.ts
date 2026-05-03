@@ -1,7 +1,7 @@
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import type { ModelTestConfig } from '@/api/agents/tests';
 import { en, type Translations } from '@/i18n/en';
 

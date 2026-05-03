@@ -1,5 +1,5 @@
 import type { ModelProfile, ModelProvider, PromptCachePolicy } from '@/lib/types/frontendTypes';
-import { profileToDropdownValue } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { profileToDropdownValue } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { DEFAULT_PERSONA_COLOR } from '@/features/shared/components/forms/ColorPicker';
 
 /**

@@ -3,7 +3,7 @@ import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { useAgentStore } from "@/stores/agentStore";
 import { capturePersonaToken } from '@/lib/personas/personaToken';
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
-import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/OllamaCloudPresets';
+import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/libs/OllamaCloudPresets';
 import { useTabSection } from './useTabSection';
 import { useDebouncedSaveGroup } from './useDebouncedSaveGroup';
 import { useEditorHistory, type UndoEntry } from './EditorDocument';

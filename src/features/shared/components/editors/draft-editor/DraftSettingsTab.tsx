@@ -2,7 +2,7 @@ import { useMemo, useCallback } from 'react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/OllamaCloudPresets';
+import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { ModelSelector } from '@/features/agents/sub_model_config';
 import { IconSelector } from '@/features/shared/components/forms/IconSelector';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';

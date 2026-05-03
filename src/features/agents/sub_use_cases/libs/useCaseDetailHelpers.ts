@@ -4,7 +4,7 @@ import type { ModelTestConfig } from '@/api/agents/tests';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 
 // -- Model helpers ---------------------------------------------------
 

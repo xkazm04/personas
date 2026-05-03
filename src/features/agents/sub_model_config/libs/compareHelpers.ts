@@ -4,7 +4,7 @@ import { compositeScore } from '@/lib/eval/evalFramework';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '../OllamaCloudPresets';
+} from './OllamaCloudPresets';
 
 // -- Model options --
 

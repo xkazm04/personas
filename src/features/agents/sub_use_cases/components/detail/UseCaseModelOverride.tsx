@@ -6,7 +6,7 @@ import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import {
   OLLAMA_CLOUD_PRESETS,
   OLLAMA_CLOUD_BASE_URL,
-} from '@/features/agents/sub_model_config/OllamaCloudPresets';
+} from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { UseCaseModelOverrideForm } from './UseCaseModelOverrideForm';
 import { useTranslation } from '@/i18n/useTranslation';
 
