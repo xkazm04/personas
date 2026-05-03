@@ -7288,6 +7288,15 @@ export type Translations = {
     all_checks_passed: string;
     validation_failed: string;
     validation_failed_with_details: string;
+    build_validation: {
+      cron_required: string;
+      cron_invalid: string;
+      interval_minimum: string;
+      event_type_required: string;
+      watch_path_required: string;
+      composite_min_conditions: string;
+      composite_window_minimum: string;
+    };
     simulated_event: string;
     matched_subscriptions_title: string;
     no_subscriptions_activated: string;

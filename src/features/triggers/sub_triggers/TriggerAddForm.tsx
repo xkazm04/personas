@@ -153,7 +153,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       clipboardContentType, clipboardPattern, clipboardInterval,
       appNames, titlePattern, appFocusInterval,
       compositeConditions, compositeOperator, windowSeconds,
-    });
+    }, t);
     if (!result.ok) { setValidationError(result.error); return; }
     setValidationError(null);
     setIsCreating(true);
