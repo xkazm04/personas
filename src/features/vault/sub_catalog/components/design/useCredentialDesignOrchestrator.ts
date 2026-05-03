@@ -11,6 +11,7 @@ import type { CredentialDesignOrchestrator } from './orchestratorTypes';
 import { useDesignFields, useFieldValidation } from './orchestratorDerived';
 import { buildContextValue } from './orchestratorContext';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 export type { CredentialDesignOrchestrator } from './orchestratorTypes';
 
@@ -20,6 +21,7 @@ export type { CredentialDesignOrchestrator } from './orchestratorTypes';
  * CredentialDesignContextValue plus the extra state the modal needs.
  */
 export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator {
+  const { t } = useTranslation();
   const design = useCredentialDesign();
   const oauth = useOAuthConsent();
   const universalOAuth = useUniversalOAuth();
@@ -118,7 +120,7 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       if (!health.result?.success || !hcConfig) {
         health.setResult({
           success: false,
-          message: 'Run Test Connection and get a successful result before saving.',
+          message: t.vault.credential_forms.healthcheck_required,
         });
         return;
       }
