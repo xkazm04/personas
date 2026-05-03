@@ -20,6 +20,7 @@ interface AutoCredConsentProps {
 export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'playwright' }: AutoCredConsentProps) {
   const { t, tx } = useTranslation();
   const ac = t.vault.auto_cred;
+  const ace = t.vault.auto_cred_extra;
   const ctx = buildConnectorContext(designResult);
   const fieldCount = ctx.fields.length;
   const isGuided = mode === 'guided';
@@ -63,19 +64,26 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
         <div className="space-y-2">
           {isGuided ? (
             <>
-              <Step number={1} text={`Open ${designResult.connector.label} dashboard in your browser`} guided />
-              <Step number={2} text="Claude provides step-by-step instructions" guided />
-              <Step number={3} text={`You create the credential following the guide (${fieldCount} field${fieldCount !== 1 ? 's' : ''})`} guided />
-              <Step number={4} text="Claude extracts the values from its instructions" guided />
-              <Step number={5} text="Review and save the credential" guided />
+              <Step number={1} text={tx(ace.step_guided_open, { label: designResult.connector.label })} guided />
+              <Step number={2} text={ace.step_guided_instructions} guided />
+              <Step number={3} text={tx(fieldCount === 1 ? ace.step_guided_fill_one : ace.step_guided_fill_other, { count: fieldCount })} guided />
+              <Step number={4} text={ace.step_guided_extract} guided />
+              <Step number={5} text={ace.step_guided_review} guided />
             </>
           ) : (
             <>
-              <Step number={1} text={`Open ${ctx.docsUrl ? 'credential page' : designResult.connector.label + ' dashboard'} in browser`} />
-              <Step number={2} text="Navigate to token/key creation form" />
-              <Step number={3} text={`Fill required fields (${fieldCount} field${fieldCount !== 1 ? 's' : ''})`} />
-              <Step number={4} text="Extract generated credential values" />
-              <Step number={5} text="Return here for your review before saving" />
+              <Step
+                number={1}
+                text={
+                  ctx.docsUrl
+                    ? ace.step_browser_open_with_docs
+                    : tx(ace.step_browser_open_without_docs, { label: designResult.connector.label })
+                }
+              />
+              <Step number={2} text={ace.step_browser_navigate} />
+              <Step number={3} text={tx(fieldCount === 1 ? ace.step_browser_fill_one : ace.step_browser_fill_other, { count: fieldCount })} />
+              <Step number={4} text={ace.step_browser_extract} />
+              <Step number={5} text={ace.step_browser_review} />
             </>
           )}
         </div>
