@@ -64,6 +64,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   const [compositeOperator, setCompositeOperator] = useState('all');
   const [windowSeconds, setWindowSeconds] = useState('300');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
   const cronDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fetchCronPreview = useCallback(async (expr: string, tz?: string) => {
@@ -142,6 +143,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
   };
 
   const handleAddTrigger = async () => {
+    if (isCreating) return;
     const result = buildTriggerConfig({
       triggerType, scheduleMode, interval, cronExpression, cronPreview,
       scheduleTimezone, scheduleMaxBackfill,
@@ -153,9 +155,14 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     });
     if (!result.ok) { setValidationError(result.error); return; }
     setValidationError(null);
-    const createError = await onCreateTrigger(triggerType, result.config);
-    if (createError) {
-      setValidationError(createError);
+    setIsCreating(true);
+    try {
+      const createError = await onCreateTrigger(triggerType, result.config);
+      if (createError) {
+        setValidationError(createError);
+      }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -222,7 +229,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
         <button onClick={onCancel} className="px-3 py-1.5 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors">{t.common.cancel}</button>
         <button
           onClick={handleAddTrigger}
-          disabled={isScheduleInvalid}
+          disabled={isScheduleInvalid || isCreating}
           className="px-3 py-1.5 bg-primary hover:bg-primary/90 text-foreground rounded-modal typo-body font-medium transition-all shadow-elevation-3 shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
         >
           {t.triggers.add.create_trigger}
