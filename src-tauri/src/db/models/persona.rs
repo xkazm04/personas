@@ -470,6 +470,15 @@ pub struct Persona {
     pub timeout_ms: i32,
     pub notification_channels: Option<String>,
     pub last_design_result: Option<String>,
+    /// JSON-encoded report from the most recent `test_build_draft` run for
+    /// this persona (A-grade Phase 2, 2026-05-03). Shape matches the value
+    /// returned from `engine::build_session::run_tool_tests` — see
+    /// `tool_tests.rs` for the full schema. The TestReportModal in the
+    /// editor reads this so users can see real per-tool / per-connector
+    /// results *after* promote, not just during the in-flight build session.
+    /// `None` for personas that have never run a test (manual templates,
+    /// legacy installs).
+    pub last_test_report: Option<String>,
     pub model_profile: Option<String>,
     pub max_budget_usd: Option<f64>,
     pub max_turns: Option<i32>,
@@ -672,6 +681,7 @@ pub struct UpdatePersonaInput {
     pub timeout_ms: Option<i32>,
     pub notification_channels: Option<String>,
     pub last_design_result: Option<Option<String>>,
+    pub last_test_report: Option<Option<String>>,
     pub model_profile: Option<Option<String>>,
     pub max_budget_usd: Option<Option<f64>>,
     pub max_turns: Option<Option<i32>>,

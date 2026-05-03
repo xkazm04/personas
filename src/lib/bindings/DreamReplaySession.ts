@@ -5,16 +5,48 @@ import type { TraceSpan } from "./TraceSpan";
 /**
  * Complete dream replay session containing all reconstructed frames.
  */
-export interface DreamReplaySession {
-  executionId: string;
-  personaId: string;
-  traceId: string;
-  totalDurationMs: number;
-  totalSpanCount: number;
-  frames: Array<DreamFrame>;
-  spans: Array<TraceSpan>;
-  isIncomplete: boolean;
-  totalCostUsd: number;
-  totalInputTokens: number;
-  totalOutputTokens: number;
-}
+export type DreamReplaySession = { 
+/**
+ * The execution ID being replayed.
+ */
+executionId: string, 
+/**
+ * The persona ID.
+ */
+personaId: string, 
+/**
+ * The original trace ID.
+ */
+traceId: string, 
+/**
+ * Total execution duration in ms.
+ */
+totalDurationMs: number, 
+/**
+ * Total number of spans in the trace.
+ */
+totalSpanCount: number, 
+/**
+ * All reconstructed frames, ordered by timestamp.
+ */
+frames: Array<DreamFrame>, 
+/**
+ * All spans from the original trace (for reference/lookup).
+ */
+spans: Array<TraceSpan>, 
+/**
+ * Whether the original execution had evicted spans (incomplete trace).
+ */
+isIncomplete: boolean, 
+/**
+ * Total cost of the original execution (USD).
+ */
+totalCostUsd: number, 
+/**
+ * Total input tokens of the original execution.
+ */
+totalInputTokens: number, 
+/**
+ * Total output tokens of the original execution.
+ */
+totalOutputTokens: number, };

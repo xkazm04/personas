@@ -2,21 +2,16 @@
 import type { LedgerAnomalyScore } from "./LedgerAnomalyScore";
 import type { LedgerHealthEntry } from "./LedgerHealthEntry";
 
-export type CredentialLedger = {
-  healthcheck_results: Array<LedgerHealthEntry>,
-  healthcheck_last_success: boolean | null,
-  healthcheck_last_success_at: string | null,
-  anomaly_score: LedgerAnomalyScore | null,
-  anomaly_tolerance: number | null,
-  environment: string | null,
-  oauth_token_expires_at: string | null,
-  oauth_refresh_count: number | null,
-  oauth_last_refresh_at: string | null,
-  oauth_predicted_lifetime_secs: number | null,
-  oauth_refresh_backoff_until: string | null,
-  oauth_refresh_fail_count: number | null,
-  needs_reauth: boolean | null,
-  needs_reauth_at: string | null,
-  usage_count: number | null,
-  last_used_at: string | null,
-};
+/**
+ * Typed metadata ledger for a credential. Sections are logically grouped but
+ * stored as a flat JSON object for backward compatibility with existing rows.
+ *
+ * ## Sections
+ *
+ * - **Health ring buffer**: `healthcheck_results`, `healthcheck_last_success`,
+ *   `healthcheck_last_success_at`, `anomaly_score`, `anomaly_tolerance`, `environment`
+ * - **OAuth lifecycle**: `oauth_token_expires_at`, `oauth_refresh_count`, etc.
+ * - **Usage tracking**: `usage_count`, `last_used_at`
+ * - **Custom hints**: any other keys (imported_from, source, auth_type, …)
+ */
+export type CredentialLedger = { healthcheck_results: Array<LedgerHealthEntry>, healthcheck_last_success: boolean | null, healthcheck_last_success_at: string | null, anomaly_score: LedgerAnomalyScore | null, anomaly_tolerance: number | null, environment: string | null, oauth_token_expires_at: string | null, oauth_refresh_count: bigint | null, oauth_last_refresh_at: string | null, oauth_predicted_lifetime_secs: bigint | null, oauth_refresh_backoff_until: string | null, oauth_refresh_fail_count: bigint | null, needs_reauth: boolean | null, needs_reauth_at: string | null, usage_count: bigint | null, last_used_at: string | null, };

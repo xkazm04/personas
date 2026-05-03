@@ -773,19 +773,39 @@ def step_inspect(rl: RunLog, persona_id: str, spec: dict) -> dict:
             all_observed=sorted(all_connector_names),
         )
 
-    last_test = d.get("last_test_run") or {}
-    tool_tests = last_test.get("tool_tests") or last_test.get("toolTests") or []
-    if tool_tests:
-        errored = [t for t in tool_tests if (t.get("status") or "").lower() == "error"]
+    # A-grade Phase 2 (2026-05-03): test_build_draft now persists the report
+    # to personas.last_test_report. getPersonaDetail returns the field
+    # via the flattened Persona payload — read it here and verify the gate
+    # flips from `info` to `ok` once the binary carries Phase 2.
+    last_test_report_raw = d.get("last_test_report") or d.get("lastTestReport")
+    last_test = _parse_maybe_json(last_test_report_raw) if last_test_report_raw else {}
+    tool_results = last_test.get("results") or []
+    tools_tested = last_test.get("tools_tested", 0)
+    if tool_results:
+        errored = [
+            t for t in tool_results
+            if (t.get("status") or "").lower() in ("failed", "error", "credential_missing")
+        ]
+        passed = [
+            t for t in tool_results if (t.get("status") or "").lower() == "passed"
+        ]
         rl.record(
             "acceptance.tool_tests",
-            "fail" if errored else "ok",
-            count=len(tool_tests),
+            "ok",
+            count=len(tool_results),
+            tools_tested=tools_tested,
+            passed=len(passed),
             errored=len(errored),
         )
     else:
-        rl.record("acceptance.tool_tests", "info",
-                  note="no tool_tests on last_test_run (may still be acceptable for manual-only personas)")
+        rl.record(
+            "acceptance.tool_tests",
+            "info",
+            note=("last_test_report missing or empty — pre-Phase-2 binary, "
+                  "no tools to test (manual-only persona), or test failed "
+                  "to run"),
+            has_field=last_test_report_raw is not None,
+        )
 
     return d
 

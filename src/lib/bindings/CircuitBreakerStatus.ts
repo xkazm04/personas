@@ -2,10 +2,11 @@
 import type { CircuitTransitionEvent } from "./CircuitTransitionEvent";
 import type { ProviderCircuitState } from "./ProviderCircuitState";
 
-export interface CircuitBreakerStatus {
-  providers: Array<ProviderCircuitState>;
-  globalPaused: boolean;
-  globalCooldownRemainingSecs: number;
-  globalFailureCount: number;
-  recentTransitions: Array<CircuitTransitionEvent>;
-}
+/**
+ * Full circuit breaker status snapshot.
+ */
+export type CircuitBreakerStatus = { providers: Array<ProviderCircuitState>, globalPaused: boolean, globalCooldownRemainingSecs: number, globalFailureCount: number, 
+/**
+ * Recent state transitions (newest first), capped at 50.
+ */
+recentTransitions: Array<CircuitTransitionEvent>, };

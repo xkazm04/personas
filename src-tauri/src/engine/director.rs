@@ -790,6 +790,7 @@ mod tests {
             system_prompt: system_prompt.into(),
             structured_prompt: None,
             last_design_result: None,
+            last_test_report: None,
             design_context: None,
             icon: None,
             color: None,

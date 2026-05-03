@@ -4,4 +4,39 @@ import type { ModelGene } from "./ModelGene";
 import type { PromptSegment } from "./PromptSegment";
 import type { ToolGene } from "./ToolGene";
 
-export type PersonaGenome = { sourcePersonaId: string, sourcePersonaName: string, promptSegments: Array<PromptSegment>, structuredPrompt: string | null, tools: ToolGene, model: ModelGene, config: ConfigGene, description: string | null };
+/**
+ * The complete decomposed genome of a persona.
+ */
+export type PersonaGenome = { 
+/**
+ * Source persona ID this genome was extracted from.
+ */
+sourcePersonaId: string, 
+/**
+ * Source persona name (for display).
+ */
+sourcePersonaName: string, 
+/**
+ * System prompt decomposed into paragraph-level segments.
+ */
+promptSegments: Array<PromptSegment>, 
+/**
+ * Structured prompt JSON (kept as opaque string for crossover).
+ */
+structuredPrompt: string | null, 
+/**
+ * Tool selection and ordering.
+ */
+tools: ToolGene, 
+/**
+ * Model/provider preferences.
+ */
+model: ModelGene, 
+/**
+ * Behavioral configuration.
+ */
+config: ConfigGene, 
+/**
+ * Description text.
+ */
+description: string | null, };

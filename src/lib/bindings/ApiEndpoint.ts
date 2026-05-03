@@ -2,4 +2,7 @@
 import type { ApiParameter } from "./ApiParameter";
 import type { ApiRequestBody } from "./ApiRequestBody";
 
-export type ApiEndpoint = { method: string, path: string, summary: string | null, description: string | null, parameters: ApiParameter[], request_body: ApiRequestBody | null, tags: string[], };
+/**
+ * A single API endpoint extracted from an OpenAPI spec.
+ */
+export type ApiEndpoint = { method: string, path: string, summary: string | null, description: string | null, parameters: Array<ApiParameter>, request_body: ApiRequestBody | null, tags: Array<string>, };

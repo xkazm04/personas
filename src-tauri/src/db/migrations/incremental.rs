@@ -2267,6 +2267,26 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added traceparent column to persona_executions");
     }
 
+    // -- last_test_report column on personas (A-grade Phase 2) -------------------
+    // Stores the JSON test report from `test_build_draft`'s last run so the
+    // UI's TestReportModal can render real per-tool / per-connector results
+    // *after* promote, and so the rapid-validation suite's
+    // `acceptance.tool_tests` gate has something to read. Pre-Phase-2 the
+    // report was returned inline by `triggerBuildTest` and never persisted —
+    // navigating away dropped it. See
+    // `docs/concepts/persona-capabilities/13-rapid-validation-personas.md`
+    // §"Phase 2 (test-pass visibility)".
+    let has_last_test_report: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'last_test_report'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_last_test_report {
+        conn.execute_batch("ALTER TABLE personas ADD COLUMN last_test_report TEXT;")?;
+        tracing::info!("Added last_test_report column to personas");
+    }
+
     // -- Drop retired desktop-bridge catalog entries -----------------------------
     // `desktop_terminal` and `desktop_vscode` were removed from the credential
     // catalog; existing installs may still have the seeded rows. Remove them so

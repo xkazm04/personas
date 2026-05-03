@@ -436,6 +436,7 @@ impl EphemeralPersona {
             timeout_ms: 30_000,
             notification_channels: None,
             last_design_result: None,
+            last_test_report: None,
             model_profile: draft.model_profile,
             max_budget_usd: draft.max_budget_usd,
             max_turns: Some(1),

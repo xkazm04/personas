@@ -351,6 +351,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         timeout_ms: row.get("timeout_ms")?,
         notification_channels,
         last_design_result: row.get("last_design_result")?,
+        last_test_report: row.get("last_test_report").ok(),
         model_profile,
         max_budget_usd: row.get("max_budget_usd")?,
         max_turns: row.get("max_turns")?,
@@ -606,6 +607,7 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
         push_field_param!(encrypted_channels, "notification_channels", sets, param_idx, param_values, clone);
         push_field_param!(input.last_design_result, "last_design_result", sets, param_idx, param_values, clone);
+        push_field_param!(input.last_test_report, "last_test_report", sets, param_idx, param_values, clone);
         push_field_param!(encrypted_profile, "model_profile", sets, param_idx, param_values, clone);
         push_field_param!(input.max_budget_usd, "max_budget_usd", sets, param_idx, param_values, copy);
         push_field_param!(input.max_turns, "max_turns", sets, param_idx, param_values, copy);

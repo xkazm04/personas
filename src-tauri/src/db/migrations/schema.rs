@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS personas (
     timeout_ms              INTEGER NOT NULL DEFAULT 300000,
     notification_channels   TEXT,
     last_design_result      TEXT,
+    last_test_report        TEXT,
     model_profile           TEXT,
     max_budget_usd          REAL,
     max_turns               INTEGER,

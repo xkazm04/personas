@@ -2,8 +2,4 @@
 import type { BlueprintConnection } from "./BlueprintConnection";
 import type { BlueprintMember } from "./BlueprintMember";
 
-export interface TopologyBlueprint {
-  members: Array<BlueprintMember>;
-  connections: Array<BlueprintConnection>;
-  description: string;
-}
+export type TopologyBlueprint = { members: Array<BlueprintMember>, connections: Array<BlueprintConnection>, description: string, };

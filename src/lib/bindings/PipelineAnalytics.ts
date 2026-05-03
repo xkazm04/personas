@@ -2,13 +2,4 @@
 import type { NodeAnalytics } from "./NodeAnalytics";
 import type { TopologySuggestion } from "./TopologySuggestion";
 
-export interface PipelineAnalytics {
-  team_id: string;
-  total_runs: number;
-  completed_runs: number;
-  failed_runs: number;
-  success_rate: number;
-  avg_duration_secs: number;
-  node_analytics: Array<NodeAnalytics>;
-  suggestions: Array<TopologySuggestion>;
-}
+export type PipelineAnalytics = { team_id: string, total_runs: bigint, completed_runs: bigint, failed_runs: bigint, success_rate: number, avg_duration_secs: number, node_analytics: Array<NodeAnalytics>, suggestions: Array<TopologySuggestion>, };

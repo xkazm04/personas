@@ -3,26 +3,25 @@
 /**
  * Metadata returned from a validation screenshot capture.
  */
-export type ValidationScreenshot = {
-  /**
-   * Absolute path to the saved PNG on disk.
-   */
-  path: string;
-  /**
-   * RFC3339 timestamp when the capture completed.
-   */
-  capturedAt: string;
-  /**
-   * The window title we captured. For full-screen captures this is the
-   * display name (e.g. "Screen 1").
-   */
-  windowTitle: string;
-  /**
-   * Width in pixels.
-   */
-  width: number;
-  /**
-   * Height in pixels.
-   */
-  height: number;
-};
+export type ValidationScreenshot = { 
+/**
+ * Absolute path to the saved PNG on disk.
+ */
+path: string, 
+/**
+ * RFC3339 timestamp when the capture completed.
+ */
+capturedAt: string, 
+/**
+ * The window title we captured. For full-screen captures this is the
+ * display name (e.g. "Screen 1").
+ */
+windowTitle: string, 
+/**
+ * Width in pixels.
+ */
+width: number, 
+/**
+ * Height in pixels.
+ */
+height: number, };

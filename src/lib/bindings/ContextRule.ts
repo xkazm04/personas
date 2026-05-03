@@ -2,12 +2,35 @@
 import type { ContextAction } from "./ContextAction";
 import type { ContextPattern } from "./ContextPattern";
 
-export type ContextRule = {
-  id: string;
-  personaId: string;
-  name: string;
-  pattern: ContextPattern;
-  action: ContextAction;
-  enabled: boolean;
-  cooldownSecs: number;
-};
+/**
+ * A context rule: when a pattern matches, perform an action.
+ */
+export type ContextRule = { 
+/**
+ * Unique rule identifier.
+ */
+id: string, 
+/**
+ * The persona that owns this rule.
+ */
+personaId: string, 
+/**
+ * Human-readable rule name.
+ */
+name: string, 
+/**
+ * The pattern to match against context events.
+ */
+pattern: ContextPattern, 
+/**
+ * The action to perform when the pattern matches.
+ */
+action: ContextAction, 
+/**
+ * Whether this rule is currently active.
+ */
+enabled: boolean, 
+/**
+ * Minimum seconds between consecutive matches (prevents spam).
+ */
+cooldownSecs: number, };

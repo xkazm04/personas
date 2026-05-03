@@ -626,6 +626,7 @@ mod tests {
             timeout_ms: 30_000,
             notification_channels: None,
             last_design_result: None,
+            last_test_report: None,
             model_profile: Some("balanced".into()),
             max_budget_usd: Some(0.50),
             max_turns: Some(10),

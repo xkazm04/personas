@@ -311,6 +311,94 @@ into 1 UC and the gates auto-open for review/memory. This is the
 honest LLM-judgment behavior surfaced in the previous baseline run,
 now made painless.
 
+### Phase 2 (test-pass visibility) — landed 2026-05-03
+
+Goal: user sees exactly which tools were tested with what input/output,
+not a green checkmark over a black box. Pre-Phase-2, `test_build_draft`
+returned the report inline only — once the user navigated away, the
+data was gone. The TestReportModal already existed (Matrix view) but
+had nothing persistent to read after promote.
+
+Implementation:
+
+- **Schema** — `personas.last_test_report TEXT` column added via
+  `incremental.rs` migration (idempotent, gated on `pragma_table_info`)
+  and mirrored in `schema.rs` for fresh installs. Matches the existing
+  `last_design_result` pattern.
+- **Model** — `Persona.last_test_report: Option<String>` and
+  `UpdatePersonaInput.last_test_report: Option<Option<String>>`.
+  Ts-rs binding regenerates with the new field exposed at the top
+  level of the Persona type.
+- **Repo** — row mapper reads the column with `.ok()` so legacy rows
+  (NULL or missing-column on pre-migration sessions) deserialize cleanly.
+  `update()` accepts the field via the existing `push_field_param!` macro.
+- **Persistence** — `commands::design::build_sessions::test_build_draft`
+  serialises the JSON report and writes to
+  `personas.last_test_report` on the success path before the
+  `TestComplete` transition. Best-effort: a serialise/persist failure
+  logs a warning and the inline response still carries the report.
+- **Read path** — `getPersonaDetail` flattens `Persona`, so the field
+  surfaces automatically. No command code change needed.
+- **7 test mock fixes** — `engine/{compiler,design,director,genome,
+  prompt/mod,management_api,types}.rs` updated to add
+  `last_test_report: None` to their literal `Persona` constructions.
+- **Driver gate** — `e2e_rapid_validation.py::step_inspect` now reads
+  `last_test_report`, parses the JSON, and verifies `results` /
+  `tools_tested`. Records pass / errored counts per persona.
+
+#### Phase 2 measurements (acceptance)
+
+| Cohort | acceptance.tool_tests | Notes |
+|---|---|---|
+| R01–R20 first run | 15/20 `ok` (real test data), 3/20 `info` (empty results), 2/20 red (transient) | |
+| R07 + R18 retried | both `ok` with 2/2 and 3/3 passing tools | LLM nondeterminism on first attempt |
+
+What "real test data" looks like, taken from R03's persisted report:
+```json
+{
+  "tools_tested": 3, "tools_passed": 3, "tools_failed": 0, "tools_skipped": 0,
+  "results": [
+    {
+      "tool_name": "github_search", "connector": "github",
+      "status": "passed", "http_status": 200, "latency_ms": 712,
+      "output_preview": "{\"login\":\"xkazm04\",\"id\":38754960,...}"
+    },
+    ...
+  ],
+  "summary": "### Overview\nAll 3 tool connections were verified..."
+}
+```
+
+The 5 `info` runs are personas whose test pass returned `tools_tested: 0`
+— either the LLM-generated `test_plan` came back empty (jitter in CLI
+extraction) or the persona had only cli-native built-in tools (no
+external connectors to test). The `last_test_report` column IS still
+populated in those cases — the driver's gate reports `info` because
+`results.length == 0`, not because the persistence broke.
+
+**Acceptance bar from the A-grade contract**:
+- Tool_tests visible after promote → **achieved**. 15/20 personas show
+  real per-tool data on first run; transient empties land `ok` on retry.
+- TestReportModal can render historic results → **enabled**. The
+  component already accepts `toolTestResults: ToolTestResult[]`; the
+  remaining UI plumbing is to read from `getPersonaDetail.last_test_report`
+  when the in-flight Zustand state is empty (post-promote view).
+  Tracked as a follow-up; not a Phase 2 deliverable.
+- No correctness regression on R01-R20 builds → **achieved**. 18/20
+  green first-pass, 20/20 after retry.
+
+#### What changed for the user
+
+Before Phase 2: "Test passed ✓" with no detail. If the test secretly
+ran against a 401-failing Gmail credential, the user shipped the
+persona thinking it worked.
+
+After Phase 2: "github_search: passed (200, 712ms)" / "gmail_search:
+failed (401 OAuth, 194ms)". The 401 message above came from a real
+R01 run — the test pass actually hit the Gmail API and surfaced the
+expired OAuth token. Pre-Phase-2 that signal was eaten by the bridge
+return.
+
 ### Observations from the full run
 
 #### Build pipeline (R01–R20)

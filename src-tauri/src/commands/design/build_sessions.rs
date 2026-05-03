@@ -436,6 +436,40 @@ pub async fn test_build_draft(
 
     match result {
         Ok(report) => {
+            // Persist the report to personas.last_test_report so the
+            // TestReportModal can render it after promote (A-grade Phase 2,
+            // 2026-05-03). Pre-Phase-2 the report was returned inline only;
+            // navigating away dropped it. Best-effort write — a serialize
+            // failure here should not block the test_complete transition,
+            // since the in-flight bridge response still carries the report
+            // for the active session.
+            match serde_json::to_string(&report) {
+                Ok(report_json) => {
+                    if let Err(e) = persona_repo::update(
+                        &state.db,
+                        &persona_id,
+                        crate::db::models::UpdatePersonaInput {
+                            last_test_report: Some(Some(report_json)),
+                            ..Default::default()
+                        },
+                    ) {
+                        tracing::warn!(
+                            persona_id = %persona_id,
+                            session_id = %session_id,
+                            error = %e,
+                            "Failed to persist last_test_report; report still returned inline"
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        session_id = %session_id,
+                        error = %e,
+                        "Failed to serialize test report for persistence; returning inline only"
+                    );
+                }
+            }
+
             // Transition to test_complete
             build_session_repo::update(
                 &state.db,

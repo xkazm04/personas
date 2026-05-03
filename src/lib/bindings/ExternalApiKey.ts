@@ -5,11 +5,11 @@
  * stored — only its SHA-256 hash. Returned from `list()` and other read paths
  * without leaking secret material.
  */
-export type ExternalApiKey = { id: string, name: string,
+export type ExternalApiKey = { id: string, name: string, 
 /**
  * First several chars of the token (e.g. "pk_a1b2c3"); safe to display.
  */
-key_prefix: string,
+key_prefix: string, 
 /**
  * JSON-encoded array of scope strings (e.g. ["personas:read","personas:execute"]).
  */

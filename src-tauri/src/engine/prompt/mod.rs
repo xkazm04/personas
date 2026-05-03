@@ -722,6 +722,7 @@ mod tests {
             timeout_ms: 300000,
             notification_channels: None,
             last_design_result: None,
+            last_test_report: None,
             model_profile: None,
             max_budget_usd: None,
             max_turns: None,

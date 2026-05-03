@@ -3,19 +3,32 @@ import type { PersonaGatewayExposure } from "./PersonaGatewayExposure";
 import type { PersonaTrustLevel } from "./PersonaTrustLevel";
 import type { PersonaTrustOrigin } from "./PersonaTrustOrigin";
 
-export type Persona = { id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, parameters: string | null, gateway_exposure: PersonaGatewayExposure, template_category: string | null, created_at: string, updated_at: string, };
-
-export type PersonaParameter = {
-  key: string;
-  label: string;
-  type: ParamType;
-  default_value: unknown;
-  value: unknown;
-  description?: string;
-  options?: string[];
-  min?: number;
-  max?: number;
-  unit?: string;
-};
-
-export type ParamType = "number" | "string" | "boolean" | "select";
+export type Persona = { id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
+/**
+ * JSON-encoded report from the most recent `test_build_draft` run for
+ * this persona (A-grade Phase 2, 2026-05-03). Shape matches the value
+ * returned from `engine::build_session::run_tool_tests` — see
+ * `tool_tests.rs` for the full schema. The TestReportModal in the
+ * editor reads this so users can see real per-tool / per-connector
+ * results *after* promote, not just during the in-flight build session.
+ * `None` for personas that have never run a test (manual templates,
+ * legacy installs).
+ */
+last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, source_review_id: string | null, trust_level: PersonaTrustLevel, trust_origin: PersonaTrustOrigin, trust_verified_at: string | null, trust_score: number, 
+/**
+ * Free parameters: JSON array of `PersonaParameter` definitions.
+ * Adjustable at runtime without triggering a rebuild.
+ */
+parameters: string | null, 
+/**
+ * Visibility to the external management HTTP API.
+ * Defaults to `LocalOnly` so existing personas are not exposed.
+ */
+gateway_exposure: PersonaGatewayExposure, 
+/**
+ * Lowercase template category (e.g. `"development"`, `"finance"`) derived
+ * by `infer_template_category` when the persona was created via template
+ * adoption. `None` for manually-created or pre-Phase-17 personas. Used by
+ * Simple-mode's illustration resolver tier-3 (see `useIllustration.ts`).
+ */
+template_category: string | null, created_at: string, updated_at: string, };

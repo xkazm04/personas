@@ -2,4 +2,31 @@
 import type { RateBucketUsage } from "./RateBucketUsage";
 import type { TierConfig } from "./TierConfig";
 
-export type TierUsageSnapshot = { tier: TierConfig, rate_buckets: RateBucketUsage[], total_running: number, total_queued: number, max_queue_depth: number, approaching_limit: boolean, };
+/**
+ * Full tier usage snapshot returned to the frontend.
+ */
+export type TierUsageSnapshot = { 
+/**
+ * Current tier config.
+ */
+tier: TierConfig, 
+/**
+ * Per-bucket rate limiter usage.
+ */
+rate_buckets: Array<RateBucketUsage>, 
+/**
+ * Total running executions across all personas.
+ */
+total_running: number, 
+/**
+ * Total queued executions across all personas.
+ */
+total_queued: number, 
+/**
+ * Configured max queue depth per persona.
+ */
+max_queue_depth: number, 
+/**
+ * Whether any bucket is at or above 80% of its limit.
+ */
+approaching_limit: boolean, };
