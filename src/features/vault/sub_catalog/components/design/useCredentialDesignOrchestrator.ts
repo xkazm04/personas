@@ -21,7 +21,7 @@ export type { CredentialDesignOrchestrator } from './orchestratorTypes';
  * CredentialDesignContextValue plus the extra state the modal needs.
  */
 export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const design = useCredentialDesign();
   const oauth = useOAuthConsent();
   const universalOAuth = useUniversalOAuth();
@@ -84,9 +84,10 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   // -- Auto-set credential name --
   useEffect(() => {
     if (design.phase === 'preview' && design.result) {
-      setCredentialName((prev) => prev || `${design.result!.connector.label} Credential`);
+      const label = design.result.connector.label;
+      setCredentialName((prev) => prev || tx(t.vault.credential_forms.credential_suffix, { name: label }));
     }
-  }, [design.phase, design.result]);
+  }, [design.phase, design.result, tx, t.vault.credential_forms.credential_suffix]);
 
   // -- Derived values --
   const { fields, flow, effectiveFields, requiredCount, optionalCount } = useDesignFields(design.result);
@@ -112,8 +113,11 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
   const handleSave = useCallback(
     (values: Record<string, string>) => {
       const hcConfig = health.result?.healthcheckConfig ?? null;
+      const fallback = tx(t.vault.credential_forms.credential_suffix, {
+        name: design.result?.connector.label ?? '',
+      });
       if (flow.kind === 'google_oauth' && values.refresh_token?.trim()) {
-        const name = credentialName.trim() || `${design.result?.connector.label} Credential`;
+        const name = credentialName.trim() || fallback;
         design.save(name, values, hcConfig);
         return;
       }
@@ -124,10 +128,10 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
         });
         return;
       }
-      const name = credentialName.trim() || `${design.result?.connector.label} Credential`;
+      const name = credentialName.trim() || fallback;
       design.save(name, values, hcConfig);
     },
-    [flow, credentialName, design.result, design.save, health.result, health.setResult],
+    [flow, credentialName, design.result, design.save, health.result, health.setResult, tx, t.vault.credential_forms.credential_suffix, t.vault.credential_forms.healthcheck_required],
   );
 
   const handleHealthcheck = useCallback(
