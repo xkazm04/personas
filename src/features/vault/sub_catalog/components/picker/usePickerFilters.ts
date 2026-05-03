@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getPurposeForConnector, PURPOSE_GROUPS, resolvePurposeLabel } from '@/lib/credentials/connectorRoles';
@@ -8,6 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
+type FilterKey = 'category' | 'purpose' | 'connected' | 'license' | 'role';
 
 function capitalize(s: string) {
   return s.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -59,45 +60,35 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     assertRolePresetCategoriesValid(live);
   }, [connectors]);
 
-  const applyConnected = (list: ConnectorDefinition[], filter: ConnectedFilter) => {
-    if (filter === 'connected') return list.filter((c) => ownedServiceTypes.has(c.name));
-    if (filter === 'new') return list.filter((c) => !ownedServiceTypes.has(c.name));
-    return list;
-  };
+  // Single filter pipeline. Pass `except` when computing the option list for a
+  // given filter — the dropdown for "Purpose" should reflect counts after the
+  // OTHER filters apply, not after the purpose filter applies to itself.
+  const applyFilters = useCallback((list: ConnectorDefinition[], except?: FilterKey) => {
+    let result = list;
+    if (except !== 'category' && activeCategory) {
+      result = result.filter((c) => c.category === activeCategory);
+    }
+    if (except !== 'purpose' && activePurpose) {
+      result = result.filter((c) => getPurposeForConnector(c.name) === activePurpose);
+    }
+    if (except !== 'license' && activeLicense) {
+      result = result.filter((c) => getLicenseTier(c.name, c.metadata) === activeLicense);
+    }
+    if (except !== 'connected') {
+      if (connectedFilter === 'connected') result = result.filter((c) => ownedServiceTypes.has(c.name));
+      else if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
+    }
+    if (except !== 'role' && activeRole) {
+      const cats = ROLE_PRESETS[activeRole].categories;
+      result = result.filter((c) => cats.includes(c.category));
+    }
+    return result;
+  }, [activeCategory, activePurpose, activeLicense, connectedFilter, activeRole, ownedServiceTypes]);
 
-  const applyCategory = (list: ConnectorDefinition[], cat: string | null) =>
-    cat ? list.filter((c) => c.category === cat) : list;
-
-  const applyPurpose = (list: ConnectorDefinition[], purpose: string | null) =>
-    purpose ? list.filter((c) => getPurposeForConnector(c.name) === purpose) : list;
-
-  const applyLicense = (list: ConnectorDefinition[], license: string | null) =>
-    license
-      ? list.filter((c) => getLicenseTier(c.name, c.metadata) === license)
-      : list;
-
-  const applyRole = (list: ConnectorDefinition[], role: RolePreset | null) =>
-    role ? list.filter((c) => ROLE_PRESETS[role].categories.includes(c.category)) : list;
-
-  const purposeBase = useMemo(
-    () => applyRole(applyLicense(applyConnected(applyCategory(connectors, activeCategory), connectedFilter), activeLicense), activeRole),
-    [connectors, activeCategory, connectedFilter, activeLicense, activeRole, ownedServiceTypes],
-  );
-
-  const categoryBase = useMemo(
-    () => applyRole(applyLicense(applyConnected(applyPurpose(connectors, activePurpose), connectedFilter), activeLicense), activeRole),
-    [connectors, activePurpose, connectedFilter, activeLicense, activeRole, ownedServiceTypes],
-  );
-
-  const connectedBase = useMemo(
-    () => applyRole(applyLicense(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), activeLicense), activeRole),
-    [connectors, activePurpose, activeCategory, activeLicense, activeRole],
-  );
-
-  const licenseBase = useMemo(
-    () => applyRole(applyConnected(applyCategory(applyPurpose(connectors, activePurpose), activeCategory), connectedFilter), activeRole),
-    [connectors, activePurpose, activeCategory, connectedFilter, activeRole, ownedServiceTypes],
-  );
+  const purposeBase = useMemo(() => applyFilters(connectors, 'purpose'), [connectors, applyFilters]);
+  const categoryBase = useMemo(() => applyFilters(connectors, 'category'), [connectors, applyFilters]);
+  const connectedBase = useMemo(() => applyFilters(connectors, 'connected'), [connectors, applyFilters]);
+  const licenseBase = useMemo(() => applyFilters(connectors, 'license'), [connectors, applyFilters]);
 
   const purposeOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
@@ -176,19 +167,7 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     return opts;
   }, [licenseBase, t, tx, ps.filter_all_licenses, ps.filter_count]);
 
-  const filteredConnectors = useMemo(() => {
-    let result = connectors;
-    if (activeCategory) result = result.filter((c) => c.category === activeCategory);
-    if (activePurpose) result = result.filter((c) => getPurposeForConnector(c.name) === activePurpose);
-    if (activeLicense) result = result.filter((c) => getLicenseTier(c.name, c.metadata) === activeLicense);
-    if (connectedFilter === 'connected') result = result.filter((c) => ownedServiceTypes.has(c.name));
-    if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
-    if (activeRole) {
-      const roleCats = ROLE_PRESETS[activeRole].categories;
-      result = result.filter((c) => roleCats.includes(c.category));
-    }
-    return result;
-  }, [connectors, activeCategory, activePurpose, activeLicense, connectedFilter, activeRole, ownedServiceTypes]);
+  const filteredConnectors = useMemo(() => applyFilters(connectors), [connectors, applyFilters]);
 
   useEffect(() => {
     if (searchTerm?.trim()) {
