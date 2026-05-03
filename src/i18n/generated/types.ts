@@ -3452,6 +3452,9 @@ export type Translations = {
       already_configured: string;
       setup_instructions_label: string;
       no_fields_defined: string;
+      credential_suffix: string;
+      save_failed_fallback: string;
+      name_required: string;
     };
     cli_panel: {
       credential_name: string;

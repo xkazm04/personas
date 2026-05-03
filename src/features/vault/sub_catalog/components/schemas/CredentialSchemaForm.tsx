@@ -8,6 +8,7 @@ import { sanitize } from './schemaFormTypes';
 import { ExtraFieldRenderer } from './ExtraFieldRenderers';
 import { SchemaFormHeader, SchemaNameField, SchemaSubTypeSelector } from './SchemaFormFields';
 import { silentCatch } from '@/lib/silentCatch';
+import { useTranslation } from '@/i18n/useTranslation';
 
 // Re-export types and configs for backwards compatibility
 export type { SchemaSubType, ExtraFieldDef, SchemaFormConfig } from './schemaFormTypes';
@@ -36,6 +37,7 @@ export function CredentialSchemaForm({
   serviceTypeOverride,
   showHeader = true,
 }: CredentialSchemaFormProps) {
+  const { t, tx } = useTranslation();
   const [name, setName] = useState('');
   const [subTypeId, setSubTypeId] = useState(defaultSubType ?? config.subTypes[0]!.id);
   const [error, setError] = useState<string | null>(null);
@@ -135,7 +137,7 @@ export function CredentialSchemaForm({
         : fieldValues;
 
       const newCredId = await createCredential({
-        name: `${effectiveName} Credential`,
+        name: tx(t.vault.credential_forms.credential_suffix, { name: effectiveName }),
         service_type: serviceType,
         data: credData,
         healthcheck_passed: health.result?.success === true,

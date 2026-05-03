@@ -3445,7 +3445,10 @@
       "open_to_generate": "Open {label} to generate an API key or token",
       "already_configured": "Credential already configured -- update below to replace",
       "setup_instructions_label": "Setup Instructions",
-      "no_fields_defined": "No credential fields defined for this connector."
+      "no_fields_defined": "No credential fields defined for this connector.",
+      "credential_suffix": "{name} Credential",
+      "save_failed_fallback": "Failed to save {target}",
+      "name_required": "{label} is required"
     },
     "cli_panel": {
       "credential_name": "Credential Name",
