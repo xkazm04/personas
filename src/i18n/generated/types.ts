@@ -3672,6 +3672,13 @@ export type Translations = {
       recipe_cached: string;
       recipe_used_one: string;
       recipe_used_other: string;
+      filter_all_purposes: string;
+      filter_all_categories: string;
+      filter_status_all: string;
+      filter_status_connected: string;
+      filter_status_new: string;
+      filter_all_licenses: string;
+      filter_count: string;
     };
     cli_capture: {
       cta: string;

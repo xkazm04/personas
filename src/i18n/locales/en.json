@@ -3665,7 +3665,14 @@
       "desktop_bridge_badge": "Local",
       "recipe_cached": "Cached",
       "recipe_used_one": "Verified setup — used {count} time",
-      "recipe_used_other": "Verified setup — used {count} times"
+      "recipe_used_other": "Verified setup — used {count} times",
+      "filter_all_purposes": "All Purposes ({count})",
+      "filter_all_categories": "All Categories ({count})",
+      "filter_status_all": "All ({count})",
+      "filter_status_connected": "Connected ({count})",
+      "filter_status_new": "New ({count})",
+      "filter_all_licenses": "All Licenses ({count})",
+      "filter_count": "{label} ({count})"
     },
     "cli_capture": {
       "cta": "Import from local CLI",

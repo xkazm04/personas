@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
-import { getPurposeForConnector, PURPOSE_GROUPS } from '@/lib/credentials/connectorRoles';
-import { getLicenseTier, LICENSE_TIER_META, type LicenseTier } from '@/lib/credentials/connectorLicensing';
+import { getPurposeForConnector, PURPOSE_GROUPS, resolvePurposeLabel } from '@/lib/credentials/connectorRoles';
+import { getLicenseTier, resolveTierLabel, type LicenseTier } from '@/lib/credentials/connectorLicensing';
 import { ROLE_PRESETS, type RolePreset, assertRolePresetCategoriesValid } from './catalogRolePresets';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
 
@@ -13,6 +14,8 @@ function capitalize(s: string) {
 }
 
 export function usePickerFilters(connectors: ConnectorDefinition[], credentials: CredentialMetadata[], searchTerm?: string) {
+  const { t, tx } = useTranslation();
+  const ps = t.vault.picker_section;
   // Consume any pending category filter set by another part of the app (e.g.
   // the template adoption modal redirecting to the catalog when a credential
   // is missing). Read inside useEffect with empty deps so the mount-time
@@ -102,28 +105,39 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
       const p = getPurposeForConnector(c.name);
       if (p) counts[p] = (counts[p] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Purposes (${Object.keys(counts).length})` }];
+    const opts: ThemedSelectOption[] = [
+      { value: '', label: tx(ps.filter_all_purposes, { count: Object.keys(counts).length }) },
+    ];
     for (const pg of PURPOSE_GROUPS) {
-      if (counts[pg.purpose]) {
-        opts.push({ value: pg.purpose, label: `${pg.label} (${counts[pg.purpose]})` });
+      const count = counts[pg.purpose];
+      if (count) {
+        opts.push({
+          value: pg.purpose,
+          label: tx(ps.filter_count, { label: resolvePurposeLabel(pg, t), count }),
+        });
       }
     }
     return opts;
-  }, [purposeBase]);
+  }, [purposeBase, t, tx, ps.filter_all_purposes, ps.filter_count]);
 
   const categoryOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
     for (const c of categoryBase) {
       counts[c.category] = (counts[c.category] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Categories (${Object.keys(counts).length})` }];
+    const opts: ThemedSelectOption[] = [
+      { value: '', label: tx(ps.filter_all_categories, { count: Object.keys(counts).length }) },
+    ];
     Object.entries(counts)
       .sort(([a], [b]) => a.localeCompare(b))
       .forEach(([cat, count]) => {
-        opts.push({ value: cat, label: `${capitalize(cat)} (${count})` });
+        opts.push({
+          value: cat,
+          label: tx(ps.filter_count, { label: capitalize(cat), count }),
+        });
       });
     return opts;
-  }, [categoryBase]);
+  }, [categoryBase, tx, ps.filter_all_categories, ps.filter_count]);
 
   const connectedOptions = useMemo<ThemedSelectOption[]>(() => {
     let connected = 0;
@@ -134,12 +148,12 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     }
     const statusCount = (connected > 0 ? 1 : 0) + (fresh > 0 ? 1 : 0);
     const opts: ThemedSelectOption[] = [
-      { value: 'all', label: `All (${statusCount})` },
+      { value: 'all', label: tx(ps.filter_status_all, { count: statusCount }) },
     ];
-    if (connected > 0) opts.push({ value: 'connected', label: `Connected (${connected})` });
-    if (fresh > 0) opts.push({ value: 'new', label: `New (${fresh})` });
+    if (connected > 0) opts.push({ value: 'connected', label: tx(ps.filter_status_connected, { count: connected }) });
+    if (fresh > 0) opts.push({ value: 'new', label: tx(ps.filter_status_new, { count: fresh }) });
     return opts;
-  }, [connectedBase, ownedServiceTypes]);
+  }, [connectedBase, ownedServiceTypes, tx, ps.filter_status_all, ps.filter_status_connected, ps.filter_status_new]);
 
   const licenseOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
@@ -147,14 +161,20 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
       const tier = getLicenseTier(c.name, c.metadata);
       counts[tier] = (counts[tier] || 0) + 1;
     }
-    const opts: ThemedSelectOption[] = [{ value: '', label: `All Licenses (${Object.keys(counts).length})` }];
+    const opts: ThemedSelectOption[] = [
+      { value: '', label: tx(ps.filter_all_licenses, { count: Object.keys(counts).length }) },
+    ];
     for (const tier of ['personal', 'paid', 'enterprise'] as LicenseTier[]) {
-      if (counts[tier]) {
-        opts.push({ value: tier, label: `${LICENSE_TIER_META[tier].label} (${counts[tier]})` });
+      const count = counts[tier];
+      if (count) {
+        opts.push({
+          value: tier,
+          label: tx(ps.filter_count, { label: resolveTierLabel(tier, t), count }),
+        });
       }
     }
     return opts;
-  }, [licenseBase]);
+  }, [licenseBase, t, tx, ps.filter_all_licenses, ps.filter_count]);
 
   const filteredConnectors = useMemo(() => {
     let result = connectors;
