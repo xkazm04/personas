@@ -15,6 +15,9 @@
  */
 
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("advisory-dispatch");
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -137,7 +140,7 @@ export function extractOperations(text: string): AdvisoryOperation[] {
         // Still can't parse — keep accumulating (multi-line JSON)
         // But cap accumulator to prevent unbounded growth
         if (accumulator.length > 50000) {
-          console.warn("[advisory] Dropping unparseable operation (>50KB):", accumulator.slice(0, 100));
+          logger.warn("Dropping unparseable operation (>50KB)", { preview: accumulator.slice(0, 100) });
           accumulator = "";
         }
       }

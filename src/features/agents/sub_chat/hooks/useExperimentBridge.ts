@@ -13,6 +13,9 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useAgentStore } from "@/stores/agentStore";
 import { createChatMessage, saveChatSessionContext } from "@/api/agents/chat";
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { createLogger } from "@/lib/log";
+
+const logger = createLogger("experiment-bridge");
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -123,7 +126,7 @@ async function deliverExperimentResult(
     // Non-critical: the result is in the lab tab regardless. But keep a
     // breadcrumb — silent failure here makes "experiment results vanished"
     // bug reports impossible to diagnose.
-    console.warn('[experiment-bridge] failed to deliver result for run', exp.runId, err);
+    logger.warn('failed to deliver result for run', { runId: exp.runId, error: err });
   }
 }
 
