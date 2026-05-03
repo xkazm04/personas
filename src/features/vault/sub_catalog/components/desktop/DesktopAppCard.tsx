@@ -1,6 +1,7 @@
 import { CheckCircle2, ChevronRight, CircleDot } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { DiscoveredApp } from '@/api/system/desktop';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesktopAppCardProps {
   app: DiscoveredApp;
@@ -10,6 +11,8 @@ interface DesktopAppCardProps {
 }
 
 export function DesktopAppCard({ app, selected, onSelect, disabled = false }: DesktopAppCardProps) {
+  const { t } = useTranslation();
+  const dd = t.vault.desktop_discovery;
   const meta = getConnectorMeta(app.connector_name);
 
   return (
@@ -40,13 +43,13 @@ export function DesktopAppCard({ app, selected, onSelect, disabled = false }: De
             {app.installed && (
               <span className="flex items-center gap-1 typo-caption text-emerald-400">
                 <CheckCircle2 className="w-3 h-3" />
-                Installed
+                {dd.app_installed}
               </span>
             )}
             {app.running && (
               <span className="flex items-center gap-1 typo-caption text-cyan-400">
                 <CircleDot className="w-3 h-3" />
-                Running
+                {dd.app_running}
               </span>
             )}
           </div>

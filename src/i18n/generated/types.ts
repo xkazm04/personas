@@ -3760,6 +3760,8 @@ export type Translations = {
       approve_connect: string;
       imported_suffix: string;
       rescan_aria: string;
+      app_installed: string;
+      app_running: string;
     };
     picker_section: {
       no_connectors: string;

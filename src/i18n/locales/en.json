@@ -3753,7 +3753,9 @@
       "approve_description": "requests the following capabilities. Review and approve to enable this connector.",
       "approve_connect": "Approve & Connect",
       "imported_suffix": "{name} (Claude Desktop)",
-      "rescan_aria": "Rescan desktop apps and MCP servers"
+      "rescan_aria": "Rescan desktop apps and MCP servers",
+      "app_installed": "Installed",
+      "app_running": "Running"
     },
     "picker_section": {
       "no_connectors": "No connectors found",
