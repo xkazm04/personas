@@ -15,6 +15,7 @@ use crate::error::AppError;
 /// idempotently — no-ops on a DB that has already been migrated.
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_memories(conn)?;
+    migrate_persona_messages(conn)?;
     Ok(())
 }
 
@@ -142,6 +143,44 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
+    // Only persona_id gets a FK; nullable execution_id stays unconstrained.
+    // Messages are surfaced in dashboards independently of execution lifetime
+    // and an execution being purged shouldn't strand the message that
+    // originated from it — frontend renders a soft "execution unavailable"
+    // state when the link is broken.
+    recreate_with_fk(
+        conn,
+        "persona_messages",
+        1,
+        &[
+            "DELETE FROM persona_messages \
+             WHERE persona_id NOT IN (SELECT id FROM personas);",
+        ],
+        "CREATE TABLE persona_messages_new (
+            id           TEXT PRIMARY KEY,
+            persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            execution_id TEXT,
+            title        TEXT,
+            content      TEXT NOT NULL,
+            content_type TEXT NOT NULL DEFAULT 'text',
+            priority     TEXT NOT NULL DEFAULT 'normal',
+            is_read      INTEGER NOT NULL DEFAULT 0,
+            metadata     TEXT,
+            created_at   TEXT NOT NULL,
+            read_at      TEXT,
+            thread_id    TEXT
+        );",
+        "id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, read_at, thread_id",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_pmsg_persona ON persona_messages(persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_pmsg_is_read ON persona_messages(is_read);",
+            "CREATE INDEX IF NOT EXISTS idx_pmsg_created ON persona_messages(created_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);",
+        ],
+    )
+}
 
 fn migrate_persona_memories(conn: &Connection) -> Result<(), AppError> {
     recreate_with_fk(
