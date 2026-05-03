@@ -1015,3 +1015,22 @@ pub fn lab_get_result_events(
         .ok_or_else(|| AppError::Validation(format!("Unknown lab result_kind: {result_kind}")))?;
     events_repo::list_events_for_result(&state.db, &result_id, kind)
 }
+
+/// Fetch the tool calls captured for a single lab result row from the
+/// `lab_tool_calls` child table. Replaces the legacy
+/// `tool_calls_expected/actual` JSON-array columns. Rows are returned ordered
+/// by variant ('expected' before 'actual') then sequence. `result_kind` MUST
+/// be one of "eval" | "ab" | "arena" | "matrix" | "consensus".
+///
+/// ADR: 2026-05-02-lab-tool-calls-child-table.
+#[tauri::command]
+pub fn lab_get_tool_calls(
+    state: State<'_, Arc<AppState>>,
+    result_id: String,
+    result_kind: String,
+) -> Result<Vec<LabToolCall>, AppError> {
+    require_auth_sync(&state)?;
+    let kind = LabResultKind::from_db(&result_kind)
+        .ok_or_else(|| AppError::Validation(format!("Unknown lab result_kind: {result_kind}")))?;
+    lab::list_tool_calls_for_result(&state.db, &result_id, kind)
+}

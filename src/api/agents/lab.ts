@@ -13,6 +13,7 @@ import type { Persona } from "@/lib/bindings/Persona";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { LabResultEvent } from "@/lib/bindings/LabResultEvent";
 import type { LabResultKind } from "@/lib/bindings/LabResultKind";
+import type { LabToolCall } from "@/lib/bindings/LabToolCall";
 import type { ScoreWeights } from "@/lib/bindings/ScoreWeights";
 import type { ModelTestConfig } from "./tests";
 
@@ -183,6 +184,16 @@ export const labGetActiveProgress = (personaId: string) =>
 
 export const labGetResultEvents = (resultId: string, resultKind: LabResultKind) =>
   invoke<LabResultEvent[]>("lab_get_result_events", { resultId, resultKind });
+
+// ============================================================================
+// Per-result tool calls — replaces the legacy toolCallsExpected/Actual JSON
+// fields on every lab result row. Returns rows ordered by variant
+// ('expected' before 'actual') then sequence.
+// ADR: 2026-05-02-lab-tool-calls-child-table.
+// ============================================================================
+
+export const labGetToolCalls = (resultId: string, resultKind: LabResultKind) =>
+  invoke<LabToolCall[]>("lab_get_tool_calls", { resultId, resultKind });
 
 // ============================================================================
 // Score weights — single source of truth lives in src-tauri/src/engine/eval.rs

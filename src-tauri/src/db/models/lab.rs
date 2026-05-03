@@ -485,6 +485,25 @@ pub struct CreateLabResultEventInput {
     pub ts_ms_relative: i64,
 }
 
+/// One row from the `lab_tool_calls` child table — replaces the legacy
+/// `tool_calls_expected/actual` JSON-array columns scattered across the lab
+/// result tables. `result_kind` is one of `'arena'|'ab'|'matrix'|'consensus'|
+/// 'eval'|'test_run'`; `variant` is `'expected'|'actual'`. See ADR
+/// 2026-05-02-lab-tool-calls-child-table.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabToolCall {
+    pub id: String,
+    pub result_kind: String,
+    pub result_id: String,
+    #[ts(type = "number")]
+    pub sequence: i64,
+    pub tool_name: String,
+    pub variant: String,
+    pub created_at: String,
+}
+
 // ============================================================================
 // Full Persona Versioning (prompts + settings + tools reference)
 // ============================================================================

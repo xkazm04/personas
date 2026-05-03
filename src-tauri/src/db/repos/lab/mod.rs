@@ -9,10 +9,44 @@ pub mod genome;
 pub mod evolution;
 pub mod versions;
 
-use crate::db::models::Json;
+use crate::db::models::{Json, LabResultKind, LabToolCall};
 use crate::db::DbPool;
 use crate::error::AppError;
 use rusqlite::params;
+
+/// List the tool calls captured for a single lab result row, ordered by
+/// variant then sequence so the frontend can render `expected` above `actual`
+/// without re-sorting. Replaces the legacy `tool_calls_expected/actual` JSON
+/// columns. ADR: 2026-05-02-lab-tool-calls-child-table.
+pub fn list_tool_calls_for_result(
+    pool: &DbPool,
+    result_id: &str,
+    result_kind: LabResultKind,
+) -> Result<Vec<LabToolCall>, AppError> {
+    timed_query!("lab_tool_calls", "lab_tool_calls::list_tool_calls_for_result", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, result_kind, result_id, sequence, tool_name, variant, created_at
+             FROM lab_tool_calls
+             WHERE result_id = ?1 AND result_kind = ?2
+             ORDER BY variant, sequence",
+        )?;
+        let rows = stmt
+            .query_map(params![result_id, result_kind.as_str()], |row| {
+                Ok(LabToolCall {
+                    id: row.get(0)?,
+                    result_kind: row.get(1)?,
+                    result_id: row.get(2)?,
+                    sequence: row.get(3)?,
+                    tool_name: row.get(4)?,
+                    variant: row.get(5)?,
+                    created_at: row.get(6)?,
+                })
+            })
+            .map_err(AppError::Database)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
 
 /// Dual-write tool calls into the `lab_tool_calls` child table alongside the
 /// JSON-array column writes inside each lab repo's `create_result`. Failures
