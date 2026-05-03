@@ -3803,6 +3803,7 @@
     },
     "design_phases": {
       "saving": "Saving credential...",
+      "elapsed_label": "{time} elapsed",
       "credential_created": "Credential Created",
       "step_connecting": "Connecting",
       "step_connecting_desc": "Establishing connection to AI",

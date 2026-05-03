@@ -3809,6 +3809,7 @@ export type Translations = {
     };
     design_phases: {
       saving: string;
+      elapsed_label: string;
       credential_created: string;
       step_connecting: string;
       step_connecting_desc: string;

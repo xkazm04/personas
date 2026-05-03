@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Check, Circle, Clock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useStepProgress } from '@/hooks/useStepProgress';
@@ -27,7 +27,7 @@ function deriveStageIndex(lines: string[]): number {
 const formatElapsed = (seconds: number) => _formatElapsed(seconds, { unit: 's' });
 
 export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const stageDefs = useMemo(() => STAGE_KEYS.map((key) => ({
     label: t.vault.design_phases[key] as string,
     description: t.vault.design_phases[`${key}_desc` as keyof typeof t.vault.design_phases] as string,
@@ -48,13 +48,6 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
     sp.setDerivedIndex(derivedIdx);
   }, [derivedIdx]);
 
-  // Last 3 output lines for the scrollable status region
-  const tailLines = outputLines.slice(-3);
-  const tailRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    tailRef.current?.scrollTo({ top: tailRef.current.scrollHeight, behavior: 'smooth' });
-  }, [outputLines.length]);
-
   // Progress: use derived index directly against total (4) for smooth 0->100
   const progress = Math.min((derivedIdx / STAGE_KEYS.length) * 100, 100);
 
@@ -68,7 +61,7 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         {elapsed >= 5 ? (
           <div className="flex items-center gap-1.5 typo-body text-foreground">
             <Clock className="w-3 h-3" />
-            <span>{formatElapsed(elapsed)} elapsed</span>
+            <span>{tx(t.vault.design_phases.elapsed_label, { time: formatElapsed(elapsed) })}</span>
           </div>
         ) : (
           <div />
@@ -124,25 +117,13 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
         })}
       </div>
 
-      {/* Latest output detail (scrollable, up to 3 lines) */}
-      {tailLines.length > 0 && (
-        <div
-          ref={tailRef}
-          className="px-3 hidden py-2 rounded-modal bg-secondary/30 border border-primary/10 typo-code text-foreground font-mono max-h-[4.5rem] overflow-y-auto"
-        >
-          {tailLines.map((line, i) => (
-            <div key={outputLines.length - tailLines.length + i}>{line}</div>
-          ))}
-        </div>
-      )}
-
       <div className="flex justify-end">
         <button
           onClick={onCancel}
           className="px-4 py-2 bg-secondary/60 hover:bg-secondary text-foreground/90 rounded-modal typo-body transition-colors"
           data-testid="analyzing-cancel-btn"
         >
-          Cancel
+          {t.common.cancel}
         </button>
       </div>
     </div>
