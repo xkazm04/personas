@@ -23,14 +23,13 @@ import {
   type DisplayUseCase, type UseCaseHealth,
 } from './shared/displayUseCase';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
-import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { CredentialMetadata } from '@/lib/types/types';
 
 interface Props {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   modelDirty: boolean;
   credentials: CredentialMetadata[];
-  connectorDefinitions: ConnectorDefinition[];
 }
 
 const RUN_LOCK_MS = 60_000;
@@ -145,7 +144,6 @@ export function RecipesVariantSigilGrid(props: Props) {
               uc={activeUc}
               personaId={personaId}
               credentials={props.credentials}
-              connectorDefinitions={props.connectorDefinitions}
               memoriesDefault={memoriesDefault}
               reviewsDefault={reviewsDefault}
               isExecuting={isExecuting}

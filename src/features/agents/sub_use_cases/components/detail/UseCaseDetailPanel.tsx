@@ -1,6 +1,5 @@
 import { Play, Square, ArrowRight, Rocket } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import { UseCaseModelDropdown } from './UseCaseModelDropdown';
 import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
 import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
@@ -10,11 +9,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseDetailPanelProps {
   useCaseId: string;
-  credentials: CredentialMetadata[];
-  connectorDefinitions: ConnectorDefinition[];
 }
 
-export function UseCaseDetailPanel({ useCaseId, credentials: _credentials, connectorDefinitions: _connectorDefinitions }: UseCaseDetailPanelProps) {
+export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
   const {
     useCase,
     isTestRunning,

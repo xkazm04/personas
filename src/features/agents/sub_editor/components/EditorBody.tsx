@@ -187,7 +187,7 @@ export function EditorBody() {
               {editorTab === 'activity' && <ActivityTab />}
               {editorTab === 'use-cases' && (
                 <EditorTabContent>
-                  <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} connectorDefinitions={connectorDefinitions} />
+                  <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
                 </EditorTabContent>
               )}
               {editorTab === 'lab' && <LabTab />}

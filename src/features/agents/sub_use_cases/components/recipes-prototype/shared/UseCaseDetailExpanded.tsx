@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
+import type { CredentialMetadata } from '@/lib/types/types';
 import { UseCaseHistory } from '@/features/shared/components/use-cases/UseCaseHistory';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,7 +23,6 @@ interface UseCaseDetailExpandedProps {
   uc: DisplayUseCase;
   personaId: string;
   credentials: CredentialMetadata[];
-  connectorDefinitions: ConnectorDefinition[];
   memoriesDefault: boolean;
   reviewsDefault: boolean;
   isExecuting: boolean;
@@ -52,7 +51,7 @@ interface UseCaseDetailExpandedProps {
  *   └─────────────────────────────────────────────────────────────────────────┘
  */
 export function UseCaseDetailExpanded({
-  uc, personaId, credentials, connectorDefinitions,
+  uc, personaId, credentials,
   memoriesDefault, reviewsDefault,
   isExecuting, isThisExecuting, pendingToggleId, historyRefreshKey,
   onBack, onToggle, onRun, onSimulate, onRerun,
@@ -297,11 +296,7 @@ export function UseCaseDetailExpanded({
                   transition={{ duration: 0.14 }}
                   className="p-3"
                 >
-                  <UseCaseDetailPanel
-                    useCaseId={uc.id}
-                    credentials={credentials}
-                    connectorDefinitions={connectorDefinitions}
-                  />
+                  <UseCaseDetailPanel useCaseId={uc.id} />
                 </motion.div>
               )}
             </AnimatePresence>
