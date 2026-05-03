@@ -158,7 +158,7 @@ pub fn create_result(
     let now = chrono::Utc::now().to_rfc3339();
 
     let conn = pool.get()?;
-    conn.query_row(
+    let result = conn.query_row(
         "INSERT INTO persona_test_results
             (id, test_run_id, scenario_name, model_id, provider, status,
              output_preview, tool_calls_expected, tool_calls_actual,
@@ -189,7 +189,15 @@ pub fn create_result(
         ],
         row_to_result,
     )
-    .map_err(AppError::Database)
+    .map_err(AppError::Database)?;
+    crate::db::repos::lab::write_tool_calls_child_rows(
+        &conn,
+        "test_run",
+        &result.id,
+        input.tool_calls_expected.as_ref(),
+        input.tool_calls_actual.as_ref(),
+    );
+    Ok(result)
     })
 }
 
@@ -225,6 +233,13 @@ pub fn batch_create_results(
                 ],
                 row_to_result,
             ).map_err(AppError::Database)?;
+            crate::db::repos::lab::write_tool_calls_child_rows(
+                &tx,
+                "test_run",
+                &result.id,
+                input.tool_calls_expected.as_ref(),
+                input.tool_calls_actual.as_ref(),
+            );
             results.push(result);
         }
         tx.commit()?;

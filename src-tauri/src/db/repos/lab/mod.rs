@@ -9,9 +9,53 @@ pub mod genome;
 pub mod evolution;
 pub mod versions;
 
+use crate::db::models::Json;
 use crate::db::DbPool;
 use crate::error::AppError;
 use rusqlite::params;
+
+/// Dual-write tool calls into the `lab_tool_calls` child table alongside the
+/// JSON-array column writes inside each lab repo's `create_result`. Failures
+/// are logged and swallowed during this transition phase: the JSON column
+/// remains the canonical source until the cutover step (step 6), so a partial
+/// child-table write does not corrupt user data — analytics simply underreport
+/// until the next backfill or run replay.
+///
+/// `result_kind` must match the CHECK constraint on `lab_tool_calls`: one of
+/// `'arena'`, `'ab'`, `'matrix'`, `'consensus'`, `'eval'`, `'test_run'`.
+///
+/// ADR: 2026-05-02-lab-tool-calls-child-table.
+pub(crate) fn write_tool_calls_child_rows(
+    conn: &rusqlite::Connection,
+    result_kind: &str,
+    result_id: &str,
+    tool_calls_expected: Option<&Json<Vec<String>>>,
+    tool_calls_actual: Option<&Json<Vec<String>>>,
+) {
+    for (variant, tools_opt) in [
+        ("expected", tool_calls_expected),
+        ("actual", tool_calls_actual),
+    ] {
+        let Some(tools) = tools_opt else { continue };
+        for (sequence, tool_name) in tools.iter().enumerate() {
+            let id = uuid::Uuid::new_v4().to_string();
+            if let Err(e) = conn.execute(
+                "INSERT OR IGNORE INTO lab_tool_calls
+                    (id, result_kind, result_id, sequence, tool_name, variant)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                params![id, result_kind, result_id, sequence as i64, tool_name, variant],
+            ) {
+                tracing::warn!(
+                    result_kind = %result_kind,
+                    result_id = %result_id,
+                    variant = %variant,
+                    error = %e,
+                    "Failed to dual-write lab_tool_calls; JSON column remains canonical"
+                );
+            }
+        }
+    }
+}
 
 /// Single-query active progress lookup across all 4 lab run tables.
 /// Returns all (mode, run_id, progress_json) tuples for non-terminal runs

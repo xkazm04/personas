@@ -87,7 +87,7 @@ pub fn create_result(
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
-        conn.query_row(
+        let result = conn.query_row(
             "INSERT INTO lab_arena_results
                 (id, run_id, scenario_name, model_id, provider, status,
                  output_preview, tool_calls_expected, tool_calls_actual,
@@ -121,6 +121,14 @@ pub fn create_result(
             ],
             row_to_result,
         )
-        .map_err(AppError::Database)
+        .map_err(AppError::Database)?;
+        super::write_tool_calls_child_rows(
+            &conn,
+            "arena",
+            &result.id,
+            input.base.tool_calls_expected.as_ref(),
+            input.base.tool_calls_actual.as_ref(),
+        );
+        Ok(result)
     })
 }

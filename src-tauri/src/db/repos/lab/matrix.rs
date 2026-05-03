@@ -120,7 +120,7 @@ pub fn create_result(
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
-        conn.query_row(
+        let result = conn.query_row(
             "INSERT INTO lab_matrix_results
                 (id, run_id, variant, scenario_name, model_id, provider, status,
                  output_preview, tool_calls_expected, tool_calls_actual,
@@ -155,6 +155,14 @@ pub fn create_result(
             ],
             row_to_result,
         )
-        .map_err(AppError::Database)
+        .map_err(AppError::Database)?;
+        super::write_tool_calls_child_rows(
+            &conn,
+            "matrix",
+            &result.id,
+            input.base.tool_calls_expected.as_ref(),
+            input.base.tool_calls_actual.as_ref(),
+        );
+        Ok(result)
     })
 }
