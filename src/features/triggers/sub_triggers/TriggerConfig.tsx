@@ -79,9 +79,10 @@ export function TriggerConfig() {
           />
         )}
 
-      {/* Trigger Error */}
-      {triggerError?.kind === 'crud' && (
-        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
+      {/* Trigger Error — render any kind (crud + fetch) so fetch failures
+          aren't silently swallowed. */}
+      {triggerError && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400" role="alert">
           <span className="flex-1">{triggerError.message}</span>
           <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
             <X className="w-3.5 h-3.5" />
