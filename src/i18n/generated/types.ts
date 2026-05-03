@@ -3758,6 +3758,7 @@ export type Translations = {
       permission_required: string;
       approve_description: string;
       approve_connect: string;
+      imported_suffix: string;
     };
     picker_section: {
       no_connectors: string;

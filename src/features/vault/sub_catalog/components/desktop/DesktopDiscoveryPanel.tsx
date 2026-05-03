@@ -102,7 +102,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
   const handleImportMcpServer = async (server: ImportedMcpServer) => {
     setImportingServer(server.name);
     try {
-      await registerImportedMcpServer(server, `${server.label} (Claude Desktop)`);
+      await registerImportedMcpServer(server, tx(dd.imported_suffix, { name: server.label }));
       setImportedServers((prev) => new Set([...prev, server.name]));
       onCredentialCreated?.();
     } catch (e) {

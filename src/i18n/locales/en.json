@@ -3751,7 +3751,8 @@
       "mcp_config_hint": "If you have Claude Desktop installed, ensure it has MCP servers configured in its settings.",
       "permission_required": "Permission Required",
       "approve_description": "requests the following capabilities. Review and approve to enable this connector.",
-      "approve_connect": "Approve & Connect"
+      "approve_connect": "Approve & Connect",
+      "imported_suffix": "{name} (Claude Desktop)"
     },
     "picker_section": {
       "no_connectors": "No connectors found",
