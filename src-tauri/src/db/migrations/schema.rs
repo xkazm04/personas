@@ -226,9 +226,11 @@ CREATE INDEX IF NOT EXISTS idx_rm_created ON review_messages(review_id, created_
 -- Messages
 -- ============================================================================
 
+-- FKs added by the FK hygiene ADR (2026-05-02-fk-hygiene-cascade). Fresh
+-- installs land in the right shape; legacy DBs get rebuilt by fk_hygiene.rs.
 CREATE TABLE IF NOT EXISTS persona_messages (
     id           TEXT PRIMARY KEY,
-    persona_id   TEXT NOT NULL,
+    persona_id   TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     execution_id TEXT,
     title        TEXT,
     content      TEXT NOT NULL,
@@ -251,7 +253,7 @@ CREATE INDEX IF NOT EXISTS idx_pmsg_thread ON persona_messages(thread_id);
 
 CREATE TABLE IF NOT EXISTS persona_message_deliveries (
     id            TEXT PRIMARY KEY,
-    message_id    TEXT NOT NULL,
+    message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
     channel_type  TEXT NOT NULL,
     status        TEXT NOT NULL DEFAULT 'pending',
     error_message TEXT,
@@ -287,8 +289,9 @@ CREATE TABLE IF NOT EXISTS persona_events (
     project_id         TEXT NOT NULL DEFAULT 'default',
     event_type         TEXT NOT NULL,
     source_type        TEXT NOT NULL,
+    -- source_id is polymorphic by source_type — no FK possible.
     source_id          TEXT,
-    target_persona_id  TEXT,
+    target_persona_id  TEXT REFERENCES personas(id) ON DELETE SET NULL,
     payload            TEXT,
     payload_iv         TEXT,
     status             TEXT NOT NULL DEFAULT 'pending',
@@ -375,7 +378,7 @@ CREATE INDEX IF NOT EXISTS idx_design_patterns_condition ON persona_design_patte
 
 CREATE TABLE IF NOT EXISTS persona_metrics_snapshots (
     id                      TEXT PRIMARY KEY,
-    persona_id              TEXT NOT NULL,
+    persona_id              TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     snapshot_date           TEXT NOT NULL,
     total_executions        INTEGER NOT NULL DEFAULT 0,
     successful_executions   INTEGER NOT NULL DEFAULT 0,
@@ -398,7 +401,7 @@ CREATE INDEX IF NOT EXISTS idx_pms_date    ON persona_metrics_snapshots(snapshot
 
 CREATE TABLE IF NOT EXISTS persona_prompt_versions (
     id                TEXT PRIMARY KEY,
-    persona_id        TEXT NOT NULL,
+    persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     version_number    INTEGER NOT NULL,
     structured_prompt TEXT,
     system_prompt     TEXT,
@@ -483,7 +486,7 @@ CREATE INDEX IF NOT EXISTS idx_cd_category ON connector_definitions(category);
 
 CREATE TABLE IF NOT EXISTS persona_memories (
     id                  TEXT PRIMARY KEY,
-    persona_id          TEXT NOT NULL,
+    persona_id          TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     title               TEXT NOT NULL,
     content             TEXT NOT NULL,
     category            TEXT DEFAULT 'fact',
@@ -505,7 +508,7 @@ CREATE INDEX IF NOT EXISTS idx_pm_persona_category         ON persona_memories(p
 
 CREATE TABLE IF NOT EXISTS persona_healing_issues (
     id          TEXT PRIMARY KEY,
-    persona_id  TEXT NOT NULL,
+    persona_id  TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
     execution_id TEXT,
     title       TEXT NOT NULL,
     description TEXT NOT NULL,
@@ -544,7 +547,7 @@ CREATE INDEX IF NOT EXISTS idx_bar_persona ON budget_alert_rules(persona_id);
 
 CREATE TABLE IF NOT EXISTS pipeline_runs (
     id              TEXT PRIMARY KEY,
-    team_id         TEXT NOT NULL,
+    team_id         TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
     status          TEXT NOT NULL DEFAULT 'running',
     node_statuses   TEXT NOT NULL DEFAULT '[]',
     input_data      TEXT,

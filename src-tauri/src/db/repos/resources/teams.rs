@@ -261,11 +261,14 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let mut conn = pool.get()?;
         let tx = conn.transaction().map_err(AppError::Database)?;
-        // Clean up all related rows explicitly (SQLite FK CASCADE requires
-        // foreign_keys pragma ON, which is OFF by default).
+        // pipeline_runs is now FK-CASCADE'd via the FK hygiene ADR
+        // (2026-05-02-fk-hygiene-cascade); the other three tables remain
+        // outside the FK-hygiene scope (persona_team_connections,
+        // persona_team_members, team_memories) and still need manual
+        // cleanup. PRAGMA foreign_keys = ON is the global default per
+        // db/mod.rs:83-86, so the CASCADE actually fires.
         tx.execute("DELETE FROM persona_team_connections WHERE team_id = ?1", params![id])?;
         tx.execute("DELETE FROM persona_team_members WHERE team_id = ?1", params![id])?;
-        tx.execute("DELETE FROM pipeline_runs WHERE team_id = ?1", params![id])?;
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
         tx.commit().map_err(AppError::Database)?;

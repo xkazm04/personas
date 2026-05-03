@@ -956,13 +956,13 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 
         let tx = conn.unchecked_transaction()?;
 
-        // Clean up records that lack ON DELETE CASCADE foreign keys.
-        // Tables with CASCADE (persona_tools, persona_triggers, persona_executions,
-        // persona_event_subscriptions, etc.) are handled automatically by SQLite.
-        tx.execute("DELETE FROM persona_memories WHERE persona_id = ?1", params![id])?;
-        tx.execute("DELETE FROM persona_messages WHERE persona_id = ?1", params![id])?;
-        tx.execute("DELETE FROM persona_events WHERE source_id = ?1 OR target_persona_id = ?1", params![id])?;
-        tx.execute("DELETE FROM persona_healing_issues WHERE persona_id = ?1", params![id])?;
+        // persona_memories, persona_messages, persona_healing_issues, and
+        // persona_events.target_persona_id are now FK-cascaded /
+        // FK-set-null automatically by the FK hygiene ADR
+        // (2026-05-02-fk-hygiene-cascade). Only persona_events.source_id
+        // still needs manual cleanup — it's polymorphic (source_type can
+        // be persona/trigger/system/...) so the FK couldn't constrain it.
+        tx.execute("DELETE FROM persona_events WHERE source_id = ?1", params![id])?;
 
         let rows = tx.execute("DELETE FROM personas WHERE id = ?1", params![id])?;
         tx.commit()?;
