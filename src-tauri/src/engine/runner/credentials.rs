@@ -301,15 +301,32 @@ pub(crate) async fn inject_connector_credentials(
     }
 }
 
+/// Successful OAuth refresh result.
+///
+/// A-grade Phase 4 (2026-05-03): pre-Phase-4 the refresh path returned
+/// only the access_token and discarded `expires_in`, so the credential's
+/// metadata never gained `oauth_token_expires_at` and the proactive
+/// `oauth_refresh_tick` never picked the credential up. By surfacing the
+/// expiry alongside the token, callers can patch metadata in the same
+/// breath, which engages the auto-rotation engine without requiring a
+/// separate code path.
+struct OAuthRefreshOk {
+    access_token: String,
+    /// Lifetime in seconds reported by the provider (Google: typically 3600).
+    /// `None` when the provider omitted the field — caller should fall back
+    /// to a sensible default rather than leaving expiry unrecorded.
+    expires_in: Option<u64>,
+}
+
 /// Attempt to refresh an OAuth access_token using a stored refresh_token.
 /// `override_client` can supply (client_id, client_secret) when the credential
 /// itself doesn't store them (e.g. `app_managed` mode).
-/// Returns the new access_token on success, or None on failure.
+/// Returns the new access_token + expiry on success, or None on failure.
 async fn try_refresh_oauth_token(
     fields: &HashMap<String, String>,
     connector_name: &str,
     override_client: Option<(&str, &str)>,
-) -> Option<String> {
+) -> Option<OAuthRefreshOk> {
     let refresh_token = fields.get("refresh_token").filter(|v| !v.is_empty())?;
 
     // Resolve client credentials: prefer fields, then override, then fail
@@ -363,9 +380,17 @@ async fn try_refresh_oauth_token(
 
     let value: serde_json::Value = response.json().await.ok()?;
     let new_token = value.get("access_token")?.as_str()?.to_string();
+    let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
 
-    tracing::info!("Successfully refreshed OAuth access token for '{}'", connector_name);
-    Some(new_token)
+    tracing::info!(
+        connector = connector_name,
+        expires_in = ?expires_in,
+        "Successfully refreshed OAuth access token"
+    );
+    Some(OAuthRefreshOk {
+        access_token: new_token,
+        expires_in,
+    })
 }
 
 /// Decrypt a single credential and inject its fields as env vars.
@@ -428,11 +453,39 @@ pub(crate) async fn inject_credential(
             None
         };
         let override_ref = override_client.as_ref().map(|(id, sec)| (id.as_str(), sec.as_str()));
-        if let Some(fresh_token) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
-            fields.insert("access_token".to_string(), fresh_token.clone());
+        if let Some(refresh_ok) = try_refresh_oauth_token(&fields, connector_name, override_ref).await {
+            fields.insert("access_token".to_string(), refresh_ok.access_token.clone());
             // Persist the refreshed token back to field-level storage
             if let Err(e) = cred_repo::save_fields(pool, &cred.id, &fields) {
                 tracing::error!(credential_id = %cred.id, credential_name = %cred.name, "Failed to persist refreshed OAuth token: {e}");
+            }
+            // A-grade Phase 4 (2026-05-03): also patch the credential's
+            // metadata with `oauth_token_expires_at` so the proactive
+            // `oauth_refresh_tick` engages this credential going forward.
+            // Pre-Phase-4 the metadata was untouched and the periodic
+            // ticker silently skipped any credential whose expiry it
+            // didn't already know — making refresh purely on-demand and
+            // wasting a Google round-trip on every persona execution.
+            // Falls back to 3600s when the provider omits expires_in
+            // (mirrors DEFAULT_FALLBACK_LIFETIME_SECS in oauth_refresh.rs).
+            let lifetime_secs = refresh_ok.expires_in.unwrap_or(3600);
+            let expires_at = chrono::Utc::now()
+                + chrono::Duration::seconds(lifetime_secs as i64);
+            let mut patch = serde_json::Map::new();
+            patch.insert(
+                "oauth_token_expires_at".into(),
+                serde_json::Value::String(expires_at.to_rfc3339()),
+            );
+            patch.insert(
+                "oauth_token_lifetime_secs".into(),
+                serde_json::Value::Number(lifetime_secs.into()),
+            );
+            if let Err(e) = cred_repo::patch_metadata_atomic(pool, &cred.id, patch) {
+                tracing::warn!(
+                    credential_id = %cred.id,
+                    error = %e,
+                    "Failed to patch oauth_token_expires_at metadata after runtime refresh"
+                );
             }
         }
     }
