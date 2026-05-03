@@ -48,7 +48,7 @@ export function ForagingResultCard({
 }: ForagingResultCardProps) {
   const { t } = useTranslation();
   const fg = t.vault.foraging;
-  const meta = SOURCE_META[credential.source] ?? SOURCE_META.env_var;
+  const meta = SOURCE_META[credential.source];
   const Icon = meta.icon;
   const disabled = credential.already_imported || isImported || isImporting;
 
