@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import { CredentialTypePicker } from '@/features/vault/sub_catalog/components/forms/CredentialTypePicker';
-import { CredentialSchemaForm, MCP_SCHEMA, CUSTOM_SCHEMA, DATABASE_SCHEMA } from '@/features/vault/sub_catalog/components/schemas/CredentialSchemaForm';
+import { CredentialSchemaForm, getMcpSchema, getCustomSchema, getDatabaseSchema } from '@/features/vault/sub_catalog/components/schemas/CredentialSchemaForm';
+import { useTranslation } from '@/i18n/useTranslation';
 import { ForagingPanel } from '@/features/vault/sub_catalog/components/foraging/ForagingPanel';
 import { DesktopDiscoveryPanel } from '@/features/vault/sub_catalog/components/desktop/DesktopDiscoveryPanel';
 import { DatabaseListView } from '@/features/vault/sub_databases/DatabaseListView';
@@ -22,6 +24,10 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
     fetchConnectorDefinitions,
     IS_DESKTOP,
   } = state;
+  const { t } = useTranslation();
+  const mcpSchema = useMemo(() => getMcpSchema(t), [t]);
+  const customSchema = useMemo(() => getCustomSchema(t), [t]);
+  const databaseSchema = useMemo(() => getDatabaseSchema(t), [t]);
 
   return (
     <div data-testid="vault-add-views">
@@ -90,7 +96,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
 
       {viewState.view === 'add-mcp' && (
         <CredentialSchemaForm
-          config={MCP_SCHEMA}
+          config={mcpSchema}
           onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
           onComplete={() => dispatch({ type: 'GO_LIST' })}
         />
@@ -98,7 +104,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
 
       {viewState.view === 'add-custom' && (
         <CredentialSchemaForm
-          config={CUSTOM_SCHEMA}
+          config={customSchema}
           onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
           onComplete={() => dispatch({ type: 'GO_LIST' })}
         />
@@ -106,7 +112,7 @@ export function CredentialAddViews({ state }: CredentialAddViewsProps) {
 
       {viewState.view === 'add-database' && (
         <CredentialSchemaForm
-          config={DATABASE_SCHEMA}
+          config={databaseSchema}
           onBack={() => dispatch({ type: 'GO_ADD_NEW' })}
           onComplete={() => dispatch({ type: 'GO_LIST' })}
         />

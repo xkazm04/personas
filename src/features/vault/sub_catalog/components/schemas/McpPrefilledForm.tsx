@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
-import { CredentialSchemaForm, MCP_SCHEMA } from './CredentialSchemaForm';
+import { CredentialSchemaForm, getMcpSchema } from './CredentialSchemaForm';
 import type { ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
+import { useTranslation } from '@/i18n/useTranslation';
 
 interface McpPrefilledFormProps {
   connector: ConnectorDefinition;
@@ -10,6 +11,8 @@ interface McpPrefilledFormProps {
 }
 
 export function McpPrefilledForm({ connector, authMethod, onComplete, onCancel }: McpPrefilledFormProps) {
+  const { t } = useTranslation();
+  const mcpSchema = useMemo(() => getMcpSchema(t), [t]);
   const initialValues = useMemo<Record<string, string> | undefined>(() => {
     if (authMethod.package) return { command: `npx -y ${authMethod.package}` };
     return undefined;
@@ -26,7 +29,7 @@ export function McpPrefilledForm({ connector, authMethod, onComplete, onCancel }
 
   return (
     <CredentialSchemaForm
-      config={MCP_SCHEMA}
+      config={mcpSchema}
       defaultSubType={authMethod.transport ?? 'stdio'}
       initialValues={initialValues}
       initialExtras={initialExtras}

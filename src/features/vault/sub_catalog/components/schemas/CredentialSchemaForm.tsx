@@ -11,9 +11,9 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
-// Re-export types and configs for backwards compatibility
+// Re-export types and schema factories for callers.
 export type { SchemaSubType, ExtraFieldDef, SchemaFormConfig } from './schemaFormTypes';
-export { MCP_SCHEMA, CUSTOM_SCHEMA, DATABASE_SCHEMA } from './schemaConfigs';
+export { getMcpSchema, getCustomSchema, getDatabaseSchema } from './schemaConfigs';
 
 interface CredentialSchemaFormProps {
   config: SchemaFormConfig;
