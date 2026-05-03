@@ -10,6 +10,8 @@ export type Translations = {
     saving: string;
     deleting: string;
     creating: string;
+    imported: string;
+    import_action: string;
     retry: string;
     cancel: string;
     save: string;
@@ -3762,6 +3764,8 @@ export type Translations = {
       rescan_aria: string;
       app_installed: string;
       app_running: string;
+      env_var_one: string;
+      env_var_other: string;
     };
     picker_section: {
       no_connectors: string;

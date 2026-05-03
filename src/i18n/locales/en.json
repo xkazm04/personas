@@ -4,6 +4,8 @@
     "saving": "Saving...",
     "deleting": "Deleting...",
     "creating": "Creating...",
+    "imported": "Imported",
+    "import_action": "Import",
     "retry": "Retry",
     "cancel": "Cancel",
     "save": "Save",
@@ -3755,7 +3757,9 @@
       "imported_suffix": "{name} (Claude Desktop)",
       "rescan_aria": "Rescan desktop apps and MCP servers",
       "app_installed": "Installed",
-      "app_running": "Running"
+      "app_running": "Running",
+      "env_var_one": "{count} env var",
+      "env_var_other": "{count} env vars"
     },
     "picker_section": {
       "no_connectors": "No connectors found",

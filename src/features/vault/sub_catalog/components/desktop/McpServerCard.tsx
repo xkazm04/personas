@@ -12,7 +12,7 @@ interface McpServerCardProps {
 
 export function McpServerCard({ server, imported, importing, onImport }: McpServerCardProps) {
   const { t, tx } = useTranslation();
-  const forg = t.vault.foraging;
+  const dd = t.vault.desktop_discovery;
   const envCount = Object.keys(server.env).length;
   return (
     <div className="flex items-center gap-3 p-3 rounded-modal border border-primary/10 bg-secondary/20">
@@ -24,14 +24,14 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
         <p className="typo-code text-foreground truncate font-mono">{server.command}</p>
         {envCount > 0 && (
           <p className="typo-caption text-foreground">
-            {tx(envCount === 1 ? forg.env_var_one : forg.env_var_other, { count: envCount })}
+            {tx(envCount === 1 ? dd.env_var_one : dd.env_var_other, { count: envCount })}
           </p>
         )}
       </div>
       {imported ? (
         <span className="flex items-center gap-1 typo-caption text-emerald-400">
           <CheckCircle2 className="w-3.5 h-3.5" />
-          {forg.imported}
+          {t.common.imported}
         </span>
       ) : (
         <button
@@ -42,7 +42,7 @@ export function McpServerCard({ server, imported, importing, onImport }: McpServ
           {importing ? (
             <LoadingSpinner size="sm" />
           ) : (
-            forg.import_server
+            t.common.import_action
           )}
         </button>
       )}
