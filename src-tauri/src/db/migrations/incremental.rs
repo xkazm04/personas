@@ -2397,6 +2397,12 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     backfill_lab_tool_calls(conn)?;
     drop_legacy_tool_calls_columns(conn);
 
+    // FK hygiene: retrofit ON DELETE CASCADE / SET NULL onto child tables
+    // that were originally created without REFERENCES clauses. Each table
+    // is rebuilt independently and idempotently.
+    // ADR: 2026-05-02-fk-hygiene-cascade.
+    super::fk_hygiene::run(conn)?;
+
     Ok(())
 }
 

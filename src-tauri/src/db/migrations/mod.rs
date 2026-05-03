@@ -18,6 +18,7 @@
 //   helpers.rs     — migrate_blob_credentials_to_fields(), normalize_credential_field_keys(),
 //                    classify_field_type() (all pub(super))
 
+mod fk_hygiene;
 mod helpers;
 mod incremental;
 mod initial;
