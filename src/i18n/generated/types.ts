@@ -3664,6 +3664,9 @@ export type Translations = {
       foraging_description: string;
       no_setup_guide: string;
       open_setup_page: string;
+      role_developer: string;
+      role_support: string;
+      role_manager: string;
     };
     cli_capture: {
       cta: string;

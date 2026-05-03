@@ -3657,7 +3657,10 @@
       "workspace_connect_description": "One Google login creates Gmail, Calendar, Drive, and Sheets credentials automatically",
       "foraging_description": "Scan your filesystem for existing API keys, AWS profiles, env vars, and more",
       "no_setup_guide": "No setup guide available for this connector. Visit the documentation link below for instructions.",
-      "open_setup_page": "Open {label} setup page"
+      "open_setup_page": "Open {label} setup page",
+      "role_developer": "Developer",
+      "role_support": "Support",
+      "role_manager": "Manager"
     },
     "cli_capture": {
       "cta": "Import from local CLI",

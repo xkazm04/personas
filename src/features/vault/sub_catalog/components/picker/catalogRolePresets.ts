@@ -12,17 +12,14 @@ export type RolePreset = 'developer' | 'support' | 'manager';
  * mismatches in dev (production keeps the existing silent behaviour to
  * avoid blowing up the UI on a transient catalog skew).
  */
-export const ROLE_PRESETS: Record<RolePreset, { label: string; categories: string[] }> = {
+export const ROLE_PRESETS: Record<RolePreset, { categories: string[] }> = {
   developer: {
-    label: 'Developer',
     categories: ['devops', 'cloud', 'database', 'monitoring', 'analytics', 'ai'],
   },
   support: {
-    label: 'Support',
     categories: ['support', 'email', 'messaging', 'productivity', 'cms'],
   },
   manager: {
-    label: 'Manager',
     categories: ['project_management', 'finance', 'ecommerce', 'social', 'crm', 'productivity', 'scheduling'],
   },
 };

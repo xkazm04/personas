@@ -85,15 +85,16 @@ export function CredentialPickerFilters({
       </div>
       <div className="flex items-center gap-1 ml-auto">
         {([
-          { role: 'developer' as const, icon: Code2, label: 'Developer' },
-          { role: 'support' as const, icon: HeadsetIcon, label: 'Support' },
-          { role: 'manager' as const, icon: Briefcase, label: 'Manager' },
+          { role: 'developer' as const, icon: Code2, label: t.vault.picker_section.role_developer },
+          { role: 'support' as const, icon: HeadsetIcon, label: t.vault.picker_section.role_support },
+          { role: 'manager' as const, icon: Briefcase, label: t.vault.picker_section.role_manager },
         ]).map(({ role, icon: Icon, label }) => (
           <button
             key={role}
             type="button"
             onClick={() => onRoleToggle(role)}
             title={label}
+            aria-label={label}
             className={`p-1.5 rounded-card border transition-colors ${
               activeRole === role
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
