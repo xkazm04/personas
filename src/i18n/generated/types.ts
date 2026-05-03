@@ -3607,6 +3607,8 @@ export type Translations = {
       selected: string;
       import_to_vault_one: string;
       import_to_vault_other: string;
+      imported_to_vault_one: string;
+      imported_to_vault_other: string;
       env_var_one: string;
       env_var_other: string;
       import_server: string;

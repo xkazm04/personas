@@ -3601,6 +3601,8 @@
       "selected": "selected",
       "import_to_vault_one": "Import {count} credential to vault",
       "import_to_vault_other": "Import {count} credentials to vault",
+      "imported_to_vault_one": "{count} credential imported to vault",
+      "imported_to_vault_other": "{count} credentials imported to vault",
       "env_var_one": "{count} env var",
       "env_var_other": "{count} env vars",
       "import_server": "Import",
