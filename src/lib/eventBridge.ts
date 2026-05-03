@@ -303,8 +303,15 @@ const registry: EventRegistration[] = [
 
           const store = useAgentStore.getState();
 
-          // Only process events for the active build session
-          if (!store.buildSessionId || payload.session_id !== store.buildSessionId) return;
+          // A-grade Phase 3 (2026-05-03): only require that the event's
+          // session_id is in our buildSessions map. Pre-Phase-3 we filtered
+          // by the scalar `buildSessionId` (which mirrors only the
+          // currently-active session) — that silently dropped events for
+          // backgrounded sessions even though the store already routes by
+          // event.session_id via updateSessionInState. The result was
+          // backgrounded builds appearing frozen until the user clicked
+          // their sidebar entry to make them active again.
+          if (!store.buildSessions[payload.session_id]) return;
 
           switch (payload.type) {
             case "cell_update":

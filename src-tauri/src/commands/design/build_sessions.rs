@@ -370,8 +370,13 @@ pub async fn test_build_draft(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
-    // Load and validate session
-    let session = build_session_repo::get_by_id(&state.db, &session_id)?
+    // A-grade Phase 3 (2026-05-03): brief server-side retry to close the
+    // agent_ir-landing race. Pre-Phase-3 the client-side rapid-validation
+    // driver had to poll for up to 180s because the LLM's agent_ir
+    // CellUpdate write could lag the phase-transition event the frontend
+    // observes. Retry the session+persona load up to 3s before falling
+    // back to the legacy "no agent_ir" error path.
+    let mut session = build_session_repo::get_by_id(&state.db, &session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
     session
@@ -379,28 +384,78 @@ pub async fn test_build_draft(
         .validate_transition(BuildPhase::Testing)
         .map_err(AppError::Validation)?;
 
-    // Parse agent_ir — try session first, fall back to persona's last_design_result
-    let mut agent_ir: crate::db::models::AgentIr = if let Some(ref raw) = session.agent_ir {
+    // Parse agent_ir — try session first, fall back to persona's last_design_result.
+    // If BOTH are absent, retry briefly: the agent_ir CellUpdate write
+    // could be in-flight from runner.rs's event loop. Up to 6 polls × 500ms = 3s.
+    let mut agent_ir_str: Option<String> = session.agent_ir.clone();
+    let mut design_result_str: Option<String> = None;
+    if agent_ir_str.is_none() {
+        let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+        design_result_str = persona.last_design_result.clone();
+        if design_result_str.is_none() {
+            tracing::info!(
+                session_id = %session_id,
+                persona_id = %persona_id,
+                "agent_ir + last_design_result both absent — entering brief retry window"
+            );
+            for attempt in 1..=6u32 {
+                tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                if let Some(s) = build_session_repo::get_by_id(&state.db, &session_id)? {
+                    if s.agent_ir.is_some() {
+                        tracing::info!(
+                            session_id = %session_id,
+                            attempt,
+                            "agent_ir landed during retry"
+                        );
+                        agent_ir_str = s.agent_ir.clone();
+                        session = s;
+                        break;
+                    }
+                    session = s;
+                }
+                persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+                if persona.last_design_result.is_some() {
+                    tracing::info!(
+                        session_id = %session_id,
+                        attempt,
+                        "last_design_result landed during retry"
+                    );
+                    design_result_str = persona.last_design_result.clone();
+                    break;
+                }
+            }
+        }
+    }
+
+    let mut agent_ir: crate::db::models::AgentIr = if let Some(ref raw) = agent_ir_str {
         serde_json::from_str(raw).map_err(|e| {
             tracing::error!(session_id = %session_id, error = %e, raw_len = raw.len(), "Failed to parse agent_ir");
             AppError::Validation(format!("Build session agent_ir parse error: {e}"))
         })?
-    } else {
-        // Fallback: try persona's last_design_result (populated after first promotion or adoption seeding)
-        tracing::warn!(session_id = %session_id, persona_id = %persona_id, "Session agent_ir is null, trying persona last_design_result");
-        let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
-        let design_result = persona.last_design_result
-            .as_deref()
-            .ok_or_else(|| AppError::Validation("Build session has no agent_ir and persona has no design result".to_string()))?;
-        let ir: crate::db::models::AgentIr = serde_json::from_str(design_result).map_err(|e| {
+    } else if let Some(design_result) = design_result_str {
+        tracing::warn!(session_id = %session_id, persona_id = %persona_id, "Session agent_ir is null, using persona last_design_result");
+        let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result).map_err(|e| {
             AppError::Validation(format!("Persona design result parse error: {e}"))
         })?;
         // Backfill the session so future calls work
-        let _ = build_session_repo::update(&state.db, &session_id, &UpdateBuildSession {
-            agent_ir: Some(Some(design_result.to_string())),
+        if let Err(e) = build_session_repo::update(&state.db, &session_id, &UpdateBuildSession {
+            agent_ir: Some(Some(design_result.clone())),
             ..Default::default()
-        });
+        }) {
+            tracing::warn!(
+                session_id = %session_id,
+                error = %e,
+                "Failed to backfill session.agent_ir from last_design_result"
+            );
+        }
         ir
+    } else {
+        return Err(AppError::Validation(
+            "Build session has no agent_ir and persona has no design result \
+             (waited 3s for late LLM emit). The build may have failed earlier; \
+             check the build session log."
+                .to_string(),
+        ));
     };
 
     // Apply adoption questionnaire answers: variable substitution + configuration section.

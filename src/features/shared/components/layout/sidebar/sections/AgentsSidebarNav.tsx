@@ -134,6 +134,10 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
         sessionId: sess.sessionId,
         personaId: sess.personaId,
         phase: sess.phase,
+        // A-grade Phase 3 (2026-05-03): surface pending-question count
+        // alongside the phase so a backgrounded draft visibly signals
+        // "needs your answers" without the user clicking in.
+        pendingCount: sess.pendingQuestions.length,
         persona: personas.find((p) => p.id === sess.personaId),
         createdAt: sess.createdAt,
       }))
@@ -202,6 +206,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
             {activeDrafts.map((draft) => {
               const isActive = isCreatingPersona && draft.sessionId === activeBuildSessionId;
               const displayName = draft.persona?.name ?? 'Draft agent';
+              const needsAnswers = draft.pendingCount > 0 || draft.phase === 'awaiting_input';
               return (
                 <button
                   key={draft.sessionId}
@@ -211,14 +216,29 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
-                      ? 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
-                      : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300'
+                      ? needsAnswers
+                        ? 'bg-amber-500/10 text-amber-300 border border-amber-500/20'
+                        : 'bg-violet-500/10 text-violet-300 border border-violet-500/15'
+                      : needsAnswers
+                        ? 'text-foreground hover:bg-amber-500/5 hover:text-amber-300'
+                        : 'text-foreground hover:bg-violet-500/5 hover:text-violet-300'
                   }`}
-                  title={`Switch to draft: ${displayName} (${draft.phase})`}
+                  title={
+                    needsAnswers
+                      ? `${displayName} — needs ${draft.pendingCount || 1} answer${(draft.pendingCount || 1) === 1 ? '' : 's'}`
+                      : `Switch to draft: ${displayName} (${draft.phase})`
+                  }
                 >
-                  <LoadingSpinner className="flex-shrink-0 text-violet-400" />
+                  <LoadingSpinner className={`flex-shrink-0 ${needsAnswers ? 'text-amber-400' : 'text-violet-400'}`} />
                   <span className="truncate">{displayName}</span>
-                  <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{draft.phase}</span>
+                  {needsAnswers ? (
+                    <span className="ml-auto inline-flex items-center gap-1 text-[10px] font-medium text-amber-300">
+                      <span aria-hidden="true">?</span>
+                      {draft.pendingCount > 0 ? draft.pendingCount : ''}
+                    </span>
+                  ) : (
+                    <span className="ml-auto text-[10px] text-violet-400/60 capitalize">{draft.phase}</span>
+                  )}
                 </button>
               );
             })}

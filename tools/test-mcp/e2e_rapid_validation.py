@@ -563,46 +563,14 @@ def step_answer_dimensions(rl: RunLog, intent: str, spec: dict) -> str:
     )
 
 
-def _wait_for_agent_ir(rl: RunLog, persona_id: str, max_seconds: int = 180) -> bool:
-    """Defensive client-side poll — see C7-handoff §Lessons #2.
-    The build session can hit test_complete BEFORE session.agent_ir is
-    persisted, causing promote to fail with 'agent_ir is null'.
-
-    Multi-UC personas with multiple resolution passes can also see phase
-    regress test_complete → draft_ready → testing → test_complete as a
-    second auto-test fires. Tolerate the oscillation; succeed when
-    agentIr is non-null AND phase ∈ {test_complete, promoted}.
-    """
-    deadline = time.time() + max_seconds
-    last_phase = None
-    while time.time() < deadline:
-        sess_resp = bridge("getActiveBuildSession", {"personaId": persona_id}, 15)
-        if sess_resp.get("success"):
-            session = sess_resp.get("session") or {}
-            phase = session.get("phase")
-            has_ir = session.get("agentIr") is not None
-            if phase != last_phase:
-                rl.record(
-                    "wait_for_agent_ir.phase_change",
-                    "info",
-                    phase=phase,
-                    has_agent_ir=has_ir,
-                )
-                last_phase = phase
-            if has_ir and phase in ("test_complete", "promoted", "draft_ready"):
-                # draft_ready is acceptable too — promote is gated on
-                # agent_ir presence, not on the test having run.
-                return True
-        time.sleep(2.0)
-    return False
-
-
 def step_test_and_promote(rl: RunLog, persona_id: str) -> dict:
-    if not _wait_for_agent_ir(rl, persona_id, max_seconds=180):
-        rl.record("wait_for_agent_ir", "fail",
-                  error="session.agent_ir never landed within 180s")
-        raise SystemExit("Cannot promote — session.agent_ir is null")
-    rl.record("wait_for_agent_ir", "ok")
+    # A-grade Phase 3 (2026-05-03): client-side wait_for_agent_ir helper
+    # was removed. The race is now handled server-side inside
+    # `commands::design::build_sessions::test_build_draft` — when both
+    # session.agent_ir and persona.last_design_result are absent the
+    # command retries 6×500ms (3s total) before erroring out. The
+    # session-keyed autoTestedRef in UnifiedMatrixEntry stops post-
+    # test_complete phase oscillation from re-firing the auto-test.
 
     # See e2e_phase_a.py — auto-test fires on draft_ready, so probe state
     # before re-triggering to avoid collision.

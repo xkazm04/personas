@@ -399,6 +399,115 @@ R01 run — the test pass actually hit the Gmail API and surfaced the
 expired OAuth token. Pre-Phase-2 that signal was eaten by the bridge
 return.
 
+### Phase 3 (backgroundable build) — landed 2026-05-03
+
+Original Phase 3 scope was narrow ("delete defensive 180s polling +
+fix the agent_ir-landing race"). On user request the scope was
+extended to cover **backgroundable build** — start a build, navigate
+freely around the app, return to find it intact, with chrome-level
+indicators showing what's pending. Most infrastructure was already in
+place (multi-session Zustand store, sidebar drafts list, hydration on
+mount); Phase 3 closes the remaining gaps.
+
+Implementation:
+
+- **A0** — `src/lib/eventBridge.ts:307` was filtering build events by
+  the scalar `buildSessionId` (active session only). Backgrounded
+  sessions were silently dropping events even though store handlers
+  already route by `event.session_id` via `updateSessionInState`.
+  Filter relaxed to "session is in the buildSessions map at all".
+  This was the actual blocker for backgroundability.
+- **A1** — `src/lib/buildSessionBootstrap.ts` (new). Calls
+  `listBuildSessions(personaId: null)` on app launch and pours every
+  non-terminal session into the store via `hydrateBuildSession`.
+  Wired into `App.tsx`'s startup `Promise.all` after eventBridge so
+  events arriving during hydration land correctly.
+- **A2** — `SidebarLevel1.tsx` aggregates state across ALL active
+  sessions (not just the scalar mirror). Badge differentiates:
+  amber "Draft needs answers (N)" when any session is in
+  `awaiting_input`, sky "Testing agent" when any is testing, violet
+  "Draft in progress (N)" otherwise.
+- **A3** — `AgentsSidebarNav.tsx` active drafts list shows a `?N`
+  badge when a draft has pending questions, with amber styling. The
+  user can spot a backgrounded draft demanding answers from any
+  screen.
+- **B1** — `commands/design/build_sessions.rs::test_build_draft`.
+  Closed the agent_ir-landing race server-side: when both
+  `session.agent_ir` and `persona.last_design_result` are absent,
+  retry 6×500ms (3s total) before erroring out. Backfill the session
+  if `last_design_result` lands first. Replaces the client-side
+  180s `wait_for_agent_ir` defensive helper.
+- **B2** — `UnifiedMatrixEntry.tsx::autoTestedRef` switched from
+  persona-keyed to session-keyed. A post-test_complete phase
+  oscillation (caused by a late LLM event re-emitting agent_ir) no
+  longer re-fires the auto-test. Multi-UC builds that hit the
+  `test_complete → draft_ready → testing → test_complete` loop in
+  earlier runs are now stable.
+- **B3** — `e2e_rapid_validation.py` lost its `_wait_for_agent_ir`
+  helper and the phase-oscillation tolerance branch. The driver no
+  longer needs to be tolerant of that pattern.
+
+#### Phase 3 measurements (acceptance)
+
+Direct comparison on R01-R20 across the three landed phases:
+
+| Cohort / phase | Green | Avg dur | wait_for_agent_ir events | tool_tests=ok |
+|---|---|---|---|---|
+| Baseline | 20/20 (after retries) | 168s | many | 0/20 |
+| Phase 1c (gates+rule26) | 19/20, 1 transient red | 158s | tolerated | n/a (driver feature) |
+| Phase 2 (test-pass visibility) | 18/20 first-pass, 20/20 with retry | 145s | tolerated | 15/20 first-pass |
+| **Phase 3 (this batch)** | **20/20 first-pass** | **131s** | **0 events** | **19/20 first-pass** |
+
+Highlights:
+- First-pass green rate: 90% → 95% → **100%**.
+- Average wall time: 168s → 158s → 145s → **131s**.
+- R09 in 79s — fastest single-UC build measured. R03 in 99s. The
+  ≤90s A-grade target is now reachable for the simplest intents.
+- Zero `wait_for_agent_ir` polling events across the full batch.
+  The 180s defensive helper has been deleted from the driver and is
+  no longer needed.
+- R20 (the previously race-prone multi-UC case) green in 168s with
+  3/3 passing tool tests on the first attempt.
+
+#### What backgroundable build means in practice
+
+Before Phase 3:
+- Start a build for persona A → navigate to Settings → return → state
+  partially missing because events were dropped while you were away.
+- App restart mid-build → sidebar's "active drafts" list empty until
+  you click into the persona.
+- Backgrounded build in `awaiting_input` → no chrome signal that
+  answers are pending; user discovers it only by re-entering the wizard.
+- Multi-UC builds occasionally fail with "agent_ir is null" or
+  oscillate `test_complete → draft_ready → …`.
+
+After Phase 3:
+- Events route to `buildSessions[sessionId]` regardless of which session
+  is currently focused — backgrounded builds receive their updates.
+- App launch hydrates every non-terminal session into the store; sidebar
+  drafts list is populated immediately.
+- L1 badge turns **amber "Draft needs answers"** when any session is
+  awaiting input; L2 active drafts row shows `?N` count next to the
+  affected draft.
+- Server-side retry + session-keyed auto-test ref eliminate the
+  agent_ir race and the test-loop oscillation.
+
+**Acceptance bar from the A-grade contract**:
+- 100% first-pass green rate → **achieved** (was 90%).
+- Defensive client polling gone → **achieved** (`_wait_for_agent_ir`
+  helper deleted; 0 events across the run).
+- "Build is running" chrome indicator that differentiates
+  `awaiting_input` from `resolving` → **achieved**.
+- App-restart hydration of active drafts → **achieved** (bootstrap
+  function landed).
+- Wall-time ≤90s for simplest intents → **partially achieved** (R09
+  hit 79s; R03 99s; average 131s — multi-UC personas still take longer
+  due to LLM resolution time, which is a separate optimization).
+- Multi-build queue without state corruption → **achieved
+  architecturally** (multi-session store + per-session event routing
+  + per-persona singleton guard already removed); manual UI test
+  pending.
+
 ### Observations from the full run
 
 #### Build pipeline (R01–R20)

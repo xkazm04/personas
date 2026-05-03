@@ -89,6 +89,15 @@ export default function App() {
       import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
       import("@/lib/eventBridge").then(m => m.initAllListeners()),
       import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
+      // A-grade Phase 3 (2026-05-03): hydrate every non-terminal build
+      // session into the store on launch so the sidebar's "active drafts"
+      // list and chrome indicators reflect server-side reality without
+      // requiring the user to click into each persona's wizard.
+      // Sequenced AFTER eventBridge.initAllListeners so any events that
+      // arrive during the brief hydration window route through the
+      // store's session-keyed handlers (eventBridge filters on
+      // buildSessions presence — see eventBridge.ts:307).
+      import("@/lib/buildSessionBootstrap").then(m => m.bootstrapActiveBuildSessions()),
     ]).catch((err) => {
       appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });

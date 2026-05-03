@@ -193,6 +193,17 @@ export function UnifiedMatrixEntry() {
   // Multi-round support: when the LLM surfaces a new pending question mid-build,
   // the ref is reset so that once the user answers it and we cycle back to
   // draft_ready with no more questions, the auto-test fires again.
+  //
+  // A-grade Phase 3 (2026-05-03): the ref is keyed by SESSION id, not
+  // persona id, so a post-test_complete phase oscillation (test_complete →
+  // draft_ready triggered by a late LLM event) does NOT re-fire the
+  // auto-test on the same session. Pre-Phase-3 a multi-UC build that
+  // emitted late agent_ir events after first test_complete would re-trigger
+  // auto-test → testing → test_complete and the rapid-validation driver
+  // had to tolerate phase oscillation. Once the test has fired for a
+  // session, we keep that session's auto-test latched even if the LLM
+  // pings phase back to draft_ready.
+  const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const autoTestedRef = useRef<string | null>(null);
   useEffect(() => {
     if (build.pendingQuestions && build.pendingQuestions.length > 0) {
@@ -203,17 +214,20 @@ export function UnifiedMatrixEntry() {
     const phase = build.buildPhase;
     if (phase !== 'draft_ready') return;
     if (!draftPersonaId) return;
-    if (autoTestedRef.current === draftPersonaId) return;
+    if (!buildSessionId) return;
+    if (autoTestedRef.current === buildSessionId) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
-    autoTestedRef.current = draftPersonaId;
+    autoTestedRef.current = buildSessionId;
     void lifecycle.handleStartTest();
-  }, [build.buildPhase, build.pendingQuestions, build.buildError, draftPersonaId, lifecycle]);
+  }, [build.buildPhase, build.pendingQuestions, build.buildError, draftPersonaId, buildSessionId, lifecycle]);
 
-  // Reset auto-test guard if the user resets/restarts the build
+  // Reset auto-test guard if the user resets/restarts the build (no
+  // active session). Switching between drafts is handled implicitly —
+  // the new session's id won't match the latched value.
   useEffect(() => {
-    if (!draftPersonaId) autoTestedRef.current = null;
-  }, [draftPersonaId]);
+    if (!buildSessionId) autoTestedRef.current = null;
+  }, [buildSessionId]);
 
   // -- Auto-submit collected answers when the round empties ----------------
   // The QuestionRow / GlyphQuestionCard Send buttons call `collectAnswer`

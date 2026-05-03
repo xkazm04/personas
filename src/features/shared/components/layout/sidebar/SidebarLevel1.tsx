@@ -47,9 +47,31 @@ export default function SidebarLevel1({
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
   const isExecuting = useAgentStore((s) => s.isExecuting);
-  const buildPhase = useAgentStore((s) => s.buildPhase);
-  const buildPersonaId = useAgentStore((s) => s.buildPersonaId);
-  const isBuildingOrTesting = !!buildPersonaId && !!buildPhase && buildPhase !== 'initializing' && buildPhase !== 'promoted';
+  const buildSessions = useAgentStore((s) => s.buildSessions);
+  // A-grade Phase 3 (2026-05-03): aggregate state across ALL active draft
+  // sessions, not only the currently-active one. Pre-Phase-3 we read the
+  // scalar buildPhase/buildPersonaId mirror (active session only) and a
+  // user with a backgrounded build in `awaiting_input` got no signal.
+  const buildAggregate = useMemo(() => {
+    let inFlight = 0;
+    let awaitingInput = 0;
+    let testing = 0;
+    for (const sess of Object.values(buildSessions)) {
+      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
+      if (sess.phase === 'failed' || sess.phase === 'cancelled') continue;
+      inFlight += 1;
+      if (sess.phase === 'awaiting_input' || sess.pendingQuestions.length > 0) {
+        awaitingInput += 1;
+      }
+      if (sess.phase === 'testing') {
+        testing += 1;
+      }
+    }
+    return { inFlight, awaitingInput, testing };
+  }, [buildSessions]);
+  const isBuildingOrTesting = buildAggregate.inFlight > 0;
+  const isAwaitingAnswers = buildAggregate.awaitingInput > 0;
+  const isTesting = buildAggregate.testing > 0;
   const isDev = import.meta.env.DEV;
   const isDark = useIsDarkTheme();
   const tier = useTier();
@@ -90,10 +112,26 @@ export default function SidebarLevel1({
           id: 'build-test',
           priority: 2,
           active: isBuildingOrTesting,
-          label: buildPhase === 'testing' ? 'Testing agent' : 'Draft in progress',
+          // A-grade Phase 3: differentiate the badge across phases so a
+          // backgrounded build in awaiting_input visibly demands attention,
+          // while one that's mid-resolution doesn't. Amber for "needs you",
+          // sky for testing, violet for working.
+          label: isAwaitingAnswers
+            ? `Draft needs answers${buildAggregate.awaitingInput > 1 ? ` (${buildAggregate.awaitingInput})` : ''}`
+            : isTesting
+              ? 'Testing agent'
+              : `Draft in progress${buildAggregate.inFlight > 1 ? ` (${buildAggregate.inFlight})` : ''}`,
           variant: 'pulse',
-          color: 'bg-violet-500 border-violet-600/50',
-          pingColor: 'bg-violet-500/40',
+          color: isAwaitingAnswers
+            ? 'bg-amber-500 border-amber-600/50'
+            : isTesting
+              ? 'bg-sky-500 border-sky-600/50'
+              : 'bg-violet-500 border-violet-600/50',
+          pingColor: isAwaitingAnswers
+            ? 'bg-amber-500/40'
+            : isTesting
+              ? 'bg-sky-500/40'
+              : 'bg-violet-500/40',
         },
         {
           id: 'executing',
@@ -139,7 +177,8 @@ export default function SidebarLevel1({
     return map;
   }, [
     pendingReviewCount, unreadMessageCount, isExecuting,
-    isBuildingOrTesting, buildPhase,
+    isBuildingOrTesting, isAwaitingAnswers, isTesting,
+    buildAggregate.awaitingInput, buildAggregate.inFlight,
     contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning,
   ]);
