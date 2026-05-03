@@ -88,6 +88,12 @@ export function CapabilityApprovalCard({ manifest, app, onApprove, onCancel, app
           <button
             onClick={onApprove}
             disabled={approving}
+            // text-white is deliberate: bg-orange-500 is saturated and
+            // theme-stable, so contrast is uniform across light/dark. The
+            // theme-aware text-foreground would render dark-on-orange on
+            // light theme — passing WCAG but visually weaker. Keep until a
+            // text-foreground-on-primary token lands.
+            // eslint-disable-next-line custom/no-direct-white-colors
             className="flex-1 px-3 py-1.5 typo-caption font-medium text-white bg-orange-500 rounded-card hover:bg-orange-600 transition-colors disabled:opacity-50"
           >
             {approving ? (
