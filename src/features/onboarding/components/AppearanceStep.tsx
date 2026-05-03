@@ -1,11 +1,15 @@
-import { Check, Sparkles, Sun, Type, Languages } from 'lucide-react';
-import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, useIsDarkTheme } from '@/stores/themeStore';
-import type { ThemeId, TextScale, BrightnessLevel } from '@/stores/themeStore';
+import { Check, Sparkles, Type, Languages } from 'lucide-react';
+import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { TIERS } from '@/lib/constants/uiModes';
 import { ModeComparisonCard } from '@/features/simple-mode';
+import {
+  TextScalePicker,
+  BrightnessPicker,
+  SimpleThemePicker,
+} from '@/features/shared/components/picker/AppearancePickers';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇺🇸' },
@@ -110,125 +114,30 @@ export function AppearanceStep() {
           <Type className="w-4 h-4 text-foreground" />
           <span className="typo-body font-medium text-foreground">{t.onboarding.text_size_label}</span>
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          {TEXT_SCALES.map((scale) => {
-            const isActive = textScale === scale.id;
-            const sizeClass = scale.id === 'large' ? 'typo-body-lg' : scale.id === 'larger' ? 'typo-heading-lg' : 'typo-heading-lg';
-            return (
-              <button
-                key={scale.id}
-                onClick={() => setTextScale(scale.id as TextScale)}
-                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-modal border transition-colors ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/5'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                }`}
-              >
-                <span className={`font-semibold ${sizeClass} ${isActive ? 'text-foreground/90' : 'text-foreground'}`}>Aa</span>
-                <span className={`typo-body ${isActive ? 'text-foreground font-medium' : 'text-foreground'}`}>{scale.label}</span>
-                {isActive && <div className="absolute top-1.5 right-1.5"><Check className="w-3 h-3 text-primary" /></div>}
-              </button>
-            );
-          })}
-        </div>
+        <TextScalePicker textScale={textScale} setTextScale={setTextScale} />
       </div>
 
       {/* Dark themes */}
       <div className="space-y-2">
         <span className="typo-body text-foreground">{t.onboarding.dark_label}</span>
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
-          {darkThemes.map((t) => {
-            const isActive = themeId === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id as ThemeId)}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-modal border transition-colors ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/5'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                }`}
-              >
-                <div
-                  className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center"
-                  style={{ backgroundColor: t.primaryColor }}
-                >
-                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
-                </div>
-                <span className={`typo-body ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-                  {t.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <SimpleThemePicker themes={darkThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Light themes */}
       <div className="space-y-2">
         <span className="typo-body text-foreground">{t.onboarding.light_label}</span>
-        <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(90px, 1fr))' }}>
-          {lightThemes.map((t) => {
-            const isActive = themeId === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setTheme(t.id as ThemeId)}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-modal border transition-colors ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/5'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                }`}
-              >
-                <div
-                  className="w-7 h-7 rounded-full border border-black/10 flex items-center justify-center"
-                  style={{ backgroundColor: t.primaryColor }}
-                >
-                  {isActive && <Check className="w-3 h-3 text-white drop-shadow-elevation-1" />}
-                </div>
-                <span className={`typo-body ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-                  {t.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+        <SimpleThemePicker themes={lightThemes} themeId={themeId} setTheme={setTheme} />
       </div>
 
       {/* Brightness */}
       <div className="space-y-2">
         <span className="typo-body text-foreground">{t.onboarding.brightness_label}</span>
-        <p className="typo-body text-foreground">
-          {t.onboarding.brightness_hint}
-        </p>
-        <div className="grid grid-cols-3 gap-2">
-          {brightnessLevels.map((level, i) => {
-            const isActive = brightness === level.id;
-            const iconOpacity = BRIGHTNESS_ICON_OPACITY_BY_INDEX[i] ?? 'opacity-100';
-            return (
-              <button
-                key={level.id}
-                onClick={() => setBrightness(level.id as BrightnessLevel)}
-                className={`relative flex flex-col items-center gap-1.5 p-3 rounded-modal border transition-colors ${
-                  isActive
-                    ? 'border-primary/30 bg-primary/5'
-                    : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
-                }`}
-              >
-                <Sun className={`w-4 h-4 ${iconOpacity} ${isActive ? 'text-amber-400' : 'text-foreground'}`} />
-                <span className={`typo-caption ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
-                  {level.label}
-                </span>
-                <span className="typo-body text-foreground">{level.description}</span>
-                {isActive && (
-                  <div className="absolute top-1.5 right-1.5">
-                    <Check className="w-3 h-3 text-primary" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <p className="typo-body text-foreground">{t.onboarding.brightness_hint}</p>
+        <BrightnessPicker
+          levels={brightnessLevels}
+          brightness={brightness}
+          setBrightness={setBrightness}
+        />
       </div>
     </div>
   );
