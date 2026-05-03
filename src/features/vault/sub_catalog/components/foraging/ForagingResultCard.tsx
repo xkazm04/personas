@@ -11,7 +11,10 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ForagedCredential, ForageSource } from "@/api/vault/foraging";
 import { useTranslation } from "@/i18n/useTranslation";
+import type { Translations } from "@/i18n/en";
 import { tokenLabel } from "@/i18n/tokenMaps";
+
+type ForagingLabelKey = keyof Translations['vault']['foraging'];
 
 interface ForagingResultCardProps {
   credential: ForagedCredential;
@@ -21,17 +24,17 @@ interface ForagingResultCardProps {
   onToggle: () => void;
 }
 
-const SOURCE_META: Record<ForageSource, { icon: typeof Cloud; label: string; color: string }> = {
-  aws_credentials: { icon: Cloud, label: "AWS Credentials", color: "text-amber-400" },
-  aws_config: { icon: Cloud, label: "AWS Config", color: "text-amber-400" },
-  kube_config: { icon: Server, label: "Kubernetes", color: "text-blue-400" },
-  env_var: { icon: Terminal, label: "Env Variable", color: "text-emerald-400" },
-  dot_env: { icon: FileKey, label: ".env File", color: "text-violet-400" },
-  npmrc: { icon: HardDrive, label: "npmrc", color: "text-red-400" },
-  docker_config: { icon: Server, label: "Docker", color: "text-cyan-400" },
-  git_hub_cli: { icon: Globe, label: "GitHub CLI", color: "text-purple-400" },
-  ssh_key: { icon: Shield, label: "SSH Key", color: "text-orange-400" },
-  git_config: { icon: Globe, label: "Git Config", color: "text-pink-400" },
+const SOURCE_META: Record<ForageSource, { icon: typeof Cloud; labelKey: ForagingLabelKey; color: string }> = {
+  aws_credentials: { icon: Cloud, labelKey: "source_aws_credentials", color: "text-amber-400" },
+  aws_config: { icon: Cloud, labelKey: "source_aws_config", color: "text-amber-400" },
+  kube_config: { icon: Server, labelKey: "source_kube_config", color: "text-blue-400" },
+  env_var: { icon: Terminal, labelKey: "source_env_var", color: "text-emerald-400" },
+  dot_env: { icon: FileKey, labelKey: "source_dot_env", color: "text-violet-400" },
+  npmrc: { icon: HardDrive, labelKey: "source_npmrc", color: "text-red-400" },
+  docker_config: { icon: Server, labelKey: "source_docker_config", color: "text-cyan-400" },
+  git_hub_cli: { icon: Globe, labelKey: "source_git_hub_cli", color: "text-purple-400" },
+  ssh_key: { icon: Shield, labelKey: "source_ssh_key", color: "text-orange-400" },
+  git_config: { icon: Globe, labelKey: "source_git_config", color: "text-pink-400" },
 };
 
 const CONFIDENCE_STYLES = {
@@ -50,6 +53,7 @@ export function ForagingResultCard({
   const { t } = useTranslation();
   const fg = t.vault.foraging;
   const meta = SOURCE_META[credential.source];
+  const sourceLabel = fg[meta.labelKey];
   const Icon = meta.icon;
   const disabled = credential.already_imported || isImported || isImporting;
 
@@ -127,7 +131,7 @@ export function ForagingResultCard({
 
           {/* Source + confidence */}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="typo-body text-foreground">{meta.label}</span>
+            <span className="typo-body text-foreground">{sourceLabel}</span>
             <span
               className={`typo-body px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
             >

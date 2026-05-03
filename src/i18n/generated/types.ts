@@ -3609,6 +3609,16 @@ export type Translations = {
       import_to_vault_other: string;
       imported_to_vault_one: string;
       imported_to_vault_other: string;
+      source_aws_credentials: string;
+      source_aws_config: string;
+      source_kube_config: string;
+      source_env_var: string;
+      source_dot_env: string;
+      source_npmrc: string;
+      source_docker_config: string;
+      source_git_hub_cli: string;
+      source_ssh_key: string;
+      source_git_config: string;
       env_var_one: string;
       env_var_other: string;
       import_server: string;
