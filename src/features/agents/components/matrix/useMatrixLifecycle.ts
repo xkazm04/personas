@@ -232,8 +232,18 @@ export function useMatrixLifecycle({
         || sessionId;  // Always use Rust promote path when a session exists
 
       if (hasRichDraft) {
+        // A-grade Phase 5b: read the active session's user-driven
+        // capability exclusions and pass them through. Empty list /
+        // missing session falls through to "promote everything".
+        const excluded = state.activeBuildSessionId
+          ? state.buildSessions[state.activeBuildSessionId]?.excludedCapabilityIds ?? []
+          : [];
         // New path: use atomic promote that creates entities from agent_ir
-        const result: PromoteBuildResult = await promoteBuildDraft(sessionId, effectivePid);
+        const result: PromoteBuildResult = await promoteBuildDraft(
+          sessionId,
+          effectivePid,
+          excluded.length > 0 ? excluded : undefined,
+        );
 
         // Transition to promoted
         useAgentStore.getState().handleBuildSessionStatus({

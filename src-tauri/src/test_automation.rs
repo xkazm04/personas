@@ -607,7 +607,7 @@ async fn handle_promote_build(
     // Call the promote command directly
     let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
     let result = crate::commands::design::build_sessions::promote_build_draft_inner(
-        &app_state, session_id.clone(), persona_id.clone()
+        &app_state, session_id.clone(), persona_id.clone(), Vec::new()
     ).await;
 
     match result {

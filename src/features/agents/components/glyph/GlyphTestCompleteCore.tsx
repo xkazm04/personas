@@ -20,12 +20,16 @@ interface GlyphTestCompleteCoreProps {
    *  inline preview is line-clamp-2, this is how the user gets at the
    *  rest. */
   onShowReport?: () => void;
+  /** Phase 5b — forwarded into the capability preview's "Split" button.
+   *  The handler should pre-populate the Refine composer with the given
+   *  prompt and switch the wizard into refining mode. */
+  onRequestSplit?: (capabilityTitle: string, prefilledPrompt: string) => void;
 }
 
 export function GlyphTestCompleteCore({
   testPassed, testError, buildSessionId,
   onPromote, onPromoteForce, onRefine, onRejectTest,
-  setRefining, onShowSimulate, onShowReport,
+  setRefining, onShowSimulate, onShowReport, onRequestSplit,
 }: GlyphTestCompleteCoreProps) {
   const { t } = useTranslation();
   return (
@@ -56,9 +60,10 @@ export function GlyphTestCompleteCore({
         )}
         {/* A-grade Phase 5: surface the capability split before promote so
          *  the user consents to the LLM's structural choice instead of
-         *  inheriting it. Read-only for v1; split/merge edits tracked
-         *  separately. Renders nothing when no capabilities have landed. */}
-        <GlyphCapabilityPreview />
+         *  inheriting it. Phase 5b adds Remove + Split-via-Refine
+         *  affordances per capability. Renders nothing when no
+         *  capabilities have landed. */}
+        <GlyphCapabilityPreview onRequestSplit={onRequestSplit} />
         <div className="mt-1 flex items-center gap-1.5 flex-wrap justify-center">
           <button
             type="button"

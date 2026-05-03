@@ -91,6 +91,11 @@ export interface BuildSessionState {
   capabilities: Record<string, CapabilityState>;
   /** Display order for capabilities (preserves enumeration order + user additions). */
   capabilityOrder: string[];
+  /** A-grade Phase 5b — capability ids the user has excluded via the
+   *  preview panel. Applied at promote time via the bridge's
+   *  `excludedUseCaseIds` parameter. Stored per-session so a switch
+   *  between drafts restores the user's exclusion choices for each. */
+  excludedCapabilityIds: string[];
   /** Persona-wide resolution fields (tools, connectors registry, defaults, ...). */
   personaResolution: PersonaResolution;
   /** v3 clarifying_question — scoped to mission, capability, field, or connector_category. */
@@ -167,6 +172,10 @@ export interface MatrixBuildSlice {
   createBuildSession: (personaId: string, sessionId: string) => void;
   /** Remove a session from the map (clears active if it was active). */
   removeBuildSession: (sessionId: string) => void;
+  /** A-grade Phase 5b — toggle a capability id in the active session's
+   *  exclusion list. Applied at promote time via promoteBuildDraft's
+   *  excludedUseCaseIds parameter. No-op when no session is active. */
+  toggleCapabilityExcluded: (capabilityId: string) => void;
 
   /** Apply a partial update to the currently active session.
    * Used by adoption/creation flows that need to patch phase/draft/etc.
@@ -299,6 +308,7 @@ function emptySessionState(personaId: string, sessionId: string): BuildSessionSt
     behaviorCore: null,
     capabilities: {},
     capabilityOrder: [],
+    excludedCapabilityIds: [],
     personaResolution: {},
     clarifyingQuestionV3: null,
     createdAt: Date.now(),
@@ -527,6 +537,25 @@ export const createMatrixBuildSlice: StateCreator<
         buildSessions: nextSessions,
         activeBuildSessionId: sessionId,
         ...scalarsFromSession(newSession),
+      };
+    });
+  },
+
+  toggleCapabilityExcluded: (capabilityId) => {
+    set((state) => {
+      const activeId = state.activeBuildSessionId;
+      if (!activeId) return state;
+      const sess = state.buildSessions[activeId];
+      if (!sess) return state;
+      const isExcluded = sess.excludedCapabilityIds.includes(capabilityId);
+      const nextList = isExcluded
+        ? sess.excludedCapabilityIds.filter((id) => id !== capabilityId)
+        : [...sess.excludedCapabilityIds, capabilityId];
+      return {
+        buildSessions: {
+          ...state.buildSessions,
+          [activeId]: { ...sess, excludedCapabilityIds: nextList },
+        },
       };
     });
   },

@@ -48,6 +48,14 @@ interface GlyphSigilFaceProps {
   /** Forwarded to GlyphCoreContent's test_complete branch. Opens the
    *  test-report modal showing the full CLI output + error detail. */
   onShowReport?: () => void;
+  /** A-grade Phase 5b — forwarded to the capability preview's "Split"
+   *  button. Pre-populates the Refine composer with a structured prompt. */
+  onRequestSplit?: (capabilityTitle: string, prefilledPrompt: string) => void;
+  /** A-grade Phase 5b — when set, the Refine composer mounts with this
+   *  text already filled in (from a "Split" click). One-shot: the
+   *  parent clears it via `onClearRefinePrefill` after consumption. */
+  refinePrefill?: string | null;
+  onClearRefinePrefill?: () => void;
 }
 
 /** The sigil column. Always mounted — the glyph is the default surface
@@ -63,6 +71,7 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
     testOutputLines, testPassed, testError,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
     onShowSimulate, buildSessionId, overlay, onComposeStart, onShowReport,
+    onRequestSplit, refinePrefill, onClearRefinePrefill,
   } = props;
 
   return (
@@ -107,6 +116,9 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
             buildSessionId={buildSessionId}
             onComposeStart={onComposeStart}
             onShowReport={onShowReport}
+            onRequestSplit={onRequestSplit}
+            refinePrefill={refinePrefill}
+            onClearRefinePrefill={onClearRefinePrefill}
           />
         </AnimatePresence>
       </GlyphSigilCanvas>

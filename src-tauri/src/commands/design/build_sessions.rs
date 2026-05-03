@@ -561,14 +561,28 @@ pub async fn test_build_draft(
 /// - DesignContextData-format design_context with structured DesignUseCase entries
 /// - AgentIR-compatible last_design_result for Design tab preview
 /// - Notification channels on persona
+/// Promote a tested build draft.
+///
+/// `excluded_use_case_ids` (A-grade Phase 5b, 2026-05-03): capability
+/// ids the user chose to exclude via the preview panel. Match against
+/// the LLM-emitted Structured-variant id (e.g. `uc_morning_digest`),
+/// not the post-promote UUID-rekeyed id which doesn't exist yet.
+/// Simple-variant capabilities have no id and pass through unchanged.
+/// `None` or empty list means "promote everything in agent_ir".
 #[tauri::command]
 pub async fn promote_build_draft(
     state: State<'_, Arc<AppState>>,
     session_id: String,
     persona_id: String,
+    excluded_use_case_ids: Option<Vec<String>>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    promote_build_draft_inner(&state, session_id, persona_id).await
+    promote_build_draft_inner(
+        &state,
+        session_id,
+        persona_id,
+        excluded_use_case_ids.unwrap_or_default(),
+    ).await
 }
 
 // ============================================================================
@@ -1680,10 +1694,15 @@ fn update_trigger_schedules(
 /// version snapshot, session phase transition) is wrapped in a single SQLite
 /// transaction so that a failure at any step rolls back the entire promotion,
 /// preventing partially-promoted orphan state.
+/// `excluded_use_case_ids`: capability ids the user excluded via the Phase
+/// 5b preview panel. Match against the LLM-emitted Structured-variant id
+/// (e.g. `uc_morning_digest`). Simple-variant capabilities have no id and
+/// are never excluded by this path. Empty list = promote everything.
 pub async fn promote_build_draft_inner(
     state: &Arc<AppState>,
     session_id: String,
     persona_id: String,
+    excluded_use_case_ids: Vec<String>,
 ) -> Result<serde_json::Value, AppError> {
     let mut session = build_session_repo::get_by_id(&state.db, &session_id)?
         .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
@@ -1789,6 +1808,71 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     // Pre-transaction preparation (read-only + encryption)
     // ================================================================
+
+    // A-grade Phase 5b (2026-05-03): apply user-driven capability
+    // exclusions from the preview panel before building structured use
+    // cases. Match against the LLM-emitted Structured variant id
+    // (uc_morning_digest), not the post-promote UUID-rekeyed id which
+    // doesn't exist yet. Simple variants have no id to match — they
+    // pass through unchanged. Removes the matching entries from
+    // `ir.use_cases` AND any aligned `ir.triggers` slot so the promoted
+    // persona doesn't carry phantom trigger rows referencing dropped UCs.
+    if !excluded_use_case_ids.is_empty() {
+        let excluded: std::collections::HashSet<&str> = excluded_use_case_ids
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        let original_count = ir.use_cases.len();
+        // Track which indices we drop so the parallel `triggers` array
+        // (positionally aligned to use_cases per build_structured_use_cases'
+        // contract) can be filtered to match.
+        let mut keep_indices: Vec<usize> = Vec::with_capacity(original_count);
+        for (idx, uc) in ir.use_cases.iter().enumerate() {
+            let drop = match uc {
+                crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => {
+                    d.id.as_deref().is_some_and(|id| excluded.contains(id))
+                }
+                crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => false,
+            };
+            if !drop {
+                keep_indices.push(idx);
+            }
+        }
+        if keep_indices.len() < original_count {
+            let kept_set: std::collections::HashSet<usize> = keep_indices.iter().copied().collect();
+            ir.use_cases = ir
+                .use_cases
+                .iter()
+                .enumerate()
+                .filter(|(idx, _)| kept_set.contains(idx))
+                .map(|(_, uc)| uc.clone())
+                .collect();
+            // Filter triggers in-place by positional alignment so a UC
+            // dropped at index N no longer has its corresponding trigger
+            // promoted into persona_triggers. Triggers without a matching
+            // UC are kept (e.g. persona-wide triggers that were never
+            // aligned in the first place); only positionally-aligned
+            // entries are filtered.
+            if ir.triggers.len() == original_count {
+                ir.triggers = ir
+                    .triggers
+                    .iter()
+                    .enumerate()
+                    .filter(|(idx, _)| kept_set.contains(idx))
+                    .map(|(_, t)| t.clone())
+                    .collect();
+            }
+            tracing::info!(
+                session_id = %session_id,
+                persona_id = %persona_id,
+                excluded_count = original_count - keep_indices.len(),
+                requested_excluded = excluded_use_case_ids.len(),
+                kept_count = keep_indices.len(),
+                "Applied user-driven capability exclusions before promote"
+            );
+        }
+    }
+
     let use_cases = build_structured_use_cases(&ir);
     let all_connectors = connector_repo::get_all(&state.db).unwrap_or_default();
     let (tool_actions, tool_names) = prepare_tool_actions(&ir, &state.db, &all_connectors);

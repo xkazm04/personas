@@ -110,14 +110,21 @@ export async function testBuildDraft(
 /**
  * Promote a build draft to production: updates the persona with enriched
  * prompt data and atomically creates tools, triggers, and connectors.
+ *
+ * `excludedUseCaseIds` (A-grade Phase 5b): capability ids the user
+ * excluded via the preview panel. Match against the LLM-emitted id
+ * (e.g. `uc_morning_digest`), NOT the post-promote UUID-rekeyed id.
+ * Optional; missing/empty means "promote everything in agent_ir".
  */
 export async function promoteBuildDraft(
   sessionId: string,
   personaId: string,
+  excludedUseCaseIds?: string[],
 ): Promise<PromoteBuildResult> {
   return invokeWithTimeout<PromoteBuildResult>("promote_build_draft", {
     sessionId,
     personaId,
+    excludedUseCaseIds: excludedUseCaseIds ?? null,
   });
 }
 

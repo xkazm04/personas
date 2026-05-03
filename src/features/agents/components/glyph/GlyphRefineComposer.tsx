@@ -5,10 +5,15 @@ import { RefreshCw } from "lucide-react";
 interface GlyphRefineComposerProps {
   onSubmit: (v: string) => void;
   onCancel: () => void;
+  /** Pre-populate the textarea — used by Phase 5b's "Split via Refine"
+   *  affordance so the user starts with a structured prompt asking the
+   *  LLM to divide a specific capability. The user can still edit
+   *  before submitting. */
+  initialText?: string;
 }
 
-export function GlyphRefineComposer({ onSubmit, onCancel }: GlyphRefineComposerProps) {
-  const [text, setText] = useState("");
+export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRefineComposerProps) {
+  const [text, setText] = useState(initialText ?? "");
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}

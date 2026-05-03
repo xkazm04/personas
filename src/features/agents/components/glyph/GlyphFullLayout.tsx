@@ -49,6 +49,16 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [refining, setRefining] = useState(false);
+  // A-grade Phase 5b — when the user clicks "Split via Refine" on a
+  // capability card, we pre-populate the Refine composer with a
+  // structured prompt asking the LLM to divide that capability. The
+  // text is consumed by GlyphRefineComposer's `initialText` prop and
+  // cleared after the composer mounts (or is cancelled).
+  const [refinePrefill, setRefinePrefill] = useState<string | null>(null);
+  const requestSplit = (_title: string, prompt: string) => {
+    setRefinePrefill(prompt);
+    setRefining(true);
+  };
   const [showSimulate, setShowSimulate] = useState(false);
   const [showReport, setShowReport] = useState(false);
   // The intent composer is now a click-to-summon overlay. The center of
@@ -223,6 +233,9 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             overlay={overlay}
             onComposeStart={isCompose ? handleComposeStart : undefined}
             onShowReport={() => setShowReport(true)}
+            onRequestSplit={requestSplit}
+            refinePrefill={refinePrefill}
+            onClearRefinePrefill={() => setRefinePrefill(null)}
           />
         )}
 

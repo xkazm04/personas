@@ -34,6 +34,13 @@ interface GlyphCoreContentProps {
   /** test_complete only: opens the test-report modal so the user can
    *  see the full CLI output and the unclamped error message. */
   onShowReport?: () => void;
+  /** Phase 5b — forwarded into GlyphTestCompleteCore for the "Split via
+   *  Refine" button on capability cards. */
+  onRequestSplit?: (capabilityTitle: string, prefilledPrompt: string) => void;
+  /** Phase 5b — pre-populates the refine composer when a capability
+   *  "Split" was just clicked. One-shot. */
+  refinePrefill?: string | null;
+  onClearRefinePrefill?: () => void;
 }
 
 export function GlyphCoreContent(props: GlyphCoreContentProps) {
@@ -41,7 +48,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
     isPreBuild, isBuilding, buildPhase, hasDesignResult,
     refining, setRefining, completenessPct, pendingQuestions,
     testOutputLines, onStartTest, onRefine, onViewAgent,
-    onComposeStart,
+    onComposeStart, refinePrefill, onClearRefinePrefill,
   } = props;
 
   if (isPreBuild) {
@@ -85,8 +92,16 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         className="flex flex-col items-center gap-2 w-full px-6"
       >
         <GlyphRefineComposer
-          onSubmit={(v) => { setRefining(false); void onRefine?.(v); }}
-          onCancel={() => setRefining(false)}
+          initialText={refinePrefill ?? undefined}
+          onSubmit={(v) => {
+            setRefining(false);
+            onClearRefinePrefill?.();
+            void onRefine?.(v);
+          }}
+          onCancel={() => {
+            setRefining(false);
+            onClearRefinePrefill?.();
+          }}
         />
       </motion.div>
     );
