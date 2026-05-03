@@ -6,6 +6,7 @@ const logger = createLogger('tauri-playwright-adapter');
 import type { AutoCredConnectorContext, BrowserLogEntry, ExtractedValues, DiscoveredField, DiscoveredConnector } from './types';
 import { startAutoCredBrowser, getPlaywrightProcedure, cancelAutoCredBrowser } from '@/api/vault/autoCredBrowser';
 import { openExternalUrl } from '@/api/system/system';
+import { silentCatch } from '@/lib/silentCatch';
 
 /**
  * Tauri-backed PlaywrightAdapter.
@@ -47,8 +48,10 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
             type: 'info',
           });
         }
-      } catch {
-        // No saved procedure, that's fine
+      } catch (err) {
+        // No saved procedure is the expected case — fall through. Breadcrumb
+        // distinguishes shape mismatches / IPC errors from a clean "no row".
+        silentCatch('TauriPlaywrightAdapter:getPlaywrightProcedure')(err);
       }
     }
 
