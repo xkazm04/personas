@@ -148,7 +148,13 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: src-tauri -> target
+          # Per-target key prevents windows-x64 and windows-arm64 (both on
+          # `windows-latest`) from sharing a cache. Without this, whichever
+          # arch builds first poisons `target/debug/deps/` with arch-specific
+          # rlibs (e.g. ort_sys' x64 object files); the second arch then fails
+          # at link time with "machine type x64 conflicts with arm64".
+          key: ${{ matrix.rust_target }}
           cache-on-failure: true
 
       - name: Install Linux dependencies
@@ -198,6 +204,17 @@ jobs:
           args: ${{ matrix.args }}
           tauriScript: npx tauri
           beforeBuildCommand: ""
+
+      - name: Verify ONNX Runtime DLL is bundled (Windows)
+        # ort/fastembed's `ort-download-binaries` feature is the only path
+        # placing onnxruntime.dll next to the exe. If it's ever silently
+        # turned off (e.g. by enabling ort's `load-dynamic` feature, which
+        # the Cargo.toml comment warns against), the build still succeeds
+        # but the app crashes at boot with "ONNX Runtime binary not found".
+        # Fail the release here instead of in users' hands.
+        if: startsWith(matrix.platform, 'windows')
+        shell: bash
+        run: node scripts/verify-onnxruntime-bundling.mjs --target ${{ matrix.rust_target }}
 
       - name: Report build sizes
         if: matrix.label == 'windows-x64'

@@ -140,11 +140,20 @@ fn intent_implies_trigger(intent_lower: &str) -> Gate {
     // "daily " is kept because the dominant phrasing ("daily digest",
     // "daily report") is genuinely schedule-leaning here.
     const SCHEDULE_KW: &[&str] = &[
-        "every morning", "every day", "every hour", "every week", "every month",
+        "every morning", "every evening", "every day", "every night",
+        "every hour", "every week", "every weekday", "every month",
+        "every two hours", "every few hours",
+        "every monday", "every tuesday", "every wednesday", "every thursday",
+        "every friday", "every saturday", "every sunday",
         "daily ", "daily.",
         "runs daily", "runs weekly", "runs monthly",
         "weekly at", "monthly at",
-        "at 9am", "at 8am", "at 7am", "at 6am", "cron",
+        "each morning", "each evening", "each weekday", "each friday",
+        "each monday", "each tuesday", "each wednesday", "each thursday",
+        "each saturday", "each sunday",
+        "at 9am", "at 8am", "at 7am", "at 6am", "at 5pm", "at 6pm",
+        "at 7pm", "at 8pm", "at noon", "cron",
+        "once an hour", "once a day", "once a week",
     ];
     const MANUAL_KW: &[&str] = &[
         "on command", "when i ask", "manually", "on demand",
@@ -163,6 +172,13 @@ fn intent_implies_review(intent_lower: &str) -> Gate {
         "without approval", "no human", "fully automated",
     ];
     for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    // Simple periodic informational report — review_policy auto-defaults to
+    // "never" without asking. The output is a digest/summary/log delivered
+    // to the user themselves; nothing leaves the user's account that would
+    // benefit from approval. See Phase 1 questionnaire-pacing rule 26.
+    if intent_is_simple_periodic_report(intent_lower) {
+        return Gate::Open;
+    }
     Gate::Closed
 }
 
@@ -173,7 +189,84 @@ fn intent_implies_memory(intent_lower: &str) -> Gate {
         "remember my", "remember user", "learn over time", "remember preferences",
     ];
     for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    // Simple periodic informational report — memory_policy auto-defaults to
+    // disabled. Each run is independent of the previous; "this morning's
+    // digest" doesn't depend on what last morning's digest was. The user
+    // can still enable memory later in the lab. See rule 26.
+    if intent_is_simple_periodic_report(intent_lower) {
+        return Gate::Open;
+    }
     Gate::Closed
+}
+
+/// Phase 1 questionnaire pacing — detects "simple periodic informational
+/// report" intents that should not need review_policy / memory_policy
+/// questions. The shape:
+///
+///   1. Schedule trigger (cadence keyword or named time-of-day).
+///   2. Output is informational — "summarize / digest / list / report on /
+///      log / scan / track / monitor / count / export / brief / snapshot".
+///   3. No external publishing pattern — "post to slack", "email me",
+///      "draft a reply", "respond to", "approve". When the user is sending
+///      an artefact to someone else or chaining into a draft step, the
+///      review/memory questions are still legitimate.
+///
+/// Conservative on purpose: when in doubt, return false and let the regular
+/// keyword heuristics decide. We only short-circuit when ALL three signals
+/// are present.
+fn intent_is_simple_periodic_report(intent_lower: &str) -> bool {
+    // (1) Schedule trigger detected. We re-use intent_implies_trigger and
+    // tighten to schedule-only (event/manual triggers don't count as
+    // "periodic").
+    const SCHEDULE_KW: &[&str] = &[
+        "every morning", "every evening", "every day", "every night",
+        "every hour", "every week", "every weekday", "every month",
+        "every two hours", "every few hours",
+        "every monday", "every tuesday", "every wednesday", "every thursday",
+        "every friday", "every saturday", "every sunday",
+        "daily ", "daily.", "runs daily", "runs weekly", "runs monthly",
+        "weekly at", "monthly at", "each morning", "each evening",
+        "each weekday", "each friday", "each monday", "each sunday",
+        "each tuesday", "each wednesday", "each thursday", "each saturday",
+        "at 9am", "at 8am", "at 7am", "at 6am", "at 5pm", "at 6pm",
+        "at 7pm", "at 8pm", "at noon", "cron",
+        "once an hour", "once a day", "once a week",
+    ];
+    let has_schedule = SCHEDULE_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_schedule { return false; }
+
+    // (2) Informational output verb.
+    const INFORMATIONAL_KW: &[&str] = &[
+        "summarize", "summarise", "summary", "summari",
+        "digest", "brief", "briefing",
+        "list ", "compile", "snapshot", "log them", "log it",
+        "report on", "report ", "scan ", "monitor ", "monitor for",
+        "check ", "count ", "track ", "tracking ",
+        "export ", "save ", "save the", "save my", "save a",
+        "build a ", "build one ", "fetch ",
+        "gather ", "ingest ",
+    ];
+    let has_informational = INFORMATIONAL_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_informational { return false; }
+
+    // (3) NOT external-publishing — these patterns produce content that
+    // leaves the user's local context and warrants review/memory questions.
+    const EXTERNAL_PUBLISH_KW: &[&str] = &[
+        " email me ", " message me ", "send me an email", "send an email",
+        // Slack/Discord/Teams as a destination — substring forms catch
+        // both "post TO slack" and "post a digest...to slack".
+        "post to slack", "post to discord", "post to teams",
+        " to slack", " to discord", " to teams",
+        " in slack", " in discord", " in teams",
+        // Direct messaging shapes
+        "draft a reply", "draft replies", "draft a response",
+        "reply to ", "respond to ", "auto-respond",
+        "approve", "escalate to",
+    ];
+    let has_external_publish = EXTERNAL_PUBLISH_KW.iter().any(|k| intent_lower.contains(k));
+    if has_external_publish { return false; }
+
+    true
 }
 
 /// Fuzzy aliases the connector registry doesn't necessarily carry as exact
@@ -199,22 +292,51 @@ fn intent_implies_connectors_with_registry(intent_lower: &str, registry_keywords
 /// Production entry — combines the fuzzy aliases (which the connector
 /// registry doesn't carry as exact names) with the live connector registry
 /// snapshot from `engine::api_proxy::connector_keyword_snapshot`. Falls
-/// back to a small set of well-known service names if the snapshot is
+/// back to a broad set of well-known service names if the snapshot is
 /// empty (uninitialized at startup or in tests), so the heuristic still
-/// behaves sensibly without DB access.
+/// behaves sensibly without DB access. Keep the fallback synced with the
+/// connector_definitions catalog — every service-name keyword that
+/// appears in user intents should match here even when the registry
+/// hasn't initialized yet.
 fn intent_implies_connectors(intent_lower: &str) -> Gate {
     const KNOWN_FALLBACK: &[&str] = &[
-        "gmail", "outlook", "slack", "discord", "teams", "github", "gitlab",
-        "linear", "jira", "notion", "trello", "asana", "airtable",
-        "hubspot", "salesforce", "stripe", "sentry", "supabase",
-        "telegram", "whatsapp", "twilio",
+        // Email / messaging
+        "gmail", "outlook", "slack", "discord", "teams", "telegram",
+        "whatsapp", "twilio",
+        // Code / VCS
+        "github", "gitlab", "bitbucket",
+        // Project management / docs
+        "linear", "jira", "notion", "trello", "asana", "clickup", "attio",
+        "monday", "basecamp",
+        // Storage / database
+        "airtable", "supabase", "postgres", "google sheets", "google drive",
+        "dropbox",
+        // Calendar / scheduling
+        "cal.com", "calcom", "google calendar", "calendly",
+        // CRM / sales
+        "hubspot", "salesforce", "pipedrive",
+        // Payments / finance
+        "stripe", "alpha vantage", "alpha_vantage", "alphavantage",
+        // Observability
+        "sentry", "betterstack", "better stack", "datadog", "pagerduty",
+        // AI / image
+        "leonardo", "leonardo ai", "leonardo_ai", "openai", "anthropic",
+        "midjourney", "elevenlabs", "gemini",
     ];
     let registry = crate::engine::api_proxy::connector_keyword_snapshot();
     if registry.is_empty() {
         let fallback: Vec<String> = KNOWN_FALLBACK.iter().map(|s| s.to_string()).collect();
         intent_implies_connectors_with_registry(intent_lower, &fallback)
     } else {
-        intent_implies_connectors_with_registry(intent_lower, &registry)
+        // Always apply the fallback list IN ADDITION TO the registry — the
+        // registry snapshot can be sparse (only credentials added by user)
+        // while the fallback covers common service names users mention in
+        // intents even before they wire credentials. Phase 1: avoid asking
+        // a connector_category question when the user's intent literally
+        // names a known service.
+        let mut combined: Vec<String> = registry;
+        combined.extend(KNOWN_FALLBACK.iter().map(|s| s.to_string()));
+        intent_implies_connectors_with_registry(intent_lower, &combined)
     }
 }
 
@@ -514,9 +636,14 @@ mod tests {
 
     #[test]
     fn review_stays_closed_when_intent_is_silent_about_approval() {
+        // Silent intents that DON'T match the Phase 1 simple-periodic-report
+        // fast-path must still leave review Closed.
         for intent in [
             "translate every incoming document",
-            "send a daily digest of headlines",
+            "help me triage support requests",
+            // Note: "send a daily digest of headlines" used to be a closed
+            // case but it now matches rule 26 (periodic + informational +
+            // no external publish). It auto-opens with default "never".
         ] {
             assert_eq!(
                 intent_implies_review(&intent.to_lowercase()),
@@ -549,12 +676,93 @@ mod tests {
     fn memory_stays_closed_when_intent_is_silent() {
         for intent in [
             "translate every incoming document",
-            "weekly summary of github issues",
+            // Note: a bare "weekly summary of github issues" no longer
+            // counts as silent — Phase 1 rule 26 short-circuits these
+            // simple periodic reports. See review_short_circuits_*.
+            "help me triage support requests",
         ] {
             assert_eq!(
                 intent_implies_memory(&intent.to_lowercase()),
                 Gate::Closed,
                 "expected silence → Closed for: {intent}"
+            );
+        }
+    }
+
+    // ── Phase 1 rule 26 — simple periodic informational reports ─────────────
+    //
+    // These tests pin down the contract for `intent_is_simple_periodic_report`
+    // and its use in `intent_implies_review` / `intent_implies_memory`. The
+    // R01–R10 batch of `13-rapid-validation-personas.md` is the canonical
+    // workload; a regression here would put their question rounds back to
+    // 4–7. Add an assertion any time you add a new simple-periodic-report
+    // shape to the keyword tables.
+
+    #[test]
+    fn simple_periodic_report_short_circuits_review_and_memory() {
+        // Every R01–R10 intent (or close paraphrase) must short-circuit.
+        for intent in [
+            "every weekday at 8am, summarize my unread gmail messages from the last 24 hours into a short digest",
+            "every monday morning, list my open linear issues assigned to me and post the summary as a notion page",
+            "each evening at 7pm, save the list of github prs i authored today to my local drive as a markdown file",
+            "every weekday at 7am, build a one-paragraph briefing of today's google calendar events",
+            "once an hour during work hours, check sentry for new unresolved errors and write a one-line note when there are any",
+            "every friday at 5pm, export my notion tasks database to a markdown file in my local drive",
+            "each morning at 9am, fetch the latest alpha vantage quote for aapl and append it to a daily price log in airtable",
+            "every sunday evening, count my open asana tasks across all projects and save the totals to a notion entry",
+            "each weekday at noon, list my today's cal.com bookings and write a short check-in note",
+            "every two hours during work hours, scan my clickup board for tasks marked urgent and log them to a local file",
+        ] {
+            assert!(
+                intent_is_simple_periodic_report(intent),
+                "expected simple-periodic-report fast-path for: {intent}"
+            );
+            assert_eq!(
+                intent_implies_review(intent),
+                Gate::Open,
+                "review must auto-open for periodic informational: {intent}"
+            );
+            assert_eq!(
+                intent_implies_memory(intent),
+                Gate::Open,
+                "memory must auto-open for periodic informational: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn external_publishing_intents_still_ask_review_and_memory() {
+        // R11 / R15 / R20-style intents that produce drafts or messages
+        // for someone else MUST keep the review/memory gates closed so the
+        // user is asked. A regression here = false confidence on an action
+        // that needs human approval.
+        for intent in [
+            // R11 — draft replies for approval
+            "watch my gmail inbox and on every new message classify it as urgent / followup / fyi, and additionally draft a short reply for urgent messages for me to approve before sending",
+            // Hypothetical "post to slack" periodic
+            "every morning at 8am post a digest of overnight emails to slack",
+            // "Email me" periodic
+            "every weekday at 6pm, email me a summary of cal.com bookings",
+        ] {
+            assert!(
+                !intent_is_simple_periodic_report(&intent.to_lowercase()),
+                "external-publish intent must NOT short-circuit: {intent}"
+            );
+        }
+    }
+
+    #[test]
+    fn event_driven_intents_do_not_count_as_periodic() {
+        // R13 / R14 / R17 / R20 — event triggers, no periodic cadence.
+        for intent in [
+            "when a new high-priority sentry error fires, open a corresponding github issue",
+            "when a new commit lands on the main branch of my github repo, write a one-line release note to a notion page",
+            "when a new attachment arrives in gmail, save the file to my local drive and record the filename, sender, and date in airtable",
+            "when i drop a file into a watched local drive folder, generate a leonardo ai cover image based on the filename",
+        ] {
+            assert!(
+                !intent_is_simple_periodic_report(intent),
+                "event-driven intent must NOT short-circuit: {intent}"
             );
         }
     }
@@ -769,7 +977,10 @@ mod tests {
             assert_eq!(g.trigger, Gate::Open, "{id}.trigger");
             assert_eq!(g.connectors, Gate::Open, "{id}.connectors");
             assert_eq!(g.review_policy, Gate::Open, "{id}.review_policy");
-            assert_eq!(g.memory_policy, Gate::Closed, "{id}.memory");
+            // Phase 1 rule 26: "every morning" + "digest" + no external
+            // publish → simple-periodic-report fast-path opens memory too
+            // (was Closed pre-Phase-1).
+            assert_eq!(g.memory_policy, Gate::Open, "{id}.memory");
         }
     }
 

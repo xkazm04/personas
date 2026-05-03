@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo } from "react";
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import { GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus } from "@/lib/types/buildTypes";
@@ -33,27 +33,29 @@ export function useGlyphLayoutState({
     return out;
   }, [cellStates, pendingDims, activeRow]);
 
-  // Auto-focus the affected petal once per "round" of pending questions.
-  // After the user submits an answer the popover closes (visual feedback
-  // that the dimension is resolved); they then click another pulsing
-  // petal to answer the next one. When all questions are cleared, the
-  // ref resets so the next batch will auto-focus again.
-  const autoSnappedRef = useRef(false);
+  // Auto-focus the next pending question's petal whenever there's no
+  // card open. Fires:
+  //   - on the first batch (initial activeDim=null + first question lands)
+  //   - after the user closes the current card (activeDim flips to null
+  //     while questions remain — drives the "transition to second
+  //     question" behaviour with rule-25 batched questions)
+  //   - if the active card is closed without an answer (e.g. user
+  //     clicks the petal again to toggle off)
+  //
+  // The `collectAnswer` action removes the answered question from
+  // `pendingQuestions` synchronously (matrixBuildSlice line ~990), so
+  // by the time activeDim flips to null the next iteration's first
+  // question is the next unanswered one. No tracking of "already
+  // answered locally" needed.
   useEffect(() => {
     const count = pendingQuestions?.length ?? 0;
-    if (count === 0) {
-      autoSnappedRef.current = false;
-      return;
-    }
-    if (autoSnappedRef.current) return;
+    if (count === 0) return;
+    if (activeDim !== null) return;
     const first = pendingQuestions?.[0];
     if (!first) return;
     const dim = CELL_KEY_TO_DIM[first.cellKey];
-    if (dim) {
-      setActiveDim(dim);
-      autoSnappedRef.current = true;
-    }
-  }, [pendingQuestions, setActiveDim]);
+    if (dim) setActiveDim(dim);
+  }, [pendingQuestions, activeDim, setActiveDim]);
 
   const activeQuestion = useMemo(() => {
     if (!activeDim || !pendingQuestions) return null;

@@ -8,6 +8,12 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle } from "lucide-react";
 import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
+// Reuse the legacy 8-dim Matrix view's test-report modal — the rich
+// split-pane viewer with structured ToolTestResult cards on the left
+// and parsed LLM summary sections on the right (with credential-add
+// flow integration). The Glyph variant gets parity automatically; no
+// reason to maintain a parallel report surface.
+import { TestReportModal } from "@/features/templates/sub_generated/gallery/matrix/TestReportModal";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
@@ -32,7 +38,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     pendingQuestions, onAnswer, agentName, onAgentNameChange,
     hasDesignResult, glyphRows,
     onStartTest, onPromote, onPromoteForce, onRejectTest, onRefine, onViewAgent,
-    buildError, testOutputLines, testPassed, testError, cliOutputLines,
+    buildError, testOutputLines, testPassed, testError, toolTestResults, testSummary, cliOutputLines,
     onQuickConfigChange,
   } = props;
 
@@ -44,14 +50,60 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const [showAdd, setShowAdd] = useState(false);
   const [refining, setRefining] = useState(false);
   const [showSimulate, setShowSimulate] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  // The intent composer is now a click-to-summon overlay. The center of
+  // the sigil acts as the affordance during the pre-build state; users
+  // who want to retry after a failed/cancelled build can re-open it the
+  // same way.
+  const [composerOpen, setComposerOpen] = useState(false);
 
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
 
-  const isCompose = !isBuilding && !hasDesignResult;
+  // "Compose" = no active build session yet. The authoritative signal
+  // is `buildSessionId === null` — buildPhase alone is unreliable
+  // because the Zustand slice can leave it on "initializing" when no
+  // session exists (default value, or stale state after a session was
+  // removed). Using buildSessionId means: any active or pending session
+  // → not compose; no session → compose, regardless of phase. Also
+  // guards against `hasDesignResult` true on a hydrated promoted
+  // persona — that's not a fresh-build state either.
+  const isCompose = buildSessionId === null && !hasDesignResult;
   const hasPending = (pendingQuestions?.length ?? 0) > 0;
   const isRefining = isBuilding && hasPending;
   const isBuildingOnly = isBuilding && !hasPending;
+
+  // Auto-close the overlay once a session actually starts. handleLaunch
+  // (the underlying onLaunch from UnifiedMatrixEntry) is async — the
+  // overlay should hide as soon as the phase transitions out of compose
+  // so the glyph's loading sequence is visible immediately.
+  useEffect(() => {
+    if (!isCompose && composerOpen) setComposerOpen(false);
+  }, [isCompose, composerOpen]);
+
+  // Submit handler that wraps the parent's onLaunch and closes the
+  // overlay optimistically — the parent will trigger the phase change
+  // shortly after but we don't want a frame where both the form and
+  // the loading sigil are visible.
+  const handleLaunchAndClose = useCallback(() => {
+    setComposerOpen(false);
+    onLaunch();
+  }, [onLaunch]);
+  const handleComposeStart = useCallback(() => {
+    setComposerOpen(true);
+  }, []);
+  const handleComposerClose = useCallback(() => {
+    setComposerOpen(false);
+  }, []);
+  // Escape-to-dismiss the overlay (keyboard parity with click-outside).
+  useEffect(() => {
+    if (!composerOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setComposerOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [composerOpen]);
 
   useEffect(() => {
     if (activeRowIndex >= glyphRows.length) setActiveRowIndex(0);
@@ -76,6 +128,13 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const closeActiveDim = () => setActiveDim(null);
   const onClickDim = (d: GlyphDimension) => setActiveDim((prev) => (prev === d ? null : d));
 
+  // Both card variants render as a centered overlay INSIDE the sigil
+  // canvas. The overlay's inner max-width is narrowed (~22rem = 352px)
+  // so the card stays in the central area between the petal ring (side
+  // petals are at iconR=217 from a 320 center → x ≈ 103 / 537; a 352px-
+  // wide card centered spans ±176, fully clear of petals on either
+  // side). User can tap any lit petal to switch active question without
+  // the card eating the click.
   const overlay = activeDim
     ? activeQuestion
       ? <GlyphAnswerCard question={activeQuestion} onAnswer={onAnswer} onClose={closeActiveDim} />
@@ -89,7 +148,21 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
 
   return (
     <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1" data-testid="build-layout-glyph-full">
-      <div className="flex flex-col items-center gap-5 pb-14 pt-4">
+      {/* Wizard surface — fixed 900px min-width so the layout stays
+          breathable on narrower viewports + a subtle grid background
+          gives the canvas its own identity (was blending into the page
+          background before). The outer flex centers it horizontally;
+          the inner column stacks topbar, sigil, answer card, etc. */}
+      <div className="flex flex-col items-center pb-14 pt-4">
+        <div
+          className="min-w-[900px] w-full max-w-[1400px] flex flex-col items-center gap-5 rounded-modal"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), " +
+              "linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }}
+        >
         <GlyphTopBar
           agentName={agentName}
           onAgentNameChange={onAgentNameChange}
@@ -100,31 +173,8 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
           onFaceChange={setFace}
         />
 
-        {/* Compose-only form. Mid-build follow-ups are answered through the
-            glyph (petal click → overlay card), so the panel hides once the
-            build is in flight. */}
-        <AnimatePresence mode="wait">
-          {isCompose && (
-            <motion.div
-              key="command-panel"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8, scale: 0.97 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full flex justify-center"
-            >
-              <CommandPanel
-                intentText={intentText}
-                onIntentChange={onIntentChange}
-                onLaunch={onLaunch}
-                launchDisabled={launchDisabled}
-                onKeyDown={handleLaunchKey}
-                onQuickConfigChange={onQuickConfigChange}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
+        {/* Row strip is meaningful only once we have capabilities — hide
+            during pre-build (no UCs to show yet). */}
         {face === "glyph" && !isCompose && (
           <GlyphRowSection
             rows={glyphRows}
@@ -171,6 +221,8 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             onShowSimulate={() => setShowSimulate(true)}
             buildSessionId={buildSessionId}
             overlay={overlay}
+            onComposeStart={isCompose ? handleComposeStart : undefined}
+            onShowReport={() => setShowReport(true)}
           />
         )}
 
@@ -180,7 +232,58 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             <span>{buildError}</span>
           </div>
         )}
+        </div>
       </div>
+
+      {/* Intent composer overlay — summoned by clicking the centre of the
+          sigil during pre-build. Scrim dismisses on click-outside; ESC
+          dismisses via the listener installed above; submit closes the
+          overlay before the build phase has visibly transitioned so the
+          loading sigil is the next thing the user sees. */}
+      <AnimatePresence>
+        {composerOpen && (
+          <motion.div
+            key="composer-overlay"
+            className="fixed inset-0 z-40 flex items-center justify-center px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              role="presentation"
+              onClick={handleComposerClose}
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              data-testid="composer-overlay-scrim"
+            />
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Describe your agent"
+              className="relative z-10 w-full flex justify-center"
+              initial={{ opacity: 0, y: 16, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <CommandPanel
+                intentText={intentText}
+                onIntentChange={onIntentChange}
+                onLaunch={handleLaunchAndClose}
+                launchDisabled={launchDisabled}
+                onKeyDown={handleLaunchKey}
+                onQuickConfigChange={onQuickConfigChange}
+                isBuilding={isBuilding}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <CapabilityAddModal open={showAdd} onClose={() => setShowAdd(false)} />
       <BuildSimulatePanel
@@ -189,6 +292,13 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
         sessionId={buildSessionId}
         draft={buildDraft}
       />
+      {showReport && (
+        <TestReportModal
+          results={toolTestResults ?? []}
+          summary={testSummary ?? null}
+          onClose={() => setShowReport(false)}
+        />
+      )}
     </div>
   );
 }

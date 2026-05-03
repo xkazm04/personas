@@ -325,20 +325,28 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | TypeScript check + Vite production build (all tiers) |
-| `npm run build:starter` | Build with only Starter features |
-| `npm run build:team` | Build with Starter + Team features |
-| `npm run build:builder` | Build with all features |
-| `npm run lint` | Run ESLint on `src/` |
-| `npm run tauri dev` | Launch Tauri in development mode |
-| `npm run tauri build` | Build distributable desktop app |
+| `npm run dev` | Vite dev server only (port 1420) — frontend without Tauri |
+| `npm run build` | TypeScript check + Vite production build (builder tier) |
+| `npm run build:{starter,team,builder}` | Tier-specific frontend bundle |
+| `npm run lint` | ESLint on `src/` |
+| `npm run check` | TypeScript + lint |
+| `npm run check:tiers` | Compile-check all three frontend tiers locally |
+| `npm run check:tauri-configs` | Validate `tauri.conf.json` and overlay configs |
+| `npm run tauri:dev` | Launch Tauri in dev mode (canonical config) |
+| `npm run tauri:dev:lite` | Dev mode with `desktop` features only — fast iteration |
+| `npm run tauri:dev:test` | Dev mode with `--features test-automation` (HTTP server on :17320) |
+| `npm run tauri:build` | Build full installer (all targets, `desktop-full`) |
+| `npm run tauri:build:lite` | Build NSIS-only installer with `desktop` features |
+| `npm run tauri:build:stable` | Build NSIS + MSI installer for Windows release |
 | `npm run analyze` | Generate bundle treemap (`dist/bundle-report.html`) |
 | `npm run check:budget` | Check JS chunk sizes against budget limits |
 | `npm run check:assets` | Show potential image optimization savings |
+| `npm run clean:rust` | `cargo clean` — full Rust target wipe |
+| `npm run clean:ort` | Surgical clean of `ort` + `ort-sys` (recovers from x64/arm64 cache contamination) |
 
-  npm run tauri dev --features test-automation    # With test HTTP server on :17320
-  npm run dev                                    # Vite only (port 1420)
+For end-to-end build documentation (architecture differences, ARM64 vs x64
+on Windows, codegen pipeline, profiles, ONNX Runtime bundling, Android setup),
+see **[docs/BUILD.md](./docs/BUILD.md)**.
 
 ## Project Structure
 

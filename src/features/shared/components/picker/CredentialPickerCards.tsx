@@ -76,7 +76,11 @@ export function CredentialPickerCards({
   return (
     <div
       role={multi ? 'group' : 'radiogroup'}
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2"
+      // Fixed 2-column grid — connector display labels (Notion, Google
+      // Calendar, Personal GitLab Account, ElevenLabs Voice Library, …)
+      // need horizontal room. Earlier 3-/4-col responsive widening
+      // truncated names mid-word at the typical answer-card width.
+      className="grid grid-cols-2 gap-2"
     >
       {items.map((item) => {
         // `value` is the connector's service_type; the icon + canonical
@@ -91,49 +95,58 @@ export function CredentialPickerCards({
             role={multi ? 'checkbox' : 'radio'}
             aria-checked={isSelected}
             onClick={() => toggle(item.value)}
-            className={`group relative flex items-center gap-3 p-3 rounded-card border text-left transition-all ${
+            // Vertical card: icon on top, label below. Tiles read more
+            // like a logo grid than a settings list — the icon does the
+            // recognition work and the label confirms.
+            className={`group relative flex flex-col items-center gap-2 p-3 rounded-card border text-center transition-all ${
               isSelected
                 ? 'bg-primary/10 border-primary/40 shadow-elevation-1 shadow-primary/10'
                 : 'bg-foreground/[0.02] border-border hover:bg-foreground/[0.05] hover:border-foreground/15'
             }`}
           >
-            {/* Connector icon — 32px square tile so the SVG logos all sit on a
-                neutral plate regardless of their native padding. */}
+            {/* Solid neutral plate — many connector SVGs are dark-fill
+                (e.g. ElevenLabs is brand-black). On a dark theme they'd
+                vanish against `bg-foreground/[0.03]`; the white-95 plate
+                keeps every icon legible regardless of its native colour
+                or the active theme. */}
             <span
-              className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-card border ${
-                isSelected ? 'border-primary/30 bg-primary/5' : 'border-border bg-foreground/[0.03]'
+              className={`flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-card border ${
+                isSelected ? 'border-primary/40' : 'border-border'
               }`}
+              style={{ background: 'rgba(255,255,255,0.95)' }}
             >
               {meta.iconUrl ? (
                 <img
                   src={meta.iconUrl}
                   alt=""
-                  className="w-6 h-6 object-contain"
+                  className="w-9 h-9 object-contain"
                   loading="lazy"
                   draggable={false}
                 />
               ) : (
-                <span className="typo-caption text-foreground/60 font-semibold">
+                <span className="typo-body text-foreground font-bold">
                   {(item.label || item.value).slice(0, 2).toUpperCase()}
                 </span>
               )}
             </span>
-            <span className="flex-1 min-w-0">
-              <span
-                className={`block truncate typo-body font-medium ${
-                  isSelected ? 'text-foreground' : 'text-foreground/90'
-                }`}
-              >
-                {item.label}
-              </span>
-              {sublabel && (
-                <span className="block truncate typo-caption text-foreground/60 mt-0.5">
-                  {sublabel}
-                </span>
-              )}
+            <span
+              className={`block w-full truncate typo-body font-medium ${
+                isSelected ? 'text-foreground' : 'text-foreground/90'
+              }`}
+              title={item.label}
+            >
+              {item.label}
             </span>
+            {sublabel && sublabel !== item.label && (
+              <span
+                className="block w-full truncate typo-caption text-foreground/55"
+                title={sublabel}
+              >
+                {sublabel}
+              </span>
+            )}
             {isSelected && (
-              <span className="flex-shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground">
+              <span className="absolute top-1.5 right-1.5 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground">
                 <Check className="w-3 h-3" strokeWidth={3} />
               </span>
             )}

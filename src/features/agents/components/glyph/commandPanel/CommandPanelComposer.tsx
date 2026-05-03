@@ -14,7 +14,6 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
 import type { CommandPanelProps } from "./types";
-import { CommandPanelHeader } from "./CommandPanelHeader";
 import { CommandPanelFooter } from "./CommandPanelFooter";
 import { CommandPanelComposeStep } from "./CommandPanelComposeStep";
 import {
@@ -27,6 +26,7 @@ import { ComposerEventPickerModal } from "./composer/ComposerEventPickerModal";
 
 export function CommandPanelComposer({
   intentText, onIntentChange, onLaunch, launchDisabled, onKeyDown, onQuickConfigChange,
+  isBuilding,
 }: CommandPanelProps) {
   const [draft, setDraft] = useState<IntentDraft>(() => parseIntent(intentText));
   const [frequency, setFrequency] = useState<Frequency | null>(null);
@@ -88,8 +88,6 @@ export function CommandPanelComposer({
           }}
         />
 
-        <CommandPanelHeader />
-
         <CommandPanelComposeStep
           draft={draft}
           setRow={setRow}
@@ -105,7 +103,11 @@ export function CommandPanelComposer({
           onOpenTools={() => setToolsOpen(true)}
         />
 
-        <CommandPanelFooter launchDisabled={launchDisabled} onLaunch={onLaunch} />
+        <CommandPanelFooter
+          launchDisabled={launchDisabled}
+          onLaunch={onLaunch}
+          isBuilding={isBuilding}
+        />
       </motion.div>
 
       <ComposerSchedulePickerModal

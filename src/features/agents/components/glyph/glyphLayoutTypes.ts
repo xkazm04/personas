@@ -1,5 +1,5 @@
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
-import type { BuildQuestion, CellBuildStatus, BuildPhase } from "@/lib/types/buildTypes";
+import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
 import type { QuickConfigState } from "@/features/agents/components/matrix/DimensionQuickConfig";
 
 export type PetalState = "idle" | "filling" | "resolved" | "pending" | "error";
@@ -29,6 +29,13 @@ export interface GlyphFullLayoutProps {
   testOutputLines?: string[];
   testPassed?: boolean | null;
   testError?: string | null;
+  /** Structured tool-test outcomes (populated by useMatrixLifecycle).
+   *  Drives the rich split-pane TestReportModal that the legacy
+   *  matrix view also uses. */
+  toolTestResults?: ToolTestResult[];
+  /** LLM-generated test summary text (parsed into sections by the
+   *  TestReportModal). */
+  testSummary?: string | null;
   cliOutputLines?: string[];
   onQuickConfigChange?: (c: QuickConfigState) => void;
 }

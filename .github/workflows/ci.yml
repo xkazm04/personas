@@ -76,6 +76,12 @@ jobs:
         # which crashes the UI at runtime via the deep-merge fallback.
         run: npm run check:i18n
 
+      - name: Validate Tauri config overlays
+        # Catches: drift in $schema across the three configs, overlays
+        # touching unexpected keys (so the overlay surface stays small),
+        # and feature names that don't match Cargo.toml [features].
+        run: npm run check:tauri-configs
+
       - name: Build
         run: npm run build
 
@@ -83,16 +89,9 @@ jobs:
         # The default `npm run build` produces the builder-tier bundle. Tier
         # variants (starter/team) flip frontend gating via VITE_APP_TIER and
         # tree-shake disabled features. Validate each tier compiles so a
-        # broken tier-gate import doesn't slip through.
-        # Skip the npm-script chain (codegen already ran via prebuild) and
-        # invoke vite directly to avoid 3× redundant codegen + tsc passes.
-        run: |
-          set -e
-          for tier in starter team builder; do
-            echo "::group::vite build (VITE_APP_TIER=$tier)"
-            VITE_APP_TIER=$tier npx vite build
-            echo "::endgroup::"
-          done
+        # broken tier-gate import doesn't slip through. Same script developers
+        # run locally via `npm run check:tiers`.
+        run: npm run check:tiers
 
       - name: Check bundle size budget
         # Budget: 850 KB per chunk (main index is ~778 KB: systemStore + agentStore + Sidebar).

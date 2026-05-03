@@ -42,13 +42,83 @@ static CONTEXT_GEN_JOBS: BackgroundJobManager<ContextGenExtra> = BackgroundJobMa
 // Prompt
 // =============================================================================
 
+/// Optional delta-mode briefing for the LLM, derived from the per-file hash
+/// cache. When present, the LLM is told exactly which files changed since the
+/// last scan and instructed to update only contexts that touch them — much
+/// cheaper than the full rescan flow above.
+struct DeltaBriefing<'a> {
+    added: &'a [String],
+    modified: &'a [String],
+    deleted: &'a [String],
+    unchanged_count: i32,
+}
+
 fn build_context_generation_prompt(
     project_id: &str,
     project_name: &str,
     root_path: &str,
     existing_context_summary: Option<&str>,
+    delta: Option<&DeltaBriefing<'_>>,
 ) -> String {
     let mode_section = if let Some(summary) = existing_context_summary {
+        let delta_section = if let Some(d) = delta {
+            // Cap the rendered file lists so the prompt stays bounded on
+            // commits that touch hundreds of files (mass refactors, lockfile
+            // bumps, etc.). The LLM still sees the counts and the first N of
+            // each category — enough to update contexts directionally.
+            const MAX_PER_CATEGORY: usize = 80;
+            let render = |label: &str, items: &[String]| -> String {
+                if items.is_empty() {
+                    return format!("- **{label}**: (none)\n");
+                }
+                let shown: Vec<&str> = items
+                    .iter()
+                    .take(MAX_PER_CATEGORY)
+                    .map(String::as_str)
+                    .collect();
+                let suffix = if items.len() > MAX_PER_CATEGORY {
+                    format!(" (+ {} more)", items.len() - MAX_PER_CATEGORY)
+                } else {
+                    String::new()
+                };
+                format!(
+                    "- **{label}** ({n}{suffix}):\n{list}\n",
+                    label = label,
+                    n = items.len(),
+                    suffix = suffix,
+                    list = shown
+                        .iter()
+                        .map(|p| format!("  - {p}"))
+                        .collect::<Vec<_>>()
+                        .join("\n"),
+                )
+            };
+            format!(
+                r#"
+### DELTA MODE — Only These Files Changed Since Last Scan
+
+The codebase has **{unchanged} unchanged files**. Do NOT re-explore the whole
+tree — focus exclusively on contexts that touch the file lists below.
+
+{added_block}{modified_block}{deleted_block}
+**Rules for delta mode:**
+- For ADDED files: locate or create the appropriate context and append the file path.
+- For MODIFIED files: re-read the file and update the owning context's description if
+  its purpose has shifted. If file_paths is unchanged you may skip the context entirely.
+- For DELETED files: emit a `context_map_update` that removes the path from `file_paths`.
+  If a context's file list becomes empty, leave a note in `description` rather than dropping
+  the context (the user will prune manually).
+- Do NOT touch contexts whose listed files do not appear in any of the three lists above.
+"#,
+                unchanged = d.unchanged_count,
+                added_block = render("ADDED", d.added),
+                modified_block = render("MODIFIED", d.modified),
+                deleted_block = render("DELETED", d.deleted),
+            )
+        } else {
+            String::new()
+        };
+
         format!(
             r#"
 ## RESCAN MODE — Existing Context Map
@@ -70,7 +140,7 @@ To update an existing context, use:
 ```
 {{"context_map_update": {{"context_id": "<id>", "description": "...", "file_paths": [...], "keywords": [...]}}}}
 ```
-"#
+{delta_section}"#
         )
     } else {
         String::new()
@@ -341,6 +411,7 @@ pub async fn dev_tools_scan_codebase(
     app: tauri::AppHandle,
     project_id: String,
     root_path: String,
+    delta_mode: Option<bool>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
 
@@ -375,6 +446,7 @@ pub async fn dev_tools_scan_codebase(
     // Check for existing contexts (rescan mode)
     let existing_summary = build_existing_context_summary(&state.db, &project_id);
     let is_rescan = existing_summary.is_some();
+    let delta_mode = delta_mode.unwrap_or(false);
 
     let app_handle = app.clone();
     let pool = state.db.clone();
@@ -395,6 +467,7 @@ pub async fn dev_tools_scan_codebase(
                 &project_name,
                 &resolved_root,
                 existing_summary.as_deref(),
+                delta_mode,
             ) => res
         };
 
@@ -446,7 +519,7 @@ pub async fn dev_tools_scan_codebase(
         }
     });
 
-    Ok(json!({ "scan_id": scan_id, "is_rescan": is_rescan }))
+    Ok(json!({ "scan_id": scan_id, "is_rescan": is_rescan, "delta_mode": delta_mode }))
 }
 
 #[tauri::command]
@@ -496,9 +569,78 @@ async fn run_context_generation(
     project_name: &str,
     root_path: &str,
     existing_summary: Option<&str>,
+    delta_mode: bool,
 ) -> Result<ContextGenSummary, AppError> {
     let is_rescan = existing_summary.is_some();
-    if is_rescan {
+
+    // ---- Delta-mode branch ----------------------------------------------------
+    // Compute the delta first so we can:
+    //   (a) short-circuit when nothing changed since the last successful scan,
+    //   (b) feed the LLM only the changed files (saves tokens vs full rescan),
+    //   (c) preserve the existing context_map (don't clear it — we're updating).
+    // Cache absence falls back to the legacy full-scan path so first scans behave
+    // exactly as before.
+    let delta_for_prompt = if delta_mode && is_rescan {
+        let cached = repo::get_file_hashes(pool, project_id).unwrap_or_default();
+        let root_owned = std::path::PathBuf::from(root_path);
+        let walked = tokio::task::spawn_blocking(move || {
+            super::incremental_scan::walk_project_files(&root_owned)
+        })
+        .await
+        .map_err(|e| AppError::Internal(format!("delta walk join: {e}")))?
+        .ok();
+
+        match walked {
+            Some(current) if !cached.is_empty() => {
+                let delta = super::incremental_scan::compute_delta(&cached, &current);
+                if delta.is_empty() {
+                    CONTEXT_GEN_JOBS.emit_line(
+                        app,
+                        scan_id,
+                        format!(
+                            "[Milestone] Delta scan: no source changes detected since last scan ({} files unchanged). Skipping LLM call.",
+                            delta.unchanged_count
+                        ),
+                    );
+                    return Ok(ContextGenSummary {
+                        scan_id: scan_id.to_string(),
+                        groups_created: 0,
+                        contexts_created: 0,
+                        files_mapped: 0,
+                        status: "completed".to_string(),
+                        error: None,
+                    });
+                }
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    format!(
+                        "[Milestone] Delta scan: {} added, {} modified, {} deleted ({} unchanged).",
+                        delta.added.len(),
+                        delta.modified.len(),
+                        delta.deleted.len(),
+                        delta.unchanged_count,
+                    ),
+                );
+                Some(delta)
+            }
+            _ => {
+                CONTEXT_GEN_JOBS.emit_line(
+                    app,
+                    scan_id,
+                    "[Milestone] Delta mode requested but cache is empty — running full scan and seeding cache.".to_string(),
+                );
+                None
+            }
+        }
+    } else {
+        None
+    };
+
+    // Legacy rescan path: clear old context map. Skipped when we have a delta
+    // because the LLM is being asked to update existing contexts, which means
+    // the existing IDs MUST stay live.
+    if is_rescan && delta_for_prompt.is_none() {
         CONTEXT_GEN_JOBS.emit_line(
             app,
             scan_id,
@@ -522,18 +664,40 @@ async fn run_context_generation(
         }
     }
 
-    let mode_label = if is_rescan { "Rescanning" } else { "Scanning" };
+    let mode_label = if delta_for_prompt.is_some() {
+        "Delta-rescanning"
+    } else if is_rescan {
+        "Rescanning"
+    } else {
+        "Scanning"
+    };
     CONTEXT_GEN_JOBS.emit_line(
         app,
         scan_id,
         format!("[Milestone] {mode_label} codebase: {project_name}..."),
     );
 
-    // Always generate fresh — on rescan we cleared old data above, so no
-    // existing_summary needed. This avoids the "Ungrouped" problem where the
-    // LLM tries to reference existing group/context IDs that are gone.
-    let prompt_text =
-        build_context_generation_prompt(project_id, project_name, root_path, None);
+    // Build the prompt. In delta mode we KEEP existing_summary so the LLM has
+    // the context IDs to update; in legacy rescan we drop it (cleared above).
+    // In first-scan mode both are None.
+    let (summary_for_prompt, briefing) = if let Some(ref delta) = delta_for_prompt {
+        let briefing = DeltaBriefing {
+            added: &delta.added,
+            modified: &delta.modified,
+            deleted: &delta.deleted,
+            unchanged_count: delta.unchanged_count,
+        };
+        (existing_summary, Some(briefing))
+    } else {
+        (None, None)
+    };
+    let prompt_text = build_context_generation_prompt(
+        project_id,
+        project_name,
+        root_path,
+        summary_for_prompt,
+        briefing.as_ref(),
+    );
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
@@ -746,6 +910,9 @@ async fn run_context_generation(
                     "[Warning] Scan timed out after 30 minutes but {groups_created} groups and {contexts_created} contexts were created. Treating as partial success."
                 ),
             );
+            // Persist hashes even on partial success — better to under-detect
+            // changes next time than to over-trigger full rescans.
+            persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
             return Ok(ContextGenSummary {
                 scan_id: scan_id.to_string(),
                 groups_created,
@@ -768,6 +935,11 @@ async fn run_context_generation(
         ),
     );
 
+    // Snapshot the live source tree into the per-file hash cache so the next
+    // scan can run in delta mode. Always overwrites — anything missing from
+    // the live snapshot is dropped (deleted files don't accumulate).
+    persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
+
     Ok(ContextGenSummary {
         scan_id: scan_id.to_string(),
         groups_created,
@@ -776,4 +948,63 @@ async fn run_context_generation(
         status: "completed".to_string(),
         error: None,
     })
+}
+
+/// Walk the project root + replace `dev_context_file_hashes` for this project.
+/// Errors are logged but do NOT fail the scan — a missing hash cache just means
+/// the next scan falls back to a full rescan, which is the legacy behavior.
+async fn persist_scan_hashes(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    root_path: &str,
+) {
+    let root_owned = std::path::PathBuf::from(root_path);
+    let walk_result = tokio::task::spawn_blocking(move || {
+        super::incremental_scan::walk_project_files(&root_owned)
+    })
+    .await;
+
+    let entries = match walk_result {
+        Ok(Ok(e)) => e,
+        Ok(Err(e)) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warn] Hash cache walk failed: {e}. Next scan will be a full rescan."),
+            );
+            return;
+        }
+        Err(e) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warn] Hash cache walk panicked: {e}. Next scan will be a full rescan."),
+            );
+            return;
+        }
+    };
+
+    let entry_tuples: Vec<(String, String, i64)> = entries
+        .into_iter()
+        .map(|e| (e.path, e.sha256, e.size_bytes))
+        .collect();
+    let count = entry_tuples.len();
+    match repo::replace_file_hashes(pool, project_id, &entry_tuples) {
+        Ok(n) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Cache] Wrote {n} file hashes (out of {count} walked)."),
+            );
+        }
+        Err(e) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warn] Failed to persist hash cache: {e}. Next scan will be a full rescan."),
+            );
+        }
+    }
 }

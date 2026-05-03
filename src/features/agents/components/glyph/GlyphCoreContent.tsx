@@ -26,6 +26,14 @@ interface GlyphCoreContentProps {
   onViewAgent: () => void;
   onShowSimulate: () => void;
   buildSessionId: string | null;
+  /** Pre-build only: clicking the center summons the intent overlay
+   *  (CommandPanel). Required because the glyph is now the default
+   *  surface — the form opens on demand instead of being rendered
+   *  inline above the sigil. */
+  onComposeStart?: () => void;
+  /** test_complete only: opens the test-report modal so the user can
+   *  see the full CLI output and the unclamped error message. */
+  onShowReport?: () => void;
 }
 
 export function GlyphCoreContent(props: GlyphCoreContentProps) {
@@ -33,29 +41,39 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
     isPreBuild, isBuilding, buildPhase, hasDesignResult,
     refining, setRefining, completenessPct, pendingQuestions,
     testOutputLines, onStartTest, onRefine, onViewAgent,
+    onComposeStart,
   } = props;
 
   if (isPreBuild) {
     return (
-      <motion.div
+      <motion.button
         key="pre"
+        type="button"
+        onClick={onComposeStart}
+        disabled={!onComposeStart}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="flex flex-col items-center gap-2 px-6"
+        whileHover={{ scale: 1.04 }}
+        whileTap={{ scale: 0.97 }}
+        aria-label="Click to begin — open intent composer"
+        data-testid="glyph-compose-summon"
+        className="flex flex-col items-center gap-2 px-6 pointer-events-auto cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 group bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
       >
         <motion.div
-          animate={{ opacity: [0.5, 1, 0.5] }}
+          animate={{ opacity: [0.55, 1, 0.55], scale: [0.96, 1.06, 0.96] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+          className="rounded-full"
+          style={{ filter: "drop-shadow(0 0 16px rgba(96,165,250,0.55))" }}
         >
-          <Sparkles className="w-8 h-8 text-primary/60" />
+          <Sparkles className="w-9 h-9 text-primary/85 group-hover:text-primary transition-colors" />
         </motion.div>
-        <span className="typo-label uppercase tracking-[0.22em] text-foreground/45">
-          Awaiting Intent
+        <span className="typo-label uppercase tracking-[0.22em] text-foreground/70 group-hover:text-foreground transition-colors">
+          Click to Begin
         </span>
-        <span className="typo-caption text-foreground/35 max-w-[220px] leading-snug">
-          Describe your agent above — its sigil will form here.
+        <span className="typo-caption text-foreground/45 max-w-[220px] leading-snug">
+          Describe your persona
         </span>
-      </motion.div>
+      </motion.button>
     );
   }
 

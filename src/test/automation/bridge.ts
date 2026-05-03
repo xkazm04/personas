@@ -1176,26 +1176,46 @@ const bridge: TestBridge = {
     useAgentStore.getState().selectPersona(null);
     useSystemStore.getState().setIsCreatingPersona(true);
     useSystemStore.getState().setSidebarSection('personas');
-    // The pre-build entry surface evolved: legacy GlyphFullLayout exposed a
-    // single `agent-intent-input` textarea; current CommandPanelComposer
-    // exposes per-row inputs (`composer-row-task`, `composer-row-when`,
-    // …). Probe both — fill whichever exists. The first one we find wins.
+    // The pre-build entry surface evolved across three iterations:
+    //   1. Legacy: a single always-visible `agent-intent-input` textarea.
+    //   2. CommandPanelComposer: per-row inputs (`composer-row-task`, …).
+    //   3. C8 Glyph redesign: form is hidden until the user clicks the
+    //      sigil's centre — `[data-testid="glyph-compose-summon"]`. The
+    //      composer renders inside an overlay only after the summon
+    //      button fires.
+    // Probe the inputs first; if none are visible, click the summon
+    // button to open the overlay and probe again.
     const mountDeadline = Date.now() + 15_000;
     let target: HTMLTextAreaElement | HTMLInputElement | null = null;
     const probeSelectors = [
       '[data-testid="agent-intent-input"]',
       '[data-testid="composer-row-task"]',
     ];
-    while (Date.now() < mountDeadline) {
+    const findTarget = (): HTMLTextAreaElement | HTMLInputElement | null => {
       for (const sel of probeSelectors) {
         const el = document.querySelector<HTMLTextAreaElement | HTMLInputElement>(sel);
-        if (el && (el as HTMLElement).offsetParent !== null) { target = el; break; }
+        if (el && (el as HTMLElement).offsetParent !== null) return el;
       }
+      return null;
+    };
+    while (Date.now() < mountDeadline) {
+      target = findTarget();
       if (target) break;
-      await new Promise((r) => setTimeout(r, 150));
+      // Form not visible yet — try the summon path. This is a no-op
+      // when the form is already mounted (button absent/disabled), so
+      // it doesn't fight legacy layouts.
+      const summon = document.querySelector<HTMLButtonElement>('[data-testid="glyph-compose-summon"]');
+      if (summon && summon.offsetParent !== null && !summon.disabled) {
+        summon.click();
+        // Give the overlay's enter animation a moment to commit before
+        // re-probing — the framer-motion enter is ~320ms.
+        await new Promise((r) => setTimeout(r, 350));
+      } else {
+        await new Promise((r) => setTimeout(r, 150));
+      }
     }
     if (!target || (target as HTMLElement).offsetParent === null) {
-      return { success: false, error: `intent input not visible after 15s (probed ${probeSelectors.join(', ')})` };
+      return { success: false, error: `intent input not visible after 15s (probed ${probeSelectors.join(', ')}, also tried summon button)` };
     }
     const proto = target.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
     const setter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;

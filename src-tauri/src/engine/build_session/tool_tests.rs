@@ -44,7 +44,35 @@ pub async fn run_tool_tests(
     persona_id: &str,
     agent_ir: &crate::db::models::AgentIr,
 ) -> Result<serde_json::Value, AppError> {
-    let tools = &agent_ir.tools;
+    // Tools may live in two places in the v3 IR:
+    //   - top-level `agent_ir.tools[]`              (legacy + structured form)
+    //   - per-UC `useCases[i].tool_hints: Vec<String>` (v3 advisory form)
+    //
+    // The build prompt encourages tool_hints; many builds produce IRs with
+    // an empty top-level tools array but populated per-UC hints. The test
+    // runner used to bail out with `tools_tested: 0` in that case (the
+    // user saw a "report empty" gap). Backfill: union the two, dedup by
+    // name, treat per-UC hints as `AgentIrTool::Simple(name)` so they
+    // flow through `tool_def_from_ir` like any other tool.
+    use crate::db::models::agent_ir::{AgentIrTool, AgentIrUseCase};
+    let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut tools: Vec<AgentIrTool> = Vec::new();
+    for t in &agent_ir.tools {
+        let name = t.name().to_string();
+        if name.is_empty() || !seen.insert(name) { continue; }
+        tools.push(t.clone());
+    }
+    for uc in &agent_ir.use_cases {
+        if let AgentIrUseCase::Structured(d) = uc {
+            if let Some(hints) = &d.tool_hints {
+                for h in hints {
+                    let name = h.trim().to_string();
+                    if name.is_empty() || !seen.insert(name.clone()) { continue; }
+                    tools.push(AgentIrTool::Simple(name));
+                }
+            }
+        }
+    }
 
     if tools.is_empty() {
         return Ok(serde_json::json!({

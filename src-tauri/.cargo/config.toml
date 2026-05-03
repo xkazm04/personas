@@ -7,7 +7,8 @@
 [env]
 TS_RS_EXPORT_DIR = { value = "../src/lib/bindings", relative = true }
 
-# Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe)
+# Use LLD for faster linking on Windows (2-5x faster than MSVC link.exe).
+# Applied to both Windows targets — speeds up cross-arch dev builds equally.
 [target.aarch64-pc-windows-msvc]
 linker = "lld-link"
 # Windows main-thread stack size bump. The default 1 MB main-thread stack
@@ -19,20 +20,13 @@ linker = "lld-link"
 rustflags = ["-C", "link-arg=/STACK:8388608"]
 
 [target.x86_64-pc-windows-msvc]
+linker = "lld-link"
 rustflags = ["-C", "link-arg=/STACK:8388608"]
 
-[target.aarch64-linux-android]
-linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\aarch64-linux-android24-clang.cmd"
-ar = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\llvm-ar.exe"
-
-[target.armv7-linux-androideabi]
-linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\armv7a-linux-androideabi24-clang.cmd"
-ar = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\llvm-ar.exe"
-
-[target.i686-linux-android]
-linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\i686-linux-android24-clang.cmd"
-ar = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\llvm-ar.exe"
-
-[target.x86_64-linux-android]
-linker = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\x86_64-linux-android24-clang.cmd"
-ar = "C:\\Users\\mkdol\\AppData\\Local\\Android\\Sdk\\ndk\\25.2.9519653\\toolchains\\llvm\\prebuilt\\windows-x86_64\\bin\\llvm-ar.exe"
+# Android linker config has been moved out of the project to keep `.cargo/config.toml`
+# portable. The Android NDK paths are user-specific (NDK version, install dir, host
+# OS) and committing absolute paths breaks every other dev machine + CI.
+#
+# To build Android targets locally, see docs/ANDROID-BUILD.md — the recommended
+# path is `cargo-ndk`, but per-user overrides in `~/.cargo/config.toml` (which
+# Cargo merges with this file) also work.

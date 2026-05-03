@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./glyphLayoutTypes";
@@ -10,10 +10,15 @@ interface GlyphPetalIconsProps {
   activeDim: GlyphDimension | null;
   /** Subdued treatment for the building phase. */
   dimmed?: boolean;
+  /** When set, that petal gets a temporary brighter glow that pulses on
+   *  and off — used by the build-phase sweep (issue #2). Independent of
+   *  `petalStates` so it doesn't conflict with the awaiting_input
+   *  per-petal pending pulse. */
+  sweepDim?: GlyphDimension | null;
 }
 
 export function GlyphPetalIcons({
-  size, petalStates, hoveredDim, activeDim, dimmed = false,
+  size, petalStates, hoveredDim, activeDim, dimmed = false, sweepDim = null,
 }: GlyphPetalIconsProps) {
   const center = size / 2;
   const iconR = size * 0.34;
@@ -32,6 +37,7 @@ export function GlyphPetalIcons({
         const y = center + iconR * Math.sin(rad);
         const isHovered = hoveredDim === dim;
         const isActive = activeDim === dim;
+        const isSwept = sweepDim === dim;
         const dimOther = activeDim !== null && !isActive;
         const boxSize = state === "resolved" || state === "pending" ? 108 : 84;
         const CustomArt = meta.customArt;
@@ -89,6 +95,28 @@ export function GlyphPetalIcons({
                 }}
               />
             )}
+            {/* Sweep highlight (issue #2). One petal at a time gets a
+                bright pulsing ring during the building phase, advancing
+                every ~5s. Sits on top of the base halo so it reads
+                clearly even when the petal layer is dimmed. The pulse
+                fades on AnimatePresence exit when the sweep dim
+                changes — no flicker between petals. */}
+            <AnimatePresence>
+              {isSwept && (
+                <motion.span
+                  key={`sweep-${dim}`}
+                  className="absolute inset-0 rounded-full pointer-events-none"
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: [0, 1, 0.6, 0], scale: [0.85, 1.08, 1.04, 1] }}
+                  exit={{ opacity: 0, scale: 1 }}
+                  transition={{ duration: 1.4, ease: "easeOut", times: [0, 0.25, 0.6, 1] }}
+                  style={{
+                    background: `${meta.color}66`,
+                    boxShadow: `0 0 38px ${meta.color}cc`,
+                  }}
+                />
+              )}
+            </AnimatePresence>
             {CustomArt ? (
               <div
                 className="relative"

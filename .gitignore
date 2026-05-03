@@ -86,3 +86,6 @@ tmp/
 
 # Test results (generated, not needed in repo)
 docs/tests/results/
+
+# Per-run JSON reports written by tools/test-mcp/e2e_*.py drivers
+logs/

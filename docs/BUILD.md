@@ -1,0 +1,187 @@
+# Building Personas Desktop
+
+End-to-end reference for building, packaging, and releasing Personas Desktop.
+For day-to-day development workflow, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+## Quick reference
+
+```bash
+# Develop
+npm run tauri:dev              # full app, all features
+npm run tauri:dev:lite         # fast iteration (no ML/P2P)
+npm run tauri:dev:test         # with test-automation HTTP server on :17320
+
+# Build
+npm run tauri:build            # canonical: all targets, desktop-full features
+npm run tauri:build:lite       # lite: nsis-only, desktop features
+npm run tauri:build:stable     # stable: nsis + msi, full LTO
+
+# Frontend-only tier checks
+npm run check:tiers            # builds starter + team + builder bundles
+npm run check:tauri-configs    # validates the three tauri.conf.json files
+```
+
+## The two dimensions
+
+A "build" is two independent choices: **frontend tier** × **backend variant**.
+
+### Frontend tier (`VITE_APP_TIER`)
+
+Tiers control which UI features are gated in the React bundle. The default
+build (`npm run build`) produces the **builder** tier (everything visible).
+For tier-specific builds:
+
+```bash
+npm run build:starter          # starter-tier UI gates only
+npm run build:team             # adds team-tier features
+npm run build:builder          # all features (default)
+```
+
+Tier compile failures don't show up in `npm run build` — run
+`npm run check:tiers` locally before pushing if you've touched tier-gated
+imports. CI also enforces this in `frontend-checks` (see `.github/workflows/ci.yml`).
+
+### Backend variant (Cargo features × Tauri config)
+
+Three Tauri configs in `src-tauri/`:
+
+| File | Features | Bundle | Use |
+|------|----------|--------|-----|
+| `tauri.conf.json`        | `desktop-full` (= desktop + ml + p2p) | all targets       | canonical full build |
+| `tauri.lite.conf.json`   | `desktop`                              | nsis only         | fast Windows iteration |
+| `tauri.stable.conf.json` | `desktop-full`                         | nsis + msi        | Windows release |
+
+Cargo features in `src-tauri/Cargo.toml`:
+
+| Feature | Implies | What it adds |
+|---------|---------|--------------|
+| `desktop`         | —                          | tray, clipboard, notifications, keyring, screen capture, window state, updater |
+| `ml`              | —                          | sqlite-vec + fastembed + ort (ONNX Runtime) |
+| `p2p`             | —                          | ed25519, mdns-sd, quinn, rcgen |
+| `desktop-full`    | desktop + ml + p2p         | full production set |
+| `test-automation` | (xcap + image)             | HTTP server on :17320 for MCP-driven UI testing |
+| `daemon`          | desktop-full *             | headless daemon binary (`personas-daemon`) |
+
+\* `daemon` implies `desktop-full` because of unresolved `#[cfg(feature="desktop")]`
+gaps in four backend modules — see the comment on the `daemon` feature in
+`Cargo.toml` for the cleanup plan.
+
+## Codegen pipeline
+
+`predev` and `prebuild` run codegen before Vite. Both go through
+`scripts/run-codegen.mjs`, which runs each task **in parallel** with a per-task
+60s timeout (override via `CODEGEN_TIMEOUT_MS`). Tasks:
+
+- `commands` — extracts Tauri command names from `src-tauri/src/lib.rs` →
+  `src/lib/commandNames.generated.ts`
+- `i18n` — generates types from `src/i18n/locales/en.json` → `src/i18n/generated/types.ts`
+- `connectors` — regenerates the connector seed
+- `checksums` (prebuild only) — template integrity hashes
+- `host-check` (predev only) — detects Rust host-triple drift (see below)
+
+ts-rs binding generation is **not** part of this pipeline — it runs via
+`cargo test export_bindings`. The `binding-drift` job in CI catches forgotten
+regenerations.
+
+## ARM64 vs x64 Windows
+
+Both architectures share `src-tauri/target/debug/deps/` — Cargo doesn't
+segregate the deps directory by triple. Switching default targets between
+runs (e.g. via toolchain change, or restoring from another machine's cache)
+poisons the cache: rlibs from arch A get linked into a build for arch B,
+producing `lld-link: error: machine type x64 conflicts with arm64`.
+
+Detection: `predev` writes `src-tauri/target/.last-build-host` after each
+successful run. The next `predev` compares to `rustc -vV`'s host and fails
+loud on mismatch with the recovery command:
+
+```bash
+npm run clean:rust             # nuclear: full cargo clean (~10 min rebuild)
+npm run clean:ort              # surgical: just ort + ort-sys (often enough)
+```
+
+CI was vulnerable to the same trap — `release.yml`'s build job has matrix
+entries for `windows-x64` and `windows-arm64` both on `windows-latest`,
+sharing a single GitHub Actions cache. The rust-cache action is now keyed
+by `matrix.rust_target` (since 2026-05-02), so each arch has an isolated
+cache.
+
+## Linker
+
+LLD-link is configured for both Windows targets in `src-tauri/.cargo/config.toml`
+(2-5x faster link than MSVC's link.exe, no measurable codegen difference).
+Stack size is bumped to 8 MB on both targets to match Linux/macOS defaults
+— sync Tauri commands deserialize on the main thread, and the default 1 MB
+stack overflows on deeply-nested payloads.
+
+## Profiles
+
+Defined in `src-tauri/Cargo.toml`:
+
+| Profile | Inherits | LTO | codegen-units | Use |
+|---------|----------|-----|---------------|-----|
+| `dev`         | —          | off          | default | local development |
+| `dev-release` | dev        | thin         | default | perf testing — ~3x faster than release |
+| `release`     | —          | thin         | 2       | daily releases (default `cargo tauri build`) |
+| `ci`          | release    | thin         | 4       | CI tests + clippy (faster, debug symbols kept) |
+| `stable`      | release    | full         | 1       | milestone releases (`cargo tauri build --profile stable`) |
+
+`panic = "unwind"` on release because `ort` panics on ONNX Runtime DLL
+version mismatches; we want `catch_unwind` to handle them.
+
+## ONNX Runtime bundling
+
+`ort = { version = "2.0.0-rc.9" }` ships in `desktop-full` builds via the `ml`
+feature. fastembed's default `ort-download-binaries` feature is the only path
+placing `onnxruntime.dll` next to the exe — **do not enable** ort's
+`load-dynamic` feature, which flips to runtime DLL lookup and panics at boot.
+
+`scripts/verify-onnxruntime-bundling.mjs` runs in `release.yml` after each
+Windows build and fails the release if the DLL is missing.
+
+### Known issue: `ort` 2.0.0-rc.9 + Windows ARM64
+
+`ort`'s pre-built binaries for `aarch64-pc-windows-msvc` (downloaded into
+`%LOCALAPPDATA%\ort.pyke.io\dfbin\aarch64-pc-windows-msvc\...`) are
+**actually x64 binaries** in the rc.9 release. Linking arm64 Rust code
+against them produces:
+
+```
+lld-link: error: machine type x64 conflicts with arm64
+```
+
+`npm run clean:ort` cannot fix this — the bug is upstream. Workarounds for
+local dev on Windows ARM64:
+
+1. **Use the lite variant**: `npm run tauri:dev:lite` or `tauri:dev:test`
+   (both exclude the `ml` feature). Sufficient for ~95% of dev work.
+2. **Cross-compile for x86_64**: install the target (`rustup target add
+   x86_64-pc-windows-msvc`) and pass `--target x86_64-pc-windows-msvc` to
+   `cargo`. The resulting x64 binary runs under Windows-on-ARM emulation —
+   slower than native but functional.
+3. **Wait for `ort` 2.0 stable**: the 2.0 stable release is expected to
+   ship real aarch64-pc-windows-msvc binaries.
+
+Production releases run x64 + arm64 Windows builds in CI on `windows-latest`
+runners (which are x64), so the upstream bug doesn't affect releases — only
+local dev on ARM64 hardware.
+
+## CI gates
+
+See `.github/workflows/ci.yml`:
+
+- **commit-lint** — Conventional Commits format
+- **frontend-checks** — typecheck + lint + i18n parity + tier validation + bundle budget + tests
+- **rust-tests** — `cargo test` + clippy + cargo-deny on Windows / macOS / Linux
+- **command-name-drift** — regenerates `commandNames.generated.ts`, fails on diff
+- **binding-drift** — runs `cargo test export_bindings`, fails on diff in `src/lib/bindings/`
+
+`release.yml` runs on merged PRs to `master` and produces NSIS / MSI / .app /
+AppImage artifacts plus the `latest.json` updater manifest. Per-target rust
+cache key prevents x64/arm64 cross-contamination.
+
+## Android
+
+Hardcoded NDK linker paths were removed from `src-tauri/.cargo/config.toml`
+to keep the project portable across machines. See [ANDROID-BUILD.md](./ANDROID-BUILD.md)
+for setup.

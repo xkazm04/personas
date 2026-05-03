@@ -4,9 +4,12 @@
 > with the canonical flow steps and current status for each scenario.
 >
 > **Companion file: `test-scenarios.xlsx`** — same data in a
-> manual-comparison grid (2 columns per scenario: flow step + status).
-> Open it side-by-side with the desktop app to walk a scenario by hand
-> and spot any false-green claims.
+> manual-comparison grid. Each scenario block carries: a title row, a
+> summary row, the **exact `INTENT` prompt** the driver passes to
+> `startBuildFromIntent` (so you can paste it into the desktop app and
+> walk the build by hand), then the flow steps + status + notes
+> columns. Open it side-by-side with the desktop app to spot any
+> false-green claims.
 >
 > Regenerate the xlsx with:
 > ```bash
@@ -64,6 +67,12 @@ step_cleanup()              # deleteAgent unless --no-persona-cleanup
 | I | Clockify monthly-invoice | 2 | ok (C7) — 7 acceptance gates green | `e2e_phase_i.py` |
 | **J** | **Documentation archiver (webhook + reference)** | 2 | **ok (C8 — verified 2026-04-28: all 5 gates green, smee_relays auto-bind verified)** | `e2e_phase_j.py` |
 | **K** | **Video narration (build-shape)** | 1 | **ok (C8 — verified 2026-04-28: gemini + elevenlabs landed, manual trigger). Runtime blocked on ElevenLabs TTS impl + ffmpeg connector exposure.** | `e2e_phase_k.py` |
+
+> **Companion suite — rapid validation**: `13-rapid-validation-personas.md`
+> defines 20 simple one-sentence personas (R01..R20) for breadth-at-scale
+> smoke testing, with module verification gates for Messages + Human
+> Review. Use it once the Phase A-K shape coverage is green to confirm
+> the wizard holds up under realistic load.
 
 ---
 
