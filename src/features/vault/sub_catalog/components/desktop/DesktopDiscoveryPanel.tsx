@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { ArrowLeft, Monitor, Download, RefreshCw } from 'lucide-react';
-import { createLogger } from '@/lib/log';
-
-const logger = createLogger('vault-discovery');
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   discoverDesktopApps,
   importClaudeMcpServers,
@@ -38,13 +36,15 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
   const [importingServer, setImportingServer] = useState<string | null>(null);
   const [importedServers, setImportedServers] = useState<Set<string>>(new Set());
 
+  // Scans run on mount; failure surfaces as the empty-state UI rather than
+  // a toast, so the catches use silentCatch for the breadcrumb only.
   const scanApps = useCallback(async () => {
     setScanning(true);
     try {
       const discovered = await discoverDesktopApps();
       setApps(discovered);
     } catch (e) {
-      logger.error('Failed to discover desktop apps', { error: String(e) });
+      silentCatch('DesktopDiscoveryPanel:scanApps')(e);
     } finally {
       setScanning(false);
     }
@@ -56,7 +56,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       const servers = await importClaudeMcpServers();
       setMcpServers(servers);
     } catch (e) {
-      logger.error('Failed to import Claude MCP servers', { error: String(e) });
+      silentCatch('DesktopDiscoveryPanel:scanMcpServers')(e);
     } finally {
       setImportingMcp(false);
     }
@@ -80,7 +80,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       if (inflightSelectionRef.current !== connectorName) return;
       setManifest(m);
     } catch (e) {
-      logger.error('Failed to get manifest', { error: String(e) });
+      toastCatch('DesktopDiscoveryPanel:getManifest')(e);
     }
   };
 
@@ -93,7 +93,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       setManifest(null);
       onCredentialCreated?.();
     } catch (e) {
-      logger.error('Failed to approve capabilities', { error: String(e) });
+      toastCatch('DesktopDiscoveryPanel:approveCapabilities')(e);
     } finally {
       setApproving(false);
     }
@@ -106,7 +106,7 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
       setImportedServers((prev) => new Set([...prev, server.name]));
       onCredentialCreated?.();
     } catch (e) {
-      logger.error('Failed to import MCP server', { error: String(e) });
+      toastCatch('DesktopDiscoveryPanel:importMcpServer')(e);
     } finally {
       setImportingServer(null);
     }
