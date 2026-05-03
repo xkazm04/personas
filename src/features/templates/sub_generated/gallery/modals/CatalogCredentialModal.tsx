@@ -3,7 +3,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { CredentialTemplateForm } from '@/features/vault/sub_catalog/components/forms/CredentialTemplateForm';
 import { isGoogleOAuthConnector } from '@/lib/utils/platform/connectors';
-import { testCredentialDesignHealthcheck } from '@/api/vault/credentialDesign';
+import { testCredentialDesignHealthcheck } from '@/api/overview/healthcheckApi';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 interface CatalogCredentialModalProps {

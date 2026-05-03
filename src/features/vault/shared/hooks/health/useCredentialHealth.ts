@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import * as credApi from '@/api/vault/credentials';
-import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/vault/credentialDesign';
+import { testCredentialDesignHealthcheck, type CredentialDesignHealthcheckResult } from '@/api/overview/healthcheckApi';
 import { encryptWithSessionKey } from '@/lib/utils/platform/crypto';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
