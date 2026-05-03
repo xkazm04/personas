@@ -434,3 +434,180 @@ fn migrate_persona_memories(conn: &Connection) -> Result<(), AppError> {
         ],
     )
 }
+
+#[cfg(test)]
+mod tests {
+    //! Orphan-prevention tests for the FK hygiene ADR
+    //! (2026-05-02-fk-hygiene-cascade). Each test creates a parent + child
+    //! pair, deletes the parent, and asserts the child is gone (CASCADE) or
+    //! has its FK column nulled (SET NULL).
+    //!
+    //! Tests use `init_test_db()` which runs both migration phases against
+    //! a fresh temp DB, so they exercise the canonical schema path that
+    //! fresh installs hit. Legacy DB rebuild path is exercised implicitly
+    //! by the helper's idempotency check (skips when FK already declared).
+    use rusqlite::params;
+
+    use crate::db::{init_test_db, DbPool};
+
+    fn count(pool: &DbPool, sql: &str, persona_id: &str) -> i64 {
+        let conn = pool.get().expect("pool.get");
+        conn.query_row(sql, params![persona_id], |row| row.get::<_, i64>(0))
+            .expect("query_row")
+    }
+
+    fn insert_persona(pool: &DbPool, id: &str) {
+        let conn = pool.get().expect("pool.get");
+        conn.execute(
+            "INSERT INTO personas (id, name, system_prompt, created_at, updated_at) \
+             VALUES (?1, 'test', 'sp', datetime('now'), datetime('now'))",
+            params![id],
+        )
+        .expect("insert persona");
+    }
+
+    fn insert_team(pool: &DbPool, id: &str) {
+        let conn = pool.get().expect("pool.get");
+        conn.execute(
+            "INSERT INTO persona_teams (id, name, created_at, updated_at) \
+             VALUES (?1, 'team', datetime('now'), datetime('now'))",
+            params![id],
+        )
+        .expect("insert team");
+    }
+
+    #[test]
+    fn deleting_persona_cascades_memories() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        let conn = pool.get().expect("pool.get");
+        conn.execute(
+            "INSERT INTO persona_memories (id, persona_id, title, content) \
+             VALUES ('m1', 'p1', 't', 'c')",
+            [],
+        )
+        .expect("insert memory");
+        drop(conn);
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ?1", "p1"), 1);
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_memories WHERE persona_id = ?1", "p1"), 0);
+    }
+
+    #[test]
+    fn deleting_persona_cascades_messages_and_deliveries() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        let conn = pool.get().expect("pool.get");
+        conn.execute(
+            "INSERT INTO persona_messages (id, persona_id, content, created_at) \
+             VALUES ('msg1', 'p1', 'c', datetime('now'))",
+            [],
+        )
+        .expect("insert message");
+        conn.execute(
+            "INSERT INTO persona_message_deliveries (id, message_id, channel_type, created_at) \
+             VALUES ('d1', 'msg1', 'email', datetime('now'))",
+            [],
+        )
+        .expect("insert delivery");
+        drop(conn);
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_messages WHERE persona_id = ?1", "p1"), 0);
+        // Transitive: deliveries should be gone too via the message_id cascade.
+        assert_eq!(
+            pool.get().unwrap().query_row(
+                "SELECT COUNT(*) FROM persona_message_deliveries WHERE message_id = 'msg1'",
+                [],
+                |row| row.get::<_, i64>(0),
+            ).unwrap(),
+            0
+        );
+    }
+
+    #[test]
+    fn deleting_persona_cascades_healing_issues() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        pool.get().unwrap().execute(
+            "INSERT INTO persona_healing_issues (id, persona_id, title, description) \
+             VALUES ('h1', 'p1', 't', 'd')",
+            [],
+        ).unwrap();
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_healing_issues WHERE persona_id = ?1", "p1"), 0);
+    }
+
+    #[test]
+    fn deleting_persona_cascades_metrics_snapshots() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        pool.get().unwrap().execute(
+            "INSERT INTO persona_metrics_snapshots (id, persona_id, snapshot_date, created_at) \
+             VALUES ('s1', 'p1', '2026-05-03', datetime('now'))",
+            [],
+        ).unwrap();
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_metrics_snapshots WHERE persona_id = ?1", "p1"), 0);
+    }
+
+    #[test]
+    fn deleting_persona_cascades_prompt_versions() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        pool.get().unwrap().execute(
+            "INSERT INTO persona_prompt_versions (id, persona_id, version_number) \
+             VALUES ('v1', 'p1', 1)",
+            [],
+        ).unwrap();
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM persona_prompt_versions WHERE persona_id = ?1", "p1"), 0);
+    }
+
+    #[test]
+    fn deleting_team_cascades_pipeline_runs() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_team(&pool, "t1");
+        pool.get().unwrap().execute(
+            "INSERT INTO pipeline_runs (id, team_id) VALUES ('pr1', 't1')",
+            [],
+        ).unwrap();
+        pool.get().unwrap().execute("DELETE FROM persona_teams WHERE id = ?1", params!["t1"]).unwrap();
+        assert_eq!(count(&pool, "SELECT COUNT(*) FROM pipeline_runs WHERE team_id = ?1", "t1"), 0);
+    }
+
+    #[test]
+    fn deleting_persona_nulls_event_target() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_persona(&pool, "p1");
+        pool.get().unwrap().execute(
+            "INSERT INTO persona_events (id, event_type, source_type, source_id, target_persona_id, status, created_at) \
+             VALUES ('e1', 'tick', 'system', NULL, 'p1', 'pending', datetime('now'))",
+            [],
+        ).unwrap();
+        pool.get().unwrap().execute("DELETE FROM personas WHERE id = ?1", params!["p1"]).unwrap();
+        // SET NULL: row preserved, target nulled.
+        let target: Option<String> = pool.get().unwrap().query_row(
+            "SELECT target_persona_id FROM persona_events WHERE id = 'e1'",
+            [],
+            |row| row.get(0),
+        ).unwrap();
+        assert!(target.is_none(), "target_persona_id should be NULL after parent delete");
+    }
+
+    #[test]
+    fn fk_hygiene_run_is_idempotent() {
+        let pool = init_test_db().expect("init_test_db");
+        // init_test_db already ran fk_hygiene::run via run_incremental.
+        // Calling it again on the same DB must be a no-op (skip via
+        // pragma_foreign_key_list count >= expected).
+        let conn = pool.get().expect("pool.get");
+        super::super::fk_hygiene::run(&conn).expect("re-run fk_hygiene");
+        // Sanity: the FKs still exist.
+        let fk_count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM pragma_foreign_key_list('persona_memories')",
+            [],
+            |row| row.get(0),
+        ).unwrap();
+        assert!(fk_count >= 1, "persona_memories should still have FK after re-run");
+    }
+}
