@@ -147,6 +147,9 @@ export function AutoCredErrorDisplay({
         {error.retryable && (
           <button
             onClick={onRetry}
+            // text-white is deliberate on saturated bg-cyan-600 — see
+            // AutoCredConsent for the same exception.
+            // eslint-disable-next-line custom/no-direct-white-colors
             className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-modal typo-body font-medium transition-colors"
           >
             {t.vault.auto_cred.retry}
