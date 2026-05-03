@@ -18,6 +18,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_messages(conn)?;
     migrate_persona_message_deliveries(conn)?;
     migrate_persona_healing_issues(conn)?;
+    migrate_persona_metrics_snapshots(conn)?;
     Ok(())
 }
 
@@ -145,6 +146,42 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_metrics_snapshots(conn: &Connection) -> Result<(), AppError> {
+    // Snapshots are aggregate counters scoped to a persona — pure derived
+    // data with no value once the persona is deleted. No prior cleanup
+    // existed in any repo, so orphans are likely.
+    recreate_with_fk(
+        conn,
+        "persona_metrics_snapshots",
+        1,
+        &[
+            "DELETE FROM persona_metrics_snapshots \
+             WHERE persona_id NOT IN (SELECT id FROM personas);",
+        ],
+        "CREATE TABLE persona_metrics_snapshots_new (
+            id                      TEXT PRIMARY KEY,
+            persona_id              TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            snapshot_date           TEXT NOT NULL,
+            total_executions        INTEGER NOT NULL DEFAULT 0,
+            successful_executions   INTEGER NOT NULL DEFAULT 0,
+            failed_executions       INTEGER NOT NULL DEFAULT 0,
+            total_cost_usd          REAL NOT NULL DEFAULT 0,
+            total_input_tokens      INTEGER NOT NULL DEFAULT 0,
+            total_output_tokens     INTEGER NOT NULL DEFAULT 0,
+            avg_duration_ms         REAL NOT NULL DEFAULT 0,
+            events_emitted          INTEGER NOT NULL DEFAULT 0,
+            events_consumed         INTEGER NOT NULL DEFAULT 0,
+            messages_sent           INTEGER NOT NULL DEFAULT 0,
+            created_at              TEXT NOT NULL
+        );",
+        "id, persona_id, snapshot_date, total_executions, successful_executions, failed_executions, total_cost_usd, total_input_tokens, total_output_tokens, avg_duration_ms, events_emitted, events_consumed, messages_sent, created_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_pms_persona ON persona_metrics_snapshots(persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_pms_date ON persona_metrics_snapshots(snapshot_date);",
+        ],
+    )
+}
 
 fn migrate_persona_healing_issues(conn: &Connection) -> Result<(), AppError> {
     // Healing issues are persona-scoped diagnostics. Once the persona is
