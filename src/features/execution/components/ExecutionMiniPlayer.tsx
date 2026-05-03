@@ -29,19 +29,27 @@ import { ExecutionSummaryCard } from '@/features/agents/sub_executions/detail/vi
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 
 /** Simplified execution view for Simple mode — progress bar while running, result summary when done. */
-function SimpleExecutionView({ isExecuting, error, stageProgress, elapsed, executionOutput, activeExecutionId }: {
+function SimpleExecutionView({
+  isExecuting,
+  error,
+  stageProgress,
+  elapsed,
+  executionOutput,
+  traceEntries,
+  traceLive,
+  executionSummary,
+}: {
   isExecuting: boolean;
   error: string | null;
   stageProgress: { label: string; fraction: number };
   elapsed: number;
   executionOutput: string[];
-  activeExecutionId: string | null;
+  traceEntries: ReturnType<typeof useReasoningTrace>['entries'];
+  traceLive: boolean;
+  executionSummary: ReturnType<typeof useExecutionSummary>;
 }) {
   const { t } = useTranslation();
   const { copied, copy } = useCopyToClipboard();
-
-  const { entries: traceEntries, isLive: traceLive } = useReasoningTrace(activeExecutionId);
-  const executionSummary = useExecutionSummary(traceEntries, traceLive);
 
   const resultText = useMemo(() => {
     const meaningful = executionOutput.filter((l) => l.trim().length > 0);
@@ -318,7 +326,9 @@ export default function ExecutionMiniPlayer() {
             stageProgress={stageProgress}
             elapsed={elapsed}
             executionOutput={executionOutput}
-            activeExecutionId={activeExecutionId}
+            traceEntries={traceEntries}
+            traceLive={traceLive}
+            executionSummary={executionSummary}
           />
         )}
 
