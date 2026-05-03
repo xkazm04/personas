@@ -2392,7 +2392,101 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_lab_tool_calls_result ON lab_tool_calls(result_kind, result_id);
         CREATE INDEX IF NOT EXISTS idx_lab_tool_calls_tool ON lab_tool_calls(tool_name);"
     )?;
+    backfill_lab_tool_calls(conn)?;
 
+    Ok(())
+}
+
+/// Backfill `lab_tool_calls` from the legacy JSON-array columns on the 5 lab
+/// result tables + `persona_test_results`. Idempotent in two layers: a fast
+/// state-check skips the walk entirely once `lab_tool_calls` is non-empty, and
+/// per-row `INSERT OR IGNORE` against `UNIQUE(result_id, variant, sequence)`
+/// makes the inner loop safe to re-run if the state-check is bypassed (e.g. a
+/// DB whose JSON columns gained new rows after the first migration pass — that
+/// path lands once dual-write ships in step 3).
+///
+/// JSON parse failures on individual rows are logged and skipped rather than
+/// aborting the whole migration; bad JSON in legacy data should not block a
+/// fresh deploy.
+fn backfill_lab_tool_calls(conn: &Connection) -> Result<(), AppError> {
+    let already_backfilled: i64 = conn
+        .prepare("SELECT COUNT(*) FROM lab_tool_calls")?
+        .query_row([], |row| row.get(0))?;
+    if already_backfilled > 0 {
+        return Ok(());
+    }
+
+    // (parent_table, result_kind discriminator)
+    let sources: &[(&str, &str)] = &[
+        ("lab_arena_results", "arena"),
+        ("lab_ab_results", "ab"),
+        ("lab_matrix_results", "matrix"),
+        ("lab_consensus_results", "consensus"),
+        ("lab_eval_results", "eval"),
+        ("persona_test_results", "test_run"),
+    ];
+
+    let mut total_inserted: usize = 0;
+    for (table, kind) in sources {
+        // Skip tables that don't exist yet on this DB (eval ships via
+        // incremental migration; consensus too).
+        let table_exists: i64 = conn
+            .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?1")?
+            .query_row([table], |row| row.get(0))?;
+        if table_exists == 0 {
+            continue;
+        }
+
+        let sql = format!(
+            "SELECT id, tool_calls_expected, tool_calls_actual FROM {}",
+            table
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, Option<String>>(1)?,
+                row.get::<_, Option<String>>(2)?,
+            ))
+        })?;
+
+        for row in rows {
+            let (result_id, expected, actual) = row?;
+            for (variant, json_opt) in [("expected", expected), ("actual", actual)] {
+                let Some(json_str) = json_opt else { continue };
+                let tools: Vec<String> = match serde_json::from_str(&json_str) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        tracing::warn!(
+                            table = %table,
+                            result_id = %result_id,
+                            variant = %variant,
+                            error = %e,
+                            "Skipping unparsable tool_calls JSON during lab_tool_calls backfill"
+                        );
+                        continue;
+                    }
+                };
+                for (sequence, tool_name) in tools.iter().enumerate() {
+                    let id = uuid::Uuid::new_v4().to_string();
+                    let inserted = conn.execute(
+                        "INSERT OR IGNORE INTO lab_tool_calls
+                            (id, result_kind, result_id, sequence, tool_name, variant)
+                         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                        rusqlite::params![id, kind, result_id, sequence as i64, tool_name, variant],
+                    )?;
+                    total_inserted += inserted;
+                }
+            }
+        }
+    }
+
+    if total_inserted > 0 {
+        tracing::info!(
+            inserted = total_inserted,
+            "Backfilled lab_tool_calls from legacy JSON-array columns"
+        );
+    }
     Ok(())
 }
 
