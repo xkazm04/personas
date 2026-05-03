@@ -6,7 +6,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface DesktopAppCardProps {
   app: DiscoveredApp;
   selected: boolean;
-  onSelect: () => void;
+  /** Required for non-disabled cards; ignored when `disabled` is true. */
+  onSelect?: () => void;
   disabled?: boolean;
 }
 

@@ -69,7 +69,6 @@ export function DiscoveryAppList({
                   key={app.connector_name}
                   app={app}
                   selected={false}
-                  onSelect={() => {}}
                   disabled
                 />
               ))}
