@@ -26,6 +26,13 @@ interface DesignResultPreviewProps {
   actualTriggers?: PersonaTrigger[];
   onTriggerEnabledToggle?: (triggerId: string, enabled: boolean) => void;
   feasibility?: DesignTestResult | null;
+  /** When true, suppress the IR-derived ConnectorsSection. Used by the
+   *  persona Design tab (saved state) where a separate live
+   *  PersonaConnectorsTab below is the source of truth for credential
+   *  bindings + healthcheck. Without this flag the IR section showed
+   *  stale "Credential ready" badges that didn't reflect actual link
+   *  state and duplicated the section heading visible just below. */
+  hideConnectors?: boolean;
 }
 
 export function DesignResultPreview({
@@ -48,6 +55,7 @@ export function DesignResultPreview({
   actualTriggers = [],
   onTriggerEnabledToggle,
   feasibility,
+  hideConnectors = false,
 }: DesignResultPreviewProps) {
   const rawChannels = result.suggested_notification_channels;
   const suggestedChannels = Array.isArray(rawChannels) ? rawChannels : [];
@@ -56,17 +64,19 @@ export function DesignResultPreview({
     <div className="space-y-6">
       <PromptTabsPreview designResult={result} />
 
-      <ConnectorsSection
-        result={result}
-        allToolDefs={allToolDefs}
-        currentToolNames={currentToolNames}
-        credentials={credentials}
-        connectorDefinitions={connectorDefinitions}
-        selectedTools={selectedTools}
-        onToolToggle={onToolToggle}
-        onConnectorClick={onConnectorClick}
-        readOnly={readOnly}
-      />
+      {!hideConnectors && (
+        <ConnectorsSection
+          result={result}
+          allToolDefs={allToolDefs}
+          currentToolNames={currentToolNames}
+          credentials={credentials}
+          connectorDefinitions={connectorDefinitions}
+          selectedTools={selectedTools}
+          onToolToggle={onToolToggle}
+          onConnectorClick={onConnectorClick}
+          readOnly={readOnly}
+        />
+      )}
 
       <EventsSection
         result={result}

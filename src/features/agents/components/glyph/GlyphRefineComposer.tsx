@@ -19,7 +19,13 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
-      className="w-full flex flex-col gap-2 pointer-events-auto"
+      // Glass material — the composer mounts INSIDE the test-complete card
+      // which itself sits on bg-background/95. Earlier the textarea used
+      // bg-primary/5 (mostly transparent) and visually collided with the
+      // status text + capability list underneath. Wrapping in an opaque
+      // glass surface gives the composer its own visual layer so the
+      // collision goes away.
+      className="w-full flex flex-col gap-2 pointer-events-auto rounded-modal border border-primary/25 bg-background/85 backdrop-blur-xl shadow-elevation-2 px-3 py-2.5"
     >
       <textarea
         value={text}
@@ -27,7 +33,7 @@ export function GlyphRefineComposer({ onSubmit, onCancel, initialText }: GlyphRe
         placeholder="Tell the agent what to change…"
         rows={3}
         autoFocus
-        className="w-full px-3 py-2 rounded-modal bg-primary/5 border border-primary/30 typo-body text-foreground placeholder:text-foreground/40 resize-none focus:outline-none focus:border-primary/60"
+        className="w-full px-3 py-2 rounded-modal bg-foreground/5 border border-primary/20 typo-body text-foreground placeholder:text-foreground/40 resize-none focus:outline-none focus:border-primary/60"
       />
       <div className="flex items-center gap-2">
         <button

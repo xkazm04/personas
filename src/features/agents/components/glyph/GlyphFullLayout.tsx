@@ -310,6 +310,14 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
           results={toolTestResults ?? []}
           summary={testSummary ?? null}
           onClose={() => setShowReport(false)}
+          // When the user quick-adds a missing credential from inside the
+          // report, refresh personas so the next test run + the linked
+          // credential reflect immediately. The vault store already
+          // refreshes itself inside ConnectorHandshakeCard's handleSave;
+          // this closes the loop on the persona side.
+          onCredentialAdded={() => {
+            void useAgentStore.getState().fetchPersonas();
+          }}
         />
       )}
     </div>

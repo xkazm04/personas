@@ -3,8 +3,57 @@ import { DesignCheckbox } from './DesignCheckbox';
 import { triggerIconMeta, SECTION_LABEL } from './helpers';
 import type { AgentIR, SuggestedTrigger } from '@/lib/types/designTypes';
 import type { PersonaTrigger } from '@/lib/types/types';
-import { parseTriggerConfig } from '@/lib/utils/platform/triggerConstants';
+import { parseTriggerConfig, type TriggerConfig } from '@/lib/utils/platform/triggerConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+
+/** Human-readable detail line for a parsed trigger config. Returns the actual
+ *  cadence/url/event so users see "0 9 * * MON" or "every 300s" instead of a
+ *  bare "Schedule" label that the saved-design preview used to render. */
+function formatTriggerDetail(cfg: TriggerConfig): string | null {
+  switch (cfg.type) {
+    case 'schedule': {
+      const parts: string[] = [];
+      if (cfg.cron) parts.push(cfg.cron);
+      else if (cfg.interval_seconds) parts.push(`every ${formatSeconds(cfg.interval_seconds)}`);
+      if (cfg.timezone) parts.push(cfg.timezone);
+      return parts.length > 0 ? parts.join(' · ') : null;
+    }
+    case 'polling': {
+      const parts: string[] = [];
+      if (cfg.interval_seconds) parts.push(`every ${formatSeconds(cfg.interval_seconds)}`);
+      const url = cfg.url || cfg.endpoint;
+      if (url) parts.push(url);
+      return parts.length > 0 ? parts.join(' · ') : null;
+    }
+    case 'webhook':
+      return cfg.event_type ? `Listens for ${cfg.event_type}` : null;
+    case 'event_listener':
+      return cfg.listen_event_type ? `On ${cfg.listen_event_type}` : null;
+    case 'chain':
+      return cfg.source_persona_id ? `After persona ${cfg.source_persona_id}` : null;
+    case 'file_watcher': {
+      const paths = (cfg.watch_paths ?? []).filter(Boolean);
+      if (paths.length === 0) return cfg.glob_filter ?? null;
+      return cfg.glob_filter ? `${paths.join(', ')} (${cfg.glob_filter})` : paths.join(', ');
+    }
+    case 'clipboard':
+      return cfg.pattern ?? cfg.content_type ?? null;
+    case 'app_focus':
+      return (cfg.app_names ?? []).filter(Boolean).join(', ') || cfg.title_pattern || null;
+    case 'composite':
+      return (cfg.conditions ?? []).map((c) => c.event_type).filter(Boolean).join(` ${cfg.operator || 'AND'} `) || null;
+    case 'manual':
+    default:
+      return null;
+  }
+}
+
+function formatSeconds(s: number): string {
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.round(s / 60)}m`;
+  if (s < 86400) return `${Math.round(s / 3600)}h`;
+  return `${Math.round(s / 86400)}d`;
+}
 
 interface EventsSectionProps {
   result: AgentIR;
@@ -52,14 +101,20 @@ export function EventsSection({
             {readOnly && actualTriggers.length > 0 ? (
               actualTriggers.map((trigger) => {
                 const config = parseTriggerConfig(trigger.trigger_type, trigger.config);
-                const intervalSec = (config.type === 'schedule' || config.type === 'polling') ? config.interval_seconds : undefined;
+                const detail = formatTriggerDetail(config);
                 return (
-                  <div key={trigger.id} className="flex items-center gap-2.5 py-1">
-                    <div className="flex-shrink-0">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type as SuggestedTrigger['trigger_type']); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
-                    <span className={`typo-body capitalize truncate flex-1 ${trigger.enabled ? 'text-foreground/90' : 'text-foreground'}`}>
-                      {trigger.trigger_type}
-                      {intervalSec ? ` (${intervalSec}s)` : ''}
-                    </span>
+                  <div key={trigger.id} className="flex items-start gap-2.5 py-1">
+                    <div className="flex-shrink-0 mt-0.5">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type as SuggestedTrigger['trigger_type']); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
+                    <div className="flex-1 min-w-0">
+                      <span className={`typo-body capitalize block ${trigger.enabled ? 'text-foreground/90' : 'text-foreground'}`}>
+                        {trigger.trigger_type.replace(/_/g, ' ')}
+                      </span>
+                      {detail && (
+                        <span className="typo-caption text-foreground/60 font-mono block leading-snug">
+                          {detail}
+                        </span>
+                      )}
+                    </div>
                     {onTriggerEnabledToggle && (
                       <button
                         onClick={() => onTriggerEnabledToggle(trigger.id, !trigger.enabled)}

@@ -497,12 +497,19 @@ pub(super) fn synthesize_gate_question(
         "memory_policy" => {
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
             obj.insert("field".into(), serde_json::Value::String("memory_policy".into()));
+            // Re-shaped 2026-05-03 — the original yes/no question made memory
+            // feel optional. With memory enabled, the persona is expected to
+            // consult it on every run, so the substantive question is *what*
+            // to carry forward. The "Nothing" option still maps to
+            // `enabled: false` downstream.
             obj.insert("question".into(), serde_json::Value::String(
-                format!("Should \"{title}\" remember user decisions across runs?")
+                format!("What should \"{title}\" remember between runs? (Pick \"Nothing\" if it doesn't need memory.)")
             ));
             obj.insert("options".into(), serde_json::json!([
-                "No — each run is independent",
-                "Yes — capture user preferences/corrections for future runs",
+                "User preferences and corrections",
+                "Items I've already approved or rejected",
+                "Recurring context (people, projects, topics I care about)",
+                "Nothing — each run is independent",
             ]));
         }
         "connectors" => {

@@ -6,7 +6,6 @@ import { BadgeSlot, type BadgeDefinition } from './BadgeSlot';
 import { OrbitDots } from './OrbitDots';
 import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useSystemStore } from "@/stores/systemStore";
-import { useAgentStore } from "@/stores/agentStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
@@ -46,32 +45,6 @@ export default function SidebarLevel1({
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
-  const isExecuting = useAgentStore((s) => s.isExecuting);
-  const buildSessions = useAgentStore((s) => s.buildSessions);
-  // A-grade Phase 3 (2026-05-03): aggregate state across ALL active draft
-  // sessions, not only the currently-active one. Pre-Phase-3 we read the
-  // scalar buildPhase/buildPersonaId mirror (active session only) and a
-  // user with a backgrounded build in `awaiting_input` got no signal.
-  const buildAggregate = useMemo(() => {
-    let inFlight = 0;
-    let awaitingInput = 0;
-    let testing = 0;
-    for (const sess of Object.values(buildSessions)) {
-      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
-      if (sess.phase === 'failed' || sess.phase === 'cancelled') continue;
-      inFlight += 1;
-      if (sess.phase === 'awaiting_input' || sess.pendingQuestions.length > 0) {
-        awaitingInput += 1;
-      }
-      if (sess.phase === 'testing') {
-        testing += 1;
-      }
-    }
-    return { inFlight, awaitingInput, testing };
-  }, [buildSessions]);
-  const isBuildingOrTesting = buildAggregate.inFlight > 0;
-  const isAwaitingAnswers = buildAggregate.awaitingInput > 0;
-  const isTesting = buildAggregate.testing > 0;
   const isDev = import.meta.env.DEV;
   const isDark = useIsDarkTheme();
   const tier = useTier();
@@ -107,42 +80,14 @@ export default function SidebarLevel1({
           count: unreadMessageCount,
         },
       ],
-      personas: [
-        {
-          id: 'build-test',
-          priority: 2,
-          active: isBuildingOrTesting,
-          // A-grade Phase 3: differentiate the badge across phases so a
-          // backgrounded build in awaiting_input visibly demands attention,
-          // while one that's mid-resolution doesn't. Amber for "needs you",
-          // sky for testing, violet for working.
-          label: isAwaitingAnswers
-            ? `Draft needs answers${buildAggregate.awaitingInput > 1 ? ` (${buildAggregate.awaitingInput})` : ''}`
-            : isTesting
-              ? 'Testing agent'
-              : `Draft in progress${buildAggregate.inFlight > 1 ? ` (${buildAggregate.inFlight})` : ''}`,
-          variant: 'pulse',
-          color: isAwaitingAnswers
-            ? 'bg-amber-500 border-amber-600/50'
-            : isTesting
-              ? 'bg-sky-500 border-sky-600/50'
-              : 'bg-violet-500 border-violet-600/50',
-          pingColor: isAwaitingAnswers
-            ? 'bg-amber-500/40'
-            : isTesting
-              ? 'bg-sky-500/40'
-              : 'bg-violet-500/40',
-        },
-        {
-          id: 'executing',
-          priority: 2,
-          active: isExecuting,
-          label: 'Execution in progress',
-          variant: 'pulse',
-          color: 'bg-blue-500 border-blue-600/50',
-          pingColor: 'bg-blue-500/40',
-        },
-      ],
+      // Per-task indicators on the Agents button are owned by OrbitDots
+      // (one violet/blue/orange dot per active draft/exec/lab session per
+      // persona, scaling 1→N for parallel work). The earlier build-test +
+      // executing pulse badges duplicated the same signal — for one draft
+      // the user saw a single OrbitDots dot AND a section pulse, reading
+      // as "two things in flight". OrbitDots already encodes phase via
+      // colour and tooltip, so the section pulses are removed.
+      personas: [],
       // Templates: no indicators — adoption creates a draft, visible via Agents
       plugins: [
         {
@@ -176,9 +121,7 @@ export default function SidebarLevel1({
     };
     return map;
   }, [
-    pendingReviewCount, unreadMessageCount, isExecuting,
-    isBuildingOrTesting, isAwaitingAnswers, isTesting,
-    buildAggregate.awaitingInput, buildAggregate.inFlight,
+    pendingReviewCount, unreadMessageCount,
     contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning,
   ]);

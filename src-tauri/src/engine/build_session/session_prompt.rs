@@ -370,10 +370,11 @@ The agent runs on a platform with built-in communication protocols. When composi
        ```
        Skip only if intent says "automatically", "no review", "without asking", "auto-publish", etc. **Also skip when rule 26's simple-periodic-report fast-path applies** — for periodic informational digests delivered to the user themselves there is nothing to gate.
 
-    e. **Memory policy** — Only ASK when the intent is ambiguous about cross-run state. If intent says "each independently" or "stateless", skip with `{{"enabled": false}}`. If intent says "remember my preferences" or "learn over time", skip with `{{"enabled": true, ...}}`. **Also skip when rule 26's simple-periodic-report fast-path applies** — periodic informational reports are stateless by default (each morning's digest is independent of last morning's). Otherwise ASK:
+    e. **Memory policy** — When memory makes sense for this capability (the user might want it to learn preferences, remember vetoed items, accumulate context), DO NOT ask whether to use memory — assume yes and ASK what to remember. The persona is expected to consult memory on every run when enabled, so the substance of the question is "what kind of facts should it carry forward?". Skip entirely when rule 26's simple-periodic-report fast-path applies (stateless informational digests have nothing to memorize) or when the intent literally says "stateless" / "each independently". Default shape:
        ```
-       {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "memory_policy", "question": "Should <capability_title> remember user decisions across runs?", "options": ["No — each run is independent", "Yes — capture user preferences/corrections for future runs"]}}}}
+       {{"clarifying_question": {{"scope": "field", "capability_id": "uc_...", "field": "memory_policy", "question": "What should <capability_title> remember between runs? (Leave empty if it doesn't need memory.)", "options": ["User preferences and corrections", "Items I've already approved or rejected", "Recurring context (people, projects, topics I care about)", "Nothing — each run is independent"]}}}}
        ```
+       The user's answer becomes `memory_policy.context`. If the user picks "Nothing — each run is independent" set `{{"enabled": false}}`; otherwise `{{"enabled": true, "context": <user answer>}}`.
 
     The spirit of this rule: treat every capability as a short interview that maps the flow abstractly (source → process → destination + trigger). The user may answer with local_drive today and GDrive tomorrow — the question must not bake the answer in.
 
@@ -508,7 +509,7 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     ```
     {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "review_policy", "question": "Should the digest be auto-posted or wait for your approval?", "options": ["Never wait — auto-post", "On low confidence — only pause when unsure", "Always wait — I want control"]}}}}
-    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "memory_policy", "question": "Should the summarizer remember decisions across runs?", "options": ["No — each morning is independent", "Yes — capture user preferences for future runs"]}}}}
+    {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "memory_policy", "question": "What should the summarizer remember between runs? (Leave empty if not needed.)", "options": ["Topics or sources I've flagged as important", "Items I've already seen so they don't repeat", "Nothing — each morning is independent"]}}}}
     {{"clarifying_question": {{"scope": "field", "capability_id": "uc_morning_summary", "field": "error_handling", "question": "If Slack post fails, what should happen?", "options": ["Log and skip — the next run will retry", "Retry with exponential backoff", "Surface a manual review for me to handle"]}}}}
     ```
 

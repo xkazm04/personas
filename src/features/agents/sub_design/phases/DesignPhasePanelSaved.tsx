@@ -50,6 +50,7 @@ export function DesignPhasePanelSaved({
         readOnly
         actualTriggers={selectedPersona.triggers || []}
         feasibility={savedDesignResult.feasibility}
+        hideConnectors
       />
 
       {/* Chat input for modifications */}

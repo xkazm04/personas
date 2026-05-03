@@ -91,15 +91,16 @@ export function GlyphSigilCanvas({
 
       {/* Overlay slot — answer card sits over the sigil with no scrim.
           Empty regions stay click-through so the petals beneath remain
-          interactive. The inner max-width is held at ~22rem (352px)
-          intentionally — wider would start covering the side petals
-          (at iconR=size*0.34 ≈ 217px from a 320 center, so x ≈ 103 /
-          537 on a 640 canvas; 352-wide centered spans ±176, fully
-          clear of petals on both sides). User can tap any lit petal
-          to switch active question without the card eating the click. */}
+          interactive. Width is held at 600px (capped to viewport) so
+          every question renders at the same width regardless of how
+          many options it has — the user reported the cards jittering
+          between ~280px and ~440px during the questionnaire. The
+          previous 22rem cap was kept tight to clear the side petals,
+          but consistency mattered more to the user; petals are still
+          clickable wherever the card doesn't cover them. */}
       {overlay && (
         <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none p-4">
-          <div className="pointer-events-auto w-full max-w-[22rem]">
+          <div className="pointer-events-auto w-[min(600px,90vw)]">
             {overlay}
           </div>
         </div>

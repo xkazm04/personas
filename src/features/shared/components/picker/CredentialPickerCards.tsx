@@ -21,9 +21,14 @@
  * credential slot, never "use every credential I have".
  */
 import { useMemo } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { BUILTIN_CONNECTORS } from '@/lib/credentials/builtinConnectors';
+
+/** Sentinel value emitted by VaultConnectorPicker when the user wants to add
+ *  a credential outside the auto-detected category. Centralised here so
+ *  CredentialPickerCards can render a distinct "+" tile for it. */
+const ADD_FROM_VAULT_SENTINEL = '__add_from_vault__';
 
 export interface CredentialPickerCardsProps {
   items: DiscoveredItem[];
@@ -83,6 +88,33 @@ export function CredentialPickerCards({
       className="grid grid-cols-2 gap-2"
     >
       {items.map((item) => {
+        // Sentinel card — "Add a different credential" CTA. Rendered with a
+        // dashed border + plus icon so it visually reads as an action, not
+        // a credential pick. Click bubbles back through onChange so the
+        // parent can open its add-credential modal.
+        if (item.value === ADD_FROM_VAULT_SENTINEL) {
+          return (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => toggle(item.value)}
+              className="group relative flex flex-col items-center gap-2 p-3 rounded-card border border-dashed border-border/60 bg-foreground/[0.01] hover:bg-primary/5 hover:border-primary/40 text-center transition-all"
+            >
+              <span className="flex-shrink-0 flex items-center justify-center w-14 h-14 rounded-card border border-dashed border-border/60 group-hover:border-primary/40 transition-colors">
+                <Plus className="w-6 h-6 text-foreground/55 group-hover:text-primary transition-colors" />
+              </span>
+              <span className="block w-full truncate typo-body font-medium text-foreground/85">
+                {item.label}
+              </span>
+              {item.sublabel && (
+                <span className="block w-full truncate typo-caption text-foreground/55">
+                  {item.sublabel}
+                </span>
+              )}
+            </button>
+          );
+        }
+
         // `value` is the connector's service_type; the icon + canonical
         // display label come from the builtin catalog keyed on that name.
         const meta = resolveConnectorMeta(item.value);
@@ -124,9 +156,18 @@ export function CredentialPickerCards({
                   draggable={false}
                 />
               ) : (
-                <span className="typo-body text-foreground font-bold">
-                  {(item.label || item.value).slice(0, 2).toUpperCase()}
-                </span>
+                // Built-in / custom connectors without a vendor logo
+                // (personas_database, web_search, etc.) fall back to the
+                // Persona app mark instead of initials. Initials read as
+                // "missing icon" — the Persona logo signals "this is one
+                // of ours" and stays on-brand.
+                <img
+                  src="/illustrations/logo-v1-geometric-nobg.png"
+                  alt=""
+                  className="w-9 h-9 object-contain"
+                  loading="lazy"
+                  draggable={false}
+                />
               )}
             </span>
             <span

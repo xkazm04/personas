@@ -17,7 +17,17 @@ export function MessagesSection({
   readOnly,
 }: MessagesSectionProps) {
   const { t } = useTranslation();
-  if (channels.length === 0) return null;
+  // Skip channels that have nothing meaningful to show. Older build sessions
+  // sometimes emit placeholder rows where every field is blank — those used
+  // to render as empty bordered cards in the persona Design tab.
+  const isMeaningful = (c: MessagesSectionProps['channels'][number]) => {
+    const hasType = !!c.type && c.type.trim().length > 0;
+    const hasDesc = !!c.description && c.description.trim().length > 0;
+    const hasConn = !!c.required_connector && c.required_connector.trim().length > 0;
+    return hasType || hasDesc || hasConn;
+  };
+  const visibleChannels = channels.filter(isMeaningful);
+  if (visibleChannels.length === 0) return null;
 
   return (
     <div className="space-y-3">
@@ -28,7 +38,7 @@ export function MessagesSection({
       </div>
 
       <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))' }}>
-        {channels.map((channel, chIdx) => {
+        {visibleChannels.map((channel, chIdx) => {
           const isSelected = selectedChannelIndices.has(chIdx);
           return (
             <div key={`ch-${chIdx}`} className="bg-secondary/20 border border-primary/10 rounded-modal p-3.5">

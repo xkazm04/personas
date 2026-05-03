@@ -37,11 +37,12 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 12, scale: 0.96 }}
       transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-      // Centered overlay inside the sigil canvas (back on top of the
-      // glyph per user request). Container max-width is held narrow
-      // (≈22rem) at the canvas overlay slot so the side petals stay
-      // clear; this card just fills its allotted width.
-      className="relative rounded-modal bg-background/95 backdrop-blur-md p-4 flex flex-col gap-3"
+      // Centered overlay inside the sigil canvas. Earlier each question
+      // sized to its content (a 2-option Yes/No card was ~280px while a
+      // free-text card was ~440px), making the questionnaire feel
+      // jittery as the user advanced. Lock to 600px (or viewport-cap)
+      // so width is consistent regardless of question shape.
+      className="relative rounded-modal bg-background/95 backdrop-blur-md p-4 flex flex-col gap-3 w-[min(600px,90vw)]"
       style={{
         border: `1px solid ${color}55`,
         boxShadow: `0 0 32px ${color}44, 0 8px 28px rgba(0,0,0,0.55)`,

@@ -28,6 +28,10 @@ import type { DiscoveredItem } from '@/api/discovery/discovery';
 import { CredentialPickerCards } from './CredentialPickerCards';
 import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
 
+/** Sentinel value emitted when the user picks the "Use a different credential"
+ *  card — the questionnaire host opens QuickAddCredentialModal in response. */
+const ADD_FROM_VAULT_SENTINEL = '__add_from_vault__';
+
 export interface VaultConnectorPickerProps {
   /** Machine token — e.g. "storage", "messaging", "ai_vision", "image_generation". */
   category: string;
@@ -54,32 +58,30 @@ export function VaultConnectorPicker({
   // the requested category. Match against both the singular `category` field
   // and the multi-tag `categories[]` array via `connectorCategoryTags`.
   //
-  // The emitted `value` is the connector's service_type (NOT the credential
-  // id). Downstream consumers — the build LLM's answer parser, adoption
-  // variable substitution — key off service_type and resolve the concrete
-  // credential at promotion time. One card per distinct service_type; if
-  // the user has several credentials for the same service, the sublabel
-  // gets a count suffix.
+  // One card per credential: when the user has 2 Gmail accounts, both render
+  // as separate cards labeled with the credential name (e.g. "Work Gmail" /
+  // "Personal Gmail") and the connector type as sublabel. The emitted
+  // `value` remains the connector's service_type for backend compatibility —
+  // resolving which specific credential to use at runtime is a separate
+  // backend concern. Cards sort A→Z by credential name.
+  //
+  // A trailing "Use a different credential" sentinel card lets the user
+  // pivot to the QuickAdd modal even when the picker already has matches —
+  // common when their build strategy doesn't fit the auto-detected category.
   const items: DiscoveredItem[] = useMemo(() => {
-    const byService = new Map<string, { label: string; count: number }>();
-    for (const c of credentials) {
-      const tags = connectorCategoryTags(c.service_type);
-      if (!tags.includes(category)) continue;
-      const entry = byService.get(c.service_type);
-      if (entry) {
-        entry.count += 1;
-      } else {
-        byService.set(c.service_type, { label: c.name || c.service_type, count: 1 });
-      }
-    }
-    const out: DiscoveredItem[] = [];
-    for (const [serviceType, meta] of byService.entries()) {
-      out.push({
-        value: serviceType,
-        label: meta.label,
-        sublabel: meta.count > 1 ? `${serviceType} · ${meta.count} credentials` : serviceType,
-      });
-    }
+    const eligible = credentials
+      .filter((c) => connectorCategoryTags(c.service_type).includes(category))
+      .sort((a, b) => (a.name || a.service_type).localeCompare(b.name || b.service_type));
+    const out: DiscoveredItem[] = eligible.map((c) => ({
+      value: c.service_type,
+      label: c.name || c.service_type,
+      sublabel: c.service_type,
+    }));
+    out.push({
+      value: ADD_FROM_VAULT_SENTINEL,
+      label: 'Add a different credential',
+      sublabel: 'Pick from catalog',
+    });
     return out;
   }, [credentials, category]);
 
@@ -141,8 +143,24 @@ export function VaultConnectorPicker({
       <CredentialPickerCards
         items={items}
         value={value}
-        onChange={onChange}
+        onChange={(picked) => {
+          if (picked === ADD_FROM_VAULT_SENTINEL) {
+            setShowQuickAdd(true);
+            return;
+          }
+          onChange(picked);
+        }}
       />
+      {showQuickAdd && (
+        <QuickAddCredentialModal
+          category={category}
+          onCredentialAdded={(serviceType) => {
+            setShowQuickAdd(false);
+            onChange(serviceType);
+          }}
+          onClose={() => setShowQuickAdd(false)}
+        />
+      )}
     </div>
   );
 }

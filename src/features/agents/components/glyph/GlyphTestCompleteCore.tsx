@@ -42,8 +42,11 @@ export function GlyphTestCompleteCore({
           buttons row tends to wrap to multiple lines and overflow the
           sigil's centre area (size * 0.56 ~358px); without an opaque
           surface the wrap collides visually with the petal/orbit
-          layer underneath. */}
-      <div className="rounded-modal bg-background/95 backdrop-blur-md border border-card-border shadow-elevation-2 px-4 py-3 flex flex-col items-center gap-2">
+          layer underneath. min-w-[600px] keeps the test-complete frame
+          a consistent width across pass/fail/refine variants — earlier
+          the box jittered between ~360px and ~520px depending on which
+          buttons rendered. */}
+      <div className="rounded-modal bg-background/95 backdrop-blur-md border border-card-border shadow-elevation-2 px-4 py-3 flex flex-col items-center gap-2 w-[min(600px,90vw)]">
         {testPassed ? (
           <>
             <CheckCircle2 className="w-8 h-8 text-emerald-400" />
