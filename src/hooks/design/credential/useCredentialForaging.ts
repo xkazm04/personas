@@ -30,6 +30,7 @@ export function useCredentialForaging() {
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const scanningRef = useRef(false);
+  const importingRef = useRef(false);
 
   const scan = useCallback(async () => {
     if (scanningRef.current) return;
@@ -86,36 +87,42 @@ export function useCredentialForaging() {
 
   const importSelected = useCallback(
     async (onImported?: () => void) => {
+      if (importingRef.current) return;
       if (!scanResult || selected.size === 0) return;
+      importingRef.current = true;
       setPhase("importing");
 
       const toImport = scanResult.credentials.filter((c) => selected.has(c.id));
       const newImported = new Map(imported);
       let hadError = false;
 
-      for (const cred of toImport) {
-        setImportingIds((prev) => new Set(prev).add(cred.id));
-        try {
-          const name = `${cred.label} (Foraged)`;
-          const result = await importForagedCredential(cred.id, name, cred.service_type);
-          newImported.set(cred.id, { id: result.id, name: result.name });
-        } catch (err) {
-          logger.error('Failed to import credential', { label: cred.label, error: String(err) });
-          hadError = true;
+      try {
+        for (const cred of toImport) {
+          setImportingIds((prev) => new Set(prev).add(cred.id));
+          try {
+            const name = `${cred.label} (Foraged)`;
+            const result = await importForagedCredential(cred.id, name, cred.service_type);
+            newImported.set(cred.id, { id: result.id, name: result.name });
+          } catch (err) {
+            logger.error('Failed to import credential', { label: cred.label, error: String(err) });
+            hadError = true;
+          }
+          setImportingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(cred.id);
+            return next;
+          });
         }
-        setImportingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(cred.id);
-          return next;
-        });
-      }
 
-      setImported(newImported);
-      if (hadError) {
-        setError("Some credentials could not be imported. They may no longer exist at the source.");
+        setImported(newImported);
+        if (hadError) {
+          setError("Some credentials could not be imported. They may no longer exist at the source.");
+        }
+        setPhase("done");
+        onImported?.();
+      } finally {
+        importingRef.current = false;
       }
-      setPhase("done");
-      onImported?.();
     },
     [scanResult, selected, imported],
   );
