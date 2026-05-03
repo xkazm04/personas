@@ -298,8 +298,9 @@ fn patch_persona_event_handler_in_tx(
 
     // Parse existing JSON or synthesize a minimal object.
     let mut sp_val: serde_json::Value = match sp_opt.as_deref() {
-        Some(s) if !s.trim().is_empty() => serde_json::from_str(s).unwrap_or_else(|_| {
+        Some(s) if !s.trim().is_empty() => serde_json::from_str(s).unwrap_or_else(|err| {
             // Corrupted JSON -- start fresh, but preserve identity from system_prompt.
+            tracing::warn!(persona_id = persona_id, error = %err, "structured_prompt JSON corrupted; rebuilding minimal object");
             let mut m = serde_json::Map::new();
             if !system_prompt.is_empty() {
                 m.insert("identity".into(), serde_json::Value::String(system_prompt.clone()));
@@ -370,8 +371,12 @@ fn remove_persona_event_handler_in_tx(
     let Some(sp_str) = sp_opt.filter(|s| !s.trim().is_empty()) else {
         return Ok(()); // no structured_prompt → nothing to remove
     };
-    let Ok(mut sp_val) = serde_json::from_str::<serde_json::Value>(&sp_str) else {
-        return Ok(()); // corrupted → skip (don't crash deletion)
+    let mut sp_val = match serde_json::from_str::<serde_json::Value>(&sp_str) {
+        Ok(v) => v,
+        Err(err) => {
+            tracing::warn!(persona_id = persona_id, error = %err, "structured_prompt JSON corrupted; skipping handler removal");
+            return Ok(()); // corrupted → skip (don't crash deletion)
+        }
     };
     let Some(sp_obj) = sp_val.as_object_mut() else {
         return Ok(());
@@ -494,7 +499,10 @@ pub fn unlink_persona_from_event(
             .map_err(|e| AppError::Internal(format!("decrypt_trigger_config failed: {e}")))?
             .unwrap_or_default();
         let cfg: serde_json::Value =
-            serde_json::from_str(&config_str).unwrap_or(serde_json::Value::Null);
+            serde_json::from_str(&config_str).unwrap_or_else(|err| {
+                tracing::warn!(trigger_id = trigger_id, error = %err, "trigger config JSON corrupted; treating as empty");
+                serde_json::Value::Null
+            });
         let handler_key = cfg
             .get("_handler_key")
             .and_then(|v| v.as_str())
