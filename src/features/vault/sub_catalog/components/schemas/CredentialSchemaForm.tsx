@@ -9,6 +9,7 @@ import { ExtraFieldRenderer } from './ExtraFieldRenderers';
 import { SchemaFormHeader, SchemaNameField, SchemaSubTypeSelector } from './SchemaFormFields';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 
 // Re-export types and configs for backwards compatibility
 export type { SchemaSubType, ExtraFieldDef, SchemaFormConfig } from './schemaFormTypes';
@@ -94,7 +95,7 @@ export function CredentialSchemaForm({
   const handleSave = async (fieldValues: Record<string, string>) => {
     const effectiveName = nameOverride ?? name.trim();
     if (!nameOverride && !name.trim()) {
-      setError(`${config.nameLabel} is required`);
+      setError(tx(t.vault.credential_forms.name_required, { label: config.nameLabel }));
       return;
     }
     setError(null);
@@ -161,7 +162,9 @@ export function CredentialSchemaForm({
           silentCatch('CredentialSchemaForm:rollbackConnector')(rollbackErr);
         }
       }
-      setError(err instanceof Error ? err.message : `Failed to save ${config.title.toLowerCase()}`);
+      const raw = err instanceof Error ? err.message : null;
+      const { message } = resolveErrorTranslated(t, raw);
+      setError(message);
     }
   };
 
