@@ -10,6 +10,7 @@ import type { CredentialDesignContextValue } from '@/features/vault/sub_catalog/
 import type { CredentialDesignOrchestrator } from './orchestratorTypes';
 import { useDesignFields, useFieldValidation } from './orchestratorDerived';
 import { buildContextValue } from './orchestratorContext';
+import { silentCatch } from '@/lib/silentCatch';
 
 export type { CredentialDesignOrchestrator } from './orchestratorTypes';
 
@@ -59,7 +60,10 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
           }));
         setPrefetchedAuthDetections(mapped);
       })
-      .catch(() => {
+      .catch((err) => {
+        // Auth-detection prefetch is best-effort — surface a Sentry breadcrumb
+        // and degrade to an empty list so the negotiator panel can still open.
+        silentCatch('useCredentialDesignOrchestrator:detectAuthenticatedServices')(err);
         if (!cancelled) setPrefetchedAuthDetections([]);
       });
     return () => { cancelled = true; };
