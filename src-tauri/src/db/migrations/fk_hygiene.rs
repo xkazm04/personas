@@ -19,6 +19,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_message_deliveries(conn)?;
     migrate_persona_healing_issues(conn)?;
     migrate_persona_metrics_snapshots(conn)?;
+    migrate_persona_prompt_versions(conn)?;
     Ok(())
 }
 
@@ -146,6 +147,36 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_prompt_versions(conn: &Connection) -> Result<(), AppError> {
+    // Prompt version history is meaningless once the persona is gone.
+    // CASCADE matches the user's mental model — deleting a persona deletes
+    // its full history.
+    recreate_with_fk(
+        conn,
+        "persona_prompt_versions",
+        1,
+        &[
+            "DELETE FROM persona_prompt_versions \
+             WHERE persona_id NOT IN (SELECT id FROM personas);",
+        ],
+        "CREATE TABLE persona_prompt_versions_new (
+            id                TEXT PRIMARY KEY,
+            persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            version_number    INTEGER NOT NULL,
+            structured_prompt TEXT,
+            system_prompt     TEXT,
+            change_summary    TEXT,
+            tag               TEXT NOT NULL DEFAULT 'experimental',
+            created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+        "id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_ppv_persona ON persona_prompt_versions(persona_id);",
+            "CREATE INDEX IF NOT EXISTS idx_ppv_version ON persona_prompt_versions(persona_id, version_number DESC);",
+        ],
+    )
+}
 
 fn migrate_persona_metrics_snapshots(conn: &Connection) -> Result<(), AppError> {
     // Snapshots are aggregate counters scoped to a persona — pure derived
