@@ -12,7 +12,7 @@
  *   const label = friendlySeverityT('critical'); // "Needs immediate attention" (translated)
  */
 import type { Translations } from './en';
-import type { FriendlyErrorCategory } from '@/lib/errors/errorRegistry';
+import { resolveError, type FriendlyErrorCategory } from '@/lib/errors/errorRegistry';
 
 export interface TranslatedError {
   message: string;
@@ -92,6 +92,19 @@ export function resolveErrorTranslated(t: Translations, raw: string | null | und
         category: rule.category,
       };
     }
+  }
+
+  // A-grade Phase 6 (2026-05-03) — chain into the non-translated
+  // errorRegistry as a final fallback. Lets new error patterns added
+  // there (e.g. the build-pipeline validation rules) surface friendly
+  // English messages immediately, without each rule needing a paired
+  // entry in `ERROR_KEY_MAP` + `error_registry` i18n keys. Localised
+  // versions can be added later by adding the keys to en.ts and
+  // ERROR_KEY_MAP in tandem; until then English non-translated text
+  // is strictly better than the raw Rust error string.
+  const englishFriendly = resolveError(raw);
+  if (englishFriendly.category !== 'unclassified') {
+    return englishFriendly;
   }
 
   return fallback;

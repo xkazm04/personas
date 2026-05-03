@@ -195,6 +195,197 @@ const ERROR_RULES: ErrorRule[] = [
     },
   },
 
+  // ── Build pipeline validators (A-grade Phase 6) ─────────────────────
+  // Specific patterns from src-tauri/src/validation/ + commands/design/
+  // build_sessions.rs. Order: most specific first; the generic
+  // "Validation" matcher below catches anything not covered here.
+  // When extending: keep messages plain English (no JSON keys), put the
+  // recovery in `suggestion` (what the user does next, not what
+  // happened). For idempotent fixes a future revision can attach a
+  // one-click action to the toast — for now humanising the text is the
+  // deliverable.
+  {
+    match: /interval_seconds must be (?:at least|>= ?)\s*\d+/i,
+    error: {
+      message: 'Polling can\'t run more than once per minute.',
+      suggestion: 'Use a polling interval of 60 seconds or higher (300 / 5 min is a safe default). Click Refine and tell the agent to slow the cadence.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: 'interval_seconds must be a valid integer',
+    error: {
+      message: 'The polling interval isn\'t a valid number.',
+      suggestion: 'Open Refine and ask for a numeric polling interval like "every 5 minutes".',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Webhook triggers require a (?:non-empty webhook_secret|config with a non-empty webhook_secret)/,
+    error: {
+      message: 'This webhook trigger is missing its signing secret.',
+      suggestion: 'Re-run Promote — the pipeline auto-generates a webhook_secret on submit. If it persists, restart the build.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: 'smee_channel_url must be an https://smee.io/ URL',
+    error: {
+      message: 'The webhook source URL needs to come from smee.io.',
+      suggestion: 'Open https://smee.io/new in a browser, copy the channel URL, and paste it into the webhook source field.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Schedule triggers require (?:either a non-empty cron expression or a positive interval_seconds|a config with either a cron expression or interval_seconds)/,
+    error: {
+      message: 'Scheduled triggers need either a cron expression or a polling interval.',
+      suggestion: 'Click Refine and specify when the agent should run (e.g. "every weekday at 8am" or "every 30 minutes").',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Invalid trigger_type '[^']+'\. Must be one of:/,
+    error: {
+      message: 'The build picked a trigger type the runtime doesn\'t recognise.',
+      suggestion: 'Click Refine and ask for a specific trigger ("on schedule", "on webhook", "when X happens"). The aliases the build can produce are normalised automatically; if you keep hitting this, the LLM may have invented a name — restart the build.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: 'Polling URL blocked',
+    error: {
+      message: 'The polling URL was rejected for safety.',
+      suggestion: 'The URL points at an internal/private address. Use a publicly reachable HTTPS URL or switch the trigger to webhook + smee.io.',
+      category: 'user_action',
+    },
+  },
+  // ── Build session lifecycle (A-grade Phase 6) ────────────────────────
+  // These were the C7-era "agent_ir is null" + race-condition errors.
+  // Phase 3 added a 3s server-side retry which closes most of these.
+  // When they DO surface now, the build is genuinely stuck.
+  {
+    match: 'Build session has no agent_ir',
+    error: {
+      message: 'The build hasn\'t finished generating yet — the agent\'s plan is still being assembled.',
+      suggestion: 'Wait a few seconds and try again. If it persists for more than a minute, restart the build with a more specific intent.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: 'agent_ir parse error',
+    error: {
+      message: 'The build output came back malformed.',
+      suggestion: 'Click Refine to regenerate, or start a new build. This usually means the LLM produced unexpected JSON — refining tightens the result.',
+      category: 'recoverable',
+    },
+  },
+  {
+    match: 'Persona design result parse error',
+    error: {
+      message: 'The persona\'s saved design data couldn\'t be parsed.',
+      suggestion: 'Run a fresh build for this persona — the cached design is from an older app version.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Build session [\w-]+ disappeared while waiting/,
+    error: {
+      message: 'This build session was cleared before it finished.',
+      suggestion: 'Start a new build — the previous draft is no longer recoverable.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Build session .* (?:not found|disappeared)/i,
+    error: {
+      message: 'This build session has expired or been cleared.',
+      suggestion: 'Start a new build with the same intent.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: 'has no agent_ir and persona has no design result',
+    error: {
+      message: 'The build hasn\'t produced anything to promote yet.',
+      suggestion: 'Wait for the build to finish generating, or click Refine to nudge it. If the wizard is stuck on the same step for more than a minute, restart.',
+      category: 'recoverable',
+    },
+  },
+  // ── Field-level validators (size + range) ────────────────────────────
+  {
+    match: /(?:Name|name) (?:cannot be empty|exceeds maximum length)/,
+    error: {
+      message: 'The persona name needs work.',
+      suggestion: 'Pick a short, descriptive name (1–40 characters) and try again.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: 'System prompt cannot be empty',
+    error: {
+      message: 'The persona\'s system prompt is empty.',
+      suggestion: 'The build pipeline normally fills this in. Refine the build, or start a new one with a more specific intent.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /(?:System prompt|Structured prompt) exceeds maximum size/,
+    error: {
+      message: 'The agent\'s prompt is too long.',
+      suggestion: 'Click Refine and ask for a tighter version, or remove redundant sections. Hard limit is around the size of a long blog post.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /max_turns must be/,
+    error: {
+      message: 'The turn limit is outside the allowed range.',
+      suggestion: 'Set max turns to a value between 1 and 50.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /max_concurrent must be between/,
+    error: {
+      message: 'The concurrency limit is out of range.',
+      suggestion: 'Set max concurrent runs to a value between 1 and the engine ceiling shown in Settings.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /timeout_ms must be (?:>=|<=)/,
+    error: {
+      message: 'The timeout is outside the allowed range.',
+      suggestion: 'Pick a timeout between 1 second and the engine ceiling (typically 30 minutes).',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /max_budget_usd must be (?:a finite number|>= 0)/,
+    error: {
+      message: 'The budget value isn\'t valid.',
+      suggestion: 'Use a positive number for the dollar budget (e.g. 5 for $5).',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Importance must be between/,
+    error: {
+      message: 'Memory importance is out of range.',
+      suggestion: 'Pick a value between 1 and 10 for memory importance.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: /Unknown field '[^']+' in structured prompt/,
+    error: {
+      message: 'The build emitted a field the runtime doesn\'t recognise.',
+      suggestion: 'Click Refine — the LLM may have used an outdated field name. The new build will use current schema.',
+      category: 'recoverable',
+    },
+  },
+
   // ── Validation ──────────────────────────────────────────────────────
   {
     match: 'Invalid JSON',
