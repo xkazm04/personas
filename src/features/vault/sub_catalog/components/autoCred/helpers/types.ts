@@ -1,6 +1,7 @@
 import type { CredentialDesignResult, CredentialDesignConnector } from '@/hooks/design/credential/useCredentialDesign';
 import type { CredentialTemplateField } from '@/lib/types/types';
 import { extractFirstUrl } from './autoCredHelpers';
+import { silentCatch } from '@/lib/silentCatch';
 
 /** Phases the auto-credential session moves through */
 export type AutoCredPhase =
@@ -112,7 +113,11 @@ export function parseAutoCredError(raw: string): AutoCredErrorInfo {
   try {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed.kind === 'string') return parsed as AutoCredErrorInfo;
-  } catch { /* intentional: non-critical -- JSON parse fallback */ }
+  } catch (err) {
+    // Raw error is plain prose, not JSON — fall through to substring
+    // matching below. Breadcrumb keeps shape-mismatches visible.
+    silentCatch('parseAutoCredError:jsonParse')(err);
+  }
 
   // Derive a better guidance message from the raw error text
   const lower = raw.toLowerCase();
