@@ -125,6 +125,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
         <button
           data-testid="vault-desktop-back"
           onClick={onBack}
+          aria-label={t.common.back}
+          title={t.common.back}
           className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -139,6 +141,8 @@ export function DesktopDiscoveryPanel({ onBack, onCredentialCreated }: DesktopDi
           onClick={() => { void scanApps(); void scanMcpServers(); }}
           disabled={scanning}
           data-testid="vault-desktop-scan"
+          aria-label={dd.rescan_aria}
+          title={dd.rescan_aria}
           className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <RefreshCw className={`w-4 h-4 ${scanning ? 'animate-spin' : ''}`} />

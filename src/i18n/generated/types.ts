@@ -3759,6 +3759,7 @@ export type Translations = {
       approve_description: string;
       approve_connect: string;
       imported_suffix: string;
+      rescan_aria: string;
     };
     picker_section: {
       no_connectors: string;
