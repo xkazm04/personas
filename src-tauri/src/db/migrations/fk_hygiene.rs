@@ -16,6 +16,7 @@ use crate::error::AppError;
 pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_memories(conn)?;
     migrate_persona_messages(conn)?;
+    migrate_persona_message_deliveries(conn)?;
     Ok(())
 }
 
@@ -143,6 +144,37 @@ fn recreate_with_fk(
 }
 
 // -- Per-table migrations -----------------------------------------------------
+
+fn migrate_persona_message_deliveries(conn: &Connection) -> Result<(), AppError> {
+    // Worst case in the FK-hygiene scope per the ADR: NO FK *and* no
+    // cleanup block in any repo. Orphans guaranteed accumulating until now.
+    // CASCADE on message_id finally collects them when the parent message
+    // is deleted (which `personas.rs::delete()` triggers via its persona_id
+    // cascade once persona_messages also CASCADEs to a persona).
+    recreate_with_fk(
+        conn,
+        "persona_message_deliveries",
+        1,
+        &[
+            "DELETE FROM persona_message_deliveries \
+             WHERE message_id NOT IN (SELECT id FROM persona_messages);",
+        ],
+        "CREATE TABLE persona_message_deliveries_new (
+            id            TEXT PRIMARY KEY,
+            message_id    TEXT NOT NULL REFERENCES persona_messages(id) ON DELETE CASCADE,
+            channel_type  TEXT NOT NULL,
+            status        TEXT NOT NULL DEFAULT 'pending',
+            error_message TEXT,
+            external_id   TEXT,
+            delivered_at  TEXT,
+            created_at    TEXT NOT NULL
+        );",
+        "id, message_id, channel_type, status, error_message, external_id, delivered_at, created_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_pmd_message ON persona_message_deliveries(message_id);",
+        ],
+    )
+}
 
 fn migrate_persona_messages(conn: &Connection) -> Result<(), AppError> {
     // Only persona_id gets a FK; nullable execution_id stays unconstrained.
