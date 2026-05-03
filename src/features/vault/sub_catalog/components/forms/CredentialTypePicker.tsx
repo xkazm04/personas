@@ -127,7 +127,7 @@ export function CredentialTypePicker({
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-blue-500/10 border-blue-500/20">
-            <Globe className="w-4.5 h-4.5 text-blue-400" />
+            <Globe className="w-[1.125rem] h-[1.125rem] text-blue-400" />
           </div>
           <div>
             <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.workspace_connect}</h4>
@@ -147,7 +147,7 @@ export function CredentialTypePicker({
         >
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-card flex items-center justify-center border bg-violet-500/10 border-violet-500/20">
-              <Radar className="w-4.5 h-4.5 text-violet-400" />
+              <Radar className="w-[1.125rem] h-[1.125rem] text-violet-400" />
             </div>
             <div>
               <h4 className="typo-body font-medium text-foreground">{t.vault.type_picker.auto_discover}</h4>
