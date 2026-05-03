@@ -28,7 +28,7 @@ export function ForagingIdle({ onScan }: ForagingIdleProps) {
     >
       <EmptyIllustration
         icon={Radar}
-        heading="Credential Foraging"
+        heading={forg.idle_heading}
         description={forg.scan_description}
       />
       <Button

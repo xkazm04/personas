@@ -3576,6 +3576,7 @@ export type Translations = {
       body_placeholder: string;
     };
     foraging: {
+      idle_heading: string;
       no_credentials_found: string;
       no_credentials_hint: string;
       scan_description: string;
