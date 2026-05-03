@@ -2367,6 +2367,32 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // success path on already-migrated DBs.
     research_lab_align_columns(conn);
 
+    // -- Lab: lab_tool_calls child table (1:N replaces JSON-array columns) -----
+    // Replaces tool_calls_expected/actual JSON columns scattered across 5 lab
+    // result tables + persona_test_runs. Lets future analytics query by
+    // tool_name (e.g. "tool-call accuracy aggregated by tool"). Backfill,
+    // dual-write, and column drop happen in subsequent steps of the same ADR.
+    //
+    // No FK on result_id yet: the parent tables share no common parent type and
+    // the FK-hygiene ADR (2026-05-02-fk-hygiene-cascade) will retrofit FKs
+    // table-by-table once it ships.
+    //
+    // ADR: 2026-05-02-lab-tool-calls-child-table.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS lab_tool_calls (
+            id           TEXT PRIMARY KEY,
+            result_kind  TEXT NOT NULL CHECK(result_kind IN ('arena','ab','matrix','consensus','eval','test_run')),
+            result_id    TEXT NOT NULL,
+            sequence     INTEGER NOT NULL,
+            tool_name    TEXT NOT NULL,
+            variant      TEXT NOT NULL CHECK(variant IN ('expected','actual')),
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(result_id, variant, sequence)
+        );
+        CREATE INDEX IF NOT EXISTS idx_lab_tool_calls_result ON lab_tool_calls(result_kind, result_id);
+        CREATE INDEX IF NOT EXISTS idx_lab_tool_calls_tool ON lab_tool_calls(tool_name);"
+    )?;
+
     Ok(())
 }
 
