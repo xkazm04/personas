@@ -8838,6 +8838,11 @@
       "validating": "Validating",
       "complete": "Complete"
     },
+    "forage_confidence": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
     "goal_state": {
       "pending": "Pending",
       "review": "Review",

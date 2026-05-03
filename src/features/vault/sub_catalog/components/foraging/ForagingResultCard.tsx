@@ -11,6 +11,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ForagedCredential, ForageSource } from "@/api/vault/foraging";
 import { useTranslation } from "@/i18n/useTranslation";
+import { tokenLabel } from "@/i18n/tokenMaps";
 
 interface ForagingResultCardProps {
   credential: ForagedCredential;
@@ -130,7 +131,7 @@ export function ForagingResultCard({
             <span
               className={`typo-body px-1.5 py-0.5 rounded border font-medium ${CONFIDENCE_STYLES[credential.confidence]}`}
             >
-              {credential.confidence}
+              {tokenLabel(t, 'forage_confidence', credential.confidence)}
             </span>
           </div>
         </div>

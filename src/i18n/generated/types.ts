@@ -8844,6 +8844,11 @@ export type Translations = {
       validating: string;
       complete: string;
     };
+    forage_confidence: {
+      high: string;
+      medium: string;
+      low: string;
+    };
     goal_state: {
       pending: string;
       review: string;
