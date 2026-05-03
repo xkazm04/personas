@@ -3577,6 +3577,8 @@ export type Translations = {
     };
     foraging: {
       idle_heading: string;
+      foraged_suffix: string;
+      partial_import_error: string;
       no_credentials_found: string;
       no_credentials_hint: string;
       scan_description: string;

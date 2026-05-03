@@ -126,8 +126,8 @@ export function ForagingDone({ forage, onBack }: ForagingDoneProps) {
         <p className="typo-body font-medium text-foreground/90">
           {tx(count === 1 ? forg.env_var_one : forg.env_var_other, { count })} {forg.imported} {forg.to_vault}
         </p>
-        {forage.error && (
-          <p className="typo-body text-amber-400/80 mt-1">{forage.error}</p>
+        {forage.partialImportError && (
+          <p className="typo-body text-amber-400/80 mt-1">{forg.partial_import_error}</p>
         )}
       </div>
       <div className="flex items-center justify-center gap-2">

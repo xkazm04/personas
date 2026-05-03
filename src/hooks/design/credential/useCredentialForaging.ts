@@ -29,6 +29,7 @@ export function useCredentialForaging() {
   const [imported, setImported] = useState<Map<string, { id: string; name: string }>>(new Map());
   const [importingIds, setImportingIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [partialImportError, setPartialImportError] = useState(false);
   const scanningRef = useRef(false);
   const importingRef = useRef(false);
 
@@ -37,6 +38,7 @@ export function useCredentialForaging() {
     scanningRef.current = true;
     setPhase("scanning");
     setError(null);
+    setPartialImportError(false);
     setScanResult(null);
     setSelected(new Set());
     setImported(new Map());
@@ -86,7 +88,7 @@ export function useCredentialForaging() {
   }, []);
 
   const importSelected = useCallback(
-    async (onImported?: () => void) => {
+    async (nameSuffix: string, onImported?: () => void) => {
       if (importingRef.current) return;
       if (!scanResult || selected.size === 0) return;
       importingRef.current = true;
@@ -100,7 +102,7 @@ export function useCredentialForaging() {
         for (const cred of toImport) {
           setImportingIds((prev) => new Set(prev).add(cred.id));
           try {
-            const name = `${cred.label} (Foraged)`;
+            const name = `${cred.label}${nameSuffix}`;
             const result = await importForagedCredential(cred.id, name, cred.service_type);
             newImported.set(cred.id, { id: result.id, name: result.name });
           } catch (err) {
@@ -115,9 +117,7 @@ export function useCredentialForaging() {
         }
 
         setImported(newImported);
-        if (hadError) {
-          setError("Some credentials could not be imported. They may no longer exist at the source.");
-        }
+        setPartialImportError(hadError);
         setPhase("done");
         onImported?.();
       } finally {
@@ -134,6 +134,7 @@ export function useCredentialForaging() {
     imported,
     importingIds,
     error,
+    partialImportError,
     scan,
     toggleSelect,
     selectAll,

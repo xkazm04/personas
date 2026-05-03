@@ -3571,6 +3571,8 @@
     },
     "foraging": {
       "idle_heading": "Credential Foraging",
+      "foraged_suffix": " (Foraged)",
+      "partial_import_error": "Some credentials could not be imported. They may no longer exist at the source.",
       "no_credentials_found": "No credentials found",
       "no_credentials_hint": "Try setting environment variables like OPENAI_API_KEY or configure ~/.aws/credentials.",
       "scan_description": "Scan your filesystem for existing credentials -- AWS profiles, environment variables, .env files, Docker configs, SSH keys, and more. Discovered credentials can be imported into your vault with one click.",

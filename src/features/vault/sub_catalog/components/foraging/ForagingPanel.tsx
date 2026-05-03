@@ -23,8 +23,8 @@ export function ForagingPanel({ onComplete, onBack }: ForagingPanelProps) {
   const forage = useCredentialForaging();
 
   const handleImport = useCallback(() => {
-    forage.importSelected(onComplete);
-  }, [forage, onComplete]);
+    forage.importSelected(t.vault.foraging.foraged_suffix, onComplete);
+  }, [forage, onComplete, t.vault.foraging.foraged_suffix]);
 
   const importableCount = forage.scanResult
     ? forage.scanResult.credentials.filter((c) => !c.already_imported).length
