@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import type { BrowserLogEntry } from './types';
 import type { LucideIcon } from 'lucide-react';
 import { Loader2, Cog, Hand, ExternalLink } from 'lucide-react';
+import type { Translations } from '@/i18n/en';
+
+type AutoCredExtraKey = keyof Translations['vault']['auto_cred_extra'];
 
 // -- Derived session state -----------------------------------------------
 
@@ -19,9 +22,9 @@ export function deriveSessionState(logs: BrowserLogEntry[]): SessionState {
 }
 
 export interface StateConfig {
-  label: string;
-  sublabel: string;
-  guidedSublabel: string;
+  labelKey: AutoCredExtraKey;
+  sublabelKey: AutoCredExtraKey;
+  guidedSublabelKey: AutoCredExtraKey;
   icon: LucideIcon;
   color: string;
   bgColor: string;
@@ -31,9 +34,9 @@ export interface StateConfig {
 
 export const STATE_CONFIG: Record<SessionState, StateConfig> = {
   connecting: {
-    label: 'Connecting...',
-    sublabel: 'Setting up Claude CLI session',
-    guidedSublabel: 'Preparing guided setup instructions',
+    labelKey: 'state_connecting_label',
+    sublabelKey: 'state_connecting_sublabel',
+    guidedSublabelKey: 'state_connecting_guided',
     icon: Loader2,
     color: 'text-foreground',
     bgColor: 'bg-secondary/20',
@@ -41,9 +44,9 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
     pulse: false,
   },
   working: {
-    label: 'Claude is working',
-    sublabel: 'Browser automation in progress -- no action needed',
-    guidedSublabel: 'Generating step-by-step instructions...',
+    labelKey: 'state_working_label',
+    sublabelKey: 'state_working_sublabel',
+    guidedSublabelKey: 'state_working_guided',
     icon: Cog,
     color: 'text-cyan-400',
     bgColor: 'bg-cyan-500/5',
@@ -51,9 +54,9 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
     pulse: false,
   },
   action_required: {
-    label: 'Your action needed',
-    sublabel: 'Please complete the step described below',
-    guidedSublabel: 'Please follow the instruction below',
+    labelKey: 'state_action_required_label',
+    sublabelKey: 'state_action_required_sublabel',
+    guidedSublabelKey: 'state_action_required_guided',
     icon: Hand,
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/8',
@@ -61,9 +64,9 @@ export const STATE_CONFIG: Record<SessionState, StateConfig> = {
     pulse: true,
   },
   opening_url: {
-    label: 'URL opened in browser',
-    sublabel: 'A page was opened in your default browser',
-    guidedSublabel: 'A page was opened in your default browser',
+    labelKey: 'state_opening_url_label',
+    sublabelKey: 'state_opening_url_sublabel',
+    guidedSublabelKey: 'state_opening_url_guided',
     icon: ExternalLink,
     color: 'text-blue-400',
     bgColor: 'bg-blue-500/5',
@@ -130,11 +133,11 @@ export function deriveEntryPhase(group: GroupedEntry): SessionState {
   return 'working';
 }
 
-export const PHASE_LABELS: Record<SessionState, string> = {
-  connecting: 'Connecting',
-  working: 'Automating',
-  action_required: 'Action needed',
-  opening_url: 'Navigating to URL',
+export const PHASE_LABEL_KEYS: Record<SessionState, AutoCredExtraKey> = {
+  connecting: 'phase_connecting',
+  working: 'phase_working',
+  action_required: 'phase_action_required',
+  opening_url: 'phase_opening_url',
 };
 
 // -- Rich message URL splitting ------------------------------------------

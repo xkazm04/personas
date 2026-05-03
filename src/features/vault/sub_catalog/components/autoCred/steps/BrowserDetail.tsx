@@ -12,6 +12,7 @@ interface BrowserStatusBannerProps {
 
 export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: BrowserStatusBannerProps) {
   const { t } = useTranslation();
+  const ace = t.vault.auto_cred_extra;
   const config = STATE_CONFIG[sessionState];
   const StateIcon = config.icon;
 
@@ -32,9 +33,9 @@ export function BrowserStatusBanner({ sessionState, isGuided, elapsed }: Browser
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className={`typo-heading font-semibold ${config.color}`}>{config.label}</p>
+          <p className={`typo-heading font-semibold ${config.color}`}>{ace[config.labelKey]}</p>
           <p className="typo-body text-foreground mt-0.5">
-            {isGuided ? config.guidedSublabel : config.sublabel}
+            {isGuided ? ace[config.guidedSublabelKey] : ace[config.sublabelKey]}
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">

@@ -8,7 +8,7 @@ import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import {
   deriveSessionState, useElapsed, groupLogEntries,
-  deriveEntryPhase, PHASE_LABELS,
+  deriveEntryPhase, PHASE_LABEL_KEYS,
   type SessionState, type GroupedEntry,
 } from '../helpers/autoCredHelpers';
 import {
@@ -33,6 +33,7 @@ interface AutoCredBrowserProps {
 
 export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCredBrowserProps) {
   const { t } = useTranslation();
+  const ace = t.vault.auto_cred_extra;
   const scrollRef = useRef<HTMLDivElement>(null);
   const isGuided = mode === 'guided';
   const sessionState = deriveSessionState(logs);
@@ -87,7 +88,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
 
       if (phase !== currentPhase) {
         currentPhase = phase;
-        items.push({ kind: 'divider', phase, label: PHASE_LABELS[phase], id: `phase-before-${gi}` });
+        items.push({ kind: 'divider', phase, label: ace[PHASE_LABEL_KEYS[phase]], id: `phase-before-${gi}` });
       }
 
       const isNew = gi >= prevGroupCountRef.current;
@@ -96,7 +97,7 @@ export function AutoCredBrowser({ logs, onCancel, mode = 'playwright' }: AutoCre
     }
 
     return items;
-  }, [groupedEntries]);
+  }, [groupedEntries, ace]);
 
   useEffect(() => { prevGroupCountRef.current = groupedEntries.length; });
 
