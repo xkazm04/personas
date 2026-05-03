@@ -217,8 +217,6 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, ini
               outputQualityScore: selectedFirst.outputQualityScore,
               protocolCompliance: selectedFirst.protocolCompliance,
               outputPreview: selectedFirst.outputPreview,
-              toolCallsExpected: selectedFirst.toolCallsExpected,
-              toolCallsActual: selectedFirst.toolCallsActual,
               costUsd: selectedFirst.costUsd,
               durationMs: selectedFirst.durationMs,
               errorMessage: selectedFirst.errorMessage,

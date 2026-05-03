@@ -158,14 +158,17 @@ pub fn create_result(
     let now = chrono::Utc::now().to_rfc3339();
 
     let conn = pool.get()?;
+    // Tool calls now write only to the lab_tool_calls child table (see
+    // write_tool_calls_child_rows below). The parent-table JSON columns are
+    // dropped in step 7 of the lab-tool-calls-child-table ADR.
     let result = conn.query_row(
         "INSERT INTO persona_test_results
             (id, test_run_id, scenario_name, model_id, provider, status,
-             output_preview, tool_calls_expected, tool_calls_actual,
+             output_preview,
              tool_accuracy_score, output_quality_score, protocol_compliance,
              input_tokens, output_tokens, cost_usd, duration_ms,
              error_message, created_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
          RETURNING *",
         params![
             id,
@@ -175,8 +178,6 @@ pub fn create_result(
             input.provider,
             input.status,
             input.output_preview,
-            input.tool_calls_expected,
-            input.tool_calls_actual,
             input.tool_accuracy_score,
             input.output_quality_score,
             input.protocol_compliance,
@@ -214,19 +215,21 @@ pub fn batch_create_results(
         for input in inputs {
             let id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
+            // Tool calls now write only to lab_tool_calls (see helper call
+            // below). Parent-table JSON columns are dropped in step 7 of the
+            // lab-tool-calls-child-table ADR.
             let result = tx.query_row(
                 "INSERT INTO persona_test_results
                     (id, test_run_id, scenario_name, model_id, provider, status,
-                     output_preview, tool_calls_expected, tool_calls_actual,
+                     output_preview,
                      tool_accuracy_score, output_quality_score, protocol_compliance,
                      input_tokens, output_tokens, cost_usd, duration_ms,
                      error_message, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
                  RETURNING *",
                 params![
                     id, input.test_run_id, input.scenario_name, input.model_id,
                     input.provider, input.status, input.output_preview,
-                    input.tool_calls_expected, input.tool_calls_actual,
                     input.tool_accuracy_score, input.output_quality_score,
                     input.protocol_compliance, input.input_tokens, input.output_tokens,
                     input.cost_usd, input.duration_ms, input.error_message, now,

@@ -352,8 +352,6 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
               outputQualityScore: selectedResult.outputQualityScore,
               protocolCompliance: selectedResult.protocolCompliance,
               outputPreview: selectedResult.outputPreview,
-              toolCallsExpected: selectedResult.toolCallsExpected,
-              toolCallsActual: selectedResult.toolCallsActual,
               costUsd: selectedResult.costUsd,
               durationMs: selectedResult.durationMs,
               errorMessage: selectedResult.errorMessage,

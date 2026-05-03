@@ -318,8 +318,6 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
               outputQualityScore: selectedResult.outputQualityScore,
               protocolCompliance: selectedResult.protocolCompliance,
               outputPreview: selectedResult.outputPreview,
-              toolCallsExpected: selectedResult.toolCallsExpected,
-              toolCallsActual: selectedResult.toolCallsActual,
               costUsd: selectedResult.costUsd,
               durationMs: selectedResult.durationMs,
               errorMessage: selectedResult.errorMessage,

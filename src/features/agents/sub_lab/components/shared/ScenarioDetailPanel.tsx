@@ -17,8 +17,6 @@ interface ScenarioResult {
   outputQualityScore: number | null;
   protocolCompliance: number | null;
   outputPreview: string | null;
-  toolCallsExpected: string | null;
-  toolCallsActual: string | null;
   costUsd: number;
   durationMs: number;
   errorMessage: string | null;

@@ -154,8 +154,6 @@ export function MatrixResultsView({ run, results, userRatings, onRate }: Props) 
               outputQualityScore: r.outputQualityScore,
               protocolCompliance: r.protocolCompliance,
               outputPreview: r.outputPreview,
-              toolCallsExpected: r.toolCallsExpected,
-              toolCallsActual: r.toolCallsActual,
               costUsd: r.costUsd,
               durationMs: r.durationMs,
               errorMessage: r.errorMessage,

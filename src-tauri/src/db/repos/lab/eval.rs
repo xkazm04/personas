@@ -96,13 +96,16 @@ pub fn create_result(
 
         let conn = pool.get()?;
         let result = conn.query_row(
+            // Tool calls now write only to the lab_tool_calls child table
+            // (see write_tool_calls_child_rows below). The parent-table JSON
+            // columns are dropped in step 7 of this ADR.
             "INSERT INTO lab_eval_results
                 (id, run_id, version_id, version_number, scenario_name, model_id, provider, status,
-                 output_preview, tool_calls_expected, tool_calls_actual,
+                 output_preview,
                  tool_accuracy_score, output_quality_score, protocol_compliance,
                  input_tokens, output_tokens, cost_usd, duration_ms,
                  rationale, suggestions, error_message, eval_method, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
              RETURNING *",
             params![
                 id,
@@ -114,8 +117,6 @@ pub fn create_result(
                 input.base.provider,
                 input.base.status,
                 input.base.output_preview,
-                input.base.tool_calls_expected,
-                input.base.tool_calls_actual,
                 input.base.tool_accuracy_score,
                 input.base.output_quality_score,
                 input.base.protocol_compliance,
