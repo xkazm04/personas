@@ -18,7 +18,7 @@ interface AutoCredConsentProps {
 }
 
 export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'playwright' }: AutoCredConsentProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ac = t.vault.auto_cred;
   const ctx = buildConnectorContext(designResult);
   const fieldCount = ctx.fields.length;
@@ -97,7 +97,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
         <LogIn className="w-4 h-4 text-blue-400 mt-0.5 shrink-0" />
         <div className="typo-body text-foreground">
           <span className="font-medium text-blue-400/90">{ac.log_in_first}</span>{' '}
-          {t.vault.auto_cred.log_in_hint.replace('{label}', designResult.connector.label)}
+          {tx(ac.log_in_hint, { label: designResult.connector.label })}
         </div>
       </div>
 
