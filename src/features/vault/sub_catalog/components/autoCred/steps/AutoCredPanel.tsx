@@ -6,6 +6,13 @@ import { createLogger } from '@/lib/log';
 const logger = createLogger('auto-cred');
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { TRANSITION_SLOW } from '@/lib/utils/animation/animationPresets';
+
+// Hoisted: this is constant across all renders, has no closure deps.
+const PHASE_TRANSITION = {
+  initial: { opacity: 0, x: 24 },
+  animate: { opacity: 1, x: 0, transition: TRANSITION_SLOW },
+  exit: { opacity: 0, x: -24, transition: { ...TRANSITION_SLOW, duration: 0.25 } },
+};
 import type { CredentialDesignResult } from '@/hooks/design/credential/useCredentialDesign';
 import type { AutoCredMode } from '../helpers/types';
 import { useAutoCredSession } from '../helpers/useAutoCredSession';
@@ -94,17 +101,11 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
     onCancel();
   };
 
-  const phaseTransition = {
-    initial: { opacity: 0, x: 24 },
-    animate: { opacity: 1, x: 0, transition: TRANSITION_SLOW },
-    exit: { opacity: 0, x: -24, transition: { ...TRANSITION_SLOW, duration: 0.25 } },
-  };
-
   return (
     <div className="space-y-4">
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
-          <motion.div key="consent" {...phaseTransition}>
+          <motion.div key="consent" {...PHASE_TRANSITION}>
             <AutoCredConsent
               designResult={designResult}
               onConsent={session.startBrowser}
@@ -115,7 +116,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         )}
 
         {session.phase === 'browser' && (
-          <motion.div key="browser" {...phaseTransition}>
+          <motion.div key="browser" {...PHASE_TRANSITION}>
             <AutoCredBrowser
               logs={session.logs}
               onCancel={session.cancelBrowser}
@@ -125,7 +126,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         )}
 
         {session.phase === 'browser-error' && session.error && (
-          <motion.div key="browser-error" {...phaseTransition}>
+          <motion.div key="browser-error" {...PHASE_TRANSITION}>
             <AutoCredBrowserError
               logs={session.logs}
               error={session.error}
@@ -136,7 +137,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         )}
 
         {session.phase === 'review' && (
-          <motion.div key="review" {...phaseTransition}>
+          <motion.div key="review" {...PHASE_TRANSITION}>
             <AutoCredReview
               designResult={designResult}
               credentialName={session.credentialName}
@@ -158,7 +159,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         {session.phase === 'saving' && (
           <motion.div
             key="saving"
-            {...phaseTransition}
+            {...PHASE_TRANSITION}
             className="flex flex-col items-center justify-center py-12 gap-3"
           >
             <LoadingSpinner size="2xl" className="text-emerald-400" />
@@ -169,7 +170,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         {session.phase === 'done' && (
           <motion.div
             key="done"
-            {...phaseTransition}
+            {...PHASE_TRANSITION}
             className="flex flex-col items-center justify-center py-10 gap-4"
           >
             <div className="w-14 h-14 rounded-full bg-emerald-500/15 flex items-center justify-center">
@@ -191,7 +192,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
         )}
 
         {session.phase === 'error' && session.error && (
-          <motion.div key="error" {...phaseTransition}>
+          <motion.div key="error" {...PHASE_TRANSITION}>
             <AutoCredErrorDisplay
               error={session.error}
               logs={session.logs}
