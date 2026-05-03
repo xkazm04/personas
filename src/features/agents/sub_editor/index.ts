@@ -5,7 +5,16 @@ export { EditorTabBar } from './components/EditorTabBar';
 export { PersonaEditorHeader } from './components/PersonaEditorHeader';
 export { UnsavedChangesBanner, CloudNudgeBanner } from './components/EditorBanners';
 export { EditorDirtyProvider, useEditorDirty, useEditorDirtyState, useEditorHistory, TabSaveError, type UndoEntry } from './libs/EditorDocument';
-export { type PersonaDraft, buildDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './libs/PersonaDraft';
+export {
+  type PersonaDraft,
+  buildDraft,
+  draftChanged,
+  SETTINGS_KEYS,
+  MODEL_KEYS,
+  DEFAULT_PERSONA_TIMEOUT_MS,
+  MIN_PERSONA_TIMEOUT_MS,
+  MAX_PERSONA_TIMEOUT_MS,
+} from './libs/PersonaDraft';
 export { useEditorSave } from './libs/useEditorSave';
 export { useEffectivePersona } from './libs/useEffectivePersona';
 export { useTabSection, type TabSaveMode, type TabSectionConfig, type TabSectionHandle } from './libs/useTabSection';

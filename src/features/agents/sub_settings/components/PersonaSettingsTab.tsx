@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { PersonaDraft } from '@/features/agents/sub_editor';
+import {
+  type PersonaDraft,
+  MIN_PERSONA_TIMEOUT_MS,
+  MAX_PERSONA_TIMEOUT_MS,
+} from '@/features/agents/sub_editor';
+
+const MIN_PERSONA_TIMEOUT_S = MIN_PERSONA_TIMEOUT_MS / 1000;
+const MAX_PERSONA_TIMEOUT_S = MAX_PERSONA_TIMEOUT_MS / 1000;
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { PopupIconSelector } from '@/features/shared/components/forms/PopupIconSelector';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
@@ -135,8 +142,8 @@ export function PersonaSettingsTab({
                 <label className="block typo-body font-medium text-foreground mb-1">
                   {t.agents.settings_status.timeout_sec}
                   <FieldHint
-                    text="How long a single execution can run before being cancelled. The engine hard ceiling is 1800 seconds (30 min) — values above this are rejected."
-                    range="10--1800 seconds"
+                    text={`How long a single execution can run before being cancelled. The engine hard ceiling is ${MAX_PERSONA_TIMEOUT_S} seconds (${Math.round(MAX_PERSONA_TIMEOUT_S / 60)} min) — values above this are rejected.`}
+                    range={`${MIN_PERSONA_TIMEOUT_S}--${MAX_PERSONA_TIMEOUT_S} seconds`}
                     example="300"
                   />
                 </label>
@@ -147,15 +154,14 @@ export function PersonaSettingsTab({
                     // Two-sided clamp: previously only the upper bound was enforced
                     // (Math.min(raw, 1800)), which meant a user-typed sub-10s value
                     // would persist all the way to the backend. The hint and the
-                    // <input min={10}/> both advertise 10s as the floor, so the
-                    // input was lying about its accepted range. Floor the parse
-                    // fallback at 10 too.
+                    // <input min/> both advertise the floor, so the input was lying
+                    // about its accepted range. Floor the parse fallback at MIN too.
                     const raw = parseInt(e.target.value, 10);
-                    const safe = Number.isFinite(raw) ? raw : 10;
-                    patch({ timeout: Math.min(Math.max(safe, 10), 1800) * 1000 });
+                    const safe = Number.isFinite(raw) ? raw : MIN_PERSONA_TIMEOUT_S;
+                    patch({ timeout: Math.min(Math.max(safe, MIN_PERSONA_TIMEOUT_S), MAX_PERSONA_TIMEOUT_S) * 1000 });
                   }}
-                  min={10}
-                  max={1800}
+                  min={MIN_PERSONA_TIMEOUT_S}
+                  max={MAX_PERSONA_TIMEOUT_S}
                   step={10}
                   className={INPUT_FIELD}
                 />
