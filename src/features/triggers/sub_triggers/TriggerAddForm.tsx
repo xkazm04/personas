@@ -220,7 +220,7 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
       {triggerType === 'composite' && <CompositeConfig compositeConditions={compositeConditions} setCompositeConditions={setCompositeConditions} compositeOperator={compositeOperator} setCompositeOperator={setCompositeOperator} windowSeconds={windowSeconds} setWindowSeconds={setWindowSeconds} validationError={validationError} setValidationError={setValidationError} />}
 
       {validationError && (
-        <div className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
+        <div role="alert" className="px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400">
           {validationError}
         </div>
       )}
