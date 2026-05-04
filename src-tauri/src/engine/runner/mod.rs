@@ -13,7 +13,9 @@ mod stages;
 // `engine::runner`) see — matches the layout before the submodule split so no
 // caller has to change.
 pub(crate) use env::sanitize_env_name;
-pub(crate) use credentials::resolve_credential_env_vars;
+pub(crate) use credentials::{
+    inject_connector_credentials, inject_credential, resolve_credential_env_vars,
+};
 
 use std::collections::HashMap;
 use std::path::PathBuf;
