@@ -514,10 +514,24 @@ export function buildChronology(designResult: Record<string, unknown> | null | u
 
 /** Hook wrapper. Reads the current adoption buildDraft and memoizes chronology. */
 export function useUseCaseChronology(): ChronologyRow[] {
-  const buildDraft = useAgentStore((s) => s.buildDraft);
+  // 2026-05-04 — read the active session's draft directly off the
+  // sessions map instead of through the scalar `buildDraft` mirror.
+  // The scalar approach worked for single-session flows, but when the
+  // user spawned a new draft while a prior one was still alive, the
+  // chronology kept rendering the prior draft's dimensions (Memory box
+  // notably) until the new session's first agent_ir event landed and
+  // re-mirrored the scalar. Pulling straight from the keyed map lets
+  // every session render its own chronology in isolation, with empty
+  // results during the brief gap between session creation and the
+  // first event.
+  const draft = useAgentStore((s) => {
+    const id = s.activeBuildSessionId;
+    if (!id) return null;
+    return s.buildSessions[id]?.draft ?? null;
+  });
   return useMemo(
-    () => buildChronology(buildDraft as Record<string, unknown> | null),
-    [buildDraft],
+    () => buildChronology(draft as Record<string, unknown> | null),
+    [draft],
   );
 }
 
@@ -586,9 +600,14 @@ export function buildFlowLookup(draft: Record<string, unknown> | null): Map<stri
 }
 
 export function useUseCaseFlows(): Map<string, UseCaseFlow> {
-  const buildDraft = useAgentStore((s) => s.buildDraft);
+  // Same active-session scoping as useUseCaseChronology — see comment there.
+  const draft = useAgentStore((s) => {
+    const id = s.activeBuildSessionId;
+    if (!id) return null;
+    return s.buildSessions[id]?.draft ?? null;
+  });
   return useMemo(
-    () => buildFlowLookup(buildDraft as Record<string, unknown> | null),
-    [buildDraft],
+    () => buildFlowLookup(draft as Record<string, unknown> | null),
+    [draft],
   );
 }

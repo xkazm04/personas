@@ -1,45 +1,45 @@
 /**
- * App-startup hydration of all active build sessions.
+ * App-startup cleanup of stale build sessions.
  *
- * Pre-Phase-3 (2026-05-03), build sessions only hydrated when the user
- * navigated INTO a specific persona's wizard — `useBuildSession(personaId)`
- * fires `getActiveBuildSession` on mount. After an app restart, the
- * sidebar's "active drafts" list was empty until the user clicked through
- * each in-flight persona, even though the data was sitting in
- * `build_sessions` SQLite rows.
+ * Pre-2026-05-04 we hydrated every non-terminal session on boot so the
+ * sidebar's "Draft Builds" list survived an app restart. The trouble: the
+ * CLI process that drove each session was tied to the old app run and
+ * died with it. The hydrated session showed up in the sidebar with a
+ * pending question, the user typed an answer, `answerBuildQuestion` was
+ * dispatched — and reached a backend session whose CLI process had been
+ * gone since startup. The build never advanced.
  *
- * This bootstrap closes the gap: on app launch, list all non-terminal
- * sessions globally and pour them into `buildSessions[sessionId]` via the
- * store's `hydrateBuildSession` action.
+ * The honest answer: a build session can't survive an app restart. The
+ * conversation history is in SQLite but the live LLM context, the
+ * pending answer hook, and the streaming Channel are all process-local.
+ * Reviving them would require respawning the CLI with a `--resume` flag
+ * the build prompt doesn't support yet.
  *
- * The Rust side (`commands::design::build_sessions::list_build_sessions`)
- * returns full `PersistedBuildSession` objects (with `resolvedCells`,
- * `pendingQuestion`, `agentIr`); the TS API surface mistypes it as the
- * lighter `BuildSessionSummary`. We cast through an `unknown` here to
- * bypass that mismatch — fixing the TS type would mean rippling changes
- * through every call site, and the runtime payload IS the full shape
- * (verified by inspecting `PersistedBuildSession::from_session` in Rust).
+ * So this bootstrap now does the inverse of the old behaviour: it cancels
+ * every non-terminal session it finds. The DB row stays around (the
+ * user's intent + answers + agent_ir-so-far are still recoverable for
+ * forensics) but the session is marked `cancelled` so the sidebar's
+ * `activeDrafts` filter excludes it. The user sees a clean Draft Builds
+ * list and starts fresh.
  */
 import { invokeWithTimeout } from "@/lib/tauriInvoke";
-import { useAgentStore } from "@/stores/agentStore";
+import { cancelBuildSession } from "@/api/agents/buildSession";
 import type { PersistedBuildSession } from "@/lib/types/buildTypes";
 import { createLogger } from "@/lib/log";
 
 const log = createLogger("buildSessionBootstrap");
 
 /**
- * List every non-terminal build session and hydrate each into the store.
- * Idempotent — `hydrateBuildSession` overwrites the matching `sessionId`
- * entry if one already exists.
- *
- * Should be called once at app boot. Failure is non-fatal — drafts will
- * still hydrate lazily when the user navigates into their wizard.
+ * List every non-terminal build session and cancel it. Best-effort —
+ * a failure to cancel any single session does not block the rest.
+ * Should be called once at app boot.
  */
 export async function bootstrapActiveBuildSessions(): Promise<void> {
   let sessions: PersistedBuildSession[];
   try {
     // Rust returns Vec<PersistedBuildSession> here despite the TS API's
-    // BuildSessionSummary annotation — see module header.
+    // BuildSessionSummary annotation — the runtime payload IS the full
+    // shape (verified by `PersistedBuildSession::from_session` in Rust).
     sessions = await invokeWithTimeout<PersistedBuildSession[]>(
       "list_build_sessions",
       { personaId: null },
@@ -53,20 +53,18 @@ export async function bootstrapActiveBuildSessions(): Promise<void> {
 
   if (sessions.length === 0) return;
 
-  const store = useAgentStore.getState();
   for (const session of sessions) {
     try {
-      store.hydrateBuildSession(session);
+      await cancelBuildSession(session.id);
     } catch (err) {
-      // A bad session row should not break the rest of the list.
-      log.warn("bootstrapActiveBuildSessions: failed to hydrate session", {
+      log.warn("bootstrapActiveBuildSessions: cancel failed", {
         sessionId: session.id,
         error: err instanceof Error ? err.message : String(err),
       });
     }
   }
 
-  log.info("bootstrapActiveBuildSessions: hydrated active drafts", {
+  log.info("bootstrapActiveBuildSessions: cancelled orphan drafts", {
     count: sessions.length,
   });
 }
