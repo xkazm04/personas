@@ -235,9 +235,39 @@ pub(super) async fn inject_design_context_credentials(
 
     if connector_names.is_empty() { return; }
 
-    // Deduplicate and skip connectors already injected
-    let existing_prefixes: std::collections::HashSet<String> = env_vars.iter()
-        .filter_map(|(k, _)| k.split('_').next().map(|p| p.to_lowercase()))
+    // 2026-05-04 — Per-persona credential link awareness.
+    //
+    // Pre-fix: when a persona had multiple credentials of the same service
+    // type in the vault (e.g. two Google Calendar accounts), this function
+    // always picked `creds.first()` — which often wasn't the credential
+    // the user explicitly linked to *this* persona. Result: even with all
+    // connectors healthy at the link level, the runtime would inject the
+    // wrong account's tokens (or skip injection silently when the first
+    // credential's healthcheck fails) and the LLM reported "connector
+    // unavailable" mid-execution.
+    //
+    // The frontend's `design_context.credentialLinks` map is the
+    // authoritative `connectorName -> credentialId` source (written by
+    // `mutateCredentialLink`); honour it before falling back to first-of-
+    // service_type lookup.
+    let credential_links: std::collections::HashMap<String, String> = parsed
+        .get("credentialLinks")
+        .and_then(|v| v.as_object())
+        .map(|obj| {
+            obj.iter()
+                .filter_map(|(k, v)| v.as_str().map(|s| (k.to_lowercase(), s.to_string())))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Deduplicate connector entries already injected by the tool-driven
+    // pass. The previous prefix-matching logic only compared the FIRST
+    // underscore segment of an env var key, so e.g. `GOOGLE_CALENDAR_*`
+    // and `GMAIL_*` would both reduce to "gmail"/"google" and over-match.
+    // Switch to the authoritative `injected_connector_names` set instead.
+    let already_injected: std::collections::HashSet<String> = injected_connector_names
+        .iter()
+        .map(|n| n.to_lowercase())
         .collect();
 
     let connectors = match connector_repo::get_all(pool) {
@@ -247,21 +277,34 @@ pub(super) async fn inject_design_context_credentials(
 
     for name in &connector_names {
         let name_lower = name.to_lowercase();
-        // Skip if we already injected env vars for this connector
-        if existing_prefixes.contains(&name_lower) { continue; }
+        if already_injected.contains(&name_lower) { continue; }
 
-        // Try to find a matching connector definition
+        // Honour the persona-specific credential link first.
+        let linked_cred = credential_links
+            .get(&name_lower)
+            .and_then(|cred_id| cred_repo::get_by_id(pool, cred_id).ok());
+        if let Some(cred) = linked_cred {
+            let connector_label = connectors
+                .iter()
+                .find(|c| c.name.to_lowercase() == name_lower)
+                .map(|c| c.label.clone())
+                .unwrap_or_else(|| name.clone());
+            if inject_credential(pool, &cred, name, &connector_label, env_vars, hints, persona_id, persona_name).await.is_ok() {
+                injected_connector_names.push(name.clone());
+            }
+            continue;
+        }
+
+        // No explicit link — fall back to catalog connector lookup, then
+        // direct service_type lookup (matches the old behaviour).
         if let Some(conn) = connectors.iter().find(|c| c.name.to_lowercase() == name_lower) {
             if let Ok(true) = inject_connector_credentials(pool, conn, env_vars, hints, persona_id, persona_name).await {
                 injected_connector_names.push(conn.name.clone());
             }
-        } else {
-            // Direct service_type lookup as fallback
-            if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
-                if let Some(cred) = creds.first() {
-                    if inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await.is_ok() {
-                        injected_connector_names.push(name.clone());
-                    }
+        } else if let Ok(creds) = cred_repo::get_by_service_type(pool, name) {
+            if let Some(cred) = creds.first() {
+                if inject_credential(pool, cred, name, name, env_vars, hints, persona_id, persona_name).await.is_ok() {
+                    injected_connector_names.push(name.clone());
                 }
             }
         }

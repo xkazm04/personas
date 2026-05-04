@@ -18,7 +18,7 @@ export function GlyphEditFace({ onAddCapability }: GlyphEditFaceProps) {
         <header className="flex items-start justify-between gap-3">
           <div>
             <h3 className="typo-heading-sm text-foreground">Capabilities</h3>
-            <p className="typo-body-sm text-foreground/50">Tune each capability's dimensions manually.</p>
+            <p className="typo-body-sm text-foreground/70">Tune each capability's dimensions manually.</p>
           </div>
           <button
             type="button"
@@ -30,7 +30,7 @@ export function GlyphEditFace({ onAddCapability }: GlyphEditFaceProps) {
           </button>
         </header>
         {capabilityOrder.length === 0 ? (
-          <p className="typo-body-sm text-foreground/40 py-4">
+          <p className="typo-body-sm text-foreground/70 py-4">
             No capabilities yet. Start a build via the Glyph face — they'll appear here for manual adjustment.
           </p>
         ) : (

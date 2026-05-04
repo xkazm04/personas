@@ -64,16 +64,23 @@ interface GlyphRowStripProps {
   onHover: (i: number | null) => void;
   onAdd: () => void;
   canAdd: boolean;
+  /** Stack the mini sigils vertically (column) instead of horizontally.
+   *  Used by the build surface to anchor the strip to the left of the
+   *  sigil so the active title can sit centred above the canvas. */
+  vertical?: boolean;
 }
 
 /** Labels removed from each mini — the full title renders in the shared
  *  header row beneath the strip so it never truncates and doesn't pile up. */
 export function GlyphRowStrip({
-  rows, activeIndex, hoveredIndex, onSelect, onHover, onAdd, canAdd,
+  rows, activeIndex, hoveredIndex, onSelect, onHover, onAdd, canAdd, vertical,
 }: GlyphRowStripProps) {
   if (rows.length <= 1 && !canAdd) return null;
+  const wrapperClass = vertical
+    ? "flex flex-col items-center gap-3"
+    : "flex items-center gap-3 flex-wrap justify-center";
   return (
-    <div className="flex items-center gap-3 flex-wrap justify-center">
+    <div className={wrapperClass}>
       {rows.map((row, i) => (
         <div
           key={row.id}

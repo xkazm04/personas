@@ -19,7 +19,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
 import { CommandPanel } from "./commandPanel";
 import { GlyphTopBar } from "./GlyphTopBar";
-import { GlyphRowSection } from "./GlyphRowSection";
+import { GlyphRowStrip } from "./GlyphRowStrip";
 import { GlyphAnswerCard } from "./GlyphAnswerCard";
 import { GlyphEditFace } from "./GlyphEditFace";
 import { GlyphDimensionSummaryCard } from "./GlyphDimensionSummaryCard";
@@ -181,37 +181,63 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
           buildPhase={buildPhase}
           face={face}
           onFaceChange={setFace}
+          editLocked={hasPending}
         />
 
-        {/* Row strip is meaningful only once we have capabilities — hide
-            during pre-build (no UCs to show yet). */}
-        {face === "glyph" && !isCompose && (
-          <GlyphRowSection
-            rows={glyphRows}
-            activeIndex={activeRowIndex}
-            hoveredIndex={hoveredRowIndex}
-            onSelect={setActiveRowIndex}
-            onHover={setHoveredRowIndex}
-            onAdd={() => setShowAdd(true)}
-            canAdd={!isBuilding}
-          />
+        {/* Active capability title — kept top-centred above the sigil.
+            The strip itself was moved to a vertical column on the left
+            of the sigil (below) per user feedback; only the title
+            renders in this band so the canvas can stay symmetrical. */}
+        {face === "glyph" && !isCompose && glyphRows.length > 0 && (
+          <div className="min-h-[1.75rem] flex items-center justify-center">
+            <span
+              className="typo-heading-sm font-semibold text-center text-foreground"
+              key={
+                hoveredRowIndex !== null && hoveredRowIndex !== activeRowIndex
+                  ? `${glyphRows[hoveredRowIndex]?.id}-preview`
+                  : `${glyphRows[activeRowIndex]?.id}-active`
+              }
+            >
+              {(hoveredRowIndex !== null && hoveredRowIndex !== activeRowIndex
+                ? glyphRows[hoveredRowIndex]?.title
+                : glyphRows[activeRowIndex]?.title) ?? ""}
+            </span>
+          </div>
         )}
 
         {face === "edit" ? (
           <GlyphEditFace onAddCapability={() => setShowAdd(true)} />
         ) : (
-          <GlyphSigilFace
-            size={SIZE}
-            petalStates={petalStates}
-            hoveredDim={hoveredDim}
-            activeDim={activeDim}
-            onHoverDim={setHoveredDim}
-            onClickDim={onClickDim}
-            isCompose={isCompose}
-            isBuilding={isBuilding}
-            isBuildingOnly={isBuildingOnly}
-            isRefining={isRefining}
-            buildPhase={buildPhase}
+          <div className="flex items-start gap-4">
+            {/* Vertical strip — anchored to the left of the sigil. Hides
+                during pre-build (no capabilities yet) and on the edit
+                face (separate UI). */}
+            {!isCompose && glyphRows.length > 0 && (
+              <div className="pt-6 shrink-0">
+                <GlyphRowStrip
+                  rows={glyphRows}
+                  activeIndex={activeRowIndex}
+                  hoveredIndex={hoveredRowIndex}
+                  onSelect={setActiveRowIndex}
+                  onHover={setHoveredRowIndex}
+                  onAdd={() => setShowAdd(true)}
+                  canAdd={!isBuilding}
+                  vertical
+                />
+              </div>
+            )}
+            <GlyphSigilFace
+              size={SIZE}
+              petalStates={petalStates}
+              hoveredDim={hoveredDim}
+              activeDim={activeDim}
+              onHoverDim={setHoveredDim}
+              onClickDim={onClickDim}
+              isCompose={isCompose}
+              isBuilding={isBuilding}
+              isBuildingOnly={isBuildingOnly}
+              isRefining={isRefining}
+              buildPhase={buildPhase}
             hasDesignResult={hasDesignResult}
             cellStates={cellStates}
             pendingQuestions={pendingQuestions}
@@ -237,6 +263,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
             refinePrefill={refinePrefill}
             onClearRefinePrefill={() => setRefinePrefill(null)}
           />
+          </div>
         )}
 
         {buildError && (

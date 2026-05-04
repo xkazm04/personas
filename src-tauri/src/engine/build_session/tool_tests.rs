@@ -96,9 +96,58 @@ pub async fn run_tool_tests(
         .filter_map(tool_runner::tool_def_from_ir)
         .collect();
 
-    let (env_vars, hints, cred_failures, _injected_connectors) =
+    let (mut env_vars, mut hints, cred_failures, mut injected_connectors) =
         engine_runner::resolve_credential_env_vars(pool, &tool_defs, persona_id, persona_name)
             .await;
+
+    // 2026-05-04 — Connector-driven injection pass.
+    //
+    // The tool-driven resolution above only injects credentials when an
+    // `agent_ir.tools[*].requires_credential_type` matches a vault entry.
+    // Connectors that ride on generic tools (e.g. `google_calendar` used
+    // via `http_request`) get missed — at build-test time the CLI then
+    // sees `cred_context` with no Google env vars and the test for the
+    // calendar connector reports it as unavailable, even though the
+    // user authed Google Calendar yesterday.
+    //
+    // Mirrors the runtime `inject_design_context_credentials` pass: walk
+    // `agent_ir.required_connectors`, inject anything we didn't already
+    // cover, with the OAuth refresh path running for credentials that
+    // store a refresh_token.
+    for ir_conn in &agent_ir.required_connectors {
+        let Some(name) = ir_conn.name() else { continue; };
+        let name_lower = name.to_lowercase();
+        if injected_connectors.iter().any(|n| n.to_lowercase() == name_lower) {
+            continue;
+        }
+        // Prefer the catalog connector definition (so `connector.label`
+        // matches the user-visible name) but fall back to direct
+        // service_type credential lookup when the connector isn't in the
+        // catalog yet.
+        let connectors = match crate::db::repos::resources::connectors::get_all(pool) {
+            Ok(c) => c,
+            Err(_) => Vec::new(),
+        };
+        let conn_def = connectors.iter().find(|c| c.name.eq_ignore_ascii_case(name));
+        let injected = if let Some(conn) = conn_def {
+            engine_runner::inject_connector_credentials(
+                pool, conn, &mut env_vars, &mut hints, persona_id, persona_name,
+            ).await.unwrap_or(false)
+        } else {
+            match crate::db::repos::resources::credentials::get_by_service_type(pool, name) {
+                Ok(creds) => {
+                    if let Some(cred) = creds.first() {
+                        engine_runner::inject_credential(
+                            pool, cred, name, name,
+                            &mut env_vars, &mut hints, persona_id, persona_name,
+                        ).await.is_ok()
+                    } else { false }
+                }
+                Err(_) => false,
+            }
+        };
+        if injected { injected_connectors.push(name.to_string()); }
+    }
 
     // Query ALL credential service types from vault so the LLM can match intelligently
     let all_vault_types = crate::db::repos::resources::credentials::get_distinct_service_types(pool)

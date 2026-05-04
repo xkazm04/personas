@@ -33,7 +33,7 @@ export function SharedResourcesPanel() {
         <h3 className="typo-heading-sm text-foreground">
           {t.matrix_v3.shared_resources_section_title}
         </h3>
-        <p className="typo-body-sm text-foreground/50">
+        <p className="typo-body-sm text-foreground/70">
           {t.matrix_v3.shared_resources_section_subtitle}
         </p>
       </header>
@@ -52,7 +52,7 @@ export function SharedResourcesPanel() {
             className="flex flex-col gap-2"
             data-testid="shared-resources-tools"
           >
-            <div className="flex items-center gap-2 text-foreground/80">
+            <div className="flex items-center gap-2 text-foreground">
               <Wrench className="h-3.5 w-3.5" />
               <span className="typo-label">{t.matrix_v3.shared_resources_tools_label}</span>
             </div>
@@ -74,7 +74,7 @@ export function SharedResourcesPanel() {
             className="flex flex-col gap-2"
             data-testid="shared-resources-connectors"
           >
-            <div className="flex items-center gap-2 text-foreground/80">
+            <div className="flex items-center gap-2 text-foreground">
               <Plug className="h-3.5 w-3.5" />
               <span className="typo-label">
                 {t.matrix_v3.shared_resources_connectors_label}
@@ -103,7 +103,7 @@ export function SharedResourcesPanel() {
             className="flex flex-col gap-3"
             data-testid="shared-resources-defaults"
           >
-            <div className="flex items-center gap-2 text-foreground/80">
+            <div className="flex items-center gap-2 text-foreground">
               <Bell className="h-3.5 w-3.5" />
               <span className="typo-label">
                 {t.matrix_v3.shared_resources_defaults_label}
@@ -121,7 +121,7 @@ export function SharedResourcesPanel() {
           {/* Operating instructions */}
           {res.operating_instructions ? (
             <div className="md:col-span-3 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 text-foreground/80">
+              <div className="flex items-center gap-2 text-foreground">
                 <Book className="h-3.5 w-3.5" />
                 <span className="typo-label">
                   {t.matrix_v3.shared_resources_operating_instructions_label}
@@ -136,7 +136,7 @@ export function SharedResourcesPanel() {
           {/* Tool guidance */}
           {res.tool_guidance ? (
             <div className="md:col-span-3 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 text-foreground/80">
+              <div className="flex items-center gap-2 text-foreground">
                 <Wrench className="h-3.5 w-3.5" />
                 <span className="typo-label">
                   {t.matrix_v3.shared_resources_tool_guidance_label}
@@ -151,7 +151,7 @@ export function SharedResourcesPanel() {
           {/* Error handling */}
           {res.error_handling ? (
             <div className="md:col-span-3 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 text-foreground/80">
+              <div className="flex items-center gap-2 text-foreground">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span className="typo-label">
                   {t.matrix_v3.shared_resources_error_handling_label}
@@ -166,7 +166,7 @@ export function SharedResourcesPanel() {
           {/* Core memories */}
           {res.core_memories && res.core_memories.length > 0 ? (
             <div className="md:col-span-3 flex flex-col gap-1.5">
-              <div className="flex items-center gap-2 text-foreground/80">
+              <div className="flex items-center gap-2 text-foreground">
                 <Brain className="h-3.5 w-3.5" />
                 <span className="typo-label">
                   {t.matrix_v3.shared_resources_core_memories_label}
