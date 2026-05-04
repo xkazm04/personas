@@ -3,10 +3,8 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import HeroHeader from './HeroHeader';
-import SetupCards from './SetupCards';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import ResumeBanner from './ResumeBanner';
-import TourLauncher from '@/features/onboarding/components/TourLauncher';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const LanguageCards = lazy(() => import('./LanguageSwitcher').then(m => ({ default: m.LanguageCardGrid })));
@@ -49,19 +47,10 @@ export default function WelcomeLayout({
           <ResumeBanner />
           <HeroHeader greeting={greeting} displayName={displayName} />
 
-          <div className="animate-fade-slide-in motion-reduce:animate-none motion-reduce:opacity-100 motion-reduce:translate-y-0 flex items-center gap-3">
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-            <span className="typo-section-title">{wl.get_started}</span>
-            <TourLauncher />
-            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-primary/10 to-transparent" />
-          </div>
-
           {/* Below-fold content deferred to keep initial DOM small. WebView2
               hangs when too many nodes commit at once; `next-frame` runs as
               soon as the first paint is on screen. */}
           <DeferUntilIdle priority="next-frame">
-            <SetupCards />
-
             <SectionDivider label={quickNavLabel} />
             <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
 

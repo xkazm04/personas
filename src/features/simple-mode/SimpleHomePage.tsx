@@ -1,18 +1,14 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 
 import { useSystemStore } from '@/stores/systemStore';
-import { TIERS } from '@/lib/constants/uiModes';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
 
 import { SimpleHomeShell } from './components/SimpleHomeShell';
-import { GraduateToPowerModal } from './components/GraduateToPowerModal';
 import { CATEGORIES } from './hooks/useIllustration';
 
 // Variants are lazy-loaded so switching tabs only fetches the chunk you need.
-// Each variant is an empty placeholder in this phase; Phases 07/08/09 wire
-// real data.
 const loadMosaic = () => import('./components/variants/MosaicVariant');
 const loadConsole = () => import('./components/variants/ConsoleVariant');
 const loadInbox = () => import('./components/variants/InboxVariant');
@@ -45,30 +41,18 @@ function variantFor(tab: SimpleTab) {
 }
 
 /**
- * Full-viewport Simple-mode Home Base. Rendered by PersonasPage when
- * `viewMode === TIERS.STARTER`; see the routing fork there. Power-mode
- * components do not mount under this page — the sidebar and section
- * router short-circuit before this component renders.
- *
- * The top bar lets the user graduate back to Power (either to Home or
- * into Settings); the tab switcher persists its selection in the system
- * store so Simple↔Power toggles remember where you were.
- *
- * Phase 12: the "Switch to Power" action is gated behind a confirmation
- * modal (`GraduateToPowerModal`). The Settings gear path stays direct —
- * users can always reach settings without confirmation.
+ * Cockpit page — embedded as a Home sub-tab. Renders a 3-tab switcher
+ * (Mosaic / Console / Inbox) inside the Home layout. The settings gear
+ * navigates the sidebar to the Settings section.
  */
 export default function SimpleHomePage() {
-  const { activeSimpleTab, setActiveSimpleTab, setViewMode, setSidebarSection } = useSystemStore(
+  const { activeSimpleTab, setActiveSimpleTab, setSidebarSection } = useSystemStore(
     useShallow((s) => ({
       activeSimpleTab: s.activeSimpleTab,
       setActiveSimpleTab: s.setActiveSimpleTab,
-      setViewMode: s.setViewMode,
       setSidebarSection: s.setSidebarSection,
     })),
   );
-
-  const [graduateOpen, setGraduateOpen] = useState(false);
 
   // Preload the 12 category PNGs + warm sibling variant chunks on first mount.
   // Both run during idle time so they never compete with first paint.
@@ -84,42 +68,20 @@ export default function SimpleHomePage() {
     });
   }, []);
 
-  const handleOpenGraduate = useCallback(() => {
-    setGraduateOpen(true);
-  }, []);
-
-  const handleCancelGraduate = useCallback(() => {
-    setGraduateOpen(false);
-  }, []);
-
-  const handleConfirmGraduate = useCallback(() => {
-    setViewMode(TIERS.TEAM);
-    setSidebarSection('home');
-    setGraduateOpen(false);
-  }, [setViewMode, setSidebarSection]);
-
   const onOpenSettings = useCallback(() => {
-    // Direct — no modal gate per Phase 12 user decision.
-    setViewMode(TIERS.TEAM);
     setSidebarSection('settings');
-  }, [setViewMode, setSidebarSection]);
+  }, [setSidebarSection]);
 
   return (
-    <ErrorBoundary name="SimpleHome">
-      <div className="h-screen flex flex-col bg-background text-foreground simple-min-width">
+    <ErrorBoundary name="Cockpit">
+      <div className="flex-1 min-h-0 flex flex-col bg-background text-foreground simple-min-width">
         <SimpleHomeShell
           activeTab={activeSimpleTab}
           onTabChange={setActiveSimpleTab}
-          onSwitchToPower={handleOpenGraduate}
           onOpenSettings={onOpenSettings}
         >
           <Suspense fallback={null}>{variantFor(activeSimpleTab)}</Suspense>
         </SimpleHomeShell>
-        <GraduateToPowerModal
-          isOpen={graduateOpen}
-          onConfirm={handleConfirmGraduate}
-          onCancel={handleCancelGraduate}
-        />
       </div>
     </ErrorBoundary>
   );

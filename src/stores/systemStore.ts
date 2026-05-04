@@ -1,6 +1,6 @@
 /**
  * System domain store -- UI chrome, cloud, GitLab, onboarding, guided tour,
- * view-mode, dev-tools, network / P2P, and setup wizard.
+ * dev-tools, network / P2P, and setup wizard.
  */
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -12,7 +12,6 @@ import { createGitLabSlice } from "./slices/system/gitlabSlice";
 import { createOnboardingSlice, isOnboardingStep, ONBOARDING_STEPS } from "./slices/system/onboardingSlice";
 import * as Sentry from "@sentry/react";
 import { createTourSlice } from "./slices/system/tourSlice";
-import { createViewModeSlice } from "./slices/system/viewModeSlice";
 import { createDevToolsSlice } from "./slices/system/devToolsSlice";
 import { createNetworkSlice } from "./slices/network/networkSlice";
 import { createSetupSlice } from "./slices/system/setupSlice";
@@ -22,10 +21,7 @@ import { createObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import { createResearchLabSlice } from "./slices/system/researchLabSlice";
 import { createTwinSlice } from "./slices/system/twinSlice";
 import { createSimpleModeSlice } from "./slices/system/simpleModeSlice";
-import { TIER_RANK, DEFAULT_TIER } from "@/lib/constants/uiModes";
-
-/** Migrate legacy viewMode values ('simple'|'full'|'dev') persisted before the tier rename. */
-const LEGACY_MAP: Record<string, string> = { simple: 'starter', full: 'team', dev: 'builder' };
+import { createCompanionPluginSlice } from "./slices/system/companionPluginSlice";
 
 export const useSystemStore = create<SystemStore>()(
   persist(
@@ -37,7 +33,6 @@ export const useSystemStore = create<SystemStore>()(
       ...createGitLabSlice(...a),
       ...createOnboardingSlice(...a),
       ...createTourSlice(...a),
-      ...createViewModeSlice(...a),
       ...createDevToolsSlice(...a),
       ...createNetworkSlice(...a),
       ...createSetupSlice(...a),
@@ -47,6 +42,7 @@ export const useSystemStore = create<SystemStore>()(
       ...createResearchLabSlice(...a),
       ...createTwinSlice(...a),
       ...createSimpleModeSlice(...a),
+      ...createCompanionPluginSlice(...a),
     }),
     {
       name: "persona-ui-system",
@@ -62,7 +58,6 @@ export const useSystemStore = create<SystemStore>()(
         onboardingStepCompleted: state.onboardingStepCompleted,
         tourCompleted: state.tourCompleted,
         tourDismissed: state.tourDismissed,
-        viewMode: state.viewMode,
         setupRole: state.setupRole,
         setupTool: state.setupTool,
         setupGoal: state.setupGoal,
@@ -74,14 +69,15 @@ export const useSystemStore = create<SystemStore>()(
         obsidianVaultPath: state.obsidianVaultPath,
         twinTab: state.twinTab,
         activeSimpleTab: state.activeSimpleTab,
+        companionPluginTab: state.companionPluginTab,
+        companionFooterEnabled: state.companionFooterEnabled,
+        companionSoundEnabled: state.companionSoundEnabled,
+        companionVoiceEnabled: state.companionVoiceEnabled,
+        companionVoiceCredentialId: state.companionVoiceCredentialId,
+        companionVoiceId: state.companionVoiceId,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
-        const raw = state.viewMode;
-        if (typeof raw === 'string' && !(raw in TIER_RANK)) {
-          // Migrate legacy value
-          state.viewMode = (LEGACY_MAP[raw] ?? DEFAULT_TIER) as typeof state.viewMode;
-        }
 
         // Guard against onboarding schema drift: if a persisted step id no
         // longer exists in the current enum (app update renamed/removed a

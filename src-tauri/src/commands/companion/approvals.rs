@@ -46,6 +46,35 @@ pub struct ApprovalOutcome {
     pub id: String,
     pub status: String,
     pub message: String,
+    /// Optional client-side action the frontend should perform after the
+    /// approval lands. UI-only operations (route navigation, prefill) emit
+    /// these instead of a backend execute. The frontend's ApprovalCard
+    /// dispatches them via the appropriate Zustand store.
+    pub client_action: Option<ClientAction>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ClientAction {
+    /// Switch the sidebar to the given top-level section.
+    Navigate { route: String },
+}
+
+/// Internal: each `execute_*` returns this so we can build either a
+/// pure-message outcome (run_persona, etc.) or one carrying a client
+/// action (open_route).
+struct ExecuteResult {
+    message: String,
+    client_action: Option<ClientAction>,
+}
+
+impl ExecuteResult {
+    fn message(message: String) -> Self {
+        Self {
+            message,
+            client_action: None,
+        }
+    }
 }
 
 // ── Tauri commands ──────────────────────────────────────────────────────
@@ -108,7 +137,7 @@ pub async fn companion_approve_action(
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (action, params) = load_pending(&state, &approval_id)?;
-    let outcome_msg = match action.as_str() {
+    let exec_result = match action.as_str() {
         "run_persona" => execute_run_persona(&state, &app, &params).await,
         "resolve_human_review" => execute_resolve_human_review(&state, &app, &params).await,
         "update_identity" => execute_update_identity(&params),
@@ -117,17 +146,22 @@ pub async fn companion_approve_action(
         ))),
     };
 
-    let (status_text, message, embedder_log) = match outcome_msg {
-        Ok(msg) => (
+    let (status_text, message, client_action, embedder_log) = match exec_result {
+        Ok(r) => (
             "approved",
-            msg.clone(),
-            format!("[Athena action approved & executed] {action}\n\n{msg}"),
+            r.message.clone(),
+            r.client_action,
+            format!(
+                "[Athena action approved & executed] {action}\n\n{}",
+                r.message
+            ),
         ),
         Err(e) => {
             let m = format!("Execution failed: {e}");
             (
-                "approved", // user approved; execution failed separately. Mark approved.
+                "approved",
                 m.clone(),
+                None,
                 format!("[Athena action approved but failed] {action}\n\n{m}"),
             )
         }
@@ -140,6 +174,7 @@ pub async fn companion_approve_action(
         id: approval_id,
         status: status_text.into(),
         message,
+        client_action,
     })
 }
 
@@ -159,6 +194,7 @@ pub async fn companion_reject_action(
         id: approval_id,
         status: "rejected".into(),
         message: reason,
+        client_action: None,
     })
 }
 
@@ -251,7 +287,7 @@ async fn execute_run_persona(
     state: &State<'_, Arc<AppState>>,
     app: &tauri::AppHandle,
     params: &serde_json::Value,
-) -> Result<String, AppError> {
+) -> Result<ExecuteResult, AppError> {
     let persona_id = params
         .get("persona_id")
         .and_then(|v| v.as_str())
@@ -278,20 +314,20 @@ async fn execute_run_persona(
     )
     .await?;
 
-    Ok(format!(
+    Ok(ExecuteResult::message(format!(
         "Started execution `{exec_id}` on persona `{persona_id}`{input_note}.",
         exec_id = exec.id,
         input_note = match input_data {
             Some(_) => " with provided input",
             None => "",
         }
-    ))
+    )))
 }
 
 /// Write a new identity.md, backing up the existing one. Used by the
 /// onboarding interview at the end of the intake, and by reflection
 /// cycles later (Phase 5).
-fn execute_update_identity(params: &serde_json::Value) -> Result<String, AppError> {
+fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
     let content = params
         .get("content")
         .and_then(|v| v.as_str())
@@ -306,21 +342,21 @@ fn execute_update_identity(params: &serde_json::Value) -> Result<String, AppErro
         let _ = std::fs::copy(&identity_path, &backup_path);
     }
     std::fs::write(&identity_path, content)?;
-    Ok(format!(
+    Ok(ExecuteResult::message(format!(
         "identity.md updated ({} bytes). Previous version backed up to {}.",
         content.len(),
         backup_path
             .file_name()
             .and_then(|s| s.to_str())
             .unwrap_or("identity.bak-*.md")
-    ))
+    )))
 }
 
 async fn execute_resolve_human_review(
     state: &State<'_, Arc<AppState>>,
     app: &tauri::AppHandle,
     params: &serde_json::Value,
-) -> Result<String, AppError> {
+) -> Result<ExecuteResult, AppError> {
     let review_id = params
         .get("review_id")
         .and_then(|v| v.as_str())
@@ -351,12 +387,18 @@ async fn execute_resolve_human_review(
     manual_repo::update_status(&state.db, &review_id, status, comment.clone())?;
     let _ = app; // event emit handled by the original command path; we keep this minimal.
 
-    Ok(format!(
+    Ok(ExecuteResult::message(format!(
         "Human Review `{review_id}` marked `{}`{comment_note}.",
         status.as_str(),
         comment_note = match comment {
             Some(_) => " with a comment",
             None => "",
         }
-    ))
+    )))
 }
+
+// open_route is intentionally NOT in this match — it's auto-fired
+// by the dispatcher via `companion://navigate` events (no approval
+// card) so chat-driven nav stays smooth. The `ClientAction::Navigate`
+// variant is preserved on `ApprovalOutcome` for future approval-gated
+// UI ops (e.g., `prefill_persona_create` once that's wired).

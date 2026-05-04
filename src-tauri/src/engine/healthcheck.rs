@@ -668,8 +668,22 @@ async fn execute_healthcheck_request_with_strategy(
     let mut has_auth_header = false;
     for (header_name, header_template) in &hc_config.headers {
         let header_value = resolve_template(header_template, &resolved_values);
-        if header_name.eq_ignore_ascii_case("authorization") && !header_value.contains("{{") {
+        let resolved_cleanly = !header_value.contains("{{");
+        if resolved_cleanly && header_name.eq_ignore_ascii_case("authorization") {
             has_auth_header = true;
+        } else if resolved_cleanly {
+            // Connectors with custom-named auth headers (e.g. ElevenLabs
+            // `xi-api-key`, Notion-style `X-Api-Key`) carry the credential
+            // outside of `Authorization`. Detect that the resolved header
+            // value contains the strategy-resolved auth token so we don't
+            // layer a redundant `Authorization: Bearer ...` on top — some
+            // APIs (ElevenLabs) reject the request as 401 when both are
+            // present.
+            if let Some(ref tok) = token {
+                if !tok.is_empty() && header_value.contains(tok.as_str()) {
+                    has_auth_header = true;
+                }
+            }
         }
         request = request.header(header_name, header_value);
     }

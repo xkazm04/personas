@@ -208,7 +208,7 @@ Recognized types:
 Tools the agent can call (HTTP requests, file I/O, browser, etc.).
 Not rendered in the matrix directly — becomes part of the
 `tool_def_from_ir` generation at build time. See
-`docs/arch-persona-matrix-build.md` for the build-session side.
+`docs/architecture/persona-matrix-build.md` for the build-session side.
 
 ## `payload.adoption_questions`
 

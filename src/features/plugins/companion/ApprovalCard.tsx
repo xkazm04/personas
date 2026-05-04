@@ -4,8 +4,36 @@ import { useTranslation } from '@/i18n/useTranslation';
 import {
   companionApproveAction,
   companionRejectAction,
+  type ClientAction,
   type PendingApproval,
 } from '@/api/companion';
+import { useSystemStore } from '@/stores/systemStore';
+import type { SidebarSection } from '@/lib/types/types';
+
+const VALID_ROUTES: SidebarSection[] = [
+  'home',
+  'overview',
+  'personas',
+  'events',
+  'credentials',
+  'design-reviews',
+  'plugins',
+  'schedules',
+  'settings',
+];
+
+function applyClientAction(action: ClientAction) {
+  // Currently only `navigate` exists, and that's handled directly via
+  // the `companion://navigate` event (open_route bypasses approvals).
+  // This stays as a defensive future-proof: if a *different* UI op
+  // needs an approval gate later (e.g., prefill_persona_create), the
+  // backend can populate clientAction and we'll dispatch from here.
+  if (action.type === 'navigate') {
+    const route = action.route as SidebarSection;
+    if (!VALID_ROUTES.includes(route)) return;
+    useSystemStore.getState().setSidebarSection(route);
+  }
+}
 
 /**
  * Inline card rendered in the chat for each `propose_action` op Athena
@@ -28,7 +56,13 @@ export function ApprovalCard({
     setError(null);
     try {
       if (kind === 'approve') {
-        await companionApproveAction(approval.id);
+        const result = await companionApproveAction(approval.id);
+        // UI-only ops (open_route) carry their follow-up here; we
+        // dispatch BEFORE marking resolved so the panel collapses
+        // smoothly rather than re-rendering with the card disappearing.
+        if (result.clientAction) {
+          applyClientAction(result.clientAction);
+        }
       } else {
         await companionRejectAction(approval.id);
       }

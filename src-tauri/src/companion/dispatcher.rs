@@ -26,6 +26,22 @@ pub struct Dispatched {
     /// Newly-created approval rows. The UI listens for these and renders
     /// inline cards per turn.
     pub approvals: Vec<CreatedApproval>,
+    /// UI-only navigations Athena fired this turn (`open_route`). These
+    /// bypass the approval pipeline by design — the user wants direct,
+    /// chat-driven navigation that doesn't interrupt the conversation.
+    /// Each entry is the validated sidebar route name.
+    pub navigations: Vec<String>,
+    /// Quick-reply option labels Athena offered for this turn. Each entry
+    /// is the literal user message that gets sent on click. Not persisted
+    /// — the UI shows them on the latest assistant bubble until the next
+    /// turn fires, then clears.
+    pub quick_replies: Vec<String>,
+    /// Spoken-version of the reply Athena emitted via a `TTS:` line —
+    /// short (1-3 sentences), conversational, suited for ElevenLabs
+    /// playback. None when Athena didn't emit one (voice off, or she
+    /// chose to skip it for this turn). Frontend sets it as the latest
+    /// `pendingPlayback` if voice playback is on.
+    pub tts_text: Option<String>,
     /// Any malformed op blocks we encountered. Logged but otherwise
     /// silent — never block the turn for a syntax error.
     pub warnings: Vec<String>,
@@ -40,12 +56,29 @@ pub struct CreatedApproval {
     pub rationale: String,
 }
 
-/// Allowed action names. The dispatcher rejects anything else with a
-/// warning so a hallucinated op doesn't reach the database.
+/// Allowed approval-creating actions. `open_route` is *not* listed here
+/// — it's handled specially below (auto-fires a navigation event, no
+/// approval card). The user wants chat-driven navigation to be smooth,
+/// not gated by an explicit click each time.
 const ALLOWED_ACTIONS: &[&str] = &[
     "run_persona",
     "resolve_human_review",
     "update_identity",
+];
+
+/// Allowed sidebar routes for `open_route`. Mirrors the SidebarSection
+/// type on the frontend; mismatches get rejected with a warning so a
+/// hallucinated route doesn't crash the navigation handler.
+const ALLOWED_ROUTES: &[&str] = &[
+    "home",
+    "overview",
+    "personas",
+    "events",
+    "credentials",
+    "design-reviews",
+    "plugins",
+    "schedules",
+    "settings",
 ];
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
@@ -67,6 +100,55 @@ pub fn dispatch(
 
     for line in assistant_text.lines() {
         let trimmed = line.trim_start();
+
+        // TTS line: `TTS: "..."` — a short, spoken-friendly version of
+        // this turn's reply. We accept either a JSON-quoted string or
+        // a bare-text rest (more forgiving for short lines). Stripped
+        // from display so the user sees only the visual reply.
+        if let Some(rest) = trimmed.strip_prefix("TTS:") {
+            let rest = rest.trim();
+            // Try JSON-string parse first (handles escapes); fall back
+            // to surrounding-quote strip; otherwise take rest as-is.
+            let candidate = serde_json::from_str::<String>(rest)
+                .ok()
+                .unwrap_or_else(|| {
+                    rest.trim_matches(|c: char| c == '"' || c == '\'').to_string()
+                });
+            let trimmed_text = candidate.trim().to_string();
+            if !trimmed_text.is_empty() {
+                // First TTS line wins; ignore subsequent ones to keep
+                // the spoken version a single coherent utterance.
+                if out.tts_text.is_none() {
+                    out.tts_text = Some(trimmed_text);
+                } else {
+                    out.warnings
+                        .push("multiple TTS lines, keeping first".into());
+                }
+            }
+            continue;
+        }
+
+        // Quick-reply line: `QR: [...]` — list of preset user-message
+        // labels Athena offers. Stripped from display, surfaced as
+        // chip buttons on the assistant bubble.
+        if let Some(rest) = trimmed.strip_prefix("QR:") {
+            match serde_json::from_str::<Vec<String>>(rest.trim()) {
+                Ok(opts) => {
+                    for opt in opts {
+                        let opt = opt.trim().to_string();
+                        if !opt.is_empty() && out.quick_replies.len() < 6 {
+                            out.quick_replies.push(opt);
+                        }
+                    }
+                }
+                Err(e) => {
+                    out.warnings.push(format!("QR parse error: {e}"));
+                    cleaned_lines.push(line);
+                }
+            }
+            continue;
+        }
+
         let payload = if let Some(rest) = trimmed.strip_prefix("OP:") {
             rest.trim()
         } else if trimmed.starts_with("{\"op\"") {
@@ -77,6 +159,28 @@ pub fn dispatch(
         };
 
         match serde_json::from_str::<OpEnvelope>(payload) {
+            // open_route bypasses the approval flow: validate the route
+            // and queue a navigation event. No card, no click. The chat
+            // panel stays open; the sidebar switches behind it.
+            Ok(env) if env.op == "propose_action" && env.action == "open_route" => {
+                let route = env
+                    .params
+                    .get("route")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if route.is_empty() {
+                    out.warnings.push("open_route: missing `route`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !ALLOWED_ROUTES.contains(&route) {
+                    out.warnings
+                        .push(format!("rejected route `{route}`"));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.navigations.push(route.to_string());
+            }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings

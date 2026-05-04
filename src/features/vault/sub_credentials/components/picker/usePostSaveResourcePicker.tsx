@@ -12,12 +12,18 @@
  */
 import { useCallback } from 'react';
 import type { ConnectorDefinition, ResourceSpec } from '@/lib/types/types';
+import type { ScopedResources } from '@/api/credentials/scopedResources';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useResourcePickerStore } from './resourcePickerStore';
 
 type PromptArgs = {
   credentialId: string;
   serviceType: string;
+};
+
+type EditArgs = PromptArgs & {
+  /** Current scope to pre-fill the picker with. */
+  initial?: ScopedResources | null;
 };
 
 export function usePostSaveResourcePicker() {
@@ -40,5 +46,27 @@ export function usePostSaveResourcePicker() {
     [connectorDefinitions, prompt],
   );
 
-  return { promptIfScoped };
+  /**
+   * Reopen the picker with current scope pre-filled. Caller is responsible
+   * for refreshing the credential after the promise resolves so the new
+   * picks show up in the UI.
+   */
+  const editScope = useCallback(
+    async ({ credentialId, serviceType, initial }: EditArgs): Promise<void> => {
+      const connector = connectorDefinitions.find((c) => c.name === serviceType) as
+        | (ConnectorDefinition & { resources?: ResourceSpec[] })
+        | undefined;
+      const specs = connector?.resources ?? [];
+      if (!connector || specs.length === 0) return;
+      await prompt({
+        credentialId,
+        connectorLabel: connector.label,
+        specs,
+        initial: initial ?? null,
+      });
+    },
+    [connectorDefinitions, prompt],
+  );
+
+  return { promptIfScoped, editScope };
 }

@@ -2,7 +2,7 @@
 
 This is the day-to-day reference for working on Personas Desktop locally. If you're setting up for the first time, start with the [README](../README.md#prerequisites) for platform-specific prerequisites, then come back here.
 
-For the big-picture system overview, see [ARCHITECTURE.md](../ARCHITECTURE.md). For contribution rules, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+For the big-picture system overview, see [architecture/overview.md](../architecture/overview.md). For contribution rules, see [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ---
 
@@ -49,13 +49,13 @@ personas/
 ├── scripts/                # Build, i18n, check-budget, etc.
 ├── docs/                   # This directory — developer docs
 ├── .github/workflows/      # CI pipeline definitions
-├── ARCHITECTURE.md         # Top-level system overview
+├── docs/architecture/      # System overview and cross-cutting architecture docs
 ├── CONTRIBUTING.md         # How to contribute
 ├── README.md               # User-facing intro
 └── package.json
 ```
 
-The full layout with file counts is in [ARCHITECTURE.md](../ARCHITECTURE.md#top-level-shape).
+The current architecture entry point is [docs/architecture/README.md](../architecture/README.md).
 
 ---
 
@@ -167,7 +167,7 @@ See the [README i18n section](../README.md#internationalization-i18n) for the fu
 
 - **Logs** — the Rust backend uses `tracing`. In dev mode, log output streams to the terminal where `npm run tauri dev` is running. Adjust verbosity with `RUST_LOG=debug`.
 - **Per-execution logs** — every agent run writes a log file under the app-data directory. On Windows that's `%APPDATA%\com.personas.desktop\logs\`.
-- **Breakpoints** — `rust-analyzer` in VS Code can attach a debugger to the running Tauri process. See [docs/devops/guide-desktop-troubleshooting.md](./devops/guide-desktop-troubleshooting.md) for the full setup.
+- **Breakpoints** — `rust-analyzer` in VS Code can attach a debugger to the running Tauri process. See [desktop troubleshooting](../devops/guide-desktop-troubleshooting.md) for the full setup.
 
 ### IPC tracing
 
@@ -221,7 +221,7 @@ The `.claude/CLAUDE.md` file has a 9-step checklist under "Adding a New Integrat
 
 ## Troubleshooting
 
-Common issues and fixes live in [docs/devops/guide-desktop-troubleshooting.md](./devops/guide-desktop-troubleshooting.md). The highlights:
+Common issues and fixes live in [desktop troubleshooting](../devops/guide-desktop-troubleshooting.md). The highlights:
 
 - **`cargo metadata` fails** — Rust isn't installed or isn't on PATH. Restart your terminal.
 - **`clang not found` on Windows ARM64** — install LLVM via `winget install LLVM.LLVM`.
@@ -236,4 +236,4 @@ Common issues and fixes live in [docs/devops/guide-desktop-troubleshooting.md](.
 
 - **Small questions** — open a [Discussion](https://github.com/xkazm04/personas/discussions).
 - **Bugs** — open an issue with the Bug Report template.
-- **Security issues** — see [SECURITY.md](../SECURITY.md). Do not file a public issue.
+- **Security issues** — see [SECURITY.md](../../SECURITY.md). Do not file a public issue.

@@ -33,7 +33,6 @@ import type { TourSlice } from "./slices/system/tourSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
-import type { ViewModeSlice } from "./slices/system/viewModeSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
 import type { SetupSlice } from "./slices/system/setupSlice";
@@ -43,6 +42,7 @@ import type { ObsidianBrainSlice } from "./slices/system/obsidianBrainSlice";
 import type { ResearchLabSlice } from "./slices/system/researchLabSlice";
 import type { TwinSlice } from "./slices/system/twinSlice";
 import type { SimpleModeSlice } from "./slices/system/simpleModeSlice";
+import type { CompanionPluginSlice } from "./slices/system/companionPluginSlice";
 import type { ChatSlice } from "./slices/agents/chatSlice";
 import type { BackgroundChatSlice } from "./slices/agents/backgroundChatSlice";
 import type { MatrixBuildSlice } from "./slices/agents/matrixBuildSlice";
@@ -227,7 +227,6 @@ export type SystemStore = CoreState &
   GitLabSlice &
   OnboardingSlice &
   TourSlice &
-  ViewModeSlice &
   DevToolsSlice &
   NetworkSlice &
   SetupSlice &
@@ -236,5 +235,6 @@ export type SystemStore = CoreState &
   ObsidianBrainSlice &
   ResearchLabSlice &
   TwinSlice &
-  SimpleModeSlice;
+  SimpleModeSlice &
+  CompanionPluginSlice;
 

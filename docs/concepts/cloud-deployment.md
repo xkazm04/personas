@@ -414,7 +414,7 @@ This is the same prompt structure used by the desktop app, ported from the Rust 
 
 ## GitLab Integration
 
-See [GitLab Duo Agent Integration](gitlab-duo-agent-integration.md) for full GitLab documentation including:
+See [GitLab integration architecture](../architecture/gitlab-integration.md) for full GitLab documentation including:
 - Deploying personas as Duo Agents (desktop)
 - Credential provisioning to CI/CD variables
 - Webhook-driven execution (cloud)

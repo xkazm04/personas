@@ -48,7 +48,6 @@ import {
 
 import type { Persona } from '@/lib/bindings/Persona';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { useAgentStore } from '@/stores/agentStore';
@@ -97,7 +96,6 @@ export default function ConsoleVariant() {
   const summary = useSimpleSummary();
   const startOnboarding = useSystemStore((s) => s.startOnboarding);
   const setActiveSimpleTab = useSystemStore((s) => s.setActiveSimpleTab);
-  const setViewMode = useSystemStore((s) => s.setViewMode);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   // Zero-persona state: the whole surface becomes a welcome card.
@@ -111,7 +109,6 @@ export default function ConsoleVariant() {
   };
 
   const onReconnect = () => {
-    setViewMode(TIERS.TEAM);
     setSidebarSection('credentials');
   };
 

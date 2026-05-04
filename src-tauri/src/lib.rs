@@ -1806,6 +1806,12 @@ pub fn run() {
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
+            commands::companion::brain::companion_list_brain_items,
+            commands::companion::brain::companion_get_brain_item,
+            commands::companion::brain::companion_delete_brain_item,
+            commands::companion::feedback::companion_beta_flags,
+            commands::companion::feedback::companion_request_improvement,
+            commands::companion::voice::companion_tts,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

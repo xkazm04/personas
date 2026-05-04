@@ -16,6 +16,15 @@ use crate::AppState;
 pub struct SendTurnResult {
     pub user_episode_id: String,
     pub assistant_episode_id: String,
+    /// Quick-reply chips Athena offered on this turn. Empty when she
+    /// didn't emit any. Frontend renders them under the latest
+    /// assistant bubble until the next send fires.
+    pub quick_replies: Vec<String>,
+    /// Spoken summary suitable for ElevenLabs synthesis. Present when
+    /// voice playback is on AND Athena emitted a TTS line. Frontend
+    /// auto-plays this if voice is enabled, or stashes it as the
+    /// latest unread playback for the footer Play button.
+    pub tts_text: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -29,29 +38,37 @@ pub struct CompanionMessage {
 
 /// Send a user message; returns once Claude finishes. Streaming progress
 /// arrives on the `companion://stream` Tauri event channel.
+///
+/// `voice_enabled` controls whether Athena is asked to emit a `TTS:`
+/// line in her reply (frontend toggle in the Voice setup or chat
+/// toolbar).
 #[tauri::command]
 pub async fn companion_send_message(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
     message: String,
+    voice_enabled: Option<bool>,
 ) -> Result<SendTurnResult, AppError> {
     require_auth(&state).await?;
     let user_db = Arc::new(state.user_db.clone());
     let sys_db = Arc::new(state.db.clone());
     #[cfg(feature = "ml")]
     let embedder = state.embedding_manager.clone();
-    let (user_episode_id, assistant_episode_id) = session::send_turn(
+    let turn = session::send_turn(
         &app,
         user_db,
         sys_db,
         #[cfg(feature = "ml")]
         embedder,
         message,
+        voice_enabled.unwrap_or(false),
     )
     .await?;
     Ok(SendTurnResult {
-        user_episode_id,
-        assistant_episode_id,
+        user_episode_id: turn.user_episode_id,
+        assistant_episode_id: turn.assistant_episode_id,
+        quick_replies: turn.quick_replies,
+        tts_text: turn.tts_text,
     })
 }
 

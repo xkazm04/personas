@@ -1,25 +1,19 @@
 /**
  * ArenaPanelColosseum — directional prototype variant for ArenaPanel.
  *
- * Round-3 layout:
+ * Round-4 layout:
  *
- *   ┌─[marquee with torches at top corners]───────────────────────┐
- *   │ [use case list]    [persona + arc]    [conditions list]     │
- *   │     (left)             (center)           (right)           │
- *   └─[formula bar + "Begin the Match"]───────────────────────────┘
+ *   ┌─[marquee with torches + clickable use-case popover]─────────────┐
+ *   │ [persona standard]    [roster grid of row cards]    [conditions]│
+ *   │      (left)                  (center)                   (right) │
+ *   └─[formula bar + "Begin the Match"]──────────────────────────────┘
  *
- * The three acts below the stage (Blueprint → Chronicle) remain. The
- * Champion card now reports the persona's *effective model* (use-case
- * override → persona.model_profile → default) rather than persona
- * readiness, because readiness already lives in the stage's right rail.
- *
- * Extractable pieces (consider hoisting if this wins):
- *   - ArenaMarquee, Torch, StageScenery
- *   - UseCaseList, ConditionsList
- *   - PersonaStandard, ContenderArc, ModelBanner, InlinePips
- *   - MatchFormula, WaxSealButton
- *   - SectionHeader, ParchmentCard, StatPips
- *   - ChampionBanner, ChronicleScrollHeader
+ * The arc-of-banners has been retired in favour of a row-composed roster
+ * grid: each contender is a card with its sigil rendered as a semi-
+ * transparent backdrop, the model title prominent, and double-size
+ * cost/speed pips. The scheme scales to many more models without the
+ * arc collapsing. Use case selection now lives on the marquee subtitle
+ * as a popover (no more left "Ground" rail).
  */
 
 import { useEffect, useMemo } from 'react';
@@ -27,7 +21,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Shield, Flame, Trophy, Swords, Sparkles, Crown, Scroll,
   ScrollText, BookOpen, Zap, Cloud, HardDrive, Medal, Circle, Coins,
-  Sword, Feather,
+  Sword, Feather, ChevronDown, Check,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
@@ -38,26 +32,26 @@ import { useHealthCheck } from '@/features/agents/health';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ArenaHistory } from './ArenaHistory';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';
 
 /* ------------------------------------------------------------------ */
-/* Model heraldry — sigils + cost/speed pips + epithets               */
+/* Model heraldry — sigils + cost/speed pips                          */
 /* ------------------------------------------------------------------ */
 
 type ModelHeraldry = {
   sigil: LucideIcon;
   cost: 1 | 2 | 3;
   speed: 1 | 2 | 3;
-  epithet: string;
   houseIcon: LucideIcon;
   houseName: string;
 };
 
 const HERALDRY: Record<string, ModelHeraldry> = {
-  haiku:  { sigil: Zap,        cost: 1, speed: 3, epithet: 'the Swift',    houseIcon: Sparkles, houseName: 'Anthropic' },
-  sonnet: { sigil: ScrollText, cost: 2, speed: 2, epithet: 'the Balanced', houseIcon: Sparkles, houseName: 'Anthropic' },
-  opus:   { sigil: BookOpen,   cost: 3, speed: 1, epithet: 'the Scholar',  houseIcon: Sparkles, houseName: 'Anthropic' },
+  haiku:  { sigil: Zap,        cost: 1, speed: 3, houseIcon: Sparkles, houseName: 'Anthropic' },
+  sonnet: { sigil: ScrollText, cost: 2, speed: 2, houseIcon: Sparkles, houseName: 'Anthropic' },
+  opus:   { sigil: BookOpen,   cost: 3, speed: 1, houseIcon: Sparkles, houseName: 'Anthropic' },
 };
 
 function heraldryFor(id: string, provider: string): ModelHeraldry {
@@ -69,16 +63,13 @@ function heraldryFor(id: string, provider: string): ModelHeraldry {
       sigil: isLocal ? HardDrive : Cloud,
       cost: 1,
       speed: 2,
-      epithet: isLocal ? 'of the Hearth' : 'of the Cloud',
       houseIcon: isLocal ? HardDrive : Cloud,
       houseName: isLocal ? 'Ollama Local' : 'Ollama Cloud',
     };
   }
-  return { sigil: Sword, cost: 2, speed: 2, epithet: 'the Unknown', houseIcon: Shield, houseName: provider };
+  return { sigil: Sword, cost: 2, speed: 2, houseIcon: Shield, houseName: provider };
 }
 
-/** Arena roster: all locally-available contenders. Cloud presets live in
- *  a deeper drawer to keep the arc readable. */
 const ARENA_ROSTER: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_LOCAL_MODELS];
 
 /* ------------------------------------------------------------------ */
@@ -173,7 +164,6 @@ export function ArenaPanelColosseum() {
     : contenderCount === 0 ? t.agents.lab.select_model
     : '';
 
-  // Champion = effective model (use case override → persona.model_profile → default sonnet)
   const effectiveModel = useMemo(
     () => resolveEffectiveModel(selectedUseCase?.model_override ?? undefined, selectedPersona?.model_profile),
     [selectedUseCase?.model_override, selectedPersona?.model_profile],
@@ -198,76 +188,47 @@ export function ArenaPanelColosseum() {
     <div className="space-y-8">
       {/* ── ACT I : THE STAGE ────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/35 via-background/40 to-background/25">
-        {/* Torches pinned to TOP CORNERS so they don't collide with side rails */}
         <Torch side="left"  lit={canLaunch} />
         <Torch side="right" lit={canLaunch} />
 
         <ArenaMarquee
           personaName={selectedPersona?.name}
-          match={selectedUseCase?.title ?? t.agents.lab.all_use_cases}
+          selectedUseCase={selectedUseCase}
+          useCases={useCases}
+          onSelectUseCase={setSelectedUseCaseId}
+          allLabel={t.agents.lab.all_use_cases}
           ready={canLaunch}
         />
 
-        {/* 3-column stage body */}
-        <div className="relative px-4 sm:px-6 pb-6 pt-3 grid grid-cols-1 lg:grid-cols-[190px_minmax(0,1fr)_200px] gap-4">
-          {/* LEFT : use cases list */}
-          <UseCaseList
-            useCases={useCases}
-            selectedId={selectedUseCaseId}
-            onSelect={setSelectedUseCaseId}
-            allLabel={t.agents.lab.all_use_cases}
-          />
+        {/* Stage body: 3-column [persona | roster grid | conditions] */}
+        <div className="relative px-4 sm:px-6 pb-5 pt-2 grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_200px] gap-4">
+          {/* LEFT : persona standard */}
+          <div className="flex justify-center lg:justify-start lg:pt-2">
+            <PersonaStandard
+              name={selectedPersona?.name ?? null}
+              trustScore={selectedPersona?.trust_score ?? 0}
+              hasPrompt={hasPrompt}
+              toolCount={toolCount}
+              iconToken={selectedPersona?.icon ?? null}
+              color={selectedPersona?.color ?? null}
+            />
+          </div>
 
-          {/* CENTER : SVG scenery + persona + contender arc */}
-          <div className="relative min-h-[520px]">
-            <StageScenery />
-            <div className="relative mx-auto h-[520px] w-full max-w-[860px]">
-              {/* House crests — anchored to column bases, identifying the flanks */}
-              <HouseCrest side="left"  Icon={Sparkles} label="Anthropic" />
-              <HouseCrest side="right" Icon={HardDrive} label="Ollama" />
-
-              {/* Persona ground halo — radial light pooling under the standard */}
-              <PersonaGroundHalo arrayed={hasPrompt && hasTools} />
-
-              {/* Contender arc — banners hang from the top rope */}
-              {ARENA_ROSTER.map((m, i) => {
-                const total = ARENA_ROSTER.length;
-                // Upper arc -160° → -20°, larger radius gives generous chord between adjacent banners
-                const deg = -160 + (i * 140) / Math.max(total - 1, 1);
-                const rad = (deg * Math.PI) / 180;
-                const rx = 350;
-                const ry = 90;
-                const x = Math.cos(rad) * rx;
-                const y = Math.sin(rad) * ry;
-                const isSelected = selectedModels.has(m.id);
-                const heraldry = heraldryFor(m.id, m.provider);
-                return (
-                  <ModelBanner
-                    key={m.id}
-                    label={m.label}
-                    selected={isSelected}
-                    heraldry={heraldry}
-                    onToggle={() => toggleModel(m.id)}
-                    style={{
-                      left: `calc(50% + ${x}px)`,
-                      top: `calc(24% + ${y}px)`,
-                    }}
-                  />
-                );
-              })}
-
-              {/* Persona standard — pinned to lower half, clear of the arc */}
-              <div className="absolute left-1/2 top-[72%] -translate-x-1/2 -translate-y-1/2 z-10">
-                <PersonaStandard
-                  name={selectedPersona?.name ?? null}
-                  trustScore={selectedPersona?.trust_score ?? 0}
-                  hasPrompt={hasPrompt}
-                  toolCount={toolCount}
-                  iconToken={selectedPersona?.icon ?? null}
-                  color={selectedPersona?.color ?? null}
+          {/* CENTER : Roster grid — row cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 content-start">
+            {ARENA_ROSTER.map((m) => {
+              const isSelected = selectedModels.has(m.id);
+              const heraldry = heraldryFor(m.id, m.provider);
+              return (
+                <ModelRowCard
+                  key={m.id}
+                  option={m}
+                  selected={isSelected}
+                  heraldry={heraldry}
+                  onToggle={() => toggleModel(m.id)}
                 />
-              </div>
-            </div>
+              );
+            })}
           </div>
 
           {/* RIGHT : match conditions list */}
@@ -278,10 +239,6 @@ export function ArenaPanelColosseum() {
             trustScore={selectedPersona?.trust_score ?? 0}
             trustLevel={selectedPersona?.trust_level ?? 'unverified'}
             scenarioCount={scenarioCount}
-            warnings={{
-              prompt: !hasPrompt ? t.agents.lab.no_prompt_warning : null,
-              tools: !hasTools ? t.agents.lab.no_tools_warning : null,
-            }}
           />
         </div>
 
@@ -339,9 +296,8 @@ export function ArenaPanelColosseum() {
                         <span className="flex items-center justify-center w-7 h-7 rounded-card border border-primary/25 bg-primary/10">
                           <Sigil className="w-4 h-4 text-primary" strokeWidth={1.75} />
                         </span>
-                        <span className="flex-1 min-w-0">
-                          <span className="typo-body-lg font-medium text-foreground">{m.label}</span>
-                          <span className="typo-body text-foreground/90 italic ml-1.5">{h.epithet}</span>
+                        <span className="flex-1 min-w-0 typo-body-lg font-medium text-foreground truncate">
+                          {m.label}
                         </span>
                         <StatPips label="cost" level={h.cost} icon={Coins} />
                         <StatPips label="speed" level={h.speed} icon={Zap} />
@@ -446,25 +402,46 @@ export function ArenaPanelColosseum() {
 }
 
 /* ================================================================== */
-/* Stage header + scenery                                              */
+/* Stage header — marquee + use-case popover                           */
 /* ================================================================== */
 
+type UseCaseLite = { id: string; title: string };
+
 function ArenaMarquee({
-  personaName, match, ready,
-}: { personaName: string | undefined; match: string; ready: boolean }) {
+  personaName, selectedUseCase, useCases, onSelectUseCase, allLabel, ready,
+}: {
+  personaName: string | undefined;
+  selectedUseCase: UseCaseLite | null;
+  useCases: UseCaseLite[];
+  onSelectUseCase: (id: string | null) => void;
+  allLabel: string;
+  ready: boolean;
+}) {
   return (
     <div className="relative px-16 pt-6 pb-3 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1.5 text-primary">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-1.5 text-primary flex-shrink-0">
           <Swords className="w-5 h-5" />
           <Flame className={`w-4 h-4 ${ready ? 'text-amber-300' : 'text-foreground'}`} fill="currentColor" strokeWidth={1.25} />
         </div>
-        <div>
+        <div className="min-w-0">
           <h3 className="typo-heading-lg font-semibold text-foreground tracking-wide">The Arena</h3>
-          <p className="typo-body-lg text-foreground">
-            {personaName
-              ? <>A trial for <span className="text-foreground font-medium">{personaName}</span> — <span className="italic text-primary/80">{match}</span></>
-              : 'Select a persona to open the gates'}
+          <p className="typo-body-lg text-foreground flex flex-wrap items-center gap-1">
+            {personaName ? (
+              <>
+                <span>A trial for</span>
+                <span className="text-foreground font-medium">{personaName}</span>
+                <span>—</span>
+                <UseCasePopover
+                  selectedUseCase={selectedUseCase}
+                  useCases={useCases}
+                  onSelect={onSelectUseCase}
+                  allLabel={allLabel}
+                />
+              </>
+            ) : (
+              <span>Select a persona to open the gates</span>
+            )}
           </p>
         </div>
       </div>
@@ -482,113 +459,70 @@ function ArenaMarquee({
   );
 }
 
-function StageScenery() {
-  // Richer amphitheater: layered stone tiers with radial sector seams, paired
-  // colonnades at the rim, a defined duel circle with chalk markings, and a
-  // soft volumetric haze over the sand. All currentColor / primary-token
-  // so it tints with the theme.
+function UseCasePopover({
+  selectedUseCase, useCases, onSelect, allLabel,
+}: {
+  selectedUseCase: UseCaseLite | null;
+  useCases: UseCaseLite[];
+  onSelect: (id: string | null) => void;
+  allLabel: string;
+}) {
+  const label = selectedUseCase?.title ?? allLabel;
+  const options = useMemo(
+    () => [{ value: '__all__', label: allLabel }, ...useCases.map((uc) => ({ value: uc.id, label: uc.title }))],
+    [allLabel, useCases],
+  );
+  const activeValue = selectedUseCase?.id ?? '__all__';
+
   return (
-    <svg
-      viewBox="0 0 800 500"
-      preserveAspectRatio="xMidYMid meet"
-      className="pointer-events-none absolute inset-0 h-full w-full text-primary"
-      aria-hidden
+    <Listbox
+      itemCount={options.length}
+      onSelectFocused={(idx) => {
+        const opt = options[idx];
+        if (opt) onSelect(opt.value === '__all__' ? null : opt.value);
+      }}
+      ariaLabel="Select use case"
+      renderTrigger={({ isOpen, toggle }) => (
+        <button
+          type="button"
+          onClick={toggle}
+          data-testid="arena-usecase-popover-trigger"
+          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-interactive italic transition-colors border focus-ring ${
+            isOpen
+              ? 'bg-primary/15 border-primary/35 text-primary'
+              : 'bg-primary/5 border-primary/20 text-primary/85 hover:bg-primary/10 hover:text-primary'
+          }`}
+        >
+          <span className="truncate max-w-[220px]">{label}</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+      )}
     >
-      <defs>
-        <radialGradient id="arena-sand" cx="50%" cy="76%" r="48%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.10)" />
-          <stop offset="55%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.03)" />
-          <stop offset="100%" stopColor="transparent" />
-        </radialGradient>
-        <radialGradient id="arena-duel-ring" cx="50%" cy="50%" r="50%">
-          <stop offset="70%" stopColor="transparent" />
-          <stop offset="92%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.10)" />
-          <stop offset="100%" stopColor="transparent" />
-        </radialGradient>
-        <linearGradient id="arena-sky" x1="50%" y1="0%" x2="50%" y2="100%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.05)" />
-          <stop offset="70%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.01)" />
-          <stop offset="100%" stopColor="transparent" />
-        </linearGradient>
-        <linearGradient id="arena-pillar" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%"  stopColor="rgba(var(--color-primary-rgb,180,140,255),0.14)" />
-          <stop offset="100%" stopColor="rgba(var(--color-primary-rgb,180,140,255),0.01)" />
-        </linearGradient>
-        <filter id="arena-soft" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.5" />
-        </filter>
-      </defs>
-
-      {/* Sky wash — subtle */}
-      <rect x="0" y="0" width="800" height="290" fill="url(#arena-sky)" />
-
-      {/* Distant colonnade silhouettes — softer */}
-      <g opacity="0.25" filter="url(#arena-soft)">
-        {[50, 92, 134, 176, 218].map((x) => (
-          <g key={`L-${x}`}>
-            <rect x={x} y="80" width="14" height="170" fill="url(#arena-pillar)" />
-            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.18" />
-            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.18" />
-          </g>
-        ))}
-        {[582, 624, 666, 708, 750].map((x) => (
-          <g key={`R-${x}`}>
-            <rect x={x} y="80" width="14" height="170" fill="url(#arena-pillar)" />
-            <rect x={x - 3} y="76" width="20" height="8" fill="currentColor" opacity="0.18" />
-            <rect x={x - 2} y="246" width="18" height="6" fill="currentColor" opacity="0.18" />
-          </g>
-        ))}
-      </g>
-
-      {/* Connecting entablature / architrave band behind the colonnades — quieter */}
-      <rect x="20" y="70" width="760" height="4" fill="currentColor" opacity="0.08" />
-      <rect x="20" y="258" width="760" height="3" fill="currentColor" opacity="0.06" />
-
-      {/* Stone tier rings (bleachers) — much softer so cards stand out */}
-      <g stroke="currentColor" fill="none">
-        <ellipse cx="400" cy="430" rx="370" ry="140" strokeOpacity="0.03" />
-        <ellipse cx="400" cy="430" rx="320" ry="120" strokeOpacity="0.04" />
-        <ellipse cx="400" cy="430" rx="272" ry="100" strokeOpacity="0.06" />
-        <ellipse cx="400" cy="430" rx="228" ry="82"  strokeOpacity="0.08" />
-        <ellipse cx="400" cy="430" rx="190" ry="68"  strokeOpacity="0.10" />
-      </g>
-
-      {/* Radial sector seams — barely there */}
-      <g stroke="currentColor" strokeOpacity="0.03" strokeWidth="1">
-        {Array.from({ length: 10 }).map((_, i) => {
-          const a = -Math.PI + (i * Math.PI) / 9;
-          const x1 = 400 + Math.cos(a) * 190;
-          const y1 = 430 + Math.sin(a) * 68;
-          const x2 = 400 + Math.cos(a) * 370;
-          const y2 = 430 + Math.sin(a) * 140;
-          return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} />;
-        })}
-      </g>
-
-      {/* Sand floor */}
-      <ellipse cx="400" cy="430" rx="190" ry="68" fill="url(#arena-sand)" />
-
-      {/* Duel chalk circle */}
-      <ellipse cx="400" cy="430" rx="108" ry="38" fill="url(#arena-duel-ring)" />
-      <ellipse
-        cx="400" cy="430" rx="108" ry="38"
-        fill="none" stroke="currentColor" strokeOpacity="0.16"
-        strokeDasharray="3 5" strokeWidth="1"
-      />
-
-      {/* Center mark — crossed swords on sand */}
-      <g stroke="currentColor" strokeOpacity="0.10" strokeWidth="1.5" strokeLinecap="round">
-        <line x1="380" y1="418" x2="420" y2="442" />
-        <line x1="420" y1="418" x2="380" y2="442" />
-      </g>
-
-      {/* Soft floor haze */}
-      <ellipse
-        cx="400" cy="420" rx="300" ry="16"
-        fill="rgba(var(--color-primary-rgb,180,140,255),0.06)"
-        filter="url(#arena-soft)"
-      />
-    </svg>
+      {({ close, focusIndex }) => (
+        <div className="py-1 bg-background border border-primary/20 rounded-card shadow-elevation-3 mt-1 max-h-60 overflow-y-auto min-w-[240px]">
+          {options.map((opt, i) => {
+            const active = opt.value === activeValue;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => {
+                  onSelect(opt.value === '__all__' ? null : opt.value);
+                  close();
+                }}
+                className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${
+                  focusIndex === i ? 'bg-primary/15' : ''
+                } ${
+                  active ? 'text-primary font-medium' : 'text-foreground hover:bg-secondary/30'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </Listbox>
   );
 }
 
@@ -614,44 +548,8 @@ function Torch({ side, lit }: { side: 'left' | 'right'; lit: boolean }) {
   );
 }
 
-/* House crest — small medallion on the left/right column base, marking
- * which faction's pillar it is. Decorative; not interactive. */
-function HouseCrest({ side, Icon, label }: { side: 'left' | 'right'; Icon: LucideIcon; label: string }) {
-  return (
-    <div
-      aria-hidden
-      className={`pointer-events-none absolute z-[5] ${side === 'left' ? 'left-2' : 'right-2'} bottom-12 flex flex-col items-center gap-1`}
-    >
-      <div className="relative w-10 h-10 rounded-full border-2 border-primary/35 bg-gradient-to-br from-primary/25 to-background/40 shadow-elevation-2 flex items-center justify-center">
-        <span aria-hidden className="absolute inset-1 rounded-full border border-primary/15" />
-        <Icon className="relative w-4 h-4 text-foreground/90" strokeWidth={1.75} />
-      </div>
-      <span className="typo-label text-foreground/85">{label}</span>
-    </div>
-  );
-}
-
-/* Soft halo on the sand around the persona standard — brighter when the
- * champion is fully arrayed, dimmer otherwise. */
-function PersonaGroundHalo({ arrayed }: { arrayed: boolean }) {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute left-1/2 top-[78%] -translate-x-1/2 -translate-y-1/2 z-0"
-      style={{
-        width: '320px',
-        height: '120px',
-        background: arrayed
-          ? 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(var(--color-primary-rgb,180,140,255),0.28) 0%, rgba(var(--color-primary-rgb,180,140,255),0.08) 50%, transparent 80%)'
-          : 'radial-gradient(ellipse 100% 100% at 50% 50%, rgba(var(--color-primary-rgb,180,140,255),0.10) 0%, transparent 70%)',
-        filter: 'blur(2px)',
-      }}
-    />
-  );
-}
-
 /* ================================================================== */
-/* Stage center — persona + contenders                                 */
+/* Persona standard                                                    */
 /* ================================================================== */
 
 function PersonaStandard({
@@ -700,7 +598,6 @@ function PersonaStandard({
       <div className="relative -mt-0.5 flex flex-col items-center">
         <div className={`h-1.5 w-[188px] rounded-sm bg-gradient-to-r from-primary/10 via-primary/30 to-primary/10 border-x border-primary/20`} />
         <div className={`h-3 w-[172px] bg-gradient-to-b from-primary/15 to-primary/[0.02] border-x border-primary/15 border-b border-primary/10`} />
-        {/* Soft cast shadow under plinth */}
         <div className="h-1 w-[150px] rounded-full bg-primary/12 blur-sm mt-0.5" />
       </div>
 
@@ -713,150 +610,100 @@ function PersonaStandard({
   );
 }
 
-function ModelBanner({
-  label, selected, heraldry, onToggle, style,
+/* ================================================================== */
+/* Model row card — sigil-as-backdrop, big stats                       */
+/* ================================================================== */
+
+function ModelRowCard({
+  option, selected, heraldry, onToggle,
 }: {
-  label: string;
+  option: ModelOption;
   selected: boolean;
   heraldry: ModelHeraldry;
   onToggle: () => void;
-  style: React.CSSProperties;
 }) {
   const Sigil = heraldry.sigil;
+  const HouseIcon = heraldry.houseIcon;
   return (
     <button
       type="button"
       onClick={onToggle}
-      style={style}
       aria-pressed={selected}
-      className="absolute -translate-x-1/2 -translate-y-1/2 group flex flex-col items-center w-[148px] focus:outline-none"
+      data-testid={`arena-model-card-${option.id}`}
+      className={`relative overflow-hidden rounded-card border-2 px-3.5 py-3 text-left transition-all focus-ring ${
+        selected
+          ? 'bg-primary/15 border-primary/55 shadow-elevation-3 shadow-primary/15'
+          : 'bg-secondary/40 border-primary/20 hover:bg-secondary/60 hover:border-primary/40 hover:shadow-elevation-2'
+      }`}
     >
-      {/* Pennant atop the banner */}
-      <div className="relative h-4 w-[20px]">
-        <div
-          aria-hidden
-          className={`absolute inset-x-0 top-0 h-4 transition-colors ${
-            selected ? 'bg-primary' : 'bg-primary/55 group-hover:bg-primary/80'
-          }`}
-          style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%)' }}
-        />
-        <div className={`absolute left-1/2 -translate-x-1/2 top-0 h-4 w-px ${selected ? 'bg-primary' : 'bg-primary/65'}`} />
-      </div>
-
-      {/* Banner body — solid, well-defined, with full border + elevation */}
-      <div
-        className={`relative w-[140px] px-3 pt-4 pb-7 border-2 rounded-card transition-all ${
-          selected
-            ? 'bg-primary/25 border-primary/70 shadow-elevation-3 shadow-primary/25 ring-1 ring-primary/30'
-            : 'bg-secondary/85 border-primary/35 shadow-elevation-2 group-hover:bg-secondary group-hover:border-primary/55 group-hover:shadow-elevation-3'
+      {/* Sigil — semi-transparent backdrop */}
+      <Sigil
+        aria-hidden
+        className={`pointer-events-none absolute -right-3 -bottom-3 w-24 h-24 transition-colors ${
+          selected ? 'text-primary/20' : 'text-foreground/[0.06]'
         }`}
-      >
-        {/* Sigil medallion */}
-        <div className={`relative mx-auto w-14 h-14 rounded-full flex items-center justify-center border-2 ${
-          selected
-            ? 'border-primary bg-gradient-to-br from-primary/35 to-background/50'
-            : 'border-primary/45 bg-background/70'
-        }`}>
-          <Sigil className={`w-7 h-7 ${selected ? 'text-foreground' : 'text-foreground'}`} strokeWidth={1.75} />
-        </div>
+        strokeWidth={1}
+      />
 
-        {/* Model name */}
-        <p className="typo-body-lg font-semibold text-center mt-2 text-foreground truncate">
-          {label}
-        </p>
-        {/* Epithet */}
-        <p className={`typo-caption italic text-center truncate mt-0.5 ${selected ? 'text-primary' : 'text-foreground/90'}`}>
-          {heraldry.epithet}
-        </p>
+      {/* Selected check */}
+      {selected && (
+        <span
+          aria-hidden
+          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-[0_0_8px_rgba(var(--color-primary-rgb,180,140,255),0.6)]"
+        >
+          <Check className="w-3 h-3 text-background" strokeWidth={3} />
+        </span>
+      )}
 
-        {/* Cost / speed row */}
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <BannerPips level={heraldry.cost}  icon={Coins} active={selected} title="cost" />
-          <span className={`h-3 w-px ${selected ? 'bg-primary/55' : 'bg-primary/30'}`} />
-          <BannerPips level={heraldry.speed} icon={Zap}   active={selected} title="speed" />
-        </div>
+      {/* House tag */}
+      <div className="relative flex items-center gap-1.5 typo-label text-foreground/75">
+        <HouseIcon className="w-3 h-3" strokeWidth={1.75} />
+        <span className="truncate">{heraldry.houseName}</span>
       </div>
 
-      {/* Selection pin under banner */}
-      {selected && (
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-primary shadow-[0_0_12px_rgba(var(--color-primary-rgb,180,140,255),1)]" />
-      )}
+      {/* Model name */}
+      <p className="relative typo-heading text-foreground font-semibold mt-1 truncate">
+        {option.label}
+      </p>
+
+      {/* Stats — double-size pips for cost & speed */}
+      <div className="relative mt-3 flex items-center gap-4">
+        <BigStatPips label="cost"  level={heraldry.cost}  icon={Coins} active={selected} />
+        <span className={`h-5 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
+        <BigStatPips label="speed" level={heraldry.speed} icon={Zap}   active={selected} />
+      </div>
     </button>
   );
 }
 
-function BannerPips({ level, icon: Icon, active, title }: { level: number; icon: LucideIcon; active: boolean; title: string }) {
+function BigStatPips({
+  label, level, icon: Icon, active,
+}: { label: string; level: number; icon: LucideIcon; active: boolean }) {
   return (
-    <span className="flex items-center gap-0.5" title={`${title}: ${level}/3`}>
-      <Icon className={`w-3 h-3 ${active ? 'text-primary' : 'text-foreground/90'}`} strokeWidth={2} />
-      {[1, 2, 3].map((i) => (
-        <span
-          key={i}
-          className={`inline-block w-[6px] h-[6px] rounded-full ${
-            i <= level
-              ? active ? 'bg-primary' : 'bg-foreground/85'
-              : active ? 'bg-primary/30' : 'bg-foreground/25'
-          }`}
-        />
-      ))}
+    <span className="flex flex-col gap-1 leading-none" title={`${label}: ${level}/3`}>
+      <span className="flex items-center gap-1.5">
+        <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-foreground/85'}`} strokeWidth={1.75} />
+        <span className="flex items-center gap-1">
+          {[1, 2, 3].map((i) => (
+            <span
+              key={i}
+              className={`inline-block w-3 h-3 rounded-full ${
+                i <= level
+                  ? active ? 'bg-primary' : 'bg-foreground/85'
+                  : active ? 'bg-primary/25' : 'bg-foreground/15'
+              }`}
+            />
+          ))}
+        </span>
+      </span>
+      <span className="typo-label text-foreground/75 uppercase tracking-wider">{label}</span>
     </span>
   );
 }
 
 /* ================================================================== */
-/* Stage side rails — use case list + conditions                       */
+/* Conditions rail                                                     */
 /* ================================================================== */
-
-type UseCaseLite = { id: string; title: string };
-function UseCaseList({
-  useCases, selectedId, onSelect, allLabel,
-}: {
-  useCases: UseCaseLite[];
-  selectedId: string | null;
-  onSelect: (id: string | null) => void;
-  allLabel: string;
-}) {
-  const effective = selectedId ?? '__all__';
-  return (
-    <aside className="rounded-card border border-primary/20 bg-background/50 backdrop-blur-sm">
-      <div className="px-3 py-2 border-b border-primary/15">
-        <span className="typo-label text-primary/80">The Ground</span>
-      </div>
-      <div className="p-2 space-y-1 lg:max-h-[400px] lg:overflow-y-auto">
-        <UseCaseRow active={effective === '__all__'} onClick={() => onSelect(null)}>{allLabel}</UseCaseRow>
-        {useCases.length === 0 ? (
-          <p className="typo-body italic text-foreground/90 px-2 py-1">no ground authored</p>
-        ) : (
-          useCases.map((uc) => (
-            <UseCaseRow key={uc.id} active={uc.id === effective} onClick={() => onSelect(uc.id)}>
-              {uc.title}
-            </UseCaseRow>
-          ))
-        )}
-      </div>
-    </aside>
-  );
-}
-
-function UseCaseRow({
-  active, onClick, children,
-}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  const title = typeof children === 'string' ? children : undefined;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title}
-      className={`w-full text-left px-2.5 py-1.5 rounded-interactive border typo-body transition-colors truncate ${
-        active
-          ? 'bg-primary/15 border-primary/35 text-foreground font-medium'
-          : 'bg-transparent border-transparent text-foreground/90 hover:bg-background/50 hover:text-foreground'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
 
 function ConditionsList({
   hasPrompt, hasTools, toolCount, trustScore, trustLevel, scenarioCount,
@@ -867,14 +714,13 @@ function ConditionsList({
   trustScore: number;
   trustLevel: string;
   scenarioCount: number;
-  warnings: { prompt: string | null; tools: string | null };
 }) {
   return (
-    <aside className="rounded-card border border-primary/20 bg-background/50 backdrop-blur-sm">
+    <aside className="rounded-card border border-primary/20 bg-background/50 backdrop-blur-sm self-start">
       <div className="px-3 py-2 border-b border-primary/15">
         <span className="typo-label text-primary/80">Conditions</span>
       </div>
-      <ul className="p-2 space-y-1 lg:max-h-[400px] lg:overflow-y-auto">
+      <ul className="p-2 space-y-1">
         <ConditionRow tone={hasPrompt ? 'ok' : 'warn'} label={hasPrompt ? 'Battle plan drawn' : 'No battle plan'} />
         <ConditionRow
           tone={hasTools ? 'ok' : 'warn'}
@@ -1066,12 +912,7 @@ function ChampionCard({
             <Sigil className="w-6 h-6 text-foreground" strokeWidth={1.75} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="typo-heading text-foreground">
-              {modelLabel}
-              {heraldry.epithet && (
-                <span className="italic text-foreground/90 font-normal ml-1.5">{heraldry.epithet}</span>
-              )}
-            </p>
+            <p className="typo-heading text-foreground truncate">{modelLabel}</p>
             <p className="typo-body text-foreground/90 mt-0.5">{sourceLabel}</p>
           </div>
         </div>
@@ -1122,8 +963,8 @@ function StandingChampionBanner({
             <Crown className="w-3.5 h-3.5" fill="currentColor" />
             Standing Champion
           </p>
-          <p className="typo-heading-lg font-semibold text-foreground capitalize mt-0.5">
-            {champion.model} <span className="italic text-foreground/90 font-normal">{heraldry.epithet}</span>
+          <p className="typo-heading-lg font-semibold text-foreground capitalize mt-0.5 truncate">
+            {champion.model}
           </p>
           <p className="typo-body text-foreground/90">
             {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} judged match{champion.total === 1 ? '' : 'es'} · {totalRuns} run{totalRuns === 1 ? '' : 's'} logged

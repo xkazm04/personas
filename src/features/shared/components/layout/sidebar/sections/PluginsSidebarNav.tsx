@@ -1,7 +1,8 @@
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { ArtistTab, DevToolsTab, TwinTab } from '@/lib/types/types';
-import { artistItems, devToolsItems, researchLabItems, twinItems } from '../sidebarData';
+import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
+import { artistItems, companionItems, devToolsItems, researchLabItems, twinItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function PluginsSidebarNav() {
@@ -18,6 +19,8 @@ export function PluginsSidebarNav() {
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const twinProfiles = useSystemStore((s) => s.twinProfiles);
+  const companionPluginTab = useSystemStore((s) => s.companionPluginTab);
+  const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -197,6 +200,44 @@ export function PluginsSidebarNav() {
                     onClick={() => setTwinTab(item.id as TwinTab)}
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       twinTab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                    }`}
+                  >
+                    {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Companion (Athena) */}
+        {enabledPlugins.has('companion') && (
+          <div className="space-y-1">
+            <button
+              onClick={() => setPluginTab('companion')}
+              aria-current={pluginTab === 'companion' ? 'page' : undefined}
+              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                pluginTab === 'companion'
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+              }`}
+            >
+              <Bot className="w-4 h-4 flex-shrink-0" />
+              Companion
+            </button>
+            {pluginTab === 'companion' && (
+              <div className="ml-4 space-y-0.5">
+                {companionItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() =>
+                      setCompanionPluginTab(item.id as CompanionPluginTab)
+                    }
+                    className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
+                      companionPluginTab === item.id
                         ? 'bg-primary/10 text-primary'
                         : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
                     }`}

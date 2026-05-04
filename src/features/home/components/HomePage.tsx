@@ -5,6 +5,7 @@ import HomeWelcome from '@/features/home/components/HomeWelcome';
 
 const HomeReleases = lazy(() => import('@/features/home/components/releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
+const Cockpit = lazy(() => import('@/features/simple-mode'));
 
 
 export default function HomePage() {
@@ -20,6 +21,8 @@ export default function HomePage() {
     >
       {showSystemCheck ? (
         <SystemHealthPanel />
+      ) : homeTab === 'cockpit' ? (
+        <Suspense fallback={fallback}><Cockpit /></Suspense>
       ) : homeTab === 'roadmap' ? (
         <Suspense fallback={fallback}><HomeReleases /></Suspense>
       ) : homeTab === 'learning' ? (

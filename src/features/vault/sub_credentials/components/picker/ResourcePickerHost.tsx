@@ -22,6 +22,7 @@ export function ResourcePickerHost() {
       credentialId={active.credentialId}
       connectorLabel={active.connectorLabel}
       specs={active.specs}
+      initial={active.initial ?? null}
       onClose={close}
     />
   );

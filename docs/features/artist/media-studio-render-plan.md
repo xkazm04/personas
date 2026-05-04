@@ -1,7 +1,7 @@
 # Media Studio — RenderPlan IR
 
 **Status:** Proposal, ready for implementation
-**Related docs:** `docs/concepts/media-studio-architecture.md` (existing architecture — read first)
+**Related docs:** `docs/features/artist/media-studio-architecture.md` (existing architecture; read first)
 **Scope:** introduce a shared intermediate representation between `Composition` and the two renderers (browser preview + FFmpeg export). Does **not** change any API surface, Tauri command, or event name visible to users or external callers.
 
 ---
@@ -10,7 +10,7 @@
 
 ### Required pre-reading, in order
 
-1. `docs/concepts/media-studio-architecture.md` — understand the current dual-stack model, the playback engine, and the parity matrix. **Especially** §"Effect model & parity matrix" and §"Loudness normalization".
+1. `docs/features/artist/media-studio-architecture.md` — understand the current dual-stack model, the playback engine, and the parity matrix. **Especially** §"Effect model & parity matrix" and §"Loudness normalization".
 2. `src/features/plugins/artist/sub_media_studio/types.ts` — current `Composition` / `TimelineItem` shape. **This is unchanged by this spec.**
 3. `src/features/plugins/artist/sub_media_studio/CompositionPreview.tsx` — current preview implementation, esp. `effectiveVideoFades`, `loudnormGain`, `fadeOpacity`.
 4. `src-tauri/src/commands/artist/ffmpeg.rs` — current export implementation, esp. `build_ffmpeg_args` and `artist_export_composition`.
@@ -691,7 +691,7 @@ Fixtures to ship with PR-2 minimum:
 
 ### Schema version compatibility
 
-`docs/concepts/render-plan-fixtures/v1/golden-*.json` — one golden file per representative composition. CI deserializes each golden into current `RenderPlan` types. Any field-addition/rename breaks this test and forces a `schemaVersion` bump + migration.
+`docs/tests/fixtures/render-plan/v1/golden-*.json` — one golden file per representative composition. CI deserializes each golden into current `RenderPlan` types. Any field-addition/rename breaks this test and forces a `schemaVersion` bump + migration.
 
 ---
 
@@ -708,7 +708,7 @@ Three incremental PRs. Each is shippable on its own.
 - `src-tauri/src/engine/render_plan/tests.rs` — proptest + golden files
 - `src-tauri/Cargo.toml` — add `proptest = { version = "1", optional = true }` under `[dev-dependencies]`
 - `src/lib/bindings/RenderPlan.ts` et al. — generated, committed
-- `docs/concepts/render-plan-fixtures/v1/golden-*.json` — initial golden set
+- `docs/tests/fixtures/render-plan/v1/golden-*.json` — initial golden set
 
 **Files modified:**
 - `src-tauri/src/engine/mod.rs` — `pub mod render_plan;`
@@ -736,7 +736,7 @@ Three incremental PRs. Each is shippable on its own.
 - `tests/render_plan_export_parity.rs` (or similar) — golden FFmpeg args tests. For each fixture composition, serialize the emitted `Vec<String>` and diff against a committed baseline.
 
 **Acceptance criteria:**
-- Every fixture in `docs/concepts/render-plan-fixtures/v1/` exports identical (or intentionally-different-with-reason) FFmpeg args to the pre-PR baseline.
+- Every fixture in `docs/tests/fixtures/render-plan/v1/` exports identical (or intentionally-different-with-reason) FFmpeg args to the pre-PR baseline.
 - End-to-end export in the running app produces visually identical MP4s for the same compositions as before (manual QA on the 7 fixture compositions).
 - No change to any Tauri event, no change to `artist_export_composition`'s signature.
 

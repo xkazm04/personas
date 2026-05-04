@@ -180,5 +180,5 @@ The three pillars of the persona platform:
 - `docs/HANDOFF-dynamic-discovery.md` — April 13–14 handoff covering
   the dynamic discovery engine rollout, alias map, Focus variant, and
   the Wave 3–6 uncommitted changes
-- `docs/arch-persona-matrix-build.md` — separate docs on the build
+- `docs/architecture/persona-matrix-build.md` — separate docs on the build
   session / matrix state machine that adoption eventually feeds into

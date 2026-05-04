@@ -13,7 +13,7 @@
 Built with **Tauri 2** (Rust) and **React 19** (TypeScript).
 
 **Looking for...**
-[Features](#key-features) · [Quickstart](#getting-started) · [Architecture](./ARCHITECTURE.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
+[Features](#key-features) · [Quickstart](#getting-started) · [Architecture](./docs/architecture/README.md) · [Docs](./docs/README.md) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md) · [Changelog](./CHANGELOG.md)
 
 ---
 
@@ -346,7 +346,7 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 
 For end-to-end build documentation (architecture differences, ARM64 vs x64
 on Windows, codegen pipeline, profiles, ONNX Runtime bundling, Android setup),
-see **[docs/BUILD.md](./docs/BUILD.md)**.
+see **[docs/development/build.md](./docs/development/build.md)**.
 
 ## Project Structure
 
@@ -525,8 +525,9 @@ This is expected — Cargo compiles ~200+ Rust crates on the first build. Subseq
 
 New to the project? Start here:
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — one-page system overview: frontend, backend, execution path, data layer, security model
-- **[docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)** — day-to-day dev loop: running locally, testing, debugging, common tasks
+- **[docs/README.md](./docs/README.md)** — documentation entry point and maintenance rules
+- **[docs/architecture](./docs/architecture/README.md)** — system overview, frontend/backend boundaries, execution path, data layer, security model
+- **[docs/development](./docs/development/README.md)** — day-to-day dev loop: running locally, testing, debugging, common tasks
 - **[CONTRIBUTING.md](./CONTRIBUTING.md)** — coding standards, PR workflow, commit style
 - **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** — community standards (Contributor Covenant v2.1)
 - **[SECURITY.md](./SECURITY.md)** — vulnerability disclosure policy

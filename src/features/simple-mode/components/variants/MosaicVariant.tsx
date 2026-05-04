@@ -38,7 +38,6 @@ import {
 import { Button } from '@/features/shared/components/buttons';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import { useAgentStore } from '@/stores/agentStore';
@@ -123,7 +122,6 @@ export default function MosaicVariant() {
   const summary = useSimpleSummary();
   const startOnboarding = useSystemStore((s) => s.startOnboarding);
   const setActiveSimpleTab = useSystemStore((s) => s.setActiveSimpleTab);
-  const setViewMode = useSystemStore((s) => s.setViewMode);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const hero = useMemo(() => pickHero(inbox), [inbox]);
@@ -165,7 +163,6 @@ export default function MosaicVariant() {
   };
 
   const onReconnect = () => {
-    setViewMode(TIERS.TEAM);
     setSidebarSection('credentials');
   };
 

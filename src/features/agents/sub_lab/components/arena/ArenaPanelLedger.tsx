@@ -1,23 +1,15 @@
 /**
  * ArenaPanelLedger — directional prototype variant for ArenaPanel.
  *
- * Metaphor: a quiet ledger page. This variant takes the shipping Arena
- * (two-column form + history) as its starting point and reworks it
- * against the design-system canon — semantic typography, status tokens,
- * `rounded-card` / `rounded-interactive` radii, `shadow-elevation-*`
- * and `border-border`. No SVG scenery, no torches, no wax seal; the
- * intent is "instrument panel", not "stage".
+ * Metaphor: a quiet ledger page. Data-dense single surface, semantic
+ * tokens, no SVG scenery. Tightened in round-4 to remove dead space:
+ *   - header band shares the run preview and formula tally
+ *   - readiness rail trimmed to a one-line-per-row rhythm
+ *   - match-preview estimates folded into the launch bar
  *
  * Distinct from Colosseum in mental model:
- *   - Colosseum: spatial, heraldic, one enormous stage
- *   - Ledger:    data-dense single surface, rich roster rows, quiet
- *
- * Extractable pieces (consider hoisting if this wins):
- *   - LedgerHeaderBand
- *   - LedgerRosterRow (model picker row with stats)
- *   - LedgerUseCasePicker (inline pills)
- *   - LedgerReadinessRow (status-token readiness line)
- *   - LedgerLaunchBar
+ *   - Colosseum: spatial, heraldic, one stage with row-card roster
+ *   - Ledger:    instrument panel, data-dense, quiet
  */
 
 import { useEffect, useMemo } from 'react';
@@ -111,9 +103,6 @@ function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: num
   return best ? { ...best, total } : null;
 }
 
-/** Per-model rolling stats across every recorded arena result.
- *  Surfaces in roster rows so a contender's *track record* is visible at
- *  selection time, not buried in the chronicle. */
 type ModelStats = { avgScore: number; runs: number; avgCostUsd: number; avgDurationMs: number };
 
 function computeModelStats(resultsMap: Record<string, LabArenaResult[]>): Map<string, ModelStats> {
@@ -145,8 +134,6 @@ function computeModelStats(resultsMap: Record<string, LabArenaResult[]>): Map<st
   return out;
 }
 
-/** Recent run trend: composite score of the winning model in each of the
- *  last N runs (oldest → newest). Powers a sparkline in the chronicle. */
 function computeRecentTrend(runs: LabArenaRun[], resultsMap: Record<string, LabArenaResult[]>, n = 8): number[] {
   const sorted = [...runs].sort((a, b) => (a.createdAt > b.createdAt ? -1 : 1)).slice(0, n).reverse();
   const out: number[] = [];
@@ -248,7 +235,6 @@ export function ArenaPanelLedger() {
   const modelStats = useMemo(() => computeModelStats(arenaResultsMap), [arenaResultsMap]);
   const recentTrend = useMemo(() => computeRecentTrend(arenaRuns, arenaResultsMap), [arenaRuns, arenaResultsMap]);
 
-  // Match preview — tally cost & duration for the *selected* contenders × scenarios
   const matchPreview = useMemo(() => {
     let costPerScenario = 0;
     let durationPerScenario = 0;
@@ -272,22 +258,19 @@ export function ArenaPanelLedger() {
   }, [selectedModels, scenarioCount, modelStats]);
 
   return (
-    <div className="space-y-6">
-      {/* Header band */}
+    <div className="space-y-4">
+      {/* Header band — persona + ledger label */}
       <LedgerHeaderBand
         personaName={selectedPersona?.name ?? null}
         iconToken={selectedPersona?.icon ?? null}
         color={selectedPersona?.color ?? null}
-        contenders={contenderCount}
-        scenarios={scenarioCount}
-        duels={duelCount}
       />
 
       {/* Two-column body: Setup (left) | Readiness (right) */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_340px] gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-3">
         {/* Setup — roster + use case picker */}
         <section className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-border">
             <span className="typo-label text-foreground/90">Setup</span>
             <span className="typo-caption text-foreground/90 tabular-nums">
               {contenderCount}/{ARENA_ROSTER.length} contender{contenderCount === 1 ? '' : 's'}
@@ -295,7 +278,7 @@ export function ArenaPanelLedger() {
           </div>
 
           {/* Roster */}
-          <div className="p-2 space-y-1">
+          <div className="p-1.5 space-y-0.5">
             {ARENA_ROSTER.map((m) => (
               <LedgerRosterRow
                 key={m.id}
@@ -308,7 +291,7 @@ export function ArenaPanelLedger() {
           </div>
 
           {/* Use case picker */}
-          <div className="border-t border-border px-4 py-3 space-y-2">
+          <div className="border-t border-border px-3 py-2.5 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="typo-label text-foreground/90">Use case filter</span>
               <span className="typo-caption text-foreground/90 tabular-nums">
@@ -326,46 +309,39 @@ export function ArenaPanelLedger() {
 
         {/* Readiness column */}
         <aside className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1 self-start">
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-3 py-2 border-b border-border">
             <span className="typo-label text-foreground/90">Readiness</span>
           </div>
-          <ul className="p-2 space-y-1">
+          <ul className="p-1.5 space-y-0.5">
             <LedgerReadinessRow
               icon={FileCode}
               label="Prompt"
               value={hasPrompt ? (selectedPersona?.structured_prompt ? 'structured' : 'system') : 'missing'}
               tone={hasPrompt ? 'success' : 'error'}
-              detail={hasPrompt ? 'battle plan drafted' : t.agents.lab.no_prompt_warning}
             />
             <LedgerReadinessRow
               icon={Wrench}
               label="Tools"
               value={`${toolCount}`}
               tone={hasTools ? 'success' : 'warning'}
-              detail={hasTools ? 'connectors linked' : t.agents.lab.no_tools_warning}
             />
             <LedgerReadinessRow
               icon={ShieldCheck}
               label="Trust"
-              value={`${selectedPersona?.trust_score ?? 0}`}
+              value={`${selectedPersona?.trust_score ?? 0} · ${selectedPersona?.trust_level ?? 'unverified'}`}
               tone={(selectedPersona?.trust_score ?? 0) >= 50 ? 'success' : 'warning'}
-              detail={selectedPersona?.trust_level ?? 'unverified'}
             />
             <LedgerReadinessRow
               icon={Crown}
-              label="Current model"
+              label="Model"
               value={effectiveModel.label}
               tone="neutral"
-              detail={effectiveModel.source === 'override' ? 'from use-case override'
-                : effectiveModel.source === 'persona' ? 'from persona profile'
-                : 'arena default'}
             />
             <LedgerReadinessRow
               icon={Target}
               label="Scenarios"
-              value={selectedUseCase ? selectedUseCase.title : `${useCases.length}`}
+              value={selectedUseCase ? selectedUseCase.title : `${useCases.length} all`}
               tone={scenarioCount > 0 ? 'success' : 'warning'}
-              detail={scenarioCount > 0 ? 'ready to fight' : 'author a use case first'}
             />
             <LedgerReadinessRow
               icon={Activity}
@@ -377,9 +353,6 @@ export function ArenaPanelLedger() {
                 : healthCheck.score?.grade === 'unhealthy' ? 'error'
                 : 'neutral'
               }
-              detail={healthCheck.phase === 'done' && healthCheck.score
-                ? healthCheck.score.grade
-                : 'run health check to populate'}
             />
           </ul>
         </aside>
@@ -387,18 +360,20 @@ export function ArenaPanelLedger() {
 
       {/* Advisories */}
       {(!hasPrompt || !hasTools) && (
-        <div className="rounded-card border border-status-warning/30 bg-status-warning/10 px-4 py-3 flex items-start gap-3">
+        <div className="rounded-card border border-status-warning/30 bg-status-warning/10 px-3 py-2 flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 text-status-warning mt-0.5 flex-shrink-0" />
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <p className="typo-body-lg font-medium text-status-warning">Match conditions unmet</p>
-            {!hasPrompt && <p className="typo-body-lg text-foreground">{t.agents.lab.no_prompt_warning}</p>}
-            {!hasTools && <p className="typo-body-lg text-foreground">{t.agents.lab.no_tools_warning}</p>}
+            {!hasPrompt && <p className="typo-body text-foreground">{t.agents.lab.no_prompt_warning}</p>}
+            {!hasTools && <p className="typo-body text-foreground">{t.agents.lab.no_tools_warning}</p>}
           </div>
         </div>
       )}
 
-      {/* Match preview — derives from history so users see a concrete projection */}
-      <MatchPreviewCard
+      {/* Launch bar — formula + estimates + CTA on a single row */}
+      <LedgerLaunchBar
+        isRunning={isLabRunning}
+        canLaunch={canLaunch}
         contenders={contenderCount}
         scenarios={scenarioCount}
         duels={duelCount}
@@ -406,15 +381,6 @@ export function ArenaPanelLedger() {
         estDurationMs={matchPreview.estDurationMs}
         coveredModels={matchPreview.coveredModels}
         totalSelected={matchPreview.totalSelected}
-      />
-
-      {/* Launch bar */}
-      <LedgerLaunchBar
-        isRunning={isLabRunning}
-        canLaunch={canLaunch}
-        contenders={contenderCount}
-        scenarios={scenarioCount}
-        duels={duelCount}
         disabledReason={disabledReason}
         onLaunch={() => void handleStart()}
         onCancel={() => void handleCancel()}
@@ -422,7 +388,7 @@ export function ArenaPanelLedger() {
       />
 
       {/* Chronicle */}
-      <section className="space-y-3">
+      <section className="space-y-2">
         <div className="flex items-baseline justify-between px-1">
           <h4 className="typo-section-title text-foreground flex items-center gap-2">
             <Trophy className="w-4 h-4 text-primary" />
@@ -449,45 +415,24 @@ export function ArenaPanelLedger() {
 /* ================================================================== */
 
 function LedgerHeaderBand({
-  personaName, iconToken, color, contenders, scenarios, duels,
+  personaName, iconToken, color,
 }: {
   personaName: string | null;
   iconToken: string | null;
   color: string | null;
-  contenders: number;
-  scenarios: number;
-  duels: number;
 }) {
   return (
-    <div className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1">
-      <div className="flex items-center gap-4 px-5 py-4">
-        <div className="flex items-center justify-center w-11 h-11 rounded-full bg-primary/12 border border-primary/25 flex-shrink-0">
-          <PersonaIcon icon={iconToken} color={color} size="w-6 h-6" />
-        </div>
-        <div className="flex-1 min-w-0 leading-tight">
-          <p className="typo-label text-primary/70">Arena · Ledger</p>
-          <h3 className="typo-submodule-header text-foreground truncate mt-1">
-            {personaName ?? 'Select a persona to prepare the ledger'}
-          </h3>
-        </div>
-        <div className="hidden md:flex items-center gap-3 typo-data-lg text-foreground">
-          <FormulaPiece n={contenders} label="contenders" />
-          <span className="text-foreground/30">×</span>
-          <FormulaPiece n={scenarios} label="scenarios" />
-          <span className="text-foreground/30">=</span>
-          <FormulaPiece n={duels} label="duels" highlight />
-        </div>
+    <div className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1 px-4 py-2.5 flex items-center gap-3">
+      <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/12 border border-primary/25 flex-shrink-0">
+        <PersonaIcon icon={iconToken} color={color} size="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0 leading-tight">
+        <p className="typo-label text-primary/70">Arena · Ledger</p>
+        <h3 className="typo-section-title text-foreground truncate mt-0.5">
+          {personaName ?? 'Select a persona to prepare the ledger'}
+        </h3>
       </div>
     </div>
-  );
-}
-
-function FormulaPiece({ n, label, highlight }: { n: number; label: string; highlight?: boolean }) {
-  return (
-    <span className="flex flex-col items-end leading-none">
-      <span className={`typo-data-lg font-bold tabular-nums ${highlight ? 'text-primary' : 'text-foreground'}`}>{n}</span>
-      <span className="typo-caption text-foreground/90 mt-0.5">{label}</span>
-    </span>
   );
 }
 
@@ -506,13 +451,12 @@ function LedgerRosterRow({
       type="button"
       onClick={onToggle}
       aria-pressed={selected}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-interactive border transition-colors text-left ${
+      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-interactive border transition-colors text-left ${
         selected
           ? 'bg-primary/10 border-primary/35 text-foreground'
           : 'bg-transparent border-transparent text-foreground hover:bg-foreground/[0.03] hover:border-border'
       }`}
     >
-      {/* selection box */}
       <span
         aria-hidden
         className={`flex items-center justify-center w-4 h-4 rounded-interactive border flex-shrink-0 ${
@@ -521,41 +465,31 @@ function LedgerRosterRow({
       >
         {selected && <Check className="w-3 h-3 text-background" strokeWidth={3} />}
       </span>
-      {/* sigil */}
-      <span className={`flex items-center justify-center w-8 h-8 rounded-interactive flex-shrink-0 ${
+      <span className={`flex items-center justify-center w-7 h-7 rounded-interactive flex-shrink-0 ${
         selected ? 'bg-primary/15 text-primary' : 'bg-foreground/[0.06] text-foreground/90'
       }`}>
         <Sigil className="w-4 h-4" strokeWidth={1.75} />
       </span>
-      {/* name + provider */}
       <span className="flex-1 min-w-0">
-        <span className="typo-body-lg font-semibold text-foreground truncate block">{option.label}</span>
-        <span className="typo-caption text-foreground/90 truncate block">{meta.providerTag}</span>
+        <span className="typo-body font-semibold text-foreground truncate block">{option.label}</span>
+        <span className="typo-caption text-foreground/85 truncate block">{meta.providerTag}</span>
       </span>
-      {/* track record — derived from past arena results */}
-      <span className="flex flex-col items-end leading-none typo-data tabular-nums">
+      {/* Track record */}
+      <span className="flex items-baseline gap-1 typo-data tabular-nums flex-shrink-0">
         {stats ? (
           <>
             <span className={`font-bold ${scoreColor(stats.avgScore)}`}>{stats.avgScore}</span>
-            <span className="typo-caption text-foreground/90">{stats.runs} run{stats.runs === 1 ? '' : 's'}</span>
+            <span className="typo-caption text-foreground/85">· {stats.runs}</span>
           </>
         ) : (
-          <>
-            <span className="font-semibold text-foreground/90">—</span>
-            <span className="typo-caption text-foreground/90">unproven</span>
-          </>
+          <span className="typo-caption text-foreground/85">unproven</span>
         )}
       </span>
-      {/* tier shorthand */}
-      <span className="flex items-center gap-3 typo-data text-foreground/90 tabular-nums">
-        <span className="flex flex-col items-end leading-none">
-          <span className="font-semibold">{meta.costLabel}</span>
-          <span className="typo-caption text-foreground">cost</span>
-        </span>
-        <span className="flex flex-col items-end leading-none">
-          <span className="font-semibold">{meta.speedLabel}</span>
-          <span className="typo-caption text-foreground">speed</span>
-        </span>
+      {/* Tier shorthand — single inline row */}
+      <span className="flex items-center gap-2 typo-caption text-foreground/85 tabular-nums flex-shrink-0">
+        <span className="font-semibold text-foreground">{meta.costLabel}</span>
+        <span className="text-foreground/30">·</span>
+        <span className="font-semibold text-foreground">{meta.speedLabel}</span>
       </span>
     </button>
   );
@@ -572,10 +506,10 @@ function LedgerUseCasePicker({
 }) {
   const effective = selectedId ?? '__all__';
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-1">
       <UseCasePill active={effective === '__all__'} onClick={() => onSelect(null)} label={allLabel} />
       {useCases.length === 0 ? (
-        <span className="typo-body italic text-foreground/90 px-2 py-1.5">no use cases authored</span>
+        <span className="typo-body italic text-foreground/85 px-2 py-1">no use cases authored</span>
       ) : (
         useCases.map((uc) => (
           <UseCasePill
@@ -596,7 +530,7 @@ function UseCasePill({ active, onClick, label }: { active: boolean; onClick: () 
       type="button"
       onClick={onClick}
       title={label}
-      className={`max-w-[200px] truncate px-3 py-1.5 rounded-interactive border typo-body font-medium transition-colors ${
+      className={`max-w-[200px] truncate px-2.5 py-1 rounded-interactive border typo-body font-medium transition-colors ${
         active
           ? 'bg-primary/15 border-primary/40 text-foreground'
           : 'bg-transparent border-border text-foreground/90 hover:text-foreground hover:border-primary/30'
@@ -608,13 +542,12 @@ function UseCasePill({ active, onClick, label }: { active: boolean; onClick: () 
 }
 
 function LedgerReadinessRow({
-  icon: Icon, label, value, tone, detail,
+  icon: Icon, label, value, tone,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
   tone: 'success' | 'warning' | 'error' | 'neutral';
-  detail: string;
 }) {
   const dotClass =
     tone === 'success' ? 'bg-status-success'
@@ -627,37 +560,41 @@ function LedgerReadinessRow({
     : tone === 'error' ? 'text-status-error'
     : 'text-foreground';
   return (
-    <li className="flex items-center gap-3 px-3 py-2 rounded-interactive hover:bg-foreground/[0.03] transition-colors">
-      <Icon className="w-4 h-4 text-foreground/90 flex-shrink-0" />
-      <span className="flex-1 min-w-0 leading-tight">
-        <span className="typo-body-lg font-medium text-foreground truncate block">{label}</span>
-        <span className="typo-caption text-foreground/90 truncate block">{detail}</span>
-      </span>
-      <span className="flex items-center gap-1.5 flex-shrink-0">
-        <span className={`h-2 w-2 rounded-full ${dotClass}`} />
-        <span className={`typo-data font-semibold ${valueClass} truncate max-w-[120px]`} title={value}>
-          {value}
-        </span>
+    <li className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-interactive hover:bg-foreground/[0.03] transition-colors">
+      <Icon className="w-3.5 h-3.5 text-foreground/85 flex-shrink-0" />
+      <span className="typo-body font-medium text-foreground flex-shrink-0">{label}</span>
+      <span className="flex-1 min-w-0" />
+      <span className={`h-2 w-2 rounded-full ${dotClass} flex-shrink-0`} />
+      <span className={`typo-data font-semibold ${valueClass} truncate max-w-[150px]`} title={value}>
+        {value}
       </span>
     </li>
   );
 }
 
 function LedgerLaunchBar({
-  isRunning, canLaunch, contenders, scenarios, duels, disabledReason, onLaunch, onCancel, cancelLabel,
+  isRunning, canLaunch, contenders, scenarios, duels,
+  estCostUsd, estDurationMs, coveredModels, totalSelected,
+  disabledReason, onLaunch, onCancel, cancelLabel,
 }: {
   isRunning: boolean;
   canLaunch: boolean;
   contenders: number;
   scenarios: number;
   duels: number;
+  estCostUsd: number;
+  estDurationMs: number;
+  coveredModels: number;
+  totalSelected: number;
   disabledReason: string;
   onLaunch: () => void;
   onCancel: () => void;
   cancelLabel: string;
 }) {
+  const hasEstimate = coveredModels > 0;
+  const partial = hasEstimate && coveredModels < totalSelected;
   return (
-    <div className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-2 px-4 py-3 flex flex-wrap items-center gap-4">
+    <div className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-2 px-3 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-2">
       <div className="flex items-center gap-2">
         <span className={`w-2 h-2 rounded-full ${
           isRunning ? 'bg-status-warning animate-pulse'
@@ -665,22 +602,27 @@ function LedgerLaunchBar({
             : 'bg-status-neutral'
         }`} />
         <span className="typo-label text-foreground/90">
-          {isRunning ? 'Run in progress'
-            : canLaunch ? 'Ready to launch'
-            : 'Awaiting readiness'}
+          {isRunning ? 'Running'
+            : canLaunch ? 'Ready'
+            : 'Awaiting'}
         </span>
       </div>
 
-      <div className="flex items-center gap-2 typo-body text-foreground/90 tabular-nums">
-        <span><span className="font-semibold text-foreground">{contenders}</span> contenders</span>
-        <span className="text-foreground/30">×</span>
-        <span><span className="font-semibold text-foreground">{scenarios}</span> scenarios</span>
-        <span className="text-foreground/30">=</span>
+      <div className="flex items-center gap-1.5 typo-body text-foreground/90 tabular-nums">
+        <span><span className="font-semibold text-foreground">{contenders}</span> ×</span>
+        <span><span className="font-semibold text-foreground">{scenarios}</span> =</span>
         <span className="text-primary font-semibold">{duels} duels</span>
       </div>
 
+      <div className="flex items-center gap-2 typo-caption text-foreground/85 tabular-nums" title={partial ? `partial — ${coveredModels}/${totalSelected} models have history` : undefined}>
+        <span>~ {hasEstimate ? formatDuration(estDurationMs) : '—'}</span>
+        <span className="text-foreground/30">·</span>
+        <span>{hasEstimate ? formatCostUsd(estCostUsd) : '—'}</span>
+        {partial && <span className="text-foreground/55">(partial)</span>}
+      </div>
+
       {!canLaunch && !isRunning && disabledReason && (
-        <span className="typo-caption text-status-warning flex items-center gap-1.5">
+        <span className="typo-caption text-status-warning flex items-center gap-1">
           <OctagonAlert className="w-3.5 h-3.5" />
           {disabledReason}
         </span>
@@ -691,7 +633,7 @@ function LedgerLaunchBar({
           <button
             onClick={onCancel}
             data-testid="arena-cancel-btn"
-            className="flex items-center gap-2 px-4 py-2 rounded-interactive bg-status-error/15 hover:bg-status-error/25 border border-status-error/35 text-status-error typo-body-lg font-medium"
+            className="flex items-center gap-2 px-4 py-1.5 rounded-interactive bg-status-error/15 hover:bg-status-error/25 border border-status-error/35 text-status-error typo-body font-medium"
           >
             <Flame className="w-4 h-4" />
             {cancelLabel}
@@ -701,7 +643,7 @@ function LedgerLaunchBar({
             onClick={onLaunch}
             disabled={!canLaunch}
             data-testid="arena-run-btn"
-            className={`flex items-center gap-2 px-5 py-2 rounded-interactive border typo-body-lg font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-interactive border typo-body font-semibold transition-colors ${
               canLaunch
                 ? 'bg-primary/20 hover:bg-primary/30 border-primary/40 text-foreground'
                 : 'bg-foreground/[0.04] border-border text-foreground cursor-not-allowed'
@@ -725,9 +667,9 @@ function StandingChampionCard({
 }) {
   if (!champion) {
     return (
-      <div className="rounded-card border border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-3">
+      <div className="rounded-card border border-border bg-foreground/[0.015] px-3 py-2 flex items-center gap-2.5">
         <Trophy className="w-4 h-4 text-foreground" />
-        <p className="typo-body-lg italic text-foreground/90">
+        <p className="typo-body italic text-foreground/85">
           No chronicle yet — the first match will crown a champion.
         </p>
       </div>
@@ -736,89 +678,28 @@ function StandingChampionCard({
   const meta = MODEL_META[champion.model] ?? metaFor(champion.model, 'unknown');
   const Sigil = meta.sigil;
   return (
-    <div className="rounded-card border border-primary/30 bg-primary/5 shadow-elevation-1 px-4 py-3 flex items-center gap-4">
-      <div className="flex items-center justify-center w-11 h-11 rounded-interactive bg-primary/15 border border-primary/30 flex-shrink-0">
-        <Sigil className="w-5 h-5 text-primary" strokeWidth={1.75} />
+    <div className="rounded-card border border-primary/30 bg-primary/5 shadow-elevation-1 px-3 py-2 flex items-center gap-3">
+      <div className="flex items-center justify-center w-9 h-9 rounded-interactive bg-primary/15 border border-primary/30 flex-shrink-0">
+        <Sigil className="w-4 h-4 text-primary" strokeWidth={1.75} />
       </div>
       <div className="flex-1 min-w-0">
         <p className="typo-label text-primary/80 flex items-center gap-1.5">
-          <Crown className="w-3.5 h-3.5" fill="currentColor" />
+          <Crown className="w-3 h-3" fill="currentColor" />
           Standing Champion
         </p>
-        <p className="typo-section-title text-foreground capitalize mt-1">{champion.model}</p>
-        <p className="typo-caption text-foreground/90">
-          {champion.wins} victory{champion.wins === 1 ? '' : 'ies'} of {champion.total} judged match{champion.total === 1 ? '' : 'es'}
-          {' '}· {totalRuns} run{totalRuns === 1 ? '' : 's'} logged
+        <p className="typo-body-lg font-semibold text-foreground capitalize truncate">
+          {champion.model}
+          <span className="typo-caption text-foreground/85 font-normal ml-1.5">
+            · {champion.wins}/{champion.total} judged · {totalRuns} run{totalRuns === 1 ? '' : 's'}
+          </span>
         </p>
       </div>
-      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/[0.04] border border-border typo-data text-foreground">
+      <div className="flex items-center gap-1 px-2 py-1 rounded-interactive bg-foreground/[0.04] border border-border typo-data text-foreground flex-shrink-0">
         <Swords className="w-3.5 h-3.5 text-primary" />
         <span className="font-semibold tabular-nums">{champion.wins}</span>
         <span className="text-foreground/90">/</span>
         <span className="text-foreground/90 tabular-nums">{champion.total}</span>
       </div>
-    </div>
-  );
-}
-
-/* Match preview — concrete projection of the next launch.
- * Estimates lean on per-model averages from the chronicle, so they
- * sharpen as more runs accumulate; before any runs, fall back to "—". */
-function MatchPreviewCard({
-  contenders, scenarios, duels, estCostUsd, estDurationMs, coveredModels, totalSelected,
-}: {
-  contenders: number;
-  scenarios: number;
-  duels: number;
-  estCostUsd: number;
-  estDurationMs: number;
-  coveredModels: number;
-  totalSelected: number;
-}) {
-  const hasEstimate = coveredModels > 0;
-  const partial = hasEstimate && coveredModels < totalSelected;
-  return (
-    <section className="rounded-card border border-border bg-foreground/[0.015] shadow-elevation-1">
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <span className="typo-label text-foreground/90">Match preview</span>
-        <span className="typo-caption text-foreground/90">
-          {hasEstimate
-            ? partial ? `partial — ${coveredModels}/${totalSelected} models have history` : 'projection from chronicle'
-            : 'no projection — first run will calibrate'}
-        </span>
-      </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4">
-        <PreviewStat label="Contenders" value={`${contenders}`} />
-        <PreviewStat label="Scenarios"  value={`${scenarios}`} />
-        <PreviewStat label="Duels"       value={`${duels}`} highlight />
-        <PreviewStat
-          label="Est. duration"
-          value={hasEstimate ? formatDuration(estDurationMs) : '—'}
-          subtle={!hasEstimate}
-        />
-        <PreviewStat
-          label="Est. cost"
-          value={hasEstimate ? formatCostUsd(estCostUsd) : '—'}
-          subtle={!hasEstimate}
-        />
-      </div>
-    </section>
-  );
-}
-
-function PreviewStat({
-  label, value, highlight, subtle,
-}: { label: string; value: string; highlight?: boolean; subtle?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1">
-      <span className="typo-label text-foreground/90">{label}</span>
-      <span className={`typo-data-lg tabular-nums ${
-        highlight ? 'text-primary'
-        : subtle  ? 'text-foreground/90'
-        :           'text-foreground'
-      }`}>
-        {value}
-      </span>
     </div>
   );
 }
@@ -838,11 +719,10 @@ function formatCostUsd(usd: number): string {
   return `$${usd.toFixed(2)}`;
 }
 
-/* Recent-run trend sparkline — winning composite score per logged run. */
 function ChronicleTrend({ trend }: { trend: number[] }) {
   if (trend.length < 2) return null;
-  const w = 240;
-  const h = 36;
+  const w = 220;
+  const h = 28;
   const pad = 2;
   const max = Math.max(...trend, 100);
   const min = Math.min(...trend, 0);
@@ -859,14 +739,13 @@ function ChronicleTrend({ trend }: { trend: number[] }) {
   const delta = last - first;
   const deltaLabel = delta >= 0 ? `+${delta}` : `${delta}`;
   return (
-    <div className="rounded-card border border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-4">
-      <div className="flex flex-col gap-0.5 flex-shrink-0">
-        <span className="typo-label text-foreground/90">Recent trend</span>
-        <span className="typo-caption text-foreground/90">{trend.length} run{trend.length === 1 ? '' : 's'}</span>
-      </div>
+    <div className="rounded-card border border-border bg-foreground/[0.015] px-3 py-2 flex items-center gap-3">
+      <span className="typo-label text-foreground/90 flex-shrink-0">
+        Trend · {trend.length}
+      </span>
       <svg
         viewBox={`0 0 ${w} ${h}`}
-        className="flex-1 h-9 max-w-[280px] text-primary"
+        className="flex-1 h-7 max-w-[260px] text-primary"
         aria-label="Recent winning composite scores"
       >
         <polyline
@@ -892,10 +771,10 @@ function ChronicleTrend({ trend }: { trend: number[] }) {
           );
         })}
       </svg>
-      <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-        <span className={`typo-data-lg tabular-nums ${scoreColor(last)}`}>{last}</span>
-        <span className={`typo-caption tabular-nums ${delta >= 0 ? 'text-status-success' : 'text-status-warning'}`}>
-          {deltaLabel} vs first
+      <div className="flex items-baseline gap-2 flex-shrink-0 tabular-nums">
+        <span className={`typo-data-lg ${scoreColor(last)}`}>{last}</span>
+        <span className={`typo-caption ${delta >= 0 ? 'text-status-success' : 'text-status-warning'}`}>
+          {deltaLabel}
         </span>
       </div>
     </div>

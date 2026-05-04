@@ -12,7 +12,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { sections as sidebarSections } from "@/features/shared/components/layout/sidebar/sidebarData";
-import { isTierVisible, TIERS, type Tier } from "@/lib/constants/uiModes";
+import { isTierVisible, TIERS, BUILD_MAX_TIER } from "@/lib/constants/uiModes";
 import type { SidebarSection } from "@/lib/types/types";
 
 const VALID_SECTIONS: SidebarSection[] = [
@@ -168,10 +168,9 @@ const bridge: TestBridge = {
     // back to home via useEffect — surface that early so callers get honest feedback.
     const def = sidebarSections.find((s) => s.id === section);
     if (def) {
-      const tier = useSystemStore.getState().viewMode as Tier;
       const minTier = def.minTier ?? TIERS.STARTER;
-      if (!isTierVisible(minTier, tier)) {
-        return { success: false, error: `Section "${section}" requires tier "${minTier}" (current: "${tier}")` };
+      if (!isTierVisible(minTier, BUILD_MAX_TIER)) {
+        return { success: false, error: `Section "${section}" requires tier "${minTier}" (current: "${BUILD_MAX_TIER}")` };
       }
       if (def.devOnly && !import.meta.env.DEV) {
         return { success: false, error: `Section "${section}" is dev-only` };
@@ -198,7 +197,6 @@ const bridge: TestBridge = {
       buildTestError: agent.buildTestError ?? null,
       buildTestOutputLines: agent.buildTestOutputLines,
       // UI state
-      viewMode: sys.viewMode,
       sidebarSection: sys.sidebarSection,
       homeTab: sys.homeTab,
       editorTab: sys.editorTab,

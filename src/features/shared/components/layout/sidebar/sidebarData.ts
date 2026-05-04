@@ -7,7 +7,7 @@ import {
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy,
   User, Mic, Volume2, Sparkles,
-  Wand2, Image as ImageIcon, Film,
+  Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -54,6 +54,7 @@ export function filterByTier<T extends { minTier?: Tier; simpleHidden?: boolean 
 
 export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> = [
   { id: 'welcome', icon: Compass, label: 'Welcome' },
+  { id: 'cockpit', icon: GaugeIcon, label: 'Cockpit' },
   { id: 'learning', icon: GraduationCap, label: 'Learning' },
   { id: 'roadmap', icon: Map, label: "What's New" },
   ...(import.meta.env.DEV ? [{ id: 'system-check' as HomeTab, icon: Monitor, label: 'System Check' }] : []),
@@ -140,6 +141,15 @@ export const cloudItems: SubNavItem[] = [
   { id: 'unified', label: 'All Deployments', icon: LayoutDashboard },
   { id: 'cloud', label: 'Cloud Runs', icon: Cloud },
   { id: 'gitlab', label: 'GitLab', icon: GitBranch },
+];
+
+// Companion plugin sub-nav: Setup (toggles), Memory (brain viewer),
+// Voice (ElevenLabs credential picker + voice id). Voice playback in
+// chat is a separate downstream feature.
+export const companionItems: SubNavItem[] = [
+  { id: 'setup', label: 'Setup', icon: Settings },
+  { id: 'memory', label: 'Memory', icon: Brain },
+  { id: 'voice', label: 'Voice', icon: Mic },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {

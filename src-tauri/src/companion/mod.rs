@@ -8,6 +8,7 @@
 //! `companion_edge`, ...) are an index over those files plus runtime state.
 
 pub mod brain;
+pub mod dev_session;
 pub mod disk;
 pub mod dispatcher;
 pub mod observability;

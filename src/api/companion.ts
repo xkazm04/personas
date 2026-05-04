@@ -41,14 +41,62 @@ export async function companionInit(): Promise<string> {
 export interface SendTurnResult {
   userEpisodeId: string;
   assistantEpisodeId: string;
+  /**
+   * Preset quick-reply labels Athena offered for this turn. Each entry
+   * is the literal user message that gets sent on click. Empty when
+   * Athena didn't offer any. UI renders these as a chip row under the
+   * latest assistant bubble until the next send fires.
+   */
+  quickReplies: string[];
+  /**
+   * Spoken-version of the reply (1-3 sentences, conversational) for
+   * ElevenLabs playback. Present when voice is enabled AND Athena emitted
+   * a `TTS:` line. Null otherwise. Frontend stashes this as the latest
+   * unread playback and either auto-plays (if user is on the panel) or
+   * makes it available via the footer Play button.
+   */
+  ttsText: string | null;
 }
 
 /**
  * Send a user message; resolves once Claude finishes the turn. Streaming
  * progress arrives separately on the `companion://stream` Tauri event.
+ *
+ * `voiceEnabled` tells Athena to emit a `TTS:` line in addition to her
+ * normal markdown reply. When false (default), no spoken summary is
+ * generated and `ttsText` in the result is null.
  */
-export async function companionSendMessage(message: string): Promise<SendTurnResult> {
-  return invoke<SendTurnResult>('companion_send_message', { message });
+export async function companionSendMessage(
+  message: string,
+  voiceEnabled: boolean = false,
+): Promise<SendTurnResult> {
+  return invoke<SendTurnResult>('companion_send_message', {
+    message,
+    voiceEnabled,
+  });
+}
+
+/**
+ * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
+ * vault, calls ElevenLabs, and returns the audio bytes as base64 (which
+ * crosses the Tauri IPC boundary cleanly). Frontend wraps the bytes in a
+ * Blob and plays via an `<audio>` element.
+ *
+ * `credentialId` is the vault row id for an ElevenLabs credential. The
+ * backend rejects anything else.
+ */
+export interface TtsAudio {
+  audioBase64: string;
+  mimeType: string;
+  byteSize: number;
+}
+
+export async function companionTts(
+  text: string,
+  credentialId: string,
+  voiceId: string,
+): Promise<TtsAudio> {
+  return invoke<TtsAudio>('companion_tts', { text, credentialId, voiceId });
 }
 
 export interface CompanionMessage {
@@ -110,7 +158,16 @@ export interface ApprovalOutcome {
   id: string;
   status: 'approved' | 'rejected';
   message: string;
+  /**
+   * UI-only follow-up the frontend should run after a successful
+   * approve. Currently the only kind is `navigate` (sidebar route
+   * switch); more variants will join as Phase B grows (prefill flows,
+   * focus-detail, etc).
+   */
+  clientAction?: ClientAction | null;
 }
+
+export type ClientAction = { type: 'navigate'; route: string };
 
 export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
   return invoke<PendingApproval[]>('companion_list_pending_approvals');
@@ -132,12 +189,91 @@ export async function companionRejectAction(
 /** Tauri event channel emitted when a turn produces new approval rows. */
 export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
 
+/**
+ * Tauri event for direct sidebar navigation triggered by Athena's
+ * `open_route` op. Payload: the route name (string). Bypasses the
+ * approval flow — the chat panel stays open and the sidebar switches
+ * behind it.
+ */
+export const COMPANION_NAVIGATE_EVENT = 'companion://navigate';
+
 /** Payload for COMPANION_APPROVALS_EVENT — array of newly-created approvals. */
 export interface CreatedApproval {
   id: string;
   action: string;
   paramsJson: string;
   rationale: string;
+}
+
+// ── Brain Viewer ────────────────────────────────────────────────────────
+
+export type BrainKind = 'episode' | 'doctrine' | 'identity' | 'constitution';
+
+export interface BrainListItem {
+  id: string;
+  kind: BrainKind;
+  title: string;
+  preview: string;
+  meta: string;
+  deletable: boolean;
+}
+
+export interface BrainDetail {
+  id: string;
+  kind: BrainKind;
+  title: string;
+  content: string;
+  meta: string;
+  deletable: boolean;
+}
+
+export async function companionListBrainItems(
+  kind: BrainKind,
+): Promise<BrainListItem[]> {
+  return invoke<BrainListItem[]>('companion_list_brain_items', { kind });
+}
+
+export async function companionGetBrainItem(
+  kind: BrainKind,
+  id: string,
+): Promise<BrainDetail> {
+  return invoke<BrainDetail>('companion_get_brain_item', { kind, id });
+}
+
+export async function companionDeleteBrainItem(
+  kind: BrainKind,
+  id: string,
+): Promise<void> {
+  return invoke<void>('companion_delete_brain_item', { kind, id });
+}
+
+// ── Phase 4: self-improve loop ─────────────────────────────────────────
+
+export interface CompanionBetaFlags {
+  /** True when the wrench-send / self-improve UI should be exposed. */
+  selfImproveEnabled: boolean;
+}
+
+export interface ImprovementOutcome {
+  success: boolean;
+  /** Final assistant summary text from the coding CLI. */
+  summary: string;
+  /** Files Claude touched (Edit/Write tool calls), repo-relative. */
+  filesModified: string[];
+  /** Subset of filesModified that match the critical-files allowlist. */
+  criticalFiles: string[];
+  elapsedSeconds: number;
+  error: string | null;
+}
+
+export async function companionBetaFlags(): Promise<CompanionBetaFlags> {
+  return invoke<CompanionBetaFlags>('companion_beta_flags');
+}
+
+export async function companionRequestImprovement(
+  feedback: string,
+): Promise<ImprovementOutcome> {
+  return invoke<ImprovementOutcome>('companion_request_improvement', { feedback });
 }
 
 /** Tauri event channel for streaming Claude CLI lines into the panel. */

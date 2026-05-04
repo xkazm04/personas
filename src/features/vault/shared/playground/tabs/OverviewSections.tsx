@@ -4,6 +4,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CredentialEventConfig } from '@/features/vault/sub_credentials/components/features/CredentialEventConfig';
 import { CredentialIntelligence } from '@/features/vault/sub_credentials/components/features/CredentialIntelligence';
+import { CredentialScopeSection } from '@/features/vault/sub_credentials/components/features/CredentialScopeSection';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 
 interface OverviewSectionsProps {
@@ -109,6 +110,9 @@ export function OverviewSections({ credential, connector, onDelete }: OverviewSe
           )}
         </div>
       )}
+
+      {/* Scope (resource-scoping picks) */}
+      <CredentialScopeSection credential={credential} connector={connector} />
 
       {/* Intelligence */}
       <div className="border border-primary/10 rounded-modal p-4">

@@ -13,7 +13,6 @@ import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
-import { TIERS } from '@/lib/constants/uiModes';
 
 // Lazy-load all section content — only Sidebar stays eager (always visible)
 const HomePage = lazy(() => import('@/features/home/components/HomePage'));
@@ -35,16 +34,16 @@ const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/O
 const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
 const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
+const CompanionPluginPage = lazy(() => import('@/features/plugins/companion/CompanionPluginPage'));
 const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
-const SimpleHomePage = lazy(() => import('@/features/simple-mode'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
 
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
-  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error, viewMode } = useSystemStore(
+  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
       cloudTab: s.cloudTab,
@@ -53,7 +52,6 @@ export default function PersonasPage() {
       isCreatingPersona: s.isCreatingPersona,
       isLoading: s.isLoading,
       error: s.error,
-      viewMode: s.viewMode,
     }))
   );
   const setError = useSystemStore((s) => s.setError);
@@ -86,52 +84,24 @@ export default function PersonasPage() {
     // Yield to browser — let React paint before loading secondary data
     await new Promise(r => setTimeout(r, 100));
 
-    // Wave 2: Secondary data — branches on viewMode so Simple-mode users
-    // don't pay for Power-only stores and Power-mode users keep existing
-    // behavior intact. Toggling Simple → Power mid-session re-runs this
-    // callback (viewMode is in the dep array) so Power fetches that were
-    // skipped will fire on mode switch. That is intentional.
-    if (viewMode === TIERS.STARTER) {
-      // Simple mode surfaces (Mosaic/Console/Inbox) need:
-      //   - credentials (connection strip)
-      //   - manual reviews (approval-kind inbox items)
-      //   - messages (message-kind inbox items)
-      //   - healing issues (health-kind inbox items)
-      //   - execution dashboard (runs-today counter in useSimpleSummary)
-      // A 1-day dashboard window is enough for the Simple summary — we
-      // only read `.daily_points[length - 1]`.
-      const { useOverviewStore } = await import("@/stores/overviewStore");
-      const { useVaultStore } = await import("@/stores/vaultStore");
-      const simpleResults = await Promise.allSettled([
-        useVaultStore.getState().fetchCredentials(),
-        useOverviewStore.getState().fetchManualReviews(),
-        useOverviewStore.getState().fetchMessages(),
-        useOverviewStore.getState().fetchHealingIssues(),
-        useOverviewStore.getState().fetchExecutionDashboard(1),
-      ]);
-      const SIMPLE_LABELS = ['credentials', 'reviews', 'messages', 'healing', 'executions'] as const;
-      simpleResults.forEach((r, i) => {
-        if (r.status === 'rejected' && SIMPLE_LABELS[i]) failed.push(SIMPLE_LABELS[i]);
-      });
-    } else {
-      const secondaryResults = await Promise.allSettled([
-        fetchToolDefinitions(),
-        import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
-        import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
-        import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
-      ]);
-      const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
-      secondaryResults.forEach((r, i) => {
-        if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
-      });
-    }
+    // Wave 2: Secondary data — single-mode app loads the full set.
+    const secondaryResults = await Promise.allSettled([
+      fetchToolDefinitions(),
+      import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+    ]);
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+    secondaryResults.forEach((r, i) => {
+      if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
+    });
 
     if (failed.length > 0) {
       setError(`Startup failed -- ${failed.join(', ')} could not be loaded`);
     }
     // Auto-reconnect GitLab if a vault credential exists (non-blocking)
     void useSystemStore.getState().gitlabInitialize();
-  }, [fetchPersonas, fetchToolDefinitions, setError, viewMode]);
+  }, [fetchPersonas, fetchToolDefinitions, setError]);
 
   useEffect(() => {
     runStartup();
@@ -146,13 +116,8 @@ export default function PersonasPage() {
 
   // Prefetch likely next routes after initial load settles.
   // Speculative -- fires during browser idle time, failures silently ignored.
-  // Skipped entirely in Simple mode: those chunks are Power-only navigation
-  // targets, and Simple mode never routes to them. If the user graduates
-  // Simple → Power mid-session, viewMode changes → this effect re-runs →
-  // prefetches kick in. Intentional.
   useEffect(() => {
     if (!personasFetched) return;
-    if (viewMode === TIERS.STARTER) return;
     const id = requestIdleCallback(() => {
       // Tier 1: most frequently visited sections
       import('@/features/overview/components/dashboard/OverviewPage').catch(silentCatch("PersonasPage:prefetchOverview"));
@@ -169,7 +134,7 @@ export default function PersonasPage() {
       cancelIdleCallback(id);
       cancelIdleCallback(id2);
     };
-  }, [personasFetched, viewMode]);
+  }, [personasFetched]);
 
   // Auto-resume active build when returning to personas from another section.
   // Uses a ref to prevent the infinite loop: only resumes ONCE per navigation event.
@@ -187,23 +152,6 @@ export default function PersonasPage() {
       useSystemStore.getState().setIsCreatingPersona(true);
     }
   }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
-
-  // Simple mode takes over the whole viewport — no sidebar, no Power-mode chunks.
-  // Placed AFTER all hooks (React rules of hooks) but BEFORE renderContent so
-  // Power-mode lazy chunks are never requested when viewMode === STARTER.
-  // Phase 15-01 gated the Wave 2 fetches + speculative prefetches above on
-  // viewMode, so Simple mode now fetches only what its surfaces actually
-  // render (credentials/reviews/messages/healing/executions) and skips the
-  // Power-only tools/recipes/groups set + route prefetches.
-  if (viewMode === TIERS.STARTER) {
-    return (
-      <ErrorBoundary name="SimpleHome">
-        <Suspense fallback={null}>
-          <SimpleHomePage />
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
 
   const renderContent = () => {
     // Show unified wizard when no personas exist OR when explicitly creating
@@ -272,6 +220,9 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'twin') {
         return <ErrorBoundary name="Twin"><Suspense fallback={SectionFallback}><TwinPage /></Suspense></ErrorBoundary>;
+      }
+      if (pluginTab === 'companion') {
+        return <ErrorBoundary name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

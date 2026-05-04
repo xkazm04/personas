@@ -20,7 +20,9 @@ linker = "lld-link"
 rustflags = ["-C", "link-arg=/STACK:8388608"]
 
 [target.x86_64-pc-windows-msvc]
-linker = "lld-link"
+# linker = "lld-link"  # disabled 2026-05-03 — lld-link not on PATH on this
+# machine. Restore after `winget install LLVM.LLVM` (or scoop/choco) for the
+# 2-5x faster dev links. Falling back to MSVC's default link.exe meanwhile.
 rustflags = ["-C", "link-arg=/STACK:8388608"]
 
 # Android linker config has been moved out of the project to keep `.cargo/config.toml`

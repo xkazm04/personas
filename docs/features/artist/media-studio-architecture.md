@@ -130,7 +130,7 @@ overlay font — into flat stages that preview and export translate
 mechanically. The prose parity matrix that used to live here has been
 **replaced by the IR spec and its cross-language fixtures**. See:
 
-- `docs/concepts/media-studio-renderplan.md` — shape of the IR, compile
+- `docs/features/artist/media-studio-render-plan.md` — shape of the IR, compile
   algorithm, invariants I1–I11, migration history.
 - `src-tauri/src/engine/render_plan/` — canonical Rust compiler + tests.
 - `src/features/plugins/artist/sub_media_studio/compile.ts` — TypeScript

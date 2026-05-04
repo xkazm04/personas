@@ -38,6 +38,26 @@ pub const STREAM_EVENT: &str = "companion://stream";
 /// per turn that produced any new approvals.
 pub const APPROVALS_EVENT: &str = "companion://approvals";
 
+/// Tauri event channel for direct sidebar navigations triggered by
+/// Athena's `open_route` op. Fires once per navigation. Frontend
+/// listens and calls `setSidebarSection(route)` without collapsing
+/// the chat panel — chat-driven nav is meant to feel transparent.
+pub const NAVIGATE_EVENT: &str = "companion://navigate";
+
+/// What `send_turn` returns to the chat command. The IDs let the UI
+/// reconcile the optimistic bubble with persisted episodes; the
+/// `quick_replies` carry Athena's QR offerings for this specific turn
+/// (transient — UI shows them on the latest assistant bubble until the
+/// next send fires); `tts_text` carries her spoken-version line if she
+/// emitted one (frontend feeds this into ElevenLabs playback).
+#[derive(Debug, Clone)]
+pub struct TurnResult {
+    pub user_episode_id: String,
+    pub assistant_episode_id: String,
+    pub quick_replies: Vec<String>,
+    pub tts_text: Option<String>,
+}
+
 /// Hard ceiling per turn — Opus is slow but should never sit forever.
 const TURN_TIMEOUT: Duration = Duration::from_secs(300);
 
@@ -79,9 +99,27 @@ pub async fn send_turn(
     sys_db: Arc<DbPool>,
     #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
     user_message: String,
-) -> Result<(String, String), AppError> {
+    voice_enabled: bool,
+) -> Result<TurnResult, AppError> {
     let session_id = DEFAULT_SESSION_ID.to_string();
     let turn_id = format!("turn_{}", short_random());
+
+    // Sweep any orphaned self-improve runs so their outcome shows up in
+    // this turn's transcript (the detached CLI may have finished after
+    // the previous parent-restart). Best-effort: a failure here doesn't
+    // block the chat turn.
+    #[cfg(feature = "ml")]
+    {
+        let _ = crate::companion::dev_session::recover_orphan_improvements(
+            &user_db,
+            embedder.as_ref(),
+        )
+        .await;
+    }
+    #[cfg(not(feature = "ml"))]
+    {
+        let _ = crate::companion::dev_session::recover_orphan_improvements(&user_db).await;
+    }
 
     // Persist the user turn (with embedding if embedder is available).
     let user_ep_id = {
@@ -134,12 +172,20 @@ pub async fn send_turn(
                 embedder.as_ref(),
                 &session_id,
                 &user_message,
+                voice_enabled,
             )
             .await?
         }
         #[cfg(not(feature = "ml"))]
         {
-            prompt::build_system_prompt(&user_db, &sys_db, &session_id, &user_message).await?
+            prompt::build_system_prompt(
+                &user_db,
+                &sys_db,
+                &session_id,
+                &user_message,
+                voice_enabled,
+            )
+            .await?
         }
     };
 
@@ -215,6 +261,9 @@ pub async fn send_turn(
             crate::companion::dispatcher::Dispatched {
                 cleaned_text: assistant_text.clone(),
                 approvals: Vec::new(),
+                navigations: Vec::new(),
+                quick_replies: Vec::new(),
+                tts_text: None,
                 warnings: vec![format!("dispatcher error: {e}")],
             }
         }
@@ -266,6 +315,16 @@ pub async fn send_turn(
         }
     }
 
+    // Fire navigation events for any open_route ops Athena emitted.
+    // The frontend handles them inline (sidebar switch, panel stays
+    // open). One event per navigation in case Athena ever chains them
+    // (rare, but supported).
+    for route in &dispatched.navigations {
+        if let Err(e) = app.emit(NAVIGATE_EVENT, route) {
+            tracing::warn!(error = %e, route = %route, "companion navigate event emit failed");
+        }
+    }
+
     emit(
         app,
         StreamEvent {
@@ -276,7 +335,12 @@ pub async fn send_turn(
         },
     );
 
-    Ok((user_ep_id, assistant_ep_id))
+    Ok(TurnResult {
+        user_episode_id: user_ep_id,
+        assistant_episode_id: assistant_ep_id,
+        quick_replies: dispatched.quick_replies,
+        tts_text: dispatched.tts_text,
+    })
 }
 
 async fn run_cli(
@@ -475,20 +539,74 @@ pub fn clear_claude_session_id(pool: &UserDbPool, session_id: &str) -> Result<()
     Ok(())
 }
 
-/// Wipe the conversation transcript: clear `companion_node` (episode rows),
-/// the FTS index, and the vec0 index. The markdown source-of-truth on disk
-/// is preserved by design — episodic is append-only and recoverable. After
-/// wipe, the next turn sees an empty transcript but identity + observability
-/// still apply.
+/// Wipe the conversation transcript so Athena starts fresh.
+///
+/// Scope (deliberate):
+///   - SQL: deletes episode rows from `companion_node`, plus their
+///     companion_fts and companion_embedding entries. **Doctrine, identity,
+///     and any other node kinds are preserved** — earlier versions of this
+///     function blindly truncated all FTS / vec0 rows, which silently
+///     wiped doctrine and forced a full re-ingest on the next start.
+///   - Disk: renames `<brain>/episodes/` to `<brain>/episodes-archive-<ts>/`
+///     so the markdown source-of-truth isn't actually destroyed (no-data-
+///     loss principle), but the next turn sees an empty episodes dir.
+///     A fresh empty `episodes/` is recreated.
+///   - Identity, constitution, doctrine, semantic facts: untouched.
 pub fn wipe_transcript(pool: &UserDbPool) -> Result<(), AppError> {
     let conn = pool.get()?;
-    // Order matters: clear FTS first to avoid leaving orphan rows.
-    let _ = conn.execute_batch(
-        "DELETE FROM companion_fts;
-         DELETE FROM companion_node WHERE kind = 'episode';",
-    );
-    // Best-effort vec0 wipe — table is created lazily so may not exist yet.
-    let _ = conn.execute_batch("DELETE FROM companion_embedding");
+
+    // Collect episode IDs first; we need them for the FTS + vec0 deletes
+    // before we drop the parent node rows.
+    let episode_ids: Vec<String> = match conn.prepare(
+        "SELECT id FROM companion_node WHERE kind = 'episode'",
+    ) {
+        Ok(mut stmt) => stmt
+            .query_map([], |row| row.get::<_, String>(0))
+            .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+
+    if !episode_ids.is_empty() {
+        let placeholders = episode_ids
+            .iter()
+            .map(|_| "?")
+            .collect::<Vec<_>>()
+            .join(",");
+        let p: Vec<&dyn rusqlite::ToSql> = episode_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::ToSql)
+            .collect();
+
+        let _ = conn.execute(
+            &format!("DELETE FROM companion_fts WHERE node_id IN ({placeholders})"),
+            p.as_slice(),
+        );
+        // vec0 table is created lazily; this is best-effort.
+        let _ = conn.execute(
+            &format!("DELETE FROM companion_embedding WHERE node_id IN ({placeholders})"),
+            p.as_slice(),
+        );
+        let _ = conn.execute(
+            &format!("DELETE FROM companion_node WHERE id IN ({placeholders})"),
+            p.as_slice(),
+        );
+    }
+
+    // Archive the on-disk episodes folder. Failure here is non-fatal —
+    // SQL has already been wiped, which is what the UI binds to.
+    if let Ok(root) = crate::companion::disk::brain_root() {
+        let episodes = root.join("episodes");
+        if episodes.exists() {
+            let stamp = chrono::Utc::now().format("%Y%m%dT%H%M%S");
+            let archived = root.join(format!("episodes-archive-{stamp}"));
+            if std::fs::rename(&episodes, &archived).is_ok() {
+                let _ = std::fs::create_dir_all(&episodes);
+                tracing::info!(archive = %archived.display(), "companion: wiped episodes — old set archived");
+            }
+        }
+    }
+
     Ok(())
 }
 

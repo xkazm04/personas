@@ -1,10 +1,7 @@
-import { Check, Sparkles, Type, Languages } from 'lucide-react';
+import { Check, Type, Languages } from 'lucide-react';
 import { useThemeStore, THEMES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, useIsDarkTheme } from '@/stores/themeStore';
 import { useI18nStore, type Language } from '@/stores/i18nStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
-import { TIERS } from '@/lib/constants/uiModes';
-import { ModeComparisonCard } from '@/features/simple-mode';
 import {
   TextScalePicker,
   BrightnessPicker,
@@ -36,8 +33,6 @@ export function AppearanceStep() {
   const isDark = useIsDarkTheme();
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const { language, setLanguage } = useI18nStore();
-  const viewMode = useSystemStore((s) => s.viewMode);
-  const setViewMode = useSystemStore((s) => s.setViewMode);
 
   const darkThemes = THEMES.filter((t) => !t.isLight);
   const lightThemes = THEMES.filter((t) => t.isLight);
@@ -49,35 +44,6 @@ export function AppearanceStep() {
         <p className="typo-body text-foreground">
           {t.onboarding.appearance_description}
         </p>
-      </div>
-
-      {/* Interface mode — Phase 12: Simple vs Power picker. Sits first so the
-          most consequential choice anchors the appearance step. Default is
-          Power (DEFAULT_TIER === TIERS.TEAM) for first-time users. */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-foreground" />
-          <span className="typo-body font-medium text-foreground">
-            {t.onboarding.interface_mode_heading}
-          </span>
-        </div>
-        <p className="typo-body text-foreground/60">
-          {t.onboarding.interface_mode_description}
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <ModeComparisonCard
-            mode="starter"
-            isActive={viewMode === TIERS.STARTER}
-            onSelect={() => setViewMode(TIERS.STARTER)}
-            compact
-          />
-          <ModeComparisonCard
-            mode="team"
-            isActive={viewMode === TIERS.TEAM}
-            onSelect={() => setViewMode(TIERS.TEAM)}
-            compact
-          />
-        </div>
       </div>
 
       {/* Language */}

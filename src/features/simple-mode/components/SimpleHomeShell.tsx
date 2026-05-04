@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
 import { Gauge, Inbox, LayoutGrid, Settings } from 'lucide-react';
-import { Button } from '@/features/shared/components/buttons';
 import { useRovingTabIndex } from '@/hooks/utility/interaction/useRovingTabIndex';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
@@ -8,7 +7,6 @@ import type { SimpleTab } from '@/stores/slices/system/simpleModeSlice';
 interface SimpleHomeShellProps {
   activeTab: SimpleTab;
   onTabChange: (tab: SimpleTab) => void;
-  onSwitchToPower: () => void;
   onOpenSettings: () => void;
   children: ReactNode;
 }
@@ -29,17 +27,15 @@ const FOCUS_RING =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 /**
- * Shared visual shell for the Simple-mode Home Base: thin top bar with
- * title/subtitle on the left, a 3-tab switcher in the center, and
- * Settings + Switch-to-Power actions on the right. Renders `children`
- * below as the variant body.
+ * Shared visual shell for the Cockpit page: thin top bar with title/subtitle
+ * on the left, a 3-tab switcher in the center, and a Settings gear on the
+ * right. Renders `children` below as the variant body.
  *
  * All user-facing strings route through `useTranslation()` per CLAUDE.md.
  */
 export function SimpleHomeShell({
   activeTab,
   onTabChange,
-  onSwitchToPower,
   onOpenSettings,
   children,
 }: SimpleHomeShellProps) {
@@ -104,7 +100,7 @@ export function SimpleHomeShell({
           })}
         </nav>
 
-        {/* Right: settings gear + switch-to-power */}
+        {/* Right: settings gear */}
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
@@ -115,14 +111,6 @@ export function SimpleHomeShell({
           >
             <Settings className="w-4 h-4" />
           </button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onSwitchToPower}
-            className={`simple-accent-violet-text simple-accent-violet-border simple-accent-violet-soft border hover:brightness-110 ${FOCUS_RING}`}
-          >
-            {t.simple_mode.switch_to_power}
-          </Button>
         </div>
       </header>
 

@@ -382,7 +382,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 // -- Navigation Types ---------------------------------------------------
 
 export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
-export type HomeTab = "welcome" | "roadmap" | "system-check" | "learning";
+export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub (absorbs former Prompt, Connectors, Health tabs). */
 export type DesignSubTab = "design" | "prompt" | "connectors";
@@ -394,7 +394,7 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "quality-gates";
 export type DevToolsTab = "overview" | "projects" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills";
 export type AgentTab = "all" | "create" | "team" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin";
+export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";
 export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";

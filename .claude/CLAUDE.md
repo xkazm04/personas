@@ -228,3 +228,67 @@ After significant feature work, run `/guide-sync` to keep the marketing site gui
 ### Historical (for context; no longer active on `master`)
 
 - The "~159 pre-existing TS errors" and the `AccountSettings.tsx` missing-import list from earlier versions of this document **no longer apply**. The 2026-04-17 ship-ready pass resolved all TS errors; `npx tsc --noEmit` now exits clean on `master`. If you see TS errors on a branch, treat them as regressions introduced on that branch.
+
+---
+
+## Feature Log Sync (codex-gf companion)
+
+A separate local project at `C:\Users\kazda\kiro\gf\codex-gf` runs a personal companion ("codex-gf") that maintains a cross-project **feature log**. The log gives the companion a brief, durable record of what the user achieved across all their Claude CLI projects so it can reason about momentum, causality, and continuity.
+
+**When to log**
+
+After completing one of the following — log a single entry:
+
+- A discrete feature phase landed (e.g. "Phase 3: conflict simulator removed", "session storage migration shipped").
+- A substantial session that touched user-visible behavior, schema, or workflow.
+- A meaningful refactor, bug fix, or architecture decision the user would care to remember 3 months from now.
+
+Skip routine work: typo fixes, single-line tweaks, dependency bumps, formatting-only commits.
+
+**How to log**
+
+1. Check whether the codex-gf dev server is reachable. It usually runs at `http://localhost:3001`. Probe it with:
+   ```bash
+   curl -s -o /dev/null -w "%{http_code}\n" http://localhost:3001/api/feature-log
+   ```
+   If the response is not `200`, skip the log silently — never block your task on this. Don't try to start the server.
+
+2. POST a single JSON object to `/api/feature-log`. Required fields: `project`, `motivation`, `action`, `result`. Optional: `phase`, `skill`, `prompt`, `proposal`, `tags`, `metrics`.
+
+   ```bash
+   curl -s -X POST http://localhost:3001/api/feature-log \
+     -H "Content-Type: application/json" \
+     -d '{
+       "project": "personas",
+       "phase": "Phase X — short label",
+       "motivation": "Why this was worth doing — short.",
+       "action": "What you actually did, ≤240 chars.",
+       "result": "What landed and why it matters, ≤240 chars.",
+       "skill": "general | review | ultrareview | init | manual",
+       "prompt": "(optional) the user prompt that triggered this work, truncated",
+       "proposal": "(optional) your one-line plan or proposal that led to this",
+       "tags": ["refactor","ui"],
+       "metrics": { "filesChanged": 3, "linesAdded": 120, "linesRemoved": 40, "durationMin": 25 }
+     }'
+   ```
+
+3. The endpoint dedupes on `(project, action[:40])` within the last 5 entries — if your work is a continuation, send a new entry anyway with a slightly different action phrasing.
+
+**Field guidance**
+
+- `project`: a stable short slug, not a path. For this repo always use `"personas"`.
+- `phase`: optional but useful — match the phase/issue label you've been using in conversation, or invent a short one (`"Phase 3 — conflict simulator"`, `"Auth migration"`).
+- `motivation` / `action` / `result`: each ≤240 characters. Server caps and truncates with an ellipsis if longer. Aim for one sentence each.
+- `skill`: which Claude Code surface this came from. Examples: `"general"` (default), `"review"`, `"ultrareview"`, `"init"`, `"security-review"`, `"manual"` if user drove it without a slash command.
+- `prompt`: the original user prompt, truncated to a single sentence/line.
+- `proposal`: the one-line summary of your plan you presented before doing the work.
+- `tags`: 1–4 short lowercase tags (`["refactor","ui","bugfix","schema","perf","docs","tooling"]`).
+- `metrics`: optional — pull `filesChanged` and `linesAdded`/`linesRemoved` from `git diff --shortstat HEAD~1..HEAD` or similar; estimate `durationMin` if you can.
+
+**Failure mode**
+
+If the POST fails (server down, validation error, network error) — silently continue. The log is best-effort observability for the user's companion, never a gate on your real work. Do not retry, do not surface the failure unless asked.
+
+**Privacy**
+
+The codex-gf project is local-only and stored in `data/memory.json`. Treat the log like a personal journal — keep entries factual and brief; avoid quoting private third-party content beyond what's necessary to make the entry meaningful.

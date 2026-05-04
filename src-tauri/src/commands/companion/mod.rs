@@ -10,11 +10,13 @@ pub mod chat;
 pub mod consolidate;
 pub mod feedback;
 pub mod observability;
+pub mod voice;
 
 use std::sync::Arc;
 use tauri::State;
 
 use crate::companion::brain::doctrine;
+use crate::companion::dev_session;
 use crate::companion::disk;
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
@@ -42,7 +44,7 @@ pub fn companion_init(state: State<'_, Arc<AppState>>) -> Result<String, AppErro
     {
         let pool = state.user_db.clone();
         let embedder = state.embedding_manager.clone();
-        if let Some(emb) = embedder {
+        if let Some(emb) = embedder.clone() {
             tauri::async_runtime::spawn(async move {
                 if let Err(e) = run_doctrine_ingest(pool, emb).await {
                     tracing::warn!(error = %e, "companion doctrine ingest failed");
@@ -51,6 +53,20 @@ pub fn companion_init(state: State<'_, Arc<AppState>>) -> Result<String, AppErro
         } else {
             tracing::debug!("companion doctrine: no embedder configured, skipping ingest");
         }
+        // Recover any self-improve runs orphaned by a previous Tauri-dev
+        // restart. The detached coding CLI keeps running across the
+        // parent-process restart triggered by source edits; this scan
+        // surfaces their outcome as a system episode so the conversation
+        // doesn't get stuck. Cheap when the dir is empty.
+        let pool2 = state.user_db.clone();
+        let emb2 = embedder;
+        tauri::async_runtime::spawn(async move {
+            if let Err(e) =
+                dev_session::recover_orphan_improvements(&pool2, emb2.as_ref()).await
+            {
+                tracing::warn!(error = %e, "self-improve: orphan recovery failed");
+            }
+        });
     }
 
     Ok(root.display().to_string())

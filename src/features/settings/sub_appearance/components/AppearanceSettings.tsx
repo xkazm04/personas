@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { Check, Globe, Palette, Sun, Type, Sparkles } from 'lucide-react';
+import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
 import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
@@ -10,9 +10,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import CustomThemeCreator from './CustomThemeCreator';
 import TranslationContributor from './TranslationContributor';
 import PseudoLocaleToggle from './PseudoLocaleToggle';
-import { useSystemStore } from '@/stores/systemStore';
-import { TIERS } from '@/lib/constants/uiModes';
-import { ModeComparisonCard } from '@/features/simple-mode';
 
 const ThemePreviewTooltip = memo(function ThemePreviewTooltip({ theme }: { theme: ThemeDefinition }) {
   const { backgroundSample, foregroundSample, primaryColor, accentColor } = theme;
@@ -180,8 +177,6 @@ export default function AppearanceSettings() {
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
   const customTheme = useThemeStore((s) => s.customTheme);
 
-  const viewMode = useSystemStore((s) => s.viewMode);
-  const setViewMode = useSystemStore((s) => s.setViewMode);
   const s = t.settings.appearance;
 
   const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);
@@ -205,33 +200,6 @@ export default function AppearanceSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          {/* Interface mode — dev preview of Simple-mode redesign */}
-          {import.meta.env.DEV && (
-            <div className="rounded-modal border-2 border-amber-500/50 ring-1 ring-amber-500/20 bg-card-bg p-6 space-y-4">
-              <div className="flex items-center justify-between gap-3">
-                <SectionHeading title={s.interface_mode} icon={<Sparkles className="text-violet-400" />} />
-                <span className="typo-caption font-semibold tracking-wide uppercase text-amber-400 shrink-0">
-                  Simple-mode redesign · preview
-                </span>
-              </div>
-              <p className="text-xs text-foreground">
-                {s.interface_mode_hint}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <ModeComparisonCard
-                  mode="starter"
-                  isActive={viewMode === TIERS.STARTER}
-                  onSelect={() => setViewMode(TIERS.STARTER)}
-                />
-                <ModeComparisonCard
-                  mode="team"
-                  isActive={viewMode === TIERS.TEAM}
-                  onSelect={() => setViewMode(TIERS.TEAM)}
-                />
-              </div>
-            </div>
-          )}
-
           {/* Text sizing */}
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
             <SectionHeading title={s.text_size} icon={<Type />} />

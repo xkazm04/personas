@@ -34,6 +34,7 @@ pub async fn build_system_prompt(
     embedder: Option<&Arc<EmbeddingManager>>,
     session_id: &str,
     query: &str,
+    voice_enabled: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -58,6 +59,7 @@ pub async fn build_system_prompt(
     };
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
+    let voice_md = voice_addendum_if_needed(voice_enabled);
 
     Ok(compose(
         &constitution,
@@ -65,6 +67,7 @@ pub async fn build_system_prompt(
         &observability_md,
         &recall,
         &onboarding_md,
+        &voice_md,
     ))
 }
 
@@ -74,6 +77,7 @@ pub async fn build_system_prompt(
     sys_db: &DbPool,
     session_id: &str,
     _query: &str,
+    voice_enabled: bool,
 ) -> Result<String, AppError> {
     let root = disk::brain_root()?;
     let constitution =
@@ -93,6 +97,7 @@ pub async fn build_system_prompt(
     };
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
+    let voice_md = voice_addendum_if_needed(voice_enabled);
 
     Ok(compose(
         &constitution,
@@ -100,6 +105,7 @@ pub async fn build_system_prompt(
         &observability_md,
         &recall,
         &onboarding_md,
+        &voice_md,
     ))
 }
 
@@ -136,6 +142,7 @@ fn compose(
     observability_md: &str,
     recall: &Recall,
     onboarding_md: &str,
+    voice_md: &str,
 ) -> String {
     let episodes_md = format_episodes(&recall.episodes);
     let doctrine_md = format_doctrine(&recall.doctrine);
@@ -147,6 +154,7 @@ fn compose(
             + episodes_md.len()
             + doctrine_md.len()
             + onboarding_md.len()
+            + voice_md.len()
             + 128,
     );
     out.push_str(constitution);
@@ -160,7 +168,52 @@ fn compose(
     // Onboarding sits at the very end so its instructions are the last
     // thing Athena reads before forming a reply — most recency-weighted.
     out.push_str(onboarding_md);
+    // Voice addendum: only included when the user has voice playback on.
+    out.push_str(voice_md);
     out
+}
+
+/// Voice addendum: only when the user toggled voice playback on. Tells
+/// Athena to emit a TTS line in addition to her normal markdown reply.
+/// Skipped entirely when voice is off so we don't waste tokens or
+/// confuse Athena with capabilities she shouldn't use.
+fn voice_addendum_if_needed(voice_enabled: bool) -> String {
+    if !voice_enabled {
+        return String::new();
+    }
+    String::from(
+        r#"
+
+# VOICE PLAYBACK — emit a TTS line this turn
+
+Voice playback is on. Alongside your normal markdown reply, emit one
+line that's safe to speak aloud — suitable for ElevenLabs synthesis.
+
+Format (exactly one line, anywhere in the reply):
+
+    TTS: "Two lab agents are failing. Want me to walk you through them?"
+
+Discipline:
+
+- Spoken text is a *different rendering* of the same content, not a
+  transcription. Bullet lists, headings, code blocks, file paths,
+  citations — none of them sound right read aloud.
+- 1–3 sentences total. Headlines, not the full reply.
+- First-person, conversational, no preamble. ("I see two failures, both
+  in the lab — let me know if you want to dig in.")
+- Plain English. No markdown, no parens, no lists, no code-style names.
+  If you'd say "see ``persona-capabilities/00-vision.md``" in writing,
+  speak it as "the vision doc."
+- Never read out IDs, paths, or hashes verbatim — describe instead.
+- Match the visual reply's tone but trim ruthlessly — if the written
+  answer is one sentence, the spoken version is the same sentence
+  cleaned of any formatting cruft.
+- If the visual reply is purely a question or a chip-prompt, the TTS
+  line can mirror it verbatim.
+- One TTS line per turn. Don't emit if the visual reply has no
+  meaningful spoken summary (rare; most replies do).
+"#,
+    )
 }
 
 /// Detect a fresh-install state (no prior conversation + identity.md is

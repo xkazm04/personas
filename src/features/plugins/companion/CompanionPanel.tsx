@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Bot, RotateCcw, Send, X } from 'lucide-react';
+import { BookOpen, Bot, Loader2, RotateCcw, Send, Wrench, X } from 'lucide-react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -8,18 +8,54 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useCompanionStore } from './companionStore';
 import {
   COMPANION_APPROVALS_EVENT,
+  COMPANION_NAVIGATE_EVENT,
   COMPANION_STREAM_EVENT,
   companionListPendingApprovals,
   companionListRecentMessages,
+  companionBetaFlags,
   companionReingestDoctrine,
+  companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
   type CompanionStreamEvent,
   type CreatedApproval,
 } from '@/api/companion';
+import type { SidebarSection } from '@/lib/types/types';
 import { ApprovalCard } from './ApprovalCard';
+import { AthenaAvatar } from './AthenaAvatar';
+import { BrainViewer } from './BrainViewer';
+import { CompanionToolbar } from './CompanionToolbar';
 import { useToastStore } from '@/stores/toastStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
+
+// Fallback follow-ups for the "What can Athena do?" toolbar preset —
+// only used when the turn returns no QR chips, so this preset is never
+// a dead-end. Each entry is the literal user message that will be sent
+// on click (first-person voice, matching Athena's QR contract).
+const CAPABILITY_FALLBACK_REPLIES: string[] = [
+  'Show me what you know about my agents',
+  'Walk me through recent execution failures',
+  'List my pending Human Reviews',
+  'Read back what you remember about me',
+];
+
+// Mirrors the backend `ALLOWED_ROUTES` allow-list in
+// src-tauri/src/companion/dispatcher.rs. Defensive: backend already
+// filtered, but a stale frontend or future-protocol mismatch shouldn't
+// throw the sidebar into an unknown state.
+const VALID_NAV_ROUTES: SidebarSection[] = [
+  'home',
+  'overview',
+  'personas',
+  'events',
+  'credentials',
+  'design-reviews',
+  'plugins',
+  'schedules',
+  'settings',
+];
 
 /**
  * Athena's chat panel — Phase 1: real chat over a long-lived Claude CLI
@@ -38,6 +74,10 @@ export default function CompanionPanel() {
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
   const approvals = useCompanionStore((s) => s.approvals);
+  const quickReplies = useCompanionStore((s) => s.quickReplies);
+  const brainView = useCompanionStore((s) => s.brainView);
+  const betaSelfImprove = useCompanionStore((s) => s.betaSelfImprove);
+  const improving = useCompanionStore((s) => s.improving);
 
   const setMessages = useCompanionStore((s) => s.setMessages);
   const appendMessage = useCompanionStore((s) => s.appendMessage);
@@ -47,8 +87,27 @@ export default function CompanionPanel() {
   const setSendError = useCompanionStore((s) => s.setSendError);
   const setApprovals = useCompanionStore((s) => s.setApprovals);
   const removeApproval = useCompanionStore((s) => s.removeApproval);
+  const setQuickReplies = useCompanionStore((s) => s.setQuickReplies);
+  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const setBetaSelfImprove = useCompanionStore((s) => s.setBetaSelfImprove);
+  const setImproving = useCompanionStore((s) => s.setImproving);
+  const setPendingPlayback = useCompanionStore((s) => s.setPendingPlayback);
+  const setPlaybackAudioUrl = useCompanionStore((s) => s.setPlaybackAudioUrl);
+  const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
+
+  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
+  const voiceId = useSystemStore((s) => s.companionVoiceId);
 
   const isOpen = state === 'open';
+
+  // Fetch the beta flag once on first panel mount. Cheap, returns a
+  // single bool. Decides whether the wrench-send button is rendered.
+  useEffect(() => {
+    companionBetaFlags()
+      .then((f) => setBetaSelfImprove(f.selfImproveEnabled))
+      .catch(silentCatch('companion_beta_flags'));
+  }, [setBetaSelfImprove]);
 
   return (
     <AnimatePresence>
@@ -63,14 +122,45 @@ export default function CompanionPanel() {
           role="dialog"
           aria-label={t.plugins.companion.panel_label}
         >
+          {/*
+            Faint background portrait sits behind everything as a
+            watermark — semi-transparent so it doesn't fight the
+            messages. pointer-events-none so it never steals clicks.
+            -z-10 keeps it below the static flex children but above the
+            panel's bg-secondary/95 fill, so the image is visible
+            through the tinted background.
+          */}
+          {/*
+            Watermark layer: the avatar fills the panel at low opacity
+            and behaves as a living wallpaper. Its first frame (poster)
+            is athena_baseline.jpg, so the visual chain is continuous
+            from "static still" → "idle loop" → "thinking loop".
+          */}
+          <AthenaAvatar
+            fill
+            state={streaming ? 'thinking' : 'idle'}
+            className="absolute inset-0 -z-10 opacity-[0.05]"
+          />
           <Header
             onClose={() => setState('collapsed')}
             onReset={async () => {
+              // Clear UI state immediately so the wipe feels instant.
+              // Backend wipes both the SQL transcript AND the CLI session
+              // pointer (wipeTranscript=true), so when the user hits send
+              // next, the prompt-builder sees an empty transcript and
+              // (if identity.md is still placeholder-shaped) re-enters
+              // onboarding mode.
+              setMessages([]);
+              setApprovals([]);
+              setQuickReplies([]);
+              setPendingPlayback(null);
               try {
-                await companionResetConversation(false);
-                const fresh = await companionListRecentMessages(50);
-                setMessages(fresh);
+                await companionResetConversation(true);
               } catch (err: unknown) {
+                // Refetch so UI reflects whatever stuck on the backend.
+                companionListRecentMessages(50)
+                  .then((msgs) => setMessages(msgs))
+                  .catch(silentCatch('companion_list_recent_messages'));
                 silentCatch('companion_reset_conversation')(err);
               }
             }}
@@ -105,6 +195,13 @@ export default function CompanionPanel() {
             streamingText={streamingText}
             sendError={sendError}
             approvals={approvals}
+            quickReplies={quickReplies}
+            brainView={brainView}
+            betaSelfImprove={betaSelfImprove}
+            improving={improving}
+            voiceEnabled={voiceEnabled}
+            voiceCredentialId={voiceCredentialId}
+            voiceId={voiceId}
             setMessages={setMessages}
             appendMessage={appendMessage}
             setStreaming={setStreaming}
@@ -113,6 +210,12 @@ export default function CompanionPanel() {
             setSendError={setSendError}
             setApprovals={setApprovals}
             removeApproval={removeApproval}
+            setQuickReplies={setQuickReplies}
+            setBrainView={setBrainView}
+            setImproving={setImproving}
+            setPendingPlayback={setPendingPlayback}
+            setPlaybackAudioUrl={setPlaybackAudioUrl}
+            markPlaybackPlayed={markPlaybackPlayed}
           />
         </motion.div>
       )}
@@ -133,6 +236,11 @@ function Header({
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
       <div className="flex items-center gap-2 min-w-0">
+        {/*
+          Header keeps a small static badge — the full Athena avatar now
+          lives behind the chat as a watermark, so duplicating the video
+          here would be visual noise.
+        */}
         <span
           className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary"
           aria-hidden
@@ -185,6 +293,13 @@ interface BodyProps {
   streamingText: string;
   sendError: string | null;
   approvals: ReturnType<typeof useCompanionStore.getState>['approvals'];
+  quickReplies: string[];
+  brainView: ReturnType<typeof useCompanionStore.getState>['brainView'];
+  betaSelfImprove: boolean;
+  improving: boolean;
+  voiceEnabled: boolean;
+  voiceCredentialId: string | null;
+  voiceId: string | null;
   setMessages: (m: BodyProps['messages']) => void;
   appendMessage: (m: BodyProps['messages'][number]) => void;
   setStreaming: (v: boolean) => void;
@@ -193,6 +308,14 @@ interface BodyProps {
   setSendError: (e: string | null) => void;
   setApprovals: (a: BodyProps['approvals']) => void;
   removeApproval: (id: string) => void;
+  setQuickReplies: (q: string[]) => void;
+  setBrainView: (next: BodyProps['brainView']) => void;
+  setImproving: (v: boolean) => void;
+  setPendingPlayback: (
+    p: ReturnType<typeof useCompanionStore.getState>['pendingPlayback'],
+  ) => void;
+  setPlaybackAudioUrl: (audioUrl: string) => void;
+  markPlaybackPlayed: () => void;
 }
 
 function Body(props: BodyProps) {
@@ -204,6 +327,13 @@ function Body(props: BodyProps) {
     streamingText,
     sendError,
     approvals,
+    quickReplies,
+    brainView,
+    betaSelfImprove,
+    improving,
+    voiceEnabled,
+    voiceCredentialId,
+    voiceId,
     setMessages,
     appendMessage,
     setStreaming,
@@ -212,6 +342,12 @@ function Body(props: BodyProps) {
     setSendError,
     setApprovals,
     removeApproval,
+    setQuickReplies,
+    setBrainView,
+    setImproving,
+    setPendingPlayback,
+    setPlaybackAudioUrl,
+    markPlaybackPlayed,
   } = props;
   const { t } = useTranslation();
 
@@ -257,6 +393,35 @@ function Body(props: BodyProps) {
     };
   }, [appendStreamingText, setSendError]);
 
+  // Subscribe to direct-navigation events fired by Athena's `open_route`
+  // op. By design these bypass the approval flow — Athena just switches
+  // the sidebar behind the chat. We deliberately do NOT collapse the
+  // panel here so the user can keep talking while the destination loads
+  // behind it (the explicit goal: "achieve using the chat and seeing
+  // how it works with the app").
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let cancelled = false;
+    listen<string>(COMPANION_NAVIGATE_EVENT, (event) => {
+      if (cancelled) return;
+      const route = event.payload as SidebarSection;
+      if (!VALID_NAV_ROUTES.includes(route)) return;
+      useSystemStore.getState().setSidebarSection(route);
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
+      })
+      .catch(silentCatch('companion_navigate_listen'));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
   // Subscribe to approval-creation events. Each event payload is the
   // array of approvals created in the just-finished turn — we refetch
   // canonical pending list to stay in sync (handles edge cases like an
@@ -292,11 +457,20 @@ function Body(props: BodyProps) {
     el.scrollTop = el.scrollHeight;
   }, [messages, streamingText, streaming]);
 
+  // Voice is "active" only when fully wired: user toggled it on AND has
+  // an ElevenLabs credential + voice id selected. The send pipeline checks
+  // this before asking the backend to emit a TTS line — there's no point
+  // generating a spoken summary we can't synthesize.
+  const voiceActive = voiceEnabled && Boolean(voiceCredentialId && voiceId);
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
       setSendError(null);
+      // Quick-replies are one-shot — clear before the new turn so they
+      // don't linger if Athena's reply doesn't offer fresh ones.
+      setQuickReplies([]);
       // Optimistic user bubble.
       const optimistic = {
         id: `optim_${Date.now()}`,
@@ -308,11 +482,41 @@ function Body(props: BodyProps) {
       setStreaming(true);
       resetStreamingText();
       try {
-        await companionSendMessage(trimmed);
+        const result = await companionSendMessage(trimmed, voiceActive);
         // Refresh canonical transcript from backend (replaces the optimistic
         // user bubble with the persisted episode + adds the assistant turn).
         const fresh = await companionListRecentMessages(50);
         setMessages(fresh);
+        if (result.quickReplies && result.quickReplies.length > 0) {
+          setQuickReplies(result.quickReplies);
+        }
+        // Voice playback wiring — only when voice is on AND backend gave
+        // us a spoken summary. Stash it for the footer Play button, then
+        // auto-play here so the user hears it without an extra click.
+        // Failures are non-fatal: the text reply already landed.
+        if (
+          voiceActive &&
+          result.ttsText &&
+          voiceCredentialId &&
+          voiceId
+        ) {
+          const playback = {
+            episodeId: result.assistantEpisodeId,
+            ttsText: result.ttsText,
+            played: false,
+            audioUrl: null as string | null,
+          };
+          setPendingPlayback(playback);
+          synthesizeTts(result.ttsText, voiceCredentialId, voiceId)
+            .then((url) => {
+              setPlaybackAudioUrl(url);
+              const { done } = playAudio(url);
+              done
+                .then(() => markPlaybackPlayed())
+                .catch(silentCatch('companion_tts_play'));
+            })
+            .catch(silentCatch('companion_tts_synthesize'));
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         setSendError(msg);
@@ -322,60 +526,168 @@ function Body(props: BodyProps) {
         resetStreamingText();
       }
     },
-    [appendMessage, resetStreamingText, setMessages, setSendError, setStreaming],
+    [
+      appendMessage,
+      markPlaybackPlayed,
+      resetStreamingText,
+      setMessages,
+      setPendingPlayback,
+      setPlaybackAudioUrl,
+      setQuickReplies,
+      setSendError,
+      setStreaming,
+      voiceActive,
+      voiceCredentialId,
+      voiceId,
+    ],
   );
 
+  // Wrench-send: pipe the textarea content into the self-improve loop.
+  // The improvement runs on a SEPARATE Claude CLI session at repo root
+  // (not Athena's main session), writes to disk, and logs the outcome
+  // as a system episode in Athena's transcript so she sees what
+  // changed in future turns.
+  const requestImprove = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      setImproving(true);
+      // Show an optimistic user-style bubble so it's clear what was
+      // submitted, then refetch when the backend logs the outcome.
+      appendMessage({
+        id: `improve_user_${Date.now()}`,
+        role: 'user',
+        content: `🛠 ${trimmed}`,
+        createdAt: new Date().toISOString(),
+      });
+      try {
+        await companionRequestImprovement(trimmed);
+        const fresh = await companionListRecentMessages(50);
+        setMessages(fresh);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setSendError(msg);
+        silentCatch('companion_request_improvement')(err);
+      } finally {
+        setImproving(false);
+      }
+    },
+    [appendMessage, setImproving, setMessages, setSendError],
+  );
+
+  // Quick-action seed for the help button on the right toolbar. Sent
+  // verbatim through the same path as a typed user message, so it
+  // produces a real episode + assistant reply (and respects the
+  // turn-in-flight guard via `disabled`).
+  //
+  // After the turn lands, if Athena didn't emit her own QR chips, we
+  // seed a deterministic follow-up set so this preset is never a
+  // dead-end. The user kept hitting this button looking for "what
+  // next" and getting only prose — the chips convert the abstract
+  // capability list into a concrete next click.
+  const askCapabilities = useCallback(async () => {
+    await send(
+      'What can you do? Walk me through your concrete capabilities — what data you see in the app right now, what actions you can propose for me to approve, and what you remember.',
+    );
+    if (useCompanionStore.getState().quickReplies.length === 0) {
+      setQuickReplies(CAPABILITY_FALLBACK_REPLIES);
+    }
+  }, [send, setQuickReplies]);
+
   return (
-    <>
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
-        {!initialized && !initError && (
-          <div className="flex items-center gap-3 text-foreground/70 typo-body">
-            <LoadingSpinner size="sm" />
-            <span>{t.plugins.companion.initializing}</span>
-          </div>
-        )}
-        {initError && (
-          <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
-            {t.plugins.companion.init_failed}: {initError}
-          </div>
-        )}
-        {initialized && messages.length === 0 && !streaming && (
-          <p className="typo-body text-foreground/50">
-            {t.plugins.companion.empty_transcript}
-          </p>
-        )}
-        {messages.map((m) => (
-          <Bubble key={m.id} role={m.role}>
-            {m.content}
-          </Bubble>
-        ))}
-        {streaming && (
-          <Bubble role="assistant" streaming>
-            {streamingText || t.plugins.companion.thinking}
-          </Bubble>
-        )}
-        {approvals.map((a) => (
-          <ApprovalCard
-            key={a.id}
-            approval={a}
-            onResolved={(id) => {
-              removeApproval(id);
-              // Pull the canonical transcript so the system episode the
-              // backend just logged (action outcome) shows up.
-              companionListRecentMessages(50)
-                .then((msgs) => setMessages(msgs))
-                .catch(silentCatch('companion_list_recent_messages'));
-            }}
+    <div className="flex flex-row flex-1 min-h-0">
+      <div className="relative flex flex-col flex-1 min-w-0">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+          {!initialized && !initError && (
+            <div className="flex items-center gap-3 text-foreground/70 typo-body">
+              <LoadingSpinner size="sm" />
+              <span>{t.plugins.companion.initializing}</span>
+            </div>
+          )}
+          {initError && (
+            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
+              {t.plugins.companion.init_failed}: {initError}
+            </div>
+          )}
+          {initialized && messages.length === 0 && !streaming && (
+            <p className="typo-body text-foreground/50">
+              {t.plugins.companion.empty_transcript}
+            </p>
+          )}
+          {messages.map((m) => (
+            <Bubble key={m.id} role={m.role}>
+              {m.content}
+            </Bubble>
+          ))}
+          {streaming && (
+            <Bubble role="assistant" streaming>
+              {streamingText || t.plugins.companion.thinking}
+            </Bubble>
+          )}
+          {improving && (
+            <div className="rounded-card border border-amber-500/30 bg-amber-500/5 px-3.5 py-2.5 typo-body text-amber-300/90 flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>{t.plugins.companion.improving}</span>
+            </div>
+          )}
+          {approvals.map((a) => (
+            <ApprovalCard
+              key={a.id}
+              approval={a}
+              onResolved={(id) => {
+                removeApproval(id);
+                // Pull the canonical transcript so the system episode the
+                // backend just logged (action outcome) shows up.
+                companionListRecentMessages(50)
+                  .then((msgs) => setMessages(msgs))
+                  .catch(silentCatch('companion_list_recent_messages'));
+              }}
+            />
+          ))}
+          {sendError && (
+            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
+              {sendError}
+            </div>
+          )}
+        </div>
+        <QuickReplies
+          options={quickReplies}
+          disabled={!initialized || streaming}
+          onPick={(opt) => {
+            // Keep the picked text visible to the user as their next
+            // turn — the send pipeline handles persistence + assistant
+            // reply + clearing the chip set.
+            void send(opt);
+          }}
+        />
+        <Composer
+          disabled={!initialized || streaming || brainView.open || improving}
+          onSend={send}
+          onImprove={requestImprove}
+          improveEnabled={betaSelfImprove}
+          improving={improving}
+        />
+        {brainView.open && (
+          <BrainViewer
+            onClose={() =>
+              setBrainView({ open: false, kind: null, id: null })
+            }
           />
-        ))}
-        {sendError && (
-          <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
-            {sendError}
-          </div>
         )}
       </div>
-      <Composer disabled={!initialized || streaming} onSend={send} />
-    </>
+      <CompanionToolbar
+        onAskCapabilities={askCapabilities}
+        onOpenBrain={() =>
+          setBrainView({
+            open: !brainView.open,
+            kind: brainView.open ? null : null,
+            id: null,
+          })
+        }
+        brainOpen={brainView.open}
+        disabled={!initialized || streaming}
+      />
+    </div>
   );
 }
 
@@ -413,12 +725,72 @@ function Bubble({
   );
 }
 
+function QuickReplies({
+  options,
+  disabled,
+  onPick,
+}: {
+  options: string[];
+  disabled: boolean;
+  onPick: (text: string) => void;
+}) {
+  // Keyboard shortcuts 1-9: when chips are visible and the user isn't
+  // typing in the composer, pressing a number key fires the matching
+  // option. Useful for keyboard-only flow.
+  useEffect(() => {
+    if (options.length === 0 || disabled) return;
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase();
+      if (tag === 'textarea' || tag === 'input') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const n = parseInt(e.key, 10);
+      if (Number.isNaN(n) || n < 1 || n > options.length) return;
+      const picked = options[n - 1];
+      if (!picked) return;
+      e.preventDefault();
+      onPick(picked);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [options, disabled, onPick]);
+
+  if (options.length === 0) return null;
+
+  return (
+    <div className="border-t border-foreground/10 px-3 py-2 flex flex-wrap gap-1.5 shrink-0">
+      {options.map((opt, i) => (
+        <button
+          key={`${i}-${opt}`}
+          onClick={() => onPick(opt)}
+          disabled={disabled}
+          className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1.5 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+          title={opt}
+        >
+          <span
+            className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-primary/20"
+            aria-hidden
+          >
+            {i + 1}
+          </span>
+          <span className="truncate">{opt}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Composer({
   disabled,
   onSend,
+  onImprove,
+  improveEnabled,
+  improving,
 }: {
   disabled: boolean;
   onSend: (text: string) => void;
+  onImprove: (text: string) => void;
+  improveEnabled: boolean;
+  improving: boolean;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -429,6 +801,12 @@ function Composer({
     onSend(draft);
     setDraft('');
   }, [disabled, draft, onSend]);
+
+  const submitImprove = useCallback(() => {
+    if (disabled || improving || !draft.trim()) return;
+    onImprove(draft);
+    setDraft('');
+  }, [disabled, improving, draft, onImprove]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -467,6 +845,21 @@ function Composer({
           className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-foreground/40 disabled:opacity-50"
           aria-label={placeholder}
         />
+        {improveEnabled && (
+          <button
+            onClick={submitImprove}
+            disabled={disabled || improving || !draft.trim()}
+            className="p-2 rounded-interactive bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+            aria-label={t.plugins.companion.improve_send}
+            title={t.plugins.companion.improve_send_title}
+          >
+            {improving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Wrench className="w-4 h-4" />
+            )}
+          </button>
+        )}
         <button
           onClick={submit}
           disabled={disabled || !draft.trim()}

@@ -66,8 +66,15 @@ pub fn ensure_initialized() -> Result<PathBuf, AppError> {
     // version once). New section markers added here will reach existing
     // installs on the next app start.
     let const_path = root.join("constitution.md");
-    const REQUIRED_MARKERS: &[&str] =
-        &["# Reference docs", "# Proposing actions", "update_identity"];
+    const REQUIRED_MARKERS: &[&str] = &[
+        "# Reference docs",
+        "# Proposing actions",
+        "update_identity",
+        "Format for the eye",
+        "Quick replies (preset chips)",
+        "Spoken summaries (TTS replies)",
+        "open_route",
+    ];
     let needs_upgrade = std::fs::read_to_string(&const_path)
         .map(|c| !REQUIRED_MARKERS.iter().all(|m| c.contains(m)))
         .unwrap_or(false);

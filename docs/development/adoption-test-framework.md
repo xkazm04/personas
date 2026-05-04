@@ -2,7 +2,7 @@
 
 > Live-harness end-to-end tests for the template adoption pipeline. Runs
 > against a real desktop app instance with the `test-automation` feature
-> enabled (see [guide-test-automation.md](guide-test-automation.md) for the
+> enabled (see [test-automation.md](test-automation.md) for the
 > harness primitives). Drives the real adoption UI through HTTP, asserts on
 > persona metadata and runtime state, and produces a catalog-wide report.
 >
@@ -277,7 +277,7 @@ FAIL 'Financial Stocks Signaller' in gallery
 
 1. Add `data-testid="..."` to the React component
 2. Reference it in the runner via `click_testid` / `fill_field`
-3. Document it in [guide-test-automation.md](guide-test-automation.md) §
+3. Document it in [test-automation.md](test-automation.md) §
    data-testid Reference
 
 ### Mock a missing connector
@@ -338,7 +338,7 @@ contributes to the overall grade via `B` tier (content gap, not bug).
 
 The earlier doc proposed `src/lib/templates/adoptionQuestionLibrary.ts` — a
 per-connector reusable question library. Deferred indefinitely; the v2
-scope mechanism (Part 1 of [C2-execution-plan.md](concepts/persona-capabilities/C2-execution-plan.md))
+scope mechanism (Part 1 of [C2-execution-plan.md](../_archive/concepts/persona-capabilities/_archive/C2-execution-plan.md))
 subsumes most of what a library would have provided by making
 `scope: "connector"` a first-class notion. Revisit if we still see question
 duplication across templates after the v2 rollout.

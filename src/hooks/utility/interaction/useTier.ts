@@ -1,12 +1,12 @@
 /**
- * useTier — unified hook for the tiered feature gate system.
+ * useTier — feature-gate hook backed by the build-time tier constant.
  *
- * Replaces the scattered useSimpleMode / useDevMode hooks with a single
- * source of truth. Components check `tier.isVisible('team')` to decide
- * whether to render a feature.
+ * The runtime "Simple vs Power" mode toggle was retired; the app now ships
+ * with a single mode determined at build time via VITE_APP_TIER. Components
+ * still call `tier.isVisible('team')` to gate features that only make sense
+ * at higher tiers within multi-tier bundles.
  */
 
-import { useSystemStore } from "@/stores/systemStore";
 import {
   type Tier,
   TIERS,
@@ -16,19 +16,19 @@ import {
 } from "@/lib/constants/uiModes";
 
 export interface TierInfo {
-  /** The user's currently selected tier. */
+  /** The active tier — equal to BUILD_MAX_TIER (no runtime override). */
   current: Tier;
 
   /** Whether a feature requiring `minTier` should be visible. */
   isVisible: (minTier: Tier) => boolean;
 
-  /** Convenience: true when current tier is starter (non-technical UI). */
+  /** Convenience: true when the active tier is starter (always false in non-starter bundles). */
   isStarter: boolean;
 
-  /** Convenience: true when current tier includes team features. */
+  /** Convenience: true when the active tier includes team features. */
   isTeam: boolean;
 
-  /** Convenience: true when current tier includes builder/dev features. */
+  /** Convenience: true when the active tier includes builder/dev features. */
   isBuilder: boolean;
 
   /** Maximum tier this build supports (set by VITE_APP_TIER). */
@@ -39,7 +39,7 @@ export interface TierInfo {
 }
 
 export function useTier(): TierInfo {
-  const current = useSystemStore((s) => s.viewMode) as Tier;
+  const current = BUILD_MAX_TIER;
   const rank = TIER_RANK[current];
 
   return {

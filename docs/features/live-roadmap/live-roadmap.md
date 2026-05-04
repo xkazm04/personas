@@ -27,8 +27,8 @@ This document is the implementation contract for **Variant A (Static JSON over C
 ```
 Build time                       Runtime
 ─────────                        ───────
-src/data/releases.json    ─┐
-src/i18n/en.ts            ─┼──>  Vite bundle  ──>  HomeRoadmapView
+../../../src/data/releases.json    ─┐
+../../../src/i18n/en.ts            ─┼──>  Vite bundle  ──>  HomeRoadmapView
                                                     reads via
                                                     useReleasesTranslation
 ```
@@ -281,8 +281,8 @@ The desktop-side code that consumes `LiveRoadmap` (`HomeRoadmapView`, the merge 
 
 ## References
 
-- Existing data layer: [`src/data/releases.ts`](../../src/data/releases.ts), [`src/data/releases.json`](../../src/data/releases.json)
-- Existing view: [`src/features/home/components/releases/HomeRoadmapView.tsx`](../../src/features/home/components/releases/HomeRoadmapView.tsx)
-- i18n source: [`src/i18n/en.ts`](../../src/i18n/en.ts) → `releases.whats_new.*`
-- IPC pattern: [`src/lib/tauriInvoke.ts`](../../src/lib/tauriInvoke.ts), CLAUDE.md → "Tauri IPC"
+- Existing data layer: [`src/data/releases.ts`](../../../src/data/releases.ts), [`src/data/releases.json`](../../../src/data/releases.json)
+- Existing view: [`src/features/home/components/releases/HomeRoadmapView.tsx`](../../../src/features/home/components/releases/HomeRoadmapView.tsx)
+- i18n source: [`src/i18n/en.ts`](../../../src/i18n/en.ts) → `releases.whats_new.*`
+- IPC pattern: [`src/lib/tauriInvoke.ts`](../../../src/lib/tauriInvoke.ts), CLAUDE.md → "Tauri IPC"
 - Integration scaffold pattern: project memory → "Adding a New Integration"

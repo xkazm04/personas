@@ -30,6 +30,7 @@ export function useSidebarLabels() {
 
       // Home sub-items
       ['welcome', sb.welcome],
+      ['cockpit', sb.cockpit],
       ['roadmap', sb.roadmap],
       ['system-check', sb.system_check],
 
