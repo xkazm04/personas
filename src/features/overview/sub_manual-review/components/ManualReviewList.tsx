@@ -1,17 +1,18 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ClipboardCheck, Plus, BookOpen } from 'lucide-react';
+import { ClipboardCheck, Plus, BookOpen, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { useToastStore } from "@/stores/toastStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import { seedMockManualReview } from '@/api/overview/reviews';
+import { seedMockManualReview, gcStaleManualReviews } from '@/api/overview/reviews';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
@@ -162,6 +163,40 @@ export default function ManualReviewList() {
     catch (err) { logger.error('Failed to seed mock review', { error: err }); }
   }, [fetchManualReviews]);
 
+  // A-grade Phase 8 (2026-05-04) — on-demand stale-review GC. The same
+  // sweep runs once at startup via `engine::background`, but giving the
+  // user an explicit button means they don't have to restart to clear
+  // accumulation from a long-running session. 7-day default mirrors the
+  // backend constant — passing `null` lets the Tauri command pick.
+  const [isGcing, setIsGcing] = useState(false);
+  const handleGcStale = useCallback(async () => {
+    if (isGcing) return;
+    setIsGcing(true);
+    try {
+      const resolved = await gcStaleManualReviews();
+      await fetchManualReviews();
+      const toastStore = useToastStore.getState();
+      if (resolved > 0) {
+        toastStore.addToast(
+          `Auto-resolved ${resolved} stale review${resolved === 1 ? '' : 's'} (older than 7 days).`,
+          'success',
+          2400,
+        );
+      } else {
+        toastStore.addToast('No stale reviews to clear.', 'success', 1600);
+      }
+    } catch (err) {
+      logger.error('Failed to GC stale reviews', { error: err });
+      useToastStore.getState().addToast(
+        'Could not clear stale reviews — see logs.',
+        'error',
+        2400,
+      );
+    } finally {
+      setIsGcing(false);
+    }
+  }, [isGcing, fetchManualReviews]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -169,10 +204,30 @@ export default function ManualReviewList() {
         iconColor="amber"
         title={t.overview.review.title}
         subtitle={`${allReviews.length} ${t.overview.review.subtitle.replace('{count}', '')} · ${statusCounts.pending ?? 0} ${t.overview.review.filter_pending.toLowerCase()}${cloudReviews.length > 0 ? ` · ${cloudReviews.length} ${t.overview.review.cloud_badge.toLowerCase()}` : ''}`}
-        actions={import.meta.env.DEV && (
-          <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.review.seed_tooltip}>
-            <Plus className="w-3.5 h-3.5" /> {t.overview.review.mock_review}
-          </button>
+        actions={(
+          <div className="flex items-center gap-2">
+            {/* A-grade Phase 8 — on-demand sweep. Always visible (unlike
+                the dev-only seed button below) because it's idempotent
+                and safe; matches the auto-aging contract that runs at
+                startup. Hidden when there are zero reviews of any kind
+                — nothing to clear. */}
+            {allReviews.length > 0 && (
+              <button
+                onClick={() => void handleGcStale()}
+                disabled={isGcing}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-foreground/5 text-foreground/70 border border-border/30 hover:bg-foreground/10 hover:text-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                title="Auto-resolve any review left in pending for more than 7 days. Each one writes a policy_events audit row tagged review.stale_gc.resolved."
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                {isGcing ? 'Clearing…' : 'Clear stale'}
+              </button>
+            )}
+            {import.meta.env.DEV && (
+              <button onClick={handleSeedReview} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.review.seed_tooltip}>
+                <Plus className="w-3.5 h-3.5" /> {t.overview.review.mock_review}
+              </button>
+            )}
+          </div>
         )}
       />
 

@@ -820,6 +820,62 @@ pub fn list_manual_reviews(
     }
 }
 
+/// A-grade Phase 8 (2026-05-04) — auto-resolve manual reviews left in
+/// `pending` for longer than the configured threshold. Days are
+/// converted to an RFC3339 cutoff inside the command so callers don't
+/// need to know about the date library. Default 7 days when omitted —
+/// short enough that the reviews list stays actionable, long enough
+/// that legitimate "I'll get to it tomorrow" reviews aren't disturbed.
+///
+/// Each resolved row writes one `policy_events` audit entry with
+/// `policy_kind = "review"` and `action = "stale_gc.resolved"` so the
+/// resolution is traceable in the same place as auto_triage decisions.
+/// Returns the number of rows resolved (0 when nothing was stale).
+#[tauri::command]
+pub fn gc_stale_manual_reviews(
+    state: State<'_, Arc<AppState>>,
+    threshold_days: Option<u32>,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    let days = threshold_days.unwrap_or(7).max(1) as i64;
+    let cutoff = (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339();
+    gc_stale_manual_reviews_inner(&state.db, &cutoff)
+}
+
+/// Inner sweep — extracted so the startup hook (which doesn't have a
+/// `tauri::State`) can call it directly without going through IPC.
+/// Best-effort audit fan-out: a `policy_events::insert` failure logs
+/// warn but does not roll back the resolution.
+pub(crate) fn gc_stale_manual_reviews_inner(
+    pool: &crate::db::DbPool,
+    cutoff_iso: &str,
+) -> Result<u32, AppError> {
+    let resolved = manual_repo::gc_stale_pending(pool, cutoff_iso)?;
+    let count = resolved.len() as u32;
+    for row in &resolved {
+        if let Err(e) = crate::db::repos::execution::policy_events::insert(
+            pool,
+            &row.execution_id,
+            &row.persona_id,
+            row.use_case_id.as_deref(),
+            "review",
+            "stale_gc.resolved",
+            None,
+            Some(&format!(
+                "Auto-resolved by GC sweep — review created {} was still pending past the threshold",
+                row.created_at
+            )),
+        ) {
+            tracing::warn!(
+                review_id = %row.id,
+                error = %e,
+                "Stale-review GC: failed to write policy_events audit row"
+            );
+        }
+    }
+    Ok(count)
+}
+
 #[derive(Clone, Serialize)]
 struct ManualReviewResolvedEvent {
     review_id: String,

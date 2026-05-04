@@ -1287,6 +1287,7 @@ pub fn run() {
             commands::design::reviews::cancel_rebuild,
             commands::design::reviews::list_manual_reviews,
             commands::design::reviews::update_manual_review_status,
+            commands::design::reviews::gc_stale_manual_reviews,
             commands::design::reviews::get_pending_review_count,
             commands::design::reviews::list_review_messages,
             commands::design::reviews::add_review_message,

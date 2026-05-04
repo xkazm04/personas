@@ -521,6 +521,40 @@ pub fn start_loops(
         }
     });
 
+    // -- Startup stale-review GC sweep (A-grade Phase 8, 2026-05-04) ----------
+    // Auto-resolve manual reviews left in `pending` for more than 7 days. The
+    // rapid-validation modules driver flagged 5 such rows from a prior C7/C8
+    // session — they accumulate when auto_triage's tokio task crashes or the
+    // human-review UI subscription drops. Each resolution writes one
+    // policy_events row tagged `review.stale_gc.resolved` so the disposition
+    // is traceable. Runs once per launch; spawned async so it doesn't block
+    // boot. Threshold is hardcoded at 7d here — exposing it via app_settings
+    // is tracked as a follow-up.
+    tokio::spawn({
+        let pool = pool.clone();
+        async move {
+            const STALE_REVIEW_THRESHOLD_DAYS: i64 = 7;
+            let cutoff = (chrono::Utc::now()
+                - chrono::Duration::days(STALE_REVIEW_THRESHOLD_DAYS))
+            .to_rfc3339();
+            match crate::commands::design::reviews::gc_stale_manual_reviews_inner(
+                &pool, &cutoff,
+            ) {
+                Ok(count) if count > 0 => {
+                    tracing::info!(
+                        count,
+                        threshold_days = STALE_REVIEW_THRESHOLD_DAYS,
+                        "Startup stale-review GC: auto-resolved pending reviews older than threshold"
+                    );
+                }
+                Ok(_) => {} // no-op on a clean install — no log spam
+                Err(e) => {
+                    tracing::warn!(error = %e, "Startup stale-review GC failed");
+                }
+            }
+        }
+    });
+
     // Smee.io relay (long-lived SSE connection, event-driven via notifier)
     tokio::spawn({
         let pool = pool.clone();

@@ -169,6 +169,20 @@ export const getPendingReviewCount = (personaId?: string) =>
     personaId: personaId,
   });
 
+/**
+ * A-grade Phase 8 (2026-05-04) — auto-resolve manual reviews left in
+ * `pending` for longer than `thresholdDays` (default 7). Each
+ * resolved row writes one `policy_events` audit entry tagged
+ * `review.stale_gc.resolved`. Returns the number of rows resolved.
+ *
+ * Idempotent — re-running returns 0 when nothing is stale. Safe to
+ * call from a "Clear stale" button without confirmation.
+ */
+export const gcStaleManualReviews = (thresholdDays?: number) =>
+  invoke<number>("gc_stale_manual_reviews", {
+    thresholdDays: thresholdDays ?? null,
+  });
+
 // ============================================================================
 // Review Messages (Conversational Thread)
 // ============================================================================

@@ -244,6 +244,92 @@ pub fn update_status(
     })
 }
 
+/// A-grade Phase 8 (2026-05-04) — GC-resolved row representation.
+///
+/// Returned from [`gc_stale_pending`] so the caller can write one
+/// `policy_events` audit row per resolution. Carries just enough fields
+/// to build the audit entry; we don't use the full `PersonaManualReview`
+/// to keep the SQL tight (SELECT id+execution_id+persona_id+use_case_id
+/// only).
+pub struct StaleReviewResolution {
+    pub id: String,
+    pub execution_id: String,
+    pub persona_id: String,
+    pub use_case_id: Option<String>,
+    pub created_at: String,
+}
+
+/// A-grade Phase 8 — auto-resolve `pending` reviews older than `cutoff`.
+///
+/// Returns the rows that were resolved so callers can emit audit
+/// entries. Idempotent: re-running with the same cutoff returns 0
+/// rows the second time. Single-transaction: either every match is
+/// flipped or none are. Caller is responsible for the audit-log fan-out
+/// (we don't do it inline so the repo stays free of policy_events
+/// dependency — that's a higher-level concern).
+///
+/// Reviewer notes are set to a sentinel string the UI can detect to
+/// label the row as auto-resolved rather than user-actioned.
+pub fn gc_stale_pending(
+    pool: &DbPool,
+    cutoff_iso: &str,
+) -> Result<Vec<StaleReviewResolution>, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::gc_stale_pending", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut conn = pool.get()?;
+        let tx = conn.transaction()?;
+
+        let resolved: Vec<StaleReviewResolution> = {
+            let mut stmt = tx.prepare(
+                "SELECT id, execution_id, persona_id, use_case_id, created_at
+                 FROM persona_manual_reviews
+                 WHERE status = 'pending' AND created_at < ?1",
+            )?;
+            let rows = stmt.query_map(params![cutoff_iso], |row| {
+                Ok(StaleReviewResolution {
+                    id: row.get("id")?,
+                    execution_id: row.get("execution_id")?,
+                    persona_id: row.get("persona_id")?,
+                    use_case_id: row.get::<_, Option<String>>("use_case_id").unwrap_or(None),
+                    created_at: row.get("created_at")?,
+                })
+            })?;
+            collect_rows(rows, "manual_reviews::gc_stale_pending")
+        };
+
+        if resolved.is_empty() {
+            tx.commit()?;
+            return Ok(resolved);
+        }
+
+        // Flip every match in a single statement so the count matches
+        // the SELECT above (no concurrent writer can sneak in between).
+        // The reviewer_notes sentinel is matched by the frontend to
+        // tag the row visually as "auto-aged-out".
+        tx.execute(
+            "UPDATE persona_manual_reviews
+             SET status = 'resolved',
+                 reviewer_notes = COALESCE(reviewer_notes, '') ||
+                                  CASE WHEN COALESCE(reviewer_notes, '') = ''
+                                       THEN 'Auto-resolved: stale > GC threshold'
+                                       ELSE ' (auto-resolved: stale > GC threshold)'
+                                  END,
+                 resolved_at = ?1,
+                 updated_at = ?1
+             WHERE status = 'pending' AND created_at < ?2",
+            params![now, cutoff_iso],
+        )?;
+
+        tx.commit()?;
+        tracing::info!(
+            count = resolved.len(),
+            cutoff = %cutoff_iso,
+            "Auto-resolved stale pending reviews"
+        );
+        Ok(resolved)
+    })
+}
+
 pub fn get_pending_count(
     pool: &DbPool,
     persona_id: Option<&str>,
