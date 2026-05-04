@@ -299,11 +299,19 @@ pub(super) async fn run_session(
             let mut synthesized: Vec<BuildEvent> = Vec::new();
             let mut suppress_legacy: std::collections::HashSet<String> =
                 std::collections::HashSet::new();
-            // Only synthesize ONE question per turn. If the LLM batched
-            // multiple closed-gate resolutions into one turn, we still
-            // suppress all of them but only ask the user about one at a
-            // time — the UI queues questions and we'd flood it otherwise.
-            let mut synthesized_this_turn = false;
+            // 2026-05-04 — questionnaire batching fix. Pre-fix the
+            // synthesizer fired one gate per turn (a `synthesized_this_turn`
+            // bool), so a build with 3 closed gates surfaced as 3 separate
+            // round-trips — each separated by an LLM round (~30-60s). The
+            // user's intent matched build prompt rule 25 ("BATCH clarifying
+            // _questions per turn — MANDATORY") but the LLM treated it as
+            // advisory and the synthesizer didn't compensate.
+            // Now we track which capabilities have already had their
+            // batched fan-out fired this turn (so a second
+            // `capability_resolution` event for the same cap doesn't
+            // double-emit), but every closed gate on a cap fires together.
+            let mut batched_caps_this_turn: std::collections::HashSet<String> =
+                std::collections::HashSet::new();
 
             for event in turn_events {
                 let keep = match &event {
@@ -348,6 +356,22 @@ pub(super) async fn run_session(
                         capability_id, field, value, ..
                     } => {
                         ensure_capability_in_coverage(&mut coverage, capability_id, &raw_user_intent);
+                        // Opportunistically harvest a title from the
+                        // resolution payload. Some LLMs include `title`
+                        // alongside the resolved field even though only the
+                        // CapEnum event is supposed to carry it. Without
+                        // this, a build that skips enumeration and goes
+                        // straight to per-field resolutions leaves
+                        // `capability_titles` empty — the synthesizer's
+                        // humanise_capability_id fallback handles the
+                        // raw-id case but a real title is always better.
+                        if !capability_titles.contains_key(capability_id) {
+                            if let Some(t) = value.get("title").and_then(|v| v.as_str()) {
+                                if !t.is_empty() {
+                                    capability_titles.insert(capability_id.clone(), t.to_string());
+                                }
+                            }
+                        }
                         // Defensive open: when the user already answered the
                         // legacy cell that maps to this field in a prior turn
                         // (still pending in `last_answered_cells` until the
@@ -397,18 +421,23 @@ pub(super) async fn run_session(
                             {
                                 suppress_legacy.insert(legacy.to_string());
                             }
-                            if !synthesized_this_turn {
-                                let title = capability_titles
-                                    .get(capability_id)
-                                    .cloned()
-                                    .unwrap_or_else(|| capability_id.clone());
-                                let synth = synthesize_gate_question(
-                                    capability_id, field, &title, value, &pool, &session_id,
+                            // Batch ALL unopen gates for this capability in
+                            // one fan-out instead of asking one-per-turn.
+                            // The bool guard makes a second
+                            // `capability_resolution` event for the same
+                            // cap a no-op (the first hit already emitted
+                            // every closed gate's question and marked
+                            // them Pending).
+                            if batched_caps_this_turn.insert(capability_id.clone()) {
+                                let synth = super::gates::synthesize_all_unopen_gates(
+                                    capability_id,
+                                    &mut coverage,
+                                    &capability_titles,
+                                    value,
+                                    &pool,
+                                    &session_id,
                                 );
                                 if !synth.is_empty() {
-                                    if let Some(cg) = coverage.get_mut(capability_id) {
-                                        cg.mark_pending(field);
-                                    }
                                     pending_gate = Some(PendingGate {
                                         cap_id: capability_id.clone(),
                                         field: field.clone(),
@@ -416,18 +445,18 @@ pub(super) async fn run_session(
                                     tracing::warn!(
                                         session_id = %session_id,
                                         capability_id = %capability_id,
-                                        field = %field,
-                                        "Gate closed — suppressing capability_resolution, synthesizing clarifying_question"
+                                        triggering_field = %field,
+                                        synthesized_count = synth.len(),
+                                        "Gate closed — suppressing capability_resolution, synthesizing batched clarifying_questions"
                                     );
                                     synthesized.extend(synth);
-                                    synthesized_this_turn = true;
                                 }
                             } else {
                                 tracing::info!(
                                     session_id = %session_id,
                                     capability_id = %capability_id,
                                     field = %field,
-                                    "Gate closed — suppressing (synthesis already fired this turn)"
+                                    "Gate closed — suppressing (batch for this cap already fired this turn)"
                                 );
                             }
                             false
@@ -474,19 +503,16 @@ pub(super) async fn run_session(
                             }
                         }
                         if let Some((cap_id, field_name)) = find_first_unopen_gate(&coverage) {
-                            if !synthesized_this_turn {
-                                let title = capability_titles
-                                    .get(&cap_id)
-                                    .cloned()
-                                    .unwrap_or_else(|| cap_id.clone());
-                                let synth = synthesize_gate_question(
-                                    &cap_id, field_name, &title, &serde_json::Value::Null,
-                                    &pool, &session_id,
+                            if batched_caps_this_turn.insert(cap_id.clone()) {
+                                let synth = super::gates::synthesize_all_unopen_gates(
+                                    &cap_id,
+                                    &mut coverage,
+                                    &capability_titles,
+                                    &serde_json::Value::Null,
+                                    &pool,
+                                    &session_id,
                                 );
                                 if !synth.is_empty() {
-                                    if let Some(cg) = coverage.get_mut(&cap_id) {
-                                        cg.mark_pending(field_name);
-                                    }
                                     pending_gate = Some(PendingGate {
                                         cap_id: cap_id.clone(),
                                         field: field_name.to_string(),
@@ -495,17 +521,17 @@ pub(super) async fn run_session(
                                         session_id = %session_id,
                                         missing_cap = %cap_id,
                                         missing_field = %field_name,
-                                        "Gate closed — suppressing agent_ir, synthesizing clarifying_question"
+                                        synthesized_count = synth.len(),
+                                        "Gate closed — suppressing agent_ir, synthesizing batched clarifying_questions"
                                     );
                                     synthesized.extend(synth);
-                                    synthesized_this_turn = true;
                                 }
                             } else {
                                 tracing::info!(
                                     session_id = %session_id,
                                     missing_cap = %cap_id,
                                     missing_field = %field_name,
-                                    "Gate closed — suppressing agent_ir (synthesis already fired this turn)"
+                                    "Gate closed — suppressing agent_ir (batch for this cap already fired this turn)"
                                 );
                             }
                             false
@@ -723,6 +749,35 @@ pub(super) async fn run_session(
                     } else {
                         conversation.push(("user".to_string(), format!("My answer for {}: {}", answer.cell_key, answer.answer)));
                         last_answered_cells = vec![answer.cell_key.clone()];
+                    }
+
+                    // 2026-05-04 — flip every Pending gate whose legacy
+                    // dimension key appears in `last_answered_cells`. The
+                    // singleton `pending_gate` block above only handles
+                    // ONE gate; with batched synthesis (which emits all
+                    // unopen gates for a cap in a single turn) multiple
+                    // gates land in Pending simultaneously. Without this
+                    // sweep, a user who answers review_policy + memory_policy
+                    // in one round would have only review_policy flipped to
+                    // Open — memory_policy stays Pending, the synthesizer
+                    // sees it on the next turn, and the user gets the same
+                    // memory question re-asked. This was directly observed
+                    // in the rapid-validation R02 trace post-batched-fix.
+                    let answered_v3_fields: std::collections::HashSet<&'static str> = last_answered_cells
+                        .iter()
+                        .filter_map(|cell| legacy_cell_to_v3_field(cell))
+                        .collect();
+                    for cap_gates in coverage.values_mut() {
+                        for field in &answered_v3_fields {
+                            if !cap_gates.is_gate_open(field) {
+                                cap_gates.mark_open(field);
+                                tracing::info!(
+                                    session_id = %session_id,
+                                    field = %field,
+                                    "Gate opened via last_answered_cells fan-out (batched answer)"
+                                );
+                            }
+                        }
                     }
                 }
                 None => {

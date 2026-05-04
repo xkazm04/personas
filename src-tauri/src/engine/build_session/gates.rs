@@ -462,6 +462,117 @@ fn infer_connector_category(
 /// both the v3 `ClarifyingQuestionV3` typed event AND the legacy `Question`
 /// mirror (via [`build_clarifying_question_events`]) so the existing UI panel
 /// renders it identically to an LLM-authored question.
+/// Synthesize a clarifying_question for EVERY unopen gate on `cap_id`.
+///
+/// Pre-fix the synthesizer fired one gate per turn (gated by a
+/// `synthesized_this_turn` flag in the runner). The user's experience
+/// was: review_policy in turn 1 → user answers → wait through another
+/// LLM round → memory_policy in turn 2. Two-minute gaps between
+/// questions for what should have been a single batch. Build prompt
+/// rule 25 instructs the LLM to batch but the LLM treats it as
+/// advisory; the synthesizer is the fallback and it was serializing.
+///
+/// This batched path:
+///   • Walks the canonical gate order (trigger → connectors →
+///     review_policy → memory_policy) to keep the question stream
+///     deterministic.
+///   • Skips gates already Open (intent-resolved or previously
+///     answered) AND gates already Pending (LLM already asked about
+///     them in this turn).
+///   • Marks each emitted gate Pending so the same call doesn't
+///     re-fire them and the answer-handler knows what the user is
+///     responding to.
+///
+/// Returns the build events ready to push onto `synthesized` in
+/// `runner::run_session`. Empty Vec when nothing to ask.
+pub(super) fn synthesize_all_unopen_gates(
+    cap_id: &str,
+    coverage: &mut std::collections::HashMap<String, CapabilityGates>,
+    capability_titles: &std::collections::HashMap<String, String>,
+    proposed_value_for_connectors: &serde_json::Value,
+    pool: &DbPool,
+    session_id: &str,
+) -> Vec<BuildEvent> {
+    let mut out: Vec<BuildEvent> = Vec::new();
+    let title = capability_titles
+        .get(cap_id)
+        .map(|s| s.as_str())
+        .unwrap_or(cap_id);
+
+    // Collect unopen fields up front to avoid borrowing `coverage`
+    // through the loop while we mutate it via `mark_pending`.
+    let unopen_fields: Vec<&'static str> = match coverage.get(cap_id) {
+        Some(gates) => GATED_CAPABILITY_FIELDS
+            .iter()
+            .copied()
+            .filter(|f| !gates.is_gate_open(f))
+            .collect(),
+        None => return out,
+    };
+
+    for field in unopen_fields {
+        let synth = synthesize_gate_question(
+            cap_id,
+            field,
+            title,
+            proposed_value_for_connectors,
+            pool,
+            session_id,
+        );
+        if synth.is_empty() {
+            continue;
+        }
+        if let Some(cg) = coverage.get_mut(cap_id) {
+            cg.mark_pending(field);
+        }
+        out.extend(synth);
+    }
+    out
+}
+
+/// Convert a raw LLM-emitted capability id (e.g. `uc_weekly_digest`) to a
+/// reader-friendly title (`Weekly Digest`). Used as a last-resort fallback
+/// inside `synthesize_gate_question` when `capability_titles` doesn't yet
+/// have an entry for the cap — typically because a `capability_resolution`
+/// event arrived before `capability_enumeration` populated the title map,
+/// or the LLM skipped enumeration entirely. Pre-fix users saw raw ids in
+/// the UI ("Should 'uc_weekly_digest' wait for your approval…").
+pub(super) fn humanise_capability_id(raw: &str) -> String {
+    let trimmed = raw.strip_prefix("uc_").unwrap_or(raw);
+    trimmed
+        .split('_')
+        .filter(|s| !s.is_empty())
+        .map(|s| {
+            let mut chars = s.chars();
+            match chars.next() {
+                Some(first) => {
+                    let head = first.to_uppercase().to_string();
+                    head + chars.as_str()
+                }
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+/// Pick the best display title for a capability when emitting a clarifying
+/// question. Prefers the captured title when it's non-empty AND doesn't
+/// look like a raw id; falls back to `humanise_capability_id`. Never
+/// returns an empty string.
+fn display_title_for_cap<'a>(captured: Option<&'a str>, cap_id: &'a str) -> String {
+    if let Some(t) = captured {
+        let trimmed = t.trim();
+        if !trimmed.is_empty()
+            && !trimmed.starts_with("uc_")
+            && trimmed != cap_id
+        {
+            return trimmed.to_string();
+        }
+    }
+    humanise_capability_id(cap_id)
+}
+
 pub(super) fn synthesize_gate_question(
     cap_id: &str,
     field: &str,
@@ -470,6 +581,10 @@ pub(super) fn synthesize_gate_question(
     pool: &DbPool,
     session_id: &str,
 ) -> Vec<BuildEvent> {
+    // Resolve the displayable title. The caller passes whatever it has;
+    // we humanise on the way out so the UI never shows raw ids.
+    let display_title = display_title_for_cap(Some(title), cap_id);
+    let title = display_title.as_str();
     let mut obj = serde_json::Map::new();
     obj.insert("capability_id".into(), serde_json::Value::String(cap_id.to_string()));
 
@@ -1187,6 +1302,179 @@ mod tests {
         assert!(
             events.is_empty(),
             "non-gated fields must produce zero synthesis events"
+        );
+    }
+
+    // ── 2026-05-04 — title humanization + batched synthesis ─────────────────
+
+    #[test]
+    fn humanise_capability_id_strips_uc_prefix_and_titlecases() {
+        for (raw, expected) in [
+            ("uc_weekly_digest", "Weekly Digest"),
+            ("uc_morning_email_summary", "Morning Email Summary"),
+            ("uc_classify", "Classify"),
+            ("uc_", ""),
+            ("plain", "Plain"),
+            ("snake_case_thing", "Snake Case Thing"),
+        ] {
+            assert_eq!(humanise_capability_id(raw), expected, "raw={raw}");
+        }
+    }
+
+    #[test]
+    fn synthesize_question_humanises_id_when_title_is_blank_or_id_like() {
+        // Title is empty → should fall back to humanised id
+        let events = synthesize_gate_question(
+            "uc_weekly_digest",
+            "review_policy",
+            "",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        let v3 = events.iter().find_map(|e| match e {
+            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+            _ => None,
+        }).expect("v3 question emitted");
+        assert!(
+            v3.contains("\"Weekly Digest\""),
+            "humanised title should appear, got: {v3}"
+        );
+        assert!(
+            !v3.contains("uc_weekly_digest"),
+            "raw id must NOT leak into the question, got: {v3}"
+        );
+
+        // Title equals the id → also fall back to humanised
+        let events = synthesize_gate_question(
+            "uc_morning_brief",
+            "memory_policy",
+            "uc_morning_brief",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        let v3 = events.iter().find_map(|e| match e {
+            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+            _ => None,
+        }).expect("v3 question emitted");
+        assert!(
+            v3.contains("\"Morning Brief\""),
+            "humanised title should appear when title==id, got: {v3}"
+        );
+        assert!(
+            !v3.contains("uc_morning_brief"),
+            "raw id must NOT leak into the question, got: {v3}"
+        );
+    }
+
+    #[test]
+    fn synthesize_question_uses_real_title_when_provided() {
+        let events = synthesize_gate_question(
+            "uc_weekly_digest",
+            "review_policy",
+            "Weekly Project Digest",
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        let v3 = events.iter().find_map(|e| match e {
+            BuildEvent::ClarifyingQuestionV3 { question, .. } => Some(question.clone()),
+            _ => None,
+        }).expect("v3 question emitted");
+        assert!(v3.contains("\"Weekly Project Digest\""), "got: {v3}");
+    }
+
+    #[test]
+    fn batched_synthesis_emits_question_per_unopen_gate_in_canonical_order() {
+        // Capability with all four gates Closed → expect 4 V3 events
+        // (trigger → connectors → review_policy → memory_policy).
+        let mut coverage = HashMap::new();
+        coverage.insert("uc_test".to_string(), CapabilityGates::default());
+        let mut titles = HashMap::new();
+        titles.insert("uc_test".to_string(), "Test Capability".to_string());
+
+        let events = synthesize_all_unopen_gates(
+            "uc_test",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+
+        let v3_fields: Vec<String> = events.iter().filter_map(|e| match e {
+            BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+            _ => None,
+        }).collect();
+
+        assert_eq!(
+            v3_fields,
+            vec![
+                "suggested_trigger".to_string(),
+                "connectors".to_string(),
+                "review_policy".to_string(),
+                "memory_policy".to_string(),
+            ],
+            "all four gates must fire in canonical order"
+        );
+
+        // Every gate should now be Pending (mark_pending called)
+        for field in GATED_CAPABILITY_FIELDS {
+            assert_eq!(
+                coverage.get("uc_test").unwrap().field_state(field),
+                Some(Gate::Pending),
+                "gate {field} should be Pending after batched synthesis"
+            );
+        }
+    }
+
+    #[test]
+    fn batched_synthesis_skips_already_open_gates() {
+        // Two gates Open (trigger + connectors), two Closed → expect 2 emissions.
+        let mut coverage = HashMap::new();
+        let mut gates = CapabilityGates::default();
+        gates.mark_open("suggested_trigger");
+        gates.mark_open("connectors");
+        coverage.insert("uc_partial".to_string(), gates);
+        let titles = HashMap::new();
+
+        let events = synthesize_all_unopen_gates(
+            "uc_partial",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+
+        let v3_fields: Vec<String> = events.iter().filter_map(|e| match e {
+            BuildEvent::ClarifyingQuestionV3 { field, .. } => field.clone(),
+            _ => None,
+        }).collect();
+
+        assert_eq!(
+            v3_fields,
+            vec!["review_policy".to_string(), "memory_policy".to_string()],
+            "only the still-Closed gates should fire"
+        );
+    }
+
+    #[test]
+    fn batched_synthesis_returns_empty_when_no_capability() {
+        let mut coverage: HashMap<String, CapabilityGates> = HashMap::new();
+        let titles = HashMap::new();
+        let events = synthesize_all_unopen_gates(
+            "uc_missing",
+            &mut coverage,
+            &titles,
+            &serde_json::Value::Null,
+            &dummy_pool(),
+            "session-1",
+        );
+        assert!(
+            events.is_empty(),
+            "missing capability should produce zero events, not panic"
         );
     }
 }
