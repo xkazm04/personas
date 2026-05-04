@@ -122,7 +122,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
                     <div className="relative h-6 flex items-center">
                       {gapMs != null && gapMs >= 10 && (
                         <span className="absolute left-[-16px] typo-code text-foreground leading-none bg-background z-10 px-0.5">
-                          {formatTimeGap(gapMs)}
+                          {formatTimeGap(Number(gapMs))}
                         </span>
                       )}
                     </div>

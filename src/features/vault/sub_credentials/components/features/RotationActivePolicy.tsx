@@ -143,7 +143,7 @@ export function RotationActivePolicy({
                 try {
                   const allPolicies = await listRotationPolicies(credentialId);
                   if (allPolicies.length > 0) {
-                    await updateRotationPolicy(allPolicies[0]!.id, { rotation_interval_days: rotationDays });
+                    await updateRotationPolicy(allPolicies[0]!.id, { enabled: null, rotation_interval_days: rotationDays });
                   }
                   await onRefresh();
                   setIsEditingPeriod(false);

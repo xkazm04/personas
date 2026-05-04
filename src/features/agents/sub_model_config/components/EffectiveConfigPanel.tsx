@@ -12,7 +12,7 @@ interface EffectiveConfigPanelProps {
 
 function FieldRow({ label, field, workspaceName, mask }: {
   label: string;
-  field: ConfigField<string | number>;
+  field: ConfigField;
   workspaceName?: string | null;
   mask?: boolean;
 }) {

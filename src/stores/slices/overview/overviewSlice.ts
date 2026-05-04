@@ -273,11 +273,11 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
       // Transform CloudReviewRequest -> ManualReviewItem shape
       // Sanitize at the trust boundary: cloud payloads are external input.
       const shaped: ManualReviewItem[] = raw.map((r) => {
-        const sanitized = sanitizeCloudReview(r.payload, r.response_message);
+        const sanitized = sanitizeCloudReview(r.payload, r.responseMessage);
         return {
-          id: r.review_id,
-          persona_id: r.persona_id,
-          execution_id: r.execution_id,
+          id: r.reviewId,
+          persona_id: r.personaId,
+          execution_id: r.executionId,
           review_type: 'info',
           content: sanitized.content,
           severity: 'info',
@@ -286,8 +286,8 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
           context_data: null,
           suggested_actions: null,
           title: sanitized.title,
-          created_at: safeTimestampToISO(r.created_at) ?? new Date().toISOString(),
-          resolved_at: safeTimestampToISO(r.resolved_at),
+          created_at: safeTimestampToISO(r.createdAt) ?? new Date().toISOString(),
+          resolved_at: safeTimestampToISO(r.resolvedAt),
           source: 'cloud' as const,
         };
       });

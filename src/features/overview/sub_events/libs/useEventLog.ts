@@ -107,7 +107,16 @@ export function useEventLog() {
     const controller = new AbortController();
     searchAbortRef.current = controller;
 
-    const filter: EventFilterInput = { limit: 200 };
+    const filter: EventFilterInput = {
+      eventType: null,
+      sourceType: null,
+      status: null,
+      targetPersonaId: null,
+      since: null,
+      until: null,
+      search: null,
+      limit: 200n,
+    };
 
     if (statusFilter !== 'all') filter.status = statusFilter;
     if (typeFilter !== 'all') filter.eventType = typeFilter;
@@ -230,8 +239,14 @@ export function useEventLog() {
     setIsLoadingOlder(true);
     try {
       const filter: EventFilterInput = {
+        eventType: null,
+        sourceType: null,
+        status: null,
+        targetPersonaId: null,
+        since: null,
         until: oldest.created_at,
-        limit: LOAD_MORE_LIMIT,
+        search: null,
+        limit: BigInt(LOAD_MORE_LIMIT),
       };
       if (statusFilter !== 'all') filter.status = statusFilter;
       if (typeFilter !== 'all') filter.eventType = typeFilter;

@@ -2,7 +2,8 @@ import {
   CheckCircle2, AlertCircle, ChevronDown, Pencil,
   Rocket, GitBranch, Zap,
 } from 'lucide-react';
-import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
+import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { FALLBACK_OPTIONS } from '../../libs/useAutomationSetup';

@@ -3,7 +3,8 @@ import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAgentStore } from '@/stores/agentStore';
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
-import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
+import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
 import { silentCatchNull } from "@/lib/silentCatch";
@@ -116,7 +117,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
       setName(editAutomation.name);
       setDescription(editAutomation.description);
       setFallbackMode(editAutomation.fallbackMode);
-      setTimeoutSecs(Math.round(editAutomation.timeoutMs / 1000));
+      setTimeoutSecs(Math.round(Number(editAutomation.timeoutMs) / 1000));
       if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
       if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
       setUseCaseId(editAutomation.useCaseId ?? null);
@@ -194,7 +195,7 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     try {
       const result = await deployAutomation({
         personaId, credentialId: platformCredentialId,
-        designResult: mergedDesign as Record<string, unknown>,
+        designResult: mergedDesign as Parameters<typeof deployAutomation>[0]['designResult'],
         githubRepo: platform === 'github_actions' ? githubRepo : null,
         useCaseId,
       });

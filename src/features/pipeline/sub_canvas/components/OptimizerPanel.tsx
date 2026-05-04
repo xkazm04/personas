@@ -82,7 +82,7 @@ export default function OptimizerPanel({
                   <div className="flex items-center gap-1.5">
                     <BarChart3 className="w-3 h-3 text-foreground" />
                     <span className="typo-code text-foreground font-mono">
-                      {analytics.total_runs} run{analytics.total_runs !== 1 ? 's' : ''}
+                      {analytics.total_runs} run{Number(analytics.total_runs) !== 1 ? 's' : ''}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5">

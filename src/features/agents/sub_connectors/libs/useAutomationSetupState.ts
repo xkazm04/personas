@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { errMsg } from '@/stores/storeTypes';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useAutomationDesign } from '@/hooks/design/core/useAutomationDesign';
-import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
+import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_TO_SERVICE_TYPE } from './automationSetupConstants';
@@ -60,7 +61,7 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       // edit, undefined timeoutMs producing NaN via /1000) from immediately
       // re-deploying the same out-of-range value when the user clicks
       // Deploy without changing the field.
-      setTimeoutSecs(clampTimeoutSecs(Math.round(editAutomation.timeoutMs / 1000)));
+      setTimeoutSecs(clampTimeoutSecs(Math.round(Number(editAutomation.timeoutMs) / 1000)));
       if (editAutomation.inputSchema) setInputSchema(editAutomation.inputSchema);
       if (editAutomation.platformCredentialId) setPlatformCredentialId(editAutomation.platformCredentialId);
     }
@@ -116,8 +117,9 @@ export function useAutomationSetupState(personaId: string, editAutomationId?: st
       const result = await deployAutomation({
         personaId,
         credentialId: platformCredentialId,
-        designResult: mergedDesign as Record<string, unknown>,
+        designResult: mergedDesign as Parameters<typeof deployAutomation>[0]['designResult'],
         githubRepo: platform === 'github_actions' ? platformData.githubRepo : null,
+        useCaseId: null,
       });
       if (result) {
         setDeployResult(result);

@@ -42,7 +42,7 @@ async function executeAutoDisable(event: RemediationEvent): Promise<void> {
     }
 
     for (const policy of enabledPolicies) {
-      await updateRotationPolicy(policy.id, { enabled: false });
+      await updateRotationPolicy(policy.id, { enabled: false, rotation_interval_days: null });
     }
 
     remediationBus.updateOutcome(

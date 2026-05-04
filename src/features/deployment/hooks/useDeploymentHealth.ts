@@ -63,7 +63,7 @@ export function useDeploymentHealth(
         const results = await Promise.allSettled(
           uniquePersonaIds.map(async (pid) => {
             const stats = await cloudExecutionStats(pid, 7);
-            return { personaId: pid, daily: stats.daily_breakdown };
+            return { personaId: pid, daily: stats.dailyBreakdown };
           }),
         );
 
@@ -72,8 +72,8 @@ export function useDeploymentHealth(
             const { personaId, daily } = result.value;
             newStats[personaId] = daily.map((d) => ({
               date: d.date,
-              count: d.count,
-              successRate: d.success_rate,
+              count: Number(d.count),
+              successRate: d.successRate,
               cost: d.cost,
             }));
           }

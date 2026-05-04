@@ -192,8 +192,8 @@ function generateRoutingRecommendations(
   const sorted = [...providerStats]
     .filter(p => p.execution_count > 5)
     .sort((a, b) => {
-      const aCostPer = a.total_cost_usd / Math.max(a.execution_count, 1);
-      const bCostPer = b.total_cost_usd / Math.max(b.execution_count, 1);
+      const aCostPer = a.total_cost_usd / Math.max(Number(a.execution_count), 1);
+      const bCostPer = b.total_cost_usd / Math.max(Number(b.execution_count), 1);
       return aCostPer - bCostPer;
     });
 
@@ -209,7 +209,7 @@ function generateRoutingRecommendations(
         const costPerExec = signal.totalExecutions > 0
           ? (signal.projectedMonthlyCost / Math.max(signal.recentExecutions, 1)) * 30
           : 0;
-        const cheapCostPer = cheapest.total_cost_usd / Math.max(cheapest.execution_count, 1);
+        const cheapCostPer = cheapest.total_cost_usd / Math.max(Number(cheapest.execution_count), 1);
         const saving = Math.max(0, costPerExec - cheapCostPer * signal.recentExecutions);
 
         if (saving > 1) {

@@ -26,7 +26,7 @@ export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
 
   const health: ScheduleHealth =
     !agent.trigger_enabled || !agent.persona_enabled ? 'paused' :
-    agent.recent_executions === 0 ? 'idle' :
+    Number(agent.recent_executions) === 0 ? 'idle' :
     failureRate === 0 ? 'healthy' :
     failureRate < 0.6 ? 'degraded' :
     'failing';
@@ -34,7 +34,7 @@ export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
   const schedule = agent.cron_expression
     ? agent.cron_expression
     : agent.interval_seconds
-      ? `every ${formatInterval(agent.interval_seconds)}`
+      ? `every ${formatInterval(Number(agent.interval_seconds))}`
       : 'no schedule';
 
   return {
@@ -43,7 +43,7 @@ export function parseScheduleEntry(agent: CronAgent): ScheduleEntry {
     lastRun: agent.last_triggered_at ? new Date(agent.last_triggered_at) : null,
     schedule,
     health,
-    failureRate,
+    failureRate: Number(failureRate),
   };
 }
 

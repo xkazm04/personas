@@ -56,7 +56,7 @@ export const DEFAULT_SENSORY_POLICY: SensoryPolicy = {
   focusAppFilter: [],
   fileGlobFilter: [],
   maxWindowSize: 30,
-  maxAgeSecs: 600,
+  maxAgeSecs: 600n,
 };
 
 export const createAmbientContextSlice: StateCreator<SystemStore, [], [], AmbientContextSlice> = (set) => {

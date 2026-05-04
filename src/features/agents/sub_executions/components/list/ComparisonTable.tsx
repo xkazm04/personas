@@ -35,7 +35,7 @@ export function ToolTimelineComparison({
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
                   <span className="font-mono text-foreground truncate">{l.tool_name}</span>
                   {l.duration_ms != null && (
-                    <span className="ml-auto typo-code text-foreground">{formatDuration(l.duration_ms)}</span>
+                    <span className="ml-auto typo-code text-foreground">{formatDuration(Number(l.duration_ms))}</span>
                   )}
                 </>
               ) : (
@@ -47,11 +47,11 @@ export function ToolTimelineComparison({
             <div className="w-16 text-center">
               {durDelta != null ? (
                 <span className={`typo-code px-1.5 py-0.5 rounded ${
-                  Math.abs(durDelta) < 500 ? 'text-foreground'
+                  Math.abs(Number(durDelta)) < 500 ? 'text-foreground'
                     : durDelta < 0 ? 'text-emerald-400 bg-emerald-500/10'
                       : 'text-amber-400 bg-amber-500/10'
                 }`}>
-                  {durDelta > 0 ? '+' : ''}{formatDuration(durDelta)}
+                  {durDelta > 0 ? '+' : ''}{formatDuration(Number(durDelta))}
                 </span>
               ) : l && r ? (
                 <span className="text-foreground typo-body">--</span>
@@ -65,7 +65,7 @@ export function ToolTimelineComparison({
                   <Hash className="w-3 h-3 text-primary/50 flex-shrink-0" />
                   <span className="font-mono text-foreground truncate">{r.tool_name}</span>
                   {r.duration_ms != null && (
-                    <span className="ml-auto typo-code text-foreground">{formatDuration(r.duration_ms)}</span>
+                    <span className="ml-auto typo-code text-foreground">{formatDuration(Number(r.duration_ms))}</span>
                   )}
                 </>
               ) : (

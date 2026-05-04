@@ -254,6 +254,9 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     icon: partial.icon !== undefined ? partial.icon : null,
     color: partial.color !== undefined ? partial.color : null,
     last_design_result: partial.last_design_result !== undefined ? partial.last_design_result : null,
+    // last_test_report is owned by build_sessions.rs (Phase 2 tool_tests surface)
+    // — never set from the frontend builder, so always pass null here.
+    last_test_report: null,
     model_profile: partial.model_profile !== undefined ? partial.model_profile : null,
     max_budget_usd: partial.max_budget_usd !== undefined ? partial.max_budget_usd : null,
     max_turns: partial.max_turns !== undefined ? partial.max_turns : null,

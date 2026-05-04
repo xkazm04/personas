@@ -53,9 +53,9 @@ export function CloudWebhooksTab() {
 
       for (const dep of webhookEnabled) {
         try {
-          const triggers = await cloudListTriggers(dep.persona_id);
-          const webhookTriggers = triggers.filter((t) => t.trigger_type === 'webhook');
-          const persona = personas.find((p) => p.id === dep.persona_id);
+          const triggers = await cloudListTriggers(dep.personaId);
+          const webhookTriggers = triggers.filter((t) => t.triggerType === 'webhook');
+          const persona = personas.find((p) => p.id === dep.personaId);
 
           for (const trigger of webhookTriggers) {
             rows.push({
@@ -125,7 +125,7 @@ export function CloudWebhooksTab() {
   };
 
   // Deployed personas available for webhook creation
-  const deployedPersonaIds = new Set(webhookRows.map((r) => r.deployment.persona_id));
+  const deployedPersonaIds = new Set(webhookRows.map((r) => r.deployment.personaId));
 
   // Not connected state
   if (!relay.connected && !isLoading) {
@@ -284,9 +284,9 @@ export function CloudWebhooksTab() {
                   </div>
 
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    {row.trigger.last_triggered_at && (
+                    {row.trigger.lastTriggeredAt && (
                       <span className="text-xs text-foreground">
-                        {t.triggers.last_label} {formatRelativeTime(row.trigger.last_triggered_at)}
+                        {t.triggers.last_label} {formatRelativeTime(row.trigger.lastTriggeredAt)}
                       </span>
                     )}
                     <button
@@ -300,9 +300,9 @@ export function CloudWebhooksTab() {
                         <Copy className="w-3.5 h-3.5" />
                       )}
                     </button>
-                    {row.deployment.webhook_secret && (
+                    {row.deployment.webhookSecret && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleCopy(row.deployment.webhook_secret!, `secret-${row.trigger.id}`); }}
+                        onClick={(e) => { e.stopPropagation(); handleCopy(row.deployment.webhookSecret!, `secret-${row.trigger.id}`); }}
                         className="px-2 py-1 rounded-card text-xs text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors border border-border/20"
                         title={t.triggers.copy_webhook_secret_title}
                       >
@@ -356,13 +356,13 @@ export function CloudWebhooksTab() {
                       {f.status}
                     </span>
                     <span className="text-foreground">
-                      {f.fired_at ? formatRelativeTime(f.fired_at) : '—'}
+                      {f.firedAt ? formatRelativeTime(f.firedAt) : '—'}
                     </span>
                     <span className="text-foreground">
-                      {f.duration_ms != null ? `${f.duration_ms}ms` : '—'}
+                      {f.durationMs != null ? `${f.durationMs}ms` : '—'}
                     </span>
                     <span className="text-right text-foreground">
-                      {f.cost_usd != null ? `$${f.cost_usd.toFixed(4)}` : '—'}
+                      {f.costUsd != null ? `$${f.costUsd.toFixed(4)}` : '—'}
                     </span>
                   </div>
                 ))}

@@ -1,4 +1,5 @@
-import type { AutomationDeploymentStatus, AutomationPlatform } from "@/lib/bindings/PersonaAutomation";
+import type { AutomationDeployStatus as AutomationDeploymentStatus } from "@/lib/bindings/AutomationDeployStatus";
+import type { AutomationPlatform } from "@/lib/bindings/AutomationPlatform";
 
 /** Visual config for automation deployment status badges */
 export const AUTOMATION_STATUS_CONFIG: Record<

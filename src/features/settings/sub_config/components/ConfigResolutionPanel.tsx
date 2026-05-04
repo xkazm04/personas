@@ -39,7 +39,7 @@ function SourceBadge({ source, isOverridden }: { source: ConfigSource; isOverrid
   );
 }
 
-function CellValue({ field, mask }: { field: ConfigField<string | number>; mask?: boolean }) {
+function CellValue({ field, mask }: { field: ConfigField; mask?: boolean }) {
   if (field.value == null) return <span className="text-foreground italic typo-caption">--</span>;
   const display = mask ? '\u2022\u2022\u2022\u2022\u2022\u2022' : String(field.value);
   return (
@@ -199,7 +199,7 @@ export default function ConfigResolutionPanel() {
                     }
                     return <td key={f.key} className="px-3 py-2"><span className="text-foreground italic typo-caption">--</span></td>;
                   }
-                  const field = row.config[f.key] as ConfigField<string | number>;
+                  const field = row.config[f.key] as ConfigField;
                   return (
                     <td key={f.key} className="px-3 py-2">
                       <div className="flex items-center gap-1.5">

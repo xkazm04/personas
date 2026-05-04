@@ -192,6 +192,7 @@ export function ChatTab() {
           source_execution_id: null,
           importance: 4,
           tags: ['quickadd'],
+          use_case_id: null,
         });
         setInputValue('');
         useToastStore.getState().addToast(

@@ -90,9 +90,9 @@ export default function IdeaScannerPage() {
       ideaCount: s.idea_count,
       timestamp: s.created_at,
       status: s.status,
-      inputTokens: s.input_tokens,
-      outputTokens: s.output_tokens,
-      durationMs: s.duration_ms,
+      inputTokens: s.input_tokens == null ? null : Number(s.input_tokens),
+      outputTokens: s.output_tokens == null ? null : Number(s.output_tokens),
+      durationMs: s.duration_ms == null ? null : Number(s.duration_ms),
     })),
   [scans]);
 

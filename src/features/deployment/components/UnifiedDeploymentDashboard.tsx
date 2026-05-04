@@ -58,11 +58,11 @@ export function UnifiedDeploymentDashboard() {
     for (const d of cloudDeployments) {
       rows.push({
         id: `cloud-${d.id}`, target: 'cloud',
-        personaName: d.label || personaName(d.persona_id), personaId: d.persona_id,
-        name: d.label || personaName(d.persona_id),
+        personaName: d.label || personaName(d.personaId), personaId: d.personaId,
+        name: d.label || personaName(d.personaId),
         status: mapCloudStatus(d.status),
-        invocations: d.invocation_count, lastActivity: d.last_invoked_at,
-        createdAt: d.created_at,
+        invocations: Number(d.invocationCount), lastActivity: d.lastInvokedAt,
+        createdAt: d.createdAt,
         webUrl: cloudBaseUrl ? `${cloudBaseUrl}/api/deployed/${d.slug}` : null,
         _cloud: d,
       });

@@ -32,8 +32,8 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
     setQuickTestResults((prev) => ({ ...prev, [id]: null }));
 
     try {
-      const inputData = JSON.parse(recipe.sample_inputs) as Record<string, unknown>;
-      const result = await recipeApi.executeRecipe({ recipe_id: id, input_data: inputData });
+      const inputData = JSON.parse(recipe.sample_inputs) as { [x: string]: unknown };
+      const result = await recipeApi.executeRecipe({ recipe_id: id, input_data: inputData as Parameters<typeof recipeApi.executeRecipe>[0]['input_data'] });
       setQuickTestResults((prev) => ({ ...prev, [id]: result }));
     } catch {
       useToastStore.getState().addToast('Quick test failed', 'error');

@@ -1,5 +1,8 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
-import type { PersonaAutomation, AutomationRun, CreateAutomationInput, UpdateAutomationInput } from "@/lib/bindings/PersonaAutomation";
+import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
+import type { AutomationRun } from "@/lib/bindings/AutomationRun";
+import type { CreateAutomationInput } from "@/lib/bindings/CreateAutomationInput";
+import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput";
 import type { N8nWorkflow } from "@/lib/bindings/N8nWorkflow";
 import type { N8nActivateResult } from "@/lib/bindings/N8nActivateResult";
 import type { ZapierZap } from "@/lib/bindings/ZapierZap";

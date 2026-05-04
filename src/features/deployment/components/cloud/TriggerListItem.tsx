@@ -55,18 +55,18 @@ export function TriggerListItem({
       >
         {isExpanded ? <ChevronDown className="w-3.5 h-3.5 text-foreground" /> : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
         <span className={`${trigger.enabled ? 'text-indigo-400' : 'text-foreground'}`}>
-          {triggerTypeIcon(trigger.trigger_type)}
+          {triggerTypeIcon(trigger.triggerType)}
         </span>
         <span className="typo-body text-foreground truncate flex-1">
           {personaName}
-          <span className="text-foreground ml-2">{triggerTypeLabel(trigger.trigger_type)}</span>
+          <span className="text-foreground ml-2">{triggerTypeLabel(trigger.triggerType)}</span>
         </span>
         {config.cron && (
           <span className="typo-code font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded">
             {`${config.cron}`}
           </span>
         )}
-        {healthBadge(trigger.health_status)}
+        {healthBadge(trigger.healthStatus)}
         <span className={`w-2 h-2 rounded-full ${trigger.enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} title={trigger.enabled ? 'Enabled' : 'Disabled'} />
       </button>
 
@@ -75,14 +75,14 @@ export function TriggerListItem({
         <div className="px-3 pb-3 pt-1 border-t border-primary/10 space-y-3">
           {/* Trigger info */}
           <div className="grid grid-cols-2 gap-2 typo-caption">
-            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(trigger.trigger_type)}</span></div>
+            <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(trigger.triggerType)}</span></div>
             <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
-            <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.last_triggered_at)}</span></div>
-            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground">{trigger.next_trigger_at ? new Date(trigger.next_trigger_at).toLocaleString() : '-'}</span></div>
+            <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.lastTriggeredAt)}</span></div>
+            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground">{trigger.nextTriggerAt ? new Date(trigger.nextTriggerAt).toLocaleString() : '-'}</span></div>
             {config.cron && <div className="col-span-2"><span className="text-foreground">{dt.label_cron}</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
-            {trigger.health_message && (
+            {trigger.healthMessage && (
               <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 typo-caption text-amber-400">
-                {trigger.health_message}
+                {trigger.healthMessage}
               </div>
             )}
           </div>
@@ -124,9 +124,9 @@ export function TriggerListItem({
                      f.status === 'failed' ? <XCircle className="w-3 h-3 text-red-400" /> :
                      <LoadingSpinner size="xs" className="text-blue-400" />}
                     <span className="text-foreground">{f.status}</span>
-                    <span className="text-foreground flex-1">{timeAgo(f.fired_at)}</span>
-                    {f.duration_ms != null && <span className="text-foreground">{f.duration_ms < 1000 ? `${f.duration_ms}ms` : `${(f.duration_ms / 1000).toFixed(1)}s`}</span>}
-                    <span className="text-foreground">{formatCost(f.cost_usd)}</span>
+                    <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
+                    {f.durationMs != null && <span className="text-foreground">{f.durationMs < 1000 ? `${f.durationMs}ms` : `${(Number(f.durationMs) / 1000).toFixed(1)}s`}</span>}
+                    <span className="text-foreground">{formatCost(f.costUsd)}</span>
                   </div>
                 ))}
               </div>

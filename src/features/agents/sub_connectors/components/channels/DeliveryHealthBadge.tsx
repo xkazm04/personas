@@ -12,7 +12,7 @@ interface DeliveryHealthBadgeProps {
 }
 
 function getHealthColor(stats: ChannelDeliveryStats): string {
-  if (stats.attempted === 0) return 'text-foreground';
+  if (Number(stats.attempted) === 0) return 'text-foreground';
   if (stats.consecutiveFailures >= 3) return 'text-red-400';
   if (stats.consecutiveFailures >= 1 || (stats.failed > 0 && stats.failed / stats.attempted > 0.2))
     return 'text-amber-400';
@@ -20,8 +20,8 @@ function getHealthColor(stats: ChannelDeliveryStats): string {
 }
 
 function formatStats(stats: ChannelDeliveryStats, noDeliveries: string): string {
-  if (stats.attempted === 0) return noDeliveries;
-  const rate = stats.attempted > 0 ? ((stats.succeeded / stats.attempted) * 100).toFixed(0) : '0';
+  if (Number(stats.attempted) === 0) return noDeliveries;
+  const rate = stats.attempted > 0 ? (Number((stats.succeeded / stats.attempted)) * 100).toFixed(0) : '0';
   const parts = [`${rate}% success (${stats.succeeded}/${stats.attempted})`];
   if (stats.avgLatencyMs > 0) parts.push(`avg ${stats.avgLatencyMs.toFixed(0)}ms`);
   if (stats.consecutiveFailures > 0) parts.push(`${stats.consecutiveFailures} consecutive failures`);

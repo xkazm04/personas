@@ -48,7 +48,7 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
       // Step 1: Render the prompt template (synchronous backend call)
       const res = await api.executeRecipe({
         recipe_id: recipe.id,
-        input_data: inputData,
+        input_data: inputData as Parameters<typeof api.executeRecipe>[0]['input_data'],
       });
       if (runId !== runCountRef.current) return;
       resultRunIdRef.current = runId;

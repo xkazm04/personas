@@ -26,16 +26,16 @@ function rotationBadge(item: RotationOverviewItem) {
   }
 
   const rem = status.anomaly_score?.remediation;
-  if (rem === 'disable') {
+  if (rem === 'Disable') {
     return { label: 'Disabled', classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: ShieldOff };
   }
-  if (rem === 'rotate_then_alert') {
+  if (rem === 'RotateThenAlert') {
     return { label: 'Perm Errors', classes: 'bg-red-500/10 border-red-500/20 text-red-400', Icon: AlertTriangle };
   }
-  if (rem === 'preemptive_rotation') {
+  if (rem === 'PreemptiveRotation') {
     return { label: 'Degrading', classes: 'bg-orange-500/10 border-orange-500/20 text-orange-400', Icon: TrendingDown };
   }
-  if (rem === 'backoff_retry') {
+  if (rem === 'BackoffRetry') {
     return { label: 'Backoff', classes: 'bg-amber-500/10 border-amber-500/20 text-amber-400', Icon: Timer };
   }
 

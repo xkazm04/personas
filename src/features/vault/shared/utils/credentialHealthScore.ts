@@ -25,11 +25,11 @@ const WEIGHT_ROTATION = 0.2;
 // -- Remediation severity mapping -------------------------------------
 
 const REMEDIATION_SCORE: Record<Remediation, number> = {
-  healthy: 100,
-  backoff_retry: 60,
-  preemptive_rotation: 35,
-  rotate_then_alert: 15,
-  disable: 0,
+  Healthy: 100,
+  BackoffRetry: 60,
+  PreemptiveRotation: 35,
+  RotateThenAlert: 15,
+  Disable: 0,
 };
 
 // -- Helpers ----------------------------------------------------------
@@ -122,11 +122,11 @@ export function computeHealthScore(
 
 function anomalyReason(score: AnomalyScore): string {
   switch (score.remediation) {
-    case 'healthy': return 'No anomalies';
-    case 'backoff_retry': return 'Transient failures (backoff active)';
-    case 'preemptive_rotation': return 'Sustained degradation';
-    case 'rotate_then_alert': return 'Permanent errors detected';
-    case 'disable': return 'Auto-disabled: critical failures';
+    case 'Healthy': return 'No anomalies';
+    case 'BackoffRetry': return 'Transient failures (backoff active)';
+    case 'PreemptiveRotation': return 'Sustained degradation';
+    case 'RotateThenAlert': return 'Permanent errors detected';
+    case 'Disable': return 'Auto-disabled: critical failures';
   }
 }
 

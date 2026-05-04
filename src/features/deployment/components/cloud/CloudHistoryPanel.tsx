@@ -122,20 +122,25 @@ export function CloudHistoryPanel() {
       {/* Stats cards */}
       {stats && (
         <div className="grid grid-cols-4 3xl:grid-cols-8 gap-3">
-          <StatCard label="Total Runs" value={String(stats.total_executions)} />
+          <StatCard label="Total Runs" value={String(stats.totalExecutions)} />
           <StatCard
             label="Success Rate"
-            value={stats.success_rate != null ? `${(stats.success_rate * 100).toFixed(0)}%` : '-'}
-            color={stats.success_rate != null && stats.success_rate >= 0.9 ? 'emerald' : stats.success_rate != null && stats.success_rate >= 0.7 ? 'amber' : 'red'}
+            value={stats.successRate != null ? `${(stats.successRate * 100).toFixed(0)}%` : '-'}
+            color={stats.successRate != null && stats.successRate >= 0.9 ? 'emerald' : stats.successRate != null && stats.successRate >= 0.7 ? 'amber' : 'red'}
           />
-          <StatCard label="Total Cost" value={formatCost(stats.total_cost_usd)} />
-          <StatCard label="Avg Duration" value={formatDuration(stats.avg_duration_ms ?? null)} />
+          <StatCard label="Total Cost" value={formatCost(stats.totalCostUsd)} />
+          <StatCard label="Avg Duration" value={formatDuration(stats.avgDurationMs == null ? null : Number(stats.avgDurationMs))} />
         </div>
       )}
 
       {/* Daily breakdown chart */}
-      {stats && stats.daily_breakdown.length > 0 && (
-        <DailyBreakdownChart data={stats.daily_breakdown} />
+      {stats && stats.dailyBreakdown.length > 0 && (
+        <DailyBreakdownChart data={stats.dailyBreakdown.map((d) => ({
+          date: d.date,
+          count: Number(d.count),
+          cost: d.cost,
+          success_rate: d.successRate,
+        }))} />
       )}
 
       {/* Filters */}
@@ -192,10 +197,10 @@ export function CloudHistoryPanel() {
       </div>
 
       {/* Top errors */}
-      {stats && stats.top_errors.length > 0 && (
+      {stats && stats.topErrors.length > 0 && (
         <div className="space-y-2">
           <SectionHeading className="typo-caption">{dt.history.top_errors}</SectionHeading>
-          {stats.top_errors.map((err, i) => (
+          {stats.topErrors.map((err, i) => (
             <div key={i} className="flex items-center gap-2 typo-caption p-2 rounded-card bg-red-500/5 border border-red-500/10">
               <AlertTriangle className="w-3 h-3 text-red-400 shrink-0" />
               <span className="text-foreground truncate flex-1">{err.message}</span>
@@ -228,7 +233,7 @@ export function CloudHistoryPanel() {
             <CloudExecutionRow
               key={exec.id}
               exec={exec}
-              personaName={personaName(exec.persona_id)}
+              personaName={personaName(exec.personaId)}
               isExpanded={expandedId === exec.id}
               onToggle={() => setExpandedId(expandedId === exec.id ? null : exec.id)}
               output={outputMap[exec.id]}

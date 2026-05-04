@@ -47,15 +47,15 @@ export interface RemediationEvent {
  */
 export function actionsForRemediation(remediation: Remediation): RemediationAction[] {
   switch (remediation) {
-    case 'healthy':
+    case 'Healthy':
       return [];
-    case 'backoff_retry':
+    case 'BackoffRetry':
       return ['backoff', 'notify_degraded'];
-    case 'preemptive_rotation':
+    case 'PreemptiveRotation':
       return ['auto_rotate', 'notify_degraded'];
-    case 'rotate_then_alert':
+    case 'RotateThenAlert':
       return ['auto_rotate', 'notify_critical'];
-    case 'disable':
+    case 'Disable':
       return ['auto_disable', 'notify_critical'];
     default:
       return [];

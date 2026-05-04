@@ -78,7 +78,7 @@ export function ReplayToolPanel({
                 {/* Duration */}
                 {step.duration_ms != null && isCompleted && (
                   <span className="ml-auto typo-code text-foreground tabular-nums">
-                    {formatDuration(step.duration_ms)}
+                    {formatDuration(Number(step.duration_ms))}
                   </span>
                 )}
 

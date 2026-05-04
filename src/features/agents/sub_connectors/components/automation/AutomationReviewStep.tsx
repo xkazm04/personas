@@ -1,6 +1,6 @@
 import { CheckCircle2, AlertCircle, AlertTriangle, ExternalLink } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { DeployAutomationResult } from '@/api/agents/automations';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';

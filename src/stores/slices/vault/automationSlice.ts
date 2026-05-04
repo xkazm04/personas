@@ -1,12 +1,10 @@
 import type { StateCreator } from "zustand";
 import type { VaultStore } from "../../storeTypes";
 import { reportError } from "../../storeTypes";
-import type {
-  PersonaAutomation,
-  AutomationRun,
-  CreateAutomationInput,
-  UpdateAutomationInput,
-} from "@/lib/bindings/PersonaAutomation";
+import type { PersonaAutomation } from "@/lib/bindings/PersonaAutomation";
+import type { AutomationRun } from "@/lib/bindings/AutomationRun";
+import type { CreateAutomationInput } from "@/lib/bindings/CreateAutomationInput";
+import type { UpdateAutomationInput } from "@/lib/bindings/UpdateAutomationInput";
 import type { DeployAutomationInput, DeployAutomationResult, ZapierZap, ZapierWebhookResult } from "@/api/agents/automations";
 import * as api from "@/api/agents/automations";
 

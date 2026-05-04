@@ -39,7 +39,7 @@ function useTimeseriesByEngine(timeseries: ProviderUsageTimeseries[]) {
         bucket = { executions: [], cost: [], duration: [] };
         map.set(row.engine_kind, bucket);
       }
-      bucket.executions.push(row.execution_count);
+      bucket.executions.push(Number(row.execution_count));
       bucket.cost.push(row.total_cost_usd);
       bucket.duration.push(row.avg_duration_ms);
     }
@@ -116,7 +116,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
       </div>
       {stat.failover_count > 0 && (
         <div className="typo-caption text-amber-400 mt-2">
-          {tx(stat.failover_count === 1 ? s.failover_one : s.failover_other, { count: stat.failover_count })}
+          {tx(Number(stat.failover_count) === 1 ? s.failover_one : s.failover_other, { count: Number(stat.failover_count) })}
         </div>
       )}
     </div>

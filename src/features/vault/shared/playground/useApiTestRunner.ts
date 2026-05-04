@@ -177,7 +177,7 @@ export function useApiTestRunner(): UseApiTestRunnerReturn {
             verdict,
             httpStatus: res.status,
             statusText: res.status_text,
-            durationMs: res.duration_ms,
+            durationMs: Number(res.duration_ms),
           });
           return next;
         });

@@ -157,7 +157,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       const lastRun: Record<string, string | null> = {};
       const healthMap: Record<string, PersonaHealth> = {};
       for (const s of summaries) {
-        triggerCounts[s.personaId] = s.enabledTriggerCount;
+        triggerCounts[s.personaId] = Number(s.enabledTriggerCount);
         lastRun[s.personaId] = s.lastRunAt;
         healthMap[s.personaId] = s.health;
       }

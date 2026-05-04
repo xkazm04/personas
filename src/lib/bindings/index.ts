@@ -135,7 +135,7 @@ export type { PersonaTrustLevel } from "./PersonaTrustLevel";
 export type { PersonaTrustOrigin } from "./PersonaTrustOrigin";
 export type { HealthStatus } from "./HealthStatus";
 export type { DesignFileKind } from "./DesignFileKind";
-export type { ParamType } from "./Persona";
+export type { ParamType } from "./ParamType";
 export type { PersonaManualReview } from "./PersonaManualReview";
 export type { PersonaMemory } from "./PersonaMemory";
 export type { PersonaMessage } from "./PersonaMessage";

@@ -72,7 +72,7 @@ export function DeploymentCard({
             <button
               type="button"
               title={dt.test_deployment}
-              onClick={() => onTest(d.id, d.persona_id)}
+              onClick={() => onTest(d.id, d.personaId)}
               disabled={isBusy || testRunning}
               className="p-1.5 rounded-card text-foreground hover:text-blue-400
                          hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
@@ -146,12 +146,12 @@ export function DeploymentCard({
       </div>
 
       {/* Budget gauge */}
-      {d.max_monthly_budget_usd != null && (
+      {d.maxMonthlyBudgetUsd != null && (
         <div className="space-y-1">
           <div className="flex items-center justify-between typo-caption text-foreground">
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
-              {dt.budget_label} {formatCost(d.current_month_cost_usd)} / {formatCost(d.max_monthly_budget_usd)}
+              {dt.budget_label} {formatCost(d.currentMonthCostUsd)} / {formatCost(d.maxMonthlyBudgetUsd)}
             </span>
             <span>{budgetUtilization(d)?.toFixed(0) ?? 0}%</span>
           </div>
@@ -166,9 +166,9 @@ export function DeploymentCard({
 
       {/* Stats row */}
       <div className="flex items-center gap-4 typo-caption text-foreground">
-        <span>{dt.label_invocations} <span className="text-foreground font-medium">{d.invocation_count}</span></span>
-        <span>{dt.label_last_called} <span className="text-foreground">{timeAgo(d.last_invoked_at)}</span></span>
-        <span>{dt.label_created} <span className="text-foreground">{timeAgo(d.created_at)}</span></span>
+        <span>{dt.label_invocations} <span className="text-foreground font-medium">{d.invocationCount}</span></span>
+        <span>{dt.label_last_called} <span className="text-foreground">{timeAgo(d.lastInvokedAt)}</span></span>
+        <span>{dt.label_created} <span className="text-foreground">{timeAgo(d.createdAt)}</span></span>
       </div>
 
       {/* Inline test result */}
@@ -218,7 +218,7 @@ export function DeploymentCard({
       {d.status === 'active' && (
         <ApiPlayground
           slug={d.slug}
-          personaId={d.persona_id}
+          personaId={d.personaId}
           endpointUrl={endpointUrl}
         />
       )}

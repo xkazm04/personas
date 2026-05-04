@@ -137,7 +137,7 @@ export function useReplayTimeline(
     if (toolSteps.length === 0) return (currentMs / totalMs) * totalCost;
     const completedFraction = completedSteps.length / toolSteps.length;
     const activeFraction = activeStep
-      ? ((currentMs - activeStep.started_at_ms) / Math.max((activeStep.ended_at_ms ?? totalMs) - activeStep.started_at_ms, 1)) / toolSteps.length
+      ? ((currentMs - Number(activeStep.started_at_ms)) / Math.max(Number(activeStep.ended_at_ms ?? totalMs) - Number(activeStep.started_at_ms), 1)) / toolSteps.length
       : 0;
     return (completedFraction + activeFraction) * totalCost;
   }, [totalMs, totalCost, toolSteps, completedSteps, activeStep, currentMs]);
@@ -169,8 +169,8 @@ export function useReplayTimeline(
   const boundaries = useMemo(() => {
     const pts = new Set<number>([0, totalMs]);
     for (const s of toolSteps) {
-      pts.add(s.started_at_ms);
-      if (s.ended_at_ms != null) pts.add(s.ended_at_ms);
+      pts.add(Number(s.started_at_ms));
+      if (s.ended_at_ms != null) pts.add(Number(s.ended_at_ms));
     }
     return Array.from(pts).sort((a, b) => a - b);
   }, [toolSteps, totalMs]);

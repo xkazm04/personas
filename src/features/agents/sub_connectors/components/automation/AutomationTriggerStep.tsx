@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';

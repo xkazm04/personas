@@ -268,7 +268,7 @@ export function computeCompositeHealth(input: CompositeScoreInput): CompositeHea
       costAnomalyCount: anomalyCount,
       openHealingIssues: issues.length,
       slaCompliance,
-      consecutiveFailures,
+      consecutiveFailures: Number(consecutiveFailures),
       dailyStatuses,
       trend,
       uptimePercent,

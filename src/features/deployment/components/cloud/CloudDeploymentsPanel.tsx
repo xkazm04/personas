@@ -50,7 +50,7 @@ export function CloudDeploymentsPanel({
   const { tests, runTest, dismissResult } = useDeploymentTest();
 
   // Which personas are not yet deployed?
-  const deployedPersonaIds = new Set(deployments.map((d) => d.persona_id));
+  const deployedPersonaIds = new Set(deployments.map((d) => d.personaId));
   const deployablePersonas = personas.filter((p) => !deployedPersonaIds.has(p.id));
 
   const handleDeploy = async () => {
@@ -161,7 +161,7 @@ export function CloudDeploymentsPanel({
               key={d.id}
               deployment={d}
               baseUrl={baseUrl}
-              personaName={personaName(d.persona_id)}
+              personaName={personaName(d.personaId)}
               onPause={onPause}
               onResume={onResume}
               onRemove={onRemove}

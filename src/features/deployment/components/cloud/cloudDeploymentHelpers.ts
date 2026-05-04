@@ -10,8 +10,8 @@ export const BUDGET_PRESETS = [
 ] as const;
 
 export function budgetUtilization(d: CloudDeployment): number | null {
-  if (!d.max_monthly_budget_usd || !d.current_month_cost_usd) return null;
-  return Math.min(100, (d.current_month_cost_usd / d.max_monthly_budget_usd) * 100);
+  if (!d.maxMonthlyBudgetUsd || !d.currentMonthCostUsd) return null;
+  return Math.min(100, (d.currentMonthCostUsd / d.maxMonthlyBudgetUsd) * 100);
 }
 
 export function budgetColor(pct: number): string {

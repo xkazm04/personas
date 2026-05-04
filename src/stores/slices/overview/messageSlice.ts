@@ -194,7 +194,7 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
           .map((ts) => {
             const cachedReplies = nextThreadReplies.get(ts.threadId);
             if (cachedReplies) {
-              return { ...ts, replyCount: cachedReplies.length };
+              return { ...ts, replyCount: BigInt(cachedReplies.length) };
             }
             return ts;
           });

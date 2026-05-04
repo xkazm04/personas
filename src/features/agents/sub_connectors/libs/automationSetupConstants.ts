@@ -1,4 +1,5 @@
-import type { AutomationPlatform, AutomationFallbackMode } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
+import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMode';
 
 export const PLATFORM_TO_SERVICE_TYPE: Record<AutomationPlatform, string | null> = {
   n8n: 'n8n',

@@ -17,9 +17,9 @@ const SOURCE_ICONS: Record<string, typeof Clipboard> = {
 
 // Action labels are resolved at render time via useTranslation
 const ACTION_LABEL_KEYS: Record<ContextAction, 'action_trigger' | 'action_emit' | 'action_log'> = {
-  TriggerExecution: 'action_trigger',
-  EmitEvent: 'action_emit',
-  Log: 'action_log',
+  triggerExecution: 'action_trigger',
+  emitEvent: 'action_emit',
+  log: 'action_log',
 };
 
 
@@ -48,7 +48,7 @@ export function AmbientContextPanel() {
   const [ruleSummaryContains, setRuleSummaryContains] = useState('');
   const [rulePathGlob, setRulePathGlob] = useState('');
   const [ruleAppFilter, setRuleAppFilter] = useState('');
-  const [ruleAction, setRuleAction] = useState<ContextAction>('EmitEvent');
+  const [ruleAction, setRuleAction] = useState<ContextAction>('emitEvent');
   const [ruleCooldown, setRuleCooldown] = useState(60);
   const { t, tx } = useTranslation();
   const s = t.settings.ambient;
@@ -144,7 +144,7 @@ export function AmbientContextPanel() {
     setRuleSummaryContains('');
     setRulePathGlob('');
     setRuleAppFilter('');
-    setRuleAction('EmitEvent');
+    setRuleAction('emitEvent');
     setRuleCooldown(60);
     setShowRuleForm(false);
   }, [selectedPersonaId, ruleName, ruleSources, ruleSummaryContains, rulePathGlob, ruleAppFilter, ruleAction, ruleCooldown, addContextRule]);
@@ -179,11 +179,11 @@ export function AmbientContextPanel() {
         <div className="flex items-center gap-3 typo-caption text-foreground">
           <div className="flex items-center gap-1">
             <Activity className="w-3 h-3" />
-            <span>{tx(s.events_broadcast, { count: contextStreamStats.totalEventsBroadcast })}</span>
+            <span>{tx(s.events_broadcast, { count: Number(contextStreamStats.totalEventsBroadcast) })}</span>
           </div>
           <div className="flex items-center gap-1">
             <Zap className="w-3 h-3" />
-            <span>{tx(contextStreamStats.activeSubscribers !== 1 ? s.subscribers_plural : s.subscribers, { count: contextStreamStats.activeSubscribers })}</span>
+            <span>{tx(Number(contextStreamStats.activeSubscribers) !== 1 ? s.subscribers_plural : s.subscribers, { count: Number(contextStreamStats.activeSubscribers) })}</span>
           </div>
         </div>
       )}
@@ -194,7 +194,7 @@ export function AmbientContextPanel() {
           <div className="flex items-center justify-between">
             <span className="typo-caption font-medium text-foreground">{s.live_context}</span>
             <div className="flex items-center gap-2 typo-caption text-foreground">
-              <span>{tx(s.total_signals, { count: ambientSnapshot.totalSignalsCaptured })}</span>
+              <span>{tx(s.total_signals, { count: Number(ambientSnapshot.totalSignalsCaptured) })}</span>
               <button
                 onClick={() => selectedPersonaId && fetchAmbientSnapshot(selectedPersonaId)}
                 className="hover:text-foreground/80 transition-colors"
@@ -226,8 +226,8 @@ export function AmbientContextPanel() {
                   signal.ageSecs < 60
                     ? `${signal.ageSecs}s`
                     : signal.ageSecs < 3600
-                      ? `${Math.floor(signal.ageSecs / 60)}m`
-                      : `${Math.floor(signal.ageSecs / 3600)}h`;
+                      ? `${Math.floor(Number(signal.ageSecs) / 60)}m`
+                      : `${Math.floor(Number(signal.ageSecs) / 3600)}h`;
 
                 return (
                   <div key={i} className="flex items-start gap-1.5 typo-caption">
@@ -400,9 +400,9 @@ export function AmbientContextPanel() {
                     onChange={(e) => setRuleAction(e.target.value as ContextAction)}
                     className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground"
                   >
-                    <option value="TriggerExecution">{s.action_trigger}</option>
-                    <option value="EmitEvent">{s.action_emit}</option>
-                    <option value="Log">{s.action_log}</option>
+                    <option value="triggerExecution">{s.action_trigger}</option>
+                    <option value="emitEvent">{s.action_emit}</option>
+                    <option value="log">{s.action_log}</option>
                   </select>
                 </div>
                 <div className="space-y-0.5">

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Zap, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from "@/stores/vaultStore";
-import type { PersonaAutomation, AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
+import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationDeployStatus as AutomationDeploymentStatus } from '@/lib/bindings/AutomationDeployStatus';
 import { AutomationCard } from './AutomationCard';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
 import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
@@ -57,7 +58,26 @@ export function AutomationsSection({ automations, onAdd, onEdit }: AutomationsSe
   const handleToggleStatus = async (id: string, newStatus: 'active' | 'paused') => {
     setTransitioningIds((prev) => new Set(prev).add(id));
     try {
-      await updateAutomation(id, { deploymentStatus: newStatus as AutomationDeploymentStatus });
+      await updateAutomation(id, {
+        // Origin's UpdateAutomationInput requires every field nullable. We only
+        // want to flip deploymentStatus — null everything else to "do not change".
+        name: null,
+        description: null,
+        useCaseId: null,
+        platformWorkflowId: null,
+        platformUrl: null,
+        webhookUrl: null,
+        webhookMethod: null,
+        platformCredentialId: null,
+        credentialMapping: null,
+        inputSchema: null,
+        outputSchema: null,
+        timeoutMs: null,
+        retryCount: null,
+        fallbackMode: null,
+        deploymentStatus: newStatus as AutomationDeploymentStatus,
+        errorMessage: null,
+      });
     } finally {
       setTransitioningIds((prev) => {
         const next = new Set(prev);

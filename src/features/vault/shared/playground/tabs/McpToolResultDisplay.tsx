@@ -44,9 +44,9 @@ export function ToolResultDisplay({ result }: { result: McpToolResult }) {
       {/* Content blocks */}
       {result.content.map((block, i) => (
         <div key={i} className="rounded-card border border-primary/8 overflow-hidden">
-          {block.content_type !== 'text' && (
+          {block.type !== 'text' && (
             <div className="px-3 py-1 typo-body text-foreground bg-secondary/20 border-b border-primary/5">
-              {block.content_type}
+              {block.type}
             </div>
           )}
           <pre className="p-3 typo-code font-mono text-foreground whitespace-pre-wrap break-words overflow-auto max-h-[400px]">

@@ -16,7 +16,10 @@ interface RunDiffViewProps {
 export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
   const { t } = useTranslation();
   const pt = t.pipeline;
-  const runs = useMemo(() => stats?.run_counts ?? [], [stats]);
+  const runs = useMemo<[string, number][]>(
+    () => (stats?.run_counts ?? []).map(([id, c]) => [id, Number(c)]),
+    [stats],
+  );
   const [runA, setRunA] = useState<string>('');
   const [runB, setRunB] = useState<string>('');
   const [loading, setLoading] = useState(false);

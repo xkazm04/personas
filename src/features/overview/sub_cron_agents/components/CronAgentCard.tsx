@@ -25,14 +25,14 @@ function AgentRow({ agent }: { agent: CronAgent }) {
 
   const healthColor =
     !agent.trigger_enabled || !agent.persona_enabled ? 'text-foreground' :
-    agent.recent_executions === 0 ? 'text-foreground' :
+    Number(agent.recent_executions) === 0 ? 'text-foreground' :
     failureRate === 0 ? 'text-emerald-400' :
     failureRate < 0.6 ? 'text-amber-400' :
     'text-red-400';
 
   const HealthIcon =
     !agent.trigger_enabled || !agent.persona_enabled ? Pause :
-    agent.recent_executions === 0 ? Clock :
+    Number(agent.recent_executions) === 0 ? Clock :
     failureRate === 0 ? CheckCircle2 :
     failureRate < 0.6 ? AlertTriangle :
     XCircle;
@@ -40,7 +40,7 @@ function AgentRow({ agent }: { agent: CronAgent }) {
   const schedule = agent.cron_expression
     ? agent.cron_expression
     : agent.interval_seconds
-      ? `every ${formatInterval(agent.interval_seconds)}`
+      ? `every ${formatInterval(Number(agent.interval_seconds))}`
       : 'no schedule';
 
   const disabled = !agent.trigger_enabled || !agent.persona_enabled;

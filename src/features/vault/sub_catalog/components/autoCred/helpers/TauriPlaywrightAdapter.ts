@@ -110,20 +110,20 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
         session_id: sessionId,
         connector_name: ctx.connector.name,
         connector_label: ctx.connector.label,
-        docs_url: ctx.docsUrl ?? undefined,
-        setup_instructions: ctx.setupInstructions ?? undefined,
+        docs_url: ctx.docsUrl ?? null,
+        setup_instructions: ctx.setupInstructions ?? null,
         fields: ctx.fields.map((f) => ({
           key: f.key,
           label: f.label,
-          field_type: f.type ?? 'text',
+          field_type: (f.type ?? 'text') as 'text' | 'password' | 'url' | 'email' | 'number' | 'select',
           required: f.required ?? false,
-          placeholder: f.placeholder,
-          help_text: f.helpText,
+          placeholder: f.placeholder ?? null,
+          help_text: f.helpText ?? null,
         })),
-        saved_procedure: savedProcedure,
+        saved_procedure: savedProcedure ?? null,
         force_guided: this.forceGuided,
-        service_url: ctx.serviceUrl ?? undefined,
-        service_description: ctx.serviceDescription ?? undefined,
+        service_url: ctx.serviceUrl ?? null,
+        service_description: ctx.serviceDescription ?? null,
       });
 
       // Parse extracted values
@@ -144,8 +144,8 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
       let discoveredConnector: DiscoveredConnector | undefined;
 
       if (result.discovered_fields && Array.isArray(result.discovered_fields)) {
-        discoveredFields = result.discovered_fields
-          .map((f: Record<string, unknown>) => ({
+        discoveredFields = (result.discovered_fields as unknown as Record<string, unknown>[])
+          .map((f) => ({
             key: String(f.key ?? ''),
             label: String(f.label ?? ''),
             type: String(f.type ?? 'text'),
@@ -155,8 +155,8 @@ export class TauriPlaywrightAdapter implements PlaywrightAdapter {
           .filter((f) => f.key && f.label);
       }
 
-      if (result.discovered_connector && typeof result.discovered_connector === 'object') {
-        const dc = result.discovered_connector;
+      if (result.discovered_connector && typeof result.discovered_connector === 'object' && !Array.isArray(result.discovered_connector)) {
+        const dc = result.discovered_connector as Record<string, unknown>;
         discoveredConnector = {
           name: String(dc.name ?? ''),
           label: String(dc.label ?? ''),

@@ -20,8 +20,8 @@ export function SubSpanBar({
 }) {
   const { t, tx } = useTranslation();
   const [hovered, setHovered] = useState(false);
-  const stepOffsetInParent = step.started_at_ms;
-  const stepDuration = step.duration_ms ?? 0;
+  const stepOffsetInParent = Number(step.started_at_ms);
+  const stepDuration = Number(step.duration_ms ?? 0);
   const absoluteStart = parentStartMs + stepOffsetInParent;
   const offsetFromPipeline = absoluteStart - pipelineStartMs;
   const leftPct = totalDurationMs > 0 ? (offsetFromPipeline / totalDurationMs) * 100 : 0;
@@ -60,7 +60,7 @@ export function SubSpanBar({
           >
             <p className="typo-heading text-cyan-400 mb-1">{step.tool_name}</p>
             <div className="flex items-center gap-3 typo-body">
-              <span className="font-mono text-foreground">{formatDuration(stepDuration)}</span>
+              <span className="font-mono text-foreground">{formatDuration(Number(stepDuration))}</span>
               <span className="text-foreground">{tx(t.agents.executions.step_number, { index: step.step_index })}</span>
             </div>
             {step.input_preview && (
@@ -74,7 +74,7 @@ export function SubSpanBar({
 
       {/* Right: duration */}
       <span className="typo-code text-foreground text-right">
-        {formatDuration(stepDuration)}
+        {formatDuration(Number(stepDuration))}
       </span>
     </div>
   );

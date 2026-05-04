@@ -192,7 +192,7 @@ export function useCalendarEvents(
           }
           if (agent.interval_seconds) {
             return generateIntervalFireTimes(
-              agent.interval_seconds,
+              Number(agent.interval_seconds),
               agent.last_triggered_at,
               startD,
               endD,
@@ -352,7 +352,7 @@ export function useConflictPreview(
             }
           }
           if (a.interval_seconds) {
-            return generateIntervalFireTimes(a.interval_seconds, a.last_triggered_at, now, end);
+            return generateIntervalFireTimes(Number(a.interval_seconds), a.last_triggered_at, now, end);
           }
           return [] as Date[];
         }),

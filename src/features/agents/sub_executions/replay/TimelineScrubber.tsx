@@ -63,7 +63,7 @@ export function TimelineScrubber({
 
         {/* Tool step markers */}
         {toolSteps.map((s) => {
-          const x = totalMs > 0 ? (s.started_at_ms / totalMs) * 100 : 0;
+          const x = totalMs > 0 ? (Number(s.started_at_ms) / totalMs) * 100 : 0;
           const isFork = forkPoint === s.step_index;
           return (
             <Tooltip

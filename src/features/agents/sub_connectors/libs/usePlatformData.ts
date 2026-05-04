@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { AutomationPlatform } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationPlatform } from '@/lib/bindings/AutomationPlatform';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
 import { silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, ZapierZap } from '@/api/agents/automations';

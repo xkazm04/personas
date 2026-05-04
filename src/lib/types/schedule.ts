@@ -35,7 +35,7 @@ export interface Schedule {
 export function toSchedule(agent: CronAgent): Schedule {
   return {
     cron: agent.cron_expression ?? undefined,
-    interval_seconds: agent.interval_seconds ?? undefined,
+    interval_seconds: agent.interval_seconds == null ? undefined : Number(agent.interval_seconds),
     timezone: agent.timezone ?? undefined,
   };
 }

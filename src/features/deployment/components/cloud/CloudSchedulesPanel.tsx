@@ -35,7 +35,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
   const [showCreate, setShowCreate] = useState(false);
 
   const deployedPersonaIds = useMemo(
-    () => new Set(deployments.filter((d) => d.status === 'active').map((d) => d.persona_id)),
+    () => new Set(deployments.filter((d) => d.status === 'active').map((d) => d.personaId)),
     [deployments],
   );
 
@@ -149,7 +149,7 @@ export function CloudSchedulesPanel({ deployments, onRefresh }: Props) {
               isExpanded={expandedId === trigger.id}
               firings={expandedId === trigger.id ? firings : []}
               isLoadingFirings={expandedId === trigger.id && isLoadingFirings}
-              personaName={personaName(trigger.persona_id)}
+              personaName={personaName(trigger.personaId)}
               onToggleExpand={() => setExpandedId(expandedId === trigger.id ? null : trigger.id)}
               onToggleEnabled={() => handleToggle(trigger)}
               onDelete={() => handleDelete(trigger.id)}

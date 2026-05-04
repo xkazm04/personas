@@ -102,6 +102,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         importance: input.importance,
         tags: input.tags,
         source_execution_id: null,
+        use_case_id: null,
       });
       set((state) => ({
         memories: [created, ...state.memories],

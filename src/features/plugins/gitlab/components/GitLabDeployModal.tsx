@@ -100,7 +100,7 @@ export function GitLabDeployModal({
         >
           <option value="">{t.gitlab.select_project}</option>
           {projects.map((p) => (
-            <option key={p.id} value={p.id}>
+            <option key={String(p.id)} value={String(p.id)}>
               {p.pathWithNamespace}
             </option>
           ))}

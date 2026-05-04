@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   CheckCircle2, XCircle, AlertCircle, Pause,
 } from 'lucide-react';
-import type { AutomationDeploymentStatus } from '@/lib/bindings/PersonaAutomation';
+import type { AutomationDeployStatus as AutomationDeploymentStatus } from '@/lib/bindings/AutomationDeployStatus';
 import { AUTOMATION_STATUS_CONFIG } from '../../libs/automationTypes';
 
 const STATUS_ICON = {

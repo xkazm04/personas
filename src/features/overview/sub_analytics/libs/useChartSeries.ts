@@ -44,7 +44,11 @@ export function useChartSeries() {
   [backendChartData?.persona_breakdown, personas]);
 
   const { areaData, allToolNames } = useMemo(() => {
-    const pivot = pivotToolUsageOverTime(toolUsageOverTime);
+    const pivot = pivotToolUsageOverTime(toolUsageOverTime.map((p) => ({
+      date: p.date,
+      tool_name: p.tool_name,
+      invocations: Number(p.invocations),
+    })));
     return {
       areaData: pivot.areaData.map(pt => ({ ...pt, dateLabel: formatDateTick(pt.date) })),
       allToolNames: pivot.allToolNames,
@@ -53,12 +57,12 @@ export function useChartSeries() {
 
   const barData = useMemo(
     () => [...toolUsageSummary]
-      .sort((a, b) => b.total_invocations - a.total_invocations)
+      .sort((a, b) => Number(b.total_invocations) - Number(a.total_invocations))
       .map((s) => ({
         name: formatToolName(s.tool_name),
-        invocations: s.total_invocations,
-        executions: s.unique_executions,
-        personas: s.unique_personas,
+        invocations: Number(s.total_invocations),
+        executions: Number(s.unique_executions),
+        personas: Number(s.unique_personas),
       })),
     [toolUsageSummary],
   );
