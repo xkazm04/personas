@@ -1,24 +1,55 @@
 # Events and Triggers
 
-Events and Triggers are the routing layer that lets personas react to schedules, webhooks, shared events, rate limits, dead letters, and composed chains.
+Events and Triggers are the routing layer that lets personas react to schedules, webhooks, filesystem changes, shared events, composite conditions, and other app activity.
 
-## Sidebar tabs
+## Page host
 
-| Tab | Purpose | Implementation |
+`src/features/triggers/TriggersPage.tsx` owns the Events section. It reads the active tab from `useSystemStore().eventBusTab`, loads all triggers through `listAllTriggers()`, reads trigger health through `getTriggerHealthMap()`, and lazily mounts heavier canvas tabs.
+
+The Live Stream header includes a shortcut into `Overview -> Events` for the full event log.
+
+## Tabs
+
+| Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Live Stream | Inspect incoming and internal events | `src/features/triggers/sub_live_stream` |
-| Builder | Route event sources to personas | `src/features/triggers/sub_builder` |
-| Speed Limits | Rate limit dashboard | `src/features/triggers/sub_speed_limits` |
-| Test | Fire and inspect test events | `src/features/triggers/sub_test` |
-| Local Relay | Smee relay management | `src/features/triggers/sub_smee_relay` |
-| Cloud Events | Dev-only cloud webhook relay | `src/features/triggers/sub_cloud_webhooks` |
-| Dead Letter Queue | Dev-only failed event queue | `src/features/triggers/sub_dead_letter` |
-| Chain Studio | Dev-only visual trigger studio | `src/features/triggers/sub_studio` |
-| Marketplace | Dev-only shared event subscriptions | `src/features/triggers/sub_shared` |
+| Live Stream | Real-time event stream with type chips, JSON highlighting, detail modal | `sub_live_stream` |
+| Builder | Visual routing canvas from event sources to persona listeners | `sub_builder/EventCanvas.tsx`, `layouts/routing` |
+| Speed Limits | Rate-limit dashboard over trigger/event activity | `sub_speed_limits/RateLimitDashboard.tsx` |
+| Test | Manual event test surface | `sub_test/TestTab.tsx` |
+| Local Relay | Smee relay control and switch-back to live stream | `sub_smee_relay/SmeeRelayTab.tsx` |
+| Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
+| Dead Letter Queue | Dev-only failed event review, retry, discard | `sub_dead_letter/DeadLetterTab.tsx` |
+| Chain Studio | Dev-only visual chain editor built on React Flow nodes/edges | `sub_studio/TriggerStudioCanvas.tsx` |
+| Marketplace | Dev-only shared event catalog and subscriptions | `sub_shared/SharedEventsTab.tsx` |
 
-## Backend
+## Trigger editor mechanics
 
-Events use `src-tauri/src/commands/communication`, `src-tauri/src/commands/execution/scheduler.rs`, and event-bus logic in `src-tauri/src/engine`.
+`sub_triggers` contains the reusable trigger list/detail/editing components:
 
-For the deeper routing design that has now shipped into the Events surface, see [event-routing.md](event-routing.md).
+- `TriggerAddForm`, `TriggerTypeSelector`, and config components create typed trigger configs.
+- Config families include webhook, schedule, polling, file watcher, event listener, clipboard, app focus, and composite triggers.
+- `NlTriggerInput` and `nlTriggerParser.ts` translate natural-language schedule text into structured trigger config.
+- `TriggerSchedulePreview`, `RadialCountdownRing`, and `TriggerCountdown` make schedule timing visible before and after save.
+- `TriggerExecutionHistory` links a trigger back to executions it caused.
+- `DryRunResultView` displays backend dry-run feedback.
 
+## Backend command surface
+
+| Family | Commands |
+| --- | --- |
+| Event log | `list_events`, `list_events_in_range`, `search_events`, `publish_event` |
+| Subscriptions | `list_subscriptions`, `list_all_subscriptions`, `create_subscription`, `update_subscription`, `delete_subscription` |
+| Testing | `test_event_flow`, `seed_mock_event` |
+| Dead letters | `list_dead_letter_events`, `count_dead_letter_events`, `retry_dead_letter_event`, `discard_dead_letter_event` |
+| Shared events | `shared_events_browse_catalog`, `shared_events_refresh_catalog`, `shared_events_subscribe`, `shared_events_unsubscribe`, `shared_events_list_subscriptions` |
+| Scheduler/triggers | `src-tauri/src/commands/execution/scheduler.rs`, trigger APIs under `src/api/pipeline/triggers` |
+
+## Data flow
+
+1. A source publishes an event, either directly (`publish_event`) or through a domain side effect such as Drive file changes.
+2. Communication repositories persist the event and expose it to logs/search.
+3. The execution engine/scheduler evaluates trigger and subscription matches.
+4. Matching persona triggers enqueue executions or route into chain/composite logic.
+5. Failures move into dead-letter handling after retry limits.
+
+For deeper routing design details, see [event-routing.md](event-routing.md).

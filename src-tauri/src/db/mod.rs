@@ -329,6 +329,29 @@ CREATE TABLE IF NOT EXISTS companion_provenance (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_provenance_episode ON companion_provenance(episode_id);
 
+-- Semantic-fact sidecar. The fact's display body and full provenance
+-- live in the corresponding `companion_node` row (kind='fact') and the
+-- markdown file under `semantic/<scope>/`. This sidecar holds the typed
+-- metadata that's awkward to encode in markdown frontmatter and that we
+-- want to query/sort on (importance decay, scope grouping, supersedes).
+--
+-- Provenance enforcement (≥1 source per fact) is upheld at the
+-- application layer in `semantic::write_fact` — the schema doesn't try
+-- to FK into companion_node because facts can outlive deleted episodes
+-- (the markdown source still records who-said-what).
+CREATE TABLE IF NOT EXISTS companion_fact (
+    id              TEXT PRIMARY KEY,
+    scope           TEXT NOT NULL,            -- 'user' | 'project' | 'world'
+    fact_key        TEXT NOT NULL,            -- short slug, e.g. "preferred_editor"
+    confidence      REAL NOT NULL DEFAULT 0.8,-- 0..1
+    supersedes_id   TEXT,                      -- prior fact this replaces
+    contradicts_id  TEXT,                      -- fact this contradicts (if any)
+    last_seen_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    last_decayed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_fact_scope ON companion_fact(scope, fact_key);
+CREATE INDEX IF NOT EXISTS idx_companion_fact_super ON companion_fact(supersedes_id);
+
 CREATE VIRTUAL TABLE IF NOT EXISTS companion_fts USING fts5(node_id UNINDEXED, body, tags);
 
 CREATE TABLE IF NOT EXISTS companion_approval (
@@ -365,6 +388,43 @@ CREATE TABLE IF NOT EXISTS companion_session (
     last_active_at       TEXT NOT NULL DEFAULT (datetime('now')),
     created_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Consolidation runs: one row per "review my recent conversations and
+-- propose semantic-fact updates" pass. The actual proposals are children
+-- in companion_consolidation_item — each one is a single fact diff the
+-- user reviews independently. We persist rather than streaming because
+-- the user often wants to come back to a half-reviewed batch later.
+CREATE TABLE IF NOT EXISTS companion_consolidation (
+    id              TEXT PRIMARY KEY,
+    triggered_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at    TEXT,
+    status          TEXT NOT NULL DEFAULT 'running',  -- running | review | applied | failed
+    episodes_count  INTEGER NOT NULL DEFAULT 0,
+    summary         TEXT,
+    error_text      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_consolidation_status
+    ON companion_consolidation(status, triggered_at DESC);
+
+CREATE TABLE IF NOT EXISTS companion_consolidation_item (
+    id                TEXT PRIMARY KEY,
+    consolidation_id  TEXT NOT NULL,
+    kind              TEXT NOT NULL,               -- 'add' | 'update' | 'contradict'
+    scope             TEXT NOT NULL,
+    fact_key          TEXT NOT NULL,
+    proposed_value    TEXT NOT NULL,
+    sources_json      TEXT NOT NULL,               -- JSON array of episode IDs
+    importance        INTEGER NOT NULL DEFAULT 3,
+    confidence        REAL NOT NULL DEFAULT 0.7,
+    supersedes_id     TEXT,                         -- existing fact this replaces (for 'update'/'contradict')
+    rationale         TEXT,
+    status            TEXT NOT NULL DEFAULT 'pending', -- pending | applied | rejected
+    fact_id           TEXT,                         -- populated after apply
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_consolidation_item_run
+    ON companion_consolidation_item(consolidation_id, status);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

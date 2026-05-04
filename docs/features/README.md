@@ -33,4 +33,4 @@ These documents describe the implemented product surface. They are written for u
 - Feature docs should name the UI entry point, primary user flows, backend command surface, data/storage model, and known limitations.
 - Long future-looking sections belong in `docs/concepts`, not in feature docs. Keep only a short "Known gaps" section here.
 - If a feature is hidden behind a tier or dev flag, state that explicitly.
-
+- Use [../architecture/codebase-map.md](../architecture/codebase-map.md) when deciding where a newly discovered mechanism belongs.

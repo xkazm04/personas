@@ -16,6 +16,7 @@ use std::sync::Arc;
 
 use crate::companion::brain::episodic::{self, Episode};
 use crate::companion::brain::retrieval::{self, DoctrineHit, Recall};
+use crate::companion::brain::semantic::Fact;
 use crate::companion::disk;
 use crate::companion::observability;
 use crate::db::{DbPool, UserDbPool};
@@ -55,6 +56,8 @@ pub async fn build_system_prompt(
         None => Recall {
             episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
             doctrine: Vec::new(),
+            facts: crate::companion::brain::semantic::list_facts(user_db, None, false, 6)
+                .unwrap_or_default(),
         },
     };
 
@@ -94,6 +97,8 @@ pub async fn build_system_prompt(
     let recall = Recall {
         episodes: episodic::list_recent(user_db, session_id, 20).unwrap_or_default(),
         doctrine: Vec::new(),
+        facts: crate::companion::brain::semantic::list_facts(user_db, None, false, 6)
+            .unwrap_or_default(),
     };
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
@@ -123,6 +128,56 @@ fn format_episodes(episodes: &[Episode]) -> String {
     s
 }
 
+/// Render facts grouped by scope. Each fact lists its sources so Athena
+/// can cite back to the source episodes when she draws on it. Facts
+/// without sources don't reach this layer (rejected at write time), but
+/// we defensively skip empty-source rows just in case.
+fn format_facts(facts: &[Fact]) -> String {
+    if facts.is_empty() {
+        return String::new();
+    }
+    let mut s = String::from(
+        "\n\n# Semantic memory (facts you've distilled — every entry is cited)\n\n",
+    );
+    let mut last_scope: Option<&str> = None;
+    let mut sorted: Vec<&Fact> = facts.iter().collect();
+    sorted.sort_by(|a, b| {
+        a.scope
+            .cmp(&b.scope)
+            .then(b.importance.cmp(&a.importance))
+            .then(b.updated_at.cmp(&a.updated_at))
+    });
+    for f in sorted {
+        if last_scope != Some(f.scope.as_str()) {
+            s.push_str(&format!("## {} facts\n\n", capitalize(&f.scope)));
+            last_scope = Some(f.scope.as_str());
+        }
+        let sources = if f.sources.is_empty() {
+            "no-sources".into()
+        } else {
+            f.sources.join(", ")
+        };
+        s.push_str(&format!(
+            "- **{key}** (importance {imp}, conf {conf:.0}%) — {value}  [from {srcs}]\n",
+            key = f.key,
+            imp = f.importance,
+            conf = f.confidence * 100.0,
+            value = f.value.trim(),
+            srcs = sources,
+        ));
+    }
+    s.push('\n');
+    s
+}
+
+fn capitalize(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        Some(c) => c.to_ascii_uppercase().to_string() + chars.as_str(),
+        None => String::new(),
+    }
+}
+
 fn format_doctrine(doctrine: &[DoctrineHit]) -> String {
     if doctrine.is_empty() {
         return String::new();
@@ -146,6 +201,7 @@ fn compose(
 ) -> String {
     let episodes_md = format_episodes(&recall.episodes);
     let doctrine_md = format_doctrine(&recall.doctrine);
+    let facts_md = format_facts(&recall.facts);
 
     let mut out = String::with_capacity(
         constitution.len()
@@ -153,6 +209,7 @@ fn compose(
             + observability_md.len()
             + episodes_md.len()
             + doctrine_md.len()
+            + facts_md.len()
             + onboarding_md.len()
             + voice_md.len()
             + 128,
@@ -162,6 +219,11 @@ fn compose(
         out.push_str("\n\n# Identity (live, evolves)\n\n");
         out.push_str(identity);
     }
+    // Facts sit just below identity — they're enduring knowledge that
+    // should color *every* response, not retrieval-of-the-day. Sourcing
+    // them right after identity helps Athena treat facts as part of who
+    // she's talking to, not as conversational recall.
+    out.push_str(&facts_md);
     out.push_str(observability_md);
     out.push_str(&episodes_md);
     out.push_str(&doctrine_md);

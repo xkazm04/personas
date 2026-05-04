@@ -1,27 +1,50 @@
 # Connections and Vault
 
-Connections is the credential and resource management area. It backs template adoption, persona execution, plugin integrations, API proxying, dynamic discovery, and local desktop connector capabilities.
+Connections is the credential, connector, resource, database, and dependency-management area. It backs template adoption, persona execution, plugin integrations, API proxying, dynamic discovery, local desktop connectors, and vector knowledge bases.
 
-## Implemented surfaces
+## User surface
 
-| Surface | Purpose | Implementation |
+| Tab | Behavior | Main files |
 | --- | --- | --- |
-| Credentials | Store and manage encrypted credentials | `src/features/vault/sub_credentials`, `src-tauri/src/commands/credentials/crud.rs` |
-| Databases | Database connection records and catalog | `src/features/vault`, `credentials/db_schema.rs` |
-| Catalog | Connector catalog and setup recipes | `src/features/vault`, `scripts/connectors`, `public/icons/connectors` |
-| Dependencies graph | Resource dependency view | `src/features/vault`, `credentials/resources.rs` |
-| Add new | Credential creation and picker flow | `src/features/vault/sub_credentials/components` |
+| Credentials | Credential list, cards, creation forms, import, workspace/picker flows, gateway controls | `sub_credentials/manager`, `sub_credentials/components` |
+| Databases | Database cards, table browser, SQL editor, safe mode, assistant chat, schema manager | `sub_databases` |
+| Catalog | Connector catalog, setup forms, auto-credential browser, desktop connectors, foraging, negotiator, schema proposal | `sub_catalog/components` |
+| Dependencies | Relationship graph, blast-radius panel, simulation controls | `sub_dependencies` |
+| Add new | Entry mode into credential creation/catalog flows | `CredentialAddViews.tsx`, `useCatalogHandlers.ts` |
+
+Navigation tab definitions live in `credentialItems` in `sidebarData.ts`.
+
+## Credential manager mechanics
+
+The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`, and `useCredentialViewFSM` to keep list/detail/create/import/catalog states explicit. It includes:
+
+- Tags and health scoring (`useCredentialTags`, `credentialHealthScore.ts`).
+- OAuth helpers (`useCredentialOAuth`, `useGoogleOAuth`).
+- Rotation ticker and rotate-all flow (`useRotationTicker`, `useRotateAll`).
+- Undo-delete support (`useUndoDelete`).
+- Post-save resource picker flow (`resourcePickerStore.ts`, `usePostSaveResourcePicker.tsx`).
+
+## API playground and vector KB
+
+`shared/playground` provides a request-builder modal for testing connector endpoints through the credential proxy. `useApiTestRunner` executes requests and `ResponseViewer` renders results.
+
+`shared/vector` provides ML-gated knowledge-base creation, ingestion, search, document listing, and deletion through `credentials/vector_kb.rs`.
 
 ## Backend command families
 
-- `credentials/connectors.rs`: connector definitions and catalog behavior.
-- `credentials/resources.rs`: scoped resources bound to credentials.
-- `credentials/api_proxy.rs`: authenticated proxy with SSRF protections.
-- `credentials/discovery.rs`: dynamic resource discovery for adoption questions.
-- `credentials/oauth.rs`, `auth_detect.rs`, `cli_capture.rs`: setup and discovery helpers.
-- `credentials/vector_kb.rs`: ML-gated vector knowledge bases.
+| Family | Modules |
+| --- | --- |
+| Credential CRUD and encryption | `credentials/crud.rs`, `shared.rs` |
+| Connector catalog | `connectors.rs`, `credential_recipes.rs`, `schema_proposal.rs` |
+| Dynamic discovery | `discovery.rs`, `auth_detect.rs`, `cli_capture.rs`, `desktop.rs`, `desktop_bridges.rs` |
+| API proxy and auth | `api_proxy.rs`, `oauth.rs`, `external_api_keys.rs`, `mcp_gateways.rs`, `mcp_tools.rs` |
+| Resource scoping | `resources.rs`, `db_schema.rs`, `query_debug.rs` |
+| Intelligence/autopilot | `credential_design.rs`, `auto_cred_browser.rs`, `foraging.rs`, `negotiator.rs`, `intelligence.rs`, `openapi_autopilot.rs` |
+| Rotation | `rotation.rs` |
+| Vector KB | `vector_kb.rs` |
 
-## Scoping
+## Security constraints
+
+Credentials are stored and read through backend commands; decrypted secrets should not be passed to the webview except for deliberate non-secret metadata. API calls that need credentials should go through backend proxy/discovery commands so auth strategy, SSRF protection, rate limiting, and audit behavior remain centralized.
 
 Resource scoping is a cross-cutting contract. See [../../architecture/resource-scoping.md](../../architecture/resource-scoping.md).
-

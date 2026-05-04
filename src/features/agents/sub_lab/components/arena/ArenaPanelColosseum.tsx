@@ -21,7 +21,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Shield, Flame, Trophy, Swords, Sparkles, Crown, Scroll,
   ScrollText, BookOpen, Zap, Cloud, HardDrive, Medal, Circle, Coins,
-  Sword, Feather, ChevronDown, Check,
+  Sword, Feather, ChevronDown, Check, DollarSign,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
@@ -623,7 +623,6 @@ function ModelRowCard({
   onToggle: () => void;
 }) {
   const Sigil = heraldry.sigil;
-  const HouseIcon = heraldry.houseIcon;
   return (
     <button
       type="button"
@@ -655,48 +654,33 @@ function ModelRowCard({
         </span>
       )}
 
-      {/* House tag */}
-      <div className="relative flex items-center gap-1.5 typo-label text-foreground/75">
-        <HouseIcon className="w-3 h-3" strokeWidth={1.75} />
-        <span className="truncate">{heraldry.houseName}</span>
-      </div>
-
-      {/* Model name */}
-      <p className="relative typo-heading text-foreground font-semibold mt-1 truncate">
+      {/* Model name — top row */}
+      <p className="relative typo-heading-lg text-foreground font-semibold truncate pr-7">
         {option.label}
       </p>
 
-      {/* Stats — double-size pips for cost & speed */}
+      {/* Stats — N icons indicate level */}
       <div className="relative mt-3 flex items-center gap-4">
-        <BigStatPips label="cost"  level={heraldry.cost}  icon={Coins} active={selected} />
+        <IconLevel level={heraldry.cost}  icon={DollarSign} active={selected} title="cost"  />
         <span className={`h-5 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
-        <BigStatPips label="speed" level={heraldry.speed} icon={Zap}   active={selected} />
+        <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title="speed" />
       </div>
     </button>
   );
 }
 
-function BigStatPips({
-  label, level, icon: Icon, active,
-}: { label: string; level: number; icon: LucideIcon; active: boolean }) {
+function IconLevel({
+  level, icon: Icon, active, title,
+}: { level: number; icon: LucideIcon; active: boolean; title: string }) {
   return (
-    <span className="flex flex-col gap-1 leading-none" title={`${label}: ${level}/3`}>
-      <span className="flex items-center gap-1.5">
-        <Icon className={`w-5 h-5 ${active ? 'text-primary' : 'text-foreground/85'}`} strokeWidth={1.75} />
-        <span className="flex items-center gap-1">
-          {[1, 2, 3].map((i) => (
-            <span
-              key={i}
-              className={`inline-block w-3 h-3 rounded-full ${
-                i <= level
-                  ? active ? 'bg-primary' : 'bg-foreground/85'
-                  : active ? 'bg-primary/25' : 'bg-foreground/15'
-              }`}
-            />
-          ))}
-        </span>
-      </span>
-      <span className="typo-label text-foreground/75 uppercase tracking-wider">{label}</span>
+    <span className="flex items-center gap-0.5" title={`${title}: ${level}/3`} aria-label={`${title}: ${level} of 3`}>
+      {Array.from({ length: level }).map((_, i) => (
+        <Icon
+          key={i}
+          className={`w-5 h-5 ${active ? 'text-primary' : 'text-foreground/85'}`}
+          strokeWidth={2}
+        />
+      ))}
     </span>
   );
 }

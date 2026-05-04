@@ -207,7 +207,28 @@ export interface CreatedApproval {
 
 // ── Brain Viewer ────────────────────────────────────────────────────────
 
-export type BrainKind = 'episode' | 'doctrine' | 'identity' | 'constitution';
+/**
+ * Brain item kinds the viewer knows how to list/show.
+ *
+ * Facts are scoped — the backend accepts both bare `fact` (all scopes
+ * mixed) and the suffixed forms `fact:user`, `fact:project`, `fact:world`
+ * to filter by scope. The viewer uses the scoped variants for the
+ * grouped UI and the bare form for retrieval-time identity in detail.
+ *
+ * Reflections: scaffolded for the next milestone — the backend already
+ * tolerates the kind, but no rows exist yet. UI hides the tab until the
+ * reflection generator lands.
+ */
+export type BrainKind =
+  | 'episode'
+  | 'doctrine'
+  | 'identity'
+  | 'constitution'
+  | 'fact'
+  | 'fact:user'
+  | 'fact:project'
+  | 'fact:world'
+  | 'reflection';
 
 export interface BrainListItem {
   id: string;
@@ -245,6 +266,119 @@ export async function companionDeleteBrainItem(
   id: string,
 ): Promise<void> {
   return invoke<void>('companion_delete_brain_item', { kind, id });
+}
+
+// ── Phase C: consolidation + reflection ────────────────────────────────
+
+/**
+ * One run of the consolidation pipeline. `status`:
+ *   - `running` — CLI in flight (rare to see, runs are short-ish)
+ *   - `review` — proposals are persisted, waiting on user review
+ *   - `applied` — every item is resolved (applied or rejected)
+ *   - `failed` — the CLI errored; check `errorText`
+ */
+export interface ConsolidationRun {
+  id: string;
+  status: 'running' | 'review' | 'applied' | 'failed';
+  triggeredAt: string;
+  completedAt: string | null;
+  episodesCount: number;
+  itemsTotal: number;
+  itemsPending: number;
+  itemsApplied: number;
+  itemsRejected: number;
+  summary: string | null;
+  errorText: string | null;
+}
+
+export interface ConsolidationItem {
+  id: string;
+  consolidationId: string;
+  kind: 'add' | 'update' | 'contradict';
+  scope: 'user' | 'project' | 'world';
+  factKey: string;
+  proposedValue: string;
+  sources: string[];
+  importance: number;
+  confidence: number;
+  supersedesId: string | null;
+  rationale: string | null;
+  status: 'pending' | 'applied' | 'rejected';
+  factId: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface ApplyConsolidationEdits {
+  value?: string;
+  key?: string;
+  scope?: string;
+  importance?: number;
+  confidence?: number;
+}
+
+export async function companionRunConsolidation(): Promise<string> {
+  return invoke<string>('companion_run_consolidation');
+}
+
+export async function companionListConsolidationRuns(
+  limit?: number,
+): Promise<ConsolidationRun[]> {
+  return invoke<ConsolidationRun[]>('companion_list_consolidation_runs', { limit });
+}
+
+export async function companionGetConsolidationItems(
+  consolidationId: string,
+): Promise<ConsolidationItem[]> {
+  return invoke<ConsolidationItem[]>('companion_get_consolidation_items', {
+    consolidationId,
+  });
+}
+
+export async function companionApplyConsolidationItem(
+  itemId: string,
+  edits?: ApplyConsolidationEdits,
+): Promise<{ itemId: string; factId: string }> {
+  return invoke('companion_apply_consolidation_item', {
+    itemId,
+    edits: edits ?? null,
+  });
+}
+
+export async function companionRejectConsolidationItem(
+  itemId: string,
+): Promise<void> {
+  return invoke<void>('companion_reject_consolidation_item', { itemId });
+}
+
+export async function companionDecayUnusedFacts(): Promise<number> {
+  return invoke<number>('companion_decay_unused_facts');
+}
+
+export interface ReflectionRow {
+  id: string;
+  preview: string;
+  createdAt: string;
+}
+
+export interface ReflectionDetail {
+  id: string;
+  body: string;
+  createdAt: string;
+}
+
+export async function companionRunReflection(): Promise<string> {
+  return invoke<string>('companion_run_reflection');
+}
+
+export async function companionListReflections(
+  limit?: number,
+): Promise<ReflectionRow[]> {
+  return invoke<ReflectionRow[]>('companion_list_reflections', { limit });
+}
+
+export async function companionGetReflection(id: string): Promise<ReflectionDetail> {
+  return invoke<ReflectionDetail>('companion_get_reflection', { id });
 }
 
 // ── Phase 4: self-improve loop ─────────────────────────────────────────

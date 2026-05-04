@@ -8,6 +8,7 @@ This directory is the source of truth for the current Personas Desktop product, 
 | --- | --- |
 | Current product behavior | [features/](features/README.md) |
 | System architecture | [architecture/](architecture/README.md) |
+| Codebase feature map | [architecture/codebase-map.md](architecture/codebase-map.md) |
 | Local development, build, test, release | [development/](development/README.md) |
 | Operations and troubleshooting | [operations/](operations/README.md) |
 | Test plans and harness notes | [tests/](tests/README.md) |
@@ -24,4 +25,3 @@ This directory is the source of truth for the current Personas Desktop product, 
 - `docs/_archive` keeps moved or superseded material so old context is not lost.
 
 When a concept ships, move or rewrite it under `docs/features` or `docs/architecture`, then leave only future follow-up work in `docs/concepts`.
-

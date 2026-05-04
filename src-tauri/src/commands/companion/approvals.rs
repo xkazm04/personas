@@ -141,6 +141,8 @@ pub async fn companion_approve_action(
         "run_persona" => execute_run_persona(&state, &app, &params).await,
         "resolve_human_review" => execute_resolve_human_review(&state, &app, &params).await,
         "update_identity" => execute_update_identity(&params),
+        "write_fact" => execute_write_fact(&state, &params).await,
+        "delete_fact" => execute_delete_fact(&state, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -402,3 +404,100 @@ async fn execute_resolve_human_review(
 // card) so chat-driven nav stays smooth. The `ClientAction::Navigate`
 // variant is preserved on `ApprovalOutcome` for future approval-gated
 // UI ops (e.g., `prefill_persona_create` once that's wired).
+
+/// Persist a semantic fact. Provenance was already validated at
+/// dispatch time (write_fact requires non-empty `sources`), so this
+/// path can trust the params shape.
+async fn execute_write_fact(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let scope_str = params
+        .get("scope")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_fact: missing `scope`".into()))?;
+    let scope = crate::companion::brain::semantic::FactScope::parse(scope_str)?;
+    let key = params
+        .get("key")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_fact: missing `key`".into()))?;
+    let value = params
+        .get("value")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_fact: missing `value`".into()))?;
+    let sources: Vec<String> = params
+        .get("sources")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    if sources.is_empty() {
+        return Err(AppError::Internal(
+            "write_fact: `sources` must be a non-empty array of episode_id strings".into(),
+        ));
+    }
+    let importance = params
+        .get("importance")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(3) as i32;
+    let confidence = params
+        .get("confidence")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.8) as f32;
+    let supersedes = params.get("supersedes_id").and_then(|v| v.as_str());
+    let contradicts = params.get("contradicts_id").and_then(|v| v.as_str());
+
+    let input = crate::companion::brain::semantic::FactInput {
+        scope,
+        key,
+        value,
+        sources: &sources,
+        importance,
+        confidence,
+        supersedes_id: supersedes,
+        contradicts_id: contradicts,
+    };
+
+    let pool = &state.user_db;
+    let id = {
+        #[cfg(feature = "ml")]
+        {
+            match state.embedding_manager.as_ref() {
+                Some(emb) => {
+                    crate::companion::brain::semantic::write_fact_and_embed(pool, emb, &input)
+                        .await?
+                }
+                None => crate::companion::brain::semantic::write_fact(pool, &input)?,
+            }
+        }
+        #[cfg(not(feature = "ml"))]
+        {
+            crate::companion::brain::semantic::write_fact(pool, &input)?
+        }
+    };
+
+    Ok(ExecuteResult::message(format!(
+        "Fact `{id}` written to `{}/{key}` (importance {importance}, {n} source(s)).",
+        scope.as_str(),
+        n = sources.len()
+    )))
+}
+
+/// Move a fact to `semantic/_deleted/`. Rare — most "wrong" facts get
+/// superseded instead, which preserves the historical record.
+fn execute_delete_fact(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("delete_fact: missing `id`".into()))?;
+    crate::companion::brain::semantic::delete_fact(&state.user_db, id)?;
+    Ok(ExecuteResult::message(format!(
+        "Fact `{id}` archived to `semantic/_deleted/`."
+    )))
+}

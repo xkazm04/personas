@@ -18,6 +18,8 @@ use serde::Serialize;
 use tauri::State;
 
 use crate::companion::brain::doctrine;
+use crate::companion::brain::reflection;
+use crate::companion::brain::semantic::{self, FactScope};
 use crate::companion::disk;
 use crate::error::AppError;
 use crate::ipc_auth;
@@ -53,9 +55,27 @@ pub fn companion_list_brain_items(
     kind: String,
 ) -> Result<Vec<BrainListItem>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    // Recognize scoped fact kinds: `fact:user`, `fact:project`, `fact:world`,
+    // and bare `fact` (= all scopes flattened). The viewer renders one
+    // scope per row group, so we keep the dispatch shape generic.
+    if let Some(rest) = kind.strip_prefix("fact") {
+        let scope = match rest {
+            "" => None,
+            ":user" => Some(FactScope::User),
+            ":project" => Some(FactScope::Project),
+            ":world" => Some(FactScope::World),
+            other => {
+                return Err(AppError::Internal(format!(
+                    "brain kind `fact{other}` — unknown scope (use fact, fact:user, fact:project, fact:world)"
+                )))
+            }
+        };
+        return list_facts(&state, scope);
+    }
     match kind.as_str() {
         "episode" => list_episodes(&state),
         "doctrine" => list_doctrine(&state),
+        "reflection" => list_reflections(&state),
         "identity" => Ok(single_file_list(
             "identity",
             "Identity",
@@ -69,7 +89,7 @@ pub fn companion_list_brain_items(
             disk::brain_root().ok().map(|r| r.join("constitution.md")),
         )),
         other => Err(AppError::Internal(format!(
-            "brain kind `{other}` not yet supported (Phase 5)"
+            "brain kind `{other}` not yet supported"
         ))),
     }
 }
@@ -81,9 +101,13 @@ pub fn companion_get_brain_item(
     id: String,
 ) -> Result<BrainDetail, AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    if kind == "fact" || kind.starts_with("fact:") {
+        return get_fact_detail(&state, &id);
+    }
     match kind.as_str() {
         "episode" => get_episode(&state, &id),
         "doctrine" => get_doctrine(&state, &id),
+        "reflection" => get_reflection(&state, &id),
         "identity" => read_brain_file("identity", "Identity", "identity.md"),
         "constitution" => {
             read_brain_file("constitution", "Constitution", "constitution.md")
@@ -101,6 +125,9 @@ pub fn companion_delete_brain_item(
     id: String,
 ) -> Result<(), AppError> {
     ipc_auth::require_auth_sync(&state)?;
+    if kind == "fact" || kind.starts_with("fact:") {
+        return semantic::delete_fact(&state.user_db, &id);
+    }
     match kind.as_str() {
         "episode" => delete_episode(&state, &id),
         "doctrine" | "identity" | "constitution" => Err(AppError::Internal(format!(
@@ -279,6 +306,152 @@ fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetai
         title: file_path,
         content,
         meta: created_at,
+        deletable: false,
+    })
+}
+
+// ── facts ───────────────────────────────────────────────────────────────
+
+fn list_facts(
+    state: &State<'_, Arc<AppState>>,
+    scope: Option<FactScope>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    // Include superseded so the user can see history, but the row meta
+    // marks them clearly. Cap is generous — facts are small.
+    let facts = semantic::list_facts(&state.user_db, scope, true, 500)?;
+    let mut out = Vec::with_capacity(facts.len());
+    for f in facts {
+        let superseded = f.importance == 0;
+        let conf_pct = (f.confidence * 100.0).round() as i32;
+        let meta = if superseded {
+            format!(
+                "{scope}/{key} · superseded · conf {conf}% · updated {updated}",
+                scope = f.scope,
+                key = f.key,
+                conf = conf_pct,
+                updated = f.updated_at,
+            )
+        } else {
+            format!(
+                "{scope}/{key} · imp {imp} · conf {conf}% · {n} source(s) · updated {updated}",
+                scope = f.scope,
+                key = f.key,
+                imp = f.importance,
+                conf = conf_pct,
+                n = f.sources.len(),
+                updated = f.updated_at,
+            )
+        };
+        out.push(BrainListItem {
+            id: f.id,
+            kind: format!("fact:{}", f.scope),
+            title: f.key,
+            preview: f.value.lines().take(2).collect::<Vec<_>>().join(" "),
+            meta,
+            deletable: true,
+        });
+    }
+    Ok(out)
+}
+
+fn get_fact_detail(
+    state: &State<'_, Arc<AppState>>,
+    id: &str,
+) -> Result<BrainDetail, AppError> {
+    let f = semantic::get_fact(&state.user_db, id)?
+        .ok_or_else(|| AppError::Internal(format!("fact `{id}` not found")))?;
+    // Render the body to include the typed metadata above the value, so
+    // the detail view doubles as an explanation surface — the user sees
+    // *why* this fact exists (sources, importance, supersedes-chain).
+    let conf_pct = (f.confidence * 100.0).round() as i32;
+    let mut content = String::new();
+    content.push_str(&format!(
+        "**Scope:** {scope} &nbsp;·&nbsp; **Key:** `{key}`\n\n",
+        scope = f.scope,
+        key = f.key,
+    ));
+    if f.importance == 0 {
+        content.push_str("> _Superseded — kept for historical record but no longer wins retrieval._\n\n");
+    }
+    content.push_str(&format!(
+        "**Importance:** {imp}/5 &nbsp;·&nbsp; **Confidence:** {conf}%\n\n",
+        imp = f.importance,
+        conf = conf_pct,
+    ));
+    if !f.sources.is_empty() {
+        content.push_str("**Sources:** ");
+        let pairs: Vec<String> = f.sources.iter().map(|s| format!("`{s}`")).collect();
+        content.push_str(&pairs.join(", "));
+        content.push_str("\n\n");
+    }
+    if let Some(s) = &f.supersedes_id {
+        content.push_str(&format!("**Supersedes:** `{s}`\n\n"));
+    }
+    if let Some(c) = &f.contradicts_id {
+        content.push_str(&format!("**Contradicts:** `{c}`\n\n"));
+    }
+    content.push_str("---\n\n");
+    content.push_str(&f.value);
+    let conf_pct_meta = (f.confidence * 100.0).round() as i32;
+    let meta = format!(
+        "{scope}/{key} · imp {imp} · conf {conf}% · {n} source(s)",
+        scope = f.scope,
+        key = f.key,
+        imp = f.importance,
+        conf = conf_pct_meta,
+        n = f.sources.len(),
+    );
+    Ok(BrainDetail {
+        id: f.id,
+        kind: format!("fact:{}", f.scope),
+        title: f.key,
+        content,
+        meta,
+        deletable: true,
+    })
+}
+
+// ── reflections ─────────────────────────────────────────────────────────
+
+fn list_reflections(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
+    let rows = reflection::list_reflections(&state.user_db, 100)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| BrainListItem {
+            id: r.id,
+            kind: "reflection".into(),
+            title: r
+                .preview
+                .lines()
+                .next()
+                .unwrap_or("Reflection")
+                .chars()
+                .take(80)
+                .collect(),
+            preview: r.preview.lines().take(3).collect::<Vec<_>>().join(" "),
+            meta: r.created_at,
+            // Reflections are append-only — they're a journal. Editing
+            // would amount to rewriting history. Keep them immutable.
+            deletable: false,
+        })
+        .collect())
+}
+
+fn get_reflection(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
+    let r = reflection::read_reflection(&state.user_db, id)?;
+    Ok(BrainDetail {
+        id: r.id,
+        kind: "reflection".into(),
+        title: r
+            .body
+            .lines()
+            .next()
+            .unwrap_or("Reflection")
+            .chars()
+            .take(80)
+            .collect(),
+        content: r.body,
+        meta: r.created_at,
         deletable: false,
     })
 }

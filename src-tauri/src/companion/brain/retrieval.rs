@@ -19,6 +19,7 @@ use std::sync::Arc;
 
 use crate::companion::brain::embeddings;
 use crate::companion::brain::episodic::{self, Episode};
+use crate::companion::brain::semantic::{self, Fact};
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
 use crate::engine::embedder::EmbeddingManager;
@@ -27,18 +28,24 @@ use crate::error::AppError;
 const RECENCY_TURNS: u32 = 5;
 const VECTOR_EPISODE_TOPK: usize = 12;
 const VECTOR_DOCTRINE_TOPK: usize = 8;
+const VECTOR_FACT_TOPK: usize = 8;
 /// We pull this many vec0 hits in one go and split by kind in app code.
 /// vec0 doesn't natively support kind-filtered MATCH, and the search
 /// itself is the expensive part. Generous so kind-imbalanced corpora
 /// don't starve one tier.
-const VECTOR_OVERFETCH: usize = 60;
+const VECTOR_OVERFETCH: usize = 80;
 const FALLBACK_LIMIT: u32 = 20;
+/// Always include the top-N facts by importance (regardless of vector
+/// hits) so Athena gets a stable view of who the user is even on
+/// off-topic queries. Cheap; small list.
+const ALWAYS_INCLUDE_TOP_FACTS: u32 = 6;
 
 /// What the prompt builder gets back per turn.
 #[derive(Debug, Default)]
 pub struct Recall {
     pub episodes: Vec<Episode>,
     pub doctrine: Vec<DoctrineHit>,
+    pub facts: Vec<Fact>,
 }
 
 #[derive(Debug, Clone)]
@@ -64,11 +71,20 @@ pub async fn retrieve(
         .await
         .unwrap_or_default();
 
+    // Always pull the top-importance facts as a stable "what I know about
+    // you" snapshot — fact retrieval shouldn't depend on whether the user
+    // happens to phrase a query that matches a fact's wording.
+    let mut top_facts =
+        semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default();
+    let mut fact_ids_in_recall: HashSet<String> =
+        top_facts.iter().map(|f| f.id.clone()).collect();
+
     if recent.is_empty() && hits.is_empty() {
         // Cold start — full fallback.
         return Ok(Recall {
             episodes: episodic::list_recent(pool, session_id, FALLBACK_LIMIT).unwrap_or_default(),
             doctrine: Vec::new(),
+            facts: top_facts,
         });
     }
 
@@ -77,6 +93,7 @@ pub async fn retrieve(
 
     let mut episode_ids: Vec<String> = Vec::new();
     let mut doctrine_ids: Vec<String> = Vec::new();
+    let mut fact_ids: Vec<String> = Vec::new();
     for (id, _dist) in &hits {
         match kinds.get(id).map(String::as_str) {
             Some("episode") => {
@@ -89,7 +106,13 @@ pub async fn retrieve(
                     doctrine_ids.push(id.clone());
                 }
             }
-            _ => {} // Other kinds (semantic facts, playbooks) — ignore for now.
+            Some("fact") => {
+                if !fact_ids_in_recall.contains(id) && fact_ids.len() < VECTOR_FACT_TOPK {
+                    fact_ids.push(id.clone());
+                    fact_ids_in_recall.insert(id.clone());
+                }
+            }
+            _ => {} // Reflections live in their own kind; not surfaced via retrieval (yet).
         }
     }
 
@@ -105,7 +128,24 @@ pub async fn retrieve(
     // heading slug.)
     let doctrine = load_doctrine_chunks(pool, &doctrine_ids).unwrap_or_default();
 
-    Ok(Recall { episodes, doctrine })
+    // Facts: hydrate the vector-matched ids and append after the
+    // top-by-importance set, deduped.
+    for id in &fact_ids {
+        if let Ok(Some(f)) = semantic::get_fact(pool, id) {
+            top_facts.push(f);
+        }
+    }
+
+    // Touch last_seen on every fact we returned so importance decay
+    // restarts its clock for facts Athena actually used. Best-effort.
+    let touched_ids: Vec<String> = top_facts.iter().map(|f| f.id.clone()).collect();
+    let _ = semantic::touch_last_seen(pool, &touched_ids);
+
+    Ok(Recall {
+        episodes,
+        doctrine,
+        facts: top_facts,
+    })
 }
 
 #[cfg(not(feature = "ml"))]
@@ -117,6 +157,7 @@ pub async fn retrieve(
     Ok(Recall {
         episodes: episodic::list_recent(pool, session_id, FALLBACK_LIMIT).unwrap_or_default(),
         doctrine: Vec::new(),
+        facts: semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default(),
     })
 }
 

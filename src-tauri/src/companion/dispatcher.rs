@@ -64,6 +64,8 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "run_persona",
     "resolve_human_review",
     "update_identity",
+    "write_fact",
+    "delete_fact",
 ];
 
 /// Allowed sidebar routes for `open_route`. Mirrors the SidebarSection
@@ -187,6 +189,25 @@ pub fn dispatch(
                         .push(format!("rejected unknown action `{}`", env.action));
                     cleaned_lines.push(line);
                     continue;
+                }
+                // Anti-hallucination guard: a write_fact proposal without
+                // any source episodes is rejected at parse time. Athena
+                // sees the warning in the next turn's system context and
+                // can re-propose with proper provenance.
+                if env.action == "write_fact" {
+                    let has_sources = env
+                        .params
+                        .get("sources")
+                        .and_then(|v| v.as_array())
+                        .is_some_and(|arr| arr.iter().any(|x| x.as_str().is_some_and(|s| !s.is_empty())));
+                    if !has_sources {
+                        out.warnings.push(
+                            "rejected write_fact: `sources` (episode_id list) must be non-empty"
+                                .into(),
+                        );
+                        cleaned_lines.push(line);
+                        continue;
+                    }
                 }
                 match insert_approval(pool, session_id, &env) {
                     Ok(created) => out.approvals.push(created),

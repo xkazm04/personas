@@ -1,22 +1,29 @@
-# Home, Onboarding, and Simple Mode
+# Home and Simple Mode
 
-The Home area is the user's entry point. It combines the welcome surface, cockpit, learning, "What's New" roadmap, and a dev-only system check.
+Home is the user's entry point. It combines setup resumption, language switching, learning, release/roadmap content, and primary navigation into the rest of the app.
 
-## Implemented surfaces
+## Tabs
 
-| Surface | Purpose | Implementation |
+Home tabs are declared in `homeItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`.
+
+| Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Welcome | First-run orientation and navigation cards | `src/features/home/components/WelcomeLayout.tsx`, `NavigationGrid.tsx` |
-| Cockpit | High-level command/dashboard entry | `src/features/home/components/HomePage.tsx` |
-| Learning | Guided learning/onboarding content | `src/features/home` and `src/features/onboarding` |
-| What's New | Live roadmap surface | `src/features/home`, backend `src-tauri/src/commands/live_roadmap.rs` |
-| System Check | Dev-only environment diagnostics | gated in `sidebarData.ts` |
-| Simple Mode | Starter-tier simplified experience | `src/features/simple-mode` |
+| Welcome | First-run/home layout, hero header, setup cards, resume banner, fleet health strip, navigation grid | `HomeWelcome.tsx`, `WelcomeLayout.tsx`, `HeroHeader.tsx`, `SetupCards.tsx`, `ResumeBanner.tsx`, `NavigationGrid.tsx` |
+| Cockpit | Operational home/cockpit view | `HomePage.tsx` |
+| Learning | Learning resources and guided education | `HomeLearning.tsx` |
+| What's New | Release notes and roadmap | `components/releases/*` |
+| System Check | Dev-only diagnostics entry | added to `homeItems` only in `import.meta.env.DEV` |
 
-## Notes for maintainers
+## Resume and prefetch
 
-- Home tabs are declared in `homeItems` in `sidebarData.ts`.
-- Tier visibility uses `TIERS` and `isTierVisible`.
-- Simple Mode is still present as a separate feature folder and exports through `src/features/simple-mode/index.ts`.
-- Roadmap implementation notes live in [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
+`useResumeContext.ts` detects unfinished work and drives the resume banner/cards. `lib/prefetch.ts` preloads likely next views so the home-to-workflow transition is fast.
 
+## Releases and live roadmap
+
+`HomeReleases.tsx` and `HomeRoadmapView.tsx` render bundled releases plus the live roadmap. `useLiveRoadmap.ts` calls the Rust live-roadmap command, falls back to bundled data, and surfaces status through `LiveRoadmapStatusPill`.
+
+Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
+
+## Simple Mode
+
+Simple Mode is a separate starter-tier experience under `src/features/simple-mode`. It has a shell (`SimpleHomeShell.tsx`), variant views (`components/variants`), and system state in `simpleModeSlice.ts`. Tier visibility is controlled by `TIERS` and `isTierVisible`.

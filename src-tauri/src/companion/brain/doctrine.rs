@@ -40,32 +40,38 @@ use crate::error::AppError;
 /// Paths are relative to the docs root (the directory whose entries
 /// include `concepts/`).
 const INCLUDED_DOCS: &[&str] = &[
-    // Persona capabilities — the core ontology
-    "concepts/persona-capabilities/00-vision.md",
-    "concepts/persona-capabilities/01-behavior-core.md",
-    "concepts/persona-capabilities/02-use-case-as-capability.md",
-    "concepts/persona-capabilities/03-runtime.md",
-    "concepts/persona-capabilities/04-data-model.md",
-    "concepts/persona-capabilities/05-pillars.md",
-    "concepts/persona-capabilities/06-building-pipeline.md",
-    "concepts/persona-capabilities/07-lab-versioning.md",
-    "concepts/persona-capabilities/11-build-wizard.md",
-    "concepts/persona-capabilities/C3-template-schema-v3.md",
-    "concepts/persona-capabilities/C3-v3.1-authoring-lessons.md",
-    // Top-level concepts — design philosophy
-    "concepts/event-routing.md",
+    // Personas — the core ontology (data model, capabilities, governance).
+    "features/personas/01-data-model.md",
+    "features/personas/02-capabilities.md",
+    "features/personas/03-trust-and-governance.md",
+    // Templates — adoption flow, catalog, schema, security.
+    "features/templates/01-template-format.md",
+    "features/templates/02-catalog-loading.md",
+    "features/templates/03-adoption-flow.md",
+    "features/templates/04-adoption-questionnaire.md",
+    "features/templates/05-dynamic-discovery.md",
+    "features/templates/06-integrity-and-security.md",
+    "features/templates/07-adoption-answer-pipeline.md",
+    // Execution — runtime / lifecycle / chaining / observability.
+    "features/execution/01-entry-points.md",
+    "features/execution/02-lifecycle.md",
+    "features/execution/03-chaining-and-approval.md",
+    "features/execution/04-observability.md",
+    // Events / recipes / artist / live roadmap.
+    "features/events/event-routing.md",
+    "features/recipes/recipe-templates.md",
+    "features/artist/media-studio-architecture.md",
+    "features/artist/media-studio-render-plan.md",
+    "features/live-roadmap/live-roadmap.md",
+    // Top-level concepts — design philosophy.
     "concepts/adoption-creation-unification.md",
-    "concepts/brotherhood-protocol.md",
-    "concepts/brotherhood-b1-implementation.md",
-    "concepts/ambient-context-fusion.md",
     "concepts/agent-operations-hub.md",
+    "concepts/ambient-context-fusion.md",
+    "concepts/claude-code-routines-integration.md",
+    "concepts/cloud-deployment.md",
     "concepts/invisible-apps-p2p.md",
-    "concepts/media-studio-architecture.md",
+    "concepts/mobile.md",
     "concepts/real-api-testing.md",
-    // Architecture refs at docs/ root
-    "arch-persona-matrix-build.md",
-    "arch-mcp-desktop-integration.md",
-    "arch-gitlab-integration.md",
 ];
 
 /// Compile-time embedded copies of every `INCLUDED_DOCS` entry. Used as a
@@ -76,29 +82,38 @@ const INCLUDED_DOCS: &[&str] = &[
 /// Paths here MUST stay in lock-step with `INCLUDED_DOCS`; the build will
 /// fail loudly if a referenced file is missing.
 const EMBEDDED_DOCS: &[(&str, &str)] = &[
-    ("concepts/persona-capabilities/00-vision.md", include_str!("../../../../docs/concepts/persona-capabilities/00-vision.md")),
-    ("concepts/persona-capabilities/01-behavior-core.md", include_str!("../../../../docs/concepts/persona-capabilities/01-behavior-core.md")),
-    ("concepts/persona-capabilities/02-use-case-as-capability.md", include_str!("../../../../docs/concepts/persona-capabilities/02-use-case-as-capability.md")),
-    ("concepts/persona-capabilities/03-runtime.md", include_str!("../../../../docs/concepts/persona-capabilities/03-runtime.md")),
-    ("concepts/persona-capabilities/04-data-model.md", include_str!("../../../../docs/concepts/persona-capabilities/04-data-model.md")),
-    ("concepts/persona-capabilities/05-pillars.md", include_str!("../../../../docs/concepts/persona-capabilities/05-pillars.md")),
-    ("concepts/persona-capabilities/06-building-pipeline.md", include_str!("../../../../docs/concepts/persona-capabilities/06-building-pipeline.md")),
-    ("concepts/persona-capabilities/07-lab-versioning.md", include_str!("../../../../docs/concepts/persona-capabilities/07-lab-versioning.md")),
-    ("concepts/persona-capabilities/11-build-wizard.md", include_str!("../../../../docs/concepts/persona-capabilities/11-build-wizard.md")),
-    ("concepts/persona-capabilities/C3-template-schema-v3.md", include_str!("../../../../docs/concepts/persona-capabilities/C3-template-schema-v3.md")),
-    ("concepts/persona-capabilities/C3-v3.1-authoring-lessons.md", include_str!("../../../../docs/concepts/persona-capabilities/C3-v3.1-authoring-lessons.md")),
-    ("concepts/event-routing.md", include_str!("../../../../docs/concepts/event-routing.md")),
+    // Personas
+    ("features/personas/01-data-model.md", include_str!("../../../../docs/features/personas/01-data-model.md")),
+    ("features/personas/02-capabilities.md", include_str!("../../../../docs/features/personas/02-capabilities.md")),
+    ("features/personas/03-trust-and-governance.md", include_str!("../../../../docs/features/personas/03-trust-and-governance.md")),
+    // Templates
+    ("features/templates/01-template-format.md", include_str!("../../../../docs/features/templates/01-template-format.md")),
+    ("features/templates/02-catalog-loading.md", include_str!("../../../../docs/features/templates/02-catalog-loading.md")),
+    ("features/templates/03-adoption-flow.md", include_str!("../../../../docs/features/templates/03-adoption-flow.md")),
+    ("features/templates/04-adoption-questionnaire.md", include_str!("../../../../docs/features/templates/04-adoption-questionnaire.md")),
+    ("features/templates/05-dynamic-discovery.md", include_str!("../../../../docs/features/templates/05-dynamic-discovery.md")),
+    ("features/templates/06-integrity-and-security.md", include_str!("../../../../docs/features/templates/06-integrity-and-security.md")),
+    ("features/templates/07-adoption-answer-pipeline.md", include_str!("../../../../docs/features/templates/07-adoption-answer-pipeline.md")),
+    // Execution
+    ("features/execution/01-entry-points.md", include_str!("../../../../docs/features/execution/01-entry-points.md")),
+    ("features/execution/02-lifecycle.md", include_str!("../../../../docs/features/execution/02-lifecycle.md")),
+    ("features/execution/03-chaining-and-approval.md", include_str!("../../../../docs/features/execution/03-chaining-and-approval.md")),
+    ("features/execution/04-observability.md", include_str!("../../../../docs/features/execution/04-observability.md")),
+    // Events / recipes / artist / live roadmap
+    ("features/events/event-routing.md", include_str!("../../../../docs/features/events/event-routing.md")),
+    ("features/recipes/recipe-templates.md", include_str!("../../../../docs/features/recipes/recipe-templates.md")),
+    ("features/artist/media-studio-architecture.md", include_str!("../../../../docs/features/artist/media-studio-architecture.md")),
+    ("features/artist/media-studio-render-plan.md", include_str!("../../../../docs/features/artist/media-studio-render-plan.md")),
+    ("features/live-roadmap/live-roadmap.md", include_str!("../../../../docs/features/live-roadmap/live-roadmap.md")),
+    // Top-level concepts
     ("concepts/adoption-creation-unification.md", include_str!("../../../../docs/concepts/adoption-creation-unification.md")),
-    ("concepts/brotherhood-protocol.md", include_str!("../../../../docs/concepts/brotherhood-protocol.md")),
-    ("concepts/brotherhood-b1-implementation.md", include_str!("../../../../docs/concepts/brotherhood-b1-implementation.md")),
-    ("concepts/ambient-context-fusion.md", include_str!("../../../../docs/concepts/ambient-context-fusion.md")),
     ("concepts/agent-operations-hub.md", include_str!("../../../../docs/concepts/agent-operations-hub.md")),
+    ("concepts/ambient-context-fusion.md", include_str!("../../../../docs/concepts/ambient-context-fusion.md")),
+    ("concepts/claude-code-routines-integration.md", include_str!("../../../../docs/concepts/claude-code-routines-integration.md")),
+    ("concepts/cloud-deployment.md", include_str!("../../../../docs/concepts/cloud-deployment.md")),
     ("concepts/invisible-apps-p2p.md", include_str!("../../../../docs/concepts/invisible-apps-p2p.md")),
-    ("concepts/media-studio-architecture.md", include_str!("../../../../docs/concepts/media-studio-architecture.md")),
+    ("concepts/mobile.md", include_str!("../../../../docs/concepts/mobile.md")),
     ("concepts/real-api-testing.md", include_str!("../../../../docs/concepts/real-api-testing.md")),
-    ("arch-persona-matrix-build.md", include_str!("../../../../docs/arch-persona-matrix-build.md")),
-    ("arch-mcp-desktop-integration.md", include_str!("../../../../docs/arch-mcp-desktop-integration.md")),
-    ("arch-gitlab-integration.md", include_str!("../../../../docs/arch-gitlab-integration.md")),
 ];
 
 /// Soft target — sections larger than this are split further. Generous

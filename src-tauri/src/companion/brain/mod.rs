@@ -12,5 +12,6 @@ pub mod episodic;
 pub mod graph;
 pub mod identity;
 pub mod procedural;
+pub mod reflection;
 pub mod retrieval;
 pub mod semantic;

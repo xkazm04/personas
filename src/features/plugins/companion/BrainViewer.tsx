@@ -4,9 +4,12 @@ import {
   BookOpen,
   Bot,
   ChevronRight,
+  Globe2,
   Layers,
+  Sparkles,
   Trash2,
   User,
+  UserCircle2,
   X,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,14 +26,27 @@ import {
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 
-const KINDS: {
-  kind: BrainKind;
-  icon: typeof Bot;
-  labelKey: 'episodes' | 'doctrine' | 'identity' | 'constitution';
-}[] = [
-  { kind: 'episode', icon: Bot, labelKey: 'episodes' },
-  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine' },
+type KindLabelKey =
+  | 'episodes'
+  | 'doctrine'
+  | 'identity'
+  | 'constitution'
+  | 'facts_user'
+  | 'facts_project'
+  | 'facts_world'
+  | 'reflections';
+
+const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey }[] = [
+  // Order matches the conversation reading flow: who Athena thinks I am,
+  // what she knows about me (facts), what she remembers (episodes,
+  // reflections), the docs she references, her own character contract.
   { kind: 'identity', icon: User, labelKey: 'identity' },
+  { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user' },
+  { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project' },
+  { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world' },
+  { kind: 'episode', icon: Bot, labelKey: 'episodes' },
+  { kind: 'reflection', icon: Sparkles, labelKey: 'reflections' },
+  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine' },
   { kind: 'constitution', icon: Layers, labelKey: 'constitution' },
 ];
 
@@ -146,6 +162,16 @@ function kindLabel(
       return t.plugins.companion.identity;
     case 'constitution':
       return t.plugins.companion.constitution;
+    case 'fact':
+      return t.plugins.companion.facts;
+    case 'fact:user':
+      return t.plugins.companion.facts_user;
+    case 'fact:project':
+      return t.plugins.companion.facts_project;
+    case 'fact:world':
+      return t.plugins.companion.facts_world;
+    case 'reflection':
+      return t.plugins.companion.reflections;
   }
 }
 

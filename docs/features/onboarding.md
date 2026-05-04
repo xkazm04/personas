@@ -1,19 +1,26 @@
 # Onboarding
 
-Onboarding covers the guided tour, setup prompts, persona creation coaching, credential setup guidance, desktop discovery, and appearance selection.
+Onboarding covers guided tour state, first persona/template setup, credentials guidance, desktop discovery, execution intro, and appearance selection.
 
-## Current flow
+## Components
 
-| Step | Purpose | Implementation |
+| Area | Behavior | Implementation |
 | --- | --- | --- |
-| Launcher and overlay | Starts or resumes the guided tour | `src/features/onboarding/components/TourLauncher.tsx`, `OnboardingOverlay.tsx` |
-| Step progress | Shows current step and progress | `StepProgress.tsx`, `StepIndicator.tsx`, `OnboardingProgressBar.tsx` |
-| Persona creation | Coaches the first agent/persona setup | `steps/PersonaCreationCoach.tsx`, `TemplatePickerStep.tsx` |
-| Credentials | Guides connection setup | `steps/CredentialsTourContent.tsx` |
-| Desktop discovery | Explains desktop capability discovery | `DesktopDiscoveryStep.tsx` |
+| Launcher | Starts/reopens guided tour | `TourLauncher.tsx` |
+| Overlay | Spotlight, panel body, progress bar, step indicator | `OnboardingOverlay.tsx`, `TourSpotlight.tsx`, `TourPanelBody.tsx`, `OnboardingProgressBar.tsx`, `StepIndicator.tsx` |
+| Step state | Current step, completed steps, navigation actions | `useOnboardingState.ts`, `tourConstants.ts` |
+| Persona/template | First persona coaching and template picker | `steps/PersonaCreationCoach.tsx`, `TemplatePickerStep.tsx` |
+| Credentials | Connection setup guidance | `steps/CredentialsTourContent.tsx` |
+| Desktop discovery | Desktop capability discovery intro | `DesktopDiscoveryStep.tsx` |
+| Execution | Run/test intro | `ExecutionStep.tsx` |
 | Appearance | Theme and visual setup | `AppearanceStep.tsx`, `steps/TourAppearanceContent.tsx` |
 
-## State
+## State and persistence
 
-Onboarding state is managed by `useOnboardingState.ts` plus persisted system UI state where needed. The guided tour copy is localized through the root i18n system.
+Tour/onboarding state is split between local hook state and system slices:
 
+- `onboardingSlice.ts`: onboarding progress and completion.
+- `tourSlice.ts`: guided tour visibility/current step.
+- `uiSlice.ts`: shared UI state that onboarding may route into.
+
+Onboarding can route users into Templates, Connections, Appearance, and execution-related surfaces; docs for those features should remain authoritative for the target workflow.

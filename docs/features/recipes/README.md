@@ -1,14 +1,38 @@
 # Recipes
 
-Recipes are reusable workflows surfaced in the Templates area under the Recipes tab.
+Recipes are reusable workflow definitions that can be created manually, generated from credentials/use cases, linked to personas, tested in a playground, versioned, and executed.
 
-## Implementation
+## User surface
 
-| Layer | Root |
+Recipes are surfaced from the Templates area through the Recipes tab. `RecipeManager` is the main page host.
+
+| Surface | Behavior | Implementation |
+| --- | --- | --- |
+| List | Searchable recipe cards, edit/delete/playground actions | `sub_list/components/RecipeList.tsx`, `RecipeCard.tsx` |
+| Editor | Create/edit recipe metadata, schema fields, tags | `sub_editor/components/RecipeEditor.tsx`, `SchemaFieldBuilder.tsx`, `TagChipInput.tsx` |
+| Playground | Test input, output, execution history, versions | `sub_playground/components/RecipePlaygroundModal.tsx`, `tabs/*` |
+| View FSM | Keeps list/create/edit/playground states explicit | `hooks/useRecipeViewFSM.ts` |
+
+The manager fetches recipes from `usePipelineStore().fetchRecipes()`, supports `Ctrl/Cmd+K` search focus, and routes editing/playground through `useRecipeViewFSM`.
+
+## Definition and schema
+
+A recipe is a structured definition with metadata, tags, input schema, and execution behavior. The editor builds schema fields visually and the playground uses the schema to render test inputs. Parse errors are surfaced by `SchemaParseErrorBanner`.
+
+For template authoring conventions, see [recipe-templates.md](recipe-templates.md).
+
+## Backend command surface
+
+| Family | Commands |
 | --- | --- |
-| Frontend | `src/features/recipes` |
-| Backend commands | `src-tauri/src/commands/recipes` |
-| Recipe template docs | [recipe-templates.md](recipe-templates.md) |
+| CRUD | `list_recipes`, `get_recipe`, `create_recipe`, `update_recipe`, `delete_recipe` |
+| Persona links | `link_recipe_to_persona`, `unlink_recipe_from_persona`, `get_persona_recipes` |
+| Execution | `execute_recipe`, `start_recipe_execution`, `cancel_recipe_execution` |
+| Credential/use-case generation | `get_credential_recipes`, `start_recipe_generation`, `cancel_recipe_generation`, `get_use_case_recipes`, `promote_use_case_to_recipe` |
+| Versioning | `get_recipe_versions`, `start_recipe_versioning`, `cancel_recipe_versioning`, `accept_recipe_version`, `revert_recipe_version` |
 
-Backend modules cover CRUD, recipe execution, recipe generation, and versioning.
+Async generation/execution/versioning commands use active-process registration and can be cancelled. Synchronous `execute_recipe` is for direct test-style execution; `start_recipe_execution` returns an execution id for longer runs.
 
+## Relationship to templates and personas
+
+Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow.

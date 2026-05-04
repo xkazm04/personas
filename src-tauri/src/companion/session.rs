@@ -617,7 +617,14 @@ fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
     Ok(path)
 }
 
-fn base_cli_invocation() -> (String, Vec<String>) {
+/// Resolve the platform-correct invocation for the Claude CLI.
+/// On Windows we go via `cmd.exe /C claude.cmd` because the CLI is a
+/// .cmd shim and a direct spawn doesn't see PATH the way the shell does.
+/// On Unix the binary itself is on PATH.
+///
+/// Public so the consolidation + reflection one-shots can reuse the
+/// same invocation pattern instead of duplicating the platform check.
+pub fn base_cli_invocation() -> (String, Vec<String>) {
     if cfg!(windows) {
         ("cmd".into(), vec!["/C".into(), "claude.cmd".into()])
     } else {

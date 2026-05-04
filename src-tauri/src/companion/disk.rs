@@ -74,6 +74,8 @@ pub fn ensure_initialized() -> Result<PathBuf, AppError> {
         "Quick replies (preset chips)",
         "Spoken summaries (TTS replies)",
         "open_route",
+        "write_fact",
+        "## Writing semantic facts",
     ];
     let needs_upgrade = std::fs::read_to_string(&const_path)
         .map(|c| !REQUIRED_MARKERS.iter().all(|m| c.contains(m)))
