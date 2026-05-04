@@ -314,6 +314,21 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // Invalidate any in-flight fetchDetail for this persona so it can't
       // resurrect the deleted persona in state after the delete completes.
       if (get().selectedPersonaId === id) ++fetchDetailSeq;
+
+      // 2026-05-04 — also drop any in-flight build sessions tied to this
+      // persona so the sidebar's "Draft Builds" list stays in sync. Pre-fix
+      // a deleted persona would still appear in the drafts list as a ghost
+      // session row until the user refreshed the app. We delegate to the
+      // matrixBuildSlice helper so the next-active-session pick + scalar
+      // mirror updates run correctly.
+      const sessionIdsToRemove: string[] = [];
+      for (const [sid, sess] of Object.entries(get().buildSessions)) {
+        if (sess.personaId === id) sessionIdsToRemove.push(sid);
+      }
+      for (const sid of sessionIdsToRemove) {
+        get().removeBuildSession(sid);
+      }
+
       set((state) => {
         const nextPersonas = state.personas.filter((p) => p.id !== id);
         const nextId = state.selectedPersonaId === id ? null : state.selectedPersonaId;

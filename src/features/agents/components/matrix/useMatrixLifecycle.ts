@@ -11,10 +11,10 @@
 import { useCallback, useEffect } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { EventName } from "@/lib/eventRegistry";
-import { answerBuildQuestion, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
+import { answerBuildQuestion, cancelBuildSession, promoteBuildDraft, testBuildDraft } from "@/api/agents/buildSession";
 import { sendAppNotification } from "@/api/system/system";
 import { silentCatch } from "@/lib/silentCatch";
-import { invokeWithTimeout } from "@/lib/tauriInvoke";
+import { useSystemStore } from "@/stores/systemStore";
 import {
   updatePersona,
   buildUpdateInput,
@@ -298,15 +298,34 @@ export function useMatrixLifecycle({
   }, [personaId]);
 
   // -- handleRejectTest ------------------------------------------------------
+  //
+  // Pre-2026-05-04: Reject just snapped the session phase back to
+  // `draft_ready` so the user could retest. In practice users hit Reject
+  // because they wanted to abandon the draft, not iterate on it — and the
+  // draft kept showing in the sidebar's "Draft Builds" list with no obvious
+  // way to dismiss it. The new flow fully discards: cancel server-side,
+  // remove the session from the store, delete the placeholder persona row
+  // (created at session start), and route the user back to All Agents.
 
-  const handleRejectTest = useCallback(() => {
+  const handleRejectTest = useCallback(async () => {
     const state = useAgentStore.getState();
-    state.handleRejectTest();
-    // Also reset the DB session phase back to draft_ready so re-testing works
     const sessionId = state.buildSessionId;
+    const personaIdToDelete = state.buildPersonaId;
+
     if (sessionId) {
-      invokeWithTimeout("reset_build_session_phase", { sessionId }).catch(silentCatch("lifecycle:rejectTest"));
+      await cancelBuildSession(sessionId).catch(silentCatch("lifecycle:rejectTest:cancel"));
+      state.removeBuildSession(sessionId);
     }
+    if (personaIdToDelete) {
+      // Build flow always creates a draft persona row up-front; deleting it
+      // here keeps the personas list and the sidebar in sync. Failures are
+      // silenced — the session is already gone from the UI; if the persona
+      // row lingers the user can clean it up from the all-agents list.
+      await state.deletePersona(personaIdToDelete).catch(silentCatch("lifecycle:rejectTest:deletePersona"));
+    }
+    useSystemStore.getState().setIsCreatingPersona(false);
+    useSystemStore.getState().setAgentTab('all');
+    state.selectPersona(null);
   }, []);
 
   // -- Return ----------------------------------------------------------------

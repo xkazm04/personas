@@ -47,11 +47,26 @@ const mockBuildUpdateInput = vi.fn((partial: Record<string, unknown>) => ({
   group_id: null,
 }));
 
+const mockCancelBuildSession = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/api/agents/buildSession", () => ({
   testBuildDraft: (...args: unknown[]) => mockTestBuildDraft(...args),
   answerBuildQuestion: (...args: unknown[]) => mockAnswerBuildQuestion(...args),
   promoteBuildDraft: (...args: unknown[]) => mockPromoteBuildDraft(...args),
+  cancelBuildSession: (...args: unknown[]) => mockCancelBuildSession(...args),
 }));
+
+const mockSetIsCreatingPersona = vi.fn();
+const mockSetAgentTab = vi.fn();
+vi.mock("@/stores/systemStore", () => {
+  const getState = () => ({
+    setIsCreatingPersona: mockSetIsCreatingPersona,
+    setAgentTab: mockSetAgentTab,
+  });
+  const useSystemStore = vi.fn(() => ({}));
+  useSystemStore.getState = getState;
+  return { useSystemStore };
+});
 
 vi.mock("@/api/agents/personas", () => ({
   updatePersona: (...args: unknown[]) => mockUpdatePersona(...args),
@@ -89,6 +104,9 @@ const mockHandleBuildSessionStatus = vi.fn();
 const mockSetToolTestResults = vi.fn();
 const mockSetTestSummary = vi.fn();
 const mockAppendToolTestResult = vi.fn();
+const mockRemoveBuildSession = vi.fn();
+const mockDeletePersona = vi.fn().mockResolvedValue(undefined);
+const mockSelectPersona = vi.fn();
 
 vi.mock("@/stores/agentStore", () => {
   const getState = () => ({
@@ -102,6 +120,9 @@ vi.mock("@/stores/agentStore", () => {
     setToolTestResults: mockSetToolTestResults,
     setTestSummary: mockSetTestSummary,
     appendToolTestResult: mockAppendToolTestResult,
+    removeBuildSession: mockRemoveBuildSession,
+    deletePersona: mockDeletePersona,
+    selectPersona: mockSelectPersona,
   });
 
   const useAgentStore = vi.fn(
@@ -547,16 +568,27 @@ describe("useMatrixLifecycle", () => {
   // -- handleRejectTest --------------------------------------------------
 
   describe("handleRejectTest", () => {
-    it("calls slice handleRejectTest action", () => {
-      setStoreState({ buildPhase: "test_complete" });
+    it("cancels the session, removes it, deletes the draft persona, and routes home", async () => {
+      setStoreState({
+        buildPhase: "test_complete",
+        buildSessionId: "session-123",
+        buildPersonaId: "persona-1",
+      });
 
       const { result } = renderHook(() =>
         useMatrixLifecycle({ personaId: "persona-1" }),
       );
 
-      result.current.handleRejectTest();
+      await act(async () => {
+        await result.current.handleRejectTest();
+      });
 
-      expect(mockHandleRejectTest).toHaveBeenCalled();
+      expect(mockCancelBuildSession).toHaveBeenCalledWith("session-123");
+      expect(mockRemoveBuildSession).toHaveBeenCalledWith("session-123");
+      expect(mockDeletePersona).toHaveBeenCalledWith("persona-1");
+      expect(mockSetIsCreatingPersona).toHaveBeenCalledWith(false);
+      expect(mockSetAgentTab).toHaveBeenCalledWith("all");
+      expect(mockSelectPersona).toHaveBeenCalledWith(null);
     });
   });
 
