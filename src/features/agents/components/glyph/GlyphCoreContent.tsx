@@ -1,13 +1,10 @@
-import { useState, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Sparkles, Play, CheckCircle2, Loader2, ArrowRight, RefreshCw,
 } from "lucide-react";
 import type { BuildPhase, BuildQuestion } from "@/lib/types/buildTypes";
 import { GlyphRefineComposer } from "./GlyphRefineComposer";
 import { GlyphTestCompleteCore } from "./GlyphTestCompleteCore";
-import { GlyphStallRecovery } from "./GlyphStallRecovery";
-import { useBuildStallDetector } from "@/hooks/build/useBuildStallDetector";
 
 interface GlyphCoreContentProps {
   isPreBuild: boolean;
@@ -53,33 +50,6 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
     testOutputLines, onStartTest, onRefine, onViewAgent,
     onComposeStart, refinePrefill, onClearRefinePrefill,
   } = props;
-
-  // A-grade Phase 7 (2026-05-03) — surface a stall-recovery affordance
-  // when the build sits silent for ≥60s in a stall-eligible phase
-  // (analyzing / resolving / testing). Snooze hides the warning for
-  // another 60s; the next stall window will re-show it. Snooze key is
-  // bound to the stalledPhase string so a phase transition naturally
-  // resets the dismissal — the user shouldn't have to keep dismissing
-  // through every phase if the build genuinely hangs across multiple.
-  const stall = useBuildStallDetector();
-  const [stallSnoozedFor, setStallSnoozedFor] = useState<string | null>(null);
-  const snoozeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    return () => {
-      if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
-    };
-  }, []);
-  const handleStallSnooze = () => {
-    if (!stall.stalledPhase) return;
-    const phase = stall.stalledPhase;
-    setStallSnoozedFor(phase);
-    if (snoozeTimerRef.current) clearTimeout(snoozeTimerRef.current);
-    snoozeTimerRef.current = setTimeout(() => setStallSnoozedFor(null), 60_000);
-  };
-  const showStallRecovery =
-    stall.isStalled
-    && stall.stalledPhase !== null
-    && stallSnoozedFor !== stall.stalledPhase;
 
   if (isPreBuild) {
     return (
@@ -157,30 +127,11 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
             work the user can't help with. We don't show this while
             answers are pending (the user IS the bottleneck) or in any
             other phase. Stays subtle: muted text, max-w cap, no chrome. */}
-        {!hasPending && !showStallRecovery && (
+        {!hasPending && (
           <span className="mt-2 typo-caption text-foreground/45 text-center max-w-[220px] leading-snug">
             You can use the app freely while this builds — the draft will keep working in the background.
           </span>
         )}
-        {/* A-grade Phase 7 — replaces the backgroundability hint when
-            the build appears stuck. The two are mutually exclusive
-            because they target opposite mental states: "no need to
-            wait" vs "something might be wrong". AnimatePresence
-            handles the transition cleanly when stall flips on/off. */}
-        <AnimatePresence>
-          {showStallRecovery && stall.stalledPhase && (
-            <GlyphStallRecovery
-              key="stall"
-              stalledPhase={stall.stalledPhase}
-              stallSecs={stall.stallSecs}
-              onOpenRefine={() => {
-                onClearRefinePrefill?.();
-                setRefining(true);
-              }}
-              onSnooze={handleStallSnooze}
-            />
-          )}
-        </AnimatePresence>
       </motion.div>
     );
   }

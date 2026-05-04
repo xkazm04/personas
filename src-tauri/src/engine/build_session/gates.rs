@@ -172,13 +172,13 @@ fn intent_implies_review(intent_lower: &str) -> Gate {
         "without approval", "no human", "fully automated",
     ];
     for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
-    // Simple periodic informational report — review_policy auto-defaults to
-    // "never" without asking. The output is a digest/summary/log delivered
-    // to the user themselves; nothing leaves the user's account that would
-    // benefit from approval. See Phase 1 questionnaire-pacing rule 26.
-    if intent_is_simple_periodic_report(intent_lower) {
-        return Gate::Open;
-    }
+    // 2026-05-04 — Phase 1's `intent_is_simple_periodic_report` short-circuit
+    // was removed. Combined with the trigger + connectors keyword auto-opens,
+    // it caused common intents like "track tasks in Linear daily and
+    // summarize" to flip ALL four gates Open, which produced an agent_ir
+    // with zero clarifying questions and dropped the user straight into the
+    // test phase with empty/failed tests. The pacing benefit didn't justify
+    // the loss of the substantive review-policy interview.
     Gate::Closed
 }
 
@@ -189,13 +189,11 @@ fn intent_implies_memory(intent_lower: &str) -> Gate {
         "remember my", "remember user", "learn over time", "remember preferences",
     ];
     for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
-    // Simple periodic informational report — memory_policy auto-defaults to
-    // disabled. Each run is independent of the previous; "this morning's
-    // digest" doesn't depend on what last morning's digest was. The user
-    // can still enable memory later in the lab. See rule 26.
-    if intent_is_simple_periodic_report(intent_lower) {
-        return Gate::Open;
-    }
+    // 2026-05-04 — see `intent_implies_review` above for context. Phase 1's
+    // simple-periodic-report shortcut was the load-bearing reason the
+    // questionnaire skipped straight to test on Project-Coordinator-style
+    // intents. Memory now ALWAYS gates closed unless the intent explicitly
+    // names cross-run state.
     Gate::Closed
 }
 
@@ -214,6 +212,12 @@ fn intent_implies_memory(intent_lower: &str) -> Gate {
 /// Conservative on purpose: when in doubt, return false and let the regular
 /// keyword heuristics decide. We only short-circuit when ALL three signals
 /// are present.
+///
+/// Kept around (no longer wired into the gate heuristics — see
+/// `intent_implies_review` / `intent_implies_memory` above) so the existing
+/// test suite around the keyword combinations still compiles. If we revive
+/// the auto-open later we can wire it back in one line.
+#[allow(dead_code)]
 fn intent_is_simple_periodic_report(intent_lower: &str) -> bool {
     // (1) Schedule trigger detected. We re-use intent_implies_trigger and
     // tighten to schedule-only (event/manual triggers don't count as
@@ -706,8 +710,14 @@ mod tests {
     // shape to the keyword tables.
 
     #[test]
-    fn simple_periodic_report_short_circuits_review_and_memory() {
-        // Every R01–R10 intent (or close paraphrase) must short-circuit.
+    fn simple_periodic_report_no_longer_short_circuits_review_or_memory() {
+        // 2026-05-04 — Phase 1's simple-periodic-report fast-path was
+        // unwired from the gate heuristics because it caused common
+        // Project-Coordinator-style intents to skip the questionnaire
+        // entirely (all four gates auto-open → straight to test). The
+        // detection function still works in isolation (kept around for
+        // possible future reuse), but the review and memory gates must
+        // now stay Closed for these intents so the user is asked.
         for intent in [
             "every weekday at 8am, summarize my unread gmail messages from the last 24 hours into a short digest",
             "every monday morning, list my open linear issues assigned to me and post the summary as a notion page",
@@ -722,17 +732,17 @@ mod tests {
         ] {
             assert!(
                 intent_is_simple_periodic_report(intent),
-                "expected simple-periodic-report fast-path for: {intent}"
+                "the detection function still recognises: {intent}"
             );
             assert_eq!(
                 intent_implies_review(intent),
-                Gate::Open,
-                "review must auto-open for periodic informational: {intent}"
+                Gate::Closed,
+                "review must stay Closed (user still asked) for: {intent}"
             );
             assert_eq!(
                 intent_implies_memory(intent),
-                Gate::Open,
-                "memory must auto-open for periodic informational: {intent}"
+                Gate::Closed,
+                "memory must stay Closed (user still asked) for: {intent}"
             );
         }
     }
@@ -983,11 +993,13 @@ mod tests {
             let g = coverage.get(id).expect("capability should be seeded");
             assert_eq!(g.trigger, Gate::Open, "{id}.trigger");
             assert_eq!(g.connectors, Gate::Open, "{id}.connectors");
+            // "automatically" keyword → review auto-opens
             assert_eq!(g.review_policy, Gate::Open, "{id}.review_policy");
-            // Phase 1 rule 26: "every morning" + "digest" + no external
-            // publish → simple-periodic-report fast-path opens memory too
-            // (was Closed pre-Phase-1).
-            assert_eq!(g.memory_policy, Gate::Open, "{id}.memory");
+            // 2026-05-04 — memory no longer auto-opens via the
+            // simple-periodic-report shortcut. The intent here doesn't
+            // contain explicit memory keywords, so memory stays Closed
+            // and the user gets asked.
+            assert_eq!(g.memory_policy, Gate::Closed, "{id}.memory");
         }
     }
 
