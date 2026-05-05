@@ -54,33 +54,25 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.126 — floor advances when a newer CLI fixes the wrapping
-        // contract personas depends on. Recent floors:
-        // - 2.1.126: stale `/plugin` Uninstall state no longer reports
-        //   "Enabled" (sidecar pair stays consistent across plugin churn);
-        //   `--dangerously-skip-permissions` now bypasses prompts for writes
-        //   to `.claude/`, `.git/`, `.vscode/`, shell config files — see
-        //   `Patterns/descoped-reopenable.md` 2026-05-01 entry for the
-        //   sandbox-erosion threat model recorded against this run.
-        //   Versions 2.1.124 and 2.1.125 were skipped upstream — all changes
-        //   batched into 2.1.126.
-        // - 2.1.121: `alwaysLoad: true` MCP server-config option (used by
-        //   `cli_mcp_config`); `--resume` corrupt-line skip + external-build
-        //   startup-crash fix; `--dangerously-skip-permissions` no longer
-        //   prompts for writes to `.claude/skills`, `.claude/agents`,
-        //   `.claude/commands`; invalid legacy enum values in `settings.json`
-        //   no longer invalidate the entire file.
-        // - 2.1.122: malformed `hooks` entry no longer invalidates the entire
-        //   `settings.json` (protects the `hooks_sidecar` + `cli_mcp_config`
-        //   sidecar pair); Vertex/Bedrock structured-output
-        //   `output_config: Extra inputs are not permitted` fix.
-        // - 2.1.123: OAuth 401 retry loop fix when
-        //   `CLAUDE_CODE_DISABLE_EXPERIMENTAL_BETAS=1` is set.
-        // Earlier floors elided — see git history of this file for the full
-        // 2.1.101 / 2.1.110 / 2.1.111 / 2.1.113 narrative if needed.
+        // CLI ≥ 2.1.128 — floor advances when a newer CLI fixes the wrapping
+        // contract personas depends on. Recent floor:
+        // - 2.1.128: `claude -p` no longer crashes on >10MB stdin (defense for
+        //   the `cli_process` stdin-pipe contract); MCP tool results no longer
+        //   drop images when the server returns both structured content and
+        //   content blocks (matters for personas-mcp `drive_*` returning
+        //   binary content alongside metadata); sub-agent progress summaries
+        //   now hit the prompt cache (~3× `cache_creation` reduction) and no
+        //   longer fire repeatedly on static transcripts (worst-case token
+        //   cap); parallel shell tool calls no longer cancel siblings on a
+        //   single read-only failure. Version 2.1.127 was skipped upstream —
+        //   all changes batched into 2.1.128.
+        // Earlier floors (2.1.121–2.1.126) elided — see git history of this
+        // file for the alwaysLoad / hooks-sidecar / sandbox-scope / OAuth
+        // narrative. The 2026-05-01 sandbox-erosion threat model recorded
+        // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.126")
+        Some("2.1.128")
     }
 }
 
@@ -163,6 +155,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.126");
+        assert_eq!(min.unwrap(), "2.1.128");
     }
 }
