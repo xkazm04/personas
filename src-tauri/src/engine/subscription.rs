@@ -181,6 +181,16 @@ pub struct ZombieExecutionSubscription {
     pub app: AppHandle,
 }
 
+/// Periodic sweep that reverts `auto_fix_pending` healing issues older than
+/// [`crate::db::repos::execution::healing::AUTO_FIX_PENDING_TTL_MINUTES`]
+/// back to `open`. Without this, an app crash or no-further-failures
+/// scenario between `mark_auto_fix_pending` and the retry firing would
+/// leave issues stuck on "pending" forever — the dashboard would lie
+/// about healing progress.
+pub struct HealingTtlSubscription {
+    pub pool: DbPool,
+}
+
 /// Performance digest subscription: periodically generates and delivers
 /// a performance digest summarizing agent success rates, cost trends,
 /// top failures, credential health, and anomalies.
@@ -226,13 +236,8 @@ impl ReactiveSubscription for EventBusSubscription {
     }
 
     async fn tick(&self) {
-        super::background::event_bus_tick(
-            &self.scheduler,
-            &self.app,
-            &self.pool,
-            &self.engine,
-        )
-        .await;
+        super::background::event_bus_tick(&self.scheduler, &self.app, &self.pool, &self.engine)
+            .await;
     }
 }
 
@@ -339,7 +344,14 @@ impl ReactiveSubscription for FileWatcherSubscription {
             0usize
         };
         let _ = events_before;
-        super::file_watcher::file_watcher_tick(&self.pool, &self.state, &self.tx, &self.rx, &self.dropped).await;
+        super::file_watcher::file_watcher_tick(
+            &self.pool,
+            &self.state,
+            &self.tx,
+            &self.rx,
+            &self.dropped,
+        )
+        .await;
     }
 }
 
@@ -378,7 +390,10 @@ impl ReactiveSubscription for ClipboardSubscription {
             drop(ctx);
 
             // Clipboard watcher: detect errors and search KB for resolutions
-            if self.watcher_enabled.load(std::sync::atomic::Ordering::Relaxed) {
+            if self
+                .watcher_enabled
+                .load(std::sync::atomic::Ordering::Relaxed)
+            {
                 self.run_error_detection().await;
             }
         }
@@ -442,10 +457,7 @@ impl ClipboardSubscription {
             };
 
             // Filter to similarity > 0.5 threshold
-            let good_matches: Vec<_> = matches
-                .into_iter()
-                .filter(|m| m.similarity > 0.5)
-                .collect();
+            let good_matches: Vec<_> = matches.into_iter().filter(|m| m.similarity > 0.5).collect();
 
             if good_matches.is_empty() {
                 return;
@@ -495,9 +507,10 @@ impl ClipboardSubscription {
         let embedding_manager = self.embedding_manager.as_ref().ok_or_else(|| {
             crate::error::AppError::Internal("Embedding manager not available".into())
         })?;
-        let vector_store = self.vector_store.as_ref().ok_or_else(|| {
-            crate::error::AppError::Internal("Vector store not available".into())
-        })?;
+        let vector_store = self
+            .vector_store
+            .as_ref()
+            .ok_or_else(|| crate::error::AppError::Internal("Vector store not available".into()))?;
 
         let query_text = query.to_string();
         let em = embedding_manager.clone();
@@ -512,7 +525,9 @@ impl ClipboardSubscription {
             "SELECT id, name FROM knowledge_bases WHERE status = 'ready' ORDER BY created_at DESC",
         )?;
         let kb_list: Vec<(String, String)> = kb_stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?
             .collect::<Result<Vec<_>, _>>()?;
 
         let mut all_matches = Vec::new();
@@ -534,10 +549,7 @@ impl ClipboardSubscription {
                     )
                     .and_then(|mut stmt| {
                         stmt.query_row(rusqlite::params![chunk_id], |row| {
-                            Ok((
-                                row.get::<_, String>(0)?,
-                                row.get::<_, Option<String>>(1)?,
-                            ))
+                            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
                         })
                     })
                     .unwrap_or_default();
@@ -546,14 +558,12 @@ impl ClipboardSubscription {
                     continue;
                 }
 
-                all_matches.push(
-                    crate::commands::execution::clipboard_intel::KbMatch {
-                        kb_name: kb_name.clone(),
-                        chunk_text,
-                        similarity,
-                        source_file,
-                    },
-                );
+                all_matches.push(crate::commands::execution::clipboard_intel::KbMatch {
+                    kb_name: kb_name.clone(),
+                    chunk_text,
+                    similarity,
+                    source_file,
+                });
             }
         }
 
@@ -586,7 +596,10 @@ impl ReactiveSubscription for AppFocusSubscription {
         // Capture app state before tick to detect changes
         let (app_before, title_before) = {
             let s = self.state.lock().await;
-            (s.last_app_name().map(|s| s.to_string()), s.last_window_title().map(|s| s.to_string()))
+            (
+                s.last_app_name().map(|s| s.to_string()),
+                s.last_window_title().map(|s| s.to_string()),
+            )
         };
 
         super::app_focus::app_focus_tick(&self.pool, &self.state).await;
@@ -594,7 +607,10 @@ impl ReactiveSubscription for AppFocusSubscription {
         // If app changed, push a signal to ambient context
         let (app_after, title_after) = {
             let s = self.state.lock().await;
-            (s.last_app_name().map(|s| s.to_string()), s.last_window_title().map(|s| s.to_string()))
+            (
+                s.last_app_name().map(|s| s.to_string()),
+                s.last_window_title().map(|s| s.to_string()),
+            )
         };
         if app_before != app_after || title_before != title_after {
             if let (Some(ref app), Some(ref title)) = (&app_after, &title_after) {
@@ -739,6 +755,43 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
     async fn tick(&self) {
         super::background::zombie_execution_tick(&self.pool, &self.app);
         super::background::silent_execution_tick(&self.pool, &self.app);
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for HealingTtlSubscription {
+    fn name(&self) -> &'static str {
+        "healing_ttl_sweep"
+    }
+
+    fn interval(&self) -> Duration {
+        // The TTL is 10 minutes; sweeping every 2 minutes bounds the
+        // worst-case "pending" overshoot at TTL + 2m, which is well below
+        // a user's "is this stuck?" threshold without burning DB cycles.
+        Duration::from_secs(120)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        // When the app is idle, slowing the sweep is fine — no new
+        // mark_auto_fix_pending calls are happening, so any stale rows
+        // are already past the cliff and just need eventual cleanup.
+        Duration::from_secs(600)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Let app startup settle before the first sweep.
+        Duration::from_secs(30)
+    }
+
+    async fn tick(&self) {
+        let pool = self.pool.clone();
+        let _ = tokio::task::spawn_blocking(move || {
+            crate::db::repos::execution::healing::revert_all_stale_auto_fix_pending(
+                &pool,
+                crate::db::repos::execution::healing::AUTO_FIX_PENDING_TTL_MINUTES,
+            )
+        })
+        .await;
     }
 }
 
@@ -890,7 +943,11 @@ async fn run_single(
         if has_idle_mode {
             let is_active = scheduler.is_active();
             if is_active != was_active {
-                let new_dur = if is_active { active_interval } else { idle_interval };
+                let new_dur = if is_active {
+                    active_interval
+                } else {
+                    idle_interval
+                };
                 interval = tokio::time::interval(new_dur);
                 interval.tick().await; // consume the immediate first tick
                 was_active = is_active;
@@ -933,12 +990,15 @@ async fn run_single(
             scheduler.record_subscription_crash(name);
 
             // Emit a Tauri event so the frontend can surface the crash immediately
-            let _ = app.emit(event_name::SUBSCRIPTION_CRASHED, SubscriptionCrashEvent {
-                name: name.to_string(),
-                panic_message: msg,
-                consecutive_panics,
-                timestamp: chrono::Utc::now().to_rfc3339(),
-            });
+            let _ = app.emit(
+                event_name::SUBSCRIPTION_CRASHED,
+                SubscriptionCrashEvent {
+                    name: name.to_string(),
+                    panic_message: msg,
+                    consecutive_panics,
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                },
+            );
 
             // Apply backoff when panics exceed the threshold, to avoid
             // tight-looping on a persistently broken subscription.
@@ -946,7 +1006,11 @@ async fn run_single(
                 let multiplier = PANIC_BACKOFF_MULTIPLIER
                     .saturating_pow(consecutive_panics - PANIC_BACKOFF_THRESHOLD + 1)
                     .min(PANIC_BACKOFF_MAX);
-                let effective = if has_idle_mode && !was_active { idle_interval } else { active_interval };
+                let effective = if has_idle_mode && !was_active {
+                    idle_interval
+                } else {
+                    active_interval
+                };
                 let backoff = effective * multiplier;
                 tracing::warn!(
                     subscription = name,
@@ -970,7 +1034,11 @@ async fn run_single(
         }
 
         // Use the current effective interval for overrun / slow-tick detection
-        let effective_interval = if has_idle_mode && !was_active { idle_interval } else { active_interval };
+        let effective_interval = if has_idle_mode && !was_active {
+            idle_interval
+        } else {
+            active_interval
+        };
         scheduler.record_tick_latency(name, effective_interval, elapsed);
 
         let elapsed_ms = elapsed.as_millis() as u64;

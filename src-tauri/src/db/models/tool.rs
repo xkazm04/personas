@@ -106,7 +106,10 @@ impl PersonaToolDefinition {
             return Ok(ToolKind::Automation);
         }
         let has_script = !self.script_path.is_empty();
-        let has_api = self.implementation_guide.as_ref().is_some_and(|g| !g.is_empty());
+        let has_api = self
+            .implementation_guide
+            .as_ref()
+            .is_some_and(|g| !g.is_empty());
         match (has_script, has_api) {
             (true, true) => Err(format!(
                 "Tool '{}' has conflicting execution strategies: both script_path and implementation_guide are set. Remove one to resolve ambiguity.",

@@ -264,8 +264,7 @@ fn record_session_capture(
 
     // Pretty-print so the body is readable in the Memories UI without an
     // extra rendering step.
-    let content = serde_json::to_string_pretty(&payload)
-        .unwrap_or_else(|_| raw_line.to_string());
+    let content = serde_json::to_string_pretty(&payload).unwrap_or_else(|_| raw_line.to_string());
 
     let input = CreatePersonaMemoryInput {
         persona_id: persona_id.to_string(),
@@ -462,11 +461,7 @@ mod tests {
 
         let tmp = tempfile::tempdir().unwrap();
         std::fs::create_dir_all(tmp.path().join(".personas")).unwrap();
-        std::fs::write(
-            queue_path(tmp.path()),
-            r#"{"hook_event_name":"Stop"}"#,
-        )
-        .unwrap();
+        std::fs::write(queue_path(tmp.path()), r#"{"hook_event_name":"Stop"}"#).unwrap();
 
         let created =
             drain_and_record_session_memories(&pool, tmp.path(), &persona.id, "exec").unwrap();

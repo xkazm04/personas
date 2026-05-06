@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
@@ -39,10 +39,7 @@ pub fn get_message(
 }
 
 #[tauri::command]
-pub fn mark_message_read(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn mark_message_read(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::mark_as_read(&state.db, &id)
 }
@@ -57,26 +54,19 @@ pub fn mark_all_messages_read(
 }
 
 #[tauri::command]
-pub fn delete_message(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_message(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
 
 #[tauri::command]
-pub fn get_unread_message_count(
-    state: State<'_, Arc<AppState>>,
-) -> Result<i64, AppError> {
+pub fn get_unread_message_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_unread_count(&state.db)
 }
 
 #[tauri::command]
-pub fn get_message_count(
-    state: State<'_, Arc<AppState>>,
-) -> Result<i64, AppError> {
+pub fn get_message_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_total_count(&state.db)
 }
@@ -97,9 +87,17 @@ pub fn get_bulk_delivery_summaries(
 ) -> Result<Vec<MessageDeliverySummary>, AppError> {
     require_auth_sync(&state)?;
     let rows = repo::get_bulk_delivery_summaries(&state.db, &message_ids)?;
-    Ok(rows.into_iter().map(|(message_id, delivered, pending, failed)| {
-        MessageDeliverySummary { message_id, delivered, pending, failed }
-    }).collect())
+    Ok(rows
+        .into_iter()
+        .map(
+            |(message_id, delivered, pending, failed)| MessageDeliverySummary {
+                message_id,
+                delivered,
+                pending,
+                failed,
+            },
+        )
+        .collect())
 }
 
 #[tauri::command]
@@ -134,9 +132,7 @@ pub fn get_thread_count(
 // -- Dev seed: mock message -------------------------------------------------------
 
 #[tauri::command]
-pub fn seed_mock_message(
-    state: State<'_, Arc<AppState>>,
-) -> Result<PersonaMessage, AppError> {
+pub fn seed_mock_message(state: State<'_, Arc<AppState>>) -> Result<PersonaMessage, AppError> {
     require_auth_sync(&state)?;
 
     #[cfg(not(debug_assertions))]
@@ -151,8 +147,8 @@ pub fn seed_mock_message(
         use super::mock_seed::{self, MOCK_MESSAGE_TEMPLATES};
 
         let t = mock_seed::seed_index();
-        let persona_id = mock_seed::pick_persona_id(&state.db, t)?
-            .unwrap_or_else(|| "mock-persona".to_string());
+        let persona_id =
+            mock_seed::pick_persona_id(&state.db, t)?.unwrap_or_else(|| "mock-persona".to_string());
         let tpl = &MOCK_MESSAGE_TEMPLATES[t % MOCK_MESSAGE_TEMPLATES.len()];
 
         let id = uuid::Uuid::new_v4().to_string();

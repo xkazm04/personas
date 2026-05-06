@@ -54,12 +54,10 @@ pub fn handle_jsonrpc(line: &str, pool: &db::McpDbPool) -> Option<Value> {
             let result = tools::call_tool(tool_name, &arguments, pool);
             Some(json!({ "jsonrpc": "2.0", "result": result, "id": id }))
         }
-        _ => {
-            Some(json!({
-                "jsonrpc": "2.0",
-                "error": { "code": -32601, "message": format!("Method not found: {method}") },
-                "id": id
-            }))
-        }
+        _ => Some(json!({
+            "jsonrpc": "2.0",
+            "error": { "code": -32601, "message": format!("Method not found: {method}") },
+            "id": id
+        })),
     }
 }

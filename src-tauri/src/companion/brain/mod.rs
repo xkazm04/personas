@@ -5,13 +5,17 @@
 //! this file just declares the shape so the rest of the scaffolding
 //! compiles cleanly.
 
+pub mod backlog;
 pub mod consolidation;
+pub mod dashboard;
 pub mod doctrine;
 pub mod embeddings;
 pub mod episodic;
+pub mod goals;
 pub mod graph;
 pub mod identity;
 pub mod procedural;
 pub mod reflection;
 pub mod retrieval;
+pub mod rituals;
 pub mod semantic;

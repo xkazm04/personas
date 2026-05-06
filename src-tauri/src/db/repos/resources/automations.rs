@@ -17,25 +17,32 @@ fn row_to_automation(row: &Row) -> rusqlite::Result<PersonaAutomation> {
         persona_id: row.get("persona_id")?,
         use_case_id: row.get("use_case_id")?,
         name: row.get("name")?,
-        description: row.get::<_, Option<String>>("description")?.unwrap_or_default(),
-        platform: row.get::<_, Option<String>>("platform")?
+        description: row
+            .get::<_, Option<String>>("description")?
+            .unwrap_or_default(),
+        platform: row
+            .get::<_, Option<String>>("platform")?
             .and_then(|s| s.parse().ok())
             .unwrap_or(AutomationPlatform::Custom),
         platform_workflow_id: row.get("platform_workflow_id")?,
         platform_url: row.get("platform_url")?,
         webhook_url: row.get("webhook_url")?,
-        webhook_method: row.get::<_, Option<String>>("webhook_method")?.unwrap_or_else(|| "POST".into()),
+        webhook_method: row
+            .get::<_, Option<String>>("webhook_method")?
+            .unwrap_or_else(|| "POST".into()),
         platform_credential_id: row.get("platform_credential_id")?,
         credential_mapping: row.get("credential_mapping")?,
         input_schema: row.get("input_schema")?,
         output_schema: row.get("output_schema")?,
         timeout_ms: row.get::<_, Option<i64>>("timeout_ms")?.unwrap_or(30000),
         retry_count: row.get::<_, Option<i32>>("retry_count")?.unwrap_or(1),
-        fallback_mode: row.get::<_, Option<String>>("fallback_mode")?
+        fallback_mode: row
+            .get::<_, Option<String>>("fallback_mode")?
             .and_then(|s| s.parse().ok())
             .unwrap_or(AutomationFallbackMode::Connector),
         deployment_status: AutomationDeployStatus::from_str(
-            &row.get::<_, Option<String>>("deployment_status")?.unwrap_or_else(|| "draft".into()),
+            &row.get::<_, Option<String>>("deployment_status")?
+                .unwrap_or_else(|| "draft".into()),
         )
         .unwrap_or(AutomationDeployStatus::Draft),
         last_triggered_at: row.get("last_triggered_at")?,
@@ -55,23 +62,36 @@ row_mapper!(row_to_run -> AutomationRun {
 // -- Automation CRUD --------------------------------------------------
 
 pub fn get_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaAutomation>, AppError> {
-    timed_query!("persona_automations", "persona_automations::get_by_persona", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_automations WHERE persona_id = ?1 ORDER BY created_at",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_automation)?;
-        let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-        Ok(items)
-    })
+    timed_query!(
+        "persona_automations",
+        "persona_automations::get_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_automations WHERE persona_id = ?1 ORDER BY created_at",
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_automation)?;
+            let items = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(items)
+        }
+    )
 }
 
-crud_get_by_id!(PersonaAutomation, "persona_automations", "Automation", row_to_automation);
+crud_get_by_id!(
+    PersonaAutomation,
+    "persona_automations",
+    "Automation",
+    row_to_automation
+);
 
 pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAutomation, AppError> {
     timed_query!("persona_automations", "persona_automations::create", {
         if input.name.trim().is_empty() {
-            return Err(AppError::Validation("Automation name cannot be empty".into()));
+            return Err(AppError::Validation(
+                "Automation name cannot be empty".into(),
+            ));
         }
 
         let id = uuid::Uuid::new_v4().to_string();
@@ -79,7 +99,9 @@ pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAuto
         let method = input.webhook_method.as_deref().unwrap_or("POST");
         let timeout = input.timeout_ms.unwrap_or(30000);
         let retries = input.retry_count.unwrap_or(1).clamp(1, 5);
-        let fallback = input.fallback_mode.unwrap_or(AutomationFallbackMode::Connector);
+        let fallback = input
+            .fallback_mode
+            .unwrap_or(AutomationFallbackMode::Connector);
         let desc = input.description.as_deref().unwrap_or("");
 
         let conn = pool.get()?;
@@ -92,11 +114,22 @@ pub fn create(pool: &DbPool, input: CreateAutomationInput) -> Result<PersonaAuto
               deployment_status, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,'draft',?18,?18)",
             params![
-                id, input.persona_id, input.use_case_id, input.name, desc,
+                id,
+                input.persona_id,
+                input.use_case_id,
+                input.name,
+                desc,
                 input.platform.as_str(),
-                input.platform_workflow_id, input.platform_url, input.webhook_url, method,
-                input.platform_credential_id, input.credential_mapping,
-                input.input_schema, input.output_schema, timeout, retries,
+                input.platform_workflow_id,
+                input.platform_url,
+                input.webhook_url,
+                method,
+                input.platform_credential_id,
+                input.credential_mapping,
+                input.input_schema,
+                input.output_schema,
+                timeout,
+                retries,
                 fallback.as_str(),
                 now,
             ],
@@ -138,22 +171,127 @@ pub fn update(
         let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
         push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
-        push_field_param!(input.description, "description", sets, param_idx, param_values, clone);
-        push_field_param!(input.use_case_id, "use_case_id", sets, param_idx, param_values, clone);
-        push_field_param!(input.platform_workflow_id, "platform_workflow_id", sets, param_idx, param_values, clone);
-        push_field_param!(input.platform_url, "platform_url", sets, param_idx, param_values, clone);
-        push_field_param!(input.webhook_url, "webhook_url", sets, param_idx, param_values, clone);
-        push_field_param!(input.webhook_method, "webhook_method", sets, param_idx, param_values, clone);
-        push_field_param!(input.platform_credential_id, "platform_credential_id", sets, param_idx, param_values, clone);
-        push_field_param!(input.credential_mapping, "credential_mapping", sets, param_idx, param_values, clone);
-        push_field_param!(input.input_schema, "input_schema", sets, param_idx, param_values, clone);
-        push_field_param!(input.output_schema, "output_schema", sets, param_idx, param_values, clone);
-        push_field_param!(input.timeout_ms, "timeout_ms", sets, param_idx, param_values, copy);
+        push_field_param!(
+            input.description,
+            "description",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.use_case_id,
+            "use_case_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.platform_workflow_id,
+            "platform_workflow_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.platform_url,
+            "platform_url",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.webhook_url,
+            "webhook_url",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.webhook_method,
+            "webhook_method",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.platform_credential_id,
+            "platform_credential_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.credential_mapping,
+            "credential_mapping",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.input_schema,
+            "input_schema",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.output_schema,
+            "output_schema",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.timeout_ms,
+            "timeout_ms",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
         let clamped_retry = input.retry_count.map(|r| r.clamp(1, 5));
-        push_field_param!(clamped_retry, "retry_count", sets, param_idx, param_values, copy);
-        push_field_param!(input.fallback_mode, "fallback_mode", sets, param_idx, param_values, as_str);
-        push_field_param!(input.deployment_status, "deployment_status", sets, param_idx, param_values, as_str);
-        push_field_param!(input.error_message, "error_message", sets, param_idx, param_values, clone);
+        push_field_param!(
+            clamped_retry,
+            "retry_count",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
+        push_field_param!(
+            input.fallback_mode,
+            "fallback_mode",
+            sets,
+            param_idx,
+            param_values,
+            as_str
+        );
+        push_field_param!(
+            input.deployment_status,
+            "deployment_status",
+            sets,
+            param_idx,
+            param_values,
+            as_str
+        );
+        push_field_param!(
+            input.error_message,
+            "error_message",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
 
         let sql = format!(
             "UPDATE persona_automations SET {} WHERE id = ?{}",
@@ -175,11 +313,14 @@ crud_delete!("persona_automations");
 
 /// Returns a summary of resources affected by deleting this automation.
 pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, AppError> {
-    timed_query!("persona_automations", "persona_automations::blast_radius", {
-        let conn = pool.get()?;
-        let mut impacts: Vec<(String, String)> = Vec::new();
+    timed_query!(
+        "persona_automations",
+        "persona_automations::blast_radius",
+        {
+            let conn = pool.get()?;
+            let mut impacts: Vec<(String, String)> = Vec::new();
 
-        let (status, running_runs, total_runs): (Option<String>, i64, i64) = conn
+            let (status, running_runs, total_runs): (Option<String>, i64, i64) = conn
             .query_row(
                 "SELECT pa.deployment_status,
                         COALESCE(SUM(CASE WHEN ar.status IN ('running', 'pending') THEN 1 ELSE 0 END), 0),
@@ -191,18 +332,28 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
                 |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
             )?;
 
-        if status.as_deref() == Some("active") {
-            impacts.push(("status".into(), "This automation is currently active and will stop running".into()));
-        }
-        if running_runs > 0 {
-            impacts.push(("run".into(), format!("{running_runs} in-progress run(s) will be orphaned")));
-        }
-        if total_runs > 0 {
-            impacts.push(("history".into(), format!("{total_runs} historical run(s) will be deleted")));
-        }
+            if status.as_deref() == Some("active") {
+                impacts.push((
+                    "status".into(),
+                    "This automation is currently active and will stop running".into(),
+                ));
+            }
+            if running_runs > 0 {
+                impacts.push((
+                    "run".into(),
+                    format!("{running_runs} in-progress run(s) will be orphaned"),
+                ));
+            }
+            if total_runs > 0 {
+                impacts.push((
+                    "history".into(),
+                    format!("{total_runs} historical run(s) will be deleted"),
+                ));
+            }
 
-        Ok(impacts)
-    })
+            Ok(impacts)
+        }
+    )
 }
 
 /// Update last_triggered_at and last_result_status after a run completes.
@@ -212,17 +363,21 @@ pub fn record_trigger_result(
     status: &str,
     error_msg: Option<&str>,
 ) -> Result<(), AppError> {
-    timed_query!("persona_automations", "persona_automations::record_trigger_result", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
+    timed_query!(
+        "persona_automations",
+        "persona_automations::record_trigger_result",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.execute(
             "UPDATE persona_automations
              SET last_triggered_at = ?1, last_result_status = ?2, error_message = ?3, updated_at = ?1
              WHERE id = ?4",
             params![now, status, error_msg, id],
         )?;
-        Ok(())
-    })
+            Ok(())
+        }
+    )
 }
 
 // -- Automation Runs --------------------------------------------------
@@ -258,36 +413,54 @@ pub fn complete_run(
     error_message: Option<&str>,
     warnings: Option<&str>,
 ) -> Result<AutomationRun, AppError> {
-    timed_query!("persona_automations", "persona_automations::complete_run", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE automation_runs
+    timed_query!(
+        "persona_automations",
+        "persona_automations::complete_run",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE automation_runs
              SET status = ?1, output_data = ?2, duration_ms = ?3,
                  platform_run_id = ?4, platform_logs_url = ?5,
                  error_message = ?6, warnings = ?7, completed_at = ?8
              WHERE id = ?9",
-            params![status.as_str(), output_data, duration_ms, platform_run_id, platform_logs_url, error_message, warnings, now, run_id],
-        )?;
-        get_run_by_id(pool, run_id)
-    })
+                params![
+                    status.as_str(),
+                    output_data,
+                    duration_ms,
+                    platform_run_id,
+                    platform_logs_url,
+                    error_message,
+                    warnings,
+                    now,
+                    run_id
+                ],
+            )?;
+            get_run_by_id(pool, run_id)
+        }
+    )
 }
 
 pub fn get_run_by_id(pool: &DbPool, id: &str) -> Result<AutomationRun, AppError> {
-    timed_query!("persona_automations", "persona_automations::get_run_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM automation_runs WHERE id = ?1",
-            params![id],
-            row_to_run,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Automation run {id}"))
-            }
-            other => AppError::Database(other),
-        })
-    })
+    timed_query!(
+        "persona_automations",
+        "persona_automations::get_run_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM automation_runs WHERE id = ?1",
+                params![id],
+                row_to_run,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Automation run {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 pub fn get_runs_by_automation(
@@ -295,17 +468,23 @@ pub fn get_runs_by_automation(
     automation_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<AutomationRun>, AppError> {
-    timed_query!("persona_automations", "persona_automations::get_runs_by_automation", {
-        let lim = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM automation_runs WHERE automation_id = ?1
+    timed_query!(
+        "persona_automations",
+        "persona_automations::get_runs_by_automation",
+        {
+            let lim = limit.unwrap_or(50);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM automation_runs WHERE automation_id = ?1
              ORDER BY started_at DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![automation_id, lim], row_to_run)?;
-        let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-        Ok(items)
-    })
+            )?;
+            let rows = stmt.query_map(params![automation_id, lim], row_to_run)?;
+            let items = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(items)
+        }
+    )
 }
 
 /// Mark automation runs stuck in 'running' as 'failed' when they exceed
@@ -342,13 +521,19 @@ pub fn get_runs_by_execution(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Vec<AutomationRun>, AppError> {
-    timed_query!("persona_automations", "persona_automations::get_runs_by_execution", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM automation_runs WHERE execution_id = ?1 ORDER BY started_at",
-        )?;
-        let rows = stmt.query_map(params![execution_id], row_to_run)?;
-        let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-        Ok(items)
-    })
+    timed_query!(
+        "persona_automations",
+        "persona_automations::get_runs_by_execution",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM automation_runs WHERE execution_id = ?1 ORDER BY started_at",
+            )?;
+            let rows = stmt.query_map(params![execution_id], row_to_run)?;
+            let items = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(items)
+        }
+    )
 }

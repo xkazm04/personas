@@ -24,10 +24,12 @@ interface ComposerConnectorsPickerModalProps {
   onClose: () => void;
   selected: string[];
   onApply: (next: string[]) => void;
+  /** Forwarded to PickerShell — solid bg when the modal opens over a translucent surface. */
+  solid?: boolean;
 }
 
 export function ComposerConnectorsPickerModal({
-  open, onClose, selected, onApply,
+  open, onClose, selected, onApply, solid = false,
 }: ComposerConnectorsPickerModalProps) {
   const healthy = useHealthyConnectors();
   const [draft, setDraft] = useState<string[]>(selected);
@@ -93,6 +95,7 @@ export function ComposerConnectorsPickerModal({
         : `${draft.length} app${draft.length === 1 ? "" : "s"} selected`}
       icon={<Plug className="w-5 h-5" />}
       size="lg"
+      solid={solid}
       footer={
         <>
           <kbd className="typo-caption text-foreground/50">⌘ + Enter</kbd>

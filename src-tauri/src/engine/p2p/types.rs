@@ -60,7 +60,29 @@ pub struct DiscoveredPeer {
     pub first_seen_at: String,
     pub is_connected: bool,
     pub metadata: Option<String>,
-    /// Trust status: "trusted" if peer_id is in trusted_peers, "unknown" otherwise.
+    /// Discovery-layer trust projection. Distinct from
+    /// [`crate::db::models::TrustLevel`] (the authoritative state of a
+    /// row in `trusted_peers`); see that enum's doc comment for the
+    /// full mapping table. Values:
+    ///
+    /// - `"trusted"` — a non-revoked `trusted_peers` row exists for
+    ///   this `peer_id` (either `Manual` or `Verified` `TrustLevel` —
+    ///   discovered-peers does not distinguish).
+    /// - `"unverified"` — discovered on the LAN but no non-revoked
+    ///   `trusted_peers` row. Advertised identity has not been proven
+    ///   via Hello/HelloAck handshake yet; UI should warn the user
+    ///   before connecting.
+    /// - `"unknown"` — column default for rows inserted before
+    ///   classification. Transient; the next mDNS reconciliation tick
+    ///   should overwrite with `"trusted"` or `"unverified"`.
+    ///
+    /// **Why two vocabularies**: `trusted_peers.trust_level` is the
+    /// user-managed source of truth for "do I trust this peer at all?";
+    /// `discovered_peers.trust_status` is a fast projection optimized
+    /// for the LAN-discovery list view, computed by joining trust state
+    /// with discovery state. Future mDNS handshake-based
+    /// auto-verification would set `TrustLevel::Verified`, but
+    /// `trust_status` would remain `"trusted"`. Don't conflate.
     pub trust_status: String,
 }
 

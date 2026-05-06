@@ -63,8 +63,6 @@ pub fn delete_external_api_key(
 /// creation; subsequent calls return the in-memory cached plaintext for the
 /// current process.
 #[tauri::command]
-pub fn get_system_api_key(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub fn get_system_api_key(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     crate::engine::management_api::get_or_create_system_api_key(&state.db)
 }

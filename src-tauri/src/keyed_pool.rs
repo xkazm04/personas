@@ -166,13 +166,21 @@ impl<K: Eq + Hash + Clone, V: Clone> KeyedResourcePool<K, V> {
     /// Number of entries currently in the pool.
     #[allow(dead_code)]
     pub fn len(&self) -> usize {
-        self.inner.map.lock().unwrap_or_else(|e| e.into_inner()).len()
+        self.inner
+            .map
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .len()
     }
 
     /// Returns `true` if the pool contains no entries.
     #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
-        self.inner.map.lock().unwrap_or_else(|e| e.into_inner()).is_empty()
+        self.inner
+            .map
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .is_empty()
     }
 }
 

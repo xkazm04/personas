@@ -17,8 +17,11 @@ use std::collections::HashSet;
 #[cfg(feature = "ml")]
 use std::sync::Arc;
 
+use crate::companion::brain::backlog::{self, BacklogItem};
 use crate::companion::brain::embeddings;
 use crate::companion::brain::episodic::{self, Episode};
+use crate::companion::brain::goals::{self, Goal};
+use crate::companion::brain::procedural::{self, Procedural};
 use crate::companion::brain::semantic::{self, Fact};
 use crate::db::UserDbPool;
 #[cfg(feature = "ml")]
@@ -39,6 +42,17 @@ const FALLBACK_LIMIT: u32 = 20;
 /// hits) so Athena gets a stable view of who the user is even on
 /// off-topic queries. Cheap; small list.
 const ALWAYS_INCLUDE_TOP_FACTS: u32 = 6;
+/// Active goals are always surfaced — the user shouldn't have to remind
+/// Athena what they're working toward. Capped to keep the prompt short.
+const ALWAYS_INCLUDE_ACTIVE_GOALS: u32 = 8;
+/// Top-by-importance procedurals always included so behavioral rules
+/// stay in force regardless of query phrasing.
+const ALWAYS_INCLUDE_TOP_PROCEDURALS: u32 = 6;
+/// Open backlog items: if Athena committed to something, she should
+/// see it next turn. Cap is conservative — long backlogs become noise.
+const ALWAYS_INCLUDE_OPEN_BACKLOG: u32 = 6;
+/// Vector top-K for procedurals matched against the user's query.
+const VECTOR_PROCEDURAL_TOPK: usize = 4;
 
 /// What the prompt builder gets back per turn.
 #[derive(Debug, Default)]
@@ -46,6 +60,9 @@ pub struct Recall {
     pub episodes: Vec<Episode>,
     pub doctrine: Vec<DoctrineHit>,
     pub facts: Vec<Fact>,
+    pub procedurals: Vec<Procedural>,
+    pub goals: Vec<Goal>,
+    pub backlog: Vec<BacklogItem>,
 }
 
 #[derive(Debug, Clone)]
@@ -76,8 +93,23 @@ pub async fn retrieve(
     // happens to phrase a query that matches a fact's wording.
     let mut top_facts =
         semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default();
-    let mut fact_ids_in_recall: HashSet<String> =
-        top_facts.iter().map(|f| f.id.clone()).collect();
+    let mut fact_ids_in_recall: HashSet<String> = top_facts.iter().map(|f| f.id.clone()).collect();
+
+    // Phase D: stable per-turn includes — active goals, top procedurals,
+    // open backlog. These don't depend on the user's query wording.
+    let active_goals = goals::list_goals(
+        pool,
+        Some(goals::GoalStatus::Active),
+        ALWAYS_INCLUDE_ACTIVE_GOALS,
+    )
+    .unwrap_or_default();
+    let mut top_procedurals =
+        procedural::list_rules(pool, None, false, ALWAYS_INCLUDE_TOP_PROCEDURALS)
+            .unwrap_or_default();
+    let mut procedural_ids_in_recall: HashSet<String> =
+        top_procedurals.iter().map(|p| p.id.clone()).collect();
+    let open_backlog =
+        backlog::list_items(pool, None, true, ALWAYS_INCLUDE_OPEN_BACKLOG).unwrap_or_default();
 
     if recent.is_empty() && hits.is_empty() {
         // Cold start — full fallback.
@@ -85,15 +117,22 @@ pub async fn retrieve(
             episodes: episodic::list_recent(pool, session_id, FALLBACK_LIMIT).unwrap_or_default(),
             doctrine: Vec::new(),
             facts: top_facts,
+            procedurals: top_procedurals,
+            goals: active_goals,
+            backlog: open_backlog,
         });
     }
 
     // Look up node kinds in one SQL round-trip, preserve search ordering.
-    let kinds = lookup_kinds(pool, &hits.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>())?;
+    let kinds = lookup_kinds(
+        pool,
+        &hits.iter().map(|(id, _)| id.clone()).collect::<Vec<_>>(),
+    )?;
 
     let mut episode_ids: Vec<String> = Vec::new();
     let mut doctrine_ids: Vec<String> = Vec::new();
     let mut fact_ids: Vec<String> = Vec::new();
+    let mut procedural_ids: Vec<String> = Vec::new();
     for (id, _dist) in &hits {
         match kinds.get(id).map(String::as_str) {
             Some("episode") => {
@@ -112,7 +151,15 @@ pub async fn retrieve(
                     fact_ids_in_recall.insert(id.clone());
                 }
             }
-            _ => {} // Reflections live in their own kind; not surfaced via retrieval (yet).
+            Some("procedural") => {
+                if !procedural_ids_in_recall.contains(id)
+                    && procedural_ids.len() < VECTOR_PROCEDURAL_TOPK
+                {
+                    procedural_ids.push(id.clone());
+                    procedural_ids_in_recall.insert(id.clone());
+                }
+            }
+            _ => {} // Reflections, goals, rituals, backlog don't ride the vector lane.
         }
     }
 
@@ -128,23 +175,35 @@ pub async fn retrieve(
     // heading slug.)
     let doctrine = load_doctrine_chunks(pool, &doctrine_ids).unwrap_or_default();
 
-    // Facts: hydrate the vector-matched ids and append after the
+    // Facts: hydrate vector-matched ids and append after the
     // top-by-importance set, deduped.
     for id in &fact_ids {
         if let Ok(Some(f)) = semantic::get_fact(pool, id) {
             top_facts.push(f);
         }
     }
+    // Procedurals: same shape as facts.
+    for id in &procedural_ids {
+        if let Ok(Some(p)) = procedural::get_rule(pool, id) {
+            top_procedurals.push(p);
+        }
+    }
 
-    // Touch last_seen on every fact we returned so importance decay
-    // restarts its clock for facts Athena actually used. Best-effort.
-    let touched_ids: Vec<String> = top_facts.iter().map(|f| f.id.clone()).collect();
-    let _ = semantic::touch_last_seen(pool, &touched_ids);
+    // Touch last_seen / last_used on every retrieved fact + procedural
+    // so the decay clock restarts for whichever pieces Athena used.
+    // Best-effort — failures don't block the turn.
+    let touched_facts: Vec<String> = top_facts.iter().map(|f| f.id.clone()).collect();
+    let _ = semantic::touch_last_seen(pool, &touched_facts);
+    let touched_procs: Vec<String> = top_procedurals.iter().map(|p| p.id.clone()).collect();
+    let _ = procedural::touch_last_used(pool, &touched_procs);
 
     Ok(Recall {
         episodes,
         doctrine,
         facts: top_facts,
+        procedurals: top_procedurals,
+        goals: active_goals,
+        backlog: open_backlog,
     })
 }
 
@@ -157,7 +216,18 @@ pub async fn retrieve(
     Ok(Recall {
         episodes: episodic::list_recent(pool, session_id, FALLBACK_LIMIT).unwrap_or_default(),
         doctrine: Vec::new(),
-        facts: semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS).unwrap_or_default(),
+        facts: semantic::list_facts(pool, None, false, ALWAYS_INCLUDE_TOP_FACTS)
+            .unwrap_or_default(),
+        procedurals: procedural::list_rules(pool, None, false, ALWAYS_INCLUDE_TOP_PROCEDURALS)
+            .unwrap_or_default(),
+        goals: goals::list_goals(
+            pool,
+            Some(goals::GoalStatus::Active),
+            ALWAYS_INCLUDE_ACTIVE_GOALS,
+        )
+        .unwrap_or_default(),
+        backlog: backlog::list_items(pool, None, true, ALWAYS_INCLUDE_OPEN_BACKLOG)
+            .unwrap_or_default(),
     })
 }
 
@@ -170,12 +240,9 @@ fn lookup_kinds(
     }
     let conn = pool.get()?;
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-    let sql = format!(
-        "SELECT id, kind FROM companion_node WHERE id IN ({placeholders})"
-    );
+    let sql = format!("SELECT id, kind FROM companion_node WHERE id IN ({placeholders})");
     let mut stmt = conn.prepare(&sql)?;
-    let params: Vec<&dyn rusqlite::ToSql> =
-        ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let rows = stmt
         .query_map(params.as_slice(), |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
@@ -197,8 +264,7 @@ fn load_episodes_by_ids(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Episode
          WHERE kind = 'episode' AND id IN ({placeholders})"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let params: Vec<&dyn rusqlite::ToSql> =
-        ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let rows = stmt
         .query_map(params.as_slice(), |row| {
             Ok((
@@ -245,8 +311,7 @@ fn load_doctrine_chunks(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Doctrin
          WHERE kind = 'doctrine' AND id IN ({placeholders})"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let params: Vec<&dyn rusqlite::ToSql> =
-        ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let params: Vec<&dyn rusqlite::ToSql> = ids.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
     let rows = stmt
         .query_map(params.as_slice(), |row| {
             Ok((
@@ -264,16 +329,11 @@ fn load_doctrine_chunks(pool: &UserDbPool, ids: &[String]) -> Result<Vec<Doctrin
     let mut out = Vec::with_capacity(rows.len());
     for (_id, file_path, excerpt) in rows {
         let (rel_path, anchor) = split_path_anchor(&file_path);
-        let content = crate::companion::brain::doctrine::read_curated_doc(
-            rel_path,
-            docs_root.as_deref(),
-        )
-        .and_then(|md| extract_section(&md, anchor))
-        .unwrap_or_else(|| excerpt.clone());
-        out.push(DoctrineHit {
-            file_path,
-            content,
-        });
+        let content =
+            crate::companion::brain::doctrine::read_curated_doc(rel_path, docs_root.as_deref())
+                .and_then(|md| extract_section(&md, anchor))
+                .unwrap_or_else(|| excerpt.clone());
+        out.push(DoctrineHit { file_path, content });
     }
     Ok(out)
 }

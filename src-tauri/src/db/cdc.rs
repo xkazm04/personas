@@ -114,18 +114,20 @@ impl CustomizeConnection<rusqlite::Connection, rusqlite::Error> for CdcCustomize
 
         // Register the CDC update hook
         let tx = self.sender.clone();
-        conn.update_hook(Some(move |action: Action, _db: &str, table: &str, rowid: i64| {
-            // Only capture tables we care about
-            if table_to_event(table, action.into()).is_some() {
-                let event = CdcEvent {
-                    action: action.into(),
-                    table: table.to_owned(),
-                    rowid,
-                };
-                // Non-blocking: silently drop if channel is full
-                let _ = tx.try_send(event);
-            }
-        }))?;
+        conn.update_hook(Some(
+            move |action: Action, _db: &str, table: &str, rowid: i64| {
+                // Only capture tables we care about
+                if table_to_event(table, action.into()).is_some() {
+                    let event = CdcEvent {
+                        action: action.into(),
+                        table: table.to_owned(),
+                        rowid,
+                    };
+                    // Non-blocking: silently drop if channel is full
+                    let _ = tx.try_send(event);
+                }
+            },
+        ))?;
 
         Ok(())
     }
@@ -191,11 +193,7 @@ fn table_to_event(table: &str, action: CdcAction) -> Option<&'static str> {
 /// For `persona_events`, the task fetches the full row by rowid (needed by the
 /// frontend event bus).  For all other tables, it emits a lightweight
 /// [`CdcNotification`] payload.
-pub fn spawn_cdc_drain_task(
-    app_handle: AppHandle,
-    receiver: CdcReceiver,
-    db: crate::db::DbPool,
-) {
+pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: crate::db::DbPool) {
     tauri::async_runtime::spawn(async move {
         // Wait for the WebView IPC bridge to be established before emitting
         // events.  Without this delay, every `app_handle.emit()` fires a

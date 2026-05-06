@@ -120,8 +120,14 @@ impl SourceEntry {
 
     pub fn media_duration_seconds(&self) -> Option<f64> {
         match self {
-            SourceEntry::File { media_duration_seconds, .. }
-            | SourceEntry::Proxy { media_duration_seconds, .. } => Some(*media_duration_seconds),
+            SourceEntry::File {
+                media_duration_seconds,
+                ..
+            }
+            | SourceEntry::Proxy {
+                media_duration_seconds,
+                ..
+            } => Some(*media_duration_seconds),
             SourceEntry::Color { .. } => None,
         }
     }
@@ -244,8 +250,8 @@ pub struct AudioStage {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct NormalizeDirective {
-    pub target_lufs: f64,      // always -16 today
-    pub max_linear_gain: f64,  // always 6 today (~ +15.5 dB safety clamp)
+    pub target_lufs: f64,     // always -16 today
+    pub max_linear_gain: f64, // always 6 today (~ +15.5 dB safety clamp)
     pub measurements: LoudnormMeasurements,
 }
 

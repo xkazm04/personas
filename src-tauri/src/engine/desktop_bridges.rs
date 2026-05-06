@@ -47,7 +47,10 @@ pub mod vscode {
         /// Install an extension by ID.
         InstallExtension { extension_id: String },
         /// Run a task from tasks.json.
-        RunTask { task_name: String, folder: Option<String> },
+        RunTask {
+            task_name: String,
+            folder: Option<String>,
+        },
         /// Get the VS Code version.
         Version,
     }
@@ -57,7 +60,11 @@ pub mod vscode {
         action: VsCodeAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action).split_whitespace().next().unwrap_or("unknown").to_string();
+        let action_name = format!("{:?}", &action)
+            .split_whitespace()
+            .next()
+            .unwrap_or("unknown")
+            .to_string();
 
         let result = match action {
             VsCodeAction::OpenFile { path, line } => {
@@ -67,9 +74,7 @@ pub mod vscode {
                 };
                 run_cli(binary, &["--goto", &goto]).await
             }
-            VsCodeAction::OpenFolder { path } => {
-                run_cli(binary, &[&path]).await
-            }
+            VsCodeAction::OpenFolder { path } => run_cli(binary, &[&path]).await,
             VsCodeAction::DiffFiles { left, right } => {
                 run_cli(binary, &["--diff", &left, &right]).await
             }
@@ -81,16 +86,17 @@ pub mod vscode {
             }
             VsCodeAction::RunTask { task_name, folder } => {
                 // VS Code doesn't have a direct CLI for tasks, use --folder-uri approach
-                let mut args = vec!["--command".to_string(), format!("workbench.action.tasks.runTask:{task_name}")];
+                let mut args = vec![
+                    "--command".to_string(),
+                    format!("workbench.action.tasks.runTask:{task_name}"),
+                ];
                 if let Some(f) = folder {
                     args.insert(0, f);
                 }
                 let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
                 run_cli(binary, &arg_refs).await
             }
-            VsCodeAction::Version => {
-                run_cli(binary, &["--version"]).await
-            }
+            VsCodeAction::Version => run_cli(binary, &["--version"]).await,
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
@@ -136,11 +142,17 @@ pub mod docker {
         /// Restart a container.
         RestartContainer { container: String },
         /// Get container logs (last N lines).
-        ContainerLogs { container: String, tail: Option<u32> },
+        ContainerLogs {
+            container: String,
+            tail: Option<u32>,
+        },
         /// Inspect a container (JSON output).
         InspectContainer { container: String },
         /// Run a command in a running container.
-        Exec { container: String, command: Vec<String> },
+        Exec {
+            container: String,
+            command: Vec<String>,
+        },
         /// Docker compose up.
         ComposeUp { file: Option<String>, detach: bool },
         /// Docker compose down.
@@ -158,16 +170,34 @@ pub mod docker {
         action: DockerAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action).split_whitespace().next().unwrap_or("unknown").to_string();
+        let action_name = format!("{:?}", &action)
+            .split_whitespace()
+            .next()
+            .unwrap_or("unknown")
+            .to_string();
 
         let result = match action {
             DockerAction::ListContainers { all } => {
-                let mut args = vec!["ps", "--format", "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"];
-                if all { args.push("-a"); }
+                let mut args = vec![
+                    "ps",
+                    "--format",
+                    "table {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}",
+                ];
+                if all {
+                    args.push("-a");
+                }
                 run_cli(binary, &args).await
             }
             DockerAction::ListImages => {
-                run_cli(binary, &["images", "--format", "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}"]).await
+                run_cli(
+                    binary,
+                    &[
+                        "images",
+                        "--format",
+                        "table {{.Repository}}\t{{.Tag}}\t{{.Size}}\t{{.CreatedSince}}",
+                    ],
+                )
+                .await
             }
             DockerAction::StartContainer { container } => {
                 run_cli(binary, &["start", &container]).await
@@ -187,13 +217,20 @@ pub mod docker {
             }
             DockerAction::Exec { container, command } => {
                 if command.is_empty() {
-                    return Err(AppError::Validation("Docker exec requires at least one command argument".into()));
+                    return Err(AppError::Validation(
+                        "Docker exec requires at least one command argument".into(),
+                    ));
                 }
                 // Security: validate command doesn't contain shell metacharacters
                 for arg in &command {
-                    if arg.contains(';') || arg.contains('|') || arg.contains('&') || arg.contains('`') {
+                    if arg.contains(';')
+                        || arg.contains('|')
+                        || arg.contains('&')
+                        || arg.contains('`')
+                    {
                         return Err(AppError::Validation(
-                            "Docker exec arguments cannot contain shell metacharacters (;|&`)".into()
+                            "Docker exec arguments cannot contain shell metacharacters (;|&`)"
+                                .into(),
                         ));
                     }
                 }
@@ -210,7 +247,9 @@ pub mod docker {
                     args.extend(&["-f", &file_owned]);
                 }
                 args.push("up");
-                if detach { args.push("-d"); }
+                if detach {
+                    args.push("-d");
+                }
                 run_cli(binary, &args).await
             }
             DockerAction::ComposeDown { file } => {
@@ -236,9 +275,7 @@ pub mod docker {
             DockerAction::SystemInfo => {
                 run_cli(binary, &["system", "info", "--format", "json"]).await
             }
-            DockerAction::Version => {
-                run_cli(binary, &["version", "--format", "json"]).await
-            }
+            DockerAction::Version => run_cli(binary, &["version", "--format", "json"]).await,
         };
 
         let duration_ms = start.elapsed().as_millis() as u64;
@@ -274,7 +311,10 @@ pub mod terminal {
     #[serde(tag = "action", content = "params")]
     pub enum TerminalAction {
         /// Execute a shell command (string split into args, NO shell involved).
-        Execute { command: Vec<String>, working_dir: Option<String> },
+        Execute {
+            command: Vec<String>,
+            working_dir: Option<String>,
+        },
         /// Read a file's contents.
         ReadFile { path: String },
         /// Write content to a file.
@@ -321,17 +361,17 @@ pub mod terminal {
         "xdg_config_dirs",
         "xdg_data_dirs",
         // Misc dangerous
-        "ifs",                    // shell field separator — can alter arg parsing
-        "bash_env",               // sourced on non-interactive bash startup
-        "env",                    // sourced on non-interactive sh startup
-        "cdpath",                 // can cause unexpected directory changes
-        "pythonpath",             // Python module injection
-        "rubylib",                // Ruby module injection
-        "node_options",           // Node.js flag injection (e.g. --require)
-        "perl5lib",               // Perl module injection
-        "classpath",              // Java classpath injection
-        "java_tool_options",      // JVM flag injection
-        "_java_options",          // JVM flag injection (alternative)
+        "ifs",               // shell field separator — can alter arg parsing
+        "bash_env",          // sourced on non-interactive bash startup
+        "env",               // sourced on non-interactive sh startup
+        "cdpath",            // can cause unexpected directory changes
+        "pythonpath",        // Python module injection
+        "rubylib",           // Ruby module injection
+        "node_options",      // Node.js flag injection (e.g. --require)
+        "perl5lib",          // Perl module injection
+        "classpath",         // Java classpath injection
+        "java_tool_options", // JVM flag injection
+        "_java_options",     // JVM flag injection (alternative)
     ];
 
     /// Returns an error if any env var key is on the blocklist.
@@ -351,18 +391,44 @@ pub mod terminal {
 
     /// Blocked commands that should never be executed via the terminal bridge.
     const BLOCKED_COMMANDS: &[&str] = &[
-        "rm", "rmdir", "del", "format", "mkfs",
-        "dd", "shred", "wipefs",
-        "shutdown", "reboot", "halt", "poweroff",
-        "passwd", "useradd", "userdel", "usermod",
-        "chmod", "chown", "chgrp",
-        "mount", "umount",
-        "iptables", "firewall-cmd", "ufw",
-        "curl", "wget",  // use API proxy instead
-        "ssh", "scp", "sftp",
-        "sudo", "su", "doas", "runas",
-        "reg", "regedit",
-        "net", "sc", "wmic",
+        "rm",
+        "rmdir",
+        "del",
+        "format",
+        "mkfs",
+        "dd",
+        "shred",
+        "wipefs",
+        "shutdown",
+        "reboot",
+        "halt",
+        "poweroff",
+        "passwd",
+        "useradd",
+        "userdel",
+        "usermod",
+        "chmod",
+        "chown",
+        "chgrp",
+        "mount",
+        "umount",
+        "iptables",
+        "firewall-cmd",
+        "ufw",
+        "curl",
+        "wget", // use API proxy instead
+        "ssh",
+        "scp",
+        "sftp",
+        "sudo",
+        "su",
+        "doas",
+        "runas",
+        "reg",
+        "regedit",
+        "net",
+        "sc",
+        "wmic",
     ];
 
     pub async fn execute(
@@ -372,10 +438,17 @@ pub mod terminal {
         manifest: &DesktopConnectorManifest,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action).split_whitespace().next().unwrap_or("unknown").to_string();
+        let action_name = format!("{:?}", &action)
+            .split_whitespace()
+            .next()
+            .unwrap_or("unknown")
+            .to_string();
 
         let result = match action {
-            TerminalAction::Execute { command, working_dir } => {
+            TerminalAction::Execute {
+                command,
+                working_dir,
+            } => {
                 if command.is_empty() {
                     return Err(AppError::Validation("Command cannot be empty".into()));
                 }
@@ -399,8 +472,11 @@ pub mod terminal {
 
                 // Validate no shell metacharacters in any argument
                 for arg in &command {
-                    if arg.contains('|') || arg.contains(';') || arg.contains('`')
-                        || arg.contains("$(") || arg.contains("${")
+                    if arg.contains('|')
+                        || arg.contains(';')
+                        || arg.contains('`')
+                        || arg.contains("$(")
+                        || arg.contains("${")
                     {
                         return Err(AppError::Validation(
                             "Shell metacharacters (|;`$()) are not allowed. Pass individual arguments instead.".into()
@@ -426,13 +502,12 @@ pub mod terminal {
                     cmd.creation_flags(0x08000000);
                 }
 
-                let output = tokio::time::timeout(
-                    std::time::Duration::from_secs(30),
-                    cmd.output(),
-                )
-                .await
-                .map_err(|_| AppError::Execution("Command timed out after 30 seconds".into()))?
-                .map_err(|e| AppError::ProcessSpawn(format!("Failed to execute command: {e}")))?;
+                let output = tokio::time::timeout(std::time::Duration::from_secs(30), cmd.output())
+                    .await
+                    .map_err(|_| AppError::Execution("Command timed out after 30 seconds".into()))?
+                    .map_err(|e| {
+                        AppError::ProcessSpawn(format!("Failed to execute command: {e}"))
+                    })?;
 
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 let stderr = String::from_utf8_lossy(&output.stderr);
@@ -444,7 +519,11 @@ pub mod terminal {
                         "Command exited with {}: {}{}",
                         output.status,
                         stderr.chars().take(2000).collect::<String>(),
-                        if stderr.len() > 2000 { "...[truncated]" } else { "" }
+                        if stderr.len() > 2000 {
+                            "...[truncated]"
+                        } else {
+                            ""
+                        }
                     )))
                 }
             }
@@ -463,8 +542,11 @@ pub mod terminal {
                     Ok(content) => {
                         // Cap at 1MB for safety
                         if content.len() > 1_048_576 {
-                            Ok(format!("{}...\n[truncated at 1MB, total {} bytes]",
-                                &content[..1_048_576], content.len()))
+                            Ok(format!(
+                                "{}...\n[truncated at 1MB, total {} bytes]",
+                                &content[..1_048_576],
+                                content.len()
+                            ))
                         } else {
                             Ok(content)
                         }
@@ -483,9 +565,13 @@ pub mod terminal {
                     )));
                 }
                 if content.len() > 10_485_760 {
-                    return Err(AppError::Validation("File content exceeds 10MB limit".into()));
+                    return Err(AppError::Validation(
+                        "File content exceeds 10MB limit".into(),
+                    ));
                 }
-                tokio::fs::write(&path, &content).await.map_err(AppError::Io)?;
+                tokio::fs::write(&path, &content)
+                    .await
+                    .map_err(AppError::Io)?;
                 Ok(format!("Written {} bytes to {}", content.len(), path))
             }
 
@@ -502,11 +588,17 @@ pub mod terminal {
                 let mut listing = Vec::new();
                 while let Some(entry) = entries.next_entry().await.map_err(AppError::Io)? {
                     let meta = entry.metadata().await.ok();
-                    let kind = meta.as_ref().map(|m| {
-                        if m.is_dir() { "dir" } else { "file" }
-                    }).unwrap_or("?");
+                    let kind = meta
+                        .as_ref()
+                        .map(|m| if m.is_dir() { "dir" } else { "file" })
+                        .unwrap_or("?");
                     let size = meta.as_ref().map(|m| m.len()).unwrap_or(0);
-                    listing.push(format!("{}\t{}\t{}", kind, size, entry.file_name().to_string_lossy()));
+                    listing.push(format!(
+                        "{}\t{}\t{}",
+                        kind,
+                        size,
+                        entry.file_name().to_string_lossy()
+                    ));
                 }
                 Ok(listing.join("\n"))
             }
@@ -565,35 +657,43 @@ pub mod terminal {
 
         // Block traversal
         if normalized.contains("../") || normalized.contains("/..") || normalized == ".." {
-            return Err(AppError::Forbidden("Path traversal (..) is not allowed".into()));
+            return Err(AppError::Forbidden(
+                "Path traversal (..) is not allowed".into(),
+            ));
         }
 
         // Block absolute system paths and sensitive user directories
         #[cfg(target_os = "windows")]
         {
             let lower = normalized.to_lowercase();
-            let blocked_prefixes = [
-                "c:/windows",
-                "c:/program files",
-                "c:/program files (x86)",
-            ];
+            let blocked_prefixes = ["c:/windows", "c:/program files", "c:/program files (x86)"];
             for prefix in &blocked_prefixes {
                 if lower.starts_with(prefix) {
-                    return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+                    return Err(AppError::Forbidden(
+                        "Access to system directories is blocked".into(),
+                    ));
                 }
             }
 
             // Block sensitive user-profile directories (resolve %USERPROFILE% patterns)
             if let Ok(home) = std::env::var("USERPROFILE") {
                 let home_norm = home.replace('\\', "/").to_lowercase();
-                let sensitive_dirs = [".ssh", ".gnupg", ".aws", ".azure", ".kube",
-                    "AppData/Local/Google/Chrome", "AppData/Local/Microsoft/Edge",
-                    "AppData/Roaming/Mozilla/Firefox"];
+                let sensitive_dirs = [
+                    ".ssh",
+                    ".gnupg",
+                    ".aws",
+                    ".azure",
+                    ".kube",
+                    "AppData/Local/Google/Chrome",
+                    "AppData/Local/Microsoft/Edge",
+                    "AppData/Roaming/Mozilla/Firefox",
+                ];
                 for dir in &sensitive_dirs {
                     let blocked = format!("{}/{}", home_norm, dir.to_lowercase());
                     if lower.starts_with(&blocked) {
                         return Err(AppError::Forbidden(format!(
-                            "Access to sensitive directory '{}' is blocked", dir
+                            "Access to sensitive directory '{}' is blocked",
+                            dir
                         )));
                     }
                 }
@@ -602,20 +702,33 @@ pub mod terminal {
         #[cfg(not(target_os = "windows"))]
         {
             let system_prefixes = [
-                "/etc/", "/usr/", "/bin/", "/sbin/",
-                "/boot/", "/sys/", "/proc/",
+                "/etc/", "/usr/", "/bin/", "/sbin/", "/boot/", "/sys/", "/proc/",
             ];
             for prefix in &system_prefixes {
                 if normalized.starts_with(prefix) {
-                    return Err(AppError::Forbidden("Access to system directories is blocked".into()));
+                    return Err(AppError::Forbidden(
+                        "Access to system directories is blocked".into(),
+                    ));
                 }
             }
 
             // Block sensitive user home directories
             if let Ok(home) = std::env::var("HOME") {
-                let home_norm = if home.ends_with('/') { home.clone() } else { format!("{}/", home) };
-                let sensitive_dirs = [".ssh", ".gnupg", ".aws", ".azure", ".kube",
-                    ".config/google-chrome", ".mozilla/firefox", ".config/chromium"];
+                let home_norm = if home.ends_with('/') {
+                    home.clone()
+                } else {
+                    format!("{}/", home)
+                };
+                let sensitive_dirs = [
+                    ".ssh",
+                    ".gnupg",
+                    ".aws",
+                    ".azure",
+                    ".kube",
+                    ".config/google-chrome",
+                    ".mozilla/firefox",
+                    ".config/chromium",
+                ];
                 for dir in &sensitive_dirs {
                     let blocked = format!("{}{}", home_norm, dir);
                     if normalized.starts_with(&blocked) {
@@ -648,7 +761,10 @@ pub mod obsidian {
         /// Create or update a note.
         WriteNote { path: String, content: String },
         /// Search notes by content (simple text match).
-        SearchNotes { query: String, max_results: Option<usize> },
+        SearchNotes {
+            query: String,
+            max_results: Option<usize>,
+        },
         /// Get vault structure (folders only).
         VaultStructure,
         /// Append content to an existing note.
@@ -662,7 +778,11 @@ pub mod obsidian {
         action: ObsidianAction,
     ) -> Result<BridgeActionResult, AppError> {
         let start = Instant::now();
-        let action_name = format!("{:?}", &action).split_whitespace().next().unwrap_or("unknown").to_string();
+        let action_name = format!("{:?}", &action)
+            .split_whitespace()
+            .next()
+            .unwrap_or("unknown")
+            .to_string();
 
         // Try REST API first, fall back to filesystem
         let result = if let (Some(port), Some(key)) = (api_port, api_key) {
@@ -720,7 +840,9 @@ pub mod obsidian {
                     .send()
                     .await
                     .map_err(|e| AppError::Internal(format!("Obsidian API request failed: {e}")))?;
-                resp.text().await.map_err(|e| AppError::Internal(e.to_string()))
+                resp.text()
+                    .await
+                    .map_err(|e| AppError::Internal(e.to_string()))
             }
             ObsidianAction::ReadNote { path } => {
                 let resp = client
@@ -730,7 +852,9 @@ pub mod obsidian {
                     .send()
                     .await
                     .map_err(|e| AppError::Internal(format!("Obsidian API request failed: {e}")))?;
-                resp.text().await.map_err(|e| AppError::Internal(e.to_string()))
+                resp.text()
+                    .await
+                    .map_err(|e| AppError::Internal(e.to_string()))
             }
             ObsidianAction::WriteNote { path, content } => {
                 let resp = client
@@ -744,7 +868,10 @@ pub mod obsidian {
                 if resp.status().is_success() {
                     Ok(format!("Note saved: {path}"))
                 } else {
-                    Err(AppError::Internal(format!("Obsidian API returned {}", resp.status())))
+                    Err(AppError::Internal(format!(
+                        "Obsidian API returned {}",
+                        resp.status()
+                    )))
                 }
             }
             ObsidianAction::SearchNotes { query, .. } => {
@@ -756,9 +883,13 @@ pub mod obsidian {
                     .send()
                     .await
                     .map_err(|e| AppError::Internal(format!("Obsidian API request failed: {e}")))?;
-                resp.text().await.map_err(|e| AppError::Internal(e.to_string()))
+                resp.text()
+                    .await
+                    .map_err(|e| AppError::Internal(e.to_string()))
             }
-            _ => Err(AppError::Validation("Action not supported via REST API, using filesystem".into())),
+            _ => Err(AppError::Validation(
+                "Action not supported via REST API, using filesystem".into(),
+            )),
         }
     }
 
@@ -767,14 +898,19 @@ pub mod obsidian {
     /// All filesystem I/O is offloaded to a blocking thread via
     /// `tokio::task::spawn_blocking` so the async runtime is never starved,
     /// even for large vaults with thousands of notes.
-    async fn execute_via_filesystem(vault_path: &str, action: &ObsidianAction) -> Result<String, AppError> {
+    async fn execute_via_filesystem(
+        vault_path: &str,
+        action: &ObsidianAction,
+    ) -> Result<String, AppError> {
         let vault_path = vault_path.to_owned();
         let action = action.clone();
 
         tokio::task::spawn_blocking(move || {
             let vault = std::path::Path::new(&vault_path);
             if !vault.exists() {
-                return Err(AppError::NotFound(format!("Vault path not found: {vault_path}")));
+                return Err(AppError::NotFound(format!(
+                    "Vault path not found: {vault_path}"
+                )));
             }
 
             match &action {
@@ -795,8 +931,7 @@ pub mod obsidian {
                     if !full_path.starts_with(vault) {
                         return Err(AppError::Forbidden("Path traversal detected".into()));
                     }
-                    std::fs::read_to_string(&full_path)
-                        .map_err(AppError::Io)
+                    std::fs::read_to_string(&full_path).map_err(AppError::Io)
                 }
                 ObsidianAction::WriteNote { path, content } => {
                     let full_path = vault.join(path);
@@ -817,14 +952,19 @@ pub mod obsidian {
                     collect_markdown_files(vault, vault, &mut all_notes)?;
 
                     for note_path in all_notes {
-                        if results.len() >= max { break; }
+                        if results.len() >= max {
+                            break;
+                        }
                         let full = vault.join(&note_path);
                         if let Ok(content) = std::fs::read_to_string(&full) {
                             if content.to_lowercase().contains(&query_lower) {
-                                let context = content.lines()
+                                let context = content
+                                    .lines()
                                     .find(|line| line.to_lowercase().contains(&query_lower))
                                     .unwrap_or("")
-                                    .chars().take(200).collect::<String>();
+                                    .chars()
+                                    .take(200)
+                                    .collect::<String>();
                                 results.push(format!("{note_path}\t{context}"));
                             }
                         }
@@ -861,13 +1001,17 @@ pub mod obsidian {
         vault_root: &std::path::Path,
         results: &mut Vec<String>,
     ) -> Result<(), AppError> {
-        if !dir.is_dir() { return Ok(()); }
+        if !dir.is_dir() {
+            return Ok(());
+        }
         let entries = std::fs::read_dir(dir).map_err(AppError::Io)?;
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
                 // Skip hidden directories
-                if entry.file_name().to_string_lossy().starts_with('.') { continue; }
+                if entry.file_name().to_string_lossy().starts_with('.') {
+                    continue;
+                }
                 collect_markdown_files(&path, vault_root, results)?;
             } else if path.extension().is_some_and(|ext| ext == "md") {
                 if let Ok(relative) = path.strip_prefix(vault_root) {
@@ -883,12 +1027,16 @@ pub mod obsidian {
         vault_root: &std::path::Path,
         results: &mut Vec<String>,
     ) -> Result<(), AppError> {
-        if !dir.is_dir() { return Ok(()); }
+        if !dir.is_dir() {
+            return Ok(());
+        }
         let entries = std::fs::read_dir(dir).map_err(AppError::Io)?;
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                if entry.file_name().to_string_lossy().starts_with('.') { continue; }
+                if entry.file_name().to_string_lossy().starts_with('.') {
+                    continue;
+                }
                 if let Ok(relative) = path.strip_prefix(vault_root) {
                     results.push(relative.to_string_lossy().to_string());
                 }
@@ -922,13 +1070,10 @@ async fn run_cli(binary: &str, args: &[&str]) -> Result<String, AppError> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = tokio::time::timeout(
-        std::time::Duration::from_secs(30),
-        cmd.output(),
-    )
-    .await
-    .map_err(|_| AppError::Execution("CLI command timed out after 30 seconds".into()))?
-    .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn '{}': {}", binary, e)))?;
+    let output = tokio::time::timeout(std::time::Duration::from_secs(30), cmd.output())
+        .await
+        .map_err(|_| AppError::Execution("CLI command timed out after 30 seconds".into()))?
+        .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn '{}': {}", binary, e)))?;
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);

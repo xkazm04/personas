@@ -75,13 +75,17 @@ impl SqliteVectorStore {
     }
 
     /// Maximum vectors inserted per transaction to bound memory and DB lock time.
-    const VECTOR_INSERT_BATCH: usize = 500;
+    /// The single source of truth lives in [`crate::engine::limits::VECTOR_INSERT_BATCH`];
+    /// kept as a thin alias here so existing call sites that read
+    /// `Self::VECTOR_INSERT_BATCH` keep compiling.
+    const VECTOR_INSERT_BATCH: usize = crate::engine::limits::VECTOR_INSERT_BATCH;
 
     /// Insert a batch of (chunk_id, embedding) pairs.
     ///
     /// Entries are inserted in transaction batches of [`Self::VECTOR_INSERT_BATCH`]
-    /// to prevent OOM on large ingests and avoid holding the SQLite write lock
-    /// for extended periods.
+    /// (= [`crate::engine::limits::VECTOR_INSERT_BATCH`]) to prevent OOM on
+    /// large ingests and avoid holding the SQLite write lock for extended
+    /// periods.
     pub fn insert_vectors(
         &self,
         kb_id: &str,
@@ -93,9 +97,7 @@ impl SqliteVectorStore {
 
         let mut conn = self.pool.get()?;
         let table_name = vec_table_name(kb_id)?;
-        let sql = format!(
-            "INSERT INTO [{table_name}] (chunk_id, embedding) VALUES (?1, ?2)"
-        );
+        let sql = format!("INSERT INTO [{table_name}] (chunk_id, embedding) VALUES (?1, ?2)");
 
         let mut total = 0;
         for batch in entries.chunks(Self::VECTOR_INSERT_BATCH) {
@@ -141,11 +143,7 @@ impl SqliteVectorStore {
     }
 
     /// Delete vectors by chunk IDs.
-    pub fn delete_by_chunks(
-        &self,
-        kb_id: &str,
-        chunk_ids: &[String],
-    ) -> Result<usize, AppError> {
+    pub fn delete_by_chunks(&self, kb_id: &str, chunk_ids: &[String]) -> Result<usize, AppError> {
         let conn = self.pool.get()?;
         delete_vectors_by_chunks(&conn, kb_id, chunk_ids)
     }
@@ -191,11 +189,7 @@ pub fn delete_vectors_by_chunks(
 /// Validates that kb_id contains only hex digits and hyphens (UUID format)
 /// to prevent SQL injection via dynamic table names.
 fn vec_table_name(kb_id: &str) -> Result<String, AppError> {
-    if kb_id.is_empty()
-        || !kb_id
-            .chars()
-            .all(|c| c.is_ascii_hexdigit() || c == '-')
-    {
+    if kb_id.is_empty() || !kb_id.chars().all(|c| c.is_ascii_hexdigit() || c == '-') {
         return Err(AppError::Validation(
             "Invalid knowledge base ID format".into(),
         ));

@@ -28,8 +28,14 @@ use crate::error::AppError;
 #[derive(Debug, PartialEq, Eq)]
 pub enum EnforcementOutcome {
     Allow,
-    WarnOnly { resource: String, attempted_id: String },
-    Block { resource: String, attempted_id: String },
+    WarnOnly {
+        resource: String,
+        attempted_id: String,
+    },
+    Block {
+        resource: String,
+        attempted_id: String,
+    },
 }
 
 /// Mode value persisted under `metadata.scope_enforcement`. Default = warn.
@@ -41,8 +47,12 @@ pub enum EnforcementMode {
 
 impl EnforcementMode {
     pub fn from_metadata(metadata_json: Option<&str>) -> Self {
-        let Some(json) = metadata_json else { return Self::Warn };
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else { return Self::Warn };
+        let Some(json) = metadata_json else {
+            return Self::Warn;
+        };
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+            return Self::Warn;
+        };
         match v.get("scope_enforcement").and_then(|x| x.as_str()) {
             Some("block") => Self::Block,
             _ => Self::Warn,
@@ -57,7 +67,9 @@ struct EnforceRule {
     id_capture: usize,
 }
 
-fn default_capture() -> usize { 1 }
+fn default_capture() -> usize {
+    1
+}
 
 #[derive(Debug, Deserialize)]
 struct ResourceSpecForEnforce {
@@ -82,8 +94,8 @@ pub fn evaluate(
     let Some(picks_blob) = scoped_resources_json else {
         return Ok(EnforcementOutcome::Allow);
     };
-    let picks: HashMap<String, serde_json::Value> = serde_json::from_str(picks_blob)
-        .unwrap_or_default();
+    let picks: HashMap<String, serde_json::Value> =
+        serde_json::from_str(picks_blob).unwrap_or_default();
     if picks.is_empty() {
         return Ok(EnforcementOutcome::Allow);
     }
@@ -109,7 +121,9 @@ pub fn evaluate(
                 continue;
             }
         };
-        let Some(caps) = re.captures(path) else { continue };
+        let Some(caps) = re.captures(path) else {
+            continue;
+        };
         let Some(captured) = caps.get(rule.id_capture).map(|m| m.as_str().to_string()) else {
             continue;
         };
@@ -166,13 +180,25 @@ mod tests {
 
     #[test]
     fn broad_scope_always_allows() {
-        let r = evaluate(Some(GH_RESOURCES), None, "/repos/anyone/anything/issues", EnforcementMode::Block).unwrap();
+        let r = evaluate(
+            Some(GH_RESOURCES),
+            None,
+            "/repos/anyone/anything/issues",
+            EnforcementMode::Block,
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
     #[test]
     fn empty_scope_blob_allows() {
-        let r = evaluate(Some(GH_RESOURCES), Some("{}"), "/repos/anyone/anything/issues", EnforcementMode::Block).unwrap();
+        let r = evaluate(
+            Some(GH_RESOURCES),
+            Some("{}"),
+            "/repos/anyone/anything/issues",
+            EnforcementMode::Block,
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
@@ -183,7 +209,8 @@ mod tests {
             Some(SCOPED_TO_PERSONAS),
             "/repos/xkazm04/personas/issues?state=open",
             EnforcementMode::Block,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
@@ -194,11 +221,15 @@ mod tests {
             Some(SCOPED_TO_PERSONAS),
             "/repos/microsoft/vscode/issues",
             EnforcementMode::Block,
-        ).unwrap();
-        assert_eq!(r, EnforcementOutcome::Block {
-            resource: "repositories".into(),
-            attempted_id: "microsoft/vscode".into(),
-        });
+        )
+        .unwrap();
+        assert_eq!(
+            r,
+            EnforcementOutcome::Block {
+                resource: "repositories".into(),
+                attempted_id: "microsoft/vscode".into(),
+            }
+        );
     }
 
     #[test]
@@ -208,11 +239,15 @@ mod tests {
             Some(SCOPED_TO_PERSONAS),
             "/repos/microsoft/vscode/issues",
             EnforcementMode::Warn,
-        ).unwrap();
-        assert_eq!(r, EnforcementOutcome::WarnOnly {
-            resource: "repositories".into(),
-            attempted_id: "microsoft/vscode".into(),
-        });
+        )
+        .unwrap();
+        assert_eq!(
+            r,
+            EnforcementOutcome::WarnOnly {
+                resource: "repositories".into(),
+                attempted_id: "microsoft/vscode".into(),
+            }
+        );
     }
 
     #[test]
@@ -223,7 +258,8 @@ mod tests {
             Some(SCOPED_TO_PERSONAS),
             "/user/profile",
             EnforcementMode::Block,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
@@ -237,7 +273,8 @@ mod tests {
             Some(scoped),
             "/repos/microsoft/vscode/issues",
             EnforcementMode::Block,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
@@ -255,7 +292,8 @@ mod tests {
             Some(SCOPED_TO_PERSONAS),
             "/repos/microsoft/vscode/issues",
             EnforcementMode::Block,
-        ).unwrap();
+        )
+        .unwrap();
         assert_eq!(r, EnforcementOutcome::Allow);
     }
 
@@ -274,6 +312,9 @@ mod tests {
             EnforcementMode::from_metadata(Some(r#"{"other":"thing"}"#)),
             EnforcementMode::Warn,
         );
-        assert_eq!(EnforcementMode::from_metadata(Some("not json")), EnforcementMode::Warn);
+        assert_eq!(
+            EnforcementMode::from_metadata(Some("not json")),
+            EnforcementMode::Warn
+        );
     }
 }

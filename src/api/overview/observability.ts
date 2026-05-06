@@ -1,6 +1,9 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { AlertRule } from "@/lib/bindings/AlertRule";
+import type { AlertMetric } from "@/lib/bindings/AlertMetric";
+import type { AlertOperator } from "@/lib/bindings/AlertOperator";
+import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import type { FiredAlert } from "@/lib/bindings/FiredAlert";
 import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
@@ -118,20 +121,20 @@ export const listAlertRules = () =>
 
 export const createAlertRule = (input: {
   name: string;
-  metric: string;
-  operator: string;
+  metric: AlertMetric;
+  operator: AlertOperator;
   threshold: number;
-  severity: string;
+  severity: AlertSeverity;
   persona_id: string | null;
   enabled: boolean;
 }) => invoke<AlertRule>("create_alert_rule", { input });
 
 export const updateAlertRule = (id: string, input: {
   name?: string;
-  metric?: string;
-  operator?: string;
+  metric?: AlertMetric;
+  operator?: AlertOperator;
   threshold?: number;
-  severity?: string;
+  severity?: AlertSeverity;
   persona_id?: string | null;
   enabled?: boolean;
 }) => invoke<AlertRule>("update_alert_rule", { id, input });

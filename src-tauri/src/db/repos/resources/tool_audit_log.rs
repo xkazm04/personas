@@ -1,7 +1,7 @@
 use rusqlite::params;
 
-use crate::db::DbPool;
 use crate::db::models::ToolExecutionAuditEntry;
+use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Append a tool execution entry to the audit log.
@@ -65,10 +65,7 @@ pub fn insert(
 }
 
 /// Get recent tool execution audit entries, newest first.
-pub fn get_recent(
-    pool: &DbPool,
-    limit: u32,
-) -> Result<Vec<ToolExecutionAuditEntry>, AppError> {
+pub fn get_recent(pool: &DbPool, limit: u32) -> Result<Vec<ToolExecutionAuditEntry>, AppError> {
     timed_query!("tool_audit_log", "tool_audit_log::get_recent", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(

@@ -174,11 +174,7 @@ pub struct ProcessContext {
 #[allow(dead_code)]
 impl ProcessContext {
     /// Register a new process run and return a context that auto-unregisters on drop.
-    pub fn register(
-        registry: &Arc<ActiveProcessRegistry>,
-        domain: &str,
-        run_id: &str,
-    ) -> Self {
+    pub fn register(registry: &Arc<ActiveProcessRegistry>, domain: &str, run_id: &str) -> Self {
         let cancelled = registry.register_run(domain, run_id);
         Self {
             domain: domain.to_string(),
@@ -343,7 +339,10 @@ impl SessionState for crate::db::models::SessionStatus {
 
     fn is_terminal(&self) -> bool {
         use crate::db::models::SessionStatus;
-        matches!(self, SessionStatus::Confirmed | SessionStatus::Failed | SessionStatus::Interrupted)
+        matches!(
+            self,
+            SessionStatus::Confirmed | SessionStatus::Failed | SessionStatus::Interrupted
+        )
     }
 
     fn failed() -> Self {

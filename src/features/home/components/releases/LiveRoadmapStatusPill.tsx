@@ -19,11 +19,20 @@ const BUCKETS: { limit: number; unit: Intl.RelativeTimeFormatUnit; div: number }
   { limit: Number.POSITIVE_INFINITY, unit: 'day', div: 60 * 60 * 24 },
 ];
 
+/**
+ * Format `iso` (a "last fetched at" timestamp from the Rust cache layer) as
+ * a localized relative time like "4 minutes ago". `iso` is supposed to be in
+ * the past, but disk-cache replay across machines, NTP corrections, DST jumps,
+ * or laptops just woken from sleep can produce a future timestamp. Negative
+ * `diffSec` would render as "in 4 minutes", which makes the freshness pill
+ * lie. Clamp to `<= 0` so a future timestamp degrades to "just now" instead.
+ */
 function formatRelative(iso: string | null, language: string): string {
   if (!iso) return '';
   const then = Date.parse(iso);
   if (!Number.isFinite(then)) return '';
-  const diffSec = Math.round((then - Date.now()) / 1000);
+  const rawDiffSec = Math.round((then - Date.now()) / 1000);
+  const diffSec = Math.min(0, rawDiffSec);
   const abs = Math.abs(diffSec);
   const bucket = BUCKETS.find((b) => abs < b.limit) ?? BUCKETS[BUCKETS.length - 1]!;
   const fmt = new Intl.RelativeTimeFormat(language, { numeric: 'auto' });
@@ -55,10 +64,16 @@ export function LiveRoadmapStatusPill({
   let dot = 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]';
   let label: string;
 
-  if (status === 'fresh' || status === 'cached') {
+  if (status === 'fresh' || status === 'cached' || status === 'stale') {
     const relative = formatRelative(fetchedAt, language);
-    const prefix = status === 'cached' ? t.live.sourceCache : t.live.updatedPrefix;
+    const prefix =
+      status === 'stale'
+        ? t.live.sourceStale
+        : status === 'cached'
+          ? t.live.sourceCache
+          : t.live.updatedPrefix;
     if (status === 'cached') dot = 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.55)]';
+    if (status === 'stale')  dot = 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.6)]';
     label = relative ? `${prefix} · ${relative}` : prefix;
   } else {
     // 'unavailable' — bundled snapshot, nothing to refresh against.

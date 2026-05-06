@@ -9,6 +9,24 @@ use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
 
+/// Maximum number of recent executions inspected when computing a
+/// persona's `consecutive_failures` streak.
+///
+/// The window is bounded for two reasons:
+/// 1. **Cost** — scanning a persona's full history during the SLA
+///    aggregate query (which fans out across every persona) becomes
+///    quadratic at fleet scale.
+/// 2. **Diminishing signal** — by the time a streak reaches ~20, the
+///    circuit breaker has long since fired and any larger number has
+///    the same operational meaning as 20: "this persona is broken".
+///
+/// The cap is observable: `PersonaSlaStats.consecutive_failure_lookback`
+/// echoes this value to the frontend so the SLA card can render a
+/// "{cap}+" boundary indicator when `consecutive_failures` equals the
+/// cap, instead of misleading users into thinking the streak has
+/// stopped at exactly 20.
+pub const CONSECUTIVE_FAILURE_LOOKBACK: i64 = 20;
+
 // ============================================================================
 // Batch query helper
 // ============================================================================
@@ -121,6 +139,37 @@ struct RawPersona {
 // ============================================================================
 
 /// Load full SLA dashboard data for the given time window.
+///
+/// # Time-window policy
+///
+/// The `days` parameter applies **only** to per-execution metrics that are
+/// derived from the `persona_executions` table:
+///
+/// - `persona_stats.*` (success/failure counts, p95, MTBF, cost, streaks)
+/// - `global.*` (rolled up from `persona_stats`)
+/// - `daily_trend` (one point per day inside the window)
+///
+/// The fields on `healing_summary` are intentionally **all-time / snapshot**
+/// and ignore `days`:
+///
+/// - `open_issues` is the count of healing issues currently in the `open`
+///   state. An issue that opened six months ago and is still open is still
+///   broken now — clipping it to a 7-day window would hide active problems.
+/// - `circuit_breaker_count` is the same: a circuit breaker that tripped
+///   last quarter and is still open is still pausing executions today.
+/// - `auto_fixed_count` is the cumulative number of issues the healing
+///   engine has auto-resolved across the lifetime of the install. Treating
+///   it as windowed would make the headline number jump around for a
+///   reason that has nothing to do with current reliability.
+/// - `knowledge_patterns` is the size of the `healing_knowledge` table —
+///   a fleet-wide knowledge-base count with no execution-time meaning.
+///
+/// The frontend (`SLADashboard.tsx`) labels these four cards with an
+/// "All-time" scope badge so users don't expect them to react to the
+/// 7d/14d/30d/60d/90d selector. The contract is pinned by
+/// `healing_summary_is_invariant_across_window` in this file's tests; do
+/// not silently change the policy without updating both the badge and
+/// the test.
 pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, AppError> {
     timed_query!("sla", "sla::get_sla_dashboard", {
         let conn = pool.get()?;
@@ -160,7 +209,10 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             })?
             .collect::<Result<Vec<_>, _>>()?;
 
-        let persona_ids: Vec<&str> = raw_personas.iter().map(|rp| rp.persona_id.as_str()).collect();
+        let persona_ids: Vec<&str> = raw_personas
+            .iter()
+            .map(|rp| rp.persona_id.as_str())
+            .collect();
 
         // -- Batch P95 durations ---------------------------------------------
         let durations_map = batch_query_map_vec(
@@ -191,23 +243,27 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
 
         // -- Batch consecutive failures --------------------------------------
         let consec_map = {
-            let statuses_map = batch_query_map_vec(
-                &conn,
+            let consec_sql = format!(
                 "SELECT persona_id, status FROM (
                     SELECT persona_id, status,
                            ROW_NUMBER() OVER (PARTITION BY persona_id ORDER BY created_at DESC) AS rn
                     FROM persona_executions
-                    WHERE persona_id IN ({placeholders})
-                 ) WHERE rn <= 20
+                    WHERE persona_id IN ({{placeholders}})
+                 ) WHERE rn <= {}
                  ORDER BY persona_id, rn ASC",
-                &persona_ids,
-                None,
-                |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)),
-            )?;
+                CONSECUTIVE_FAILURE_LOOKBACK,
+            );
+            let statuses_map =
+                batch_query_map_vec(&conn, &consec_sql, &persona_ids, None, |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+                })?;
             statuses_map
                 .into_iter()
                 .map(|(pid, statuses)| {
-                    let count = statuses.iter().take_while(|s| s.as_str() == "failed").count() as i64;
+                    let count = statuses
+                        .iter()
+                        .take_while(|s| s.as_str() == "failed")
+                        .count() as i64;
                     (pid, count)
                 })
                 .collect::<HashMap<String, i64>>()
@@ -229,11 +285,17 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
 
         for rp in &raw_personas {
             let p95 = percentile(
-                durations_map.get(&rp.persona_id).map(|v| v.as_slice()).unwrap_or(&[]),
+                durations_map
+                    .get(&rp.persona_id)
+                    .map(|v| v.as_slice())
+                    .unwrap_or(&[]),
                 95.0,
             );
             let mtbf = compute_mtbf(
-                fail_ts_map.get(&rp.persona_id).map(|v| v.as_slice()).unwrap_or(&[]),
+                fail_ts_map
+                    .get(&rp.persona_id)
+                    .map(|v| v.as_slice())
+                    .unwrap_or(&[]),
             );
             let consecutive_failures = consec_map.get(&rp.persona_id).copied().unwrap_or(0);
             let auto_healed = healed_map.get(&rp.persona_id).copied().unwrap_or(0);
@@ -258,6 +320,7 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                 total_cost_usd: rp.total_cost,
                 mtbf_seconds: mtbf,
                 consecutive_failures,
+                consecutive_failure_lookback: CONSECUTIVE_FAILURE_LOOKBACK,
                 auto_healed_count: auto_healed,
             });
         }
@@ -284,13 +347,23 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
             successful: g_success,
             failed: g_failed,
             cancelled: g_cancelled,
-            success_rate: if g_decided > 0 { g_success as f64 / g_decided as f64 } else { 0.0 },
+            success_rate: if g_decided > 0 {
+                g_success as f64 / g_decided as f64
+            } else {
+                0.0
+            },
             avg_duration_ms: g_avg_dur,
             total_cost_usd: g_cost,
             active_persona_count: persona_stats.len() as i64,
         };
 
         // -- Healing summary -------------------------------------------------
+        // Previously this swallowed any rusqlite::Error and replaced it with
+        // an all-zeros HealingSummary, which made a real outage (table
+        // missing post-migration, lock contention, schema drift, row
+        // deserialization failures) look like "all healthy: 0 open issues,
+        // 0 circuit breakers" on the SLA dashboard. Surface the failure
+        // instead so the dashboard goes red rather than silently green.
         let healing_summary: HealingSummary = conn
             .query_row(
                 "SELECT
@@ -309,12 +382,10 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                     })
                 },
             )
-            .unwrap_or(HealingSummary {
-                open_issues: 0,
-                auto_fixed_count: 0,
-                circuit_breaker_count: 0,
-                knowledge_patterns: 0,
-            });
+            .map_err(|e| {
+                tracing::error!(error = %e, "failed to load healing summary for SLA dashboard");
+                AppError::Database(e)
+            })?;
 
         // -- Daily trend -----------------------------------------------------
         let mut daily_stmt = conn.prepare(
@@ -375,20 +446,70 @@ fn percentile(values: &[f64], p: f64) -> f64 {
     sorted[idx.min(sorted.len() - 1)]
 }
 
+/// Try every timestamp shape we have ever written into
+/// `persona_executions.created_at` and return a `NaiveDateTime` if any
+/// succeeds.
+///
+/// SQLite's `datetime('now')` writes `"YYYY-MM-DD HH:MM:SS"` while
+/// `chrono::Utc::now().to_rfc3339()` (used by the dispatcher) writes a
+/// `T`-separated form with a `+00:00` offset, and historical migrations
+/// have produced rows with a trailing `Z`. We accept all of these so a
+/// future schema change cannot silently break MTBF for legacy rows.
+fn parse_execution_timestamp(ts: &str) -> Option<chrono::NaiveDateTime> {
+    // RFC 3339 with offset (e.g. "2026-05-05T12:34:56.789+00:00" or "...Z")
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(ts) {
+        return Some(dt.naive_utc());
+    }
+    // Naive forms historically written by SQLite/chrono.
+    for fmt in [
+        "%Y-%m-%dT%H:%M:%S%.f",
+        "%Y-%m-%d %H:%M:%S%.f",
+        "%Y-%m-%dT%H:%M:%S",
+        "%Y-%m-%d %H:%M:%S",
+    ] {
+        if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(ts, fmt) {
+            return Some(dt);
+        }
+    }
+    None
+}
+
 /// Compute mean time between failures from sorted timestamps.
+///
+/// Unrecognised timestamp shapes are dropped, but logged at WARN level
+/// with a sample. MTBF is the single number on the SLA card that
+/// answers "is this persona stable?", so a silent parser drift would
+/// quietly turn it into `None` and make a broken persona look healthy.
 fn compute_mtbf(timestamps: &[String]) -> Option<f64> {
     if timestamps.len() < 2 {
         return None;
     }
 
-    let parsed: Vec<chrono::NaiveDateTime> = timestamps
-        .iter()
-        .filter_map(|ts| {
-            chrono::NaiveDateTime::parse_from_str(ts, "%Y-%m-%dT%H:%M:%S%.f")
-                .or_else(|_| chrono::NaiveDateTime::parse_from_str(ts, "%Y-%m-%d %H:%M:%S"))
-                .ok()
-        })
-        .collect();
+    let mut parsed: Vec<chrono::NaiveDateTime> = Vec::with_capacity(timestamps.len());
+    let mut dropped = 0usize;
+    let mut sample: Option<&str> = None;
+    for ts in timestamps {
+        match parse_execution_timestamp(ts) {
+            Some(dt) => parsed.push(dt),
+            None => {
+                dropped += 1;
+                if sample.is_none() {
+                    sample = Some(ts.as_str());
+                }
+            }
+        }
+    }
+
+    if dropped > 0 {
+        tracing::warn!(
+            dropped,
+            total = timestamps.len(),
+            sample = sample.unwrap_or(""),
+            "compute_mtbf: failed to parse {} of {} failure timestamps; metric may underreport",
+            dropped,
+            timestamps.len(),
+        );
+    }
 
     if parsed.len() < 2 {
         return None;
@@ -399,4 +520,339 @@ fn compute_mtbf(timestamps: &[String]) -> Option<f64> {
     let total_span = (last - first).num_seconds() as f64;
     let gaps = (parsed.len() - 1) as f64;
     Some(total_span / gaps)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::CreatePersonaInput;
+    use crate::db::repos::core::personas;
+
+    /// Insert a `persona_executions` row with a fully specified status and
+    /// `created_at` timestamp so SLA tests can pin both the streak length
+    /// and the timestamp shape (`YYYY-MM-DD HH:MM:SS` vs RFC 3339).
+    fn insert_execution(pool: &DbPool, persona_id: &str, status: &str, created_at: &str) -> String {
+        let conn = pool.get().unwrap();
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO persona_executions
+             (id, persona_id, status, input_tokens, output_tokens, cost_usd, created_at)
+             VALUES (?1, ?2, ?3, 0, 0, 0, ?4)",
+            params![id, persona_id, status, created_at],
+        )
+        .unwrap();
+        id
+    }
+
+    fn create_test_persona(pool: &DbPool, name: &str) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "test".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                group_id: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    // -- Phase 4: compute_mtbf parser tolerance ------------------------------
+
+    #[test]
+    fn parse_execution_timestamp_accepts_known_shapes() {
+        // SQLite datetime('now') form
+        assert!(parse_execution_timestamp("2026-05-04 12:00:00").is_some());
+        // chrono::Utc::now().to_rfc3339() form with offset
+        assert!(parse_execution_timestamp("2026-05-04T12:00:00+00:00").is_some());
+        // Z-suffixed RFC 3339
+        assert!(parse_execution_timestamp("2026-05-04T12:00:00Z").is_some());
+        // Sub-second precision (chrono default)
+        assert!(parse_execution_timestamp("2026-05-04T12:00:00.123456789+00:00").is_some());
+        assert!(parse_execution_timestamp("2026-05-04 12:00:00.500").is_some());
+    }
+
+    #[test]
+    fn parse_execution_timestamp_rejects_garbage() {
+        assert!(parse_execution_timestamp("not a date").is_none());
+        assert!(parse_execution_timestamp("").is_none());
+    }
+
+    #[test]
+    fn compute_mtbf_handles_mixed_formats() {
+        // Two-minute spacing across heterogeneous timestamp shapes.
+        let timestamps = vec![
+            "2026-05-04 12:00:00".to_string(),
+            "2026-05-04T12:02:00+00:00".to_string(),
+            "2026-05-04T12:04:00Z".to_string(),
+        ];
+        let mtbf = compute_mtbf(&timestamps).expect("mtbf should be Some");
+        // Two gaps of 120s each → mean 120s.
+        assert!((mtbf - 120.0).abs() < 0.001, "expected 120, got {mtbf}");
+    }
+
+    #[test]
+    fn compute_mtbf_returns_none_when_too_few_parsed() {
+        // Only one parses; the rest are unrecognised. Must not pretend MTBF
+        // exists from a single timestamp.
+        let timestamps = vec![
+            "2026-05-04T12:00:00Z".to_string(),
+            "garbage-1".to_string(),
+            "garbage-2".to_string(),
+        ];
+        assert!(compute_mtbf(&timestamps).is_none());
+    }
+
+    #[test]
+    fn compute_mtbf_returns_none_for_under_two_inputs() {
+        assert!(compute_mtbf(&[]).is_none());
+        assert!(compute_mtbf(&["2026-05-04T12:00:00Z".to_string()]).is_none());
+    }
+
+    // -- Phase 2: consecutive_failures cap regression ------------------------
+
+    #[test]
+    fn consecutive_failures_caps_at_lookback_constant() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "streak");
+
+        // 25 failures, oldest first; created_at is monotonic so ORDER BY DESC
+        // walks newest-to-oldest deterministically.
+        let cap = CONSECUTIVE_FAILURE_LOOKBACK as usize;
+        let total = cap + 5;
+        for i in 0..total {
+            let minute = i + 1;
+            let ts = format!("2026-05-04 12:{:02}:00", minute);
+            insert_execution(&pool, &persona_id, "failed", &ts);
+        }
+
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        let row = dash
+            .persona_stats
+            .iter()
+            .find(|p| p.persona_id == persona_id)
+            .expect("persona row missing");
+
+        assert_eq!(
+            row.consecutive_failures, CONSECUTIVE_FAILURE_LOOKBACK,
+            "streak should saturate at the lookback cap, not the true count",
+        );
+        assert_eq!(
+            row.consecutive_failure_lookback, CONSECUTIVE_FAILURE_LOOKBACK,
+            "lookback cap must be surfaced on every row so the UI can render '{cap}+' boundary",
+        );
+        assert_eq!(row.failed, total as i64);
+    }
+
+    // -- Phase 3: success_rate denominator policy ----------------------------
+
+    #[test]
+    fn success_rate_excludes_cancelled_runs() {
+        // 4 successful, 1 failed, 5 cancelled. With cancelled excluded the
+        // denominator is 5 and the rate is 4/5 = 0.8. If a future refactor
+        // changes the policy (e.g. counts cancelled as failures), this test
+        // pins the original contract so the divergence is loud.
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "rate");
+
+        for i in 0..4 {
+            insert_execution(
+                &pool,
+                &persona_id,
+                "completed",
+                &format!("2026-05-04 12:{:02}:00", i),
+            );
+        }
+        insert_execution(&pool, &persona_id, "failed", "2026-05-04 12:10:00");
+        for i in 0..5 {
+            insert_execution(
+                &pool,
+                &persona_id,
+                "cancelled",
+                &format!("2026-05-04 12:{:02}:00", 20 + i),
+            );
+        }
+
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        let row = dash
+            .persona_stats
+            .iter()
+            .find(|p| p.persona_id == persona_id)
+            .expect("persona row missing");
+
+        assert_eq!(row.successful, 4);
+        assert_eq!(row.failed, 1);
+        assert_eq!(row.cancelled, 5);
+        assert_eq!(row.total_executions, 10);
+        assert!(
+            (row.success_rate - 0.8).abs() < 1e-9,
+            "success_rate must be successful / (successful + failed); cancelled rows are excluded; got {}",
+            row.success_rate,
+        );
+
+        // Same rule applied to global aggregates.
+        assert!(
+            (dash.global.success_rate - 0.8).abs() < 1e-9,
+            "global success_rate must follow the same denominator rule; got {}",
+            dash.global.success_rate,
+        );
+
+        // Daily trend uses the same formula.
+        let day = dash
+            .daily_trend
+            .iter()
+            .find(|d| d.date == "2026-05-04")
+            .expect("daily point missing");
+        assert!(
+            (day.success_rate - 0.8).abs() < 1e-9,
+            "daily success_rate must follow the same denominator rule; got {}",
+            day.success_rate,
+        );
+    }
+
+    // -- Healing summary time-window policy ---------------------------------
+
+    /// Insert a healing issue with explicit `created_at` so we can place
+    /// rows both inside and outside any rolling window the test exercises.
+    fn insert_healing_issue(
+        pool: &DbPool,
+        persona_id: &str,
+        status: &str,
+        auto_fixed: bool,
+        is_circuit_breaker: bool,
+        created_at: &str,
+    ) {
+        let conn = pool.get().unwrap();
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO persona_healing_issues
+             (id, persona_id, title, description, is_circuit_breaker,
+              severity, category, auto_fixed, status, created_at)
+             VALUES (?1, ?2, 'test', 'test', ?3, 'low', 'config', ?4, ?5, ?6)",
+            params![
+                id,
+                persona_id,
+                is_circuit_breaker as i64,
+                auto_fixed as i64,
+                status,
+                created_at,
+            ],
+        )
+        .unwrap();
+    }
+
+    fn insert_knowledge_pattern(pool: &DbPool, key: &str, last_seen_at: &str) {
+        let conn = pool.get().unwrap();
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
+            "INSERT INTO healing_knowledge
+             (id, service_type, pattern_key, description, occurrence_count, last_seen_at)
+             VALUES (?1, 'test_service', ?2, 'test', 1, ?3)",
+            params![id, key, last_seen_at],
+        )
+        .unwrap();
+    }
+
+    /// `healing_summary` is intentionally **all-time / snapshot** and must
+    /// not move when the user toggles the 7d/14d/30d/60d/90d window in the
+    /// SLA dashboard. The dashboard frames these four cards as operational
+    /// state ("right now, what's broken?") rather than executions in a
+    /// window, and the SLADashboard frontend renders an "All-time" badge to
+    /// match. If a future refactor windowed any of these aggregates, the
+    /// label and the SQL would silently drift apart again — exactly the
+    /// fog this test exists to prevent.
+    #[test]
+    fn healing_summary_is_invariant_across_window() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "healing-window");
+
+        // Old issues (>90 days back, outside every selectable window).
+        insert_healing_issue(
+            &pool, &persona_id, "open", false, false, "2025-01-01 12:00:00",
+        );
+        insert_healing_issue(
+            &pool, &persona_id, "open", false, true, "2025-01-02 12:00:00",
+        );
+        insert_healing_issue(
+            &pool, &persona_id, "resolved", true, false, "2025-01-03 12:00:00",
+        );
+
+        // Recent issues (well inside the 7d window).
+        insert_healing_issue(
+            &pool, &persona_id, "open", false, false, "2026-05-04 12:00:00",
+        );
+        insert_healing_issue(
+            &pool, &persona_id, "resolved", true, false, "2026-05-04 13:00:00",
+        );
+
+        // A pattern that's also "old".
+        insert_knowledge_pattern(&pool, "ancient", "2025-01-01 12:00:00");
+        insert_knowledge_pattern(&pool, "recent", "2026-05-04 12:00:00");
+
+        // Pre-window expectations: 3 open (2 old + 1 recent), 2 auto-fixed
+        // total (1 old + 1 recent), 1 open circuit breaker (old), 2 patterns.
+        let expected_open = 3;
+        let expected_auto_fixed = 2;
+        let expected_breakers = 1;
+        let expected_patterns = 2;
+
+        for &days in &[7_i64, 14, 30, 60, 90] {
+            let dash = get_sla_dashboard(&pool, days).unwrap();
+            assert_eq!(
+                dash.healing_summary.open_issues, expected_open,
+                "open_issues must be all-time and invariant across window (days={days})",
+            );
+            assert_eq!(
+                dash.healing_summary.auto_fixed_count, expected_auto_fixed,
+                "auto_fixed_count must be all-time and invariant across window (days={days})",
+            );
+            assert_eq!(
+                dash.healing_summary.circuit_breaker_count, expected_breakers,
+                "circuit_breaker_count must be all-time and invariant across window (days={days})",
+            );
+            assert_eq!(
+                dash.healing_summary.knowledge_patterns, expected_patterns,
+                "knowledge_patterns must be all-time and invariant across window (days={days})",
+            );
+        }
+    }
+
+    #[test]
+    fn success_rate_is_zero_when_no_decided_runs() {
+        // Only cancelled runs ⇒ denominator is 0 ⇒ rate falls back to 0.0
+        // (the contract is "0 not NaN" so the dashboard renders cleanly).
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool, "zero");
+
+        for i in 0..3 {
+            insert_execution(
+                &pool,
+                &persona_id,
+                "cancelled",
+                &format!("2026-05-04 12:{:02}:00", i),
+            );
+        }
+
+        let dash = get_sla_dashboard(&pool, 30).unwrap();
+        let row = dash
+            .persona_stats
+            .iter()
+            .find(|p| p.persona_id == persona_id)
+            .expect("persona row missing");
+        assert_eq!(row.success_rate, 0.0);
+    }
 }

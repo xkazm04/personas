@@ -64,16 +64,21 @@ pub fn build(db: &DbPool) -> Result<ObservabilityDigest, AppError> {
                 SUM(CASE WHEN enabled = 1 THEN 1 ELSE 0 END) AS enabled
          FROM personas",
         [],
-        |r| Ok((r.get::<_, i64>(0)?, r.get::<_, Option<i64>>(1)?.unwrap_or(0))),
+        |r| {
+            Ok((
+                r.get::<_, i64>(0)?,
+                r.get::<_, Option<i64>>(1)?.unwrap_or(0),
+            ))
+        },
     ) {
         digest.personas_total = row.0;
         digest.personas_enabled = row.1;
     }
 
     // Top 10 enabled persona names
-    if let Ok(mut stmt) = conn.prepare(
-        "SELECT name FROM personas WHERE enabled = 1 ORDER BY updated_at DESC LIMIT 10",
-    ) {
+    if let Ok(mut stmt) = conn
+        .prepare("SELECT name FROM personas WHERE enabled = 1 ORDER BY updated_at DESC LIMIT 10")
+    {
         if let Ok(rows) = stmt.query_map([], |r| r.get::<_, String>(0)) {
             digest.top_personas = rows.filter_map(|r| r.ok()).collect();
         }

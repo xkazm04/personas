@@ -313,7 +313,6 @@ pub struct AgentIrUseCaseData {
     pub event_subscriptions: Vec<AgentIrUseCaseEvent>,
 
     // ---- Phase C2 additions (v2 capability envelope). All additive. ----
-
     /// One-line summary rendered in the Active Capabilities prompt section.
     /// Falls back to `description` when absent. Mirrors `DesignUseCase`.
     #[serde(default)]
@@ -440,9 +439,7 @@ impl AgentIr {
             return Some(arr);
         }
         // Case 3: top-level notification_channels.
-        self.notification_channels
-            .as_ref()
-            .filter(|v| v.is_array())
+        self.notification_channels.as_ref().filter(|v| v.is_array())
     }
 
     /// Derive connectors from `service_flow` when `required_connectors` is empty.
@@ -508,7 +505,10 @@ mod tests {
         let ir: AgentIr = serde_json::from_value(v1).expect("v1 still parses");
         assert_eq!(ir.name.as_deref(), Some("Legacy"));
         assert_eq!(ir.triggers.len(), 1);
-        assert!(ir.triggers[0].use_case_id.is_none(), "v1 trigger has no use_case_id");
+        assert!(
+            ir.triggers[0].use_case_id.is_none(),
+            "v1 trigger has no use_case_id"
+        );
 
         match &ir.use_cases[0] {
             AgentIrUseCase::Structured(d) => {
@@ -566,7 +566,10 @@ mod tests {
             AgentIrUseCase::Simple(_) => panic!("expected structured"),
         };
         assert_eq!(data.id.as_deref(), Some("uc_gem"));
-        assert_eq!(data.capability_summary.as_deref(), Some("weekly sector screen"));
+        assert_eq!(
+            data.capability_summary.as_deref(),
+            Some("weekly sector screen")
+        );
         assert_eq!(data.enabled, Some(true));
         assert_eq!(
             data.tool_hints.as_deref(),
@@ -598,7 +601,9 @@ mod tests {
             }
         }))
         .unwrap();
-        let arr = ir.notification_channel_array().expect("legacy shape resolves");
+        let arr = ir
+            .notification_channel_array()
+            .expect("legacy shape resolves");
         assert!(arr.is_array());
         assert_eq!(arr.as_array().unwrap().len(), 1);
     }
@@ -614,7 +619,9 @@ mod tests {
             ]
         }))
         .unwrap();
-        let arr = ir.notification_channel_array().expect("v3.1 alias array resolves");
+        let arr = ir
+            .notification_channel_array()
+            .expect("v3.1 alias array resolves");
         assert!(arr.is_array());
         assert_eq!(arr.as_array().unwrap()[0]["target"], "titlebar");
     }
@@ -663,8 +670,7 @@ mod tests {
         ];
         let expected = [None, Some(true), Some(false)];
         for (uc, want) in cases.into_iter().zip(expected) {
-            let data: AgentIrUseCaseData =
-                serde_json::from_value(uc).expect("case parses");
+            let data: AgentIrUseCaseData = serde_json::from_value(uc).expect("case parses");
             assert_eq!(data.enabled, want);
         }
     }

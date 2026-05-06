@@ -117,9 +117,7 @@ fn parse_field(field: &str, min: u32, max: u32) -> Result<u64, String> {
                 bits |= 1u64 << v;
             }
         } else {
-            let v: u32 = part
-                .parse()
-                .map_err(|_| format!("Invalid value: {part}"))?;
+            let v: u32 = part.parse().map_err(|_| format!("Invalid value: {part}"))?;
             if v < min || v > max {
                 return Err(format!("Value {v} out of range {min}-{max}"));
             }
@@ -141,9 +139,7 @@ fn parse_range_bounds(s: &str, min: u32, max: u32) -> Result<(u32, u32), String>
         .parse()
         .map_err(|_| format!("Invalid range end: {}", pieces[1]))?;
     if lo < min || hi > max || lo > hi {
-        return Err(format!(
-            "Range {lo}-{hi} out of bounds {min}-{max}"
-        ));
+        return Err(format!("Range {lo}-{hi} out of bounds {min}-{max}"));
     }
     Ok((lo, hi))
 }
@@ -192,19 +188,18 @@ fn matches_in_zone<Z: TimeZone>(schedule: &CronSchedule, dt: &DateTime<Utc>, tz:
     schedule.has_minute(local.minute())
         && schedule.has_hour(local.hour())
         && schedule.has_month(local.month())
-        && day_matches(schedule, local.day(), local.weekday().num_days_from_sunday())
+        && day_matches(
+            schedule,
+            local.day(),
+            local.weekday().num_days_from_sunday(),
+        )
 }
 
 /// Compute the next fire time strictly after `from` (cron evaluated in UTC).
 /// Returns None if no valid time found within 4 years (safety limit).
 #[allow(dead_code)]
 pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<DateTime<Utc>> {
-    let start = from
-        .with_second(0)
-        .unwrap()
-        .with_nanosecond(0)
-        .unwrap()
-        + Duration::minutes(1);
+    let start = from.with_second(0).unwrap().with_nanosecond(0).unwrap() + Duration::minutes(1);
 
     let max_iterations = 4 * 366 * 24 * 60; // ~4 years of minutes
     let mut current = start;
@@ -235,7 +230,11 @@ pub fn next_fire_time(schedule: &CronSchedule, from: DateTime<Utc>) -> Option<Da
             continue;
         }
 
-        if !day_matches(schedule, current.day(), current.weekday().num_days_from_sunday()) {
+        if !day_matches(
+            schedule,
+            current.day(),
+            current.weekday().num_days_from_sunday(),
+        ) {
             current = (current + Duration::days(1))
                 .with_hour(0)
                 .unwrap()
@@ -268,12 +267,7 @@ fn next_fire_time_in_zone<Z: TimeZone>(
     from: DateTime<Utc>,
     tz: &Z,
 ) -> Option<DateTime<Utc>> {
-    let start = from
-        .with_second(0)
-        .unwrap()
-        .with_nanosecond(0)
-        .unwrap()
-        + Duration::minutes(1);
+    let start = from.with_second(0).unwrap().with_nanosecond(0).unwrap() + Duration::minutes(1);
 
     let max_iterations = 4 * 366 * 24 * 60; // ~4 years of minutes
     let mut current = start;
@@ -306,7 +300,11 @@ fn next_fire_time_in_zone<Z: TimeZone>(
             continue;
         }
 
-        if !day_matches(schedule, local.day(), local.weekday().num_days_from_sunday()) {
+        if !day_matches(
+            schedule,
+            local.day(),
+            local.weekday().num_days_from_sunday(),
+        ) {
             let next_day = (local + Duration::days(1))
                 .with_hour(0)
                 .and_then(|d| d.with_minute(0));
@@ -482,15 +480,24 @@ mod tests {
 
         // 2026-01-15 is a Thursday — matches on day_of_month (15th)
         let thu_15 = Utc.with_ymd_and_hms(2026, 1, 15, 9, 0, 0).unwrap();
-        assert!(matches(&s, &thu_15), "should match: 15th (dom), even though not Monday");
+        assert!(
+            matches(&s, &thu_15),
+            "should match: 15th (dom), even though not Monday"
+        );
 
         // 2026-01-19 is a Monday (day 19) — matches on day_of_week
         let mon_19 = Utc.with_ymd_and_hms(2026, 1, 19, 9, 0, 0).unwrap();
-        assert!(matches(&s, &mon_19), "should match: Monday (dow), even though not 15th");
+        assert!(
+            matches(&s, &mon_19),
+            "should match: Monday (dow), even though not 15th"
+        );
 
         // 2026-01-16 is a Friday, not 15th nor Monday — no match
         let fri_16 = Utc.with_ymd_and_hms(2026, 1, 16, 9, 0, 0).unwrap();
-        assert!(!matches(&s, &fri_16), "should NOT match: neither 15th nor Monday");
+        assert!(
+            !matches(&s, &fri_16),
+            "should NOT match: neither 15th nor Monday"
+        );
     }
 
     #[test]

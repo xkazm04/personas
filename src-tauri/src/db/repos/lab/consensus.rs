@@ -1,6 +1,9 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateConsensusResultInput, LabConsensusResult, LabConsensusRun, LabRunStatus, row_to_lab_result_base};
+use crate::db::models::{
+    row_to_lab_result_base, CreateConsensusResultInput, LabConsensusResult, LabConsensusRun,
+    LabRunStatus,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -72,37 +75,48 @@ pub fn create_run(
 }
 
 pub fn update_agreement_rate(pool: &DbPool, id: &str, rate: f64) -> Result<(), AppError> {
-    timed_query!("lab_consensus_runs", "lab_consensus_runs::update_agreement_rate", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE lab_consensus_runs SET agreement_rate = ?1 WHERE id = ?2",
-            params![rate, id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "lab_consensus_runs",
+        "lab_consensus_runs::update_agreement_rate",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE lab_consensus_runs SET agreement_rate = ?1 WHERE id = ?2",
+                params![rate, id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 pub fn update_llm_summary(pool: &DbPool, id: &str, llm_summary: &str) -> Result<(), AppError> {
-    timed_query!("lab_consensus_runs", "lab_consensus_runs::update_llm_summary", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE lab_consensus_runs SET llm_summary = ?1 WHERE id = ?2",
-            params![llm_summary, id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "lab_consensus_runs",
+        "lab_consensus_runs::update_llm_summary",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE lab_consensus_runs SET llm_summary = ?1 WHERE id = ?2",
+                params![llm_summary, id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 pub fn create_result(
     pool: &DbPool,
     input: &CreateConsensusResultInput,
 ) -> Result<LabConsensusResult, AppError> {
-    timed_query!("lab_consensus_results", "lab_consensus_results::create_result", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+    timed_query!(
+        "lab_consensus_results",
+        "lab_consensus_results::create_result",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
-        let result = conn.query_row(
+            let conn = pool.get()?;
+            let result = conn.query_row(
             // Tool calls now write only to the lab_tool_calls child table
             // (see write_tool_calls_child_rows below). The parent-table JSON
             // columns are dropped in step 7 of this ADR.
@@ -138,13 +152,14 @@ pub fn create_result(
             row_to_result,
         )
         .map_err(AppError::Database)?;
-        super::write_tool_calls_child_rows(
-            &conn,
-            "consensus",
-            &result.id,
-            input.base.tool_calls_expected.as_ref(),
-            input.base.tool_calls_actual.as_ref(),
-        );
-        Ok(result)
-    })
+            super::write_tool_calls_child_rows(
+                &conn,
+                "consensus",
+                &result.id,
+                input.base.tool_calls_expected.as_ref(),
+                input.base.tool_calls_actual.as_ref(),
+            );
+            Ok(result)
+        }
+    )
 }

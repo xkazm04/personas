@@ -133,6 +133,12 @@ pub struct PullSyncResult {
     pub created: i64,
     pub updated: i64,
     pub conflicts: Vec<SyncConflict>,
+    /// Count of entities where both app and vault sides edited independently
+    /// but ended up identical (lucky convergence). Distinct from a no-op:
+    /// surfaces in the UI as a confirmation toast so the user can see the
+    /// audit trail of avoided conflicts.
+    #[serde(default)]
+    pub converged: i64,
     pub errors: Vec<String>,
 }
 

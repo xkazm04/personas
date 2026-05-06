@@ -69,6 +69,13 @@ export interface PullSyncResult {
   created: number;
   updated: number;
   conflicts: SyncConflict[];
+  /**
+   * Lucky-convergence count: both app and vault sides edited an entity
+   * since last sync but ended up with byte-identical content. Distinct from
+   * a no-op so the user can see a real conflict was avoided by chance.
+   * Optional because older backends won't include it.
+   */
+  converged?: number;
   errors: string[];
 }
 

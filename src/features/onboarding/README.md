@@ -59,7 +59,7 @@ A step completes when `emitTourEvent(completeOn)` is called while that step is t
 | **storeBus wiring** (recommended for real app events) | `src/lib/storeBusWiring.ts` | `tour:appearance-changed`, `tour:execution-complete`, `tour:persona-draft-ready`, `tour:persona-promoted` |
 | **Tour slice itself** (interaction counters) | `tourSlice.ts` `recordCredentialInteraction` | `tour:credentials-explored` |
 | **Component-level** (inline triggers) | e.g. `PersonaCreationCoach.tsx` | `tour:persona-promoted` |
-| **Timed auto-advance** | `GuidedTour.tsx` | any event in the `timedSteps` list (5s timeout) — used for observability/events tours where there's no meaningful user action |
+| **Explicit user acknowledgment** | `TourPanelBody.tsx` "I've explored this" button | any event listed in `EXPLORATION_TOUR_EVENTS` (`tourSlice.ts`) — used for observability/events stops where there's no meaningful user action to detect |
 
 **Adding a new completion event:**
 1. Pick an event key — convention `tour:<feature>-<verb>`.
@@ -67,7 +67,7 @@ A step completes when `emitTourEvent(completeOn)` is called while that step is t
 3. Wire an emitter:
    - If a storeBus event already fires at the right moment → add a listener in `storeBusWiring.ts`.
    - If it's a counter-style interaction → extend `recordCredentialInteraction` or mirror that pattern.
-   - If you just want to advance after the user has been on the page a while → add the key to `timedSteps` in `GuidedTour.tsx`.
+   - If the step is purely informational (look at the dashboard, watch a stream) → add the key to `EXPLORATION_TOUR_EVENTS` in `tourSlice.ts`. The panel will render an "I've explored this" button so the user advances when they're ready (no hidden timer).
 
 ## Icons & colors
 
@@ -101,3 +101,90 @@ When you add a new step, add an entry to both maps. Missing entries fall back si
 ## State persistence
 
 Tour progress is persisted to `localStorage` under key `guided-tour-state` at version `TOUR_STATE_VERSION`. Bumping the version wipes all tour progress for all users — use sparingly and only for genuinely breaking schema changes.
+
+## Related but separate: the home Setup Cards stepper
+
+Three slices in `src/stores/slices/system/` cover overlapping-but-distinct first-run concerns. Don't conflate them:
+
+| Slice | Drives | Lives in |
+|---|---|---|
+| `onboardingSlice` | First-run **Onboarding Overlay** (`OnboardingOverlay.tsx`) — global welcome / step gating | `src/features/onboarding/` |
+| `tourSlice` | **Guided spotlight tours** (`GuidedTour.tsx`) — coach-marks over the chrome (this README) | `src/features/onboarding/components/` |
+| `setupSlice` | Home **"Role → Tool → Goal" Setup Cards** (`SetupCards.tsx`) — captures user profile and bridges into agent creation via `setupGoal` | `src/features/home/` |
+
+`setupSlice` is owned by Home, not Onboarding, but the bridge into `UnifiedMatrixEntry` (pre-fill build intent) only fires while `onboardingActive || tourActive`, which is why it's listed here. See the docstring at the top of `setupSlice.ts` for the full consumer map.
+
+## Onboarding modal vs Guided Tour — precedence contract
+
+`onboardingSlice` and `tourSlice` are two independent state machines that can both be `active` at the same time. Without explicit precedence, a fresh user could see the welcome modal AND the spotlight panel render simultaneously — the modal's scrim on top, the tour panel painting underneath, both asking for attention. This section pins the contract.
+
+### Decision: **the onboarding modal wins.**
+
+The reasoning:
+- The modal is a **focused, blocking** welcome flow (5 steps: appearance → discover → pick-template → adopt → execute). It owns the screen by design.
+- The tour is a **persistent, dismissible** left-rail panel. It can wait without losing context — `tourActive` and `tourCurrentStepIndex` are preserved while the modal is open and the panel reappears unchanged when the modal closes.
+- One affordance at a time matches Design.md's "no double-prompting" rule.
+
+### State diagram
+
+```text
+                          ┌──────────────┐
+            cold start →  │ idle (no UI) │
+                          └──────┬───────┘
+            startOnboarding()    │       startTour()
+                                 ▼
+            ┌──────────────────────────────────┐  finishTour /
+            │ onboardingActive=false           │  dismissTour
+            │ tourActive=true                  │◀─────────────┐
+            │ → GuidedTour panel renders       │              │
+            └────────┬─────────────────────────┘              │
+                     │ startOnboarding()                      │
+                     ▼                                        │
+            ┌──────────────────────────────────┐              │
+            │ onboardingActive=true            │              │
+            │ tourActive=true (preserved)      │              │
+            │ → OnboardingOverlay only         │              │
+            │   (GuidedTour returns null,      │              │
+            │   TourLauncher returns null)     │              │
+            └────────┬─────────────────────────┘              │
+                     │ finishOnboarding /                     │
+                     │ dismissOnboarding                      │
+                     ▼                                        │
+            ┌──────────────────────────────────┐              │
+            │ onboardingActive=false           │              │
+            │ tourActive=true (resumes panel)  │──────────────┘
+            └──────────────────────────────────┘
+```
+
+### Encoding in code
+
+The contract is enforced in three places, each with a comment pointing back to this README:
+
+| File | Guard | Behavior when `onboardingActive` is true |
+|---|---|---|
+| `GuidedTour.tsx` | `if (onboardingActive) return null;` | Panel hidden; `tourActive` and step index untouched. |
+| `TourLauncher.tsx` | `if (… || onboardingActive) return null;` | Launcher button hidden so the user can't trigger a parallel tour from the topbar. |
+| `OnboardingOverlay.tsx` | `if (!onboardingActive) return null;` | (existing) Modal does not render until `startOnboarding()` flips the flag. |
+
+### Who fires first
+
+- **Cold-start path:** Simple-mode empty state's CTA → `startOnboarding()`. The tour does not auto-start; it is an opt-in via `TourLauncher`.
+- **Power-mode path:** No automatic onboarding modal. `TourLauncher` is shown in the topbar so the user can opt into the guided tour at any time.
+- **Re-entry path:** From a help/menu affordance, `reopenOnboarding()` brings the modal back even after `tourCompleted=true`. The tour is unchanged by this — it picks up from its persisted step.
+
+### What happens when both are dismissed
+
+- Onboarding dismissal → `onboardingActive=false`; `onboardingDismissedAtStep` remembers the step. Calling `resumeOnboarding()` later picks up where the user left off.
+- Tour dismissal → `tourActive=false`, `tourDismissed=true`. Calling `startTour()` un-dismisses and resumes (or restarts if completed).
+- Independent: dismissing one does not touch the other.
+
+### What happens when one finishes
+
+- `finishOnboarding()` → `onboardingCompleted=true`, the modal won't auto-show again. Tour state is untouched.
+- `finishTour()` → `tourCompleted=true` for the active tour; the launcher disappears. Onboarding state is untouched.
+
+### Tier-switch policy for the active tour
+
+The Starter ↔ Team tier transition is a real customer journey (see `tourSlice.ts::startTour` for the encoded policy). When a user switches tier mid-tour for the getting-started family (`getting-started` ↔ `getting-started-simple`), the slice **auto-migrates progress via shared step ids**: `appearance-setup`, `credentials-intro`, `persona-creation` exist in both registries, and any step the user has already completed in one tour is marked complete in the other. The user sees the new tier's tour copy without losing context.
+
+The migration is intentionally one-directional per call: each `startTour(newId)` migrates *into* `newId` from the most-recent state of the other family member. The "other" tour's persisted progress is left alone so a tier flip-flop doesn't lose work either way.

@@ -206,10 +206,7 @@ pub fn seal(
 /// 1. Ed25519 signature over the manifest is valid
 /// 2. Content hash in the manifest matches the actual persona data
 /// 3. Whether the creator is a trusted peer
-pub fn verify(
-    pool: &DbPool,
-    enclave_bytes: &[u8],
-) -> Result<EnclaveVerifyResult, AppError> {
+pub fn verify(pool: &DbPool, enclave_bytes: &[u8]) -> Result<EnclaveVerifyResult, AppError> {
     let enclave_hash = hex::encode(Sha256::digest(enclave_bytes));
     let (manifest, sig, persona_json) = parse_enclave(enclave_bytes)?;
 
@@ -227,12 +224,10 @@ pub fn verify(
     let content_intact = actual_hash == manifest.content_hash;
 
     // Check trust status
-    let creator_trusted = crate::db::repos::resources::identity::get_trusted_peer(
-        pool,
-        &sig.signer_peer_id,
-    )
-    .map(|p| !p.trust_level.is_revoked())
-    .unwrap_or(false);
+    let creator_trusted =
+        crate::db::repos::resources::identity::get_trusted_peer(pool, &sig.signer_peer_id)
+            .map(|p| !p.trust_level.is_revoked())
+            .unwrap_or(false);
 
     Ok(EnclaveVerifyResult {
         enclave_id: manifest.enclave_id,

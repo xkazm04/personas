@@ -61,27 +61,31 @@ pub fn get_sync_states_by_type(
     pool: &DbPool,
     entity_type: &str,
 ) -> Result<Vec<SyncState>, AppError> {
-    timed_query!("obsidian_sync_state", "obsidian_sync::get_sync_states_by_type", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "obsidian_sync_state",
+        "obsidian_sync::get_sync_states_by_type",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT id, entity_type, entity_id, vault_file_path, content_hash, sync_direction, synced_at
              FROM obsidian_sync_state WHERE entity_type = ?1 ORDER BY synced_at DESC",
         )?;
-        let rows = stmt
-            .query_map(params![entity_type], |row| {
-                Ok(SyncState {
-                    id: row.get(0)?,
-                    entity_type: row.get(1)?,
-                    entity_id: row.get(2)?,
-                    vault_file_path: row.get(3)?,
-                    content_hash: row.get(4)?,
-                    sync_direction: row.get(5)?,
-                    synced_at: row.get(6)?,
-                })
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        Ok(rows)
-    })
+            let rows = stmt
+                .query_map(params![entity_type], |row| {
+                    Ok(SyncState {
+                        id: row.get(0)?,
+                        entity_type: row.get(1)?,
+                        entity_id: row.get(2)?,
+                        vault_file_path: row.get(3)?,
+                        content_hash: row.get(4)?,
+                        sync_direction: row.get(5)?,
+                        synced_at: row.get(6)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        }
+    )
 }
 
 pub fn delete_sync_state(
@@ -120,10 +124,7 @@ pub fn insert_sync_log(pool: &DbPool, entry: &SyncLogEntry) -> Result<(), AppErr
     })
 }
 
-pub fn list_sync_log(
-    pool: &DbPool,
-    limit: i64,
-) -> Result<Vec<SyncLogEntry>, AppError> {
+pub fn list_sync_log(pool: &DbPool, limit: i64) -> Result<Vec<SyncLogEntry>, AppError> {
     timed_query!("obsidian_sync_log", "obsidian_sync::list_sync_log", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(

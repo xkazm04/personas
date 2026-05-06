@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
 import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
+import { useSystemStore } from '@/stores/systemStore';
 import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -16,14 +17,14 @@ const RegressionPanel = lazy(() => import('../regression/RegressionPanel').then(
 
 const LAB_MODE_KEY = 'dac-lab-mode';
 
-const modeTabs: Array<{ id: LabMode; label: string; desc: string; icon: typeof FlaskConical }> = [
-  { id: 'arena', label: 'Arena', desc: 'Compare models head-to-head', icon: FlaskConical },
-  { id: 'ab', label: 'A/B', desc: 'Compare prompt versions', icon: Scale },
-  { id: 'matrix', label: 'Improve', desc: 'AI-driven prompt improvement', icon: Wand2 },
-  { id: 'breed', label: 'Breed', desc: 'Cross-breed top performers', icon: Dna },
-  { id: 'evolve', label: 'Evolve', desc: 'Auto-evolving optimization', icon: Sparkles },
-  { id: 'versions', label: 'Versions', desc: 'Track prompt evolution', icon: GitBranch },
-  { id: 'regression', label: 'Regression', desc: 'Test against baseline', icon: ShieldCheck },
+const modeTabs: Array<{ id: LabMode; label: string; icon: typeof FlaskConical }> = [
+  { id: 'arena', label: 'Arena', icon: FlaskConical },
+  { id: 'ab', label: 'A/B', icon: Scale },
+  { id: 'matrix', label: 'Improve', icon: Wand2 },
+  { id: 'breed', label: 'Breed', icon: Dna },
+  { id: 'evolve', label: 'Evolve', icon: Sparkles },
+  { id: 'versions', label: 'Versions', icon: GitBranch },
+  { id: 'regression', label: 'Regression', icon: ShieldCheck },
 ];
 
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
@@ -35,13 +36,23 @@ export function LabTab() {
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
   const hydrateActiveProgress = useAgentStore((s) => s.hydrateActiveProgress);
 
-  // Restore persisted tab on mount
+  // Restore persisted tab on mount.
+  // Phase F: a pending Athena `companion://open-lab` jump beats the
+  // persisted localStorage choice — Athena's intent is the most
+  // recent signal. Consume + clear in the same effect.
   useEffect(() => {
+    const sys = useSystemStore.getState();
+    const jump = sys.companionLabJump;
+    if (jump && validModes.has(jump.mode) && (!personaId || personaId === jump.personaId)) {
+      setLabMode(jump.mode as LabMode);
+      sys.setCompanionLabJump(null);
+      return;
+    }
     const saved = localStorage.getItem(LAB_MODE_KEY);
     if (saved && validModes.has(saved)) {
       setLabMode(saved as LabMode);
     }
-  }, [setLabMode]);
+  }, [setLabMode, personaId]);
 
   // Hydrate active run progress on mount (restores progress indicators after page refresh)
   useEffect(() => {
@@ -55,40 +66,36 @@ export function LabTab() {
 
   return (
     <div className="space-y-4">
-      {/* Mode tabs + Auto-Optimize toggle */}
-      <div className="flex items-center gap-1">
-        {modeTabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = labMode === tab.id;
-          return (
-            <button
-              key={tab.id}
-              data-testid={`lab-mode-${tab.id}`}
-              onClick={() => setLabMode(tab.id)}
-              className={`relative flex flex-col items-start gap-0.5 px-3 py-2 typo-body font-medium rounded-modal transition-colors ${
-                isActive
-                  ? 'bg-primary/10 text-foreground/90 border border-primary/20'
-                  : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Icon className="w-3.5 h-3.5" />
+      {/* Mode tabs + Auto-Optimize toggle — styled to mirror the parent EditorTabBar */}
+      <div className="flex items-center border-b border-primary/10 px-1">
+        <div className="flex items-center flex-1 min-w-0 overflow-x-auto scrollbar-none">
+          {modeTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = labMode === tab.id;
+            return (
+              <button
+                key={tab.id}
+                data-testid={`lab-mode-${tab.id}`}
+                onClick={() => setLabMode(tab.id)}
+                title={tab.label}
+                className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors whitespace-nowrap ${
+                  isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {tab.label}
-              </span>
-              <span className="text-[10px] text-foreground font-mono tracking-wider">
-                {tab.desc}
-              </span>
-              {isActive && (
-                <motion.div
-                  layoutId="labModeTab"
-                  className="absolute -bottom-px left-2 right-2 h-0.5 bg-primary rounded-full"
-                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                />
-              )}
-            </button>
-          );
-        })}
-        <div className="ml-auto">
+                {isActive && (
+                  <motion.div
+                    layoutId="labModeTab"
+                    className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full"
+                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  />
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="pl-2 flex-shrink-0">
           <AutoOptimizeToggle />
         </div>
       </div>
@@ -149,10 +156,10 @@ function AutoOptimizeToggle() {
       data-testid="auto-optimize-toggle"
       onClick={toggle}
       disabled={loading || !persona}
-      className={`flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card transition-colors ${
+      className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
         enabled
-          ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-          : 'text-foreground hover:text-muted-foreground hover:bg-secondary/30 border border-transparent'
+          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+          : 'text-foreground hover:bg-secondary/30 border-primary/10 hover:border-primary/20'
       }`}
       title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
     >

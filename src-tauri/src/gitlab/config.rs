@@ -36,7 +36,10 @@ pub fn store_gitlab_instance_url(_url: &str) -> Result<(), String> {
 /// Load GitLab instance URL from OS keyring. Returns None if not configured (defaults to gitlab.com).
 #[cfg(feature = "desktop")]
 pub fn load_gitlab_instance_url() -> Option<String> {
-    let url = Entry::new(SERVICE, KEY_INSTANCE_URL).ok()?.get_password().ok()?;
+    let url = Entry::new(SERVICE, KEY_INSTANCE_URL)
+        .ok()?
+        .get_password()
+        .ok()?;
     if url.is_empty() {
         return None;
     }

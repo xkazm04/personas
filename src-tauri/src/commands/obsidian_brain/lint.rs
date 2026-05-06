@@ -256,13 +256,19 @@ mod tests {
     #[test]
     fn extract_wikilink_with_alias_and_section() {
         let links = extract_wikilinks("[[Foo|bar]] and [[Baz#Section]]");
-        assert_eq!(links, vec!["Foo|bar".to_string(), "Baz#Section".to_string()]);
+        assert_eq!(
+            links,
+            vec!["Foo|bar".to_string(), "Baz#Section".to_string()]
+        );
     }
 
     #[test]
     fn extract_multiple_wikilinks_one_line() {
         let links = extract_wikilinks("[[A]] [[B]] [[C]]");
-        assert_eq!(links, vec!["A".to_string(), "B".to_string(), "C".to_string()]);
+        assert_eq!(
+            links,
+            vec!["A".to_string(), "B".to_string(), "C".to_string()]
+        );
     }
 
     #[test]
@@ -292,8 +298,7 @@ mod tests {
         // README is a top-level entry point → not orphan.
         // popular is referenced from nothing but is at depth 2 → flagged.
         // lonely is referenced from popular → not orphan.
-        let orphan_paths: Vec<&str> =
-            report.orphans.iter().map(|o| o.path.as_str()).collect();
+        let orphan_paths: Vec<&str> = report.orphans.iter().map(|o| o.path.as_str()).collect();
         assert!(orphan_paths.contains(&"notes/popular.md"));
         assert!(!orphan_paths.iter().any(|p| p.contains("README")));
         assert!(!orphan_paths.iter().any(|p| p.contains("lonely")));

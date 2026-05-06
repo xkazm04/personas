@@ -23,10 +23,18 @@ interface ComposerPickerShellProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: "md" | "lg";
+  /**
+   * When the picker opens *over* another translucent surface (e.g. the
+   * companion chat panel uses `bg-secondary/95`), the default card-bg
+   * token (RGBA-transparent across themes) lets the underlying panel
+   * bleed through visually. Opt into a solid `bg-secondary` background
+   * for those callers so the modal feels like its own surface.
+   */
+  solid?: boolean;
 }
 
 export function ComposerPickerShell({
-  open, onClose, onApply, title, subtitle, icon, children, footer, size = "md",
+  open, onClose, onApply, title, subtitle, icon, children, footer, size = "md", solid = false,
 }: ComposerPickerShellProps) {
   useEffect(() => {
     if (!open) return;
@@ -57,7 +65,7 @@ export function ComposerPickerShell({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border border-card-border bg-card-bg shadow-elevation-4 overflow-hidden flex flex-col max-h-[82vh]`}
+            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border border-card-border ${solid ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[82vh]`}
             onClick={(e) => e.stopPropagation()}
           >
             <header className="flex items-center gap-3 px-5 py-4 border-b border-border/25 bg-gradient-to-r from-primary/10 via-transparent to-transparent">

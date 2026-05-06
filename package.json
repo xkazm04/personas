@@ -38,6 +38,8 @@
     "check": "npm run check:contracts && npm run check:tiers && npm run check:tauri-configs && tsc --noEmit && eslint src/",
     "lint": "eslint src/",
     "test": "vitest run",
+    "test:playwright": "playwright test --config=playwright.config.ts",
+    "test:playwright:companion": "playwright test --config=playwright.config.ts athena-conversation",
     "test:watch": "vitest",
     "test:e2e:cli": "vitest run --config vitest.e2e.config.ts",
     "test:integration:cli": "vitest run --config vitest.integration.config.ts",
@@ -92,6 +94,7 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.2",
     "@tauri-apps/cli": "^2.10.1",
     "@testing-library/jest-dom": "^6.9.1",

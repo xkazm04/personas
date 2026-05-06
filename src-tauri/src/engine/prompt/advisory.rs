@@ -2,7 +2,6 @@
 
 use crate::db::models::{Persona, PersonaToolDefinition};
 
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // Advisory Assistant
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -35,7 +34,14 @@ pub(super) fn build_advisory_prompt(
     if let Some(ref sp_json) = persona.structured_prompt {
         if let Ok(sp) = serde_json::from_str::<serde_json::Value>(sp_json) {
             p.push_str("### Current Prompt Configuration\n");
-            for section in &["identity", "instructions", "toolGuidance", "examples", "errorHandling", "customSections"] {
+            for section in &[
+                "identity",
+                "instructions",
+                "toolGuidance",
+                "examples",
+                "errorHandling",
+                "customSections",
+            ] {
                 if let Some(val) = sp.get(section).and_then(|v| v.as_str()) {
                     // Show full content for identity and instructions (most impactful),
                     // truncate others at 500 chars
@@ -46,7 +52,12 @@ pub(super) fn build_advisory_prompt(
                     } else {
                         val.to_string()
                     };
-                    p.push_str(&format!("\n**{}** ({} chars):\n{}\n", section, val.len(), display));
+                    p.push_str(&format!(
+                        "\n**{}** ({} chars):\n{}\n",
+                        section,
+                        val.len(),
+                        display
+                    ));
                 }
             }
             p.push('\n');
@@ -54,18 +65,29 @@ pub(super) fn build_advisory_prompt(
     } else if !persona.system_prompt.is_empty() {
         let max_len = 2000;
         let display = if persona.system_prompt.len() > max_len {
-            format!("{}... ({} total)", &persona.system_prompt[..max_len], persona.system_prompt.len())
+            format!(
+                "{}... ({} total)",
+                &persona.system_prompt[..max_len],
+                persona.system_prompt.len()
+            )
         } else {
             persona.system_prompt.clone()
         };
-        p.push_str(&format!("### System Prompt ({} chars)\n{}\n\n", persona.system_prompt.len(), display));
+        p.push_str(&format!(
+            "### System Prompt ({} chars)\n{}\n\n",
+            persona.system_prompt.len(),
+            display
+        ));
     }
 
     // Tools — the advisory LLM needs to know what capabilities the agent has
     if !tools.is_empty() {
         p.push_str("### Available Tools\n");
         for tool in tools {
-            p.push_str(&format!("- **{}** ({}): {}\n", tool.name, tool.category, tool.description));
+            p.push_str(&format!(
+                "- **{}** ({}): {}\n",
+                tool.name, tool.category, tool.description
+            ));
         }
         p.push('\n');
     } else {
@@ -96,12 +118,22 @@ pub(super) fn build_advisory_prompt(
                 if !use_cases.is_empty() {
                     p.push_str("### Use Cases (Business Intent)\n");
                     for uc in use_cases {
-                        let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled");
+                        let title = uc
+                            .get("title")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("Untitled");
                         let desc = uc.get("description").and_then(|v| v.as_str()).unwrap_or("");
                         let cat = uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
-                        p.push_str(&format!("- **{}**{}: {}\n", title,
-                            if cat.is_empty() { String::new() } else { format!(" [{}]", cat) },
-                            desc));
+                        p.push_str(&format!(
+                            "- **{}**{}: {}\n",
+                            title,
+                            if cat.is_empty() {
+                                String::new()
+                            } else {
+                                format!(" [{}]", cat)
+                            },
+                            desc
+                        ));
                     }
                     p.push('\n');
                 }
@@ -117,10 +149,19 @@ pub(super) fn build_advisory_prompt(
         if let Some(metrics) = ctx.get("execution_metrics") {
             p.push_str("### Execution Performance (Last 30 Days)\n");
             let total = metrics.get("total").and_then(|v| v.as_i64()).unwrap_or(0);
-            let success = metrics.get("successful").and_then(|v| v.as_i64()).unwrap_or(0);
+            let success = metrics
+                .get("successful")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             let failed = metrics.get("failed").and_then(|v| v.as_i64()).unwrap_or(0);
-            let rate = metrics.get("success_rate_pct").and_then(|v| v.as_f64()).unwrap_or(0.0);
-            let cost = metrics.get("total_cost_usd").and_then(|v| v.as_f64()).unwrap_or(0.0);
+            let rate = metrics
+                .get("success_rate_pct")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
+            let cost = metrics
+                .get("total_cost_usd")
+                .and_then(|v| v.as_f64())
+                .unwrap_or(0.0);
             p.push_str(&format!(
                 "- Total: {} | Success: {} | Failed: {} | Success rate: {:.0}%\n- Total cost: ${:.4}\n\n",
                 total, success, failed, rate, cost
@@ -140,11 +181,18 @@ pub(super) fn build_advisory_prompt(
                 p.push_str("### Recent Executions\n");
                 for exec in recent.iter().take(10) {
                     let status = exec.get("status").and_then(|v| v.as_str()).unwrap_or("?");
-                    let started = exec.get("started_at").and_then(|v| v.as_str()).unwrap_or("?");
-                    let dur = exec.get("duration_ms").and_then(|v| v.as_f64())
+                    let started = exec
+                        .get("started_at")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?");
+                    let dur = exec
+                        .get("duration_ms")
+                        .and_then(|v| v.as_f64())
                         .map(|d| format!("{:.1}s", d / 1000.0))
                         .unwrap_or_else(|| "-".into());
-                    let cost = exec.get("cost_usd").and_then(|v| v.as_f64())
+                    let cost = exec
+                        .get("cost_usd")
+                        .and_then(|v| v.as_f64())
                         .map(|c| format!("${:.4}", c))
                         .unwrap_or_else(|| "-".into());
                     p.push_str(&format!("- {} | {} | {} | {}", status, dur, cost, started));
@@ -159,11 +207,20 @@ pub(super) fn build_advisory_prompt(
 
         // Knowledge graph
         if let Some(kg) = ctx.get("knowledge_graph") {
-            let total = kg.get("total_entries").and_then(|v| v.as_i64()).unwrap_or(0);
+            let total = kg
+                .get("total_entries")
+                .and_then(|v| v.as_i64())
+                .unwrap_or(0);
             if total > 0 {
                 p.push_str("### Knowledge Graph\n");
-                let fp = kg.get("failure_patterns").and_then(|v| v.as_i64()).unwrap_or(0);
-                let ts = kg.get("tool_sequences").and_then(|v| v.as_i64()).unwrap_or(0);
+                let fp = kg
+                    .get("failure_patterns")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
+                let ts = kg
+                    .get("tool_sequences")
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0);
                 p.push_str(&format!(
                     "- {} entries: {} tool sequences, {} failure patterns\n",
                     total, ts, fp
@@ -171,9 +228,17 @@ pub(super) fn build_advisory_prompt(
                 if let Some(patterns) = kg.get("top_patterns").and_then(|v| v.as_array()) {
                     for pat in patterns {
                         let key = pat.get("key").and_then(|v| v.as_str()).unwrap_or("?");
-                        let conf = pat.get("confidence").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                        let conf = pat
+                            .get("confidence")
+                            .and_then(|v| v.as_f64())
+                            .unwrap_or(0.0);
                         let ptype = pat.get("type").and_then(|v| v.as_str()).unwrap_or("?");
-                        p.push_str(&format!("  - [{}] {} (confidence: {:.0}%)\n", ptype, key, conf * 100.0));
+                        p.push_str(&format!(
+                            "  - [{}] {} (confidence: {:.0}%)\n",
+                            ptype,
+                            key,
+                            conf * 100.0
+                        ));
                     }
                 }
                 p.push('\n');
@@ -187,10 +252,19 @@ pub(super) fn build_advisory_prompt(
                 for a in assertions {
                     let name = a.get("name").and_then(|v| v.as_str()).unwrap_or("?");
                     let severity = a.get("severity").and_then(|v| v.as_str()).unwrap_or("?");
-                    let pass_rate = a.get("pass_rate_pct").and_then(|v| v.as_f64()).unwrap_or(0.0);
+                    let pass_rate = a
+                        .get("pass_rate_pct")
+                        .and_then(|v| v.as_f64())
+                        .unwrap_or(0.0);
                     let fail_count = a.get("fail_count").and_then(|v| v.as_i64()).unwrap_or(0);
                     let enabled = a.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
-                    let status = if !enabled { "OFF" } else if fail_count == 0 { "PASS" } else { "FAIL" };
+                    let status = if !enabled {
+                        "OFF"
+                    } else if fail_count == 0 {
+                        "PASS"
+                    } else {
+                        "FAIL"
+                    };
                     p.push_str(&format!(
                         "- [{}] {} ({}) — {:.0}% pass rate\n",
                         status, name, severity, pass_rate
@@ -211,9 +285,8 @@ pub(super) fn build_advisory_prompt(
                     total, core, active
                 ));
                 if let Some(cats) = mem.get("by_category").and_then(|v| v.as_object()) {
-                    let cat_str: Vec<String> = cats.iter()
-                        .map(|(k, v)| format!("{}={}", k, v))
-                        .collect();
+                    let cat_str: Vec<String> =
+                        cats.iter().map(|(k, v)| format!("{}={}", k, v)).collect();
                     p.push_str(&format!("- Categories: {}\n", cat_str.join(", ")));
                 }
                 p.push('\n');

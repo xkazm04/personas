@@ -24,6 +24,16 @@ use tokio::process::Command as TokioCommand;
 
 use crate::error::AppError;
 
+/// Sidecar schema version. Bump when the on-disk shape changes in a way
+/// that older readers can't tolerate.
+///
+/// **Policy** (shared with all other artist artifacts — see
+/// `super::schema_policy`): newer-than-current is rejected, equal is
+/// accepted, older accepts with a permissive load + `tracing::warn!`
+/// until a migration step lands. Any future consumer reading
+/// `*.transcript.json` MUST call `super::schema_policy::classify` rather
+/// than rolling its own version check, so all four artist surfaces stay
+/// in lockstep.
 const SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +50,20 @@ pub struct TranscribeResult {
     pub transcript_path: String,
     pub word_count: usize,
     pub duration_seconds: Option<f64>,
+}
+
+/// Static capability map for the transcribe surface. Returned by
+/// `artist_transcribe_providers_available` so the UI can grey out (or hide)
+/// providers that always return `not yet wired up`. Falsy entries here are
+/// authoritative — the matching arms in [`artist_transcribe_media`] return
+/// [`AppError::Internal`] and the user can't recover from that failure
+/// without code changes.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranscribeProviderAvailability {
+    pub local_whisper: bool,
+    pub elevenlabs: bool,
+    pub openai_whisper: bool,
 }
 
 #[derive(Debug, Serialize)]
@@ -105,10 +129,23 @@ pub async fn artist_load_transcript(transcript_path: String) -> Result<String, A
             "transcript_path must end with .transcript.json".into(),
         ));
     }
-    let bytes = tokio::fs::read(&transcript_path).await.map_err(|e| {
-        AppError::NotFound(format!("Read transcript {transcript_path}: {e}"))
-    })?;
+    let bytes = tokio::fs::read(&transcript_path)
+        .await
+        .map_err(|e| AppError::NotFound(format!("Read transcript {transcript_path}: {e}")))?;
     String::from_utf8(bytes).map_err(|e| AppError::Internal(format!("Transcript not UTF-8: {e}")))
+}
+
+/// Static capability map of which transcribe providers are actually wired up.
+/// Lets the frontend grey out unimplemented variants instead of letting the
+/// user pick one and discover the failure only after `invoke` returns.
+/// Mirrors the match arms in [`artist_transcribe_media`].
+#[tauri::command]
+pub fn artist_transcribe_providers_available() -> TranscribeProviderAvailability {
+    TranscribeProviderAvailability {
+        local_whisper: true,
+        elevenlabs: false,
+        openai_whisper: false,
+    }
 }
 
 /// Check whether the local `whisper` binary is discoverable on PATH.
@@ -133,13 +170,17 @@ pub async fn artist_check_local_whisper() -> Result<bool, AppError> {
 }
 
 fn whisper_binary_name() -> &'static str {
-    if cfg!(windows) { "whisper.exe" } else { "whisper" }
+    if cfg!(windows) {
+        "whisper.exe"
+    } else {
+        "whisper"
+    }
 }
 
 async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, AppError> {
-    let parent = source.parent().ok_or_else(|| {
-        AppError::Internal("Clip path has no parent directory".into())
-    })?;
+    let parent = source
+        .parent()
+        .ok_or_else(|| AppError::Internal("Clip path has no parent directory".into()))?;
     let stem = source
         .file_stem()
         .and_then(|s| s.to_str())
@@ -193,7 +234,10 @@ async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, App
         .await
         .map_err(|e| AppError::Internal(format!("Read whisper output: {e}")))?;
     let parsed: WhisperJson = serde_json::from_slice(&raw).map_err(|e| {
-        AppError::Internal(format!("Parse whisper JSON at {:?}: {e}", whisper_json_path))
+        AppError::Internal(format!(
+            "Parse whisper JSON at {:?}: {e}",
+            whisper_json_path
+        ))
     })?;
 
     let mut words = Vec::new();

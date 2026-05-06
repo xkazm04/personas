@@ -96,7 +96,11 @@ fn evaluate_warn(table: &str) -> (bool, Option<(String, u32, u64)>) {
     let mut summary = None;
     if now.duration_since(bucket.window_start) >= WARN_WINDOW {
         if bucket.suppressed > 0 {
-            summary = Some((table.to_string(), bucket.suppressed, bucket.max_suppressed_ms));
+            summary = Some((
+                table.to_string(),
+                bucket.suppressed,
+                bucket.max_suppressed_ms,
+            ));
         }
         *bucket = WarnBucket::new(now);
     }
@@ -201,7 +205,11 @@ impl RingBuffer {
             });
         }
 
-        tables.sort_by(|a, b| b.max_ms.partial_cmp(&a.max_ms).unwrap_or(std::cmp::Ordering::Equal));
+        tables.sort_by(|a, b| {
+            b.max_ms
+                .partial_cmp(&a.max_ms)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         DbPerfSnapshot {
             tables,

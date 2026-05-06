@@ -111,23 +111,21 @@ impl DesktopConnectorManifest {
             .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
         let normalized = binary.replace('\\', "/").to_lowercase();
 
-        self.allowed_binaries
-            .iter()
-            .any(|allowed| {
-                let norm_allowed = allowed.replace('\\', "/").to_lowercase();
-                let canon_allowed = std::path::Path::new(allowed)
-                    .canonicalize()
-                    .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
+        self.allowed_binaries.iter().any(|allowed| {
+            let norm_allowed = allowed.replace('\\', "/").to_lowercase();
+            let canon_allowed = std::path::Path::new(allowed)
+                .canonicalize()
+                .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
 
-                // Prefer canonical comparison when both sides resolve.
-                if let (Ok(ref cb), Ok(ref ca)) = (&canonical, &canon_allowed) {
-                    return *cb == *ca || cb.ends_with(&format!("/{ca}"));
-                }
+            // Prefer canonical comparison when both sides resolve.
+            if let (Ok(ref cb), Ok(ref ca)) = (&canonical, &canon_allowed) {
+                return *cb == *ca || cb.ends_with(&format!("/{ca}"));
+            }
 
-                // Fall back to normalized string matching (bare binary names
-                // like "docker" won't have a canonical path).
-                normalized == norm_allowed || normalized.ends_with(&format!("/{norm_allowed}"))
-            })
+            // Fall back to normalized string matching (bare binary names
+            // like "docker" won't have a canonical path).
+            normalized == norm_allowed || normalized.ends_with(&format!("/{norm_allowed}"))
+        })
     }
 
     /// Validate that a file path is within allowed prefixes.
@@ -209,18 +207,16 @@ impl DesktopConnectorManifest {
             }
         };
 
-        self.allowed_paths
-            .iter()
-            .any(|prefix| {
-                // Canonicalize the prefix too so that both sides use
-                // the same real-path representation.
-                let canon_prefix = std::path::Path::new(prefix)
-                    .canonicalize()
-                    .map(|cp| cp.to_string_lossy().replace('\\', "/").to_lowercase())
-                    .unwrap_or_else(|_| prefix.replace('\\', "/").to_lowercase());
+        self.allowed_paths.iter().any(|prefix| {
+            // Canonicalize the prefix too so that both sides use
+            // the same real-path representation.
+            let canon_prefix = std::path::Path::new(prefix)
+                .canonicalize()
+                .map(|cp| cp.to_string_lossy().replace('\\', "/").to_lowercase())
+                .unwrap_or_else(|_| prefix.replace('\\', "/").to_lowercase());
 
-                check_path.starts_with(&canon_prefix)
-            })
+            check_path.starts_with(&canon_prefix)
+        })
     }
 
     /// Validate that a port is in the allowlist.
@@ -257,8 +253,9 @@ impl DesktopApprovalStore {
                 capability TEXT NOT NULL,
                 approved_at TEXT NOT NULL DEFAULT (datetime('now')),
                 PRIMARY KEY (connector_id, capability)
-            );"
-        ).map_err(|e| AppError::Internal(format!("Failed to create approvals table: {e}")))?;
+            );",
+        )
+        .map_err(|e| AppError::Internal(format!("Failed to create approvals table: {e}")))?;
 
         let mut stmt = conn
             .prepare("SELECT connector_id, capability FROM desktop_connector_approvals")
@@ -292,7 +289,10 @@ impl DesktopApprovalStore {
     pub fn is_fully_approved(&self, manifest: &DesktopConnectorManifest) -> bool {
         let guard = self.approved.read().unwrap_or_else(|e| e.into_inner());
         if let Some(approved_caps) = guard.get(&manifest.connector_id) {
-            manifest.capabilities.iter().all(|c| approved_caps.contains(c))
+            manifest
+                .capabilities
+                .iter()
+                .all(|c| approved_caps.contains(c))
         } else {
             false
         }
@@ -308,9 +308,7 @@ impl DesktopApprovalStore {
         manifest
             .capabilities
             .iter()
-            .filter(|c| {
-                approved_caps.map_or(true, |set| !set.contains(c))
-            })
+            .filter(|c| approved_caps.map_or(true, |set| !set.contains(c)))
             .cloned()
             .collect()
     }
@@ -356,11 +354,7 @@ impl DesktopApprovalStore {
     }
 
     /// Revoke all approvals for a connector.
-    pub fn revoke(
-        &self,
-        pool: &DbPool,
-        connector_id: &str,
-    ) -> Result<(), AppError> {
+    pub fn revoke(&self, pool: &DbPool, connector_id: &str) -> Result<(), AppError> {
         let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
 
         conn.execute(
@@ -369,9 +363,12 @@ impl DesktopApprovalStore {
         )
         .map_err(|e| AppError::Internal(format!("Failed to revoke approvals: {e}")))?;
 
-        self.approved.write().map_err(|e| {
-            AppError::Internal(format!("Approval store RwLock poisoned on revoke: {e}"))
-        })?.remove(connector_id);
+        self.approved
+            .write()
+            .map_err(|e| {
+                AppError::Internal(format!("Approval store RwLock poisoned on revoke: {e}"))
+            })?
+            .remove(connector_id);
 
         tracing::info!(connector_id, "Desktop connector approvals revoked");
         Ok(())
@@ -410,15 +407,27 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 DesktopCapability::NetworkLocal,
             ],
             allowed_binaries: vec![
-                "code".into(), "code.cmd".into(), "code.exe".into(),
-                "code-insiders".into(), "code-insiders.cmd".into(),
+                "code".into(),
+                "code.cmd".into(),
+                "code.exe".into(),
+                "code-insiders".into(),
+                "code-insiders.cmd".into(),
             ],
             allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![],
             justifications: HashMap::from([
-                ("process_spawn".into(), "Launch VS Code CLI to open files, run tasks, and manage extensions".into()),
-                ("file_read".into(), "Read project files for context and analysis".into()),
-                ("network_local".into(), "Connect to VS Code's extension host API".into()),
+                (
+                    "process_spawn".into(),
+                    "Launch VS Code CLI to open files, run tasks, and manage extensions".into(),
+                ),
+                (
+                    "file_read".into(),
+                    "Read project files for context and analysis".into(),
+                ),
+                (
+                    "network_local".into(),
+                    "Connect to VS Code's extension host API".into(),
+                ),
             ]),
         }),
 
@@ -429,14 +438,22 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 DesktopCapability::NetworkLocal,
             ],
             allowed_binaries: vec![
-                "docker".into(), "docker.exe".into(),
-                "docker-compose".into(), "docker-compose.exe".into(),
+                "docker".into(),
+                "docker.exe".into(),
+                "docker-compose".into(),
+                "docker-compose.exe".into(),
             ],
             allowed_paths: vec![],
             allowed_ports: vec![2375, 2376], // Docker API
             justifications: HashMap::from([
-                ("process_spawn".into(), "Run Docker CLI commands to manage containers".into()),
-                ("network_local".into(), "Connect to Docker Engine API".into()),
+                (
+                    "process_spawn".into(),
+                    "Run Docker CLI commands to manage containers".into(),
+                ),
+                (
+                    "network_local".into(),
+                    "Connect to Docker Engine API".into(),
+                ),
             ]),
         }),
 
@@ -449,16 +466,26 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 DesktopCapability::EnvRead,
             ],
             allowed_binaries: vec![
-                "bash".into(), "sh".into(), "zsh".into(),
-                "powershell.exe".into(), "pwsh.exe".into(), "cmd.exe".into(),
+                "bash".into(),
+                "sh".into(),
+                "zsh".into(),
+                "powershell.exe".into(),
+                "pwsh.exe".into(),
+                "cmd.exe".into(),
             ],
             allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![],
             justifications: HashMap::from([
                 ("process_spawn".into(), "Execute shell commands".into()),
                 ("file_read".into(), "Read command output and scripts".into()),
-                ("file_write".into(), "Write script files for execution".into()),
-                ("env_read".into(), "Access environment for PATH and tool detection".into()),
+                (
+                    "file_write".into(),
+                    "Write script files for execution".into(),
+                ),
+                (
+                    "env_read".into(),
+                    "Access environment for PATH and tool detection".into(),
+                ),
             ]),
         }),
 
@@ -473,9 +500,18 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
             allowed_paths: vec![], // see allowed_paths field docs for population lifecycle
             allowed_ports: vec![27123, 27124], // Obsidian Local REST API plugin
             justifications: HashMap::from([
-                ("file_read".into(), "Read notes from your Obsidian vault".into()),
-                ("file_write".into(), "Create and update notes in your vault".into()),
-                ("network_local".into(), "Connect to Obsidian's Local REST API plugin".into()),
+                (
+                    "file_read".into(),
+                    "Read notes from your Obsidian vault".into(),
+                ),
+                (
+                    "file_write".into(),
+                    "Create and update notes in your vault".into(),
+                ),
+                (
+                    "network_local".into(),
+                    "Connect to Obsidian's Local REST API plugin".into(),
+                ),
             ]),
         }),
 
@@ -486,14 +522,24 @@ pub fn get_manifest(connector_name: &str) -> Option<DesktopConnectorManifest> {
                 DesktopCapability::NetworkLocal,
             ],
             allowed_binaries: vec![
-                "chrome".into(), "chrome.exe".into(), "google-chrome".into(),
-                "msedge.exe".into(), "firefox".into(), "firefox.exe".into(),
+                "chrome".into(),
+                "chrome.exe".into(),
+                "google-chrome".into(),
+                "msedge.exe".into(),
+                "firefox".into(),
+                "firefox.exe".into(),
             ],
             allowed_paths: vec![],
             allowed_ports: vec![9222, 9229], // Chrome DevTools Protocol
             justifications: HashMap::from([
-                ("process_spawn".into(), "Launch browser with debugging enabled".into()),
-                ("network_local".into(), "Connect to browser DevTools Protocol for automation".into()),
+                (
+                    "process_spawn".into(),
+                    "Launch browser with debugging enabled".into(),
+                ),
+                (
+                    "network_local".into(),
+                    "Connect to browser DevTools Protocol for automation".into(),
+                ),
             ]),
         }),
 

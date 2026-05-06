@@ -91,13 +91,17 @@ pub(crate) async fn resolve_credential_env_vars(
                 &mut hints,
                 persona_id,
                 persona_name,
-            ).await {
+            )
+            .await
+            {
                 Ok(true) => {
                     matched_connector = true;
                     injected_connector_names.push(connector.name.clone());
                 }
                 Ok(false) => {}
-                Err(name) => { failures.push(name); }
+                Err(name) => {
+                    failures.push(name);
+                }
             }
         }
 
@@ -126,14 +130,18 @@ pub(crate) async fn resolve_credential_env_vars(
                         &mut hints,
                         persona_id,
                         persona_name,
-                    ).await {
+                    )
+                    .await
+                    {
                         Ok(true) => {
                             matched_connector = true;
                             injected_connector_names.push(connector.name.clone());
                             break;
                         }
                         Ok(false) => {}
-                        Err(name) => { failures.push(name); }
+                        Err(name) => {
+                            failures.push(name);
+                        }
                     }
                 }
 
@@ -150,7 +158,9 @@ pub(crate) async fn resolve_credential_env_vars(
                                 &mut hints,
                                 persona_id,
                                 persona_name,
-                            ).await {
+                            )
+                            .await
+                            {
                                 failures.push(name);
                             }
                         }
@@ -233,7 +243,9 @@ pub(super) async fn inject_design_context_credentials(
         }
     }
 
-    if connector_names.is_empty() { return; }
+    if connector_names.is_empty() {
+        return;
+    }
 
     // 2026-05-04 — Per-persona credential link awareness.
     //
@@ -337,7 +349,8 @@ pub(crate) async fn inject_connector_credentials(
             hints,
             persona_id,
             persona_name,
-        ).await?;
+        )
+        .await?;
         Ok(true)
     } else {
         Ok(false)
@@ -381,7 +394,10 @@ async fn try_refresh_oauth_token(
     } else if let Some((id, secret)) = override_client {
         (id.to_string(), secret.to_string())
     } else {
-        tracing::debug!("No client credentials available for OAuth refresh of '{}'", connector_name);
+        tracing::debug!(
+            "No client credentials available for OAuth refresh of '{}'",
+            connector_name
+        );
         return None;
     };
     let client_id = &cid;
@@ -389,7 +405,11 @@ async fn try_refresh_oauth_token(
 
     // Determine the token endpoint based on connector type
     let token_url = match connector_name {
-        n if n.starts_with("google") || n == "gmail" || n == "google_calendar" || n == "google_drive" => {
+        n if n.starts_with("google")
+            || n == "gmail"
+            || n == "google_calendar"
+            || n == "google_drive" =>
+        {
             "https://oauth2.googleapis.com/token"
         }
         "microsoft" => "https://login.microsoftonline.com/common/oauth2/v2.0/token",
@@ -398,7 +418,10 @@ async fn try_refresh_oauth_token(
         _ => return None, // Unknown provider -- skip refresh
     };
 
-    tracing::info!("Refreshing OAuth access token for connector '{}'", connector_name);
+    tracing::info!(
+        "Refreshing OAuth access token for connector '{}'",
+        connector_name
+    );
 
     let response = crate::SHARED_HTTP
         .post(token_url)
@@ -417,7 +440,12 @@ async fn try_refresh_oauth_token(
     if !response.status().is_success() {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        tracing::warn!("OAuth token refresh failed for '{}' ({}): {}", connector_name, status, body);
+        tracing::warn!(
+            "OAuth token refresh failed for '{}' ({}): {}",
+            connector_name,
+            status,
+            body
+        );
         return None;
     }
 
@@ -484,11 +512,9 @@ pub(crate) async fn inject_credential(
                 || connector_name == "onedrive"
                 || connector_name == "sharepoint";
             if is_google {
-                crate::engine::google_oauth::resolve_google_desktop_oauth_credentials()
-                    .ok()
+                crate::engine::google_oauth::resolve_google_desktop_oauth_credentials().ok()
             } else if is_microsoft {
-                crate::engine::google_oauth::resolve_microsoft_oauth_credentials()
-                    .ok()
+                crate::engine::google_oauth::resolve_microsoft_oauth_credentials().ok()
             } else {
                 None
             }
@@ -535,8 +561,12 @@ pub(crate) async fn inject_credential(
 
     // Internal metadata fields that shouldn't be exposed as env vars
     const SKIP_FIELDS: &[&str] = &[
-        "oauth_client_mode", "client_id", "client_secret",
-        "token_type", "expiry_date", "expires_in",
+        "oauth_client_mode",
+        "client_id",
+        "client_secret",
+        "token_type",
+        "expiry_date",
+        "expires_in",
     ];
 
     for (field_key, field_val) in &fields {

@@ -23,7 +23,9 @@ pub struct ZapierClient {
 
 impl ZapierClient {
     pub fn new() -> Result<Self, AppError> {
-        Ok(Self { http: ZAPIER_HTTP.clone() })
+        Ok(Self {
+            http: ZAPIER_HTTP.clone(),
+        })
     }
 
     /// Validate a Zapier catch hook URL by sending a test POST.

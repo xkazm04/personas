@@ -78,9 +78,10 @@ impl RateLimiter {
             if !buckets.is_empty() {
                 let mut high_watermark_key = String::new();
                 let mut high_watermark_depth: usize = 0;
-                let active_buckets = buckets.iter().filter(|(_, ts)| {
-                    ts.iter().any(|t| *t > cutoff)
-                }).count();
+                let active_buckets = buckets
+                    .iter()
+                    .filter(|(_, ts)| ts.iter().any(|t| *t > cutoff))
+                    .count();
                 for (k, ts) in buckets.iter() {
                     let live = ts.iter().filter(|t| **t > cutoff).count();
                     if live > high_watermark_depth {
@@ -240,15 +241,22 @@ mod tests {
         thread::sleep(Duration::from_millis(150));
 
         // Advance call_count so the next fetch_add returns a multiple of AUTO_PRUNE_INTERVAL
-        rl.call_count.store(super::AUTO_PRUNE_INTERVAL, Ordering::Relaxed);
+        rl.call_count
+            .store(super::AUTO_PRUNE_INTERVAL, Ordering::Relaxed);
 
         // This call should trigger auto-prune (count hits the interval boundary)
         rl.check("new_key", 1000, short_window).unwrap();
 
         let buckets = rl.buckets.lock().unwrap();
         // "old_key" should have been pruned away
-        assert!(!buckets.contains_key("old_key"), "expired bucket should be auto-pruned");
+        assert!(
+            !buckets.contains_key("old_key"),
+            "expired bucket should be auto-pruned"
+        );
         // "new_key" should still be present (just inserted)
-        assert!(buckets.contains_key("new_key"), "active bucket should remain");
+        assert!(
+            buckets.contains_key("new_key"),
+            "active bucket should remain"
+        );
     }
 }

@@ -30,12 +30,11 @@ struct NlQuerySnapshotExtras {
 
 // -- Static job manager --------------------------------------------------
 
-static NL_QUERY_JOBS: BackgroundJobManager<NlQueryExtra> =
-    BackgroundJobManager::new(
-        "nl query job lock",
-        event_name::NL_QUERY_STATUS,
-        event_name::NL_QUERY_OUTPUT,
-    );
+static NL_QUERY_JOBS: BackgroundJobManager<NlQueryExtra> = BackgroundJobManager::new(
+    "nl query job lock",
+    event_name::NL_QUERY_STATUS,
+    event_name::NL_QUERY_OUTPUT,
+);
 
 /// List all NL query job snapshots (for unified workflows view).
 #[allow(dead_code)]
@@ -100,11 +99,9 @@ pub async fn get_nl_query_snapshot(
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "get_nl_query_snapshot").await?;
 
-    let snapshot = NL_QUERY_JOBS.get_task_snapshot(&query_id, |extra| {
-        NlQuerySnapshotExtras {
-            generated_sql: extra.generated_sql.clone(),
-            explanation: extra.explanation.clone(),
-        }
+    let snapshot = NL_QUERY_JOBS.get_task_snapshot(&query_id, |extra| NlQuerySnapshotExtras {
+        generated_sql: extra.generated_sql.clone(),
+        explanation: extra.explanation.clone(),
     });
 
     Ok(match snapshot {
@@ -134,8 +131,8 @@ pub async fn cancel_nl_query(
 
 #[derive(Clone, serde::Deserialize, Serialize)]
 pub struct ConversationTurn {
-    pub role: String,     // "user" or "assistant"
-    pub content: String,  // the message text
+    pub role: String,    // "user" or "assistant"
+    pub content: String, // the message text
 }
 
 // -- Internal logic ------------------------------------------------------
@@ -177,15 +174,14 @@ async fn run_nl_query(params: RunParams) {
 
     let db_type = database_type.as_deref().unwrap_or("sql");
 
-    emit_line(&app, &query_id, "> Generating query from your description...");
+    emit_line(
+        &app,
+        &query_id,
+        "> Generating query from your description...",
+    );
 
     // 2. Build the AI prompt
-    let system_prompt = build_nl_prompt(
-        &question,
-        &conversation_history,
-        &schema_context,
-        db_type,
-    );
+    let system_prompt = build_nl_prompt(&question, &conversation_history, &schema_context, db_type);
 
     // 3. Build CLI args -- fast model, single turn
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -200,15 +196,9 @@ async fn run_nl_query(params: RunParams) {
         NL_QUERY_JOBS.emit_line(&app_clone, &id_clone, line);
     };
 
-    let cli_result = run_claude_prompt_text_inner(
-        system_prompt,
-        &cli_args,
-        Some(&on_line),
-        None,
-        None,
-        120,
-    )
-    .await;
+    let cli_result =
+        run_claude_prompt_text_inner(system_prompt, &cli_args, Some(&on_line), None, None, 120)
+            .await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &query_id, "> Cancelled.");
@@ -319,7 +309,11 @@ fn build_nl_prompt(
     if !conversation_history.is_empty() {
         prompt.push_str("## Conversation History\n");
         for turn in conversation_history {
-            let role_label = if turn.role == "user" { "User" } else { "Assistant" };
+            let role_label = if turn.role == "user" {
+                "User"
+            } else {
+                "Assistant"
+            };
             prompt.push_str(&format!("**{role_label}**: {}\n\n", turn.content));
         }
     }
@@ -337,16 +331,13 @@ async fn build_db_schema_context(
     user_db: &crate::db::UserDbPool,
     credential_id: &str,
 ) -> String {
-    let tables_result = match db_query::introspect_tables(pool, credential_id, Some(user_db)).await {
+    let tables_result = match db_query::introspect_tables(pool, credential_id, Some(user_db)).await
+    {
         Ok(r) => r,
         Err(_) => return String::new(),
     };
 
-    let name_idx = match tables_result
-        .columns
-        .iter()
-        .position(|c| c == "table_name")
-    {
+    let name_idx = match tables_result.columns.iter().position(|c| c == "table_name") {
         Some(i) => i,
         None => return String::new(),
     };
@@ -364,16 +355,20 @@ async fn build_db_schema_context(
     let mut ctx = String::new();
 
     for table_name in &table_names {
-        let cols =
-            match db_query::introspect_columns(pool, credential_id, table_name, Some(user_db))
-                .await
-            {
-                Ok(r) => r,
-                Err(_) => {
-                    ctx.push_str(&format!("- {table_name}\n"));
-                    continue;
-                }
-            };
+        let cols = match db_query::introspect_columns(
+            pool,
+            credential_id,
+            table_name,
+            Some(user_db),
+        )
+        .await
+        {
+            Ok(r) => r,
+            Err(_) => {
+                ctx.push_str(&format!("- {table_name}\n"));
+                continue;
+            }
+        };
 
         let col_name_idx = cols.columns.iter().position(|c| c == "column_name");
         let col_type_idx = cols
@@ -416,9 +411,16 @@ fn extract_sql_block(text: &str) -> Option<String> {
                 .trim()
                 .to_lowercase();
             is_sql = tag.is_empty()
-                || ["sql", "sqlite", "sqlite3", "mysql", "postgresql", "postgres"]
-                    .iter()
-                    .any(|t| tag == *t);
+                || [
+                    "sql",
+                    "sqlite",
+                    "sqlite3",
+                    "mysql",
+                    "postgresql",
+                    "postgres",
+                ]
+                .iter()
+                .any(|t| tag == *t);
             continue;
         }
         if in_block {

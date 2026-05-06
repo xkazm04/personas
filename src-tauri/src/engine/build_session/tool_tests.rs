@@ -9,7 +9,6 @@
 //! persona events fired. The promote pipeline happens in a separate command
 //! once the user approves the test results.
 
-
 use tauri::Emitter;
 
 use crate::db::DbPool;
@@ -59,7 +58,9 @@ pub async fn run_tool_tests(
     let mut tools: Vec<AgentIrTool> = Vec::new();
     for t in &agent_ir.tools {
         let name = t.name().to_string();
-        if name.is_empty() || !seen.insert(name) { continue; }
+        if name.is_empty() || !seen.insert(name) {
+            continue;
+        }
         tools.push(t.clone());
     }
     for uc in &agent_ir.use_cases {
@@ -67,7 +68,9 @@ pub async fn run_tool_tests(
             if let Some(hints) = &d.tool_hints {
                 for h in hints {
                     let name = h.trim().to_string();
-                    if name.is_empty() || !seen.insert(name.clone()) { continue; }
+                    if name.is_empty() || !seen.insert(name.clone()) {
+                        continue;
+                    }
                     tools.push(AgentIrTool::Simple(name));
                 }
             }
@@ -85,10 +88,7 @@ pub async fn run_tool_tests(
         }));
     }
 
-    let persona_name = agent_ir
-        .name
-        .as_deref()
-        .unwrap_or("draft-agent");
+    let persona_name = agent_ir.name.as_deref().unwrap_or("draft-agent");
 
     // Step 1: Resolve credentials to get env var names + values
     let tool_defs: Vec<_> = tools
@@ -150,8 +150,9 @@ pub async fn run_tool_tests(
     }
 
     // Query ALL credential service types from vault so the LLM can match intelligently
-    let all_vault_types = crate::db::repos::resources::credentials::get_distinct_service_types(pool)
-        .unwrap_or_default();
+    let all_vault_types =
+        crate::db::repos::resources::credentials::get_distinct_service_types(pool)
+            .unwrap_or_default();
 
     let cred_context = {
         let mut ctx = String::new();
@@ -204,7 +205,9 @@ pub async fn run_tool_tests(
 
     if let Err(e) = driver.write_stdin_line(test_prompt.as_bytes()).await {
         let _ = driver.kill().await;
-        return Err(AppError::Execution(format!("Failed to write test prompt: {e}")));
+        return Err(AppError::Execution(format!(
+            "Failed to write test prompt: {e}"
+        )));
     }
     driver.close_stdin().await;
 
@@ -238,19 +241,26 @@ pub async fn run_tool_tests(
 
     // Built-in platform connectors that never need user credentials
     let platform_connectors: std::collections::HashSet<&str> = [
-        "personas_database", "personas_messages", "personas_vector_db",
-        "messaging", "database", "builtin",
-    ].iter().copied().collect();
+        "personas_database",
+        "personas_messages",
+        "personas_vector_db",
+        "messaging",
+        "database",
+        "builtin",
+    ]
+    .iter()
+    .copied()
+    .collect();
 
     // Build connector resolution list for the report so the frontend can show
     // which connectors were matched to user credentials.
     // Check three sources: resolved env vars, credential hints, AND vault service types.
-    let vault_types_lower: std::collections::HashSet<String> = all_vault_types
-        .iter()
-        .map(|t| t.to_lowercase())
-        .collect();
+    let vault_types_lower: std::collections::HashSet<String> =
+        all_vault_types.iter().map(|t| t.to_lowercase()).collect();
     let connectors_resolved: Vec<serde_json::Value> = {
-        let names: Vec<String> = agent_ir.required_connectors.iter()
+        let names: Vec<String> = agent_ir
+            .required_connectors
+            .iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
         names.iter()
@@ -288,12 +298,30 @@ pub async fn run_tool_tests(
         //     name so the UI can surface "Alpha Vantage needs credentials"
         //     instead of "http_request needs credentials".
         let builtin_tool_names: std::collections::HashSet<&str> = [
-            "personas_database", "database", "database_query", "db_query", "db_write",
-            "personas_messages", "messaging", "personas_vector_db",
-            "file_read", "file_write", "web_search", "web_fetch",
-            "http_request", "data_processing", "nlp_parser", "ai_generation",
-            "date_calculation", "notification_sender", "text_analysis", "data_enrichment",
-        ].iter().copied().collect();
+            "personas_database",
+            "database",
+            "database_query",
+            "db_query",
+            "db_write",
+            "personas_messages",
+            "messaging",
+            "personas_vector_db",
+            "file_read",
+            "file_write",
+            "web_search",
+            "web_fetch",
+            "http_request",
+            "data_processing",
+            "nlp_parser",
+            "ai_generation",
+            "date_calculation",
+            "notification_sender",
+            "text_analysis",
+            "data_enrichment",
+        ]
+        .iter()
+        .copied()
+        .collect();
 
         let mut fb_passed = 0usize;
         let mut fb_failed = 0usize;
@@ -304,7 +332,9 @@ pub async fn run_tool_tests(
         // credentials; they're conduits to whichever connector is bound.
         for t in tools.iter() {
             let name = t.name();
-            if name.is_empty() { continue; }
+            if name.is_empty() {
+                continue;
+            }
             if builtin_tool_names.contains(name) {
                 fb_passed += 1;
                 fallback_results.push(serde_json::json!({
@@ -322,7 +352,9 @@ pub async fn run_tool_tests(
         // Emit one result per connector. This is what makes the UI's
         // credential_missing messages specific — the connector name is the
         // credential subject, not the generic tool name.
-        let connector_names: Vec<String> = agent_ir.required_connectors.iter()
+        let connector_names: Vec<String> = agent_ir
+            .required_connectors
+            .iter()
             .filter_map(|c| c.name().map(|n| n.to_string()))
             .collect();
         for cname in &connector_names {
@@ -341,10 +373,14 @@ pub async fn run_tool_tests(
                 continue;
             }
             let has_cred = resolved_cred_names.contains(&name_lower)
-                || resolved_cred_names.iter().any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
+                || resolved_cred_names
+                    .iter()
+                    .any(|cred| name_lower.contains(cred.as_str()) || cred.contains(&name_lower))
                 || hints.iter().any(|h| h.to_lowercase().contains(&name_lower))
                 || vault_types_lower.contains(&name_lower)
-                || vault_types_lower.iter().any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
+                || vault_types_lower
+                    .iter()
+                    .any(|vt| name_lower.contains(vt.as_str()) || vt.contains(&name_lower));
             if has_cred {
                 fb_passed += 1;
                 fallback_results.push(serde_json::json!({
@@ -402,10 +438,7 @@ pub async fn run_tool_tests(
             .get("tool_name")
             .and_then(|v| v.as_str())
             .unwrap_or("unknown");
-        let curl_cmd = entry
-            .get("curl")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
+        let curl_cmd = entry.get("curl").and_then(|v| v.as_str()).unwrap_or("");
         let connector = entry
             .get("connector")
             .and_then(|v| v.as_str())
@@ -432,11 +465,19 @@ pub async fn run_tool_tests(
         // Auto-pass built-in platform connectors regardless of CLI classification
         let is_builtin_platform = matches!(
             tool_name,
-            "personas_database" | "database" | "database_query" | "db_query" | "db_write"
-            | "personas_messages" | "messaging"
-            | "personas_vector_db"
-            | "file_read" | "file_write"
-        ) || connector.as_deref().is_some_and(|c| c.starts_with("personas_") || c == "builtin");
+            "personas_database"
+                | "database"
+                | "database_query"
+                | "db_query"
+                | "db_write"
+                | "personas_messages"
+                | "messaging"
+                | "personas_vector_db"
+                | "file_read"
+                | "file_write"
+        ) || connector
+            .as_deref()
+            .is_some_and(|c| c.starts_with("personas_") || c == "builtin");
 
         let result = if is_cli_native || is_builtin_platform {
             // CLI-native tools and built-in platform connectors auto-pass
@@ -457,7 +498,11 @@ pub async fn run_tool_tests(
                 status: "skipped".to_string(),
                 http_status: None,
                 latency_ms: 0,
-                error: Some(if description.is_empty() { "No curl command generated".to_string() } else { description }),
+                error: Some(if description.is_empty() {
+                    "No curl command generated".to_string()
+                } else {
+                    description
+                }),
                 connector: connector.clone(),
                 output_preview: None,
             }
@@ -492,32 +537,29 @@ pub async fn run_tool_tests(
         });
 
         // Emit per-tool result event
-        let _ = app.emit(event_name::BUILD_TEST_TOOL_RESULT, serde_json::json!({
-            "session_id": session_id,
-            "tool_name": result.tool_name,
-            "status": result.status,
-            "http_status": result.http_status,
-            "latency_ms": result.latency_ms,
-            "error": result.error,
-            "connector": result.connector,
-            "tested": idx + 1,
-            "total": total,
-        }));
+        let _ = app.emit(
+            event_name::BUILD_TEST_TOOL_RESULT,
+            serde_json::json!({
+                "session_id": session_id,
+                "tool_name": result.tool_name,
+                "status": result.status,
+                "http_status": result.http_status,
+                "latency_ms": result.latency_ms,
+                "error": result.error,
+                "connector": result.connector,
+                "tested": idx + 1,
+                "total": total,
+            }),
+        );
 
         results.push(result_json);
     }
 
     // Step 5: Generate human-friendly summary via CLI
     let results_json = serde_json::to_string_pretty(&results).unwrap_or_default();
-    let summary = generate_test_summary(
-        &results_json,
-        persona_name,
-        passed,
-        failed,
-        skipped,
-    )
-    .await
-    .unwrap_or_else(|_| build_fallback_summary(&results, passed, failed, skipped));
+    let summary = generate_test_summary(&results_json, persona_name, passed, failed, skipped)
+        .await
+        .unwrap_or_else(|_| build_fallback_summary(&results, passed, failed, skipped));
 
     Ok(serde_json::json!({
         "results": results,
@@ -540,7 +582,7 @@ async fn generate_test_summary(
     skipped: usize,
 ) -> Result<String, AppError> {
     let prompt = format!(
-r#"You are writing a test report for a non-technical user who just built an AI agent called "{agent_name}".
+        r#"You are writing a test report for a non-technical user who just built an AI agent called "{agent_name}".
 
 ## Test Results (raw data)
 {results_json}
@@ -580,7 +622,9 @@ If some failed: 2-3 bullet points with specific, actionable steps the user shoul
 
     if let Err(e) = driver.write_stdin_line(prompt.as_bytes()).await {
         let _ = driver.kill().await;
-        return Err(AppError::Execution(format!("Failed to write summary prompt: {e}")));
+        return Err(AppError::Execution(format!(
+            "Failed to write summary prompt: {e}"
+        )));
     }
     driver.close_stdin().await;
 
@@ -601,10 +645,7 @@ If some failed: 2-3 bullet points with specific, actionable steps the user shoul
 
     // Extract plain text from CLI output (unwrap stream-json envelopes)
     let text = extract_llm_text_from_output(&raw_output);
-    let cleaned = text
-        .replace("```", "")
-        .trim()
-        .to_string();
+    let cleaned = text.replace("```", "").trim().to_string();
 
     if cleaned.is_empty() {
         return Err(AppError::Execution("Empty summary from CLI".to_string()));
@@ -623,11 +664,22 @@ fn build_fallback_summary(
     let mut lines = Vec::new();
 
     if failed == 0 && passed > 0 {
-        lines.push(format!("All {} tool connections were verified successfully.", passed));
+        lines.push(format!(
+            "All {} tool connections were verified successfully.",
+            passed
+        ));
     } else if passed == 0 && failed > 0 {
-        lines.push(format!("None of the {} tools could connect to their services.", failed));
+        lines.push(format!(
+            "None of the {} tools could connect to their services.",
+            failed
+        ));
     } else {
-        lines.push(format!("{} of {} tools connected successfully, {} had issues.", passed, passed + failed, failed));
+        lines.push(format!(
+            "{} of {} tools connected successfully, {} had issues.",
+            passed,
+            passed + failed,
+            failed
+        ));
     }
 
     for r in results {
@@ -635,31 +687,52 @@ fn build_fallback_summary(
         // Prefer the connector name (e.g. "alpha_vantage") over the tool
         // name (e.g. "http_request") so the user sees which external
         // service is failing, not the generic tool that drove the call.
-        let connector = r.get("connector").and_then(|v| v.as_str()).filter(|s| !s.is_empty());
-        let tool = r.get("tool_name").and_then(|v| v.as_str()).unwrap_or("unknown");
+        let connector = r
+            .get("connector")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty());
+        let tool = r
+            .get("tool_name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown");
         let subject = connector.unwrap_or(tool);
         let friendly = subject.replace('_', " ");
 
         if status == "credential_missing" {
-            lines.push(format!("\"{}\" needs credentials — add them in the Keys section.", friendly));
+            lines.push(format!(
+                "\"{}\" needs credentials — add them in the Keys section.",
+                friendly
+            ));
         } else if status == "failed" {
             let code = r.get("http_status").and_then(|v| v.as_u64());
             match code {
                 Some(401) | Some(403) => {
-                    lines.push(format!("\"{}\" authentication failed — try refreshing credentials in Keys.", friendly));
+                    lines.push(format!(
+                        "\"{}\" authentication failed — try refreshing credentials in Keys.",
+                        friendly
+                    ));
                 }
                 Some(404) => {
-                    lines.push(format!("\"{}\" endpoint not found — the API configuration may need updating.", friendly));
+                    lines.push(format!(
+                        "\"{}\" endpoint not found — the API configuration may need updating.",
+                        friendly
+                    ));
                 }
                 _ => {
-                    lines.push(format!("\"{}\" could not connect to the service.", friendly));
+                    lines.push(format!(
+                        "\"{}\" could not connect to the service.",
+                        friendly
+                    ));
                 }
             }
         }
     }
 
     if skipped > 0 {
-        lines.push(format!("{} tools were skipped (read-only verification not available).", skipped));
+        lines.push(format!(
+            "{} tools were skipped (read-only verification not available).",
+            skipped
+        ));
     }
 
     lines.join(" ")
@@ -668,7 +741,7 @@ fn build_fallback_summary(
 /// Build the test prompt sent to the CLI to generate executable curl commands.
 fn build_test_prompt(tools_json: &str, connectors_json: &str, cred_context: &str) -> String {
     format!(
-r#"You are a tool-testing agent. Compose one `test_plan` entry PER CONNECTOR the persona relies on — plus one entry per non-connector tool that might need verification.
+        r#"You are a tool-testing agent. Compose one `test_plan` entry PER CONNECTOR the persona relies on — plus one entry per non-connector tool that might need verification.
 
 ## Connectors the persona uses
 These are the external services the persona binds to. EVERY connector needs its own test_plan entry so the user sees per-service status.
@@ -726,9 +799,7 @@ fn extract_test_plan(raw_output: &str) -> Vec<serde_json::Value> {
 
     // Look for test_plan JSON object in the text
     // Strategy: find a JSON object containing "test_plan" key
-    let cleaned = search_text
-        .replace("```json", "")
-        .replace("```", "");
+    let cleaned = search_text.replace("```json", "").replace("```", "");
 
     for line in cleaned.lines() {
         let trimmed = line.trim();
@@ -755,9 +826,7 @@ fn extract_test_plan(raw_output: &str) -> Vec<serde_json::Value> {
         if let Ok(val) = serde_json::from_str::<serde_json::Value>(trimmed) {
             // Check stream-json result envelope
             if let Some(result_text) = val.get("result").and_then(|v| v.as_str()) {
-                let inner_cleaned = result_text
-                    .replace("```json", "")
-                    .replace("```", "");
+                let inner_cleaned = result_text.replace("```json", "").replace("```", "");
                 if let Ok(inner) = serde_json::from_str::<serde_json::Value>(&inner_cleaned) {
                     if let Some(plan) = inner.get("test_plan").and_then(|v| v.as_array()) {
                         return plan.clone();
@@ -765,16 +834,16 @@ fn extract_test_plan(raw_output: &str) -> Vec<serde_json::Value> {
                 }
             }
             // Check assistant envelope
-            if let Some(content) = val.get("message")
+            if let Some(content) = val
+                .get("message")
                 .and_then(|m| m.get("content"))
                 .and_then(|c| c.as_array())
             {
                 for item in content {
                     if let Some(text) = item.get("text").and_then(|t| t.as_str()) {
-                        let inner_cleaned = text
-                            .replace("```json", "")
-                            .replace("```", "");
-                        if let Ok(inner) = serde_json::from_str::<serde_json::Value>(&inner_cleaned) {
+                        let inner_cleaned = text.replace("```json", "").replace("```", "");
+                        if let Ok(inner) = serde_json::from_str::<serde_json::Value>(&inner_cleaned)
+                        {
                             if let Some(plan) = inner.get("test_plan").and_then(|v| v.as_array()) {
                                 return plan.clone();
                             }
@@ -829,4 +898,3 @@ fn extract_llm_text_from_output(raw: &str) -> String {
     // Prefer result (complete output) over assistant (may be partial/duplicate)
     result_text.or(assistant_text).unwrap_or_default()
 }
-

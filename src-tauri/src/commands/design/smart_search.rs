@@ -165,19 +165,14 @@ pub async fn smart_search_templates(
     require_auth(&state).await?;
     let query = sanitize_query(&query);
     if query.len() < 5 {
-        return Err(AppError::Validation(
-            "Query too short for AI search".into(),
-        ));
+        return Err(AppError::Validation("Query too short for AI search".into()));
     }
 
     // Pre-filter: extract keywords and use SQL LIKE to narrow candidates.
     // This avoids loading all templates into the LLM context.
     let keywords = extract_keywords(&query);
-    let (rows, total_templates) = repo::search_reviews_compact(
-        &state.db,
-        &keywords,
-        MAX_LLM_TEMPLATES as i64,
-    )?;
+    let (rows, total_templates) =
+        repo::search_reviews_compact(&state.db, &keywords, MAX_LLM_TEMPLATES as i64)?;
 
     if rows.is_empty() {
         return Ok(SmartSearchResult {
@@ -231,8 +226,7 @@ pub async fn smart_search_templates(
         // Truncate to fit: re-serialize with fewer templates
         let safe_count = summaries.len() * MAX_PROMPT_CHARS / summaries_json.len();
         let trimmed = &summaries[..safe_count.max(1)];
-        summaries_json =
-            serde_json::to_string_pretty(trimmed).unwrap_or_else(|_| "[]".into());
+        summaries_json = serde_json::to_string_pretty(trimmed).unwrap_or_else(|_| "[]".into());
         templates_searched = trimmed.len();
     } else {
         templates_searched = summaries.len();
@@ -285,18 +279,16 @@ pub async fn smart_search_templates(
     }
 
     // Parse response using RawSearchResult (snake_case, matching Claude's output)
-    let json_str = extract_first_json_object_matching(output_text, |val| {
-        val.get("ranked_ids").is_some()
-    })
-    .ok_or_else(|| {
-        AppError::Internal(format!(
-            "Failed to extract search results from Claude output. Raw output:\n{}",
-            &output_text[..output_text.len().min(500)]
-        ))
-    })?;
+    let json_str =
+        extract_first_json_object_matching(output_text, |val| val.get("ranked_ids").is_some())
+            .ok_or_else(|| {
+                AppError::Internal(format!(
+                    "Failed to extract search results from Claude output. Raw output:\n{}",
+                    &output_text[..output_text.len().min(500)]
+                ))
+            })?;
 
-    let raw: RawSearchResult =
-        serde_json::from_str(&json_str).map_err(AppError::Serde)?;
+    let raw: RawSearchResult = serde_json::from_str(&json_str).map_err(AppError::Serde)?;
 
     Ok(SmartSearchResult {
         ranked_ids: raw.ranked_ids,

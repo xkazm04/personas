@@ -8,10 +8,15 @@
 //! `companion_edge`, ...) are an index over those files plus runtime state.
 
 pub mod brain;
+pub mod connectors;
 pub mod dev_session;
 pub mod disk;
 pub mod dispatcher;
+pub mod jobs;
 pub mod observability;
+pub mod plugins;
+pub mod proactive;
+pub mod projects;
 pub mod prompt;
 pub mod session;
 pub mod templates;

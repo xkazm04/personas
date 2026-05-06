@@ -10,7 +10,11 @@ use super::cron;
 /// when `parse_config()` has already been called for other purposes.
 pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) -> Option<String> {
     match cfg {
-        TriggerConfig::Schedule { cron: Some(cron_expr), timezone, .. } => {
+        TriggerConfig::Schedule {
+            cron: Some(cron_expr),
+            timezone,
+            ..
+        } => {
             let schedule = cron::parse_cron(cron_expr).ok()?;
             let resolved_tz: Option<Tz> = match timezone.as_deref() {
                 None => None,
@@ -31,7 +35,7 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
                         );
                         None
                     }
-                }
+                },
             };
             let next = match resolved_tz {
                 Some(tz) => cron::next_fire_time_in_tz(&schedule, now, tz)?,
@@ -53,11 +57,17 @@ pub(crate) fn compute_next_from_config(cfg: &TriggerConfig, now: DateTime<Utc>) 
             };
             Some(next.to_rfc3339())
         }
-        TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
+        TriggerConfig::Schedule {
+            interval_seconds: Some(secs),
+            ..
+        } => {
             let next = now + Duration::seconds(*secs as i64);
             Some(next.to_rfc3339())
         }
-        TriggerConfig::Polling { interval_seconds: Some(secs), .. } => {
+        TriggerConfig::Polling {
+            interval_seconds: Some(secs),
+            ..
+        } => {
             let next = now + Duration::seconds(*secs as i64);
             Some(next.to_rfc3339())
         }

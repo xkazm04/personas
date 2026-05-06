@@ -10,7 +10,7 @@ use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 use super::ai_artifact_flow::{
-    AiArtifactMessages, AiArtifactParams, run_ai_artifact_task, run_claude_prompt,
+    run_ai_artifact_task, run_claude_prompt, AiArtifactMessages, AiArtifactParams,
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
@@ -65,8 +65,12 @@ pub async fn start_credential_negotiation(
     registry.set_id("negotiation", negotiation_id.clone());
 
     let _ = audit_log::insert(
-        &state.db, &negotiation_id, &service_name,
-        "negotiation_started", None, None,
+        &state.db,
+        &negotiation_id,
+        &service_name,
+        "negotiation_started",
+        None,
+        None,
         Some(&format!("provisioning plan for '{service_name}'")),
     );
 
@@ -92,13 +96,14 @@ pub async fn start_credential_negotiation(
 
 /// Cancel an active credential negotiation.
 #[tauri::command]
-pub fn cancel_credential_negotiation(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub fn cancel_credential_negotiation(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_privileged_sync(&state, "cancel_credential_negotiation")?;
     // Cancel the active negotiation and kill the CLI child process.
     if let Some(pid) = state.process_registry.cancel("negotiation") {
-        tracing::info!(pid = pid, "Killing credential negotiation CLI child process");
+        tracing::info!(
+            pid = pid,
+            "Killing credential negotiation CLI child process"
+        );
         crate::engine::kill_process(pid);
     }
 
@@ -123,12 +128,19 @@ pub async fn get_negotiation_step_help(
     );
 
     let cli_args = build_credential_task_cli_args();
-    let output_text = run_claude_prompt(prompt_text, &cli_args, 120, "Claude produced no output for step help")
-        .await
-        .map_err(AppError::Internal)?;
+    let output_text = run_claude_prompt(
+        prompt_text,
+        &cli_args,
+        120,
+        "Claude produced no output for step help",
+    )
+    .await
+    .map_err(AppError::Internal)?;
 
-    let help_result = credential_negotiator::extract_step_help_result(&output_text)
-        .ok_or_else(|| AppError::Internal("Failed to extract step help from Claude output".into()))?;
+    let help_result =
+        credential_negotiator::extract_step_help_result(&output_text).ok_or_else(|| {
+            AppError::Internal("Failed to extract step help from Claude output".into())
+        })?;
 
     Ok(help_result)
 }

@@ -112,11 +112,27 @@ pub async fn artist_load_composition(file_path: String) -> Result<CompositionLoa
     let wrapped: SavedComposition = serde_json::from_slice(&bytes)
         .map_err(|e| AppError::Validation(format!("Invalid composition file: {e}")))?;
 
-    if wrapped.schema_version > CURRENT_SCHEMA_VERSION {
-        return Err(AppError::Validation(format!(
-            "Composition file was saved by a newer app version (schema v{}, this app supports up to v{})",
-            wrapped.schema_version, CURRENT_SCHEMA_VERSION
-        )));
+    // Apply the shared schema-version policy (see
+    // `super::schema_policy` for the contract).
+    use super::schema_policy::{classify, SchemaCompatibility};
+    match classify(wrapped.schema_version, CURRENT_SCHEMA_VERSION) {
+        SchemaCompatibility::Match => {}
+        SchemaCompatibility::OlderNeedsMigration => {
+            // Permissive load: composition stays a `serde_json::Value` so
+            // older payloads still surface in the UI even before a
+            // migration step is written. Drift is logged for visibility.
+            tracing::warn!(
+                schema_version = wrapped.schema_version,
+                current = CURRENT_SCHEMA_VERSION,
+                "Loading older composition with no migration step yet"
+            );
+        }
+        SchemaCompatibility::NewerThanSupported => {
+            return Err(AppError::Validation(format!(
+                "Composition file was saved by a newer app version (schema v{}, this app supports up to v{})",
+                wrapped.schema_version, CURRENT_SCHEMA_VERSION
+            )));
+        }
     }
 
     let composition_json = serde_json::to_string(&wrapped.composition)
@@ -162,9 +178,7 @@ pub async fn artist_autosave_composition(
 /// Read the autosave file if it exists. Returns None when there's nothing
 /// to restore — the frontend uses that as the "fresh session" signal.
 #[tauri::command]
-pub async fn artist_load_autosave(
-    app: AppHandle,
-) -> Result<Option<CompositionLoad>, AppError> {
+pub async fn artist_load_autosave(app: AppHandle) -> Result<Option<CompositionLoad>, AppError> {
     let path = autosave_path(&app)?;
     if !path.exists() {
         return Ok(None);
@@ -180,13 +194,28 @@ pub async fn artist_load_autosave(
         return Ok(None);
     };
 
-    if wrapped.schema_version > CURRENT_SCHEMA_VERSION {
-        tracing::warn!(
-            "autosave schema v{} is newer than current v{}; ignoring",
-            wrapped.schema_version,
-            CURRENT_SCHEMA_VERSION
-        );
-        return Ok(None);
+    // Best-effort autosave: the shared schema policy says newer-than-current
+    // payloads are dropped (the user just loses the autosave once), and
+    // older-than-current payloads load permissively with a warn — same rule
+    // as user saves above. See `super::schema_policy`.
+    use super::schema_policy::{classify, SchemaCompatibility};
+    match classify(wrapped.schema_version, CURRENT_SCHEMA_VERSION) {
+        SchemaCompatibility::Match => {}
+        SchemaCompatibility::OlderNeedsMigration => {
+            tracing::warn!(
+                schema_version = wrapped.schema_version,
+                current = CURRENT_SCHEMA_VERSION,
+                "Restoring older autosave with no migration step yet"
+            );
+        }
+        SchemaCompatibility::NewerThanSupported => {
+            tracing::warn!(
+                "autosave schema v{} is newer than current v{}; ignoring",
+                wrapped.schema_version,
+                CURRENT_SCHEMA_VERSION
+            );
+            return Ok(None);
+        }
     }
 
     let composition_json = serde_json::to_string(&wrapped.composition)
@@ -218,9 +247,8 @@ pub async fn artist_clear_autosave(app: AppHandle) -> Result<(), AppError> {
 /// user files.
 #[tauri::command]
 pub async fn artist_default_save_dir() -> Result<String, AppError> {
-    let documents = dirs::document_dir().ok_or_else(|| {
-        AppError::NotFound("Could not resolve the Documents directory".into())
-    })?;
+    let documents = dirs::document_dir()
+        .ok_or_else(|| AppError::NotFound("Could not resolve the Documents directory".into()))?;
     let dir = documents.join("Personas Media Studio");
     fs::create_dir_all(&dir)
         .await
@@ -258,13 +286,20 @@ async fn ensure_parent_dir(path: &Path) -> Result<(), AppError> {
 
 /// Write-then-rename to avoid producing a half-written file if the process
 /// dies mid-save.
+///
+/// The tmp suffix is per-call (`<orig-ext>.<uuid>.tmp`) so two concurrent
+/// writers — e.g. an explicit `save_composition` racing the autosave timer
+/// over the same file — cannot collide on the same staging path. Without the
+/// uuid one writer would either find its tmp gone before rename, or rename
+/// over a half-written sibling. The atomic-rename guarantee only protects
+/// against crash-mid-write, not against concurrent staging.
 async fn atomic_write(target: &Path, bytes: &[u8]) -> Result<(), AppError> {
     let tmp = target.with_extension({
         let mut ext = target
             .extension()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
-        ext.push_str(".tmp");
+        ext.push_str(&format!(".{}.tmp", uuid::Uuid::new_v4().simple()));
         ext
     });
     fs::write(&tmp, bytes)

@@ -32,8 +32,7 @@ fn drive_root() -> Result<PathBuf, String> {
     // Canonicalise so downstream `strip_prefix` comparisons (which get a
     // canonicalised path from `resolve_drive_path`) succeed. On Windows this
     // also resolves the `\\?\` extended-length prefix consistently.
-    std::fs::canonicalize(&raw)
-        .map_err(|e| format!("PERSONAS_DRIVE_ROOT canonicalize failed: {e}"))
+    std::fs::canonicalize(&raw).map_err(|e| format!("PERSONAS_DRIVE_ROOT canonicalize failed: {e}"))
 }
 
 fn resolve_drive_path(root: &Path, rel: &str) -> Result<PathBuf, String> {
@@ -61,14 +60,12 @@ fn resolve_drive_path(root: &Path, rel: &str) -> Result<PathBuf, String> {
     // (target does not exist), canonicalise the parent and re-append the
     // basename so `drive_write_text("new/file.txt", ...)` still works.
     let canonical = if joined.exists() {
-        std::fs::canonicalize(&joined)
-            .map_err(|e| format!("canonicalize failed: {e}"))?
+        std::fs::canonicalize(&joined).map_err(|e| format!("canonicalize failed: {e}"))?
     } else {
         let parent = joined
             .parent()
             .ok_or_else(|| "Drive path has no parent directory".to_string())?;
-        std::fs::create_dir_all(parent)
-            .map_err(|e| format!("create_dir_all failed: {e}"))?;
+        std::fs::create_dir_all(parent).map_err(|e| format!("create_dir_all failed: {e}"))?;
         let parent_canonical = std::fs::canonicalize(parent)
             .map_err(|e| format!("canonicalize parent failed: {e}"))?;
         let basename = joined
@@ -76,8 +73,8 @@ fn resolve_drive_path(root: &Path, rel: &str) -> Result<PathBuf, String> {
             .ok_or_else(|| "Drive path missing basename".to_string())?;
         parent_canonical.join(basename)
     };
-    let root_canonical = std::fs::canonicalize(root)
-        .map_err(|e| format!("canonicalize root failed: {e}"))?;
+    let root_canonical =
+        std::fs::canonicalize(root).map_err(|e| format!("canonicalize root failed: {e}"))?;
     if !canonical.starts_with(&root_canonical) {
         return Err("Resolved path escapes the drive sandbox".into());
     }
@@ -137,8 +134,7 @@ fn handle_drive_read_text(args: &Value) -> Result<String, String> {
         ));
     }
     let bytes = std::fs::read(&abs).map_err(|e| format!("read failed: {e}"))?;
-    let text = String::from_utf8(bytes)
-        .map_err(|e| format!("File is not valid UTF-8: {e}"))?;
+    let text = String::from_utf8(bytes).map_err(|e| format!("File is not valid UTF-8: {e}"))?;
     Ok(text)
 }
 
@@ -198,10 +194,7 @@ fn handle_drive_list(args: &Value) -> Result<String, String> {
 /// Resolve a project_id from optional project_id / project_root args.
 /// Falls back to the first project in the table if neither is supplied — the
 /// common case is a single-project install.
-fn resolve_context_project(
-    conn: &rusqlite::Connection,
-    args: &Value,
-) -> Result<String, String> {
+fn resolve_context_project(conn: &rusqlite::Connection, args: &Value) -> Result<String, String> {
     if let Some(pid) = args.get("project_id").and_then(|v| v.as_str()) {
         return Ok(pid.to_string());
     }
@@ -326,7 +319,10 @@ fn handle_context_get_by_file_path(args: &Value, pool: &McpDbPool) -> Result<Str
     // the surrounding double-quotes. Avoids matching "src/foo.ts.bak".
     let needle = format!(
         "%\"{}\"%",
-        file_path.replace('\\', "/").replace('%', "\\%").replace('_', "\\_")
+        file_path
+            .replace('\\', "/")
+            .replace('%', "\\%")
+            .replace('_', "\\_")
     );
     let mut stmt = conn
         .prepare(
@@ -710,7 +706,10 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
 
 fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String> {
     let conn = pool.get()?;
-    let enabled_only = args.get("enabled_only").and_then(|v| v.as_bool()).unwrap_or(false);
+    let enabled_only = args
+        .get("enabled_only")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let group_id = args.get("group_id").and_then(|v| v.as_str());
 
     let sql = if enabled_only {
@@ -743,7 +742,9 @@ fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String
 }
 
 fn handle_personas_get(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let persona_id = args.get("persona_id").and_then(|v| v.as_str())
+    let persona_id = args
+        .get("persona_id")
+        .and_then(|v| v.as_str())
         .ok_or("persona_id is required")?;
     let conn = pool.get()?;
 
@@ -776,13 +777,17 @@ fn handle_personas_get(args: &Value, pool: &McpDbPool) -> Result<String, String>
     let mut tool_stmt = conn.prepare(
         "SELECT name, description, category FROM persona_tool_definitions WHERE persona_id = ?1",
     ).map_err(|e| format!("Query error: {e}"))?;
-    let tools: Vec<Value> = tool_stmt.query_map(rusqlite::params![persona_id], |row| {
-        Ok(json!({
-            "name": row.get::<_, String>(0)?,
-            "description": row.get::<_, String>(1)?,
-            "category": row.get::<_, String>(2)?,
-        }))
-    }).map_err(|e| format!("Query error: {e}"))?.filter_map(|r| r.ok()).collect();
+    let tools: Vec<Value> = tool_stmt
+        .query_map(rusqlite::params![persona_id], |row| {
+            Ok(json!({
+                "name": row.get::<_, String>(0)?,
+                "description": row.get::<_, String>(1)?,
+                "category": row.get::<_, String>(2)?,
+            }))
+        })
+        .map_err(|e| format!("Query error: {e}"))?
+        .filter_map(|r| r.ok())
+        .collect();
 
     let mut result = persona;
     result["tools"] = json!(tools);
@@ -791,17 +796,21 @@ fn handle_personas_get(args: &Value, pool: &McpDbPool) -> Result<String, String>
 }
 
 fn handle_personas_execute(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let persona_id = args.get("persona_id").and_then(|v| v.as_str())
+    let persona_id = args
+        .get("persona_id")
+        .and_then(|v| v.as_str())
         .ok_or("persona_id is required")?;
     let input = args.get("input").cloned().unwrap_or(json!({}));
     let conn = pool.get()?;
 
     // Verify persona exists and is enabled
-    let enabled: bool = conn.query_row(
-        "SELECT enabled FROM personas WHERE id = ?1",
-        rusqlite::params![persona_id],
-        |row| Ok(row.get::<_, i32>(0)? != 0),
-    ).map_err(|e| format!("Persona not found: {e}"))?;
+    let enabled: bool = conn
+        .query_row(
+            "SELECT enabled FROM personas WHERE id = ?1",
+            rusqlite::params![persona_id],
+            |row| Ok(row.get::<_, i32>(0)? != 0),
+        )
+        .map_err(|e| format!("Persona not found: {e}"))?;
 
     if !enabled {
         return Err("Persona is disabled".to_string());
@@ -830,59 +839,68 @@ fn handle_personas_execute(args: &Value, pool: &McpDbPool) -> Result<String, Str
         "execution_id": exec_id,
         "status": "queued",
         "message": "Execution queued. Use personas_status to poll for completion."
-    }).to_string())
+    })
+    .to_string())
 }
 
 fn handle_personas_status(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let execution_id = args.get("execution_id").and_then(|v| v.as_str())
+    let execution_id = args
+        .get("execution_id")
+        .and_then(|v| v.as_str())
         .ok_or("execution_id is required")?;
     let conn = pool.get()?;
 
-    let result = conn.query_row(
-        "SELECT id, persona_id, status, duration_ms, cost_usd, created_at, updated_at
+    let result = conn
+        .query_row(
+            "SELECT id, persona_id, status, duration_ms, cost_usd, created_at, updated_at
          FROM persona_executions WHERE id = ?1",
-        rusqlite::params![execution_id],
-        |row| {
-            Ok(json!({
-                "execution_id": row.get::<_, String>(0)?,
-                "persona_id": row.get::<_, String>(1)?,
-                "status": row.get::<_, String>(2)?,
-                "duration_ms": row.get::<_, Option<i64>>(3)?,
-                "cost_usd": row.get::<_, Option<f64>>(4)?,
-                "created_at": row.get::<_, String>(5)?,
-                "updated_at": row.get::<_, String>(6)?,
-            }))
-        },
-    ).map_err(|e| format!("Execution not found: {e}"))?;
+            rusqlite::params![execution_id],
+            |row| {
+                Ok(json!({
+                    "execution_id": row.get::<_, String>(0)?,
+                    "persona_id": row.get::<_, String>(1)?,
+                    "status": row.get::<_, String>(2)?,
+                    "duration_ms": row.get::<_, Option<i64>>(3)?,
+                    "cost_usd": row.get::<_, Option<f64>>(4)?,
+                    "created_at": row.get::<_, String>(5)?,
+                    "updated_at": row.get::<_, String>(6)?,
+                }))
+            },
+        )
+        .map_err(|e| format!("Execution not found: {e}"))?;
 
     serde_json::to_string_pretty(&result).map_err(|e| format!("Serialize error: {e}"))
 }
 
 fn handle_personas_result(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let execution_id = args.get("execution_id").and_then(|v| v.as_str())
+    let execution_id = args
+        .get("execution_id")
+        .and_then(|v| v.as_str())
         .ok_or("execution_id is required")?;
     let conn = pool.get()?;
 
-    let result = conn.query_row(
-        "SELECT id, persona_id, status, output_data, duration_ms, cost_usd,
+    let result = conn
+        .query_row(
+            "SELECT id, persona_id, status, output_data, duration_ms, cost_usd,
                 input_tokens, output_tokens, model_used, tool_steps
          FROM persona_executions WHERE id = ?1",
-        rusqlite::params![execution_id],
-        |row| {
-            Ok(json!({
-                "execution_id": row.get::<_, String>(0)?,
-                "persona_id": row.get::<_, String>(1)?,
-                "status": row.get::<_, String>(2)?,
-                "output": row.get::<_, Option<String>>(3)?,
-                "duration_ms": row.get::<_, Option<i64>>(4)?,
-                "cost_usd": row.get::<_, Option<f64>>(5)?,
-                "input_tokens": row.get::<_, Option<i64>>(6)?,
-                "output_tokens": row.get::<_, Option<i64>>(7)?,
-                "model_used": row.get::<_, Option<String>>(8)?,
-                "tool_steps": row.get::<_, Option<String>>(9)?,
-            }))
-        },
-    ).map_err(|e| format!("Execution not found: {e}"))?;
+            rusqlite::params![execution_id],
+            |row| {
+                Ok(json!({
+                    "execution_id": row.get::<_, String>(0)?,
+                    "persona_id": row.get::<_, String>(1)?,
+                    "status": row.get::<_, String>(2)?,
+                    "output": row.get::<_, Option<String>>(3)?,
+                    "duration_ms": row.get::<_, Option<i64>>(4)?,
+                    "cost_usd": row.get::<_, Option<f64>>(5)?,
+                    "input_tokens": row.get::<_, Option<i64>>(6)?,
+                    "output_tokens": row.get::<_, Option<i64>>(7)?,
+                    "model_used": row.get::<_, Option<String>>(8)?,
+                    "tool_steps": row.get::<_, Option<String>>(9)?,
+                }))
+            },
+        )
+        .map_err(|e| format!("Execution not found: {e}"))?;
 
     serde_json::to_string_pretty(&result).map_err(|e| format!("Serialize error: {e}"))
 }
@@ -929,9 +947,13 @@ fn handle_knowledge_search(args: &Value, pool: &McpDbPool) -> Result<String, Str
 }
 
 fn handle_annotate(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let scope = args.get("scope").and_then(|v| v.as_str())
+    let scope = args
+        .get("scope")
+        .and_then(|v| v.as_str())
         .ok_or("scope is required")?;
-    let note = args.get("note").and_then(|v| v.as_str())
+    let note = args
+        .get("note")
+        .and_then(|v| v.as_str())
         .ok_or("note is required")?;
 
     let conn = pool.get()?;
@@ -940,8 +962,10 @@ fn handle_annotate(args: &Value, pool: &McpDbPool) -> Result<String, String> {
     let persona_id = if let Some(pid) = args.get("persona_id").and_then(|v| v.as_str()) {
         pid.to_string()
     } else {
-        conn.query_row("SELECT id FROM personas LIMIT 1", [], |row| row.get::<_, String>(0))
-            .map_err(|_| "No personas available for attribution")?
+        conn.query_row("SELECT id FROM personas LIMIT 1", [], |row| {
+            row.get::<_, String>(0)
+        })
+        .map_err(|_| "No personas available for attribution")?
     };
 
     // Parse scope
@@ -970,28 +994,48 @@ fn handle_annotate(args: &Value, pool: &McpDbPool) -> Result<String, String> {
                  ?6, ?7, ?8, 'mcp', 0)
          ON CONFLICT(persona_id, knowledge_type, pattern_key) DO UPDATE SET
             annotation_text = ?8, updated_at = ?5, success_count = success_count + 1",
-        rusqlite::params![id, persona_id, knowledge_type, pattern_key, now, scope_type, scope_id, note],
-    ).map_err(|e| format!("Failed to store annotation: {e}"))?;
+        rusqlite::params![
+            id,
+            persona_id,
+            knowledge_type,
+            pattern_key,
+            now,
+            scope_type,
+            scope_id,
+            note
+        ],
+    )
+    .map_err(|e| format!("Failed to store annotation: {e}"))?;
 
     Ok(json!({
         "status": "stored",
         "scope": scope,
         "note": note
-    }).to_string())
+    })
+    .to_string())
 }
 
 fn handle_health(_args: &Value, pool: &McpDbPool) -> Result<String, String> {
     let conn = pool.get()?;
 
-    let persona_count: i64 = conn.query_row("SELECT COUNT(*) FROM personas", [], |row| row.get(0))
+    let persona_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM personas", [], |row| row.get(0))
         .unwrap_or(0);
-    let enabled_count: i64 = conn.query_row("SELECT COUNT(*) FROM personas WHERE enabled = 1", [], |row| row.get(0))
+    let enabled_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM personas WHERE enabled = 1",
+            [],
+            |row| row.get(0),
+        )
         .unwrap_or(0);
     let recent_executions: i64 = conn.query_row(
         "SELECT COUNT(*) FROM persona_executions WHERE created_at >= datetime('now', '-24 hours')",
         [], |row| row.get(0),
     ).unwrap_or(0);
-    let knowledge_entries: i64 = conn.query_row("SELECT COUNT(*) FROM execution_knowledge", [], |row| row.get(0))
+    let knowledge_entries: i64 = conn
+        .query_row("SELECT COUNT(*) FROM execution_knowledge", [], |row| {
+            row.get(0)
+        })
         .unwrap_or(0);
 
     Ok(json!({
@@ -999,7 +1043,8 @@ fn handle_health(_args: &Value, pool: &McpDbPool) -> Result<String, String> {
         "personas": { "total": persona_count, "enabled": enabled_count },
         "executions_24h": recent_executions,
         "knowledge_entries": knowledge_entries,
-    }).to_string())
+    })
+    .to_string())
 }
 
 fn handle_list_templates(args: &Value, pool: &McpDbPool) -> Result<String, String> {
@@ -1144,9 +1189,7 @@ fn handle_arena_run_status(args: &Value, pool: &McpDbPool) -> Result<String, Str
         .map_err(|e| format!("Arena run not found: {e}"))?;
 
     let mut stmt = conn
-        .prepare(
-            "SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status",
-        )
+        .prepare("SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status")
         .map_err(|e| format!("Query error: {e}"))?;
     let counts: Vec<(String, i64)> = stmt
         .query_map(rusqlite::params![run_id], |row| {

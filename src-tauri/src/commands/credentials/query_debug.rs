@@ -27,11 +27,33 @@ const DEBUG_MAX_RESULT_ROWS: usize = 5;
 
 /// Column names (lowercase) that indicate sensitive data requiring redaction.
 const SENSITIVE_COLUMNS: &[&str] = &[
-    "password", "passwd", "pass", "secret", "token", "api_key", "apikey",
-    "access_key", "private_key", "credential", "auth", "authorization",
-    "ssn", "credit_card", "card_number", "cvv", "encrypted", "hash",
-    "salt", "iv", "tag", "encrypted_data", "service_role_key", "anon_key",
-    "connection_string", "database_url", "redis_rest_token",
+    "password",
+    "passwd",
+    "pass",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "access_key",
+    "private_key",
+    "credential",
+    "auth",
+    "authorization",
+    "ssn",
+    "credit_card",
+    "card_number",
+    "cvv",
+    "encrypted",
+    "hash",
+    "salt",
+    "iv",
+    "tag",
+    "encrypted_data",
+    "service_role_key",
+    "anon_key",
+    "connection_string",
+    "database_url",
+    "redis_rest_token",
 ];
 
 /// Redaction placeholder shown in place of sensitive values.
@@ -111,11 +133,15 @@ fn sanitize_db_error(err: &str) -> String {
         "Permission denied. The database user may lack required privileges.".to_string()
     } else if lower.contains("timeout") || lower.contains("timed out") {
         "Query timed out. Try simplifying the query or adding limits.".to_string()
-    } else if lower.contains("not exist") || lower.contains("not found") || lower.contains("unknown") {
+    } else if lower.contains("not exist")
+        || lower.contains("not found")
+        || lower.contains("unknown")
+    {
         "Referenced object not found. Check table and column names.".to_string()
     } else if lower.contains("connection") || lower.contains("connect") {
         "Database connection error. Check credentials and network.".to_string()
-    } else if lower.contains("duplicate") || lower.contains("unique") || lower.contains("conflict") {
+    } else if lower.contains("duplicate") || lower.contains("unique") || lower.contains("conflict")
+    {
         "Duplicate value conflict. The query violates a uniqueness constraint.".to_string()
     } else {
         "Query execution failed. See application logs for details.".to_string()
@@ -124,8 +150,11 @@ fn sanitize_db_error(err: &str) -> String {
 
 // -- Static job manager --------------------------------------------------
 
-static QUERY_DEBUG_JOBS: BackgroundJobManager<()> =
-    BackgroundJobManager::new("query debug job lock", event_name::QUERY_DEBUG_STATUS, event_name::QUERY_DEBUG_OUTPUT);
+static QUERY_DEBUG_JOBS: BackgroundJobManager<()> = BackgroundJobManager::new(
+    "query debug job lock",
+    event_name::QUERY_DEBUG_STATUS,
+    event_name::QUERY_DEBUG_OUTPUT,
+);
 
 /// Maximum number of fix-and-retry cycles.
 const MAX_RETRIES: usize = 3;
@@ -136,7 +165,10 @@ pub fn list_query_debug_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel a query debug job.
-pub fn cancel_query_debug_job(app: &tauri::AppHandle, debug_id: &str) -> Result<(), crate::error::AppError> {
+pub fn cancel_query_debug_job(
+    app: &tauri::AppHandle,
+    debug_id: &str,
+) -> Result<(), crate::error::AppError> {
     QUERY_DEBUG_JOBS.cancel(app, debug_id)
 }
 
@@ -249,7 +281,11 @@ async fn run_query_debug(params: RunParams) {
         error_context.as_deref(),
     );
 
-    emit_line(&app, &debug_id, &format!("> Analyzing query for {connector_family} ({service_type})..."));
+    emit_line(
+        &app,
+        &debug_id,
+        &format!("> Analyzing query for {connector_family} ({service_type})..."),
+    );
 
     // Build CLI args (no persona, default provider)
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -265,22 +301,24 @@ async fn run_query_debug(params: RunParams) {
     };
 
     // Run the initial prompt
-    let cli_result = run_claude_prompt_text_inner(
-        prompt,
-        &cli_args,
-        Some(&on_line),
-        None,
-        None,
-        120,
-    )
-    .await;
+    let cli_result =
+        run_claude_prompt_text_inner(prompt, &cli_args, Some(&on_line), None, None, 120).await;
 
     let (mut output, mut session_id) = match cli_result {
         Ok((text, sid, _)) => (text, sid),
         Err(e) => {
             tracing::warn!(debug_id = %debug_id, "Claude CLI failed: {}", e);
-            emit_line(&app, &debug_id, "[ERROR] AI analysis failed. See application logs for details.");
-            QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some("AI analysis failed".into()));
+            emit_line(
+                &app,
+                &debug_id,
+                "[ERROR] AI analysis failed. See application logs for details.",
+            );
+            QUERY_DEBUG_JOBS.set_status(
+                &app,
+                &debug_id,
+                "failed",
+                Some("AI analysis failed".into()),
+            );
             return;
         }
     };
@@ -296,7 +334,11 @@ async fn run_query_debug(params: RunParams) {
         let query_to_run = match extracted {
             Some(q) => q,
             None => {
-                emit_line(&app, &debug_id, "[ERROR] Could not extract a query from AI response.");
+                emit_line(
+                    &app,
+                    &debug_id,
+                    "[ERROR] Could not extract a query from AI response.",
+                );
                 QUERY_DEBUG_JOBS.set_status(
                     &app,
                     &debug_id,
@@ -307,13 +349,23 @@ async fn run_query_debug(params: RunParams) {
             }
         };
 
-        emit_line(&app, &debug_id, &format!("> Attempt {} -- executing extracted query...", attempt + 1));
+        emit_line(
+            &app,
+            &debug_id,
+            &format!("> Attempt {} -- executing extracted query...", attempt + 1),
+        );
 
         // Audit log the query execution (log a length fingerprint, not raw query text)
         let query_fingerprint = format!("len={}, attempt={}", query_to_run.len(), attempt + 1);
         let is_mutation = db_query::is_mutation(&query_to_run);
         let mutation_label = if is_mutation { "mutation" } else { "read" };
-        audit_log::insert_warn(&pool, &credential_id, &credential_id, "db_query_execute", Some(&format!("{mutation_label}, {query_fingerprint}")));
+        audit_log::insert_warn(
+            &pool,
+            &credential_id,
+            &credential_id,
+            "db_query_execute",
+            Some(&format!("{mutation_label}, {query_fingerprint}")),
+        );
 
         // Block mutations unless the user explicitly opted in
         if is_mutation && !allow_mutations {
@@ -328,7 +380,16 @@ async fn run_query_debug(params: RunParams) {
         }
 
         // Execute the extracted query
-        match db_query::execute_query(&pool, &credential_id, &query_to_run, None, allow_mutations, false).await {
+        match db_query::execute_query(
+            &pool,
+            &credential_id,
+            &query_to_run,
+            None,
+            allow_mutations,
+            false,
+        )
+        .await
+        {
             Ok(result) => {
                 let summary = format!(
                     "> Query succeeded: {} row{} in {}ms",
@@ -366,18 +427,29 @@ async fn run_query_debug(params: RunParams) {
                 emit_line(&app, &debug_id, &format!("[ERROR] {}", safe_msg));
 
                 if attempt + 1 >= MAX_RETRIES {
-                    emit_line(&app, &debug_id, &format!("> Max retries ({MAX_RETRIES}) reached."));
+                    emit_line(
+                        &app,
+                        &debug_id,
+                        &format!("> Max retries ({MAX_RETRIES}) reached."),
+                    );
                     QUERY_DEBUG_JOBS.set_status(
                         &app,
                         &debug_id,
                         "failed",
-                        Some(format!("Query failed after {} attempts: {}", MAX_RETRIES, safe_msg)),
+                        Some(format!(
+                            "Query failed after {} attempts: {}",
+                            MAX_RETRIES, safe_msg
+                        )),
                     );
                     return;
                 }
 
                 // Resume Claude session with the error for another attempt
-                emit_line(&app, &debug_id, "> Resuming AI session with error context...");
+                emit_line(
+                    &app,
+                    &debug_id,
+                    "> Resuming AI session with error context...",
+                );
 
                 let resume_prompt = format!(
                     "The query you suggested failed with this error:\n\n{safe_msg}\n\n\
@@ -430,8 +502,17 @@ async fn run_query_debug(params: RunParams) {
                     }
                     Err(e) => {
                         tracing::warn!(debug_id = %debug_id, "AI retry failed: {}", e);
-                        emit_line(&app, &debug_id, "[ERROR] AI retry failed. See application logs for details.");
-                        QUERY_DEBUG_JOBS.set_status(&app, &debug_id, "failed", Some("AI retry failed".into()));
+                        emit_line(
+                            &app,
+                            &debug_id,
+                            "[ERROR] AI retry failed. See application logs for details.",
+                        );
+                        QUERY_DEBUG_JOBS.set_status(
+                            &app,
+                            &debug_id,
+                            "failed",
+                            Some("AI retry failed".into()),
+                        );
                         return;
                     }
                 }
@@ -481,7 +562,6 @@ fn build_prompt(
     prompt
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -492,15 +572,18 @@ mod tests {
     #[test]
     fn test_sanitize_redacts_sensitive_columns() {
         let result = QueryResult {
-            columns: vec!["id".into(), "email".into(), "password".into(), "api_key".into()],
-            rows: vec![
-                vec![
-                    serde_json::json!(1),
-                    serde_json::json!("alice@test.com"),
-                    serde_json::json!("hunter2"),
-                    serde_json::json!("sk-1234567890"),
-                ],
+            columns: vec![
+                "id".into(),
+                "email".into(),
+                "password".into(),
+                "api_key".into(),
             ],
+            rows: vec![vec![
+                serde_json::json!(1),
+                serde_json::json!("alice@test.com"),
+                serde_json::json!("hunter2"),
+                serde_json::json!("sk-1234567890"),
+            ]],
             row_count: 1,
             duration_ms: 42,
             truncated: false,
@@ -508,17 +591,16 @@ mod tests {
 
         let sanitized = sanitize_query_result(&result);
         let rows = sanitized["rows"].as_array().unwrap();
-        assert_eq!(rows[0][0], serde_json::json!(1));          // id: not redacted
+        assert_eq!(rows[0][0], serde_json::json!(1)); // id: not redacted
         assert_eq!(rows[0][1], serde_json::json!("alice@test.com")); // email: not redacted
-        assert_eq!(rows[0][2], serde_json::json!(REDACTED));   // password: redacted
-        assert_eq!(rows[0][3], serde_json::json!(REDACTED));   // api_key: redacted
+        assert_eq!(rows[0][2], serde_json::json!(REDACTED)); // password: redacted
+        assert_eq!(rows[0][3], serde_json::json!(REDACTED)); // api_key: redacted
     }
 
     #[test]
     fn test_sanitize_caps_rows() {
-        let rows: Vec<Vec<serde_json::Value>> = (0..20)
-            .map(|i| vec![serde_json::json!(i)])
-            .collect();
+        let rows: Vec<Vec<serde_json::Value>> =
+            (0..20).map(|i| vec![serde_json::json!(i)]).collect();
 
         let result = QueryResult {
             columns: vec!["id".into()],

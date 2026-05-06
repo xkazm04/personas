@@ -35,31 +35,31 @@ pub fn list_catalog(
     search: Option<&str>,
 ) -> Result<Vec<SharedEventCatalogEntry>, AppError> {
     timed_query!("shared_events", "shared_events::list_catalog", {
-    let conn = pool.get()?;
-    let mut sql = String::from(
-        "SELECT * FROM shared_event_catalog WHERE status = 'active'",
-    );
-    let mut param_values: Vec<String> = Vec::new();
+        let conn = pool.get()?;
+        let mut sql = String::from("SELECT * FROM shared_event_catalog WHERE status = 'active'");
+        let mut param_values: Vec<String> = Vec::new();
 
-    if let Some(cat) = category {
-        sql.push_str(&format!(" AND category = ?{}", param_values.len() + 1));
-        param_values.push(cat.to_string());
-    }
-    if let Some(q) = search {
-        let idx = param_values.len() + 1;
-        sql.push_str(&format!(
-            " AND (name LIKE ?{idx} OR slug LIKE ?{idx} OR description LIKE ?{idx})"
-        ));
-        param_values.push(format!("%{q}%"));
-    }
+        if let Some(cat) = category {
+            sql.push_str(&format!(" AND category = ?{}", param_values.len() + 1));
+            param_values.push(cat.to_string());
+        }
+        if let Some(q) = search {
+            let idx = param_values.len() + 1;
+            sql.push_str(&format!(
+                " AND (name LIKE ?{idx} OR slug LIKE ?{idx} OR description LIKE ?{idx})"
+            ));
+            param_values.push(format!("%{q}%"));
+        }
 
-    sql.push_str(" ORDER BY is_featured DESC, subscriber_count DESC, name ASC");
+        sql.push_str(" ORDER BY is_featured DESC, subscriber_count DESC, name ASC");
 
-    let mut stmt = conn.prepare(&sql)?;
-    let params_refs: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|v| v as &dyn rusqlite::types::ToSql).collect();
-    let rows = stmt.query_map(params_refs.as_slice(), row_to_catalog)?;
-    Ok(rows.filter_map(|r| r.ok()).collect())
+        let mut stmt = conn.prepare(&sql)?;
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> = param_values
+            .iter()
+            .map(|v| v as &dyn rusqlite::types::ToSql)
+            .collect();
+        let rows = stmt.query_map(params_refs.as_slice(), row_to_catalog)?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
     })
 }
 
@@ -68,12 +68,12 @@ pub fn upsert_catalog_batch(
     entries: &[SharedEventCatalogEntry],
 ) -> Result<usize, AppError> {
     timed_query!("shared_events", "shared_events::upsert_catalog_batch", {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut count = 0;
-    for e in entries {
-        conn.execute(
-            "INSERT INTO shared_event_catalog
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut count = 0;
+        for e in entries {
+            conn.execute(
+                "INSERT INTO shared_event_catalog
              (id, slug, name, description, category, publisher, icon, color,
               sample_payload, event_schema, subscriber_count, is_featured, status,
               cloud_updated_at, cached_at)
@@ -86,16 +86,27 @@ pub fn upsert_catalog_batch(
                subscriber_count=excluded.subscriber_count, is_featured=excluded.is_featured,
                status=excluded.status, cloud_updated_at=excluded.cloud_updated_at,
                cached_at=excluded.cached_at",
-            params![
-                e.id, e.slug, e.name, e.description, e.category, e.publisher,
-                e.icon, e.color, e.sample_payload, e.event_schema,
-                e.subscriber_count, e.is_featured as i32, e.status,
-                e.cloud_updated_at, now,
-            ],
-        )?;
-        count += 1;
-    }
-    Ok(count)
+                params![
+                    e.id,
+                    e.slug,
+                    e.name,
+                    e.description,
+                    e.category,
+                    e.publisher,
+                    e.icon,
+                    e.color,
+                    e.sample_payload,
+                    e.event_schema,
+                    e.subscriber_count,
+                    e.is_featured as i32,
+                    e.status,
+                    e.cloud_updated_at,
+                    now,
+                ],
+            )?;
+            count += 1;
+        }
+        Ok(count)
     })
 }
 
@@ -123,25 +134,26 @@ pub fn get_catalog_entry(pool: &DbPool, id: &str) -> Result<SharedEventCatalogEn
 pub fn list_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscription>, AppError> {
     timed_query!("shared_events", "shared_events::list_subscriptions", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM shared_event_subscriptions ORDER BY created_at DESC",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM shared_event_subscriptions ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_subscription)?;
         Ok(rows.filter_map(|r| r.ok()).collect())
     })
 }
 
-pub fn list_enabled_subscriptions(
-    pool: &DbPool,
-) -> Result<Vec<SharedEventSubscription>, AppError> {
-    timed_query!("shared_events", "shared_events::list_enabled_subscriptions", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+pub fn list_enabled_subscriptions(pool: &DbPool) -> Result<Vec<SharedEventSubscription>, AppError> {
+    timed_query!(
+        "shared_events",
+        "shared_events::list_enabled_subscriptions",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM shared_event_subscriptions WHERE enabled = 1 ORDER BY created_at DESC",
         )?;
-        let rows = stmt.query_map([], row_to_subscription)?;
-        Ok(rows.filter_map(|r| r.ok()).collect())
-    })
+            let rows = stmt.query_map([], row_to_subscription)?;
+            Ok(rows.filter_map(|r| r.ok()).collect())
+        }
+    )
 }
 
 pub fn subscribe(
@@ -179,10 +191,7 @@ pub fn unsubscribe(pool: &DbPool, subscription_id: &str) -> Result<(), AppError>
     })
 }
 
-pub fn get_subscription(
-    pool: &DbPool,
-    id: &str,
-) -> Result<SharedEventSubscription, AppError> {
+pub fn get_subscription(pool: &DbPool, id: &str) -> Result<SharedEventSubscription, AppError> {
     timed_query!("shared_events", "shared_events::get_subscription", {
         let conn = pool.get()?;
         conn.query_row(

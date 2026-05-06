@@ -3,7 +3,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
-import { useOverviewTranslation } from '@/features/overview/i18n/useOverviewTranslation';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
@@ -20,7 +19,7 @@ import { useObservabilityData } from '../libs/useObservabilityData';
 import { useHealingPanelState } from '../libs/useHealingPanelState';
 import { useAnomalyDrilldown } from '../libs/useAnomalyDrilldown';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
+import { useAttention } from '@/hooks/useAttention';
 import AnomalyDrilldownPanel from './AnomalyDrilldownPanel';
 import SystemTraceViewer from './SystemTraceViewer';
 
@@ -78,10 +77,9 @@ function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: 
 
 export default function ObservabilityDashboard() {
   const { t } = useTranslation();
-  const { t: tOverview } = useOverviewTranslation();
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
-  const activeAlertCount = useOverviewStore(selectActiveAlertCount);
+  const activeAlertCount = useAttention("observability").counts.active_alerts;
   const { pipelineErrors, pipelineFetchedAt } = useOverviewStore((s) => ({
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
@@ -178,7 +176,7 @@ export default function ObservabilityDashboard() {
       <PanelStatusChips
         pipelineErrors={pipelineErrors}
         pipelineFetchedAt={pipelineFetchedAt}
-        errorRecovery={tOverview.errorRecovery}
+        errorRecovery={t.overview.observability.error_recovery}
       />
 
       <ContentBody>

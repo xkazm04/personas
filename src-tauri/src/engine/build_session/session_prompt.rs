@@ -43,7 +43,8 @@ pub(super) fn build_session_prompt(
     };
 
     let connector_section = if connectors.is_empty() {
-        "No connectors configured. The app has a built-in messaging system available by default.".to_string()
+        "No connectors configured. The app has a built-in messaging system available by default."
+            .to_string()
     } else {
         format!(
             "Available connectors:\n{}\n\nThe app also has a built-in messaging system available by default.",
@@ -105,10 +106,20 @@ pub(super) fn build_session_prompt(
     let rule5 = if let Some(lang) = language {
         if lang != "en" {
             let lang_name = match lang {
-                "zh" => "Chinese", "ar" => "Arabic", "hi" => "Hindi", "ru" => "Russian",
-                "id" => "Indonesian", "es" => "Spanish", "fr" => "French", "bn" => "Bengali",
-                "ja" => "Japanese", "vi" => "Vietnamese", "de" => "German", "ko" => "Korean",
-                "cs" => "Czech", other => other,
+                "zh" => "Chinese",
+                "ar" => "Arabic",
+                "hi" => "Hindi",
+                "ru" => "Russian",
+                "id" => "Indonesian",
+                "es" => "Spanish",
+                "fr" => "French",
+                "bn" => "Bengali",
+                "ja" => "Japanese",
+                "vi" => "Vietnamese",
+                "de" => "German",
+                "ko" => "Korean",
+                "cs" => "Czech",
+                other => other,
             };
             let examples = match lang {
                 "de" => "\"E-Mail Triage Manager\", \"Sprint-Bericht Bot\"",
@@ -131,7 +142,7 @@ pub(super) fn build_session_prompt(
     };
 
     let result = format!(
-r###"You are a senior AI agent architect. The user wants:
+        r###"You are a senior AI agent architect. The user wants:
 
 "{intent}"{lang_preamble}
 

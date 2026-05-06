@@ -829,6 +829,9 @@ export type Translations = {
       select_model: string;
       run_arena: string;
       cancel_test: string;
+      arena_use_case_prefers: string;
+      arena_add_pinned_to_roster: string;
+      arena_pinned_in_roster: string;
       focus_use_case: string;
       describe_changes: string;
       describe_changes_placeholder: string;
@@ -4598,6 +4601,11 @@ export type Translations = {
       metrics_unavailable: string;
       no_open_issues: string;
       run_analysis: string;
+      error_recovery: {
+        panel_loaded: string;
+        panel_failed: string;
+        panel_stale: string;
+      };
     };
     memories: {
       title: string;
@@ -4704,6 +4712,7 @@ export type Translations = {
       loading: string;
       no_data: string;
       success_rate: string;
+      success_rate_tooltip: string;
       executions_summary: string;
       avg_latency: string;
       active_agents: string;
@@ -4711,6 +4720,10 @@ export type Translations = {
       circuit_breakers: string;
       auto_healed: string;
       known_patterns: string;
+      all_time_badge: string;
+      open_issues_tooltip: string;
+      auto_healed_tooltip: string;
+      windowed_tooltip: string;
       daily_success_rate: string;
       per_agent: string;
       no_agent_data: string;
@@ -8169,6 +8182,9 @@ export type Translations = {
     desktop_description: string;
     desktop_empty: string;
     desktop_empty_hint: string;
+    desktop_scan_error: string;
+    desktop_scan_error_hint: string;
+    desktop_scan_retry: string;
     risk_review: string;
     risk_review_tooltip: string;
     risk_safe: string;
@@ -8218,8 +8234,11 @@ export type Translations = {
     tour_skip: string;
     what_to_explore: string;
     auto_complete_hint: string;
+    tour_explore_to_continue: string;
+    tour_acknowledge: string;
     resume_tour: string;
     start_tour: string;
+    tour_storage_unavailable_toast: string;
     connector_count_stat: string;
     connector_count_hint: string;
     categories_label: string;
@@ -8397,6 +8416,8 @@ export type Translations = {
     invalid_json_suggestion: string;
     validation_message: string;
     validation_suggestion: string;
+    n8n_invalid_shape_message: string;
+    n8n_invalid_shape_suggestion: string;
     body_too_large_message: string;
     body_too_large_suggestion: string;
     ocr_file_too_large_message: string;
@@ -9969,6 +9990,8 @@ export type Translations = {
       composer_placeholder: string;
       send: string;
       reset: string;
+      compact_toggle_collapse: string;
+      compact_toggle_expand: string;
       refresh_doctrine: string;
       doctrine_up_to_date: string;
       doctrine_refreshed: string;
@@ -10008,6 +10031,34 @@ export type Translations = {
       facts_empty_user: string;
       facts_empty_project: string;
       facts_empty_world: string;
+      procedurals: string;
+      procedurals_chat: string;
+      procedurals_action: string;
+      procedurals_memory: string;
+      procedurals_build: string;
+      goals: string;
+      goals_active: string;
+      rituals: string;
+      backlog: string;
+      backlog_self_promise: string;
+      backlog_capability_gap: string;
+      dev_scan_codebase: string;
+      dev_generate_ideas: string;
+      dev_queue_tasks: string;
+      dev_projects_state: string;
+      dev_tools_enable: string;
+      dev_tools_disable: string;
+      connectors_add: string;
+      connectors_section_label: string;
+      connectors_remove_from_sidebar: string;
+      proactive_label: string;
+      proactive_engage: string;
+      proactive_dismiss: string;
+      proactive_kind_goal: string;
+      proactive_kind_backlog: string;
+      proactive_kind_cadence: string;
+      proactive_kind_on_this_day: string;
+      proactive_evaluate_now: string;
       memory_run_consolidation: string;
       memory_generate_reflection: string;
       memory_decay_unused: string;
@@ -10054,6 +10105,11 @@ export type Translations = {
       tab_setup: string;
       tab_memory: string;
       tab_voice: string;
+      tab_dashboard: string;
+      dashboard_empty_title: string;
+      dashboard_empty_body: string;
+      dashboard_unknown_widget: string;
+      dashboard_updated_at: string;
       loading: string;
       setup_chrome_title: string;
       setup_chrome_desc: string;
@@ -11001,6 +11057,7 @@ export type Translations = {
     error_toggle_rule: string;
     error_dismiss: string;
     error_clear_history: string;
+    error_load_rules: string;
   };
   deploy_errors: {
     not_reachable: string;
@@ -11877,6 +11934,7 @@ export type Translations = {
       release_roadmap_item_6_description: string;
       live_updated_prefix: string;
       live_source_cache: string;
+      live_source_stale: string;
       live_source_fallback: string;
     };
   };

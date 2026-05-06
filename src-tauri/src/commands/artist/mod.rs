@@ -1,5 +1,6 @@
 pub mod ffmpeg;
 pub mod persistence;
+pub mod schema_policy;
 pub mod transcribe;
 
 use std::path::{Path, PathBuf};
@@ -53,10 +54,8 @@ const MODEL_EXTENSIONS: &[&str] = &["glb", "gltf", "obj", "fbx", "stl", "blend",
 /// is never blocked. Blender + MCP checks run concurrently.
 #[tauri::command]
 pub async fn artist_check_blender() -> Result<BlenderMcpStatus, AppError> {
-    let (blender, mcp_installed) = tokio::join!(
-        detect_blender_async(),
-        check_blender_mcp_installed_async(),
-    );
+    let (blender, mcp_installed) =
+        tokio::join!(detect_blender_async(), check_blender_mcp_installed_async(),);
 
     let (installed, version, path_str) = match blender {
         Some((path, ver)) => (true, ver, Some(path.to_string_lossy().to_string())),
@@ -200,7 +199,10 @@ pub fn artist_scan_folder(folder: String) -> Result<Vec<ArtistAsset>, AppError> 
     }
 
     let mut assets = Vec::new();
-    scan_dir_recursive(dir, &mut assets)?;
+    // Root for classification = the folder the user pointed us at. Only the
+    // immediate child of `dir` that contains an asset counts toward the
+    // 2d/3d bucket — see CONTRACT on `AssetType`.
+    scan_dir_recursive(dir, dir, &mut assets)?;
     Ok(assets)
 }
 
@@ -226,10 +228,7 @@ pub fn artist_import_asset(
 
 /// Delete an asset from the database.
 #[tauri::command]
-pub fn artist_delete_asset(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn artist_delete_asset(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     let pool = &state.db;
     repo::delete_asset(pool, &id)
 }
@@ -301,7 +300,11 @@ pub async fn artist_run_creative_session(
     output_folder: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     let cancel_token = CancellationToken::new();
-    CREATIVE_JOBS.insert_running(session_id.clone(), cancel_token.clone(), CreativeSessionExtra)?;
+    CREATIVE_JOBS.insert_running(
+        session_id.clone(),
+        cancel_token.clone(),
+        CreativeSessionExtra,
+    )?;
     CREATIVE_JOBS.set_status(&app, &session_id, "running", None);
 
     let app_handle = app.clone();
@@ -364,7 +367,11 @@ async fn run_creative_cli(
 ) -> Result<i32, AppError> {
     use std::io::Write as _;
 
-    CREATIVE_JOBS.emit_line(app, session_id, "[Creative] Starting session...".to_string());
+    CREATIVE_JOBS.emit_line(
+        app,
+        session_id,
+        "[Creative] Starting session...".to_string(),
+    );
 
     let has_blender = tools.contains(&"blender".to_string());
     let has_leonardo = tools.contains(&"leonardo_ai".to_string());
@@ -372,7 +379,8 @@ async fn run_creative_cli(
 
     // Build system prompt that enables creative tool usage
     let mut system_parts = vec![
-        "You are a creative assistant specializing in visual art and 3D content creation.".to_string(),
+        "You are a creative assistant specializing in visual art and 3D content creation."
+            .to_string(),
     ];
     if has_blender {
         system_parts.push(
@@ -380,9 +388,7 @@ async fn run_creative_cli(
         );
     }
     if has_leonardo {
-        system_parts.push(
-            "You have access to Leonardo AI for image generation.".to_string(),
-        );
+        system_parts.push("You have access to Leonardo AI for image generation.".to_string());
     }
     if has_gemini {
         system_parts.push(
@@ -443,8 +449,9 @@ async fn run_creative_cli(
                 }
             }
         });
-        let mut tmp = tempfile::NamedTempFile::new()
-            .map_err(|e| AppError::Internal(format!("Failed to create MCP config temp file: {e}")))?;
+        let mut tmp = tempfile::NamedTempFile::new().map_err(|e| {
+            AppError::Internal(format!("Failed to create MCP config temp file: {e}"))
+        })?;
         tmp.write_all(serde_json::to_string_pretty(&mcp_config)?.as_bytes())
             .map_err(|e| AppError::Internal(format!("Failed to write MCP config: {e}")))?;
         tmp.flush()
@@ -495,7 +502,11 @@ async fn run_creative_cli(
         }
     })?;
 
-    CREATIVE_JOBS.emit_line(app, session_id, "[Creative] CLI started. Processing...".to_string());
+    CREATIVE_JOBS.emit_line(
+        app,
+        session_id,
+        "[Creative] CLI started. Processing...".to_string(),
+    );
 
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
@@ -586,42 +597,91 @@ async fn run_creative_cli(
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn scan_dir_recursive(dir: &Path, assets: &mut Vec<ArtistAsset>) -> Result<(), AppError> {
+/// Recursively walk the artist tree and emit `ArtistAsset` entries.
+///
+/// Classification follows the CONTRACT documented on `AssetType`:
+///
+///   - The asset's bucket is the FIRST path segment immediately under
+///     `root`. Only `<root>/2d/...` and `<root>/3d/...` count; any deeper
+///     `"2d"`/`"3d"` directory name is ignored. This pins the rule the
+///     prior code violated by walking all ancestors — a PNG nested under
+///     `.../2d/sketches/refs/3d/` is no longer silently re-classified as 3D.
+///   - If the file is under neither bucket directly under root, the
+///     extension table picks the type.
+///   - If both `2d` and `3d` segments appear between root and file (a
+///     malformed tree, typically from a user dragging folders around), the
+///     file is skipped with `tracing::warn!` rather than guessing.
+///
+/// `root` is threaded through unchanged on every recursion so the
+/// classification key is stable regardless of recursion depth.
+fn scan_dir_recursive(
+    root: &Path,
+    dir: &Path,
+    assets: &mut Vec<ArtistAsset>,
+) -> Result<(), AppError> {
+    use crate::db::models::AssetType;
+
     let entries = std::fs::read_dir(dir)?;
     for entry in entries.flatten() {
         let path = entry.path();
         if path.is_dir() {
-            scan_dir_recursive(&path, assets)?;
+            scan_dir_recursive(root, &path, assets)?;
         } else if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
             let ext_lower = ext.to_lowercase();
 
-            // Determine asset type: use parent folder name as hint.
-            // Files under a "3d" folder are 3D assets (including renders).
-            // Files under a "2d" folder are 2D assets.
-            // Otherwise fall back to extension-based classification.
-            let in_3d_folder = path.ancestors().any(|a| {
-                a.file_name().and_then(|n| n.to_str()).map(|n| n == "3d").unwrap_or(false)
-            });
-            let in_2d_folder = path.ancestors().any(|a| {
-                a.file_name().and_then(|n| n.to_str()).map(|n| n == "2d").unwrap_or(false)
-            });
+            // The bucket is the FIRST segment under `root`. Anything else
+            // in the path is ignored for classification purposes.
+            let bucket = path
+                .strip_prefix(root)
+                .ok()
+                .and_then(|rel| rel.components().next())
+                .and_then(|c| c.as_os_str().to_str())
+                .map(|s| s.to_lowercase());
 
-            let asset_type = if in_3d_folder {
-                // Everything in 3d/ folder is a 3D asset (models + renders)
-                "3d"
-            } else if in_2d_folder {
-                "2d"
-            } else if MODEL_EXTENSIONS.contains(&ext_lower.as_str()) {
-                "3d"
-            } else if IMAGE_EXTENSIONS.contains(&ext_lower.as_str()) {
-                "2d"
-            } else {
+            // Detect ambiguous trees: both "2d" and "3d" appearing between
+            // root and the file. The bucket above already pins the answer,
+            // but a deeper `"3d"` directory inside `2d/` (or vice versa)
+            // is a tree the user almost certainly didn't intend. Skip with
+            // a warning rather than silently picking the bucket.
+            let mut has_2d = false;
+            let mut has_3d = false;
+            if let Ok(rel) = path.strip_prefix(root) {
+                for comp in rel.components() {
+                    if let Some(name) = comp.as_os_str().to_str() {
+                        match name {
+                            "2d" => has_2d = true,
+                            "3d" => has_3d = true,
+                            _ => {}
+                        }
+                    }
+                }
+            }
+            if has_2d && has_3d {
+                tracing::warn!(
+                    path = %path.display(),
+                    "Skipping artist asset: ambiguous tree contains both '2d' and '3d' segments"
+                );
                 continue;
+            }
+
+            let asset_type = match bucket.as_deref() {
+                Some("2d") => AssetType::TwoD,
+                Some("3d") => AssetType::ThreeD,
+                _ => {
+                    if MODEL_EXTENSIONS.contains(&ext_lower.as_str()) {
+                        AssetType::ThreeD
+                    } else if IMAGE_EXTENSIONS.contains(&ext_lower.as_str()) {
+                        AssetType::TwoD
+                    } else {
+                        continue;
+                    }
+                }
             };
 
             let metadata = std::fs::metadata(&path).ok();
             let file_size = metadata.as_ref().map(|m| m.len() as i64).unwrap_or(0);
-            let file_name = path.file_name()
+            let file_name = path
+                .file_name()
                 .map(|n| n.to_string_lossy().to_string())
                 .unwrap_or_default();
 
@@ -629,7 +689,7 @@ fn scan_dir_recursive(dir: &Path, assets: &mut Vec<ArtistAsset>) -> Result<(), A
                 id: uuid::Uuid::new_v4().to_string(),
                 file_name,
                 file_path: path.to_string_lossy().to_string(),
-                asset_type: asset_type.to_string(),
+                asset_type: asset_type.as_str().to_string(),
                 mime_type: Some(mime_from_ext(&ext_lower)),
                 file_size,
                 width: None,
@@ -642,6 +702,55 @@ fn scan_dir_recursive(dir: &Path, assets: &mut Vec<ArtistAsset>) -> Result<(), A
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod scan_tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+
+    /// Cover the main classification rules in one go: bucket-based wins over
+    /// extension; deep nesting under the bucket stays in the bucket; ambiguous
+    /// trees are skipped; files outside either bucket fall back to extension.
+    #[test]
+    fn scan_classifies_by_immediate_root_child() {
+        let tmp = tempdir().unwrap();
+        let root = tmp.path();
+
+        // Bucket-based: 2d/ and 3d/ at top level.
+        fs::create_dir_all(root.join("2d/sketches")).unwrap();
+        fs::create_dir_all(root.join("3d/models")).unwrap();
+        fs::write(root.join("2d/sketches/draft.png"), b"x").unwrap();
+        fs::write(root.join("3d/models/scene.glb"), b"x").unwrap();
+
+        // Extension fallback for files outside both buckets.
+        fs::write(root.join("loose.png"), b"x").unwrap();
+        fs::write(root.join("loose.glb"), b"x").unwrap();
+
+        // Ambiguous: a "3d" folder inside 2d/. Must be skipped.
+        fs::create_dir_all(root.join("2d/refs/3d")).unwrap();
+        fs::write(root.join("2d/refs/3d/wrong.png"), b"x").unwrap();
+
+        let mut assets = Vec::new();
+        scan_dir_recursive(root, root, &mut assets).unwrap();
+
+        let by_name = |n: &str| {
+            assets
+                .iter()
+                .find(|a| a.file_name == n)
+                .map(|a| a.asset_type.as_str())
+        };
+
+        assert_eq!(by_name("draft.png"), Some("2d"), "2d bucket pins .png");
+        assert_eq!(by_name("scene.glb"), Some("3d"), "3d bucket pins .glb");
+        assert_eq!(by_name("loose.png"), Some("2d"), "extension fallback .png");
+        assert_eq!(by_name("loose.glb"), Some("3d"), "extension fallback .glb");
+        assert!(
+            by_name("wrong.png").is_none(),
+            "ambiguous 2d+3d tree must skip the file, not silently classify",
+        );
+    }
 }
 
 fn mime_from_ext(ext: &str) -> String {

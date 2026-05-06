@@ -119,12 +119,12 @@ CREATE INDEX IF NOT EXISTS idx_bench_patterns_run
 
 /// Valid rubric dimensions. Judge output is validated against this set.
 pub const RUBRIC_DIMENSIONS: &[&str] = &[
-    "coverage",         // weight 2.0
-    "recommendations",  // weight 2.0
-    "review_content",   // weight 1.5 (N/A if persona did not produce review output)
-    "value",            // weight 1.5
-    "coherence",        // weight 1.0
-    "tone",             // weight 0.5
+    "coverage",        // weight 2.0
+    "recommendations", // weight 2.0
+    "review_content",  // weight 1.5 (N/A if persona did not produce review output)
+    "value",           // weight 1.5
+    "coherence",       // weight 1.0
+    "tone",            // weight 0.5
 ];
 
 /// Valid model labels for the matrix. Extend cautiously — schema uses
@@ -138,7 +138,9 @@ pub struct BenchDbPool {
 
 impl BenchDbPool {
     pub fn get(&self) -> Result<std::sync::MutexGuard<'_, Connection>, String> {
-        self.conn.lock().map_err(|e| format!("Bench DB lock error: {e}"))
+        self.conn
+            .lock()
+            .map_err(|e| format!("Bench DB lock error: {e}"))
     }
 }
 
@@ -157,8 +159,10 @@ pub fn open_pool(path: &Path) -> Result<BenchDbPool, String> {
     let conn = Connection::open(path)
         .map_err(|e| format!("Failed to open bench DB at {}: {e}", path.display()))?;
 
-    conn.execute_batch("PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;")
-        .map_err(|e| format!("Bench DB PRAGMA error: {e}"))?;
+    conn.execute_batch(
+        "PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000; PRAGMA foreign_keys=ON;",
+    )
+    .map_err(|e| format!("Bench DB PRAGMA error: {e}"))?;
 
     ensure_schema(&conn)?;
 

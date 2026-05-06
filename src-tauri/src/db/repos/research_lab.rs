@@ -1,15 +1,13 @@
 use rusqlite::params;
 use uuid::Uuid;
 
-use crate::db::DbPool;
 use crate::db::models::{
-    CreateResearchProject, ResearchDashboardStats, ResearchProject, UpdateResearchProject,
-    CreateResearchSource, ResearchSource,
-    CreateResearchHypothesis, ResearchHypothesis,
-    CreateResearchExperiment, ResearchExperiment, ResearchExperimentRun,
-    CreateResearchFinding, ResearchFinding,
-    CreateResearchReport, ResearchReport,
+    CreateResearchExperiment, CreateResearchFinding, CreateResearchHypothesis,
+    CreateResearchProject, CreateResearchReport, CreateResearchSource, ResearchDashboardStats,
+    ResearchExperiment, ResearchExperimentRun, ResearchFinding, ResearchHypothesis,
+    ResearchProject, ResearchReport, ResearchSource, UpdateResearchProject,
 };
+use crate::db::DbPool;
 use crate::error::AppError;
 
 // ============================================================================
@@ -65,7 +63,10 @@ pub fn get_project(pool: &DbPool, id: &str) -> Result<ResearchProject, AppError>
     .map_err(|_| AppError::NotFound(format!("Research project {id} not found")))
 }
 
-pub fn create_project(pool: &DbPool, input: &CreateResearchProject) -> Result<ResearchProject, AppError> {
+pub fn create_project(
+    pool: &DbPool,
+    input: &CreateResearchProject,
+) -> Result<ResearchProject, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
     conn.execute(
@@ -76,7 +77,11 @@ pub fn create_project(pool: &DbPool, input: &CreateResearchProject) -> Result<Re
     get_project(pool, &id)
 }
 
-pub fn update_project(pool: &DbPool, id: &str, input: &UpdateResearchProject) -> Result<ResearchProject, AppError> {
+pub fn update_project(
+    pool: &DbPool,
+    id: &str,
+    input: &UpdateResearchProject,
+) -> Result<ResearchProject, AppError> {
     let existing = get_project(pool, id)?;
     let conn = pool.get()?;
     conn.execute(
@@ -137,7 +142,10 @@ pub fn list_sources(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchSourc
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-pub fn create_source(pool: &DbPool, input: &CreateResearchSource) -> Result<ResearchSource, AppError> {
+pub fn create_source(
+    pool: &DbPool,
+    input: &CreateResearchSource,
+) -> Result<ResearchSource, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
     conn.execute(
@@ -169,7 +177,10 @@ pub fn delete_source(pool: &DbPool, id: &str) -> Result<(), AppError> {
 // Research Hypotheses
 // ============================================================================
 
-pub fn list_hypotheses(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchHypothesis>, AppError> {
+pub fn list_hypotheses(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<ResearchHypothesis>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, project_id, statement, rationale, status, confidence, parent_hypothesis_id, generated_by, supporting_evidence, counter_evidence, linked_experiments, created_at, updated_at
@@ -177,17 +188,28 @@ pub fn list_hypotheses(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchHy
     )?;
     let rows = stmt.query_map(params![project_id], |row| {
         Ok(ResearchHypothesis {
-            id: row.get(0)?, project_id: row.get(1)?, statement: row.get(2)?,
-            rationale: row.get(3)?, status: row.get(4)?, confidence: row.get(5)?,
-            parent_hypothesis_id: row.get(6)?, generated_by: row.get(7)?,
-            supporting_evidence: row.get(8)?, counter_evidence: row.get(9)?,
-            linked_experiments: row.get(10)?, created_at: row.get(11)?, updated_at: row.get(12)?,
+            id: row.get(0)?,
+            project_id: row.get(1)?,
+            statement: row.get(2)?,
+            rationale: row.get(3)?,
+            status: row.get(4)?,
+            confidence: row.get(5)?,
+            parent_hypothesis_id: row.get(6)?,
+            generated_by: row.get(7)?,
+            supporting_evidence: row.get(8)?,
+            counter_evidence: row.get(9)?,
+            linked_experiments: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-pub fn create_hypothesis(pool: &DbPool, input: &CreateResearchHypothesis) -> Result<ResearchHypothesis, AppError> {
+pub fn create_hypothesis(
+    pool: &DbPool,
+    input: &CreateResearchHypothesis,
+) -> Result<ResearchHypothesis, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
     conn.execute(
@@ -208,7 +230,14 @@ pub fn create_hypothesis(pool: &DbPool, input: &CreateResearchHypothesis) -> Res
     ).map_err(AppError::from)
 }
 
-pub fn update_hypothesis(pool: &DbPool, id: &str, status: Option<&str>, confidence: Option<f64>, supporting_evidence: Option<&str>, counter_evidence: Option<&str>) -> Result<(), AppError> {
+pub fn update_hypothesis(
+    pool: &DbPool,
+    id: &str,
+    status: Option<&str>,
+    confidence: Option<f64>,
+    supporting_evidence: Option<&str>,
+    counter_evidence: Option<&str>,
+) -> Result<(), AppError> {
     let conn = pool.get()?;
     let mut parts = vec!["updated_at = datetime('now')".to_string()];
     let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
@@ -231,8 +260,13 @@ pub fn update_hypothesis(pool: &DbPool, id: &str, status: Option<&str>, confiden
     }
 
     param_values.push(Box::new(id.to_string()));
-    let sql = format!("UPDATE research_hypotheses SET {} WHERE id = ?{}", parts.join(", "), param_values.len());
-    let params: Vec<&dyn rusqlite::types::ToSql> = param_values.iter().map(|p| p.as_ref()).collect();
+    let sql = format!(
+        "UPDATE research_hypotheses SET {} WHERE id = ?{}",
+        parts.join(", "),
+        param_values.len()
+    );
+    let params: Vec<&dyn rusqlite::types::ToSql> =
+        param_values.iter().map(|p| p.as_ref()).collect();
     conn.execute(&sql, params.as_slice())?;
     Ok(())
 }
@@ -247,7 +281,10 @@ pub fn delete_hypothesis(pool: &DbPool, id: &str) -> Result<(), AppError> {
 // Research Experiments
 // ============================================================================
 
-pub fn list_experiments(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchExperiment>, AppError> {
+pub fn list_experiments(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<ResearchExperiment>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, project_id, hypothesis_id, name, methodology, input_schema, success_criteria, status, pipeline_id, created_at, updated_at
@@ -255,16 +292,26 @@ pub fn list_experiments(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchE
     )?;
     let rows = stmt.query_map(params![project_id], |row| {
         Ok(ResearchExperiment {
-            id: row.get(0)?, project_id: row.get(1)?, hypothesis_id: row.get(2)?,
-            name: row.get(3)?, methodology: row.get(4)?, input_schema: row.get(5)?,
-            success_criteria: row.get(6)?, status: row.get(7)?, pipeline_id: row.get(8)?,
-            created_at: row.get(9)?, updated_at: row.get(10)?,
+            id: row.get(0)?,
+            project_id: row.get(1)?,
+            hypothesis_id: row.get(2)?,
+            name: row.get(3)?,
+            methodology: row.get(4)?,
+            input_schema: row.get(5)?,
+            success_criteria: row.get(6)?,
+            status: row.get(7)?,
+            pipeline_id: row.get(8)?,
+            created_at: row.get(9)?,
+            updated_at: row.get(10)?,
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-pub fn create_experiment(pool: &DbPool, input: &CreateResearchExperiment) -> Result<ResearchExperiment, AppError> {
+pub fn create_experiment(
+    pool: &DbPool,
+    input: &CreateResearchExperiment,
+) -> Result<ResearchExperiment, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
     conn.execute(
@@ -286,7 +333,10 @@ pub fn create_experiment(pool: &DbPool, input: &CreateResearchExperiment) -> Res
 
 pub fn delete_experiment(pool: &DbPool, id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
-    conn.execute("DELETE FROM research_experiments WHERE id = ?1", params![id])?;
+    conn.execute(
+        "DELETE FROM research_experiments WHERE id = ?1",
+        params![id],
+    )?;
     Ok(())
 }
 
@@ -302,17 +352,28 @@ pub fn list_findings(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchFind
     )?;
     let rows = stmt.query_map(params![project_id], |row| {
         Ok(ResearchFinding {
-            id: row.get(0)?, project_id: row.get(1)?, title: row.get(2)?,
-            description: row.get(3)?, confidence: row.get(4)?, category: row.get(5)?,
-            source_experiment_ids: row.get(6)?, source_ids: row.get(7)?,
-            hypothesis_ids: row.get(8)?, generated_by: row.get(9)?,
-            status: row.get(10)?, created_at: row.get(11)?, updated_at: row.get(12)?,
+            id: row.get(0)?,
+            project_id: row.get(1)?,
+            title: row.get(2)?,
+            description: row.get(3)?,
+            confidence: row.get(4)?,
+            category: row.get(5)?,
+            source_experiment_ids: row.get(6)?,
+            source_ids: row.get(7)?,
+            hypothesis_ids: row.get(8)?,
+            generated_by: row.get(9)?,
+            status: row.get(10)?,
+            created_at: row.get(11)?,
+            updated_at: row.get(12)?,
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-pub fn create_finding(pool: &DbPool, input: &CreateResearchFinding) -> Result<ResearchFinding, AppError> {
+pub fn create_finding(
+    pool: &DbPool,
+    input: &CreateResearchFinding,
+) -> Result<ResearchFinding, AppError> {
     let id = Uuid::new_v4().to_string();
     let confidence = input.confidence.unwrap_or(0.5);
     let conn = pool.get()?;
@@ -352,16 +413,25 @@ pub fn list_reports(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchRepor
     )?;
     let rows = stmt.query_map(params![project_id], |row| {
         Ok(ResearchReport {
-            id: row.get(0)?, project_id: row.get(1)?, title: row.get(2)?,
-            report_type: row.get(3)?, status: row.get(4)?, template: row.get(5)?,
-            format: row.get(6)?, review_id: row.get(7)?,
-            created_at: row.get(8)?, updated_at: row.get(9)?,
+            id: row.get(0)?,
+            project_id: row.get(1)?,
+            title: row.get(2)?,
+            report_type: row.get(3)?,
+            status: row.get(4)?,
+            template: row.get(5)?,
+            format: row.get(6)?,
+            review_id: row.get(7)?,
+            created_at: row.get(8)?,
+            updated_at: row.get(9)?,
         })
     })?;
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
-pub fn create_report(pool: &DbPool, input: &CreateResearchReport) -> Result<ResearchReport, AppError> {
+pub fn create_report(
+    pool: &DbPool,
+    input: &CreateResearchReport,
+) -> Result<ResearchReport, AppError> {
     let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
     conn.execute(
@@ -393,13 +463,25 @@ pub fn delete_report(pool: &DbPool, id: &str) -> Result<(), AppError> {
 
 pub fn get_dashboard_stats(pool: &DbPool) -> Result<ResearchDashboardStats, AppError> {
     let conn = pool.get()?;
-    let total_projects: i32 = conn.query_row("SELECT COUNT(*) FROM research_projects", [], |r| r.get(0))?;
-    let active_projects: i32 = conn.query_row("SELECT COUNT(*) FROM research_projects WHERE status NOT IN ('complete')", [], |r| r.get(0))?;
-    let total_sources: i32 = conn.query_row("SELECT COUNT(*) FROM research_sources", [], |r| r.get(0))?;
-    let total_hypotheses: i32 = conn.query_row("SELECT COUNT(*) FROM research_hypotheses", [], |r| r.get(0))?;
-    let total_experiments: i32 = conn.query_row("SELECT COUNT(*) FROM research_experiments", [], |r| r.get(0))?;
-    let total_findings: i32 = conn.query_row("SELECT COUNT(*) FROM research_findings", [], |r| r.get(0))?;
-    let total_reports: i32 = conn.query_row("SELECT COUNT(*) FROM research_reports", [], |r| r.get(0))?;
+    let total_projects: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_projects", [], |r| r.get(0))?;
+    let active_projects: i32 = conn.query_row(
+        "SELECT COUNT(*) FROM research_projects WHERE status NOT IN ('complete')",
+        [],
+        |r| r.get(0),
+    )?;
+    let total_sources: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_sources", [], |r| r.get(0))?;
+    let total_hypotheses: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_hypotheses", [], |r| r.get(0))?;
+    let total_experiments: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_experiments", [], |r| {
+            r.get(0)
+        })?;
+    let total_findings: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_findings", [], |r| r.get(0))?;
+    let total_reports: i32 =
+        conn.query_row("SELECT COUNT(*) FROM research_reports", [], |r| r.get(0))?;
 
     Ok(ResearchDashboardStats {
         total_projects,
@@ -441,7 +523,10 @@ pub fn update_source_status(
 // Experiment Runs
 // ============================================================================
 
-pub fn list_experiment_runs(pool: &DbPool, experiment_id: &str) -> Result<Vec<ResearchExperimentRun>, AppError> {
+pub fn list_experiment_runs(
+    pool: &DbPool,
+    experiment_id: &str,
+) -> Result<Vec<ResearchExperimentRun>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, experiment_id, run_number, inputs, outputs, metrics, passed, execution_id, duration_ms, cost_usd, created_at

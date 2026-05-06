@@ -19,7 +19,9 @@ use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
-use crate::engine::rate_limiter::{RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW};
+use crate::engine::rate_limiter::{
+    RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
+};
 use crate::error::AppError;
 
 /// Maximum allowed MCP JSON-RPC response payload (10 MB).
@@ -208,7 +210,8 @@ async fn take_pooled_session(credential_id: &str) -> Option<PooledStdioSession> 
     pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
     let evicted = before - pool.len();
     if evicted > 0 {
-        m.pool_evictions.fetch_add(evicted as u64, Ordering::Relaxed);
+        m.pool_evictions
+            .fetch_add(evicted as u64, Ordering::Relaxed);
     }
     let mut session = pool.remove(credential_id)?;
     // Verify the process hasn't exited while idle
@@ -234,7 +237,8 @@ async fn return_pooled_session(credential_id: &str, mut session: PooledStdioSess
     pool.retain(|_, s| s.last_used.elapsed() < STDIO_POOL_IDLE_TIMEOUT);
     let evicted = before - pool.len();
     if evicted > 0 {
-        m.pool_evictions.fetch_add(evicted as u64, Ordering::Relaxed);
+        m.pool_evictions
+            .fetch_add(evicted as u64, Ordering::Relaxed);
     }
     if pool.len() >= STDIO_POOL_MAX_SESSIONS {
         m.pool_full_drops.fetch_add(1, Ordering::Relaxed);
@@ -292,11 +296,15 @@ async fn spawn_stdio_session(
     };
 
     // MCP initialize handshake
-    let init_req = jsonrpc_request(session.next_id, "initialize", serde_json::json!({
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-    }));
+    let init_req = jsonrpc_request(
+        session.next_id,
+        "initialize",
+        serde_json::json!({
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
+        }),
+    );
     session.next_id += 1;
 
     write_session_jsonrpc(&mut session.stdin, &init_req).await?;
@@ -399,7 +407,11 @@ pub async fn ping(fields: &HashMap<String, String>) -> Result<PingResult, AppErr
     match result {
         Ok(tools) => Ok(PingResult {
             success: true,
-            message: format!("Connected -- {} tool{} available", tools.len(), if tools.len() == 1 { "" } else { "s" }),
+            message: format!(
+                "Connected -- {} tool{} available",
+                tools.len(),
+                if tools.len() == 1 { "" } else { "s" }
+            ),
         }),
         Err(e) => Ok(PingResult {
             success: false,
@@ -458,10 +470,8 @@ fn detect_authorization_required(result: &McpToolResult) -> Option<String> {
             == Some(JSONRPC_AUTHORIZATION_REQUIRED_CODE);
 
         // Condition 3b: top-level kind sentinel
-        let has_auth_kind = value
-            .get("kind")
-            .and_then(|k| k.as_str())
-            == Some("authorization_required");
+        let has_auth_kind =
+            value.get("kind").and_then(|k| k.as_str()) == Some("authorization_required");
 
         if !has_auth_code && !has_auth_kind {
             continue;
@@ -512,10 +522,7 @@ fn parse_gateway_tool_name(tool_name: &str) -> (Option<&str>, &str) {
 /// fans out to each enabled member's tools/list, prefixes every tool name with
 /// `<member_display_name>::`, and merges the results. Members that fail are
 /// logged and skipped -- the gateway returns whatever succeeded.
-pub async fn list_tools(
-    pool: &DbPool,
-    credential_id: &str,
-) -> Result<Vec<McpTool>, AppError> {
+pub async fn list_tools(pool: &DbPool, credential_id: &str) -> Result<Vec<McpTool>, AppError> {
     // Return cached result if fresh (cache is keyed by the incoming credential_id,
     // which is the gateway id for gateway credentials -- so gateway merges are
     // cached as a single entry, invalidated when members change).
@@ -527,10 +534,7 @@ pub async fn list_tools(
 
     // Gateway path: fan out to members, prefix tool names, merge.
     if credential.service_type == MCP_GATEWAY_CONNECTOR {
-        let members = crate::db::repos::resources::mcp_gateways::list_members(
-            pool,
-            credential_id,
-        )?;
+        let members = crate::db::repos::resources::mcp_gateways::list_members(pool, credential_id)?;
         let mut merged: Vec<McpTool> = Vec::new();
         for member in members.into_iter().filter(|m| m.enabled) {
             match Box::pin(list_tools(pool, &member.member_credential_id)).await {
@@ -561,7 +565,14 @@ pub async fn list_tools(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:list_tools", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "mcp_tools:list_tools",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
@@ -599,7 +610,11 @@ pub async fn execute_tool(
     // Per-tool rate limiting
     if let Some(rl) = rate_limiter {
         let rate_key = format!("mcp_tool:{tool_name}");
-        if let Err(retry_after) = rl.check(&rate_key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW) {
+        if let Err(retry_after) = rl.check(
+            &rate_key,
+            TOOL_EXECUTION_MAX_PER_MINUTE,
+            TOOL_EXECUTION_WINDOW,
+        ) {
             tracing::warn!(
                 tool_name = %tool_name,
                 retry_after_secs = retry_after,
@@ -629,10 +644,7 @@ pub async fn execute_tool(
                  Expected '<member>{GATEWAY_TOOL_SEPARATOR}<tool>'."
             )));
         };
-        let members = crate::db::repos::resources::mcp_gateways::list_members(
-            pool,
-            credential_id,
-        )?;
+        let members = crate::db::repos::resources::mcp_gateways::list_members(pool, credential_id)?;
         let member = members
             .into_iter()
             .find(|m| m.enabled && m.display_name == member_prefix)
@@ -661,7 +673,14 @@ pub async fn execute_tool(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "mcp_tools:execute_tool", persona_id, persona_name) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "mcp_tools:execute_tool",
+        persona_id,
+        persona_name,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
@@ -672,13 +691,25 @@ pub async fn execute_tool(
 
     // Try to resolve input_schema from cache to skip redundant tools/list call
     let cached_schema = get_cached_tools(credential_id).and_then(|tools| {
-        tools.into_iter().find(|t| t.name == tool_name).map(|t| t.input_schema)
+        tools
+            .into_iter()
+            .find(|t| t.name == tool_name)
+            .map(|t| t.input_schema)
     });
 
     let start = Instant::now();
 
     let result = match connection_type {
-        "stdio" => execute_tool_stdio(&fields, tool_name, &arguments, cached_schema.as_ref(), Some(credential_id)).await,
+        "stdio" => {
+            execute_tool_stdio(
+                &fields,
+                tool_name,
+                &arguments,
+                cached_schema.as_ref(),
+                Some(credential_id),
+            )
+            .await
+        }
         "sse" => execute_tool_sse(&fields, tool_name, &arguments, cached_schema.as_ref()).await,
         other => Err(AppError::Validation(format!(
             "Unsupported MCP connection type: '{other}'"
@@ -748,9 +779,7 @@ async fn list_tools_stdio(
         list_tools_stdio_inner(fields, credential_id),
     )
     .await
-    .map_err(|_| AppError::Internal(
-        "MCP stdio session timed out during tools/list".into(),
-    ))?
+    .map_err(|_| AppError::Internal("MCP stdio session timed out during tools/list".into()))?
 }
 
 async fn list_tools_stdio_inner(
@@ -810,9 +839,11 @@ async fn execute_tool_stdio(
         execute_tool_stdio_inner(fields, tool_name, arguments, cached_schema, credential_id),
     )
     .await
-    .map_err(|_| AppError::Internal(
-        format!("MCP stdio session timed out executing tool '{tool_name}'"),
-    ))?
+    .map_err(|_| {
+        AppError::Internal(format!(
+            "MCP stdio session timed out executing tool '{tool_name}'"
+        ))
+    })?
 }
 
 async fn execute_tool_stdio_inner(
@@ -848,7 +879,8 @@ async fn execute_tool_stdio_inner(
             tracing::debug!(tool = %tool_name, "Pooled MCP session failed, spawning fresh process");
             let _ = session.child.start_kill();
             let mut fresh = spawn_stdio_session(fields).await?;
-            let retry = execute_tool_on_session(&mut fresh, tool_name, arguments, cached_schema).await;
+            let retry =
+                execute_tool_on_session(&mut fresh, tool_name, arguments, cached_schema).await;
             finish_session(fresh, credential_id, retry.is_ok()).await;
             retry
         }
@@ -864,9 +896,7 @@ async fn execute_tool_stdio_inner(
 }
 
 /// Execute `tools/list` on an already-initialized session.
-async fn list_tools_on_session(
-    session: &mut PooledStdioSession,
-) -> Result<Vec<McpTool>, AppError> {
+async fn list_tools_on_session(session: &mut PooledStdioSession) -> Result<Vec<McpTool>, AppError> {
     let list_req = jsonrpc_request(session.next_id, "tools/list", serde_json::json!({}));
     session.next_id += 1;
 
@@ -908,10 +938,14 @@ async fn execute_tool_on_session(
     }
 
     // Call tool
-    let call_req = jsonrpc_request(session.next_id, "tools/call", serde_json::json!({
-        "name": tool_name,
-        "arguments": arguments,
-    }));
+    let call_req = jsonrpc_request(
+        session.next_id,
+        "tools/call",
+        serde_json::json!({
+            "name": tool_name,
+            "arguments": arguments,
+        }),
+    );
     session.next_id += 1;
 
     write_session_jsonrpc(&mut session.stdin, &call_req).await?;
@@ -941,28 +975,29 @@ fn is_io_error(e: &AppError) -> bool {
 // SSE transport
 // ============================================================================
 
-async fn list_tools_sse(
-    fields: &HashMap<String, String>,
-) -> Result<Vec<McpTool>, AppError> {
+async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>, AppError> {
     let url = fields
         .get("url")
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
 
     // SSRF protection: reject private/internal/metadata URLs
-    super::url_safety::validate_url_safety(url).map_err(|reason| {
-        AppError::Validation(format!("MCP SSE URL blocked: {reason}"))
-    })?;
+    super::url_safety::validate_url_safety(url)
+        .map_err(|reason| AppError::Validation(format!("MCP SSE URL blocked: {reason}")))?;
 
     let auth_token = fields.get("auth_token");
 
     let client = crate::SHARED_HTTP.clone();
 
     // Initialize
-    let init_payload = jsonrpc_request(1, "initialize", serde_json::json!({
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-    }));
+    let init_payload = jsonrpc_request(
+        1,
+        "initialize",
+        serde_json::json!({
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
+        }),
+    );
 
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
@@ -995,20 +1030,23 @@ async fn execute_tool_sse(
         .ok_or_else(|| AppError::Validation("MCP server has no 'url' field".into()))?;
 
     // SSRF protection: reject private/internal/metadata URLs
-    super::url_safety::validate_url_safety(url).map_err(|reason| {
-        AppError::Validation(format!("MCP SSE URL blocked: {reason}"))
-    })?;
+    super::url_safety::validate_url_safety(url)
+        .map_err(|reason| AppError::Validation(format!("MCP SSE URL blocked: {reason}")))?;
 
     let auth_token = fields.get("auth_token");
 
     let client = crate::SHARED_HTTP.clone();
 
     // Initialize
-    let init_payload = jsonrpc_request(1, "initialize", serde_json::json!({
-        "protocolVersion": "2024-11-05",
-        "capabilities": {},
-        "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
-    }));
+    let init_payload = jsonrpc_request(
+        1,
+        "initialize",
+        serde_json::json!({
+            "protocolVersion": "2024-11-05",
+            "capabilities": {},
+            "clientInfo": { "name": "personas-playground", "version": "1.0.0" }
+        }),
+    );
     let _init_resp = send_sse_request(&client, url, auth_token, &init_payload).await?;
 
     // Validate arguments: use cached schema if available, otherwise fetch via tools/list
@@ -1023,10 +1061,14 @@ async fn execute_tool_sse(
     }
 
     // Call tool
-    let call_payload = jsonrpc_request(3, "tools/call", serde_json::json!({
-        "name": tool_name,
-        "arguments": arguments,
-    }));
+    let call_payload = jsonrpc_request(
+        3,
+        "tools/call",
+        serde_json::json!({
+            "name": tool_name,
+            "arguments": arguments,
+        }),
+    );
     let call_resp = send_sse_request(&client, url, auth_token, &call_payload).await?;
 
     parse_tool_result(&call_resp)
@@ -1093,12 +1135,8 @@ fn validate_argument_structure(arguments: &serde_json::Value) -> Result<(), AppE
 /// Compute the maximum nesting depth of a JSON value.
 fn json_depth(value: &serde_json::Value) -> usize {
     match value {
-        serde_json::Value::Array(arr) => {
-            1 + arr.iter().map(json_depth).max().unwrap_or(0)
-        }
-        serde_json::Value::Object(obj) => {
-            1 + obj.values().map(json_depth).max().unwrap_or(0)
-        }
+        serde_json::Value::Array(arr) => 1 + arr.iter().map(json_depth).max().unwrap_or(0),
+        serde_json::Value::Object(obj) => 1 + obj.values().map(json_depth).max().unwrap_or(0),
         _ => 0,
     }
 }
@@ -1120,12 +1158,13 @@ fn extract_tool_schema(
         .iter()
         .find(|t| t.get("name").and_then(|n| n.as_str()) == Some(tool_name))
         .ok_or_else(|| {
-            AppError::Validation(format!(
-                "Tool '{tool_name}' not found on MCP server"
-            ))
+            AppError::Validation(format!("Tool '{tool_name}' not found on MCP server"))
         })?;
 
-    Ok(tool.get("inputSchema").or_else(|| tool.get("input_schema")).cloned())
+    Ok(tool
+        .get("inputSchema")
+        .or_else(|| tool.get("input_schema"))
+        .cloned())
 }
 
 /// Validate arguments against the tool's declared JSON Schema.
@@ -1199,9 +1238,7 @@ fn parse_env_vars(fields: &HashMap<String, String>) -> HashMap<String, String> {
         .unwrap_or_default();
 
     raw.into_iter()
-        .filter_map(|(k, v)| {
-            super::runner::sanitize_env_name(&k).map(|safe_key| (safe_key, v))
-        })
+        .filter_map(|(k, v)| super::runner::sanitize_env_name(&k).map(|safe_key| (safe_key, v)))
         .collect()
 }
 
@@ -1212,8 +1249,7 @@ fn parse_env_vars(fields: &HashMap<String, String>) -> HashMap<String, String> {
 /// string (i.e. the program name, without arguments). Both bare names and
 /// names with common extensions (.exe, .cmd, .bat) are accepted.
 const MCP_ALLOWED_BINARIES: &[&str] = &[
-    "npx", "node", "python", "python3", "uvx", "uv", "deno", "bun",
-    "docker", "podman", "cargo",
+    "npx", "node", "python", "python3", "uvx", "uv", "deno", "bun", "docker", "podman", "cargo",
 ];
 
 /// Shell metacharacters that must never appear in an MCP command string.
@@ -1253,7 +1289,10 @@ fn validate_mcp_command(command: &str) -> Result<Vec<String>, AppError> {
         .and_then(|s| s.to_str())
         .unwrap_or(basename);
 
-    if !MCP_ALLOWED_BINARIES.iter().any(|&allowed| allowed.eq_ignore_ascii_case(stem)) {
+    if !MCP_ALLOWED_BINARIES
+        .iter()
+        .any(|&allowed| allowed.eq_ignore_ascii_case(stem))
+    {
         return Err(AppError::Validation(format!(
             "MCP binary '{}' is not in the allowlist. Permitted: {}",
             basename,
@@ -1361,41 +1400,41 @@ async fn read_session_jsonrpc(
 
     // Read headers with a total timeout (prevents slowloris-style attacks
     // where the server sends headers one byte at a time).
-    let content_length: usize = tokio::time::timeout(
-        std::time::Duration::from_secs(60),
-        async {
-            let mut cl: usize = 0;
-            loop {
-                let mut line = String::new();
-                let bytes_read = reader
-                    .read_line(&mut line)
-                    .await
-                    .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
+    let content_length: usize = tokio::time::timeout(std::time::Duration::from_secs(60), async {
+        let mut cl: usize = 0;
+        loop {
+            let mut line = String::new();
+            let bytes_read = reader
+                .read_line(&mut line)
+                .await
+                .map_err(|e| AppError::Internal(format!("Failed to read from MCP stdout: {e}")))?;
 
-                if bytes_read == 0 {
-                    return Err(AppError::Internal("MCP process closed stdout unexpectedly".into()));
-                }
-
-                let trimmed = line.trim();
-                if trimmed.is_empty() {
-                    break; // End of headers
-                }
-
-                if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
-                    cl = len_str
-                        .trim()
-                        .parse()
-                        .map_err(|_| AppError::Internal("Invalid Content-Length from MCP server".into()))?;
-                }
+            if bytes_read == 0 {
+                return Err(AppError::Internal(
+                    "MCP process closed stdout unexpectedly".into(),
+                ));
             }
-            Ok(cl)
-        },
-    )
+
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                break; // End of headers
+            }
+
+            if let Some(len_str) = trimmed.strip_prefix("Content-Length:") {
+                cl = len_str.trim().parse().map_err(|_| {
+                    AppError::Internal("Invalid Content-Length from MCP server".into())
+                })?;
+            }
+        }
+        Ok(cl)
+    })
     .await
     .map_err(|_| AppError::Internal("Timeout reading headers from MCP server".into()))??;
 
     if content_length == 0 {
-        return Err(AppError::Internal("MCP server sent no Content-Length header".into()));
+        return Err(AppError::Internal(
+            "MCP server sent no Content-Length header".into(),
+        ));
     }
 
     if content_length > MAX_MCP_PAYLOAD_BYTES {

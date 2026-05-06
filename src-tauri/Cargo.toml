@@ -47,6 +47,12 @@ mobile = []
 # desktop UI stack. The duplication with `desktop`'s deps is intentional —
 # Cargo unions feature dep sets when both are enabled.
 test-automation = ["dep:xcap", "dep:image"]
+# Compiles the dormant native Ollama execution path in engine/ollama.rs.
+# Deferred — not enabled in any release profile. Reviving it requires the
+# wiring listed in src/features/settings/sub_engine/libs/engineCapabilities.ts
+# (EngineKind variant, runner dispatch, PROVIDERS row, capability column).
+# Build with `cargo build --features ollama` when iterating on it.
+ollama = []
 # Phase 0 scaffolding for the always-on daemon mode. Gates the
 # `personas-daemon` bin target.
 #
@@ -97,6 +103,7 @@ aes-gcm = "0.10"
 base64 = "0.22"
 pbkdf2 = { version = "0.12", features = ["simple"] }
 sha2 = "0.10"
+walkdir = "2"
 whoami = "1"
 reqwest = { version = "0.12", features = ["json", "rustls-tls", "stream", "multipart"], default-features = false }
 futures-util = "0.3"

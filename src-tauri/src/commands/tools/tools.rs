@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary, UpdateToolDefinitionInput};
+use crate::db::models::{
+    CreateToolDefinitionInput, PersonaTool, PersonaToolDefinition, PersonaUsageSummary,
+    ToolUsageOverTime, ToolUsageSummary, UpdateToolDefinitionInput,
+};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::tool_usage;
 use crate::db::repos::resources::tools as repo;
@@ -150,5 +153,13 @@ pub async fn invoke_tool_direct(
             tool.name, persona.name
         )));
     }
-    tool_runner::invoke_tool_direct(&state.db, &tool, &persona_id, &persona.name, &input_json, Some(&state.rate_limiter)).await
+    tool_runner::invoke_tool_direct(
+        &state.db,
+        &tool,
+        &persona_id,
+        &persona.name,
+        &input_json,
+        Some(&state.rate_limiter),
+    )
+    .await
 }

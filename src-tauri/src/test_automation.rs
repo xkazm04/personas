@@ -170,20 +170,15 @@ async fn try_eval_bridge(
 
     // Build JS to call the bridge's __exec__ dispatcher
     let params_json = serde_json::to_string(params).unwrap_or_else(|_| "{}".to_string());
-    let js = format!(
-        r#"window.__TEST__.__exec__("{id}", "{method}", {params_json});"#,
-    );
+    let js = format!(r#"window.__TEST__.__exec__("{id}", "{method}", {params_json});"#,);
 
     // Evaluate JS in the WebView
-    let webview = state
-        .app_handle
-        .get_webview_window("main")
-        .ok_or_else(|| {
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                "WebView window 'main' not found".to_string(),
-            )
-        })?;
+    let webview = state.app_handle.get_webview_window("main").ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "WebView window 'main' not found".to_string(),
+        )
+    })?;
 
     webview.eval(&js).map_err(|e| {
         (
@@ -267,7 +262,13 @@ async fn handle_wait(
     let params = serde_json::json!({ "selector": req.selector, "timeoutMs": req.timeout_ms });
     // Wait timeout = JS-side timeout + generous buffer for bridge overhead
     let bridge_timeout = (req.timeout_ms / 1000).max(BRIDGE_TIMEOUT_DEFAULT) + 10;
-    eval_bridge_method_with_timeout(&state, "waitFor", &params, bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX)).await
+    eval_bridge_method_with_timeout(
+        &state,
+        "waitFor",
+        &params,
+        bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX),
+    )
+    .await
 }
 
 async fn handle_list_interactive(
@@ -281,15 +282,12 @@ async fn handle_eval(
     AxumState(state): AxumState<ServerState>,
     Json(req): Json<EvalRequest>,
 ) -> Result<String, (StatusCode, String)> {
-    let webview = state
-        .app_handle
-        .get_webview_window("main")
-        .ok_or_else(|| {
-            (
-                StatusCode::SERVICE_UNAVAILABLE,
-                "WebView window 'main' not found".to_string(),
-            )
-        })?;
+    let webview = state.app_handle.get_webview_window("main").ok_or_else(|| {
+        (
+            StatusCode::SERVICE_UNAVAILABLE,
+            "WebView window 'main' not found".to_string(),
+        )
+    })?;
 
     webview.eval(&req.js).map_err(|e| {
         (
@@ -318,27 +316,30 @@ async fn handle_screenshot(
     }
     #[cfg(any(feature = "test-automation", feature = "desktop"))]
     {
-    use std::path::PathBuf;
+        use std::path::PathBuf;
 
-    let save_dir = PathBuf::from(&req.save_dir);
-    tokio::fs::create_dir_all(&save_dir).await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to create save dir {}: {e}", save_dir.display()),
-        )
-    })?;
+        let save_dir = PathBuf::from(&req.save_dir);
+        tokio::fs::create_dir_all(&save_dir).await.map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to create save dir {}: {e}", save_dir.display()),
+            )
+        })?;
 
-    let filename = if req.filename.ends_with(".png") {
-        req.filename.clone()
-    } else {
-        format!("{}.png", req.filename)
-    };
-    let out_path = save_dir.join(&filename);
-    let target_title = req.window_title.clone().unwrap_or_else(|| "Personas".to_string());
-    let max_width = req.max_width.unwrap_or(1280);
+        let filename = if req.filename.ends_with(".png") {
+            req.filename.clone()
+        } else {
+            format!("{}.png", req.filename)
+        };
+        let out_path = save_dir.join(&filename);
+        let target_title = req
+            .window_title
+            .clone()
+            .unwrap_or_else(|| "Personas".to_string());
+        let max_width = req.max_width.unwrap_or(1280);
 
-    let out_path_owned = out_path.clone();
-    let result = tokio::task::spawn_blocking(move || -> Result<(u32, u32), String> {
+        let out_path_owned = out_path.clone();
+        let result = tokio::task::spawn_blocking(move || -> Result<(u32, u32), String> {
         use xcap::{Monitor, Window};
 
         let mut captured: Option<image::RgbaImage> = None;
@@ -403,16 +404,15 @@ async fn handle_screenshot(
         )
     })?;
 
-    let (width, height) =
-        result.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+        let (width, height) = result.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
 
-    Ok(serde_json::json!({
-        "success": true,
-        "path": out_path.to_string_lossy(),
-        "width": width,
-        "height": height,
-    })
-    .to_string())
+        Ok(serde_json::json!({
+            "success": true,
+            "path": out_path.to_string_lossy(),
+            "width": width,
+            "height": height,
+        })
+        .to_string())
     } // end cfg(any(feature = "test-automation", feature = "desktop"))
 }
 
@@ -539,7 +539,13 @@ async fn handle_wait_toast(
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "text": req.text, "timeoutMs": req.timeout_ms });
     let bridge_timeout = (req.timeout_ms / 1000).max(BRIDGE_TIMEOUT_DEFAULT) + 10;
-    eval_bridge_method_with_timeout(&state, "waitForToast", &params, bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX)).await
+    eval_bridge_method_with_timeout(
+        &state,
+        "waitForToast",
+        &params,
+        bridge_timeout.min(BRIDGE_TIMEOUT_WAIT_MAX),
+    )
+    .await
 }
 
 async fn handle_answer_question(
@@ -565,8 +571,14 @@ async fn handle_promote_build(
     // Direct promote via Tauri command — bypasses bridge store dependency.
     // Accepts optional JSON body with session_id and persona_id to skip bridge getState.
     let (session_id, persona_id) = if let Some(Json(ref b)) = body {
-        let sid = b.get("session_id").and_then(|v| v.as_str()).map(|s| s.to_string());
-        let pid = b.get("persona_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+        let sid = b
+            .get("session_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let pid = b
+            .get("persona_id")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         if sid.is_some() {
             (sid, pid)
         } else {
@@ -581,11 +593,21 @@ async fn handle_promote_build(
         sid
     } else {
         let state_json = eval_bridge_method(&state, "getState", &serde_json::json!({})).await?;
-        let state_val: serde_json::Value = serde_json::from_str(&state_json)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Parse state: {e}")))?;
-        state_val.get("buildSessionId")
+        let state_val: serde_json::Value = serde_json::from_str(&state_json).map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Parse state: {e}"),
+            )
+        })?;
+        state_val
+            .get("buildSessionId")
             .and_then(|v| v.as_str())
-            .ok_or_else(|| (StatusCode::BAD_REQUEST, "No buildSessionId in state".to_string()))?
+            .ok_or_else(|| {
+                (
+                    StatusCode::BAD_REQUEST,
+                    "No buildSessionId in state".to_string(),
+                )
+            })?
             .to_string()
     };
 
@@ -598,9 +620,15 @@ async fn handle_promote_build(
                 "SELECT persona_id FROM build_sessions WHERE id = ?1",
                 rusqlite::params![session_id],
                 |row| row.get::<_, String>(0),
-            ).ok()
+            )
+            .ok()
         })
-        .ok_or_else(|| (StatusCode::BAD_REQUEST, format!("No persona_id for session {session_id}")))?;
+        .ok_or_else(|| {
+            (
+                StatusCode::BAD_REQUEST,
+                format!("No persona_id for session {session_id}"),
+            )
+        })?;
 
     tracing::info!(session_id = %session_id, persona_id = %persona_id, "test_automation: promote_build via direct invoke");
 
@@ -613,8 +641,16 @@ async fn handle_promote_build(
     match result {
         Ok(val) => {
             // Refresh the persona list in the WebView
-            let _ = eval_bridge_method(&state, "navigate", &serde_json::json!({"section": "personas"})).await;
-            Ok(serde_json::json!({"success": true, "result": val, "personaId": persona_id}).to_string())
+            let _ = eval_bridge_method(
+                &state,
+                "navigate",
+                &serde_json::json!({"section": "personas"}),
+            )
+            .await;
+            Ok(
+                serde_json::json!({"success": true, "result": val, "personaId": persona_id})
+                    .to_string(),
+            )
         }
         Err(e) => {
             tracing::warn!(error = %e, "test_automation: promote_build failed");
@@ -633,7 +669,8 @@ async fn handle_execute_persona(
     Json(req): Json<ExecutePersonaRequest>,
 ) -> Result<String, (StatusCode, String)> {
     let params = serde_json::json!({ "nameOrId": req.name_or_id });
-    eval_bridge_method_with_timeout(&state, "executePersona", &params, BRIDGE_TIMEOUT_MUTATION).await
+    eval_bridge_method_with_timeout(&state, "executePersona", &params, BRIDGE_TIMEOUT_MUTATION)
+        .await
 }
 
 #[derive(Deserialize)]
@@ -655,7 +692,12 @@ async fn handle_adopt_template(
     ) {
         Ok(val) => {
             // Refresh persona list in the webview
-            let _ = eval_bridge_method(&state, "navigate", &serde_json::json!({"section": "personas"})).await;
+            let _ = eval_bridge_method(
+                &state,
+                "navigate",
+                &serde_json::json!({"section": "personas"}),
+            )
+            .await;
             Ok(serde_json::json!({"success": true, "result": val}).to_string())
         }
         Err(e) => {
@@ -681,7 +723,13 @@ async fn handle_open_matrix_adoption(
 async fn handle_refresh_personas(
     AxumState(state): AxumState<ServerState>,
 ) -> Result<String, (StatusCode, String)> {
-    eval_bridge_method_with_timeout(&state, "refreshPersonas", &serde_json::json!({}), BRIDGE_TIMEOUT_MUTATION).await
+    eval_bridge_method_with_timeout(
+        &state,
+        "refreshPersonas",
+        &serde_json::json!({}),
+        BRIDGE_TIMEOUT_MUTATION,
+    )
+    .await
 }
 
 // ── Overview & credential helpers ───────────────────────────────────────────
@@ -727,7 +775,13 @@ async fn handle_persona_detail(
 async fn handle_list_credentials(
     AxumState(state): AxumState<ServerState>,
 ) -> Result<String, (StatusCode, String)> {
-    eval_bridge_method_with_timeout(&state, "listCredentials", &serde_json::json!({}), BRIDGE_TIMEOUT_DEFAULT).await
+    eval_bridge_method_with_timeout(
+        &state,
+        "listCredentials",
+        &serde_json::json!({}),
+        BRIDGE_TIMEOUT_DEFAULT,
+    )
+    .await
 }
 
 async fn handle_list_cli_capturable(
@@ -794,7 +848,11 @@ async fn handle_bridge_exec(
     }
     // Only allow identifier characters so nothing clever slips into the
     // eval'd JS. Matches the bridge method name shape.
-    if !req.method.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
+    if !req
+        .method
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
         return Err((
             StatusCode::BAD_REQUEST,
             "method must be alphanumeric/underscore only".into(),
@@ -886,7 +944,8 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
             Err(e) => {
                 tracing::error!(
                     "Failed to bind test automation server on {}: {}",
-                    addr_clone, e
+                    addr_clone,
+                    e
                 );
             }
         }

@@ -17,7 +17,7 @@ use crate::error::AppError;
 
 use super::chunker;
 use super::embedder::EmbeddingManager;
-use super::vector_store::SqliteVectorStore;
+use super::vector_store::{delete_vectors_by_chunks, SqliteVectorStore};
 
 /// Batch size for embedding (number of chunks per batch call).
 const EMBED_BATCH_SIZE: usize = 32;
@@ -282,14 +282,8 @@ async fn store_chunks_and_vectors(
     }
 
     // Embed in batches and insert vectors
-    let embed_result = embed_and_store_vectors(
-        embedder,
-        vector_store,
-        kb_id,
-        &chunk_ids,
-        &texts,
-    )
-    .await;
+    let embed_result =
+        embed_and_store_vectors(embedder, vector_store, kb_id, &chunk_ids, &texts).await;
 
     if let Err(e) = embed_result {
         // Clean up orphaned chunks and any partial vectors on embedding failure
@@ -329,30 +323,68 @@ async fn embed_and_store_vectors(
 }
 
 /// Remove orphaned chunk rows and their vectors after an embedding failure.
+///
+/// **Atomicity** (added 2026-05-05): both deletes run inside a single
+/// `rusqlite::Transaction` on the user-db pool (the same pool the vector
+/// store wraps — see `SqliteVectorStore::new`). Without the tx, a partial
+/// failure left the KB in one of two corrupt shapes:
+///   - chunks deleted, vectors retained → searches return zombie chunk_ids
+///     that 404 on lookup;
+///   - vectors deleted, chunks retained → silent search misses, plus the
+///     next ingest re-creates duplicate chunks.
+/// This function is itself best-effort (errors are logged, not propagated)
+/// because the caller is already in the failure path; but failing partially
+/// is strictly worse than failing entirely.
+///
+/// `_vector_store` is unused here now that we hold the connection ourselves,
+/// but the parameter stays for call-site stability and to make the dependency
+/// explicit at the function boundary.
 fn cleanup_orphaned_chunks(
     user_db: &UserDbPool,
-    vector_store: &SqliteVectorStore,
+    _vector_store: &SqliteVectorStore,
     kb_id: &str,
     chunk_ids: &[String],
 ) {
-    // Best-effort: log but don't propagate errors from cleanup
-    if let Err(e) = vector_store.delete_by_chunks(kb_id, chunk_ids) {
-        tracing::error!(error = %e, "Failed to delete orphaned vectors during cleanup");
+    if chunk_ids.is_empty() {
+        return;
+    }
+    let mut conn = match user_db.get() {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to acquire user_db connection for orphan cleanup");
+            return;
+        }
+    };
+    let tx = match conn.transaction() {
+        Ok(t) => t,
+        Err(e) => {
+            tracing::error!(error = %e, "Failed to begin orphan-cleanup transaction");
+            return;
+        }
+    };
+
+    if let Err(e) = delete_vectors_by_chunks(&tx, kb_id, chunk_ids) {
+        tracing::error!(error = %e, "Failed to delete orphaned vectors during cleanup; rolling back");
+        // tx drops on early return → automatic rollback.
+        return;
     }
 
-    if let Ok(conn) = user_db.get() {
-        let placeholders: Vec<String> = (1..=chunk_ids.len()).map(|i| format!("?{i}")).collect();
-        let sql = format!(
-            "DELETE FROM kb_chunks WHERE id IN ({})",
-            placeholders.join(",")
-        );
-        let params: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
-            .iter()
-            .map(|id| id as &dyn rusqlite::types::ToSql)
-            .collect();
-        if let Err(e) = conn.execute(&sql, params.as_slice()) {
-            tracing::error!(error = %e, "Failed to delete orphaned chunks during cleanup");
-        }
+    let placeholders: Vec<String> = (1..=chunk_ids.len()).map(|i| format!("?{i}")).collect();
+    let sql = format!(
+        "DELETE FROM kb_chunks WHERE id IN ({})",
+        placeholders.join(",")
+    );
+    let params: Vec<&dyn rusqlite::types::ToSql> = chunk_ids
+        .iter()
+        .map(|id| id as &dyn rusqlite::types::ToSql)
+        .collect();
+    if let Err(e) = tx.execute(&sql, params.as_slice()) {
+        tracing::error!(error = %e, "Failed to delete orphaned chunks during cleanup; rolling back");
+        return;
+    }
+
+    if let Err(e) = tx.commit() {
+        tracing::error!(error = %e, "Failed to commit orphan-cleanup transaction");
     }
 }
 

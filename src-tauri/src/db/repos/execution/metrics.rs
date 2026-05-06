@@ -1,14 +1,12 @@
-use std::collections::HashMap;
 use rusqlite::{params, Row};
-use tracing::{info, warn, instrument};
+use std::collections::HashMap;
+use tracing::{info, instrument, warn};
 
 use crate::db::models::{
-    MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown,
-    PersonaPromptVersion, PromptPerformanceData, PromptPerformancePoint,
-    VersionMarker, MetricAnomaly,
-    DashboardDailyPoint, DashboardCostAnomaly, DashboardTopPersona,
-    ExecutionDashboardData, PersonaCostEntry,
-    AnomalyDrilldownData, CorrelatedEvent, RootCauseSuggestion,
+    AnomalyDrilldownData, CorrelatedEvent, DashboardCostAnomaly, DashboardDailyPoint,
+    DashboardTopPersona, ExecutionDashboardData, MetricAnomaly, MetricsChartData,
+    MetricsChartPoint, MetricsPersonaBreakdown, PersonaCostEntry, PersonaPromptVersion,
+    PromptPerformanceData, PromptPerformancePoint, RootCauseSuggestion, VersionMarker,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -26,7 +24,9 @@ pub(crate) fn row_to_prompt_version(row: &Row) -> rusqlite::Result<PersonaPrompt
         structured_prompt: row.get("structured_prompt")?,
         system_prompt: row.get("system_prompt")?,
         change_summary: row.get("change_summary")?,
-        tag: row.get::<_, Option<String>>("tag")?.unwrap_or_else(|| "experimental".into()),
+        tag: row
+            .get::<_, Option<String>>("tag")?
+            .unwrap_or_else(|| "experimental".into()),
         created_at: row.get("created_at")?,
         design_context: row.get("design_context").unwrap_or(None),
         last_design_result: row.get("last_design_result").unwrap_or(None),
@@ -57,9 +57,20 @@ pub fn create_prompt_version(
     system_prompt: Option<String>,
     change_summary: Option<String>,
 ) -> Result<PersonaPromptVersion, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::create_prompt_version", {
-        create_prompt_version_with_snapshot(pool, persona_id, structured_prompt, system_prompt, change_summary, VersionSnapshotFields::default())
-    })
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::create_prompt_version",
+        {
+            create_prompt_version_with_snapshot(
+                pool,
+                persona_id,
+                structured_prompt,
+                system_prompt,
+                change_summary,
+                VersionSnapshotFields::default(),
+            )
+        }
+    )
 }
 
 pub fn create_prompt_version_with_snapshot(
@@ -70,25 +81,28 @@ pub fn create_prompt_version_with_snapshot(
     change_summary: Option<String>,
     snapshot: VersionSnapshotFields,
 ) -> Result<PersonaPromptVersion, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::create_prompt_version_with_snapshot", {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let tag = "experimental".to_string();
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::create_prompt_version_with_snapshot",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let tag = "experimental".to_string();
 
-    let conn = pool.get()?;
+            let conn = pool.get()?;
 
-    // Wrap SELECT MAX + INSERT in a transaction to prevent concurrent callers
-    // from reading the same MAX and inserting duplicate version numbers.
-    conn.execute_batch("BEGIN IMMEDIATE")?;
-    let result = (|| -> Result<(i32,), AppError> {
-        let version_number: i32 = conn
+            // Wrap SELECT MAX + INSERT in a transaction to prevent concurrent callers
+            // from reading the same MAX and inserting duplicate version numbers.
+            conn.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(i32,), AppError> {
+                let version_number: i32 = conn
             .query_row(
                 "SELECT COALESCE(MAX(version_number), 0) + 1 FROM persona_prompt_versions WHERE persona_id = ?1",
                 params![persona_id],
                 |row| row.get(0),
             )?;
 
-        conn.execute(
+                conn.execute(
             "INSERT INTO persona_prompt_versions
              (id, persona_id, version_number, structured_prompt, system_prompt, change_summary, tag, created_at,
               design_context, last_design_result, resolved_cells, icon, color)
@@ -98,25 +112,35 @@ pub fn create_prompt_version_with_snapshot(
                 snapshot.design_context, snapshot.last_design_result, snapshot.resolved_cells, snapshot.icon, snapshot.color,
             ],
         )?;
-        Ok((version_number,))
-    })();
+                Ok((version_number,))
+            })();
 
-    match result {
-        Ok((version_number,)) => {
-            conn.execute_batch("COMMIT")?;
-            Ok(PersonaPromptVersion {
-                id, persona_id: persona_id.to_string(), version_number,
-                structured_prompt, system_prompt, change_summary, tag, created_at: now,
-                design_context: snapshot.design_context, last_design_result: snapshot.last_design_result,
-                resolved_cells: snapshot.resolved_cells, icon: snapshot.icon, color: snapshot.color,
-            })
+            match result {
+                Ok((version_number,)) => {
+                    conn.execute_batch("COMMIT")?;
+                    Ok(PersonaPromptVersion {
+                        id,
+                        persona_id: persona_id.to_string(),
+                        version_number,
+                        structured_prompt,
+                        system_prompt,
+                        change_summary,
+                        tag,
+                        created_at: now,
+                        design_context: snapshot.design_context,
+                        last_design_result: snapshot.last_design_result,
+                        resolved_cells: snapshot.resolved_cells,
+                        icon: snapshot.icon,
+                        color: snapshot.color,
+                    })
+                }
+                Err(e) => {
+                    let _ = conn.execute_batch("ROLLBACK");
+                    Err(e)
+                }
+            }
         }
-        Err(e) => {
-            let _ = conn.execute_batch("ROLLBACK");
-            Err(e)
-        }
-    }
-    })
+    )
 }
 
 /// Creates a version only if the prompt actually changed from the latest version.
@@ -127,35 +151,39 @@ pub fn create_prompt_version_if_changed(
     structured_prompt: Option<String>,
     system_prompt: Option<String>,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::create_prompt_version_if_changed", {
-    let conn = pool.get()?;
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::create_prompt_version_if_changed",
+        {
+            let conn = pool.get()?;
 
-    // Get latest version's prompt to diff
-    let latest: Option<(Option<String>,)> = conn
-        .query_row(
-            "SELECT structured_prompt FROM persona_prompt_versions
+            // Get latest version's prompt to diff
+            let latest: Option<(Option<String>,)> = conn
+                .query_row(
+                    "SELECT structured_prompt FROM persona_prompt_versions
              WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT 1",
-            params![persona_id],
-            |row| Ok((row.get(0)?,)),
-        )
-        .ok();
+                    params![persona_id],
+                    |row| Ok((row.get(0)?,)),
+                )
+                .ok();
 
-    let latest_prompt = latest.and_then(|r| r.0);
+            let latest_prompt = latest.and_then(|r| r.0);
 
-    // Skip if prompts are identical
-    if latest_prompt.as_deref() == structured_prompt.as_deref() {
-        return Ok(None);
-    }
+            // Skip if prompts are identical
+            if latest_prompt.as_deref() == structured_prompt.as_deref() {
+                return Ok(None);
+            }
 
-    let version = create_prompt_version(
-        pool,
-        persona_id,
-        structured_prompt,
-        system_prompt,
-        Some("Auto-saved".into()),
-    )?;
-    Ok(Some(version))
-    })
+            let version = create_prompt_version(
+                pool,
+                persona_id,
+                structured_prompt,
+                system_prompt,
+                Some("Auto-saved".into()),
+            )?;
+            Ok(Some(version))
+        }
+    )
 }
 
 pub fn get_prompt_versions(
@@ -163,36 +191,48 @@ pub fn get_prompt_versions(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaPromptVersion>, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_prompt_versions", {
-        let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_prompt_versions",
+        {
+            let limit = limit.unwrap_or(50);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 ORDER BY version_number DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
-        Ok(rows.filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => { warn!("get_prompt_versions: row deserialization failed: {e}"); None }
-        }).collect())
-    })
+            let rows = stmt.query_map(params![persona_id, limit], row_to_prompt_version)?;
+            Ok(rows
+                .filter_map(|r| match r {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        warn!("get_prompt_versions: row deserialization failed: {e}");
+                        None
+                    }
+                })
+                .collect())
+        }
+    )
 }
 
-pub fn get_prompt_version_by_id(
-    pool: &DbPool,
-    id: &str,
-) -> Result<PersonaPromptVersion, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_prompt_version_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
-            params![id],
-            row_to_prompt_version,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {id}")),
-            other => AppError::Database(other),
-        })
-    })
+pub fn get_prompt_version_by_id(pool: &DbPool, id: &str) -> Result<PersonaPromptVersion, AppError> {
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_prompt_version_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+                params![id],
+                row_to_prompt_version,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Prompt version {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 pub fn update_prompt_version_tag(
@@ -200,68 +240,75 @@ pub fn update_prompt_version_tag(
     id: &str,
     tag: &str,
 ) -> Result<PersonaPromptVersion, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::update_prompt_version_tag", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
-            params![tag, id],
-        )?;
-        if rows == 0 {
-            return Err(AppError::NotFound(format!("Prompt version {id}")));
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::update_prompt_version_tag",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
+                params![tag, id],
+            )?;
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("Prompt version {id}")));
+            }
+            get_prompt_version_by_id(pool, id)
         }
-        get_prompt_version_by_id(pool, id)
-    })
+    )
 }
 
 /// Promote a version to "production" atomically: any existing production version
 /// for the same persona is demoted to "experimental" in the same transaction so
 /// the table can never contain two production rows for one persona.
-pub fn promote_to_production(
-    pool: &DbPool,
-    id: &str,
-) -> Result<PersonaPromptVersion, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::promote_to_production", {
-        let conn = pool.get()?;
-        conn.execute_batch("BEGIN IMMEDIATE")?;
-        let result = (|| -> Result<(), AppError> {
-            let persona_id: String = conn
-                .query_row(
-                    "SELECT persona_id FROM persona_prompt_versions WHERE id = ?1",
-                    params![id],
-                    |row| row.get(0),
-                )
-                .map_err(|e| match e {
-                    rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {id}")),
-                    other => AppError::Database(other),
-                })?;
+pub fn promote_to_production(pool: &DbPool, id: &str) -> Result<PersonaPromptVersion, AppError> {
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::promote_to_production",
+        {
+            let conn = pool.get()?;
+            conn.execute_batch("BEGIN IMMEDIATE")?;
+            let result = (|| -> Result<(), AppError> {
+                let persona_id: String = conn
+                    .query_row(
+                        "SELECT persona_id FROM persona_prompt_versions WHERE id = ?1",
+                        params![id],
+                        |row| row.get(0),
+                    )
+                    .map_err(|e| match e {
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            AppError::NotFound(format!("Prompt version {id}"))
+                        }
+                        other => AppError::Database(other),
+                    })?;
 
-            conn.execute(
-                "UPDATE persona_prompt_versions SET tag = 'experimental'
+                conn.execute(
+                    "UPDATE persona_prompt_versions SET tag = 'experimental'
                  WHERE persona_id = ?1 AND tag = 'production' AND id <> ?2",
-                params![persona_id, id],
-            )?;
+                    params![persona_id, id],
+                )?;
 
-            let rows = conn.execute(
-                "UPDATE persona_prompt_versions SET tag = 'production' WHERE id = ?1",
-                params![id],
-            )?;
-            if rows == 0 {
-                return Err(AppError::NotFound(format!("Prompt version {id}")));
-            }
-            Ok(())
-        })();
+                let rows = conn.execute(
+                    "UPDATE persona_prompt_versions SET tag = 'production' WHERE id = ?1",
+                    params![id],
+                )?;
+                if rows == 0 {
+                    return Err(AppError::NotFound(format!("Prompt version {id}")));
+                }
+                Ok(())
+            })();
 
-        match result {
-            Ok(()) => {
-                conn.execute_batch("COMMIT")?;
-                get_prompt_version_by_id(pool, id)
-            }
-            Err(e) => {
-                let _ = conn.execute_batch("ROLLBACK");
-                Err(e)
+            match result {
+                Ok(()) => {
+                    conn.execute_batch("COMMIT")?;
+                    get_prompt_version_by_id(pool, id)
+                }
+                Err(e) => {
+                    let _ = conn.execute_batch("ROLLBACK");
+                    Err(e)
+                }
             }
         }
-    })
+    )
 }
 
 /// Get the current production version for a persona, if any.
@@ -269,19 +316,23 @@ pub fn get_production_version(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Option<PersonaPromptVersion>, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_production_version", {
-        let conn = pool.get()?;
-        let result = conn.query_row(
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_production_version",
+        {
+            let conn = pool.get()?;
+            let result = conn.query_row(
             "SELECT * FROM persona_prompt_versions WHERE persona_id = ?1 AND tag = 'production' ORDER BY version_number DESC LIMIT 1",
             params![persona_id],
             row_to_prompt_version,
         );
-        match result {
-            Ok(v) => Ok(Some(v)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::Database(e)),
+            match result {
+                Ok(v) => Ok(Some(v)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
         }
-    })
+    )
 }
 
 /// Get recent error rate for a persona (last N executions).
@@ -290,19 +341,23 @@ pub fn get_recent_error_rate(
     persona_id: &str,
     window: i64,
 ) -> Result<f64, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_recent_error_rate", {
-        let conn = pool.get()?;
-        let (total, failed): (i64, i64) = conn.query_row(
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_recent_error_rate",
+        {
+            let conn = pool.get()?;
+            let (total, failed): (i64, i64) = conn.query_row(
             "SELECT COUNT(*), COALESCE(SUM(CASE WHEN status IN ('failed','error') THEN 1 ELSE 0 END), 0)
              FROM (SELECT status FROM persona_executions WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2)",
             params![persona_id, window],
             |row| Ok((row.get(0)?, row.get(1)?)),
         )?;
-        if total == 0 {
-            return Ok(0.0);
+            if total == 0 {
+                return Ok(0.0);
+            }
+            Ok(failed as f64 / total as f64)
         }
-        Ok(failed as f64 / total as f64)
-    })
+    )
 }
 
 // ============================================================================
@@ -311,10 +366,7 @@ pub fn get_recent_error_rate(
 
 /// Builds a QueryBuilder with the date filter as `?1` (for use in
 /// `datetime('now', ?1)`) and an optional `AND persona_id = ?N` condition.
-fn persona_filter_qb(
-    date_filter: String,
-    persona_id: Option<&str>,
-) -> QueryBuilder {
+fn persona_filter_qb(date_filter: String, persona_id: Option<&str>) -> QueryBuilder {
     let mut qb = QueryBuilder::new();
     // Push the date offset as ?1 — used manually in `datetime('now', ?1)`
     qb.push_param(date_filter);
@@ -329,20 +381,24 @@ fn persona_filter_qb(
 // ============================================================================
 
 #[instrument(skip(pool), fields(days, persona_id))]
-pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -> Result<crate::db::models::MetricsSummary, AppError> {
+pub fn get_summary(
+    pool: &DbPool,
+    days: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<crate::db::models::MetricsSummary, AppError> {
     timed_query!("execution_metrics", "execution_metrics::get_summary", {
-    let start = std::time::Instant::now();
-    let days = days.unwrap_or(30).clamp(1, 365);
-    let conn = pool.get()?;
-    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
-    let pid_clause = if qb.has_conditions() {
-        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
-    } else {
-        String::new()
-    };
+        let start = std::time::Instant::now();
+        let days = days.unwrap_or(30).clamp(1, 365);
+        let conn = pool.get()?;
+        let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+        let pid_clause = if qb.has_conditions() {
+            format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+        } else {
+            String::new()
+        };
 
-    let sql = format!(
-        "SELECT
+        let sql = format!(
+            "SELECT
             COUNT(*) as total_executions,
             COALESCE(SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END), 0) as successful,
             COALESCE(SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END), 0) as failed,
@@ -350,27 +406,27 @@ pub fn get_summary(pool: &DbPool, days: Option<i64>, persona_id: Option<&str>) -
             COUNT(DISTINCT persona_id) as active_personas
          FROM persona_executions
          WHERE created_at >= datetime('now', ?1){pid_clause}"
-    );
+        );
 
-    let result = conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
-        Ok(crate::db::models::MetricsSummary {
-            total_executions: row.get(0)?,
-            successful_executions: row.get(1)?,
-            failed_executions: row.get(2)?,
-            total_cost_usd: row.get(3)?,
-            active_personas: row.get(4)?,
-            period_days: days,
-        })
-    })?;
+        let result = conn.query_row(&sql, qb.params_ref().as_slice(), |row| {
+            Ok(crate::db::models::MetricsSummary {
+                total_executions: row.get(0)?,
+                successful_executions: row.get(1)?,
+                failed_executions: row.get(2)?,
+                total_cost_usd: row.get(3)?,
+                active_personas: row.get(4)?,
+                period_days: days,
+            })
+        })?;
 
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        total_executions = result.total_executions,
-        active_personas = result.active_personas,
-        "get_summary completed"
-    );
+        info!(
+            duration_ms = start.elapsed().as_millis() as u64,
+            total_executions = result.total_executions,
+            active_personas = result.active_personas,
+            "get_summary completed"
+        );
 
-    Ok(result)
+        Ok(result)
     })
 }
 
@@ -388,19 +444,19 @@ pub fn get_chart_data(
     persona_id: Option<&str>,
 ) -> Result<MetricsChartData, AppError> {
     timed_query!("execution_metrics", "execution_metrics::get_chart_data", {
-    let start = std::time::Instant::now();
-    let days = days.unwrap_or(30).clamp(1, 365);
-    let conn = pool.get()?;
-    let qb = persona_filter_qb(format!("-{days} days"), persona_id);
-    let pid_clause = if qb.has_conditions() {
-        format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
-    } else {
-        String::new()
-    };
+        let start = std::time::Instant::now();
+        let days = days.unwrap_or(30).clamp(1, 365);
+        let conn = pool.get()?;
+        let qb = persona_filter_qb(format!("-{days} days"), persona_id);
+        let pid_clause = if qb.has_conditions() {
+            format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+        } else {
+            String::new()
+        };
 
-    // 1) Date-bucketed chart points (GROUP BY date only)
-    let chart_sql = format!(
-        "SELECT
+        // 1) Date-bucketed chart points (GROUP BY date only)
+        let chart_sql = format!(
+            "SELECT
             DATE(created_at) as date,
             COALESCE(SUM(cost_usd), 0.0) as cost,
             COUNT(*) as executions,
@@ -412,32 +468,36 @@ pub fn get_chart_data(
          WHERE created_at >= datetime('now', ?1){pid_clause}
          GROUP BY DATE(created_at)
          ORDER BY date ASC"
-    );
+        );
 
-    let params_ref = qb.params_ref();
+        let params_ref = qb.params_ref();
 
-    let chart_points: Vec<MetricsChartPoint> = {
-        let mut stmt = conn.prepare(&chart_sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), |row| {
-            Ok(MetricsChartPoint {
-                date: row.get("date")?,
-                cost: row.get("cost")?,
-                executions: row.get("executions")?,
-                success: row.get("success")?,
-                failed: row.get("failed")?,
-                tokens: row.get("tokens")?,
-                active_personas: row.get("active_personas")?,
+        let chart_points: Vec<MetricsChartPoint> = {
+            let mut stmt = conn.prepare(&chart_sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), |row| {
+                Ok(MetricsChartPoint {
+                    date: row.get("date")?,
+                    cost: row.get("cost")?,
+                    executions: row.get("executions")?,
+                    success: row.get("success")?,
+                    failed: row.get("failed")?,
+                    tokens: row.get("tokens")?,
+                    active_personas: row.get("active_personas")?,
+                })
+            })?;
+            rows.filter_map(|r| match r {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    warn!("get_chart_data: chart_points row deserialization failed: {e}");
+                    None
+                }
             })
-        })?;
-        rows.filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => { warn!("get_chart_data: chart_points row deserialization failed: {e}"); None }
-        }).collect()
-    };
+            .collect()
+        };
 
-    // 2) Per-persona breakdown (for pie chart)
-    let breakdown_sql = format!(
-        "SELECT
+        // 2) Per-persona breakdown (for pie chart)
+        let breakdown_sql = format!(
+            "SELECT
             persona_id,
             COUNT(*) as executions,
             COALESCE(SUM(cost_usd), 0.0) as cost
@@ -445,39 +505,43 @@ pub fn get_chart_data(
          WHERE created_at >= datetime('now', ?1){pid_clause}
          GROUP BY persona_id
          HAVING executions > 0"
-    );
+        );
 
-    let persona_breakdown = {
-        let mut stmt = conn.prepare(&breakdown_sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), |row| {
-            Ok(MetricsPersonaBreakdown {
-                persona_id: row.get("persona_id")?,
-                executions: row.get("executions")?,
-                cost: row.get("cost")?,
+        let persona_breakdown = {
+            let mut stmt = conn.prepare(&breakdown_sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), |row| {
+                Ok(MetricsPersonaBreakdown {
+                    persona_id: row.get("persona_id")?,
+                    executions: row.get("executions")?,
+                    cost: row.get("cost")?,
+                })
+            })?;
+            rows.filter_map(|r| match r {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    warn!("get_chart_data: persona_breakdown row deserialization failed: {e}");
+                    None
+                }
             })
-        })?;
-        rows.filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => { warn!("get_chart_data: persona_breakdown row deserialization failed: {e}"); None }
-        }).collect()
-    };
+            .collect()
+        };
 
-    let anomalies = detect_chart_anomalies(&chart_points);
+        let anomalies = detect_chart_anomalies(&chart_points);
 
-    let result = MetricsChartData {
-        chart_points,
-        persona_breakdown,
-        anomalies,
-    };
+        let result = MetricsChartData {
+            chart_points,
+            persona_breakdown,
+            anomalies,
+        };
 
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        chart_points = result.chart_points.len(),
-        persona_breakdown = result.persona_breakdown.len(),
-        "get_chart_data completed"
-    );
+        info!(
+            duration_ms = start.elapsed().as_millis() as u64,
+            chart_points = result.chart_points.len(),
+            persona_breakdown = result.persona_breakdown.len(),
+            "get_chart_data completed"
+        );
 
-    Ok(result)
+        Ok(result)
     })
 }
 
@@ -571,11 +635,14 @@ fn detect_rolling_anomalies<T>(
 /// window with >100% / <-50% deviation thresholds.
 fn detect_chart_anomalies(points: &[MetricsChartPoint]) -> Vec<MetricAnomaly> {
     detect_rolling_anomalies(
-        points, 5, "cost",
+        points,
+        5,
+        "cost",
         |p| p.cost,
         |p| &p.date,
         |_| None,
-        100.0, -50.0,
+        100.0,
+        -50.0,
     )
 }
 
@@ -587,20 +654,43 @@ fn detect_anomalies(
     worst_cost_by_date: &HashMap<String, (String, f64)>,
     worst_duration_by_date: &HashMap<String, (String, f64)>,
 ) -> Vec<MetricAnomaly> {
-    let metrics: Vec<(&str, Box<dyn Fn(&PromptPerformancePoint) -> f64>, &HashMap<String, (String, f64)>)> = vec![
-        ("cost", Box::new(|p: &PromptPerformancePoint| p.avg_cost_usd), worst_cost_by_date),
-        ("error_rate", Box::new(|p: &PromptPerformancePoint| p.error_rate), worst_cost_by_date),
-        ("latency", Box::new(|p: &PromptPerformancePoint| p.p95_duration_ms), worst_duration_by_date),
+    let metrics: Vec<(
+        &str,
+        Box<dyn Fn(&PromptPerformancePoint) -> f64>,
+        &HashMap<String, (String, f64)>,
+    )> = vec![
+        (
+            "cost",
+            Box::new(|p: &PromptPerformancePoint| p.avg_cost_usd),
+            worst_cost_by_date,
+        ),
+        (
+            "error_rate",
+            Box::new(|p: &PromptPerformancePoint| p.error_rate),
+            worst_cost_by_date,
+        ),
+        (
+            "latency",
+            Box::new(|p: &PromptPerformancePoint| p.p95_duration_ms),
+            worst_duration_by_date,
+        ),
     ];
 
     let mut anomalies = Vec::new();
     for (metric_name, extract, worst_map) in &metrics {
         anomalies.extend(detect_rolling_anomalies(
-            daily_points, 5, metric_name,
+            daily_points,
+            5,
+            metric_name,
             |p| extract(p),
             |p| &p.date,
-            |i| worst_map.get(&daily_points[i].date).map(|(id, _)| id.clone()),
-            100.0, -50.0,
+            |i| {
+                worst_map
+                    .get(&daily_points[i].date)
+                    .map(|(id, _)| id.clone())
+            },
+            100.0,
+            -50.0,
         ));
     }
     anomalies
@@ -615,15 +705,18 @@ pub fn get_prompt_performance(
     persona_id: &str,
     days: i64,
 ) -> Result<PromptPerformanceData, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_prompt_performance", {
-    let start = std::time::Instant::now();
-    let days = days.clamp(1, 365);
-    let conn = pool.get()?;
-    let date_filter = format!("-{days} days");
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_prompt_performance",
+        {
+            let start = std::time::Instant::now();
+            let days = days.clamp(1, 365);
+            let conn = pool.get()?;
+            let date_filter = format!("-{days} days");
 
-    // 1) Fetch raw execution rows for this persona
-    let mut stmt = conn.prepare(
-        "SELECT
+            // 1) Fetch raw execution rows for this persona
+            let mut stmt = conn.prepare(
+                "SELECT
             DATE(created_at) as date,
             COALESCE(duration_ms, 0) as duration_ms,
             COALESCE(cost_usd, 0.0) as cost_usd,
@@ -636,98 +729,98 @@ pub fn get_prompt_performance(
            AND created_at >= datetime('now', ?2)
            AND status IN ('completed', 'failed')
          ORDER BY date ASC, cost_usd DESC",
-    )?;
-    let rows: Vec<RawExecRow> = stmt
-        .query_map(params![persona_id, date_filter], |row| {
-            Ok(RawExecRow {
-                date: row.get(0)?,
-                duration_ms: row.get(1)?,
-                cost_usd: row.get(2)?,
-                input_tokens: row.get(3)?,
-                output_tokens: row.get(4)?,
-                status: row.get(5)?,
-                id: row.get(6)?,
-            })
-        })?
-        .filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => { warn!("get_prompt_performance: exec row deserialization failed: {e}"); None }
-        })
-        .collect();
+            )?;
+            let rows: Vec<RawExecRow> = stmt
+                .query_map(params![persona_id, date_filter], |row| {
+                    Ok(RawExecRow {
+                        date: row.get(0)?,
+                        duration_ms: row.get(1)?,
+                        cost_usd: row.get(2)?,
+                        input_tokens: row.get(3)?,
+                        output_tokens: row.get(4)?,
+                        status: row.get(5)?,
+                        id: row.get(6)?,
+                    })
+                })?
+                .filter_map(|r| match r {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        warn!("get_prompt_performance: exec row deserialization failed: {e}");
+                        None
+                    }
+                })
+                .collect();
 
-    // 2) Bucket by date
-    let mut date_buckets: HashMap<String, Vec<&RawExecRow>> = HashMap::new();
-    for row in &rows {
-        date_buckets
-            .entry(row.date.clone())
-            .or_default()
-            .push(row);
-    }
-
-    // Track worst execution per date per metric for accurate anomaly linking
-    let mut worst_cost_by_date: HashMap<String, (String, f64)> = HashMap::new();
-    let mut worst_duration_by_date: HashMap<String, (String, f64)> = HashMap::new();
-    for row in &rows {
-        let cost_entry = worst_cost_by_date
-            .entry(row.date.clone())
-            .or_insert_with(|| (row.id.clone(), row.cost_usd));
-        if row.cost_usd > cost_entry.1 {
-            *cost_entry = (row.id.clone(), row.cost_usd);
-        }
-
-        let dur_entry = worst_duration_by_date
-            .entry(row.date.clone())
-            .or_insert_with(|| (row.id.clone(), row.duration_ms));
-        if row.duration_ms > dur_entry.1 {
-            *dur_entry = (row.id.clone(), row.duration_ms);
-        }
-    }
-
-    // 3) Build daily points with percentiles
-    let mut dates: Vec<String> = date_buckets.keys().cloned().collect();
-    dates.sort();
-
-    let daily_points: Vec<PromptPerformancePoint> = dates
-        .iter()
-        .map(|date| {
-            let bucket = &date_buckets[date];
-            let n = bucket.len() as f64;
-            let success = bucket.iter().filter(|r| r.status == "completed").count() as i64;
-            let failed = bucket.iter().filter(|r| r.status == "failed").count() as i64;
-
-            let mut durations: Vec<f64> = bucket.iter().map(|r| r.duration_ms).collect();
-            durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-
-            PromptPerformancePoint {
-                date: date.clone(),
-                avg_cost_usd: bucket.iter().map(|r| r.cost_usd).sum::<f64>() / n,
-                avg_duration_ms: bucket.iter().map(|r| r.duration_ms).sum::<f64>() / n,
-                avg_input_tokens: bucket.iter().map(|r| r.input_tokens).sum::<f64>() / n,
-                avg_output_tokens: bucket.iter().map(|r| r.output_tokens).sum::<f64>() / n,
-                total_executions: bucket.len() as i64,
-                success_count: success,
-                failed_count: failed,
-                error_rate: if (success + failed) > 0 {
-                    failed as f64 / (success + failed) as f64
-                } else {
-                    0.0
-                },
-                p50_duration_ms: percentile(&durations, 50.0),
-                p95_duration_ms: percentile(&durations, 95.0),
-                p99_duration_ms: percentile(&durations, 99.0),
+            // 2) Bucket by date
+            let mut date_buckets: HashMap<String, Vec<&RawExecRow>> = HashMap::new();
+            for row in &rows {
+                date_buckets.entry(row.date.clone()).or_default().push(row);
             }
-        })
-        .collect();
 
-    // 4) Fetch version markers
-    let mut vstmt = conn.prepare(
+            // Track worst execution per date per metric for accurate anomaly linking
+            let mut worst_cost_by_date: HashMap<String, (String, f64)> = HashMap::new();
+            let mut worst_duration_by_date: HashMap<String, (String, f64)> = HashMap::new();
+            for row in &rows {
+                let cost_entry = worst_cost_by_date
+                    .entry(row.date.clone())
+                    .or_insert_with(|| (row.id.clone(), row.cost_usd));
+                if row.cost_usd > cost_entry.1 {
+                    *cost_entry = (row.id.clone(), row.cost_usd);
+                }
+
+                let dur_entry = worst_duration_by_date
+                    .entry(row.date.clone())
+                    .or_insert_with(|| (row.id.clone(), row.duration_ms));
+                if row.duration_ms > dur_entry.1 {
+                    *dur_entry = (row.id.clone(), row.duration_ms);
+                }
+            }
+
+            // 3) Build daily points with percentiles
+            let mut dates: Vec<String> = date_buckets.keys().cloned().collect();
+            dates.sort();
+
+            let daily_points: Vec<PromptPerformancePoint> = dates
+                .iter()
+                .map(|date| {
+                    let bucket = &date_buckets[date];
+                    let n = bucket.len() as f64;
+                    let success = bucket.iter().filter(|r| r.status == "completed").count() as i64;
+                    let failed = bucket.iter().filter(|r| r.status == "failed").count() as i64;
+
+                    let mut durations: Vec<f64> = bucket.iter().map(|r| r.duration_ms).collect();
+                    durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+
+                    PromptPerformancePoint {
+                        date: date.clone(),
+                        avg_cost_usd: bucket.iter().map(|r| r.cost_usd).sum::<f64>() / n,
+                        avg_duration_ms: bucket.iter().map(|r| r.duration_ms).sum::<f64>() / n,
+                        avg_input_tokens: bucket.iter().map(|r| r.input_tokens).sum::<f64>() / n,
+                        avg_output_tokens: bucket.iter().map(|r| r.output_tokens).sum::<f64>() / n,
+                        total_executions: bucket.len() as i64,
+                        success_count: success,
+                        failed_count: failed,
+                        error_rate: if (success + failed) > 0 {
+                            failed as f64 / (success + failed) as f64
+                        } else {
+                            0.0
+                        },
+                        p50_duration_ms: percentile(&durations, 50.0),
+                        p95_duration_ms: percentile(&durations, 95.0),
+                        p99_duration_ms: percentile(&durations, 99.0),
+                    }
+                })
+                .collect();
+
+            // 4) Fetch version markers
+            let mut vstmt = conn.prepare(
         "SELECT id, version_number, COALESCE(tag, 'experimental') as tag, created_at, change_summary
          FROM persona_prompt_versions
          WHERE persona_id = ?1
            AND created_at >= datetime('now', ?2)
          ORDER BY version_number ASC",
     )?;
-    let version_markers: Vec<VersionMarker> = vstmt
+            let version_markers: Vec<VersionMarker> = vstmt
         .query_map(params![persona_id, date_filter], |row| {
             Ok(VersionMarker {
                 version_id: row.get(0)?,
@@ -743,24 +836,26 @@ pub fn get_prompt_performance(
         })
         .collect();
 
-    // 5) Detect anomalies
-    let anomalies = detect_anomalies(&daily_points, &worst_cost_by_date, &worst_duration_by_date);
+            // 5) Detect anomalies
+            let anomalies =
+                detect_anomalies(&daily_points, &worst_cost_by_date, &worst_duration_by_date);
 
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        raw_rows = rows.len(),
-        daily_points = daily_points.len(),
-        version_markers = version_markers.len(),
-        anomalies = anomalies.len(),
-        "get_prompt_performance completed"
-    );
+            info!(
+                duration_ms = start.elapsed().as_millis() as u64,
+                raw_rows = rows.len(),
+                daily_points = daily_points.len(),
+                version_markers = version_markers.len(),
+                anomalies = anomalies.len(),
+                "get_prompt_performance completed"
+            );
 
-    Ok(PromptPerformanceData {
-        daily_points,
-        version_markers,
-        anomalies,
-    })
-    })
+            Ok(PromptPerformanceData {
+                daily_points,
+                version_markers,
+                anomalies,
+            })
+        }
+    )
 }
 
 // ============================================================================
@@ -777,16 +872,19 @@ pub fn get_execution_dashboard(
     pool: &DbPool,
     days: i64,
 ) -> Result<ExecutionDashboardData, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_execution_dashboard", {
-    let start = std::time::Instant::now();
-    let days = days.clamp(1, 365);
-    let conn = pool.get()?;
-    let date_filter = format!("-{days} days");
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_execution_dashboard",
+        {
+            let start = std::time::Instant::now();
+            let days = days.clamp(1, 365);
+            let conn = pool.get()?;
+            let date_filter = format!("-{days} days");
 
-    // Single query: fetch all rows with persona name, aggregated in Rust.
-    // This replaces 4 separate SQL queries that each scanned the same rows.
-    let mut stmt = conn.prepare(
-        "SELECT
+            // Single query: fetch all rows with persona name, aggregated in Rust.
+            // This replaces 4 separate SQL queries that each scanned the same rows.
+            let mut stmt = conn.prepare(
+                "SELECT
             DATE(e.created_at) as date,
             e.persona_id,
             COALESCE(p.name, 'Unknown') as persona_name,
@@ -801,308 +899,369 @@ pub fn get_execution_dashboard(
          WHERE e.created_at >= datetime('now', ?1)
            AND e.status IN ('completed', 'failed')
          ORDER BY DATE(e.created_at) ASC, e.cost_usd DESC",
-    )?;
+            )?;
 
-    struct RawRow {
-        date: String,
-        persona_id: String,
-        persona_name: String,
-        duration_ms: f64,
-        cost_usd: f64,
-        input_tokens: i64,
-        output_tokens: i64,
-        status: String,
-        exec_id: String,
-    }
-
-    let rows: Vec<RawRow> = stmt
-        .query_map(params![date_filter], |row| {
-            Ok(RawRow {
-                date: row.get(0)?,
-                persona_id: row.get(1)?,
-                persona_name: row.get(2)?,
-                duration_ms: row.get(3)?,
-                cost_usd: row.get(4)?,
-                input_tokens: row.get(5)?,
-                output_tokens: row.get(6)?,
-                status: row.get(7)?,
-                exec_id: row.get(8)?,
-            })
-        })?
-        .filter_map(|r| match r {
-            Ok(v) => Some(v),
-            Err(e) => { warn!("get_execution_dashboard: row deserialization failed: {e}"); None }
-        })
-        .collect();
-
-    if rows.is_empty() {
-        return Ok(ExecutionDashboardData {
-            daily_points: vec![],
-            top_personas: vec![],
-            cost_anomalies: vec![],
-            total_executions: 0,
-            successful_executions: 0,
-            failed_executions: 0,
-            total_cost: 0.0,
-            overall_success_rate: 0.0,
-            avg_latency_ms: 0.0,
-            active_personas: 0,
-            projected_monthly_cost: None,
-            burn_rate: None,
-        });
-    }
-
-    // Single-pass aggregation over all rows
-    struct DateBucket {
-        total: i64,
-        completed: i64,
-        failed: i64,
-        total_cost: f64,
-        total_tokens: i64,
-        sum_duration: f64,
-        durations: Vec<f64>,
-        persona_costs: HashMap<String, (String, f64)>, // persona_id -> (name, cost)
-        top_exec_ids: Vec<(String, f64)>,               // (exec_id, cost_usd) kept sorted desc
-    }
-
-    struct PersonaAgg {
-        persona_name: String,
-        total_cost: f64,
-        total_executions: i64,
-    }
-
-    let mut date_buckets: HashMap<String, DateBucket> = HashMap::new();
-    let mut persona_aggs: HashMap<String, PersonaAgg> = HashMap::new();
-
-    for row in &rows {
-        // Per-date aggregation
-        let bucket = date_buckets.entry(row.date.clone()).or_insert_with(|| DateBucket {
-            total: 0, completed: 0, failed: 0, total_cost: 0.0, total_tokens: 0,
-            sum_duration: 0.0, durations: Vec::new(),
-            persona_costs: HashMap::new(), top_exec_ids: Vec::new(),
-        });
-        bucket.total += 1;
-        if row.status == "completed" { bucket.completed += 1; }
-        if row.status == "failed" { bucket.failed += 1; }
-        bucket.total_cost += row.cost_usd;
-        bucket.total_tokens += row.input_tokens + row.output_tokens;
-        bucket.sum_duration += row.duration_ms;
-        bucket.durations.push(row.duration_ms);
-
-        // Per-persona cost within this date
-        let pc = bucket.persona_costs
-            .entry(row.persona_id.clone())
-            .or_insert_with(|| (row.persona_name.clone(), 0.0));
-        pc.1 += row.cost_usd;
-
-        // Track top-5 costliest exec IDs per date (rows already ordered by cost_usd DESC)
-        if bucket.top_exec_ids.len() < 5 {
-            bucket.top_exec_ids.push((row.exec_id.clone(), row.cost_usd));
-        }
-
-        // Global per-persona aggregation (for top-5 costliest personas)
-        let pa = persona_aggs.entry(row.persona_id.clone()).or_insert_with(|| PersonaAgg {
-            persona_name: row.persona_name.clone(),
-            total_cost: 0.0,
-            total_executions: 0,
-        });
-        pa.total_cost += row.cost_usd;
-        pa.total_executions += 1;
-    }
-
-    // Sort durations for percentile computation
-    for bucket in date_buckets.values_mut() {
-        bucket.durations.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    }
-
-    // Build sorted date keys
-    let mut dates: Vec<String> = date_buckets.keys().cloned().collect();
-    dates.sort();
-
-    // Build daily points
-    let daily_points: Vec<DashboardDailyPoint> = dates
-        .iter()
-        .map(|date| {
-            let bucket = date_buckets.get_mut(date).unwrap();
-
-            let persona_costs: Vec<PersonaCostEntry> = {
-                let mut entries: Vec<PersonaCostEntry> = bucket.persona_costs.drain()
-                    .map(|(pid, (name, cost))| PersonaCostEntry {
-                        persona_id: pid,
-                        persona_name: name,
-                        cost,
-                    })
-                    .collect();
-                entries.sort_by(|a, b| b.cost.partial_cmp(&a.cost).unwrap_or(std::cmp::Ordering::Equal));
-                entries
-            };
-
-            DashboardDailyPoint {
-                date: date.clone(),
-                total_cost: bucket.total_cost,
-                total_executions: bucket.total,
-                completed: bucket.completed,
-                failed: bucket.failed,
-                success_rate: if bucket.total > 0 { bucket.completed as f64 / bucket.total as f64 } else { 0.0 },
-                p50_duration_ms: percentile(&bucket.durations, 50.0),
-                p95_duration_ms: percentile(&bucket.durations, 95.0),
-                p99_duration_ms: percentile(&bucket.durations, 99.0),
-                total_tokens: bucket.total_tokens,
-                persona_costs,
+            struct RawRow {
+                date: String,
+                persona_id: String,
+                persona_name: String,
+                duration_ms: f64,
+                cost_usd: f64,
+                input_tokens: i64,
+                output_tokens: i64,
+                status: String,
+                exec_id: String,
             }
-        })
-        .collect();
 
-    // Top-5 costliest personas (from in-memory aggregation)
-    let mut top_personas_vec: Vec<(&String, &PersonaAgg)> = persona_aggs.iter().collect();
-    top_personas_vec.sort_by(|a, b| b.1.total_cost.partial_cmp(&a.1.total_cost).unwrap_or(std::cmp::Ordering::Equal));
-    let top_personas: Vec<DashboardTopPersona> = top_personas_vec
-        .into_iter()
-        .take(5)
-        .map(|(pid, pa)| DashboardTopPersona {
-            persona_id: pid.clone(),
-            persona_name: pa.persona_name.clone(),
-            total_cost: pa.total_cost,
-            total_executions: pa.total_executions,
-            avg_cost_per_exec: if pa.total_executions > 0 { pa.total_cost / pa.total_executions as f64 } else { 0.0 },
-        })
-        .collect();
+            let rows: Vec<RawRow> = stmt
+                .query_map(params![date_filter], |row| {
+                    Ok(RawRow {
+                        date: row.get(0)?,
+                        persona_id: row.get(1)?,
+                        persona_name: row.get(2)?,
+                        duration_ms: row.get(3)?,
+                        cost_usd: row.get(4)?,
+                        input_tokens: row.get(5)?,
+                        output_tokens: row.get(6)?,
+                        status: row.get(7)?,
+                        exec_id: row.get(8)?,
+                    })
+                })?
+                .filter_map(|r| match r {
+                    Ok(v) => Some(v),
+                    Err(e) => {
+                        warn!("get_execution_dashboard: row deserialization failed: {e}");
+                        None
+                    }
+                })
+                .collect();
 
-    // Cost anomaly detection (no N+1 queries — exec IDs already tracked per date)
-    let window = 7usize;
-    let mut cost_anomalies: Vec<DashboardCostAnomaly> = Vec::new();
+            if rows.is_empty() {
+                return Ok(ExecutionDashboardData {
+                    daily_points: vec![],
+                    top_personas: vec![],
+                    cost_anomalies: vec![],
+                    total_executions: 0,
+                    successful_executions: 0,
+                    failed_executions: 0,
+                    total_cost: 0.0,
+                    overall_success_rate: 0.0,
+                    avg_latency_ms: 0.0,
+                    active_personas: 0,
+                    projected_monthly_cost: None,
+                    burn_rate: None,
+                });
+            }
 
-    for i in 0..daily_points.len() {
-        let start_idx = i.saturating_sub(window);
-        let preceding_costs: Vec<f64> = (start_idx..i).map(|j| daily_points[j].total_cost).collect();
-        if preceding_costs.len() < 3 {
-            continue;
-        }
+            // Single-pass aggregation over all rows
+            struct DateBucket {
+                total: i64,
+                completed: i64,
+                failed: i64,
+                total_cost: f64,
+                total_tokens: i64,
+                sum_duration: f64,
+                durations: Vec<f64>,
+                persona_costs: HashMap<String, (String, f64)>, // persona_id -> (name, cost)
+                top_exec_ids: Vec<(String, f64)>, // (exec_id, cost_usd) kept sorted desc
+            }
 
-        let n = preceding_costs.len() as f64;
-        let mean = preceding_costs.iter().sum::<f64>() / n;
-        let variance = preceding_costs.iter().map(|c| (c - mean).powi(2)).sum::<f64>() / n;
-        let std_dev = variance.sqrt();
+            struct PersonaAgg {
+                persona_name: String,
+                total_cost: f64,
+                total_executions: i64,
+            }
 
-        if std_dev == 0.0 {
-            continue;
-        }
+            let mut date_buckets: HashMap<String, DateBucket> = HashMap::new();
+            let mut persona_aggs: HashMap<String, PersonaAgg> = HashMap::new();
 
-        let deviation_sigma = (daily_points[i].total_cost - mean) / std_dev;
-        if deviation_sigma > 2.0 {
-            let exec_ids = date_buckets
-                .get(&daily_points[i].date)
-                .map(|b| b.top_exec_ids.iter().map(|(id, _)| id.clone()).collect())
-                .unwrap_or_default();
+            for row in &rows {
+                // Per-date aggregation
+                let bucket = date_buckets
+                    .entry(row.date.clone())
+                    .or_insert_with(|| DateBucket {
+                        total: 0,
+                        completed: 0,
+                        failed: 0,
+                        total_cost: 0.0,
+                        total_tokens: 0,
+                        sum_duration: 0.0,
+                        durations: Vec::new(),
+                        persona_costs: HashMap::new(),
+                        top_exec_ids: Vec::new(),
+                    });
+                bucket.total += 1;
+                if row.status == "completed" {
+                    bucket.completed += 1;
+                }
+                if row.status == "failed" {
+                    bucket.failed += 1;
+                }
+                bucket.total_cost += row.cost_usd;
+                bucket.total_tokens += row.input_tokens + row.output_tokens;
+                bucket.sum_duration += row.duration_ms;
+                bucket.durations.push(row.duration_ms);
 
-            cost_anomalies.push(DashboardCostAnomaly {
-                date: daily_points[i].date.clone(),
-                cost: daily_points[i].total_cost,
-                moving_avg: mean,
-                std_dev,
-                deviation_sigma,
-                execution_ids: exec_ids,
+                // Per-persona cost within this date
+                let pc = bucket
+                    .persona_costs
+                    .entry(row.persona_id.clone())
+                    .or_insert_with(|| (row.persona_name.clone(), 0.0));
+                pc.1 += row.cost_usd;
+
+                // Track top-5 costliest exec IDs per date (rows already ordered by cost_usd DESC)
+                if bucket.top_exec_ids.len() < 5 {
+                    bucket
+                        .top_exec_ids
+                        .push((row.exec_id.clone(), row.cost_usd));
+                }
+
+                // Global per-persona aggregation (for top-5 costliest personas)
+                let pa = persona_aggs
+                    .entry(row.persona_id.clone())
+                    .or_insert_with(|| PersonaAgg {
+                        persona_name: row.persona_name.clone(),
+                        total_cost: 0.0,
+                        total_executions: 0,
+                    });
+                pa.total_cost += row.cost_usd;
+                pa.total_executions += 1;
+            }
+
+            // Sort durations for percentile computation
+            for bucket in date_buckets.values_mut() {
+                bucket
+                    .durations
+                    .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            }
+
+            // Build sorted date keys
+            let mut dates: Vec<String> = date_buckets.keys().cloned().collect();
+            dates.sort();
+
+            // Build daily points
+            let daily_points: Vec<DashboardDailyPoint> = dates
+                .iter()
+                .map(|date| {
+                    let bucket = date_buckets.get_mut(date).unwrap();
+
+                    let persona_costs: Vec<PersonaCostEntry> = {
+                        let mut entries: Vec<PersonaCostEntry> = bucket
+                            .persona_costs
+                            .drain()
+                            .map(|(pid, (name, cost))| PersonaCostEntry {
+                                persona_id: pid,
+                                persona_name: name,
+                                cost,
+                            })
+                            .collect();
+                        entries.sort_by(|a, b| {
+                            b.cost
+                                .partial_cmp(&a.cost)
+                                .unwrap_or(std::cmp::Ordering::Equal)
+                        });
+                        entries
+                    };
+
+                    DashboardDailyPoint {
+                        date: date.clone(),
+                        total_cost: bucket.total_cost,
+                        total_executions: bucket.total,
+                        completed: bucket.completed,
+                        failed: bucket.failed,
+                        success_rate: if bucket.total > 0 {
+                            bucket.completed as f64 / bucket.total as f64
+                        } else {
+                            0.0
+                        },
+                        p50_duration_ms: percentile(&bucket.durations, 50.0),
+                        p95_duration_ms: percentile(&bucket.durations, 95.0),
+                        p99_duration_ms: percentile(&bucket.durations, 99.0),
+                        total_tokens: bucket.total_tokens,
+                        persona_costs,
+                    }
+                })
+                .collect();
+
+            // Top-5 costliest personas (from in-memory aggregation)
+            let mut top_personas_vec: Vec<(&String, &PersonaAgg)> = persona_aggs.iter().collect();
+            top_personas_vec.sort_by(|a, b| {
+                b.1.total_cost
+                    .partial_cmp(&a.1.total_cost)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
-        }
-    }
+            let top_personas: Vec<DashboardTopPersona> = top_personas_vec
+                .into_iter()
+                .take(5)
+                .map(|(pid, pa)| DashboardTopPersona {
+                    persona_id: pid.clone(),
+                    persona_name: pa.persona_name.clone(),
+                    total_cost: pa.total_cost,
+                    total_executions: pa.total_executions,
+                    avg_cost_per_exec: if pa.total_executions > 0 {
+                        pa.total_cost / pa.total_executions as f64
+                    } else {
+                        0.0
+                    },
+                })
+                .collect();
 
-    // Overall summary from in-memory aggregation
-    let total_executions: i64 = daily_points.iter().map(|p| p.total_executions).sum();
-    let total_cost: f64 = daily_points.iter().map(|p| p.total_cost).sum();
-    let total_completed: i64 = daily_points.iter().map(|p| p.completed).sum();
-    let total_failed: i64 = daily_points.iter().map(|p| p.failed).sum();
-    let active_personas = persona_aggs.len() as i64;
-    let overall_success_rate = if total_executions > 0 {
-        total_completed as f64 / total_executions as f64
-    } else {
-        0.0
-    };
-    let total_duration: f64 = date_buckets.values().map(|b| b.sum_duration).sum();
-    let avg_latency_ms = if total_executions > 0 {
-        total_duration / total_executions as f64
-    } else {
-        0.0
-    };
+            // Cost anomaly detection (no N+1 queries — exec IDs already tracked per date)
+            let window = 7usize;
+            let mut cost_anomalies: Vec<DashboardCostAnomaly> = Vec::new();
 
-    use chrono::Datelike;
-    let (projected_monthly_cost, burn_rate) = {
-        let n_points = daily_points.len();
-        if n_points >= 2 {
-            let limit = n_points.min(7);
-            let recent_points: Vec<f64> = daily_points.iter().skip(n_points - limit).map(|p| p.total_cost).collect();
-            let n = recent_points.len() as f64;
-            
-            let sum_x = (0..recent_points.len()).map(|x| x as f64).sum::<f64>();
-            let sum_y = recent_points.iter().sum::<f64>();
-            let sum_xy = recent_points.iter().enumerate().map(|(x, &y)| x as f64 * y).sum::<f64>();
-            let sum_x2 = (0..recent_points.len()).map(|x| (x as f64).powi(2)).sum::<f64>();
+            for i in 0..daily_points.len() {
+                let start_idx = i.saturating_sub(window);
+                let preceding_costs: Vec<f64> =
+                    (start_idx..i).map(|j| daily_points[j].total_cost).collect();
+                if preceding_costs.len() < 3 {
+                    continue;
+                }
 
-            let denominator = n * sum_x2 - sum_x * sum_x;
-            let slope = if denominator != 0.0 {
-                (n * sum_xy - sum_x * sum_y) / denominator
+                let n = preceding_costs.len() as f64;
+                let mean = preceding_costs.iter().sum::<f64>() / n;
+                let variance = preceding_costs
+                    .iter()
+                    .map(|c| (c - mean).powi(2))
+                    .sum::<f64>()
+                    / n;
+                let std_dev = variance.sqrt();
+
+                if std_dev == 0.0 {
+                    continue;
+                }
+
+                let deviation_sigma = (daily_points[i].total_cost - mean) / std_dev;
+                if deviation_sigma > 2.0 {
+                    let exec_ids = date_buckets
+                        .get(&daily_points[i].date)
+                        .map(|b| b.top_exec_ids.iter().map(|(id, _)| id.clone()).collect())
+                        .unwrap_or_default();
+
+                    cost_anomalies.push(DashboardCostAnomaly {
+                        date: daily_points[i].date.clone(),
+                        cost: daily_points[i].total_cost,
+                        moving_avg: mean,
+                        std_dev,
+                        deviation_sigma,
+                        execution_ids: exec_ids,
+                    });
+                }
+            }
+
+            // Overall summary from in-memory aggregation
+            let total_executions: i64 = daily_points.iter().map(|p| p.total_executions).sum();
+            let total_cost: f64 = daily_points.iter().map(|p| p.total_cost).sum();
+            let total_completed: i64 = daily_points.iter().map(|p| p.completed).sum();
+            let total_failed: i64 = daily_points.iter().map(|p| p.failed).sum();
+            let active_personas = persona_aggs.len() as i64;
+            let overall_success_rate = if total_executions > 0 {
+                total_completed as f64 / total_executions as f64
             } else {
                 0.0
             };
-            let intercept = (sum_y - slope * sum_x) / n;
+            let total_duration: f64 = date_buckets.values().map(|b| b.sum_duration).sum();
+            let avg_latency_ms = if total_executions > 0 {
+                total_duration / total_executions as f64
+            } else {
+                0.0
+            };
 
-            let current_burn_rate = (slope * (n - 1.0) + intercept).max(0.0);
+            use chrono::Datelike;
+            let (projected_monthly_cost, burn_rate) = {
+                let n_points = daily_points.len();
+                if n_points >= 2 {
+                    let limit = n_points.min(7);
+                    let recent_points: Vec<f64> = daily_points
+                        .iter()
+                        .skip(n_points - limit)
+                        .map(|p| p.total_cost)
+                        .collect();
+                    let n = recent_points.len() as f64;
 
-            let now = chrono::Utc::now();
-            let year = now.year();
-            let month = now.month();
-            let next_month = if month == 12 { 1 } else { month + 1 };
-            let next_year = if month == 12 { year + 1 } else { year };
-            
-            let first_of_this = chrono::NaiveDate::from_ymd_opt(year, month, 1).unwrap();
-            let first_of_next = chrono::NaiveDate::from_ymd_opt(next_year, next_month, 1).unwrap();
-            let days_in_month = (first_of_next - first_of_this).num_days();
-            let current_day = now.day() as i64;
+                    let sum_x = (0..recent_points.len()).map(|x| x as f64).sum::<f64>();
+                    let sum_y = recent_points.iter().sum::<f64>();
+                    let sum_xy = recent_points
+                        .iter()
+                        .enumerate()
+                        .map(|(x, &y)| x as f64 * y)
+                        .sum::<f64>();
+                    let sum_x2 = (0..recent_points.len())
+                        .map(|x| (x as f64).powi(2))
+                        .sum::<f64>();
 
-            let current_month_prefix = format!("{:04}-{:02}", year, month);
-            let spent_this_month: f64 = daily_points.iter()
-                .filter(|p| p.date.starts_with(&current_month_prefix))
-                .map(|p| p.total_cost)
-                .sum();
+                    let denominator = n * sum_x2 - sum_x * sum_x;
+                    let slope = if denominator != 0.0 {
+                        (n * sum_xy - sum_x * sum_y) / denominator
+                    } else {
+                        0.0
+                    };
+                    let intercept = (sum_y - slope * sum_x) / n;
 
-            let remaining_days = days_in_month - current_day;
-            let mut projected_remaining = 0.0;
-            for i in 1..=remaining_days {
-                let x_future = (n - 1.0) + i as f64;
-                let daily_proj = (slope * x_future + intercept).max(0.0);
-                projected_remaining += daily_proj;
-            }
+                    let current_burn_rate = (slope * (n - 1.0) + intercept).max(0.0);
 
-            (Some(spent_this_month + projected_remaining), Some(current_burn_rate))
-        } else {
-            (None, None)
+                    let now = chrono::Utc::now();
+                    let year = now.year();
+                    let month = now.month();
+                    let next_month = if month == 12 { 1 } else { month + 1 };
+                    let next_year = if month == 12 { year + 1 } else { year };
+
+                    let first_of_this = chrono::NaiveDate::from_ymd_opt(year, month, 1).unwrap();
+                    let first_of_next =
+                        chrono::NaiveDate::from_ymd_opt(next_year, next_month, 1).unwrap();
+                    let days_in_month = (first_of_next - first_of_this).num_days();
+                    let current_day = now.day() as i64;
+
+                    let current_month_prefix = format!("{:04}-{:02}", year, month);
+                    let spent_this_month: f64 = daily_points
+                        .iter()
+                        .filter(|p| p.date.starts_with(&current_month_prefix))
+                        .map(|p| p.total_cost)
+                        .sum();
+
+                    let remaining_days = days_in_month - current_day;
+                    let mut projected_remaining = 0.0;
+                    for i in 1..=remaining_days {
+                        let x_future = (n - 1.0) + i as f64;
+                        let daily_proj = (slope * x_future + intercept).max(0.0);
+                        projected_remaining += daily_proj;
+                    }
+
+                    (
+                        Some(spent_this_month + projected_remaining),
+                        Some(current_burn_rate),
+                    )
+                } else {
+                    (None, None)
+                }
+            };
+
+            info!(
+                duration_ms = start.elapsed().as_millis() as u64,
+                daily_buckets = daily_points.len(),
+                top_personas = top_personas.len(),
+                cost_anomalies = cost_anomalies.len(),
+                total_executions,
+                total_cost,
+                "get_execution_dashboard completed"
+            );
+
+            Ok(ExecutionDashboardData {
+                daily_points,
+                top_personas,
+                cost_anomalies,
+                total_executions,
+                successful_executions: total_completed,
+                failed_executions: total_failed,
+                total_cost,
+                overall_success_rate,
+                avg_latency_ms,
+                active_personas,
+                projected_monthly_cost,
+                burn_rate,
+            })
         }
-    };
-
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        daily_buckets = daily_points.len(),
-        top_personas = top_personas.len(),
-        cost_anomalies = cost_anomalies.len(),
-        total_executions,
-        total_cost,
-        "get_execution_dashboard completed"
-    );
-
-    Ok(ExecutionDashboardData {
-        daily_points,
-        top_personas,
-        cost_anomalies,
-        total_executions,
-        successful_executions: total_completed,
-        failed_executions: total_failed,
-        total_cost,
-        overall_success_rate,
-        avg_latency_ms,
-        active_personas,
-        projected_monthly_cost,
-        burn_rate,
-    })
-    })
+    )
 }
 
 // =============================================================================
@@ -1122,183 +1281,273 @@ pub fn get_anomaly_drilldown(
     anomaly_deviation_pct: f64,
     persona_id: Option<&str>,
 ) -> Result<AnomalyDrilldownData, AppError> {
-    timed_query!("execution_metrics", "execution_metrics::get_anomaly_drilldown", {
-    let start = std::time::Instant::now();
-    let conn = pool.get()?;
+    timed_query!(
+        "execution_metrics",
+        "execution_metrics::get_anomaly_drilldown",
+        {
+            let start = std::time::Instant::now();
+            let conn = pool.get()?;
 
-    // Parse the anomaly date as midday UTC so ±1 day window is clean
-    let anomaly_dt = chrono::NaiveDate::parse_from_str(anomaly_date, "%Y-%m-%d")
-        .map_err(|e| AppError::Validation(format!("Invalid anomaly_date: {e}")))?
-        .and_hms_opt(12, 0, 0)
-        .unwrap();
-    let window_start = (anomaly_dt - chrono::Duration::days(1)).format("%Y-%m-%dT00:00:00").to_string();
-    let window_end = (anomaly_dt + chrono::Duration::days(1)).format("%Y-%m-%dT23:59:59").to_string();
+            // Parse the anomaly date as midday UTC so ±1 day window is clean
+            let anomaly_dt = chrono::NaiveDate::parse_from_str(anomaly_date, "%Y-%m-%d")
+                .map_err(|e| AppError::Validation(format!("Invalid anomaly_date: {e}")))?
+                .and_hms_opt(12, 0, 0)
+                .unwrap();
+            let window_start = (anomaly_dt - chrono::Duration::days(1))
+                .format("%Y-%m-%dT00:00:00")
+                .to_string();
+            let window_end = (anomaly_dt + chrono::Duration::days(1))
+                .format("%Y-%m-%dT23:59:59")
+                .to_string();
 
-    let mut correlated: Vec<CorrelatedEvent> = Vec::new();
+            let mut correlated: Vec<CorrelatedEvent> = Vec::new();
 
-    // 1. Prompt version deployments in window
-    {
-        let query = if persona_id.is_some() {
-            "SELECT id, persona_id, version_number, tag, created_at, change_summary
+            // 1. Prompt version deployments in window
+            {
+                let query = if persona_id.is_some() {
+                    "SELECT id, persona_id, version_number, tag, created_at, change_summary
              FROM persona_prompt_versions
              WHERE created_at BETWEEN ?1 AND ?2 AND persona_id = ?3
              ORDER BY created_at"
-        } else {
-            "SELECT id, persona_id, version_number, tag, created_at, change_summary
+                } else {
+                    "SELECT id, persona_id, version_number, tag, created_at, change_summary
              FROM persona_prompt_versions
              WHERE created_at BETWEEN ?1 AND ?2
              ORDER BY created_at"
-        };
-        let mut stmt = conn.prepare(query)?;
-        let rows: Vec<(String, String, i32, String, String, Option<String>)> = if let Some(pid) = persona_id {
-            stmt.query_map(params![&window_start, &window_end, pid], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
-            })?.collect::<Result<Vec<_>, _>>()?
-        } else {
-            stmt.query_map(params![&window_start, &window_end], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
-            })?.collect::<Result<Vec<_>, _>>()?
-        };
-        for (_id, pid, ver_num, tag, created_at, summary) in rows {
-            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
-            let relevance = compute_relevance(offset, persona_id.is_some());
-            correlated.push(CorrelatedEvent {
-                timestamp: created_at,
-                event_type: "prompt_deployment".into(),
-                label: format!("Prompt v{ver_num} ({tag})"),
-                detail: summary,
-                persona_id: Some(pid),
-                offset_seconds: offset,
-                relevance,
-            });
-        }
-    }
+                };
+                let mut stmt = conn.prepare(query)?;
+                let rows: Vec<(String, String, i32, String, String, Option<String>)> =
+                    if let Some(pid) = persona_id {
+                        stmt.query_map(params![&window_start, &window_end, pid], |row| {
+                            Ok((
+                                row.get(0)?,
+                                row.get(1)?,
+                                row.get(2)?,
+                                row.get(3)?,
+                                row.get(4)?,
+                                row.get(5)?,
+                            ))
+                        })?
+                        .collect::<Result<Vec<_>, _>>()?
+                    } else {
+                        stmt.query_map(params![&window_start, &window_end], |row| {
+                            Ok((
+                                row.get(0)?,
+                                row.get(1)?,
+                                row.get(2)?,
+                                row.get(3)?,
+                                row.get(4)?,
+                                row.get(5)?,
+                            ))
+                        })?
+                        .collect::<Result<Vec<_>, _>>()?
+                    };
+                for (_id, pid, ver_num, tag, created_at, summary) in rows {
+                    let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+                    let relevance = compute_relevance(offset, persona_id.is_some());
+                    correlated.push(CorrelatedEvent {
+                        timestamp: created_at,
+                        event_type: "prompt_deployment".into(),
+                        label: format!("Prompt v{ver_num} ({tag})"),
+                        detail: summary,
+                        persona_id: Some(pid),
+                        offset_seconds: offset,
+                        relevance,
+                    });
+                }
+            }
 
-    // 2. Credential rotations in window
-    {
-        let mut stmt = conn.prepare(
+            // 2. Credential rotations in window
+            {
+                let mut stmt = conn.prepare(
             "SELECT r.id, r.credential_id, c.name, r.rotation_type, r.status, r.detail, r.created_at
              FROM credential_rotation_history r
              LEFT JOIN credentials c ON c.id = r.credential_id
              WHERE r.created_at BETWEEN ?1 AND ?2
              ORDER BY r.created_at"
         )?;
-        #[allow(clippy::type_complexity)]
-        let rows: Vec<(String, String, Option<String>, String, String, Option<String>, String)> = stmt
-            .query_map(params![&window_start, &window_end], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?))
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        for (_id, _cred_id, cred_name, rot_type, status, detail, created_at) in rows {
-            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
-            let relevance = compute_relevance(offset, false);
-            let name_part = cred_name.as_deref().unwrap_or("unknown");
-            correlated.push(CorrelatedEvent {
-                timestamp: created_at,
-                event_type: "credential_rotation".into(),
-                label: format!("Rotation {status} · {name_part} ({rot_type})"),
-                detail,
-                persona_id: None,
-                offset_seconds: offset,
-                relevance,
-            });
-        }
-    }
+                #[allow(clippy::type_complexity)]
+                let rows: Vec<(
+                    String,
+                    String,
+                    Option<String>,
+                    String,
+                    String,
+                    Option<String>,
+                    String,
+                )> = stmt
+                    .query_map(params![&window_start, &window_end], |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get(3)?,
+                            row.get(4)?,
+                            row.get(5)?,
+                            row.get(6)?,
+                        ))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                for (_id, _cred_id, cred_name, rot_type, status, detail, created_at) in rows {
+                    let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+                    let relevance = compute_relevance(offset, false);
+                    let name_part = cred_name.as_deref().unwrap_or("unknown");
+                    correlated.push(CorrelatedEvent {
+                        timestamp: created_at,
+                        event_type: "credential_rotation".into(),
+                        label: format!("Rotation {status} · {name_part} ({rot_type})"),
+                        detail,
+                        persona_id: None,
+                        offset_seconds: offset,
+                        relevance,
+                    });
+                }
+            }
 
-    // 3. Healing issues in window
-    {
-        let query = if persona_id.is_some() {
-            "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
+            // 3. Healing issues in window
+            {
+                let query = if persona_id.is_some() {
+                    "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
              FROM persona_healing_issues
              WHERE created_at BETWEEN ?1 AND ?2 AND persona_id = ?3
              ORDER BY created_at"
-        } else {
-            "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
+                } else {
+                    "SELECT id, persona_id, title, description, is_circuit_breaker, severity, category, created_at
              FROM persona_healing_issues
              WHERE created_at BETWEEN ?1 AND ?2
              ORDER BY created_at"
-        };
-        let mut stmt = conn.prepare(query)?;
-        #[allow(clippy::type_complexity)]
-        let rows: Vec<(String, String, String, String, bool, String, String, String)> = if let Some(pid) = persona_id {
-            stmt.query_map(params![&window_start, &window_end, pid], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?))
-            })?.collect::<Result<Vec<_>, _>>()?
-        } else {
-            stmt.query_map(params![&window_start, &window_end], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?))
-            })?.collect::<Result<Vec<_>, _>>()?
-        };
-        for (_id, pid, title, desc, is_cb, severity, category, created_at) in rows {
-            let offset = compute_offset_seconds(&created_at, &anomaly_dt);
-            let mut relevance = compute_relevance(offset, persona_id.is_some());
-            if is_cb { relevance = (relevance + 0.2).min(1.0); }
-            let etype = if is_cb { "circuit_breaker" } else { "healing_issue" };
-            correlated.push(CorrelatedEvent {
-                timestamp: created_at,
-                event_type: etype.into(),
-                label: title,
-                detail: Some(format!("[{severity}/{category}] {desc}")),
-                persona_id: Some(pid),
-                offset_seconds: offset,
-                relevance,
-            });
-        }
-    }
+                };
+                let mut stmt = conn.prepare(query)?;
+                #[allow(clippy::type_complexity)]
+                let rows: Vec<(
+                    String,
+                    String,
+                    String,
+                    String,
+                    bool,
+                    String,
+                    String,
+                    String,
+                )> = if let Some(pid) = persona_id {
+                    stmt.query_map(params![&window_start, &window_end, pid], |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get(3)?,
+                            row.get(4)?,
+                            row.get(5)?,
+                            row.get(6)?,
+                            row.get(7)?,
+                        ))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    stmt.query_map(params![&window_start, &window_end], |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get(3)?,
+                            row.get(4)?,
+                            row.get(5)?,
+                            row.get(6)?,
+                            row.get(7)?,
+                        ))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?
+                };
+                for (_id, pid, title, desc, is_cb, severity, category, created_at) in rows {
+                    let offset = compute_offset_seconds(&created_at, &anomaly_dt);
+                    let mut relevance = compute_relevance(offset, persona_id.is_some());
+                    if is_cb {
+                        relevance = (relevance + 0.2).min(1.0);
+                    }
+                    let etype = if is_cb {
+                        "circuit_breaker"
+                    } else {
+                        "healing_issue"
+                    };
+                    correlated.push(CorrelatedEvent {
+                        timestamp: created_at,
+                        event_type: etype.into(),
+                        label: title,
+                        detail: Some(format!("[{severity}/{category}] {desc}")),
+                        persona_id: Some(pid),
+                        offset_seconds: offset,
+                        relevance,
+                    });
+                }
+            }
 
-    // 4. Fired alerts in window
-    {
-        let mut stmt = conn.prepare(
-            "SELECT id, rule_name, metric, severity, message, fired_at
+            // 4. Fired alerts in window
+            {
+                let mut stmt = conn.prepare(
+                    "SELECT id, rule_name, metric, severity, message, fired_at
              FROM fired_alerts
              WHERE fired_at BETWEEN ?1 AND ?2
-             ORDER BY fired_at"
-        )?;
-        let rows: Vec<(String, String, String, String, String, String)> = stmt
-            .query_map(params![&window_start, &window_end], |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?))
-            })?
-            .collect::<Result<Vec<_>, _>>()?;
-        for (_id, rule_name, metric, severity, message, fired_at) in rows {
-            let offset = compute_offset_seconds(&fired_at, &anomaly_dt);
-            let mut relevance = compute_relevance(offset, false);
-            // Boost relevance if alert metric matches anomaly metric
-            if metric == anomaly_metric { relevance = (relevance + 0.3).min(1.0); }
-            correlated.push(CorrelatedEvent {
-                timestamp: fired_at,
-                event_type: "alert".into(),
-                label: format!("Alert: {rule_name} [{severity}]"),
-                detail: Some(message),
-                persona_id: None,
-                offset_seconds: offset,
-                relevance,
+             ORDER BY fired_at",
+                )?;
+                let rows: Vec<(String, String, String, String, String, String)> = stmt
+                    .query_map(params![&window_start, &window_end], |row| {
+                        Ok((
+                            row.get(0)?,
+                            row.get(1)?,
+                            row.get(2)?,
+                            row.get(3)?,
+                            row.get(4)?,
+                            row.get(5)?,
+                        ))
+                    })?
+                    .collect::<Result<Vec<_>, _>>()?;
+                for (_id, rule_name, metric, severity, message, fired_at) in rows {
+                    let offset = compute_offset_seconds(&fired_at, &anomaly_dt);
+                    let mut relevance = compute_relevance(offset, false);
+                    // Boost relevance if alert metric matches anomaly metric
+                    if metric == anomaly_metric {
+                        relevance = (relevance + 0.3).min(1.0);
+                    }
+                    correlated.push(CorrelatedEvent {
+                        timestamp: fired_at,
+                        event_type: "alert".into(),
+                        label: format!("Alert: {rule_name} [{severity}]"),
+                        detail: Some(message),
+                        persona_id: None,
+                        offset_seconds: offset,
+                        relevance,
+                    });
+                }
+            }
+
+            // Sort by relevance descending
+            correlated.sort_by(|a, b| {
+                b.relevance
+                    .partial_cmp(&a.relevance)
+                    .unwrap_or(std::cmp::Ordering::Equal)
             });
+
+            // Generate root cause suggestions from top correlated events
+            let suggestions =
+                generate_root_cause_suggestions(&correlated, anomaly_metric, anomaly_deviation_pct);
+
+            info!(
+                duration_ms = start.elapsed().as_millis() as u64,
+                correlated_events = correlated.len(),
+                suggestions = suggestions.len(),
+                "get_anomaly_drilldown completed"
+            );
+
+            Ok(AnomalyDrilldownData {
+                anomaly_date: anomaly_date.to_string(),
+                anomaly_metric: anomaly_metric.to_string(),
+                anomaly_value,
+                anomaly_baseline,
+                anomaly_deviation_pct,
+                correlated_events: correlated,
+                root_cause_suggestions: suggestions,
+            })
         }
-    }
-
-    // Sort by relevance descending
-    correlated.sort_by(|a, b| b.relevance.partial_cmp(&a.relevance).unwrap_or(std::cmp::Ordering::Equal));
-
-    // Generate root cause suggestions from top correlated events
-    let suggestions = generate_root_cause_suggestions(&correlated, anomaly_metric, anomaly_deviation_pct);
-
-    info!(
-        duration_ms = start.elapsed().as_millis() as u64,
-        correlated_events = correlated.len(),
-        suggestions = suggestions.len(),
-        "get_anomaly_drilldown completed"
-    );
-
-    Ok(AnomalyDrilldownData {
-        anomaly_date: anomaly_date.to_string(),
-        anomaly_metric: anomaly_metric.to_string(),
-        anomaly_value,
-        anomaly_baseline,
-        anomaly_deviation_pct,
-        correlated_events: correlated,
-        root_cause_suggestions: suggestions,
-    })
-    })
+    )
 }
 
 /// Compute signed offset in seconds between a timestamp string and the anomaly midpoint.
@@ -1312,7 +1561,8 @@ fn compute_offset_seconds(timestamp: &str, anomaly_midpoint: &chrono::NaiveDateT
         (dt - *anomaly_midpoint).num_seconds() as f64
     } else {
         // Fallback: try chrono's DateTime parser for RFC-3339
-        timestamp.parse::<chrono::DateTime<chrono::Utc>>()
+        timestamp
+            .parse::<chrono::DateTime<chrono::Utc>>()
             .map(|dt| (dt.naive_utc() - *anomaly_midpoint).num_seconds() as f64)
             .unwrap_or(86400.0) // push to edge if unparseable
     }
@@ -1336,9 +1586,12 @@ fn generate_root_cause_suggestions(
     let mut suggestions: Vec<RootCauseSuggestion> = Vec::new();
 
     // Group by event_type and pick the highest-relevance event per type
-    let mut best_by_type: std::collections::HashMap<&str, &CorrelatedEvent> = std::collections::HashMap::new();
+    let mut best_by_type: std::collections::HashMap<&str, &CorrelatedEvent> =
+        std::collections::HashMap::new();
     for event in events {
-        let entry = best_by_type.entry(event.event_type.as_str()).or_insert(event);
+        let entry = best_by_type
+            .entry(event.event_type.as_str())
+            .or_insert(event);
         if event.relevance > entry.relevance {
             *entry = event;
         }
@@ -1379,7 +1632,11 @@ fn generate_root_cause_suggestions(
                  can cause authentication errors and increased latency.",
                 ev.label,
                 ev.offset_seconds.abs(),
-                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+                if ev.offset_seconds < 0.0 {
+                    "before"
+                } else {
+                    "after"
+                },
             ),
             confidence,
             event_type: "credential_rotation".into(),
@@ -1398,7 +1655,11 @@ fn generate_root_cause_suggestions(
                  sustained failures that directly cause {anomaly_metric} degradation.",
                 ev.label,
                 ev.offset_seconds.abs(),
-                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+                if ev.offset_seconds < 0.0 {
+                    "before"
+                } else {
+                    "after"
+                },
             ),
             confidence,
             event_type: "circuit_breaker".into(),
@@ -1435,7 +1696,11 @@ fn generate_root_cause_suggestions(
                 "\"{}\" fired {:.0}s {} the anomaly, confirming the system was under stress.",
                 ev.label,
                 ev.offset_seconds.abs(),
-                if ev.offset_seconds < 0.0 { "before" } else { "after" },
+                if ev.offset_seconds < 0.0 {
+                    "before"
+                } else {
+                    "after"
+                },
             ),
             confidence,
             event_type: "alert".into(),
@@ -1460,7 +1725,11 @@ fn generate_root_cause_suggestions(
     }
 
     // Sort by confidence descending and assign ranks
-    suggestions.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+    suggestions.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     for (i, s) in suggestions.iter_mut().enumerate() {
         s.rank = (i + 1) as i32;
     }
@@ -1498,14 +1767,9 @@ mod tests {
         assert_eq!(v2.version_number, 2);
 
         // Different persona starts at 1
-        let other = create_prompt_version(
-            &pool,
-            "persona-2",
-            Some("structured".into()),
-            None,
-            None,
-        )
-        .unwrap();
+        let other =
+            create_prompt_version(&pool, "persona-2", Some("structured".into()), None, None)
+                .unwrap();
         assert_eq!(other.version_number, 1);
 
         // List versions for persona-1

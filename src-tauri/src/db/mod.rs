@@ -1,16 +1,16 @@
 #[macro_use]
 pub mod macros;
+mod builtin_connectors;
 pub mod cdc;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
 #[allow(dead_code)]
 pub mod models;
-#[allow(dead_code)]
-pub mod repos;
 pub mod perf;
 pub mod query_builder;
+#[allow(dead_code)]
+pub mod repos;
 pub mod settings_keys;
-mod builtin_connectors;
 
 use r2d2::{CustomizeConnection, Pool};
 use r2d2_sqlite::SqliteConnectionManager;
@@ -487,6 +487,160 @@ CREATE TABLE IF NOT EXISTS companion_consolidation_item (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_consolidation_item_run
     ON companion_consolidation_item(consolidation_id, status);
+
+-- Phase D: procedural rules — durable how-to behaviors Athena follows
+-- ("when X, do Y"). Same provenance contract as facts: every rule cites
+-- ≥1 source episode where the behavior was confirmed/discussed. Body
+-- markdown lives under `procedurals/<scope>/<id>.md`.
+CREATE TABLE IF NOT EXISTS companion_procedural (
+    id              TEXT PRIMARY KEY,
+    scope           TEXT NOT NULL,            -- 'chat' | 'action' | 'memory' | 'build'
+    trigger_pattern TEXT NOT NULL,            -- short summary of the situation
+    confidence      REAL NOT NULL DEFAULT 0.8,
+    supersedes_id   TEXT,
+    last_used_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    last_decayed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_procedural_scope ON companion_procedural(scope);
+CREATE INDEX IF NOT EXISTS idx_companion_procedural_super ON companion_procedural(supersedes_id);
+
+-- Phase D: goals — user-stated objectives with status. No provenance
+-- requirement (the user *is* the source). Body markdown holds the goal
+-- description + any sub-bullets the user added.
+CREATE TABLE IF NOT EXISTS companion_goal (
+    id            TEXT PRIMARY KEY,
+    title         TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'active', -- active | paused | completed | abandoned
+    priority      INTEGER NOT NULL DEFAULT 3,     -- 1..5
+    target_date   TEXT,                            -- ISO8601 or null
+    sources_json  TEXT NOT NULL DEFAULT '[]',     -- supportive episodes (optional)
+    completed_at  TEXT,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_goal_status ON companion_goal(status, priority DESC);
+
+-- Phase D: rituals — recurring patterns Athena should respect (quiet
+-- hours, weekly review, sprint cadence). `schedule_json` is a small
+-- DSL the proactive engine reads (Phase E). Not surfaced in retrieval —
+-- they're behavioral guardrails, not memory.
+CREATE TABLE IF NOT EXISTS companion_ritual (
+    id            TEXT PRIMARY KEY,
+    kind          TEXT NOT NULL,                  -- 'quiet_hours' | 'cadence' | 'focus_window'
+    description   TEXT NOT NULL,
+    schedule_json TEXT NOT NULL,
+    active        INTEGER NOT NULL DEFAULT 1,     -- 0/1
+    sources_json  TEXT NOT NULL DEFAULT '[]',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_ritual_active ON companion_ritual(active, kind);
+
+-- Phase D: backlog — Athena's self-promises and capability gaps. When
+-- she says "I'll check on the deploy after lunch" or "I can't do X yet
+-- but I could propose it", a row lands here. The user (or Athena's own
+-- next turn) resolves them. Append-only: `dropped` is a state, not a
+-- delete.
+CREATE TABLE IF NOT EXISTS companion_backlog_item (
+    id                TEXT PRIMARY KEY,
+    summary           TEXT NOT NULL,
+    kind              TEXT NOT NULL,             -- 'self_promise' | 'capability_gap'
+    status            TEXT NOT NULL DEFAULT 'pending', -- pending | done | dropped
+    source_episode_id TEXT,                       -- where she committed to it
+    reminded_count    INTEGER NOT NULL DEFAULT 0,
+    created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+    resolved_at       TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_backlog_status ON companion_backlog_item(status, created_at DESC);
+
+-- Phase E: proactive messages — nudges Athena drafted on her own initiative.
+-- Status flow: queued → delivered (pushed to UI) → engaged (user replied)
+-- | dismissed (user said no) | expired (sat too long).
+CREATE TABLE IF NOT EXISTS companion_proactive_message (
+    id            TEXT PRIMARY KEY,
+    trigger_kind  TEXT NOT NULL,                 -- 'goal_target_approaching' | 'backlog_aging' | 'cadence_due'
+    trigger_ref   TEXT,                           -- id of the goal/backlog/ritual that fired
+    message       TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'queued',
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    delivered_at  TEXT,
+    resolved_at   TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_proactive_status
+    ON companion_proactive_message(status, created_at DESC);
+-- Per-trigger dedupe: don't fire the same trigger for the same target
+-- multiple times in a row. The query checks for an unresolved message
+-- with matching (trigger_kind, trigger_ref) before inserting.
+CREATE INDEX IF NOT EXISTS idx_companion_proactive_dedupe
+    ON companion_proactive_message(trigger_kind, trigger_ref, status);
+
+-- Daily budget for proactive nudges. The scheduler increments on each
+-- delivery; a fresh row is created on the first nudge of any UTC date.
+CREATE TABLE IF NOT EXISTS companion_proactive_budget (
+    date    TEXT PRIMARY KEY,                    -- 'YYYY-MM-DD' UTC
+    count   INTEGER NOT NULL DEFAULT 0
+);
+
+-- Phase F: connectors the user has attached to Athena's chat surface.
+-- `connector_name` is the canonical service-type id (matches
+-- `vault_credential.service_type` and the connector definitions). When
+-- `enabled` is 1, the prompt builder appends an "Available connectors"
+-- block to every turn so Athena is aware. When 0, the connector is
+-- still pinned in the sidebar (greyed out) but invisible to Athena —
+-- this models the user's "toggle off, keep around" workflow.
+CREATE TABLE IF NOT EXISTS companion_active_connector (
+    connector_name TEXT PRIMARY KEY,
+    enabled        INTEGER NOT NULL DEFAULT 1,    -- 0/1
+    created_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Phase F: companion plugin toggles. Each row = one plugin Athena
+-- can be made aware of. Rows with `enabled=1` get a contextual block
+-- appended to the system prompt teaching her what's available. v1
+-- ships `dev_tools` (codebase scan / idea generation / task batching
+-- / projects state). Future plugins land as additional rows without
+-- a schema change.
+CREATE TABLE IF NOT EXISTS companion_plugin_toggle (
+    plugin_name  TEXT PRIMARY KEY,                -- 'dev_tools' | future plugins
+    enabled      INTEGER NOT NULL DEFAULT 0,      -- 0/1, default off
+    updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Phase G: project registry — repos/projects Athena's Dev Tools knows
+-- about. Seeded on first init with the Personas repo so "list projects"
+-- and "scan project" have something concrete to operate on. Users can
+-- register more via `register_project`.
+CREATE TABLE IF NOT EXISTS companion_known_project (
+    id                  TEXT PRIMARY KEY,
+    name                TEXT NOT NULL,
+    path                TEXT NOT NULL UNIQUE,
+    description         TEXT,
+    last_scan_at        TEXT,
+    last_scan_summary   TEXT,
+    created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Phase G: background jobs — long-running ops Athena can enqueue and
+-- have run while she keeps chatting. Status: queued → running →
+-- completed | failed. A worker tokio task picks queued rows,
+-- dispatches to per-kind handlers, and on completion appends a system
+-- episode to the chat so Athena sees the result on her next turn.
+CREATE TABLE IF NOT EXISTS companion_background_job (
+    id            TEXT PRIMARY KEY,
+    kind          TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'queued',
+    params_json   TEXT NOT NULL DEFAULT '{}',
+    result_text   TEXT,
+    error_text    TEXT,
+    project_id    TEXT,                              -- nullable: links scan jobs to known_project
+    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+    started_at    TEXT,
+    completed_at  TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_background_job_status
+    ON companion_background_job(status, created_at);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.
@@ -666,13 +820,62 @@ fn restrict_windows_permissions(path: &Path) {
 fn seed_builtin_tools(conn: &rusqlite::Connection) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
     let tools = [
-        ("builtin-http-request", "http_request", "network", "Make HTTP requests to external APIs", "builtin://http_request", None),
-        ("builtin-gmail-read", "gmail_read", "email", "Read emails from Gmail", "builtin://gmail_read", Some("gmail")),
-        ("builtin-gmail-send", "gmail_send", "email", "Send emails via Gmail", "builtin://gmail_send", Some("gmail")),
-        ("builtin-gmail-search", "gmail_search", "email", "Search Gmail messages", "builtin://gmail_search", Some("gmail")),
-        ("builtin-gmail-mark-read", "gmail_mark_read", "email", "Mark Gmail messages as read", "builtin://gmail_mark_read", Some("gmail")),
-        ("builtin-file-read", "file_read", "filesystem", "Read file contents from disk", "builtin://file_read", None),
-        ("builtin-file-write", "file_write", "filesystem", "Write content to files on disk", "builtin://file_write", None),
+        (
+            "builtin-http-request",
+            "http_request",
+            "network",
+            "Make HTTP requests to external APIs",
+            "builtin://http_request",
+            None,
+        ),
+        (
+            "builtin-gmail-read",
+            "gmail_read",
+            "email",
+            "Read emails from Gmail",
+            "builtin://gmail_read",
+            Some("gmail"),
+        ),
+        (
+            "builtin-gmail-send",
+            "gmail_send",
+            "email",
+            "Send emails via Gmail",
+            "builtin://gmail_send",
+            Some("gmail"),
+        ),
+        (
+            "builtin-gmail-search",
+            "gmail_search",
+            "email",
+            "Search Gmail messages",
+            "builtin://gmail_search",
+            Some("gmail"),
+        ),
+        (
+            "builtin-gmail-mark-read",
+            "gmail_mark_read",
+            "email",
+            "Mark Gmail messages as read",
+            "builtin://gmail_mark_read",
+            Some("gmail"),
+        ),
+        (
+            "builtin-file-read",
+            "file_read",
+            "filesystem",
+            "Read file contents from disk",
+            "builtin://file_read",
+            None,
+        ),
+        (
+            "builtin-file-write",
+            "file_write",
+            "filesystem",
+            "Write content to files on disk",
+            "builtin://file_write",
+            None,
+        ),
     ];
 
     for (id, name, category, description, script_path, cred_type) in &tools {
@@ -712,8 +915,21 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
               healthcheck_config, services, events, metadata, resources, is_builtin,
               created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, 1, ?13, ?13)",
-            params![c.id, c.name, c.label, c.icon_url, c.color, c.category, c.fields,
-                    c.healthcheck_config, c.services, c.events, c.metadata, c.resources, now],
+            params![
+                c.id,
+                c.name,
+                c.label,
+                c.icon_url,
+                c.color,
+                c.category,
+                c.fields,
+                c.healthcheck_config,
+                c.services,
+                c.events,
+                c.metadata,
+                c.resources,
+                now
+            ],
         )?;
 
         // Update existing rows to refresh fields/metadata/category/services/events/resources on app upgrade

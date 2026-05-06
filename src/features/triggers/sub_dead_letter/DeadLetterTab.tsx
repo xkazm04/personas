@@ -1,19 +1,24 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Archive, RefreshCw, Trash2, AlertTriangle, Ban } from 'lucide-react';
-import { listDeadLetterEvents, retryDeadLetterEvent, discardDeadLetterEvent } from '@/api/overview/events';
+import { listDeadLetterEvents, retryDeadLetterEvent, discardDeadLetterEvent, getDeadLetterConfig } from '@/api/overview/events';
 import { ConfirmDestructiveModal, useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useToastStore } from '@/stores/toastStore';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
-/** Must match MAX_MANUAL_RETRIES in events.rs */
-const MAX_MANUAL_RETRIES = 5;
+/**
+ * First-paint default while `getDeadLetterConfig` is in flight. Matches the
+ * historical Rust default; the real cap is fetched on mount and overrides
+ * this so UI labels never drift from `MAX_MANUAL_RETRIES` in `events.rs`.
+ */
+const MAX_MANUAL_RETRIES_FALLBACK = 5;
 
 export function DeadLetterTab() {
   const { t } = useTranslation();
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [maxManualRetries, setMaxManualRetries] = useState<number>(MAX_MANUAL_RETRIES_FALLBACK);
   const [actionsInProgress, setActionsInProgress] = useState<Set<string>>(new Set());
   const startAction = useCallback((id: string) => {
     setActionsInProgress((prev) => new Set(prev).add(id));
@@ -41,6 +46,20 @@ export function DeadLetterTab() {
   }, []);
 
   useEffect(() => { void loadEvents(); }, [loadEvents]);
+
+  // Fetch the authoritative cap from Rust on mount. We keep the fallback for
+  // first paint and on IPC failure so the UI stays usable even if this fails;
+  // the alternative (showing 0/0 retries) would be more confusing.
+  useEffect(() => {
+    let cancelled = false;
+    getDeadLetterConfig().then((cfg) => {
+      if (!cancelled) setMaxManualRetries(cfg.maxManualRetries);
+    }).catch(() => {
+      // Keep fallback. Sentry breadcrumb is unnecessary — the displayed cap
+      // is still correct as long as the Rust constant hasn't actually drifted.
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleRetry = async (id: string) => {
     startAction(id);
@@ -147,12 +166,12 @@ export function DeadLetterTab() {
                       <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
                       <span className="typo-body font-medium truncate">{evt.event_type}</span>
                       <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono shrink-0 ${
-                        evt.retry_count >= MAX_MANUAL_RETRIES
+                        evt.retry_count >= maxManualRetries
                           ? 'bg-orange-500/20 text-orange-300'
                           : 'bg-red-500/20 text-red-300'
                       }`}>
-                        {evt.retry_count}/{MAX_MANUAL_RETRIES} retries
-                        {evt.retry_count >= MAX_MANUAL_RETRIES && ' — exhausted'}
+                        {evt.retry_count}/{maxManualRetries} retries
+                        {evt.retry_count >= maxManualRetries && ' — exhausted'}
                       </span>
                     </div>
                     <div className="flex items-center gap-3 typo-caption text-foreground">
@@ -162,7 +181,7 @@ export function DeadLetterTab() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    {evt.retry_count >= MAX_MANUAL_RETRIES ? (
+                    {evt.retry_count >= maxManualRetries ? (
                       <span
                         className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input bg-orange-500/10 text-orange-400 cursor-not-allowed"
                         title={t.triggers.dead_letter_retry_exhausted_title}

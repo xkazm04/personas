@@ -66,12 +66,12 @@ fn get_foreground_window() -> Option<ForegroundWindow> {
 
 #[cfg(target_os = "windows")]
 fn get_foreground_window_windows() -> Option<ForegroundWindow> {
-    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW};
-    use windows::Win32::Foundation::{HWND, CloseHandle};
+    use windows::Win32::Foundation::{CloseHandle, HWND};
+    use windows::Win32::System::ProcessStatus::GetProcessImageFileNameW;
     use windows::Win32::System::Threading::OpenProcess;
     use windows::Win32::System::Threading::PROCESS_QUERY_INFORMATION;
     use windows::Win32::UI::WindowsAndMessaging::GetWindowThreadProcessId;
-    use windows::Win32::System::ProcessStatus::GetProcessImageFileNameW;
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowTextW};
 
     unsafe {
         let hwnd = GetForegroundWindow();
@@ -127,10 +127,7 @@ fn get_foreground_window_windows() -> Option<ForegroundWindow> {
 /// 1. Get the current foreground window.
 /// 2. Compare with last known state.
 /// 3. If changed, check against all enabled `app_focus` triggers and publish matching events.
-pub async fn app_focus_tick(
-    pool: &DbPool,
-    state: &Arc<Mutex<AppFocusState>>,
-) {
+pub async fn app_focus_tick(pool: &DbPool, state: &Arc<Mutex<AppFocusState>>) {
     // Get foreground window on a blocking thread (uses FFI)
     let window = tokio::task::spawn_blocking(get_foreground_window).await;
 

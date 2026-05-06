@@ -1,11 +1,11 @@
-use std::collections::HashMap;
-use std::path::Path;
-use std::sync::{Arc, LazyLock, Mutex};
-use std::time::Instant;
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
 use chrono::Utc;
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::path::Path;
+use std::sync::{Arc, LazyLock, Mutex};
+use std::time::Instant;
 use tauri::{AppHandle, State};
 use tokio_util::sync::CancellationToken;
 
@@ -93,7 +93,12 @@ struct GeminiUsage {
 
 /// Detect MIME type from file extension.
 fn mime_from_path(path: &Path) -> &'static str {
-    match path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref() {
+    match path
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase())
+        .as_deref()
+    {
         Some("png") => "image/png",
         Some("jpg" | "jpeg") => "image/jpeg",
         Some("gif") => "image/gif",
@@ -121,7 +126,16 @@ pub async fn ocr_with_gemini(
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
     }
-    run_gemini_ocr(&state.db, &path, file_path, &api_key, model, prompt, operation_id).await
+    run_gemini_ocr(
+        &state.db,
+        &path,
+        file_path,
+        &api_key,
+        model,
+        prompt,
+        operation_id,
+    )
+    .await
 }
 
 /// Shared Gemini OCR core. Reads the file, POSTs it to the Generative
@@ -143,7 +157,8 @@ async fn run_gemini_ocr(
     prompt: Option<String>,
     operation_id: Option<String>,
 ) -> Result<OcrResult, AppError> {
-    let file_size = tokio::fs::metadata(path).await
+    let file_size = tokio::fs::metadata(path)
+        .await
         .map_err(|e| AppError::Internal(format!("Cannot stat file: {e}")))?
         .len();
     if file_size > MAX_OCR_FILE_BYTES {
@@ -154,7 +169,8 @@ async fn run_gemini_ocr(
         )));
     }
 
-    let file_bytes = tokio::fs::read(path).await
+    let file_bytes = tokio::fs::read(path)
+        .await
         .map_err(|e| AppError::Internal(format!("Cannot read file: {e}")))?;
     let b64_data = B64.encode(&file_bytes);
     let mime = mime_from_path(path);
@@ -203,7 +219,10 @@ async fn run_gemini_ocr(
     .map_err(|e| AppError::Internal(format!("Failed to read Gemini response: {e}")))?;
 
     if !status.is_success() {
-        return Err(AppError::Internal(format!("Gemini API error ({}): {}", status, resp_text)));
+        return Err(AppError::Internal(format!(
+            "Gemini API error ({}): {}",
+            status, resp_text
+        )));
     }
 
     let duration_ms = start.elapsed().as_millis() as i64;
@@ -211,7 +230,8 @@ async fn run_gemini_ocr(
     let gemini: GeminiResponse = serde_json::from_str(&resp_text)
         .map_err(|e| AppError::Internal(format!("Failed to parse Gemini response: {e}")))?;
 
-    let extracted_text = gemini.candidates
+    let extracted_text = gemini
+        .candidates
         .as_ref()
         .and_then(|c| c.first())
         .and_then(|c| c.content.as_ref())
@@ -220,10 +240,10 @@ async fn run_gemini_ocr(
         .and_then(|p| p.text.clone())
         .unwrap_or_default();
 
-    let token_count = gemini.usage_metadata
-        .and_then(|u| u.total_token_count);
+    let token_count = gemini.usage_metadata.and_then(|u| u.total_token_count);
 
-    let file_name = path.file_name()
+    let file_name = path
+        .file_name()
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".into());
 
@@ -273,7 +293,9 @@ pub async fn ocr_drive_file_gemini(
     let root = crate::commands::drive::managed_root(&app)?;
     let abs = crate::commands::drive::resolve_safe(&root, &rel_path)?;
     if !abs.exists() {
-        return Err(AppError::NotFound(format!("Drive file not found: {rel_path}")));
+        return Err(AppError::NotFound(format!(
+            "Drive file not found: {rel_path}"
+        )));
     }
     // Extension check — path_safety::ALLOWED_OCR_EXTENSIONS is the source of
     // truth for which file types Gemini OCR accepts.
@@ -306,7 +328,16 @@ pub async fn ocr_drive_file_gemini(
         .clone();
 
     let abs_display = abs.to_string_lossy().to_string();
-    run_gemini_ocr(&state.db, &abs, abs_display, &api_key, None, prompt, operation_id).await
+    run_gemini_ocr(
+        &state.db,
+        &abs,
+        abs_display,
+        &api_key,
+        None,
+        prompt,
+        operation_id,
+    )
+    .await
 }
 
 /// Cancel an in-flight OCR operation by its client-supplied `operation_id`.
@@ -364,7 +395,9 @@ pub async fn ocr_drive_file_claude(
     let root = crate::commands::drive::managed_root(&app)?;
     let abs = crate::commands::drive::resolve_safe(&root, &rel_path)?;
     if !abs.exists() {
-        return Err(AppError::NotFound(format!("Drive file not found: {rel_path}")));
+        return Err(AppError::NotFound(format!(
+            "Drive file not found: {rel_path}"
+        )));
     }
     let ext = abs
         .extension()
@@ -407,15 +440,21 @@ async fn run_claude_ocr(
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".into());
 
-    let user_prompt = prompt.clone().unwrap_or_else(|| OCR_SYSTEM_PROMPT.to_string());
+    let user_prompt = prompt
+        .clone()
+        .unwrap_or_else(|| OCR_SYSTEM_PROMPT.to_string());
 
     // Read the file and encode as base64 so Claude can process it directly
-    let file_bytes = std::fs::read(path)
-        .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
+    let file_bytes =
+        std::fs::read(path).map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
     let file_b64 = B64.encode(&file_bytes);
 
     // Detect MIME type from extension
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
     let mime = match ext.as_str() {
         "png" => "image/png",
         "jpg" | "jpeg" => "image/jpeg",
@@ -442,7 +481,8 @@ async fn run_claude_ocr(
     use crate::engine::provider::CliProvider;
     let candidates = crate::engine::provider::claude::ClaudeProvider.binary_candidates();
     #[cfg(any(feature = "desktop", feature = "test-automation"))]
-    let binary = candidates.iter()
+    let binary = candidates
+        .iter()
         .find_map(|name| which::which(name).ok())
         .ok_or_else(|| AppError::Internal("Claude Code CLI not found in PATH".into()))?;
     // Fallback PATH search when the `which` crate isn't linked (default-feature
@@ -456,18 +496,20 @@ async fn run_claude_ocr(
         } else {
             &[""]
         };
-        candidates.iter().find_map(|name| {
-            std::env::split_paths(&path_var).find_map(|dir| {
-                for ext in exts {
-                    let candidate = dir.join(format!("{name}{ext}"));
-                    if candidate.is_file() {
-                        return Some(candidate);
+        candidates
+            .iter()
+            .find_map(|name| {
+                std::env::split_paths(&path_var).find_map(|dir| {
+                    for ext in exts {
+                        let candidate = dir.join(format!("{name}{ext}"));
+                        if candidate.is_file() {
+                            return Some(candidate);
+                        }
                     }
-                }
-                None
+                    None
+                })
             })
-        })
-        .ok_or_else(|| AppError::Internal("Claude Code CLI not found in PATH".into()))?
+            .ok_or_else(|| AppError::Internal("Claude Code CLI not found in PATH".into()))?
     };
 
     let start = Instant::now();
@@ -480,7 +522,14 @@ async fn run_claude_ocr(
 
         #[cfg(target_os = "windows")]
         let mut child = tokio::process::Command::new("cmd")
-            .args(["/c", binary.to_str().unwrap_or("claude"), "-p", "-", "--output-format", "text"])
+            .args([
+                "/c",
+                binary.to_str().unwrap_or("claude"),
+                "-p",
+                "-",
+                "--output-format",
+                "text",
+            ])
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
@@ -499,12 +548,16 @@ async fn run_claude_ocr(
 
         // Write prompt to stdin then close it
         if let Some(mut stdin) = child.stdin.take() {
-            stdin.write_all(full_prompt.as_bytes()).await
+            stdin
+                .write_all(full_prompt.as_bytes())
+                .await
                 .map_err(|e| AppError::Internal(format!("Failed to write to Claude stdin: {e}")))?;
             drop(stdin); // Close stdin so Claude starts processing
         }
 
-        child.wait_with_output().await
+        child
+            .wait_with_output()
+            .await
             .map_err(|e| AppError::Internal(format!("Failed to read Claude output: {e}")))?
     };
 
@@ -547,9 +600,7 @@ async fn run_claude_ocr(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn list_ocr_documents(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<OcrDocument>, AppError> {
+pub fn list_ocr_documents(state: State<'_, Arc<AppState>>) -> Result<Vec<OcrDocument>, AppError> {
     require_auth_sync(&state)?;
     repo::list_documents(&state.db)
 }
@@ -564,10 +615,7 @@ pub fn get_ocr_document(
 }
 
 #[tauri::command]
-pub fn delete_ocr_document(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_ocr_document(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_document(&state.db, &id)
 }

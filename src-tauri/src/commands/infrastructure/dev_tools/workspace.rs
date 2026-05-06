@@ -180,10 +180,7 @@ impl WorkspaceCoordinator {
         }
 
         // Confirm this is a git work tree (not a bare repo, not a non-repo).
-        let check = git_output(
-            project_repo_path,
-            &["rev-parse", "--is-inside-work-tree"],
-        )?;
+        let check = git_output(project_repo_path, &["rev-parse", "--is-inside-work-tree"])?;
         if !check.success || check.stdout.trim() != "true" {
             return Err(AppError::Validation(format!(
                 "Path is not a git work tree: {}",
@@ -286,8 +283,7 @@ impl WorkspaceCoordinator {
                 let path = self.scratch_parent.join("members").join(member_id);
                 std::fs::create_dir_all(path.parent().expect("members/ has a parent"))?;
 
-                let branch =
-                    format!("{MEMBER_BRANCH_NAMESPACE}/{}/{member_id}", self.run_id);
+                let branch = format!("{MEMBER_BRANCH_NAMESPACE}/{}/{member_id}", self.run_id);
 
                 let add = git_output(
                     &self.project_repo_path,
@@ -347,10 +343,7 @@ impl WorkspaceCoordinator {
     /// `OwnWorktree` allocation in insertion order, attempting `git merge
     /// --no-ff` into the run worktree. The first conflicting branch halts
     /// the loop; remaining branches are recorded as `unattempted_branches`.
-    pub fn integrate(
-        &self,
-        strategy: IntegrationStrategy,
-    ) -> Result<IntegrationReport, AppError> {
+    pub fn integrate(&self, strategy: IntegrationStrategy) -> Result<IntegrationReport, AppError> {
         let mut report = IntegrationReport::default();
 
         let own_branches: Vec<&str> = self
@@ -373,12 +366,7 @@ impl WorkspaceCoordinator {
 
                     let merge = git_output(
                         &self.run_worktree,
-                        &[
-                            "merge",
-                            "--no-ff",
-                            "--no-edit",
-                            branch,
-                        ],
+                        &["merge", "--no-ff", "--no-edit", branch],
                     )?;
                     if merge.success {
                         report.merged_branches.push((*branch).to_string());
@@ -442,7 +430,9 @@ impl WorkspaceCoordinator {
                     stderr = %o.stderr.trim(),
                     "git worktree remove failed for run worktree"
                 ),
-                Err(e) => tracing::warn!(error = %e, "git worktree remove errored for run worktree"),
+                Err(e) => {
+                    tracing::warn!(error = %e, "git worktree remove errored for run worktree")
+                }
             }
         }
 
@@ -597,7 +587,10 @@ mod tests {
             .expect("allocate")
             .to_path_buf();
         assert_eq!(path.as_path(), coord.run_worktree());
-        assert_eq!(coord.cwd_for_member("reviewer-1"), Some(coord.run_worktree()));
+        assert_eq!(
+            coord.cwd_for_member("reviewer-1"),
+            Some(coord.run_worktree())
+        );
 
         coord.cleanup().expect("cleanup");
     }
@@ -736,7 +729,11 @@ mod tests {
             .integrate(IntegrationStrategy::MergeSequentially)
             .unwrap();
 
-        assert_eq!(report.merged_branches.len(), 2, "both branches should merge");
+        assert_eq!(
+            report.merged_branches.len(),
+            2,
+            "both branches should merge"
+        );
         assert!(report.conflicting_branches.is_empty());
         assert!(report.unattempted_branches.is_empty());
 
@@ -796,7 +793,9 @@ mod tests {
         // (still disjoint vs m3), then m2 conflicts. Or m1 first, m3 second,
         // m2 conflicts. So merged_branches.len() ∈ {1, 2} depending on order.
         assert_eq!(
-            report.merged_branches.len() + report.conflicting_branches.len() + report.unattempted_branches.len(),
+            report.merged_branches.len()
+                + report.conflicting_branches.len()
+                + report.unattempted_branches.len(),
             3,
             "all 3 branches should be accounted for"
         );

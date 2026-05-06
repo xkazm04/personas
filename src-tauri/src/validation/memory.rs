@@ -3,7 +3,12 @@ use super::contract::{ValidationError, ValidationRule};
 pub const IMPORTANCE_MIN: i32 = 1;
 pub const IMPORTANCE_MAX: i32 = 5;
 pub const MEMORY_CATEGORIES: &[&str] = &[
-    "fact", "preference", "instruction", "context", "learned", "constraint",
+    "fact",
+    "preference",
+    "instruction",
+    "context",
+    "learned",
+    "constraint",
 ];
 
 pub fn validate_importance(value: i32) -> Vec<ValidationError> {
@@ -13,7 +18,9 @@ pub fn validate_importance(value: i32) -> Vec<ValidationError> {
         vec![ValidationError::new(
             "importance",
             "range",
-            format!("Importance must be between {IMPORTANCE_MIN} and {IMPORTANCE_MAX}, got {value}"),
+            format!(
+                "Importance must be between {IMPORTANCE_MIN} and {IMPORTANCE_MAX}, got {value}"
+            ),
         )]
     }
 }
@@ -37,9 +44,19 @@ pub fn validate_category(value: &str) -> Vec<ValidationError> {
 
 pub fn rules() -> Vec<ValidationRule> {
     vec![
-        ValidationRule::new("memory", "importance", "range", format!("Must be between {IMPORTANCE_MIN} and {IMPORTANCE_MAX}"))
-            .with_range(IMPORTANCE_MIN as f64, IMPORTANCE_MAX as f64),
-        ValidationRule::new("memory", "category", "allowed_values", "Must be a valid memory category")
-            .with_allowed(MEMORY_CATEGORIES.iter().map(|s| s.to_string()).collect()),
+        ValidationRule::new(
+            "memory",
+            "importance",
+            "range",
+            format!("Must be between {IMPORTANCE_MIN} and {IMPORTANCE_MAX}"),
+        )
+        .with_range(IMPORTANCE_MIN as f64, IMPORTANCE_MAX as f64),
+        ValidationRule::new(
+            "memory",
+            "category",
+            "allowed_values",
+            "Must be a valid memory category",
+        )
+        .with_allowed(MEMORY_CATEGORIES.iter().map(|s| s.to_string()).collect()),
     ]
 }

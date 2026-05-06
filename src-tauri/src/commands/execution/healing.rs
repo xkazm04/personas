@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{HealingAuditEntry, HealingKnowledge, HealingTimelineEvent, PersonaExecution, PersonaHealingIssue};
+use crate::db::models::{
+    HealingAuditEntry, HealingKnowledge, HealingTimelineEvent, PersonaExecution,
+    PersonaHealingIssue,
+};
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as repo;
 use crate::engine::healing;
@@ -111,7 +114,9 @@ pub async fn trigger_ai_healing(
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
     if !cfg!(debug_assertions) && std::env::var("VITE_DEVELOPMENT").as_deref() != Ok("true") {
-        return Err(AppError::Internal("AI healing is only available in development mode".into()));
+        return Err(AppError::Internal(
+            "AI healing is only available in development mode".into(),
+        ));
     }
 
     let pool = &state.db;
@@ -129,7 +134,10 @@ pub async fn trigger_ai_healing(
         AppError::Internal("Cannot heal: no Claude session ID on this execution".into())
     })?;
 
-    let error_str = execution.error_message.as_deref().unwrap_or("Unknown error");
+    let error_str = execution
+        .error_message
+        .as_deref()
+        .unwrap_or("Unknown error");
     let timed_out = error_str.contains("timed out");
     let session_limit = error_str.contains("Session limit");
     let category = healing::classify_error(error_str, timed_out, session_limit);

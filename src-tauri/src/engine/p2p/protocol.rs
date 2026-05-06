@@ -34,13 +34,9 @@ pub enum Message {
     /// Request the peer's exposure manifest.
     ManifestRequest,
     /// Response with the peer's exposure manifest.
-    ManifestResponse {
-        resources: Vec<ManifestEntry>,
-    },
+    ManifestResponse { resources: Vec<ManifestEntry> },
     /// Agent-to-agent message.
-    AgentMessage {
-        envelope: AgentEnvelope,
-    },
+    AgentMessage { envelope: AgentEnvelope },
     /// Keep-alive ping.
     Ping,
     /// Keep-alive pong response.
@@ -88,9 +84,10 @@ pub fn encode(msg: &Message) -> Result<Vec<u8>, AppError> {
 /// Decode a message from a reader (reads length prefix then payload).
 pub async fn decode<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Message, AppError> {
     let mut len_buf = [0u8; 4];
-    reader.read_exact(&mut len_buf).await.map_err(|e| {
-        AppError::Internal(format!("Failed to read message length: {e}"))
-    })?;
+    reader
+        .read_exact(&mut len_buf)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read message length: {e}")))?;
     let len = u32::from_be_bytes(len_buf);
 
     if len > MAX_MESSAGE_SIZE {
@@ -101,9 +98,10 @@ pub async fn decode<R: AsyncRead + Unpin>(reader: &mut R) -> Result<Message, App
     }
 
     let mut payload = vec![0u8; len as usize];
-    reader.read_exact(&mut payload).await.map_err(|e| {
-        AppError::Internal(format!("Failed to read message payload: {e}"))
-    })?;
+    reader
+        .read_exact(&mut payload)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read message payload: {e}")))?;
 
     rmp_serde::from_slice(&payload)
         .map_err(|e| AppError::Internal(format!("MessagePack decode error: {e}")))
@@ -115,11 +113,13 @@ pub async fn write_message<W: AsyncWrite + Unpin>(
     msg: &Message,
 ) -> Result<(), AppError> {
     let bytes = encode(msg)?;
-    writer.write_all(&bytes).await.map_err(|e| {
-        AppError::Internal(format!("Failed to write message: {e}"))
-    })?;
-    writer.flush().await.map_err(|e| {
-        AppError::Internal(format!("Failed to flush message: {e}"))
-    })?;
+    writer
+        .write_all(&bytes)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to write message: {e}")))?;
+    writer
+        .flush()
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to flush message: {e}")))?;
     Ok(())
 }

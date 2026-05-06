@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::engine::enclave::{self, EnclaveSealResult, EnclavePolicy, EnclaveVerifyResult};
+use crate::engine::enclave::{self, EnclavePolicy, EnclaveSealResult, EnclaveVerifyResult};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
 use crate::AppState;

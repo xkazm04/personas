@@ -117,9 +117,15 @@ pub fn resolve_effective_config(
     );
 
     let prompt_cache_policy = resolve_string_field(
-        agent_profile.as_ref().and_then(|p| p.prompt_cache_policy.clone()),
-        ws_profile.as_ref().and_then(|p| p.prompt_cache_policy.clone()),
-        global_profile.as_ref().and_then(|p| p.prompt_cache_policy.clone()),
+        agent_profile
+            .as_ref()
+            .and_then(|p| p.prompt_cache_policy.clone()),
+        ws_profile
+            .as_ref()
+            .and_then(|p| p.prompt_cache_policy.clone()),
+        global_profile
+            .as_ref()
+            .and_then(|p| p.prompt_cache_policy.clone()),
     );
 
     let config = EffectiveModelConfig {
@@ -171,7 +177,9 @@ fn log_resolution(config: &EffectiveModelConfig) {
 
 /// Build a global-level ModelProfile from app_settings.
 fn resolve_global_model_profile(pool: &DbPool) -> Option<ModelProfile> {
-    let json = settings::get(pool, settings_keys::GLOBAL_MODEL_PROFILE).ok().flatten()?;
+    let json = settings::get(pool, settings_keys::GLOBAL_MODEL_PROFILE)
+        .ok()
+        .flatten()?;
     match serde_json::from_str::<ModelProfile>(&json) {
         Ok(profile) => Some(profile),
         Err(e) => {
@@ -331,11 +339,8 @@ mod tests {
 
     #[test]
     fn test_resolve_string_workspace_fallback() {
-        let result = resolve_string_field(
-            None,
-            Some("ws-model".into()),
-            Some("global-model".into()),
-        );
+        let result =
+            resolve_string_field(None, Some("ws-model".into()), Some("global-model".into()));
         assert_eq!(result.value.as_deref(), Some("ws-model"));
         assert_eq!(result.source, ConfigSource::Workspace);
         assert!(!result.is_overridden);
@@ -351,11 +356,7 @@ mod tests {
 
     #[test]
     fn test_resolve_string_empty_skipped() {
-        let result = resolve_string_field(
-            Some("".into()),
-            Some("ws-model".into()),
-            None,
-        );
+        let result = resolve_string_field(Some("".into()), Some("ws-model".into()), None);
         assert_eq!(result.value.as_deref(), Some("ws-model"));
         assert_eq!(result.source, ConfigSource::Workspace);
     }

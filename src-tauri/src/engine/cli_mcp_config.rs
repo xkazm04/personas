@@ -26,7 +26,11 @@ const MCP_SERVER_NAME: &str = "personas";
 fn find_mcp_binary() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let exe_dir = exe.parent()?;
-    let ext = if cfg!(target_os = "windows") { ".exe" } else { "" };
+    let ext = if cfg!(target_os = "windows") {
+        ".exe"
+    } else {
+        ""
+    };
     let filename = format!("personas-mcp{ext}");
 
     let candidates = [
@@ -36,7 +40,10 @@ fn find_mcp_binary() -> Option<PathBuf> {
         // but production bundles drop the binary one level up next to the
         // desktop exe — keep both probes so this works in installed builds
         // too.
-        exe_dir.parent().map(|p| p.join(&filename)).unwrap_or_default(),
+        exe_dir
+            .parent()
+            .map(|p| p.join(&filename))
+            .unwrap_or_default(),
     ];
     candidates.into_iter().find(|p| p.is_file())
 }
@@ -48,10 +55,7 @@ fn find_mcp_binary() -> Option<PathBuf> {
 /// intentionally skipped. Never errors the execution — a missing MCP just
 /// means the persona runs without the drive tools, which is the status
 /// quo anyway.
-pub fn install_mcp_sidecar(
-    exec_dir: &Path,
-    drive_root: Option<&Path>,
-) -> Result<bool, AppError> {
+pub fn install_mcp_sidecar(exec_dir: &Path, drive_root: Option<&Path>) -> Result<bool, AppError> {
     let Some(mcp_binary) = find_mcp_binary() else {
         tracing::debug!("cli_mcp_config: personas-mcp binary not found — skipping sidecar");
         return Ok(false);
@@ -107,7 +111,9 @@ pub fn install_mcp_sidecar(
     });
 
     // Merge (or create) `mcpServers.personas`.
-    let root_obj = existing.as_object_mut().expect("existing was just set to object");
+    let root_obj = existing
+        .as_object_mut()
+        .expect("existing was just set to object");
     let servers = root_obj
         .entry("mcpServers")
         .or_insert_with(|| serde_json::json!({}));

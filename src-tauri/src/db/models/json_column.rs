@@ -82,9 +82,8 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Json<T> {
 
 impl<T: Serialize> ToSql for Json<T> {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        let s = serde_json::to_string(&self.0).map_err(|e| {
-            rusqlite::Error::ToSqlConversionFailure(Box::new(e))
-        })?;
+        let s = serde_json::to_string(&self.0)
+            .map_err(|e| rusqlite::Error::ToSqlConversionFailure(Box::new(e)))?;
         Ok(ToSqlOutput::from(s))
     }
 }

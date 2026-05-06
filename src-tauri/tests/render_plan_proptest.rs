@@ -12,7 +12,7 @@
 //!   PROPTEST_CASES=10000 cargo test --features desktop --test render_plan_proptest
 
 use app_lib::render_plan::compile::{
-    AudioClipInput, Composition, CompileDeps, CompileOptions, ImageItemInput, TextItemInput,
+    AudioClipInput, CompileDeps, CompileOptions, Composition, ImageItemInput, TextItemInput,
     TimelineItem, VideoClipInput,
 };
 use app_lib::render_plan::{assert_invariants, compile};
@@ -42,39 +42,41 @@ fn arb_transition() -> impl Strategy<Value = String> {
 /// "compile rejects every malformed input", which is covered elsewhere.
 fn arb_video_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
     (
-        0.0f64..40.0,      // start_time
-        0.25f64..10.0,     // duration
-        0.0f64..5.0,       // trim_start
-        arb_transition(),  // transition
-        0.0f64..1.0,       // transition_duration
-        0.25f64..4.0,      // speed
-        0.0f64..1.0,       // fade_in
-        0.0f64..1.0,       // fade_out
-        any::<bool>(),     // strip_audio
+        0.0f64..40.0,          // start_time
+        0.25f64..10.0,         // duration
+        0.0f64..5.0,           // trim_start
+        arb_transition(),      // transition
+        0.0f64..1.0,           // transition_duration
+        0.25f64..4.0,          // speed
+        0.0f64..1.0,           // fade_in
+        0.0f64..1.0,           // fade_out
+        any::<bool>(),         // strip_audio
         option::of(0..3usize), // which file path index
     )
-        .prop_map(move |(start, duration, trim, trans, trans_dur, speed, fi, fo, strip, path_idx)| {
-            let path_pool = ["/a.mp4", "/b.mp4", "/c.mp4"];
-            let file_path = path_pool[path_idx.unwrap_or(0)].to_string();
-            TimelineItem::Video(VideoClipInput {
-                id: Some(format!("v{ordinal}")),
-                label: None,
-                file_path,
-                start_time: start,
-                duration,
-                trim_start: trim,
-                trim_end: 0.0,
-                media_duration: Some(60.0),
-                transition: Some(trans),
-                transition_duration: trans_dur,
-                speed: Some(speed),
-                fade_in: fi,
-                fade_out: fo,
-                strip_audio: strip,
-                transcript_path: None,
-                transcript_status: None,
-            })
-        })
+        .prop_map(
+            move |(start, duration, trim, trans, trans_dur, speed, fi, fo, strip, path_idx)| {
+                let path_pool = ["/a.mp4", "/b.mp4", "/c.mp4"];
+                let file_path = path_pool[path_idx.unwrap_or(0)].to_string();
+                TimelineItem::Video(VideoClipInput {
+                    id: Some(format!("v{ordinal}")),
+                    label: None,
+                    file_path,
+                    start_time: start,
+                    duration,
+                    trim_start: trim,
+                    trim_end: 0.0,
+                    media_duration: Some(60.0),
+                    transition: Some(trans),
+                    transition_duration: trans_dur,
+                    speed: Some(speed),
+                    fade_in: fi,
+                    fade_out: fo,
+                    strip_audio: strip,
+                    transcript_path: None,
+                    transcript_status: None,
+                })
+            },
+        )
 }
 
 fn arb_audio_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
@@ -82,11 +84,11 @@ fn arb_audio_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
         0.0f64..40.0,
         0.25f64..10.0,
         0.0f64..5.0,
-        0.0f64..2.0,       // volume
-        0.25f64..4.0,      // speed
-        0.0f64..0.5,       // fade_in
-        0.0f64..0.5,       // fade_out
-        any::<bool>(),     // normalize
+        0.0f64..2.0,   // volume
+        0.25f64..4.0,  // speed
+        0.0f64..0.5,   // fade_in
+        0.0f64..0.5,   // fade_out
+        any::<bool>(), // normalize
     )
         .prop_map(move |(start, duration, trim, vol, speed, fi, fo, norm)| {
             TimelineItem::Audio(AudioClipInput {
@@ -115,24 +117,28 @@ fn arb_audio_clip(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
 }
 
 fn arb_text_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
-    (0.0f64..40.0, 0.25f64..8.0).prop_map(
-        move |(start, duration)| {
-            TimelineItem::Text(TextItemInput {
-                id: Some(format!("t{ordinal}")),
-                label: Some(format!("label{ordinal}")),
-                start_time: start,
-                duration,
-                text: format!("body{ordinal}"),
-                anchor: None,
-                _legacy: Default::default(),
-            })
-        },
-    )
+    (0.0f64..40.0, 0.25f64..8.0).prop_map(move |(start, duration)| {
+        TimelineItem::Text(TextItemInput {
+            id: Some(format!("t{ordinal}")),
+            label: Some(format!("label{ordinal}")),
+            start_time: start,
+            duration,
+            text: format!("body{ordinal}"),
+            anchor: None,
+            _legacy: Default::default(),
+        })
+    })
 }
 
 fn arb_image_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
-    (0.0f64..40.0, 0.25f64..8.0, 0.0f64..1.0, 0.0f64..1.0, 0.25f64..3.0).prop_map(
-        move |(start, duration, px, py, scale)| {
+    (
+        0.0f64..40.0,
+        0.25f64..8.0,
+        0.0f64..1.0,
+        0.0f64..1.0,
+        0.25f64..3.0,
+    )
+        .prop_map(move |(start, duration, px, py, scale)| {
             TimelineItem::Image(ImageItemInput {
                 id: Some(format!("i{ordinal}")),
                 label: None,
@@ -145,8 +151,7 @@ fn arb_image_item(ordinal: usize) -> impl Strategy<Value = TimelineItem> {
                 fade_in: 0.0,
                 fade_out: 0.0,
             })
-        },
-    )
+        })
 }
 
 fn arb_composition() -> impl Strategy<Value = Composition> {

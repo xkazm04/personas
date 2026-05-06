@@ -13,10 +13,7 @@ impl ExecutionLogger {
     pub fn new(log_dir: &std::path::Path, execution_id: &str) -> std::io::Result<Self> {
         fs::create_dir_all(log_dir)?;
         let path = log_dir.join(format!("{execution_id}.log"));
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&path)?;
+        let file = OpenOptions::new().create(true).append(true).open(&path)?;
         Ok(Self {
             writer: Some(BufWriter::new(file)),
             path,

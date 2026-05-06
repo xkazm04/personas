@@ -33,12 +33,11 @@ struct SchemaProposalSnapshotExtras {
 
 // -- Static job manager --------------------------------------------------
 
-static SCHEMA_PROPOSAL_JOBS: BackgroundJobManager<SchemaProposalExtra> =
-    BackgroundJobManager::new(
-        "schema proposal job lock",
-        event_name::SCHEMA_PROPOSAL_STATUS,
-        event_name::SCHEMA_PROPOSAL_OUTPUT,
-    );
+static SCHEMA_PROPOSAL_JOBS: BackgroundJobManager<SchemaProposalExtra> = BackgroundJobManager::new(
+    "schema proposal job lock",
+    event_name::SCHEMA_PROPOSAL_STATUS,
+    event_name::SCHEMA_PROPOSAL_OUTPUT,
+);
 
 /// List all schema proposal job snapshots (for unified workflows view).
 pub fn list_schema_proposal_jobs() -> Vec<crate::background_job::JobSnapshot> {
@@ -46,7 +45,10 @@ pub fn list_schema_proposal_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel a schema proposal job (called from unified workflows dispatcher).
-pub fn cancel_schema_proposal_job(app: &tauri::AppHandle, proposal_id: &str) -> Result<(), AppError> {
+pub fn cancel_schema_proposal_job(
+    app: &tauri::AppHandle,
+    proposal_id: &str,
+) -> Result<(), AppError> {
     SCHEMA_PROPOSAL_JOBS.cancel(app, proposal_id)
 }
 
@@ -142,12 +144,8 @@ pub async fn validate_db_schema(
 ) -> Result<serde_json::Value, AppError> {
     require_privileged(&state, "validate_db_schema").await?;
 
-    let tables_result = db_query::introspect_tables(
-        &state.db,
-        &credential_id,
-        Some(&state.user_db),
-    )
-    .await?;
+    let tables_result =
+        db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await?;
 
     let name_idx = tables_result
         .columns
@@ -222,7 +220,8 @@ async fn run_schema_proposal(params: RunParams) {
     emit_line(&app, &proposal_id, "> Starting schema proposal...");
 
     // Build schema context from existing tables
-    let schema_context = ai_helpers::build_schema_context(&pool, &credential_id, Some(&user_db)).await;
+    let schema_context =
+        ai_helpers::build_schema_context(&pool, &credential_id, Some(&user_db)).await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &proposal_id, "> Cancelled.");
@@ -259,15 +258,9 @@ async fn run_schema_proposal(params: RunParams) {
 
     emit_line(&app, &proposal_id, "> Generating schema with AI...");
 
-    let cli_result = run_claude_prompt_text_inner(
-        system_prompt,
-        &cli_args,
-        Some(&on_line),
-        None,
-        None,
-        120,
-    )
-    .await;
+    let cli_result =
+        run_claude_prompt_text_inner(system_prompt, &cli_args, Some(&on_line), None, None, 120)
+            .await;
 
     if cancel_token.is_cancelled() {
         emit_line(&app, &proposal_id, "> Cancelled.");
@@ -396,7 +389,6 @@ fn build_prompt(
     prompt
 }
 
-
 /// Extract the explanation text that comes after the SQL code block.
 fn extract_explanation(text: &str) -> Option<String> {
     let mut found_sql_block = false;
@@ -426,7 +418,6 @@ fn extract_explanation(text: &str) -> Option<String> {
         Some(explanation)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

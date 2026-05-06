@@ -18,9 +18,6 @@ export interface EventSlice {
   pushRecentEvent: (event: PersonaEvent, maxItems?: number) => void;
 }
 
-// O(1) lookup index for event dedup — kept in sync with recentEvents array
-const eventIndex = new Map<string, PersonaEvent>();
-
 export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> = (set) => ({
   recentEvents: [],
   pendingEventCount: 0,
@@ -28,8 +25,6 @@ export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> =
   fetchRecentEvents: deduplicateKeyedFetch('recentEvents', async (limit?: number) => {
     try {
       const events = await listEvents(limit ?? 50);
-      eventIndex.clear();
-      for (const e of events) eventIndex.set(e.id, e);
       set({ recentEvents: events, pendingEventCount: events.filter((e) => e.status === "pending").length });
     } catch (err) {
       logger.warn("fetchRecentEvents failed", { error: String(err) });
@@ -39,7 +34,12 @@ export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> =
   pushRecentEvent: (event, maxItems = 200) => {
     set((state) => {
       const isPending = event.status === "pending";
-      const oldEvent = eventIndex.get(event.id);
+      // O(n) scan over recentEvents — bounded by maxItems (200), and lookup
+      // stays in sync with the array because both live in the same state.
+      // A module-scoped index would survive store recreation (HMR, multi-window,
+      // test isolation) while recentEvents resets, causing pendingEventCount to drift.
+      const oldIndex = state.recentEvents.findIndex((e) => e.id === event.id);
+      const oldEvent = oldIndex >= 0 ? state.recentEvents[oldIndex] : undefined;
 
       let nextEvents: PersonaEvent[];
       let pendingDelta = 0;
@@ -54,12 +54,9 @@ export const createEventSlice: StateCreator<OverviewStore, [], [], EventSlice> =
         if (isPending) pendingDelta = 1;
       }
 
-      eventIndex.set(event.id, event);
-
       // Account for any pending event that gets trimmed off the end
       if (nextEvents.length > maxItems) {
         const dropped = nextEvents[maxItems]!;
-        eventIndex.delete(dropped.id);
         if (dropped.status === "pending") pendingDelta -= 1;
         nextEvents = nextEvents.slice(0, maxItems);
       }

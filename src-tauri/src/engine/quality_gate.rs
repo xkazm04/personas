@@ -53,10 +53,7 @@ pub struct QualityGateConfig {
 impl Default for QualityGateConfig {
     fn default() -> Self {
         Self {
-            memory_reject_categories: vec![
-                "error".to_string(),
-                "failure".to_string(),
-            ],
+            memory_reject_categories: vec!["error".to_string(), "failure".to_string()],
             memory_rules: vec![
                 // Stack traces and raw dumps
                 rule("Stack traces", "traceback"),
@@ -116,7 +113,10 @@ fn rule(label: &str, pattern: &str) -> QualityGateRule {
 impl QualityGateConfig {
     /// Check whether the combined text matches any of the given rules.
     /// Returns the first matching rule label, or None.
-    pub fn check_rules<'a>(rules: &'a [QualityGateRule], combined: &str) -> Option<(String, &'a FilterAction)> {
+    pub fn check_rules<'a>(
+        rules: &'a [QualityGateRule],
+        combined: &str,
+    ) -> Option<(String, &'a FilterAction)> {
         for r in rules {
             let haystack: String;
             let needle: String;
@@ -147,7 +147,10 @@ pub fn load(pool: &crate::db::DbPool) -> QualityGateConfig {
 }
 
 /// Save quality-gate config to DB.
-pub fn save(pool: &crate::db::DbPool, config: &QualityGateConfig) -> Result<(), crate::error::AppError> {
+pub fn save(
+    pool: &crate::db::DbPool,
+    config: &QualityGateConfig,
+) -> Result<(), crate::error::AppError> {
     use crate::db::repos::core::settings;
     use crate::db::settings_keys::QUALITY_GATE_CONFIG;
 

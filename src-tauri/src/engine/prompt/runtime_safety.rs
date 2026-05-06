@@ -41,14 +41,29 @@ pub(super) const RUNTIME_CANARY_INSTRUCTION: &str =
 
 /// XML/HTML tags that could inject prompt structure.
 pub(super) const DANGEROUS_TAGS: &[&str] = &[
-    "system", "instruction", "prompt", "role", "override", "ignore",
+    "system",
+    "instruction",
+    "prompt",
+    "role",
+    "override",
+    "ignore",
 ];
 
 /// Check if a character is an invisible/zero-width Unicode character.
 pub(super) fn is_invisible_runtime_char(c: char) -> bool {
-    matches!(c,
-        '\u{200b}' | '\u{200c}' | '\u{200d}' | '\u{200e}' | '\u{200f}'
-        | '\u{feff}' | '\u{2060}' | '\u{2061}' | '\u{2062}' | '\u{2063}' | '\u{2064}'
+    matches!(
+        c,
+        '\u{200b}'
+            | '\u{200c}'
+            | '\u{200d}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{feff}'
+            | '\u{2060}'
+            | '\u{2061}'
+            | '\u{2062}'
+            | '\u{2063}'
+            | '\u{2064}'
     )
 }
 
@@ -84,7 +99,10 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
     };
 
     // 2. Strip invisible/zero-width characters
-    let clean: String = truncated.chars().filter(|c| !is_invisible_runtime_char(*c)).collect();
+    let clean: String = truncated
+        .chars()
+        .filter(|c| !is_invisible_runtime_char(*c))
+        .collect();
 
     // 3. Strip non-BMP Unicode (homoglyph defence -- e.g. Mathematical Alphanumeric
     //    Symbols U+1D400..U+1D7FF that look like ASCII letters)
@@ -116,18 +134,21 @@ pub(super) fn sanitize_runtime_variable(value: &str) -> String {
 
     // 6. Strip dangerous XML/HTML tags
     for tag in DANGEROUS_TAGS {
-        let open_re = regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag))).unwrap();
+        let open_re =
+            regex::Regex::new(&format!(r"(?i)</?{}\b[^>]*>", regex::escape(tag))).unwrap();
         clean = open_re.replace_all(&clean, "").to_string();
     }
 
     // 7. Contextual escaping for prompt structure
     // Escape markdown headings that could inject prompt sections
     let re_heading = regex::Regex::new(r"(?m)^(#{1,6})\s").unwrap();
-    clean = re_heading.replace_all(&clean, |caps: &regex::Captures| {
-        let hashes = caps.get(1).unwrap().as_str();
-        let escaped = hashes.replace('#', "\u{FF03}"); // fullwidth #
-        format!("{escaped} ")
-    }).to_string();
+    clean = re_heading
+        .replace_all(&clean, |caps: &regex::Captures| {
+            let hashes = caps.get(1).unwrap().as_str();
+            let escaped = hashes.replace('#', "\u{FF03}"); // fullwidth #
+            format!("{escaped} ")
+        })
+        .to_string();
 
     // Escape triple backticks (could break markdown code fences)
     clean = clean.replace("```", "\\`\\`\\`");

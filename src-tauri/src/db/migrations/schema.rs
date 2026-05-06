@@ -1191,7 +1191,7 @@ CREATE TABLE IF NOT EXISTS dev_ideas (
   project_id    TEXT REFERENCES dev_projects(id) ON DELETE CASCADE,
   context_id    TEXT,
   scan_type     TEXT NOT NULL,
-  category      TEXT NOT NULL DEFAULT 'functionality',
+  category      TEXT NOT NULL DEFAULT 'technical',
   title         TEXT NOT NULL,
   description   TEXT,
   reasoning     TEXT,

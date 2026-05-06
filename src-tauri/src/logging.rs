@@ -135,15 +135,27 @@ pub fn install_crash_hook(app_data_dir: &std::path::Path) {
 
             // Location
             if let Some(loc) = info.location() {
-                report.push_str(&format!("Location: {}:{}:{}\n", loc.file(), loc.line(), loc.column()));
+                report.push_str(&format!(
+                    "Location: {}:{}:{}\n",
+                    loc.file(),
+                    loc.line(),
+                    loc.column()
+                ));
             }
 
             // Backtrace
-            report.push_str(&format!("\nBacktrace:\n{}\n", std::backtrace::Backtrace::force_capture()));
+            report.push_str(&format!(
+                "\nBacktrace:\n{}\n",
+                std::backtrace::Backtrace::force_capture()
+            ));
 
             // Thread info
             let thread = std::thread::current();
-            report.push_str(&format!("\nThread: {:?} (id: {:?})\n", thread.name(), thread.id()));
+            report.push_str(&format!(
+                "\nThread: {:?} (id: {:?})\n",
+                thread.name(),
+                thread.id()
+            ));
 
             let _ = std::fs::write(&path, &report);
             eprintln!("[CRASH] Report written to: {}", path.display());
@@ -167,7 +179,11 @@ pub fn read_crash_logs(app_data_dir: &std::path::Path) -> Vec<CrashLogEntry> {
             if path.extension().map(|e| e == "log").unwrap_or(false) {
                 if let Ok(content) = std::fs::read_to_string(&path) {
                     entries.push(CrashLogEntry {
-                        filename: path.file_name().unwrap_or_default().to_string_lossy().into(),
+                        filename: path
+                            .file_name()
+                            .unwrap_or_default()
+                            .to_string_lossy()
+                            .into(),
                         content,
                     });
                 }

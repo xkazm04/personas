@@ -17,8 +17,12 @@ use rusqlite::params;
 use serde::Serialize;
 use tauri::State;
 
+use crate::companion::brain::backlog;
 use crate::companion::brain::doctrine;
+use crate::companion::brain::goals;
+use crate::companion::brain::procedural::{self, ProceduralScope};
 use crate::companion::brain::reflection;
+use crate::companion::brain::rituals;
 use crate::companion::brain::semantic::{self, FactScope};
 use crate::companion::disk;
 use crate::error::AppError;
@@ -72,6 +76,34 @@ pub fn companion_list_brain_items(
         };
         return list_facts(&state, scope);
     }
+    // Phase D scoped kinds.
+    if let Some(rest) = kind.strip_prefix("procedural") {
+        let scope = match rest {
+            "" => None,
+            ":chat" => Some(ProceduralScope::Chat),
+            ":action" => Some(ProceduralScope::Action),
+            ":memory" => Some(ProceduralScope::Memory),
+            ":build" => Some(ProceduralScope::Build),
+            other => {
+                return Err(AppError::Internal(format!(
+                    "brain kind `procedural{other}` — unknown scope"
+                )))
+            }
+        };
+        return list_procedurals(&state, scope);
+    }
+    if kind == "goal" || kind.starts_with("goal:") {
+        let status_filter = kind.strip_prefix("goal:");
+        return list_goals(&state, status_filter);
+    }
+    if kind == "ritual" || kind.starts_with("ritual:") {
+        let kind_filter = kind.strip_prefix("ritual:");
+        return list_rituals(&state, kind_filter);
+    }
+    if kind == "backlog" || kind.starts_with("backlog:") {
+        let kind_filter = kind.strip_prefix("backlog:");
+        return list_backlog(&state, kind_filter);
+    }
     match kind.as_str() {
         "episode" => list_episodes(&state),
         "doctrine" => list_doctrine(&state),
@@ -104,14 +136,24 @@ pub fn companion_get_brain_item(
     if kind == "fact" || kind.starts_with("fact:") {
         return get_fact_detail(&state, &id);
     }
+    if kind == "procedural" || kind.starts_with("procedural:") {
+        return get_procedural_detail(&state, &id);
+    }
+    if kind == "goal" || kind.starts_with("goal:") {
+        return get_goal_detail(&state, &id);
+    }
+    if kind == "ritual" || kind.starts_with("ritual:") {
+        return get_ritual_detail(&state, &id);
+    }
+    if kind == "backlog" || kind.starts_with("backlog:") {
+        return get_backlog_detail(&state, &id);
+    }
     match kind.as_str() {
         "episode" => get_episode(&state, &id),
         "doctrine" => get_doctrine(&state, &id),
         "reflection" => get_reflection(&state, &id),
         "identity" => read_brain_file("identity", "Identity", "identity.md"),
-        "constitution" => {
-            read_brain_file("constitution", "Constitution", "constitution.md")
-        }
+        "constitution" => read_brain_file("constitution", "Constitution", "constitution.md"),
         other => Err(AppError::Internal(format!(
             "brain kind `{other}` not yet supported"
         ))),
@@ -127,6 +169,23 @@ pub fn companion_delete_brain_item(
     ipc_auth::require_auth_sync(&state)?;
     if kind == "fact" || kind.starts_with("fact:") {
         return semantic::delete_fact(&state.user_db, &id);
+    }
+    if kind == "procedural" || kind.starts_with("procedural:") {
+        return procedural::delete_rule(&state.user_db, &id);
+    }
+    if kind == "goal" || kind.starts_with("goal:") {
+        return goals::delete_goal(&state.user_db, &id);
+    }
+    if kind == "ritual" || kind.starts_with("ritual:") {
+        return rituals::delete_ritual(&state.user_db, &id);
+    }
+    // Backlog items are append-only — `done`/`dropped` is the resolution path.
+    // Surface a clear error rather than silently failing on an unsupported kind.
+    if kind == "backlog" || kind.starts_with("backlog:") {
+        return Err(AppError::Internal(
+            "backlog items are append-only — resolve them via `resolve_backlog_item` instead"
+                .into(),
+        ));
     }
     match kind.as_str() {
         "episode" => delete_episode(&state, &id),
@@ -218,18 +277,12 @@ fn delete_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<(), AppE
             |r| r.get::<_, String>(0),
         )
         .ok();
-    let _ = conn.execute(
-        "DELETE FROM companion_fts WHERE node_id = ?1",
-        params![id],
-    );
+    let _ = conn.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id]);
     let _ = conn.execute(
         "DELETE FROM companion_embedding WHERE node_id = ?1",
         params![id],
     );
-    conn.execute(
-        "DELETE FROM companion_node WHERE id = ?1",
-        params![id],
-    )?;
+    conn.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
     if let Some(rel) = file_path {
         if let Ok(root) = disk::brain_root() {
             let _ = std::fs::remove_file(root.join(rel));
@@ -279,13 +332,12 @@ fn list_doctrine(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>,
 
 fn get_doctrine(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
     let conn = state.user_db.get()?;
-    let (file_path, body_excerpt, created_at): (String, Option<String>, String) =
-        conn.query_row(
-            "SELECT file_path, body_excerpt, created_at FROM companion_node
+    let (file_path, body_excerpt, created_at): (String, Option<String>, String) = conn.query_row(
+        "SELECT file_path, body_excerpt, created_at FROM companion_node
              WHERE kind = 'doctrine' AND id = ?1",
-            params![id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
-        )?;
+        params![id],
+        |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)),
+    )?;
 
     // file_path is `<rel>#<anchor>` — re-extract the section content from
     // disk (or from the embedded fallback) so we render the actual chunk
@@ -354,10 +406,7 @@ fn list_facts(
     Ok(out)
 }
 
-fn get_fact_detail(
-    state: &State<'_, Arc<AppState>>,
-    id: &str,
-) -> Result<BrainDetail, AppError> {
+fn get_fact_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
     let f = semantic::get_fact(&state.user_db, id)?
         .ok_or_else(|| AppError::Internal(format!("fact `{id}` not found")))?;
     // Render the body to include the typed metadata above the value, so
@@ -371,7 +420,9 @@ fn get_fact_detail(
         key = f.key,
     ));
     if f.importance == 0 {
-        content.push_str("> _Superseded — kept for historical record but no longer wins retrieval._\n\n");
+        content.push_str(
+            "> _Superseded — kept for historical record but no longer wins retrieval._\n\n",
+        );
     }
     content.push_str(&format!(
         "**Importance:** {imp}/5 &nbsp;·&nbsp; **Confidence:** {conf}%\n\n",
@@ -408,6 +459,281 @@ fn get_fact_detail(
         content,
         meta,
         deletable: true,
+    })
+}
+
+// ── Phase D: procedurals / goals / rituals / backlog ───────────────────
+
+fn list_procedurals(
+    state: &State<'_, Arc<AppState>>,
+    scope: Option<ProceduralScope>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let rules = procedural::list_rules(&state.user_db, scope, true, 500)?;
+    Ok(rules
+        .into_iter()
+        .map(|r| {
+            let superseded = r.importance == 0;
+            let conf_pct = (r.confidence * 100.0).round() as i32;
+            let meta = if superseded {
+                format!(
+                    "{scope}/{trigger} · superseded · conf {conf}% · updated {updated}",
+                    scope = r.scope,
+                    trigger = r.trigger,
+                    conf = conf_pct,
+                    updated = r.updated_at,
+                )
+            } else {
+                format!(
+                    "{scope} · imp {imp} · conf {conf}% · {n} source(s) · updated {updated}",
+                    scope = r.scope,
+                    imp = r.importance,
+                    conf = conf_pct,
+                    n = r.sources.len(),
+                    updated = r.updated_at,
+                )
+            };
+            BrainListItem {
+                id: r.id,
+                kind: format!("procedural:{}", r.scope),
+                title: r.trigger,
+                preview: r.behavior.lines().take(2).collect::<Vec<_>>().join(" "),
+                meta,
+                deletable: true,
+            }
+        })
+        .collect())
+}
+
+fn get_procedural_detail(
+    state: &State<'_, Arc<AppState>>,
+    id: &str,
+) -> Result<BrainDetail, AppError> {
+    let r = procedural::get_rule(&state.user_db, id)?
+        .ok_or_else(|| AppError::Internal(format!("procedural `{id}` not found")))?;
+    let conf_pct = (r.confidence * 100.0).round() as i32;
+    let mut content = String::new();
+    content.push_str(&format!(
+        "**Scope:** {scope} &nbsp;·&nbsp; **Importance:** {imp}/5 &nbsp;·&nbsp; **Confidence:** {conf}%\n\n",
+        scope = r.scope,
+        imp = r.importance,
+        conf = conf_pct,
+    ));
+    if r.importance == 0 {
+        content.push_str("> _Superseded — kept for historical record._\n\n");
+    }
+    if !r.sources.is_empty() {
+        content.push_str("**Sources:** ");
+        let pairs: Vec<String> = r.sources.iter().map(|s| format!("`{s}`")).collect();
+        content.push_str(&pairs.join(", "));
+        content.push_str("\n\n");
+    }
+    if let Some(s) = &r.supersedes_id {
+        content.push_str(&format!("**Supersedes:** `{s}`\n\n"));
+    }
+    content.push_str("---\n\n");
+    content.push_str("**When:** ");
+    content.push_str(&r.trigger);
+    content.push_str("\n\n**Then:**\n\n");
+    content.push_str(&r.behavior);
+    Ok(BrainDetail {
+        id: r.id,
+        kind: format!("procedural:{}", r.scope),
+        title: r.trigger,
+        content,
+        meta: format!(
+            "{scope} · imp {imp} · conf {conf}%",
+            scope = r.scope,
+            imp = r.importance,
+            conf = conf_pct
+        ),
+        deletable: true,
+    })
+}
+
+fn list_goals(
+    state: &State<'_, Arc<AppState>>,
+    status_filter: Option<&str>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let status = match status_filter {
+        Some(s) => Some(goals::GoalStatus::parse(s)?),
+        None => None,
+    };
+    let rows = goals::list_goals(&state.user_db, status, 200)?;
+    Ok(rows
+        .into_iter()
+        .map(|g| BrainListItem {
+            id: g.id,
+            kind: format!("goal:{}", g.status),
+            title: g.title,
+            preview: g.description.lines().take(2).collect::<Vec<_>>().join(" "),
+            meta: format!(
+                "{status} · priority {p}{target} · updated {updated}",
+                status = g.status,
+                p = g.priority,
+                target = g
+                    .target_date
+                    .map(|d| format!(" · target {d}"))
+                    .unwrap_or_default(),
+                updated = g.updated_at,
+            ),
+            deletable: true,
+        })
+        .collect())
+}
+
+fn get_goal_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
+    let g = goals::get_goal(&state.user_db, id)?
+        .ok_or_else(|| AppError::Internal(format!("goal `{id}` not found")))?;
+    let mut content = String::new();
+    content.push_str(&format!(
+        "**Status:** {status} &nbsp;·&nbsp; **Priority:** {p}/5",
+        status = g.status,
+        p = g.priority,
+    ));
+    if let Some(td) = &g.target_date {
+        content.push_str(&format!(" &nbsp;·&nbsp; **Target:** {td}"));
+    }
+    content.push_str("\n\n");
+    if let Some(c) = &g.completed_at {
+        content.push_str(&format!("**Completed:** {c}\n\n"));
+    }
+    if !g.sources.is_empty() {
+        content.push_str("**Sources:** ");
+        let pairs: Vec<String> = g.sources.iter().map(|s| format!("`{s}`")).collect();
+        content.push_str(&pairs.join(", "));
+        content.push_str("\n\n");
+    }
+    content.push_str("---\n\n");
+    content.push_str(&g.description);
+    Ok(BrainDetail {
+        id: g.id,
+        kind: format!("goal:{}", g.status),
+        title: g.title,
+        content,
+        meta: format!("{} · priority {}", g.status, g.priority),
+        deletable: true,
+    })
+}
+
+fn list_rituals(
+    state: &State<'_, Arc<AppState>>,
+    kind_filter: Option<&str>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let kind = match kind_filter {
+        Some(s) => Some(rituals::RitualKind::parse(s)?),
+        None => None,
+    };
+    let rows = rituals::list_rituals(&state.user_db, kind, false)?;
+    Ok(rows
+        .into_iter()
+        .map(|r| BrainListItem {
+            id: r.id,
+            kind: format!("ritual:{}", r.kind),
+            title: r.description.lines().next().unwrap_or("Ritual").to_string(),
+            preview: r.schedule_json.chars().take(120).collect(),
+            meta: format!(
+                "{kind} · {state} · updated {updated}",
+                kind = r.kind,
+                state = if r.active { "active" } else { "paused" },
+                updated = r.updated_at,
+            ),
+            deletable: true,
+        })
+        .collect())
+}
+
+fn get_ritual_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
+    let r = rituals::get_ritual(&state.user_db, id)?
+        .ok_or_else(|| AppError::Internal(format!("ritual `{id}` not found")))?;
+    let mut content = String::new();
+    content.push_str(&format!(
+        "**Kind:** {kind} &nbsp;·&nbsp; **State:** {state}\n\n",
+        kind = r.kind,
+        state = if r.active { "active" } else { "paused" },
+    ));
+    if !r.sources.is_empty() {
+        content.push_str("**Sources:** ");
+        let pairs: Vec<String> = r.sources.iter().map(|s| format!("`{s}`")).collect();
+        content.push_str(&pairs.join(", "));
+        content.push_str("\n\n");
+    }
+    content.push_str("---\n\n");
+    content.push_str(&r.description);
+    content.push_str("\n\n## Schedule\n\n```json\n");
+    content.push_str(&r.schedule_json);
+    content.push_str("\n```\n");
+    Ok(BrainDetail {
+        id: r.id.clone(),
+        kind: format!("ritual:{}", r.kind),
+        title: r.description.lines().next().unwrap_or("Ritual").to_string(),
+        content,
+        meta: format!(
+            "{} · {}",
+            r.kind,
+            if r.active { "active" } else { "paused" }
+        ),
+        deletable: true,
+    })
+}
+
+fn list_backlog(
+    state: &State<'_, Arc<AppState>>,
+    kind_filter: Option<&str>,
+) -> Result<Vec<BrainListItem>, AppError> {
+    let kind = match kind_filter {
+        Some(s) => Some(backlog::BacklogKind::parse(s)?),
+        None => None,
+    };
+    // Show resolved + pending; the viewer can sort, and the user wants
+    // to audit "what did I drop / what did I finish".
+    let rows = backlog::list_items(&state.user_db, kind, false, 200)?;
+    Ok(rows
+        .into_iter()
+        .map(|b| BrainListItem {
+            id: b.id,
+            kind: format!("backlog:{}", b.kind),
+            title: b.summary.lines().next().unwrap_or("Backlog").to_string(),
+            preview: b.summary.lines().take(2).collect::<Vec<_>>().join(" "),
+            meta: format!(
+                "{kind} · {status}{src} · created {created}",
+                kind = b.kind,
+                status = b.status,
+                src = b
+                    .source_episode_id
+                    .map(|x| format!(" · from {x}"))
+                    .unwrap_or_default(),
+                created = b.created_at,
+            ),
+            // Deletion is via resolve_backlog_item, not the generic delete.
+            deletable: false,
+        })
+        .collect())
+}
+
+fn get_backlog_detail(state: &State<'_, Arc<AppState>>, id: &str) -> Result<BrainDetail, AppError> {
+    let b = backlog::get_item(&state.user_db, id)?
+        .ok_or_else(|| AppError::Internal(format!("backlog `{id}` not found")))?;
+    let mut content = String::new();
+    content.push_str(&format!(
+        "**Kind:** {kind} &nbsp;·&nbsp; **Status:** {status}\n\n",
+        kind = b.kind,
+        status = b.status,
+    ));
+    if let Some(src) = &b.source_episode_id {
+        content.push_str(&format!("**From episode:** `{src}`\n\n"));
+    }
+    if let Some(resolved) = &b.resolved_at {
+        content.push_str(&format!("**Resolved:** {resolved}\n\n"));
+    }
+    content.push_str("---\n\n");
+    content.push_str(&b.summary);
+    Ok(BrainDetail {
+        id: b.id.clone(),
+        kind: format!("backlog:{}", b.kind),
+        title: b.summary.lines().next().unwrap_or("Backlog").to_string(),
+        content,
+        meta: format!("{} · {}", b.kind, b.status),
+        deletable: false,
     })
 }
 

@@ -245,11 +245,21 @@ impl CreateDesignReviewInput {
 // Import helper -- serde-based alternative to manual JSON extraction
 // ============================================================================
 
-fn default_test_case_id() -> String { "unknown".into() }
-fn default_test_case_name() -> String { "Unnamed".into() }
-fn default_status() -> String { "passed".into() }
-fn default_test_run_id() -> String { "imported".into() }
-fn default_reviewed_at() -> String { chrono::Utc::now().to_rfc3339() }
+fn default_test_case_id() -> String {
+    "unknown".into()
+}
+fn default_test_case_name() -> String {
+    "Unnamed".into()
+}
+fn default_status() -> String {
+    "passed".into()
+}
+fn default_test_run_id() -> String {
+    "imported".into()
+}
+fn default_reviewed_at() -> String {
+    chrono::Utc::now().to_rfc3339()
+}
 
 /// Typed input for `import_design_review`, replacing manual `.get()/.as_str()` chains.
 #[derive(Debug, Clone, Deserialize)]

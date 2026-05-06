@@ -2,6 +2,80 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 // ============================================================================
+// Dev Ideas: canonical category vocabulary
+// ============================================================================
+//
+// The `dev_ideas.category` column historically carried two clashing
+// vocabularies depending on the row's origin:
+//
+//   - LLM scanner (`commands/infrastructure/idea_scanner.rs`) emits
+//     {technical, user, business, mastermind} keyed off scan-agent groups.
+//   - DB default + early-prototype frontend constants used
+//     {functionality, performance, maintenance, ui, code_quality, user_benefit}.
+//
+// `IdeaTriagePage` filters on the first set, so a row with
+// `category='functionality'` was silently dropped from every category facet.
+// `IdeaCategory` below is the single canonical vocabulary going forward; the
+// scanner prompt is pinned to it, the DB default is migrated to it (see
+// `helpers::reconcile_idea_category_vocabulary`), and ts-rs exports it for
+// the frontend triage UI.
+//
+// Mapping legacy → canonical (one-shot, idempotent):
+//   functionality → technical
+//   performance   → technical
+//   maintenance   → technical
+//   code_quality  → technical
+//   ui            → user
+//   user_benefit  → user
+//
+// Anything outside both vocabularies is left untouched and logged at startup
+// for forensic review.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
+pub enum IdeaCategory {
+    Technical,
+    User,
+    Business,
+    Mastermind,
+}
+
+impl IdeaCategory {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Technical => "technical",
+            Self::User => "user",
+            Self::Business => "business",
+            Self::Mastermind => "mastermind",
+        }
+    }
+
+    /// Parse a token from any vocabulary. Legacy values map to the canonical
+    /// equivalent; canonical values pass through; anything else returns None.
+    pub fn from_token(s: &str) -> Option<Self> {
+        match s {
+            // Canonical
+            "technical" => Some(Self::Technical),
+            "user" => Some(Self::User),
+            "business" => Some(Self::Business),
+            "mastermind" => Some(Self::Mastermind),
+            // Legacy → canonical (one-way, written down here so future readers
+            // see the mapping without diffing migrations).
+            "functionality" | "performance" | "maintenance" | "code_quality" => {
+                Some(Self::Technical)
+            }
+            "ui" | "user_benefit" => Some(Self::User),
+            _ => None,
+        }
+    }
+}
+
+/// Default canonical category for ideas with no explicit category. Mirrors
+/// the DB column default: keeps generic ideas in the "technical" bucket
+/// so they remain visible in the triage UI's default filter.
+pub const DEFAULT_IDEA_CATEGORY: IdeaCategory = IdeaCategory::Technical;
+
+// ============================================================================
 // Dev Projects
 // ============================================================================
 
@@ -386,7 +460,7 @@ pub struct RiskMatrixEntry {
     pub project_id: String,
     pub project_name: String,
     pub risk_category: String, // "dependency_drift" | "stale_project" | "no_tests" | "security" | "single_maintainer" | "tech_debt"
-    pub severity: String, // "low" | "medium" | "high" | "critical"
+    pub severity: String,      // "low" | "medium" | "high" | "critical"
     pub description: String,
     pub affected_contexts: Vec<String>,
 }

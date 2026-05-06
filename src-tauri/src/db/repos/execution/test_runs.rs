@@ -131,7 +131,14 @@ pub fn update_run_status(
                 error = COALESCE(?4, error),
                 completed_at = COALESCE(?5, completed_at)
              WHERE id = ?6",
-            params![status.as_str(), scenarios_count, summary, error, completed_at, id],
+            params![
+                status.as_str(),
+                scenarios_count,
+                summary,
+                error,
+                completed_at,
+                id
+            ],
         )?;
         Ok(())
     })
@@ -152,15 +159,16 @@ pub fn create_result(
     input: &CreateTestResultInput,
 ) -> Result<PersonaTestResult, AppError> {
     timed_query!("test_runs", "test_runs::create_result", {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    // Tool calls now write only to the lab_tool_calls child table (see
-    // write_tool_calls_child_rows below). The parent-table JSON columns are
-    // dropped in step 7 of the lab-tool-calls-child-table ADR.
-    let result = conn.query_row(
-        "INSERT INTO persona_test_results
+        let conn = pool.get()?;
+        // Tool calls now write only to the lab_tool_calls child table (see
+        // write_tool_calls_child_rows below). The parent-table JSON columns are
+        // dropped in step 7 of the lab-tool-calls-child-table ADR.
+        let result = conn
+            .query_row(
+                "INSERT INTO persona_test_results
             (id, test_run_id, scenario_name, model_id, provider, status,
              output_preview,
              tool_accuracy_score, output_quality_score, protocol_compliance,
@@ -168,35 +176,35 @@ pub fn create_result(
              error_message, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
          RETURNING *",
-        params![
-            id,
-            input.test_run_id,
-            input.scenario_name,
-            input.model_id,
-            input.provider,
-            input.status,
-            input.output_preview,
-            input.tool_accuracy_score,
-            input.output_quality_score,
-            input.protocol_compliance,
-            input.input_tokens,
-            input.output_tokens,
-            input.cost_usd,
-            input.duration_ms,
-            input.error_message,
-            now,
-        ],
-        row_to_result,
-    )
-    .map_err(AppError::Database)?;
-    crate::db::repos::lab::write_tool_calls_child_rows(
-        &conn,
-        "test_run",
-        &result.id,
-        input.tool_calls_expected.as_ref(),
-        input.tool_calls_actual.as_ref(),
-    );
-    Ok(result)
+                params![
+                    id,
+                    input.test_run_id,
+                    input.scenario_name,
+                    input.model_id,
+                    input.provider,
+                    input.status,
+                    input.output_preview,
+                    input.tool_accuracy_score,
+                    input.output_quality_score,
+                    input.protocol_compliance,
+                    input.input_tokens,
+                    input.output_tokens,
+                    input.cost_usd,
+                    input.duration_ms,
+                    input.error_message,
+                    now,
+                ],
+                row_to_result,
+            )
+            .map_err(AppError::Database)?;
+        crate::db::repos::lab::write_tool_calls_child_rows(
+            &conn,
+            "test_run",
+            &result.id,
+            input.tool_calls_expected.as_ref(),
+            input.tool_calls_actual.as_ref(),
+        );
+        Ok(result)
     })
 }
 
@@ -216,8 +224,9 @@ pub fn batch_create_results(
             // Tool calls now write only to lab_tool_calls (see helper call
             // below). Parent-table JSON columns are dropped in step 7 of the
             // lab-tool-calls-child-table ADR.
-            let result = tx.query_row(
-                "INSERT INTO persona_test_results
+            let result = tx
+                .query_row(
+                    "INSERT INTO persona_test_results
                     (id, test_run_id, scenario_name, model_id, provider, status,
                      output_preview,
                      tool_accuracy_score, output_quality_score, protocol_compliance,
@@ -225,15 +234,27 @@ pub fn batch_create_results(
                      error_message, created_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)
                  RETURNING *",
-                params![
-                    id, input.test_run_id, input.scenario_name, input.model_id,
-                    input.provider, input.status, input.output_preview,
-                    input.tool_accuracy_score, input.output_quality_score,
-                    input.protocol_compliance, input.input_tokens, input.output_tokens,
-                    input.cost_usd, input.duration_ms, input.error_message, now,
-                ],
-                row_to_result,
-            ).map_err(AppError::Database)?;
+                    params![
+                        id,
+                        input.test_run_id,
+                        input.scenario_name,
+                        input.model_id,
+                        input.provider,
+                        input.status,
+                        input.output_preview,
+                        input.tool_accuracy_score,
+                        input.output_quality_score,
+                        input.protocol_compliance,
+                        input.input_tokens,
+                        input.output_tokens,
+                        input.cost_usd,
+                        input.duration_ms,
+                        input.error_message,
+                        now,
+                    ],
+                    row_to_result,
+                )
+                .map_err(AppError::Database)?;
             crate::db::repos::lab::write_tool_calls_child_rows(
                 &tx,
                 "test_run",
@@ -327,8 +348,26 @@ mod tests {
         assert_eq!(fetched.id, run.id);
 
         // Update: generating -> running -> completed
-        update_run_status(&pool, &run.id, LabRunStatus::Running, Some(3), None, None, None).unwrap();
-        update_run_status(&pool, &run.id, LabRunStatus::Completed, None, None, None, None).unwrap();
+        update_run_status(
+            &pool,
+            &run.id,
+            LabRunStatus::Running,
+            Some(3),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        update_run_status(
+            &pool,
+            &run.id,
+            LabRunStatus::Completed,
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
         let updated = get_run_by_id(&pool, &run.id).unwrap();
         assert_eq!(updated.status, LabRunStatus::Completed);
         assert_eq!(updated.scenarios_count, 3);
@@ -357,8 +396,14 @@ mod tests {
                 provider: "anthropic".into(),
                 status: "passed".into(),
                 output_preview: Some("Processed 3 emails".into()),
-                tool_calls_expected: Some(Json(vec!["gmail_read".to_string(), "http_request".to_string()])),
-                tool_calls_actual: Some(Json(vec!["gmail_read".to_string(), "http_request".to_string()])),
+                tool_calls_expected: Some(Json(vec![
+                    "gmail_read".to_string(),
+                    "http_request".to_string(),
+                ])),
+                tool_calls_actual: Some(Json(vec![
+                    "gmail_read".to_string(),
+                    "http_request".to_string(),
+                ])),
                 tool_accuracy_score: Some(100),
                 output_quality_score: Some(85),
                 protocol_compliance: Some(90),

@@ -70,9 +70,7 @@ const KNOWN_APPS: &[AppDetector] = &[
         category: "desktop",
         binaries: &["docker", "docker.exe"],
         #[cfg(target_os = "windows")]
-        install_paths: &[
-            r"C:\Program Files\Docker\Docker\resources\bin\docker.exe",
-        ],
+        install_paths: &[r"C:\Program Files\Docker\Docker\resources\bin\docker.exe"],
     },
     AppDetector {
         connector_name: "desktop_obsidian",
@@ -299,7 +297,9 @@ fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSe
         _ => return false,
     };
 
-    process_names.iter().any(|name| processes.contains(&name.to_lowercase()))
+    process_names
+        .iter()
+        .any(|name| processes.contains(&name.to_lowercase()))
 }
 
 /// Check whether a desktop app is installed, by connector name.
@@ -307,7 +307,10 @@ fn is_process_in_list(connector_name: &str, processes: &std::collections::HashSe
 /// Returns `(installed, binary_path)`.  Used by the healthcheck engine to
 /// verify local-tool connectors without an HTTP endpoint.
 pub fn is_desktop_app_installed(connector_name: &str) -> (bool, Option<String>) {
-    match KNOWN_APPS.iter().find(|a| a.connector_name == connector_name) {
+    match KNOWN_APPS
+        .iter()
+        .find(|a| a.connector_name == connector_name)
+    {
         Some(app) => detect_binary(app),
         None => (false, None),
     }
@@ -397,17 +400,16 @@ pub async fn import_claude_desktop_mcp_servers() -> Result<Vec<ImportedMcpServer
 
     for config_path in &config_paths {
         if config_path.exists() {
-            let content = tokio::fs::read_to_string(config_path)
-                .await
-                .map_err(|e| AppError::Internal(format!(
+            let content = tokio::fs::read_to_string(config_path).await.map_err(|e| {
+                AppError::Internal(format!(
                     "Failed to read Claude Desktop config at {}: {e}",
                     config_path.display()
-                )))?;
+                ))
+            })?;
 
-            let config: ClaudeDesktopConfig = serde_json::from_str(&content)
-                .map_err(|e| AppError::Internal(format!(
-                    "Failed to parse Claude Desktop config: {e}"
-                )))?;
+            let config: ClaudeDesktopConfig = serde_json::from_str(&content).map_err(|e| {
+                AppError::Internal(format!("Failed to parse Claude Desktop config: {e}"))
+            })?;
 
             let servers: Vec<ImportedMcpServer> = config
                 .mcp_servers
@@ -450,18 +452,28 @@ fn get_claude_config_paths() -> Vec<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         if let Ok(appdata) = std::env::var("APPDATA") {
-            paths.push(PathBuf::from(&appdata).join("Claude").join("claude_desktop_config.json"));
+            paths.push(
+                PathBuf::from(&appdata)
+                    .join("Claude")
+                    .join("claude_desktop_config.json"),
+            );
         }
         if let Ok(localappdata) = std::env::var("LOCALAPPDATA") {
-            paths.push(PathBuf::from(&localappdata).join("Claude").join("claude_desktop_config.json"));
+            paths.push(
+                PathBuf::from(&localappdata)
+                    .join("Claude")
+                    .join("claude_desktop_config.json"),
+            );
         }
     }
 
     #[cfg(target_os = "macos")]
     {
         if let Ok(home) = std::env::var("HOME") {
-            paths.push(PathBuf::from(&home)
-                .join("Library/Application Support/Claude/claude_desktop_config.json"));
+            paths.push(
+                PathBuf::from(&home)
+                    .join("Library/Application Support/Claude/claude_desktop_config.json"),
+            );
         }
     }
 
@@ -577,22 +589,15 @@ pub async fn get_app_version(binary_path: &str) -> Option<String> {
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = tokio::time::timeout(
-        std::time::Duration::from_secs(1),
-        cmd.output(),
-    )
-    .await
-    .ok()?  // timeout
-    .ok()?; // IO error
+    let output = tokio::time::timeout(std::time::Duration::from_secs(1), cmd.output())
+        .await
+        .ok()? // timeout
+        .ok()?; // IO error
 
     if output.status.success() {
         let stdout = String::from_utf8_lossy(&output.stdout);
         // Take first line, trim common prefixes
-        let version = stdout
-            .lines()
-            .next()?
-            .trim()
-            .to_string();
+        let version = stdout.lines().next()?.trim().to_string();
         Some(version)
     } else {
         None

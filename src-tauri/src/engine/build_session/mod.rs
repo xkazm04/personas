@@ -38,9 +38,7 @@ use std::sync::{Arc, Mutex};
 use tauri::ipc::Channel;
 use tokio::sync::mpsc;
 
-use crate::db::models::{
-    BuildEvent, BuildPhase, BuildSession, UpdateBuildSession, UserAnswer,
-};
+use crate::db::models::{BuildEvent, BuildPhase, BuildSession, UpdateBuildSession, UserAnswer};
 use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::credentials as credential_repo;
@@ -213,7 +211,13 @@ impl BuildSessionManager {
         let template_context = build_template_context(&intent);
 
         // Build the system prompt that wraps the user intent with dimension framework
-        let system_prompt = build_session_prompt(&intent, &cred_summary, &connector_summary, &template_context, language.as_deref());
+        let system_prompt = build_session_prompt(
+            &intent,
+            &cred_summary,
+            &connector_summary,
+            &template_context,
+            language.as_deref(),
+        );
 
         // Spawn the session task
         let sessions_map = self.sessions.clone();
@@ -251,9 +255,9 @@ impl BuildSessionManager {
     /// Send a user answer to an active session, resuming the build task.
     pub fn send_answer(&self, session_id: &str, answer: UserAnswer) -> Result<(), AppError> {
         let sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let handle = sessions.get(session_id).ok_or_else(|| {
-            AppError::NotFound(format!("Build session {session_id}"))
-        })?;
+        let handle = sessions
+            .get(session_id)
+            .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
 
         handle
             .input_tx
@@ -303,5 +307,3 @@ impl BuildSessionManager {
         sessions.keys().cloned().collect()
     }
 }
-
-

@@ -4,7 +4,7 @@ use tauri::State;
 use crate::engine::capability_contract::{self, ContractReport};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
-use crate::validation::contract::{ValidationRule, all_rules};
+use crate::validation::contract::{all_rules, ValidationRule};
 use crate::AppState;
 
 #[tauri::command]

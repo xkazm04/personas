@@ -13,7 +13,9 @@ pub const GLOBAL_MAX_CONCURRENT: usize = 4;
 // =============================================================================
 
 /// Execution priority levels. Higher priority executions are dequeued first.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
 #[serde(rename_all = "lowercase")]
 pub enum ExecutionPriority {
     /// Low priority -- background or bulk jobs.
@@ -163,7 +165,12 @@ impl ConcurrencyTracker {
     /// Returns `true` if the execution was registered (had capacity).
     /// Returns `false` if at capacity (execution not registered).
     /// This prevents TOCTOU races between `has_capacity` and `add_running`.
-    pub fn try_add_running(&mut self, persona_id: &str, execution_id: &str, max_concurrent: i32) -> bool {
+    pub fn try_add_running(
+        &mut self,
+        persona_id: &str,
+        execution_id: &str,
+        max_concurrent: i32,
+    ) -> bool {
         if !self.has_capacity(persona_id, max_concurrent) {
             return false;
         }
@@ -251,11 +258,7 @@ impl ConcurrencyTracker {
     /// Call this after `remove_running` frees a slot. Returns `Some(queued)` if
     /// an execution was promoted from the queue to running, `None` if the queue
     /// is empty or persona has no queue.
-    pub fn drain_next(
-        &mut self,
-        persona_id: &str,
-        max_concurrent: i32,
-    ) -> Option<QueuedExecution> {
+    pub fn drain_next(&mut self, persona_id: &str, max_concurrent: i32) -> Option<QueuedExecution> {
         if !self.has_capacity(persona_id, max_concurrent) {
             return None;
         }
@@ -348,9 +351,7 @@ impl ConcurrencyTracker {
 
     /// Count running executions for a specific persona.
     pub fn running_count(&self, persona_id: &str) -> usize {
-        self.running
-            .get(persona_id)
-            .map_or(0, |set| set.len())
+        self.running.get(persona_id).map_or(0, |set| set.len())
     }
 
     /// Get all running execution IDs for a specific persona.
@@ -363,9 +364,7 @@ impl ConcurrencyTracker {
 
     /// Count queued executions for a specific persona.
     pub fn queue_depth(&self, persona_id: &str) -> usize {
-        self.queues
-            .get(persona_id)
-            .map_or(0, |q| q.len())
+        self.queues.get(persona_id).map_or(0, |q| q.len())
     }
 
     /// Get the queue position for a specific execution (0-indexed), or None.
@@ -590,7 +589,10 @@ mod tests {
         assert!(next.is_some());
         let promoted = next.unwrap();
         assert_eq!(promoted.execution_id, "exec-q1");
-        assert!(promoted.wait_ms.is_some(), "wait_ms should be populated on promotion");
+        assert!(
+            promoted.wait_ms.is_some(),
+            "wait_ms should be populated on promotion"
+        );
         assert_eq!(tracker.running_count("p1"), 1);
         assert_eq!(tracker.queue_depth("p1"), 1);
     }
@@ -656,10 +658,22 @@ mod tests {
         // Global limit is 4 (GLOBAL_MAX_CONCURRENT)
 
         // Spread 4 executions across different personas (each persona has unlimited capacity)
-        assert!(matches!(tracker.admit("p1", "e1", 0, ExecutionPriority::Normal), AdmitResult::Running));
-        assert!(matches!(tracker.admit("p2", "e2", 0, ExecutionPriority::Normal), AdmitResult::Running));
-        assert!(matches!(tracker.admit("p3", "e3", 0, ExecutionPriority::Normal), AdmitResult::Running));
-        assert!(matches!(tracker.admit("p4", "e4", 0, ExecutionPriority::Normal), AdmitResult::Running));
+        assert!(matches!(
+            tracker.admit("p1", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert!(matches!(
+            tracker.admit("p2", "e2", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert!(matches!(
+            tracker.admit("p3", "e3", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert!(matches!(
+            tracker.admit("p4", "e4", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
         assert_eq!(tracker.total_running(), 4);
 
         // 5th execution should be queued even though persona has unlimited capacity
@@ -673,7 +687,10 @@ mod tests {
         assert!(tracker.has_global_capacity());
 
         // Now admission should work
-        assert!(matches!(tracker.admit("p6", "e6", 0, ExecutionPriority::Normal), AdmitResult::Running));
+        assert!(matches!(
+            tracker.admit("p6", "e6", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
     }
 
     #[test]

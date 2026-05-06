@@ -52,10 +52,7 @@ pub fn update_connector(
 }
 
 #[tauri::command]
-pub fn delete_connector(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_connector(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_privileged_sync(&state, "delete_connector")?;
     let result = repo::delete(&state.db, &id)?;
     invalidate_connector_cache();

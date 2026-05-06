@@ -4,22 +4,58 @@
 //! This enables local model execution for personas without requiring
 //! Claude Code CLI (which only supports Anthropic models).
 //!
-//! NOTE: This module is dormant — the runner currently always spawns the
-//! Claude Code CLI. The `#![allow]` defers the warnings until an
-//! Ollama-backed dispatch path is wired through `engine::runner`.
+//! # Status: DEFERRED (2026-05-05)
+//!
+//! Ollama-as-a-CLI-engine is **not a shipping feature**. The decision to defer
+//! rather than ship was made because:
+//!   - `EngineKind` has only the `ClaudeCode` variant.
+//!   - `runner` dispatches all executions through `engine::provider::claude`.
+//!   - `PROVIDERS` (frontend) lists only `claude_code`.
+//!   - The capability map no longer carries a (misleading) `ollama: false`
+//!     column — see `src/features/settings/sub_engine/libs/engineCapabilities.ts`.
+//!
+//! This module is gated behind the `ollama` Cargo feature (declared in
+//! `src-tauri/Cargo.toml`) and is **not** included in `default`, `desktop`, or
+//! `desktop-full`. It is preserved as a reference implementation; iterate on it
+//! with `cargo build --features ollama`.
+//!
+//! ## Revival checklist
+//!
+//! To promote this from deferred to shipping, do all of these in lockstep:
+//! 1. Add an `Ollama` variant to `EngineKind`
+//!    (`src-tauri/src/engine/provider/mod.rs`). The `assert_all_covered`
+//!    compile-time guard plus the `ALL` array will refuse to build until
+//!    `as_setting`, `FromStr`, and `resolve_provider` cover the new variant.
+//! 2. Wire `runner` to dispatch to `execute_native` for the new variant.
+//! 3. Add `'ollama'` back to `CliEngine` in `src/lib/types/types.ts`.
+//! 4. Add a `PROVIDERS` row and an `ollama: true|false` column to every entry
+//!    of `DEFAULT_CAPABILITIES` in `engineCapabilities.ts`.
+//! 5. Enable the `ollama` feature in the Cargo profiles that should ship it
+//!    (most likely `desktop` and `desktop-full`).
+//!
+//! # Note: BYOM Ollama is unrelated
+//!
+//! BYOM (Bring-Your-Own-Model) lets users point the Claude Code CLI at an
+//! Ollama-hosted model — that path lives in `engine/byom.rs` and is fully
+//! shipped. It does not exercise this file. Only the dormant native HTTP path
+//! is deferred.
+
+// Ollama feature is opt-in; the module is `cfg`-gated in engine/mod.rs. The
+// allow below silences warnings for code that references items the runner does
+// not (yet) call into when the feature *is* compiled.
 #![allow(dead_code)]
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::engine::events::{emit_to, ExecutionEventEmitter};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use crate::engine::events::{ExecutionEventEmitter, emit_to};
 
-use crate::db::DbPool;
 use crate::db::models::Persona;
 use crate::db::repos::execution::executions as exec_repo;
+use crate::db::DbPool;
 use crate::engine::event_registry::event_name;
 use crate::engine::types::{
     ExecutionOutputEvent, ExecutionResult, ExecutionState, ExecutionStatusEvent, ModelProfile,
@@ -102,23 +138,28 @@ pub async fn execute_native(
         .base_url
         .as_deref()
         .unwrap_or("http://localhost:11434");
-    let model = model_profile
-        .model
-        .as_deref()
-        .unwrap_or("gemma4");
+    let model = model_profile.model.as_deref().unwrap_or("gemma4");
     let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
 
     // Announce start
-    emit_output(emitter, execution_id, &format!(
-        "[OLLAMA] Using model '{}' at {}", model, base_url
-    ));
+    emit_output(
+        emitter,
+        execution_id,
+        &format!("[OLLAMA] Using model '{}' at {}", model, base_url),
+    );
 
     // Build request
     let body = ChatRequest {
         model: model.to_string(),
         messages: vec![
-            Message { role: "system".to_string(), content: build_system_prompt(persona) },
-            Message { role: "user".to_string(), content: prompt_text.to_string() },
+            Message {
+                role: "system".to_string(),
+                content: build_system_prompt(persona),
+            },
+            Message {
+                role: "user".to_string(),
+                content: prompt_text.to_string(),
+            },
         ],
         stream: true,
     };
@@ -130,7 +171,11 @@ pub async fn execute_native(
         Ok(resp) => {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            let err = format!("Ollama API error ({}): {}", status, &text[..text.len().min(200)]);
+            let err = format!(
+                "Ollama API error ({}): {}",
+                status,
+                &text[..text.len().min(200)]
+            );
             return fail(emitter, pool, execution_id, &err, &start_time).await;
         }
         Err(e) => {
@@ -152,15 +197,23 @@ pub async fn execute_native(
         if cancelled.load(Ordering::Relaxed) {
             emit_output(emitter, execution_id, "[CANCELLED] Execution cancelled");
             let duration_ms = start_time.elapsed().as_millis() as u64;
-            let _ = exec_repo::update_status(pool, execution_id, crate::db::models::UpdateExecutionStatus {
-                status: ExecutionState::Cancelled,
-                duration_ms: Some(duration_ms as i64),
-                ..Default::default()
-            });
+            let _ = exec_repo::update_status(
+                pool,
+                execution_id,
+                crate::db::models::UpdateExecutionStatus {
+                    status: ExecutionState::Cancelled,
+                    duration_ms: Some(duration_ms as i64),
+                    ..Default::default()
+                },
+            );
             return ExecutionResult {
                 success: false,
                 error: Some("Cancelled".into()),
-                output: if full_output.is_empty() { None } else { Some(full_output) },
+                output: if full_output.is_empty() {
+                    None
+                } else {
+                    Some(full_output)
+                },
                 duration_ms,
                 model_used: Some(model.to_string()),
                 ..default_result()
@@ -204,26 +257,42 @@ pub async fn execute_native(
     // Success
     let duration_ms = start_time.elapsed().as_millis() as u64;
 
-    emit_to(emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
-        execution_id: execution_id.to_string(),
-        status: ExecutionState::Completed,
-        error: None,
-        duration_ms: Some(duration_ms),
-        cost_usd: Some(0.0),
-    });
+    emit_to(
+        emitter,
+        event_name::EXECUTION_STATUS,
+        &ExecutionStatusEvent {
+            execution_id: execution_id.to_string(),
+            status: ExecutionState::Completed,
+            error: None,
+            duration_ms: Some(duration_ms),
+            cost_usd: Some(0.0),
+        },
+    );
 
-    let _ = exec_repo::update_status(pool, execution_id, crate::db::models::UpdateExecutionStatus {
-        status: ExecutionState::Completed,
-        output_data: if full_output.is_empty() { None } else { Some(full_output.clone()) },
-        duration_ms: Some(duration_ms as i64),
-        output_tokens: Some(eval_tokens as i64),
-        input_tokens: Some(prompt_tokens as i64),
-        cost_usd: Some(0.0),
-        ..Default::default()
-    });
+    let _ = exec_repo::update_status(
+        pool,
+        execution_id,
+        crate::db::models::UpdateExecutionStatus {
+            status: ExecutionState::Completed,
+            output_data: if full_output.is_empty() {
+                None
+            } else {
+                Some(full_output.clone())
+            },
+            duration_ms: Some(duration_ms as i64),
+            output_tokens: Some(eval_tokens as i64),
+            input_tokens: Some(prompt_tokens as i64),
+            cost_usd: Some(0.0),
+            ..Default::default()
+        },
+    );
 
     tracing::info!(
-        execution_id, model, duration_ms, eval_tokens, prompt_tokens,
+        execution_id,
+        model,
+        duration_ms,
+        eval_tokens,
+        prompt_tokens,
         output_len = full_output.len(),
         "[OLLAMA] Execution completed"
     );
@@ -243,10 +312,14 @@ pub async fn execute_native(
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 fn emit_output(emitter: &dyn ExecutionEventEmitter, execution_id: &str, line: &str) {
-    emit_to(emitter, event_name::EXECUTION_OUTPUT, &ExecutionOutputEvent {
-        execution_id: execution_id.to_string(),
-        line: line.to_string(),
-    });
+    emit_to(
+        emitter,
+        event_name::EXECUTION_OUTPUT,
+        &ExecutionOutputEvent {
+            execution_id: execution_id.to_string(),
+            line: line.to_string(),
+        },
+    );
 }
 
 async fn fail(
@@ -258,20 +331,32 @@ async fn fail(
 ) -> ExecutionResult {
     let duration_ms = start_time.elapsed().as_millis() as u64;
 
-    emit_output(emitter, execution_id, &format!("[OLLAMA ERROR] {}", error_msg));
-    emit_to(emitter, event_name::EXECUTION_STATUS, &ExecutionStatusEvent {
-        execution_id: execution_id.to_string(),
-        status: ExecutionState::Failed,
-        error: Some(error_msg.to_string()),
-        duration_ms: Some(duration_ms),
-        cost_usd: None,
-    });
-    let _ = exec_repo::update_status(pool, execution_id, crate::db::models::UpdateExecutionStatus {
-        status: ExecutionState::Failed,
-        error_message: Some(error_msg.to_string()),
-        duration_ms: Some(duration_ms as i64),
-        ..Default::default()
-    });
+    emit_output(
+        emitter,
+        execution_id,
+        &format!("[OLLAMA ERROR] {}", error_msg),
+    );
+    emit_to(
+        emitter,
+        event_name::EXECUTION_STATUS,
+        &ExecutionStatusEvent {
+            execution_id: execution_id.to_string(),
+            status: ExecutionState::Failed,
+            error: Some(error_msg.to_string()),
+            duration_ms: Some(duration_ms),
+            cost_usd: None,
+        },
+    );
+    let _ = exec_repo::update_status(
+        pool,
+        execution_id,
+        crate::db::models::UpdateExecutionStatus {
+            status: ExecutionState::Failed,
+            error_message: Some(error_msg.to_string()),
+            duration_ms: Some(duration_ms as i64),
+            ..Default::default()
+        },
+    );
 
     ExecutionResult {
         success: false,

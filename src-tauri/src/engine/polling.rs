@@ -38,13 +38,17 @@ fn backoff_map() -> &'static Mutex<HashMap<String, BackoffEntry>> {
 }
 
 fn is_in_backoff(trigger_id: &str) -> bool {
-    let Ok(map) = backoff_map().lock() else { return false };
+    let Ok(map) = backoff_map().lock() else {
+        return false;
+    };
     map.get(trigger_id)
         .is_some_and(|e| Instant::now() < e.until)
 }
 
 fn record_mark_failure(trigger_id: &str) {
-    let Ok(mut map) = backoff_map().lock() else { return };
+    let Ok(mut map) = backoff_map().lock() else {
+        return;
+    };
 
     // TTL eviction: remove entries that haven't been updated in BACKOFF_TTL_SECS
     let now = Instant::now();
@@ -54,7 +58,8 @@ fn record_mark_failure(trigger_id: &str) {
     // LRU-style cap: if still over limit, batch-evict oldest 10%
     if map.len() >= MAX_BACKOFF_ENTRIES {
         let to_remove = (map.len() / 10).max(1);
-        let mut keys_by_age: Vec<_> = map.iter()
+        let mut keys_by_age: Vec<_> = map
+            .iter()
             .map(|(k, e)| (k.clone(), e.last_updated))
             .collect();
         keys_by_age.sort_by_key(|(_, ts)| *ts);
@@ -63,9 +68,11 @@ fn record_mark_failure(trigger_id: &str) {
         }
     }
 
-    let entry = map
-        .entry(trigger_id.to_string())
-        .or_insert(BackoffEntry { until: now, failures: 0, last_updated: now });
+    let entry = map.entry(trigger_id.to_string()).or_insert(BackoffEntry {
+        until: now,
+        failures: 0,
+        last_updated: now,
+    });
     entry.failures += 1;
     entry.last_updated = now;
     let exp = entry.failures.min(4) - 1;
@@ -98,7 +105,9 @@ fn try_mark_triggered(
 /// Called once per poll cycle to prevent unbounded growth when triggers are deleted.
 fn purge_stale_backoff(pool: &DbPool) {
     let ids: Vec<String> = {
-        let Ok(map) = backoff_map().lock() else { return };
+        let Ok(map) = backoff_map().lock() else {
+            return;
+        };
         if map.is_empty() {
             return;
         }
@@ -106,28 +115,38 @@ fn purge_stale_backoff(pool: &DbPool) {
     };
 
     // Check which IDs still exist with a single query
-    let existing: std::collections::HashSet<String> = match (|| -> Result<_, crate::error::AppError> {
-        let conn = pool.get()?;
-        let placeholders: Vec<String> = ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
-        let sql = format!(
-            "SELECT id FROM persona_triggers WHERE id IN ({})",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), |row| row.get::<_, String>(0))?;
-        let set = rows.filter_map(|r| r.ok()).collect();
-        Ok(set)
-    })() {
-        Ok(set) => set,
-        Err(e) => {
-            tracing::warn!("Failed to check backoff map staleness: {}", e);
-            return;
-        }
-    };
+    let existing: std::collections::HashSet<String> =
+        match (|| -> Result<_, crate::error::AppError> {
+            let conn = pool.get()?;
+            let placeholders: Vec<String> = ids
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect();
+            let sql = format!(
+                "SELECT id FROM persona_triggers WHERE id IN ({})",
+                placeholders.join(", ")
+            );
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), |row| row.get::<_, String>(0))?;
+            let set = rows.filter_map(|r| r.ok()).collect();
+            Ok(set)
+        })() {
+            Ok(set) => set,
+            Err(e) => {
+                tracing::warn!("Failed to check backoff map staleness: {}", e);
+                return;
+            }
+        };
 
-    let stale: Vec<String> = ids.into_iter().filter(|id| !existing.contains(id)).collect();
+    let stale: Vec<String> = ids
+        .into_iter()
+        .filter(|id| !existing.contains(id))
+        .collect();
     if stale.is_empty() {
         return;
     }
@@ -137,17 +156,16 @@ fn purge_stale_backoff(pool: &DbPool) {
             map.remove(id);
         }
     }
-    tracing::debug!(count = stale.len(), "Purged stale backoff entries for deleted triggers");
+    tracing::debug!(
+        count = stale.len(),
+        "Purged stale backoff entries for deleted triggers"
+    );
 }
 
 /// Run one polling cycle: fetch all enabled polling triggers that are due,
 /// GET their configured endpoints, compare content hashes, and fire events
 /// when content changes.
-pub async fn poll_due_triggers(
-    pool: &DbPool,
-    scheduler: &SchedulerState,
-    http: &reqwest::Client,
-) {
+pub async fn poll_due_triggers(pool: &DbPool, scheduler: &SchedulerState, http: &reqwest::Client) {
     // Sweep backoff entries for triggers that were deleted since the last cycle
     purge_stale_backoff(pool);
 
@@ -185,7 +203,10 @@ pub async fn poll_due_triggers(
         let cfg = trigger.parse_config();
         let (cfg_url, cfg_headers, previous_hash) = match &cfg {
             crate::db::models::TriggerConfig::Polling {
-                url, headers, content_hash, ..
+                url,
+                headers,
+                content_hash,
+                ..
             } => (url.clone(), headers.clone(), content_hash.clone()),
             _ => continue,
         };
@@ -213,10 +234,7 @@ pub async fn poll_due_triggers(
             continue;
         }
 
-        let headers: Vec<(String, String)> = cfg_headers
-            .unwrap_or_default()
-            .into_iter()
-            .collect();
+        let headers: Vec<(String, String)> = cfg_headers.unwrap_or_default().into_iter().collect();
 
         // Make the HTTP request
         let mut req = http.get(&url);

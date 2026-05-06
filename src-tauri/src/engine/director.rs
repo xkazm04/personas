@@ -46,8 +46,7 @@ use crate::error::AppError;
 pub const DIRECTOR_NAME: &str = "Director";
 
 /// Short description shown in the persona list. Reads as news, not internals.
-const DIRECTOR_DESCRIPTION: &str =
-    "Watches every persona and suggests practical improvements. \
+const DIRECTOR_DESCRIPTION: &str = "Watches every persona and suggests practical improvements. \
      Approve or dismiss its notes in your review queue — your decisions \
      teach it your taste.";
 
@@ -231,7 +230,11 @@ impl DirectorEvaluator for DeterministicEvaluator {
                      Leaving these unresolved blocks progress because the app \
                      will keep retrying the same failure pattern.",
                     ctx.open_critical_healing,
-                    if ctx.open_critical_healing == 1 { "issue" } else { "issues" },
+                    if ctx.open_critical_healing == 1 {
+                        "issue"
+                    } else {
+                        "issues"
+                    },
                 ),
                 rationale: Some(format!(
                     "{} critical issues in persona_healing_issues (status='open')",
@@ -280,7 +283,8 @@ impl DirectorEvaluator for DeterministicEvaluator {
                     .to_string(),
                 rationale: Some("trigger_count=0 AND total_executions=0".into()),
                 suggested_actions: vec![
-                    "Add at least one trigger, or disable the persona to hide it from the grid.".into(),
+                    "Add at least one trigger, or disable the persona to hide it from the grid."
+                        .into(),
                 ],
             });
         }
@@ -322,7 +326,9 @@ impl DirectorEvaluator for DeterministicEvaluator {
                         "Only {} of the last {} executions succeeded ({:.0}%). \
                          Repeated failures usually point to a prompt that is \
                          too ambitious for the bound tools, or a missing credential.",
-                        ctx.success_count, ctx.total_executions, success_rate * 100.0,
+                        ctx.success_count,
+                        ctx.total_executions,
+                        success_rate * 100.0,
                     ),
                     rationale: Some(format!(
                         "success={}, total={}, rate={:.2}",
@@ -330,7 +336,8 @@ impl DirectorEvaluator for DeterministicEvaluator {
                     )),
                     suggested_actions: vec![
                         "Open the last failed execution and read the error.".into(),
-                        "Narrow the persona's scope to match what its tools can actually do.".into(),
+                        "Narrow the persona's scope to match what its tools can actually do."
+                            .into(),
                     ],
                 });
             }
@@ -439,15 +446,17 @@ pub fn gather_context(
     target_persona_id: &str,
 ) -> Result<PersonaEvaluationContext, AppError> {
     let persona = personas::get_by_id(pool, target_persona_id)?;
-    let recent = executions::get_by_persona_id(pool, target_persona_id, Some(CONTEXT_EXECUTION_WINDOW))?;
+    let recent =
+        executions::get_by_persona_id(pool, target_persona_id, Some(CONTEXT_EXECUTION_WINDOW))?;
 
     let total_executions = recent.len();
-    let (success_count, failure_count) = recent.iter().fold((0usize, 0usize), |(s, f), e| {
-        match e.status.as_str() {
-            "completed" | "success" | "succeeded" => (s + 1, f),
-            "failed" | "error" | "timeout" => (s, f + 1),
-            _ => (s, f),
-        }
+    let (success_count, failure_count) = recent.iter().fold((0usize, 0usize), |(s, f), e| match e
+        .status
+        .as_str()
+    {
+        "completed" | "success" | "succeeded" => (s + 1, f),
+        "failed" | "error" | "timeout" => (s, f + 1),
+        _ => (s, f),
     });
 
     let latest_execution_id = recent.first().map(|e| e.id.clone());
@@ -482,19 +491,20 @@ pub fn gather_context(
     // Past Director feedback memories — tallied for Phase 2 few-shot, but also
     // informs the deterministic evaluator's "should we repeat this verdict?"
     // check once that lands.
-    let (feedback_accepts, feedback_rejects) = memories.iter().fold((0usize, 0usize), |(a, r), m| {
-        if m.category != DIRECTOR_FEEDBACK_CATEGORY {
-            return (a, r);
-        }
-        let content_lower = m.content.to_lowercase();
-        if content_lower.contains("\"outcome\":\"accepted\"") {
-            (a + 1, r)
-        } else if content_lower.contains("\"outcome\":\"rejected\"") {
-            (a, r + 1)
-        } else {
-            (a, r)
-        }
-    });
+    let (feedback_accepts, feedback_rejects) =
+        memories.iter().fold((0usize, 0usize), |(a, r), m| {
+            if m.category != DIRECTOR_FEEDBACK_CATEGORY {
+                return (a, r);
+            }
+            let content_lower = m.content.to_lowercase();
+            if content_lower.contains("\"outcome\":\"accepted\"") {
+                (a + 1, r)
+            } else if content_lower.contains("\"outcome\":\"rejected\"") {
+                (a, r + 1)
+            } else {
+                (a, r)
+            }
+        });
 
     Ok(PersonaEvaluationContext {
         persona,
@@ -520,10 +530,7 @@ pub fn gather_context(
 
 /// Run one Director cycle against a single target persona. Returns the number
 /// of verdicts emitted (0 is the healthy outcome).
-pub fn run_director_cycle_for(
-    pool: &DbPool,
-    target_persona_id: &str,
-) -> Result<i64, AppError> {
+pub fn run_director_cycle_for(pool: &DbPool, target_persona_id: &str) -> Result<i64, AppError> {
     let director_id = get_director_persona_id(pool)?;
     if target_persona_id == director_id {
         // Never evaluate yourself.
@@ -695,8 +702,10 @@ pub fn list_verdicts(
     };
 
     let mut stmt = conn.prepare(sql)?;
-    let param_refs: Vec<&dyn rusqlite::ToSql> =
-        params_vec.iter().map(|s| s as &dyn rusqlite::ToSql).collect();
+    let param_refs: Vec<&dyn rusqlite::ToSql> = params_vec
+        .iter()
+        .map(|s| s as &dyn rusqlite::ToSql)
+        .collect();
     let rows = stmt.query_map(param_refs.as_slice(), |row| {
         let context_json: Option<String> = row.get("context_data")?;
         let actions_json: Option<String> = row.get("suggested_actions")?;
@@ -722,13 +731,11 @@ pub fn list_verdicts(
             .as_deref()
             .and_then(|j| serde_json::from_str::<serde_json::Value>(j).ok())
             .and_then(|v| {
-                v.get("actions")
-                    .and_then(|x| x.as_array())
-                    .map(|arr| {
-                        arr.iter()
-                            .filter_map(|v| v.as_str().map(|s| s.to_string()))
-                            .collect()
-                    })
+                v.get("actions").and_then(|x| x.as_array()).map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
             })
             .unwrap_or_default();
 
@@ -747,9 +754,7 @@ pub fn list_verdicts(
         })
     })?;
 
-    let results: Vec<DirectorVerdictRow> = rows
-        .filter_map(|r| r.ok())
-        .collect();
+    let results: Vec<DirectorVerdictRow> = rows.filter_map(|r| r.ok()).collect();
     Ok(results)
 }
 
@@ -843,8 +848,9 @@ mod tests {
         ctx.open_critical_healing = 2;
 
         let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out.iter().any(|v| v.severity == DirectorSeverity::Error
-            && v.category == DirectorCategory::Health));
+        assert!(out.iter().any(
+            |v| v.severity == DirectorSeverity::Error && v.category == DirectorCategory::Health
+        ));
     }
 
     #[test]
@@ -860,8 +866,10 @@ mod tests {
         ctx.days_since_last_run = Some(1);
 
         let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out.iter().any(|v| v.severity == DirectorSeverity::Warning
-            && v.category == DirectorCategory::Health));
+        assert!(out
+            .iter()
+            .any(|v| v.severity == DirectorSeverity::Warning
+                && v.category == DirectorCategory::Health));
     }
 
     #[test]

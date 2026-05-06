@@ -432,16 +432,13 @@ mod tests {
 
     #[test]
     fn automation_active_cannot_revert_to_draft() {
-        assert!(!AutomationDeployStatus::Active
-            .can_transition_to(AutomationDeployStatus::Draft));
+        assert!(!AutomationDeployStatus::Active.can_transition_to(AutomationDeployStatus::Draft));
     }
 
     #[test]
     fn automation_error_can_recover() {
-        assert!(AutomationDeployStatus::Error
-            .can_transition_to(AutomationDeployStatus::Draft));
-        assert!(AutomationDeployStatus::Error
-            .can_transition_to(AutomationDeployStatus::Active));
+        assert!(AutomationDeployStatus::Error.can_transition_to(AutomationDeployStatus::Draft));
+        assert!(AutomationDeployStatus::Error.can_transition_to(AutomationDeployStatus::Active));
     }
 
     #[test]
@@ -481,10 +478,7 @@ mod tests {
             RotationEntryStatus::Failed,
             RotationEntryStatus::Skipped,
         ] {
-            assert_eq!(
-                RotationEntryStatus::from_str(status.as_str()),
-                Ok(status)
-            );
+            assert_eq!(RotationEntryStatus::from_str(status.as_str()), Ok(status));
         }
     }
 

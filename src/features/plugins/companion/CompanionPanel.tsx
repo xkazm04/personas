@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { BookOpen, Bot, Loader2, RotateCcw, Send, Wrench, X } from 'lucide-react';
+import {
+  BookOpen,
+  Bot,
+  Loader2,
+  PanelRightClose,
+  PanelRightOpen,
+  RotateCcw,
+  Send,
+  Wrench,
+  X,
+} from 'lucide-react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -8,9 +18,13 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useCompanionStore } from './companionStore';
 import {
   COMPANION_APPROVALS_EVENT,
+  COMPANION_COMPOSE_DASHBOARD_EVENT,
   COMPANION_NAVIGATE_EVENT,
+  COMPANION_OPEN_LAB_EVENT,
+  COMPANION_PROACTIVE_EVENT,
   COMPANION_STREAM_EVENT,
   companionListPendingApprovals,
+  companionListProactiveMessages,
   companionListRecentMessages,
   companionBetaFlags,
   companionReingestDoctrine,
@@ -19,9 +33,12 @@ import {
   companionSendMessage,
   type CompanionStreamEvent,
   type CreatedApproval,
+  type OpenLabEvent,
+  type ProactiveDeliveryEvent,
 } from '@/api/companion';
 import type { SidebarSection } from '@/lib/types/types';
 import { ApprovalCard } from './ApprovalCard';
+import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
@@ -74,6 +91,7 @@ export default function CompanionPanel() {
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
   const approvals = useCompanionStore((s) => s.approvals);
+  const proactive = useCompanionStore((s) => s.proactive);
   const quickReplies = useCompanionStore((s) => s.quickReplies);
   const brainView = useCompanionStore((s) => s.brainView);
   const betaSelfImprove = useCompanionStore((s) => s.betaSelfImprove);
@@ -87,6 +105,9 @@ export default function CompanionPanel() {
   const setSendError = useCompanionStore((s) => s.setSendError);
   const setApprovals = useCompanionStore((s) => s.setApprovals);
   const removeApproval = useCompanionStore((s) => s.removeApproval);
+  const setProactive = useCompanionStore((s) => s.setProactive);
+  const appendProactive = useCompanionStore((s) => s.appendProactive);
+  const removeProactive = useCompanionStore((s) => s.removeProactive);
   const setQuickReplies = useCompanionStore((s) => s.setQuickReplies);
   const setBrainView = useCompanionStore((s) => s.setBrainView);
   const setBetaSelfImprove = useCompanionStore((s) => s.setBetaSelfImprove);
@@ -98,6 +119,8 @@ export default function CompanionPanel() {
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
+  const panelCompact = useSystemStore((s) => s.companionPanelCompact);
+  const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
 
   const isOpen = state === 'open';
 
@@ -118,9 +141,13 @@ export default function CompanionPanel() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 8, scale: 0.98 }}
           transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed bottom-12 left-4 z-[60] w-[760px] h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden"
+          className={`fixed bottom-12 left-4 z-[60] ${
+            panelCompact ? 'w-[380px]' : 'w-[760px]'
+          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
           role="dialog"
           aria-label={t.plugins.companion.panel_label}
+          data-testid="companion-panel"
+          data-companion-streaming={streaming ? 'true' : 'false'}
         >
           {/*
             Faint background portrait sits behind everything as a
@@ -154,6 +181,11 @@ export default function CompanionPanel() {
               setApprovals([]);
               setQuickReplies([]);
               setPendingPlayback(null);
+              // Reset is the user's "make this go away" button — make
+              // sure the prior turn's error chip vanishes too. Without
+              // this, a timeout error from a stuck CLI lingers across
+              // sessions.
+              setSendError(null);
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -186,6 +218,8 @@ export default function CompanionPanel() {
                 silentCatch('companion_reingest_doctrine')(err);
               }
             }}
+            compact={panelCompact}
+            onToggleCompact={() => setPanelCompact(!panelCompact)}
           />
           <Body
             initialized={initialized}
@@ -195,6 +229,7 @@ export default function CompanionPanel() {
             streamingText={streamingText}
             sendError={sendError}
             approvals={approvals}
+            proactive={proactive}
             quickReplies={quickReplies}
             brainView={brainView}
             betaSelfImprove={betaSelfImprove}
@@ -210,6 +245,9 @@ export default function CompanionPanel() {
             setSendError={setSendError}
             setApprovals={setApprovals}
             removeApproval={removeApproval}
+            setProactive={setProactive}
+            appendProactive={appendProactive}
+            removeProactive={removeProactive}
             setQuickReplies={setQuickReplies}
             setBrainView={setBrainView}
             setImproving={setImproving}
@@ -227,10 +265,14 @@ function Header({
   onClose,
   onReset,
   onRefreshDoctrine,
+  compact,
+  onToggleCompact,
 }: {
   onClose: () => void;
   onReset: () => void;
   onRefreshDoctrine: () => void;
+  compact: boolean;
+  onToggleCompact: () => void;
 }) {
   const { t } = useTranslation();
   return (
@@ -258,6 +300,28 @@ function Header({
       </div>
       <div className="flex items-center gap-1">
         <button
+          onClick={onToggleCompact}
+          data-testid="companion-toggle-compact"
+          aria-pressed={compact}
+          className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
+          aria-label={
+            compact
+              ? t.plugins.companion.compact_toggle_expand
+              : t.plugins.companion.compact_toggle_collapse
+          }
+          title={
+            compact
+              ? t.plugins.companion.compact_toggle_expand
+              : t.plugins.companion.compact_toggle_collapse
+          }
+        >
+          {compact ? (
+            <PanelRightOpen className="w-4 h-4" />
+          ) : (
+            <PanelRightClose className="w-4 h-4" />
+          )}
+        </button>
+        <button
           onClick={onRefreshDoctrine}
           className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.plugins.companion.refresh_doctrine}
@@ -267,6 +331,7 @@ function Header({
         </button>
         <button
           onClick={onReset}
+          data-testid="companion-reset"
           className="p-1.5 rounded-interactive text-foreground/60 hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
           aria-label={t.plugins.companion.reset}
           title={t.plugins.companion.reset}
@@ -293,6 +358,7 @@ interface BodyProps {
   streamingText: string;
   sendError: string | null;
   approvals: ReturnType<typeof useCompanionStore.getState>['approvals'];
+  proactive: ReturnType<typeof useCompanionStore.getState>['proactive'];
   quickReplies: string[];
   brainView: ReturnType<typeof useCompanionStore.getState>['brainView'];
   betaSelfImprove: boolean;
@@ -308,6 +374,9 @@ interface BodyProps {
   setSendError: (e: string | null) => void;
   setApprovals: (a: BodyProps['approvals']) => void;
   removeApproval: (id: string) => void;
+  setProactive: (a: BodyProps['proactive']) => void;
+  appendProactive: (m: BodyProps['proactive'][number]) => void;
+  removeProactive: (id: string) => void;
   setQuickReplies: (q: string[]) => void;
   setBrainView: (next: BodyProps['brainView']) => void;
   setImproving: (v: boolean) => void;
@@ -327,6 +396,7 @@ function Body(props: BodyProps) {
     streamingText,
     sendError,
     approvals,
+    proactive,
     quickReplies,
     brainView,
     betaSelfImprove,
@@ -342,6 +412,9 @@ function Body(props: BodyProps) {
     setSendError,
     setApprovals,
     removeApproval,
+    setProactive,
+    appendProactive,
+    removeProactive,
     setQuickReplies,
     setBrainView,
     setImproving,
@@ -362,7 +435,13 @@ function Body(props: BodyProps) {
     companionListPendingApprovals()
       .then((list) => setApprovals(list))
       .catch(silentCatch('companion_list_pending_approvals'));
-  }, [initialized, setMessages, setApprovals]);
+    // Phase E: hydrate any unresolved proactive nudges so the user
+    // sees them immediately on panel mount (rather than only after
+    // the next scheduler tick).
+    companionListProactiveMessages(true, 20)
+      .then((list) => setProactive(list))
+      .catch(silentCatch('companion_list_proactive_messages'));
+  }, [initialized, setMessages, setApprovals, setProactive]);
 
   // Subscribe to streaming events from the backend.
   useEffect(() => {
@@ -421,6 +500,111 @@ function Body(props: BodyProps) {
       unlisten?.();
     };
   }, []);
+
+  // Phase F: subscribe to `open_lab` events. Athena's op auto-fires
+  // these (no approval card) — we route to the persona, switch the
+  // editor to the lab tab, and stash the requested mode in
+  // `companionLabJump` so the LabTab consumes it on mount.
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let cancelled = false;
+    listen<OpenLabEvent>(COMPANION_OPEN_LAB_EVENT, (event) => {
+      if (cancelled) return;
+      const { personaId, mode } = event.payload;
+      if (!personaId || !mode) return;
+      // Pre-set the lab jump first; the LabTab effect below reads it
+      // on mount/render. Then drive the navigation: select persona,
+      // switch sidebar, switch editor tab. (Order matters: persona
+      // selection must precede editorTab so the editor has data to
+      // render against.)
+      useSystemStore.getState().setCompanionLabJump({ personaId, mode });
+      try {
+        // Lazy-load to avoid bringing the agent store into Companion's
+        // bundle. The store module is already loaded elsewhere; this
+        // is just a typed handle.
+        void import('@/stores/agentStore').then(({ useAgentStore }) => {
+          useAgentStore.getState().selectPersona(personaId);
+        });
+      } catch {
+        /* best-effort: persona selection can fail silently */
+      }
+      useSystemStore.getState().setSidebarSection('personas');
+      // Switch the editor tab via the store's custom setter (it
+      // handles activity → lab handoff).
+      const setEditorTab = useSystemStore.getState().setEditorTab;
+      if (typeof setEditorTab === 'function') {
+        setEditorTab('lab' as never);
+      }
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
+      })
+      .catch(silentCatch('companion_open_lab_listen'));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
+  // Phase F: subscribe to `compose_dashboard` events (auto-fire path).
+  // The spec is already saved server-side — we just navigate the user
+  // to the dashboard tab so they see what Athena built. Same three-
+  // store-call pattern as the OpenCompanionTab client action; kept
+  // inline because this listener fires *without* an approval card.
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let cancelled = false;
+    listen<unknown>(COMPANION_COMPOSE_DASHBOARD_EVENT, () => {
+      if (cancelled) return;
+      const sys = useSystemStore.getState();
+      sys.setSidebarSection('plugins');
+      sys.setPluginTab('companion');
+      sys.setCompanionPluginTab('dashboard');
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
+      })
+      .catch(silentCatch('companion_compose_dashboard_listen'));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
+  // Phase E: subscribe to proactive deliveries from the scheduler.
+  // Each event payload carries newly-delivered messages — we append
+  // them to the store so the panel pops the "Athena reached out"
+  // card without a refetch. Dedupe by id is enforced in the store.
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let cancelled = false;
+    listen<ProactiveDeliveryEvent>(COMPANION_PROACTIVE_EVENT, (event) => {
+      if (cancelled) return;
+      for (const m of event.payload.messages) {
+        appendProactive(m);
+      }
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+        } else {
+          unlisten = fn;
+        }
+      })
+      .catch(silentCatch('companion_proactive_listen'));
+    return () => {
+      cancelled = true;
+      unlisten?.();
+    };
+  }, [appendProactive]);
 
   // Subscribe to approval-creation events. Each event payload is the
   // array of approvals created in the just-finished turn — we refetch
@@ -609,18 +793,36 @@ function Body(props: BodyProps) {
               {t.plugins.companion.init_failed}: {initError}
             </div>
           )}
-          {initialized && messages.length === 0 && !streaming && (
+          {/*
+            Proactive nudges land at the top of the transcript so they
+            stay glanceable even when scroll-pinned at the bottom.
+            "Engage" routes the message text through the normal send
+            pipeline (creating an assistant turn that responds to it),
+            "Dismiss" silently resolves and removes the card.
+          */}
+          {proactive.map((m) => (
+            <ProactiveCard
+              key={m.id}
+              message={m}
+              onEngaged={(text) => {
+                removeProactive(m.id);
+                void send(text);
+              }}
+              onDismissed={() => removeProactive(m.id)}
+            />
+          ))}
+          {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
             <p className="typo-body text-foreground/50">
               {t.plugins.companion.empty_transcript}
             </p>
           )}
-          {messages.map((m) => (
-            <Bubble key={m.id} role={m.role}>
+          {messages.map((m, i) => (
+            <Bubble key={m.id} role={m.role} index={i}>
               {m.content}
             </Bubble>
           ))}
           {streaming && (
-            <Bubble role="assistant" streaming>
+            <Bubble role="assistant" streaming index={messages.length}>
               {streamingText || t.plugins.companion.thinking}
             </Bubble>
           )}
@@ -694,10 +896,12 @@ function Body(props: BodyProps) {
 function Bubble({
   role,
   streaming,
+  index,
   children,
 }: {
   role: string;
   streaming?: boolean;
+  index: number;
   children: React.ReactNode;
 }) {
   const isUser = role === 'user';
@@ -707,7 +911,14 @@ function Bubble({
   // partial content looks right as it grows.
   const isString = typeof children === 'string';
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      data-testid={
+        streaming ? 'companion-bubble-streaming' : `companion-bubble-${role}`
+      }
+      data-companion-bubble-role={role}
+      data-companion-bubble-index={index}
+    >
       <div
         className={`max-w-[85%] rounded-card px-3.5 py-2.5 typo-body break-words ${
           isUser
@@ -842,6 +1053,7 @@ function Composer({
           placeholder={placeholder}
           disabled={disabled}
           rows={1}
+          data-testid="companion-composer"
           className="flex-1 bg-transparent border-0 outline-none resize-none typo-body text-foreground placeholder:text-foreground/40 disabled:opacity-50"
           aria-label={placeholder}
         />
@@ -863,6 +1075,7 @@ function Composer({
         <button
           onClick={submit}
           disabled={disabled || !draft.trim()}
+          data-testid="companion-send"
           className="p-2 rounded-interactive bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring"
           aria-label={t.plugins.companion.send}
         >

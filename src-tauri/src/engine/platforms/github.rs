@@ -62,7 +62,9 @@ impl GitHubClient {
         let token = fields
             .get("personal_access_token")
             .ok_or_else(|| {
-                AppError::Validation("GitHub credential missing 'personal_access_token' field".into())
+                AppError::Validation(
+                    "GitHub credential missing 'personal_access_token' field".into(),
+                )
             })?
             .clone();
 
@@ -77,10 +79,7 @@ impl GitHubClient {
             "Authorization",
             format!("Bearer {}", self.token).parse().unwrap(),
         );
-        h.insert(
-            "Accept",
-            "application/vnd.github+json".parse().unwrap(),
-        );
+        h.insert("Accept", "application/vnd.github+json".parse().unwrap());
         h.insert("User-Agent", "personas-desktop".parse().unwrap());
         h.insert("X-GitHub-Api-Version", "2022-11-28".parse().unwrap());
         h
@@ -171,9 +170,7 @@ impl GitHubClient {
         event_type: &str,
         client_payload: &Value,
     ) -> Result<(), AppError> {
-        let url = format!(
-            "https://api.github.com/repos/{owner}/{repo}/dispatches"
-        );
+        let url = format!("https://api.github.com/repos/{owner}/{repo}/dispatches");
         let body = serde_json::json!({
             "event_type": event_type,
             "client_payload": client_payload,
@@ -210,7 +207,14 @@ pub fn build_client_from_credential(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:github", None, None) {
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "platform:github",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
     GitHubClient::from_fields(&fields)

@@ -78,8 +78,7 @@ pub fn get_batch(
     // Dedupe + filter unknowns, preserving the original keys in the result map
     // so callers always get an entry for every key they asked for.
     let mut unique_valid: Vec<&str> = Vec::with_capacity(keys.len());
-    let mut result: HashMap<String, Option<String>> =
-        HashMap::with_capacity(keys.len());
+    let mut result: HashMap<String, Option<String>> = HashMap::with_capacity(keys.len());
     for key in keys {
         if result.contains_key(key) {
             continue;
@@ -102,9 +101,7 @@ pub fn get_batch(
             .take(unique_valid.len())
             .collect::<Vec<_>>()
             .join(",");
-        let sql = format!(
-            "SELECT key, value FROM app_settings WHERE key IN ({placeholders})"
-        );
+        let sql = format!("SELECT key, value FROM app_settings WHERE key IN ({placeholders})");
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params_from_iter(unique_valid.iter()), |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
@@ -135,13 +132,13 @@ pub fn get_by_prefix(pool: &DbPool, prefix: &str) -> Result<Vec<(String, String)
             .replace('%', "\\%")
             .replace('_', "\\_");
         let pattern = format!("{escaped}%");
-        let mut stmt = conn.prepare(
-            "SELECT key, value FROM app_settings WHERE key LIKE ?1 ESCAPE '\\'",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT key, value FROM app_settings WHERE key LIKE ?1 ESCAPE '\\'")?;
         let rows = stmt.query_map(params![pattern], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -202,14 +199,20 @@ mod tests {
     fn set_rejects_unknown_key() {
         let pool = init_test_db().unwrap();
         let err = set(&pool, "evil_key", "whatever").unwrap_err();
-        assert!(matches!(err, AppError::Validation(_)), "expected Validation error, got {err:?}");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "expected Validation error, got {err:?}"
+        );
     }
 
     #[test]
     fn set_rejects_malformed_numeric_value() {
         let pool = init_test_db().unwrap();
         let err = set(&pool, settings_keys::EVENT_RETENTION_DAYS, "30d").unwrap_err();
-        assert!(matches!(err, AppError::Validation(_)), "expected Validation error, got {err:?}");
+        assert!(
+            matches!(err, AppError::Validation(_)),
+            "expected Validation error, got {err:?}"
+        );
         // Valid value accepted
         set(&pool, settings_keys::EVENT_RETENTION_DAYS, "45").unwrap();
     }
@@ -227,8 +230,14 @@ mod tests {
         ];
         let result = get_batch(&pool, &keys).unwrap();
         assert_eq!(result.len(), 3);
-        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("claude_code".to_string())));
-        assert_eq!(result.get(settings_keys::HEALTH_DIGEST_ENABLED), Some(&Some("true".to_string())));
+        assert_eq!(
+            result.get(settings_keys::CLI_ENGINE),
+            Some(&Some("claude_code".to_string()))
+        );
+        assert_eq!(
+            result.get(settings_keys::HEALTH_DIGEST_ENABLED),
+            Some(&Some("true".to_string()))
+        );
         assert_eq!(result.get(settings_keys::NOTIFICATION_PREFS), Some(&None));
     }
 
@@ -243,7 +252,10 @@ mod tests {
         ];
         let result = get_batch(&pool, &keys).unwrap();
         assert_eq!(result.len(), 2);
-        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("claude_code".to_string())));
+        assert_eq!(
+            result.get(settings_keys::CLI_ENGINE),
+            Some(&Some("claude_code".to_string()))
+        );
         // Unknown key still appears in the result map but with None.
         assert_eq!(result.get("evil_key"), Some(&None));
     }
@@ -265,7 +277,10 @@ mod tests {
         ];
         let result = get_batch(&pool, &keys).unwrap();
         assert_eq!(result.len(), 1);
-        assert_eq!(result.get(settings_keys::CLI_ENGINE), Some(&Some("codex_cli".to_string())));
+        assert_eq!(
+            result.get(settings_keys::CLI_ENGINE),
+            Some(&Some("codex_cli".to_string()))
+        );
     }
 
     #[test]

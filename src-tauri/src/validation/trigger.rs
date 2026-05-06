@@ -1,8 +1,16 @@
 use super::contract::{ValidationError, ValidationRule};
 
 pub const VALID_TRIGGER_TYPES: &[&str] = &[
-    "schedule", "polling", "webhook", "manual", "chain", "event_listener",
-    "file_watcher", "clipboard", "app_focus", "composite",
+    "schedule",
+    "polling",
+    "webhook",
+    "manual",
+    "chain",
+    "event_listener",
+    "file_watcher",
+    "clipboard",
+    "app_focus",
+    "composite",
 ];
 pub const MIN_INTERVAL_SECONDS: i64 = 60;
 
@@ -92,10 +100,7 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                 // C7 — when the build pipeline attached a smee.io channel URL,
                 // validate format up front so a malformed URL fails build/promote
                 // rather than silently being skipped at smee-relay-create time.
-                if let Some(smee_url) = parsed
-                    .get("smee_channel_url")
-                    .and_then(|v| v.as_str())
-                {
+                if let Some(smee_url) = parsed.get("smee_channel_url").and_then(|v| v.as_str()) {
                     let trimmed = smee_url.trim();
                     if !trimmed.is_empty() && !trimmed.starts_with("https://smee.io/") {
                         errors.push(ValidationError::new(
@@ -206,9 +211,18 @@ mod tests {
 
     #[test]
     fn schedule_validator_rejects_missing_config() {
-        assert_eq!(validate_schedule_has_cron_or_interval("schedule", None).len(), 1);
-        assert_eq!(validate_schedule_has_cron_or_interval("schedule", Some("")).len(), 1);
-        assert_eq!(validate_schedule_has_cron_or_interval("schedule", Some("   ")).len(), 1);
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", None).len(),
+            1
+        );
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some("")).len(),
+            1
+        );
+        assert_eq!(
+            validate_schedule_has_cron_or_interval("schedule", Some("   ")).len(),
+            1
+        );
     }
 
     #[test]
@@ -228,48 +242,51 @@ mod tests {
             1
         );
         assert_eq!(
-            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": 0}"#)).len(),
+            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": 0}"#))
+                .len(),
             1
         );
         assert_eq!(
-            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": -10}"#)).len(),
+            validate_schedule_has_cron_or_interval(
+                "schedule",
+                Some(r#"{"interval_seconds": -10}"#)
+            )
+            .len(),
             1
         );
     }
 
     #[test]
     fn schedule_validator_accepts_cron() {
-        assert!(
-            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"cron": "0 * * * *"}"#))
-                .is_empty()
-        );
+        assert!(validate_schedule_has_cron_or_interval(
+            "schedule",
+            Some(r#"{"cron": "0 * * * *"}"#)
+        )
+        .is_empty());
         // Alternate key alias
-        assert!(
-            validate_schedule_has_cron_or_interval(
-                "schedule",
-                Some(r#"{"cron_expression": "0 * * * *"}"#)
-            )
-            .is_empty()
-        );
+        assert!(validate_schedule_has_cron_or_interval(
+            "schedule",
+            Some(r#"{"cron_expression": "0 * * * *"}"#)
+        )
+        .is_empty());
     }
 
     #[test]
     fn schedule_validator_accepts_interval() {
-        assert!(
-            validate_schedule_has_cron_or_interval("schedule", Some(r#"{"interval_seconds": 60}"#))
-                .is_empty()
-        );
+        assert!(validate_schedule_has_cron_or_interval(
+            "schedule",
+            Some(r#"{"interval_seconds": 60}"#)
+        )
+        .is_empty());
     }
 
     #[test]
     fn schedule_validator_accepts_both() {
-        assert!(
-            validate_schedule_has_cron_or_interval(
-                "schedule",
-                Some(r#"{"cron": "*/5 * * * *", "interval_seconds": 300}"#)
-            )
-            .is_empty()
-        );
+        assert!(validate_schedule_has_cron_or_interval(
+            "schedule",
+            Some(r#"{"cron": "*/5 * * * *", "interval_seconds": 300}"#)
+        )
+        .is_empty());
     }
 }
 
@@ -277,12 +294,37 @@ mod tests {
 
 pub fn rules() -> Vec<ValidationRule> {
     vec![
-        ValidationRule::new("trigger", "trigger_type", "allowed_values", "Must be a valid trigger type")
-            .with_allowed(VALID_TRIGGER_TYPES.iter().map(|s| s.to_string()).collect()),
-        ValidationRule::new("trigger", "config", "json", "Config must be valid JSON when provided"),
-        ValidationRule::new("trigger", "config.interval_seconds", "range", format!("Must be at least {MIN_INTERVAL_SECONDS}"))
-            .with_min(MIN_INTERVAL_SECONDS as f64),
-        ValidationRule::new("trigger", "config.webhook_secret", "required", "Required for webhook triggers"),
-        ValidationRule::new("trigger", "config.url", "url_safety", "Polling URLs must not target private/internal addresses"),
+        ValidationRule::new(
+            "trigger",
+            "trigger_type",
+            "allowed_values",
+            "Must be a valid trigger type",
+        )
+        .with_allowed(VALID_TRIGGER_TYPES.iter().map(|s| s.to_string()).collect()),
+        ValidationRule::new(
+            "trigger",
+            "config",
+            "json",
+            "Config must be valid JSON when provided",
+        ),
+        ValidationRule::new(
+            "trigger",
+            "config.interval_seconds",
+            "range",
+            format!("Must be at least {MIN_INTERVAL_SECONDS}"),
+        )
+        .with_min(MIN_INTERVAL_SECONDS as f64),
+        ValidationRule::new(
+            "trigger",
+            "config.webhook_secret",
+            "required",
+            "Required for webhook triggers",
+        ),
+        ValidationRule::new(
+            "trigger",
+            "config.url",
+            "url_safety",
+            "Polling URLs must not target private/internal addresses",
+        ),
     ]
 }

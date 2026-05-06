@@ -8,9 +8,7 @@ use crate::AppState;
 
 /// Get the current digest configuration.
 #[tauri::command]
-pub fn get_digest_config(
-    state: State<'_, Arc<AppState>>,
-) -> Result<DigestConfig, AppError> {
+pub fn get_digest_config(state: State<'_, Arc<AppState>>) -> Result<DigestConfig, AppError> {
     require_auth_sync(&state)?;
     Ok(digest::load_config(&state.db))
 }

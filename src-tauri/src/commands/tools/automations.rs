@@ -2,7 +2,9 @@ use std::collections::HashSet;
 use std::sync::{Arc, LazyLock, Mutex};
 use tauri::State;
 
-use crate::db::models::{AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput};
+use crate::db::models::{
+    AutomationRun, CreateAutomationInput, PersonaAutomation, UpdateAutomationInput,
+};
 use crate::db::repos::resources::automations as repo;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -102,15 +104,15 @@ pub fn automation_blast_radius(
     let items = repo::blast_radius(&state.db, &id)?;
     Ok(items
         .into_iter()
-        .map(|(category, description)| BlastRadiusItem { category, description })
+        .map(|(category, description)| BlastRadiusItem {
+            category,
+            description,
+        })
         .collect())
 }
 
 #[tauri::command]
-pub fn delete_automation(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_automation(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     let active_runs = repo::get_runs_by_automation(&state.db, &id, Some(50))?;
     let in_flight = active_runs.iter().any(|r| {
@@ -214,7 +216,8 @@ mod tests {
     #[test]
     fn generates_sample_from_string_types() {
         let schema = r#"{"file_url": "string", "count": "number", "active": "boolean"}"#;
-        let payload: serde_json::Value = serde_json::from_str(&generate_sample_payload(schema)).unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&generate_sample_payload(schema)).unwrap();
         assert!(payload["file_url"].is_string());
         assert_eq!(payload["file_url"], "sample_file_url");
         assert!(payload["count"].is_number());
@@ -224,7 +227,8 @@ mod tests {
     #[test]
     fn generates_sample_from_special_types() {
         let schema = r#"{"endpoint": "url", "contact": "email", "created": "datetime"}"#;
-        let payload: serde_json::Value = serde_json::from_str(&generate_sample_payload(schema)).unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&generate_sample_payload(schema)).unwrap();
         assert_eq!(payload["endpoint"], "https://example.com");
         assert_eq!(payload["contact"], "test@example.com");
         assert_eq!(payload["created"], "2026-01-01T00:00:00Z");
@@ -233,7 +237,8 @@ mod tests {
     #[test]
     fn preserves_concrete_values() {
         let schema = r#"{"name": "string", "limit": 42, "tags": ["a", "b"]}"#;
-        let payload: serde_json::Value = serde_json::from_str(&generate_sample_payload(schema)).unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&generate_sample_payload(schema)).unwrap();
         assert_eq!(payload["name"], "sample_name");
         assert_eq!(payload["limit"], 42);
         assert_eq!(payload["tags"], serde_json::json!(["a", "b"]));
@@ -248,7 +253,8 @@ mod tests {
 
     #[test]
     fn handles_empty_object_schema() {
-        let payload: serde_json::Value = serde_json::from_str(&generate_sample_payload("{}")).unwrap();
+        let payload: serde_json::Value =
+            serde_json::from_str(&generate_sample_payload("{}")).unwrap();
         assert_eq!(payload, serde_json::json!({}));
     }
 }

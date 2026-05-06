@@ -1,4 +1,12 @@
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
+import {
+  TEXT_SIM_WORD_WEIGHT,
+  TEXT_SIM_BIGRAM_WEIGHT,
+  DUPLICATE_THRESHOLD,
+  CONTRADICTION_TOPIC_THRESHOLD,
+  SUPERSEDED_TOPIC_THRESHOLD,
+  SUPERSEDED_MIN_TIME_DIFF_MS,
+} from '@/lib/memoryLimits';
 
 export type ConflictKind = 'duplicate' | 'contradiction' | 'superseded';
 
@@ -41,7 +49,7 @@ export function textSimilarity(a: string, b: string): number {
   const tokensB = new Set(tokenize(b));
   const wordSim = jaccard(tokensA, tokensB);
   const bigramSim = jaccard(bigrams(a), bigrams(b));
-  return wordSim * 0.4 + bigramSim * 0.6;
+  return wordSim * TEXT_SIM_WORD_WEIGHT + bigramSim * TEXT_SIM_BIGRAM_WEIGHT;
 }
 
 const NEGATION_PAIRS: Array<[RegExp, RegExp]> = [
@@ -68,10 +76,10 @@ function topicOverlap(a: string, b: string): number {
   return overlap / Math.min(tokensA.size, tokensB.size);
 }
 
-const DUPLICATE_THRESHOLD = 0.7;
-const CONTRADICTION_TOPIC_THRESHOLD = 0.4;
-const SUPERSEDED_TOPIC_THRESHOLD = 0.6;
-const MIN_TIME_DIFF_MS = 60 * 60 * 1000;
+const MIN_TIME_DIFF_MS = SUPERSEDED_MIN_TIME_DIFF_MS;
+// Thresholds (DUPLICATE_THRESHOLD / CONTRADICTION_TOPIC_THRESHOLD /
+// SUPERSEDED_TOPIC_THRESHOLD) are imported from `@/lib/memoryLimits` —
+// changing them in one place updates both this lib and the parallel hook copy.
 
 export function detectConflicts(memories: PersonaMemory[]): MemoryConflict[] {
   const conflicts: MemoryConflict[] = [];

@@ -11,9 +11,7 @@ use crate::AppState;
 // -- Local Identity ------------------------------------------------------
 
 #[tauri::command]
-pub fn get_local_identity(
-    state: State<'_, Arc<AppState>>,
-) -> Result<PeerIdentity, AppError> {
+pub fn get_local_identity(state: State<'_, Arc<AppState>>) -> Result<PeerIdentity, AppError> {
     require_auth_sync(&state)?;
     identity_engine::get_or_create_identity(&state.db)
 }
@@ -28,15 +26,15 @@ pub fn set_display_name(
         return Err(AppError::Validation("Display name cannot be empty".into()));
     }
     if name.len() > 64 {
-        return Err(AppError::Validation("Display name too long (max 64 chars)".into()));
+        return Err(AppError::Validation(
+            "Display name too long (max 64 chars)".into(),
+        ));
     }
     identity_repo::update_display_name(&state.db, name.trim())
 }
 
 #[tauri::command]
-pub fn export_identity_card(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub fn export_identity_card(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     require_auth_sync(&state)?;
     identity_engine::export_identity_card(&state.db)
 }
@@ -45,9 +43,7 @@ pub fn export_identity_card(
 /// Generates a new Ed25519 keypair and updates the database.
 /// WARNING: All existing trust relationships will be invalidated.
 #[tauri::command]
-pub fn reinitialize_identity(
-    state: State<'_, Arc<AppState>>,
-) -> Result<PeerIdentity, AppError> {
+pub fn reinitialize_identity(state: State<'_, Arc<AppState>>) -> Result<PeerIdentity, AppError> {
     require_auth_sync(&state)?;
     identity_engine::reinitialize_identity(&state.db)
 }
@@ -55,9 +51,7 @@ pub fn reinitialize_identity(
 // -- Trusted Peers -------------------------------------------------------
 
 #[tauri::command]
-pub fn list_trusted_peers(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<TrustedPeer>, AppError> {
+pub fn list_trusted_peers(state: State<'_, Arc<AppState>>) -> Result<Vec<TrustedPeer>, AppError> {
     require_auth_sync(&state)?;
     identity_repo::list_trusted_peers(&state.db)
 }
@@ -74,7 +68,9 @@ pub fn import_trusted_peer(
     // Prevent adding self as trusted peer
     if let Some(local) = identity_repo::get_local_identity(&state.db)? {
         if local.peer_id == card.peer_id {
-            return Err(AppError::Validation("Cannot add yourself as a trusted peer".into()));
+            return Err(AppError::Validation(
+                "Cannot add yourself as a trusted peer".into(),
+            ));
         }
     }
 

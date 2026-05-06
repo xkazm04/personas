@@ -15,11 +15,25 @@
 //! 7. Canary instruction asking the model to report manipulation attempts
 
 use rand::Rng;
+use regex::{Regex, RegexBuilder};
+use std::sync::LazyLock;
 
 /// Maximum lengths for sanitized fields to prevent oversized payloads.
 const MAX_WORKFLOW_NAME: usize = 200;
 const MAX_JSON_PAYLOAD: usize = 50_000;
 const MAX_FREE_TEXT: usize = 10_000;
+
+/// Single compiled regex matching any open or close form of a dangerous tag.
+///
+/// Replaces a previous loop that, for each of N dangerous tags, called
+/// `to_lowercase()` and rebuilt the entire string per match — quadratic in
+/// payload size and exploitable as a CPU DoS vector against the wizard UI.
+static DANGEROUS_TAG_RE: LazyLock<Regex> = LazyLock::new(|| {
+    RegexBuilder::new(r"</?(?:system|instruction|prompt|role|override|ignore)[^>]*>")
+        .case_insensitive(true)
+        .build()
+        .expect("dangerous-tag regex must compile")
+});
 
 fn generate_nonce() -> String {
     let bytes: [u8; 16] = rand::thread_rng().gen();
@@ -47,9 +61,19 @@ fn is_safe_name_char(c: char) -> bool {
 
 /// Check if a character is an invisible/zero-width Unicode character.
 fn is_invisible_char(c: char) -> bool {
-    matches!(c,
-        '\u{200b}' | '\u{200c}' | '\u{200d}' | '\u{200e}' | '\u{200f}'
-        | '\u{feff}' | '\u{2060}' | '\u{2061}' | '\u{2062}' | '\u{2063}' | '\u{2064}'
+    matches!(
+        c,
+        '\u{200b}'
+            | '\u{200c}'
+            | '\u{200d}'
+            | '\u{200e}'
+            | '\u{200f}'
+            | '\u{feff}'
+            | '\u{2060}'
+            | '\u{2061}'
+            | '\u{2062}'
+            | '\u{2063}'
+            | '\u{2064}'
     )
 }
 
@@ -115,32 +139,7 @@ fn strip_role_overrides(text: &str) -> String {
 
 /// Strip XML/HTML tags that could inject prompt structure.
 fn strip_dangerous_tags(text: &str) -> String {
-    const DANGEROUS_TAGS: &[&str] = &[
-        "system", "instruction", "prompt", "role", "override", "ignore",
-    ];
-
-    let mut result = text.to_string();
-    for tag in DANGEROUS_TAGS {
-        let open_pattern = format!("<{}", tag);
-        let close_pattern = format!("</{}", tag);
-        loop {
-            let lower = result.to_lowercase();
-            if let Some(start) = lower.find(&open_pattern) {
-                if let Some(end) = result[start..].find('>') {
-                    result = format!("{}{}", &result[..start], &result[start + end + 1..]);
-                    continue;
-                }
-            }
-            if let Some(start) = lower.find(&close_pattern) {
-                if let Some(end) = result[start..].find('>') {
-                    result = format!("{}{}", &result[..start], &result[start + end + 1..]);
-                    continue;
-                }
-            }
-            break;
-        }
-    }
-    result
+    DANGEROUS_TAG_RE.replace_all(text, "").into_owned()
 }
 
 /// Apply all structural sanitisation passes (everything except XML boundary wrapping).
@@ -296,6 +295,46 @@ mod tests {
         let result = sanitize_free_text(input);
         assert!(!result.contains("<system>"));
         assert!(!result.contains("</system>"));
+    }
+
+    #[test]
+    fn test_strips_dangerous_tags_with_attributes_and_case() {
+        let input = r#"a <SYSTEM attribute="x">b</System> c <Instruction>d</instruction> e"#;
+        let result = strip_dangerous_tags(input);
+        assert!(!result.to_lowercase().contains("<system"));
+        assert!(!result.to_lowercase().contains("</system"));
+        assert!(!result.to_lowercase().contains("<instruction"));
+        assert!(!result.to_lowercase().contains("</instruction"));
+        // Surrounding text must survive.
+        assert!(result.contains("a "));
+        assert!(result.contains("b"));
+        assert!(result.contains(" c "));
+        assert!(result.contains("d"));
+        assert!(result.contains(" e"));
+    }
+
+    #[test]
+    fn test_strip_dangerous_tags_handles_large_payload_quickly() {
+        // Regression guard: prior implementation was O(6 * N * len), so a 50KB
+        // payload of harmless-looking <system attribute="..."> fragments could
+        // freeze the Tauri command thread for seconds. Single-pass regex must
+        // finish well under the historical threshold even on slow CI.
+        let fragment = r#"<system attribute="value">payload</system>"#;
+        // Roughly 50KB total — same order as MAX_JSON_PAYLOAD.
+        let count = MAX_JSON_PAYLOAD / fragment.len();
+        let input: String = fragment.repeat(count);
+        let start = std::time::Instant::now();
+        let result = strip_dangerous_tags(&input);
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed.as_millis() < 250,
+            "strip_dangerous_tags too slow on {}-byte payload: {:?}",
+            input.len(),
+            elapsed
+        );
+        assert!(!result.to_lowercase().contains("<system"));
+        assert!(!result.to_lowercase().contains("</system"));
+        assert!(result.contains("payload"));
     }
 
     #[test]

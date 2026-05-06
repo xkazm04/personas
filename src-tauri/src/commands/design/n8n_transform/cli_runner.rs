@@ -6,8 +6,8 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
-use crate::db::repos::resources::n8n_sessions;
 use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
+use crate::db::repos::resources::n8n_sessions;
 use crate::engine::event_registry::event_name;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
@@ -17,11 +17,14 @@ use crate::ipc_auth::require_auth;
 use crate::AppState;
 
 use super::job_state::{self, *};
-use super::prompts::{build_n8n_transform_prompt, build_n8n_unified_prompt, wrap_prompt_with_sections};
+use super::prompts::{
+    build_n8n_transform_prompt, build_n8n_unified_prompt, wrap_prompt_with_sections,
+};
 use super::streaming;
 use super::types::N8nPersonaOutput;
 
 use crate::commands::design::analysis::extract_display_text;
+use crate::commands::design::n8n_limits::MAX_TRANSFORM_PAYLOAD_BYTES;
 
 // -- Tauri commands ----------------------------------------------
 
@@ -46,12 +49,16 @@ pub async fn start_n8n_transform_background(
         return Err(AppError::Validation("Workflow JSON cannot be empty".into()));
     }
 
-    // Reject extremely large payloads early (>10MB combined)
-    let total_size = workflow_json.len() + parser_result_json.len()
+    // Reject extremely large payloads early — see commands::design::n8n_limits.
+    let total_size = workflow_json.len()
+        + parser_result_json.len()
         + adjustment_request.as_ref().map_or(0, |s| s.len())
         + previous_draft_json.as_ref().map_or(0, |s| s.len());
-    if total_size > 10 * 1024 * 1024 {
-        return Err(AppError::Validation("Payload too large (>10MB). Use a smaller workflow.".into()));
+    if total_size > MAX_TRANSFORM_PAYLOAD_BYTES {
+        return Err(AppError::Validation(format!(
+            "Payload too large (>{} MB). Use a smaller workflow.",
+            MAX_TRANSFORM_PAYLOAD_BYTES / (1024 * 1024)
+        )));
     }
 
     let cancel_token = CancellationToken::new();
@@ -77,8 +84,7 @@ pub async fn start_n8n_transform_background(
         // Prevent concurrent transforms targeting the same session
         if let Some(ref sid) = session_id {
             let has_running = jobs.values().any(|job| {
-                job.status == "running"
-                    && job.extra.session_id.as_deref() == Some(sid.as_str())
+                job.status == "running" && job.extra.session_id.as_deref() == Some(sid.as_str())
             });
             if has_running {
                 return Err(AppError::Validation(
@@ -114,16 +120,24 @@ pub async fn start_n8n_transform_background(
     // Persist 'transforming' status to DB session so startup recovery can detect it
     if let Some(ref sid) = session_id {
         let state = app.state::<Arc<AppState>>();
-        let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-            status: Some(SessionStatus::Transforming),
-            step: Some("transform".into()),
-            ..Default::default()
-        });
+        let _ = n8n_sessions::update(
+            &state.db,
+            sid,
+            &UpdateN8nSessionInput {
+                status: Some(SessionStatus::Transforming),
+                step: Some("transform".into()),
+                ..Default::default()
+            },
+        );
     }
 
     // Determine if this is an adjustment re-run or initial transform
-    let is_adjustment = adjustment_request.as_ref().is_some_and(|a| !a.trim().is_empty())
-        || previous_draft_json.as_ref().is_some_and(|d| !d.trim().is_empty());
+    let is_adjustment = adjustment_request
+        .as_ref()
+        .is_some_and(|a| !a.trim().is_empty())
+        || previous_draft_json
+            .as_ref()
+            .is_some_and(|d| !d.trim().is_empty());
 
     let app_handle = app.clone();
     let transform_id_for_task = transform_id.clone();
@@ -193,7 +207,9 @@ pub async fn start_n8n_transform_background(
                 Ok((None, false)) => {
                     // No questions and no persona -- unusual, treat as failure
                     handle_transform_result(
-                        Err(AppError::Internal("No output from unified transform".into())),
+                        Err(AppError::Internal(
+                            "No output from unified transform".into(),
+                        )),
                         &app_handle,
                         &transform_id_for_task,
                         &workflow_name,
@@ -288,10 +304,13 @@ fn build_section_callbacks(
         if let Ok(serialized) = serde_json::to_value(section) {
             job_state::store_n8n_transform_section(&id2, serialized.clone());
             // Push section to frontend instantly via Tauri event
-            let _ = app2.emit(event_name::N8N_TRANSFORM_SECTION, json!({
-                "transformId": &id2,
-                "section": serialized,
-            }));
+            let _ = app2.emit(
+                event_name::N8N_TRANSFORM_SECTION,
+                json!({
+                    "transformId": &id2,
+                    "section": serialized,
+                }),
+            );
         }
         emit_n8n_transform_line(
             &app2,
@@ -299,7 +318,11 @@ fn build_section_callbacks(
             format!(
                 "[Section] {} -- {}",
                 section.label,
-                if section.validation.valid { "valid" } else { "errors detected" }
+                if section.validation.valid {
+                    "valid"
+                } else {
+                    "errors detected"
+                }
             ),
         );
     };
@@ -324,13 +347,17 @@ fn handle_transform_result(
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
                 let draft_str = serde_json::to_string(&draft).unwrap_or_default();
-                let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some(SessionStatus::Editing),
-                    step: Some("edit".into()),
-                    draft_json: Some(Some(draft_str)),
-                    error: Some(None),
-                    ..Default::default()
-                });
+                let _ = n8n_sessions::update(
+                    &state.db,
+                    sid,
+                    &UpdateN8nSessionInput {
+                        status: Some(SessionStatus::Editing),
+                        step: Some("edit".into()),
+                        draft_json: Some(Some(draft_str)),
+                        error: Some(None),
+                        ..Default::default()
+                    },
+                );
             }
         }
         Err(err) => {
@@ -340,11 +367,15 @@ fn handle_transform_result(
             crate::notifications::notify_n8n_transform_completed(app, workflow_name, false);
             if let Some(sid) = session_id {
                 let state = app.state::<Arc<AppState>>();
-                let _ = n8n_sessions::update(&state.db, sid, &UpdateN8nSessionInput {
-                    status: Some(SessionStatus::Failed),
-                    error: Some(Some(msg)),
-                    ..Default::default()
-                });
+                let _ = n8n_sessions::update(
+                    &state.db,
+                    sid,
+                    &UpdateN8nSessionInput {
+                        status: Some(SessionStatus::Failed),
+                        error: Some(Some(msg)),
+                        ..Default::default()
+                    },
+                );
             }
         }
     }
@@ -415,11 +446,7 @@ async fn run_unified_transform_turn1(
 
     let draft = parse_persona_output(&output_text, workflow_name)?;
 
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Draft ready for review.",
-    );
+    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
 
     Ok((Some(draft), false))
 }
@@ -490,11 +517,7 @@ Remember: return ONLY valid JSON with the persona object, no markdown fences."#
         "[Milestone] Extracting persona JSON draft...",
     );
     let draft = parse_persona_output(&output_text, "n8n workflow")?;
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Draft ready for review.",
-    );
+    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
     Ok(draft)
 }
 
@@ -541,8 +564,7 @@ async fn run_n8n_transform_job(
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
-    let known_connectors =
-        streaming::extract_known_connectors(connectors_json, credentials_json);
+    let known_connectors = streaming::extract_known_connectors(connectors_json, credentials_json);
     clear_n8n_transform_sections(transform_id);
 
     emit_n8n_transform_line(
@@ -590,11 +612,7 @@ async fn run_n8n_transform_job(
         "[Milestone] Extracting persona JSON draft...",
     );
     let draft = parse_persona_output(&output_text, workflow_name)?;
-    emit_n8n_transform_line(
-        app,
-        transform_id,
-        "[Milestone] Draft ready for review.",
-    );
+    emit_n8n_transform_line(app, transform_id, "[Milestone] Draft ready for review.");
     Ok(draft)
 }
 
@@ -659,7 +677,14 @@ pub async fn run_claude_prompt_text_inner(
     on_section: Option<&(dyn Fn(&streaming::StreamingSection) + Send + Sync)>,
     accumulator: Option<streaming::SectionAccumulator>,
     timeout_secs: u64,
-) -> Result<(String, Option<String>, Option<streaming::SectionAccumulator>), String> {
+) -> Result<
+    (
+        String,
+        Option<String>,
+        Option<streaming::SectionAccumulator>,
+    ),
+    String,
+> {
     let mut accumulator = accumulator;
 
     // Use a temp directory as CWD so Claude CLI doesn't pick up project context
@@ -709,7 +734,10 @@ pub async fn run_claude_prompt_text_inner(
         });
     }
 
-    let stderr = child.stderr.take().ok_or_else(|| "Missing stderr pipe".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "Missing stderr pipe".to_string())?;
     let stderr_task = tokio::spawn(async move {
         let mut stderr_reader = BufReader::new(stderr);
         let mut stderr_buf = String::new();
@@ -717,7 +745,10 @@ pub async fn run_claude_prompt_text_inner(
         stderr_buf
     });
 
-    let stdout = child.stdout.take().ok_or_else(|| "Missing stdout pipe".to_string())?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Missing stdout pipe".to_string())?;
     let mut reader = BufReader::new(stdout).lines();
     let mut text_output = String::new();
     let mut last_emitted_line: Option<String> = None;
@@ -734,8 +765,14 @@ pub async fn run_claude_prompt_text_inner(
             if captured_session_id.is_none() {
                 let (line_type, _) = parse_stream_line(&line);
                 match line_type {
-                    StreamLineType::SystemInit { session_id: Some(sid), .. }
-                    | StreamLineType::Result { session_id: Some(sid), .. } => {
+                    StreamLineType::SystemInit {
+                        session_id: Some(sid),
+                        ..
+                    }
+                    | StreamLineType::Result {
+                        session_id: Some(sid),
+                        ..
+                    } => {
                         captured_session_id = Some(sid);
                     }
                     _ => {}
@@ -1000,21 +1037,27 @@ pub fn extract_questions_output(text: &str) -> Option<serde_json::Value> {
 
 /// Parse persona output from Claude CLI text. Extracts JSON and deserializes.
 /// Uses schema-aware extraction to skip incidental JSON in Claude commentary.
-pub fn parse_persona_output(output_text: &str, workflow_name: &str) -> Result<N8nPersonaOutput, AppError> {
+pub fn parse_persona_output(
+    output_text: &str,
+    workflow_name: &str,
+) -> Result<N8nPersonaOutput, AppError> {
     // Try schema-aware extraction first, fall back to any valid JSON object
     let parsed_json = extract_first_json_object_matching(output_text, looks_like_persona_json)
         .or_else(|| extract_first_json_object(output_text))
-        .ok_or_else(|| AppError::Internal("Claude did not return valid JSON persona output".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("Claude did not return valid JSON persona output".into())
+        })?;
 
     let parsed_value: serde_json::Value = serde_json::from_str(&parsed_json)?;
 
-    let persona_payload = parsed_value
-        .get("persona")
-        .cloned()
-        .unwrap_or(parsed_value);
+    let persona_payload = parsed_value.get("persona").cloned().unwrap_or(parsed_value);
 
-    let output: N8nPersonaOutput = serde_json::from_value(persona_payload)
-        .map_err(|e| AppError::Internal(format!("Failed to parse transformed persona output: {e}")))?;
+    let output: N8nPersonaOutput = serde_json::from_value(persona_payload).map_err(|e| {
+        AppError::Internal(format!("Failed to parse transformed persona output: {e}"))
+    })?;
 
-    Ok(super::types::normalize_n8n_persona_draft(output, workflow_name))
+    Ok(super::types::normalize_n8n_persona_draft(
+        output,
+        workflow_name,
+    ))
 }

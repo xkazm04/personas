@@ -234,7 +234,10 @@ mod tests {
 
     fn make_answers(pairs: &[(&str, &str)], questions: &[(&str, &str)]) -> AdoptionAnswers {
         AdoptionAnswers {
-            answers: pairs.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            answers: pairs
+                .iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
             questions: questions
                 .iter()
                 .map(|(id, q)| AdoptionQuestionMeta {
@@ -251,11 +254,9 @@ mod tests {
 
     #[test]
     fn substitute_replaces_params() {
-        let mut ir = make_ir("Monitor {{param.aq_ticker}} weekly with threshold {{param.aq_threshold}}.");
-        let answers = make_answers(
-            &[("aq_ticker", "NVDA,AAPL"), ("aq_threshold", "500")],
-            &[],
-        );
+        let mut ir =
+            make_ir("Monitor {{param.aq_ticker}} weekly with threshold {{param.aq_threshold}}.");
+        let answers = make_answers(&[("aq_ticker", "NVDA,AAPL"), ("aq_threshold", "500")], &[]);
         substitute_variables(&mut ir, &answers);
         assert_eq!(
             ir.system_prompt.unwrap(),

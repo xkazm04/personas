@@ -11,8 +11,8 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::repos::core::personas as persona_repo;
 use crate::db::models::PersonaExecution;
+use crate::db::repos::core::personas as persona_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_privileged;
 use crate::AppState;
@@ -52,17 +52,17 @@ pub(crate) mod testable {
                 other => AppError::Database(other),
             })?;
         let dc_str = dc_str.ok_or_else(|| {
-            AppError::Validation(format!(
-                "Persona '{}' has no design_context", persona_id
-            ))
+            AppError::Validation(format!("Persona '{}' has no design_context", persona_id))
         })?;
 
-        let mut dc: serde_json::Value = serde_json::from_str(&dc_str)
-            .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
+        let mut dc: serde_json::Value = serde_json::from_str(&dc_str).map_err(|e| {
+            AppError::Validation(format!("design_context is not valid JSON: {}", e))
+        })?;
         let use_cases = crate::engine::design_context::pick_use_cases_array_mut(&mut dc)
             .ok_or_else(|| {
                 AppError::Validation(format!(
-                    "Persona '{}' design_context has no use_cases array", persona_id
+                    "Persona '{}' design_context has no use_cases array",
+                    persona_id
                 ))
             })?;
         let mut found = false;
@@ -82,8 +82,9 @@ pub(crate) mod testable {
                 use_case_id, persona_id
             )));
         }
-        let new_dc_str = serde_json::to_string(&dc)
-            .map_err(|e| AppError::Validation(format!("failed to re-serialize design_context: {}", e)))?;
+        let new_dc_str = serde_json::to_string(&dc).map_err(|e| {
+            AppError::Validation(format!("failed to re-serialize design_context: {}", e))
+        })?;
 
         let tx = conn.transaction().map_err(AppError::Database)?;
 
@@ -155,8 +156,9 @@ pub(crate) mod testable {
             AppError::Validation(format!("Persona '{}' has no design_context", persona_id))
         })?;
 
-        let mut dc: serde_json::Value = serde_json::from_str(&dc_str)
-            .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
+        let mut dc: serde_json::Value = serde_json::from_str(&dc_str).map_err(|e| {
+            AppError::Validation(format!("design_context is not valid JSON: {}", e))
+        })?;
         let use_cases = crate::engine::design_context::pick_use_cases_array_mut(&mut dc)
             .ok_or_else(|| {
                 AppError::Validation(format!(
@@ -185,8 +187,9 @@ pub(crate) mod testable {
             )));
         }
 
-        let new_dc_str = serde_json::to_string(&dc)
-            .map_err(|e| AppError::Validation(format!("failed to re-serialize design_context: {}", e)))?;
+        let new_dc_str = serde_json::to_string(&dc).map_err(|e| {
+            AppError::Validation(format!("failed to re-serialize design_context: {}", e))
+        })?;
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
@@ -211,7 +214,11 @@ pub(crate) mod testable {
             serde_json::from_str(raw.trim())
                 .unwrap_or_else(|_| serde_json::json!({ "user_input": raw }))
         } else if let Some(sample) = use_case.get("sample_input").cloned() {
-            if sample.is_null() { serde_json::json!({}) } else { sample }
+            if sample.is_null() {
+                serde_json::json!({})
+            } else {
+                sample
+            }
         } else {
             serde_json::json!({})
         };
@@ -563,7 +570,10 @@ pub async fn simulate_use_case(
     let dc: serde_json::Value = serde_json::from_str(&dc_str)
         .map_err(|e| AppError::Validation(format!("design_context is not valid JSON: {}", e)))?;
     let use_case = crate::engine::design_context::pick_use_cases_array(&dc)
-        .and_then(|arr| arr.iter().find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id.as_str())))
+        .and_then(|arr| {
+            arr.iter()
+                .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(use_case_id.as_str()))
+        })
         .ok_or_else(|| {
             AppError::Validation(format!(
                 "use_case_id '{}' not found on persona '{}'",
@@ -639,7 +649,8 @@ mod tests {
                  (id, persona_id, use_case_id, event_type, enabled, created_at, updated_at)
                  VALUES (?1, 'p_1', 'uc_1', ?2, 1, ?3, ?3)",
                 rusqlite::params![sid, evt, now],
-            ).unwrap();
+            )
+            .unwrap();
         }
         conn.execute(
             "INSERT INTO persona_automations
@@ -648,13 +659,21 @@ mod tests {
             rusqlite::params![now],
         ).unwrap();
 
-        let result = cascade_use_case_toggle(&mut conn, "p_1", "uc_1", false)
-            .expect("cascade ok");
+        let result = cascade_use_case_toggle(&mut conn, "p_1", "uc_1", false).expect("cascade ok");
 
         assert_eq!(result.enabled, false);
-        assert_eq!(result.triggers_updated, 2, "two triggers should be cascaded");
-        assert_eq!(result.subscriptions_updated, 3, "three subs should be cascaded");
-        assert_eq!(result.automations_updated, 1, "one running automation paused");
+        assert_eq!(
+            result.triggers_updated, 2,
+            "two triggers should be cascaded"
+        );
+        assert_eq!(
+            result.subscriptions_updated, 3,
+            "three subs should be cascaded"
+        );
+        assert_eq!(
+            result.automations_updated, 1,
+            "one running automation paused"
+        );
 
         for tid in ["tr_1", "tr_2"] {
             let (enabled, status): (i64, String) = conn
@@ -662,30 +681,37 @@ mod tests {
                     "SELECT enabled, status FROM persona_triggers WHERE id = ?1",
                     rusqlite::params![tid],
                     |r| Ok((r.get(0)?, r.get(1)?)),
-                ).unwrap();
+                )
+                .unwrap();
             assert_eq!(enabled, 0, "trigger {tid} should be disabled");
             assert_eq!(status, "paused", "trigger {tid} status should be paused");
         }
         for sid in ["sub_1", "sub_2", "sub_3"] {
-            let enabled: i64 = conn.query_row(
-                "SELECT enabled FROM persona_event_subscriptions WHERE id = ?1",
-                rusqlite::params![sid],
-                |r| r.get(0),
-            ).unwrap();
+            let enabled: i64 = conn
+                .query_row(
+                    "SELECT enabled FROM persona_event_subscriptions WHERE id = ?1",
+                    rusqlite::params![sid],
+                    |r| r.get(0),
+                )
+                .unwrap();
             assert_eq!(enabled, 0, "subscription {sid} should be disabled");
         }
-        let auto_status: String = conn.query_row(
-            "SELECT deployment_status FROM persona_automations WHERE id = 'au_1'",
-            [],
-            |r| r.get(0),
-        ).unwrap();
+        let auto_status: String = conn
+            .query_row(
+                "SELECT deployment_status FROM persona_automations WHERE id = 'au_1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert_eq!(auto_status, "paused");
 
-        let dc: String = conn.query_row(
-            "SELECT design_context FROM personas WHERE id = 'p_1'",
-            [],
-            |r| r.get(0),
-        ).unwrap();
+        let dc: String = conn
+            .query_row(
+                "SELECT design_context FROM personas WHERE id = 'p_1'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         let dc_v: serde_json::Value = serde_json::from_str(&dc).unwrap();
         assert_eq!(dc_v["use_cases"][0]["enabled"], serde_json::json!(false));
     }
@@ -704,13 +730,15 @@ mod tests {
              (id, persona_id, use_case_id, trigger_type, enabled, status, created_at, updated_at)
              VALUES ('tr_p', 'p_2', 'uc_2', 'manual', 0, 'paused', ?1, ?1)",
             rusqlite::params![now],
-        ).unwrap();
+        )
+        .unwrap();
         conn.execute(
             "INSERT INTO persona_event_subscriptions
              (id, persona_id, use_case_id, event_type, enabled, created_at, updated_at)
              VALUES ('sub_p', 'p_2', 'uc_2', 'evt.test', 0, ?1, ?1)",
             rusqlite::params![now],
-        ).unwrap();
+        )
+        .unwrap();
         conn.execute(
             "INSERT INTO persona_automations
              (id, persona_id, use_case_id, name, platform, deployment_status, created_at, updated_at)
@@ -720,19 +748,34 @@ mod tests {
 
         let result = cascade_use_case_toggle(&mut conn, "p_2", "uc_2", true).unwrap();
         assert_eq!(result.enabled, true);
-        assert_eq!(result.automations_updated, 0, "automations stay paused on re-enable");
+        assert_eq!(
+            result.automations_updated, 0,
+            "automations stay paused on re-enable"
+        );
 
-        let trig_status: String = conn.query_row(
-            "SELECT status FROM persona_triggers WHERE id = 'tr_p'", [], |r| r.get(0),
-        ).unwrap();
+        let trig_status: String = conn
+            .query_row(
+                "SELECT status FROM persona_triggers WHERE id = 'tr_p'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert_eq!(trig_status, "active");
-        let sub_enabled: i64 = conn.query_row(
-            "SELECT enabled FROM persona_event_subscriptions WHERE id = 'sub_p'", [], |r| r.get(0),
-        ).unwrap();
+        let sub_enabled: i64 = conn
+            .query_row(
+                "SELECT enabled FROM persona_event_subscriptions WHERE id = 'sub_p'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert_eq!(sub_enabled, 1);
-        let auto_status: String = conn.query_row(
-            "SELECT deployment_status FROM persona_automations WHERE id = 'au_p'", [], |r| r.get(0),
-        ).unwrap();
+        let auto_status: String = conn
+            .query_row(
+                "SELECT deployment_status FROM persona_automations WHERE id = 'au_p'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         assert_eq!(auto_status, "paused", "operator must explicitly reactivate");
     }
 
@@ -776,7 +819,11 @@ mod tests {
         let raw = build_simulation_input(&uc, None).unwrap();
         let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(v["_simulation"], serde_json::json!(true));
-        assert_eq!(v.as_object().unwrap().len(), 1, "only the flag should be present");
+        assert_eq!(
+            v.as_object().unwrap().len(),
+            1,
+            "only the flag should be present"
+        );
     }
 
     #[test]
@@ -830,14 +877,26 @@ mod tests {
         assert_eq!(returned.memories.as_deref(), Some("off"));
         assert_eq!(returned.reviews.as_deref(), Some("trust_llm"));
 
-        let dc: String = conn.query_row(
-            "SELECT design_context FROM personas WHERE id = 'p_gs'",
-            [], |r| r.get(0),
-        ).unwrap();
+        let dc: String = conn
+            .query_row(
+                "SELECT design_context FROM personas WHERE id = 'p_gs'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
         let policy = crate::engine::dispatch::testable::pick_generation_policy(&dc, "uc_gs");
-        assert!(matches!(policy.memories, crate::engine::dispatch::testable::BoolPolicy::Off));
-        assert!(matches!(policy.reviews, crate::engine::dispatch::testable::ReviewPolicy::TrustLlm));
-        assert_eq!(policy.event_aliases.get("alert").map(|s| s.as_str()), Some("escalation"));
+        assert!(matches!(
+            policy.memories,
+            crate::engine::dispatch::testable::BoolPolicy::Off
+        ));
+        assert!(matches!(
+            policy.reviews,
+            crate::engine::dispatch::testable::ReviewPolicy::TrustLlm
+        ));
+        assert_eq!(
+            policy.event_aliases.get("alert").map(|s| s.as_str()),
+            Some("escalation")
+        );
     }
 
     #[test]
@@ -846,25 +905,31 @@ mod tests {
         let conn = pool.get().unwrap();
         seed_persona_with_capability(&conn, "p_gs2", "uc_gs2");
         let settings = UseCaseGenerationSettings::default();
-        let err = testable::patch_generation_settings(&conn, "p_gs2", "missing", &settings)
-            .unwrap_err();
+        let err =
+            testable::patch_generation_settings(&conn, "p_gs2", "missing", &settings).unwrap_err();
         match err {
             AppError::Validation(m) => assert!(m.contains("missing")),
             other => panic!("expected Validation, got {other:?}"),
         }
     }
 
-    fn seed_persona_with_capability(conn: &rusqlite::Connection, persona_id: &str, use_case_id: &str) {
+    fn seed_persona_with_capability(
+        conn: &rusqlite::Connection,
+        persona_id: &str,
+        use_case_id: &str,
+    ) {
         let now = chrono::Utc::now().to_rfc3339();
         let dc = serde_json::json!({
             "use_cases": [
                 { "id": use_case_id, "title": "Cap", "enabled": true }
             ]
-        }).to_string();
+        })
+        .to_string();
         conn.execute(
             "INSERT INTO personas (id, name, system_prompt, design_context, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?5)",
             rusqlite::params![persona_id, "Test", "you are test", dc, now],
-        ).expect("seed persona");
+        )
+        .expect("seed persona");
     }
 }

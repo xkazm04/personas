@@ -4,14 +4,14 @@ use tauri::ipc::Channel;
 use tauri::State;
 
 use crate::db::models::{
-    BuildEvent, BuildPhase, PersistedBuildSession, UserAnswer, UpdateBuildSession,
-    CreateToolDefinitionInput, ConnectorDefinition,
+    BuildEvent, BuildPhase, ConnectorDefinition, CreateToolDefinitionInput, PersistedBuildSession,
+    UpdateBuildSession, UserAnswer,
 };
 use crate::db::repos::core::build_sessions as build_session_repo;
 use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::resources::connectors as connector_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
-use crate::db::repos::resources::connectors as connector_repo;
 use crate::engine::build_session as build_session_engine;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -35,8 +35,14 @@ fn infer_credential_type(tool_name: &str, connectors: &[ConnectorDefinition]) ->
 /// own credential type — they need the agent's connectors to know which
 /// API key to inject.
 const GENERIC_TOOL_NAMES: &[&str] = &[
-    "http_request", "http", "api_call", "rest_api", "api_request",
-    "fetch", "curl", "request",
+    "http_request",
+    "http",
+    "api_call",
+    "rest_api",
+    "api_request",
+    "fetch",
+    "curl",
+    "request",
 ];
 
 /// Built-in drive tools that any persona with a `local_drive` connector or a
@@ -52,9 +58,18 @@ const GENERIC_TOOL_NAMES: &[&str] = &[
 /// currently only sees its native Read/Write/Glob plus MCP-exposed tools, so
 /// an MCP bridge is the next step for full end-to-end invocation.
 const DRIVE_BUILTIN_TOOLS: &[(&str, &str)] = &[
-    ("drive_write_text", "Write a UTF-8 text file into the persona's local drive (relative path)."),
-    ("drive_read_text",  "Read a UTF-8 text file from the persona's local drive (relative path)."),
-    ("drive_list",       "List entries under a relative path in the persona's local drive."),
+    (
+        "drive_write_text",
+        "Write a UTF-8 text file into the persona's local drive (relative path).",
+    ),
+    (
+        "drive_read_text",
+        "Read a UTF-8 text file from the persona's local drive (relative path).",
+    ),
+    (
+        "drive_list",
+        "List entries under a relative path in the persona's local drive.",
+    ),
 ];
 
 /// True when the persona's agent_ir indicates it interacts with the built-in
@@ -62,15 +77,22 @@ const DRIVE_BUILTIN_TOOLS: &[(&str, &str)] = &[
 /// event subscription.
 fn persona_uses_drive(ir: &crate::db::models::AgentIr) -> bool {
     let has_connector = ir.required_connectors.iter().any(|c| {
-        c.name().map(|n| {
-            let lower = n.to_lowercase();
-            lower == "local_drive" || lower == "local-drive" || lower == "localdrive"
-        }).unwrap_or(false)
+        c.name()
+            .map(|n| {
+                let lower = n.to_lowercase();
+                lower == "local_drive" || lower == "local-drive" || lower == "localdrive"
+            })
+            .unwrap_or(false)
     });
-    if has_connector { return true; }
+    if has_connector {
+        return true;
+    }
 
     ir.events.iter().any(|e| {
-        e.event_type.as_deref().map(|t| t.starts_with("drive.document.")).unwrap_or(false)
+        e.event_type
+            .as_deref()
+            .map(|t| t.starts_with("drive.document."))
+            .unwrap_or(false)
     })
 }
 
@@ -306,11 +328,9 @@ pub async fn cancel_build_session(
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
 
-    state.build_session_manager.cancel_session(
-        &session_id,
-        &state.db,
-        &state.process_registry,
-    )
+    state
+        .build_session_manager
+        .cancel_session(&session_id, &state.db, &state.process_registry)
 }
 
 /// Get the active (non-terminal) build session for a persona, if any.
@@ -348,8 +368,7 @@ pub async fn list_build_sessions(
 ) -> Result<Vec<PersistedBuildSession>, AppError> {
     require_auth(&state).await?;
 
-    let sessions =
-        build_session_repo::list_non_terminal(&state.db, persona_id.as_deref())?;
+    let sessions = build_session_repo::list_non_terminal(&state.db, persona_id.as_deref())?;
     Ok(sessions
         .iter()
         .map(PersistedBuildSession::from_session)
@@ -437,6 +456,8 @@ pub async fn test_build_draft(
         let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result).map_err(|e| {
             AppError::Validation(format!("Persona design result parse error: {e}"))
         })?;
+        let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result)
+            .map_err(|e| AppError::Validation(format!("Persona design result parse error: {e}")))?;
         // Backfill the session so future calls work
         if let Err(e) = build_session_repo::update(&state.db, &session_id, &UpdateBuildSession {
             agent_ir: Some(Some(design_result.clone())),
@@ -461,10 +482,15 @@ pub async fn test_build_draft(
     // Apply adoption questionnaire answers: variable substitution + configuration section.
     // This ensures the test runs with the user's actual configured values, not template placeholders.
     if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+        if let Ok(answers) =
+            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
             crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
-            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
+                &mut agent_ir,
+                &answers,
+            );
             tracing::info!(session_id = %session_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for testing");
         }
     }
@@ -480,14 +506,9 @@ pub async fn test_build_draft(
     )?;
 
     // Run real API tests — on failure, revert to draft_ready so the user can retry
-    let result = build_session_engine::run_tool_tests(
-        &state.db,
-        &app,
-        &session_id,
-        &persona_id,
-        &agent_ir,
-    )
-    .await;
+    let result =
+        build_session_engine::run_tool_tests(&state.db, &app, &session_id, &persona_id, &agent_ir)
+            .await;
 
     match result {
         Ok(report) => {
@@ -627,11 +648,12 @@ struct PromoteCounters {
 // Step 1: Build structured DesignUseCase[] from agent_ir
 // ============================================================================
 
-fn build_structured_use_cases(
-    ir: &crate::db::models::AgentIr,
-) -> UseCaseData {
+fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
     if ir.use_cases.is_empty() {
-        return UseCaseData { structured: Vec::new(), ids: Vec::new() };
+        return UseCaseData {
+            structured: Vec::new(),
+            ids: Vec::new(),
+        };
     }
 
     let mut structured = Vec::new();
@@ -645,13 +667,13 @@ fn build_structured_use_cases(
         let category = uc.category().to_string();
         let execution_mode = uc.execution_mode().to_string();
 
-        let suggested_trigger = ir.triggers
-            .get(idx)
-            .map(|t| serde_json::json!({
+        let suggested_trigger = ir.triggers.get(idx).map(|t| {
+            serde_json::json!({
                 "type": t.trigger_type.as_deref().unwrap_or("manual"),
                 "cron": t.config.as_ref().and_then(|c| c.get("cron")).and_then(|v| v.as_str()),
                 "description": t.description.as_deref().unwrap_or(""),
-            }));
+            })
+        });
 
         // Extract per-use-case event subscriptions via typed accessor.
         let event_subs: Vec<serde_json::Value> = uc
@@ -659,7 +681,9 @@ fn build_structured_use_cases(
             .iter()
             .filter_map(|e| {
                 let event_type = e.event_type.as_deref().unwrap_or("");
-                if event_type.is_empty() { return None; }
+                if event_type.is_empty() {
+                    return None;
+                }
                 Some(serde_json::json!({
                     "event_type": event_type,
                     "source_filter": e.source_filter.as_deref(),
@@ -687,9 +711,7 @@ fn build_structured_use_cases(
                 d.generation_settings.clone(),
                 d.memory_policy.clone(),
             ),
-            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
-                (None, None, None, None)
-            }
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None, None),
         };
 
         structured.push(serde_json::json!({
@@ -731,47 +753,71 @@ fn prepare_tool_actions(
     // Pre-extract the first connector from the agent IR for generic tool linkage.
     // Generic tools like "http_request" are transport utilities that don't inherently
     // know which API they serve — the agent's connectors define that.
-    let ir_primary_connector: Option<String> = ir.required_connectors.first()
+    let ir_primary_connector: Option<String> = ir
+        .required_connectors
+        .first()
         .and_then(|c| c.name().map(|n| n.to_string()));
 
     for tool in &ir.tools {
         let name = tool.name().to_string();
-        if name.is_empty() { continue; }
+        if name.is_empty() {
+            continue;
+        }
 
-        let normalized: String = name.chars().enumerate().fold(String::new(), |mut acc, (i, c)| {
-            if c.is_uppercase() && i > 0 { acc.push('_'); }
-            acc.push(c.to_ascii_lowercase());
-            acc
-        });
+        let normalized: String = name
+            .chars()
+            .enumerate()
+            .fold(String::new(), |mut acc, (i, c)| {
+                if c.is_uppercase() && i > 0 {
+                    acc.push('_');
+                }
+                acc.push(c.to_ascii_lowercase());
+                acc
+            });
 
-        if !seen_names.insert(normalized.clone()) { continue; }
+        if !seen_names.insert(normalized.clone()) {
+            continue;
+        }
         tool_names.push(name.clone());
 
         // Try to find an existing tool definition by name
         let existing_def = tool_repo::get_definition_by_name(db, &normalized)
-            .ok().flatten()
+            .ok()
+            .flatten()
             .or_else(|| tool_repo::get_definition_by_name(db, &name).ok().flatten());
 
         if let Some(def) = existing_def {
-            tool_actions.push(ToolAction { name, existing_def_id: Some(def.id), create_input: None });
+            tool_actions.push(ToolAction {
+                name,
+                existing_def_id: Some(def.id),
+                create_input: None,
+            });
             continue;
         }
 
-        let (category, description, input_schema, output_schema, req_cred, impl_guide) = match tool {
+        let (category, description, input_schema, output_schema, req_cred, impl_guide) = match tool
+        {
             AgentIrTool::Structured(d) => {
-                let is = d.input_schema.as_ref()
+                let is = d
+                    .input_schema
+                    .as_ref()
                     .map(|v| serde_json::to_string(v).unwrap_or_default())
-                    .or_else(|| d.parameters.as_ref().map(|p| {
-                        serde_json::json!({"type": "object", "properties": p}).to_string()
-                    }))
+                    .or_else(|| {
+                        d.parameters.as_ref().map(|p| {
+                            serde_json::json!({"type": "object", "properties": p}).to_string()
+                        })
+                    })
                     .or_else(|| Some(default_schema.to_string()));
-                let os = d.output_schema.as_ref()
+                let os = d
+                    .output_schema
+                    .as_ref()
                     .map(|v| serde_json::to_string(v).unwrap_or_default())
                     .or_else(|| Some(default_schema.to_string()));
                 (
                     d.category.as_deref().unwrap_or("api").to_string(),
                     d.description.as_deref().unwrap_or("").to_string(),
-                    is, os,
+                    is,
+                    os,
                     d.requires_credential_type.clone(),
                     d.implementation_guide.clone(),
                 )
@@ -783,7 +829,8 @@ fn prepare_tool_actions(
                     format!("Auto-created from build: {}", name),
                     Some(default_schema.to_string()),
                     Some(default_schema.to_string()),
-                    inferred_cred, None,
+                    inferred_cred,
+                    None,
                 )
             }
         };
@@ -823,7 +870,9 @@ fn prepare_tool_actions(
     // rows the first time a workspace sees them.
     if persona_uses_drive(ir) {
         for (tool_name, tool_desc) in DRIVE_BUILTIN_TOOLS {
-            if !seen_names.insert((*tool_name).to_string()) { continue; }
+            if !seen_names.insert((*tool_name).to_string()) {
+                continue;
+            }
             let existing_def = tool_repo::get_definition_by_name(db, tool_name)
                 .ok()
                 .flatten();
@@ -874,7 +923,8 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
         let needs_secret = match &t.config {
             None => true,
             Some(cfg) => {
-                let secret = cfg.get("webhook_secret")
+                let secret = cfg
+                    .get("webhook_secret")
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 secret.trim().is_empty()
@@ -885,9 +935,15 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
             let generated = uuid::Uuid::new_v4().to_string();
             let config = t.config.get_or_insert_with(|| serde_json::json!({}));
             if let Some(obj) = config.as_object_mut() {
-                obj.insert("webhook_secret".to_string(), serde_json::Value::String(generated.clone()));
+                obj.insert(
+                    "webhook_secret".to_string(),
+                    serde_json::Value::String(generated.clone()),
+                );
             }
-            tracing::info!("Auto-generated webhook_secret for webhook trigger (description: {:?})", t.description);
+            tracing::info!(
+                "Auto-generated webhook_secret for webhook trigger (description: {:?})",
+                t.description
+            );
         }
     }
 }
@@ -899,26 +955,26 @@ fn ensure_webhook_secrets(ir: &mut crate::db::models::AgentIr) {
 /// The 20-icon catalog — MUST stay in sync with `src/lib/icons/agentIconCatalog.ts`.
 /// Tuple: (id, suggested_hex_color).
 const AGENT_ICON_CATALOG: &[(&str, &str)] = &[
-    ("assistant",    "#8b5cf6"),
-    ("code",         "#06b6d4"),
-    ("data",         "#3b82f6"),
-    ("security",     "#ef4444"),
-    ("monitor",      "#f59e0b"),
-    ("email",        "#ec4899"),
-    ("document",     "#a78bfa"),
-    ("support",      "#14b8a6"),
-    ("automation",   "#f97316"),
-    ("research",     "#6366f1"),
-    ("finance",      "#22c55e"),
-    ("marketing",    "#e879f9"),
-    ("devops",       "#0ea5e9"),
-    ("content",      "#c084fc"),
-    ("sales",        "#fb923c"),
-    ("hr",           "#4ade80"),
-    ("legal",        "#94a3b8"),
+    ("assistant", "#8b5cf6"),
+    ("code", "#06b6d4"),
+    ("data", "#3b82f6"),
+    ("security", "#ef4444"),
+    ("monitor", "#f59e0b"),
+    ("email", "#ec4899"),
+    ("document", "#a78bfa"),
+    ("support", "#14b8a6"),
+    ("automation", "#f97316"),
+    ("research", "#6366f1"),
+    ("finance", "#22c55e"),
+    ("marketing", "#e879f9"),
+    ("devops", "#0ea5e9"),
+    ("content", "#c084fc"),
+    ("sales", "#fb923c"),
+    ("hr", "#4ade80"),
+    ("legal", "#94a3b8"),
     ("notification", "#fbbf24"),
-    ("calendar",     "#2dd4bf"),
-    ("search",       "#818cf8"),
+    ("calendar", "#2dd4bf"),
+    ("search", "#818cf8"),
 ];
 
 /// Normalize `ir.icon` to `agent-icon:<catalog_id>` — the only icon shape the
@@ -940,39 +996,52 @@ fn normalize_agent_icon(ir: &mut crate::db::models::AgentIr) {
     const PREFIX: &str = "agent-icon:";
 
     fn lookup_catalog(id: &str) -> Option<&'static str> {
-        AGENT_ICON_CATALOG.iter().find(|(x, _)| *x == id).map(|(x, _)| *x)
+        AGENT_ICON_CATALOG
+            .iter()
+            .find(|(x, _)| *x == id)
+            .map(|(x, _)| *x)
     }
 
     fn catalog_color(id: &str) -> Option<&'static str> {
-        AGENT_ICON_CATALOG.iter().find(|(x, _)| *x == id).map(|(_, c)| *c)
+        AGENT_ICON_CATALOG
+            .iter()
+            .find(|(x, _)| *x == id)
+            .map(|(_, c)| *c)
     }
 
     // Lucide PascalCase name → nearest catalog id.
     fn lucide_to_id(name: &str) -> Option<&'static str> {
         match name {
             "Mail" | "MailOpen" | "AtSign" | "Send" | "Inbox" => Some("email"),
-            "Database" | "BarChart" | "BarChart2" | "BarChart3" | "PieChart"
-                | "LineChart" | "Table" | "Table2" => Some("data"),
+            "Database" | "BarChart" | "BarChart2" | "BarChart3" | "PieChart" | "LineChart"
+            | "Table" | "Table2" => Some("data"),
             "MessageSquare" | "MessageCircle" | "MessagesSquare" | "Bot" => Some("assistant"),
-            "Code" | "Code2" | "GitBranch" | "GitCommit" | "GitPullRequest"
-                | "Github" | "Terminal" | "TerminalSquare" => Some("code"),
-            "FileText" | "FileCode" | "File" | "Files" | "BookOpen" | "Book"
-                | "Notebook" | "NotebookText" => Some("document"),
+            "Code" | "Code2" | "GitBranch" | "GitCommit" | "GitPullRequest" | "Github"
+            | "Terminal" | "TerminalSquare" => Some("code"),
+            "FileText" | "FileCode" | "File" | "Files" | "BookOpen" | "Book" | "Notebook"
+            | "NotebookText" => Some("document"),
             "Bell" | "BellRing" | "BellDot" => Some("notification"),
-            "Calendar" | "CalendarDays" | "CalendarCheck" | "CalendarClock"
-                | "Clock" | "Timer" => Some("calendar"),
+            "Calendar" | "CalendarDays" | "CalendarCheck" | "CalendarClock" | "Clock" | "Timer" => {
+                Some("calendar")
+            }
             "Search" | "SearchCheck" | "ScanSearch" | "Binoculars" => Some("search"),
-            "Shield" | "ShieldCheck" | "ShieldAlert" | "Lock" | "KeyRound" | "Key" => Some("security"),
-            "DollarSign" | "CircleDollarSign" | "Banknote" | "Wallet"
-                | "CreditCard" | "Receipt" => Some("finance"),
+            "Shield" | "ShieldCheck" | "ShieldAlert" | "Lock" | "KeyRound" | "Key" => {
+                Some("security")
+            }
+            "DollarSign" | "CircleDollarSign" | "Banknote" | "Wallet" | "CreditCard"
+            | "Receipt" => Some("finance"),
             "Users" | "UserPlus" | "UserCheck" | "User" | "UserCog" => Some("hr"),
             "Briefcase" | "Scale" | "Gavel" | "FileSignature" => Some("legal"),
-            "Megaphone" | "Speaker" | "Sparkles" | "Palette" | "Image" | "Camera" => Some("marketing"),
+            "Megaphone" | "Speaker" | "Sparkles" | "Palette" | "Image" | "Camera" => {
+                Some("marketing")
+            }
             "Zap" | "Workflow" | "Cog" | "Settings" | "Settings2" => Some("automation"),
             "Activity" | "Gauge" | "Heart" | "HeartPulse" => Some("monitor"),
             "Headphones" | "LifeBuoy" | "HelpCircle" => Some("support"),
             "Server" | "Cloud" | "CloudCog" | "Container" | "Boxes" => Some("devops"),
-            "Flask" | "FlaskConical" | "Microscope" | "Lightbulb" | "GraduationCap" => Some("research"),
+            "Flask" | "FlaskConical" | "Microscope" | "Lightbulb" | "GraduationCap" => {
+                Some("research")
+            }
             "ShoppingCart" | "ShoppingBag" | "Store" | "TrendingUp" | "Target" => Some("sales"),
             "Edit" | "Edit2" | "Edit3" | "Pen" | "PenTool" | "PenLine" | "Type" => Some("content"),
             _ => None,
@@ -983,19 +1052,51 @@ fn normalize_agent_icon(ir: &mut crate::db::models::AgentIr) {
     fn connector_to_id(name: &str) -> Option<&'static str> {
         let n = name.to_lowercase();
         let c = |needle: &str| n.contains(needle);
-        if c("gmail") || c("outlook") || c("mailgun") || c("sendgrid") || c("mailchimp") { return Some("email"); }
-        if c("github") || c("gitlab") || c("bitbucket") { return Some("code"); }
-        if c("notion") || c("confluence") { return Some("document"); }
-        if c("airtable") || c("postgres") || c("mysql") || c("supabase") || c("sheets") || c("bigquery") { return Some("data"); }
-        if c("slack") || c("discord") || c("telegram") || c("teams") || c("whatsapp") { return Some("assistant"); }
-        if c("stripe") || c("quickbooks") || c("xero") || c("plaid") { return Some("finance"); }
-        if c("hubspot") || c("salesforce") || c("pipedrive") || c("attio") { return Some("sales"); }
-        if c("sentry") || c("datadog") || c("newrelic") || c("grafana") { return Some("monitor"); }
-        if c("jira") || c("linear") || c("asana") || c("clickup") || c("trello") { return Some("devops"); }
-        if c("google-calendar") || c("google_calendar") || c("calcom") || c("calendly") { return Some("calendar"); }
-        if c("zendesk") || c("intercom") || c("freshdesk") { return Some("support"); }
-        if c("greenhouse") || c("workday") || c("lever") { return Some("hr"); }
-        if c("docusign") || c("hellosign") { return Some("legal"); }
+        if c("gmail") || c("outlook") || c("mailgun") || c("sendgrid") || c("mailchimp") {
+            return Some("email");
+        }
+        if c("github") || c("gitlab") || c("bitbucket") {
+            return Some("code");
+        }
+        if c("notion") || c("confluence") {
+            return Some("document");
+        }
+        if c("airtable")
+            || c("postgres")
+            || c("mysql")
+            || c("supabase")
+            || c("sheets")
+            || c("bigquery")
+        {
+            return Some("data");
+        }
+        if c("slack") || c("discord") || c("telegram") || c("teams") || c("whatsapp") {
+            return Some("assistant");
+        }
+        if c("stripe") || c("quickbooks") || c("xero") || c("plaid") {
+            return Some("finance");
+        }
+        if c("hubspot") || c("salesforce") || c("pipedrive") || c("attio") {
+            return Some("sales");
+        }
+        if c("sentry") || c("datadog") || c("newrelic") || c("grafana") {
+            return Some("monitor");
+        }
+        if c("jira") || c("linear") || c("asana") || c("clickup") || c("trello") {
+            return Some("devops");
+        }
+        if c("google-calendar") || c("google_calendar") || c("calcom") || c("calendly") {
+            return Some("calendar");
+        }
+        if c("zendesk") || c("intercom") || c("freshdesk") {
+            return Some("support");
+        }
+        if c("greenhouse") || c("workday") || c("lever") {
+            return Some("hr");
+        }
+        if c("docusign") || c("hellosign") {
+            return Some("legal");
+        }
         None
     }
 
@@ -1003,31 +1104,89 @@ fn normalize_agent_icon(ir: &mut crate::db::models::AgentIr) {
     fn keyword_scan(text: &str) -> Option<&'static str> {
         let t = text.to_lowercase();
         let any = |kws: &[&str]| kws.iter().any(|kw| t.contains(kw));
-        if any(&["developer", "codebase", "feature flag", "source code"]) { return Some("code"); }
-        if any(&["devops", "sentry", "infrastructure", "deploy", "incident"]) { return Some("devops"); }
-        if any(&["security", "vulnerability", "sentinel"]) { return Some("security"); }
-        if any(&["monitor", "watchdog", "health check"]) { return Some("monitor"); }
-        if any(&["email", "inbox", "mail", "digest", "newsletter"]) { return Some("email"); }
-        if any(&["document", "documentation", "knowledge base", "wiki"]) { return Some("document"); }
-        if any(&["support", "helpdesk", "ticket", "escalation", "customer service"]) { return Some("support"); }
-        if any(&["automat", "workflow", "orchestrat"]) { return Some("automation"); }
-        if any(&["research", "intelligence", "analyst", "insight", "scout"]) { return Some("research"); }
-        if any(&["finance", "invoice", "expense", "budget", "billing", "revenue", "accounting", "payment"]) { return Some("finance"); }
-        if any(&["marketing", "campaign", "seo", "content distribution"]) { return Some("marketing"); }
-        if any(&["editorial", "blog", "writer"]) { return Some("content"); }
-        if any(&["sales", "crm", "proposal", "outbound"]) { return Some("sales"); }
-        if any(&["recruit", "onboard", "hiring", "employee"]) { return Some("hr"); }
-        if any(&["legal", "contract", "compliance", "regulation"]) { return Some("legal"); }
-        if any(&["notification", "webhook"]) { return Some("notification"); }
-        if any(&["calendar", "schedule", "meeting", "appointment", "deadline"]) { return Some("calendar"); }
-        if any(&["search", "discover", "explore", "lookup"]) { return Some("search"); }
-        if any(&["data", "analytics", "chart", "metric", "dashboard"]) { return Some("data"); }
+        if any(&["developer", "codebase", "feature flag", "source code"]) {
+            return Some("code");
+        }
+        if any(&["devops", "sentry", "infrastructure", "deploy", "incident"]) {
+            return Some("devops");
+        }
+        if any(&["security", "vulnerability", "sentinel"]) {
+            return Some("security");
+        }
+        if any(&["monitor", "watchdog", "health check"]) {
+            return Some("monitor");
+        }
+        if any(&["email", "inbox", "mail", "digest", "newsletter"]) {
+            return Some("email");
+        }
+        if any(&["document", "documentation", "knowledge base", "wiki"]) {
+            return Some("document");
+        }
+        if any(&[
+            "support",
+            "helpdesk",
+            "ticket",
+            "escalation",
+            "customer service",
+        ]) {
+            return Some("support");
+        }
+        if any(&["automat", "workflow", "orchestrat"]) {
+            return Some("automation");
+        }
+        if any(&["research", "intelligence", "analyst", "insight", "scout"]) {
+            return Some("research");
+        }
+        if any(&[
+            "finance",
+            "invoice",
+            "expense",
+            "budget",
+            "billing",
+            "revenue",
+            "accounting",
+            "payment",
+        ]) {
+            return Some("finance");
+        }
+        if any(&["marketing", "campaign", "seo", "content distribution"]) {
+            return Some("marketing");
+        }
+        if any(&["editorial", "blog", "writer"]) {
+            return Some("content");
+        }
+        if any(&["sales", "crm", "proposal", "outbound"]) {
+            return Some("sales");
+        }
+        if any(&["recruit", "onboard", "hiring", "employee"]) {
+            return Some("hr");
+        }
+        if any(&["legal", "contract", "compliance", "regulation"]) {
+            return Some("legal");
+        }
+        if any(&["notification", "webhook"]) {
+            return Some("notification");
+        }
+        if any(&["calendar", "schedule", "meeting", "appointment", "deadline"]) {
+            return Some("calendar");
+        }
+        if any(&["search", "discover", "explore", "lookup"]) {
+            return Some("search");
+        }
+        if any(&["data", "analytics", "chart", "metric", "dashboard"]) {
+            return Some("data");
+        }
         None
     }
 
     // ---- Resolve the canonical catalog id ----
     let resolved_id: &'static str = 'resolve: {
-        if let Some(raw) = ir.icon.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+        if let Some(raw) = ir
+            .icon
+            .as_deref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+        {
             // Case 1: already `agent-icon:<valid id>`
             if let Some(rest) = raw.strip_prefix(PREFIX) {
                 if let Some(id) = lookup_catalog(rest) {
@@ -1065,7 +1224,11 @@ fn normalize_agent_icon(ir: &mut crate::db::models::AgentIr) {
     ir.icon = Some(format!("{}{}", PREFIX, resolved_id));
 
     // Backfill color from catalog if empty
-    let color_empty = ir.color.as_deref().map(|s| s.trim().is_empty()).unwrap_or(true);
+    let color_empty = ir
+        .color
+        .as_deref()
+        .map(|s| s.trim().is_empty())
+        .unwrap_or(true);
     if color_empty {
         if let Some(col) = catalog_color(resolved_id) {
             ir.color = Some(col.to_string());
@@ -1089,7 +1252,10 @@ fn validate_triggers(ir: &crate::db::models::AgentIr) -> Result<(), AppError> {
     for t in &ir.triggers {
         let raw_type = t.trigger_type.as_deref().unwrap_or("manual");
         let trigger_type = trigger_repo::normalize_trigger_type(raw_type);
-        let config_str = t.config.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default());
+        let config_str = t
+            .config
+            .as_ref()
+            .map(|v| serde_json::to_string(v).unwrap_or_default());
         trigger_repo::validate_trigger_type(trigger_type)?;
         trigger_repo::validate_config(trigger_type, config_str.as_deref())?;
     }
@@ -1105,9 +1271,21 @@ fn build_design_json(
     structured_use_cases: &[serde_json::Value],
     tool_names: &[String],
 ) -> (String, String) {
-    let ir_triggers: Option<&Vec<crate::db::models::agent_ir::AgentIrTrigger>> = if ir.triggers.is_empty() { None } else { Some(&ir.triggers) };
-    let ir_events: Option<&Vec<crate::db::models::agent_ir::AgentIrEvent>> = if ir.events.is_empty() { None } else { Some(&ir.events) };
-    let ir_use_cases_json: Vec<serde_json::Value> = ir.use_cases.iter()
+    let ir_triggers: Option<&Vec<crate::db::models::agent_ir::AgentIrTrigger>> =
+        if ir.triggers.is_empty() {
+            None
+        } else {
+            Some(&ir.triggers)
+        };
+    let ir_events: Option<&Vec<crate::db::models::agent_ir::AgentIrEvent>> = if ir.events.is_empty()
+    {
+        None
+    } else {
+        Some(&ir.events)
+    };
+    let ir_use_cases_json: Vec<serde_json::Value> = ir
+        .use_cases
+        .iter()
         .filter_map(|uc| serde_json::to_value(uc).ok())
         .collect();
 
@@ -1149,11 +1327,15 @@ fn build_design_json(
 // Step 5: Encrypt notification channels (pre-transaction)
 // ============================================================================
 
-fn prepare_notification_channels(ir: &crate::db::models::AgentIr) -> Result<Option<String>, AppError> {
+fn prepare_notification_channels(
+    ir: &crate::db::models::AgentIr,
+) -> Result<Option<String>, AppError> {
     let channel_val = ir.notification_channel_array();
     let raw = channel_val.map(|v| serde_json::to_string(v).unwrap_or_default());
     match &raw {
-        Some(json) if !json.trim().is_empty() => Ok(Some(persona_repo::encrypt_notification_channels(json)?)),
+        Some(json) if !json.trim().is_empty() => {
+            Ok(Some(persona_repo::encrypt_notification_channels(json)?))
+        }
         other => Ok(other.clone()),
     }
 }
@@ -1203,10 +1385,17 @@ fn create_tools_in_tx(
                   created_at, updated_at)
                  VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?11)",
                 rusqlite::params![
-                    def_id, input.name, input.category, input.description,
-                    input.script_path, input.input_schema, input.output_schema,
-                    input.requires_credential_type, input.implementation_guide,
-                    is_builtin, now,
+                    def_id,
+                    input.name,
+                    input.category,
+                    input.description,
+                    input.script_path,
+                    input.input_schema,
+                    input.output_schema,
+                    input.requires_credential_type,
+                    input.implementation_guide,
+                    is_builtin,
+                    now,
                 ],
             );
             match insert_result {
@@ -1218,9 +1407,13 @@ fn create_tools_in_tx(
                         "SELECT id FROM persona_tool_definitions WHERE LOWER(name) = LOWER(?1)",
                         rusqlite::params![input.name],
                         |row| row.get::<_, String>(0),
-                    ).map_err(|e| AppError::Internal(format!(
-                        "Tool '{}' exists but could not be looked up: {e}", action.name
-                    )))?
+                    )
+                    .map_err(|e| {
+                        AppError::Internal(format!(
+                            "Tool '{}' exists but could not be looked up: {e}",
+                            action.name
+                        ))
+                    })?
                 }
                 Err(e) => return Err(AppError::Database(e)),
             }
@@ -1229,11 +1422,13 @@ fn create_tools_in_tx(
         };
 
         // Assign tool to persona (skip if already assigned)
-        let existing_assignment: Option<String> = tx.query_row(
-            "SELECT id FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
-            rusqlite::params![persona_id, def_id],
-            |row| row.get(0),
-        ).ok();
+        let existing_assignment: Option<String> = tx
+            .query_row(
+                "SELECT id FROM persona_tools WHERE persona_id = ?1 AND tool_id = ?2",
+                rusqlite::params![persona_id, def_id],
+                |row| row.get(0),
+            )
+            .ok();
 
         if existing_assignment.is_none() {
             let assign_id = uuid::Uuid::new_v4().to_string();
@@ -1241,7 +1436,8 @@ fn create_tools_in_tx(
                 "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
                  VALUES (?1, ?2, ?3, NULL, ?4)",
                 rusqlite::params![assign_id, persona_id, def_id, now],
-            ).map_err(AppError::Database)?;
+            )
+            .map_err(AppError::Database)?;
         }
         tools_created += 1;
     }
@@ -1369,10 +1565,14 @@ fn create_triggers_in_tx(
             }
             serde_json::to_string(v).unwrap_or_default()
         });
-        let use_case_id = use_case_ids.get(idx)
+        let use_case_id = use_case_ids
+            .get(idx)
             .or_else(|| use_case_ids.last())
             .cloned();
-        let encrypted_config = config.as_deref().map(trigger_repo::encrypt_config).transpose()?;
+        let encrypted_config = config
+            .as_deref()
+            .map(trigger_repo::encrypt_config)
+            .transpose()?;
 
         let trigger_id = uuid::Uuid::new_v4().to_string();
         let status = "active";
@@ -1422,7 +1622,8 @@ fn create_event_subscriptions_in_tx(
     // Track (event_type, source_filter) pairs we've already inserted so the
     // same subscription declared both on a UC and at the persona level doesn't
     // produce a duplicate row.
-    let mut seen: std::collections::HashSet<(String, Option<String>)> = std::collections::HashSet::new();
+    let mut seen: std::collections::HashSet<(String, Option<String>)> =
+        std::collections::HashSet::new();
 
     // -- Per-UC subscriptions (v3 primary location) --------------------------
     //
@@ -1433,7 +1634,9 @@ fn create_event_subscriptions_in_tx(
     // row per listen subscription found on any use case.
     for uc in &use_cases.structured {
         let uc_id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
-        if uc_id.is_empty() { continue; }
+        if uc_id.is_empty() {
+            continue;
+        }
         let subs = match uc.get("event_subscriptions").and_then(|v| v.as_array()) {
             Some(s) => s,
             None => continue,
@@ -1444,7 +1647,9 @@ fn create_event_subscriptions_in_tx(
                 _ => continue,
             };
             let direction = sub.get("direction").and_then(|v| v.as_str());
-            if !is_listen(direction) { continue; }
+            if !is_listen(direction) {
+                continue;
+            }
             // Cross-persona chain default — see `collect_persona_emit_event_types`.
             // When this persona doesn't emit this event itself, the event has to
             // arrive from a different persona; default source_filter to "*" so
@@ -1462,7 +1667,9 @@ fn create_event_subscriptions_in_tx(
                 });
 
             let key = (event_type.clone(), source_filter.clone());
-            if !seen.insert(key) { continue; }
+            if !seen.insert(key) {
+                continue;
+            }
 
             let sub_id = uuid::Uuid::new_v4().to_string();
             let rows = tx.execute(
@@ -1471,7 +1678,9 @@ fn create_event_subscriptions_in_tx(
                  VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?6)",
                 rusqlite::params![sub_id, persona_id, event_type, source_filter, uc_id, now],
             ).map_err(AppError::Database)?;
-            if rows > 0 { subscriptions_created += 1; }
+            if rows > 0 {
+                subscriptions_created += 1;
+            }
         }
     }
 
@@ -1484,14 +1693,17 @@ fn create_event_subscriptions_in_tx(
     // Build a reverse lookup so persona-level events can still be attributed
     // to the first UC that mentioned the same event_type, keeping the
     // use_case_id column non-null whenever possible.
-    let mut event_to_use_case: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut event_to_use_case: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     for uc in &use_cases.structured {
         let uc_id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
         if let Some(subs) = uc.get("event_subscriptions").and_then(|v| v.as_array()) {
             for sub in subs {
                 if let Some(et) = sub.get("event_type").and_then(|v| v.as_str()) {
                     if !et.is_empty() {
-                        event_to_use_case.entry(et.to_string()).or_insert_with(|| uc_id.to_string());
+                        event_to_use_case
+                            .entry(et.to_string())
+                            .or_insert_with(|| uc_id.to_string());
                     }
                 }
             }
@@ -1500,8 +1712,12 @@ fn create_event_subscriptions_in_tx(
 
     for evt in &ir.events {
         let event_type = evt.event_type.as_deref().unwrap_or("").to_string();
-        if event_type.is_empty() { continue; }
-        if !is_listen(evt.direction.as_deref()) { continue; }
+        if event_type.is_empty() {
+            continue;
+        }
+        if !is_listen(evt.direction.as_deref()) {
+            continue;
+        }
 
         // Same cross-persona-chain default as the per-UC loop above.
         let source_filter: Option<String> = evt.source_filter.clone().or_else(|| {
@@ -1512,7 +1728,9 @@ fn create_event_subscriptions_in_tx(
             }
         });
         let key = (event_type.clone(), source_filter.clone());
-        if !seen.insert(key) { continue; }
+        if !seen.insert(key) {
+            continue;
+        }
 
         let use_case_id: Option<&str> = event_to_use_case.get(&event_type).map(|s| s.as_str());
         let sub_id = uuid::Uuid::new_v4().to_string();
@@ -1548,14 +1766,33 @@ fn create_output_assertions_in_tx(
 ) -> Result<u32, AppError> {
     let mut created = 0u32;
     for a in &ir.output_assertions {
-        let name = a.get("name").and_then(|v| v.as_str()).unwrap_or("Unnamed assertion");
+        let name = a
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Unnamed assertion");
         let description = a.get("description").and_then(|v| v.as_str());
-        let assertion_type = a.get("type").and_then(|v| v.as_str()).unwrap_or("not_contains");
-        let config_value = a.get("config").cloned().unwrap_or_else(|| serde_json::json!({}));
+        let assertion_type = a
+            .get("type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("not_contains");
+        let config_value = a
+            .get("config")
+            .cloned()
+            .unwrap_or_else(|| serde_json::json!({}));
         let config = serde_json::to_string(&config_value).unwrap_or_else(|_| "{}".into());
-        let severity = a.get("severity").and_then(|v| v.as_str()).unwrap_or("warning");
-        let on_failure = a.get("on_failure").and_then(|v| v.as_str()).unwrap_or("log");
-        let enabled: i32 = if a.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true) { 1 } else { 0 };
+        let severity = a
+            .get("severity")
+            .and_then(|v| v.as_str())
+            .unwrap_or("warning");
+        let on_failure = a
+            .get("on_failure")
+            .and_then(|v| v.as_str())
+            .unwrap_or("log");
+        let enabled: i32 = if a.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true) {
+            1
+        } else {
+            0
+        };
 
         let id = uuid::Uuid::new_v4().to_string();
         tx.execute(
@@ -1582,7 +1819,8 @@ fn update_persona_in_tx(
     design_result_str: &str,
     now: &str,
 ) -> Result<(), AppError> {
-    let structured_prompt_str: Option<String> = ir.structured_prompt
+    let structured_prompt_str: Option<String> = ir
+        .structured_prompt
         .as_ref()
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
@@ -1601,13 +1839,20 @@ fn update_persona_in_tx(
             updated_at = ?10
          WHERE id = ?11",
         rusqlite::params![
-            ir.name.as_deref(), ir.description.as_deref(), ir.system_prompt.as_deref(),
-            structured_prompt_str, ir.icon.as_deref(), ir.color.as_deref(),
+            ir.name.as_deref(),
+            ir.description.as_deref(),
+            ir.system_prompt.as_deref(),
+            structured_prompt_str,
+            ir.icon.as_deref(),
+            ir.color.as_deref(),
             notification_channels,
-            design_context_str, design_result_str,
-            now, persona_id,
+            design_context_str,
+            design_result_str,
+            now,
+            persona_id,
         ],
-    ).map_err(AppError::Database)?;
+    )
+    .map_err(AppError::Database)?;
 
     tracing::info!(
         persona_id = %persona_id,
@@ -1632,7 +1877,8 @@ fn create_version_snapshot_in_tx(
     resolved_cells: &str,
     now: &str,
 ) -> Result<(), AppError> {
-    let sp_str: Option<String> = ir.structured_prompt
+    let sp_str: Option<String> = ir
+        .structured_prompt
         .as_ref()
         .and_then(|v| serde_json::to_string(v).ok());
     let version_id = uuid::Uuid::new_v4().to_string();
@@ -1666,13 +1912,12 @@ fn create_version_snapshot_in_tx(
 // Post-transaction: update trigger schedules (best-effort)
 // ============================================================================
 
-fn update_trigger_schedules(
-    db: &crate::db::DbPool,
-    trigger_ids: &[String],
-) {
+fn update_trigger_schedules(db: &crate::db::DbPool, trigger_ids: &[String]) {
     for trigger_id in trigger_ids {
         if let Ok(trigger) = trigger_repo::get_by_id(db, trigger_id) {
-            if let Some(next_at) = crate::engine::scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now()) {
+            if let Some(next_at) =
+                crate::engine::scheduler::compute_next_trigger_at(&trigger, chrono::Utc::now())
+            {
                 let _ = db.get().map(|c| {
                     c.execute(
                         "UPDATE persona_triggers SET next_trigger_at = ?1, updated_at = ?2 WHERE id = ?3",
@@ -1786,10 +2031,14 @@ pub async fn promote_build_draft_inner(
     // the user picked (so the matrix shows the right services and runtime credential
     // resolution finds the right vault entries).
     if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+        if let Ok(answers) =
+            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
+        {
             crate::engine::adoption_answers::substitute_variables(&mut ir, &answers);
             crate::engine::adoption_answers::inject_configuration_section(&mut ir, &answers);
-            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(&mut ir, &answers);
+            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
+                &mut ir, &answers,
+            );
             tracing::info!(persona_id = %persona_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for promotion");
         }
     }
@@ -1878,13 +2127,17 @@ pub async fn promote_build_draft_inner(
     let (tool_actions, tool_names) = prepare_tool_actions(&ir, &state.db, &all_connectors);
     validate_triggers(&ir)?;
     let notification_channels = prepare_notification_channels(&ir)?;
-    let (design_context_str, design_result_str) = build_design_json(&ir, &use_cases.structured, &tool_names);
+    let (design_context_str, design_result_str) =
+        build_design_json(&ir, &use_cases.structured, &tool_names);
     let connectors_needing_setup = find_connectors_needing_setup(&ir);
 
     // ================================================================
     // BEGIN TRANSACTION — all writes are atomic from here
     // ================================================================
-    let mut conn = state.db.get().map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
+    let mut conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
     let tx = conn.transaction().map_err(AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -1894,17 +2147,36 @@ pub async fn promote_build_draft_inner(
     // listen is intra-persona (self-loop) or cross-persona (chain) so the
     // promote path can default `source_filter = "*"` for chain inbounds.
     let persona_emits = collect_persona_emit_event_types(&ir, &use_cases);
-    let (triggers_created, created_trigger_ids) = create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &persona_emits, &now)?;
-    let subscriptions_created = create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &persona_emits, &now)?;
+    let (triggers_created, created_trigger_ids) =
+        create_triggers_in_tx(&tx, &persona_id, &ir, &use_cases.ids, &persona_emits, &now)?;
+    let subscriptions_created =
+        create_event_subscriptions_in_tx(&tx, &persona_id, &ir, &use_cases, &persona_emits, &now)?;
     let assertions_created = create_output_assertions_in_tx(&tx, &persona_id, &ir, &now)?;
-    update_persona_in_tx(&tx, &persona_id, &ir, &notification_channels, &design_context_str, &design_result_str, &now)?;
-    create_version_snapshot_in_tx(&tx, &persona_id, &ir, &design_context_str, &design_result_str, &session.resolved_cells, &now)?;
+    update_persona_in_tx(
+        &tx,
+        &persona_id,
+        &ir,
+        &notification_channels,
+        &design_context_str,
+        &design_result_str,
+        &now,
+    )?;
+    create_version_snapshot_in_tx(
+        &tx,
+        &persona_id,
+        &ir,
+        &design_context_str,
+        &design_result_str,
+        &session.resolved_cells,
+        &now,
+    )?;
 
     // Transition build session to Promoted
     tx.execute(
         "UPDATE build_sessions SET phase = ?1, updated_at = ?2 WHERE id = ?3",
         rusqlite::params![BuildPhase::Promoted.as_str(), now, session_id],
-    ).map_err(AppError::Database)?;
+    )
+    .map_err(AppError::Database)?;
 
     // ================================================================
     // COMMIT — all entities are persisted atomically
@@ -1969,7 +2241,9 @@ fn auto_create_smee_relays(
         if trigger.trigger_type.as_deref() != Some("webhook") {
             continue;
         }
-        let Some(cfg) = trigger.config.as_ref() else { continue; };
+        let Some(cfg) = trigger.config.as_ref() else {
+            continue;
+        };
         let Some(channel_url) = cfg
             .get("smee_channel_url")
             .and_then(|v| v.as_str())
@@ -2075,12 +2349,13 @@ mod tests {
     fn collect_emit_set_from_per_uc_subs() {
         let ir = AgentIr::default();
         let use_cases = UseCaseData {
-            structured: vec![
-                uc_with_subs("uc-1", serde_json::json!([
+            structured: vec![uc_with_subs(
+                "uc-1",
+                serde_json::json!([
                     {"event_type": "news.draft.captured", "direction": "emit"},
                     {"event_type": "external.thing.happened", "direction": "listen"},
-                ])),
-            ],
+                ]),
+            )],
             ids: vec!["uc-1".into()],
         };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
@@ -2105,7 +2380,10 @@ mod tests {
             ],
             ..Default::default()
         };
-        let use_cases = UseCaseData { structured: vec![], ids: vec![] };
+        let use_cases = UseCaseData {
+            structured: vec![],
+            ids: vec![],
+        };
         let emits = collect_persona_emit_event_types(&ir, &use_cases);
         assert!(emits.contains("a.b.published"));
         assert!(!emits.contains("c.d.received"));
@@ -2147,7 +2425,7 @@ mod tests {
         let use_cases = UseCaseData {
             structured: vec![uc_with_subs(
                 "uc-1",
-                serde_json::json!([{"event_type": "p.q.r"}]),  // missing direction
+                serde_json::json!([{"event_type": "p.q.r"}]), // missing direction
             )],
             ids: vec!["uc-1".into()],
         };
@@ -2281,11 +2559,13 @@ mod tests {
 
         // Original binding to p_a is preserved
         let conn = pool.get().unwrap();
-        let target: Option<String> = conn.query_row(
-            "SELECT target_persona_id FROM smee_relays WHERE channel_url = ?1",
-            rusqlite::params![url],
-            |row| row.get(0),
-        ).unwrap();
+        let target: Option<String> = conn
+            .query_row(
+                "SELECT target_persona_id FROM smee_relays WHERE channel_url = ?1",
+                rusqlite::params![url],
+                |row| row.get(0),
+            )
+            .unwrap();
         assert_eq!(target.as_deref(), Some("p_a"));
     }
 
@@ -2297,7 +2577,7 @@ mod tests {
             triggers: vec![
                 schedule_trigger(),
                 webhook_trigger(Some("https://smee.io/mix-1"), None),
-                webhook_trigger(None, None),  // webhook but no smee URL
+                webhook_trigger(None, None), // webhook but no smee URL
                 webhook_trigger(Some("https://smee.io/mix-2"), Some("a,b")),
             ],
             ..Default::default()

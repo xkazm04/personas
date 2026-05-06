@@ -25,19 +25,32 @@ pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
 ///
 /// Phase C1 runtime foundation. See `docs/concepts/persona-capabilities/03-runtime.md`.
 pub fn render_active_capabilities(design_context: Option<&str>) -> String {
-    let Some(dc_json) = design_context else { return String::new(); };
-    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
-    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else { return String::new(); };
-    if use_cases.is_empty() { return String::new(); }
+    let Some(dc_json) = design_context else {
+        return String::new();
+    };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else {
+        return String::new();
+    };
+    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else {
+        return String::new();
+    };
+    if use_cases.is_empty() {
+        return String::new();
+    }
 
     let mut out = String::new();
     let mut rendered = 0usize;
 
     for uc in use_cases {
         // Disabled only when explicitly `enabled == false`. Missing or true → active.
-        if uc.get("enabled").and_then(|v| v.as_bool()) == Some(false) { continue; }
+        if uc.get("enabled").and_then(|v| v.as_bool()) == Some(false) {
+            continue;
+        }
 
-        let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled");
+        let title = uc
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled");
         let summary = uc
             .get("capability_summary")
             .and_then(|v| v.as_str())
@@ -107,9 +120,15 @@ pub fn render_active_capabilities(design_context: Option<&str>) -> String {
 ///
 /// Phase C1. See `docs/concepts/persona-capabilities/03-runtime.md` §3.
 pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
-    let Some(dc_json) = design_context else { return String::new(); };
-    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else { return String::new(); };
-    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else { return String::new(); };
+    let Some(dc_json) = design_context else {
+        return String::new();
+    };
+    let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) else {
+        return String::new();
+    };
+    let Some(use_cases) = crate::engine::design_context::pick_use_cases_array(&dc) else {
+        return String::new();
+    };
 
     let mut entries: Vec<String> = use_cases
         .iter()
@@ -133,14 +152,17 @@ pub fn active_capabilities_fingerprint(design_context: Option<&str>) -> String {
 /// drops protocol messages that violate the policy — required because LLMs
 /// occasionally ignore even explicit instructions.
 pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> Vec<String> {
-    let Some(s) = settings.filter(|v| !v.is_null()) else { return Vec::new(); };
+    let Some(s) = settings.filter(|v| !v.is_null()) else {
+        return Vec::new();
+    };
     let mut lines = Vec::new();
 
     if let Some(v) = s.get("memories").and_then(|v| v.as_str()) {
         if v.eq_ignore_ascii_case("off") {
             lines.push(
                 "Do not write to agent memory for this capability. The persona has memories \
-                 from other capabilities; do not extend them from this run.".to_string(),
+                 from other capabilities; do not extend them from this run."
+                    .to_string(),
             );
         }
     }
@@ -148,12 +170,14 @@ pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> V
         match v.to_ascii_lowercase().as_str() {
             "off" => lines.push(
                 "Do not request manual review for this capability. Resolve uncertainty \
-                 with your own best judgment and proceed.".to_string(),
+                 with your own best judgment and proceed."
+                    .to_string(),
             ),
             "trust_llm" | "trustllm" | "trust-llm" => lines.push(
                 "Trust your own judgment for this capability. If you would normally \
                  request manual review, proceed instead — your decisions will not be queued \
-                 for human approval.".to_string(),
+                 for human approval."
+                    .to_string(),
             ),
             _ => {}
         }
@@ -162,7 +186,8 @@ pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> V
         if v.eq_ignore_ascii_case("off") {
             lines.push(
                 "Do not emit events for this capability. Other personas will not be \
-                 notified of your actions on this run.".to_string(),
+                 notified of your actions on this run."
+                    .to_string(),
             );
         }
     }

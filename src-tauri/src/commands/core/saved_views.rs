@@ -2,7 +2,10 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::{
-    db::{models::{CreateSavedViewInput, SavedView}, repos},
+    db::{
+        models::{CreateSavedViewInput, SavedView},
+        repos,
+    },
     error::AppError,
     ipc_auth::require_auth,
     AppState,
@@ -19,9 +22,7 @@ pub async fn create_saved_view(
 }
 
 #[tauri::command]
-pub async fn list_saved_views(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<SavedView>, AppError> {
+pub async fn list_saved_views(state: State<'_, Arc<AppState>>) -> Result<Vec<SavedView>, AppError> {
     require_auth(&state).await?;
     let views = repos::core::saved_views::list_all(&state.db)?;
     Ok(views)

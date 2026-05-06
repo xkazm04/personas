@@ -626,10 +626,7 @@ pub async fn discover_resources(
             let items_value = match items_path {
                 None => &root,
                 Some(p) => extract_path(&root, p).ok_or_else(|| {
-                    AppError::Internal(format!(
-                        "Discovery response missing items_path '{}'",
-                        p
-                    ))
+                    AppError::Internal(format!("Discovery response missing items_path '{}'", p))
                 })?,
             };
 
@@ -772,8 +769,8 @@ mod tests {
     fn interpolate_rejects_slash_in_resolved_value() {
         let mut fields = HashMap::new();
         fields.insert("organization_slug".to_string(), "evil/../admin".into());
-        let err = interpolate("/api/0/{{organization_slug}}/", &fields, &HashMap::new())
-            .unwrap_err();
+        let err =
+            interpolate("/api/0/{{organization_slug}}/", &fields, &HashMap::new()).unwrap_err();
         assert!(err.to_string().contains("unsafe"));
     }
 
@@ -788,8 +785,14 @@ mod tests {
         let v: serde_json::Value = serde_json::json!({
             "project": { "slug": "web-api", "meta": { "count": 42 } }
         });
-        assert_eq!(extract_string(&v, "project.slug").as_deref(), Some("web-api"));
-        assert_eq!(extract_string(&v, "project.meta.count").as_deref(), Some("42"));
+        assert_eq!(
+            extract_string(&v, "project.slug").as_deref(),
+            Some("web-api")
+        );
+        assert_eq!(
+            extract_string(&v, "project.meta.count").as_deref(),
+            Some("42")
+        );
         assert_eq!(extract_string(&v, "missing"), None);
     }
 

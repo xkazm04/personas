@@ -7,7 +7,7 @@
 //! of the library's global test-target compilation health.
 
 use app_lib::render_plan::compile::{
-    AudioClipInput, Composition, CompileDeps, CompileOptions, ProxyRef, TextItemInput,
+    AudioClipInput, CompileDeps, CompileOptions, Composition, ProxyRef, TextItemInput,
     TimelineItem, TransitionMode, VideoClipInput,
 };
 use app_lib::render_plan::{
@@ -83,7 +83,11 @@ fn worked_example_fold() {
     ];
     let plan = compile(
         &comp,
-        &CompileOptions { transition_mode: TransitionMode::Fold, frame_snap: true, for_export: true },
+        &CompileOptions {
+            transition_mode: TransitionMode::Fold,
+            frame_snap: true,
+            for_export: true,
+        },
         &CompileDeps::none(),
     )
     .unwrap();
@@ -153,7 +157,10 @@ fn normalize_unmeasured_emits_warning() {
         measured_threshold: None,
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
-    assert!(plan.warnings.iter().any(|w| matches!(w, CompileWarning::LoudnormUnmeasured { .. })));
+    assert!(plan
+        .warnings
+        .iter()
+        .any(|w| matches!(w, CompileWarning::LoudnormUnmeasured { .. })));
 }
 
 #[test]
@@ -174,7 +181,13 @@ fn text_items_never_produce_overlays() {
     assert_eq!(plan.overlays.len(), 0);
     // Beats do not participate in font probing, so no font-related
     // warnings ever appear.
-    assert!(plan.warnings.is_empty() || plan.warnings.iter().all(|w| !format!("{w:?}").contains("Font")));
+    assert!(
+        plan.warnings.is_empty()
+            || plan
+                .warnings
+                .iter()
+                .all(|w| !format!("{w:?}").contains("Font"))
+    );
 }
 
 #[test]
@@ -195,6 +208,8 @@ fn proxy_lookup_preferred_in_preview_mode() {
         media_probe: None,
     };
     let plan = compile(&comp, &CompileOptions::fold_default(), &deps).unwrap();
-    assert!(plan.sources.iter().any(|s| matches!(s, SourceEntry::Proxy { .. })));
+    assert!(plan
+        .sources
+        .iter()
+        .any(|s| matches!(s, SourceEntry::Proxy { .. })));
 }
-

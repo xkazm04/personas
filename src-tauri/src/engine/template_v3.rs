@@ -110,7 +110,9 @@ fn hoist_output_assertions(obj: &mut Map<String, Value>) {
     // Per-UC assertions
     if let Some(ucs) = obj.get("use_cases").and_then(|v| v.as_array()) {
         for uc in ucs {
-            let Some(uc_obj) = uc.as_object() else { continue };
+            let Some(uc_obj) = uc.as_object() else {
+                continue;
+            };
             let uc_id = uc_obj
                 .get("id")
                 .and_then(|v| v.as_str())
@@ -142,7 +144,10 @@ fn hoist_output_assertions(obj: &mut Map<String, Value>) {
     }
 
     if !flat.is_empty() {
-        obj.insert("suggested_output_assertions".to_string(), Value::Array(flat));
+        obj.insert(
+            "suggested_output_assertions".to_string(),
+            Value::Array(flat),
+        );
     }
 }
 
@@ -180,14 +185,21 @@ fn baseline_not_contains_assertion() -> Value {
 /// already have `use_case_ids` are left alone. Both fields are preserved
 /// so the downstream UI can read either.
 fn migrate_adoption_questions(obj: &mut Map<String, Value>) {
-    let Some(qs) = obj.get_mut("adoption_questions").and_then(|v| v.as_array_mut()) else {
+    let Some(qs) = obj
+        .get_mut("adoption_questions")
+        .and_then(|v| v.as_array_mut())
+    else {
         return;
     };
     for q in qs.iter_mut() {
         let Some(q_obj) = q.as_object_mut() else {
             continue;
         };
-        if q_obj.get("use_case_ids").and_then(|v| v.as_array()).is_some() {
+        if q_obj
+            .get("use_case_ids")
+            .and_then(|v| v.as_array())
+            .is_some()
+        {
             continue;
         }
         if let Some(single) = q_obj.get("use_case_id").and_then(|v| v.as_str()) {
@@ -277,13 +289,18 @@ fn hoist_sample_outputs(obj: &mut Map<String, Value>) {
         return;
     };
     for uc in use_cases.iter_mut() {
-        let Some(uc_obj) = uc.as_object_mut() else { continue };
+        let Some(uc_obj) = uc.as_object_mut() else {
+            continue;
+        };
         let uc_id = uc_obj
             .get("id")
             .and_then(|v| v.as_str())
             .unwrap_or("<unknown>")
             .to_string();
-        let Some(sample) = uc_obj.get_mut("sample_output").and_then(|v| v.as_object_mut()) else {
+        let Some(sample) = uc_obj
+            .get_mut("sample_output")
+            .and_then(|v| v.as_object_mut())
+        else {
             continue;
         };
         match sample.get("format").and_then(|v| v.as_str()) {
@@ -317,8 +334,13 @@ fn hoist_sample_outputs(obj: &mut Map<String, Value>) {
 fn hoist_notify_titlebar_flags(obj: &mut Map<String, Value>) {
     fn default_in_subs_array(subs: &mut Vec<Value>) {
         for sub in subs.iter_mut() {
-            let Some(sub_obj) = sub.as_object_mut() else { continue };
-            let direction = sub_obj.get("direction").and_then(|v| v.as_str()).unwrap_or("");
+            let Some(sub_obj) = sub.as_object_mut() else {
+                continue;
+            };
+            let direction = sub_obj
+                .get("direction")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             if direction != "emit" {
                 continue;
             }
@@ -331,7 +353,9 @@ fn hoist_notify_titlebar_flags(obj: &mut Map<String, Value>) {
     // Template per-UC event subscriptions.
     if let Some(use_cases) = obj.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
         for uc in use_cases.iter_mut() {
-            let Some(uc_obj) = uc.as_object_mut() else { continue };
+            let Some(uc_obj) = uc.as_object_mut() else {
+                continue;
+            };
             if let Some(subs) = uc_obj
                 .get_mut("event_subscriptions")
                 .and_then(|v| v.as_array_mut())
@@ -729,7 +753,10 @@ fn derive_protocol_capabilities(obj: &mut Map<String, Value>) {
     if let Some(ucs) = obj.get("use_cases").and_then(|v| v.as_array()) {
         for uc in ucs {
             if let Some(review) = uc.get("review_policy").and_then(|v| v.as_object()) {
-                let mode = review.get("mode").and_then(|v| v.as_str()).unwrap_or("never");
+                let mode = review
+                    .get("mode")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("never");
                 if mode != "never" {
                     let ctx = review.get("context").and_then(|v| v.as_str()).unwrap_or("");
                     review_contexts.push(if ctx.is_empty() {
@@ -740,7 +767,11 @@ fn derive_protocol_capabilities(obj: &mut Map<String, Value>) {
                 }
             }
             if let Some(memory) = uc.get("memory_policy").and_then(|v| v.as_object()) {
-                if memory.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false) {
+                if memory
+                    .get("enabled")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false)
+                {
                     let ctx = memory.get("context").and_then(|v| v.as_str()).unwrap_or("");
                     if !ctx.is_empty() {
                         memory_contexts.push(ctx.to_string());
@@ -824,7 +855,11 @@ fn ensure_use_case_flows(obj: &mut Map<String, Value>) {
         if uc_obj.get("nodes").is_some() {
             continue;
         }
-        let Some(flow) = uc_obj.get("use_case_flow").and_then(|v| v.as_object()).cloned() else {
+        let Some(flow) = uc_obj
+            .get("use_case_flow")
+            .and_then(|v| v.as_object())
+            .cloned()
+        else {
             continue;
         };
         if let Some(nodes) = flow.get("nodes").cloned() {
@@ -1005,7 +1040,10 @@ mod tests {
         assert!(types.contains(&"user_message"));
         assert!(types.contains(&"agent_memory"));
         assert!(types.contains(&"emit_event"));
-        assert!(!types.contains(&"manual_review"), "review mode=never should not emit manual_review");
+        assert!(
+            !types.contains(&"manual_review"),
+            "review mode=never should not emit manual_review"
+        );
     }
 
     #[test]
@@ -1048,10 +1086,16 @@ mod tests {
             ]
         });
         normalize_v3_to_flat(&mut payload);
-        let qs = payload.get("adoption_questions").and_then(|v| v.as_array()).unwrap();
+        let qs = payload
+            .get("adoption_questions")
+            .and_then(|v| v.as_array())
+            .unwrap();
 
         // aq1: singular → plural of length 1
-        let aq1_ids = qs[0].get("use_case_ids").and_then(|v| v.as_array()).unwrap();
+        let aq1_ids = qs[0]
+            .get("use_case_ids")
+            .and_then(|v| v.as_array())
+            .unwrap();
         assert_eq!(aq1_ids.len(), 1);
         assert_eq!(aq1_ids[0].as_str(), Some("uc_a"));
 
@@ -1059,7 +1103,10 @@ mod tests {
         assert!(qs[1].get("use_case_ids").is_none());
 
         // aq3: already plural, untouched
-        let aq3_ids = qs[2].get("use_case_ids").and_then(|v| v.as_array()).unwrap();
+        let aq3_ids = qs[2]
+            .get("use_case_ids")
+            .and_then(|v| v.as_array())
+            .unwrap();
         assert_eq!(aq3_ids.len(), 2);
     }
 
@@ -1083,9 +1130,18 @@ mod tests {
             .and_then(|v| v.get("connectors"))
             .and_then(|v| v.as_array())
             .unwrap();
-        assert_eq!(conns[0].get("required").and_then(|v| v.as_bool()), Some(true));
-        assert_eq!(conns[1].get("required").and_then(|v| v.as_bool()), Some(true));
-        assert_eq!(conns[2].get("required").and_then(|v| v.as_bool()), Some(false));
+        assert_eq!(
+            conns[0].get("required").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            conns[1].get("required").and_then(|v| v.as_bool()),
+            Some(true)
+        );
+        assert_eq!(
+            conns[2].get("required").and_then(|v| v.as_bool()),
+            Some(false)
+        );
 
         // Flat copy carries the same values.
         let flat = payload
@@ -1181,7 +1237,10 @@ mod tests {
     fn test_hoist_sample_outputs_defaults_format_to_plain() {
         let mut payload = v32_fixture();
         // Remove format to test default.
-        payload["use_cases"][0]["sample_output"].as_object_mut().unwrap().remove("format");
+        payload["use_cases"][0]["sample_output"]
+            .as_object_mut()
+            .unwrap()
+            .remove("format");
         normalize_v3_to_flat(&mut payload);
         assert_eq!(payload["use_cases"][0]["sample_output"]["format"], "plain");
     }
@@ -1210,7 +1269,9 @@ mod tests {
     fn test_hoist_notify_titlebar_defaults_false_on_emit() {
         let mut payload = v32_fixture();
         normalize_v3_to_flat(&mut payload);
-        let subs = payload["use_cases"][0]["event_subscriptions"].as_array().unwrap();
+        let subs = payload["use_cases"][0]["event_subscriptions"]
+            .as_array()
+            .unwrap();
         // Entry 0: explicit true — preserved.
         assert_eq!(subs[0]["notify_titlebar"], true);
         // Entry 1: emit, no explicit — defaulted to false.
@@ -1224,7 +1285,9 @@ mod tests {
         let mut payload = v32_fixture();
         payload["use_cases"][0]["event_subscriptions"][1]["notify_titlebar"] = json!(true);
         normalize_v3_to_flat(&mut payload);
-        let subs = payload["use_cases"][0]["event_subscriptions"].as_array().unwrap();
+        let subs = payload["use_cases"][0]["event_subscriptions"]
+            .as_array()
+            .unwrap();
         assert_eq!(subs[0]["notify_titlebar"], true);
         assert_eq!(subs[1]["notify_titlebar"], true);
     }
@@ -1280,6 +1343,9 @@ mod tests {
     fn test_sample_output_format_unknown_value_deserialize_error() {
         let json = r#"{"format":"xml"}"#;
         let parsed: Result<crate::db::models::SampleOutput, _> = serde_json::from_str(json);
-        assert!(parsed.is_err(), "unknown format must fail at serde layer (D-01)");
+        assert!(
+            parsed.is_err(),
+            "unknown format must fail at serde layer (D-01)"
+        );
     }
 }

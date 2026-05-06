@@ -113,7 +113,10 @@ impl ExecutionEventEmitter for NoOpEmitter {
 /// emit_to(&*emitter, event_name::EXECUTION_STATUS, &status_event);
 /// ```
 pub fn emit_to<P: Serialize>(emitter: &dyn ExecutionEventEmitter, event: &str, payload: &P) {
-    emitter.emit_json(event, serde_json::to_value(payload).unwrap_or(serde_json::Value::Null));
+    emitter.emit_json(
+        event,
+        serde_json::to_value(payload).unwrap_or(serde_json::Value::Null),
+    );
 }
 
 #[cfg(test)]
@@ -154,22 +157,31 @@ mod tests {
 
     impl ExecutionEventEmitter for CapturingEmitter {
         fn emit_json(&self, event: &str, payload: serde_json::Value) {
-            self.events.lock().unwrap().push((event.to_string(), payload));
+            self.events
+                .lock()
+                .unwrap()
+                .push((event.to_string(), payload));
         }
     }
 
     #[test]
     fn capturing_emitter_records_typed_emit_calls() {
         let cap = CapturingEmitter::new();
-        cap.emit("execution-status", &serde_json::json!({
-            "execution_id": "exec-1",
-            "status": "completed",
-        }));
-        cap.emit("execution-status", &serde_json::json!({
-            "execution_id": "exec-1",
-            "status": "failed",
-            "error": "boom",
-        }));
+        cap.emit(
+            "execution-status",
+            &serde_json::json!({
+                "execution_id": "exec-1",
+                "status": "completed",
+            }),
+        );
+        cap.emit(
+            "execution-status",
+            &serde_json::json!({
+                "execution_id": "exec-1",
+                "status": "failed",
+                "error": "boom",
+            }),
+        );
         let snap = cap.snapshot();
         assert_eq!(snap.len(), 2);
         assert_eq!(snap[0].0, "execution-status");

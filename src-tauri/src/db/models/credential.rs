@@ -5,6 +5,25 @@ use ts_rs::TS;
 // Credentials
 // ============================================================================
 
+/// A user credential. Field-level rows in `credential_fields` are the
+/// authoritative source of truth for secrets — `encrypted_data` and `iv`
+/// on this row are LEGACY-ONLY blobs left over from before the per-field
+/// migration.
+///
+/// **Invariant (post-migration):** for every credential that has at least
+/// one `credential_fields` row, `encrypted_data == ''` AND `iv == ''`.
+/// Readers must NOT consult `encrypted_data` when field rows exist; doing
+/// so reintroduces the dual-source-of-truth bug the migration was meant
+/// to eliminate. The invariant is enforced two ways:
+///
+///  1. The `clear_legacy_credential_blobs` migration step empties the
+///     blob columns on every row that has been split into fields.
+///  2. `assert_credential_blob_invariant` runs at startup and emits a
+///     `tracing::error!` for any row that violates the rule, so a future
+///     regression that re-populates `encrypted_data` is loud.
+///
+/// New rows written by `create_credential` always set both blob columns
+/// to the empty string. The fields-table is the only place secrets live.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
@@ -12,11 +31,15 @@ pub struct PersonaCredential {
     pub id: String,
     pub name: String,
     pub service_type: String,
-    /// Never sent to the frontend -- only used internally for crypto operations.
+    /// LEGACY blob, retained only for migration reads. Authoritative source
+    /// of truth for secrets is `credential_fields`. Post-migration this is
+    /// always `""` for any row whose fields have been split — see the
+    /// invariant on the type-level doc.
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub encrypted_data: String,
-    /// Never sent to the frontend -- only used internally for crypto operations.
+    /// LEGACY nonce, paired with `encrypted_data`. Post-migration always
+    /// `""` for split rows. See type-level invariant.
     #[serde(skip_serializing)]
     #[ts(skip)]
     pub iv: String,

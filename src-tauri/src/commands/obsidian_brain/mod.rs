@@ -16,15 +16,15 @@ use crate::db::models::{
     DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport,
     SyncConflict, SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
-use crate::db::repos::core::settings;
-use crate::db::settings_keys;
-use crate::ipc_auth::require_auth;
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::core::settings;
 use crate::db::repos::core::settings as settings_repo;
-use crate::db::repos::resources::{connectors as connector_repo, obsidian_brain as sync_repo};
 use crate::db::repos::dev_tools as dev_tools_repo;
+use crate::db::repos::resources::{connectors as connector_repo, obsidian_brain as sync_repo};
+use crate::db::settings_keys;
 use crate::error::AppError;
+use crate::ipc_auth::require_auth;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
@@ -123,13 +123,16 @@ pub fn obsidian_brain_test_connection(
             let ep = entry.path();
             if ep.extension().map(|e| e == "md").unwrap_or(false) {
                 note_count += 1;
-            } else if ep.is_dir() && ep.file_name().map(|n| !n.to_string_lossy().starts_with('.')).unwrap_or(false) {
+            } else if ep.is_dir()
+                && ep
+                    .file_name()
+                    .map(|n| !n.to_string_lossy().starts_with('.'))
+                    .unwrap_or(false)
+            {
                 if let Ok(sub) = std::fs::read_dir(&ep) {
                     note_count += sub
                         .flatten()
-                        .filter(|e| {
-                            e.path().extension().map(|ext| ext == "md").unwrap_or(false)
-                        })
+                        .filter(|e| e.path().extension().map(|ext| ext == "md").unwrap_or(false))
                         .count() as i64;
                 }
             }
@@ -231,7 +234,9 @@ pub fn obsidian_brain_push_sync(
             match persona_repo::get_by_id(&state.db, id) {
                 Ok(p) => list.push(p),
                 Err(e) => {
-                    result.errors.push(format!("Error fetching persona {id}: {e}"));
+                    result
+                        .errors
+                        .push(format!("Error fetching persona {id}: {e}"));
                 }
             }
         }
@@ -355,9 +360,7 @@ pub fn obsidian_brain_push_sync(
             }
 
             if let Err(e) = std::fs::create_dir_all(&persona_dir) {
-                result
-                    .errors
-                    .push(format!("Failed to create dir: {e}"));
+                result.errors.push(format!("Failed to create dir: {e}"));
                 continue;
             }
 
@@ -424,7 +427,9 @@ pub fn obsidian_brain_push_sync(
             }
 
             if let Err(e) = std::fs::write(&file_path, &md_content) {
-                result.errors.push(format!("Failed to write connector: {e}"));
+                result
+                    .errors
+                    .push(format!("Failed to write connector: {e}"));
                 continue;
             }
 
@@ -499,10 +504,9 @@ pub fn obsidian_brain_pull_sync(
         let vault_content = match std::fs::read_to_string(&file_path) {
             Ok(c) => c,
             Err(e) => {
-                result.errors.push(format!(
-                    "Failed to read {}: {e}",
-                    tracked.vault_file_path
-                ));
+                result
+                    .errors
+                    .push(format!("Failed to read {}: {e}", tracked.vault_file_path));
                 continue;
             }
         };
@@ -562,18 +566,18 @@ pub fn obsidian_brain_pull_sync(
                         .trim()
                         .to_string();
 
-                    let new_category = extract_yaml_field(&yaml, "category")
-                        .unwrap_or(memory.category.clone());
+                    let new_category =
+                        extract_yaml_field(&yaml, "category").unwrap_or(memory.category.clone());
                     let new_importance = extract_yaml_field(&yaml, "importance")
                         .and_then(|v| v.parse::<i32>().ok())
                         .unwrap_or(memory.importance);
-                    let new_tier = extract_yaml_field(&yaml, "tier")
-                        .unwrap_or(memory.tier.clone());
+                    let new_tier = extract_yaml_field(&yaml, "tier").unwrap_or(memory.tier.clone());
                     let new_tags = extract_yaml_tags(&yaml);
 
                     // Update memory in DB
                     let conn = state.db.get()?;
-                    let tags_json = serde_json::to_string(&new_tags).unwrap_or_else(|_| "[]".into());
+                    let tags_json =
+                        serde_json::to_string(&new_tags).unwrap_or_else(|_| "[]".into());
                     let now = Utc::now().to_rfc3339();
                     conn.execute(
                         "UPDATE persona_memories SET title = ?1, content = ?2, category = ?3, importance = ?4, tier = ?5, tags = ?6, updated_at = ?7 WHERE id = ?8",
@@ -614,6 +618,34 @@ pub fn obsidian_brain_pull_sync(
                     );
                 }
             }
+            ThreeWayResult::ConvergedConflict { app_hash, .. } => {
+                // Both sides edited and ended up identical — a real conflict
+                // avoided by chance. Update the sync state to the converged
+                // hash so future runs see no change, and log a distinct
+                // "converged" action so SyncBridge can surface a confirmation
+                // toast ("Both sides edited X and ended up identical —
+                // keeping shared version").
+                let ss = SyncState {
+                    id: tracked.id.clone(),
+                    entity_type: "memory".into(),
+                    entity_id: tracked.entity_id.clone(),
+                    vault_file_path: tracked.vault_file_path.clone(),
+                    content_hash: app_hash,
+                    sync_direction: "converged".into(),
+                    synced_at: Utc::now().to_rfc3339(),
+                };
+                let _ = sync_repo::upsert_sync_state(&state.db, &ss);
+                log_sync(
+                    &state.db,
+                    "pull",
+                    "memory",
+                    Some(&tracked.entity_id),
+                    Some(&tracked.vault_file_path),
+                    "converged",
+                    Some("Both sides edited and ended up identical — keeping shared version"),
+                );
+                result.converged += 1;
+            }
             ThreeWayResult::Conflict(c) => {
                 log_sync(
                     &state.db,
@@ -637,16 +669,13 @@ pub fn obsidian_brain_pull_sync(
                 if !persona_entry.path().is_dir() {
                     continue;
                 }
-                let mem_dir = persona_entry.path().join(&config.folder_mapping.memories_folder);
+                let mem_dir = persona_entry
+                    .path()
+                    .join(&config.folder_mapping.memories_folder);
                 if !mem_dir.exists() {
                     continue;
                 }
-                scan_new_vault_memories(
-                    &state.db,
-                    vault_base,
-                    &mem_dir,
-                    &mut result,
-                )?;
+                scan_new_vault_memories(&state.db, vault_base, &mem_dir, &mut result)?;
             }
         }
     }
@@ -872,8 +901,8 @@ pub fn obsidian_brain_resolve_conflict(
                         .trim()
                         .to_string();
                     let new_category = extract_yaml_field(&yaml, "category");
-                    let new_importance = extract_yaml_field(&yaml, "importance")
-                        .and_then(|v| v.parse::<i32>().ok());
+                    let new_importance =
+                        extract_yaml_field(&yaml, "importance").and_then(|v| v.parse::<i32>().ok());
                     let new_tags = extract_yaml_tags(&yaml);
                     let tags_json =
                         serde_json::to_string(&new_tags).unwrap_or_else(|_| "[]".into());
@@ -1041,7 +1070,10 @@ pub fn obsidian_brain_read_vault_note(
 // Goal Tree Sync — push goals to vault as linked markdown notes
 // ============================================================================
 
-fn goal_to_markdown(goal: &crate::db::models::DevGoal, children: &[&crate::db::models::DevGoal]) -> String {
+fn goal_to_markdown(
+    goal: &crate::db::models::DevGoal,
+    children: &[&crate::db::models::DevGoal],
+) -> String {
     let mut md = String::new();
     md.push_str("---\n");
     md.push_str(&format!("id: \"{}\"\n", goal.id));
@@ -1079,7 +1111,12 @@ fn goal_to_markdown(goal: &crate::db::models::DevGoal, children: &[&crate::db::m
                 "blocked" => "🚫",
                 _ => "⬜",
             };
-            md.push_str(&format!("- {} [[{}]] ({}%)\n", status_icon, sanitize_filename(&child.title), child.progress));
+            md.push_str(&format!(
+                "- {} [[{}]] ({}%)\n",
+                status_icon,
+                sanitize_filename(&child.title),
+                child.progress
+            ));
         }
         md.push_str("\n");
     }
@@ -1127,7 +1164,9 @@ pub fn obsidian_brain_push_goals(
         let file_path = goals_folder.join(&filename);
 
         // Check sync state
-        let existing = sync_repo::get_sync_state(&state.db, "dev-goal", &goal.id).ok().flatten();
+        let existing = sync_repo::get_sync_state(&state.db, "dev-goal", &goal.id)
+            .ok()
+            .flatten();
         if let Some(ref state_entry) = existing {
             if state_entry.content_hash == hash {
                 skipped += 1;
@@ -1149,7 +1188,11 @@ pub fn obsidian_brain_push_goals(
                         synced_at: chrono::Utc::now().to_rfc3339(),
                     },
                 );
-                if existing.is_some() { updated += 1; } else { created += 1; }
+                if existing.is_some() {
+                    updated += 1;
+                } else {
+                    created += 1;
+                }
             }
             Err(e) => {
                 errors.push(format!("Failed to write {}: {}", filename, e));
@@ -1166,12 +1209,20 @@ pub fn obsidian_brain_push_goals(
             entity_id: None,
             vault_file_path: None,
             action: "sync".into(),
-            details: Some(format!("Goals push: {} created, {} updated, {} skipped", created, updated, skipped)),
+            details: Some(format!(
+                "Goals push: {} created, {} updated, {} skipped",
+                created, updated, skipped
+            )),
             created_at: chrono::Utc::now().to_rfc3339(),
         },
     );
 
-    Ok(PushSyncResult { created, updated, skipped, errors })
+    Ok(PushSyncResult {
+        created,
+        updated,
+        skipped,
+        errors,
+    })
 }
 
 // ── Phase 5: Vault Lint (knowledge integrity check) ──────────────────
@@ -1284,13 +1335,7 @@ pub async fn obsidian_drive_push_sync(
         config.vault_name
     };
 
-    drive::push_to_drive(
-        &token,
-        Path::new(&config.vault_path),
-        &vault_name,
-        &folders,
-    )
-    .await
+    drive::push_to_drive(&token, Path::new(&config.vault_path), &vault_name, &folders).await
 }
 
 #[tauri::command]
@@ -1327,13 +1372,7 @@ pub async fn obsidian_drive_pull_sync(
         config.vault_name
     };
 
-    drive::pull_from_drive(
-        &token,
-        Path::new(&config.vault_path),
-        &vault_name,
-        &folders,
-    )
-    .await
+    drive::pull_from_drive(&token, Path::new(&config.vault_path), &vault_name, &folders).await
 }
 
 /// Extract the Google provider token from auth state.

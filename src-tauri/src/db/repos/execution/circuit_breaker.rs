@@ -34,7 +34,10 @@ pub fn upsert(
 }
 
 /// Load all non-expired circuit states (updated within the last `ttl_minutes`).
-pub fn load_active(pool: &DbPool, ttl_minutes: i64) -> Result<Vec<PersistedCircuitState>, AppError> {
+pub fn load_active(
+    pool: &DbPool,
+    ttl_minutes: i64,
+) -> Result<Vec<PersistedCircuitState>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT provider, consecutive_failures, is_open, opened_at

@@ -4,10 +4,10 @@
 //! Writes alerts to `{app_data}/logs/freeze_monitor.jsonl` when growth is anomalous.
 //! Zero external process spawns — fully silent.
 
+use serde::Serialize;
 use std::io::Write;
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
-use serde::Serialize;
 use tauri::AppHandle;
 
 #[derive(Serialize)]
@@ -59,14 +59,20 @@ fn estimate_heap_mb() -> i64 {
         -1
     }
     #[cfg(not(windows))]
-    { -1 }
+    {
+        -1
+    }
 }
 
 pub fn start(_app: AppHandle, log_dir: PathBuf) {
     tauri::async_runtime::spawn(async move {
         let log_path = log_dir.join("freeze_monitor.jsonl");
         if let Ok(mut f) = std::fs::File::create(&log_path) {
-            let _ = writeln!(f, "{{\"event\":\"monitor_start\",\"ts\":\"{}\"}}", chrono::Utc::now().to_rfc3339());
+            let _ = writeln!(
+                f,
+                "{{\"event\":\"monitor_start\",\"ts\":\"{}\"}}",
+                chrono::Utc::now().to_rfc3339()
+            );
         }
 
         let start = Instant::now();
@@ -101,7 +107,11 @@ pub fn start(_app: AppHandle, log_dir: PathBuf) {
                     heap_estimate_mb: heap,
                     alert,
                 };
-                if let Ok(mut f) = std::fs::OpenOptions::new().append(true).create(true).open(&log_path) {
+                if let Ok(mut f) = std::fs::OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open(&log_path)
+                {
                     if let Ok(json) = serde_json::to_string(&entry) {
                         let _ = writeln!(f, "{}", json);
                     }

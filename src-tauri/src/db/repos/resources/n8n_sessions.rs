@@ -1,7 +1,10 @@
 use rusqlite::{named_params, params};
 use tracing::warn;
 
-use crate::db::models::{CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, SessionStatus, UpdateN8nSessionInput};
+use crate::db::models::{
+    CreateN8nSessionInput, N8nSessionSummary, N8nTransformSession, SessionStatus,
+    UpdateN8nSessionInput,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -29,10 +32,17 @@ pub fn create(
             "INSERT INTO n8n_transform_sessions
                 (id, workflow_name, status, raw_workflow_json, step, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
-            params![id, input.workflow_name, input.status, input.raw_workflow_json, input.step, now, now],
+            params![
+                id,
+                input.workflow_name,
+                input.status,
+                input.raw_workflow_json,
+                input.step,
+                now,
+                now
+            ],
         )?;
         get(pool, &id)
-
     })
 }
 
@@ -50,20 +60,17 @@ pub fn get(pool: &DbPool, id: &str) -> Result<N8nTransformSession, AppError> {
             }
             other => AppError::Database(other),
         })
-
     })
 }
 
 pub fn list(pool: &DbPool) -> Result<Vec<N8nTransformSession>, AppError> {
     timed_query!("n8n_sessions", "n8n_sessions::list", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM n8n_transform_sessions ORDER BY updated_at DESC",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM n8n_transform_sessions ORDER BY updated_at DESC")?;
         let rows = stmt.query_map([], row_to_session)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
@@ -88,7 +95,6 @@ pub fn list_summaries(pool: &DbPool) -> Result<Vec<N8nSessionSummary>, AppError>
         })?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
@@ -148,7 +154,6 @@ pub fn update(
         }
 
         get(pool, id)
-
     })
 }
 
@@ -160,16 +165,19 @@ pub fn update(
 /// and can resume without re-running the transform.
 /// Called at startup -- their CLI processes died when the app last exited.
 pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppError> {
-    timed_query!("n8n_sessions", "n8n_sessions::recover_interrupted_sessions", {
-        let conn = pool.get()?;
+    timed_query!(
+        "n8n_sessions",
+        "n8n_sessions::recover_interrupted_sessions",
+        {
+            let conn = pool.get()?;
 
-        // Collect transform_ids of sessions we're about to mark as failed
-        let mut stmt = conn.prepare(
-            "SELECT transform_id FROM n8n_transform_sessions
+            // Collect transform_ids of sessions we're about to mark as failed
+            let mut stmt = conn.prepare(
+                "SELECT transform_id FROM n8n_transform_sessions
              WHERE status IN ('transforming', 'analyzing', 'interrupted')
                AND transform_id IS NOT NULL",
-        )?;
-        let transform_ids: Vec<String> = stmt
+            )?;
+            let transform_ids: Vec<String> = stmt
             .query_map([], |row| row.get(0))?
             .filter_map(|r| match r {
                 Ok(id) => Some(id),
@@ -180,24 +188,24 @@ pub fn recover_interrupted_sessions(pool: &DbPool) -> Result<Vec<String>, AppErr
             })
             .collect();
 
-        let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
-            "UPDATE n8n_transform_sessions
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "UPDATE n8n_transform_sessions
              SET status = ?1,
                  error = 'App closed during transform -- click Retry to resume',
                  updated_at = ?2
              WHERE status IN (?3, ?4, ?5)",
-            params![
-                SessionStatus::Failed,
-                now,
-                SessionStatus::Transforming,
-                SessionStatus::Analyzing,
-                SessionStatus::Interrupted,
-            ],
-        )?;
-        Ok(transform_ids)
-
-    })
+                params![
+                    SessionStatus::Failed,
+                    now,
+                    SessionStatus::Transforming,
+                    SessionStatus::Analyzing,
+                    SessionStatus::Interrupted,
+                ],
+            )?;
+            Ok(transform_ids)
+        }
+    )
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -208,7 +216,6 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             params![id],
         )?;
         Ok(rows > 0)
-
     })
 }
 

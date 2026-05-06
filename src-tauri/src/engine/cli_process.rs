@@ -73,32 +73,33 @@ pub(crate) async fn read_line_limited<R: tokio::io::AsyncBufRead + Unpin>(
         }
 
         // Search for newline in the available buffer
-        let (consumed, found_newline) = if let Some(nl_pos) = available.iter().position(|&b| b == b'\n') {
-            // Copy up to newline (excluding the newline itself)
-            let take = nl_pos;
-            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
-                line_buf.extend_from_slice(&available[..take]);
-            } else if !truncated {
-                // Partial fit -- fill up to the limit
-                let remaining = MAX_LINE_BYTES - line_buf.len();
-                line_buf.extend_from_slice(&available[..remaining]);
-                truncated = true;
-            }
-            (nl_pos + 1, true) // +1 to consume the newline
-        } else {
-            // No newline found -- take the whole buffer
-            let take = available.len();
-            if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
-                line_buf.extend_from_slice(available);
-            } else if !truncated {
-                let remaining = MAX_LINE_BYTES.saturating_sub(line_buf.len());
-                if remaining > 0 {
+        let (consumed, found_newline) =
+            if let Some(nl_pos) = available.iter().position(|&b| b == b'\n') {
+                // Copy up to newline (excluding the newline itself)
+                let take = nl_pos;
+                if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                    line_buf.extend_from_slice(&available[..take]);
+                } else if !truncated {
+                    // Partial fit -- fill up to the limit
+                    let remaining = MAX_LINE_BYTES - line_buf.len();
                     line_buf.extend_from_slice(&available[..remaining]);
+                    truncated = true;
                 }
-                truncated = true;
-            }
-            (take, false)
-        };
+                (nl_pos + 1, true) // +1 to consume the newline
+            } else {
+                // No newline found -- take the whole buffer
+                let take = available.len();
+                if !truncated && line_buf.len() + take <= MAX_LINE_BYTES {
+                    line_buf.extend_from_slice(available);
+                } else if !truncated {
+                    let remaining = MAX_LINE_BYTES.saturating_sub(line_buf.len());
+                    if remaining > 0 {
+                        line_buf.extend_from_slice(&available[..remaining]);
+                    }
+                    truncated = true;
+                }
+                (take, false)
+            };
 
         reader.consume(consumed);
 
@@ -149,11 +150,8 @@ impl CliProcessDriver {
     /// The temp directory is automatically removed when [`finish`] or [`cleanup`]
     /// is called.
     pub fn spawn_temp(cli_args: &CliArgs, temp_prefix: &str) -> Result<Self, String> {
-        let exec_dir = std::env::temp_dir().join(format!(
-            "{}-{}",
-            temp_prefix,
-            uuid::Uuid::new_v4()
-        ));
+        let exec_dir =
+            std::env::temp_dir().join(format!("{}-{}", temp_prefix, uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&exec_dir)
             .map_err(|e| format!("Failed to create temp dir: {e}"))?;
 
@@ -190,11 +188,17 @@ impl CliProcessDriver {
     /// stderr is sent to null to prevent buffer-full deadlocks on Windows
     /// (the ~4 KB pipe buffer fills up if nobody reads stderr, causing the
     /// child process to block on its next stderr write and hang forever).
-    fn build_and_spawn(cli_args: &CliArgs, exec_dir: &PathBuf) -> Result<tokio::process::Child, std::io::Error> {
+    fn build_and_spawn(
+        cli_args: &CliArgs,
+        exec_dir: &PathBuf,
+    ) -> Result<tokio::process::Child, std::io::Error> {
         Self::build_and_spawn_core(cli_args, Some(exec_dir))
     }
 
-    fn build_and_spawn_core(cli_args: &CliArgs, exec_dir: Option<&PathBuf>) -> Result<tokio::process::Child, std::io::Error> {
+    fn build_and_spawn_core(
+        cli_args: &CliArgs,
+        exec_dir: Option<&PathBuf>,
+    ) -> Result<tokio::process::Child, std::io::Error> {
         let mut cmd = Command::new(&cli_args.command);
         cmd.args(&cli_args.args)
             .stdin(std::process::Stdio::piped())
@@ -225,11 +229,8 @@ impl CliProcessDriver {
     /// Build and spawn with stderr discarded (piped to null).
     /// Useful for test/lab runners that don't need stderr.
     pub fn spawn_temp_no_stderr(cli_args: &CliArgs, temp_prefix: &str) -> Result<Self, String> {
-        let exec_dir = std::env::temp_dir().join(format!(
-            "{}-{}",
-            temp_prefix,
-            uuid::Uuid::new_v4()
-        ));
+        let exec_dir =
+            std::env::temp_dir().join(format!("{}-{}", temp_prefix, uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&exec_dir)
             .map_err(|e| format!("Failed to create temp dir: {e}"))?;
 
@@ -254,7 +255,9 @@ impl CliProcessDriver {
             cmd.env(key, val);
         }
 
-        let child = cmd.spawn().map_err(|e| format!("Failed to spawn CLI: {e}"))?;
+        let child = cmd
+            .spawn()
+            .map_err(|e| format!("Failed to spawn CLI: {e}"))?;
         let pid = child.id();
         Ok(Self {
             child,
@@ -270,22 +273,14 @@ impl CliProcessDriver {
     }
 
     /// Register this process's PID in a shared map (for external cancellation).
-    pub async fn register_pid(
-        &self,
-        pids: &Mutex<HashMap<String, u32>>,
-        key: &str,
-    ) {
+    pub async fn register_pid(&self, pids: &Mutex<HashMap<String, u32>>, key: &str) {
         if let Some(pid) = self.pid {
             pids.lock().await.insert(key.to_string(), pid);
         }
     }
 
     /// Unregister this process's PID from the shared map.
-    pub async fn unregister_pid(
-        &self,
-        pids: &Mutex<HashMap<String, u32>>,
-        key: &str,
-    ) {
+    pub async fn unregister_pid(&self, pids: &Mutex<HashMap<String, u32>>, key: &str) {
         pids.lock().await.remove(key);
     }
 
@@ -382,10 +377,7 @@ impl CliProcessDriver {
         .await;
 
         if result.is_err() {
-            return Err(format!(
-                "CLI timed out after {} seconds",
-                timeout.as_secs()
-            ));
+            return Err(format!("CLI timed out after {} seconds", timeout.as_secs()));
         }
 
         Ok(())

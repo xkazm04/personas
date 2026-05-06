@@ -142,7 +142,12 @@ impl Serialize for AppError {
                 AppError::External(_) => "external",
             },
         )?;
-        if let AppError::AuthorizationRequired { credential_id, tool_name, authorize_url } = self {
+        if let AppError::AuthorizationRequired {
+            credential_id,
+            tool_name,
+            authorize_url,
+        } = self
+        {
             let details = serde_json::json!({
                 "credential_id": credential_id,
                 "tool_name": tool_name,

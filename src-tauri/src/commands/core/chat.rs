@@ -2,8 +2,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    ChatMessage, ChatSession, ChatSessionContext, CreateChatMessageInput,
-    UpsertSessionContextInput,
+    ChatMessage, ChatSession, ChatSessionContext, CreateChatMessageInput, UpsertSessionContextInput,
 };
 use crate::db::repos::communication::chat as repo;
 use crate::error::AppError;

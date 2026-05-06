@@ -7,8 +7,34 @@ import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import { createTrigger, deleteTrigger, getWebhookStatus, updateTrigger } from "@/api/pipeline/triggers";
 import type { TriggerRateLimitConfig } from "@/lib/utils/platform/triggerConstants";
 
-/** Discriminated trigger error -- `kind` tells UI whether to render inline or toast. */
-export type TriggerErrorKind = 'crud' | 'fetch';
+/**
+ * Discriminated trigger-error tag indicating *how* the error should be presented.
+ *
+ * Contract — pinned here, enforced by the renderer at
+ * `src/features/triggers/lib/triggerError.ts`. Every UI surface that displays
+ * a trigger error must dispatch through `useRenderTriggerError` (or call
+ * `triggerErrorPresentation` directly) rather than reading `triggerError.message`
+ * inline, so the kind→surface mapping stays uniform across builder, studio,
+ * dry-run panel, and any future surface.
+ *
+ *   - `crud`        → INLINE form error. Origin: create/update/delete operations
+ *                     where the user has an active form they can correct. Render
+ *                     adjacent to the offending control.
+ *   - `validation`  → INLINE form error. Origin: validate-before-fire pre-checks
+ *                     (cron syntax, missing credential binding, schema mismatch).
+ *                     Same surface as `crud` — both are "the user typed something
+ *                     we can't accept." Split out so callers (and tests) can
+ *                     distinguish "the request reached the backend and failed"
+ *                     from "we caught it before sending."
+ *   - `fetch`       → TOAST. Origin: passive background loads (webhook status,
+ *                     listener registry refresh) where there is no form context.
+ *                     Inline rendering would be invisible during a passive load
+ *                     and the user has nothing to correct.
+ *
+ * Adding a new kind requires updating `triggerErrorPresentation()` — the
+ * exhaustive `switch` there fails the type-check until you classify it.
+ */
+export type TriggerErrorKind = 'crud' | 'fetch' | 'validation';
 
 export interface TriggerError {
   kind: TriggerErrorKind;

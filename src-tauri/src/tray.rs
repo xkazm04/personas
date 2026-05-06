@@ -88,27 +88,21 @@ fn build_tray_menu(
     };
 
     builder = builder
-        .item(
-            &MenuItemBuilder::with_id("show_hide", "Show / Hide Window").build(app)?,
-        )
+        .item(&MenuItemBuilder::with_id("show_hide", "Show / Hide Window").build(app)?)
         .separator()
         .item(
             &MenuItemBuilder::with_id("scheduler_status", status_label)
                 .enabled(false)
                 .build(app)?,
         )
-        .item(
-            &MenuItemBuilder::with_id("toggle_scheduler", toggle_label).build(app)?,
-        )
+        .item(&MenuItemBuilder::with_id("toggle_scheduler", toggle_label).build(app)?)
         .separator()
         .item(
             &MenuItemBuilder::with_id("watcher_status", watcher_status)
                 .enabled(false)
                 .build(app)?,
         )
-        .item(
-            &MenuItemBuilder::with_id("toggle_watcher", watcher_toggle).build(app)?,
-        )
+        .item(&MenuItemBuilder::with_id("toggle_watcher", watcher_toggle).build(app)?)
         .separator();
 
     if recent_labels.is_empty() {
@@ -127,9 +121,9 @@ fn build_tray_menu(
         }
     }
 
-    builder = builder.separator().item(
-        &MenuItemBuilder::with_id("quit", "Quit Personas").build(app)?,
-    );
+    builder = builder
+        .separator()
+        .item(&MenuItemBuilder::with_id("quit", "Quit Personas").build(app)?);
 
     Ok(builder.build()?)
 }

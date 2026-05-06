@@ -7,10 +7,10 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
-use crate::commands::design::n8n_transform::job_state::list_n8n_transform_jobs;
-use crate::commands::design::template_adopt::{list_adopt_jobs, list_generate_jobs};
 use crate::commands::credentials::query_debug::list_query_debug_jobs;
 use crate::commands::credentials::schema_proposal::list_schema_proposal_jobs;
+use crate::commands::design::n8n_transform::job_state::list_n8n_transform_jobs;
+use crate::commands::design::template_adopt::{list_adopt_jobs, list_generate_jobs};
 
 // -- Types --------------------------------------------------------------
 
@@ -84,7 +84,9 @@ pub fn get_workflows_overview(
     jobs.sort_by(|a, b| {
         let a_running = a.status == "running";
         let b_running = b.status == "running";
-        b_running.cmp(&a_running).then(a.elapsed_secs.cmp(&b.elapsed_secs))
+        b_running
+            .cmp(&a_running)
+            .then(a.elapsed_secs.cmp(&b.elapsed_secs))
     });
 
     Ok(WorkflowsOverview {
@@ -110,7 +112,12 @@ pub fn get_workflow_job_output(
         "template_generate" => list_generate_jobs(),
         "query_debug" => list_query_debug_jobs(),
         "schema_proposal" => list_schema_proposal_jobs(),
-        _ => return Err(AppError::Validation(format!("Unknown job type: {}", job_type))),
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Unknown job type: {}",
+                job_type
+            )))
+        }
     };
 
     snapshots
@@ -150,6 +157,9 @@ pub fn cancel_workflow_job(
             use crate::commands::credentials::schema_proposal::cancel_schema_proposal_job;
             cancel_schema_proposal_job(&app, &job_id)
         }
-        _ => Err(AppError::Validation(format!("Unknown job type: {}", job_type))),
+        _ => Err(AppError::Validation(format!(
+            "Unknown job type: {}",
+            job_type
+        ))),
     }
 }

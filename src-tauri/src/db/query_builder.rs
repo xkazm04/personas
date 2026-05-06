@@ -96,7 +96,8 @@ impl QueryBuilder {
     /// `column LIKE ?N ESCAPE '\'`
     pub fn where_like_escape(&mut self, col: &str, pattern: impl ToSql + 'static) -> &mut Self {
         let idx = self.next_idx();
-        self.conditions.push(format!("{col} LIKE ?{idx} ESCAPE '\\'"));
+        self.conditions
+            .push(format!("{col} LIKE ?{idx} ESCAPE '\\'"));
         self.params.push(Box::new(pattern));
         self
     }
@@ -383,7 +384,10 @@ mod tests {
     #[test]
     fn test_like_any_no_escape() {
         let mut qb = QueryBuilder::new();
-        qb.where_like_any(&["event_type", "source_type", "payload"], "%search%".to_string());
+        qb.where_like_any(
+            &["event_type", "source_type", "payload"],
+            "%search%".to_string(),
+        );
         assert_eq!(
             qb.where_clause(),
             "WHERE (event_type LIKE ?1 OR source_type LIKE ?2 OR payload LIKE ?3)"
@@ -394,7 +398,10 @@ mod tests {
     #[test]
     fn test_where_in() {
         let mut qb = QueryBuilder::new();
-        qb.where_in("id", vec!["a".to_string(), "b".to_string(), "c".to_string()]);
+        qb.where_in(
+            "id",
+            vec!["a".to_string(), "b".to_string(), "c".to_string()],
+        );
         assert_eq!(qb.where_clause(), "WHERE id IN (?1, ?2, ?3)");
         assert_eq!(qb.param_count(), 3);
     }
@@ -466,10 +473,7 @@ mod tests {
         qb.where_eq("status", "active".to_string());
         qb.where_raw(
             |idx| format!("(a = ?{} AND b = ?{})", idx, idx + 1),
-            vec![
-                Box::new("val_a".to_string()),
-                Box::new("val_b".to_string()),
-            ],
+            vec![Box::new("val_a".to_string()), Box::new("val_b".to_string())],
         );
         assert_eq!(
             qb.where_clause(),

@@ -33,6 +33,18 @@ function validateRelPath(relPath: string): string {
   }
   return relPath;
 }
+// drive_delete on the managed root would `remove_dir_all` the entire sandbox.
+// Reject any rel_path that addresses the root: empty/separator-only, or one
+// whose segments are all "." ("./", "./.", ".\\."). The Rust backend has its
+// own guard, but we want the bad call to never cross IPC.
+function validateNonRootRelPath(relPath: string): string {
+  validateRelPath(relPath);
+  const trimmed = relPath.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  if (trimmed.length === 0 || trimmed.split('/').every((seg) => seg === '' || seg === '.')) {
+    throw new Error('drive: refusing to delete the managed root');
+  }
+  return relPath;
+}
 function validateRenameTarget(newName: string): string {
   if (typeof newName !== 'string' || newName.length === 0) {
     throw new Error('drive: rename target must be a non-empty file name');
@@ -108,7 +120,7 @@ export const driveMkdir = (relPath: string) =>
   invoke<DriveEntry>("drive_mkdir", { relPath: validateRelPath(relPath) });
 
 export const driveDelete = (relPath: string) =>
-  invoke<void>("drive_delete", { relPath: validateRelPath(relPath) });
+  invoke<void>("drive_delete", { relPath: validateNonRootRelPath(relPath) });
 
 export const driveRename = (relPath: string, newName: string) =>
   invoke<DriveEntry>("drive_rename", {

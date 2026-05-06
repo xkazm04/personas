@@ -228,7 +228,9 @@ impl AmbientContextFusion {
 
     /// Get a persona's effective policy (persona-specific or default).
     pub fn get_policy(&self, persona_id: &str) -> &SensoryPolicy {
-        self.policies.get(persona_id).unwrap_or(&self.default_policy)
+        self.policies
+            .get(persona_id)
+            .unwrap_or(&self.default_policy)
     }
 
     /// Push a clipboard change signal.
@@ -248,11 +250,7 @@ impl AmbientContextFusion {
         }
         let path_display: Vec<&str> = paths
             .iter()
-            .map(|p| {
-                p.rsplit(['/', '\\'])
-                    .next()
-                    .unwrap_or(p.as_str())
-            })
+            .map(|p| p.rsplit(['/', '\\']).next().unwrap_or(p.as_str()))
             .collect();
         let summary = format!("File {kind}: {}", path_display.join(", "));
         let raw_paths = paths.to_vec();
@@ -373,7 +371,8 @@ impl AmbientContextFusion {
             .unwrap_or_default()
             .as_secs();
         let max_age = self.effective_max_age();
-        self.signals.retain(|s| now.saturating_sub(s.captured_at) < max_age);
+        self.signals
+            .retain(|s| now.saturating_sub(s.captured_at) < max_age);
     }
 
     /// Build a snapshot of ambient context for a specific persona,
@@ -488,7 +487,9 @@ impl AmbientContextFusion {
 
         let mut doc = String::with_capacity(512);
         doc.push_str("## Ambient Desktop Context\n");
-        doc.push_str("The following is a summary of recent desktop activity observed by the system.\n");
+        doc.push_str(
+            "The following is a summary of recent desktop activity observed by the system.\n",
+        );
         doc.push_str("Use this context to understand what the user is currently working on.\n\n");
 
         if let Some(ref app) = snapshot.active_app {
@@ -508,7 +509,10 @@ impl AmbientContextFusion {
             } else {
                 format!("{}h ago", entry.age_secs / 3600)
             };
-            doc.push_str(&format!("- [{}] {} ({})\n", entry.source, entry.summary, age));
+            doc.push_str(&format!(
+                "- [{}] {} ({})\n",
+                entry.source, entry.summary, age
+            ));
         }
 
         Some(doc)
@@ -534,9 +538,7 @@ pub fn create_ambient_context() -> AmbientContextHandle {
 /// This is designed to be called independently from (and in addition to)
 /// the existing per-monitor ticks. The monitors publish events; this tick
 /// captures the state for ambient context.
-pub async fn ambient_context_tick(
-    ctx: &AmbientContextHandle,
-) {
+pub async fn ambient_context_tick(ctx: &AmbientContextHandle) {
     let guard = ctx.lock().await;
     if !guard.is_enabled() {
         return;
@@ -1013,7 +1015,9 @@ mod tests {
                 // Acceptable on headless hosts: no monitor / wayland permission
                 // denied / etc. We just want to make sure we don't panic.
                 let msg = format!("{e}");
-                tracing::info!("capture_validation_screenshot error (expected in headless CI): {msg}");
+                tracing::info!(
+                    "capture_validation_screenshot error (expected in headless CI): {msg}"
+                );
             }
         }
     }

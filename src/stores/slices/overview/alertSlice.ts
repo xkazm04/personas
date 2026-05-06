@@ -1,4 +1,5 @@
 import type { StateCreator } from "zustand";
+import * as Sentry from "@sentry/react";
 import type { OverviewStore } from "../../storeTypes";
 import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { FiredAlert } from "@/lib/bindings/FiredAlert";
@@ -6,6 +7,7 @@ import type { AlertMetric } from "@/lib/bindings/AlertMetric";
 import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import * as api from "@/api/overview/observability";
 import { useToastStore } from "@/stores/toastStore";
+import { toastCatch } from "@/lib/silentCatch";
 import { en } from "@/i18n/en";
 
 // -- Alert metric / severity display helpers (sourced from backend enums) -----
@@ -64,8 +66,21 @@ function evaluateRule(rule: AlertRule, metrics: MetricsSnapshot): { triggered: b
     case 'executions':
       value = metrics.totalExecutions;
       break;
-    default:
+    default: {
+      // The ts-rs-shared `AlertMetric` union narrows this branch to `never` at
+      // compile time — adding a new metric variant in `observability.rs`
+      // without handling it here is a TypeScript error, not a silent
+      // "rule never fires" bug. Defensive at runtime: a stale DB row with
+      // a metric the binding no longer enumerates lands here, and we
+      // surface it to Sentry instead of returning `triggered: false`
+      // and pretending the system is healthy.
+      const unhandled: never = rule.metric;
+      Sentry.captureMessage(
+        `[alerts] unhandled AlertMetric variant: ${String(unhandled)} (rule_id=${rule.id})`,
+        'error',
+      );
       return { triggered: false, value: 0 };
+    }
   }
 
   let triggered = false;
@@ -106,6 +121,7 @@ export interface AlertSlice {
   alertHistory: FiredAlert[];
   alertRulesLoading: boolean;
   alertHistoryLoading: boolean;
+  alertRulesError: string | null;
 
   // TTL tracking for filter-independent fetches
   _alertRulesFetchedAt: number;
@@ -147,6 +163,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
   alertHistory: [],
   alertRulesLoading: false,
   alertHistoryLoading: false,
+  alertRulesError: null,
   _alertRulesFetchedAt: 0,
   _alertHistoryFetchedAt: 0,
   alertFiredCooldowns: {},
@@ -166,9 +183,16 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     set({ alertRulesLoading: true });
     try {
       const rules = await api.listAlertRules();
-      set({ alertRules: rules, alertRulesLoading: false, _alertRulesFetchedAt: Date.now() });
-    } catch {
-      set({ alertRulesLoading: false });
+      set({
+        alertRules: rules,
+        alertRulesLoading: false,
+        alertRulesError: null,
+        _alertRulesFetchedAt: Date.now(),
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({ alertRulesLoading: false, alertRulesError: msg });
+      toastCatch("alertSlice:fetchAlertRules", `${en.alerts.error_load_rules} ${msg}`)(err);
     }
   },
 

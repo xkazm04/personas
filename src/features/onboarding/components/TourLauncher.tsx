@@ -44,10 +44,16 @@ export default function TourLauncher() {
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourStepCompleted = useSystemStore((s) => s.tourStepCompleted);
+  // Onboarding modal owns the screen — see precedence contract in
+  // `src/features/onboarding/README.md`. While the welcome modal is
+  // open we hide the launcher button so the user only sees one
+  // first-run affordance at a time.
+  const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const { isStarter } = useTier();
 
-  // Hide when tour is active (it's running) or fully completed
-  if (tourActive || tourCompleted) return null;
+  // Hide when tour is active (it's running), fully completed, or the
+  // onboarding modal is the active first-run surface.
+  if (tourActive || tourCompleted || onboardingActive) return null;
 
   const tourId: TourId = isStarter ? "getting-started-simple" : "getting-started";
   const steps = getActiveTourSteps(tourId);

@@ -353,6 +353,7 @@ function setupBackgroundExecListeners(
   registerCleanup(feedbackId, cleanup);
 
   (async () => {
+   try {
     const { listen } = await import("@tauri-apps/api/event");
     const { EventName } = await import("@/lib/eventRegistry");
     const { isTerminalState } = await import("@/lib/execution/executionState");
@@ -468,9 +469,33 @@ function setupBackgroundExecListeners(
           });
         }
 
-        cleanup();
-        activeCleanups.delete(feedbackId);
+        releaseCleanup(feedbackId);
       },
     );
+   } catch (err) {
+    // Listener-setup failure: record as failed so the chat row resolves and
+    // the activeCleanups entry doesn't leak. Without this, the slice stays in
+    // "starting"/"running" forever and the Map grows by one closure per call.
+    logger.error("Failed to install background chat listeners", { feedbackId, executionId, error: err });
+    if (!finalized) {
+      finalized = true;
+      set((s) => {
+        const cur = s.backgroundChats[feedbackId];
+        if (!cur) return s;
+        return {
+          backgroundChats: {
+            ...s.backgroundChats,
+            [feedbackId]: {
+              ...cur,
+              status: "failed",
+              completedAt: Date.now(),
+              errorMessage: err instanceof Error ? err.message : "Listener setup failed",
+            },
+          },
+        };
+      });
+    }
+    releaseCleanup(feedbackId);
+   }
   })();
 }

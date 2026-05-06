@@ -72,22 +72,20 @@ pub fn get_by_credential(
              ORDER BY created_at DESC
              LIMIT ?2",
         )?;
-        let rows = stmt
-            .query_map(params![credential_id, limit], |row| {
-                Ok(CredentialAuditEntry {
-                    id: row.get(0)?,
-                    credential_id: row.get(1)?,
-                    credential_name: row.get(2)?,
-                    operation: row.get(3)?,
-                    persona_id: row.get(4)?,
-                    persona_name: row.get(5)?,
-                    detail: row.get(6)?,
-                    created_at: row.get(7)?,
-                })
-            })?;
+        let rows = stmt.query_map(params![credential_id, limit], |row| {
+            Ok(CredentialAuditEntry {
+                id: row.get(0)?,
+                credential_id: row.get(1)?,
+                credential_name: row.get(2)?,
+                operation: row.get(3)?,
+                persona_id: row.get(4)?,
+                persona_name: row.get(5)?,
+                detail: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
         let rows = collect_rows(rows, "audit_log::get_by_credential");
         Ok(rows)
-
     })
 }
 
@@ -125,7 +123,6 @@ pub fn get_usage_stats(
             },
         )?;
         Ok(row)
-
     })
 }
 
@@ -138,7 +135,15 @@ pub fn insert_warn(
     operation: &str,
     detail: Option<&str>,
 ) {
-    if let Err(e) = insert(pool, credential_id, credential_name, operation, None, None, detail) {
+    if let Err(e) = insert(
+        pool,
+        credential_id,
+        credential_name,
+        operation,
+        None,
+        None,
+        detail,
+    ) {
         tracing::warn!("audit_log::insert_warn failed (op={}): {}", operation, e);
     }
 }
@@ -177,15 +182,11 @@ pub fn cleanup_old_entries(pool: &DbPool, retention_days: i64) -> Result<usize, 
             params![cutoff],
         )?;
         Ok(deleted)
-
     })
 }
 
 /// Get all audit log entries across all credentials, newest first.
-pub fn get_all(
-    pool: &DbPool,
-    limit: u32,
-) -> Result<Vec<CredentialAuditEntry>, AppError> {
+pub fn get_all(pool: &DbPool, limit: u32) -> Result<Vec<CredentialAuditEntry>, AppError> {
     timed_query!("audit_log", "audit_log::get_all", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -194,22 +195,20 @@ pub fn get_all(
              ORDER BY created_at DESC
              LIMIT ?1",
         )?;
-        let rows = stmt
-            .query_map(params![limit], |row| {
-                Ok(CredentialAuditEntry {
-                    id: row.get(0)?,
-                    credential_id: row.get(1)?,
-                    credential_name: row.get(2)?,
-                    operation: row.get(3)?,
-                    persona_id: row.get(4)?,
-                    persona_name: row.get(5)?,
-                    detail: row.get(6)?,
-                    created_at: row.get(7)?,
-                })
-            })?;
+        let rows = stmt.query_map(params![limit], |row| {
+            Ok(CredentialAuditEntry {
+                id: row.get(0)?,
+                credential_id: row.get(1)?,
+                credential_name: row.get(2)?,
+                operation: row.get(3)?,
+                persona_id: row.get(4)?,
+                persona_name: row.get(5)?,
+                detail: row.get(6)?,
+                created_at: row.get(7)?,
+            })
+        })?;
         let rows = collect_rows(rows, "audit_log::get_all");
         Ok(rows)
-
     })
 }
 
@@ -241,16 +240,15 @@ pub fn get_dependents(
              INNER JOIN connector_definitions cd ON cd.name = ?1
              WHERE cd.services LIKE '%' || ptd.name || '%'",
         )?;
-        let structural = stmt
-            .query_map(params![service_type], |row| {
-                Ok(CredentialDependent {
-                    persona_id: row.get(0)?,
-                    persona_name: row.get(1)?,
-                    link_type: "tool_connector".to_string(),
-                    via_connector: row.get(2)?,
-                    last_used_at: None,
-                })
-            })?;
+        let structural = stmt.query_map(params![service_type], |row| {
+            Ok(CredentialDependent {
+                persona_id: row.get(0)?,
+                persona_name: row.get(1)?,
+                link_type: "tool_connector".to_string(),
+                via_connector: row.get(2)?,
+                last_used_at: None,
+            })
+        })?;
         let structural = collect_rows(structural, "audit_log::get_dependents/structural");
 
         // Find observed dependents from audit log (personas that have used this credential)
@@ -260,16 +258,15 @@ pub fn get_dependents(
              WHERE credential_id = ?1 AND persona_id IS NOT NULL
              GROUP BY persona_id",
         )?;
-        let observed = stmt2
-            .query_map(params![credential_id], |row| {
-                Ok(CredentialDependent {
-                    persona_id: row.get(0)?,
-                    persona_name: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
-                    link_type: "audit_log".to_string(),
-                    via_connector: None,
-                    last_used_at: row.get(2)?,
-                })
-            })?;
+        let observed = stmt2.query_map(params![credential_id], |row| {
+            Ok(CredentialDependent {
+                persona_id: row.get(0)?,
+                persona_name: row.get::<_, Option<String>>(1)?.unwrap_or_default(),
+                link_type: "audit_log".to_string(),
+                via_connector: None,
+                last_used_at: row.get(2)?,
+            })
+        })?;
         let observed = collect_rows(observed, "audit_log::get_dependents/observed");
 
         // Merge: structural first, then observed (skip duplicates)
@@ -283,6 +280,5 @@ pub fn get_dependents(
         }
 
         Ok(result)
-
     })
 }

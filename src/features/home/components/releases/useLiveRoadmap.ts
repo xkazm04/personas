@@ -5,16 +5,27 @@
  * Status values:
  * - `loading`      — first fetch in-flight, no data yet.
  * - `fresh`        — payload came from the network this session.
- * - `cached`       — payload came from the Rust disk cache (either because
- *                    it was fresh enough to skip the network, or because the
- *                    network path failed and the cache saved us).
+ * - `cached`       — payload came from the Rust disk cache because it was
+ *                    still fresh enough to skip the network. Healthy path.
+ * - `stale`        — payload came from the disk cache as a *rescue* because
+ *                    the network attempt failed. Degraded path — the live
+ *                    channel is silently broken and the content may be
+ *                    out-of-date relative to the server.
  * - `unavailable`  — no cache AND network failed. Caller falls back to the
  *                    bundled roadmap content.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchLiveRoadmap, type LiveRoadmap } from '@/api/liveRoadmap';
+import { fetchLiveRoadmap, type LiveRoadmap, type LiveRoadmapSource } from '@/api/liveRoadmap';
 
-export type LiveRoadmapStatus = 'loading' | 'fresh' | 'cached' | 'unavailable';
+export type LiveRoadmapStatus = 'loading' | 'fresh' | 'cached' | 'stale' | 'unavailable';
+
+function statusFromSource(source: LiveRoadmapSource): Exclude<LiveRoadmapStatus, 'loading' | 'unavailable'> {
+  switch (source) {
+    case 'network': return 'fresh';
+    case 'cache':   return 'cached';
+    case 'stale':   return 'stale';
+  }
+}
 
 export interface UseLiveRoadmap {
   roadmap: LiveRoadmap | null;
@@ -47,7 +58,7 @@ export function useLiveRoadmap(): UseLiveRoadmap {
     } else {
       setRoadmap(result.roadmap);
       setFetchedAt(result.fetchedAt);
-      setStatus(result.source === 'network' ? 'fresh' : 'cached');
+      setStatus(statusFromSource(result.source));
     }
     if (force) setRefreshing(false);
   }, []);

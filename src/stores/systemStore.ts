@@ -71,6 +71,7 @@ export const useSystemStore = create<SystemStore>()(
         activeSimpleTab: state.activeSimpleTab,
         companionPluginTab: state.companionPluginTab,
         companionFooterEnabled: state.companionFooterEnabled,
+        companionPanelCompact: state.companionPanelCompact,
         companionSoundEnabled: state.companionSoundEnabled,
         companionVoiceEnabled: state.companionVoiceEnabled,
         companionVoiceCredentialId: state.companionVoiceCredentialId,

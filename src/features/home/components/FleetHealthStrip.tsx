@@ -5,6 +5,7 @@ import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
+import { hasFailureSpike } from '@/features/home/lib/fleetHealth';
 import type { SidebarSection } from '@/lib/types/types';
 
 interface FleetMetrics {
@@ -29,14 +30,12 @@ function useFleetMetrics() {
         ? Math.round((summary.successfulExecutions / summary.totalExecutions) * 100)
         : 100;
 
-      const hasFailureSpike = summary.totalExecutions >= 3 && summary.failedExecutions / summary.totalExecutions > 0.5;
-
       setMetrics({
         executionsToday: summary.totalExecutions,
         successRate: rate,
         activePersonas: summary.activePersonas,
         credentialCount: credentials.length,
-        hasFailureSpike,
+        hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
       });
     } catch {
       // Silently fail — strip just won't render

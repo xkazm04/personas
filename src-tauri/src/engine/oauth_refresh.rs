@@ -6,8 +6,8 @@
 //! Records per-refresh metrics (predicted vs actual lifetime, fallback usage,
 //! failure rates) to the `oauth_token_metrics` table for observability.
 
-use crate::db::repos::resources::{audit_log, credentials as cred_repo};
 use crate::db::repos::resources::oauth_token_metrics as metrics_repo;
+use crate::db::repos::resources::{audit_log, credentials as cred_repo};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -31,9 +31,7 @@ fn parse_credential_metadata(
 }
 
 /// Extract `oauth_token_expires_at` from parsed metadata.
-fn extract_expires_at(
-    meta: &serde_json::Value,
-) -> Option<chrono::DateTime<chrono::FixedOffset>> {
+fn extract_expires_at(meta: &serde_json::Value) -> Option<chrono::DateTime<chrono::FixedOffset>> {
     meta.get("oauth_token_expires_at")
         .and_then(|v| v.as_str())
         .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
@@ -92,7 +90,9 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
 
         let remaining = expires_at.signed_duration_since(now);
         // Refresh if expired (up to STALENESS_CEILING) or expiring within threshold
-        if remaining.num_seconds() > startup_threshold_secs || remaining.num_seconds() < -STALENESS_CEILING_SECS {
+        if remaining.num_seconds() > startup_threshold_secs
+            || remaining.num_seconds() < -STALENESS_CEILING_SECS
+        {
             continue;
         }
 
@@ -119,7 +119,13 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
                         "Startup OAuth sweep: grant revoked — needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
-                    emit_reauth_required(app, &cred.id, &cred.name, &cred.service_type, &e.to_string());
+                    emit_reauth_required(
+                        app,
+                        &cred.id,
+                        &cred.name,
+                        &cred.service_type,
+                        &e.to_string(),
+                    );
                 } else {
                     tracing::warn!(
                         credential_id = %cred.id,
@@ -134,11 +140,7 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
     }
 
     if refreshed > 0 || failed > 0 {
-        tracing::info!(
-            refreshed,
-            failed,
-            "Startup OAuth sweep: complete"
-        );
+        tracing::info!(refreshed, failed, "Startup OAuth sweep: complete");
     }
 
     (refreshed, failed)
@@ -171,7 +173,9 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
         oauth_eligible += 1;
 
         let remaining = expires_at.signed_duration_since(now);
-        if remaining.num_seconds() > REFRESH_THRESHOLD_SECS || remaining.num_seconds() < -STALENESS_CEILING_SECS {
+        if remaining.num_seconds() > REFRESH_THRESHOLD_SECS
+            || remaining.num_seconds() < -STALENESS_CEILING_SECS
+        {
             // Not expiring soon, or expired beyond staleness ceiling (skip)
             continue;
         }
@@ -214,7 +218,13 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
                         "OAuth grant revoked — credential needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
-                    emit_reauth_required(app, &cred.id, &cred.name, &cred.service_type, &e.to_string());
+                    emit_reauth_required(
+                        app,
+                        &cred.id,
+                        &cred.name,
+                        &cred.service_type,
+                        &e.to_string(),
+                    );
                 } else {
                     tracing::warn!(
                         credential_id = %cred.id,
@@ -301,7 +311,8 @@ pub async fn refresh_single_credential(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, cred)?;
-    if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None) {
+    if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None)
+    {
         tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
@@ -359,17 +370,21 @@ pub async fn refresh_single_credential(
 
     let resolved = resolve_result?;
 
-    let resolved = resolved.ok_or_else(|| {
-        AppError::Internal("Strategy returned no token after refresh".into())
-    })?;
+    let resolved = resolved
+        .ok_or_else(|| AppError::Internal("Strategy returned no token after refresh".into()))?;
 
     // Compute values needed for persistence before opening the transaction.
-    let expiry_secs_for_field = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
-    let expires_at_rfc3339 = (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs_for_field)).to_rfc3339();
+    let expiry_secs_for_field = resolved
+        .expires_in_secs
+        .unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
+    let expires_at_rfc3339 =
+        (chrono::Utc::now() + chrono::Duration::seconds(expiry_secs_for_field)).to_rfc3339();
 
     // Compute lifetime metrics
     let used_fallback = resolved.expires_in_secs.is_none();
-    let expiry_secs = resolved.expires_in_secs.unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
+    let expiry_secs = resolved
+        .expires_in_secs
+        .unwrap_or(DEFAULT_FALLBACK_LIFETIME_SECS) as i64;
 
     // Build the metadata patch using the typed ledger
     let current_count = ledger.oauth_refresh_count.unwrap_or(0);
@@ -377,10 +392,22 @@ pub async fn refresh_single_credential(
 
     // Build a JSON patch from the ledger fields for the atomic persist block
     let mut patch = serde_json::Map::new();
-    patch.insert("oauth_refresh_count".to_string(), serde_json::json!(current_count + 1));
-    patch.insert("oauth_last_refresh_at".to_string(), serde_json::json!(chrono::Utc::now().to_rfc3339()));
-    patch.insert("oauth_predicted_lifetime_secs".to_string(), serde_json::json!(expiry_secs));
-    patch.insert("oauth_token_expires_at".to_string(), serde_json::json!(new_expiry));
+    patch.insert(
+        "oauth_refresh_count".to_string(),
+        serde_json::json!(current_count + 1),
+    );
+    patch.insert(
+        "oauth_last_refresh_at".to_string(),
+        serde_json::json!(chrono::Utc::now().to_rfc3339()),
+    );
+    patch.insert(
+        "oauth_predicted_lifetime_secs".to_string(),
+        serde_json::json!(expiry_secs),
+    );
+    patch.insert(
+        "oauth_token_expires_at".to_string(),
+        serde_json::json!(new_expiry),
+    );
     // Clear any previous revocation flag on successful refresh
     patch.insert("needs_reauth".to_string(), serde_json::Value::Null);
     patch.insert("needs_reauth_at".to_string(), serde_json::Value::Null);
@@ -395,10 +422,22 @@ pub async fn refresh_single_credential(
         let tx = conn.transaction()?;
 
         cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
-        cred_repo::upsert_field_on_conn(&tx, &cred.id, "oauth_token_expires_at", &expires_at_rfc3339, false)?;
+        cred_repo::upsert_field_on_conn(
+            &tx,
+            &cred.id,
+            "oauth_token_expires_at",
+            &expires_at_rfc3339,
+            false,
+        )?;
 
         if let Some(ref new_refresh_token) = resolved.refresh_token {
-            cred_repo::upsert_field_on_conn(&tx, &cred.id, "refresh_token", new_refresh_token, true)?;
+            cred_repo::upsert_field_on_conn(
+                &tx,
+                &cred.id,
+                "refresh_token",
+                new_refresh_token,
+                true,
+            )?;
         }
 
         cred_repo::patch_metadata_on_conn(&tx, &cred.id, patch)?;
@@ -416,11 +455,8 @@ pub async fn refresh_single_credential(
     }
 
     // Actual lifetime: how long the previous token lived before we replaced it
-    let actual_lifetime_secs = previous_refresh_at.map(|prev| {
-        chrono::Utc::now()
-            .signed_duration_since(prev)
-            .num_seconds()
-    });
+    let actual_lifetime_secs = previous_refresh_at
+        .map(|prev| chrono::Utc::now().signed_duration_since(prev).num_seconds());
 
     // Drift: actual − predicted (from the previous refresh's predicted value)
     let drift_secs = match (actual_lifetime_secs, previous_predicted_secs) {
@@ -468,7 +504,11 @@ pub async fn refresh_single_credential(
             "Proactive refresh (count: {}, fallback {}s, no provider expires_in{})",
             current_count + 1,
             DEFAULT_FALLBACK_LIFETIME_SECS,
-            if rt_rotated { ", refresh_token rotated" } else { "" },
+            if rt_rotated {
+                ", refresh_token rotated"
+            } else {
+                ""
+            },
         )
     } else {
         format!(
@@ -478,7 +518,11 @@ pub async fn refresh_single_credential(
             drift_secs
                 .map(|d| format!(", drift: {}s", d))
                 .unwrap_or_default(),
-            if rt_rotated { ", refresh_token rotated" } else { "" },
+            if rt_rotated {
+                ", refresh_token rotated"
+            } else {
+                ""
+            },
         )
     };
 

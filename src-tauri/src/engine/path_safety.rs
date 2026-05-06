@@ -5,24 +5,11 @@
 //! Defence-in-depth against malicious persona templates that could leak
 //! file names and change patterns from sensitive directories.
 
-
 /// Sensitive directory prefixes that must never be watched (normalised to forward slashes, lowercase).
 /// Covers Windows and Unix system directories.
 const BLOCKED_PREFIXES_UNIX: &[&str] = &[
-    "/etc",
-    "/var",
-    "/usr",
-    "/bin",
-    "/sbin",
-    "/boot",
-    "/proc",
-    "/sys",
-    "/dev",
-    "/lib",
-    "/lib64",
-    "/root",
-    "/run",
-    "/snap",
+    "/etc", "/var", "/usr", "/bin", "/sbin", "/boot", "/proc", "/sys", "/dev", "/lib", "/lib64",
+    "/root", "/run", "/snap",
 ];
 
 const BLOCKED_PREFIXES_WINDOWS: &[&str] = &[
@@ -121,12 +108,7 @@ fn app_data_dir_normalised() -> Option<String> {
     // ~/Library/Application Support/com.personas.desktop (macOS)
     let base = dirs::data_dir()?;
     let app_dir = base.join("com.personas.desktop");
-    Some(
-        app_dir
-            .to_string_lossy()
-            .replace('\\', "/")
-            .to_lowercase(),
-    )
+    Some(app_dir.to_string_lossy().replace('\\', "/").to_lowercase())
 }
 
 /// Check whether a normalised path is under the current user's home directory.
@@ -198,17 +180,17 @@ pub fn validate_save_path(path: &str) -> Result<std::path::PathBuf, String> {
     // The parent directory must exist so we can canonicalize it and detect
     // symlink escapes. We canonicalize the parent (not the file itself,
     // since the file doesn't exist yet) and then re-append the filename.
-    let parent = raw.parent().ok_or_else(|| {
-        format!("Cannot determine parent directory for: {trimmed}")
-    })?;
+    let parent = raw
+        .parent()
+        .ok_or_else(|| format!("Cannot determine parent directory for: {trimmed}"))?;
 
-    let file_name = raw.file_name().ok_or_else(|| {
-        format!("Cannot determine file name for: {trimmed}")
-    })?;
+    let file_name = raw
+        .file_name()
+        .ok_or_else(|| format!("Cannot determine file name for: {trimmed}"))?;
 
-    let canonical_parent = parent.canonicalize().map_err(|e| {
-        format!("Parent directory does not exist or is inaccessible: {e}")
-    })?;
+    let canonical_parent = parent
+        .canonicalize()
+        .map_err(|e| format!("Parent directory does not exist or is inaccessible: {e}"))?;
 
     let canonical_path = canonical_parent.join(file_name);
     let mut canonical_str = canonical_path
@@ -403,7 +385,10 @@ mod tests {
             if !home_str.contains("tmp") {
                 // /tmp is outside home
                 let result = validate_watch_path("/tmp/something");
-                assert!(result.is_err(), "Expected /tmp to be rejected as outside home");
+                assert!(
+                    result.is_err(),
+                    "Expected /tmp to be rejected as outside home"
+                );
             }
         }
     }
@@ -450,7 +435,11 @@ mod tests {
             // Use the home dir itself as the parent (it should exist)
             let p = home.join("export.persona");
             let result = validate_save_path(&p.to_string_lossy());
-            assert!(result.is_ok(), "Expected valid .persona path to be accepted: {:?}", result);
+            assert!(
+                result.is_ok(),
+                "Expected valid .persona path to be accepted: {:?}",
+                result
+            );
         }
     }
 
@@ -459,7 +448,11 @@ mod tests {
         if let Some(home) = dirs::home_dir() {
             let p = home.join("sealed.enclave");
             let result = validate_save_path(&p.to_string_lossy());
-            assert!(result.is_ok(), "Expected valid .enclave path to be accepted: {:?}", result);
+            assert!(
+                result.is_ok(),
+                "Expected valid .enclave path to be accepted: {:?}",
+                result
+            );
         }
     }
 

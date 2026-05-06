@@ -3,11 +3,13 @@ use tauri::State;
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
 
-use crate::db::models::{TwinProfile, TwinTone, TwinPendingMemory, TwinCommunication, TwinVoiceProfile, TwinChannel};
+use crate::db::models::{
+    TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
+};
 use crate::db::repos::twin as repo;
 use crate::engine::prompt;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth_sync, require_auth};
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -19,9 +21,7 @@ use crate::AppState;
 // ============================================================================
 
 #[tauri::command]
-pub fn twin_list_profiles(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<TwinProfile>, AppError> {
+pub fn twin_list_profiles(state: State<'_, Arc<AppState>>) -> Result<Vec<TwinProfile>, AppError> {
     require_auth_sync(&state)?;
     repo::list_profiles(&state.db)
 }
@@ -89,10 +89,7 @@ pub fn twin_update_profile(
 }
 
 #[tauri::command]
-pub fn twin_delete_profile(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn twin_delete_profile(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_profile(&state.db, &id)
 }
@@ -152,10 +149,7 @@ pub fn twin_upsert_tone(
 }
 
 #[tauri::command]
-pub fn twin_delete_tone(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn twin_delete_tone(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_tone(&state.db, &id)
 }
@@ -349,10 +343,7 @@ pub fn twin_update_channel(
 }
 
 #[tauri::command]
-pub fn twin_delete_channel(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn twin_delete_channel(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_channel(&state.db, &id)
 }
@@ -407,7 +398,10 @@ pub async fn twin_generate_bio(
 
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
-            AppError::Internal("Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code".into())
+            AppError::Internal(
+                "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"
+                    .into(),
+            )
         } else {
             AppError::Internal(format!("Failed to spawn Claude CLI: {e}"))
         }
@@ -421,11 +415,15 @@ pub async fn twin_generate_bio(
         });
     }
 
-    let output = child.wait_with_output().await
+    let output = child
+        .wait_with_output()
+        .await
         .map_err(|e| AppError::Internal(format!("CLI execution failed: {e}")))?;
 
     if !output.status.success() {
-        return Err(AppError::Internal("Claude CLI returned non-zero exit code".into()));
+        return Err(AppError::Internal(
+            "Claude CLI returned non-zero exit code".into(),
+        ));
     }
 
     let raw = String::from_utf8_lossy(&output.stdout).to_string();
@@ -554,11 +552,16 @@ pub async fn twin_ingest_url(
 ) -> Result<TwinPendingMemory, AppError> {
     require_auth(&state).await?;
 
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return Err(AppError::Validation(
-            "URL must start with http:// or https://".into(),
-        ));
-    }
+    // SSRF defense. Reject loopback / private (10/8, 172.16/12, 192.168/16),
+    // link-local (169.254/16 — covers the AWS/Azure/GCP metadata IP), CGN
+    // (100.64/10), IPv6 ULA (fc00::/7), `.local` / `.internal` hostnames,
+    // and any hostname that resolves to an internal IP. Combined with the
+    // SSRF-safe DNS resolver attached to the client below this also covers
+    // DNS-rebinding (resolver re-checks at connect time) and the redirect
+    // policy re-checks IP literals on every hop.
+    let validated_url = crate::engine::url_safety::validate_url_safety(&url)
+        .map(|_| url.clone())
+        .map_err(AppError::Validation)?;
 
     // Verify the twin exists before doing the fetch so we don't waste a network
     // round-trip on an invalid id.
@@ -567,11 +570,27 @@ pub async fn twin_ingest_url(
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
         .user_agent("Mozilla/5.0 (compatible; PersonasTwinIngest/1.0)")
+        .dns_resolver(std::sync::Arc::new(
+            crate::engine::url_safety::SsrfSafeResolver,
+        ))
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            // Re-check each redirect target. The DNS resolver above blocks
+            // hostname-based rebinding, but a `Location: http://127.0.0.1/`
+            // header skips DNS entirely and would otherwise reach the
+            // loopback service, so we inspect IP literals here too.
+            if crate::engine::url_safety::is_url_target_private(attempt.url()) {
+                attempt.error("redirect target is a private/internal address")
+            } else if attempt.previous().len() >= 5 {
+                attempt.stop()
+            } else {
+                attempt.follow()
+            }
+        }))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client init failed: {e}")))?;
 
     let response = client
-        .get(&url)
+        .get(&validated_url)
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("Failed to fetch URL: {e}")))?;
@@ -733,16 +752,12 @@ pub async fn twin_compile_wiki(
         if line.trim() == "=== END FILE ===" {
             if let Some(name) = current_file.take() {
                 // Sanitize filename — only allow basename, strip path traversal
-                let safe_name = name
-                    .replace("..", "_")
-                    .replace('/', "_")
-                    .replace('\\', "_");
+                let safe_name = name.replace("..", "_").replace('/', "_").replace('\\', "_");
                 if !safe_name.is_empty() {
                     let path = std::path::Path::new(&output_dir).join(&safe_name);
-                    std::fs::write(&path, current_content.trim_start_matches('\n'))
-                        .map_err(|e| {
-                            AppError::Internal(format!("Failed to write {safe_name}: {e}"))
-                        })?;
+                    std::fs::write(&path, current_content.trim_start_matches('\n')).map_err(
+                        |e| AppError::Internal(format!("Failed to write {safe_name}: {e}")),
+                    )?;
                     written += 1;
                 }
                 current_content.clear();
@@ -791,8 +806,8 @@ pub async fn twin_audit_wiki(
     for entry in std::fs::read_dir(dir)
         .map_err(|e| AppError::Internal(format!("Failed to read wiki dir: {e}")))?
     {
-        let entry = entry
-            .map_err(|e| AppError::Internal(format!("Failed to read wiki entry: {e}")))?;
+        let entry =
+            entry.map_err(|e| AppError::Internal(format!("Failed to read wiki entry: {e}")))?;
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) == Some("md") {
             let content = std::fs::read_to_string(&path).map_err(|e| {

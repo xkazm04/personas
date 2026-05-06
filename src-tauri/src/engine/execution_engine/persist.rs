@@ -50,7 +50,13 @@ pub(crate) async fn persist_status_update(
 
     let err_msg = last_err
         .as_ref()
-        .map(|e| format!("Status persist failed after {} retries: {}", PERSIST_MAX_RETRIES + 1, e))
+        .map(|e| {
+            format!(
+                "Status persist failed after {} retries: {}",
+                PERSIST_MAX_RETRIES + 1,
+                e
+            )
+        })
         .unwrap_or_else(|| "Status persist failed".into());
 
     if !matches!(update.status, ExecutionState::Failed) {
@@ -170,7 +176,13 @@ pub(crate) async fn persist_status_if_not_final(
 
     let err_msg = last_err
         .as_ref()
-        .map(|e| format!("Conditional status persist failed after {} retries: {}", PERSIST_MAX_RETRIES + 1, e))
+        .map(|e| {
+            format!(
+                "Conditional status persist failed after {} retries: {}",
+                PERSIST_MAX_RETRIES + 1,
+                e
+            )
+        })
         .unwrap_or_else(|| "Conditional status persist failed".into());
 
     if !matches!(update.status, ExecutionState::Failed) {

@@ -258,18 +258,15 @@ pub fn try_emit_event<P: Serialize + Clone>(
 // ---------------------------------------------------------------------------
 
 #[allow(unused_imports)]
-pub use super::types::{
-    ExecutionOutputEvent, ExecutionStatusEvent, QueueStatusEvent,
-    HeartbeatEvent, StructuredExecutionEvent, HealingEventPayload,
-    HealingIssueUpdatedEvent, AiHealingStatusEvent,
-};
-#[allow(unused_imports)]
-pub use super::failover::{CircuitTransitionEvent, CircuitBreakerStatus};
-#[allow(unused_imports)]
 pub use super::auto_rollback::AutoRollbackEvent;
 #[allow(unused_imports)]
-pub use super::background::{
-    SubscriptionCrashEvent, OverdueTriggersEvent, ZombieExecutionEvent,
-};
+pub use super::background::{OverdueTriggersEvent, SubscriptionCrashEvent, ZombieExecutionEvent};
+#[allow(unused_imports)]
+pub use super::failover::{CircuitBreakerStatus, CircuitTransitionEvent};
 #[allow(unused_imports)]
 pub use super::trace::TraceSpanEvent;
+#[allow(unused_imports)]
+pub use super::types::{
+    AiHealingStatusEvent, ExecutionOutputEvent, ExecutionStatusEvent, HealingEventPayload,
+    HealingIssueUpdatedEvent, HeartbeatEvent, QueueStatusEvent, StructuredExecutionEvent,
+};

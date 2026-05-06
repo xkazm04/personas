@@ -10,9 +10,7 @@ use crate::AppState;
 
 #[tauri::command]
 #[instrument(skip(state))]
-pub fn list_alert_rules(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<AlertRule>, AppError> {
+pub fn list_alert_rules(state: State<'_, Arc<AppState>>) -> Result<Vec<AlertRule>, AppError> {
     require_auth_sync(&state)?;
     alert_repo::list_alert_rules(&state.db)
 }
@@ -25,7 +23,9 @@ pub fn create_alert_rule(
 ) -> Result<AlertRule, AppError> {
     require_auth_sync(&state)?;
     if !input.threshold.is_finite() {
-        return Err(AppError::Validation("Threshold must be a finite number".into()));
+        return Err(AppError::Validation(
+            "Threshold must be a finite number".into(),
+        ));
     }
     alert_repo::create_alert_rule(&state.db, input)
 }
@@ -40,7 +40,9 @@ pub fn update_alert_rule(
     require_auth_sync(&state)?;
     if let Some(t) = input.threshold {
         if !t.is_finite() {
-            return Err(AppError::Validation("Threshold must be a finite number".into()));
+            return Err(AppError::Validation(
+                "Threshold must be a finite number".into(),
+            ));
         }
     }
     alert_repo::update_alert_rule(&state.db, &id, input)
@@ -48,10 +50,7 @@ pub fn update_alert_rule(
 
 #[tauri::command]
 #[instrument(skip(state))]
-pub fn delete_alert_rule(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn delete_alert_rule(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     alert_repo::delete_alert_rule(&state.db, &id)
 }
@@ -92,19 +91,14 @@ pub fn create_fired_alert(
 
 #[tauri::command]
 #[instrument(skip(state))]
-pub fn dismiss_fired_alert(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn dismiss_fired_alert(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     alert_repo::dismiss_fired_alert(&state.db, &id)
 }
 
 #[tauri::command]
 #[instrument(skip(state))]
-pub fn clear_fired_alerts(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub fn clear_fired_alerts(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     alert_repo::clear_fired_alerts(&state.db)
 }

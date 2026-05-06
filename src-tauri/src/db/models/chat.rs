@@ -47,9 +47,12 @@ impl ToSql for ChatRole {
 impl FromSql for ChatRole {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let s = value.as_str()?;
-        ChatRole::from_str_checked(s).map_err(|e| FromSqlError::Other(Box::new(
-            std::io::Error::new(std::io::ErrorKind::InvalidData, e),
-        )))
+        ChatRole::from_str_checked(s).map_err(|e| {
+            FromSqlError::Other(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                e,
+            )))
+        })
     }
 }
 

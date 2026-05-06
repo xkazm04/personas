@@ -8,6 +8,7 @@ import type { PersonaTrigger } from '@/lib/types/types';
 import { TriggerAddForm } from './TriggerAddForm';
 import { TriggerListItem } from './TriggerListItem';
 import { useTriggerOperations } from '@/features/triggers/hooks/useTriggerOperations';
+import { useRenderTriggerError } from '@/features/triggers/lib/triggerError';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function TriggerConfig() {
@@ -17,6 +18,10 @@ export function TriggerConfig() {
   const fetchCredentialEvents = useVaultStore((s) => s.fetchCredentialEvents);
   const triggerError = usePipelineStore((s) => s.triggerError);
   const clearTriggerError = usePipelineStore((s) => s.clearTriggerError);
+  // Route through the central renderer: `crud`/`validation` come back as an
+  // inline message (rendered below); `fetch` is dispatched to a toast inside
+  // the hook and returns null here.
+  const inlineError = useRenderTriggerError(triggerError);
 
   const personaId = selectedPersona?.id || '';
   const triggers = selectedPersona?.triggers || [];
@@ -79,11 +84,12 @@ export function TriggerConfig() {
           />
         )}
 
-      {/* Trigger Error — render any kind (crud + fetch) so fetch failures
-          aren't silently swallowed. */}
-      {triggerError && (
+      {/* Inline trigger error (`crud` or `validation` kind). `fetch` failures
+          are dispatched as toasts inside `useRenderTriggerError`, so they
+          don't appear here. */}
+      {inlineError && (
         <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-card typo-body text-red-400" role="alert">
-          <span className="flex-1">{triggerError.message}</span>
+          <span className="flex-1">{inlineError}</span>
           <Button variant="ghost" size="icon-sm" onClick={clearTriggerError} className="shrink-0 hover:text-red-300">
             <X className="w-3.5 h-3.5" />
           </Button>

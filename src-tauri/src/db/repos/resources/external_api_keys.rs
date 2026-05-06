@@ -64,8 +64,7 @@ pub fn create(
         let id = uuid::Uuid::new_v4().to_string();
         let (plaintext_token, key_prefix) = generate_token();
         let key_hash = hash_token(&plaintext_token);
-        let scopes_json = serde_json::to_string(&scopes)
-            .unwrap_or_else(|_| "[]".to_string());
+        let scopes_json = serde_json::to_string(&scopes).unwrap_or_else(|_| "[]".to_string());
 
         let conn = pool.get()?;
         let record = conn
@@ -90,9 +89,7 @@ pub fn create(
 pub fn list(pool: &DbPool) -> Result<Vec<ExternalApiKey>, AppError> {
     timed_query!("external_api_keys", "external_api_keys::list", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM external_api_keys ORDER BY created_at DESC",
-        )?;
+        let mut stmt = conn.prepare("SELECT * FROM external_api_keys ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_external_api_key)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
@@ -157,10 +154,7 @@ pub fn revoke(pool: &DbPool, id: &str) -> Result<(), AppError> {
 pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
     timed_query!("external_api_keys", "external_api_keys::delete", {
         let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM external_api_keys WHERE id = ?1",
-            params![id],
-        )?;
+        let rows = conn.execute("DELETE FROM external_api_keys WHERE id = ?1", params![id])?;
         if rows == 0 {
             return Err(AppError::NotFound(format!("ExternalApiKey {id}")));
         }
@@ -201,8 +195,8 @@ mod tests {
     #[test]
     fn create_then_find_by_token_roundtrip() {
         let pool = test_pool();
-        let resp = create(&pool, "test-key", vec!["personas:read".into()])
-            .expect("create should succeed");
+        let resp =
+            create(&pool, "test-key", vec!["personas:read".into()]).expect("create should succeed");
 
         // Plaintext is returned once and starts with the expected prefix.
         assert!(resp.plaintext_token.starts_with("pk_"));
@@ -211,8 +205,8 @@ mod tests {
         assert!(resp.record.revoked_at.is_none());
 
         // The record itself does not contain the plaintext (key_hash is skip_serializing).
-        let found = find_by_token(&pool, &resp.plaintext_token)
-            .expect("find_by_token should not error");
+        let found =
+            find_by_token(&pool, &resp.plaintext_token).expect("find_by_token should not error");
         let found = found.expect("token should be found");
         assert_eq!(found.id, resp.record.id);
 

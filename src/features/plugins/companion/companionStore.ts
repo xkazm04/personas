@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
-import type { BrainKind, PendingApproval } from '@/api/companion';
+import type {
+  BrainKind,
+  CompanionConnector,
+  PendingApproval,
+  PluginToggle,
+  ProactiveMessage,
+} from '@/api/companion';
 
 /**
  * Brain Viewer mode: hidden when null, otherwise a 3-step wizard:
@@ -86,6 +92,21 @@ interface CompanionStore {
   improving: boolean;
   setImproving: (v: boolean) => void;
 
+  // Phase E: proactive messages awaiting engagement (delivered or queued).
+  proactive: ProactiveMessage[];
+  setProactive: (msgs: ProactiveMessage[]) => void;
+  appendProactive: (msg: ProactiveMessage) => void;
+  removeProactive: (id: string) => void;
+
+  // Phase F: connectors pinned in the chat sidebar.
+  connectors: CompanionConnector[];
+  setConnectors: (c: CompanionConnector[]) => void;
+
+  // Phase F: plugin toggles (Dev Tools, future). Backend default is
+  // off; the toolbar shows the live state and writes through on click.
+  pluginToggles: PluginToggle[];
+  setPluginToggles: (toggles: PluginToggle[]) => void;
+
   // Phase 4.5: voice playback
   pendingPlayback: PendingPlayback | null;
   setPendingPlayback: (p: PendingPlayback | null) => void;
@@ -134,6 +155,24 @@ export const useCompanionStore = create<CompanionStore>((set) => ({
   setBetaSelfImprove: (betaSelfImprove) => set({ betaSelfImprove }),
   improving: false,
   setImproving: (improving) => set({ improving }),
+
+  connectors: [],
+  setConnectors: (connectors) => set({ connectors }),
+
+  pluginToggles: [],
+  setPluginToggles: (pluginToggles) => set({ pluginToggles }),
+
+  proactive: [],
+  setProactive: (proactive) => set({ proactive }),
+  appendProactive: (msg) =>
+    set((s) => {
+      // Dedupe by id — the scheduler can re-fire if the user reopens
+      // the app while a message is already loaded from the listing.
+      if (s.proactive.some((m) => m.id === msg.id)) return s;
+      return { proactive: [msg, ...s.proactive] };
+    }),
+  removeProactive: (id) =>
+    set((s) => ({ proactive: s.proactive.filter((m) => m.id !== id) })),
 
   pendingPlayback: null,
   setPendingPlayback: (pendingPlayback) => set({ pendingPlayback }),

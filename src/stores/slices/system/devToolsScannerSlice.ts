@@ -5,6 +5,32 @@ import type { DevIdea } from "@/lib/bindings/DevIdea";
 import type { DevScan } from "@/lib/bindings/DevScan";
 import * as devApi from "@/api/devTools/devTools";
 
+/**
+ * Scores must be either null/missing or an integer in 1..=10. Any value outside
+ * that range is treated as garbage (the LLM hallucinated it) and coerced to
+ * `null` so triage filters and the "top wins" sort don't poison off it.
+ * Mirrors the same validation in `parse_idea_protocol` on the Rust side.
+ */
+function sanitizeScore(value: number | null): number | null {
+  if (value == null || !Number.isFinite(value)) return null;
+  const intVal = Math.trunc(value);
+  if (intVal < 1 || intVal > 10) return null;
+  return intVal;
+}
+
+function sanitizeIdea(idea: DevIdea): DevIdea {
+  const effort = sanitizeScore(idea.effort);
+  const impact = sanitizeScore(idea.impact);
+  const risk = sanitizeScore(idea.risk);
+  if (effort !== idea.effort || impact !== idea.impact || risk !== idea.risk) {
+    console.warn(
+      `Idea "${idea.title}" had out-of-range score(s); coerced to null`,
+      { rawEffort: idea.effort, rawImpact: idea.impact, rawRisk: idea.risk },
+    );
+  }
+  return { ...idea, effort, impact, risk };
+}
+
 export interface DevToolsScannerSlice {
   // -- Scanner ---------------------------------------------------------
   scanAgentSelection: string[];
@@ -100,7 +126,7 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
     set({ ideasLoading: true });
     try {
       const ideas = await devApi.listIdeas(projectId, status, category, scanType, limit, offset);
-      set({ ideas, ideasLoading: false, error: null });
+      set({ ideas: ideas.map(sanitizeIdea), ideasLoading: false, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch ideas", set, { stateUpdates: { ideasLoading: false } });
     }
@@ -108,7 +134,7 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
 
   getIdea: async (id) => {
     try {
-      return await devApi.getIdea(id);
+      return sanitizeIdea(await devApi.getIdea(id));
     } catch (err) {
       reportError(err, "Failed to fetch idea", set);
       throw err;
@@ -117,7 +143,7 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
 
   updateIdea: async (id, updates) => {
     try {
-      const updated = await devApi.updateIdea(id, updates);
+      const updated = sanitizeIdea(await devApi.updateIdea(id, updates));
       set((state) => ({
         ideas: state.ideas.map((i) => (i.id === id ? updated : i)),
         triageItems: state.triageItems.map((i) => (i.id === id ? updated : i)),

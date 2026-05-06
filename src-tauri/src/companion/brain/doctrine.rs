@@ -21,9 +21,9 @@
 //! Idempotent: safe to call on every app start. Skips unchanged chunks
 //! via `content_hash` equality.
 
+use std::path::{Path, PathBuf};
 #[cfg(feature = "ml")]
 use std::sync::Arc;
-use std::path::{Path, PathBuf};
 
 use chrono::Utc;
 use rusqlite::params;
@@ -83,37 +83,118 @@ const INCLUDED_DOCS: &[&str] = &[
 /// fail loudly if a referenced file is missing.
 const EMBEDDED_DOCS: &[(&str, &str)] = &[
     // Personas
-    ("features/personas/01-data-model.md", include_str!("../../../../docs/features/personas/01-data-model.md")),
-    ("features/personas/02-capabilities.md", include_str!("../../../../docs/features/personas/02-capabilities.md")),
-    ("features/personas/03-trust-and-governance.md", include_str!("../../../../docs/features/personas/03-trust-and-governance.md")),
+    (
+        "features/personas/01-data-model.md",
+        include_str!("../../../../docs/features/personas/01-data-model.md"),
+    ),
+    (
+        "features/personas/02-capabilities.md",
+        include_str!("../../../../docs/features/personas/02-capabilities.md"),
+    ),
+    (
+        "features/personas/03-trust-and-governance.md",
+        include_str!("../../../../docs/features/personas/03-trust-and-governance.md"),
+    ),
     // Templates
-    ("features/templates/01-template-format.md", include_str!("../../../../docs/features/templates/01-template-format.md")),
-    ("features/templates/02-catalog-loading.md", include_str!("../../../../docs/features/templates/02-catalog-loading.md")),
-    ("features/templates/03-adoption-flow.md", include_str!("../../../../docs/features/templates/03-adoption-flow.md")),
-    ("features/templates/04-adoption-questionnaire.md", include_str!("../../../../docs/features/templates/04-adoption-questionnaire.md")),
-    ("features/templates/05-dynamic-discovery.md", include_str!("../../../../docs/features/templates/05-dynamic-discovery.md")),
-    ("features/templates/06-integrity-and-security.md", include_str!("../../../../docs/features/templates/06-integrity-and-security.md")),
-    ("features/templates/07-adoption-answer-pipeline.md", include_str!("../../../../docs/features/templates/07-adoption-answer-pipeline.md")),
+    (
+        "features/templates/01-template-format.md",
+        include_str!("../../../../docs/features/templates/01-template-format.md"),
+    ),
+    (
+        "features/templates/02-catalog-loading.md",
+        include_str!("../../../../docs/features/templates/02-catalog-loading.md"),
+    ),
+    (
+        "features/templates/03-adoption-flow.md",
+        include_str!("../../../../docs/features/templates/03-adoption-flow.md"),
+    ),
+    (
+        "features/templates/04-adoption-questionnaire.md",
+        include_str!("../../../../docs/features/templates/04-adoption-questionnaire.md"),
+    ),
+    (
+        "features/templates/05-dynamic-discovery.md",
+        include_str!("../../../../docs/features/templates/05-dynamic-discovery.md"),
+    ),
+    (
+        "features/templates/06-integrity-and-security.md",
+        include_str!("../../../../docs/features/templates/06-integrity-and-security.md"),
+    ),
+    (
+        "features/templates/07-adoption-answer-pipeline.md",
+        include_str!("../../../../docs/features/templates/07-adoption-answer-pipeline.md"),
+    ),
     // Execution
-    ("features/execution/01-entry-points.md", include_str!("../../../../docs/features/execution/01-entry-points.md")),
-    ("features/execution/02-lifecycle.md", include_str!("../../../../docs/features/execution/02-lifecycle.md")),
-    ("features/execution/03-chaining-and-approval.md", include_str!("../../../../docs/features/execution/03-chaining-and-approval.md")),
-    ("features/execution/04-observability.md", include_str!("../../../../docs/features/execution/04-observability.md")),
+    (
+        "features/execution/01-entry-points.md",
+        include_str!("../../../../docs/features/execution/01-entry-points.md"),
+    ),
+    (
+        "features/execution/02-lifecycle.md",
+        include_str!("../../../../docs/features/execution/02-lifecycle.md"),
+    ),
+    (
+        "features/execution/03-chaining-and-approval.md",
+        include_str!("../../../../docs/features/execution/03-chaining-and-approval.md"),
+    ),
+    (
+        "features/execution/04-observability.md",
+        include_str!("../../../../docs/features/execution/04-observability.md"),
+    ),
     // Events / recipes / artist / live roadmap
-    ("features/events/event-routing.md", include_str!("../../../../docs/features/events/event-routing.md")),
-    ("features/recipes/recipe-templates.md", include_str!("../../../../docs/features/recipes/recipe-templates.md")),
-    ("features/artist/media-studio-architecture.md", include_str!("../../../../docs/features/artist/media-studio-architecture.md")),
-    ("features/artist/media-studio-render-plan.md", include_str!("../../../../docs/features/artist/media-studio-render-plan.md")),
-    ("features/live-roadmap/live-roadmap.md", include_str!("../../../../docs/features/live-roadmap/live-roadmap.md")),
+    (
+        "features/events/event-routing.md",
+        include_str!("../../../../docs/features/events/event-routing.md"),
+    ),
+    (
+        "features/recipes/recipe-templates.md",
+        include_str!("../../../../docs/features/recipes/recipe-templates.md"),
+    ),
+    (
+        "features/artist/media-studio-architecture.md",
+        include_str!("../../../../docs/features/artist/media-studio-architecture.md"),
+    ),
+    (
+        "features/artist/media-studio-render-plan.md",
+        include_str!("../../../../docs/features/artist/media-studio-render-plan.md"),
+    ),
+    (
+        "features/live-roadmap/live-roadmap.md",
+        include_str!("../../../../docs/features/live-roadmap/live-roadmap.md"),
+    ),
     // Top-level concepts
-    ("concepts/adoption-creation-unification.md", include_str!("../../../../docs/concepts/adoption-creation-unification.md")),
-    ("concepts/agent-operations-hub.md", include_str!("../../../../docs/concepts/agent-operations-hub.md")),
-    ("concepts/ambient-context-fusion.md", include_str!("../../../../docs/concepts/ambient-context-fusion.md")),
-    ("concepts/claude-code-routines-integration.md", include_str!("../../../../docs/concepts/claude-code-routines-integration.md")),
-    ("concepts/cloud-deployment.md", include_str!("../../../../docs/concepts/cloud-deployment.md")),
-    ("concepts/invisible-apps-p2p.md", include_str!("../../../../docs/concepts/invisible-apps-p2p.md")),
-    ("concepts/mobile.md", include_str!("../../../../docs/concepts/mobile.md")),
-    ("concepts/real-api-testing.md", include_str!("../../../../docs/concepts/real-api-testing.md")),
+    (
+        "concepts/adoption-creation-unification.md",
+        include_str!("../../../../docs/concepts/adoption-creation-unification.md"),
+    ),
+    (
+        "concepts/agent-operations-hub.md",
+        include_str!("../../../../docs/concepts/agent-operations-hub.md"),
+    ),
+    (
+        "concepts/ambient-context-fusion.md",
+        include_str!("../../../../docs/concepts/ambient-context-fusion.md"),
+    ),
+    (
+        "concepts/claude-code-routines-integration.md",
+        include_str!("../../../../docs/concepts/claude-code-routines-integration.md"),
+    ),
+    (
+        "concepts/cloud-deployment.md",
+        include_str!("../../../../docs/concepts/cloud-deployment.md"),
+    ),
+    (
+        "concepts/invisible-apps-p2p.md",
+        include_str!("../../../../docs/concepts/invisible-apps-p2p.md"),
+    ),
+    (
+        "concepts/mobile.md",
+        include_str!("../../../../docs/concepts/mobile.md"),
+    ),
+    (
+        "concepts/real-api-testing.md",
+        include_str!("../../../../docs/concepts/real-api-testing.md"),
+    ),
 ];
 
 /// Soft target — sections larger than this are split further. Generous
@@ -191,8 +272,12 @@ pub async fn ingest_all(
     // mode we're in for transparency.
     let root = find_docs_root();
     match &root {
-        Some(r) => tracing::info!(root = %r.display(), "companion doctrine: starting ingest (disk-mode)"),
-        None => tracing::info!("companion doctrine: starting ingest (embedded-mode, no docs root on disk)"),
+        Some(r) => {
+            tracing::info!(root = %r.display(), "companion doctrine: starting ingest (disk-mode)")
+        }
+        None => tracing::info!(
+            "companion doctrine: starting ingest (embedded-mode, no docs root on disk)"
+        ),
     }
 
     // Track which (file, anchor) pairs we saw so we can prune orphans afterward.
@@ -264,9 +349,7 @@ fn chunk_markdown(rel_path: &str, body: &str) -> Vec<DoctrineChunk> {
     let mut current_heading = String::new();
     let mut current_lines: Vec<&str> = Vec::new();
 
-    let flush = |heading: &str,
-                 lines: &[&str],
-                 out: &mut Vec<DoctrineChunk>| {
+    let flush = |heading: &str, lines: &[&str], out: &mut Vec<DoctrineChunk>| {
         let content = lines.join("\n");
         if content.trim().is_empty() {
             return;
@@ -427,7 +510,11 @@ async fn upsert_chunk(
                 )?;
                 conn.execute(
                     "UPDATE companion_fts SET body = ?1, tags = ?2 WHERE node_id = ?3",
-                    params![chunk.content, format!("doctrine path:{}", chunk.file_path), id],
+                    params![
+                        chunk.content,
+                        format!("doctrine path:{}", chunk.file_path),
+                        id
+                    ],
                 )?;
                 // Drop old vector row; we'll insert fresh below.
                 conn.execute(
@@ -438,9 +525,7 @@ async fn upsert_chunk(
             // Embed best-effort. If the embedder is poisoned (ORT panic on
             // some Windows configs), the row + FTS still update; vec entry
             // is missing until a future run when the embedder works.
-            if let Err(e) =
-                embeddings::embed_and_store(pool, embedder, &id, &chunk.content).await
-            {
+            if let Err(e) = embeddings::embed_and_store(pool, embedder, &id, &chunk.content).await {
                 tracing::debug!(node_id = %id, error = %e, "doctrine: embed-on-update failed");
             }
             Ok(UpsertOutcome::Updated)
@@ -464,15 +549,17 @@ async fn upsert_chunk(
                 )?;
                 conn.execute(
                     "INSERT INTO companion_fts (node_id, body, tags) VALUES (?1, ?2, ?3)",
-                    params![id, chunk.content, format!("doctrine path:{}", chunk.file_path)],
+                    params![
+                        id,
+                        chunk.content,
+                        format!("doctrine path:{}", chunk.file_path)
+                    ],
                 )?;
             }
             // Same best-effort as the Update path: row sticks even if
             // embedding fails. has_vec_entry() check on next ingest will
             // trigger a backfill attempt.
-            if let Err(e) =
-                embeddings::embed_and_store(pool, embedder, &id, &chunk.content).await
-            {
+            if let Err(e) = embeddings::embed_and_store(pool, embedder, &id, &chunk.content).await {
                 tracing::debug!(node_id = %id, error = %e, "doctrine: embed-on-insert failed");
             }
             Ok(UpsertOutcome::Inserted)
@@ -496,16 +583,14 @@ fn has_vec_entry(pool: &UserDbPool, node_id: &str) -> Result<bool, AppError> {
 fn prune_orphans(pool: &UserDbPool, seen: &[String]) -> Result<usize, AppError> {
     let conn = pool.get()?;
     // Get all doctrine ids and file_paths.
-    let mut stmt = conn.prepare(
-        "SELECT id, file_path FROM companion_node WHERE kind = 'doctrine'",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT id, file_path FROM companion_node WHERE kind = 'doctrine'")?;
     let rows = stmt
         .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
         .collect::<Result<Vec<_>, _>>()?;
     drop(stmt);
 
-    let seen_set: std::collections::HashSet<&str> =
-        seen.iter().map(|s| s.as_str()).collect();
+    let seen_set: std::collections::HashSet<&str> = seen.iter().map(|s| s.as_str()).collect();
     let mut deleted = 0;
     for (id, file_path) in rows {
         if !seen_set.contains(file_path.as_str()) {

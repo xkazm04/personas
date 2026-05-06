@@ -1,11 +1,13 @@
-use std::sync::Arc;
 use chrono::{Datelike, TimeZone};
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::State;
 use tracing::{info, instrument};
 use ts_rs::TS;
 
-use crate::db::models::{MetricsChartData, MetricsSummary, ExecutionDashboardData, AnomalyDrilldownData};
+use crate::db::models::{
+    AnomalyDrilldownData, ExecutionDashboardData, MetricsChartData, MetricsSummary,
+};
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -84,9 +86,7 @@ pub fn get_all_monthly_spend(
         .date_naive()
         .with_day(1)
         .unwrap_or(local_now.date_naive());
-    let local_month_start_dt = local_month_start
-        .and_hms_opt(0, 0, 0)
-        .unwrap();
+    let local_month_start_dt = local_month_start.and_hms_opt(0, 0, 0).unwrap();
     // Convert local start-of-month back to UTC.
     // Use earliest() instead of single() so that DST-ambiguous times resolve
     // to the earlier UTC instant (guaranteeing period_start <= now).
@@ -128,7 +128,11 @@ pub fn get_all_monthly_spend(
         })
     })?;
     let items: Vec<PersonaMonthlySpend> = rows.collect::<Result<Vec<_>, _>>()?;
-    info!(duration_ms = start.elapsed().as_millis() as u64, rows = items.len(), "cmd::get_all_monthly_spend");
+    info!(
+        duration_ms = start.elapsed().as_millis() as u64,
+        rows = items.len(),
+        "cmd::get_all_monthly_spend"
+    );
     Ok(MonthlySpendResult {
         period_start_utc: period_start_str,
         items,

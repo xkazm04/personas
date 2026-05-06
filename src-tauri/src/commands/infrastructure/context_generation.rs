@@ -300,7 +300,10 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
             entry_points: arr_to_vec("entry_points"),
             keywords: arr_to_vec("keywords"),
             db_tables: arr_to_vec("db_tables"),
-            api_surface: ctx.get("api_surface").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            api_surface: ctx
+                .get("api_surface")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
             cross_refs: arr_to_vec("cross_refs"),
             tech_stack: arr_to_vec("tech_stack"),
         });
@@ -474,7 +477,11 @@ pub async fn dev_tools_scan_codebase(
         match result {
             Ok(summary) => {
                 let is_warning = summary.status == "completed_with_warning";
-                let status_str = if is_warning { "completed_with_warning" } else { "completed" };
+                let status_str = if is_warning {
+                    "completed_with_warning"
+                } else {
+                    "completed"
+                };
                 CONTEXT_GEN_JOBS.set_status(
                     &app_handle,
                     &scan_id_for_task,
@@ -483,7 +490,11 @@ pub async fn dev_tools_scan_codebase(
                 );
                 let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
                 // OS notification
-                let title = if is_warning { "Context Map Ready (with warning)" } else { "Context Map Ready" };
+                let title = if is_warning {
+                    "Context Map Ready (with warning)"
+                } else {
+                    "Context Map Ready"
+                };
                 let body = if is_warning {
                     format!(
                         "{}: {} groups, {} contexts mapped (scan exceeded timeout — partial results saved).",
@@ -651,7 +662,9 @@ async fn run_context_generation(
                 CONTEXT_GEN_JOBS.emit_line(
                     app,
                     scan_id,
-                    format!("[Milestone] Cleared {grp} groups, {ctx} contexts. Regenerating fresh..."),
+                    format!(
+                        "[Milestone] Cleared {grp} groups, {ctx} contexts. Regenerating fresh..."
+                    ),
                 );
             }
             Err(e) => {
@@ -919,7 +932,9 @@ async fn run_context_generation(
                 contexts_created,
                 files_mapped,
                 status: "completed_with_warning".to_string(),
-                error: Some("Scan exceeded 30-minute timeout but partial results were saved".to_string()),
+                error: Some(
+                    "Scan exceeded 30-minute timeout but partial results were saved".to_string(),
+                ),
             });
         }
         return Err(AppError::Internal(
@@ -1003,7 +1018,9 @@ async fn persist_scan_hashes(
             CONTEXT_GEN_JOBS.emit_line(
                 app,
                 scan_id,
-                format!("[Warn] Failed to persist hash cache: {e}. Next scan will be a full rescan."),
+                format!(
+                    "[Warn] Failed to persist hash cache: {e}. Next scan will be a full rescan."
+                ),
             );
         }
     }

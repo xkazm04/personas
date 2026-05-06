@@ -50,7 +50,10 @@ pub struct N8nConnectorRef {
     pub has_credential: bool,
 }
 
-pub fn normalize_n8n_persona_draft(mut draft: N8nPersonaOutput, workflow_name: &str) -> N8nPersonaOutput {
+pub fn normalize_n8n_persona_draft(
+    mut draft: N8nPersonaOutput,
+    workflow_name: &str,
+) -> N8nPersonaOutput {
     if draft.name.as_deref().unwrap_or("").trim().is_empty() {
         draft.name = Some(format!("{} (n8n)", workflow_name.trim()));
     }

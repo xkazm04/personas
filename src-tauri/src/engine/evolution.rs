@@ -7,15 +7,15 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
+use super::test_runner::{execute_scenario, generate_scenarios, score_result, TestModelConfig};
 use crate::db::models::{EvolutionPolicy, Persona, PersonaToolDefinition};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::genome::{
-    self, breed_generation, compute_fitness, parse_fitness_objective, FitnessScore, PersonaGenome,
+    self, breed_generation, compute_fitness, parse_fitness_objective, PersonaGenome,
 };
-use super::test_runner::{generate_scenarios, execute_scenario, score_result, TestModelConfig};
 
 // =============================================================================
 // Types
@@ -126,11 +126,7 @@ fn try_status_update(
 /// 2. Create self-bred variants via mutation (single-parent breeding)
 /// 3. Compute fitness for each variant based on historical data
 /// 4. If best variant beats incumbent by the improvement threshold, promote it
-pub async fn run_evolution_cycle(
-    pool: DbPool,
-    policy: EvolutionPolicy,
-    cycle_id: String,
-) {
+pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id: String) {
     let persona_id = policy.persona_id.clone();
     let mut status_reliable = true;
 
@@ -145,7 +141,9 @@ pub async fn run_evolution_cycle(
         Ok(p) => p,
         Err(e) => {
             if !try_status_update(
-                &pool, &cycle_id, EvolutionCycleStatus::Failed,
+                &pool,
+                &cycle_id,
+                EvolutionCycleStatus::Failed,
                 Some(&format!("Failed to load persona: {e}")),
             ) {
                 status_reliable = false;
@@ -171,7 +169,9 @@ pub async fn run_evolution_cycle(
         );
         // Persist warning in cycle error field so frontend can show it
         let _ = evolution_repo::update_cycle_status(
-            &pool, &cycle_id, EvolutionCycleStatus::Breeding,
+            &pool,
+            &cycle_id,
+            EvolutionCycleStatus::Breeding,
             Some(&format!("Warning: {warning_msg}")),
         );
     }
@@ -192,10 +192,7 @@ pub async fn run_evolution_cycle(
     //     Cheap-by-default with one expensive exploration variant per cycle.
     let variant_count = policy.variants_per_cycle.clamp(2, 8) as usize;
     let mutation_rate = policy.mutation_rate;
-    let strategy = policy
-        .mutation_strategy
-        .as_deref()
-        .unwrap_or("mechanical");
+    let strategy = policy.mutation_strategy.as_deref().unwrap_or("mechanical");
     let mut variants: Vec<PersonaGenome> = Vec::with_capacity(variant_count);
 
     for variant_idx in 0..variant_count {
@@ -246,9 +243,12 @@ pub async fn run_evolution_cycle(
     }
 
     // Update variant count so frontend shows progress (retry once on failure)
-    if let Err(e) = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32) {
+    if let Err(e) = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32)
+    {
         tracing::warn!(cycle_id = %cycle_id, error = %e, "Variant count update failed, retrying");
-        if let Err(retry_err) = evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32) {
+        if let Err(retry_err) =
+            evolution_repo::update_variants_tested(&pool, &cycle_id, variants.len() as i32)
+        {
             tracing::warn!(cycle_id = %cycle_id, error = %retry_err, "Variant count retry also failed");
             status_reliable = false;
         }
@@ -271,7 +271,9 @@ pub async fn run_evolution_cycle(
         Ok(s) if !s.is_empty() => s,
         Ok(_) => {
             if !try_status_update(
-                &pool, &cycle_id, EvolutionCycleStatus::Failed,
+                &pool,
+                &cycle_id,
+                EvolutionCycleStatus::Failed,
                 Some("No test scenarios generated for evaluation"),
             ) {
                 status_reliable = false;
@@ -281,7 +283,9 @@ pub async fn run_evolution_cycle(
         }
         Err(e) => {
             if !try_status_update(
-                &pool, &cycle_id, EvolutionCycleStatus::Failed,
+                &pool,
+                &cycle_id,
+                EvolutionCycleStatus::Failed,
                 Some(&format!("Scenario generation failed: {e}")),
             ) {
                 status_reliable = false;
@@ -302,7 +306,8 @@ pub async fn run_evolution_cycle(
     };
 
     // Score the incumbent first (baseline)
-    let incumbent_avg = evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model).await;
+    let incumbent_avg =
+        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model).await;
 
     // Score each variant
     let mut best_variant_idx: Option<usize> = None;
@@ -315,7 +320,8 @@ pub async fn run_evolution_cycle(
         // Clear structured_prompt so the system_prompt is used
         variant_persona.structured_prompt = None;
 
-        let variant_avg = evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model).await;
+        let variant_avg =
+            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model).await;
 
         tracing::debug!(
             cycle_id = %cycle_id,
@@ -383,12 +389,16 @@ pub async fn run_evolution_cycle(
     let summary = EvolutionCycleSummary {
         cycle_id: cycle_id.clone(),
         persona_id: persona_id.clone(),
-        generation: 1,
+        generation: policy.total_cycles + 1,
         variants_tested: variants.len() as i32,
         winner_fitness: best_variant_idx.map(|_| best_variant_score),
         incumbent_fitness: Some(incumbent_fitness.overall),
         promoted,
-        promoted_persona_id: if promoted { Some(persona_id.clone()) } else { None },
+        promoted_persona_id: if promoted {
+            Some(persona_id.clone())
+        } else {
+            None
+        },
         status_reliable,
         warnings: objective_warnings,
         raw_fitness_objective: Some(policy.fitness_objective.clone()),
@@ -397,15 +407,21 @@ pub async fn run_evolution_cycle(
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();
     // complete_cycle is critical — retry once on failure
     if let Err(e) = evolution_repo::complete_cycle(
-        &pool, &cycle_id, promoted,
+        &pool,
+        &cycle_id,
+        promoted,
         best_variant_idx.map(|_| best_variant_score),
-        incumbent_fitness.overall, &summary_json,
+        incumbent_fitness.overall,
+        &summary_json,
     ) {
         tracing::warn!(cycle_id = %cycle_id, error = %e, "complete_cycle failed, retrying");
         if let Err(retry_err) = evolution_repo::complete_cycle(
-            &pool, &cycle_id, promoted,
+            &pool,
+            &cycle_id,
+            promoted,
             best_variant_idx.map(|_| best_variant_score),
-            incumbent_fitness.overall, &summary_json,
+            incumbent_fitness.overall,
+            &summary_json,
         ) {
             tracing::error!(
                 cycle_id = %cycle_id,
@@ -414,56 +430,6 @@ pub async fn run_evolution_cycle(
             );
         }
     }
-}
-
-// =============================================================================
-// Variant scoring
-// =============================================================================
-
-/// Score a variant genome relative to the incumbent.
-///
-/// Combines the incumbent's actual fitness with structural heuristics
-/// to estimate variant quality without running full executions.
-#[allow(dead_code)]
-fn score_variant(
-    variant: &PersonaGenome,
-    incumbent: &PersonaGenome,
-    incumbent_fitness: &FitnessScore,
-) -> f64 {
-    let base = incumbent_fitness.overall;
-
-    // Segment preservation bonus: variants that keep similar segment count score higher
-    let seg_ratio = variant.prompt_segments.len() as f64
-        / incumbent.prompt_segments.len().max(1) as f64;
-    let seg_bonus = if (0.5..=1.5).contains(&seg_ratio) {
-        0.02 // Reasonable segment count
-    } else {
-        -0.05 // Too much divergence
-    };
-
-    // Tool retention bonus
-    let incumbent_tools: std::collections::HashSet<&str> =
-        incumbent.tools.tool_ids.iter().map(|s| s.as_str()).collect();
-    let retained = variant
-        .tools
-        .tool_ids
-        .iter()
-        .filter(|t| incumbent_tools.contains(t.as_str()))
-        .count();
-    let tool_ratio = retained as f64 / incumbent_tools.len().max(1) as f64;
-    let tool_bonus = (tool_ratio - 0.5) * 0.04; // +0.02 for full retention, -0.02 for 0%
-
-    // Config reasonableness: timeout shouldn't be too low
-    let timeout_penalty = if variant.model.timeout_ms < 10_000 { -0.03 } else { 0.0 };
-
-    // Add small random perturbation to break ties and explore
-    let perturbation = {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
-        rng.gen_range(-0.01..0.01)
-    };
-
-    (base + seg_bonus + tool_bonus + timeout_penalty + perturbation).clamp(0.0, 1.0)
 }
 
 // =============================================================================
@@ -494,14 +460,20 @@ async fn evaluate_persona_on_scenarios(
                 count += 1;
             }
             Err(e) => {
-                tracing::debug!("Evolution eval failed for scenario '{}': {}", scenario.name, e);
+                tracing::debug!(
+                    "Evolution eval failed for scenario '{}': {}",
+                    scenario.name,
+                    e
+                );
                 // Count failures as 0 score
                 count += 1;
             }
         }
     }
 
-    if count == 0 { return 0.0; }
+    if count == 0 {
+        return 0.0;
+    }
     total_score / count as f64
 }
 
@@ -548,10 +520,7 @@ fn promote_variant(
 // =============================================================================
 
 /// Check if enough executions have occurred since the last cycle to warrant evolution.
-pub fn should_evolve(
-    pool: &DbPool,
-    policy: &EvolutionPolicy,
-) -> bool {
+pub fn should_evolve(pool: &DbPool, policy: &EvolutionPolicy) -> bool {
     if !policy.enabled {
         return false;
     }
@@ -561,7 +530,10 @@ pub fn should_evolve(
         .get()
         .ok()
         .and_then(|conn| {
-            let since = policy.last_cycle_at.as_deref().unwrap_or("1970-01-01T00:00:00Z");
+            let since = policy
+                .last_cycle_at
+                .as_deref()
+                .unwrap_or("1970-01-01T00:00:00Z");
             conn.query_row(
                 "SELECT COUNT(*) FROM persona_executions
                  WHERE persona_id = ?1 AND status = 'completed' AND created_at > ?2",

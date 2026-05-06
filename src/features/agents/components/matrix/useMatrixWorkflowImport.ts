@@ -10,9 +10,9 @@ import { useCallback, useState } from "react";
 import { parseWorkflowFile, type WorkflowParseResult } from "@/lib/personas/parsers/workflowParser";
 import { isSupportedFile } from "@/lib/personas/parsers/workflowDetector";
 import { useAgentStore } from "@/stores/agentStore";
+import { MAX_WORKFLOW_JSON_BYTES } from "@/lib/n8nLimits.generated";
 
-// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = MAX_WORKFLOW_JSON_BYTES;
 
 interface UseMatrixWorkflowImportReturn {
   /** Parse a content string (e.g., from paste or URL fetch) */
@@ -68,7 +68,8 @@ export function useMatrixWorkflowImport(): UseMatrixWorkflowImportReturn {
       }
 
       if (file.size > MAX_FILE_SIZE) {
-        setImportError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 5 MB.`);
+        const limitMb = MAX_FILE_SIZE / (1024 * 1024);
+        setImportError(`File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is ${limitMb} MB.`);
         return null;
       }
 

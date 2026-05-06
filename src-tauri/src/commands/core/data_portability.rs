@@ -10,17 +10,17 @@ use pbkdf2::pbkdf2_hmac;
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
 use tauri::{AppHandle, State};
-use ts_rs::TS;
 use tauri_plugin_dialog::DialogExt;
+use ts_rs::TS;
 
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{
     groups as group_repo, memories as memory_repo, personas as persona_repo,
 };
-use crate::db::repos::execution::{test_suites as suite_repo};
+use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::{
-    audit_log, connectors as connector_repo, credentials as cred_repo,
-    teams as team_repo, tools as tool_repo, triggers as trigger_repo,
+    audit_log, connectors as connector_repo, credentials as cred_repo, teams as team_repo,
+    tools as tool_repo, triggers as trigger_repo,
 };
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -30,16 +30,26 @@ use crate::validation;
 use crate::AppState;
 
 use super::export_types::{
-    MemoryExport, SubscriptionExport, TriggerExport,
-    MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN, MAX_DESIGN_CONTEXT_LEN, MAX_MEMORIES,
-    MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN, MAX_SHORT_FIELD_LEN, MAX_STRUCTURED_PROMPT_LEN,
-    MAX_SUBSCRIPTIONS, MAX_SYSTEM_PROMPT_LEN, MAX_TRIGGERS,
+    MemoryExport, SubscriptionExport, TriggerExport, MAX_CONFIG_LEN, MAX_DESCRIPTION_LEN,
+    MAX_DESIGN_CONTEXT_LEN, MAX_MEMORIES, MAX_MEMORY_CONTENT_LEN, MAX_NAME_LEN,
+    MAX_SHORT_FIELD_LEN, MAX_STRUCTURED_PROMPT_LEN, MAX_SUBSCRIPTIONS, MAX_SYSTEM_PROMPT_LEN,
+    MAX_TRIGGERS,
 };
 
 // Additional constants specific to data_portability (not shared with import_export)
 const MAX_CANVAS_DATA_LEN: usize = 500_000;
 const MAX_SCHEMA_LEN: usize = 100_000;
 const MAX_SCENARIOS_LEN: usize = 500_000;
+
+/// Hard ceiling on the size of a `.enc` credential bundle accepted by
+/// `import_credentials`. Mirrors the persona-import guard in
+/// `import_export::MAX_IMPORT_FILE_BYTES` but tightened: a credential
+/// bundle is JSON envelope + base64-encoded ciphertext, and even a
+/// vault with hundreds of secrets stays well under 1 MB. Anything
+/// larger is either corruption, accidental file selection (logs, DB
+/// dump), or a hostile blob aimed at OOMing the read_to_string path
+/// before AES decryption runs.
+const MAX_CREDENTIAL_IMPORT_BYTES: u64 = 2 * 1024 * 1024;
 
 // Array size caps specific to data_portability
 const MAX_PERSONAS: usize = 200;
@@ -219,9 +229,7 @@ pub struct ExportStats {
 
 /// Get export statistics for the entire workspace (for UI preview).
 #[tauri::command]
-pub async fn get_export_stats(
-    state: State<'_, Arc<AppState>>,
-) -> Result<ExportStats, AppError> {
+pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportStats, AppError> {
     require_auth_sync(&state)?;
     let pool = &state.db;
     let personas = persona_repo::get_all(pool)?;
@@ -301,7 +309,11 @@ pub async fn export_selective(
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
-            let filter_ids = if credential_ids.is_empty() { None } else { Some(&credential_ids) };
+            let filter_ids = if credential_ids.is_empty() {
+                None
+            } else {
+                Some(&credential_ids)
+            };
             let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
             bundle.encrypted_credentials = Some(envelope);
             bundle.format_version = 3;
@@ -471,15 +483,19 @@ pub async fn export_selective_to_path(
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
-            let filter_ids = if credential_ids.is_empty() { None } else { Some(&credential_ids) };
+            let filter_ids = if credential_ids.is_empty() {
+                None
+            } else {
+                Some(&credential_ids)
+            };
             let envelope = build_encrypted_credentials(pool, pp, filter_ids)?;
             bundle.encrypted_credentials = Some(envelope);
             bundle.format_version = 3;
         }
     }
 
-    let json = serde_json::to_string_pretty(&bundle)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let json =
+        serde_json::to_string_pretty(&bundle).map_err(|e| AppError::Internal(e.to_string()))?;
     let zip_bytes = create_zip_bundle(&json)?;
     tokio::fs::write(&file_path, zip_bytes)
         .await
@@ -558,7 +574,10 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
 
     let (selected_persona_ids, selected_team_ids) = match &scope {
         ExportScope::Full => (
-            all_personas.iter().map(|p| p.id.clone()).collect::<Vec<_>>(),
+            all_personas
+                .iter()
+                .map(|p| p.id.clone())
+                .collect::<Vec<_>>(),
             all_teams.iter().map(|t| t.id.clone()).collect::<Vec<_>>(),
         ),
         ExportScope::Selective {
@@ -570,7 +589,8 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
 
     // Batch-fetch all per-persona data in 5 queries instead of 5*N
     let all_triggers = trigger_repo::get_by_persona_ids(pool, &selected_persona_ids)?;
-    let all_subscriptions = event_repo::get_subscriptions_by_persona_ids(pool, &selected_persona_ids)?;
+    let all_subscriptions =
+        event_repo::get_subscriptions_by_persona_ids(pool, &selected_persona_ids)?;
     let all_memories = memory_repo::get_all_by_persona_ids(pool, &selected_persona_ids)?;
     let all_persona_tools = tool_repo::get_tools_for_personas(pool, &selected_persona_ids)?;
     let all_test_suites = suite_repo::list_by_persona_ids(pool, &selected_persona_ids)?;
@@ -578,15 +598,24 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
     // Group by persona_id into HashMaps
     let mut triggers_map: HashMap<String, Vec<_>> = HashMap::new();
     for t in all_triggers {
-        triggers_map.entry(t.persona_id.clone()).or_default().push(t);
+        triggers_map
+            .entry(t.persona_id.clone())
+            .or_default()
+            .push(t);
     }
     let mut subscriptions_map: HashMap<String, Vec<_>> = HashMap::new();
     for s in all_subscriptions {
-        subscriptions_map.entry(s.persona_id.clone()).or_default().push(s);
+        subscriptions_map
+            .entry(s.persona_id.clone())
+            .or_default()
+            .push(s);
     }
     let mut memories_map: HashMap<String, Vec<_>> = HashMap::new();
     for m in all_memories {
-        memories_map.entry(m.persona_id.clone()).or_default().push(m);
+        memories_map
+            .entry(m.persona_id.clone())
+            .or_default()
+            .push(m);
     }
     let mut tools_map: HashMap<String, Vec<_>> = HashMap::new();
     for (pid, def) in all_persona_tools {
@@ -785,8 +814,8 @@ async fn save_bundle_to_file(
     bundle: &PortabilityBundle,
     default_name: &str,
 ) -> Result<bool, AppError> {
-    let json = serde_json::to_string_pretty(bundle)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let json =
+        serde_json::to_string_pretty(bundle).map_err(|e| AppError::Internal(e.to_string()))?;
 
     let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
     let file_name = format!("{}_{}.zip", default_name, timestamp);
@@ -886,27 +915,63 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     for (i, g) in bundle.groups.iter().enumerate() {
         validation::require_non_empty(&format!("group[{i}].name"), &g.name)?;
         validation::require_max_len(&format!("group[{i}].name"), &g.name, MAX_NAME_LEN)?;
-        validation::require_optional_max_len(&format!("group[{i}].color"), &g.color, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("group[{i}].description"), &g.description, MAX_DESCRIPTION_LEN)?;
+        validation::require_optional_max_len(
+            &format!("group[{i}].color"),
+            &g.color,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("group[{i}].description"),
+            &g.description,
+            MAX_DESCRIPTION_LEN,
+        )?;
     }
 
     // Validate tool definitions
     for (i, t) in bundle.tool_definitions.iter().enumerate() {
         validation::require_non_empty(&format!("tool[{i}].name"), &t.name)?;
         validation::require_max_len(&format!("tool[{i}].name"), &t.name, MAX_NAME_LEN)?;
-        validation::require_max_len(&format!("tool[{i}].category"), &t.category, MAX_SHORT_FIELD_LEN)?;
-        validation::require_max_len(&format!("tool[{i}].description"), &t.description, MAX_DESCRIPTION_LEN)?;
-        validation::require_optional_max_len(&format!("tool[{i}].input_schema"), &t.input_schema, MAX_SCHEMA_LEN)?;
-        validation::require_optional_max_len(&format!("tool[{i}].requires_credential_type"), &t.requires_credential_type, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("tool[{i}].implementation_guide"), &t.implementation_guide, MAX_DESIGN_CONTEXT_LEN)?;
+        validation::require_max_len(
+            &format!("tool[{i}].category"),
+            &t.category,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("tool[{i}].description"),
+            &t.description,
+            MAX_DESCRIPTION_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("tool[{i}].input_schema"),
+            &t.input_schema,
+            MAX_SCHEMA_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("tool[{i}].requires_credential_type"),
+            &t.requires_credential_type,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("tool[{i}].implementation_guide"),
+            &t.implementation_guide,
+            MAX_DESIGN_CONTEXT_LEN,
+        )?;
     }
 
     // Validate credentials
     for (i, c) in bundle.credentials.iter().enumerate() {
         validation::require_non_empty(&format!("credential[{i}].name"), &c.name)?;
         validation::require_max_len(&format!("credential[{i}].name"), &c.name, MAX_NAME_LEN)?;
-        validation::require_max_len(&format!("credential[{i}].service_type"), &c.service_type, MAX_NAME_LEN)?;
-        validation::require_optional_max_len(&format!("credential[{i}].metadata"), &c.metadata, MAX_SCHEMA_LEN)?;
+        validation::require_max_len(
+            &format!("credential[{i}].service_type"),
+            &c.service_type,
+            MAX_NAME_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("credential[{i}].metadata"),
+            &c.metadata,
+            MAX_SCHEMA_LEN,
+        )?;
     }
 
     // Validate personas and their sub-entities
@@ -916,52 +981,173 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
         // Core persona fields
         validation::require_non_empty(&format!("{prefix}.name"), &p.name)?;
         validation::require_max_len(&format!("{prefix}.name"), &p.name, MAX_NAME_LEN)?;
-        validation::require_max_len(&format!("{prefix}.system_prompt"), &p.system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.description"), &p.description, MAX_DESCRIPTION_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.structured_prompt"), &p.structured_prompt, MAX_STRUCTURED_PROMPT_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.icon"), &p.icon, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.color"), &p.color, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.notification_channels"), &p.notification_channels, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.model_profile"), &p.model_profile, MAX_SHORT_FIELD_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.design_context"), &p.design_context, MAX_DESIGN_CONTEXT_LEN)?;
+        validation::require_max_len(
+            &format!("{prefix}.system_prompt"),
+            &p.system_prompt,
+            MAX_SYSTEM_PROMPT_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.description"),
+            &p.description,
+            MAX_DESCRIPTION_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.structured_prompt"),
+            &p.structured_prompt,
+            MAX_STRUCTURED_PROMPT_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.icon"),
+            &p.icon,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.color"),
+            &p.color,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.notification_channels"),
+            &p.notification_channels,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.model_profile"),
+            &p.model_profile,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.design_context"),
+            &p.design_context,
+            MAX_DESIGN_CONTEXT_LEN,
+        )?;
 
         // Sub-entity array caps
-        validation::require_max_count(&format!("{prefix}.triggers"), &p.triggers, MAX_TRIGGERS_PER_PERSONA)?;
-        validation::require_max_count(&format!("{prefix}.subscriptions"), &p.subscriptions, MAX_SUBSCRIPTIONS_PER_PERSONA)?;
-        validation::require_max_count(&format!("{prefix}.memories"), &p.memories, MAX_MEMORIES_PER_PERSONA)?;
-        validation::require_max_count(&format!("{prefix}.test_suites"), &p.test_suites, MAX_TEST_SUITES_PER_PERSONA)?;
+        validation::require_max_count(
+            &format!("{prefix}.triggers"),
+            &p.triggers,
+            MAX_TRIGGERS_PER_PERSONA,
+        )?;
+        validation::require_max_count(
+            &format!("{prefix}.subscriptions"),
+            &p.subscriptions,
+            MAX_SUBSCRIPTIONS_PER_PERSONA,
+        )?;
+        validation::require_max_count(
+            &format!("{prefix}.memories"),
+            &p.memories,
+            MAX_MEMORIES_PER_PERSONA,
+        )?;
+        validation::require_max_count(
+            &format!("{prefix}.test_suites"),
+            &p.test_suites,
+            MAX_TEST_SUITES_PER_PERSONA,
+        )?;
 
         // Validate triggers
         for (j, t) in p.triggers.iter().enumerate() {
-            validation::require_non_empty(&format!("{prefix}.trigger[{j}].trigger_type"), &t.trigger_type)?;
-            validation::require_max_len(&format!("{prefix}.trigger[{j}].trigger_type"), &t.trigger_type, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.trigger[{j}].config"), &t.config, MAX_CONFIG_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.trigger[{j}].use_case_id"), &t.use_case_id, MAX_SHORT_FIELD_LEN)?;
+            validation::require_non_empty(
+                &format!("{prefix}.trigger[{j}].trigger_type"),
+                &t.trigger_type,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.trigger[{j}].trigger_type"),
+                &t.trigger_type,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.trigger[{j}].config"),
+                &t.config,
+                MAX_CONFIG_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.trigger[{j}].use_case_id"),
+                &t.use_case_id,
+                MAX_SHORT_FIELD_LEN,
+            )?;
         }
 
         // Validate subscriptions
         for (j, s) in p.subscriptions.iter().enumerate() {
-            validation::require_non_empty(&format!("{prefix}.subscription[{j}].event_type"), &s.event_type)?;
-            validation::require_max_len(&format!("{prefix}.subscription[{j}].event_type"), &s.event_type, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.subscription[{j}].source_filter"), &s.source_filter, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.subscription[{j}].use_case_id"), &s.use_case_id, MAX_SHORT_FIELD_LEN)?;
+            validation::require_non_empty(
+                &format!("{prefix}.subscription[{j}].event_type"),
+                &s.event_type,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.subscription[{j}].event_type"),
+                &s.event_type,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.subscription[{j}].source_filter"),
+                &s.source_filter,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.subscription[{j}].use_case_id"),
+                &s.use_case_id,
+                MAX_SHORT_FIELD_LEN,
+            )?;
         }
 
         // Validate memories
         for (j, m) in p.memories.iter().enumerate() {
             validation::require_non_empty(&format!("{prefix}.memory[{j}].title"), &m.title)?;
-            validation::require_max_len(&format!("{prefix}.memory[{j}].title"), &m.title, MAX_NAME_LEN)?;
-            validation::require_max_len(&format!("{prefix}.memory[{j}].content"), &m.content, MAX_MEMORY_CONTENT_LEN)?;
-            validation::require_max_len(&format!("{prefix}.memory[{j}].category"), &m.category, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.memory[{j}].tags"), &m.tags.as_ref().map(|j| serde_json::to_string(&j.0).unwrap_or_default()), MAX_SHORT_FIELD_LEN)?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].title"),
+                &m.title,
+                MAX_NAME_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].content"),
+                &m.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].category"),
+                &m.category,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            // Surface tag-serialization failures as a validation error
+            // rather than collapsing them into an empty string. See the
+            // matching guard in import_export::import_persona for the
+            // why — silent unwrap_or_default() lets craft-able tags
+            // bypass the length check and reach the DB layer raw.
+            let tags_serialized = m
+                .tags
+                .as_ref()
+                .map(|jv| serde_json::to_string(&jv.0))
+                .transpose()
+                .map_err(|e| {
+                    AppError::Validation(format!(
+                        "{prefix}.memory[{j}].tags is not serializable JSON: {e}"
+                    ))
+                })?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.memory[{j}].tags"),
+                &tags_serialized,
+                MAX_SHORT_FIELD_LEN,
+            )?;
         }
 
         // Validate test suites
         for (j, s) in p.test_suites.iter().enumerate() {
             validation::require_non_empty(&format!("{prefix}.test_suite[{j}].name"), &s.name)?;
-            validation::require_max_len(&format!("{prefix}.test_suite[{j}].name"), &s.name, MAX_NAME_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.test_suite[{j}].description"), &s.description, MAX_DESCRIPTION_LEN)?;
-            validation::require_max_len(&format!("{prefix}.test_suite[{j}].scenarios"), &s.scenarios, MAX_SCENARIOS_LEN)?;
+            validation::require_max_len(
+                &format!("{prefix}.test_suite[{j}].name"),
+                &s.name,
+                MAX_NAME_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.test_suite[{j}].description"),
+                &s.description,
+                MAX_DESCRIPTION_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.test_suite[{j}].scenarios"),
+                &s.scenarios,
+                MAX_SCENARIOS_LEN,
+            )?;
         }
     }
 
@@ -971,23 +1157,63 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
 
         validation::require_non_empty(&format!("{prefix}.name"), &t.name)?;
         validation::require_max_len(&format!("{prefix}.name"), &t.name, MAX_NAME_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.description"), &t.description, MAX_DESCRIPTION_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.canvas_data"), &t.canvas_data, MAX_CANVAS_DATA_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.team_config"), &t.team_config, MAX_CONFIG_LEN)?;
-        validation::require_optional_max_len(&format!("{prefix}.icon"), &t.icon, MAX_SHORT_FIELD_LEN)?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.description"),
+            &t.description,
+            MAX_DESCRIPTION_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.canvas_data"),
+            &t.canvas_data,
+            MAX_CANVAS_DATA_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.team_config"),
+            &t.team_config,
+            MAX_CONFIG_LEN,
+        )?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.icon"),
+            &t.icon,
+            MAX_SHORT_FIELD_LEN,
+        )?;
 
         validation::require_max_count(&format!("{prefix}.members"), &t.members, MAX_TEAM_MEMBERS)?;
-        validation::require_max_count(&format!("{prefix}.connections"), &t.connections, MAX_TEAM_CONNECTIONS)?;
+        validation::require_max_count(
+            &format!("{prefix}.connections"),
+            &t.connections,
+            MAX_TEAM_CONNECTIONS,
+        )?;
 
         for (j, m) in t.members.iter().enumerate() {
-            validation::require_optional_max_len(&format!("{prefix}.member[{j}].role"), &m.role, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.member[{j}].config"), &m.config, MAX_CONFIG_LEN)?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.member[{j}].role"),
+                &m.role,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.member[{j}].config"),
+                &m.config,
+                MAX_CONFIG_LEN,
+            )?;
         }
 
         for (j, c) in t.connections.iter().enumerate() {
-            validation::require_optional_max_len(&format!("{prefix}.connection[{j}].connection_type"), &c.connection_type, MAX_SHORT_FIELD_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.connection[{j}].condition"), &c.condition, MAX_CONFIG_LEN)?;
-            validation::require_optional_max_len(&format!("{prefix}.connection[{j}].label"), &c.label, MAX_NAME_LEN)?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.connection[{j}].connection_type"),
+                &c.connection_type,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.connection[{j}].condition"),
+                &c.condition,
+                MAX_CONFIG_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.connection[{j}].label"),
+                &c.label,
+                MAX_NAME_LEN,
+            )?;
         }
     }
 
@@ -1076,9 +1302,7 @@ fn import_bundle(
                 result.id_mapping.insert(t.id.clone(), id);
                 result.tools_created += 1;
             }
-            Err(e) => result
-                .warnings
-                .push(format!("Tool '{}': {}", t.name, e)),
+            Err(e) => result.warnings.push(format!("Tool '{}': {}", t.name, e)),
         }
     }
 
@@ -1099,7 +1323,8 @@ fn import_bundle(
 
         let id = uuid::Uuid::new_v4().to_string();
         // Create credential shell with empty encrypted data — secrets must be added separately
-        let empty_encrypted = crypto::encrypt_for_db("{}").map_err(|e| AppError::Internal(e.to_string()))?;
+        let empty_encrypted =
+            crypto::encrypt_for_db("{}").map_err(|e| AppError::Internal(e.to_string()))?;
         match tx.execute(
             "INSERT INTO persona_credentials
              (id, name, service_type, encrypted_data, iv, metadata, created_at, updated_at)
@@ -1135,12 +1360,24 @@ fn import_bundle(
         let max_concurrent = p.max_concurrent;
         let timeout_ms = p.timeout_ms;
 
-        // Encrypt notification channel secrets before storing
+        // Encrypt notification channel secrets before storing.
+        // Never fall back to the original plaintext on failure: downstream
+        // reads treat this column as ciphertext, so persisting plaintext
+        // would leak webhook secrets / Slack tokens / SMTP passwords on disk
+        // and break decryption on every subsequent read. If the keyring is
+        // unavailable, skip this persona and surface a warning so the user
+        // can re-import once it's healthy.
         let encrypted_channels = match &p.notification_channels {
             Some(json) if !json.trim().is_empty() => {
                 match persona_repo::encrypt_notification_channels(json) {
                     Ok(enc) => Some(enc),
-                    Err(_) => p.notification_channels.clone(), // fallback to original on error
+                    Err(e) => {
+                        result.warnings.push(format!(
+                            "Persona '{}': skipped — failed to encrypt notification channels ({}). Re-import once the keyring is available.",
+                            p.name, e
+                        ));
+                        continue;
+                    }
                 }
             }
             other => other.clone(),
@@ -1262,9 +1499,7 @@ fn import_bundle(
                     }
                 }
             }
-            Err(e) => result
-                .warnings
-                .push(format!("Persona '{}': {}", p.name, e)),
+            Err(e) => result.warnings.push(format!("Persona '{}': {}", p.name, e)),
         }
     }
 
@@ -1395,14 +1630,12 @@ fn is_n8n_workflow(v: &serde_json::Value) -> bool {
 
 fn is_zapier_workflow(v: &serde_json::Value) -> bool {
     // Zapier exports have "steps" array and often a "title" field
-    v.get("steps").is_some_and(|s| s.is_array())
-        && v.get("title").is_some()
+    v.get("steps").is_some_and(|s| s.is_array()) && v.get("title").is_some()
 }
 
 fn is_make_workflow(v: &serde_json::Value) -> bool {
     // Make/Integromat exports have "modules" array
-    v.get("modules").is_some_and(|s| s.is_array())
-        || v.get("scenario").is_some()
+    v.get("modules").is_some_and(|s| s.is_array()) || v.get("scenario").is_some()
 }
 
 fn parse_n8n_preview(v: &serde_json::Value) -> Result<Vec<CompetitiveImportPreview>, AppError> {
@@ -1466,11 +1699,7 @@ fn parse_zapier_preview(v: &serde_json::Value) -> Result<Vec<CompetitiveImportPr
 
     let apps: Vec<String> = steps
         .iter()
-        .filter_map(|s| {
-            s.get("app")
-                .and_then(|a| a.as_str())
-                .map(|a| a.to_string())
-        })
+        .filter_map(|s| s.get("app").and_then(|a| a.as_str()).map(|a| a.to_string()))
         .collect();
 
     let triggers: Vec<String> = steps
@@ -1643,11 +1872,9 @@ fn apply_encrypted_credentials(
         .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let plaintext = cipher
-        .decrypt(nonce, ciphertext.as_ref())
-        .map_err(|_| {
-            AppError::Validation("Decryption failed -- wrong passphrase or corrupted data".into())
-        })?;
+    let plaintext = cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| {
+        AppError::Validation("Decryption failed -- wrong passphrase or corrupted data".into())
+    })?;
 
     let cred_bundle: CredentialExportBundle = serde_json::from_slice(&plaintext)
         .map_err(|e| AppError::Validation(format!("Invalid inner credential data: {e}")))?;
@@ -1663,9 +1890,9 @@ fn apply_encrypted_credentials(
     for entry in &cred_bundle.credentials {
         // The imported credential shell has name "{name} (imported)" and same service_type
         let imported_name = format!("{} (imported)", entry.name);
-        let matching_cred = existing.iter().find(|c| {
-            c.name == imported_name && c.service_type == entry.service_type
-        });
+        let matching_cred = existing
+            .iter()
+            .find(|c| c.name == imported_name && c.service_type == entry.service_type);
 
         let Some(cred) = matching_cred else {
             continue;
@@ -1799,9 +2026,15 @@ pub async fn export_credentials(
         if builtin_names.contains(&cred.service_type.to_lowercase()) {
             continue;
         }
-        let fields = cred_repo::get_decrypted_fields(pool, cred)
-            .unwrap_or_default();
-        if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "data_portability:export", None, None) {
+        let fields = cred_repo::get_decrypted_fields(pool, cred).unwrap_or_default();
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            &cred.id,
+            &cred.name,
+            "data_portability:export",
+            None,
+            None,
+        ) {
             tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
         }
         entries.push(CredentialExportEntry {
@@ -1909,6 +2142,21 @@ pub async fn import_credentials(
             .map_err(|e| AppError::Internal(format!("Invalid file path: {e}")))?
     };
 
+    // Cap the file size before read_to_string so a multi-GB pick (accidental
+    // or socially engineered) cannot OOM the process. Mirrors the guard in
+    // `import_persona`, with a tighter ceiling because credential bundles
+    // are tiny (JSON envelope + base64 ciphertext).
+    let metadata = tokio::fs::metadata(&path)
+        .await
+        .map_err(|e| AppError::Internal(format!("Failed to read file metadata: {e}")))?;
+    if metadata.len() > MAX_CREDENTIAL_IMPORT_BYTES {
+        return Err(AppError::Validation(format!(
+            "Credential import file too large ({:.1} MB). Maximum is {} MB.",
+            metadata.len() as f64 / (1024.0 * 1024.0),
+            MAX_CREDENTIAL_IMPORT_BYTES / (1024 * 1024)
+        )));
+    }
+
     let content = tokio::fs::read_to_string(&path)
         .await
         .map_err(|e| AppError::Internal(format!("Failed to read file: {e}")))?;
@@ -1938,11 +2186,9 @@ pub async fn import_credentials(
         .map_err(|e| AppError::Internal(format!("Cipher init failed: {e}")))?;
     let nonce = Nonce::from_slice(&nonce_bytes);
 
-    let plaintext = cipher
-        .decrypt(nonce, ciphertext.as_ref())
-        .map_err(|_| {
-            AppError::Validation("Decryption failed -- wrong passphrase or corrupted file".into())
-        })?;
+    let plaintext = cipher.decrypt(nonce, ciphertext.as_ref()).map_err(|_| {
+        AppError::Validation("Decryption failed -- wrong passphrase or corrupted file".into())
+    })?;
 
     let bundle: CredentialExportBundle = serde_json::from_slice(&plaintext)
         .map_err(|e| AppError::Validation(format!("Invalid inner data: {e}")))?;
@@ -1982,7 +2228,10 @@ pub async fn import_credentials(
                 result.conflicts.push(CredentialConflict {
                     name: entry.name.clone(),
                     service_type: entry.service_type.clone(),
-                    existing_id: existing_names.get(&conflict_key).cloned().unwrap_or_default(),
+                    existing_id: existing_names
+                        .get(&conflict_key)
+                        .cloned()
+                        .unwrap_or_default(),
                 });
             }
         }
@@ -2013,11 +2262,26 @@ pub async fn import_credentials(
             Some("replace") => {
                 // Delete existing credential and dependents within the transaction
                 if let Some(existing_id) = existing_names.get(&conflict_key) {
-                    tx.execute("DELETE FROM credential_fields WHERE credential_id = ?1", rusqlite::params![existing_id])?;
-                    tx.execute("DELETE FROM credential_rotation_history WHERE credential_id = ?1", rusqlite::params![existing_id])?;
-                    tx.execute("DELETE FROM credential_rotation_policies WHERE credential_id = ?1", rusqlite::params![existing_id])?;
-                    tx.execute("DELETE FROM credential_events WHERE credential_id = ?1", rusqlite::params![existing_id])?;
-                    tx.execute("DELETE FROM persona_credentials WHERE id = ?1", rusqlite::params![existing_id])?;
+                    tx.execute(
+                        "DELETE FROM credential_fields WHERE credential_id = ?1",
+                        rusqlite::params![existing_id],
+                    )?;
+                    tx.execute(
+                        "DELETE FROM credential_rotation_history WHERE credential_id = ?1",
+                        rusqlite::params![existing_id],
+                    )?;
+                    tx.execute(
+                        "DELETE FROM credential_rotation_policies WHERE credential_id = ?1",
+                        rusqlite::params![existing_id],
+                    )?;
+                    tx.execute(
+                        "DELETE FROM credential_events WHERE credential_id = ?1",
+                        rusqlite::params![existing_id],
+                    )?;
+                    tx.execute(
+                        "DELETE FROM persona_credentials WHERE id = ?1",
+                        rusqlite::params![existing_id],
+                    )?;
                 }
                 result.replaced += 1;
             }
@@ -2105,7 +2369,11 @@ fn classify_credential_field_type(key: &str) -> &'static str {
     let lower = key.to_lowercase();
     if lower.contains("url") || lower.contains("endpoint") || lower == "host" || lower == "server" {
         "url"
-    } else if lower.contains("token") || lower.contains("key") || lower.contains("secret") || lower.contains("password") {
+    } else if lower.contains("token")
+        || lower.contains("key")
+        || lower.contains("secret")
+        || lower.contains("password")
+    {
         "secret"
     } else if lower == "port" {
         "number"

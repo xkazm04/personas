@@ -242,7 +242,9 @@ pub async fn upload_file(
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
-            return Err(drive_err(format!("upload update failed ({status}): {body}")));
+            return Err(drive_err(format!(
+                "upload update failed ({status}): {body}"
+            )));
         }
         resp.json().await.map_err(drive_err)
     } else {
@@ -273,17 +275,16 @@ pub async fn upload_file(
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
-            return Err(drive_err(format!("upload create failed ({status}): {body}")));
+            return Err(drive_err(format!(
+                "upload create failed ({status}): {body}"
+            )));
         }
         resp.json().await.map_err(drive_err)
     }
 }
 
 /// Download a file's content from Google Drive.
-pub async fn download_file(
-    client: &reqwest::Client,
-    file_id: &str,
-) -> Result<String, AppError> {
+pub async fn download_file(client: &reqwest::Client, file_id: &str) -> Result<String, AppError> {
     let resp = client
         .get(format!("{DRIVE_API}/files/{file_id}"))
         .query(&[("alt", "media")])
@@ -308,13 +309,11 @@ pub async fn list_files_in_folder(
 
     loop {
         let query = format!("'{folder_id}' in parents and trashed = false");
-        let mut req = client
-            .get(format!("{DRIVE_API}/files"))
-            .query(&[
-                ("q", query.as_str()),
-                ("fields", "files(id,name,mimeType,size),nextPageToken"),
-                ("pageSize", "1000"),
-            ]);
+        let mut req = client.get(format!("{DRIVE_API}/files")).query(&[
+            ("q", query.as_str()),
+            ("fields", "files(id,name,mimeType,size),nextPageToken"),
+            ("pageSize", "1000"),
+        ]);
         if let Some(ref token) = page_token {
             req = req.query(&[("pageToken", token.as_str())]);
         }
@@ -333,10 +332,7 @@ pub async fn list_files_in_folder(
 }
 
 /// Delete a file from Google Drive.
-pub async fn delete_file(
-    client: &reqwest::Client,
-    file_id: &str,
-) -> Result<(), AppError> {
+pub async fn delete_file(client: &reqwest::Client, file_id: &str) -> Result<(), AppError> {
     let resp = client
         .delete(format!("{DRIVE_API}/files/{file_id}"))
         .send()
@@ -376,10 +372,7 @@ pub async fn load_manifest(
 
     let resp = client
         .get(format!("{DRIVE_API}/files"))
-        .query(&[
-            ("q", query.as_str()),
-            ("fields", "files(id,name)"),
-        ])
+        .query(&[("q", query.as_str()), ("fields", "files(id,name)")])
         .send()
         .await
         .map_err(drive_err)?;
@@ -388,8 +381,7 @@ pub async fn load_manifest(
 
     if let Some(manifest_file) = list.files.first() {
         let content = download_file(client, &manifest_file.id).await?;
-        let manifest: SyncManifest =
-            serde_json::from_str(&content).unwrap_or_default();
+        let manifest: SyncManifest = serde_json::from_str(&content).unwrap_or_default();
         Ok((Some(manifest_file.id.clone()), manifest))
     } else {
         Ok((None, SyncManifest::default()))
@@ -471,8 +463,10 @@ pub async fn push_to_drive(
                             }
 
                             // Upload to Drive
-                            let existing_id =
-                                manifest.files.get(&file_key).map(|e| e.drive_file_id.as_str());
+                            let existing_id = manifest
+                                .files
+                                .get(&file_key)
+                                .map(|e| e.drive_file_id.as_str());
                             match upload_file(
                                 &client,
                                 &drive_subfolder,
@@ -512,7 +506,9 @@ pub async fn push_to_drive(
     }
 
     manifest.last_full_sync = Some(Utc::now().to_rfc3339());
-    if let Err(e) = save_manifest(&client, &vault_folder_id, manifest_id.as_deref(), &manifest).await {
+    if let Err(e) =
+        save_manifest(&client, &vault_folder_id, manifest_id.as_deref(), &manifest).await
+    {
         result.errors.push(format!("save manifest: {e}"));
     }
 
@@ -609,7 +605,9 @@ pub async fn pull_from_drive(
     }
 
     manifest.last_full_sync = Some(Utc::now().to_rfc3339());
-    if let Err(e) = save_manifest(&client, &vault_folder_id, manifest_id.as_deref(), &manifest).await {
+    if let Err(e) =
+        save_manifest(&client, &vault_folder_id, manifest_id.as_deref(), &manifest).await
+    {
         result.errors.push(format!("save manifest: {e}"));
     }
 
@@ -617,22 +615,17 @@ pub async fn pull_from_drive(
 }
 
 /// Get Drive connection status and storage info.
-pub async fn get_drive_status(
-    token: &str,
-    vault_name: &str,
-) -> Result<DriveStatus, AppError> {
+pub async fn get_drive_status(token: &str, vault_name: &str) -> Result<DriveStatus, AppError> {
     let client = drive_client(token)?;
 
     let about = get_about(&client).await?;
 
     // Try to load manifest for file count
     let manifest_count = match ensure_vault_folder(&client, vault_name).await {
-        Ok(vault_folder_id) => {
-            load_manifest(&client, &vault_folder_id)
-                .await
-                .map(|(_, m)| m.files.len() as u32)
-                .unwrap_or(0)
-        }
+        Ok(vault_folder_id) => load_manifest(&client, &vault_folder_id)
+            .await
+            .map(|(_, m)| m.files.len() as u32)
+            .unwrap_or(0),
         Err(_) => 0,
     };
 

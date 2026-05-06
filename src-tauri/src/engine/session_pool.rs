@@ -45,12 +45,7 @@ impl SessionPool {
     }
 
     /// Store a session for a persona after successful execution.
-    pub async fn offer(
-        &self,
-        persona_id: &str,
-        session_id: String,
-        config_hash: u64,
-    ) {
+    pub async fn offer(&self, persona_id: &str, session_id: String, config_hash: u64) {
         let mut sessions = self.sessions.write().await;
         sessions.insert(
             persona_id.to_string(),
@@ -71,11 +66,7 @@ impl SessionPool {
     ///
     /// Returns `Some(session_id)` if a valid, non-expired session exists
     /// whose config hash matches the current config.
-    pub async fn take(
-        &self,
-        persona_id: &str,
-        current_config_hash: u64,
-    ) -> Option<String> {
+    pub async fn take(&self, persona_id: &str, current_config_hash: u64) -> Option<String> {
         let mut sessions = self.sessions.write().await;
         let session = sessions.get(persona_id)?;
 
@@ -135,11 +126,7 @@ impl SessionPool {
 /// Compute a fast config fingerprint for invalidation checks.
 /// Uses FNV-style hash of the key config fields.
 #[allow(dead_code)]
-pub fn compute_config_hash(
-    system_prompt: &str,
-    model_profile: &str,
-    tool_count: usize,
-) -> u64 {
+pub fn compute_config_hash(system_prompt: &str, model_profile: &str, tool_count: usize) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     system_prompt.hash(&mut hasher);

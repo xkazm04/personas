@@ -1,8 +1,34 @@
-//! Intent Compiler -- compiles plain-language intent into a complete persona configuration.
+//! `IntentCompiler` — plain-language intent → complete persona configuration.
 //!
-//! Implements `CompilationPipeline` with an extended output schema that adds
-//! use cases, model recommendation, and test scenarios on top of the standard
-//! design output.
+//! See [`engine/README.md`](./README.md) for the full decision matrix and the
+//! boundary against `compiler.rs` (refining an existing persona) and
+//! `workflow_compiler.rs` (multi-persona team topology).
+//!
+//! - **Input:** [`IntentInput`] — a `&Persona` (the empty shell to fill in),
+//!   `&[PersonaToolDefinition]`, `&[ConnectorDefinition]`, and the user's
+//!   plain-language `intent` string. Unlike [`compiler::CompilationInput`],
+//!   there is no `existing_result` and no `conversation_history` — intent
+//!   compilation is always greenfield.
+//! - **Output:** `serde_json::Value` with the standard design schema **plus**
+//!   the [`INTENT_EXTENSION_SCHEMA`] fields: `intent_statement`, `use_cases`,
+//!   `model_recommendation`, `test_scenarios`. Persistence is the same path
+//!   as `PersonaCompiler` (the design store accepts the superset).
+//! - **Caller:** picked by `commands::design::analysis::compile_from_intent`
+//!   when the user supplies a one-shot intent and wants the system to
+//!   bootstrap an entire persona (prompt + tools + triggers + tests). The
+//!   call site uses [`build_intent_prompt`] directly rather than going
+//!   through the trait — the trait impl exists for symmetry and tests.
+//! - **Delegated to `engine::design`:** parsing only —
+//!   `extract_design_question` and `extract_design_result` are reused
+//!   verbatim because intent output is a strict superset of design output.
+//! - **Duplicated vs. `PersonaCompiler`:** prompt assembly is **deliberately
+//!   separate** ([`build_intent_prompt`] here vs. `design::build_design_prompt`
+//!   in the sibling module). The two prompts have different framing
+//!   ("you are an expert AI systems architect" vs. design-iteration tone) and
+//!   different output requirements, so they are not collapsed. Parsing and
+//!   feasibility-check helpers ARE shared via `engine::design`. **Do not
+//!   subclass `PersonaCompiler` from here** — invoke the shared `design::`
+//!   helpers directly so the boundary stays explicit.
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 use crate::engine::compilation_pipeline::{CompilationPipeline, PipelineOutcome};

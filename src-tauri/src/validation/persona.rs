@@ -16,7 +16,11 @@ pub const MAX_TURNS_MIN: i32 = 1;
 pub fn validate_name(name: &str) -> Vec<ValidationError> {
     let mut errors = Vec::new();
     if name.trim().is_empty() {
-        errors.push(ValidationError::new("name", "required", "Name cannot be empty"));
+        errors.push(ValidationError::new(
+            "name",
+            "required",
+            "Name cannot be empty",
+        ));
         return errors;
     }
     if name.chars().count() > MAX_NAME_CHARS {
@@ -33,17 +37,28 @@ pub fn validate_name(name: &str) -> Vec<ValidationError> {
 pub fn validate_system_prompt(prompt: &str) -> Vec<ValidationError> {
     let mut errors = Vec::new();
     if prompt.trim().is_empty() {
-        errors.push(ValidationError::new("system_prompt", "required", "System prompt cannot be empty"));
+        errors.push(ValidationError::new(
+            "system_prompt",
+            "required",
+            "System prompt cannot be empty",
+        ));
         return errors;
     }
     if prompt.len() > MAX_PROMPT_BYTES {
         errors.push(ValidationError::new(
             "system_prompt",
             "max_length",
-            format!("System prompt exceeds maximum size of {} KB", MAX_PROMPT_BYTES / 1024),
+            format!(
+                "System prompt exceeds maximum size of {} KB",
+                MAX_PROMPT_BYTES / 1024
+            ),
         ));
     }
-    errors.extend(check_dangerous_content(prompt, "system_prompt", "System prompt"));
+    errors.extend(check_dangerous_content(
+        prompt,
+        "system_prompt",
+        "System prompt",
+    ));
     errors
 }
 
@@ -53,10 +68,17 @@ pub fn validate_structured_prompt(prompt: &str) -> Vec<ValidationError> {
         errors.push(ValidationError::new(
             "structured_prompt",
             "max_length",
-            format!("Structured prompt exceeds maximum size of {} KB", MAX_PROMPT_BYTES / 1024),
+            format!(
+                "Structured prompt exceeds maximum size of {} KB",
+                MAX_PROMPT_BYTES / 1024
+            ),
         ));
     }
-    errors.extend(check_dangerous_content(prompt, "structured_prompt", "Structured prompt"));
+    errors.extend(check_dangerous_content(
+        prompt,
+        "structured_prompt",
+        "Structured prompt",
+    ));
     match serde_json::from_str::<serde_json::Value>(prompt) {
         Err(_) => {
             errors.push(ValidationError::new(
@@ -109,8 +131,14 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
     };
 
     // Must have at least identity or instructions to be a meaningful prompt
-    let has_identity = obj.get("identity").and_then(|v| v.as_str()).is_some_and(|s| !s.trim().is_empty());
-    let has_instructions = obj.get("instructions").and_then(|v| v.as_str()).is_some_and(|s| !s.trim().is_empty());
+    let has_identity = obj
+        .get("identity")
+        .and_then(|v| v.as_str())
+        .is_some_and(|s| !s.trim().is_empty());
+    let has_instructions = obj
+        .get("instructions")
+        .and_then(|v| v.as_str())
+        .is_some_and(|s| !s.trim().is_empty());
     if !has_identity && !has_instructions {
         errors.push(ValidationError::new(
             "structured_prompt",
@@ -120,7 +148,14 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
     }
 
     // Validate string fields are actually strings
-    for &key in &["identity", "instructions", "toolGuidance", "examples", "errorHandling", "webSearch"] {
+    for &key in &[
+        "identity",
+        "instructions",
+        "toolGuidance",
+        "examples",
+        "errorHandling",
+        "webSearch",
+    ] {
         if let Some(v) = obj.get(key) {
             if !v.is_string() && !v.is_null() {
                 errors.push(ValidationError::new(
@@ -151,9 +186,12 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
                         }
                     }
                     // Must have at least one heading key
-                    let has_heading = ["title", "label", "name", "key"]
-                        .iter()
-                        .any(|k| sec_obj.get(*k).and_then(|v| v.as_str()).is_some_and(|s| !s.is_empty()));
+                    let has_heading = ["title", "label", "name", "key"].iter().any(|k| {
+                        sec_obj
+                            .get(*k)
+                            .and_then(|v| v.as_str())
+                            .is_some_and(|s| !s.is_empty())
+                    });
                     if !has_heading {
                         errors.push(ValidationError::new(
                             "structured_prompt",
@@ -185,12 +223,18 @@ pub fn validate_structured_prompt_schema(val: &serde_json::Value) -> Vec<Validat
                 .iter()
                 .filter_map(|known| {
                     let d = levenshtein(key, known);
-                    if d <= 3 { Some((*known, d)) } else { None }
+                    if d <= 3 {
+                        Some((*known, d))
+                    } else {
+                        None
+                    }
                 })
                 .min_by_key(|(_, d)| *d)
                 .map(|(k, _)| k);
             let msg = match suggestion {
-                Some(s) => format!("Unknown field '{key}' in structured prompt — did you mean '{s}'?"),
+                Some(s) => {
+                    format!("Unknown field '{key}' in structured prompt — did you mean '{s}'?")
+                }
                 None => format!("Unknown field '{key}' in structured prompt"),
             };
             tracing::warn!(field = %key, suggestion = ?suggestion, "Structured prompt has unknown key");
@@ -229,7 +273,11 @@ pub fn validate_timeout_ms(v: i32) -> Vec<ValidationError> {
         vec![ValidationError::new(
             "timeout_ms",
             "range",
-            format!("timeout_ms must be <= {} (engine ceiling is {} minutes)", ceiling, ceiling / 60_000),
+            format!(
+                "timeout_ms must be <= {} (engine ceiling is {} minutes)",
+                ceiling,
+                ceiling / 60_000
+            ),
         )]
     } else {
         vec![]
@@ -238,9 +286,17 @@ pub fn validate_timeout_ms(v: i32) -> Vec<ValidationError> {
 
 pub fn validate_max_budget_usd(v: f64) -> Vec<ValidationError> {
     if v.is_nan() || v.is_infinite() {
-        vec![ValidationError::new("max_budget_usd", "finite", "max_budget_usd must be a finite number")]
+        vec![ValidationError::new(
+            "max_budget_usd",
+            "finite",
+            "max_budget_usd must be a finite number",
+        )]
     } else if v < 0.0 {
-        vec![ValidationError::new("max_budget_usd", "range", "max_budget_usd must be >= 0")]
+        vec![ValidationError::new(
+            "max_budget_usd",
+            "range",
+            "max_budget_usd must be >= 0",
+        )]
     } else {
         vec![]
     }
@@ -248,7 +304,11 @@ pub fn validate_max_budget_usd(v: f64) -> Vec<ValidationError> {
 
 pub fn validate_max_turns(v: i32) -> Vec<ValidationError> {
     if v < MAX_TURNS_MIN {
-        vec![ValidationError::new("max_turns", "range", format!("max_turns must be >= {MAX_TURNS_MIN}"))]
+        vec![ValidationError::new(
+            "max_turns",
+            "range",
+            format!("max_turns must be >= {MAX_TURNS_MIN}"),
+        )]
     } else {
         vec![]
     }
@@ -297,13 +357,25 @@ pub fn validate_notification_channels(channels_json: &str) -> Vec<ValidationErro
         };
         match ch_type {
             "slack" if !get_field("channel") => {
-                errors.push(ValidationError::new("notification_channels", "channel_required", "Slack channel name is required"));
+                errors.push(ValidationError::new(
+                    "notification_channels",
+                    "channel_required",
+                    "Slack channel name is required",
+                ));
             }
             "telegram" if !get_field("chat_id") => {
-                errors.push(ValidationError::new("notification_channels", "chat_id_required", "Telegram chat ID is required"));
+                errors.push(ValidationError::new(
+                    "notification_channels",
+                    "chat_id_required",
+                    "Telegram chat ID is required",
+                ));
             }
             "email" if !get_field("to") => {
-                errors.push(ValidationError::new("notification_channels", "to_required", "Email 'to' address is required"));
+                errors.push(ValidationError::new(
+                    "notification_channels",
+                    "to_required",
+                    "Email 'to' address is required",
+                ));
             }
             _ => {}
         }
@@ -357,27 +429,86 @@ pub fn rules() -> Vec<ValidationRule> {
     let ceiling = ENGINE_MAX_EXECUTION_MS;
     vec![
         ValidationRule::new("persona", "name", "required", "Name cannot be empty"),
-        ValidationRule::new("persona", "name", "max_length", format!("Maximum {MAX_NAME_CHARS} characters"))
-            .with_max(MAX_NAME_CHARS as f64),
-        ValidationRule::new("persona", "name", "no_control_chars", "Must not contain null bytes or control characters"),
-        ValidationRule::new("persona", "system_prompt", "required", "System prompt cannot be empty"),
-        ValidationRule::new("persona", "system_prompt", "max_length", format!("Maximum {} KB", MAX_PROMPT_BYTES / 1024))
-            .with_max(MAX_PROMPT_BYTES as f64),
-        ValidationRule::new("persona", "structured_prompt", "max_length", format!("Maximum {} KB", MAX_PROMPT_BYTES / 1024))
-            .with_max(MAX_PROMPT_BYTES as f64),
+        ValidationRule::new(
+            "persona",
+            "name",
+            "max_length",
+            format!("Maximum {MAX_NAME_CHARS} characters"),
+        )
+        .with_max(MAX_NAME_CHARS as f64),
+        ValidationRule::new(
+            "persona",
+            "name",
+            "no_control_chars",
+            "Must not contain null bytes or control characters",
+        ),
+        ValidationRule::new(
+            "persona",
+            "system_prompt",
+            "required",
+            "System prompt cannot be empty",
+        ),
+        ValidationRule::new(
+            "persona",
+            "system_prompt",
+            "max_length",
+            format!("Maximum {} KB", MAX_PROMPT_BYTES / 1024),
+        )
+        .with_max(MAX_PROMPT_BYTES as f64),
+        ValidationRule::new(
+            "persona",
+            "structured_prompt",
+            "max_length",
+            format!("Maximum {} KB", MAX_PROMPT_BYTES / 1024),
+        )
+        .with_max(MAX_PROMPT_BYTES as f64),
         ValidationRule::new("persona", "structured_prompt", "json", "Must be valid JSON"),
-        ValidationRule::new("persona", "structured_prompt", "schema", "Must be a JSON object with 'identity' or 'instructions'"),
-        ValidationRule::new("persona", "structured_prompt", "unknown_field", "Must not contain unknown top-level fields"),
-        ValidationRule::new("persona", "max_concurrent", "range", format!("Must be between {MAX_CONCURRENT_MIN} and {MAX_CONCURRENT_MAX}"))
-            .with_range(MAX_CONCURRENT_MIN as f64, MAX_CONCURRENT_MAX as f64),
-        ValidationRule::new("persona", "timeout_ms", "range", format!("Must be between {TIMEOUT_MS_MIN} and {ceiling}"))
-            .with_range(TIMEOUT_MS_MIN as f64, ceiling as f64),
-        ValidationRule::new("persona", "max_budget_usd", "finite", "Must be a finite number"),
-        ValidationRule::new("persona", "max_budget_usd", "range", "Must be >= 0")
-            .with_min(0.0),
-        ValidationRule::new("persona", "max_turns", "range", format!("Must be >= {MAX_TURNS_MIN}"))
-            .with_min(MAX_TURNS_MIN as f64),
-        ValidationRule::new("persona", "notification_channels", "json", "Must be a valid JSON array"),
+        ValidationRule::new(
+            "persona",
+            "structured_prompt",
+            "schema",
+            "Must be a JSON object with 'identity' or 'instructions'",
+        ),
+        ValidationRule::new(
+            "persona",
+            "structured_prompt",
+            "unknown_field",
+            "Must not contain unknown top-level fields",
+        ),
+        ValidationRule::new(
+            "persona",
+            "max_concurrent",
+            "range",
+            format!("Must be between {MAX_CONCURRENT_MIN} and {MAX_CONCURRENT_MAX}"),
+        )
+        .with_range(MAX_CONCURRENT_MIN as f64, MAX_CONCURRENT_MAX as f64),
+        ValidationRule::new(
+            "persona",
+            "timeout_ms",
+            "range",
+            format!("Must be between {TIMEOUT_MS_MIN} and {ceiling}"),
+        )
+        .with_range(TIMEOUT_MS_MIN as f64, ceiling as f64),
+        ValidationRule::new(
+            "persona",
+            "max_budget_usd",
+            "finite",
+            "Must be a finite number",
+        ),
+        ValidationRule::new("persona", "max_budget_usd", "range", "Must be >= 0").with_min(0.0),
+        ValidationRule::new(
+            "persona",
+            "max_turns",
+            "range",
+            format!("Must be >= {MAX_TURNS_MIN}"),
+        )
+        .with_min(MAX_TURNS_MIN as f64),
+        ValidationRule::new(
+            "persona",
+            "notification_channels",
+            "json",
+            "Must be a valid JSON array",
+        ),
     ]
 }
 
@@ -389,14 +520,20 @@ mod tests_v32 {
     fn test_validate_channels_v2_accepts_star_sentinel() {
         let json = r#"[{"type":"built-in","enabled":true,"use_case_ids":"*"}]"#;
         let errors = validate_notification_channels(json);
-        assert!(errors.is_empty(), "\"*\" sentinel must be accepted, got {errors:?}");
+        assert!(
+            errors.is_empty(),
+            "\"*\" sentinel must be accepted, got {errors:?}"
+        );
     }
 
     #[test]
     fn test_validate_channels_v2_accepts_non_empty_array() {
         let json = r#"[{"type":"titlebar","enabled":true,"use_case_ids":["uc_a"]}]"#;
         let errors = validate_notification_channels(json);
-        assert!(errors.is_empty(), "non-empty array must be accepted, got {errors:?}");
+        assert!(
+            errors.is_empty(),
+            "non-empty array must be accepted, got {errors:?}"
+        );
     }
 
     #[test]
@@ -424,6 +561,9 @@ mod tests_v32 {
         // enabled=false short-circuits before the use_case_ids guard.
         let json = r#"[{"type":"built-in","enabled":false,"use_case_ids":[]}]"#;
         let errors = validate_notification_channels(json);
-        assert!(errors.is_empty(), "disabled channel must skip all validation");
+        assert!(
+            errors.is_empty(),
+            "disabled channel must skip all validation"
+        );
     }
 }

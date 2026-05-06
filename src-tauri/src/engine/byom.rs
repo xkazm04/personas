@@ -87,6 +87,48 @@ pub struct RoutingRule {
 }
 
 /// Task complexity levels for cost-optimized routing.
+///
+/// # Canonical source
+///
+/// **As of 2026-05-05, no caller of [`ByomPolicy::evaluate`] supplies an
+/// explicit complexity.** The only production call site lives in
+/// `engine/runner/mod.rs` (search for `byom_policy.*evaluate`) and passes
+/// `None`, which falls through to [`TaskComplexity::DEFAULT`] (`Standard`).
+///
+/// This means routing rules whose `task_complexity` is `Simple` or `Critical`
+/// **never fire today** — the matching loop in [`ByomPolicy::evaluate`] only
+/// finds `Standard` rules. Users who configure a `Simple` rule expecting cost
+/// savings will silently route through the `Standard` branch every time.
+///
+/// # Precedence (intended, when sources land)
+///
+/// When future work introduces classification, the resolution order at the
+/// runner call site MUST be:
+///
+/// 1. **Explicit per-execution override** — passed by an API caller, slash
+///    command, or schedule. Highest priority because it is the most specific
+///    signal.
+/// 2. **Persona-level default** — a future field on `Persona` (e.g. derived
+///    from `template_category` or set explicitly in the editor). Applies to
+///    every execution of that persona unless overridden.
+/// 3. **Heuristic inference** — optional last-resort classification from the
+///    prompt body (e.g. token count, keyword presence). Should be feature-flagged
+///    so that an unexpected upgrade to "Critical" never silently increases cost.
+/// 4. **`TaskComplexity::DEFAULT` (`Standard`)** — terminal fallback when
+///    nothing above produced a value. Logged at the decision point so the
+///    fallback is observable rather than silent.
+///
+/// Each layer narrows from "more specific" to "less specific"; never invert
+/// the order.
+///
+/// # Why this matters
+///
+/// BYOM cost routing exists for the `Simple` and `Critical` branches — that's
+/// the whole point. A routing rule for `Simple` is a contract with the user:
+/// "format-only edits will hit the cheap model." Until something wires up a
+/// real complexity source, that contract is unfulfilled. The doc comment here
+/// is the audit trail; the tracing breadcrumb in `evaluate` is the runtime
+/// signal that flags the fallback.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "lowercase")]
@@ -105,6 +147,10 @@ impl TaskComplexity {
     /// `Standard` is chosen because it represents the middle tier — safe for
     /// cost routing (not as cheap as Simple, not as expensive as Critical) and
     /// appropriate for the majority of unclassified tasks.
+    ///
+    /// See the module-level docs on [`TaskComplexity`] for the canonical-source
+    /// contract — this constant is the **terminal fallback** in that contract,
+    /// not a recommendation for callers to bypass classification.
     pub const DEFAULT: Self = Self::Standard;
 }
 
@@ -220,12 +266,14 @@ impl ByomPolicy {
             }
         }
         if !error_messages.is_empty() {
-            return Err(crate::error::AppError::Validation(
-                format!("Policy has blocking errors: {}", error_messages.join("; ")),
-            ));
+            return Err(crate::error::AppError::Validation(format!(
+                "Policy has blocking errors: {}",
+                error_messages.join("; ")
+            )));
         }
-        let json = serde_json::to_string(self)
-            .map_err(|e| crate::error::AppError::Internal(format!("Failed to serialize BYOM policy: {}", e)))?;
+        let json = serde_json::to_string(self).map_err(|e| {
+            crate::error::AppError::Internal(format!("Failed to serialize BYOM policy: {}", e))
+        })?;
         crate::db::repos::core::settings::set(pool, BYOM_POLICY_KEY, &json)
     }
 
@@ -253,7 +301,9 @@ impl ByomPolicy {
         let mut allowed_set: HashSet<EngineKind> = HashSet::new();
         for s in &self.allowed_providers {
             match s.parse::<EngineKind>() {
-                Ok(kind) => { allowed_set.insert(kind); }
+                Ok(kind) => {
+                    allowed_set.insert(kind);
+                }
                 Err(_) => warnings.push(PolicyWarning {
                     severity: PolicyWarningSeverity::Info,
                     message: format!(
@@ -268,12 +318,19 @@ impl ByomPolicy {
         let mut blocked_set: HashSet<EngineKind> = HashSet::new();
         for s in &self.blocked_providers {
             match s.parse::<EngineKind>() {
-                Ok(kind) => { blocked_set.insert(kind); }
+                Ok(kind) => {
+                    blocked_set.insert(kind);
+                }
+                // Unknown entries in the deny-list are treated as Error — silently
+                // dropping them at evaluate-time would let a typo (e.g. `claude-code`
+                // instead of `claude_code`) bypass the block, which is a security
+                // regression. Allowed-list typos fail closed, so they remain Info.
                 Err(_) => warnings.push(PolicyWarning {
-                    severity: PolicyWarningSeverity::Info,
+                    severity: PolicyWarningSeverity::Error,
                     message: format!(
                         "Top-level blocked_providers contains unknown provider '{}' — \
-                         it will be ignored (check for typos)",
+                         it would be silently dropped at evaluate-time and the block \
+                         would not take effect (check for typos)",
                         s,
                     ),
                 }),
@@ -359,7 +416,9 @@ impl ByomPolicy {
     /// Returns true if the policy has any Error-level validation warnings.
     #[allow(dead_code)]
     pub fn has_blocking_errors(&self) -> bool {
-        self.validate().iter().any(|w| w.severity == PolicyWarningSeverity::Error)
+        self.validate()
+            .iter()
+            .any(|w| w.severity == PolicyWarningSeverity::Error)
     }
 
     /// Evaluate the policy for a given execution context.
@@ -370,9 +429,19 @@ impl ByomPolicy {
     /// 3. `compliance_rules` — further restrict within the allowed set.
     /// 4. `routing_rules` — select a preferred provider/model (must still be allowed).
     ///
-    /// - `persona_tags`: tags/categories associated with the persona (for compliance matching).
-    /// - `complexity`: the task complexity level (for cost routing). When `None`, defaults
-    ///   to [`TaskComplexity::DEFAULT`] (`Standard`) so that routing rules still apply.
+    /// # Arguments
+    ///
+    /// - `persona_tags`: tags/categories associated with the persona (for
+    ///   compliance matching). **Today the production runner passes `&[]`** —
+    ///   no source on `Persona` currently feeds tags through. Until that lands,
+    ///   compliance rules whose `workflow_tags` are non-empty will never match.
+    /// - `complexity`: the task complexity level (for cost routing). When
+    ///   `None`, defaults to [`TaskComplexity::DEFAULT`] (`Standard`) so that
+    ///   routing rules still apply. **Today every production call passes
+    ///   `None`** — see the canonical-source notes on [`TaskComplexity`] for
+    ///   the intended precedence (explicit > persona-default > heuristic >
+    ///   Standard) and why `Simple`/`Critical` rules silently no-op until that
+    ///   precedence is wired up.
     pub fn evaluate(
         &self,
         persona_tags: &[String],
@@ -440,7 +509,16 @@ impl ByomPolicy {
         // 4. Evaluate routing rules (first matching complexity wins).
         //    When no complexity is provided, default to Standard so that
         //    routing rules still apply rather than silently producing no match.
+        //    The tracing breadcrumb makes the fallback observable: if a user
+        //    configured a `Simple` rule and is still hitting the `Standard`
+        //    branch, the log line tells them why (`source = "default-fallback"`).
         let effective_complexity = complexity.unwrap_or(TaskComplexity::DEFAULT);
+        tracing::debug!(
+            requested = ?complexity,
+            effective = ?effective_complexity,
+            source = if complexity.is_some() { "caller" } else { "default-fallback" },
+            "BYOM policy: resolved task complexity for routing-rule match"
+        );
         let mut preferred_provider = None;
         let mut preferred_model = None;
         let mut routing_rule_name = None;
@@ -549,8 +627,14 @@ mod tests {
         };
         let decision = policy.evaluate(&[], Some(TaskComplexity::Simple));
         assert_eq!(decision.preferred_provider, Some(EngineKind::ClaudeCode));
-        assert_eq!(decision.preferred_model.as_deref(), Some("claude-haiku-4-5-20251001"));
-        assert_eq!(decision.routing_rule_name.as_deref(), Some("Use Haiku for simple"));
+        assert_eq!(
+            decision.preferred_model.as_deref(),
+            Some("claude-haiku-4-5-20251001")
+        );
+        assert_eq!(
+            decision.routing_rule_name.as_deref(),
+            Some("Use Haiku for simple")
+        );
     }
 
     #[test]
@@ -642,7 +726,10 @@ mod tests {
 
         // But exact "test" should match
         let decision = policy.evaluate(&["test".into()], None);
-        assert_eq!(decision.compliance_rule_name.as_deref(), Some("Test restriction"));
+        assert_eq!(
+            decision.compliance_rule_name.as_deref(),
+            Some("Test restriction")
+        );
         // claude_code is the allowed provider, so it's not blocked
         assert!(!decision.blocked_providers.contains(&EngineKind::ClaudeCode));
     }
@@ -748,7 +835,9 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 2);
-        assert!(warnings.iter().all(|w| w.severity == PolicyWarningSeverity::Info));
+        assert!(warnings
+            .iter()
+            .all(|w| w.severity == PolicyWarningSeverity::Info));
     }
 
     #[test]
@@ -834,8 +923,14 @@ mod tests {
         // None complexity should match the Standard rule
         let decision = policy.evaluate(&[], None);
         assert_eq!(decision.preferred_provider, Some(EngineKind::ClaudeCode));
-        assert_eq!(decision.preferred_model.as_deref(), Some("claude-sonnet-4-20250514"));
-        assert_eq!(decision.routing_rule_name.as_deref(), Some("Sonnet for standard"));
+        assert_eq!(
+            decision.preferred_model.as_deref(),
+            Some("claude-sonnet-4-20250514")
+        );
+        assert_eq!(
+            decision.routing_rule_name.as_deref(),
+            Some("Sonnet for standard")
+        );
     }
 
     #[test]
@@ -896,9 +991,18 @@ mod tests {
         };
         let none_decision = policy.evaluate(&[], None);
         let explicit_decision = policy.evaluate(&[], Some(TaskComplexity::Standard));
-        assert_eq!(none_decision.preferred_provider, explicit_decision.preferred_provider);
-        assert_eq!(none_decision.preferred_model, explicit_decision.preferred_model);
-        assert_eq!(none_decision.routing_rule_name, explicit_decision.routing_rule_name);
+        assert_eq!(
+            none_decision.preferred_provider,
+            explicit_decision.preferred_provider
+        );
+        assert_eq!(
+            none_decision.preferred_model,
+            explicit_decision.preferred_model
+        );
+        assert_eq!(
+            none_decision.routing_rule_name,
+            explicit_decision.routing_rule_name
+        );
     }
 
     #[test]
@@ -921,7 +1025,7 @@ mod tests {
     }
 
     #[test]
-    fn test_validate_unknown_top_level_blocked_provider_warns() {
+    fn test_validate_unknown_top_level_blocked_provider_is_error() {
         let policy = ByomPolicy {
             enabled: true,
             blocked_providers: vec!["cladue_code".into()],
@@ -929,9 +1033,31 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
         assert!(warnings[0].message.contains("blocked_providers"));
         assert!(warnings[0].message.contains("cladue_code"));
+        // Save must refuse this policy so the typo can't silently bypass the block.
+        assert!(policy.has_blocking_errors());
+    }
+
+    #[test]
+    fn test_validate_blocked_provider_typo_blocks_save() {
+        // Reproduces the BYOM-bypass scenario: admin types `claude-code` (hyphen)
+        // into blocked_providers. The parse fails, evaluate() would drop the entry,
+        // and Claude Code would NOT be blocked at execute-time. Save must refuse.
+        let pool = crate::db::init_test_db().expect("test db");
+        let policy = ByomPolicy {
+            enabled: true,
+            blocked_providers: vec!["claude-code".into()],
+            ..Default::default()
+        };
+        let result = policy.save(&pool);
+        let err = result.expect_err("save must refuse a policy with an unknown blocked provider");
+        let msg = format!("{err:?}");
+        assert!(
+            msg.contains("blocking errors") && msg.contains("claude-code"),
+            "expected validation error mentioning claude-code, got: {msg}"
+        );
     }
 
     #[test]
@@ -943,7 +1069,9 @@ mod tests {
         };
         let warnings = policy.validate();
         assert_eq!(warnings.len(), 2);
-        assert!(warnings.iter().all(|w| w.severity == PolicyWarningSeverity::Info));
+        assert!(warnings
+            .iter()
+            .all(|w| w.severity == PolicyWarningSeverity::Info));
         assert!(warnings[0].message.contains("bad1"));
         assert!(warnings[1].message.contains("bad2"));
     }

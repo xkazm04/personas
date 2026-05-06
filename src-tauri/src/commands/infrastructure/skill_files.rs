@@ -99,9 +99,7 @@ fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
 // ============================================================================
 
 #[tauri::command]
-pub fn skill_files_list(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<SkillEntry>, AppError> {
+pub fn skill_files_list(state: State<'_, Arc<AppState>>) -> Result<Vec<SkillEntry>, AppError> {
     require_auth_sync(&state)?;
 
     let dir = skills_dir(&state)?;
@@ -115,7 +113,8 @@ pub fn skill_files_list(
         if !path.is_dir() {
             // Single-file skill (e.g. skill-name.md directly in skills/)
             if path.extension().and_then(|e| e.to_str()) == Some("md") {
-                let name = path.file_stem()
+                let name = path
+                    .file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("unknown")
                     .to_string();
@@ -149,7 +148,9 @@ pub fn skill_files_list(
             None
         };
 
-        let description = skill_md_path.as_ref().and_then(|p| read_first_line_description(p));
+        let description = skill_md_path
+            .as_ref()
+            .and_then(|p| read_first_line_description(p));
 
         // Count reference files (everything except SKILL.md)
         let mut ref_files = Vec::new();
@@ -194,7 +195,9 @@ pub fn skill_files_read(
         if alt.exists() && file_name == format!("{skill_name}.md") {
             alt
         } else {
-            return Err(AppError::NotFound(format!("Skill file not found: {skill_name}/{file_name}")));
+            return Err(AppError::NotFound(format!(
+                "Skill file not found: {skill_name}/{file_name}"
+            )));
         }
     };
 
@@ -227,9 +230,11 @@ pub fn skill_files_write(
     }
 
     // Validate the path is still within the skills directory (prevent path traversal)
-    let canonical_dir = dir.canonicalize()
+    let canonical_dir = dir
+        .canonicalize()
         .map_err(|e| AppError::Internal(format!("Failed to canonicalize skills dir: {e}")))?;
-    let canonical_file = file_path.canonicalize()
+    let canonical_file = file_path
+        .canonicalize()
         .map_err(|e| AppError::Internal(format!("Failed to canonicalize file path: {e}")))?;
     if !canonical_file.starts_with(&canonical_dir) {
         return Err(AppError::Validation("Path traversal detected".into()));

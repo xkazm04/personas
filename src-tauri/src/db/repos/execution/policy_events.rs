@@ -59,16 +59,14 @@ pub fn insert(
     })
 }
 
-pub fn list_by_execution(
-    pool: &DbPool,
-    execution_id: &str,
-) -> Result<Vec<PolicyEvent>, AppError> {
+pub fn list_by_execution(pool: &DbPool, execution_id: &str) -> Result<Vec<PolicyEvent>, AppError> {
     timed_query!("policy_events", "policy_events::list_by_execution", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM policy_events WHERE execution_id = ?1 ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![execution_id], row_to_policy_event)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }

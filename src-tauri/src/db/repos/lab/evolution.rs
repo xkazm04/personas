@@ -31,23 +31,26 @@ pub fn upsert_policy(
     pool: &DbPool,
     input: &UpsertEvolutionPolicyInput,
 ) -> Result<EvolutionPolicy, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::upsert_policy", {
-        let conn = pool.get()?;
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::upsert_policy",
+        {
+            let conn = pool.get()?;
 
-        // Check if policy exists
-        let existing: Option<String> = conn
-            .query_row(
-                "SELECT id FROM evolution_policies WHERE persona_id = ?1",
-                params![input.persona_id],
-                |row| row.get(0),
-            )
-            .ok();
+            // Check if policy exists
+            let existing: Option<String> = conn
+                .query_row(
+                    "SELECT id FROM evolution_policies WHERE persona_id = ?1",
+                    params![input.persona_id],
+                    |row| row.get(0),
+                )
+                .ok();
 
-        if let Some(id) = existing {
-            // Update existing
-            let now = chrono::Utc::now().to_rfc3339();
-            conn.execute(
-                "UPDATE evolution_policies SET
+            if let Some(id) = existing {
+                // Update existing
+                let now = chrono::Utc::now().to_rfc3339();
+                conn.execute(
+                    "UPDATE evolution_policies SET
                     enabled = COALESCE(?1, enabled),
                     fitness_objective = COALESCE(?2, fitness_objective),
                     mutation_rate = COALESCE(?3, mutation_rate),
@@ -57,113 +60,131 @@ pub fn upsert_policy(
                     mutation_strategy = COALESCE(?7, mutation_strategy),
                     updated_at = ?8
                  WHERE id = ?9",
-                params![
-                    input.enabled.map(|b| b as i32),
-                    input.fitness_objective,
-                    input.mutation_rate,
-                    input.variants_per_cycle,
-                    input.improvement_threshold,
-                    input.min_executions_between,
-                    input.mutation_strategy,
-                    now,
-                    id,
-                ],
-            )?;
-            get_policy_by_id(pool, &id)
-        } else {
-            // Create new
-            let id = uuid::Uuid::new_v4().to_string();
-            let now = chrono::Utc::now().to_rfc3339();
-            let enabled = input.enabled.unwrap_or(false);
-            let fitness_obj = input
-                .fitness_objective
-                .clone()
-                .unwrap_or_else(|| r#"{"speed":0.33,"quality":0.34,"cost":0.33}"#.into());
-            let mutation_rate = input.mutation_rate.unwrap_or(0.15);
-            let variants = input.variants_per_cycle.unwrap_or(4);
-            let threshold = input.improvement_threshold.unwrap_or(0.05);
-            let min_execs = input.min_executions_between.unwrap_or(10);
+                    params![
+                        input.enabled.map(|b| b as i32),
+                        input.fitness_objective,
+                        input.mutation_rate,
+                        input.variants_per_cycle,
+                        input.improvement_threshold,
+                        input.min_executions_between,
+                        input.mutation_strategy,
+                        now,
+                        id,
+                    ],
+                )?;
+                get_policy_by_id(pool, &id)
+            } else {
+                // Create new
+                let id = uuid::Uuid::new_v4().to_string();
+                let now = chrono::Utc::now().to_rfc3339();
+                let enabled = input.enabled.unwrap_or(false);
+                let fitness_obj = input
+                    .fitness_objective
+                    .clone()
+                    .unwrap_or_else(|| r#"{"speed":0.33,"quality":0.34,"cost":0.33}"#.into());
+                let mutation_rate = input.mutation_rate.unwrap_or(0.15);
+                let variants = input.variants_per_cycle.unwrap_or(4);
+                let threshold = input.improvement_threshold.unwrap_or(0.05);
+                let min_execs = input.min_executions_between.unwrap_or(10);
 
-            conn.execute(
-                "INSERT INTO evolution_policies
+                conn.execute(
+                    "INSERT INTO evolution_policies
                     (id, persona_id, enabled, fitness_objective, mutation_rate,
                      variants_per_cycle, improvement_threshold, min_executions_between,
                      mutation_strategy, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
-                params![
-                    id,
-                    input.persona_id,
-                    enabled as i32,
-                    fitness_obj,
-                    mutation_rate,
-                    variants,
-                    threshold,
-                    min_execs,
-                    input.mutation_strategy,
-                    now,
-                    now,
-                ],
-            )?;
-            get_policy_by_id(pool, &id)
+                    params![
+                        id,
+                        input.persona_id,
+                        enabled as i32,
+                        fitness_obj,
+                        mutation_rate,
+                        variants,
+                        threshold,
+                        min_execs,
+                        input.mutation_strategy,
+                        now,
+                        now,
+                    ],
+                )?;
+                get_policy_by_id(pool, &id)
+            }
         }
-    })
+    )
 }
 
 pub fn get_policy_by_id(pool: &DbPool, id: &str) -> Result<EvolutionPolicy, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::get_policy_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM evolution_policies WHERE id = ?1",
-            params![id],
-            row_to_policy,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("EvolutionPolicy {id}"))
-            }
-            other => AppError::Database(other),
-        })
-    })
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::get_policy_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM evolution_policies WHERE id = ?1",
+                params![id],
+                row_to_policy,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("EvolutionPolicy {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 pub fn get_policy_for_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Option<EvolutionPolicy>, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::get_policy_for_persona", {
-        let conn = pool.get()?;
-        match conn.query_row(
-            "SELECT * FROM evolution_policies WHERE persona_id = ?1",
-            params![persona_id],
-            row_to_policy,
-        ) {
-            Ok(policy) => Ok(Some(policy)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::Database(e)),
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::get_policy_for_persona",
+        {
+            let conn = pool.get()?;
+            match conn.query_row(
+                "SELECT * FROM evolution_policies WHERE persona_id = ?1",
+                params![persona_id],
+                row_to_policy,
+            ) {
+                Ok(policy) => Ok(Some(policy)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
         }
-    })
+    )
 }
 
 pub fn list_enabled_policies(pool: &DbPool) -> Result<Vec<EvolutionPolicy>, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::list_enabled_policies", {
-        let conn = pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT * FROM evolution_policies WHERE enabled = 1 ORDER BY updated_at")?;
-        let rows = stmt.query_map([], row_to_policy)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::list_enabled_policies",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM evolution_policies WHERE enabled = 1 ORDER BY updated_at",
+            )?;
+            let rows = stmt.query_map([], row_to_policy)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn delete_policy(pool: &DbPool, persona_id: &str) -> Result<bool, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::delete_policy", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM evolution_policies WHERE persona_id = ?1",
-            params![persona_id],
-        )?;
-        Ok(rows > 0)
-    })
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::delete_policy",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "DELETE FROM evolution_policies WHERE persona_id = ?1",
+                params![persona_id],
+            )?;
+            Ok(rows > 0)
+        }
+    )
 }
 
 // -- Evolution Cycles ------------------------------------------
@@ -173,36 +194,44 @@ pub fn create_cycle(
     policy_id: &str,
     persona_id: &str,
 ) -> Result<EvolutionCycle, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::create_cycle", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::create_cycle",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
-        conn.execute(
-            "INSERT INTO evolution_cycles
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO evolution_cycles
                 (id, policy_id, persona_id, status, started_at)
              VALUES (?1, ?2, ?3, 'breeding', ?4)",
-            params![id, policy_id, persona_id, now],
-        )?;
-        get_cycle_by_id(pool, &id)
-    })
+                params![id, policy_id, persona_id, now],
+            )?;
+            get_cycle_by_id(pool, &id)
+        }
+    )
 }
 
 pub fn get_cycle_by_id(pool: &DbPool, id: &str) -> Result<EvolutionCycle, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::get_cycle_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM evolution_cycles WHERE id = ?1",
-            params![id],
-            row_to_cycle,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("EvolutionCycle {id}"))
-            }
-            other => AppError::Database(other),
-        })
-    })
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::get_cycle_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM evolution_cycles WHERE id = ?1",
+                params![id],
+                row_to_cycle,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("EvolutionCycle {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 pub fn list_cycles_for_persona(
@@ -210,17 +239,21 @@ pub fn list_cycles_for_persona(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<EvolutionCycle>, AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::list_cycles_for_persona", {
-        let limit = limit.unwrap_or(20);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM evolution_cycles WHERE persona_id = ?1
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::list_cycles_for_persona",
+        {
+            let limit = limit.unwrap_or(20);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM evolution_cycles WHERE persona_id = ?1
              ORDER BY started_at DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_cycle)?;
-        rows.collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_cycle)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn update_cycle_status(
@@ -229,25 +262,33 @@ pub fn update_cycle_status(
     status: EvolutionCycleStatus,
     error: Option<&str>,
 ) -> Result<(), AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::update_cycle_status", {
-        let conn = pool.get()?;
-        conn.execute(
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::update_cycle_status",
+        {
+            let conn = pool.get()?;
+            conn.execute(
             "UPDATE evolution_cycles SET status = ?1, error = COALESCE(?2, error) WHERE id = ?3",
             params![status.as_str(), error, id],
         )?;
-        Ok(())
-    })
+            Ok(())
+        }
+    )
 }
 
 pub fn update_variants_tested(pool: &DbPool, id: &str, count: i32) -> Result<(), AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::update_variants_tested", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE evolution_cycles SET variants_tested = ?1 WHERE id = ?2",
-            params![count, id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::update_variants_tested",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE evolution_cycles SET variants_tested = ?1 WHERE id = ?2",
+                params![count, id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 pub fn complete_cycle(
@@ -258,12 +299,15 @@ pub fn complete_cycle(
     incumbent_fitness: f64,
     summary: &str,
 ) -> Result<(), AppError> {
-    timed_query!("lab_evolution_cycles", "lab_evolution_cycles::complete_cycle", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::complete_cycle",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
 
-        conn.execute(
-            "UPDATE evolution_cycles SET
+            conn.execute(
+                "UPDATE evolution_cycles SET
                 status = 'completed',
                 promoted = ?1,
                 winner_fitness = ?2,
@@ -271,20 +315,28 @@ pub fn complete_cycle(
                 summary = ?4,
                 completed_at = ?5
              WHERE id = ?6",
-            params![promoted as i32, winner_fitness, incumbent_fitness, summary, now, id],
-        )?;
+                params![
+                    promoted as i32,
+                    winner_fitness,
+                    incumbent_fitness,
+                    summary,
+                    now,
+                    id
+                ],
+            )?;
 
-        // Update policy stats
-        conn.execute(
-            "UPDATE evolution_policies SET
+            // Update policy stats
+            conn.execute(
+                "UPDATE evolution_policies SET
                 last_cycle_at = ?1,
                 total_cycles = total_cycles + 1,
                 total_promotions = total_promotions + CASE WHEN ?2 THEN 1 ELSE 0 END,
                 updated_at = ?1
              WHERE id = (SELECT policy_id FROM evolution_cycles WHERE id = ?3)",
-            params![now, promoted as i32, id],
-        )?;
+                params![now, promoted as i32, id],
+            )?;
 
-        Ok(())
-    })
+            Ok(())
+        }
+    )
 }

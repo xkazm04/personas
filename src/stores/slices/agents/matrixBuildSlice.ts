@@ -315,12 +315,7 @@ function emptySessionState(personaId: string, sessionId: string): BuildSessionSt
   };
 }
 
-/**
- * Project a BuildSessionState onto the top-level scalar fields.
- * Called after every mutation that touches buildSessions or activeBuildSessionId
- * so existing selectors (which read the scalars) stay in sync.
- */
-function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
+type ScalarsProjection = Pick<MatrixBuildSlice,
   | 'buildPersonaId' | 'buildSessionId' | 'buildPhase' | 'buildCellStates' | 'buildCellData'
   | 'buildPendingQuestions' | 'buildProgress' | 'buildOutputLines' | 'buildActivity'
   | 'buildError' | 'buildDraft' | 'buildConnectorLinks' | 'buildWorkflowJson'
@@ -329,9 +324,30 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
   | 'buildTestError' | 'buildToolTestResults' | 'buildTestSummary' | 'buildTestConnectors'
   | 'buildEditState' | 'buildEditDirty' | 'editingCellKey'
   | 'buildBehaviorCore' | 'buildCapabilities' | 'buildCapabilityOrder'
-  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3'> {
+  | 'buildPersonaResolution' | 'buildClarifyingQuestionV3'>;
+
+/**
+ * Memoize the projection by session reference. Each `updater(existing)` returns
+ * a fresh BuildSessionState, so cache hits only occur when the same reference
+ * is projected multiple times (hydration, idempotent reset paths). The WeakMap
+ * lets sessions be GC'd as soon as the buildSessions record drops them.
+ *
+ * Future work: drop the scalar mirror entirely and migrate consumers to read
+ * from `s.buildSessions[s.activeBuildSessionId]?.<field>` directly. ~50
+ * consumer files would need to change, so this is deferred to a focused PR.
+ */
+const scalarsCache = new WeakMap<BuildSessionState, ScalarsProjection>();
+let nullScalarsCached: ScalarsProjection | null = null;
+
+/**
+ * Project a BuildSessionState onto the top-level scalar fields.
+ * Called after every mutation that touches buildSessions or activeBuildSessionId
+ * so existing selectors (which read the scalars) stay in sync.
+ */
+function scalarsFromSession(s: BuildSessionState | null): ScalarsProjection {
   if (!s) {
-    return {
+    if (nullScalarsCached) return nullScalarsCached;
+    nullScalarsCached = {
       buildPersonaId: null,
       buildSessionId: null,
       buildPhase: "initializing",
@@ -365,8 +381,11 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
       buildPersonaResolution: {},
       buildClarifyingQuestionV3: null,
     };
+    return nullScalarsCached;
   }
-  return {
+  const cached = scalarsCache.get(s);
+  if (cached) return cached;
+  const projection: ScalarsProjection = {
     buildPersonaId: s.personaId,
     buildSessionId: s.sessionId,
     buildPhase: s.phase,
@@ -400,6 +419,8 @@ function scalarsFromSession(s: BuildSessionState | null): Pick<MatrixBuildSlice,
     buildPersonaResolution: s.personaResolution,
     buildClarifyingQuestionV3: s.clarifyingQuestionV3,
   };
+  scalarsCache.set(s, projection);
+  return projection;
 }
 
 /**
@@ -715,13 +736,17 @@ export const createMatrixBuildSlice: StateCreator<
       });
       phase = 'failed';
     }
-    set((state) => {
-      const patch = updateSessionInState(state, event.session_id, (sess) => {
-        storeBus.emit('build:phase-changed', { phase, personaId: sess.personaId });
-        return { ...sess, phase, progress };
-      });
-      return patch;
-    });
+    set((state) => updateSessionInState(state, event.session_id, (sess) => ({
+      ...sess,
+      phase,
+      progress,
+    })));
+    // Emit AFTER commit so listeners can read settled state and any reentrant
+    // set() they trigger doesn't interleave with this updater closure.
+    const sess = get().buildSessions[event.session_id];
+    if (sess) {
+      storeBus.emit('build:phase-changed', { phase, personaId: sess.personaId });
+    }
   },
 
   // -- v3 event handlers ----------------------------------------------------
@@ -940,15 +965,17 @@ export const createMatrixBuildSlice: StateCreator<
   },
 
   handleTestComplete: (passed, outputPreview) => {
-    set((state) => updateSessionInState(state, null, (sess) => {
+    set((state) => updateSessionInState(state, null, (sess) => ({
+      ...sess,
+      phase: "test_complete" as BuildPhase,
+      testPassed: passed,
+      testOutputLines: [outputPreview],
+    })));
+    const activeId = get().activeBuildSessionId;
+    const sess = activeId ? get().buildSessions[activeId] : null;
+    if (sess) {
       storeBus.emit('build:phase-changed', { phase: 'test_complete', personaId: sess.personaId });
-      return {
-        ...sess,
-        phase: "test_complete" as BuildPhase,
-        testPassed: passed,
-        testOutputLines: [outputPreview],
-      };
-    }));
+    }
   },
 
   handleTestFailed: (error) => {

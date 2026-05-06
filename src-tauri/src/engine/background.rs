@@ -8,29 +8,30 @@ use ts_rs::TS;
 
 use std::collections::HashMap;
 
-use crate::db::models::{CreatePersonaEventInput, PersonaEvent, PersonaEventStatus, UpdateExecutionStatus};
+use super::event_registry::{emit_event_bus, event_name};
+use crate::daemon::lock::{default_data_dir, trigger_type_to_kind, DaemonLock, LockFileContents};
+use crate::db::models::{
+    CreatePersonaEventInput, PersonaEvent, PersonaEventStatus, UpdateExecutionStatus,
+};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
-use crate::db::repos::resources::audit_log;
 use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
 use crate::db::settings_keys;
 use crate::db::DbPool;
 use crate::engine::bus;
 use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
-    self, CleanupSubscription, CloudWebhookRelaySubscription, EventBusSubscription,
-    PollingSubscription, RotationSubscription, TriggerSchedulerSubscription,
-    CompositeSubscription, OAuthRefreshSubscription, SharedEventRelaySubscription,
+    self, CleanupSubscription, CloudWebhookRelaySubscription, CompositeSubscription,
+    EventBusSubscription, OAuthRefreshSubscription, PollingSubscription, RotationSubscription,
+    SharedEventRelaySubscription, TriggerSchedulerSubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
-    FileWatcherSubscription, ClipboardSubscription, AppFocusSubscription,
-    ContextRuleSubscription,
+    AppFocusSubscription, ClipboardSubscription, ContextRuleSubscription, FileWatcherSubscription,
 };
 use crate::engine::ExecutionEngine;
-use super::event_registry::{emit_event_bus, event_name};
-use crate::daemon::lock::{DaemonLock, LockFileContents, default_data_dir, trigger_type_to_kind};
 
 /// Per-subscription health snapshot including tick latency, counts, and error tracking.
 #[derive(Debug, Clone, Serialize, TS)]
@@ -195,23 +196,28 @@ impl SchedulerState {
         self.subscriptions_crashed.fetch_add(1, Ordering::Relaxed);
 
         let now = chrono::Utc::now().to_rfc3339();
-        let mut map = self.subscription_health.lock().unwrap_or_else(|e| e.into_inner());
-        let entry = map.entry(name.to_string()).or_insert_with(|| SubscriptionHealth {
-            name: name.to_string(),
-            alive: false,
-            started_at: None,
-            interval_ms: 0,
-            last_tick_duration_ms: 0,
-            max_tick_duration_ms: 0,
-            overrun: false,
-            tick_count: 0,
-            error_count: 0,
-            consecutive_panics: 0,
-            last_tick_at: None,
-            avg_tick_duration_ms: 0,
-            overrun_count: 0,
-            slow_tick_count: 0,
-        });
+        let mut map = self
+            .subscription_health
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let entry = map
+            .entry(name.to_string())
+            .or_insert_with(|| SubscriptionHealth {
+                name: name.to_string(),
+                alive: false,
+                started_at: None,
+                interval_ms: 0,
+                last_tick_duration_ms: 0,
+                max_tick_duration_ms: 0,
+                overrun: false,
+                tick_count: 0,
+                error_count: 0,
+                consecutive_panics: 0,
+                last_tick_at: None,
+                avg_tick_duration_ms: 0,
+                overrun_count: 0,
+                slow_tick_count: 0,
+            });
         entry.error_count += 1;
         entry.consecutive_panics += 1;
         entry.last_tick_at = Some(now);
@@ -231,23 +237,28 @@ impl SchedulerState {
         let overrun = elapsed_ms > interval_ms;
         let now = chrono::Utc::now().to_rfc3339();
 
-        let mut map = self.subscription_health.lock().unwrap_or_else(|e| e.into_inner());
-        let entry = map.entry(name.to_string()).or_insert_with(|| SubscriptionHealth {
-            name: name.to_string(),
-            alive: false,
-            started_at: None,
-            interval_ms,
-            last_tick_duration_ms: 0,
-            max_tick_duration_ms: 0,
-            overrun: false,
-            tick_count: 0,
-            error_count: 0,
-            consecutive_panics: 0,
-            last_tick_at: None,
-            avg_tick_duration_ms: 0,
-            overrun_count: 0,
-            slow_tick_count: 0,
-        });
+        let mut map = self
+            .subscription_health
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let entry = map
+            .entry(name.to_string())
+            .or_insert_with(|| SubscriptionHealth {
+                name: name.to_string(),
+                alive: false,
+                started_at: None,
+                interval_ms,
+                last_tick_duration_ms: 0,
+                max_tick_duration_ms: 0,
+                overrun: false,
+                tick_count: 0,
+                error_count: 0,
+                consecutive_panics: 0,
+                last_tick_at: None,
+                avg_tick_duration_ms: 0,
+                overrun_count: 0,
+                slow_tick_count: 0,
+            });
         entry.tick_count += 1;
         entry.consecutive_panics = 0; // successful tick resets consecutive panic counter
         entry.last_tick_at = Some(now);
@@ -280,30 +291,38 @@ impl SchedulerState {
 
     /// Snapshot of per-subscription health status.
     pub fn subscription_health(&self) -> Vec<SubscriptionHealth> {
-        let map = self.subscription_health.lock().unwrap_or_else(|e| e.into_inner());
+        let map = self
+            .subscription_health
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         map.values().cloned().collect()
     }
 
     /// Mark a subscription as alive when its loop starts. Called from `run_single`.
     pub fn mark_subscription_alive(&self, name: &str, interval_ms: u64) {
         let now = chrono::Utc::now().to_rfc3339();
-        let mut map = self.subscription_health.lock().unwrap_or_else(|e| e.into_inner());
-        let entry = map.entry(name.to_string()).or_insert_with(|| SubscriptionHealth {
-            name: name.to_string(),
-            alive: false,
-            started_at: None,
-            interval_ms,
-            last_tick_duration_ms: 0,
-            max_tick_duration_ms: 0,
-            overrun: false,
-            tick_count: 0,
-            error_count: 0,
-            consecutive_panics: 0,
-            last_tick_at: None,
-            avg_tick_duration_ms: 0,
-            overrun_count: 0,
-            slow_tick_count: 0,
-        });
+        let mut map = self
+            .subscription_health
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        let entry = map
+            .entry(name.to_string())
+            .or_insert_with(|| SubscriptionHealth {
+                name: name.to_string(),
+                alive: false,
+                started_at: None,
+                interval_ms,
+                last_tick_duration_ms: 0,
+                max_tick_duration_ms: 0,
+                overrun: false,
+                tick_count: 0,
+                error_count: 0,
+                consecutive_panics: 0,
+                last_tick_at: None,
+                avg_tick_duration_ms: 0,
+                overrun_count: 0,
+                slow_tick_count: 0,
+            });
         entry.alive = true;
         entry.started_at = Some(now);
         entry.interval_ms = interval_ms;
@@ -311,7 +330,10 @@ impl SchedulerState {
 
     /// Mark a subscription as dead when its loop exits. Called from `run_single`.
     pub fn mark_subscription_dead(&self, name: &str) {
-        let mut map = self.subscription_health.lock().unwrap_or_else(|e| e.into_inner());
+        let mut map = self
+            .subscription_health
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some(entry) = map.get_mut(name) {
             entry.alive = false;
         }
@@ -319,7 +341,10 @@ impl SchedulerState {
 
     /// Store retained JoinHandles for spawned subscription tasks.
     pub fn store_subscription_handles(&self, handles: Vec<tokio::task::JoinHandle<()>>) {
-        let mut h = self.subscription_handles.lock().unwrap_or_else(|e| e.into_inner());
+        let mut h = self
+            .subscription_handles
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *h = handles;
     }
 }
@@ -354,12 +379,14 @@ pub fn start_loops(
     rate_limiter: Arc<super::rate_limiter::RateLimiter>,
     tier_config: Arc<std::sync::Mutex<super::tier::TierConfig>>,
     cloud_client: Arc<tokio::sync::Mutex<Option<Arc<crate::cloud::client::CloudClient>>>>,
-    cloud_webhook_relay_state: Arc<tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>>,
-    shared_event_relay_state: Arc<tokio::sync::Mutex<super::shared_event_relay::SharedEventRelayState>>,
-    #[cfg(feature = "desktop")]
-    ambient_ctx: super::ambient_context::AmbientContextHandle,
-    #[cfg(feature = "desktop")]
-    context_rule_engine: super::context_rules::ContextRuleEngineHandle,
+    cloud_webhook_relay_state: Arc<
+        tokio::sync::Mutex<super::cloud_webhook_relay::CloudWebhookRelayState>,
+    >,
+    shared_event_relay_state: Arc<
+        tokio::sync::Mutex<super::shared_event_relay::SharedEventRelayState>,
+    >,
+    #[cfg(feature = "desktop")] ambient_ctx: super::ambient_context::AmbientContextHandle,
+    #[cfg(feature = "desktop")] context_rule_engine: super::context_rules::ContextRuleEngineHandle,
     composite_state: super::composite::CompositeState,
     smee_notifier: super::smee_relay::SmeeRelayNotifier,
 ) -> tokio::sync::watch::Sender<bool> {
@@ -389,9 +416,7 @@ pub fn start_loops(
             pool: pool.clone(),
             http,
         }),
-        Box::new(CleanupSubscription {
-            pool: pool.clone(),
-        }),
+        Box::new(CleanupSubscription { pool: pool.clone() }),
         Box::new(RotationSubscription {
             pool: pool.clone(),
             app: app.clone(),
@@ -412,6 +437,7 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        Box::new(subscription::HealingTtlSubscription { pool: pool.clone() }),
         Box::new(CloudWebhookRelaySubscription {
             cloud_client: cloud_client.clone(),
             pool: pool.clone(),
@@ -474,7 +500,9 @@ pub fn start_loops(
         // Context rule engine: subscribes to the context stream and evaluates
         // persona-defined rules for proactive actions.
         let stream_rx = {
-            let ctx = ambient_ctx.try_lock().expect("ambient_ctx lock should be uncontested during startup");
+            let ctx = ambient_ctx
+                .try_lock()
+                .expect("ambient_ctx lock should be uncontested during startup");
             ctx.subscribe()
         };
         subscriptions.push(Box::new(ContextRuleSubscription {
@@ -496,11 +524,17 @@ pub fn start_loops(
     {
         let recovered = trigger_scheduler_tick_counted(&scheduler, &pool);
         if recovered > 0 {
-            tracing::info!(count = recovered, "Startup overdue sweep: fired {recovered} overdue trigger(s)");
-            let _ = app.emit(event_name::OVERDUE_TRIGGERS_FIRED, OverdueTriggersEvent {
-                recovered,
-                timestamp: chrono::Utc::now().to_rfc3339(),
-            });
+            tracing::info!(
+                count = recovered,
+                "Startup overdue sweep: fired {recovered} overdue trigger(s)"
+            );
+            let _ = app.emit(
+                event_name::OVERDUE_TRIGGERS_FIRED,
+                OverdueTriggersEvent {
+                    recovered,
+                    timestamp: chrono::Utc::now().to_rfc3339(),
+                },
+            );
         }
     }
 
@@ -512,7 +546,8 @@ pub fn start_loops(
         let pool = pool.clone();
         let app = app.clone();
         async move {
-            let (refreshed, failed) = super::oauth_refresh::startup_oauth_sweep(&pool, Some(&app)).await;
+            let (refreshed, failed) =
+                super::oauth_refresh::startup_oauth_sweep(&pool, Some(&app)).await;
             if refreshed > 0 || failed > 0 {
                 tracing::info!(refreshed, failed, "Startup OAuth sweep complete");
             }
@@ -583,17 +618,28 @@ pub fn start_loops(
             scheduler.webhook_alive.store(true, Ordering::Relaxed);
 
             // Try to start with management API (needs AppState for process_registry)
-            let process_registry = app_for_mgmt.try_state::<std::sync::Arc<crate::AppState>>()
+            let process_registry = app_for_mgmt
+                .try_state::<std::sync::Arc<crate::AppState>>()
                 .map(|s| s.process_registry.clone());
             let result = if let Some(registry) = process_registry {
                 super::webhook::start_webhook_server_with_management(
-                    pool, rate_limiter, tier_config,
-                    app_for_mgmt, registry,
+                    pool,
+                    rate_limiter,
+                    tier_config,
+                    app_for_mgmt,
+                    registry,
                     webhook_shutdown_rx,
-                ).await
+                )
+                .await
             } else {
                 // Fallback: webhook-only (no management API)
-                super::webhook::start_webhook_server(pool, rate_limiter, tier_config, webhook_shutdown_rx).await
+                super::webhook::start_webhook_server(
+                    pool,
+                    rate_limiter,
+                    tier_config,
+                    webhook_shutdown_rx,
+                )
+                .await
             };
 
             if let Err(e) = result {
@@ -673,8 +719,8 @@ pub(crate) async fn event_bus_tick(
             Vec::new()
         }
     };
-    let all_listeners = trigger_repo::get_event_listeners_for_event_types(pool, &event_types)
-        .unwrap_or_default();
+    let all_listeners =
+        trigger_repo::get_event_listeners_for_event_types(pool, &event_types).unwrap_or_default();
 
     tracing::debug!(
         event_count = events.len(),
@@ -685,10 +731,8 @@ pub(crate) async fn event_bus_tick(
     );
 
     // 4. Pre-parse trigger configs once (avoids re-deserializing JSON per event).
-    let parsed_listeners: Vec<bus::ParsedTrigger<'_>> = all_listeners
-        .iter()
-        .map(bus::ParsedTrigger::new)
-        .collect();
+    let parsed_listeners: Vec<bus::ParsedTrigger<'_>> =
+        all_listeners.iter().map(bus::ParsedTrigger::new).collect();
 
     // 5. Match all events against the pre-fetched subscriptions/listeners
     //    and collect (event_index, matches) pairs.
@@ -807,7 +851,10 @@ pub(crate) async fn event_bus_tick(
             // emitted event lands. Persona-wide matches keep the original
             // per-persona guard (no use_case to disambiguate).
             let running_count = match m.use_case_id.as_deref() {
-                Some(uc_id) => exec_repo::get_running_count_for_persona_use_case(pool, &persona.id, uc_id).unwrap_or(0),
+                Some(uc_id) => {
+                    exec_repo::get_running_count_for_persona_use_case(pool, &persona.id, uc_id)
+                        .unwrap_or(0)
+                }
                 None => exec_repo::get_running_count_for_persona(pool, &persona.id).unwrap_or(0),
             };
             if running_count > 0 {
@@ -840,30 +887,31 @@ pub(crate) async fn event_bus_tick(
             };
 
             // Resolve tools from map
-            let tools = tools_map
-                .get(&persona.id)
-                .cloned()
-                .unwrap_or_default();
+            let tools = tools_map.get(&persona.id).cloned().unwrap_or_default();
 
             // Parse input — log on failure since chain_trace_id is embedded in the payload JSON.
             // A parse failure here means the chain trace ID is lost and downstream
             // chain executions will create orphaned trace roots.
             let parsed_payload: Option<serde_json::Value> =
-                m.payload.as_deref().and_then(|s| match serde_json::from_str(s) {
-                    Ok(v) => Some(v),
-                    Err(parse_err) => {
-                        tracing::warn!(
-                            event_id = %event.id,
-                            persona_id = %m.persona_id,
-                            payload_len = s.len(),
-                            error = %parse_err,
-                            "Event bus: payload JSON parse failed — chain trace correlation \
-                             will break if this event is part of a chain cascade"
-                        );
-                        scheduler.trace_continuity_breaks.fetch_add(1, Ordering::Relaxed);
-                        None
-                    }
-                });
+                m.payload
+                    .as_deref()
+                    .and_then(|s| match serde_json::from_str(s) {
+                        Ok(v) => Some(v),
+                        Err(parse_err) => {
+                            tracing::warn!(
+                                event_id = %event.id,
+                                persona_id = %m.persona_id,
+                                payload_len = s.len(),
+                                error = %parse_err,
+                                "Event bus: payload JSON parse failed — chain trace correlation \
+                                 will break if this event is part of a chain cascade"
+                            );
+                            scheduler
+                                .trace_continuity_breaks
+                                .fetch_add(1, Ordering::Relaxed);
+                            None
+                        }
+                    });
 
             // Wrap the payload with `_event` metadata so the persona prompt
             // (see engine/prompt.rs `## Triggering Event` block) can show the
@@ -877,16 +925,28 @@ pub(crate) async fn event_bus_tick(
                 }
             });
             let mut event_meta = serde_json::Map::new();
-            event_meta.insert("event_type".into(), serde_json::Value::String(event.event_type.clone()));
-            event_meta.insert("source_type".into(), serde_json::Value::String(event.source_type.clone()));
+            event_meta.insert(
+                "event_type".into(),
+                serde_json::Value::String(event.event_type.clone()),
+            );
+            event_meta.insert(
+                "source_type".into(),
+                serde_json::Value::String(event.source_type.clone()),
+            );
             if let Some(sid) = &event.source_id {
                 event_meta.insert("source_id".into(), serde_json::Value::String(sid.clone()));
             }
             if let Some(spid) = &source_persona_id {
-                event_meta.insert("source_persona_id".into(), serde_json::Value::String(spid.clone()));
+                event_meta.insert(
+                    "source_persona_id".into(),
+                    serde_json::Value::String(spid.clone()),
+                );
             }
             if let Some(tpid) = &event.target_persona_id {
-                event_meta.insert("target_persona_id".into(), serde_json::Value::String(tpid.clone()));
+                event_meta.insert(
+                    "target_persona_id".into(),
+                    serde_json::Value::String(tpid.clone()),
+                );
             }
             let input_val: Option<serde_json::Value> = Some(serde_json::json!({
                 "_event": serde_json::Value::Object(event_meta),
@@ -930,12 +990,17 @@ pub(crate) async fn event_bus_tick(
             // Use DLQ pattern: increment retry count, move to dead_letter after max retries
             let max_retries = event_repo::DEFAULT_MAX_RETRIES;
             match event_repo::increment_retry_or_dead_letter(
-                pool, &event.id,
+                pool,
+                &event.id,
                 Some("One or more subscription executions failed".into()),
                 max_retries,
             ) {
                 Ok(moved_to_dlq) => {
-                    let status = if moved_to_dlq { PersonaEventStatus::DeadLetter } else { PersonaEventStatus::Failed };
+                    let status = if moved_to_dlq {
+                        PersonaEventStatus::DeadLetter
+                    } else {
+                        PersonaEventStatus::Failed
+                    };
                     if moved_to_dlq {
                         tracing::warn!(
                             event_id = %event.id,
@@ -1035,10 +1100,14 @@ pub(crate) fn synthesize_trigger_fired_payload(
 ) -> String {
     use crate::db::models::TriggerConfig;
     let (cron, interval_seconds) = match cfg {
-        TriggerConfig::Schedule { cron, interval_seconds, .. } => {
-            (cron.clone(), *interval_seconds)
-        }
-        TriggerConfig::Polling { interval_seconds, .. } => (None, *interval_seconds),
+        TriggerConfig::Schedule {
+            cron,
+            interval_seconds,
+            ..
+        } => (cron.clone(), *interval_seconds),
+        TriggerConfig::Polling {
+            interval_seconds, ..
+        } => (None, *interval_seconds),
         _ => (None, None),
     };
     let mut meta = serde_json::Map::new();
@@ -1068,10 +1137,7 @@ pub(crate) fn synthesize_trigger_fired_payload(
         );
     }
     if let Some(uc) = trigger.use_case_id.as_ref() {
-        meta.insert(
-            "use_case_id".into(),
-            serde_json::Value::String(uc.clone()),
-        );
+        meta.insert("use_case_id".into(), serde_json::Value::String(uc.clone()));
     }
     serde_json::to_string(&serde_json::Value::Object(meta)).unwrap_or_default()
 }
@@ -1080,7 +1146,10 @@ pub(crate) fn synthesize_trigger_fired_payload(
 /// against amplification when a trigger configured with a large
 /// `max_backfill` was offline for a long time — without this cap, an
 /// every-minute trigger offline overnight would emit hundreds of events.
-const BACKFILL_HARD_CAP: usize = 100;
+///
+/// Single source of truth lives in [`crate::engine::limits::BACKFILL_HARD_CAP`];
+/// re-exported here so the existing local references compile unchanged.
+const BACKFILL_HARD_CAP: usize = crate::engine::limits::BACKFILL_HARD_CAP;
 
 /// Enumerate cron/interval slots that should have fired strictly between
 /// `last_fire` (exclusive) and `now` (inclusive), excluding the most-recent
@@ -1097,8 +1166,14 @@ fn compute_missed_backfill_slots(
     use crate::db::models::TriggerConfig;
     let mut slots: Vec<chrono::DateTime<chrono::Utc>> = Vec::new();
     match cfg {
-        TriggerConfig::Schedule { cron: Some(expr), timezone, .. } => {
-            let Ok(schedule) = crate::engine::cron::parse_cron(expr) else { return slots };
+        TriggerConfig::Schedule {
+            cron: Some(expr),
+            timezone,
+            ..
+        } => {
+            let Ok(schedule) = crate::engine::cron::parse_cron(expr) else {
+                return slots;
+            };
             let tz = timezone
                 .as_deref()
                 .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
@@ -1117,7 +1192,10 @@ fn compute_missed_backfill_slots(
                 }
             }
         }
-        TriggerConfig::Schedule { interval_seconds: Some(secs), .. } => {
+        TriggerConfig::Schedule {
+            interval_seconds: Some(secs),
+            ..
+        } => {
             if *secs == 0 {
                 return slots;
             }
@@ -1148,22 +1226,39 @@ fn synthesize_backfill_payload(
 ) -> String {
     use crate::db::models::TriggerConfig;
     let (cron, interval_seconds) = match cfg {
-        TriggerConfig::Schedule { cron, interval_seconds, .. } => {
-            (cron.clone(), *interval_seconds)
-        }
+        TriggerConfig::Schedule {
+            cron,
+            interval_seconds,
+            ..
+        } => (cron.clone(), *interval_seconds),
         _ => (None, None),
     };
     let mut meta = serde_json::Map::new();
-    meta.insert("trigger_id".into(), serde_json::Value::String(trigger.id.clone()));
-    meta.insert("trigger_type".into(), serde_json::Value::String(trigger.trigger_type.clone()));
-    meta.insert("target_persona_id".into(), serde_json::Value::String(trigger.persona_id.clone()));
-    meta.insert("fired_at".into(), serde_json::Value::String(slot_fired_at.to_string()));
+    meta.insert(
+        "trigger_id".into(),
+        serde_json::Value::String(trigger.id.clone()),
+    );
+    meta.insert(
+        "trigger_type".into(),
+        serde_json::Value::String(trigger.trigger_type.clone()),
+    );
+    meta.insert(
+        "target_persona_id".into(),
+        serde_json::Value::String(trigger.persona_id.clone()),
+    );
+    meta.insert(
+        "fired_at".into(),
+        serde_json::Value::String(slot_fired_at.to_string()),
+    );
     meta.insert("backfill_slot".into(), serde_json::Value::Bool(true));
     if let Some(c) = cron {
         meta.insert("cron".into(), serde_json::Value::String(c));
     }
     if let Some(iv) = interval_seconds {
-        meta.insert("interval_seconds".into(), serde_json::Value::Number(iv.into()));
+        meta.insert(
+            "interval_seconds".into(),
+            serde_json::Value::Number(iv.into()),
+        );
     }
     if let Some(uc) = trigger.use_case_id.as_ref() {
         meta.insert("use_case_id".into(), serde_json::Value::String(uc.clone()));
@@ -1191,11 +1286,10 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
     // re-reading the lock file for every due trigger. If the daemon is
     // running, `daemon_lock` holds its lock contents; if not, it's None
     // and `should_yield_to_daemon` falls through to the UI-fires path.
-    let daemon_lock = DaemonLock::check_active(&default_data_dir())
-        .unwrap_or_else(|e| {
-            tracing::warn!(error = %e, "failed to read daemon lock — assuming no daemon");
-            None
-        });
+    let daemon_lock = DaemonLock::check_active(&default_data_dir()).unwrap_or_else(|e| {
+        tracing::warn!(error = %e, "failed to read daemon lock — assuming no daemon");
+        None
+    });
 
     for trigger in triggers {
         // Skip polling triggers -- they are handled by the PollingSubscription
@@ -1229,24 +1323,30 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
 
         // Check if persona is over budget for scheduled triggers
         if trigger.trigger_type == "schedule" {
-            let over_budget: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
-                conn.query_row(
-                    "SELECT COALESCE((
+            let over_budget: bool = pool
+                .get()
+                .map_err(|e| e.to_string())
+                .and_then(|conn| {
+                    conn.query_row(
+                        "SELECT COALESCE((
                         SELECT SUM(cost_usd)
                         FROM persona_executions
                         WHERE persona_id = ?1 AND created_at >= datetime('now', 'start of month')
                     ), 0.0) >= max_budget_usd
                     FROM personas
                     WHERE id = ?1 AND max_budget_usd IS NOT NULL",
-                    rusqlite::params![trigger.persona_id],
-                    |row| row.get(0)
-                ).map_err(|e| e.to_string())
-            }).unwrap_or(false);
+                        rusqlite::params![trigger.persona_id],
+                        |row| row.get(0),
+                    )
+                    .map_err(|e| e.to_string())
+                })
+                .unwrap_or(false);
 
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
                 let next = sched_logic::compute_next_from_config(&cfg, now);
-                let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
+                let _ =
+                    trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
             }
         }
@@ -1257,18 +1357,19 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         // existing mark_triggered + publish path below handles the most-
         // recent slot as the "live" fire — backfill only emits the EXTRAS.
         let backfill_cap: usize = match &cfg {
-            crate::db::models::TriggerConfig::Schedule { max_backfill: Some(n), .. }
-                if trigger.trigger_type == "schedule" =>
-            {
-                (*n as usize).min(BACKFILL_HARD_CAP)
-            }
+            crate::db::models::TriggerConfig::Schedule {
+                max_backfill: Some(n),
+                ..
+            } if trigger.trigger_type == "schedule" => crate::engine::limits::cap_with_log(
+                "backfill_hard_cap",
+                *n as usize,
+                BACKFILL_HARD_CAP,
+            ),
             _ => 1,
         };
         if backfill_cap > 1 {
             if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
-                if let Ok(last_dt) =
-                    chrono::DateTime::parse_from_rfc3339(last_iso)
-                {
+                if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(last_iso) {
                     let last_utc = last_dt.with_timezone(&chrono::Utc);
                     let mut missed = compute_missed_backfill_slots(&cfg, last_utc, now);
                     // Cap to (cap - 1) extras; the live fire below counts
@@ -1442,7 +1543,11 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
     );
 
     match event_repo::cleanup(pool, Some(retention_days)) {
-        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old events (retention={}d)", n, retention_days),
+        Ok(n) if n > 0 => tracing::info!(
+            "Cleaned up {} old events (retention={}d)",
+            n,
+            retention_days
+        ),
         Ok(_) => {}
         Err(e) => tracing::error!("Event cleanup error: {}", e),
     }
@@ -1453,11 +1558,16 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         Ok(events) if !events.is_empty() => {
             let count = events.len();
             for evt in &events {
-                if let Err(e) = event_repo::update_status(pool, &evt.id, PersonaEventStatus::Pending, None) {
+                if let Err(e) =
+                    event_repo::update_status(pool, &evt.id, PersonaEventStatus::Pending, None)
+                {
                     tracing::warn!(event_id = %evt.id, "DLQ auto-retry: failed to re-queue: {}", e);
                 }
             }
-            tracing::info!("DLQ auto-retry: re-queued {} failed events for retry", count);
+            tracing::info!(
+                "DLQ auto-retry: re-queued {} failed events for retry",
+                count
+            );
         }
         Ok(_) => {}
         Err(e) => tracing::error!("DLQ auto-retry query error: {}", e),
@@ -1465,7 +1575,10 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
 
     // Credential audit log: 90-day retention
     match audit_log::cleanup_old_entries(pool, 90) {
-        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old credential audit log entries (retention=90d)", n),
+        Ok(n) if n > 0 => tracing::info!(
+            "Cleaned up {} old credential audit log entries (retention=90d)",
+            n
+        ),
         Ok(_) => {}
         Err(e) => tracing::error!("Credential audit log cleanup error: {}", e),
     }
@@ -1474,7 +1587,9 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
     {
         use crate::db::repos::resources::automations as auto_repo;
         match auto_repo::reap_stale_runs(pool) {
-            Ok(n) if n > 0 => tracing::warn!("Reaped {} stale automation run(s) stuck in running", n),
+            Ok(n) if n > 0 => {
+                tracing::warn!("Reaped {} stale automation run(s) stuck in running", n)
+            }
             Ok(_) => {}
             Err(e) => tracing::error!("Stale automation run reaper error: {}", e),
         }
@@ -1487,7 +1602,11 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         settings_keys::EXECUTION_RETENTION_DAYS_DEFAULT,
     );
     match exec_repo::cleanup_old_executions(pool, exec_retention_days, 50) {
-        Ok(n) if n > 0 => tracing::info!("Cleaned up {} old execution records (retention={}d, min_keep=50/persona)", n, exec_retention_days),
+        Ok(n) if n > 0 => tracing::info!(
+            "Cleaned up {} old execution records (retention={}d, min_keep=50/persona)",
+            n,
+            exec_retention_days
+        ),
         Ok(_) => {}
         Err(e) => tracing::error!("Execution log cleanup error: {}", e),
     }
@@ -1577,10 +1696,10 @@ pub(crate) fn zombie_execution_tick(pool: &DbPool, app: &AppHandle) {
                     "Zombie execution sweep: transitioned {} stale executions to incomplete",
                     count,
                 );
-                let _ = app.emit(event_name::ZOMBIE_EXECUTIONS_DETECTED, ZombieExecutionEvent {
-                    zombie_ids,
-                    count,
-                });
+                let _ = app.emit(
+                    event_name::ZOMBIE_EXECUTIONS_DETECTED,
+                    ZombieExecutionEvent { zombie_ids, count },
+                );
             }
         }
         Err(e) => {
@@ -1877,7 +1996,10 @@ mod tests {
         };
         let json = synthesize_backfill_payload(&trigger, &cfg, "2026-05-01T10:00:00Z");
         let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(v["backfill_slot"], true, "backfill events must self-identify");
+        assert_eq!(
+            v["backfill_slot"], true,
+            "backfill events must self-identify"
+        );
         assert_eq!(v["fired_at"], "2026-05-01T10:00:00Z");
         assert_eq!(v["cron"], "0 * * * *");
         assert_eq!(v["trigger_id"], "t-bf-1");
@@ -1921,7 +2043,11 @@ mod tests {
         let state = SchedulerState::new();
 
         // Record a normal tick (under interval)
-        state.record_tick_latency("event_bus", Duration::from_secs(2), Duration::from_millis(50));
+        state.record_tick_latency(
+            "event_bus",
+            Duration::from_secs(2),
+            Duration::from_millis(50),
+        );
         let health = state.subscription_health();
         assert_eq!(health.len(), 1);
         let h = &health[0];
@@ -1938,7 +2064,11 @@ mod tests {
         assert_eq!(h.slow_tick_count, 0);
 
         // Record an overrun tick
-        state.record_tick_latency("event_bus", Duration::from_secs(2), Duration::from_millis(3000));
+        state.record_tick_latency(
+            "event_bus",
+            Duration::from_secs(2),
+            Duration::from_millis(3000),
+        );
         let health = state.subscription_health();
         let h = health.iter().find(|l| l.name == "event_bus").unwrap();
         assert_eq!(h.last_tick_duration_ms, 3000);
@@ -1949,7 +2079,11 @@ mod tests {
         assert_eq!(h.overrun_count, 1);
 
         // Record a smaller tick — max should stay at 3000
-        state.record_tick_latency("event_bus", Duration::from_secs(2), Duration::from_millis(100));
+        state.record_tick_latency(
+            "event_bus",
+            Duration::from_secs(2),
+            Duration::from_millis(100),
+        );
         let health = state.subscription_health();
         let h = health.iter().find(|l| l.name == "event_bus").unwrap();
         assert_eq!(h.last_tick_duration_ms, 100);
@@ -1966,20 +2100,44 @@ mod tests {
         // interval=2000ms, 80% threshold=1600ms
 
         // 1500ms — under threshold, not slow
-        state.record_tick_latency("poller", Duration::from_secs(2), Duration::from_millis(1500));
-        let h = state.subscription_health().into_iter().find(|h| h.name == "poller").unwrap();
+        state.record_tick_latency(
+            "poller",
+            Duration::from_secs(2),
+            Duration::from_millis(1500),
+        );
+        let h = state
+            .subscription_health()
+            .into_iter()
+            .find(|h| h.name == "poller")
+            .unwrap();
         assert_eq!(h.slow_tick_count, 0);
         assert_eq!(h.overrun_count, 0);
 
         // 1700ms — above 80% threshold but under interval, counts as slow
-        state.record_tick_latency("poller", Duration::from_secs(2), Duration::from_millis(1700));
-        let h = state.subscription_health().into_iter().find(|h| h.name == "poller").unwrap();
+        state.record_tick_latency(
+            "poller",
+            Duration::from_secs(2),
+            Duration::from_millis(1700),
+        );
+        let h = state
+            .subscription_health()
+            .into_iter()
+            .find(|h| h.name == "poller")
+            .unwrap();
         assert_eq!(h.slow_tick_count, 1);
         assert_eq!(h.overrun_count, 0);
 
         // 2500ms — overrun, does NOT also count as slow (only overrun)
-        state.record_tick_latency("poller", Duration::from_secs(2), Duration::from_millis(2500));
-        let h = state.subscription_health().into_iter().find(|h| h.name == "poller").unwrap();
+        state.record_tick_latency(
+            "poller",
+            Duration::from_secs(2),
+            Duration::from_millis(2500),
+        );
+        let h = state
+            .subscription_health()
+            .into_iter()
+            .find(|h| h.name == "poller")
+            .unwrap();
         assert_eq!(h.slow_tick_count, 1); // unchanged
         assert_eq!(h.overrun_count, 1);
     }
@@ -1997,7 +2155,11 @@ mod tests {
     #[test]
     fn test_stats_includes_subscription_health() {
         let state = SchedulerState::new();
-        state.record_tick_latency("cleanup", Duration::from_secs(3600), Duration::from_millis(200));
+        state.record_tick_latency(
+            "cleanup",
+            Duration::from_secs(3600),
+            Duration::from_millis(200),
+        );
         let stats = state.stats();
         assert_eq!(stats.subscription_health.len(), 1);
         assert_eq!(stats.subscription_health[0].name, "cleanup");
@@ -2030,7 +2192,11 @@ mod tests {
         assert!(h.last_tick_at.is_some());
 
         // A successful tick resets consecutive_panics
-        state.record_tick_latency("event_bus", Duration::from_secs(2), Duration::from_millis(10));
+        state.record_tick_latency(
+            "event_bus",
+            Duration::from_secs(2),
+            Duration::from_millis(10),
+        );
         let health = state.subscription_health();
         let h = health.iter().find(|h| h.name == "event_bus").unwrap();
         assert_eq!(h.error_count, 2); // errors stay
@@ -2080,8 +2246,12 @@ mod tests {
     fn test_trace_continuity_breaks_counter() {
         let state = SchedulerState::new();
         assert_eq!(state.stats().trace_continuity_breaks, 0);
-        state.trace_continuity_breaks.fetch_add(1, Ordering::Relaxed);
-        state.trace_continuity_breaks.fetch_add(1, Ordering::Relaxed);
+        state
+            .trace_continuity_breaks
+            .fetch_add(1, Ordering::Relaxed);
+        state
+            .trace_continuity_breaks
+            .fetch_add(1, Ordering::Relaxed);
         assert_eq!(state.stats().trace_continuity_breaks, 2);
     }
 

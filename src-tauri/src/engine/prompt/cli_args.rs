@@ -63,10 +63,7 @@ pub(super) fn resolve_effort(model_profile: Option<&ModelProfile>) -> String {
 /// call sites that want to inject a W3C `TRACEPARENT` header into the child
 /// CLI's env (so personas' trace and the CLI's internal spans can be
 /// correlated), use [`build_cli_args_with_trace`] instead.
-pub fn build_cli_args(
-    persona: Option<&Persona>,
-    model_profile: Option<&ModelProfile>,
-) -> CliArgs {
+pub fn build_cli_args(persona: Option<&Persona>, model_profile: Option<&ModelProfile>) -> CliArgs {
     build_cli_args_with_trace(persona, model_profile, None)
 }
 
@@ -85,7 +82,9 @@ pub fn build_cli_args_with_trace(
             .env_overrides
             .push(("TRACEPARENT".to_string(), t.traceparent_header()));
         if let Some(state) = t.tracestate_header() {
-            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+            cli_args
+                .env_overrides
+                .push(("TRACESTATE".to_string(), state));
         }
     }
     cli_args
@@ -180,9 +179,15 @@ pub(super) fn build_cli_args_inner(
     // 2.1.108 started warning at startup when these are set; the warning lands
     // on stderr and can confuse log consumers. Keep enumerated — env_remove is
     // exact-match, not prefix.
-    cli_args.env_removals.push("DISABLE_PROMPT_CACHING".to_string());
-    cli_args.env_removals.push("DISABLE_PROMPT_CACHING_1H".to_string());
-    cli_args.env_removals.push("DISABLE_PROMPT_CACHING_5M".to_string());
+    cli_args
+        .env_removals
+        .push("DISABLE_PROMPT_CACHING".to_string());
+    cli_args
+        .env_removals
+        .push("DISABLE_PROMPT_CACHING_1H".to_string());
+    cli_args
+        .env_removals
+        .push("DISABLE_PROMPT_CACHING_5M".to_string());
 
     // Suppress the CLI's nonessential traffic — no value in headless mode:
     // - Auto-title: the CLI otherwise makes an extra Haiku call to name the
@@ -202,18 +207,16 @@ pub(super) fn build_cli_args_inner(
     // `claude -p` dozens of times per session; a mid-spawn updater adds startup
     // latency and stderr noise. CLI updates are managed out-of-band by the user.
     // Env var introduced in CLI 2.1.118; no-op on older CLIs.
-    cli_args.env_overrides.push((
-        "DISABLE_UPDATES".to_string(),
-        "1".to_string(),
-    ));
+    cli_args
+        .env_overrides
+        .push(("DISABLE_UPDATES".to_string(), "1".to_string()));
     // Conceal cwd from the CLI's startup banner and internal telemetry. Personas
     // runs each execution in a per-execution directory that may embed GUIDs or
     // temp paths; there is no reason for those to leak into CLI-side logs.
     // Env var introduced in CLI 2.1.119; no-op on older CLIs.
-    cli_args.env_overrides.push((
-        "CLAUDE_CODE_HIDE_CWD".to_string(),
-        "1".to_string(),
-    ));
+    cli_args
+        .env_overrides
+        .push(("CLAUDE_CODE_HIDE_CWD".to_string(), "1".to_string()));
 
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
@@ -250,7 +253,9 @@ pub fn build_resume_cli_args_with_trace(
             .env_overrides
             .push(("TRACEPARENT".to_string(), t.traceparent_header()));
         if let Some(state) = t.tracestate_header() {
-            cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+            cli_args
+                .env_overrides
+                .push(("TRACESTATE".to_string(), state));
         }
     }
     cli_args

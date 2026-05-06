@@ -60,7 +60,10 @@ pub struct TeamSynthesisResult {
 // Prompt builder
 // ============================================================================
 
-fn build_synthesis_prompt(query: &str, templates: &[crate::db::models::PersonaDesignReview]) -> String {
+fn build_synthesis_prompt(
+    query: &str,
+    templates: &[crate::db::models::PersonaDesignReview],
+) -> String {
     let catalog: Vec<serde_json::Value> = templates
         .iter()
         .filter(|t| t.status == "passed")
@@ -262,8 +265,15 @@ pub async fn synthesize_team_from_templates(
             let mut sp = v.clone();
             if let Some(sections) = sp.get_mut("customSections").and_then(|v| v.as_array_mut()) {
                 for section in sections.iter_mut() {
-                    if section.get("title").and_then(|v| v.as_str()).unwrap_or("").is_empty() {
-                        let heading = section.get("label").cloned()
+                    if section
+                        .get("title")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .is_empty()
+                    {
+                        let heading = section
+                            .get("label")
+                            .cloned()
                             .or_else(|| section.get("name").cloned())
                             .or_else(|| section.get("key").cloned());
                         if let Some(heading_val) = heading {
@@ -278,9 +288,18 @@ pub async fn synthesize_team_from_templates(
         });
 
         let persona_meta = design.get("persona_meta");
-        let icon = persona_meta.and_then(|m| m.get("icon")).and_then(|v| v.as_str()).map(|s| s.to_string());
-        let color = persona_meta.and_then(|m| m.get("color")).and_then(|v| v.as_str()).map(|s| s.to_string());
-        let model_profile = persona_meta.and_then(|m| m.get("model_profile")).and_then(|v| v.as_str()).map(|s| s.to_string());
+        let icon = persona_meta
+            .and_then(|m| m.get("icon"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let color = persona_meta
+            .and_then(|m| m.get("color"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+        let model_profile = persona_meta
+            .and_then(|m| m.get("model_profile"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         let persona_name = persona_meta
             .and_then(|m| m.get("name"))
             .and_then(|v| v.as_str())
@@ -314,7 +333,11 @@ pub async fn synthesize_team_from_templates(
         )?;
 
         // Track adoption count (with audit log)
-        if let Err(e) = review_repo::increment_adoption_count(&state.db, &tmpl.test_case_name, Some(&persona.id)) {
+        if let Err(e) = review_repo::increment_adoption_count(
+            &state.db,
+            &tmpl.test_case_name,
+            Some(&persona.id),
+        ) {
             tracing::warn!(template = %tmpl.test_case_name, error = %e, "Failed to increment adoption count");
         }
 
@@ -341,7 +364,11 @@ pub async fn synthesize_team_from_templates(
     let edge_pairs: Vec<(usize, usize)> = response
         .connections
         .iter()
-        .filter(|c| c.source_index < persona_ids.len() && c.target_index < persona_ids.len() && c.source_index != c.target_index)
+        .filter(|c| {
+            c.source_index < persona_ids.len()
+                && c.target_index < persona_ids.len()
+                && c.source_index != c.target_index
+        })
         .map(|c| (c.source_index, c.target_index))
         .collect();
 

@@ -44,6 +44,17 @@ pub const APPROVALS_EVENT: &str = "companion://approvals";
 /// the chat panel — chat-driven nav is meant to feel transparent.
 pub const NAVIGATE_EVENT: &str = "companion://navigate";
 
+/// Tauri event for "open this persona's lab tab and select mode X" —
+/// Athena's `open_lab` op. Payload: `{ personaId, mode }`. Bypasses
+/// approval like NAVIGATE_EVENT; the persona editor reads this and
+/// jumps the user there.
+pub const OPEN_LAB_EVENT: &str = "companion://open-lab";
+
+/// Tauri event for `compose_dashboard` auto-fire. Payload is empty —
+/// the spec is already persisted server-side; the frontend just needs
+/// to navigate to the Companion → Dashboard tab so the user sees it.
+pub const COMPOSE_DASHBOARD_EVENT: &str = "companion://compose-dashboard";
+
 /// What `send_turn` returns to the chat command. The IDs let the UI
 /// reconcile the optimistic bubble with persisted episodes; the
 /// `quick_replies` carry Athena's QR offerings for this specific turn
@@ -58,8 +69,12 @@ pub struct TurnResult {
     pub tts_text: Option<String>,
 }
 
-/// Hard ceiling per turn — Opus is slow but should never sit forever.
-const TURN_TIMEOUT: Duration = Duration::from_secs(300);
+/// Hard ceiling per turn — Athena is designed to run long background
+/// tasks (codebase scans, idea generation, multi-step reasoning).
+/// 15 minutes is enough for the longest realistic flow without
+/// holding a stuck CLI forever. Mirrors the frontend's
+/// `COMPANION_TURN_TIMEOUT_MS`; if you change one, change the other.
+const TURN_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 
 /// One streamed event sent to the frontend. The JSON `payload` is the raw
 /// stream-json line so the UI can render thinking/tool-use/text indicators
@@ -110,11 +125,9 @@ pub async fn send_turn(
     // block the chat turn.
     #[cfg(feature = "ml")]
     {
-        let _ = crate::companion::dev_session::recover_orphan_improvements(
-            &user_db,
-            embedder.as_ref(),
-        )
-        .await;
+        let _ =
+            crate::companion::dev_session::recover_orphan_improvements(&user_db, embedder.as_ref())
+                .await;
     }
     #[cfg(not(feature = "ml"))]
     {
@@ -218,7 +231,13 @@ pub async fn send_turn(
             match timeout(
                 TURN_TIMEOUT,
                 run_cli(
-                    app, &turn_id, &session_id, None, &system_prompt, &user_message, &user_db,
+                    app,
+                    &turn_id,
+                    &session_id,
+                    None,
+                    &system_prompt,
+                    &user_message,
+                    &user_db,
                 ),
             )
             .await
@@ -250,24 +269,23 @@ pub async fn send_turn(
     // persist them as approval rows, and strip them from the displayed
     // text. The episode stores the cleaned text — what the user sees in
     // the chat — so future turns' transcript is clean too.
-    let dispatched = match crate::companion::dispatcher::dispatch(
-        &user_db,
-        &session_id,
-        &assistant_text,
-    ) {
-        Ok(d) => d,
-        Err(e) => {
-            tracing::warn!(error = %e, "companion dispatcher failed; using raw text");
-            crate::companion::dispatcher::Dispatched {
-                cleaned_text: assistant_text.clone(),
-                approvals: Vec::new(),
-                navigations: Vec::new(),
-                quick_replies: Vec::new(),
-                tts_text: None,
-                warnings: vec![format!("dispatcher error: {e}")],
+    let dispatched =
+        match crate::companion::dispatcher::dispatch(&user_db, &session_id, &assistant_text) {
+            Ok(d) => d,
+            Err(e) => {
+                tracing::warn!(error = %e, "companion dispatcher failed; using raw text");
+                crate::companion::dispatcher::Dispatched {
+                    cleaned_text: assistant_text.clone(),
+                    approvals: Vec::new(),
+                    navigations: Vec::new(),
+                    lab_opens: Vec::new(),
+                    dashboards: Vec::new(),
+                    quick_replies: Vec::new(),
+                    tts_text: None,
+                    warnings: vec![format!("dispatcher error: {e}")],
+                }
             }
-        }
-    };
+        };
     let display_text = if dispatched.cleaned_text.trim().is_empty() {
         // The whole reply was ops with no prose. Don't render an empty
         // bubble — replace with a tiny placeholder.
@@ -300,12 +318,7 @@ pub async fn send_turn(
         }
         #[cfg(not(feature = "ml"))]
         {
-            episodic::append_episode(
-                &user_db,
-                &session_id,
-                EpisodeRole::Assistant,
-                &display_text,
-            )?
+            episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, &display_text)?
         }
     };
 
@@ -322,6 +335,36 @@ pub async fn send_turn(
     for route in &dispatched.navigations {
         if let Err(e) = app.emit(NAVIGATE_EVENT, route) {
             tracing::warn!(error = %e, route = %route, "companion navigate event emit failed");
+        }
+    }
+
+    // Phase F: open_lab ops — fire one event per (persona_id, mode).
+    // The persona editor listens and switches tabs without nagging the
+    // user with an approval card, same UX as open_route.
+    for (persona_id, mode) in &dispatched.lab_opens {
+        let payload = serde_json::json!({
+            "personaId": persona_id,
+            "mode": mode,
+        });
+        if let Err(e) = app.emit(OPEN_LAB_EVENT, payload) {
+            tracing::warn!(error = %e, "companion open_lab event emit failed");
+        }
+    }
+
+    // Phase F: compose_dashboard auto-fire. Persist each spec, then
+    // emit a compose-dashboard event so the frontend navigates the
+    // user straight to the Dashboard tab. If multiple specs landed in
+    // one turn (rare — Athena should pick the latest), we save and
+    // emit for each, but the singleton write naturally collapses.
+    for spec_json in &dispatched.dashboards {
+        if let Err(e) =
+            crate::companion::brain::dashboard::save_dashboard(&user_db, spec_json)
+        {
+            tracing::warn!(error = %e, "companion compose_dashboard save failed");
+            continue;
+        }
+        if let Err(e) = app.emit(COMPOSE_DASHBOARD_EVENT, serde_json::json!({})) {
+            tracing::warn!(error = %e, "companion compose_dashboard event emit failed");
         }
     }
 
@@ -523,8 +566,9 @@ async fn run_cli(
 /// keeps working across CLI version drift.
 fn is_stale_session_error(e: &AppError) -> bool {
     let msg = e.to_string().to_lowercase();
-    msg.contains("no conversation found") || msg.contains("session id")
-        && (msg.contains("not found") || msg.contains("does not exist"))
+    msg.contains("no conversation found")
+        || msg.contains("session id")
+            && (msg.contains("not found") || msg.contains("does not exist"))
 }
 
 /// Clear the persisted claude_session_id so the next turn starts a fresh
@@ -557,15 +601,14 @@ pub fn wipe_transcript(pool: &UserDbPool) -> Result<(), AppError> {
 
     // Collect episode IDs first; we need them for the FTS + vec0 deletes
     // before we drop the parent node rows.
-    let episode_ids: Vec<String> = match conn.prepare(
-        "SELECT id FROM companion_node WHERE kind = 'episode'",
-    ) {
-        Ok(mut stmt) => stmt
-            .query_map([], |row| row.get::<_, String>(0))
-            .map(|rows| rows.filter_map(Result::ok).collect())
-            .unwrap_or_default(),
-        Err(_) => Vec::new(),
-    };
+    let episode_ids: Vec<String> =
+        match conn.prepare("SELECT id FROM companion_node WHERE kind = 'episode'") {
+            Ok(mut stmt) => stmt
+                .query_map([], |row| row.get::<_, String>(0))
+                .map(|rows| rows.filter_map(Result::ok).collect())
+                .unwrap_or_default(),
+            Err(_) => Vec::new(),
+        };
 
     if !episode_ids.is_empty() {
         let placeholders = episode_ids

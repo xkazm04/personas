@@ -158,7 +158,10 @@ pub fn diagnose(
             }
             // Use knowledge-base recommended delay when available, otherwise
             // fall back to exponential backoff.
-            let computed_delay = std::cmp::min(30u64.saturating_mul(1 << consecutive_failures), MAX_BACKOFF_SECS);
+            let computed_delay = std::cmp::min(
+                30u64.saturating_mul(1 << consecutive_failures),
+                MAX_BACKOFF_SECS,
+            );
             let delay = kb_hint
                 .and_then(|h| h.recommended_delay_secs)
                 .map(|kb_delay| std::cmp::min(kb_delay, MAX_BACKOFF_SECS))
@@ -187,9 +190,7 @@ pub fn diagnose(
             ),
             severity: "high".into(),
             db_category: "external".into(),
-            suggested_fix: Some(
-                "Wait for the usage limit to reset, or upgrade your plan.".into(),
-            ),
+            suggested_fix: Some("Wait for the usage limit to reset, or upgrade your plan.".into()),
         },
         FailureCategory::Timeout => {
             // Escalation policy (consistent with RateLimit): exhaust
@@ -217,7 +218,8 @@ pub fn diagnose(
                     ),
                 }
             } else {
-                let new_timeout = std::cmp::min(current_timeout_ms.saturating_mul(2), MAX_TIMEOUT_MS);
+                let new_timeout =
+                    std::cmp::min(current_timeout_ms.saturating_mul(2), MAX_TIMEOUT_MS);
                 HealingDiagnosis {
                     category: *category,
                     action: HealingAction::RetryWithTimeout { new_timeout_ms: new_timeout },
@@ -274,9 +276,7 @@ pub fn diagnose(
             ),
             severity: "medium".into(),
             db_category: "external".into(),
-            suggested_fix: Some(
-                "Check network connectivity and firewall settings.".into(),
-            ),
+            suggested_fix: Some("Check network connectivity and firewall settings.".into()),
         },
         FailureCategory::ToolError => HealingDiagnosis {
             category: *category,
@@ -316,9 +316,7 @@ pub fn diagnose(
             ),
             severity: "low".into(),
             db_category: "prompt".into(),
-            suggested_fix: Some(
-                "Check input data format and prompt structure.".into(),
-            ),
+            suggested_fix: Some("Check input data format and prompt structure.".into()),
         },
         FailureCategory::Unknown => HealingDiagnosis {
             category: *category,
@@ -408,7 +406,11 @@ mod tests {
             FailureCategory::ProviderNotFound,
         );
         assert_eq!(
-            classify_error("'claude' is not recognized as an internal command", false, false),
+            classify_error(
+                "'claude' is not recognized as an internal command",
+                false,
+                false
+            ),
             FailureCategory::ProviderNotFound,
         );
     }
@@ -441,7 +443,14 @@ mod tests {
 
     #[test]
     fn test_diagnose_rate_limit_backoff() {
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, None);
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            0,
+            None,
+        );
         assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: 30 });
         assert_eq!(d.severity, "medium");
     }
@@ -449,14 +458,28 @@ mod tests {
     #[test]
     fn test_diagnose_rate_limit_escalating_backoff() {
         // consecutive_failures = 3 -> 30 * 2^3 = 240
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 3, 0, None);
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            3,
+            0,
+            None,
+        );
         assert_eq!(
             d.action,
             HealingAction::RetryWithBackoff { delay_secs: 240 }
         );
 
         // consecutive_failures = 5 -> 30 * 32 = 960 -> capped at 300
-        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 5, 0, None);
+        let d2 = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            5,
+            0,
+            None,
+        );
         assert_eq!(
             d2.action,
             HealingAction::RetryWithBackoff { delay_secs: 300 }
@@ -466,12 +489,26 @@ mod tests {
     #[test]
     fn test_diagnose_rate_limit_retries_exhausted() {
         // retry_count = MAX_RETRY_COUNT -> escalate to CreateIssue
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT, None);
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            MAX_RETRY_COUNT,
+            None,
+        );
         assert_eq!(d.action, HealingAction::CreateIssue);
         assert_eq!(d.severity, "high");
 
         // retry_count > MAX_RETRY_COUNT -> still CreateIssue
-        let d2 = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, MAX_RETRY_COUNT + 1, None);
+        let d2 = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            MAX_RETRY_COUNT + 1,
+            None,
+        );
         assert_eq!(d2.action, HealingAction::CreateIssue);
     }
 
@@ -489,7 +526,14 @@ mod tests {
     #[test]
     fn test_diagnose_timeout_max_cap() {
         // 1_200_000 * 2 = 2_400_000 -> capped at MAX_TIMEOUT_MS (1_200_000)
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 1_200_000, 0, 0, None);
+        let d = diagnose(
+            &FailureCategory::Timeout,
+            "timed out",
+            1_200_000,
+            0,
+            0,
+            None,
+        );
         assert_eq!(
             d.action,
             HealingAction::RetryWithTimeout {
@@ -504,7 +548,9 @@ mod tests {
         let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 1, 0, None);
         assert_eq!(
             d.action,
-            HealingAction::RetryWithTimeout { new_timeout_ms: 1_200_000 }
+            HealingAction::RetryWithTimeout {
+                new_timeout_ms: 1_200_000
+            }
         );
         assert_eq!(d.severity, "medium");
     }
@@ -512,7 +558,14 @@ mod tests {
     #[test]
     fn test_diagnose_timeout_retries_exhausted() {
         // Even with consecutive_failures = 0, retry_count at limit should escalate
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, MAX_RETRY_COUNT, None);
+        let d = diagnose(
+            &FailureCategory::Timeout,
+            "timed out",
+            600_000,
+            0,
+            MAX_RETRY_COUNT,
+            None,
+        );
         assert_eq!(d.action, HealingAction::CreateIssue);
     }
 
@@ -534,9 +587,19 @@ mod tests {
             recommended_delay_secs: Some(120),
             occurrence_count: 3,
         };
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
         // KB delay (120) overrides computed delay (30)
-        assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: 120 });
+        assert_eq!(
+            d.action,
+            HealingAction::RetryWithBackoff { delay_secs: 120 }
+        );
     }
 
     #[test]
@@ -545,8 +608,20 @@ mod tests {
             recommended_delay_secs: Some(999),
             occurrence_count: 2,
         };
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
-        assert_eq!(d.action, HealingAction::RetryWithBackoff { delay_secs: MAX_BACKOFF_SECS });
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
+        assert_eq!(
+            d.action,
+            HealingAction::RetryWithBackoff {
+                delay_secs: MAX_BACKOFF_SECS
+            }
+        );
     }
 
     #[test]
@@ -556,7 +631,14 @@ mod tests {
             occurrence_count: 5, // meets KB_ESCALATION_THRESHOLD
         };
         // Even with retry_count=0 and consecutive_failures=0, high occurrence escalates
-        let d = diagnose(&FailureCategory::RateLimit, "rate limited", 600_000, 0, 0, Some(&hint));
+        let d = diagnose(
+            &FailureCategory::RateLimit,
+            "rate limited",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
         assert_eq!(d.action, HealingAction::CreateIssue);
     }
 
@@ -566,7 +648,14 @@ mod tests {
             recommended_delay_secs: None,
             occurrence_count: 5,
         };
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0, Some(&hint));
+        let d = diagnose(
+            &FailureCategory::Timeout,
+            "timed out",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
         assert_eq!(d.action, HealingAction::CreateIssue);
     }
 
@@ -576,11 +665,20 @@ mod tests {
             recommended_delay_secs: None,
             occurrence_count: 4, // below threshold
         };
-        let d = diagnose(&FailureCategory::Timeout, "timed out", 600_000, 0, 0, Some(&hint));
+        let d = diagnose(
+            &FailureCategory::Timeout,
+            "timed out",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
         // Should still retry, not escalate
         assert_eq!(
             d.action,
-            HealingAction::RetryWithTimeout { new_timeout_ms: 1_200_000 }
+            HealingAction::RetryWithTimeout {
+                new_timeout_ms: 1_200_000
+            }
         );
     }
 }

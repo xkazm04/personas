@@ -27,7 +27,13 @@ function readInitialSelection(): string {
   if (typeof window === 'undefined') return getActiveRelease().version;
   try {
     const stored = window.sessionStorage.getItem(SELECTION_STORAGE_KEY);
-    if (stored && getReleaseByVersion(stored)) return stored;
+    if (stored) {
+      if (getReleaseByVersion(stored)) return stored;
+      // Stored version no longer exists (e.g. dropped from releases.json
+      // in a later build). Drop the stale value so we don't re-read it on
+      // every mount and keep flashing the wrong tab before the fallback.
+      window.sessionStorage.removeItem(SELECTION_STORAGE_KEY);
+    }
   } catch {
     // sessionStorage may be unavailable (e.g. SSR, sandboxed iframes) — fall back silently.
   }
@@ -44,6 +50,11 @@ export default function HomeReleases() {
 
   const handleSelect = useCallback((version: string) => {
     setSelectedVersion(version);
+    // Only persist versions we can actually rehydrate. A caller could pass
+    // any string in principle, and persisting an unknown value would
+    // re-introduce the stale-selection flash that `readInitialSelection`
+    // is now defending against.
+    if (!getReleaseByVersion(version)) return;
     try {
       window.sessionStorage.setItem(SELECTION_STORAGE_KEY, version);
     } catch {

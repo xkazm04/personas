@@ -43,7 +43,10 @@ pub(crate) fn build_design_prompt(
         }
     }
     if !persona.system_prompt.is_empty() {
-        prompt.push_str(&format!("Current system prompt: {}\n", persona.system_prompt));
+        prompt.push_str(&format!(
+            "Current system prompt: {}\n",
+            persona.system_prompt
+        ));
     }
     prompt.push('\n');
 
@@ -140,9 +143,15 @@ pub(crate) fn build_refinement_prompt_with_history(
             // Parse messages and render as a readable thread
             if let Ok(messages) = serde_json::from_str::<Vec<serde_json::Value>>(history) {
                 for msg in &messages {
-                    let role = msg.get("role").and_then(|v| v.as_str()).unwrap_or("unknown");
+                    let role = msg
+                        .get("role")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown");
                     let content = msg.get("content").and_then(|v| v.as_str()).unwrap_or("");
-                    let msg_type = msg.get("messageType").and_then(|v| v.as_str()).unwrap_or("");
+                    let msg_type = msg
+                        .get("messageType")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
                     if content.is_empty() {
                         continue;
                     }
@@ -708,7 +717,12 @@ mod tests {
     #[test]
     fn test_build_refinement_prompt() {
         let result = sample_design_result();
-        let prompt = build_refinement_prompt_with_history(result, "Add error reporting to Slack", None, None);
+        let prompt = build_refinement_prompt_with_history(
+            result,
+            "Add error reporting to Slack",
+            None,
+            None,
+        );
 
         assert!(prompt.contains("# Design Refinement"));
         assert!(prompt.contains("Email monitor agent"));
@@ -721,7 +735,12 @@ mod tests {
     fn test_build_refinement_prompt_with_context() {
         let result = sample_design_result();
         let ctx = r#"{"files":[{"name":"api.yaml","content":"openapi: 3.0"}],"references":["https://example.com"]}"#;
-        let prompt = build_refinement_prompt_with_history(result, "Add error reporting to Slack", Some(ctx), None);
+        let prompt = build_refinement_prompt_with_history(
+            result,
+            "Add error reporting to Slack",
+            Some(ctx),
+            None,
+        );
 
         assert!(prompt.contains("# Design Refinement"));
         assert!(prompt.contains("## Design Context"));
@@ -797,7 +816,10 @@ mod tests {
 
     #[test]
     fn test_extract_question_not_present() {
-        let output = format!("Here is the full design:\n```json\n{}\n```", sample_design_result());
+        let output = format!(
+            "Here is the full design:\n```json\n{}\n```",
+            sample_design_result()
+        );
         let question = extract_design_question(&output);
         assert!(question.is_none());
     }

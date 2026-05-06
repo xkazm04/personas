@@ -123,6 +123,41 @@ pub trait CompilationPipeline {
 }
 
 // ============================================================================
+// Prompt-assembly inventory (compile-time guard against duplication)
+// ============================================================================
+
+/// Canonical inventory of prompt-assembly entry points across the three
+/// compilers that implement [`CompilationPipeline`]. See
+/// [`engine/README.md`](./README.md) for the decision matrix that explains
+/// which compiler owns which artifact.
+///
+/// This list is paired with the `const _: () = assert!(...)` below to make
+/// it impossible to silently land a fifth compiler with an unregistered
+/// prompt-assembly helper. If you add or remove a pipeline, update both this
+/// list and the README in the same change.
+///
+/// `chain.rs` is deliberately **not** listed: it is a runtime event-cascade
+/// evaluator and assembles no prompt.
+#[doc(hidden)]
+#[allow(dead_code)]
+pub const PROMPT_ASSEMBLY_INVENTORY: &[&str] = &[
+    "engine::compiler::assemble_prompt",
+    "engine::intent_compiler::build_intent_prompt",
+    "engine::workflow_compiler::WorkflowCompiler::assemble_prompt",
+];
+
+/// Compile-time assertion: keep the inventory at exactly three entries. If
+/// this fires, you have either added a compiler without registering it
+/// (breaking the documented boundary in `engine/README.md`) or removed one
+/// without retiring its README row.
+const _: () = assert!(
+    PROMPT_ASSEMBLY_INVENTORY.len() == 3,
+    "engine: PROMPT_ASSEMBLY_INVENTORY must list exactly the three compilers \
+     described in engine/README.md (compiler, intent_compiler, workflow_compiler). \
+     Update the inventory AND the README decision matrix together."
+);
+
+// ============================================================================
 // Tests
 // ============================================================================
 
@@ -140,7 +175,10 @@ mod tests {
 
     #[test]
     fn test_stage_labels() {
-        assert_eq!(CompilationStage::PromptAssembly.label(), "Assembling prompt");
+        assert_eq!(
+            CompilationStage::PromptAssembly.label(),
+            "Assembling prompt"
+        );
         assert_eq!(CompilationStage::Validation.label(), "Validating result");
     }
 
@@ -173,6 +211,19 @@ mod tests {
         let pipeline = EchoPipeline;
         let prompt = pipeline.assemble_prompt(&"hello".to_string());
         assert_eq!(prompt, "Echo: hello");
+    }
+
+    #[test]
+    fn test_prompt_assembly_inventory_entries_are_unique() {
+        let mut sorted: Vec<&&str> = PROMPT_ASSEMBLY_INVENTORY.iter().collect();
+        sorted.sort();
+        let before = sorted.len();
+        sorted.dedup();
+        assert_eq!(
+            before,
+            sorted.len(),
+            "Duplicate entries in PROMPT_ASSEMBLY_INVENTORY — each compiler must register exactly one prompt-assembly helper"
+        );
     }
 
     #[test]

@@ -1,21 +1,19 @@
 //! Runtime persona prompt assembly. See [`README.md`](./README.md) for the
 //! module map, prompt sections, and invariants.
 
+mod advisory;
 mod capabilities;
-mod runtime_safety;
-mod variables;
 mod cli_args;
 mod resume_prompt;
-mod advisory;
+mod runtime_safety;
 mod templates;
+mod variables;
 
 pub use capabilities::{
     active_capabilities_fingerprint, build_tool_documentation, parse_model_profile,
     render_active_capabilities, render_generation_policy_lines,
 };
-pub use cli_args::{
-    apply_provider_env, build_cli_args, build_resume_cli_args,
-};
+pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args};
 pub use resume_prompt::assemble_resume_prompt;
 pub use variables::replace_variables;
 
@@ -24,9 +22,8 @@ use runtime_safety::{wrap_runtime_xml_boundary, RUNTIME_CANARY_INSTRUCTION};
 use templates::{
     DELIBERATE_MODE_DIRECTIVE, EXECUTION_MODE_DIRECTIVE, MEMORY_SYSTEM_PREAMBLE,
     PROTOCOL_AGENT_MEMORY, PROTOCOL_EMIT_EVENT, PROTOCOL_EXECUTION_FLOW,
-    PROTOCOL_INTEGRATION_REQUIREMENTS, PROTOCOL_KNOWLEDGE_ANNOTATION,
-    PROTOCOL_MANUAL_REVIEW, PROTOCOL_OUTCOME_ASSESSMENT, PROTOCOL_PERSONA_ACTION,
-    PROTOCOL_USER_MESSAGE,
+    PROTOCOL_INTEGRATION_REQUIREMENTS, PROTOCOL_KNOWLEDGE_ANNOTATION, PROTOCOL_MANUAL_REVIEW,
+    PROTOCOL_OUTCOME_ASSESSMENT, PROTOCOL_PERSONA_ACTION, PROTOCOL_USER_MESSAGE,
 };
 
 use crate::db::models::{LlmUsageHint, Persona, PersonaToolDefinition};
@@ -43,7 +40,6 @@ pub struct ResolvedConnectorHint {
     pub label: String,
     pub hint: LlmUsageHint,
 }
-
 
 /// Execution discipline mode — picks between the default autonomous directive
 /// (business personas) and a Karpathy-aligned "deliberate" variant (code personas
@@ -113,7 +109,10 @@ pub fn assemble_prompt(
 
     // Context-aware variable substitution: replace {{variable}} in persona fields.
     let name = replace_variables(&persona.name, persona, input_data);
-    let description = persona.description.as_ref().map(|d| replace_variables(d, persona, input_data));
+    let description = persona
+        .description
+        .as_ref()
+        .map(|d| replace_variables(d, persona, input_data));
 
     // Header
     prompt.push_str(&format!("# Persona: {name}\n\n"));
@@ -134,7 +133,10 @@ pub fn assemble_prompt(
     // persona can route its behavior on event_type + source. Legacy raw payloads
     // skip this section and behave exactly as before.
     if let Some(event_meta) = input_data.and_then(|d| d.get("_event")) {
-        let event_type = event_meta.get("event_type").and_then(|v| v.as_str()).unwrap_or("");
+        let event_type = event_meta
+            .get("event_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
         if !event_type.is_empty() {
             prompt.push_str("## Triggering Event\n");
             prompt.push_str(&format!("- **event_type**: `{event_type}`\n"));
@@ -220,7 +222,8 @@ pub fn assemble_prompt(
                         prompt.push_str(&format!(
                             "**Currently firing: `{et}`**\n\n{substituted}\n\n",
                         ));
-                    } else if let Some(default) = handlers.get("_default").and_then(|v| v.as_str()) {
+                    } else if let Some(default) = handlers.get("_default").and_then(|v| v.as_str())
+                    {
                         let substituted = replace_variables(default, persona, input_data);
                         prompt.push_str(&format!(
                             "**Currently firing: `{et}` (no specific handler, using _default)**\n\n{substituted}\n\n",
@@ -232,7 +235,10 @@ pub fn assemble_prompt(
                 // every event type it's wired for. `_default` is excluded from
                 // the list — it's not a real event_type.
                 prompt.push_str("### All event types this persona handles\n");
-                let mut keys: Vec<&String> = handlers.keys().filter(|k| k.as_str() != "_default").collect();
+                let mut keys: Vec<&String> = handlers
+                    .keys()
+                    .filter(|k| k.as_str() != "_default")
+                    .collect();
                 keys.sort();
                 for key in keys {
                     if let Some(text) = handlers.get(key).and_then(|v| v.as_str()) {
@@ -286,15 +292,15 @@ pub fn assemble_prompt(
             // Custom Sections
             if let Some(sections) = sp.get("customSections").and_then(|v| v.as_array()) {
                 for section in sections {
-                    let heading = section.get("title")
+                    let heading = section
+                        .get("title")
                         .or_else(|| section.get("label"))
                         .or_else(|| section.get("name"))
                         .or_else(|| section.get("key"))
                         .and_then(|v| v.as_str());
-                    if let (Some(name), Some(content)) = (
-                        heading,
-                        section.get("content").and_then(|v| v.as_str()),
-                    ) {
+                    if let (Some(name), Some(content)) =
+                        (heading, section.get("content").and_then(|v| v.as_str()))
+                    {
                         prompt.push_str(&format!("## {}\n", name));
                         prompt.push_str(&wrap_runtime_xml_boundary(
                             "persona_custom_section",
@@ -340,7 +346,9 @@ pub fn assemble_prompt(
     // Filters design_context.useCases by `enabled != false` so toggling a
     // capability immediately removes it from the LLM's awareness. Always
     // rendered in normal execution; advisory mode has its own rendering.
-    prompt.push_str(&render_active_capabilities(persona.design_context.as_deref()));
+    prompt.push_str(&render_active_capabilities(
+        persona.design_context.as_deref(),
+    ));
 
     // Workspace Shared Instructions (from group/workspace defaults)
     if let Some(ws_instructions) = workspace_instructions {
@@ -368,7 +376,9 @@ pub fn assemble_prompt(
     prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"category\": \"learned|preference|fact|instruction|context|constraint\", \"importance\": 1-5, \"tags\": [\"string\"]}`\n\n");
     prompt.push_str("### emit_message\nSend your main output/report to the user. This is how users receive your work.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"content_type\": \"success|info|warning|error\", \"priority\": \"normal|high|low\"}`\n\n");
-    prompt.push_str("### emit_event\nSignal completion or broadcast a custom event for other agents/systems.\n");
+    prompt.push_str(
+        "### emit_event\nSignal completion or broadcast a custom event for other agents/systems.\n",
+    );
     prompt.push_str("**Input**: `{\"event_type\": \"string\", \"data\": {}}`\n\n");
     prompt.push_str("### request_review\nRequest human review for a business decision.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"severity\": \"low|medium|high|critical\", \"context_data\": \"string\", \"suggested_actions\": [\"string\"]}`\n\n");
@@ -396,7 +406,8 @@ pub fn assemble_prompt(
     if let Some(hints) = credential_hints {
         if !hints.is_empty() {
             prompt.push_str("## Available Credentials (via secure proxy)\n");
-            prompt.push_str("Authenticated API calls are routed through a local credential proxy.\n");
+            prompt
+                .push_str("Authenticated API calls are routed through a local credential proxy.\n");
             prompt.push_str("Credential secrets are NOT in your environment -- use the proxy endpoint instead.\n\n");
             prompt.push_str("Credential IDs available:\n");
             for hint in hints {
@@ -595,16 +606,20 @@ pub fn assemble_prompt(
                     ));
                 }
             }
-            if let Some(channels) = use_case.get("notification_channels").and_then(|v| v.as_array()) {
+            if let Some(channels) = use_case
+                .get("notification_channels")
+                .and_then(|v| v.as_array())
+            {
                 let types: Vec<String> = channels
                     .iter()
-                    .filter_map(|c| c.get("type").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                    .filter_map(|c| {
+                        c.get("type")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    })
                     .collect();
                 if !types.is_empty() {
-                    prompt.push_str(&format!(
-                        "Deliver outputs via: {}\n",
-                        types.join(", ")
-                    ));
+                    prompt.push_str(&format!("Deliver outputs via: {}\n", types.join(", ")));
                 }
             }
             // Phase C5b — render the capability's generation policy so the LLM
@@ -686,24 +701,17 @@ pub fn assemble_prompt(
     prompt
 }
 
-
-
-
-
-
-
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 #[cfg(test)]
 mod tests {
+    use super::cli_args::DEFAULT_EFFORT;
+    use super::runtime_safety::{sanitize_runtime_variable, MAX_RUNTIME_VAR_LENGTH};
     use super::*;
     use crate::db::models::{Persona, PersonaToolDefinition};
     use crate::engine::types::ModelProfile;
-    use super::cli_args::DEFAULT_EFFORT;
-    use super::runtime_safety::{sanitize_runtime_variable, MAX_RUNTIME_VAR_LENGTH};
 
     fn test_persona() -> Persona {
         Persona {
@@ -761,7 +769,16 @@ mod tests {
     #[test]
     fn test_assemble_minimal_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -776,7 +793,16 @@ mod tests {
     fn assemble_prompt_defaults_to_autonomous_mode() {
         // Persona with parameters = None should fall back to AUTONOMOUS discipline.
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         assert!(
             prompt.contains("## Execution Mode: AUTONOMOUS"),
             "Persona with no parameters should use AUTONOMOUS mode"
@@ -807,7 +833,16 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         assert!(
             prompt.contains("## Execution Mode: DELIBERATE"),
             "Persona with execution_discipline=deliberate should use DELIBERATE mode"
@@ -840,7 +875,16 @@ mod tests {
         // Garbage that is not valid JSON: should fall back to AUTONOMOUS without panic.
         let mut persona = test_persona();
         persona.parameters = Some("not valid json".to_string());
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         assert!(
             prompt.contains("## Execution Mode: AUTONOMOUS"),
             "Malformed parameters JSON should fall back to AUTONOMOUS"
@@ -853,7 +897,16 @@ mod tests {
             ])
             .to_string(),
         );
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         assert!(
             prompt.contains("## Execution Mode: AUTONOMOUS"),
             "Unknown discipline value should fall back to AUTONOMOUS"
@@ -867,7 +920,16 @@ mod tests {
             ])
             .to_string(),
         );
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         assert!(
             prompt.contains("## Execution Mode: AUTONOMOUS"),
             "Missing execution_discipline key should fall back to AUTONOMOUS"
@@ -877,7 +939,16 @@ mod tests {
     #[test]
     fn test_prompt_contains_persona_name() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("# Persona: Test Agent"));
         assert!(prompt.contains("You are Test Agent."));
@@ -886,7 +957,16 @@ mod tests {
     #[test]
     fn test_prompt_contains_system_prompt() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Identity"));
         assert!(prompt.contains("You are a helpful test agent."));
@@ -909,7 +989,16 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Identity\n"));
         assert!(prompt.contains("I am a code reviewer."));
@@ -939,7 +1028,16 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Web Search Research Prompt"));
         assert!(prompt.contains("Q1 2026 tech industry reports"));
@@ -958,7 +1056,16 @@ mod tests {
             .to_string(),
         );
 
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(!prompt.contains("## Web Search Research Prompt"));
     }
@@ -967,7 +1074,16 @@ mod tests {
     fn test_prompt_with_tools() {
         let persona = test_persona();
         let tool = test_tool();
-        let prompt = assemble_prompt(&persona, &[tool], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[tool],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Available Tools"));
         assert!(prompt.contains("### file_reader"));
@@ -1005,7 +1121,16 @@ mod tests {
     fn test_prompt_with_input_data() {
         let persona = test_persona();
         let input = serde_json::json!({"task": "review", "files": ["main.rs"]});
-        let prompt = assemble_prompt(&persona, &[], Some(&input), None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            Some(&input),
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Input Data"));
         assert!(prompt.contains("```json"));
@@ -1028,9 +1153,12 @@ mod tests {
         let hint = LlmUsageHint {
             overview: "GitHub REST API v3. Auth via PAT in $GITHUB_TOKEN.".into(),
             examples: vec![
-                "curl -H \"Authorization: Bearer $GITHUB_TOKEN\" https://api.github.com/user".into(),
+                "curl -H \"Authorization: Bearer $GITHUB_TOKEN\" https://api.github.com/user"
+                    .into(),
             ],
-            gotchas: Some(vec!["Pagination defaults to 30 items; use ?per_page=100.".into()]),
+            gotchas: Some(vec![
+                "Pagination defaults to 30 items; use ?per_page=100.".into()
+            ]),
         };
         let hints = vec![ResolvedConnectorHint {
             label: "GitHub".into(),
@@ -1149,7 +1277,16 @@ mod tests {
     #[test]
     fn test_prompt_contains_protocols() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## Communication Protocols"));
         assert!(prompt.contains("### User Message Protocol"));
@@ -1164,7 +1301,16 @@ mod tests {
     #[test]
     fn test_prompt_ends_with_execute_now() {
         let persona = test_persona();
-        let prompt = assemble_prompt(&persona, &[], None, None, None, None, #[cfg(feature = "desktop")] None);
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
 
         assert!(prompt.contains("## EXECUTE NOW"));
         assert!(prompt.contains("Act autonomously"));
@@ -1290,7 +1436,10 @@ mod tests {
         assert!(!args.args.contains(&"--max-turns".to_string()));
         // No API_TIMEOUT_MS without a persona
         assert!(
-            !args.env_overrides.iter().any(|(k, _)| k == "API_TIMEOUT_MS"),
+            !args
+                .env_overrides
+                .iter()
+                .any(|(k, _)| k == "API_TIMEOUT_MS"),
             "API_TIMEOUT_MS should not be set without a persona"
         );
     }
@@ -1335,7 +1484,10 @@ mod tests {
         let args = build_cli_args(Some(&persona), None);
 
         assert!(
-            !args.env_overrides.iter().any(|(k, _)| k == "API_TIMEOUT_MS"),
+            !args
+                .env_overrides
+                .iter()
+                .any(|(k, _)| k == "API_TIMEOUT_MS"),
             "API_TIMEOUT_MS should not be set when timeout_ms is 0"
         );
     }
@@ -1349,10 +1501,7 @@ mod tests {
             "DISABLE_UPDATES",
             "CLAUDE_CODE_HIDE_CWD",
         ] {
-            let entry = args
-                .env_overrides
-                .iter()
-                .find(|(k, _)| k == key);
+            let entry = args.env_overrides.iter().find(|(k, _)| k == key);
             assert!(
                 entry.is_some(),
                 "{key} must be set in env_overrides to suppress nonessential CLI traffic"
@@ -1370,10 +1519,7 @@ mod tests {
             "DISABLE_UPDATES",
             "CLAUDE_CODE_HIDE_CWD",
         ] {
-            let entry = args
-                .env_overrides
-                .iter()
-                .find(|(k, _)| k == key);
+            let entry = args.env_overrides.iter().find(|(k, _)| k == key);
             assert!(
                 entry.is_some(),
                 "{key} must be set on resume too so continued sessions stay privacy-positive"
@@ -1443,7 +1589,10 @@ mod tests {
         // Test input data variables
         let input_text = "Action: {{task_name}}, Level: {{priority_level}}, Urgent: {{is_urgent}}";
         let input_replaced = replace_variables(input_text, &persona, Some(&input));
-        assert_eq!(input_replaced, "Action: Review Code, Level: 1, Urgent: true");
+        assert_eq!(
+            input_replaced,
+            "Action: Review Code, Level: 1, Urgent: true"
+        );
 
         // Test non-existent variable (should remain as-is)
         let missing_text = "Hello {{ghost}}";
@@ -1953,7 +2102,10 @@ mod tests {
         .to_string();
         let fp_disabled = active_capabilities_fingerprint(Some(&dc_one_disabled));
 
-        assert_ne!(fp_all, fp_disabled, "session hash must invalidate on toggle");
+        assert_ne!(
+            fp_all, fp_disabled,
+            "session hash must invalidate on toggle"
+        );
         assert!(fp_disabled.contains("uc_perf"));
         assert!(!fp_disabled.contains("uc_gem"));
     }
@@ -1999,8 +2151,10 @@ mod tests {
         assert!(prompt.contains("## Active Capabilities"));
         assert!(prompt.contains("Performance Analysis"));
         assert!(prompt.contains("Weekly Gem Finder"));
-        assert!(!prompt.contains("Gov Investment Tracker"),
-            "disabled capability must not leak into the runtime prompt");
+        assert!(
+            !prompt.contains("Gov Investment Tracker"),
+            "disabled capability must not leak into the runtime prompt"
+        );
         // Trigger hints render too.
         assert!(prompt.contains("Mondays 8am"));
     }

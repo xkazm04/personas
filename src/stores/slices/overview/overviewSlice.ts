@@ -121,6 +121,12 @@ const MAX_GLOBAL_LIMIT = 500;
 
 /** Sequence counter to discard stale fetchGlobalExecutions responses. */
 let fetchGlobalSeq = 0;
+/** Sequence counter to discard stale fetchGlobalExecutionCounts responses.
+ *  Without this, rapidly switching the persona filter could let an older
+ *  count request resolve last and overwrite the badges with the previous
+ *  persona's totals, even though the row list (guarded by fetchGlobalSeq)
+ *  is correct. */
+let fetchGlobalCountsSeq = 0;
 
 export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSlice> = (set, get) => ({
   overviewTab: "home" as OverviewTab,
@@ -206,10 +212,13 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
   },
 
   fetchGlobalExecutionCounts: async (personaId?: string) => {
+    const seq = ++fetchGlobalCountsSeq;
     try {
       const counts = await countExecutions(personaId);
+      if (seq !== fetchGlobalCountsSeq) return; // superseded by a newer request
       set({ globalExecutionCounts: counts });
     } catch (err) {
+      if (seq !== fetchGlobalCountsSeq) return; // superseded by a newer request
       log.warn('overviewSlice', 'fetchGlobalExecutionCounts failed', { error: String(err) });
     }
   },

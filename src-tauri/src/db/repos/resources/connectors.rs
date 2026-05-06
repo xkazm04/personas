@@ -14,41 +14,58 @@ row_mapper!(row_to_connector -> ConnectorDefinition {
     created_at, updated_at,
 });
 
-crud_get_by_id!(ConnectorDefinition, "connector_definitions", "Connector definition", row_to_connector);
-crud_get_all!(ConnectorDefinition, "connector_definitions", row_to_connector, "is_builtin DESC, name");
+crud_get_by_id!(
+    ConnectorDefinition,
+    "connector_definitions",
+    "Connector definition",
+    row_to_connector
+);
+crud_get_all!(
+    ConnectorDefinition,
+    "connector_definitions",
+    row_to_connector,
+    "is_builtin DESC, name"
+);
 crud_delete!("connector_definitions");
 
 pub fn get_by_name(pool: &DbPool, name: &str) -> Result<Option<ConnectorDefinition>, AppError> {
-    timed_query!("connector_definitions", "connector_definitions::get_by_name", {
-        let conn = pool.get()?;
-        let result = conn.query_row(
-            "SELECT * FROM connector_definitions WHERE name = ?1",
-            params![name],
-            row_to_connector,
-        );
+    timed_query!(
+        "connector_definitions",
+        "connector_definitions::get_by_name",
+        {
+            let conn = pool.get()?;
+            let result = conn.query_row(
+                "SELECT * FROM connector_definitions WHERE name = ?1",
+                params![name],
+                row_to_connector,
+            );
 
-        match result {
-            Ok(def) => Ok(Some(def)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::Database(e)),
+            match result {
+                Ok(def) => Ok(Some(def)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
         }
-
-    })
+    )
 }
 
 pub fn get_by_category(
     pool: &DbPool,
     category: &str,
 ) -> Result<Vec<ConnectorDefinition>, AppError> {
-    timed_query!("connector_definitions", "connector_definitions::get_by_category", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "connector_definitions",
+        "connector_definitions::get_by_category",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM connector_definitions WHERE category = ?1 ORDER BY is_builtin DESC, name",
         )?;
-        let rows = stmt.query_map(params![category], row_to_connector)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
-    })
+            let rows = stmt.query_map(params![category], row_to_connector)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn create(
@@ -96,7 +113,6 @@ pub fn create(
         )?;
 
         get_by_id(pool, &id)
-
     })
 }
 
@@ -128,14 +144,49 @@ pub fn update(
 
         push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
         push_field_param!(input.label, "label", sets, param_idx, param_values, clone);
-        push_field_param!(input.icon_url, "icon_url", sets, param_idx, param_values, clone);
+        push_field_param!(
+            input.icon_url,
+            "icon_url",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
         push_field_param!(input.color, "color", sets, param_idx, param_values, clone);
-        push_field_param!(input.category, "category", sets, param_idx, param_values, clone);
+        push_field_param!(
+            input.category,
+            "category",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
         push_field_param!(input.fields, "fields", sets, param_idx, param_values, clone);
-        push_field_param!(input.healthcheck_config, "healthcheck_config", sets, param_idx, param_values, clone);
-        push_field_param!(input.services, "services", sets, param_idx, param_values, clone);
+        push_field_param!(
+            input.healthcheck_config,
+            "healthcheck_config",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.services,
+            "services",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
         push_field_param!(input.events, "events", sets, param_idx, param_values, clone);
-        push_field_param!(input.metadata, "metadata", sets, param_idx, param_values, clone);
+        push_field_param!(
+            input.metadata,
+            "metadata",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
         param_values.push(Box::new(id.to_string()));
 
         let sql = format!(
@@ -149,7 +200,6 @@ pub fn update(
         conn.execute(&sql, params_ref.as_slice())?;
 
         get_by_id(pool, id)
-
     })
 }
 

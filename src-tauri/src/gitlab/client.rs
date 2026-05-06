@@ -16,11 +16,7 @@ fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
     if value.is_empty() {
         return Err(AppError::GitLab(format!("{name} must not be empty")));
     }
-    if value.contains('/')
-        || value.contains('\\')
-        || value.contains("..")
-        || value.contains('\0')
-    {
+    if value.contains('/') || value.contains('\\') || value.contains("..") || value.contains('\0') {
         return Err(AppError::GitLab(format!(
             "{name} contains invalid characters"
         )));
@@ -140,14 +136,12 @@ impl GitLabClient {
     /// `GET /api/v4/projects?membership=true&min_access_level=30`
     /// Returns projects where the user has at least Developer access.
     pub async fn list_projects(&self) -> Result<Vec<GitLabProject>, AppError> {
-        let req = self
-            .authed(reqwest::Method::GET, "/projects")
-            .query(&[
-                ("membership", "true"),
-                ("min_access_level", "30"),
-                ("per_page", "100"),
-                ("order_by", "last_activity_at"),
-            ]);
+        let req = self.authed(reqwest::Method::GET, "/projects").query(&[
+            ("membership", "true"),
+            ("min_access_level", "30"),
+            ("per_page", "100"),
+            ("order_by", "last_activity_at"),
+        ]);
         self.send_json(req).await
     }
 
@@ -194,11 +188,7 @@ impl GitLabClient {
     }
 
     /// `DELETE /api/v4/projects/:id/duo/agents/:agent_id`
-    pub async fn delete_duo_agent(
-        &self,
-        project_id: i64,
-        agent_id: &str,
-    ) -> Result<(), AppError> {
+    pub async fn delete_duo_agent(&self, project_id: i64, agent_id: &str) -> Result<(), AppError> {
         validate_path_segment(agent_id, "agent_id")?;
         let path = format!("/projects/{project_id}/duo/agents/{agent_id}");
         self.send_ok(self.authed(reqwest::Method::DELETE, &path))
@@ -210,17 +200,15 @@ impl GitLabClient {
     // --------------------------------------------------------------------
 
     /// `GET /api/v4/projects/:id/repository/files/AGENTS.md/raw?ref=main`
-    pub async fn get_agents_md(
-        &self,
-        project_id: i64,
-        branch: &str,
-    ) -> Result<String, AppError> {
+    pub async fn get_agents_md(&self, project_id: i64, branch: &str) -> Result<String, AppError> {
         let path = format!(
             "/projects/{}/repository/files/{}/raw",
             project_id,
             urlencoding::encode("AGENTS.md")
         );
-        let req = self.authed(reqwest::Method::GET, &path).query(&[("ref", branch)]);
+        let req = self
+            .authed(reqwest::Method::GET, &path)
+            .query(&[("ref", branch)]);
         self.send_text(req).await
     }
 
@@ -283,11 +271,7 @@ impl GitLabClient {
     }
 
     /// `DELETE /api/v4/projects/:id/variables/:key` -- remove a CI/CD variable.
-    pub async fn delete_variable(
-        &self,
-        project_id: i64,
-        key: &str,
-    ) -> Result<(), AppError> {
+    pub async fn delete_variable(&self, project_id: i64, key: &str) -> Result<(), AppError> {
         let path = format!(
             "/projects/{}/variables/{}",
             project_id,

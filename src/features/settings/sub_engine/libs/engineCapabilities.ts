@@ -6,6 +6,28 @@
  *
  * Users can override these defaults via the Engine settings UI.
  * The map is stored as a JSON string in app_settings under key "engine_capabilities".
+ *
+ * ## Ollama deferral (2026-05-05)
+ *
+ * Ollama-as-a-CLI-engine is **deferred**, not shipping. The runner-level path
+ * (`src-tauri/src/engine/ollama.rs`) is gated behind the `ollama` Cargo feature
+ * which is not enabled in any release profile. To match, this map only carries
+ * `claude_code` columns — there is no `ollama: false` ghost row anymore.
+ *
+ * To revive Ollama as a CLI engine you must wire all of these in lockstep:
+ *   1. Add `Ollama` variant to `EngineKind` (src-tauri/src/engine/provider/mod.rs)
+ *      — the `assert_all_covered` and `ALL` const will force you to.
+ *   2. Add `'ollama'` back to `CliEngine` (src/lib/types/types.ts).
+ *   3. Add an entry to `PROVIDERS` below and to `PROVIDER_OPTIONS` in any UI
+ *      that shows engine pickers.
+ *   4. Add an `ollama: true|false` cell to every row of `DEFAULT_CAPABILITIES`.
+ *   5. Wire `runner` dispatch to `engine::ollama::execute_native` for the new
+ *      variant, and enable the `ollama` Cargo feature in the appropriate profile.
+ *
+ * Note: BYOM-level Ollama (Bring-Your-Own-Model, src/features/settings/sub_byom)
+ * is a separate concept — that lets users point Claude Code at an Ollama-hosted
+ * model. The runner still spawns the Claude Code CLI; it does not call Ollama
+ * directly. Only the dormant native HTTP path in engine::ollama is deferred.
  */
 import type { CliEngine } from '@/lib/types/types';
 
@@ -86,18 +108,21 @@ export type EngineCapabilityMap = Record<CliOperation, Record<CliEngine, boolean
  * Claude Sonnet 4.6: 9/9 (100%) -- all A grades
  *
  * Codex CLI removed — all execution uses Claude Code CLI only.
+ * Ollama-as-CLI-engine is deferred (see top-of-file note); the previous
+ * `ollama: false` columns were removed to stop implying a runtime that
+ * doesn't exist.
  */
 export const DEFAULT_CAPABILITIES: EngineCapabilityMap = {
-  design_analysis:        { claude_code: true, ollama: false },
-  credential_design:      { claude_code: true, ollama: false },
-  credential_healthcheck: { claude_code: true, ollama: false },
-  n8n_transform:          { claude_code: true, ollama: false },
-  test_generation:        { claude_code: true, ollama: false },
-  persona_execution:      { claude_code: true, ollama: false },
-  template_adopt:         { claude_code: true, ollama: false },
-  query_debug:            { claude_code: true, ollama: false },
-  healing_analysis:       { claude_code: true, ollama: false },
-  recipe_execution:       { claude_code: true, ollama: false },
+  design_analysis:        { claude_code: true },
+  credential_design:      { claude_code: true },
+  credential_healthcheck: { claude_code: true },
+  n8n_transform:          { claude_code: true },
+  test_generation:        { claude_code: true },
+  persona_execution:      { claude_code: true },
+  template_adopt:         { claude_code: true },
+  query_debug:            { claude_code: true },
+  healing_analysis:       { claude_code: true },
+  recipe_execution:       { claude_code: true },
 };
 
 /** Settings key for the persisted capability map */

@@ -83,7 +83,13 @@ pub struct AiArtifactParams {
 // -- Emit helpers -------------------------------------------------
 
 /// Emit a progress line on the configured progress event channel.
-fn emit_task_progress(app: &tauri::AppHandle, event: &str, id_field: &str, task_id: &str, line: &str) {
+fn emit_task_progress(
+    app: &tauri::AppHandle,
+    event: &str,
+    id_field: &str,
+    task_id: &str,
+    line: &str,
+) {
     let _ = app.emit(event, json!({ id_field: task_id, "line": line }));
 }
 
@@ -97,12 +103,15 @@ fn emit_task_status(
     result: Option<serde_json::Value>,
     error: Option<String>,
 ) {
-    let _ = app.emit(event, json!({
-        id_field: task_id,
-        "status": status,
-        "result": result,
-        "error": error,
-    }));
+    let _ = app.emit(
+        event,
+        json!({
+            id_field: task_id,
+            "status": status,
+            "result": result,
+            "error": error,
+        }),
+    );
 }
 
 // -- Panic-safe spawn wrapper -------------------------------------
@@ -173,9 +182,29 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         None
     };
 
-    crate::engine::process_activity::emit_process_activity(&app, &domain, "started", Some(&task_id), None);
-    emit_task_status(&app, messages.status_event, messages.id_field, &task_id, messages.initial_status, None, None);
-    emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, "Connecting to Claude...");
+    crate::engine::process_activity::emit_process_activity(
+        &app,
+        &domain,
+        "started",
+        Some(&task_id),
+        None,
+    );
+    emit_task_status(
+        &app,
+        messages.status_event,
+        messages.id_field,
+        &task_id,
+        messages.initial_status,
+        None,
+        None,
+    );
+    emit_task_progress(
+        &app,
+        messages.progress_event,
+        messages.id_field,
+        &task_id,
+        "Connecting to Claude...",
+    );
 
     let pe = messages.progress_event;
     let idf = messages.id_field;
@@ -226,7 +255,13 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
     let is_cancelled = registry.get_id(&domain).as_deref() != Some(&task_id);
 
     if is_cancelled {
-        crate::engine::process_activity::emit_process_activity(&app, &domain, "cancelled", Some(&task_id), None);
+        crate::engine::process_activity::emit_process_activity(
+            &app,
+            &domain,
+            "cancelled",
+            Some(&task_id),
+            None,
+        );
         let duration_ms = started_at.elapsed().as_millis() as u64;
         tracing::info!(
             task_id = %task_id,
@@ -254,8 +289,22 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                 error = %error_msg,
                 "AI artifact task failed"
             );
-            crate::engine::process_activity::emit_process_activity(&app, &domain, "failed", Some(&task_id), None);
-            emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "failed", None, Some(error_msg));
+            crate::engine::process_activity::emit_process_activity(
+                &app,
+                &domain,
+                "failed",
+                Some(&task_id),
+                None,
+            );
+            emit_task_status(
+                &app,
+                messages.status_event,
+                messages.id_field,
+                &task_id,
+                "failed",
+                None,
+                Some(error_msg),
+            );
         }
         Ok(spawn_result) => {
             if !spawn_result.stderr_output.trim().is_empty() {
@@ -277,9 +326,29 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                         outcome = "success",
                         "AI artifact task completed"
                     );
-                    crate::engine::process_activity::emit_process_activity(&app, &domain, "completed", Some(&task_id), None);
-                    emit_task_progress(&app, messages.progress_event, messages.id_field, &task_id, messages.success_progress);
-                    emit_task_status(&app, messages.status_event, messages.id_field, &task_id, "completed", Some(extracted), None);
+                    crate::engine::process_activity::emit_process_activity(
+                        &app,
+                        &domain,
+                        "completed",
+                        Some(&task_id),
+                        None,
+                    );
+                    emit_task_progress(
+                        &app,
+                        messages.progress_event,
+                        messages.id_field,
+                        &task_id,
+                        messages.success_progress,
+                    );
+                    emit_task_status(
+                        &app,
+                        messages.status_event,
+                        messages.id_field,
+                        &task_id,
+                        "completed",
+                        Some(extracted),
+                        None,
+                    );
                 }
                 None => {
                     registry.clear_id_if(&domain, &task_id);
@@ -293,7 +362,13 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
                         raw_output_preview = %raw_preview,
                         "Failed to extract result from Claude text output"
                     );
-                    crate::engine::process_activity::emit_process_activity(&app, &domain, "failed", Some(&task_id), None);
+                    crate::engine::process_activity::emit_process_activity(
+                        &app,
+                        &domain,
+                        "failed",
+                        Some(&task_id),
+                        None,
+                    );
                     emit_task_status(
                         &app,
                         messages.status_event,
@@ -323,7 +398,10 @@ fn extract_result_text(line: &str) -> Option<String> {
     if value.get("type").and_then(|t| t.as_str()) != Some("result") {
         return None;
     }
-    value.get("result").and_then(|r| r.as_str()).map(|s| s.to_string())
+    value
+        .get("result")
+        .and_then(|r| r.as_str())
+        .map(|s| s.to_string())
 }
 
 /// Spawn Claude CLI, pipe prompt to stdin, collect text output from stdout.
@@ -384,7 +462,10 @@ pub async fn spawn_claude_and_collect(
         let _ = stdin.shutdown().await;
     }
 
-    let stderr = child.stderr.take().ok_or_else(|| "Missing stderr pipe".to_string())?;
+    let stderr = child
+        .stderr
+        .take()
+        .ok_or_else(|| "Missing stderr pipe".to_string())?;
     let stderr_task = tokio::spawn(async move {
         let mut stderr_reader = BufReader::new(stderr);
         let mut stderr_buf = String::new();
@@ -392,7 +473,10 @@ pub async fn spawn_claude_and_collect(
         stderr_buf
     });
 
-    let stdout = child.stdout.take().ok_or_else(|| "Missing stdout pipe".to_string())?;
+    let stdout = child
+        .stdout
+        .take()
+        .ok_or_else(|| "Missing stdout pipe".to_string())?;
     let mut reader = BufReader::new(stdout).lines();
     let mut text_output = String::new();
 
@@ -452,7 +536,9 @@ pub async fn spawn_claude_and_collect(
                 }
                 #[cfg(all(not(windows), not(target_os = "android")))]
                 {
-                    unsafe { libc::kill(pid as i32, libc::SIGTERM); }
+                    unsafe {
+                        libc::kill(pid as i32, libc::SIGTERM);
+                    }
                 }
             }
         }
@@ -500,7 +586,8 @@ pub async fn run_claude_prompt(
     timeout_secs: u64,
     empty_error: &str,
 ) -> Result<String, String> {
-    let result = spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}, None).await?;
+    let result =
+        spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}, None).await?;
 
     if result.text_output.trim().is_empty() {
         return Err(empty_error.into());

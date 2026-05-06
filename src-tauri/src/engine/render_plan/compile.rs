@@ -6,12 +6,12 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::invariants::assert_invariants;
 use super::{
     AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
     NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
     VideoStage, RENDER_PLAN_SCHEMA_VERSION,
 };
-use super::invariants::assert_invariants;
 
 // =============================================================================
 // Composition input types
@@ -171,7 +171,9 @@ pub struct BeatAnchor {
     pub occurrence: u32,
 }
 
-fn default_one_u32() -> u32 { 1 }
+fn default_one_u32() -> u32 {
+    1
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -195,8 +197,12 @@ pub struct ImageItemInput {
     pub fade_out: f64,
 }
 
-fn default_one() -> f64 { 1.0 }
-fn default_half() -> f64 { 0.5 }
+fn default_one() -> f64 {
+    1.0
+}
+fn default_half() -> f64 {
+    0.5
+}
 
 // =============================================================================
 // CompileOptions / CompileDeps / CompileError
@@ -225,13 +231,25 @@ pub struct CompileOptions {
 
 impl CompileOptions {
     pub fn fold_default() -> Self {
-        Self { transition_mode: TransitionMode::Fold, frame_snap: true, for_export: false }
+        Self {
+            transition_mode: TransitionMode::Fold,
+            frame_snap: true,
+            for_export: false,
+        }
     }
     pub fn overlap_default() -> Self {
-        Self { transition_mode: TransitionMode::Overlap, frame_snap: true, for_export: false }
+        Self {
+            transition_mode: TransitionMode::Overlap,
+            frame_snap: true,
+            for_export: false,
+        }
     }
     pub fn for_export_default() -> Self {
-        Self { transition_mode: TransitionMode::Fold, frame_snap: true, for_export: true }
+        Self {
+            transition_mode: TransitionMode::Fold,
+            frame_snap: true,
+            for_export: true,
+        }
     }
 }
 
@@ -264,7 +282,11 @@ pub struct CompileDeps<'a> {
 
 impl<'a> CompileDeps<'a> {
     pub fn none() -> Self {
-        Self { proxy_lookup: None, font_probe: None, media_probe: None }
+        Self {
+            proxy_lookup: None,
+            font_probe: None,
+            media_probe: None,
+        }
     }
 }
 
@@ -277,9 +299,17 @@ pub struct MediaProbe {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum CompileError {
-    NegativeOrZeroDuration { stage_id: String },
-    SourceOutOfBounds { stage_id: String, requested: f64, available: f64 },
-    UnsupportedCompositionShape { reason: String },
+    NegativeOrZeroDuration {
+        stage_id: String,
+    },
+    SourceOutOfBounds {
+        stage_id: String,
+        requested: f64,
+        available: f64,
+    },
+    UnsupportedCompositionShape {
+        reason: String,
+    },
 }
 
 impl std::fmt::Display for CompileError {
@@ -288,7 +318,11 @@ impl std::fmt::Display for CompileError {
             CompileError::NegativeOrZeroDuration { stage_id } => {
                 write!(f, "stage {stage_id} has non-positive duration")
             }
-            CompileError::SourceOutOfBounds { stage_id, requested, available } => {
+            CompileError::SourceOutOfBounds {
+                stage_id,
+                requested,
+                available,
+            } => {
                 write!(
                     f,
                     "stage {stage_id} requires {requested:.3}s of source but only {available:.3}s available"
@@ -319,7 +353,8 @@ pub fn compile(
     }
 
     // ---- Step 1: normalize item order (stable, deterministic). ----
-    let mut items_indexed: Vec<(usize, &TimelineItem)> = composition.items.iter().enumerate().collect();
+    let mut items_indexed: Vec<(usize, &TimelineItem)> =
+        composition.items.iter().enumerate().collect();
     items_indexed.sort_by(|(a_idx, a), (b_idx, b)| {
         let a_key = sort_key(a, *a_idx);
         let b_key = sort_key(b, *b_idx);
@@ -370,8 +405,10 @@ pub fn compile(
     });
 
     // Dedupe file/proxy sources by path. Collect ordered-first-seen.
-    let mut path_to_source_id: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
-    let mut image_source_ids: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut path_to_source_id: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
+    let mut image_source_ids: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
 
     // Paths referenced by video/audio clips.
     let referenced_media_paths: Vec<String> = items_indexed
@@ -505,7 +542,13 @@ pub fn compile(
                 let output_end = clip.start_time + clip.duration;
                 let fade_in = (base_fade_in + transition_in_from_prev).min(clip.duration);
                 let fade_out = (base_fade_out + transition_out_self).min(clip.duration);
-                (fade_in, fade_out, output_start, output_end, None::<OverlapNext>)
+                (
+                    fade_in,
+                    fade_out,
+                    output_start,
+                    output_end,
+                    None::<OverlapNext>,
+                )
             }
             TransitionMode::Overlap => {
                 // Each transition on a preceding clip pulls this clip earlier
@@ -523,7 +566,13 @@ pub fn compile(
                 };
                 // After this clip, extend the prefix.
                 cumulative_overlap_prefix += transition_out_self;
-                (base_fade_in, base_fade_out, output_start, output_end, overlap_next)
+                (
+                    base_fade_in,
+                    base_fade_out,
+                    output_start,
+                    output_end,
+                    overlap_next,
+                )
             }
         };
 
@@ -886,7 +935,9 @@ impl PartialEq for OrderedF64 {
 }
 impl Eq for OrderedF64 {}
 impl PartialOrd for OrderedF64 {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for OrderedF64 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {

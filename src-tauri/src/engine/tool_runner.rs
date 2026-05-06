@@ -9,7 +9,9 @@ use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tool_audit_log;
 use crate::db::DbPool;
 use crate::engine::automation_runner::invoke_automation;
-use crate::engine::rate_limiter::{RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW};
+use crate::engine::rate_limiter::{
+    RateLimiter, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW,
+};
 use crate::error::AppError;
 
 /// Default timeout for direct tool invocations (script and API calls).
@@ -51,7 +53,11 @@ pub async fn invoke_tool_direct(
     // Per-tool rate limiting
     if let Some(rl) = rate_limiter {
         let rate_key = format!("tool:{}", tool.id);
-        if let Err(retry_after) = rl.check(&rate_key, TOOL_EXECUTION_MAX_PER_MINUTE, TOOL_EXECUTION_WINDOW) {
+        if let Err(retry_after) = rl.check(
+            &rate_key,
+            TOOL_EXECUTION_MAX_PER_MINUTE,
+            TOOL_EXECUTION_WINDOW,
+        ) {
             tracing::warn!(
                 tool_name = %tool.name,
                 tool_id = %tool.id,
@@ -69,8 +75,13 @@ pub async fn invoke_tool_direct(
 
     // Resolve credential env vars using the existing runner infrastructure
     let (env_vars, _hints, cred_failures, _injected_connectors) =
-        super::runner::resolve_credential_env_vars(pool, std::slice::from_ref(tool), persona_id, persona_name)
-            .await;
+        super::runner::resolve_credential_env_vars(
+            pool,
+            std::slice::from_ref(tool),
+            persona_id,
+            persona_name,
+        )
+        .await;
 
     if !cred_failures.is_empty() {
         return Err(AppError::Execution(format!(
@@ -88,7 +99,9 @@ pub async fn invoke_tool_direct(
 
     let result = {
         #[allow(clippy::type_complexity)]
-        let fut: std::pin::Pin<Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>> = match kind {
+        let fut: std::pin::Pin<
+            Box<dyn std::future::Future<Output = Result<(String, String), AppError>> + Send>,
+        > = match kind {
             ToolKind::Automation => Box::pin(invoke_automation_tool(pool, tool, input_json)),
             ToolKind::Script => Box::pin(invoke_script(tool, input_json, &env_map)),
             ToolKind::Api => {
@@ -103,10 +116,13 @@ pub async fn invoke_tool_direct(
         };
         tokio::time::timeout(DIRECT_TOOL_TIMEOUT, fut)
             .await
-            .map_err(|_| AppError::Execution(format!(
-                "Tool '{}' timed out after {}s",
-                tool.name, DIRECT_TOOL_TIMEOUT.as_secs()
-            )))?
+            .map_err(|_| {
+                AppError::Execution(format!(
+                    "Tool '{}' timed out after {}s",
+                    tool.name,
+                    DIRECT_TOOL_TIMEOUT.as_secs()
+                ))
+            })?
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -146,7 +162,11 @@ pub async fn invoke_tool_direct(
         Some(persona_id),
         Some(persona_name),
         None,
-        if invocation_result.success { "success" } else { "error" },
+        if invocation_result.success {
+            "success"
+        } else {
+            "error"
+        },
         Some(duration_ms),
         invocation_result.error.as_deref(),
     ) {
@@ -176,7 +196,10 @@ async fn invoke_script(
         .stderr(std::process::Stdio::piped());
 
     let output = cmd.output().await.map_err(|e| {
-        AppError::Execution(format!("Failed to spawn tool script '{}': {}", tool.script_path, e))
+        AppError::Execution(format!(
+            "Failed to spawn tool script '{}': {}",
+            tool.script_path, e
+        ))
     })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -263,7 +286,10 @@ async fn invoke_api(
         .stderr(std::process::Stdio::piped());
 
     let output = cmd.output().await.map_err(|e| {
-        AppError::Execution(format!("Failed to execute curl for tool '{}': {}", tool.name, e))
+        AppError::Execution(format!(
+            "Failed to execute curl for tool '{}': {}",
+            tool.name, e
+        ))
     })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -346,10 +372,14 @@ fn sanitize_input_value(value: &str) -> String {
 /// - `-T` / `--upload-file`: upload local files
 /// - `--proto`: override our protocol restriction
 const BLOCKED_CURL_FLAGS: &[&str] = &[
-    "-o", "--output",
-    "-O", "--remote-name",
-    "-K", "--config",
-    "-T", "--upload-file",
+    "-o",
+    "--output",
+    "-O",
+    "--remote-name",
+    "-K",
+    "--config",
+    "-T",
+    "--upload-file",
     "--proto",
 ];
 
@@ -477,27 +507,58 @@ pub struct ToolTestResult {
 ///
 /// For string entries, the name is used as both the tool name and
 /// `requires_credential_type` so credential resolution can match it to a connector.
-pub fn tool_def_from_ir(tool: &crate::db::models::agent_ir::AgentIrTool) -> Option<PersonaToolDefinition> {
+pub fn tool_def_from_ir(
+    tool: &crate::db::models::agent_ir::AgentIrTool,
+) -> Option<PersonaToolDefinition> {
     use crate::db::models::agent_ir::AgentIrTool;
 
     let name = tool.name().to_string();
-    if name.is_empty() { return None; }
+    if name.is_empty() {
+        return None;
+    }
 
     match tool {
         AgentIrTool::Simple(_) => {
             // Infer credential type from well-known connector prefixes.
             // "notion_database_query" → "notion", "gmail" → "gmail", "data_processing" → None (builtin)
-            let known_connectors = ["notion", "gmail", "slack", "github", "airtable", "linear",
-                "supabase", "sentry", "asana", "attio", "clickup", "cal_com", "google_calendar",
-                "betterstack", "leonardo_ai"];
-            let builtin_prefixes = ["personas_", "database", "db_", "file_", "web_", "http_",
-                "data_", "nlp_", "ai_", "text_", "notification_", "date_"];
+            let known_connectors = [
+                "notion",
+                "gmail",
+                "slack",
+                "github",
+                "airtable",
+                "linear",
+                "supabase",
+                "sentry",
+                "asana",
+                "attio",
+                "clickup",
+                "cal_com",
+                "google_calendar",
+                "betterstack",
+                "leonardo_ai",
+            ];
+            let builtin_prefixes = [
+                "personas_",
+                "database",
+                "db_",
+                "file_",
+                "web_",
+                "http_",
+                "data_",
+                "nlp_",
+                "ai_",
+                "text_",
+                "notification_",
+                "date_",
+            ];
             let name_lower = name.to_lowercase();
             let is_builtin = builtin_prefixes.iter().any(|p| name_lower.starts_with(p));
             let cred_type = if is_builtin {
                 None
             } else {
-                known_connectors.iter()
+                known_connectors
+                    .iter()
                     .find(|c| name_lower == **c || name_lower.starts_with(&format!("{}_", c)))
                     .map(|c| c.to_string())
                     .or_else(|| Some(name.clone()))
@@ -517,23 +578,20 @@ pub fn tool_def_from_ir(tool: &crate::db::models::agent_ir::AgentIrTool) -> Opti
                 updated_at: String::new(),
             })
         }
-        AgentIrTool::Structured(d) => {
-            Some(PersonaToolDefinition {
-                id: format!("test_{}", name),
-                name: name.clone(),
-                category: d.category.as_deref().unwrap_or("api").to_string(),
-                description: d.description.as_deref().unwrap_or("").to_string(),
-                script_path: String::new(),
-                input_schema: None,
-                output_schema: None,
-                requires_credential_type: d.requires_credential_type.clone()
-                    .or(Some(name)),
-                implementation_guide: d.implementation_guide.clone(),
-                is_builtin: false,
-                created_at: String::new(),
-                updated_at: String::new(),
-            })
-        }
+        AgentIrTool::Structured(d) => Some(PersonaToolDefinition {
+            id: format!("test_{}", name),
+            name: name.clone(),
+            category: d.category.as_deref().unwrap_or("api").to_string(),
+            description: d.description.as_deref().unwrap_or("").to_string(),
+            script_path: String::new(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: d.requires_credential_type.clone().or(Some(name)),
+            implementation_guide: d.implementation_guide.clone(),
+            is_builtin: false,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }),
     }
 }
 
@@ -571,7 +629,10 @@ pub async fn execute_test_curl(
             status: "failed".to_string(),
             http_status: None,
             latency_ms: 0,
-            error: Some(format!("Invalid curl command: must start with 'curl', got: {:?}", raw_tokens.first())),
+            error: Some(format!(
+                "Invalid curl command: must start with 'curl', got: {:?}",
+                raw_tokens.first()
+            )),
             connector: None,
             output_preview: None,
         };
@@ -643,7 +704,11 @@ pub async fn execute_test_curl(
                     status: status.to_string(),
                     http_status: http_code,
                     latency_ms,
-                    error: if status == "passed" { None } else { Some(preview.clone()) },
+                    error: if status == "passed" {
+                        None
+                    } else {
+                        Some(preview.clone())
+                    },
                     connector: None,
                     output_preview: Some(preview),
                 }
@@ -657,7 +722,11 @@ pub async fn execute_test_curl(
                     latency_ms,
                     error: Some(msg.trim().to_string()),
                     connector: None,
-                    output_preview: if !preview.is_empty() { Some(preview) } else { None },
+                    output_preview: if !preview.is_empty() {
+                        Some(preview)
+                    } else {
+                        None
+                    },
                 }
             }
         }
@@ -675,7 +744,10 @@ pub async fn execute_test_curl(
             status: "failed".to_string(),
             http_status: None,
             latency_ms,
-            error: Some(format!("Curl timed out after {}s", TEST_TOOL_TIMEOUT.as_secs())),
+            error: Some(format!(
+                "Curl timed out after {}s",
+                TEST_TOOL_TIMEOUT.as_secs()
+            )),
             connector: None,
             output_preview: None,
         },
@@ -719,7 +791,8 @@ fn classify_api_error(error_msg: &str) -> (&'static str, Option<u16>) {
         if body.contains("404") || body.contains("Not Found") {
             return ("failed", Some(404));
         }
-        if body.contains("429") || body.contains("Too Many Requests") || body.contains("rate limit") {
+        if body.contains("429") || body.contains("Too Many Requests") || body.contains("rate limit")
+        {
             return ("failed", Some(429));
         }
         if body.contains("500") || body.contains("Internal Server Error") {

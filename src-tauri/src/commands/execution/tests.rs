@@ -10,11 +10,11 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::test_runs as repo;
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::tools as tool_repo;
-use crate::engine::{eval, parser, prompt};
 use crate::engine::cli_process::CliProcessDriver;
 use crate::engine::event_registry::event_name;
 use crate::engine::test_runner::{self, parse_model_configs, TestScenario};
 use crate::engine::types::{EphemeralPersona, StreamLineType};
+use crate::engine::{eval, parser, prompt};
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -47,26 +47,20 @@ pub async fn start_test_run(
         None
     };
 
-    let models_json = serde_json::to_string(
-        &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    )
-    .unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&model_configs.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
     let run = repo::create_run(&state.db, &persona_id, &models_json)?;
     let run_id = run.id.clone();
 
     let pool = state.db.clone();
-    let log_dir = state
-        .engine
-        .child_pids
-        .lock()
-        .await;
+    let log_dir = state.engine.child_pids.lock().await;
     drop(log_dir); // just used to verify engine is alive
 
     // Register cancellation flag in process registry.
     // The guard ensures unregister_run is called even if the task panics.
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("test", &run_id);
+    let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
     let cancelled_clone = cancelled.clone();
     let run_id_for_cancel = run_id.clone();
@@ -135,17 +129,22 @@ pub async fn delete_test_run(
 }
 
 #[tauri::command]
-pub fn cancel_test_run(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn cancel_test_run(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     // Set cancellation flag -- the test runner checks this between iterations
     state.process_registry.cancel_run("test", &id);
 
     // Update DB status immediately
     let now = chrono::Utc::now().to_rfc3339();
-    repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
+    repo::update_run_status(
+        &state.db,
+        &id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    )?;
 
     Ok(())
 }
@@ -192,8 +191,7 @@ pub async fn validate_n8n_draft(
     draft_json: String,
 ) -> Result<DraftValidationResult, AppError> {
     require_auth(&state).await?;
-    let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
-        .map_err(AppError::Validation)?;
+    let ephemeral = EphemeralPersona::from_draft_json(&draft_json).map_err(AppError::Validation)?;
     let tools = &ephemeral.tools;
 
     // Check for tools with non-empty script_path pointing to missing files
@@ -255,14 +253,16 @@ pub async fn test_n8n_draft(
     require_auth(&state).await?;
 
     // Reject duplicate spawns: if a draft test with this test_id is already running, bail out.
-    if state.process_registry.is_run_registered("draft_test", &test_id) {
+    if state
+        .process_registry
+        .is_run_registered("draft_test", &test_id)
+    {
         return Err(AppError::Validation(format!(
             "A draft test with id '{test_id}' is already running"
         )));
     }
 
-    let ephemeral = EphemeralPersona::from_draft_json(&draft_json)
-        .map_err(AppError::Validation)?;
+    let ephemeral = EphemeralPersona::from_draft_json(&draft_json).map_err(AppError::Validation)?;
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
 
@@ -273,14 +273,21 @@ pub async fn test_n8n_draft(
             continue;
         }
         let path = std::path::Path::new(script);
-        let missing = if path.is_absolute() { !path.exists() } else { true };
+        let missing = if path.is_absolute() {
+            !path.exists()
+        } else {
+            true
+        };
         if missing {
             let _ = app.emit(
                 event_name::N8N_TEST_STATUS,
                 N8nTestStatusEvent {
                     test_id,
                     status: "failed".to_string(),
-                    error: Some(format!("Tool '{}' references script '{}' that does not exist.", tool.name, script)),
+                    error: Some(format!(
+                        "Tool '{}' references script '{}' that does not exist.",
+                        tool.name, script
+                    )),
                     passed: Some(false),
                 },
             );
@@ -310,14 +317,24 @@ pub async fn test_n8n_draft(
             ]
         })
         .collect();
-    let credential_hint_refs: Vec<&str> = credential_hint_strings.iter().map(|s| s.as_str()).collect();
+    let credential_hint_refs: Vec<&str> =
+        credential_hint_strings.iter().map(|s| s.as_str()).collect();
     let cred_hints = if credential_hint_refs.is_empty() {
         None
     } else {
         Some(credential_hint_refs.as_slice())
     };
 
-    let prompt_text = prompt::assemble_prompt(persona, tools, None, cred_hints, None, None, #[cfg(feature = "desktop")] None);
+    let prompt_text = prompt::assemble_prompt(
+        persona,
+        tools,
+        None,
+        cred_hints,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
 
     // Spawn CLI process via CliProcessDriver (with piped stderr)
     let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "personas-test") {
@@ -355,8 +372,9 @@ pub async fn test_n8n_draft(
 
     // Register in process registry so duplicate spawns are rejected.
     // The guard auto-unregisters on drop (task completion or panic).
-    let (_cancelled, run_guard) =
-        state.process_registry.register_run_guarded("draft_test", &test_id);
+    let (_cancelled, run_guard) = state
+        .process_registry
+        .register_run_guarded("draft_test", &test_id);
 
     // Background task: read stdout, emit events, determine result
     let test_id_bg = test_id.clone();
@@ -420,7 +438,9 @@ pub async fn test_n8n_draft(
                     }
                     _ => {
                         if let Some(ref d) = display {
-                            if (d.contains("error") || d.contains("Error") || d.contains("ERROR")) && error_text.is_empty() {
+                            if (d.contains("error") || d.contains("Error") || d.contains("ERROR"))
+                                && error_text.is_empty()
+                            {
                                 error_text = d.clone();
                             }
                         }
@@ -434,27 +454,24 @@ pub async fn test_n8n_draft(
         let (status, passed, error) = if read_result.is_err() {
             // Timeout: kill process first, then cleanup
             driver.kill().await;
-            let _ = tokio::time::timeout(
-                tokio::time::Duration::from_secs(5),
-                driver.wait(),
-            )
-            .await;
+            let _ = tokio::time::timeout(tokio::time::Duration::from_secs(5), driver.wait()).await;
             driver.cleanup_dir();
-            ("failed".to_string(), Some(false), Some("Test timed out after 60 seconds".to_string()))
+            (
+                "failed".to_string(),
+                Some(false),
+                Some("Test timed out after 60 seconds".to_string()),
+            )
         } else {
             // Normal exit: wait for process, then cleanup
-            let _ = tokio::time::timeout(
-                tokio::time::Duration::from_secs(5),
-                driver.wait(),
-            )
-            .await;
+            let _ = tokio::time::timeout(tokio::time::Duration::from_secs(5), driver.wait()).await;
             driver.cleanup_dir();
 
             if !saw_init {
                 let err = if !error_text.is_empty() {
                     error_text
                 } else {
-                    "Claude CLI failed to initialize. Check your API key and network connection.".to_string()
+                    "Claude CLI failed to initialize. Check your API key and network connection."
+                        .to_string()
                 };
                 ("failed".to_string(), Some(false), Some(err))
             } else if !saw_text {
@@ -467,7 +484,11 @@ pub async fn test_n8n_draft(
             } else {
                 // saw_init && saw_text -- apply confusion detection via eval framework
                 let actual_tools_empty: Vec<String> = Vec::new();
-                let actual_tools: &[String] = if saw_tool_use { &["_tool_used".to_string()] } else { &actual_tools_empty };
+                let actual_tools: &[String] = if saw_tool_use {
+                    &["_tool_used".to_string()]
+                } else {
+                    &actual_tools_empty
+                };
                 let eval_input = eval::EvalInput {
                     output: &assistant_full_text,
                     expected_behavior: None,

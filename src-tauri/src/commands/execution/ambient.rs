@@ -12,12 +12,14 @@ use std::sync::Arc;
 
 use tauri::State;
 
+#[cfg(feature = "desktop")]
+use crate::engine::ambient_context::{
+    capture_validation_screenshot as ac_capture, ValidationScreenshot,
+};
+use crate::engine::ambient_context::{AmbientContextSnapshot, ContextStreamStats, SensoryPolicy};
+use crate::engine::context_rules::{ContextRule, ContextRuleMatch};
 use crate::error::AppError;
 use crate::AppState;
-use crate::engine::ambient_context::{AmbientContextSnapshot, ContextStreamStats, SensoryPolicy};
-#[cfg(feature = "desktop")]
-use crate::engine::ambient_context::{capture_validation_screenshot as ac_capture, ValidationScreenshot};
-use crate::engine::context_rules::{ContextRule, ContextRuleMatch};
 
 /// Get the ambient context snapshot for a specific persona, filtered by its sensory policy.
 #[tauri::command]

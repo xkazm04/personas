@@ -31,7 +31,12 @@ fn load_template_index() -> Vec<TemplateEntry> {
         if let Ok(categories) = std::fs::read_dir(templates_dir) {
             for cat_entry in categories.flatten() {
                 let cat_path = cat_entry.path();
-                if !cat_path.is_dir() || cat_path.file_name().map(|n| n.to_string_lossy().starts_with('_')).unwrap_or(true) {
+                if !cat_path.is_dir()
+                    || cat_path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().starts_with('_'))
+                        .unwrap_or(true)
+                {
                     continue;
                 }
                 if let Ok(files) = std::fs::read_dir(&cat_path) {
@@ -39,19 +44,36 @@ fn load_template_index() -> Vec<TemplateEntry> {
                         let fp = file_entry.path();
                         if fp.extension().map(|e| e == "json").unwrap_or(false) {
                             if let Ok(content) = std::fs::read_to_string(&fp) {
-                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content)
+                                {
                                     entries.push(TemplateEntry {
-                                        name: val.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                        description: val.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-                                        category: val.get("category")
+                                        name: val
+                                            .get("name")
+                                            .and_then(|v| v.as_str())
+                                            .unwrap_or("")
+                                            .to_string(),
+                                        description: val
+                                            .get("description")
+                                            .and_then(|v| v.as_str())
+                                            .unwrap_or("")
+                                            .to_string(),
+                                        category: val
+                                            .get("category")
                                             .and_then(|v| v.as_array())
                                             .and_then(|a| a.first())
                                             .and_then(|v| v.as_str())
                                             .unwrap_or("")
                                             .to_string(),
-                                        service_flow: val.get("service_flow")
+                                        service_flow: val
+                                            .get("service_flow")
                                             .and_then(|v| v.as_array())
-                                            .map(|a| a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                                            .map(|a| {
+                                                a.iter()
+                                                    .filter_map(|v| {
+                                                        v.as_str().map(|s| s.to_string())
+                                                    })
+                                                    .collect()
+                                            })
                                             .unwrap_or_default(),
                                     });
                                 }
@@ -76,16 +98,18 @@ fn load_template_index() -> Vec<TemplateEntry> {
 /// all languages.
 fn extract_keywords(text: &str) -> Vec<String> {
     let stopwords: std::collections::HashSet<&str> = [
-        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for",
-        "of", "with", "by", "from", "is", "it", "that", "this", "be", "are",
-        "was", "were", "been", "have", "has", "had", "do", "does", "did",
-        "will", "would", "could", "should", "may", "might", "can", "shall",
-        "i", "me", "my", "we", "our", "you", "your", "they", "their",
-        "want", "need", "like", "make", "create", "build", "agent", "bot",
-    ].into_iter().collect();
+        "a", "an", "the", "and", "or", "but", "in", "on", "at", "to", "for", "of", "with", "by",
+        "from", "is", "it", "that", "this", "be", "are", "was", "were", "been", "have", "has",
+        "had", "do", "does", "did", "will", "would", "could", "should", "may", "might", "can",
+        "shall", "i", "me", "my", "we", "our", "you", "your", "they", "their", "want", "need",
+        "like", "make", "create", "build", "agent", "bot",
+    ]
+    .into_iter()
+    .collect();
 
     // Standard word extraction (works for space-delimited languages).
-    let mut keywords: Vec<String> = text.to_lowercase()
+    let mut keywords: Vec<String> = text
+        .to_lowercase()
         .split(|c: char| !c.is_alphanumeric())
         .filter(|w| w.len() > 2 && !stopwords.contains(w))
         .map(|s| s.to_string())
@@ -97,11 +121,37 @@ fn extract_keywords(text: &str) -> Vec<String> {
     // set so template matching still works when the snapshot is empty
     // (uninitialized at startup, or under unit tests with no DB).
     const FALLBACK_SERVICES: &[&str] = &[
-        "gmail", "outlook", "notion", "slack", "discord", "trello", "jira",
-        "asana", "github", "gitlab", "linear", "airtable", "google", "sheets",
-        "drive", "calendar", "teams", "zoom", "hubspot", "salesforce",
-        "stripe", "shopify", "sentry", "supabase", "clickup", "attio",
-        "telegram", "whatsapp", "twilio", "sendgrid", "calcom",
+        "gmail",
+        "outlook",
+        "notion",
+        "slack",
+        "discord",
+        "trello",
+        "jira",
+        "asana",
+        "github",
+        "gitlab",
+        "linear",
+        "airtable",
+        "google",
+        "sheets",
+        "drive",
+        "calendar",
+        "teams",
+        "zoom",
+        "hubspot",
+        "salesforce",
+        "stripe",
+        "shopify",
+        "sentry",
+        "supabase",
+        "clickup",
+        "attio",
+        "telegram",
+        "whatsapp",
+        "twilio",
+        "sendgrid",
+        "calcom",
     ];
     let text_lower = text.to_lowercase();
     let registry = crate::engine::api_proxy::connector_keyword_snapshot();
@@ -121,21 +171,35 @@ fn extract_keywords(text: &str) -> Vec<String> {
 
 /// Find the top N templates most similar to the given intent by keyword
 /// overlap score.
-fn find_similar_templates<'a>(intent: &str, templates: &'a [TemplateEntry], top_n: usize) -> Vec<&'a TemplateEntry> {
+fn find_similar_templates<'a>(
+    intent: &str,
+    templates: &'a [TemplateEntry],
+    top_n: usize,
+) -> Vec<&'a TemplateEntry> {
     let intent_kw = extract_keywords(intent);
     if intent_kw.is_empty() {
         return vec![];
     }
 
-    let mut scored: Vec<(usize, &TemplateEntry)> = templates.iter().map(|t| {
-        let text = format!("{} {} {} {}", t.name, t.description, t.category, t.service_flow.join(" "));
-        let tmpl_kw = extract_keywords(&text);
-        let score = intent_kw.iter().filter(|kw| tmpl_kw.contains(kw)).count();
-        (score, t)
-    }).collect();
+    let mut scored: Vec<(usize, &TemplateEntry)> = templates
+        .iter()
+        .map(|t| {
+            let text = format!(
+                "{} {} {} {}",
+                t.name,
+                t.description,
+                t.category,
+                t.service_flow.join(" ")
+            );
+            let tmpl_kw = extract_keywords(&text);
+            let score = intent_kw.iter().filter(|kw| tmpl_kw.contains(kw)).count();
+            (score, t)
+        })
+        .collect();
 
     scored.sort_by(|a, b| b.0.cmp(&a.0));
-    scored.into_iter()
+    scored
+        .into_iter()
         .filter(|(score, _)| *score > 0)
         .take(top_n)
         .map(|(_, t)| t)

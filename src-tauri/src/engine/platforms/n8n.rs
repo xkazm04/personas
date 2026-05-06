@@ -96,15 +96,19 @@ impl N8nClient {
             .to_string();
 
         if base_url.is_empty() {
-            return Err(AppError::Validation("n8n base_url must not be empty".into()));
+            return Err(AppError::Validation(
+                "n8n base_url must not be empty".into(),
+            ));
         }
         let parsed = url::Url::parse(&base_url)
             .map_err(|e| AppError::Validation(format!("Invalid n8n base_url '{base_url}': {e}")))?;
         match parsed.scheme() {
             "http" | "https" => {}
-            other => return Err(AppError::Validation(format!(
-                "n8n base_url must use http or https scheme, got '{other}'"
-            ))),
+            other => {
+                return Err(AppError::Validation(format!(
+                    "n8n base_url must use http or https scheme, got '{other}'"
+                )))
+            }
         }
 
         let api_key = fields
@@ -112,7 +116,11 @@ impl N8nClient {
             .ok_or_else(|| AppError::Validation("n8n credential missing 'api_key' field".into()))?
             .clone();
 
-        Ok(Self { base_url, api_key, http: crate::SHARED_HTTP.clone() })
+        Ok(Self {
+            base_url,
+            api_key,
+            http: crate::SHARED_HTTP.clone(),
+        })
     }
 
     /// List all workflows, following cursor-based pagination.
@@ -137,10 +145,9 @@ impl N8nClient {
 
             let resp = Self::check_response(resp, "n8n API").await?;
 
-            let list: N8nListResponse = resp
-                .json()
-                .await
-                .map_err(|e| AppError::Execution(format!("Failed to parse n8n workflow list: {e}")))?;
+            let list: N8nListResponse = resp.json().await.map_err(|e| {
+                AppError::Execution(format!("Failed to parse n8n workflow list: {e}"))
+            })?;
 
             all_workflows.extend(list.data);
 
@@ -203,21 +210,31 @@ impl N8nClient {
     }
 
     /// Trigger a webhook URL with a JSON body.
-    pub async fn trigger_webhook(&self, webhook_url: &str, body: &Value) -> Result<Value, AppError> {
+    pub async fn trigger_webhook(
+        &self,
+        webhook_url: &str,
+        body: &Value,
+    ) -> Result<Value, AppError> {
         let parsed_webhook = url::Url::parse(webhook_url)
             .map_err(|e| AppError::Validation(format!("Invalid webhook URL: {e}")))?;
         let parsed_base = url::Url::parse(&self.base_url)
             .map_err(|e| AppError::Validation(format!("Invalid base URL: {e}")))?;
 
         let scheme = parsed_webhook.scheme();
-        if scheme != "https" && !(scheme == "http" && parsed_webhook.host_str() == Some("localhost")) {
-            return Err(AppError::Validation("Webhook URL must use https (or http for localhost)".into()));
+        if scheme != "https"
+            && !(scheme == "http" && parsed_webhook.host_str() == Some("localhost"))
+        {
+            return Err(AppError::Validation(
+                "Webhook URL must use https (or http for localhost)".into(),
+            ));
         }
 
         if parsed_webhook.host_str() != parsed_base.host_str()
             || parsed_webhook.port_or_known_default() != parsed_base.port_or_known_default()
         {
-            return Err(AppError::Validation("Webhook URL origin (host+port) must match the n8n instance base URL".into()));
+            return Err(AppError::Validation(
+                "Webhook URL origin (host+port) must match the n8n instance base URL".into(),
+            ));
         }
 
         let resp = self
@@ -231,10 +248,9 @@ impl N8nClient {
 
         let resp = Self::check_response(resp, "n8n webhook").await?;
 
-        let raw = resp
-            .text()
-            .await
-            .map_err(|e| AppError::Execution(format!("Failed to read webhook response body: {e}")))?;
+        let raw = resp.text().await.map_err(|e| {
+            AppError::Execution(format!("Failed to read webhook response body: {e}"))
+        })?;
 
         if raw.is_empty() {
             return Ok(Value::Null);
@@ -249,7 +265,11 @@ impl N8nClient {
     }
 
     /// Internal helper to PATCH workflow active state.
-    async fn set_workflow_active(&self, id: &str, active: bool) -> Result<N8nActivateResult, AppError> {
+    async fn set_workflow_active(
+        &self,
+        id: &str,
+        active: bool,
+    ) -> Result<N8nActivateResult, AppError> {
         validate_workflow_id(id)?;
         let url = format!("{}/api/v1/workflows/{}", self.base_url, id);
         let resp = self
@@ -284,7 +304,14 @@ pub fn build_client_from_credential(
 
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, credential_id, &credential.name, "platform:n8n", None, None) {
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "platform:n8n",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
     N8nClient::from_fields(&fields)

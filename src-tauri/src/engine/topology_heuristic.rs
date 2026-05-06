@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use crate::db::models::Persona;
 
 use super::topology_types::{
-    BlueprintConnection, BlueprintMember, TopologyBlueprint, compute_dag_layout,
+    compute_dag_layout, BlueprintConnection, BlueprintMember, TopologyBlueprint,
 };
 
 // ============================================================================
@@ -18,39 +18,69 @@ use super::topology_types::{
 // ============================================================================
 
 /// Role-related keywords that hint at what role a persona should fill.
-const ORCHESTRATOR_KEYWORDS: &[&str] = &[
-    "orchestrat", "coordinat", "manag", "plan", "direct", "lead",
-];
+const ORCHESTRATOR_KEYWORDS: &[&str] =
+    &["orchestrat", "coordinat", "manag", "plan", "direct", "lead"];
 const REVIEWER_KEYWORDS: &[&str] = &[
     "review", "check", "audit", "qualit", "inspect", "validat", "verify", "approv",
 ];
-const ROUTER_KEYWORDS: &[&str] = &[
-    "rout", "dispatch", "triag", "classif", "sort", "filter",
-];
+const ROUTER_KEYWORDS: &[&str] = &["rout", "dispatch", "triag", "classif", "sort", "filter"];
 
 /// Domain keywords for matching personas to user intent.
 const DOMAIN_KEYWORDS: &[(&str, &[&str])] = &[
-    ("code", &["code", "program", "develop", "software", "engineer", "implement"]),
-    ("test", &["test", "qa", "quality", "assert", "spec", "unit test"]),
-    ("review", &["review", "critique", "feedback", "check", "audit"]),
-    ("write", &["write", "draft", "author", "content", "copy", "document"]),
-    ("research", &["research", "investigat", "analyz", "study", "explor"]),
-    ("design", &["design", "architect", "plan", "blueprint", "structure"]),
-    ("data", &["data", "analyt", "etl", "transform", "pipeline", "process"]),
+    (
+        "code",
+        &[
+            "code",
+            "program",
+            "develop",
+            "software",
+            "engineer",
+            "implement",
+        ],
+    ),
+    (
+        "test",
+        &["test", "qa", "quality", "assert", "spec", "unit test"],
+    ),
+    (
+        "review",
+        &["review", "critique", "feedback", "check", "audit"],
+    ),
+    (
+        "write",
+        &["write", "draft", "author", "content", "copy", "document"],
+    ),
+    (
+        "research",
+        &["research", "investigat", "analyz", "study", "explor"],
+    ),
+    (
+        "design",
+        &["design", "architect", "plan", "blueprint", "structure"],
+    ),
+    (
+        "data",
+        &["data", "analyt", "etl", "transform", "pipeline", "process"],
+    ),
     ("deploy", &["deploy", "release", "publish", "ship", "ci/cd"]),
-    ("support", &["support", "help", "assist", "troubleshoot", "debug"]),
+    (
+        "support",
+        &["support", "help", "assist", "troubleshoot", "debug"],
+    ),
     ("translate", &["translat", "locali", "i18n", "language"]),
-    ("summarize", &["summari", "digest", "condense", "tldr", "brief"]),
-    ("edit", &["edit", "proofread", "polish", "refine", "rewrite"]),
+    (
+        "summarize",
+        &["summari", "digest", "condense", "tldr", "brief"],
+    ),
+    (
+        "edit",
+        &["edit", "proofread", "polish", "refine", "rewrite"],
+    ),
 ];
 
 fn score_persona(persona: &Persona, query_lower: &str) -> f64 {
     let name_lower = persona.name.to_lowercase();
-    let desc_lower = persona
-        .description
-        .as_deref()
-        .unwrap_or("")
-        .to_lowercase();
+    let desc_lower = persona.description.as_deref().unwrap_or("").to_lowercase();
     let prompt_lower = persona.system_prompt.to_lowercase();
 
     let searchable = format!("{name_lower} {desc_lower} {prompt_lower}");
@@ -97,7 +127,10 @@ fn infer_role(persona: &Persona) -> &'static str {
         persona.system_prompt.to_lowercase(),
     );
 
-    if ORCHESTRATOR_KEYWORDS.iter().any(|kw| searchable.contains(kw)) {
+    if ORCHESTRATOR_KEYWORDS
+        .iter()
+        .any(|kw| searchable.contains(kw))
+    {
         return "orchestrator";
     }
     if REVIEWER_KEYWORDS.iter().any(|kw| searchable.contains(kw)) {
@@ -167,7 +200,8 @@ fn build_blueprint(
         return TopologyBlueprint {
             members: vec![],
             connections: vec![],
-            description: "No matching agents found. Create some agents first, then try again.".into(),
+            description: "No matching agents found. Create some agents first, then try again."
+                .into(),
         };
     }
 
@@ -203,19 +237,27 @@ fn build_blueprint(
         // Single node, no connections
     } else {
         // Find orchestrator, workers, reviewers, routers
-        let orchestrators: Vec<usize> = members.iter().enumerate()
+        let orchestrators: Vec<usize> = members
+            .iter()
+            .enumerate()
             .filter(|(_, m)| m.role == "orchestrator")
             .map(|(i, _)| i)
             .collect();
-        let reviewers: Vec<usize> = members.iter().enumerate()
+        let reviewers: Vec<usize> = members
+            .iter()
+            .enumerate()
             .filter(|(_, m)| m.role == "reviewer")
             .map(|(i, _)| i)
             .collect();
-        let workers: Vec<usize> = members.iter().enumerate()
+        let workers: Vec<usize> = members
+            .iter()
+            .enumerate()
             .filter(|(_, m)| m.role == "worker")
             .map(|(i, _)| i)
             .collect();
-        let routers: Vec<usize> = members.iter().enumerate()
+        let routers: Vec<usize> = members
+            .iter()
+            .enumerate()
             .filter(|(_, m)| m.role == "router")
             .map(|(i, _)| i)
             .collect();

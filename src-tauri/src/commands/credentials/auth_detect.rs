@@ -137,7 +137,8 @@ fn user_safe_dirs() -> &'static [String] {
             }
         }
         out
-    }).as_slice()
+    })
+    .as_slice()
 }
 
 /// Resolve a CLI tool name to an absolute path and validate it.
@@ -185,7 +186,10 @@ pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<Path
 fn is_path_allowed(binary_path: &Path, extra_allowed: &[&str]) -> bool {
     let path_str = binary_path.to_string_lossy();
 
-    let static_iter = SAFE_DIRS.iter().copied().chain(extra_allowed.iter().copied());
+    let static_iter = SAFE_DIRS
+        .iter()
+        .copied()
+        .chain(extra_allowed.iter().copied());
     for dir in static_iter {
         if path_matches_dir(&path_str, dir) {
             return true;
@@ -230,14 +234,26 @@ const CLI_PROBES: &[CliProbe] = &[
     CliProbe {
         service_type: "aws",
         cmd: "aws",
-        args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
+        args: &[
+            "sts",
+            "get-caller-identity",
+            "--output",
+            "text",
+            "--query",
+            "Arn",
+        ],
         parse: parse_aws_identity,
         allowed_dirs: &[],
     },
     CliProbe {
         service_type: "google_cloud",
         cmd: "gcloud",
-        args: &["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
+        args: &[
+            "auth",
+            "list",
+            "--filter=status:ACTIVE",
+            "--format=value(account)",
+        ],
         parse: parse_simple_identity,
         // gcloud often installs to ~/google-cloud-sdk/bin or /usr/lib/google-cloud-sdk/bin
         allowed_dirs: &[],
@@ -393,8 +409,7 @@ async fn probe_cli_tools() -> Vec<AuthDetection> {
                 // tokio's Command exposes creation_flags inherently.
                 #[cfg(windows)]
                 cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-                let mut child = match cmd.spawn()
-                {
+                let mut child = match cmd.spawn() {
                     Ok(c) => c,
                     Err(_) => return None,
                 };
@@ -533,9 +548,15 @@ fn browser_cookie_paths() -> Vec<PathBuf> {
     {
         if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
             // Chrome
-            paths.push(PathBuf::from(&local_app_data).join("Google/Chrome/User Data/Default/Network/Cookies"));
+            paths.push(
+                PathBuf::from(&local_app_data)
+                    .join("Google/Chrome/User Data/Default/Network/Cookies"),
+            );
             // Edge
-            paths.push(PathBuf::from(&local_app_data).join("Microsoft/Edge/User Data/Default/Network/Cookies"));
+            paths.push(
+                PathBuf::from(&local_app_data)
+                    .join("Microsoft/Edge/User Data/Default/Network/Cookies"),
+            );
         }
     }
 
@@ -612,9 +633,11 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
                 let query = "SELECT COUNT(*) FROM cookies WHERE host_key LIKE ?1 AND (expires_utc = 0 OR expires_utc > ?2) LIMIT 1";
                 let domain_pattern = format!("%{}", domain);
 
-                match conn.query_row(query, rusqlite::params![domain_pattern, now_chrome_epoch], |row| {
-                    row.get::<_, i64>(0)
-                }) {
+                match conn.query_row(
+                    query,
+                    rusqlite::params![domain_pattern, now_chrome_epoch],
+                    |row| row.get::<_, i64>(0),
+                ) {
                     Ok(count) if count > 0 => {
                         detected.insert(
                             service_type.to_string(),
@@ -622,7 +645,10 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
                                 service_type: service_type.to_string(),
                                 method: "cookie".into(),
                                 authenticated: true,
-                                identity: Some(format!("session cookie for {}", domain.trim_start_matches('.'))),
+                                identity: Some(format!(
+                                    "session cookie for {}",
+                                    domain.trim_start_matches('.')
+                                )),
                                 confidence: "medium".into(),
                             },
                         );

@@ -71,12 +71,13 @@ impl EmbeddingManager {
         // Acquire a strong reference to the model while holding the read lock.
         // This ensures the model stays alive for the duration of inference even
         // if the idle-unloader fires and sets the slot to `None` concurrently.
-        let model_ref = {
-            let guard = self.model.read().await;
-            Arc::clone(guard.as_ref().ok_or_else(|| {
-                AppError::Internal("Model not loaded after ensure_loaded".into())
-            })?)
-        };
+        let model_ref =
+            {
+                let guard = self.model.read().await;
+                Arc::clone(guard.as_ref().ok_or_else(|| {
+                    AppError::Internal("Model not loaded after ensure_loaded".into())
+                })?)
+            };
 
         // Update last-used timestamp
         {
@@ -146,7 +147,9 @@ impl EmbeddingManager {
                         .map(|s| s.as_str())
                         .or_else(|| panic.downcast_ref::<&str>().copied())
                         .unwrap_or("unknown panic");
-                    Err(format!("ONNX Runtime init panicked (likely DLL version mismatch): {msg}"))
+                    Err(format!(
+                        "ONNX Runtime init panicked (likely DLL version mismatch): {msg}"
+                    ))
                 }
             }
         })
@@ -191,9 +194,20 @@ impl EmbeddingManager {
 
         let model = Arc::clone(&self.model);
         let last_used = Arc::clone(&self.last_used);
-        let active_flag = Arc::clone(&self.unloader_active);
+        // Move the flag into a Drop-guard so it resets on ANY exit from the
+        // task — normal break, early return, or panic from `sleep`/`write`.
+        // Previously the task ended with an explicit `active_flag.store(false)`,
+        // which the panic path skipped: a single panic stranded the flag at
+        // `true`, every subsequent `ensure_loaded` call short-circuited
+        // `start_idle_unloader`, and the 23MB ONNX model lived in RAM for the
+        // rest of the session — defeating the entire idle-unload mechanism.
+        let active_flag_guard = ActiveFlagGuard::new(Arc::clone(&self.unloader_active));
 
         tokio::spawn(async move {
+            // The guard's destructor fires whenever this task scope exits,
+            // including unwinding from a panic at any await point.
+            let _guard = active_flag_guard;
+
             loop {
                 tokio::time::sleep(Duration::from_secs(60)).await;
 
@@ -223,8 +237,28 @@ impl EmbeddingManager {
                     break;
                 }
             }
-            // Allow a new unloader to be spawned on next load
-            active_flag.store(false, Ordering::SeqCst);
+            // `_guard` drops here, resetting `unloader_active` to false so
+            // the next `ensure_loaded` can spawn a fresh unloader.
         });
+    }
+}
+
+/// RAII guard that resets the "unloader active" flag back to `false` when
+/// dropped — including the panic-unwind path. Spawned inside the unloader
+/// task so any panic at an `.await` point still flips the flag, preventing
+/// the leak described in `start_idle_unloader`.
+struct ActiveFlagGuard {
+    flag: Arc<AtomicBool>,
+}
+
+impl ActiveFlagGuard {
+    fn new(flag: Arc<AtomicBool>) -> Self {
+        Self { flag }
+    }
+}
+
+impl Drop for ActiveFlagGuard {
+    fn drop(&mut self) {
+        self.flag.store(false, Ordering::SeqCst);
     }
 }

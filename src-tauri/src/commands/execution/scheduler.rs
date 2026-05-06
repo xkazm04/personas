@@ -7,9 +7,7 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 #[tauri::command]
-pub fn get_scheduler_status(
-    state: State<'_, Arc<AppState>>,
-) -> Result<SchedulerStats, AppError> {
+pub fn get_scheduler_status(state: State<'_, Arc<AppState>>) -> Result<SchedulerStats, AppError> {
     require_auth_sync(&state)?;
     Ok(state.scheduler.stats())
 }
@@ -46,9 +44,7 @@ pub async fn start_scheduler(
 }
 
 #[tauri::command]
-pub fn stop_scheduler(
-    state: State<'_, Arc<AppState>>,
-) -> Result<SchedulerStats, AppError> {
+pub fn stop_scheduler(state: State<'_, Arc<AppState>>) -> Result<SchedulerStats, AppError> {
     require_auth_sync(&state)?;
     background::stop_loops(&state.scheduler);
     Ok(state.scheduler.stats())

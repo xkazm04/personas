@@ -4,12 +4,17 @@ import {
   BookOpen,
   Bot,
   ChevronRight,
+  Compass,
   Globe2,
+  Inbox,
   Layers,
+  ListChecks,
   Sparkles,
+  Target,
   Trash2,
   User,
   UserCircle2,
+  Workflow,
   X,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -34,18 +39,27 @@ type KindLabelKey =
   | 'facts_user'
   | 'facts_project'
   | 'facts_world'
-  | 'reflections';
+  | 'reflections'
+  | 'procedurals'
+  | 'goals'
+  | 'rituals'
+  | 'backlog';
 
 const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey }[] = [
-  // Order matches the conversation reading flow: who Athena thinks I am,
-  // what she knows about me (facts), what she remembers (episodes,
-  // reflections), the docs she references, her own character contract.
+  // Reading order: who I think she is (identity), what she knows about
+  // me (facts), what I'm trying to do (goals + backlog), how she's
+  // agreed to behave (procedurals + rituals), what she remembers
+  // (episodes, reflections), the docs, her contract.
   { kind: 'identity', icon: User, labelKey: 'identity' },
   { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user' },
   { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project' },
   { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world' },
+  { kind: 'goal', icon: Target, labelKey: 'goals' },
+  { kind: 'backlog', icon: Inbox, labelKey: 'backlog' },
+  { kind: 'procedural', icon: Workflow, labelKey: 'procedurals' },
+  { kind: 'ritual', icon: Compass, labelKey: 'rituals' },
   { kind: 'episode', icon: Bot, labelKey: 'episodes' },
-  { kind: 'reflection', icon: Sparkles, labelKey: 'reflections' },
+  { kind: 'reflection', icon: ListChecks, labelKey: 'reflections' },
   { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine' },
   { kind: 'constitution', icon: Layers, labelKey: 'constitution' },
 ];
@@ -153,6 +167,12 @@ function kindLabel(
   t: ReturnType<typeof useTranslation>['t'],
   kind: BrainKind,
 ): string {
+  // Phase D scoped variants share their parent's label — the meta line
+  // already shows the scope, so the title doesn't need to repeat it.
+  if (kind.startsWith('procedural')) return t.plugins.companion.procedurals;
+  if (kind.startsWith('goal')) return t.plugins.companion.goals;
+  if (kind.startsWith('ritual')) return t.plugins.companion.rituals;
+  if (kind.startsWith('backlog')) return t.plugins.companion.backlog;
   switch (kind) {
     case 'episode':
       return t.plugins.companion.episodes;
@@ -172,6 +192,8 @@ function kindLabel(
       return t.plugins.companion.facts_world;
     case 'reflection':
       return t.plugins.companion.reflections;
+    default:
+      return kind;
   }
 }
 

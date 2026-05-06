@@ -2,8 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember,
-    PipelineRun, TeamCounts, UpdateTeamInput,
+    CreateTeamInput, PersonaTeam, PersonaTeamConnection, PersonaTeamMember, PipelineRun,
+    TeamCounts, UpdateTeamInput,
 };
 use crate::db::repos::resources::teams as repo;
 use crate::engine::event_registry::event_name;
@@ -91,7 +91,15 @@ pub fn add_team_member(
     config: Option<String>,
 ) -> Result<PersonaTeamMember, AppError> {
     require_auth_sync(&state)?;
-    repo::add_member(&state.db, &team_id, &persona_id, role, position_x, position_y, config)
+    repo::add_member(
+        &state.db,
+        &team_id,
+        &persona_id,
+        role,
+        position_x,
+        position_y,
+        config,
+    )
 }
 
 #[tauri::command]
@@ -108,10 +116,7 @@ pub fn update_team_member(
 }
 
 #[tauri::command]
-pub fn remove_team_member(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn remove_team_member(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::remove_member(&state.db, &id)
 }
@@ -136,7 +141,15 @@ pub fn create_team_connection(
     label: Option<String>,
 ) -> Result<PersonaTeamConnection, AppError> {
     require_auth_sync(&state)?;
-    repo::create_connection(&state.db, &team_id, &source_member_id, &target_member_id, connection_type, condition, label)
+    repo::create_connection(
+        &state.db,
+        &team_id,
+        &source_member_id,
+        &target_member_id,
+        connection_type,
+        condition,
+        label,
+    )
 }
 
 #[tauri::command]
@@ -196,7 +209,8 @@ pub async fn execute_team(
     // execution races (duplicate LLM calls, conflicting pipeline-status events).
     if team_repo::has_running_pipeline(&state.db, &team_id)? {
         return Err(AppError::Validation(
-            "This team already has a pipeline running. Wait for it to complete or cancel it first.".into(),
+            "This team already has a pipeline running. Wait for it to complete or cancel it first."
+                .into(),
         ));
     }
 
@@ -262,13 +276,8 @@ pub async fn execute_team(
 
     let node_statuses_json =
         serde_json::to_string(&initial_node_statuses).unwrap_or_else(|_| "[]".into());
-    let _ = team_repo::update_pipeline_run(
-        &state.db,
-        &run_id,
-        "running",
-        &node_statuses_json,
-        None,
-    );
+    let _ =
+        team_repo::update_pipeline_run(&state.db, &run_id, "running", &node_statuses_json, None);
     let _ = app.emit(
         event_name::PIPELINE_STATUS,
         serde_json::json!({
@@ -280,8 +289,9 @@ pub async fn execute_team(
     );
 
     // Set up cancellation flag.
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("pipeline", &run_id);
+    let (cancelled, run_guard) = state
+        .process_registry
+        .register_run_guarded("pipeline", &run_id);
 
     let ctx = PipelineContext {
         db: state.db.clone(),
@@ -320,10 +330,7 @@ pub async fn execute_team(
 
 /// Cancel a running pipeline by setting its cancellation flag.
 #[tauri::command]
-pub fn cancel_pipeline(
-    state: State<'_, Arc<AppState>>,
-    run_id: String,
-) -> Result<bool, AppError> {
+pub fn cancel_pipeline(state: State<'_, Arc<AppState>>, run_id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("pipeline", &run_id);
     tracing::info!(run_id = %run_id, "Pipeline cancellation requested");
@@ -378,7 +385,12 @@ pub fn get_pipeline_analytics(
     let members = repo::get_members(&state.db, &team_id)?;
     let connections = repo::get_connections(&state.db, &team_id)?;
 
-    Ok(optimizer::analyze_pipeline(&team_id, &runs, &members, &connections))
+    Ok(optimizer::analyze_pipeline(
+        &team_id,
+        &runs,
+        &members,
+        &connections,
+    ))
 }
 
 #[tauri::command]
@@ -400,7 +412,11 @@ pub fn suggest_topology(
         vec![]
     };
 
-    Ok(topology_heuristic::suggest_topology(&query, &personas, &existing_member_ids))
+    Ok(topology_heuristic::suggest_topology(
+        &query,
+        &personas,
+        &existing_member_ids,
+    ))
 }
 
 /// LLM model for team building -- needs reasoning for composition decisions.
@@ -425,12 +441,8 @@ async fn run_llm_topology_request(
     let personas = persona_repo::get_all(db)?;
     let templates = review_repo::get_reviews(db, None, Some(50))?;
 
-    let prompt_text = llm_topology::build_llm_topology_prompt(
-        query,
-        &personas,
-        &templates,
-        existing_member_ids,
-    );
+    let prompt_text =
+        llm_topology::build_llm_topology_prompt(query, &personas, &templates, existing_member_ids);
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
@@ -449,7 +461,11 @@ async fn run_llm_topology_request(
 
     match llm_topology::parse_llm_topology_response(&output_text, &personas) {
         Some(bp) if !bp.members.is_empty() => Ok(bp),
-        _ => Ok(topology_heuristic::suggest_topology(query, &personas, existing_member_ids)),
+        _ => Ok(topology_heuristic::suggest_topology(
+            query,
+            &personas,
+            existing_member_ids,
+        )),
     }
 }
 

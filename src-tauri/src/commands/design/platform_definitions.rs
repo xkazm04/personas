@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::platform_rules;
 use crate::db::models::{PlatformDefinition, PlatformFormat};
+use crate::engine::platform_rules;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;

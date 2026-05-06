@@ -52,16 +52,20 @@ impl ConnectionMetrics {
     fn record_disconnect(&self, reason: DisconnectReason) {
         match reason {
             DisconnectReason::HealthCheck => {
-                self.connections_dropped_health.fetch_add(1, Ordering::Relaxed);
+                self.connections_dropped_health
+                    .fetch_add(1, Ordering::Relaxed);
             }
             DisconnectReason::User => {
-                self.connections_dropped_user.fetch_add(1, Ordering::Relaxed);
+                self.connections_dropped_user
+                    .fetch_add(1, Ordering::Relaxed);
             }
             DisconnectReason::Shutdown => {
-                self.connections_dropped_shutdown.fetch_add(1, Ordering::Relaxed);
+                self.connections_dropped_shutdown
+                    .fetch_add(1, Ordering::Relaxed);
             }
             DisconnectReason::ProtocolError => {
-                self.connections_dropped_protocol.fetch_add(1, Ordering::Relaxed);
+                self.connections_dropped_protocol
+                    .fetch_add(1, Ordering::Relaxed);
             }
         }
     }
@@ -236,9 +240,10 @@ impl ConnectionManager {
                     is_outgoing = is_outgoing,
                     "Simultaneous connect tie-break: closing new connection, keeping existing"
                 );
-                new_conn
-                    .quinn_conn
-                    .close(quinn::VarInt::from_u32(2), b"simultaneous connect tie-break");
+                new_conn.quinn_conn.close(
+                    quinn::VarInt::from_u32(2),
+                    b"simultaneous connect tie-break",
+                );
                 return false;
             }
 
@@ -248,9 +253,10 @@ impl ConnectionManager {
                 is_outgoing = is_outgoing,
                 "Simultaneous connect tie-break: replacing existing connection with new one"
             );
-            existing
-                .quinn_conn
-                .close(quinn::VarInt::from_u32(2), b"simultaneous connect tie-break");
+            existing.quinn_conn.close(
+                quinn::VarInt::from_u32(2),
+                b"simultaneous connect tie-break",
+            );
         }
 
         conns.insert(peer_id.to_string(), new_conn);
@@ -264,7 +270,9 @@ impl ConnectionManager {
         manifest_sync: Arc<ManifestSync>,
         messages: Arc<MessageRouter>,
     ) -> Result<(), AppError> {
-        self.metrics.connection_attempts.fetch_add(1, Ordering::Relaxed);
+        self.metrics
+            .connection_attempts
+            .fetch_add(1, Ordering::Relaxed);
         let connect_start = std::time::Instant::now();
 
         // Look up the peer's address from the discovered_peers table
@@ -276,9 +284,10 @@ impl ConnectionManager {
         let quinn_conn = self.transport.connect(addr).await?;
 
         // Perform Hello handshake
-        let (send, recv) = quinn_conn.open_bi().await.map_err(|e| {
-            AppError::Internal(format!("Failed to open stream: {e}"))
-        })?;
+        let (send, recv) = quinn_conn
+            .open_bi()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to open stream: {e}")))?;
 
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
@@ -300,7 +309,9 @@ impl ConnectionManager {
             protocol::decode(&mut recv),
         )
         .await
-        .map_err(|_| AppError::Internal("HelloAck timeout: peer did not respond within 10s".into()))??;
+        .map_err(|_| {
+            AppError::Internal("HelloAck timeout: peer did not respond within 10s".into())
+        })??;
         let (remote_peer_id, remote_display_name) = match response {
             Message::HelloAck {
                 peer_id: remote_id,
@@ -395,9 +406,10 @@ impl ConnectionManager {
             )));
         }
 
-        let (send, recv) = quinn_conn.accept_bi().await.map_err(|e| {
-            AppError::Internal(format!("Failed to accept stream: {e}"))
-        })?;
+        let (send, recv) = quinn_conn
+            .accept_bi()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to accept stream: {e}")))?;
 
         let mut send = tokio::io::BufWriter::new(send);
         let mut recv = tokio::io::BufReader::new(recv);
@@ -408,7 +420,9 @@ impl ConnectionManager {
             protocol::decode(&mut recv),
         )
         .await
-        .map_err(|_| AppError::Internal("Hello timeout: peer did not send Hello within 10s".into()))??;
+        .map_err(|_| {
+            AppError::Internal("Hello timeout: peer did not send Hello within 10s".into())
+        })??;
         let (remote_peer_id, remote_display_name) = match hello {
             Message::Hello {
                 peer_id,
@@ -464,7 +478,10 @@ impl ConnectionManager {
         };
 
         // Insert with tie-breaker to handle simultaneous connect race
-        if !self.try_insert_connection(&remote_peer_id, conn, false).await {
+        if !self
+            .try_insert_connection(&remote_peer_id, conn, false)
+            .await
+        {
             // Lost the tie-break — the outgoing connection to this peer wins.
             tracing::debug!(peer_id = %remote_peer_id, "Incoming connection lost tie-break, closing");
             return Ok(());
@@ -538,10 +555,7 @@ impl ConnectionManager {
                         msg_count = rate_msg_count,
                         "Peer exceeded message rate limit, disconnecting"
                     );
-                    quinn_conn.close(
-                        quinn::VarInt::from_u32(3),
-                        b"rate limit exceeded",
-                    );
+                    quinn_conn.close(quinn::VarInt::from_u32(3), b"rate limit exceeded");
                     break;
                 }
 
@@ -576,8 +590,14 @@ impl ConnectionManager {
                         }
                     };
 
-                    if let Err(e) =
-                        Self::dispatch_inbound_message(msg, &mut send, &peer_id, &manifest_sync, &messages).await
+                    if let Err(e) = Self::dispatch_inbound_message(
+                        msg,
+                        &mut send,
+                        &peer_id,
+                        &manifest_sync,
+                        &messages,
+                    )
+                    .await
                     {
                         tracing::debug!(
                             peer_id = %peer_id,
@@ -693,9 +713,10 @@ impl ConnectionManager {
         ),
         AppError,
     > {
-        let quinn_conn = self.get_quinn_conn(peer_id).await.ok_or_else(|| {
-            AppError::NotFound(format!("Not connected to peer {}", peer_id))
-        })?;
+        let quinn_conn = self
+            .get_quinn_conn(peer_id)
+            .await
+            .ok_or_else(|| AppError::NotFound(format!("Not connected to peer {}", peer_id)))?;
 
         let (send, recv) = quinn_conn.open_bi().await.map_err(|e| {
             AppError::Internal(format!("Failed to open stream to {}: {e}", peer_id))
@@ -713,13 +734,7 @@ impl ConnectionManager {
     pub async fn run_health_checks(&self) -> Result<(), crate::error::AppError> {
         use futures_util::stream::{self, StreamExt};
 
-        let peer_ids: Vec<String> = self
-            .connections
-            .read()
-            .await
-            .keys()
-            .cloned()
-            .collect();
+        let peer_ids: Vec<String> = self.connections.read().await.keys().cloned().collect();
 
         // Collect ping results without holding the write lock
         let results: Vec<(String, Result<u64, crate::error::AppError>)> = stream::iter(peer_ids)
@@ -843,9 +858,9 @@ impl ConnectionManager {
             })?;
 
         let addresses: Vec<String> = serde_json::from_str(&addresses_json)?;
-        let addr_str = addresses.first().ok_or_else(|| {
-            AppError::NotFound(format!("No addresses for peer {}", peer_id))
-        })?;
+        let addr_str = addresses
+            .first()
+            .ok_or_else(|| AppError::NotFound(format!("No addresses for peer {}", peer_id)))?;
 
         addr_str
             .parse()

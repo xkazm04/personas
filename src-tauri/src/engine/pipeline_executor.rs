@@ -330,10 +330,14 @@ async fn run_persona_node(
     let persona = match persona_repo::get_by_id(db, &member.persona_id) {
         Ok(p) => p,
         Err(_) => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("failed")),
-                ("error", serde_json::json!("Persona not found")),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("failed")),
+                    ("error", serde_json::json!("Persona not found")),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: false };
         }
     };
@@ -358,18 +362,24 @@ async fn run_persona_node(
     ) {
         Ok(e) => e,
         Err(_) => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("failed")),
-                ("error", serde_json::json!("Failed to create execution")),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("failed")),
+                    ("error", serde_json::json!("Failed to create execution")),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: false };
         }
     };
 
     // Attach execution_id to node status
-    update_node_status(statuses, &member.id, &[
-        ("execution_id", serde_json::json!(exec.id)),
-    ]);
+    update_node_status(
+        statuses,
+        &member.id,
+        &[("execution_id", serde_json::json!(exec.id))],
+    );
 
     // Start execution
     if let Err(e) = engine
@@ -384,10 +394,14 @@ async fn run_persona_node(
         )
         .await
     {
-        update_node_status(statuses, &member.id, &[
-            ("status", serde_json::json!("failed")),
-            ("error", serde_json::json!(format!("{}", e))),
-        ]);
+        update_node_status(
+            statuses,
+            &member.id,
+            &[
+                ("status", serde_json::json!("failed")),
+                ("error", serde_json::json!(format!("{}", e))),
+            ],
+        );
         return NodeOutcome::Failed { cancelled: false };
     }
 
@@ -401,27 +415,39 @@ async fn run_persona_node(
             let _ = engine
                 .cancel_execution(&exec.id, db, persona_id.as_deref())
                 .await;
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("cancelled")),
-                ("error", serde_json::json!("Pipeline cancelled by user")),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("cancelled")),
+                    ("error", serde_json::json!("Pipeline cancelled by user")),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: true };
         }
 
         if let Ok(execution) = exec_repo::get_by_id(db, &exec.id) {
             match execution.status.as_str() {
                 "completed" => {
-                    update_node_status(statuses, &member.id, &[
-                        ("status", serde_json::json!("completed")),
-                        ("output", serde_json::json!(execution.output_data)),
-                    ]);
+                    update_node_status(
+                        statuses,
+                        &member.id,
+                        &[
+                            ("status", serde_json::json!("completed")),
+                            ("output", serde_json::json!(execution.output_data)),
+                        ],
+                    );
                     return NodeOutcome::Completed(execution.output_data.clone());
                 }
                 "failed" | "cancelled" => {
-                    update_node_status(statuses, &member.id, &[
-                        ("status", serde_json::json!("failed")),
-                        ("error", serde_json::json!(execution.error_message)),
-                    ]);
+                    update_node_status(
+                        statuses,
+                        &member.id,
+                        &[
+                            ("status", serde_json::json!("failed")),
+                            ("error", serde_json::json!(execution.error_message)),
+                        ],
+                    );
                     return NodeOutcome::Failed { cancelled: false };
                 }
                 _ => {}
@@ -430,10 +456,14 @@ async fn run_persona_node(
     }
 
     // Timed out
-    update_node_status(statuses, &member.id, &[
-        ("status", serde_json::json!("failed")),
-        ("error", serde_json::json!("Execution timed out")),
-    ]);
+    update_node_status(
+        statuses,
+        &member.id,
+        &[
+            ("status", serde_json::json!("failed")),
+            ("error", serde_json::json!("Execution timed out")),
+        ],
+    );
     NodeOutcome::Failed { cancelled: false }
 }
 
@@ -448,23 +478,31 @@ async fn run_command_node(
     let cmd = match &config.command {
         Some(c) => c.clone(),
         None => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("failed")),
-                (
-                    "error",
-                    serde_json::json!("Command node missing 'command' field in config"),
-                ),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("failed")),
+                    (
+                        "error",
+                        serde_json::json!("Command node missing 'command' field in config"),
+                    ),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: false };
         }
     };
 
     // Check cancellation before starting
     if cancelled.load(Ordering::Relaxed) {
-        update_node_status(statuses, &member.id, &[
-            ("status", serde_json::json!("cancelled")),
-            ("error", serde_json::json!("Pipeline cancelled by user")),
-        ]);
+        update_node_status(
+            statuses,
+            &member.id,
+            &[
+                ("status", serde_json::json!("cancelled")),
+                ("error", serde_json::json!("Pipeline cancelled by user")),
+            ],
+        );
         return NodeOutcome::Failed { cancelled: true };
     }
 
@@ -483,80 +521,97 @@ async fn run_command_node(
         command.env("PIPELINE_INPUT", input_val.to_string());
     }
 
-    let output = match tokio::time::timeout(
-        std::time::Duration::from_secs(300),
-        async {
-            let mut child = command.spawn()?;
-            // Poll exit status with try_wait (non-consuming) so we can check
-            // for cancellation between polls. Once exited, wait_with_output
-            // drains stdout/stderr exactly once.
-            loop {
-                if cancelled.load(Ordering::Relaxed) {
-                    let _ = child.kill().await;
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::Interrupted,
-                        "Pipeline cancelled by user",
-                    ));
-                }
-                match child.try_wait() {
-                    Ok(Some(_)) => break,
-                    Ok(None) => {
-                        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
-                    }
-                    Err(e) => return Err(e),
-                }
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(300), async {
+        let mut child = command.spawn()?;
+        // Poll exit status with try_wait (non-consuming) so we can check
+        // for cancellation between polls. Once exited, wait_with_output
+        // drains stdout/stderr exactly once.
+        loop {
+            if cancelled.load(Ordering::Relaxed) {
+                let _ = child.kill().await;
+                return Err(std::io::Error::new(
+                    std::io::ErrorKind::Interrupted,
+                    "Pipeline cancelled by user",
+                ));
             }
-            child.wait_with_output().await
-        },
-    )
+            match child.try_wait() {
+                Ok(Some(_)) => break,
+                Ok(None) => {
+                    tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        child.wait_with_output().await
+    })
     .await
     {
         Ok(Ok(o)) => o,
         Ok(Err(e)) if e.kind() == std::io::ErrorKind::Interrupted => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("cancelled")),
-                ("error", serde_json::json!("Pipeline cancelled by user")),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("cancelled")),
+                    ("error", serde_json::json!("Pipeline cancelled by user")),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: true };
         }
         Ok(Err(e)) => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("failed")),
-                (
-                    "error",
-                    serde_json::json!(format!("Command failed to start: {}", e)),
-                ),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("failed")),
+                    (
+                        "error",
+                        serde_json::json!(format!("Command failed to start: {}", e)),
+                    ),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: false };
         }
         Err(_) => {
-            update_node_status(statuses, &member.id, &[
-                ("status", serde_json::json!("failed")),
-                ("error", serde_json::json!("Command timed out after 300 seconds")),
-            ]);
+            update_node_status(
+                statuses,
+                &member.id,
+                &[
+                    ("status", serde_json::json!("failed")),
+                    (
+                        "error",
+                        serde_json::json!("Command timed out after 300 seconds"),
+                    ),
+                ],
+            );
             return NodeOutcome::Failed { cancelled: false };
         }
     };
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     if output.status.success() {
-        update_node_status(statuses, &member.id, &[
-            ("status", serde_json::json!("completed")),
-            ("output", serde_json::json!(stdout)),
-        ]);
+        update_node_status(
+            statuses,
+            &member.id,
+            &[
+                ("status", serde_json::json!("completed")),
+                ("output", serde_json::json!(stdout)),
+            ],
+        );
         NodeOutcome::Completed(Some(stdout))
     } else {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        update_node_status(statuses, &member.id, &[
-            ("status", serde_json::json!("failed")),
-            (
-                "error",
-                serde_json::json!(format!(
-                    "Exit code {}: {}",
-                    output.status, stderr
-                )),
-            ),
-        ]);
+        update_node_status(
+            statuses,
+            &member.id,
+            &[
+                ("status", serde_json::json!("failed")),
+                (
+                    "error",
+                    serde_json::json!(format!("Exit code {}: {}", output.status, stderr)),
+                ),
+            ],
+        );
         NodeOutcome::Failed { cancelled: false }
     }
 }
@@ -652,10 +707,14 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         let node_config = match parse_node_config(member) {
             Ok(cfg) => cfg,
             Err(msg) => {
-                update_node_status(&mut statuses, member_id, &[
-                    ("status", serde_json::json!("failed")),
-                    ("error", serde_json::json!(msg)),
-                ]);
+                update_node_status(
+                    &mut statuses,
+                    member_id,
+                    &[
+                        ("status", serde_json::json!("failed")),
+                        ("error", serde_json::json!(msg)),
+                    ],
+                );
                 emitter.emit("running", &statuses, Some(memories_created));
                 has_failure = true;
                 continue;
@@ -666,13 +725,14 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         // Skip this node if an incoming conditional edge's condition is not
         // met by the source node's output.
         if should_skip_node(member_id, &ctx.connections, &node_outputs) {
-            update_node_status(&mut statuses, member_id, &[
-                ("status", serde_json::json!("skipped")),
-                (
-                    "skip_reason",
-                    serde_json::json!("condition_not_met"),
-                ),
-            ]);
+            update_node_status(
+                &mut statuses,
+                member_id,
+                &[
+                    ("status", serde_json::json!("skipped")),
+                    ("skip_reason", serde_json::json!("condition_not_met")),
+                ],
+            );
             emitter.emit("running", &statuses, Some(memories_created));
             continue;
         }
@@ -685,14 +745,12 @@ pub async fn run_pipeline(ctx: PipelineContext) {
                 .unwrap_or_else(|_| "Unknown".into());
 
             // Find last predecessor output for context
-            let pred_output = predecessor_map
-                .get(member_id)
-                .and_then(|preds| {
-                    preds
-                        .iter()
-                        .rev()
-                        .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
-                });
+            let pred_output = predecessor_map.get(member_id).and_then(|preds| {
+                preds
+                    .iter()
+                    .rev()
+                    .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
+            });
 
             // Emit approval-needed event
             let _ = ctx.app.emit(
@@ -706,9 +764,11 @@ pub async fn run_pipeline(ctx: PipelineContext) {
                 }),
             );
 
-            update_node_status(&mut statuses, member_id, &[
-                ("status", serde_json::json!("awaiting_approval")),
-            ]);
+            update_node_status(
+                &mut statuses,
+                member_id,
+                &[("status", serde_json::json!("awaiting_approval"))],
+            );
             emitter.emit("awaiting_approval", &statuses, Some(memories_created));
 
             let outcome = poll_for_approval(
@@ -727,10 +787,14 @@ pub async fn run_pipeline(ctx: PipelineContext) {
                         ApprovalOutcome::TimedOut => "Approval timed out (1 hour)",
                         ApprovalOutcome::Approved => unreachable!(),
                     };
-                    update_node_status(&mut statuses, member_id, &[
-                        ("status", serde_json::json!("rejected")),
-                        ("error", serde_json::json!(reason)),
-                    ]);
+                    update_node_status(
+                        &mut statuses,
+                        member_id,
+                        &[
+                            ("status", serde_json::json!("rejected")),
+                            ("error", serde_json::json!(reason)),
+                        ],
+                    );
                     has_failure = true;
                     emitter.emit("running", &statuses, Some(memories_created));
                     break;
@@ -739,18 +803,16 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         }
 
         // Mark node running
-        update_node_status(&mut statuses, member_id, &[
-            ("status", serde_json::json!("running")),
-        ]);
+        update_node_status(
+            &mut statuses,
+            member_id,
+            &[("status", serde_json::json!("running"))],
+        );
         emitter.emit("running", &statuses, None);
 
         // Resolve input: predecessor output(s) or pipeline-level input_data
-        let resolved_input = resolve_node_input(
-            &predecessor_map,
-            member_id,
-            &node_outputs,
-            &ctx.input_data,
-        );
+        let resolved_input =
+            resolve_node_input(&predecessor_map, member_id, &node_outputs, &ctx.input_data);
 
         // Load team memories for context injection
         let memory_context = load_memory_context(&ctx.db, &ctx.team_id);
@@ -879,8 +941,7 @@ fn resolve_node_input(
 
 /// Load top team memories and format as context string.
 fn load_memory_context(db: &DbPool, team_id: &str) -> Option<String> {
-    let team_memories = team_memories_repo::get_for_injection(db, team_id, 20)
-        .unwrap_or_default();
+    let team_memories = team_memories_repo::get_for_injection(db, team_id, 20).unwrap_or_default();
     if team_memories.is_empty() {
         return None;
     }
@@ -1004,7 +1065,10 @@ mod tests {
             "approvalGate": true
         }"#;
         let config: NodeConfig = serde_json::from_str(json).unwrap();
-        assert_eq!(config.model_profile_override.as_deref(), Some("claude-haiku"));
+        assert_eq!(
+            config.model_profile_override.as_deref(),
+            Some("claude-haiku")
+        );
         assert_eq!(config.node_type.as_deref(), Some("command"));
         assert_eq!(config.command.as_deref(), Some("echo hello"));
         assert_eq!(config.approval_gate, Some(true));

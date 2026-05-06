@@ -22,7 +22,6 @@ pub fn list_tables(pool: &DbPool, credential_id: &str) -> Result<Vec<DbSchemaTab
         )?;
         let rows = stmt.query_map(params![credential_id], row_to_schema_table)?;
         Ok(rows.filter_map(|r| r.ok()).collect())
-
     })
 }
 
@@ -40,7 +39,6 @@ pub fn get_table_by_id(pool: &DbPool, id: &str) -> Result<DbSchemaTable, AppErro
             }
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -67,7 +65,6 @@ pub fn create_table(
         )?;
 
         get_table_by_id(pool, &id)
-
     })
 }
 
@@ -89,11 +86,46 @@ pub fn update_table(
         let mut param_idx = 2u32;
         let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
-        push_field_param!(table_name, "table_name", sets, param_idx, param_values, clone);
-        push_field_param!(display_label, "display_label", sets, param_idx, param_values, clone);
-        push_field_param!(column_hints, "column_hints", sets, param_idx, param_values, clone);
-        push_field_param!(is_favorite, "is_favorite", sets, param_idx, param_values, bool);
-        push_field_param!(sort_order, "sort_order", sets, param_idx, param_values, copy);
+        push_field_param!(
+            table_name,
+            "table_name",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            display_label,
+            "display_label",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            column_hints,
+            "column_hints",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            is_favorite,
+            "is_favorite",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            sort_order,
+            "sort_order",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
 
         let sql = format!(
             "UPDATE db_schema_tables SET {} WHERE id = ?{}",
@@ -108,7 +140,6 @@ pub fn update_table(
         conn.execute(&sql, params_ref.as_slice())?;
 
         get_table_by_id(pool, id)
-
     })
 }
 
@@ -117,7 +148,6 @@ pub fn delete_table(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM db_schema_tables WHERE id = ?1", params![id])?;
         Ok(rows > 0)
-
     })
 }
 
@@ -151,7 +181,6 @@ pub fn list_queries(pool: &DbPool, credential_id: &str) -> Result<Vec<DbSavedQue
         )?;
         let rows = stmt.query_map(params![credential_id], row_to_saved_query)?;
         Ok(rows.filter_map(|r| r.ok()).collect())
-
     })
 }
 
@@ -169,7 +198,6 @@ pub fn get_query_by_id(pool: &DbPool, id: &str) -> Result<DbSavedQuery, AppError
             }
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -197,7 +225,6 @@ pub fn create_query(
         )?;
 
         get_query_by_id(pool, &id)
-
     })
 }
 
@@ -220,10 +247,31 @@ pub fn update_query(
         let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
         push_field_param!(title, "title", sets, param_idx, param_values, clone);
-        push_field_param!(query_text, "query_text", sets, param_idx, param_values, clone);
+        push_field_param!(
+            query_text,
+            "query_text",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
         push_field_param!(language, "language", sets, param_idx, param_values, clone);
-        push_field_param!(is_favorite, "is_favorite", sets, param_idx, param_values, bool);
-        push_field_param!(sort_order, "sort_order", sets, param_idx, param_values, copy);
+        push_field_param!(
+            is_favorite,
+            "is_favorite",
+            sets,
+            param_idx,
+            param_values,
+            bool
+        );
+        push_field_param!(
+            sort_order,
+            "sort_order",
+            sets,
+            param_idx,
+            param_values,
+            copy
+        );
 
         let sql = format!(
             "UPDATE db_saved_queries SET {} WHERE id = ?{}",
@@ -238,7 +286,6 @@ pub fn update_query(
         conn.execute(&sql, params_ref.as_slice())?;
 
         get_query_by_id(pool, id)
-
     })
 }
 
@@ -257,7 +304,6 @@ pub fn update_query_run(
             params![now, ok_int, duration_ms, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -266,7 +312,6 @@ pub fn delete_query(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM db_saved_queries WHERE id = ?1", params![id])?;
         Ok(rows > 0)
-
     })
 }
 
@@ -449,7 +494,9 @@ mod tests {
         let result = get_table_by_id(&pool, "nonexistent");
         assert!(result.is_err());
         let err = format!("{}", result.unwrap_err());
-        assert!(err.contains("NotFound") || err.contains("not found") || err.contains("DbSchemaTable"));
+        assert!(
+            err.contains("NotFound") || err.contains("not found") || err.contains("DbSchemaTable")
+        );
     }
 
     // -- Saved Queries -----------------------------------------------
@@ -506,7 +553,8 @@ mod tests {
         let pool = test_pool();
         let q = create_query(&pool, "cred-1", "Old title", "SELECT 1", None).unwrap();
 
-        let updated = update_query(&pool, &q.id, Some("New title"), None, None, None, None).unwrap();
+        let updated =
+            update_query(&pool, &q.id, Some("New title"), None, None, None, None).unwrap();
         assert_eq!(updated.title, "New title");
     }
 
@@ -597,7 +645,8 @@ mod tests {
         let conn = pool.get().unwrap();
         // Re-enable FK enforcement on this connection
         conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        conn.execute("DELETE FROM persona_credentials WHERE id = 'cred-1'", []).unwrap();
+        conn.execute("DELETE FROM persona_credentials WHERE id = 'cred-1'", [])
+            .unwrap();
         drop(conn);
 
         assert_eq!(list_tables(&pool, "cred-1").unwrap().len(), 0);

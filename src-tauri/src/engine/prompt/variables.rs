@@ -18,7 +18,8 @@ pub fn replace_variables(
     let now = chrono::Utc::now();
 
     // Define magic variables (trusted -- skip sanitization)
-    let mut trusted_vars: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut trusted_vars: std::collections::HashMap<String, String> =
+        std::collections::HashMap::new();
     trusted_vars.insert("now".into(), now.to_rfc3339());
     trusted_vars.insert("today".into(), now.format("%Y-%m-%d").to_string());
     trusted_vars.insert("iso8601".into(), now.to_rfc3339());
@@ -31,10 +32,9 @@ pub fn replace_variables(
     if let Some(ref params_json) = persona.parameters {
         if let Ok(params) = serde_json::from_str::<Vec<serde_json::Value>>(params_json) {
             for p in &params {
-                if let (Some(key), Some(value)) = (
-                    p.get("key").and_then(|k| k.as_str()),
-                    p.get("value"),
-                ) {
+                if let (Some(key), Some(value)) =
+                    (p.get("key").and_then(|k| k.as_str()), p.get("value"))
+                {
                     let val_str = match value {
                         serde_json::Value::String(s) => s.clone(),
                         serde_json::Value::Number(n) => n.to_string(),
@@ -84,5 +84,6 @@ pub fn replace_variables(
         } else {
             caps.get(0).unwrap().as_str().to_string()
         }
-    }).to_string()
+    })
+    .to_string()
 }

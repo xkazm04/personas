@@ -40,13 +40,22 @@ pub fn list_assets(pool: &DbPool, asset_type: Option<&str>) -> Result<Vec<Artist
             ),
         };
         let mut stmt = conn.prepare(sql)?;
-        let params_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        let params_refs: Vec<&dyn rusqlite::types::ToSql> =
+            params.iter().map(|p| p.as_ref()).collect();
         let rows = stmt.query_map(params_refs.as_slice(), |row| {
             Ok(ArtistAsset {
-                id: row.get(0)?, file_name: row.get(1)?, file_path: row.get(2)?,
-                asset_type: row.get(3)?, mime_type: row.get(4)?, file_size: row.get(5)?,
-                width: row.get(6)?, height: row.get(7)?, thumbnail_path: row.get(8)?,
-                tags: row.get(9)?, source: row.get(10)?, created_at: row.get(11)?,
+                id: row.get(0)?,
+                file_name: row.get(1)?,
+                file_path: row.get(2)?,
+                asset_type: row.get(3)?,
+                mime_type: row.get(4)?,
+                file_size: row.get(5)?,
+                width: row.get(6)?,
+                height: row.get(7)?,
+                thumbnail_path: row.get(8)?,
+                tags: row.get(9)?,
+                source: row.get(10)?,
+                created_at: row.get(11)?,
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)

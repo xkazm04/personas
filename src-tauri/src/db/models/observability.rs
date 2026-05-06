@@ -1,4 +1,5 @@
 use std::fmt;
+use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -31,6 +32,20 @@ impl fmt::Display for AlertMetric {
     }
 }
 
+impl FromStr for AlertMetric {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "error_rate" => Ok(Self::ErrorRate),
+            "success_rate" => Ok(Self::SuccessRate),
+            "cost" => Ok(Self::Cost),
+            "cost_spike" => Ok(Self::CostSpike),
+            "executions" => Ok(Self::Executions),
+            other => Err(format!("unknown AlertMetric: {other:?}")),
+        }
+    }
+}
+
 /// Supported alert comparison operators.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -56,6 +71,19 @@ impl fmt::Display for AlertOperator {
     }
 }
 
+impl FromStr for AlertOperator {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            ">" => Ok(Self::Gt),
+            "<" => Ok(Self::Lt),
+            ">=" => Ok(Self::Gte),
+            "<=" => Ok(Self::Lte),
+            other => Err(format!("unknown AlertOperator: {other:?}")),
+        }
+    }
+}
+
 /// Supported alert severity levels.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -72,6 +100,18 @@ impl fmt::Display for AlertSeverity {
             Self::Info => write!(f, "info"),
             Self::Warning => write!(f, "warning"),
             Self::Critical => write!(f, "critical"),
+        }
+    }
+}
+
+impl FromStr for AlertSeverity {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "info" => Ok(Self::Info),
+            "warning" => Ok(Self::Warning),
+            "critical" => Ok(Self::Critical),
+            other => Err(format!("unknown AlertSeverity: {other:?}")),
         }
     }
 }
@@ -325,10 +365,10 @@ pub struct ExecutionDashboardData {
 pub struct AlertRule {
     pub id: String,
     pub name: String,
-    pub metric: String,
-    pub operator: String,
+    pub metric: AlertMetric,
+    pub operator: AlertOperator,
     pub threshold: f64,
-    pub severity: String,
+    pub severity: AlertSeverity,
     pub persona_id: Option<String>,
     pub enabled: bool,
     pub created_at: String,
@@ -341,8 +381,8 @@ pub struct FiredAlert {
     pub id: String,
     pub rule_id: String,
     pub rule_name: String,
-    pub metric: String,
-    pub severity: String,
+    pub metric: AlertMetric,
+    pub severity: AlertSeverity,
     pub message: String,
     pub value: f64,
     pub threshold: f64,

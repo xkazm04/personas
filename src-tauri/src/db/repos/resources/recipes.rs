@@ -28,8 +28,18 @@ row_mapper!(row_to_link -> PersonaRecipeLink {
 // Recipe CRUD
 // ============================================================================
 
-crud_get_by_id!(RecipeDefinition, "recipe_definitions", "Recipe", row_to_recipe);
-crud_get_all!(RecipeDefinition, "recipe_definitions", row_to_recipe, "created_at DESC");
+crud_get_by_id!(
+    RecipeDefinition,
+    "recipe_definitions",
+    "Recipe",
+    row_to_recipe
+);
+crud_get_all!(
+    RecipeDefinition,
+    "recipe_definitions",
+    row_to_recipe,
+    "created_at DESC"
+);
 
 pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::create", {
@@ -68,7 +78,6 @@ pub fn create(pool: &DbPool, input: CreateRecipeInput) -> Result<RecipeDefinitio
             rusqlite::Error::QueryReturnedNoRows => AppError::Internal("Failed to create recipe".into()),
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -90,8 +99,18 @@ pub fn update(
         push_field!(input.prompt_template, "prompt_template", sets, param_idx);
         push_field!(input.input_schema, "input_schema", sets, param_idx);
         push_field!(input.output_contract, "output_contract", sets, param_idx);
-        push_field!(input.tool_requirements, "tool_requirements", sets, param_idx);
-        push_field!(input.credential_requirements, "credential_requirements", sets, param_idx);
+        push_field!(
+            input.tool_requirements,
+            "tool_requirements",
+            sets,
+            param_idx
+        );
+        push_field!(
+            input.credential_requirements,
+            "credential_requirements",
+            sets,
+            param_idx
+        );
         push_field!(input.model_preference, "model_preference", sets, param_idx);
         push_field!(input.sample_inputs, "sample_inputs", sets, param_idx);
         push_field!(input.tags, "tags", sets, param_idx);
@@ -154,7 +173,6 @@ pub fn update(
                 rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {id}")),
                 other => AppError::Database(other),
             })
-
     })
 }
 
@@ -173,7 +191,6 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let rows = tx.execute("DELETE FROM recipe_definitions WHERE id = ?1", params![id])?;
         tx.commit()?;
         Ok(rows > 0)
-
     })
 }
 
@@ -195,7 +212,14 @@ pub fn link_to_persona(
             "INSERT OR IGNORE INTO persona_recipe_links
              (id, persona_id, recipe_id, sort_order, config, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![id, input.persona_id, input.recipe_id, sort_order, input.config, now],
+            params![
+                id,
+                input.persona_id,
+                input.recipe_id,
+                sort_order,
+                input.config,
+                now
+            ],
         )?;
 
         // Return the link (may already exist due to IGNORE)
@@ -212,7 +236,6 @@ pub fn link_to_persona(
                 other => AppError::Database(other),
             })?;
         Ok(link)
-
     })
 }
 
@@ -228,7 +251,6 @@ pub fn unlink_from_persona(
             params![persona_id, recipe_id],
         )?;
         Ok(rows > 0)
-
     })
 }
 
@@ -244,11 +266,13 @@ pub fn get_for_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<RecipeDefi
         let rows = stmt.query_map(params![persona_id], row_to_recipe)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
-pub fn get_for_credential(pool: &DbPool, credential_id: &str) -> Result<Vec<RecipeDefinition>, AppError> {
+pub fn get_for_credential(
+    pool: &DbPool,
+    credential_id: &str,
+) -> Result<Vec<RecipeDefinition>, AppError> {
     timed_query!("recipes", "recipes::get_for_credential", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -257,11 +281,13 @@ pub fn get_for_credential(pool: &DbPool, credential_id: &str) -> Result<Vec<Reci
         let rows = stmt.query_map(params![credential_id], row_to_recipe)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
-pub fn get_for_use_case(pool: &DbPool, use_case_id: &str) -> Result<Vec<RecipeDefinition>, AppError> {
+pub fn get_for_use_case(
+    pool: &DbPool,
+    use_case_id: &str,
+) -> Result<Vec<RecipeDefinition>, AppError> {
     timed_query!("recipes", "recipes::get_for_use_case", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -270,7 +296,6 @@ pub fn get_for_use_case(pool: &DbPool, use_case_id: &str) -> Result<Vec<RecipeDe
         let rows = stmt.query_map(params![use_case_id], row_to_recipe)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
@@ -288,12 +313,11 @@ pub fn get_versions(pool: &DbPool, recipe_id: &str) -> Result<Vec<RecipeVersion>
     timed_query!("recipes", "recipes::get_versions", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT * FROM recipe_versions WHERE recipe_id = ?1 ORDER BY version_number DESC"
+            "SELECT * FROM recipe_versions WHERE recipe_id = ?1 ORDER BY version_number DESC",
         )?;
         let rows = stmt.query_map([recipe_id], row_to_version)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
@@ -306,7 +330,6 @@ pub fn get_latest_version_number(pool: &DbPool, recipe_id: &str) -> Result<i32, 
             |row| row.get(0),
         )?;
         Ok(n as i32)
-
     })
 }
 
@@ -334,8 +357,8 @@ pub fn create_version(
             "SELECT * FROM recipe_versions WHERE id = ?1",
             [&id],
             row_to_version,
-        ).map_err(AppError::Database)
-
+        )
+        .map_err(AppError::Database)
     })
 }
 
@@ -362,11 +385,13 @@ pub fn accept_version(
 
         // 2. If no versions exist yet, snapshot the current recipe as v1
         if latest == 0 {
-            let current = tx.query_row(
-                "SELECT * FROM recipe_definitions WHERE id = ?1",
-                params![recipe_id],
-                row_to_recipe,
-            ).map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
+            let current = tx
+                .query_row(
+                    "SELECT * FROM recipe_definitions WHERE id = ?1",
+                    params![recipe_id],
+                    row_to_recipe,
+                )
+                .map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
 
             let snapshot_id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
@@ -401,40 +426,51 @@ pub fn accept_version(
         )?;
 
         // 5. Read the updated recipe within the transaction
-        let recipe = tx.query_row(
-            "SELECT * FROM recipe_definitions WHERE id = ?1",
-            params![recipe_id],
-            row_to_recipe,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {recipe_id}")),
-            other => AppError::Database(other),
-        })?;
+        let recipe = tx
+            .query_row(
+                "SELECT * FROM recipe_definitions WHERE id = ?1",
+                params![recipe_id],
+                row_to_recipe,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Recipe {recipe_id}"))
+                }
+                other => AppError::Database(other),
+            })?;
 
         tx.commit()?;
 
         Ok(recipe)
-
     })
 }
 
-pub fn revert_to_version(pool: &DbPool, recipe_id: &str, version_id: &str) -> Result<RecipeDefinition, AppError> {
+pub fn revert_to_version(
+    pool: &DbPool,
+    recipe_id: &str,
+    version_id: &str,
+) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::revert_to_version", {
         let conn = pool.get()?;
         let tx = conn.unchecked_transaction()?;
 
         // 1. Read the target version
-        let version = tx.query_row(
-            "SELECT * FROM recipe_versions WHERE id = ?1 AND recipe_id = ?2",
-            rusqlite::params![version_id, recipe_id],
-            row_to_version,
-        ).map_err(|_| AppError::NotFound(format!("Version {version_id} not found")))?;
+        let version = tx
+            .query_row(
+                "SELECT * FROM recipe_versions WHERE id = ?1 AND recipe_id = ?2",
+                rusqlite::params![version_id, recipe_id],
+                row_to_version,
+            )
+            .map_err(|_| AppError::NotFound(format!("Version {version_id} not found")))?;
 
         // 2. Read the current recipe state
-        let current = tx.query_row(
-            "SELECT * FROM recipe_definitions WHERE id = ?1",
-            params![recipe_id],
-            row_to_recipe,
-        ).map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
+        let current = tx
+            .query_row(
+                "SELECT * FROM recipe_definitions WHERE id = ?1",
+                params![recipe_id],
+                row_to_recipe,
+            )
+            .map_err(|_| AppError::NotFound(format!("Recipe {recipe_id} not found")))?;
 
         // 3. Get latest version number
         let latest: i64 = tx.query_row(
@@ -471,18 +507,21 @@ pub fn revert_to_version(pool: &DbPool, recipe_id: &str, version_id: &str) -> Re
         )?;
 
         // 6. Read the updated recipe within the transaction
-        let recipe = tx.query_row(
-            "SELECT * FROM recipe_definitions WHERE id = ?1",
-            params![recipe_id],
-            row_to_recipe,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Recipe {recipe_id}")),
-            other => AppError::Database(other),
-        })?;
+        let recipe = tx
+            .query_row(
+                "SELECT * FROM recipe_definitions WHERE id = ?1",
+                params![recipe_id],
+                row_to_recipe,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Recipe {recipe_id}"))
+                }
+                other => AppError::Database(other),
+            })?;
 
         tx.commit()?;
 
         Ok(recipe)
-
     })
 }

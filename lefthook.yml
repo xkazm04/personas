@@ -17,7 +17,7 @@ pre-commit:
   jobs:
     - name: eslint-staged
       glob: "*.{ts,tsx,js,cjs,mjs}"
-      run: npx eslint --no-warn-ignored --max-warnings 99999 {staged_files}
+      run: npx eslint --quiet --no-warn-ignored --max-warnings 99999 {staged_files}
 
 pre-push:
   jobs:

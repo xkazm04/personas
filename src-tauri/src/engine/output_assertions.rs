@@ -251,18 +251,16 @@ fn eval_json_path(config_json: &str, output: &str) -> (bool, String, Option<Stri
             let json_start = trimmed.find('{');
             let json_end = trimmed.rfind('}');
             match (json_start, json_end) {
-                (Some(s), Some(e)) if s < e => {
-                    match serde_json::from_str(&trimmed[s..=e]) {
-                        Ok(v) => v,
-                        Err(_) => {
-                            return (
-                                false,
-                                "Output is not valid JSON; cannot evaluate JSONPath".into(),
-                                None,
-                            )
-                        }
+                (Some(s), Some(e)) if s < e => match serde_json::from_str(&trimmed[s..=e]) {
+                    Ok(v) => v,
+                    Err(_) => {
+                        return (
+                            false,
+                            "Output is not valid JSON; cannot evaluate JSONPath".into(),
+                            None,
+                        )
                     }
-                }
+                },
                 _ => {
                     return (
                         false,
@@ -374,15 +372,9 @@ fn eval_json_schema(config_json: &str, output: &str) -> (bool, String, Option<St
 
     let passed = missing.is_empty();
     let explanation = if passed {
-        format!(
-            "All {} required keys present",
-            config.required_keys.len()
-        )
+        format!("All {} required keys present", config.required_keys.len())
     } else {
-        format!(
-            "Missing required keys: {}",
-            missing.join(", ")
-        )
+        format!("Missing required keys: {}", missing.join(", "))
     };
 
     (passed, explanation, None)
@@ -479,10 +471,8 @@ pub fn evaluate_assertions(
             if assertion.severity.eq_ignore_ascii_case("critical") {
                 critical_failures += 1;
                 if first_critical_failure.is_none() {
-                    first_critical_failure = Some(format!(
-                        "{}: {}",
-                        assertion.name, result.explanation
-                    ));
+                    first_critical_failure =
+                        Some(format!("{}: {}", assertion.name, result.explanation));
                 }
             }
         }
@@ -499,7 +489,13 @@ pub fn evaluate_assertions(
 
         // Handle failure actions
         if !result.passed {
-            handle_failure_action(pool, assertion, execution_id, persona_id, &result.explanation);
+            handle_failure_action(
+                pool,
+                assertion,
+                execution_id,
+                persona_id,
+                &result.explanation,
+            );
         }
 
         results.push(result);
@@ -558,9 +554,7 @@ fn handle_failure_action(
                 ),
                 use_case_id: None,
             };
-            if let Err(e) =
-                crate::db::repos::communication::manual_reviews::create(pool, input)
-            {
+            if let Err(e) = crate::db::repos::communication::manual_reviews::create(pool, input) {
                 tracing::warn!(
                     assertion = %assertion.name,
                     "Failed to create manual review for assertion failure: {}", e
@@ -618,10 +612,7 @@ mod tests {
 
     #[test]
     fn test_regex_match() {
-        let a = make_assertion(
-            AssertionType::Regex,
-            r#"{"pattern": "\\d{3}-\\d{4}"}"#,
-        );
+        let a = make_assertion(AssertionType::Regex, r#"{"pattern": "\\d{3}-\\d{4}"}"#);
         let result = evaluate_one(&a, "Call us at 555-1234 for help");
         assert!(result.passed);
         assert_eq!(result.matched_value.as_deref(), Some("555-1234"));
@@ -729,10 +720,7 @@ mod tests {
 
     #[test]
     fn test_length_bounds() {
-        let a = make_assertion(
-            AssertionType::Length,
-            r#"{"min": 10, "max": 1000}"#,
-        );
+        let a = make_assertion(AssertionType::Length, r#"{"min": 10, "max": 1000}"#);
         let result = evaluate_one(&a, "This is a valid length output");
         assert!(result.passed);
 

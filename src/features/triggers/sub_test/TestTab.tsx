@@ -162,17 +162,39 @@ export function TestTab() {
     setTestResult(null);
   };
 
+  const getPersona = (id: string | null) => (id ? personas.find(p => p.id === id) : null);
+
+  const eventOptionsAvailable = eventOptions.length > 1; // 1 = always-present custom row
+  const hasPersona = !!selectedPersonaId;
+  const isCustomPicked = selectedEventType === CUSTOM_EVENT_VALUE;
+
+  // Validate JSON. Invalid payload BLOCKS submit — previously the textarea
+  // showed an amber hint but the button was still active, and `handleTestFire`
+  // dropped the payload (`normalised = undefined`) on parse failure. Users
+  // saw a green "event published" with empty input and blamed their persona
+  // logic for not handling input it never received. The hint stays visible
+  // so the cause is obvious; the test fire is only enabled once it parses.
+  const isInvalidJson = useMemo(() => {
+    if (!payload.trim()) return false;
+    try { JSON.parse(payload); return false; } catch { return true; }
+  }, [payload]);
+
+  const canFire = !!activeEventType && hasPersona && !isTesting && !isInvalidJson;
+
   const handleTestFire = async () => {
     if (!activeEventType) return;
+    // Defense in depth: the disabled `canFire` check prevents this in practice,
+    // but keyboard "Enter" inside the textarea or other corner cases could still
+    // route here. Refuse to silently drop the payload.
+    if (isInvalidJson) return;
     setIsTesting(true);
     setTestResult(null);
     try {
-      let normalised: string | undefined;
-      try {
-        normalised = JSON.stringify(JSON.parse(payload));
-      } catch {
-        normalised = undefined;
-      }
+      // Empty textarea → omit payload entirely. Otherwise send the normalized
+      // (re-stringified) JSON so the backend sees canonical form.
+      const normalised = payload.trim()
+        ? JSON.stringify(JSON.parse(payload))
+        : undefined;
       const result = await testEventFlow(activeEventType, normalised);
       setTestResult(result);
       // Append the new event so the next prefill refresh sees it as history.
@@ -183,19 +205,6 @@ export function TestTab() {
       setIsTesting(false);
     }
   };
-
-  const getPersona = (id: string | null) => (id ? personas.find(p => p.id === id) : null);
-
-  const eventOptionsAvailable = eventOptions.length > 1; // 1 = always-present custom row
-  const hasPersona = !!selectedPersonaId;
-  const isCustomPicked = selectedEventType === CUSTOM_EVENT_VALUE;
-  const canFire = !!activeEventType && hasPersona && !isTesting;
-
-  // Validate JSON for inline hint (does not block submit — backend gets raw on parse failure)
-  const isInvalidJson = useMemo(() => {
-    if (!payload.trim()) return false;
-    try { JSON.parse(payload); return false; } catch { return true; }
-  }, [payload]);
 
   return (
     <div className="flex-1 overflow-y-auto">

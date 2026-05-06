@@ -6,13 +6,11 @@
 
 use tauri::AppHandle;
 
-use super::events::{ExecutionEventEmitter, emit_to};
 use super::event_registry::event_name;
+use super::events::{emit_to, ExecutionEventEmitter};
 use super::protocol::{ExecutionProtocol, StatusFinalization};
 use super::quality_gate::{self, FilterAction, QualityGateConfig};
-use super::types::{
-    ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent,
-};
+use super::types::{ExecutionOutputEvent, HeartbeatEvent, StructuredExecutionEvent};
 use crate::db::models::{
     CreateManualReviewInput, CreateMessageInput, CreatePersonaEventInput, CreatePersonaMemoryInput,
 };
@@ -154,11 +152,8 @@ impl<'a> DispatchContext<'a> {
         if let Some(p) = self.policy_cache.as_ref() {
             return p.clone();
         }
-        let resolved = testable::resolve_generation_policy(
-            self.pool,
-            self.persona_id,
-            self.use_case_id,
-        );
+        let resolved =
+            testable::resolve_generation_policy(self.pool, self.persona_id, self.use_case_id);
         self.policy_cache = Some(resolved.clone());
         resolved
     }
@@ -208,7 +203,10 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
     // Skip all protocol storage for ops chat executions — they are conversational
     // queries, not real agent executions. No messages, memories, events, or reviews.
     if ctx.ops_mode {
-        ctx.logger.log(&format!("[OPS] Suppressed protocol dispatch: {:?}", std::mem::discriminant(msg)));
+        ctx.logger.log(&format!(
+            "[OPS] Suppressed protocol dispatch: {:?}",
+            std::mem::discriminant(msg)
+        ));
         return;
     }
     match msg {
@@ -247,10 +245,12 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     ));
                     emit_to(ctx.emitter, event_name::MESSAGE_CREATED, &m);
                     if ctx.is_simulation {
-                        ctx.logger.log("[SIM] Notification delivery skipped (simulation)");
+                        ctx.logger
+                            .log("[SIM] Notification delivery skipped (simulation)");
                     } else {
                         let channels = ctx.resolve_notification_channels();
-                        let title_str = m.title.clone().unwrap_or_else(|| "New message".to_string());
+                        let title_str =
+                            m.title.clone().unwrap_or_else(|| "New message".to_string());
                         if let Some(app) = ctx.app_handle {
                             let delivery_ctx = crate::notifications::DeliveryContext {
                                 persona_id: ctx.persona_id.to_string(),
@@ -283,7 +283,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let policy = ctx.generation_policy();
             if !policy.events.is_on() {
                 let reason = format!("capability events policy = off (target={target})");
-                ctx.logger.log(&format!("[POLICY] PersonaAction dropped — {reason}"));
+                ctx.logger
+                    .log(&format!("[POLICY] PersonaAction dropped — {reason}"));
                 audit_policy_event(ctx, "event.off", "dropped", Some(target), Some(&reason));
                 return;
             }
@@ -309,7 +310,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 Ok(_) => ctx.logger.log(&format!(
                     "[EVENT] Published persona_action targeting '{target}'"
                 )),
-                Err(e) => ctx.logger.log(&format!("[EVENT] Failed to publish persona_action: {e}")),
+                Err(e) => ctx
+                    .logger
+                    .log(&format!("[EVENT] Failed to publish persona_action: {e}")),
             }
         }
         ProtocolMessage::EmitEvent { event_type, data } => {
@@ -318,7 +321,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let policy = ctx.generation_policy();
             if !policy.events.is_on() {
                 let reason = format!("capability events policy = off ({event_type})");
-                ctx.logger.log(&format!("[POLICY] Custom event dropped — {reason}"));
+                ctx.logger
+                    .log(&format!("[POLICY] Custom event dropped — {reason}"));
                 audit_policy_event(ctx, "event.off", "dropped", Some(event_type), Some(&reason));
                 return;
             }
@@ -326,14 +330,28 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             if published_name != *event_type {
                 let reason = format!("'{event_type}' -> '{published_name}'");
                 ctx.logger.log(&format!("[POLICY] Event aliased: {reason}"));
-                audit_policy_event(ctx, "event.aliased", "aliased", Some(event_type), Some(&reason));
+                audit_policy_event(
+                    ctx,
+                    "event.aliased",
+                    "aliased",
+                    Some(event_type),
+                    Some(&reason),
+                );
             }
             // Sanitize persona name for source_type: replace spaces with underscores,
             // keep only alphanumeric, underscore, hyphen, dot, colon, forward-slash.
-            let safe_name: String = ctx.persona_name
+            let safe_name: String = ctx
+                .persona_name
                 .replace(' ', "_")
                 .chars()
-                .filter(|c| c.is_ascii_alphanumeric() || *c == '_' || *c == '-' || *c == '.' || *c == ':' || *c == '/')
+                .filter(|c| {
+                    c.is_ascii_alphanumeric()
+                        || *c == '_'
+                        || *c == '-'
+                        || *c == '.'
+                        || *c == ':'
+                        || *c == '/'
+                })
                 .collect();
             match event_repo::publish(
                 ctx.pool,
@@ -348,7 +366,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 },
             ) {
                 Ok(_) => {
-                    ctx.logger.log(&format!("[EVENT] Published custom event: {published_name}"));
+                    ctx.logger
+                        .log(&format!("[EVENT] Published custom event: {published_name}"));
                     // Phase 19 DELIV-02/DELIV-03: EmitEvent now fans out to notification
                     // channels so templates can route events to titlebar/slack/etc.
                     // First time EmitEvent delivers to channels — prior to Phase 19 only
@@ -390,7 +409,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let policy = ctx.generation_policy();
             if !policy.memories.is_on() {
                 let reason = format!("capability memories policy = off ({title})");
-                ctx.logger.log(&format!("[POLICY] Memory dropped — {reason}"));
+                ctx.logger
+                    .log(&format!("[POLICY] Memory dropped — {reason}"));
                 audit_policy_event(ctx, "memory.off", "dropped", Some(title), Some(&reason));
                 return;
             }
@@ -400,7 +420,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let combined = format!("{} {}", title, content);
 
             // Check rejected categories first
-            let category_rejected = gate_config.memory_reject_categories
+            let category_rejected = gate_config
+                .memory_reject_categories
                 .iter()
                 .any(|c| c.to_lowercase() == cat_lower);
 
@@ -420,7 +441,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             }
 
             // Check pattern rules
-            if let Some((rule_label, action)) = QualityGateConfig::check_rules(&gate_config.memory_rules, &combined) {
+            if let Some((rule_label, action)) =
+                QualityGateConfig::check_rules(&gate_config.memory_rules, &combined)
+            {
                 tracing::info!(
                     gate = "memory",
                     rule = %rule_label,
@@ -474,7 +497,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     use_case_id: ctx.use_case_id.map(|s| s.to_string()),
                 },
             ) {
-                Ok(m) => ctx.logger.log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
+                Ok(m) => ctx
+                    .logger
+                    .log(&format!("[MEMORY] Stored: {} ({})", title, m.id)),
                 Err(e) => ctx.logger.log(&format!("[MEMORY] Failed to store: {e}")),
             }
         }
@@ -495,7 +520,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let review_policy = policy.reviews;
             if matches!(review_policy, testable::ReviewPolicy::Off) {
                 let reason = format!("capability reviews policy = off ({title})");
-                ctx.logger.log(&format!("[POLICY] Manual review dropped — {reason}"));
+                ctx.logger
+                    .log(&format!("[POLICY] Manual review dropped — {reason}"));
                 audit_policy_event(ctx, "review.off", "dropped", Some(title), Some(&reason));
                 return;
             }
@@ -503,7 +529,9 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
             let gate_config = ctx.quality_gate_config().clone();
             let combined = format!("{} {}", title, description.as_deref().unwrap_or(""));
 
-            if let Some((rule_label, action)) = QualityGateConfig::check_rules(&gate_config.review_rules, &combined) {
+            if let Some((rule_label, action)) =
+                QualityGateConfig::check_rules(&gate_config.review_rules, &combined)
+            {
                 tracing::info!(
                     gate = "review",
                     rule = %rule_label,
@@ -606,9 +634,16 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 r.id
                             ));
                         } else {
-                            let reason = format!("review.trust_llm — review {} auto-resolved", r.id);
+                            let reason =
+                                format!("review.trust_llm — review {} auto-resolved", r.id);
                             ctx.logger.log(&format!("[POLICY] {reason}"));
-                            audit_policy_event(ctx, "review.trust_llm", "auto_resolved", Some(title), Some(&reason));
+                            audit_policy_event(
+                                ctx,
+                                "review.trust_llm",
+                                "auto_resolved",
+                                Some(title),
+                                Some(&reason),
+                            );
                         }
                     } else if auto_triage {
                         ctx.logger.log(&format!(
@@ -631,7 +666,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         );
                     }
                     if ctx.is_simulation {
-                        ctx.logger.log("[SIM] Manual-review notification skipped (simulation)");
+                        ctx.logger
+                            .log("[SIM] Manual-review notification skipped (simulation)");
                     } else if auto_resolved {
                         // No notification for auto-resolved reviews — nothing to act on.
                     } else {
@@ -659,7 +695,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
         }
         ProtocolMessage::ExecutionFlow { .. } => {
             // Execution flows are handled at the top level, not here
-            ctx.logger.log("[FLOW] Execution flow captured (will be stored on completion)");
+            ctx.logger
+                .log("[FLOW] Execution flow captured (will be stored on completion)");
         }
         ProtocolMessage::KnowledgeAnnotation {
             scope,
@@ -694,13 +731,13 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                         entry.id
                     ));
                 }
-                Err(e) => ctx.logger.log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
+                Err(e) => ctx
+                    .logger
+                    .log(&format!("[KNOWLEDGE] Failed to store annotation: {e}")),
             }
         }
         ProtocolMessage::ProposeImprovement {
-            section,
-            rationale,
-            ..
+            section, rationale, ..
         } => {
             // TODO: route to Lab Matrix for user review. For now, log only so
             // the protocol message is acknowledged rather than ignored.
@@ -781,7 +818,10 @@ pub(crate) mod testable {
 
         /// Apply the alias map to an event name. Returns the published name.
         pub fn published_event_name<'a>(&'a self, emitted: &'a str) -> &'a str {
-            self.event_aliases.get(emitted).map(|s| s.as_str()).unwrap_or(emitted)
+            self.event_aliases
+                .get(emitted)
+                .map(|s| s.as_str())
+                .unwrap_or(emitted)
         }
     }
 
@@ -839,9 +879,10 @@ pub(crate) mod testable {
         let Some(dc) = serde_json::from_str::<serde_json::Value>(design_context_json).ok() else {
             return GenerationPolicy::permissive();
         };
-        let Some(uc) = crate::engine::design_context::pick_use_cases_array(&dc)
-            .and_then(|arr| arr.iter().find(|u| u.get("id").and_then(|v| v.as_str()) == Some(use_case_id)))
-        else {
+        let Some(uc) = crate::engine::design_context::pick_use_cases_array(&dc).and_then(|arr| {
+            arr.iter()
+                .find(|u| u.get("id").and_then(|v| v.as_str()) == Some(use_case_id))
+        }) else {
             return GenerationPolicy::permissive();
         };
 
@@ -907,9 +948,7 @@ pub(crate) mod testable {
         let dc: serde_json::Value = serde_json::from_str(design_context_json).ok()?;
         let uc = crate::engine::design_context::pick_use_cases_array(&dc)?
             .iter()
-            .find(|u| {
-                u.get("id").and_then(|v| v.as_str()) == Some(use_case_id)
-            })?;
+            .find(|u| u.get("id").and_then(|v| v.as_str()) == Some(use_case_id))?;
         let channels = uc.get("notification_channels")?;
         let arr = channels.as_array()?;
         if arr.is_empty() {
@@ -1082,8 +1121,14 @@ mod tests {
         assert!(matches!(p.memories, testable::BoolPolicy::Off));
         assert!(matches!(p.reviews, testable::ReviewPolicy::TrustLlm));
         assert!(matches!(p.events, testable::BoolPolicy::Off));
-        assert_eq!(p.event_aliases.get("alert").map(|s| s.as_str()), Some("escalation"));
-        assert_eq!(p.event_aliases.get("summary").map(|s| s.as_str()), Some("daily_digest"));
+        assert_eq!(
+            p.event_aliases.get("alert").map(|s| s.as_str()),
+            Some("escalation")
+        );
+        assert_eq!(
+            p.event_aliases.get("summary").map(|s| s.as_str()),
+            Some("daily_digest")
+        );
     }
 
     #[test]
@@ -1117,7 +1162,8 @@ mod tests {
                 { "id": "uc-1", "generation_settings": { "memories": "off" } },
                 { "id": "uc-2", "generation_settings": { "reviews": "trust_llm" } },
             ]
-        }).to_string();
+        })
+        .to_string();
         let p1 = testable::pick_generation_policy(&dc, "uc-1");
         assert!(matches!(p1.memories, testable::BoolPolicy::Off));
         assert!(matches!(p1.reviews, testable::ReviewPolicy::On));
@@ -1196,7 +1242,8 @@ mod tests {
     #[test]
     fn published_event_name_uses_alias_when_present() {
         let mut p = testable::GenerationPolicy::permissive();
-        p.event_aliases.insert("alert".to_string(), "escalation".to_string());
+        p.event_aliases
+            .insert("alert".to_string(), "escalation".to_string());
         assert_eq!(p.published_event_name("alert"), "escalation");
         assert_eq!(p.published_event_name("other"), "other");
     }
@@ -1227,7 +1274,10 @@ mod tests {
         // Legacy shape-A JSON does NOT parse as v2 — fallback proceeds to
         // the per-UC lookup (or returns fallback_channels if no uc_id given).
         let parsed = crate::notifications::parse_channels_v2(Some(SHAPE_A_JSON));
-        assert!(parsed.is_none(), "shape-A JSON must NOT be recognized as v2");
+        assert!(
+            parsed.is_none(),
+            "shape-A JSON must NOT be recognized as v2"
+        );
         // With None use_case_id, pick_capability_channels is never called,
         // so fallback_channels is returned as-is. Verified by the existing
         // test_resolve_falls_back_to_persona_wide test above.
@@ -1248,6 +1298,9 @@ mod tests {
             emit_event_type: None, // invariant: UserMessage always sets None
             priority: None,
         };
-        assert!(ctx.emit_event_type.is_none(), "UserMessage DeliveryContext must have emit_event_type: None");
+        assert!(
+            ctx.emit_event_type.is_none(),
+            "UserMessage DeliveryContext must have emit_event_type: None"
+        );
     }
 }

@@ -106,7 +106,15 @@ pub async fn genome_start_breeding(
     let _app = app; // Keep handle alive for event emission
 
     tokio::spawn(async move {
-        run_breeding_pipeline(pool, run_id, parent_ids, fitness_objective, mutation_rate, generations).await;
+        run_breeding_pipeline(
+            pool,
+            run_id,
+            parent_ids,
+            fitness_objective,
+            mutation_rate,
+            generations,
+        )
+        .await;
     });
 
     Ok(run)
@@ -315,9 +323,7 @@ pub fn genome_adopt_offspring(
         .map(|p| p.project_id)
         .unwrap_or_else(|_| "default".into());
 
-    let persona_name = name.unwrap_or_else(|| {
-        format!("Offspring: {}", genome.source_persona_name)
-    });
+    let persona_name = name.unwrap_or_else(|| format!("Offspring: {}", genome.source_persona_name));
 
     // Encrypt model_profile if it contains an auth_token
     let encrypted_profile = encrypt_profile_for_adoption(&genome.model.model_profile)?;
@@ -371,7 +377,8 @@ pub fn genome_adopt_offspring(
             "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
              VALUES (?1, ?2, ?3, NULL, ?4)",
             rusqlite::params![tool_assign_id, persona_id, tool_id, tool_now],
-        ).map_err(|e| {
+        )
+        .map_err(|e| {
             AppError::Internal(format!("Failed to assign tool {tool_id} to offspring: {e}"))
         })?;
     }
@@ -415,7 +422,10 @@ fn encrypt_profile_for_adoption(profile: &Option<String>) -> Result<Option<Strin
 
     let (ciphertext, nonce) = crate::engine::crypto::encrypt_for_db(&token)?;
     obj.remove("auth_token");
-    obj.insert("auth_token_enc".into(), serde_json::Value::String(ciphertext));
+    obj.insert(
+        "auth_token_enc".into(),
+        serde_json::Value::String(ciphertext),
+    );
     obj.insert("auth_token_iv".into(), serde_json::Value::String(nonce));
 
     serde_json::to_string(&val)

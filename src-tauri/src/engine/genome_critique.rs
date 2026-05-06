@@ -39,13 +39,9 @@ pub async fn mutate_via_critique(
     incumbent: &PersonaGenome,
 ) -> Result<PersonaGenome, String> {
     // Gather low-fitness knowledge entries — the gradient signal.
-    let entries = knowledge_repo::list_for_persona(
-        pool,
-        &persona.id,
-        Some("cost_quality"),
-        Some(50),
-    )
-    .map_err(|e| format!("Failed to load knowledge entries: {e}"))?;
+    let entries =
+        knowledge_repo::list_for_persona(pool, &persona.id, Some("cost_quality"), Some(50))
+            .map_err(|e| format!("Failed to load knowledge entries: {e}"))?;
 
     let failures = select_failure_patterns(&entries);
     if failures.is_empty() {
@@ -185,20 +181,20 @@ fn parse_rewrite_response(raw: &str) -> Result<Vec<String>, String> {
 
     let trimmed = raw.trim();
 
-    let parsed: Option<Rewrite> = serde_json::from_str(trimmed)
-        .ok()
-        .or_else(|| {
-            let start = trimmed.find('{')?;
-            let end = trimmed.rfind('}')?;
-            if end <= start {
-                return None;
-            }
-            serde_json::from_str(&trimmed[start..=end]).ok()
-        });
+    let parsed: Option<Rewrite> = serde_json::from_str(trimmed).ok().or_else(|| {
+        let start = trimmed.find('{')?;
+        let end = trimmed.rfind('}')?;
+        if end <= start {
+            return None;
+        }
+        serde_json::from_str(&trimmed[start..=end]).ok()
+    });
 
     let Some(rewrite) = parsed else {
         let head = &trimmed[..trimmed.len().min(500)];
-        return Err(format!("Failed to parse critique response. Head (≤500 chars): {head}"));
+        return Err(format!(
+            "Failed to parse critique response. Head (≤500 chars): {head}"
+        ));
     };
 
     let cleaned: Vec<String> = rewrite
@@ -257,7 +253,10 @@ mod tests {
         // Two failures but only 2 total observations — under the floor.
         let entries = vec![ek("rare_fail", 0, 2, 0.5)];
         let picked = select_failure_patterns(&entries);
-        assert!(picked.is_empty(), "patterns under MIN_OBSERVATIONS must be ignored");
+        assert!(
+            picked.is_empty(),
+            "patterns under MIN_OBSERVATIONS must be ignored"
+        );
     }
 
     #[test]
@@ -265,7 +264,10 @@ mod tests {
         // Lots of observations but successes win — not a gradient signal.
         let entries = vec![ek("mostly_works", 8, 2, 0.9)];
         let picked = select_failure_patterns(&entries);
-        assert!(picked.is_empty(), "success-dominant patterns are not gradient signal");
+        assert!(
+            picked.is_empty(),
+            "success-dominant patterns are not gradient signal"
+        );
     }
 
     #[test]
@@ -285,9 +287,18 @@ mod tests {
     #[test]
     fn render_segments_joins_in_index_order_even_if_unsorted() {
         let segs = vec![
-            PromptSegment { index: 2, text: "third".into() },
-            PromptSegment { index: 0, text: "first".into() },
-            PromptSegment { index: 1, text: "second".into() },
+            PromptSegment {
+                index: 2,
+                text: "third".into(),
+            },
+            PromptSegment {
+                index: 0,
+                text: "first".into(),
+            },
+            PromptSegment {
+                index: 1,
+                text: "second".into(),
+            },
         ];
         let rendered = render_segments(&segs);
         assert_eq!(rendered, "first\n\nsecond\n\nthird");
@@ -302,7 +313,8 @@ mod tests {
 
     #[test]
     fn parse_rewrite_response_extracts_from_surrounding_text() {
-        let raw = "Sure, here is the rewrite:\n\n{\"rewritten_segments\":[\"a\",\"b\"]}\n\nLet me know!";
+        let raw =
+            "Sure, here is the rewrite:\n\n{\"rewritten_segments\":[\"a\",\"b\"]}\n\nLet me know!";
         let segs = parse_rewrite_response(raw).expect("embedded JSON parses");
         assert_eq!(segs, vec!["a", "b"]);
     }

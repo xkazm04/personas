@@ -108,16 +108,25 @@ impl ManifestSync {
     }
 
     /// Emit a manifest sync progress event to the frontend.
-    async fn emit_sync_progress(&self, peer_id: &str, synced: usize, total: usize, resource_count: usize) {
+    async fn emit_sync_progress(
+        &self,
+        peer_id: &str,
+        synced: usize,
+        total: usize,
+        resource_count: usize,
+    ) {
         if let Some(app) = self.app_handle.read().await.as_ref() {
             use tauri::Emitter;
-            let _ = app.emit(event_name::P2P_MANIFEST_SYNC_PROGRESS, serde_json::json!({
-                "peerId": peer_id,
-                "synced": synced,
-                "total": total,
-                "resourceCount": resource_count,
-                "syncedAt": chrono::Utc::now().to_rfc3339(),
-            }));
+            let _ = app.emit(
+                event_name::P2P_MANIFEST_SYNC_PROGRESS,
+                serde_json::json!({
+                    "peerId": peer_id,
+                    "synced": synced,
+                    "total": total,
+                    "resourceCount": resource_count,
+                    "syncedAt": chrono::Utc::now().to_rfc3339(),
+                }),
+            );
         }
     }
 
@@ -128,14 +137,11 @@ impl ManifestSync {
         // Wrap all network I/O (open_stream + write + read) in a single timeout
         // to prevent indefinite hangs on stalled peers that accept connections
         // but never read/write data (e.g. malicious or network-partitioned peers).
-        let result = tokio::time::timeout(
-            std::time::Duration::from_secs(15),
-            async {
-                let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
-                protocol::write_message(&mut send, &Message::ManifestRequest).await?;
-                protocol::decode(&mut recv).await
-            },
-        )
+        let result = tokio::time::timeout(std::time::Duration::from_secs(15), async {
+            let (mut send, mut recv) = self.connections.open_stream(peer_id).await?;
+            protocol::write_message(&mut send, &Message::ManifestRequest).await?;
+            protocol::decode(&mut recv).await
+        })
         .await
         .map_err(|_| AppError::Internal(format!("Manifest sync timeout for peer {peer_id}")))?;
 
@@ -174,8 +180,12 @@ impl ManifestSync {
                     let mut hashes = self.manifest_hashes.write().await;
                     if hashes.get(peer_id).map(|h| h.as_str()) == Some(new_hash.as_str()) {
                         self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
-                        self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
-                        self.counters.total_entries_received.fetch_add(entry_count, Ordering::Relaxed);
+                        self.counters
+                            .total_sync_duration_ms
+                            .fetch_add(duration_ms, Ordering::Relaxed);
+                        self.counters
+                            .total_entries_received
+                            .fetch_add(entry_count, Ordering::Relaxed);
                         tracing::debug!(
                             peer_id = %peer_id,
                             count = resources.len(),
@@ -190,8 +200,12 @@ impl ManifestSync {
                 }
 
                 self.counters.sync_successes.fetch_add(1, Ordering::Relaxed);
-                self.counters.total_sync_duration_ms.fetch_add(duration_ms, Ordering::Relaxed);
-                self.counters.total_entries_received.fetch_add(entry_count, Ordering::Relaxed);
+                self.counters
+                    .total_sync_duration_ms
+                    .fetch_add(duration_ms, Ordering::Relaxed);
+                self.counters
+                    .total_entries_received
+                    .fetch_add(entry_count, Ordering::Relaxed);
 
                 tracing::debug!(
                     peer_id = %peer_id,
@@ -214,20 +228,22 @@ impl ManifestSync {
         let mut stmt = conn.prepare(
             "SELECT resource_type, resource_id, display_name, access_level, tags
              FROM exposed_resources
-             WHERE expires_at IS NULL OR expires_at > datetime('now')"
+             WHERE expires_at IS NULL OR expires_at > datetime('now')",
         )?;
 
-        let entries = stmt.query_map([], |row| {
-            let tags_json: String = row.get(4)?;
-            let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
-            Ok(ManifestEntry {
-                resource_type: row.get(0)?,
-                resource_id: row.get(1)?,
-                display_name: row.get(2)?,
-                access_level: row.get(3)?,
-                tags,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let entries = stmt
+            .query_map([], |row| {
+                let tags_json: String = row.get(4)?;
+                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
+                Ok(ManifestEntry {
+                    resource_type: row.get(0)?,
+                    resource_id: row.get(1)?,
+                    display_name: row.get(2)?,
+                    access_level: row.get(3)?,
+                    tags,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(entries)
     }
@@ -243,9 +259,9 @@ impl ManifestSync {
 
         // Wrap DELETE + INSERT in a transaction to prevent data loss on crash
         // or partial manifests from concurrent syncs.
-        let tx = conn.transaction().map_err(|e| {
-            AppError::Internal(format!("Failed to begin transaction: {e}"))
-        })?;
+        let tx = conn
+            .transaction()
+            .map_err(|e| AppError::Internal(format!("Failed to begin transaction: {e}")))?;
 
         tx.execute(
             "DELETE FROM peer_manifests WHERE peer_id = ?1",
@@ -290,20 +306,22 @@ impl ManifestSync {
              ORDER BY display_name"
         )?;
 
-        let entries = stmt.query_map(rusqlite::params![peer_id], |row| {
-            let tags_json: String = row.get(6)?;
-            let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
-            Ok(PeerManifestEntry {
-                id: row.get(0)?,
-                peer_id: row.get(1)?,
-                resource_type: row.get(2)?,
-                resource_id: row.get(3)?,
-                display_name: row.get(4)?,
-                access_level: row.get(5)?,
-                tags,
-                synced_at: row.get(7)?,
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+        let entries = stmt
+            .query_map(rusqlite::params![peer_id], |row| {
+                let tags_json: String = row.get(6)?;
+                let tags: Vec<String> = serde_json::from_str(&tags_json).unwrap_or_default();
+                Ok(PeerManifestEntry {
+                    id: row.get(0)?,
+                    peer_id: row.get(1)?,
+                    resource_type: row.get(2)?,
+                    resource_id: row.get(3)?,
+                    display_name: row.get(4)?,
+                    access_level: row.get(5)?,
+                    tags,
+                    synced_at: row.get(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(entries)
     }
@@ -348,10 +366,12 @@ impl ManifestSync {
             match self.sync_manifest(peer_id).await {
                 Ok(()) => {
                     // Emit progress with resource count from the synced manifest
-                    let resource_count = self.get_peer_manifest(peer_id)
+                    let resource_count = self
+                        .get_peer_manifest(peer_id)
                         .map(|m| m.len())
                         .unwrap_or(0);
-                    self.emit_sync_progress(peer_id, i + 1, total, resource_count).await;
+                    self.emit_sync_progress(peer_id, i + 1, total, resource_count)
+                        .await;
                 }
                 Err(e) => {
                     tracing::debug!(peer_id = %peer_id, "Periodic manifest sync failed: {}", e);
@@ -373,9 +393,8 @@ impl ManifestSync {
     /// Get peer_ids of currently connected peers.
     fn get_connected_peer_ids(&self) -> Result<Vec<String>, AppError> {
         let conn = self.pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT peer_id FROM discovered_peers WHERE is_connected = 1"
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT peer_id FROM discovered_peers WHERE is_connected = 1")?;
         let ids = stmt
             .query_map([], |row| row.get(0))?
             .collect::<Result<Vec<String>, _>>()?;

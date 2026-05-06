@@ -240,9 +240,12 @@ async fn call_claude_oneshot(prompt: &str) -> Result<String, AppError> {
         Ok::<(), AppError>(())
     };
 
-    timeout(REFLECTION_TIMEOUT, collect)
-        .await
-        .map_err(|_| AppError::Internal(format!("reflection timed out after {:?}", REFLECTION_TIMEOUT)))??;
+    timeout(REFLECTION_TIMEOUT, collect).await.map_err(|_| {
+        AppError::Internal(format!(
+            "reflection timed out after {:?}",
+            REFLECTION_TIMEOUT
+        ))
+    })??;
 
     let _ = stderr_handle.await;
     let status = child

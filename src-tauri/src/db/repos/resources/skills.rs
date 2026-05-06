@@ -26,8 +26,8 @@ fn row_to_skill(row: &Row) -> rusqlite::Result<Skill> {
 
 fn row_to_component(row: &Row) -> rusqlite::Result<SkillComponent> {
     let type_str: String = row.get("component_type")?;
-    let component_type = SkillComponentType::from_str(&type_str)
-        .unwrap_or(SkillComponentType::Tool);
+    let component_type =
+        SkillComponentType::from_str(&type_str).unwrap_or(SkillComponentType::Tool);
     Ok(SkillComponent {
         id: row.get("id")?,
         skill_id: row.get("skill_id")?,
@@ -83,9 +83,7 @@ pub fn get_skill(pool: &DbPool, id: &str) -> Result<Skill, AppError> {
             row_to_skill,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Skill {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Skill {id}")),
             other => AppError::Database(other),
         })
     })
@@ -104,7 +102,9 @@ pub fn list_skills(pool: &DbPool) -> Result<Vec<Skill>, AppError> {
         let conn = pool.get()?;
         let mut stmt = conn.prepare("SELECT * FROM skills ORDER BY category, name")?;
         let rows = stmt.query_map([], row_to_skill)?;
-        let skills = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let skills = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(skills)
     })
 }
@@ -125,9 +125,30 @@ pub fn update_skill(pool: &DbPool, id: &str, input: UpdateSkillInput) -> Result<
         let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
 
         push_field_param!(input.name, "name", sets, param_idx, param_values, clone);
-        push_field_param!(input.version, "version", sets, param_idx, param_values, clone);
-        push_field_param!(input.description, "description", sets, param_idx, param_values, clone);
-        push_field_param!(input.category, "category", sets, param_idx, param_values, clone);
+        push_field_param!(
+            input.version,
+            "version",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.description,
+            "description",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.category,
+            "category",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
 
         let sql = format!(
             "UPDATE skills SET {} WHERE id = ?{}",
@@ -161,14 +182,18 @@ pub fn delete_skill(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 // Skill Component CRUD
 // ============================================================================
 
-fn get_components_for_skill(pool: &DbPool, skill_id: &str) -> Result<Vec<SkillComponent>, AppError> {
+fn get_components_for_skill(
+    pool: &DbPool,
+    skill_id: &str,
+) -> Result<Vec<SkillComponent>, AppError> {
     timed_query!("skill_components", "skill_components::get_for_skill", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM skill_components WHERE skill_id = ?1 ORDER BY created_at"
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM skill_components WHERE skill_id = ?1 ORDER BY created_at")?;
         let rows = stmt.query_map(params![skill_id], row_to_component)?;
-        let components = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let components = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(components)
     })
 }
@@ -232,6 +257,12 @@ pub fn assign_skill_to_persona(
         // Validate skill exists
         get_skill(pool, skill_id)?;
 
+        // Validate config shape NOW so we get a typed error at assignment
+        // instead of a malformed prompt at trigger fire time.
+        if let Some(cfg) = config.as_deref() {
+            validate_skill_config(cfg)?;
+        }
+
         let conn = pool.get()?;
 
         // Return existing assignment if already present
@@ -294,10 +325,12 @@ pub fn get_persona_skills(
             "SELECT s.* FROM skills s
              INNER JOIN persona_skills ps ON ps.skill_id = s.id
              WHERE ps.persona_id = ?1 AND ps.enabled = 1
-             ORDER BY s.category, s.name"
+             ORDER BY s.category, s.name",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_skill)?;
-        let skills = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let skills = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
 
         let mut result = Vec::with_capacity(skills.len());
         for skill in skills {
@@ -311,24 +344,100 @@ pub fn get_persona_skills(
 // ============================================================================
 // Template expansion helper
 // ============================================================================
+//
+// CONTRACT (do not relax without a code review):
+//
+//   1. The skill config is a flat JSON object whose values are strings only.
+//      Booleans, numbers, arrays, objects, and null are rejected at validation
+//      time — see `validate_skill_config`. Earlier versions silently coerced
+//      non-strings via `.to_string()` and produced literal "true"/"false"
+//      placeholders inside a webhook config. That class of bug is now an
+//      assignment-time error.
+//
+//   2. Template expansion is a single, non-recursive pass. A replacement that
+//      itself contains `{key}` text is left as-is — we will not re-expand it.
+//      This bounds the work and prevents accidental recursion bombs.
+//
+//   3. Any unresolved `{key}` placeholder left in the output is an
+//      `AppError::Validation` with prefix "missing placeholder:". Callers
+//      must handle this — the previous "leave raw {key} in the output"
+//      behavior is gone.
+//
+//   4. Validation runs at `assign_skill_to_persona` time so problems surface
+//      where the user can act on them, not at trigger fire time when the
+//      config is a frozen blob.
+
+/// Validate a skill config blob: must be a flat JSON object with string-only
+/// values. Returns the parsed map on success.
+///
+/// This is the typed-error path the contract refers to: any non-string value
+/// produces `AppError::Validation` with a precise message identifying the
+/// offending key, so the user sees "skill config: field 'enabled' must be a
+/// string, got bool" rather than discovering a malformed prompt at fire time.
+pub fn validate_skill_config(
+    config: &str,
+) -> Result<serde_json::Map<String, serde_json::Value>, AppError> {
+    let map: serde_json::Map<String, serde_json::Value> = serde_json::from_str(config)
+        .map_err(|e| AppError::Validation(format!("skill config must be a JSON object: {e}")))?;
+
+    for (key, value) in &map {
+        if !value.is_string() {
+            let kind = match value {
+                serde_json::Value::Null => "null",
+                serde_json::Value::Bool(_) => "bool",
+                serde_json::Value::Number(_) => "number",
+                serde_json::Value::Array(_) => "array",
+                serde_json::Value::Object(_) => "object",
+                serde_json::Value::String(_) => unreachable!(),
+            };
+            return Err(AppError::Validation(format!(
+                "skill config: field '{key}' must be a string, got {kind}"
+            )));
+        }
+    }
+    Ok(map)
+}
+
+/// Regex matching `{identifier}` placeholders. Identifiers are
+/// `[A-Za-z_][A-Za-z0-9_]*` to match Rust/JSON-key conventions and avoid
+/// matching JSON-object syntax like `{ "foo"`.
+static PLACEHOLDER_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+fn placeholder_re() -> &'static regex::Regex {
+    PLACEHOLDER_RE
+        .get_or_init(|| regex::Regex::new(r"\{([A-Za-z_][A-Za-z0-9_]*)\}").expect("valid regex"))
+}
 
 /// Expand placeholders in a trigger template with user-provided config values.
-/// Replaces `{key}` patterns with the corresponding value from the config JSON.
+///
+/// See the module-level CONTRACT above for guarantees. Briefly: string values
+/// only, single pass, no recursion, unresolved placeholders are an error.
 pub fn expand_trigger_template(template_data: &str, config: &str) -> Result<String, AppError> {
-    let config_map: serde_json::Map<String, serde_json::Value> =
-        serde_json::from_str(config)
-            .map_err(|e| AppError::Validation(format!("Config must be a JSON object: {e}")))?;
+    let config_map = validate_skill_config(config)?;
 
-    let mut result = template_data.to_string();
-    for (key, value) in &config_map {
-        let placeholder = format!("{{{key}}}");
-        let replacement = match value {
-            serde_json::Value::String(s) => s.clone(),
-            other => other.to_string(),
-        };
-        result = result.replace(&placeholder, &replacement);
+    // Single-pass walk: we iterate the template once and substitute each
+    // `{key}` we find. This is intentionally not `String::replace` in a loop —
+    // doing so could re-expand a substituted value if it happened to contain
+    // another `{key}` literal, breaking the no-recursion guarantee.
+    let re = placeholder_re();
+    let mut out = String::with_capacity(template_data.len());
+    let mut last = 0usize;
+    for caps in re.captures_iter(template_data) {
+        let mat = caps.get(0).expect("group 0 always matches");
+        let key = caps.get(1).expect("group 1 captured");
+        out.push_str(&template_data[last..mat.start()]);
+        let value = config_map.get(key.as_str()).ok_or_else(|| {
+            AppError::Validation(format!(
+                "missing placeholder: '{}' is not present in skill config",
+                key.as_str()
+            ))
+        })?;
+        // validate_skill_config already proved every value is a string.
+        let s = value.as_str().expect("validated as string");
+        out.push_str(s);
+        last = mat.end();
     }
-    Ok(result)
+    out.push_str(&template_data[last..]);
+    Ok(out)
 }
 
 #[cfg(test)]
@@ -358,7 +467,10 @@ mod tests {
 
         // Get by ID
         let fetched = get_skill(&pool, &skill.id).unwrap();
-        assert_eq!(fetched.description.as_deref(), Some("GitHub PR and issue management"));
+        assert_eq!(
+            fetched.description.as_deref(),
+            Some("GitHub PR and issue management")
+        );
 
         // List all
         let all = list_skills(&pool).unwrap();
@@ -406,7 +518,8 @@ mod tests {
             &skill.id,
             CreateSkillComponentInput {
                 component_type: SkillComponentType::Tool,
-                component_data: r#"{"name":"send_slack_message","description":"Send a message"}"#.into(),
+                component_data: r#"{"name":"send_slack_message","description":"Send a message"}"#
+                    .into(),
             },
         )
         .unwrap();
@@ -494,6 +607,59 @@ mod tests {
         let result = expand_trigger_template(template, config).unwrap();
         assert!(result.contains("0 9 * * 1-5"));
         assert!(result.contains("#general"));
+    }
+
+    #[test]
+    fn test_expand_trigger_template_rejects_non_string_values() {
+        // Booleans, numbers, arrays, objects, null must be rejected up front
+        // rather than coerced into "true"/"false" — see CONTRACT in
+        // skills.rs.
+        let template = r#"{"enabled": "{enabled}"}"#;
+        for cfg in [
+            r#"{"enabled": true}"#,
+            r#"{"enabled": 42}"#,
+            r#"{"enabled": null}"#,
+            r#"{"enabled": [1,2]}"#,
+            r#"{"enabled": {"nested":"x"}}"#,
+        ] {
+            let err = expand_trigger_template(template, cfg).unwrap_err();
+            let msg = err.to_string();
+            assert!(
+                msg.contains("must be a string"),
+                "expected typed error for non-string config, got: {msg}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_expand_trigger_template_missing_placeholder_errors() {
+        // Unresolved placeholders are an error, not silently-left-as-text.
+        let template = r#"{"cron": "{schedule}", "channel": "{channel_name}"}"#;
+        let config = r#"{"schedule": "0 0 * * *"}"#;
+        let err = expand_trigger_template(template, config).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("missing placeholder") && msg.contains("channel_name"),
+            "expected MissingPlaceholder error mentioning channel_name, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn test_expand_trigger_template_single_pass_no_recursion() {
+        // If a value happens to contain `{key}` text, we do NOT re-expand it.
+        let template = r#"{"a": "{a}", "b": "{b}"}"#;
+        let config = r#"{"a": "{b}", "b": "literal"}"#;
+        let result = expand_trigger_template(template, config).unwrap();
+        // The first pass replaces {a} with "{b}" and {b} with "literal";
+        // we MUST NOT then re-expand the freshly-substituted "{b}".
+        assert!(result.contains(r#""a": "{b}""#));
+        assert!(result.contains(r#""b": "literal""#));
+    }
+
+    #[test]
+    fn test_validate_skill_config_invalid_json() {
+        let err = validate_skill_config("not json at all").unwrap_err();
+        assert!(err.to_string().contains("must be a JSON object"));
     }
 
     #[test]

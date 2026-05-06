@@ -19,7 +19,10 @@ use std::path::{Path, PathBuf};
 
 use chrono::Utc;
 
-use crate::companion::templates::{CONSTITUTION_MD, IDENTITY_MD_TEMPLATE};
+use crate::companion::templates::{CONSTITUTION_MD, CONSTITUTION_VERSION, IDENTITY_MD_TEMPLATE};
+use crate::db::repos::core::settings as settings_repo;
+use crate::db::settings_keys;
+use crate::db::DbPool;
 use crate::error::AppError;
 
 /// Resolve `~/.personas/companion-brain/`. Honors PERSONAS_HOME override
@@ -37,7 +40,14 @@ pub fn brain_root() -> Result<PathBuf, AppError> {
 
 /// Create the directory tree and seed constitution + identity if absent.
 /// Safe to call repeatedly. Returns the resolved root.
-pub fn ensure_initialized() -> Result<PathBuf, AppError> {
+///
+/// Constitution upgrade is gated on a stored canonical version
+/// (`companion_constitution_version` in `app_settings`). When the embedded
+/// `CONSTITUTION_VERSION` is newer than the stored value (or no stamp exists
+/// at all), the on-disk file is replaced with a timestamped backup left
+/// next to it (`constitution.bak-YYYYMMDDTHHMMSS.md`) so a second upgrade
+/// in a future release can't trample the user's original customization.
+pub fn ensure_initialized(pool: &DbPool) -> Result<PathBuf, AppError> {
     let root = brain_root()?;
     fs::create_dir_all(&root)?;
 
@@ -54,39 +64,47 @@ pub fn ensure_initialized() -> Result<PathBuf, AppError> {
     }
 
     // Constitution: write fresh iff missing. Once on disk it's user-owned;
-    // we never overwrite arbitrary edits from the embedded copy.
-    //
-    // BUT: when a known-marker section is missing on disk, we treat that
-    // as a pre-upgrade copy and replace once. This lets us roll out new
-    // canonical sections (like the doctrine paragraph) without bricking
-    // existing installs. Users who customize will get a `.bak` of their
-    // version next to it.
-    // Marker-based upgrade: if the on-disk constitution is missing any of
-    // the canonical sections, we replace it (after backing up the old
-    // version once). New section markers added here will reach existing
-    // installs on the next app start.
+    // we never overwrite arbitrary edits from the embedded copy unless the
+    // canonical version stamp has bumped — and even then we keep a
+    // timestamped `.bak-<ts>.md` of whatever was there.
     let const_path = root.join("constitution.md");
-    const REQUIRED_MARKERS: &[&str] = &[
-        "# Reference docs",
-        "# Proposing actions",
-        "update_identity",
-        "Format for the eye",
-        "Quick replies (preset chips)",
-        "Spoken summaries (TTS replies)",
-        "open_route",
-        "write_fact",
-        "## Writing semantic facts",
-    ];
-    let needs_upgrade = std::fs::read_to_string(&const_path)
-        .map(|c| !REQUIRED_MARKERS.iter().all(|m| c.contains(m)))
-        .unwrap_or(false);
-    if needs_upgrade {
-        let _ = std::fs::copy(&const_path, root.join("constitution.bak.md"));
-        std::fs::write(&const_path, CONSTITUTION_MD)?;
-        tracing::info!("companion: upgraded constitution.md (new sections added; old saved as constitution.bak.md)");
-    } else {
-        write_if_absent(&const_path, CONSTITUTION_MD)?;
+    let stored_version: Option<u32> =
+        settings_repo::get(pool, settings_keys::COMPANION_CONSTITUTION_VERSION)?
+            .and_then(|s| s.parse::<u32>().ok());
+
+    if !const_path.exists() {
+        // First-run path: seed and stamp.
+        fs::write(&const_path, CONSTITUTION_MD)?;
+        settings_repo::set(
+            pool,
+            settings_keys::COMPANION_CONSTITUTION_VERSION,
+            &CONSTITUTION_VERSION.to_string(),
+        )?;
+        tracing::info!(
+            version = CONSTITUTION_VERSION,
+            "companion: seeded constitution.md"
+        );
+    } else if stored_version.map_or(true, |v| v < CONSTITUTION_VERSION) {
+        // Upgrade path. Always timestamp the backup so a second upgrade
+        // doesn't clobber the first one, and only run upgrade once per
+        // version bump regardless of what edits the user has made.
+        let backup_name = format!("constitution.bak-{}.md", Utc::now().format("%Y%m%dT%H%M%S"));
+        let backup_path = root.join(&backup_name);
+        let _ = fs::copy(&const_path, &backup_path);
+        fs::write(&const_path, CONSTITUTION_MD)?;
+        settings_repo::set(
+            pool,
+            settings_keys::COMPANION_CONSTITUTION_VERSION,
+            &CONSTITUTION_VERSION.to_string(),
+        )?;
+        tracing::info!(
+            from = ?stored_version,
+            to = CONSTITUTION_VERSION,
+            backup = %backup_name,
+            "companion: upgraded constitution.md"
+        );
     }
+    // else: user is on the current canonical version — leave their edits alone.
 
     // Identity: substitute the creation timestamp, then write iff missing.
     let now = Utc::now().to_rfc3339();

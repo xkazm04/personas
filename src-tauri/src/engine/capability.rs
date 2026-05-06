@@ -146,8 +146,7 @@ impl Capability for DbQueryCapability {
         pool: &DbPool,
         credential_id: &str,
     ) -> Result<QueryResult, AppError> {
-        crate::engine::db_query::introspect_tables(pool, credential_id, self.user_db.as_ref())
-            .await
+        crate::engine::db_query::introspect_tables(pool, credential_id, self.user_db.as_ref()).await
     }
 
     async fn healthcheck(
@@ -157,12 +156,8 @@ impl Capability for DbQueryCapability {
     ) -> Result<CapabilityHealth, AppError> {
         let start = std::time::Instant::now();
         // Use introspect_tables as a lightweight connectivity probe.
-        match crate::engine::db_query::introspect_tables(
-            pool,
-            credential_id,
-            self.user_db.as_ref(),
-        )
-        .await
+        match crate::engine::db_query::introspect_tables(pool, credential_id, self.user_db.as_ref())
+            .await
         {
             Ok(_) => Ok(CapabilityHealth {
                 healthy: true,

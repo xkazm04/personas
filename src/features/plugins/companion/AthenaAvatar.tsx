@@ -1,28 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
- * Tiny circular video avatar for Athena's panel header. Two stacked
- * `<video>` elements crossfade between an idle loop and a thinking loop
- * driven by `streaming`. Both are muted/looped/autoplay so the OS-level
- * audio stack is never engaged — the user's "I don't hear sound" report
- * a few iterations back was because the chime needs an explicit gesture
- * grant; muted video has no such gate.
+ * Athena's video avatar — two stacked `<video>` elements that crossfade
+ * between an idle loop and a thinking loop driven by `state`.
  *
- * Performance discipline:
- * - **Lazy mount**: this component is only rendered while the panel is
- *   open (the panel itself is `lazy()` in App.tsx), so the videos never
- *   load if Athena is collapsed.
- * - **Single decode**: each `<video>` decodes its own loop, but at 80px
- *   square that's <1% CPU. We do NOT decode a third "alerting" track
- *   here — it can be a separate variant later (Phase E).
- * - **No mid-frame swap**: the crossfade is opacity-only. Both videos
- *   keep playing through the transition; whichever is at opacity 1 is
- *   what the user sees. Transition duration is short enough (180ms)
- *   that no awkward frame-jump is visible even if the sources differ
- *   in length.
- * - **`preload="auto"`** on both so the browser pre-decodes a few
- *   frames before we cross-fade in. Avoids the "first frame is black"
- *   flash that plagues lazy autoplay.
+ * **Loop-boundary swap discipline.** Earlier iterations let the
+ * crossfade fire mid-clip; the user saw "the video cuts in half"
+ * because the thinking clip has a dramatic arc (calm → climax → calm
+ * via ping-pong) and crossfading at frame 50/241 reveals a halo'd
+ * climax pose right as the panel is supposed to settle. We now:
+ *
+ * 1. Drop the `loop` attribute. Each video manually replays from
+ *    frame 0 in its `onEnded` handler. This means `ended` actually
+ *    fires (HTMLMediaElement suppresses `ended` while `loop=true`),
+ *    giving us a deterministic "loop boundary" event.
+ * 2. Track `displayState` (what's visible) separately from `state`
+ *    (what the caller wants). `state` changes update a ref;
+ *    `displayState` only flips on the active video's `ended` event.
+ *    Result: the swap always lands at frame 0 of both clips, the
+ *    crossfade is between two matching poses, and the user never
+ *    sees a mid-arc cut.
+ * 3. Inactive video is paused at frame 0. No background CPU; the
+ *    incoming clip is always pre-rolled to a clean starting frame.
+ *
+ * Source files (`/public/athena/`):
+ *   - `athena_idle_loop.mp4`    — 5s, audio stripped, clean loop
+ *     (first frame ≈ last frame; ffmpeg re-encode of the original).
+ *   - `athena_thinking_loop.mp4` — 10s ping-pong (forward + reverse
+ *     concat), so the dramatic ending blends back into the calm
+ *     starting pose without a hard cut.
+ *
+ * Performance:
+ *   - Lazy mount: this component only renders while the panel is
+ *     open (panel is `lazy()` in App.tsx). 50ms tick before mount
+ *     so the open-animation isn't competing with video decode.
+ *   - Single decode: each video element decodes its own clip once.
+ *     At 80px square the cost is <1% CPU; the watermark `fill` mode
+ *     stretches them but that's still a single hardware-accelerated
+ *     decode.
  */
 export type AthenaState = 'idle' | 'thinking';
 
@@ -44,10 +59,6 @@ export function AthenaAvatar({
   /** Extra classes (positioning, opacity overrides) for the outer wrapper. */
   className?: string;
 }) {
-  // Track whether the videos have been touched at least once. We
-  // don't render them on first paint to keep first-render cheap;
-  // mount on next tick so the panel's open-animation isn't competing
-  // with video decode.
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
@@ -57,49 +68,100 @@ export function AthenaAvatar({
   const idleRef = useRef<HTMLVideoElement>(null);
   const thinkingRef = useRef<HTMLVideoElement>(null);
 
-  // When mounted, kick both videos to play so the crossfade is instant
-  // when state flips. Browsers may suspend autoplay until visible; the
-  // explicit play() retries until it succeeds. Both calls are no-ops
-  // if the video is already playing.
+  // What the caller wants. Captured via ref so the `onEnded` handler
+  // (created once per render) sees the latest value without churn.
+  const pendingRef = useRef<AthenaState>(state);
+  useEffect(() => {
+    pendingRef.current = state;
+  }, [state]);
+
+  // What's actually visible right now. Flips on the active video's
+  // `ended` event; never mid-clip.
+  const [displayState, setDisplayState] = useState<AthenaState>(state);
+
+  /**
+   * Drive the active/inactive split. The active clip plays from where
+   * it is (or from frame 0 on a fresh swap); the inactive clip pauses
+   * at frame 0 so it's pre-rolled for the next swap.
+   */
+  const playActive = useCallback((which: AthenaState) => {
+    const active = which === 'idle' ? idleRef.current : thinkingRef.current;
+    const inactive = which === 'idle' ? thinkingRef.current : idleRef.current;
+    if (active) {
+      active.currentTime = 0;
+      // Autoplay can be blocked until the WebView gets a user gesture;
+      // the panel-open click already provides one in normal flow, but
+      // we tolerate a rejection silently — the next state change retries.
+      active.play().catch(() => {});
+    }
+    if (inactive) {
+      try {
+        inactive.pause();
+      } catch {
+        /* not yet ready — fine */
+      }
+      inactive.currentTime = 0;
+    }
+  }, []);
+
+  // Whenever the visible state changes (mount, or a swap committed by
+  // onEnded), reset both videos to the active/inactive split.
   useEffect(() => {
     if (!mounted) return;
-    const tryPlay = (el: HTMLVideoElement | null) => {
-      if (!el) return;
-      el.play().catch(() => {
-        // Autoplay blocked — a follow-up user gesture (panel click,
-        // already happened to open the panel) will let it through next
-        // tick. We retry on every state change anyway.
-      });
-    };
-    tryPlay(idleRef.current);
-    tryPlay(thinkingRef.current);
-  }, [mounted, state]);
+    playActive(displayState);
+  }, [mounted, displayState, playActive]);
+
+  /**
+   * Active video finished a loop. Decision: swap to the requested
+   * state if it differs from what we're showing, otherwise replay
+   * the same clip from frame 0 (manual loop).
+   */
+  const onEnded = useCallback(
+    (which: AthenaState) => {
+      // Hidden clip's `ended` is irrelevant — only act for the active.
+      if (which !== displayState) return;
+      const target = pendingRef.current;
+      if (target !== displayState) {
+        // Commit the swap. The `displayState` effect above resets both
+        // refs (active to currentTime=0+play, inactive to pause+0).
+        setDisplayState(target);
+      } else {
+        // Same state — manual self-loop.
+        const el = which === 'idle' ? idleRef.current : thinkingRef.current;
+        if (el) {
+          el.currentTime = 0;
+          el.play().catch(() => {});
+        }
+      }
+    },
+    [displayState],
+  );
 
   const videos = mounted ? (
     <>
       <video
         ref={idleRef}
-        src="/athena/athena_idle.mp4"
-        // baseline.jpg should match the first frame of both clips, so
-        // the still→video handoff is invisible while the browser decodes.
+        src="/athena/athena_idle_loop.mp4"
+        // baseline.jpg matches the first frame of both clips, so the
+        // still→video handoff is invisible while the browser decodes.
         poster="/athena/athena_baseline.jpg"
         muted
-        loop
         playsInline
         preload="auto"
+        onEnded={() => onEnded('idle')}
         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out"
-        style={{ opacity: state === 'idle' ? 1 : 0 }}
+        style={{ opacity: displayState === 'idle' ? 1 : 0 }}
       />
       <video
         ref={thinkingRef}
-        src="/athena/athena_thinking.mp4"
+        src="/athena/athena_thinking_loop.mp4"
         poster="/athena/athena_baseline.jpg"
         muted
-        loop
         playsInline
         preload="auto"
+        onEnded={() => onEnded('thinking')}
         className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out"
-        style={{ opacity: state === 'thinking' ? 1 : 0 }}
+        style={{ opacity: displayState === 'thinking' ? 1 : 0 }}
       />
     </>
   ) : null;

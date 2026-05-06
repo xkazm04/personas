@@ -15,10 +15,18 @@ row_mapper!(row_to_log -> WebhookRequestLog {
     error_message, received_at,
 });
 
-crud_get_by_id!(WebhookRequestLog, "webhook_request_log", "WebhookRequestLog", row_to_log);
+crud_get_by_id!(
+    WebhookRequestLog,
+    "webhook_request_log",
+    "WebhookRequestLog",
+    row_to_log
+);
 
 /// List the most recent webhook request logs for a trigger (newest first, max 100).
-pub fn list_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<Vec<WebhookRequestLog>, AppError> {
+pub fn list_by_trigger(
+    pool: &DbPool,
+    trigger_id: &str,
+) -> Result<Vec<WebhookRequestLog>, AppError> {
     timed_query!("webhook_log", "webhook_log::list_by_trigger", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -26,13 +34,15 @@ pub fn list_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<Vec<WebhookReq
         )?;
         let rows = stmt.query_map(params![trigger_id], row_to_log)?;
         Ok(collect_rows(rows, "webhook_log::list_by_trigger"))
-
     })
 }
 
 /// Insert a new webhook request log entry and periodically enforce the 100-per-trigger cap.
 /// The cap-enforcement DELETE runs every 10th insert to avoid per-insert overhead on a hot path.
-pub fn create(pool: &DbPool, input: CreateWebhookRequestLogInput) -> Result<WebhookRequestLog, AppError> {
+pub fn create(
+    pool: &DbPool,
+    input: CreateWebhookRequestLogInput,
+) -> Result<WebhookRequestLog, AppError> {
     timed_query!("webhook_log", "webhook_log::create", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
@@ -72,7 +82,6 @@ pub fn create(pool: &DbPool, input: CreateWebhookRequestLogInput) -> Result<Webh
         }
 
         Ok(row)
-
     })
 }
 
@@ -85,6 +94,5 @@ pub fn delete_by_trigger(pool: &DbPool, trigger_id: &str) -> Result<i64, AppErro
             params![trigger_id],
         )?;
         Ok(deleted as i64)
-
     })
 }

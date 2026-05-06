@@ -339,7 +339,10 @@ mod tests {
         assert_eq!(findings.len(), 2);
         // Dupes get effort 4; dead_code gets effort 2.
         let dup = findings.iter().find(|f| f.title.contains("dup")).unwrap();
-        let dead = findings.iter().find(|f| f.title.contains("unused")).unwrap();
+        let dead = findings
+            .iter()
+            .find(|f| f.title.contains("unused"))
+            .unwrap();
         assert_eq!(dup.effort, Some(4));
         assert_eq!(dead.effort, Some(2));
     }

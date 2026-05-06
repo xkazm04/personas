@@ -429,8 +429,7 @@ pub async fn run_semantic_lint(
         ))
     })?;
 
-    let raw: RawSemanticLint =
-        serde_json::from_str(&json_str).map_err(AppError::Serde)?;
+    let raw: RawSemanticLint = serde_json::from_str(&json_str).map_err(AppError::Serde)?;
 
     // Translate snake_case raw struct into the camelCase-serialized public type.
     let inconsistencies: Vec<Inconsistency> = raw
@@ -537,7 +536,10 @@ mod tests {
     fn wikilinks_extracted_and_deduped() {
         let content = "[[A]] and [[B]] and [[A|alias]] and [[C#section]]";
         let links = extract_wikilink_targets(content);
-        assert_eq!(links, vec!["A".to_string(), "B".to_string(), "C".to_string()]);
+        assert_eq!(
+            links,
+            vec!["A".to_string(), "B".to_string(), "C".to_string()]
+        );
     }
 
     #[test]

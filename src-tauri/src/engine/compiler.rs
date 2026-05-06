@@ -1,11 +1,33 @@
-//! PersonaCompiler -- persona design compilation via the staged pipeline framework.
+//! `PersonaCompiler` — design / refinement of an existing persona via the
+//! staged compilation pipeline framework.
 //!
-//! This module implements `CompilationPipeline` for persona design:
-//!   wizard input → NL instruction → LLM prompt → Claude CLI → raw output →
-//!   parsed JSON → feasibility check → DB persist
+//! See [`engine/README.md`](./README.md) for the full decision matrix and the
+//! boundary against `intent_compiler.rs` (greenfield intent → persona) and
+//! `workflow_compiler.rs` (prose → team topology). This compiler operates on
+//! a persona that already exists.
 //!
-//! The public API (`assemble_prompt`, `parse_output`, `run_feasibility`) is
-//! preserved for backward compatibility; each delegates to the pipeline impl.
+//! - **Input:** [`CompilationInput`] — a `&Persona`, the available
+//!   `&[PersonaToolDefinition]` / `&[ConnectorDefinition]`, the user's
+//!   `instruction`, optional `design_context` (project-level files), and
+//!   optional `existing_result` for refinement mode.
+//! - **Output:** `serde_json::Value` matching the standard persona design
+//!   schema (`structured_prompt`, `suggested_tools`, `suggested_triggers`,
+//!   `summary`, …) with a `feasibility` block attached by stage 4.
+//! - **Caller:** picked by `commands::design::analysis::start_design_analysis`
+//!   and `refine_design` whenever the user is iterating on an existing
+//!   persona's blueprint inside the design surface. Refinement vs. fresh
+//!   compilation is decided by `existing_result`.
+//! - **Delegated to `engine::design`:** `build_design_prompt` /
+//!   `build_refinement_prompt_with_history`, `extract_design_question`,
+//!   `extract_design_result`, `check_feasibility`. This module owns the
+//!   pipeline trait wiring; the prompt strings and parser regexes live in
+//!   `engine::design`.
+//! - **Duplicated vs. `IntentCompiler`:** both produce a persona-design JSON
+//!   and reuse the same `extract_*` parsers. They diverge in prompt assembly:
+//!   `PersonaCompiler` builds a refinement-aware design prompt; `IntentCompiler`
+//!   builds a from-scratch intent prompt with extra schema fields
+//!   (`use_cases`, `model_recommendation`, `test_scenarios`). **Do not bolt
+//!   intent-only fields onto this compiler** — extend `IntentCompiler` instead.
 
 use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition};
 #[cfg(test)]

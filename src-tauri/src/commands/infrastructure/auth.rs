@@ -254,9 +254,11 @@ fn load_cached_user() -> Option<AuthUser> {
 fn store_google_provider_refresh_token(token: &str) -> Result<(), AppError> {
     let entry = keyring::Entry::new(KEYRING_SERVICE, KEYRING_GOOGLE_PROVIDER_REFRESH)
         .map_err(|e| AppError::Auth(format!("Keyring entry error: {e}")))?;
-    entry
-        .set_password(token)
-        .map_err(|e| AppError::Auth(format!("Failed to store Google provider refresh token: {e}")))?;
+    entry.set_password(token).map_err(|e| {
+        AppError::Auth(format!(
+            "Failed to store Google provider refresh token: {e}"
+        ))
+    })?;
     Ok(())
 }
 
@@ -309,13 +311,8 @@ async fn fetch_user_profile(access_token: &str) -> Result<AuthUser, AppError> {
     Ok(user.to_auth_user())
 }
 
-async fn refresh_access_token(
-    refresh_token: &str,
-) -> Result<SupabaseTokenResponse, AppError> {
-    let url = format!(
-        "{}/auth/v1/token?grant_type=refresh_token",
-        supabase_url()?
-    );
+async fn refresh_access_token(refresh_token: &str) -> Result<SupabaseTokenResponse, AppError> {
+    let url = format!("{}/auth/v1/token?grant_type=refresh_token", supabase_url()?);
     let anon_key = supabase_anon_key()?;
 
     let resp = crate::SHARED_HTTP
@@ -437,9 +434,15 @@ pub async fn login_with_google(
     }
 
     let nav_handle = app.clone();
-    WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
-        oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
-    ))
+    WebviewWindowBuilder::new(
+        &app,
+        "oauth",
+        tauri::WebviewUrl::External(
+            oauth_url
+                .parse()
+                .map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
+        ),
+    )
     .title("Personas \u{2014} Sign in with Google")
     .inner_size(480.0, 680.0)
     .center()
@@ -461,9 +464,12 @@ pub async fn login_with_google(
                 if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
                     tracing::error!("OAuth callback failed: {}", e);
                     // Surface the error to the frontend so the user sees what went wrong
-                    let _ = handle.emit(event_name::AUTH_ERROR, serde_json::json!({
-                        "error": format!("{}", e)
-                    }));
+                    let _ = handle.emit(
+                        event_name::AUTH_ERROR,
+                        serde_json::json!({
+                            "error": format!("{}", e)
+                        }),
+                    );
                 }
             });
 
@@ -534,9 +540,15 @@ pub async fn login_with_google_drive(
     }
 
     let nav_handle = app.clone();
-    WebviewWindowBuilder::new(&app, "oauth", tauri::WebviewUrl::External(
-        oauth_url.parse().map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
-    ))
+    WebviewWindowBuilder::new(
+        &app,
+        "oauth",
+        tauri::WebviewUrl::External(
+            oauth_url
+                .parse()
+                .map_err(|e| AppError::Auth(format!("Invalid OAuth URL: {e}")))?,
+        ),
+    )
     .title("Personas \u{2014} Connect Google Drive")
     .inner_size(480.0, 680.0)
     .center()
@@ -554,9 +566,12 @@ pub async fn login_with_google_drive(
                 }
                 if let Err(e) = handle_auth_callback(&handle, &callback_url).await {
                     tracing::error!("Drive OAuth callback failed: {}", e);
-                    let _ = handle.emit(event_name::AUTH_ERROR, serde_json::json!({
-                        "error": format!("{}", e)
-                    }));
+                    let _ = handle.emit(
+                        event_name::AUTH_ERROR,
+                        serde_json::json!({
+                            "error": format!("{}", e)
+                        }),
+                    );
                 }
             });
             return false;
@@ -591,9 +606,7 @@ pub async fn get_auth_state(
 
 /// Clear a stale pending OAuth state that blocks new login attempts.
 #[tauri::command]
-pub async fn clear_pending_oauth(
-    state: tauri::State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn clear_pending_oauth(state: tauri::State<'_, Arc<AppState>>) -> Result<(), AppError> {
     let mut auth = state.auth.write().await;
     auth.pending_oauth_state = None;
     tracing::info!("Cleared pending OAuth state");
@@ -618,13 +631,16 @@ pub async fn logout(
         client.set_user_token(None).await;
     }
 
-    let _ = app.emit(event_name::AUTH_STATE_CHANGED, AuthStateResponse {
-        is_authenticated: false,
-        is_offline: false,
-        is_offline_authenticated: false,
-        user: None,
-        subscription: None,
-    });
+    let _ = app.emit(
+        event_name::AUTH_STATE_CHANGED,
+        AuthStateResponse {
+            is_authenticated: false,
+            is_offline: false,
+            is_offline_authenticated: false,
+            user: None,
+            subscription: None,
+        },
+    );
 
     tracing::info!("User logged out, tokens cleared");
     Ok(())
@@ -657,8 +673,8 @@ pub async fn refresh_session(
         }
     }
 
-    let refresh_token = load_refresh_token()
-        .ok_or_else(|| AppError::Auth("No refresh token stored".into()))?;
+    let refresh_token =
+        load_refresh_token().ok_or_else(|| AppError::Auth("No refresh token stored".into()))?;
 
     match refresh_access_token(&refresh_token).await {
         Ok(token_resp) => {
@@ -668,8 +684,8 @@ pub async fn refresh_session(
             store_refresh_token(&token_resp.refresh_token)?;
             cache_user(&user);
 
-            let expires_at = std::time::Instant::now()
-                + std::time::Duration::from_secs(token_resp.expires_in);
+            let expires_at =
+                std::time::Instant::now() + std::time::Duration::from_secs(token_resp.expires_in);
 
             let access_token = SecureString::new(token_resp.access_token);
             let response = {
@@ -683,7 +699,9 @@ pub async fn refresh_session(
 
             // Push refreshed Supabase JWT to cloud client
             if let Some(ref client) = *state.cloud_client.lock().await {
-                client.set_user_token(Some(access_token.expose_secret().to_string())).await;
+                client
+                    .set_user_token(Some(access_token.expose_secret().to_string()))
+                    .await;
             }
 
             let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
@@ -718,12 +736,12 @@ pub async fn refresh_session(
 /// Validates the `app_state` query parameter against the nonce stored by
 /// `login_with_google` to prevent token injection via crafted deep links
 /// (RFC 6749 §10.12).
-pub async fn handle_auth_callback(
-    app: &AppHandle,
-    url_str: &str,
-) -> Result<(), AppError> {
+pub async fn handle_auth_callback(app: &AppHandle, url_str: &str) -> Result<(), AppError> {
     // Log only the non-fragment portion to avoid leaking tokens in logs
-    tracing::info!("Auth callback received from: {}", url_str.split('#').next().unwrap_or("unknown"));
+    tracing::info!(
+        "Auth callback received from: {}",
+        url_str.split('#').next().unwrap_or("unknown")
+    );
 
     let params = parse_callback_params(url_str);
 
@@ -794,8 +812,7 @@ pub async fn handle_auth_callback(
     let user = fetch_user_profile(&access_token).await?;
     cache_user(&user);
 
-    let expires_at =
-        std::time::Instant::now() + std::time::Duration::from_secs(expires_in);
+    let expires_at = std::time::Instant::now() + std::time::Duration::from_secs(expires_in);
 
     // Update in-memory state
     let access_token = SecureString::new(access_token);
@@ -816,7 +833,9 @@ pub async fn handle_auth_callback(
 
     // Push Supabase JWT to cloud client for per-user isolation
     if let Some(ref client) = *state.cloud_client.lock().await {
-        client.set_user_token(Some(access_token.expose_secret().to_string())).await;
+        client
+            .set_user_token(Some(access_token.expose_secret().to_string()))
+            .await;
     }
 
     let _ = app.emit(event_name::AUTH_STATE_CHANGED, &response);
@@ -860,8 +879,8 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
             }
             cache_user(&user);
 
-            let expires_at = std::time::Instant::now()
-                + std::time::Duration::from_secs(token_resp.expires_in);
+            let expires_at =
+                std::time::Instant::now() + std::time::Duration::from_secs(token_resp.expires_in);
 
             let response = {
                 let mut auth = state.auth.write().await;
@@ -1069,7 +1088,8 @@ mod tests {
 
     #[test]
     fn test_parse_callback_params_with_app_state() {
-        let url = "personas://auth/callback?app_state=my-nonce-123#access_token=abc&refresh_token=def";
+        let url =
+            "personas://auth/callback?app_state=my-nonce-123#access_token=abc&refresh_token=def";
         let params = parse_callback_params(url);
         assert_eq!(params.get("app_state").unwrap(), "my-nonce-123");
         assert_eq!(params.get("access_token").unwrap(), "abc");
@@ -1094,7 +1114,9 @@ mod tests {
         rand::thread_rng().fill(&mut buf);
         let state = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(buf);
         // URL-safe base64 should only contain alphanumeric, '-', and '_'
-        assert!(state.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
+        assert!(state
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
         // 32 bytes -> 43 base64 characters (no padding)
         assert_eq!(state.len(), 43);
     }

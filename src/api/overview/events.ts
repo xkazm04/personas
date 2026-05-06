@@ -6,6 +6,7 @@ import type { PersonaEvent } from "@/lib/bindings/PersonaEvent";
 import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscription";
 import type { CreateEventSubscriptionInput } from "@/lib/bindings/CreateEventSubscriptionInput";
 import type { UpdateEventSubscriptionInput } from "@/lib/bindings/UpdateEventSubscriptionInput";
+import type { DeadLetterConfig } from "@/lib/bindings/DeadLetterConfig";
 
 // ============================================================================
 // Events
@@ -64,3 +65,13 @@ export const retryDeadLetterEvent = (id: string) =>
 
 export const discardDeadLetterEvent = (id: string) =>
   invoke<boolean>("discard_dead_letter_event", { id });
+
+/**
+ * Read the dead-letter knobs the UI needs to mirror (currently just
+ * `maxManualRetries`). Source of truth lives in
+ * `src-tauri/src/db/repos/communication/events.rs::MAX_MANUAL_RETRIES`.
+ * The DLQ tab fetches this on mount so the "Retry" / "exhausted" labels
+ * always agree with the Rust cap, even after a backend bump.
+ */
+export const getDeadLetterConfig = () =>
+  invoke<DeadLetterConfig>("get_dead_letter_config");

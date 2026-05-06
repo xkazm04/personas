@@ -160,7 +160,9 @@ fn row_to_task(row: &Row) -> rusqlite::Result<DevTask> {
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
-        depth: row.get::<_, Option<String>>("depth")?.unwrap_or_else(|| "quick".to_string()),
+        depth: row
+            .get::<_, Option<String>>("depth")?
+            .unwrap_or_else(|| "quick".to_string()),
     })
 }
 
@@ -181,24 +183,20 @@ fn row_to_triage_rule(row: &Row) -> rusqlite::Result<TriageRule> {
 // Projects
 // ============================================================================
 
-pub fn list_projects(
-    pool: &DbPool,
-    status: Option<&str>,
-) -> Result<Vec<DevProject>, AppError> {
+pub fn list_projects(pool: &DbPool, status: Option<&str>) -> Result<Vec<DevProject>, AppError> {
     timed_query!("dev_projects", "dev_projects::list_projects", {
         let conn = pool.get()?;
         if let Some(status) = status {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_projects WHERE status = ?1 ORDER BY updated_at DESC",
-            )?;
+            let mut stmt = conn
+                .prepare("SELECT * FROM dev_projects WHERE status = ?1 ORDER BY updated_at DESC")?;
             let rows = stmt.query_map(params![status], row_to_project)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_projects ORDER BY updated_at DESC",
-            )?;
+            let mut stmt = conn.prepare("SELECT * FROM dev_projects ORDER BY updated_at DESC")?;
             let rows = stmt.query_map([], row_to_project)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -212,9 +210,7 @@ pub fn get_project_by_id(pool: &DbPool, id: &str) -> Result<DevProject, AppError
             row_to_project,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev project {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev project {id}")),
             other => AppError::Database(other),
         })
     })
@@ -277,8 +273,18 @@ pub fn update_project(
         push_field!(status, "status", sets, param_idx);
         push_field!(tech_stack, "tech_stack", sets, param_idx);
         push_field!(github_url, "github_url", sets, param_idx);
-        push_field!(monitoring_credential_id, "monitoring_credential_id", sets, param_idx);
-        push_field!(monitoring_project_slug, "monitoring_project_slug", sets, param_idx);
+        push_field!(
+            monitoring_credential_id,
+            "monitoring_credential_id",
+            sets,
+            param_idx
+        );
+        push_field!(
+            monitoring_project_slug,
+            "monitoring_project_slug",
+            sets,
+            param_idx
+        );
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -362,13 +368,14 @@ pub fn list_goals_by_project(
                 "SELECT * FROM dev_goals WHERE project_id = ?1 AND status = ?2 ORDER BY order_index",
             )?;
             let rows = stmt.query_map(params![project_id, status], row_to_goal)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_goals WHERE project_id = ?1 ORDER BY order_index",
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM dev_goals WHERE project_id = ?1 ORDER BY order_index")?;
             let rows = stmt.query_map(params![project_id], row_to_goal)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -382,9 +389,7 @@ pub fn get_goal_by_id(pool: &DbPool, id: &str) -> Result<DevGoal, AppError> {
             row_to_goal,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev goal {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev goal {id}")),
             other => AppError::Database(other),
         })
     })
@@ -538,7 +543,8 @@ pub fn list_goal_signals(
             "SELECT * FROM dev_goal_signals WHERE goal_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![goal_id, limit], row_to_goal_signal)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -550,24 +556,28 @@ pub fn create_goal_signal(
     delta: Option<i32>,
     message: Option<&str>,
 ) -> Result<DevGoalSignal, AppError> {
-    timed_query!("dev_goal_signals", "dev_goal_signals::create_goal_signal", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+    timed_query!(
+        "dev_goal_signals",
+        "dev_goal_signals::create_goal_signal",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
-        conn.execute(
+            let conn = pool.get()?;
+            conn.execute(
             "INSERT INTO dev_goal_signals (id, goal_id, signal_type, source_id, delta, message, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![id, goal_id, signal_type, source_id, delta, message, now],
         )?;
 
-        conn.query_row(
-            "SELECT * FROM dev_goal_signals WHERE id = ?1",
-            params![id],
-            row_to_goal_signal,
-        )
-        .map_err(AppError::Database)
-    })
+            conn.query_row(
+                "SELECT * FROM dev_goal_signals WHERE id = ?1",
+                params![id],
+                row_to_goal_signal,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 // ============================================================================
@@ -584,18 +594,19 @@ pub fn list_goal_dependencies(
             "SELECT id, goal_id, depends_on_id, dependency_type, created_at
              FROM dev_goal_dependencies WHERE goal_id = ?1 ORDER BY created_at",
         )?;
-        let rows = stmt.query_map(params![goal_id], |row| {
-            Ok(DevGoalDependency {
-                id: row.get("id")?,
-                goal_id: row.get("goal_id")?,
-                depends_on_id: row.get("depends_on_id")?,
-                dependency_type: row.get("dependency_type")?,
-                created_at: row.get("created_at")?,
+        let rows = stmt
+            .query_map(params![goal_id], |row| {
+                Ok(DevGoalDependency {
+                    id: row.get("id")?,
+                    goal_id: row.get("goal_id")?,
+                    depends_on_id: row.get("depends_on_id")?,
+                    dependency_type: row.get("dependency_type")?,
+                    created_at: row.get("created_at")?,
+                })
             })
-        })
-        .map_err(AppError::Database)?
-        .collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)?;
+            .map_err(AppError::Database)?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(rows)
     })
 }
@@ -627,15 +638,18 @@ pub fn list_goal_statuses_with_deps(
 
             let goal_ids: Vec<String> = map.keys().cloned().collect();
             if !goal_ids.is_empty() {
-                let placeholders =
-                    std::iter::repeat_n("?", goal_ids.len()).collect::<Vec<_>>().join(",");
+                let placeholders = std::iter::repeat_n("?", goal_ids.len())
+                    .collect::<Vec<_>>()
+                    .join(",");
                 let sql = format!(
                     "SELECT goal_id, depends_on_id FROM dev_goal_dependencies \
                      WHERE goal_id IN ({placeholders}) AND dependency_type = 'blocks'"
                 );
                 let mut dep_stmt = conn.prepare(&sql)?;
-                let params: Vec<&dyn rusqlite::types::ToSql> =
-                    goal_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+                let params: Vec<&dyn rusqlite::types::ToSql> = goal_ids
+                    .iter()
+                    .map(|s| s as &dyn rusqlite::types::ToSql)
+                    .collect();
                 let dep_rows = dep_stmt.query_map(params.as_slice(), |row| {
                     Ok((
                         row.get::<_, String>("goal_id")?,
@@ -690,9 +704,8 @@ pub fn check_goal_dependency_cycle(
                         "Adding this dependency would create a cycle".into(),
                     ));
                 }
-                let rows = stmt.query_map(params![node], |row| {
-                    row.get::<_, String>("depends_on_id")
-                })?;
+                let rows =
+                    stmt.query_map(params![node], |row| row.get::<_, String>("depends_on_id"))?;
                 for r in rows {
                     stack.push(r.map_err(AppError::Database)?);
                 }
@@ -734,7 +747,10 @@ pub fn add_goal_dependency(
 pub fn remove_goal_dependency(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("dev_goal_dependencies", "dev_goal_dependencies::remove", {
         let conn = pool.get()?;
-        let count = conn.execute("DELETE FROM dev_goal_dependencies WHERE id = ?1", params![id])?;
+        let count = conn.execute(
+            "DELETE FROM dev_goal_dependencies WHERE id = ?1",
+            params![id],
+        )?;
         Ok(count > 0)
     })
 }
@@ -747,14 +763,19 @@ pub fn list_context_groups(
     pool: &DbPool,
     project_id: &str,
 ) -> Result<Vec<DevContextGroup>, AppError> {
-    timed_query!("dev_context_groups", "dev_context_groups::list_context_groups", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM dev_context_groups WHERE project_id = ?1 ORDER BY position",
-        )?;
-        let rows = stmt.query_map(params![project_id], row_to_context_group)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::list_context_groups",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM dev_context_groups WHERE project_id = ?1 ORDER BY position",
+            )?;
+            let rows = stmt.query_map(params![project_id], row_to_context_group)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn create_context_group(
@@ -769,34 +790,38 @@ pub fn create_context_group(
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
 
-    timed_query!("dev_context_groups", "dev_context_groups::create_context_group", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let color = color.unwrap_or("#6366f1");
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::create_context_group",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let color = color.unwrap_or("#6366f1");
 
-        let conn = pool.get()?;
-        let max_pos: i32 = conn
+            let conn = pool.get()?;
+            let max_pos: i32 = conn
             .query_row(
                 "SELECT COALESCE(MAX(position), -1) FROM dev_context_groups WHERE project_id = ?1",
                 params![project_id],
                 |row| row.get(0),
             )
             .unwrap_or(-1);
-        let position = max_pos + 1;
+            let position = max_pos + 1;
 
-        conn.execute(
+            conn.execute(
             "INSERT INTO dev_context_groups (id, project_id, name, color, icon, group_type, position, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
             params![id, project_id, name, color, icon, group_type, position, now],
         )?;
 
-        conn.query_row(
-            "SELECT * FROM dev_context_groups WHERE id = ?1",
-            params![id],
-            row_to_context_group,
-        )
-        .map_err(AppError::Database)
-    })
+            conn.query_row(
+                "SELECT * FROM dev_context_groups WHERE id = ?1",
+                params![id],
+                row_to_context_group,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -810,101 +835,120 @@ pub fn update_context_group(
     health_score: Option<Option<i32>>,
     last_scan_at: Option<Option<&str>>,
 ) -> Result<DevContextGroup, AppError> {
-    timed_query!("dev_context_groups", "dev_context_groups::update_context_group", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::update_context_group",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
 
-        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-        let mut param_idx = 2u32;
+            let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+            let mut param_idx = 2u32;
 
-        push_field!(name, "name", sets, param_idx);
-        push_field!(color, "color", sets, param_idx);
-        push_field!(icon, "icon", sets, param_idx);
-        push_field!(group_type, "group_type", sets, param_idx);
-        push_field!(health_score, "health_score", sets, param_idx);
-        push_field!(last_scan_at, "last_scan_at", sets, param_idx);
+            push_field!(name, "name", sets, param_idx);
+            push_field!(color, "color", sets, param_idx);
+            push_field!(icon, "icon", sets, param_idx);
+            push_field!(group_type, "group_type", sets, param_idx);
+            push_field!(health_score, "health_score", sets, param_idx);
+            push_field!(last_scan_at, "last_scan_at", sets, param_idx);
 
-        let sql = format!(
-            "UPDATE dev_context_groups SET {} WHERE id = ?{}",
-            sets.join(", "),
-            param_idx
-        );
+            let sql = format!(
+                "UPDATE dev_context_groups SET {} WHERE id = ?{}",
+                sets.join(", "),
+                param_idx
+            );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-        if let Some(v) = name {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = color {
-            param_values.push(Box::new(v.to_string()));
-        }
-        if let Some(v) = icon {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = group_type {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        if let Some(v) = health_score {
-            param_values.push(Box::new(v));
-        }
-        if let Some(v) = last_scan_at {
-            param_values.push(Box::new(v.map(|s| s.to_string())));
-        }
-        param_values.push(Box::new(id.to_string()));
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+            if let Some(v) = name {
+                param_values.push(Box::new(v.to_string()));
+            }
+            if let Some(v) = color {
+                param_values.push(Box::new(v.to_string()));
+            }
+            if let Some(v) = icon {
+                param_values.push(Box::new(v.map(|s| s.to_string())));
+            }
+            if let Some(v) = group_type {
+                param_values.push(Box::new(v.map(|s| s.to_string())));
+            }
+            if let Some(v) = health_score {
+                param_values.push(Box::new(v));
+            }
+            if let Some(v) = last_scan_at {
+                param_values.push(Box::new(v.map(|s| s.to_string())));
+            }
+            param_values.push(Box::new(id.to_string()));
 
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-        conn.execute(&sql, params_ref.as_slice())?;
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                param_values.iter().map(|p| p.as_ref()).collect();
+            conn.execute(&sql, params_ref.as_slice())?;
 
-        conn.query_row(
-            "SELECT * FROM dev_context_groups WHERE id = ?1",
-            params![id],
-            row_to_context_group,
-        )
-        .map_err(AppError::Database)
-    })
+            conn.query_row(
+                "SELECT * FROM dev_context_groups WHERE id = ?1",
+                params![id],
+                row_to_context_group,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn delete_context_group(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("dev_context_groups", "dev_context_groups::delete_context_group", {
-        let conn = pool.get()?;
-        let rows = conn.execute("DELETE FROM dev_context_groups WHERE id = ?1", params![id])?;
-        Ok(rows > 0)
-    })
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::delete_context_group",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute("DELETE FROM dev_context_groups WHERE id = ?1", params![id])?;
+            Ok(rows > 0)
+        }
+    )
 }
 
 /// Delete all contexts, groups, and group relationships for a project.
 /// Used before a rescan to start with a clean slate.
-pub fn clear_project_context_map(pool: &DbPool, project_id: &str) -> Result<(usize, usize), AppError> {
-    timed_query!("dev_context_groups", "dev_context_groups::clear_project_context_map", {
-        let conn = pool.get()?;
-        let ctx_rows = conn.execute(
-            "DELETE FROM dev_contexts WHERE project_id = ?1",
-            params![project_id],
-        )?;
-        let rel_rows = conn.execute(
-            "DELETE FROM dev_context_group_relationships WHERE project_id = ?1",
-            params![project_id],
-        );
-        let _ = rel_rows; // ok if table is empty
-        let grp_rows = conn.execute(
-            "DELETE FROM dev_context_groups WHERE project_id = ?1",
-            params![project_id],
-        )?;
-        Ok((grp_rows, ctx_rows))
-    })
+pub fn clear_project_context_map(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<(usize, usize), AppError> {
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::clear_project_context_map",
+        {
+            let conn = pool.get()?;
+            let ctx_rows = conn.execute(
+                "DELETE FROM dev_contexts WHERE project_id = ?1",
+                params![project_id],
+            )?;
+            let rel_rows = conn.execute(
+                "DELETE FROM dev_context_group_relationships WHERE project_id = ?1",
+                params![project_id],
+            );
+            let _ = rel_rows; // ok if table is empty
+            let grp_rows = conn.execute(
+                "DELETE FROM dev_context_groups WHERE project_id = ?1",
+                params![project_id],
+            )?;
+            Ok((grp_rows, ctx_rows))
+        }
+    )
 }
 
 pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
-    timed_query!("dev_context_groups", "dev_context_groups::reorder_context_groups", {
-        let conn = pool.get()?;
-        for (i, id) in ids.iter().enumerate() {
-            conn.execute(
-                "UPDATE dev_context_groups SET position = ?1, updated_at = ?2 WHERE id = ?3",
-                params![i as i32, chrono::Utc::now().to_rfc3339(), id],
-            )?;
+    timed_query!(
+        "dev_context_groups",
+        "dev_context_groups::reorder_context_groups",
+        {
+            let conn = pool.get()?;
+            for (i, id) in ids.iter().enumerate() {
+                conn.execute(
+                    "UPDATE dev_context_groups SET position = ?1, updated_at = ?2 WHERE id = ?3",
+                    params![i as i32, chrono::Utc::now().to_rfc3339(), id],
+                )?;
+            }
+            Ok(())
         }
-        Ok(())
-    })
+    )
 }
 
 // ============================================================================
@@ -915,22 +959,29 @@ pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppEr
 /// Populated by `commands/infrastructure/context_generation.rs` after a successful
 /// scan; consumed by `commands/infrastructure/incremental_scan.rs` to compute
 /// the delta {added, modified, deleted} against the live filesystem.
-pub fn get_file_hashes(pool: &DbPool, project_id: &str) -> Result<HashMap<String, String>, AppError> {
-    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::get_file_hashes", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT file_path, sha256 FROM dev_context_file_hashes WHERE project_id = ?1",
-        )?;
-        let rows = stmt.query_map(params![project_id], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-        })?;
-        let mut map = HashMap::new();
-        for row in rows {
-            let (path, sha) = row.map_err(AppError::Database)?;
-            map.insert(path, sha);
+pub fn get_file_hashes(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<HashMap<String, String>, AppError> {
+    timed_query!(
+        "dev_context_file_hashes",
+        "dev_context_file_hashes::get_file_hashes",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT file_path, sha256 FROM dev_context_file_hashes WHERE project_id = ?1",
+            )?;
+            let rows = stmt.query_map(params![project_id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?;
+            let mut map = HashMap::new();
+            for row in rows {
+                let (path, sha) = row.map_err(AppError::Database)?;
+                map.insert(path, sha);
+            }
+            Ok(map)
         }
-        Ok(map)
-    })
+    )
 }
 
 /// Replace the entire file-hash cache for a project in a single transaction.
@@ -942,41 +993,49 @@ pub fn replace_file_hashes(
     project_id: &str,
     entries: &[(String, String, i64)], // (file_path, sha256, size_bytes)
 ) -> Result<usize, AppError> {
-    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::replace_file_hashes", {
-        let mut conn = pool.get()?;
-        let tx = conn.transaction()?;
-        tx.execute(
-            "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
-            params![project_id],
-        )?;
-        let now = chrono::Utc::now().to_rfc3339();
-        let mut written = 0usize;
+    timed_query!(
+        "dev_context_file_hashes",
+        "dev_context_file_hashes::replace_file_hashes",
         {
-            let mut stmt = tx.prepare(
+            let mut conn = pool.get()?;
+            let tx = conn.transaction()?;
+            tx.execute(
+                "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
+                params![project_id],
+            )?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut written = 0usize;
+            {
+                let mut stmt = tx.prepare(
                 "INSERT INTO dev_context_file_hashes (project_id, file_path, sha256, size_bytes, last_extracted_at)
                  VALUES (?1, ?2, ?3, ?4, ?5)",
             )?;
-            for (path, sha, size) in entries {
-                stmt.execute(params![project_id, path, sha, size, now])?;
-                written += 1;
+                for (path, sha, size) in entries {
+                    stmt.execute(params![project_id, path, sha, size, now])?;
+                    written += 1;
+                }
             }
+            tx.commit()?;
+            Ok(written)
         }
-        tx.commit()?;
-        Ok(written)
-    })
+    )
 }
 
 /// Drop all cached file hashes for a project (e.g. on project delete or a
 /// "force full rescan" user action). Returns the number of rows removed.
 pub fn clear_file_hashes(pool: &DbPool, project_id: &str) -> Result<usize, AppError> {
-    timed_query!("dev_context_file_hashes", "dev_context_file_hashes::clear_file_hashes", {
-        let conn = pool.get()?;
-        let n = conn.execute(
-            "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
-            params![project_id],
-        )?;
-        Ok(n)
-    })
+    timed_query!(
+        "dev_context_file_hashes",
+        "dev_context_file_hashes::clear_file_hashes",
+        {
+            let conn = pool.get()?;
+            let n = conn.execute(
+                "DELETE FROM dev_context_file_hashes WHERE project_id = ?1",
+                params![project_id],
+            )?;
+            Ok(n)
+        }
+    )
 }
 
 // ============================================================================
@@ -995,13 +1054,14 @@ pub fn list_contexts_by_project(
                 "SELECT * FROM dev_contexts WHERE project_id = ?1 AND group_id = ?2 ORDER BY name",
             )?;
             let rows = stmt.query_map(params![project_id, group_id], row_to_context)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_contexts WHERE project_id = ?1 ORDER BY name",
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM dev_contexts WHERE project_id = ?1 ORDER BY name")?;
             let rows = stmt.query_map(params![project_id], row_to_context)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -1015,9 +1075,7 @@ pub fn get_context_by_id(pool: &DbPool, id: &str) -> Result<DevContext, AppError
             row_to_context,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev context {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev context {id}")),
             other => AppError::Database(other),
         })
     })
@@ -1166,96 +1224,105 @@ pub fn scan_codebase(
     root_path: &str,
 ) -> Result<Vec<DevContext>, AppError> {
     timed_query!("dev_contexts", "dev_contexts::scan_codebase", {
-    use std::collections::BTreeMap;
-    use std::path::Path;
+        use std::collections::BTreeMap;
+        use std::path::Path;
 
-    let root = Path::new(root_path).canonicalize().map_err(|e| {
-        AppError::Validation(format!("Cannot resolve root path '{}': {}", root_path, e))
-    })?;
+        let root = Path::new(root_path).canonicalize().map_err(|e| {
+            AppError::Validation(format!("Cannot resolve root path '{}': {}", root_path, e))
+        })?;
 
-    // Collect files grouped by their first sub-directory under root.
-    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        // Collect files grouped by their first sub-directory under root.
+        let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
 
-    let source_exts: &[&str] = &[
-        "rs", "ts", "tsx", "js", "jsx", "py", "go", "java", "rb", "css", "scss",
-        "html", "vue", "svelte", "json", "toml", "yaml", "yml", "sql", "sh",
-    ];
+        let source_exts: &[&str] = &[
+            "rs", "ts", "tsx", "js", "jsx", "py", "go", "java", "rb", "css", "scss", "html", "vue",
+            "svelte", "json", "toml", "yaml", "yml", "sql", "sh",
+        ];
 
-    fn visit_dir(
-        dir: &Path,
-        root: &Path,
-        source_exts: &[&str],
-        groups: &mut BTreeMap<String, Vec<String>>,
-    ) {
-        let entries = match std::fs::read_dir(dir) {
-            Ok(e) => e,
-            Err(_) => return,
-        };
+        fn visit_dir(
+            dir: &Path,
+            root: &Path,
+            source_exts: &[&str],
+            groups: &mut BTreeMap<String, Vec<String>>,
+        ) {
+            let entries = match std::fs::read_dir(dir) {
+                Ok(e) => e,
+                Err(_) => return,
+            };
 
-        for entry in entries.flatten() {
-            let path = entry.path();
-            let name = entry.file_name().to_string_lossy().to_string();
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let name = entry.file_name().to_string_lossy().to_string();
 
-            // Skip hidden dirs and common non-source directories.
-            if name.starts_with('.') || name == "node_modules" || name == "target" || name == "dist" || name == "build" {
-                continue;
-            }
+                // Skip hidden dirs and common non-source directories.
+                if name.starts_with('.')
+                    || name == "node_modules"
+                    || name == "target"
+                    || name == "dist"
+                    || name == "build"
+                {
+                    continue;
+                }
 
-            if path.is_dir() {
-                visit_dir(&path, root, source_exts, groups);
-            } else if path.is_file() {
-                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
-                if source_exts.contains(&ext) {
-                    // Key = first sub-directory under root, or "_root" for files directly in root.
-                    let rel = path.strip_prefix(root).unwrap_or(&path);
-                    let key = rel
-                        .components()
-                        .next()
-                        .and_then(|c| {
-                            let s = c.as_os_str().to_string_lossy().to_string();
-                            // If the first component IS the file itself, it's a root-level file.
-                            if rel.components().count() <= 1 { None } else { Some(s) }
-                        })
-                        .unwrap_or_else(|| "_root".to_string());
+                if path.is_dir() {
+                    visit_dir(&path, root, source_exts, groups);
+                } else if path.is_file() {
+                    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                    if source_exts.contains(&ext) {
+                        // Key = first sub-directory under root, or "_root" for files directly in root.
+                        let rel = path.strip_prefix(root).unwrap_or(&path);
+                        let key = rel
+                            .components()
+                            .next()
+                            .and_then(|c| {
+                                let s = c.as_os_str().to_string_lossy().to_string();
+                                // If the first component IS the file itself, it's a root-level file.
+                                if rel.components().count() <= 1 {
+                                    None
+                                } else {
+                                    Some(s)
+                                }
+                            })
+                            .unwrap_or_else(|| "_root".to_string());
 
-                    let rel_str = rel.to_string_lossy().replace('\\', "/");
-                    groups.entry(key).or_default().push(rel_str);
+                        let rel_str = rel.to_string_lossy().replace('\\', "/");
+                        groups.entry(key).or_default().push(rel_str);
+                    }
                 }
             }
         }
-    }
 
-    visit_dir(&root, &root, source_exts, &mut groups);
+        visit_dir(&root, &root, source_exts, &mut groups);
 
-    let mut created: Vec<DevContext> = Vec::new();
-    for (dir_name, files) in &groups {
-        let context_name = if dir_name == "_root" {
-            "Root Files".to_string()
-        } else {
-            dir_name.clone()
-        };
+        let mut created: Vec<DevContext> = Vec::new();
+        for (dir_name, files) in &groups {
+            let context_name = if dir_name == "_root" {
+                "Root Files".to_string()
+            } else {
+                dir_name.clone()
+            };
 
-        let file_paths_json = serde_json::to_string(files).unwrap_or_else(|_| "[]".into());
-        let description = Some(format!("{} source files", files.len()));
+            let file_paths_json = serde_json::to_string(files).unwrap_or_else(|_| "[]".into());
+            let description = Some(format!("{} source files", files.len()));
 
-        let ctx = create_context(
-            pool,
-            project_id,
-            &context_name,
-            None,
-            description.as_deref(),
-            Some(&file_paths_json),
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        )?;
-        created.push(ctx);
-    }
+            let ctx = create_context(
+                pool,
+                project_id,
+                &context_name,
+                None,
+                description.as_deref(),
+                Some(&file_paths_json),
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )?;
+            created.push(ctx);
+        }
 
-    Ok(created)
+        Ok(created)
     })
 }
 
@@ -1267,14 +1334,19 @@ pub fn list_context_group_relationships(
     pool: &DbPool,
     project_id: &str,
 ) -> Result<Vec<DevContextGroupRelationship>, AppError> {
-    timed_query!("dev_context_group_relationships", "dev_context_group_relationships::list", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "dev_context_group_relationships",
+        "dev_context_group_relationships::list",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM dev_context_group_relationships WHERE project_id = ?1 ORDER BY created_at",
         )?;
-        let rows = stmt.query_map(params![project_id], row_to_context_group_relationship)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![project_id], row_to_context_group_relationship)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn create_context_group_relationship(
@@ -1283,35 +1355,43 @@ pub fn create_context_group_relationship(
     source_group_id: &str,
     target_group_id: &str,
 ) -> Result<DevContextGroupRelationship, AppError> {
-    timed_query!("dev_context_group_relationships", "dev_context_group_relationships::create", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+    timed_query!(
+        "dev_context_group_relationships",
+        "dev_context_group_relationships::create",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
-        conn.execute(
+            let conn = pool.get()?;
+            conn.execute(
             "INSERT INTO dev_context_group_relationships (id, project_id, source_group_id, target_group_id, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5)",
             params![id, project_id, source_group_id, target_group_id, now],
         )?;
 
-        conn.query_row(
-            "SELECT * FROM dev_context_group_relationships WHERE id = ?1",
-            params![id],
-            row_to_context_group_relationship,
-        )
-        .map_err(AppError::Database)
-    })
+            conn.query_row(
+                "SELECT * FROM dev_context_group_relationships WHERE id = ?1",
+                params![id],
+                row_to_context_group_relationship,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn delete_context_group_relationship(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("dev_context_group_relationships", "dev_context_group_relationships::delete", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM dev_context_group_relationships WHERE id = ?1",
-            params![id],
-        )?;
-        Ok(rows > 0)
-    })
+    timed_query!(
+        "dev_context_group_relationships",
+        "dev_context_group_relationships::delete",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "DELETE FROM dev_context_group_relationships WHERE id = ?1",
+                params![id],
+            )?;
+            Ok(rows > 0)
+        }
+    )
 }
 
 // ============================================================================
@@ -1327,27 +1407,28 @@ pub fn list_ideas(
     offset: Option<i64>,
 ) -> Result<Vec<DevIdea>, AppError> {
     timed_query!("dev_ideas", "dev_ideas::list_ideas", {
-    let conn = pool.get()?;
-    let mut qb = QueryBuilder::new();
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
 
-    if let Some(v) = project_id {
-        qb.where_eq("project_id", v.to_string());
-    }
-    if let Some(v) = status {
-        qb.where_eq("status", v.to_string());
-    }
-    if let Some(v) = category {
-        qb.where_eq("category", v.to_string());
-    }
+        if let Some(v) = project_id {
+            qb.where_eq("project_id", v.to_string());
+        }
+        if let Some(v) = status {
+            qb.where_eq("status", v.to_string());
+        }
+        if let Some(v) = category {
+            qb.where_eq("category", v.to_string());
+        }
 
-    qb.order_by("created_at", "DESC");
-    qb.limit(limit.unwrap_or(100));
-    qb.offset(offset.unwrap_or(0));
+        qb.order_by("created_at", "DESC");
+        qb.limit(limit.unwrap_or(100));
+        qb.offset(offset.unwrap_or(0));
 
-    let sql = qb.build_select("SELECT * FROM dev_ideas");
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_idea)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let sql = qb.build_select("SELECT * FROM dev_ideas");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_idea)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -1360,9 +1441,7 @@ pub fn get_idea_by_id(pool: &DbPool, id: &str) -> Result<DevIdea, AppError> {
             row_to_idea,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev idea {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev idea {id}")),
             other => AppError::Database(other),
         })
     })
@@ -1392,7 +1471,14 @@ pub fn create_idea(
     timed_query!("dev_ideas", "dev_ideas::create_idea", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let category = category.unwrap_or("functionality");
+        // Normalize the incoming category through the canonical vocabulary
+        // (see `IdeaCategory` for the mapping). Legacy values from older code
+        // paths or LLM hallucinations collapse to the canonical default
+        // rather than poisoning the column with a third vocabulary.
+        let canonical_category = category
+            .and_then(crate::db::models::IdeaCategory::from_token)
+            .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+        let category = canonical_category.as_str();
         let status = status.unwrap_or("pending");
 
         let conn = pool.get()?;
@@ -1420,60 +1506,64 @@ pub fn update_idea(
     rejection_reason: Option<Option<&str>>,
 ) -> Result<DevIdea, AppError> {
     timed_query!("dev_ideas", "dev_ideas::update_idea", {
-    get_idea_by_id(pool, id)?;
-    let now = chrono::Utc::now().to_rfc3339();
-    let conn = pool.get()?;
+        get_idea_by_id(pool, id)?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-    let mut param_idx = 2u32;
+        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+        let mut param_idx = 2u32;
 
-    push_field!(title, "title", sets, param_idx);
-    push_field!(description, "description", sets, param_idx);
-    push_field!(status, "status", sets, param_idx);
-    push_field!(category, "category", sets, param_idx);
-    push_field!(effort, "effort", sets, param_idx);
-    push_field!(impact, "impact", sets, param_idx);
-    push_field!(risk, "risk", sets, param_idx);
-    push_field!(rejection_reason, "rejection_reason", sets, param_idx);
+        push_field!(title, "title", sets, param_idx);
+        push_field!(description, "description", sets, param_idx);
+        push_field!(status, "status", sets, param_idx);
+        push_field!(category, "category", sets, param_idx);
+        push_field!(effort, "effort", sets, param_idx);
+        push_field!(impact, "impact", sets, param_idx);
+        push_field!(risk, "risk", sets, param_idx);
+        push_field!(rejection_reason, "rejection_reason", sets, param_idx);
 
-    let sql = format!(
-        "UPDATE dev_ideas SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE dev_ideas SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
-    if let Some(v) = title {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = description {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    if let Some(v) = status {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = category {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = effort {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = impact {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = risk {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = rejection_reason {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    param_values.push(Box::new(id.to_string()));
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now)];
+        if let Some(v) = title {
+            param_values.push(Box::new(v.to_string()));
+        }
+        if let Some(v) = description {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = status {
+            param_values.push(Box::new(v.to_string()));
+        }
+        if let Some(v) = category {
+            // Normalize through the canonical vocabulary so callers writing
+            // legacy values can't reintroduce vocabulary drift via update.
+            let canonical = crate::db::models::IdeaCategory::from_token(v)
+                .unwrap_or(crate::db::models::DEFAULT_IDEA_CATEGORY);
+            param_values.push(Box::new(canonical.as_str().to_string()));
+        }
+        if let Some(v) = effort {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = impact {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = risk {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = rejection_reason {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_idea_by_id(pool, id)
+        get_idea_by_id(pool, id)
     })
 }
 
@@ -1490,16 +1580,22 @@ pub fn bulk_delete_ideas(pool: &DbPool, ids: &[String]) -> Result<usize, AppErro
         return Ok(0);
     }
     timed_query!("dev_ideas", "dev_ideas::bulk_delete_ideas", {
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = ids.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
-    let sql = format!(
-        "DELETE FROM dev_ideas WHERE id IN ({})",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
-    let rows = conn.execute(&sql, params_ref.as_slice())?;
-    Ok(rows)
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "DELETE FROM dev_ideas WHERE id IN ({})",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let rows = conn.execute(&sql, params_ref.as_slice())?;
+        Ok(rows)
     })
 }
 
@@ -1520,13 +1616,14 @@ pub fn list_scans(
                 "SELECT * FROM dev_scans WHERE project_id = ?1 ORDER BY created_at DESC LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![project_id, limit], row_to_scan)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_scans ORDER BY created_at DESC LIMIT ?1",
-            )?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM dev_scans ORDER BY created_at DESC LIMIT ?1")?;
             let rows = stmt.query_map(params![limit], row_to_scan)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -1540,9 +1637,7 @@ pub fn get_scan_by_id(pool: &DbPool, id: &str) -> Result<DevScan, AppError> {
             row_to_scan,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev scan {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev scan {id}")),
             other => AppError::Database(other),
         })
     })
@@ -1582,55 +1677,55 @@ pub fn update_scan(
     error: Option<Option<&str>>,
 ) -> Result<DevScan, AppError> {
     timed_query!("dev_scans", "dev_scans::update_scan", {
-    get_scan_by_id(pool, id)?;
-    let conn = pool.get()?;
+        get_scan_by_id(pool, id)?;
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = Vec::new();
-    let mut param_idx = 1u32;
+        let mut sets: Vec<String> = Vec::new();
+        let mut param_idx = 1u32;
 
-    push_field!(status, "status", sets, param_idx);
-    push_field!(idea_count, "idea_count", sets, param_idx);
-    push_field!(input_tokens, "input_tokens", sets, param_idx);
-    push_field!(output_tokens, "output_tokens", sets, param_idx);
-    push_field!(duration_ms, "duration_ms", sets, param_idx);
-    push_field!(error, "error", sets, param_idx);
+        push_field!(status, "status", sets, param_idx);
+        push_field!(idea_count, "idea_count", sets, param_idx);
+        push_field!(input_tokens, "input_tokens", sets, param_idx);
+        push_field!(output_tokens, "output_tokens", sets, param_idx);
+        push_field!(duration_ms, "duration_ms", sets, param_idx);
+        push_field!(error, "error", sets, param_idx);
 
-    if sets.is_empty() {
-        return get_scan_by_id(pool, id);
-    }
+        if sets.is_empty() {
+            return get_scan_by_id(pool, id);
+        }
 
-    let sql = format!(
-        "UPDATE dev_scans SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE dev_scans SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    if let Some(v) = status {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = idea_count {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = input_tokens {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = output_tokens {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = duration_ms {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = error {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    param_values.push(Box::new(id.to_string()));
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        if let Some(v) = status {
+            param_values.push(Box::new(v.to_string()));
+        }
+        if let Some(v) = idea_count {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = input_tokens {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = output_tokens {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = duration_ms {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = error {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_scan_by_id(pool, id)
+        get_scan_by_id(pool, id)
     })
 }
 
@@ -1644,22 +1739,23 @@ pub fn list_tasks(
     status: Option<&str>,
 ) -> Result<Vec<DevTask>, AppError> {
     timed_query!("dev_tasks", "dev_tasks::list_tasks", {
-    let conn = pool.get()?;
-    let mut qb = QueryBuilder::new();
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
 
-    if let Some(v) = project_id {
-        qb.where_eq("project_id", v.to_string());
-    }
-    if let Some(v) = status {
-        qb.where_eq("status", v.to_string());
-    }
+        if let Some(v) = project_id {
+            qb.where_eq("project_id", v.to_string());
+        }
+        if let Some(v) = status {
+            qb.where_eq("status", v.to_string());
+        }
 
-    qb.order_by("created_at", "DESC");
+        qb.order_by("created_at", "DESC");
 
-    let sql = qb.build_select("SELECT * FROM dev_tasks");
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_task)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let sql = qb.build_select("SELECT * FROM dev_tasks");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_task)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -1672,9 +1768,7 @@ pub fn get_task_by_id(pool: &DbPool, id: &str) -> Result<DevTask, AppError> {
             row_to_task,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Dev task {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Dev task {id}")),
             other => AppError::Database(other),
         })
     })
@@ -1700,10 +1794,7 @@ pub fn list_ready_tasks(
         // Returns: "completed" if every upstream goal is completed (or gid has no
         // upstream); "blocked" if any upstream is queued/in_progress; "failed" if
         // any upstream is failed/cancelled.
-        fn upstream_state(
-            gid: &str,
-            map: &HashMap<String, (String, Vec<String>)>,
-        ) -> &'static str {
+        fn upstream_state(gid: &str, map: &HashMap<String, (String, Vec<String>)>) -> &'static str {
             let mut visited: HashSet<String> = HashSet::new();
             let mut stack: Vec<String> = vec![gid.to_string()];
             let mut blocked = false;
@@ -1726,7 +1817,11 @@ pub fn list_ready_tasks(
                     }
                 }
             }
-            if blocked { "blocked" } else { "completed" }
+            if blocked {
+                "blocked"
+            } else {
+                "completed"
+            }
         }
 
         let conn = pool.get()?;
@@ -1802,67 +1897,67 @@ pub fn update_task(
     completed_at: Option<Option<&str>>,
 ) -> Result<DevTask, AppError> {
     timed_query!("dev_tasks", "dev_tasks::update_task", {
-    get_task_by_id(pool, id)?;
-    let conn = pool.get()?;
+        get_task_by_id(pool, id)?;
+        let conn = pool.get()?;
 
-    let mut sets: Vec<String> = Vec::new();
-    let mut param_idx = 1u32;
+        let mut sets: Vec<String> = Vec::new();
+        let mut param_idx = 1u32;
 
-    push_field!(title, "title", sets, param_idx);
-    push_field!(description, "description", sets, param_idx);
-    push_field!(status, "status", sets, param_idx);
-    push_field!(session_id, "session_id", sets, param_idx);
-    push_field!(progress_pct, "progress_pct", sets, param_idx);
-    push_field!(output_lines, "output_lines", sets, param_idx);
-    push_field!(error, "error", sets, param_idx);
-    push_field!(started_at, "started_at", sets, param_idx);
-    push_field!(completed_at, "completed_at", sets, param_idx);
+        push_field!(title, "title", sets, param_idx);
+        push_field!(description, "description", sets, param_idx);
+        push_field!(status, "status", sets, param_idx);
+        push_field!(session_id, "session_id", sets, param_idx);
+        push_field!(progress_pct, "progress_pct", sets, param_idx);
+        push_field!(output_lines, "output_lines", sets, param_idx);
+        push_field!(error, "error", sets, param_idx);
+        push_field!(started_at, "started_at", sets, param_idx);
+        push_field!(completed_at, "completed_at", sets, param_idx);
 
-    if sets.is_empty() {
-        return get_task_by_id(pool, id);
-    }
+        if sets.is_empty() {
+            return get_task_by_id(pool, id);
+        }
 
-    let sql = format!(
-        "UPDATE dev_tasks SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
+        let sql = format!(
+            "UPDATE dev_tasks SET {} WHERE id = ?{}",
+            sets.join(", "),
+            param_idx
+        );
 
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    if let Some(v) = title {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = description {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    if let Some(v) = status {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = session_id {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    if let Some(v) = progress_pct {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = output_lines {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = error {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    if let Some(v) = started_at {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    if let Some(v) = completed_at {
-        param_values.push(Box::new(v.map(|s| s.to_string())));
-    }
-    param_values.push(Box::new(id.to_string()));
+        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        if let Some(v) = title {
+            param_values.push(Box::new(v.to_string()));
+        }
+        if let Some(v) = description {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = status {
+            param_values.push(Box::new(v.to_string()));
+        }
+        if let Some(v) = session_id {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = progress_pct {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = output_lines {
+            param_values.push(Box::new(v));
+        }
+        if let Some(v) = error {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = started_at {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = completed_at {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        param_values.push(Box::new(id.to_string()));
 
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+            param_values.iter().map(|p| p.as_ref()).collect();
+        conn.execute(&sql, params_ref.as_slice())?;
 
-    get_task_by_id(pool, id)
+        get_task_by_id(pool, id)
     })
 }
 
@@ -1889,13 +1984,13 @@ pub fn list_triage_rules(
                 "SELECT * FROM dev_triage_rules WHERE project_id = ?1 ORDER BY created_at",
             )?;
             let rows = stmt.query_map(params![project_id], row_to_triage_rule)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
-            let mut stmt = conn.prepare(
-                "SELECT * FROM dev_triage_rules ORDER BY created_at",
-            )?;
+            let mut stmt = conn.prepare("SELECT * FROM dev_triage_rules ORDER BY created_at")?;
             let rows = stmt.query_map([], row_to_triage_rule)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -1912,25 +2007,29 @@ pub fn create_triage_rule(
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
 
-    timed_query!("dev_triage_rules", "dev_triage_rules::create_triage_rule", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let enabled = if enabled.unwrap_or(true) { 1 } else { 0 };
+    timed_query!(
+        "dev_triage_rules",
+        "dev_triage_rules::create_triage_rule",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let enabled = if enabled.unwrap_or(true) { 1 } else { 0 };
 
-        let conn = pool.get()?;
-        conn.execute(
+            let conn = pool.get()?;
+            conn.execute(
             "INSERT INTO dev_triage_rules (id, project_id, name, conditions, action, enabled, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![id, project_id, name, conditions, action, enabled, now],
         )?;
 
-        conn.query_row(
-            "SELECT * FROM dev_triage_rules WHERE id = ?1",
-            params![id],
-            row_to_triage_rule,
-        )
-        .map_err(AppError::Database)
-    })
+            conn.query_row(
+                "SELECT * FROM dev_triage_rules WHERE id = ?1",
+                params![id],
+                row_to_triage_rule,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn update_triage_rule(
@@ -1942,85 +2041,93 @@ pub fn update_triage_rule(
     enabled: Option<bool>,
     times_fired: Option<i32>,
 ) -> Result<TriageRule, AppError> {
-    timed_query!("dev_triage_rules", "dev_triage_rules::update_triage_rule", {
-    let conn = pool.get()?;
+    timed_query!(
+        "dev_triage_rules",
+        "dev_triage_rules::update_triage_rule",
+        {
+            let conn = pool.get()?;
 
-    let mut sets: Vec<String> = Vec::new();
-    let mut param_idx = 1u32;
+            let mut sets: Vec<String> = Vec::new();
+            let mut param_idx = 1u32;
 
-    push_field!(name, "name", sets, param_idx);
-    push_field!(conditions, "conditions", sets, param_idx);
-    push_field!(action, "action", sets, param_idx);
-    // Handle bool -> i32 conversion for enabled
-    let enabled_i32 = enabled.map(|b| if b { 1i32 } else { 0i32 });
-    push_field!(enabled_i32, "enabled", sets, param_idx);
-    push_field!(times_fired, "times_fired", sets, param_idx);
+            push_field!(name, "name", sets, param_idx);
+            push_field!(conditions, "conditions", sets, param_idx);
+            push_field!(action, "action", sets, param_idx);
+            // Handle bool -> i32 conversion for enabled
+            let enabled_i32 = enabled.map(|b| if b { 1i32 } else { 0i32 });
+            push_field!(enabled_i32, "enabled", sets, param_idx);
+            push_field!(times_fired, "times_fired", sets, param_idx);
 
-    if sets.is_empty() {
-        return conn
-            .query_row(
+            if sets.is_empty() {
+                return conn
+                    .query_row(
+                        "SELECT * FROM dev_triage_rules WHERE id = ?1",
+                        params![id],
+                        row_to_triage_rule,
+                    )
+                    .map_err(|e| match e {
+                        rusqlite::Error::QueryReturnedNoRows => {
+                            AppError::NotFound(format!("Triage rule {id}"))
+                        }
+                        other => AppError::Database(other),
+                    });
+            }
+
+            let sql = format!(
+                "UPDATE dev_triage_rules SET {} WHERE id = ?{}",
+                sets.join(", "),
+                param_idx
+            );
+
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+            if let Some(v) = name {
+                param_values.push(Box::new(v.to_string()));
+            }
+            if let Some(v) = conditions {
+                param_values.push(Box::new(v.to_string()));
+            }
+            if let Some(v) = action {
+                param_values.push(Box::new(v.to_string()));
+            }
+            if let Some(v) = enabled_i32 {
+                param_values.push(Box::new(v));
+            }
+            if let Some(v) = times_fired {
+                param_values.push(Box::new(v));
+            }
+            param_values.push(Box::new(id.to_string()));
+
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                param_values.iter().map(|p| p.as_ref()).collect();
+            conn.execute(&sql, params_ref.as_slice())?;
+
+            conn.query_row(
                 "SELECT * FROM dev_triage_rules WHERE id = ?1",
                 params![id],
                 row_to_triage_rule,
             )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("Triage rule {id}"))
-                }
-                other => AppError::Database(other),
-            });
-    }
-
-    let sql = format!(
-        "UPDATE dev_triage_rules SET {} WHERE id = ?{}",
-        sets.join(", "),
-        param_idx
-    );
-
-    let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    if let Some(v) = name {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = conditions {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = action {
-        param_values.push(Box::new(v.to_string()));
-    }
-    if let Some(v) = enabled_i32 {
-        param_values.push(Box::new(v));
-    }
-    if let Some(v) = times_fired {
-        param_values.push(Box::new(v));
-    }
-    param_values.push(Box::new(id.to_string()));
-
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        param_values.iter().map(|p| p.as_ref()).collect();
-    conn.execute(&sql, params_ref.as_slice())?;
-
-    conn.query_row(
-        "SELECT * FROM dev_triage_rules WHERE id = ?1",
-        params![id],
-        row_to_triage_rule,
+            .map_err(AppError::Database)
+        }
     )
-    .map_err(AppError::Database)
-    })
 }
 
 pub fn delete_triage_rule(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("dev_triage_rules", "dev_triage_rules::delete_triage_rule", {
-        let conn = pool.get()?;
-        let rows = conn.execute("DELETE FROM dev_triage_rules WHERE id = ?1", params![id])?;
-        Ok(rows > 0)
-    })
+    timed_query!(
+        "dev_triage_rules",
+        "dev_triage_rules::delete_triage_rule",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute("DELETE FROM dev_triage_rules WHERE id = ?1", params![id])?;
+            Ok(rows > 0)
+        }
+    )
 }
 
 // ============================================================================
 // Pipelines (Idea-to-Execution)
 // ============================================================================
 
-use crate::db::models::{DevPipeline, ContextHealthSnapshot};
+use crate::db::models::{ContextHealthSnapshot, DevPipeline};
 
 fn row_to_pipeline(row: &Row) -> rusqlite::Result<DevPipeline> {
     Ok(DevPipeline {
@@ -2051,7 +2158,13 @@ pub fn create_pipeline(
         conn.execute(
             "INSERT INTO dev_pipelines (id, project_id, idea_id, stage, auto_execute, verify_after)
              VALUES (?1, ?2, ?3, 'triaged', ?4, ?5)",
-            params![id, project_id, idea_id, auto_execute as i32, verify_after as i32],
+            params![
+                id,
+                project_id,
+                idea_id,
+                auto_execute as i32,
+                verify_after as i32
+            ],
         )?;
         get_pipeline_by_id(pool, &id)
     })
@@ -2066,7 +2179,9 @@ pub fn get_pipeline_by_id(pool: &DbPool, id: &str) -> Result<DevPipeline, AppErr
             row_to_pipeline,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Pipeline not found: {id}")),
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Pipeline not found: {id}"))
+            }
             other => AppError::from(other),
         })
     })
@@ -2087,7 +2202,7 @@ pub fn list_pipelines(
             rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
         } else {
             let mut stmt = conn.prepare(
-                "SELECT * FROM dev_pipelines WHERE project_id = ?1 ORDER BY created_at DESC"
+                "SELECT * FROM dev_pipelines WHERE project_id = ?1 ORDER BY created_at DESC",
             )?;
             let rows = stmt.query_map(params![project_id], row_to_pipeline)?;
             rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
@@ -2142,10 +2257,16 @@ fn row_to_health_snapshot(row: &Row) -> rusqlite::Result<ContextHealthSnapshot> 
     })
 }
 
-pub fn insert_health_snapshot(pool: &DbPool, snap: &ContextHealthSnapshot) -> Result<ContextHealthSnapshot, AppError> {
-    timed_query!("context_health_snapshots", "context_health_snapshots::insert", {
-        let conn = pool.get()?;
-        conn.execute(
+pub fn insert_health_snapshot(
+    pool: &DbPool,
+    snap: &ContextHealthSnapshot,
+) -> Result<ContextHealthSnapshot, AppError> {
+    timed_query!(
+        "context_health_snapshots",
+        "context_health_snapshots::insert",
+        {
+            let conn = pool.get()?;
+            conn.execute(
             "INSERT INTO context_health_snapshots (id, project_id, group_id, group_name, overall_score, security_score, quality_score, coverage_score, debt_score, issues_found, issues_json, recommendations, scanned_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
             params![
@@ -2155,23 +2276,33 @@ pub fn insert_health_snapshot(pool: &DbPool, snap: &ContextHealthSnapshot) -> Re
                 snap.issues_json, snap.recommendations, snap.scanned_at,
             ],
         )?;
-        get_health_snapshot_by_id(pool, &snap.id)
-    })
+            get_health_snapshot_by_id(pool, &snap.id)
+        }
+    )
 }
 
-pub fn get_health_snapshot_by_id(pool: &DbPool, id: &str) -> Result<ContextHealthSnapshot, AppError> {
-    timed_query!("context_health_snapshots", "context_health_snapshots::get_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM context_health_snapshots WHERE id = ?1",
-            params![id],
-            row_to_health_snapshot,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Health snapshot not found: {id}")),
-            other => AppError::from(other),
-        })
-    })
+pub fn get_health_snapshot_by_id(
+    pool: &DbPool,
+    id: &str,
+) -> Result<ContextHealthSnapshot, AppError> {
+    timed_query!(
+        "context_health_snapshots",
+        "context_health_snapshots::get_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM context_health_snapshots WHERE id = ?1",
+                params![id],
+                row_to_health_snapshot,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Health snapshot not found: {id}"))
+                }
+                other => AppError::from(other),
+            })
+        }
+    )
 }
 
 pub fn list_health_snapshots(
@@ -2179,15 +2310,19 @@ pub fn list_health_snapshots(
     project_id: &str,
     limit: Option<i32>,
 ) -> Result<Vec<ContextHealthSnapshot>, AppError> {
-    timed_query!("context_health_snapshots", "context_health_snapshots::list", {
-        let conn = pool.get()?;
-        let lim = limit.unwrap_or(50);
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "context_health_snapshots",
+        "context_health_snapshots::list",
+        {
+            let conn = pool.get()?;
+            let lim = limit.unwrap_or(50);
+            let mut stmt = conn.prepare(
             "SELECT * FROM context_health_snapshots WHERE project_id = ?1 ORDER BY scanned_at DESC LIMIT ?2"
         )?;
-        let rows = stmt.query_map(params![project_id, lim], row_to_health_snapshot)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
-    })
+            let rows = stmt.query_map(params![project_id, lim], row_to_health_snapshot)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+        }
+    )
 }
 
 // ============================================================================
@@ -2195,8 +2330,8 @@ pub fn list_health_snapshots(
 // ============================================================================
 
 use crate::db::models::{
-    CrossProjectRelation, PortfolioHealthSummary, ProjectHealthEntry,
-    TechRadarEntry, RiskMatrixEntry,
+    CrossProjectRelation, PortfolioHealthSummary, ProjectHealthEntry, RiskMatrixEntry,
+    TechRadarEntry,
 };
 
 fn row_to_cross_relation(row: &Row) -> rusqlite::Result<CrossProjectRelation> {
@@ -2212,14 +2347,17 @@ fn row_to_cross_relation(row: &Row) -> rusqlite::Result<CrossProjectRelation> {
 }
 
 pub fn list_cross_project_relations(pool: &DbPool) -> Result<Vec<CrossProjectRelation>, AppError> {
-    timed_query!("cross_project_relations", "cross_project_relations::list", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM cross_project_relations ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_cross_relation)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
-    })
+    timed_query!(
+        "cross_project_relations",
+        "cross_project_relations::list",
+        {
+            let conn = pool.get()?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM cross_project_relations ORDER BY created_at DESC")?;
+            let rows = stmt.query_map([], row_to_cross_relation)?;
+            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
+        }
+    )
 }
 
 pub fn upsert_cross_project_relation(
@@ -2229,94 +2367,141 @@ pub fn upsert_cross_project_relation(
     relation_type: &str,
     details: Option<&str>,
 ) -> Result<CrossProjectRelation, AppError> {
-    timed_query!("cross_project_relations", "cross_project_relations::upsert", {
-        let conn = pool.get()?;
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
+    timed_query!(
+        "cross_project_relations",
+        "cross_project_relations::upsert",
+        {
+            let conn = pool.get()?;
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
             "INSERT INTO cross_project_relations (id, source_project_id, target_project_id, relation_type, details, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?6)
              ON CONFLICT(source_project_id, target_project_id, relation_type)
              DO UPDATE SET details = ?5, updated_at = ?6",
             params![id, source_project_id, target_project_id, relation_type, details, now],
         )?;
-        // Return the upserted row
-        conn.query_row(
+            // Return the upserted row
+            conn.query_row(
             "SELECT * FROM cross_project_relations WHERE source_project_id = ?1 AND target_project_id = ?2 AND relation_type = ?3",
             params![source_project_id, target_project_id, relation_type],
             row_to_cross_relation,
         )
         .map_err(AppError::from)
-    })
+        }
+    )
 }
 
-pub fn delete_cross_project_relations_for_project(pool: &DbPool, project_id: &str) -> Result<usize, AppError> {
-    timed_query!("cross_project_relations", "cross_project_relations::delete_for_project", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
+pub fn delete_cross_project_relations_for_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<usize, AppError> {
+    timed_query!(
+        "cross_project_relations",
+        "cross_project_relations::delete_for_project",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
             "DELETE FROM cross_project_relations WHERE source_project_id = ?1 OR target_project_id = ?1",
             params![project_id],
         )?;
-        Ok(rows)
-    })
+            Ok(rows)
+        }
+    )
 }
 
 /// Bulk create ideas across multiple projects in a single transaction.
 #[allow(clippy::type_complexity)]
 pub fn bulk_create_ideas_cross_project(
     pool: &DbPool,
-    ideas: &[(Option<&str>, Option<&str>, &str, &str, &str, Option<&str>, Option<i32>, Option<i32>, Option<i32>)],
+    ideas: &[(
+        Option<&str>,
+        Option<&str>,
+        &str,
+        &str,
+        &str,
+        Option<&str>,
+        Option<i32>,
+        Option<i32>,
+        Option<i32>,
+    )],
     // Each tuple: (project_id, context_id, scan_type, category, title, description, effort, impact, risk)
 ) -> Result<Vec<DevIdea>, AppError> {
     timed_query!("dev_ideas", "dev_ideas::bulk_create_ideas_cross_project", {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut created = Vec::with_capacity(ideas.len());
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        let mut created = Vec::with_capacity(ideas.len());
 
-    for &(project_id, context_id, scan_type, category, title, description, effort, impact, risk) in ideas {
-        let id = uuid::Uuid::new_v4().to_string();
-        conn.execute(
+        for &(
+            project_id,
+            context_id,
+            scan_type,
+            category,
+            title,
+            description,
+            effort,
+            impact,
+            risk,
+        ) in ideas
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
             "INSERT INTO dev_ideas (id, project_id, context_id, scan_type, category, title, description, status, effort, impact, risk, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 'pending', ?8, ?9, ?10, ?11, ?11)",
             params![id, project_id, context_id, scan_type, category, title, description, effort, impact, risk, now],
         )?;
-        created.push(DevIdea {
-            id,
-            project_id: project_id.map(|s| s.to_string()),
-            context_id: context_id.map(|s| s.to_string()),
-            scan_type: scan_type.to_string(),
-            category: category.to_string(),
-            title: title.to_string(),
-            description: description.map(|s| s.to_string()),
-            reasoning: None,
-            status: "pending".to_string(),
-            effort,
-            impact,
-            risk,
-            provider: None,
-            model: None,
-            rejection_reason: None,
-            created_at: now.clone(),
-            updated_at: now.clone(),
-        });
-    }
-    Ok(created)
+            created.push(DevIdea {
+                id,
+                project_id: project_id.map(|s| s.to_string()),
+                context_id: context_id.map(|s| s.to_string()),
+                scan_type: scan_type.to_string(),
+                category: category.to_string(),
+                title: title.to_string(),
+                description: description.map(|s| s.to_string()),
+                reasoning: None,
+                status: "pending".to_string(),
+                effort,
+                impact,
+                risk,
+                provider: None,
+                model: None,
+                rejection_reason: None,
+                created_at: now.clone(),
+                updated_at: now.clone(),
+            });
+        }
+        Ok(created)
     })
 }
 
 /// Build portfolio health summary across all projects.
 pub fn get_portfolio_health(pool: &DbPool) -> Result<PortfolioHealthSummary, AppError> {
     timed_query!("dev_projects", "dev_projects::get_portfolio_health", {
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    let total_projects: i32 = conn.query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get(0))?;
-    let active_projects: i32 = conn.query_row("SELECT COUNT(*) FROM dev_projects WHERE status = 'active'", [], |r| r.get(0))?;
-    let total_ideas: i32 = conn.query_row("SELECT COUNT(*) FROM dev_ideas", [], |r| r.get(0))?;
-    let pending_ideas: i32 = conn.query_row("SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'", [], |r| r.get(0))?;
-    let total_tasks: i32 = conn.query_row("SELECT COUNT(*) FROM dev_tasks", [], |r| r.get(0))?;
-    let running_tasks: i32 = conn.query_row("SELECT COUNT(*) FROM dev_tasks WHERE status = 'running'", [], |r| r.get(0))?;
+        let total_projects: i32 =
+            conn.query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get(0))?;
+        let active_projects: i32 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_projects WHERE status = 'active'",
+            [],
+            |r| r.get(0),
+        )?;
+        let total_ideas: i32 =
+            conn.query_row("SELECT COUNT(*) FROM dev_ideas", [], |r| r.get(0))?;
+        let pending_ideas: i32 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_ideas WHERE status = 'pending'",
+            [],
+            |r| r.get(0),
+        )?;
+        let total_tasks: i32 =
+            conn.query_row("SELECT COUNT(*) FROM dev_tasks", [], |r| r.get(0))?;
+        let running_tasks: i32 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_tasks WHERE status = 'running'",
+            [],
+            |r| r.get(0),
+        )?;
 
-    let avg_health_score: Option<f64> = conn.query_row(
+        let avg_health_score: Option<f64> = conn.query_row(
         "SELECT AVG(overall_score) FROM (
             SELECT project_id, overall_score, ROW_NUMBER() OVER (PARTITION BY project_id ORDER BY scanned_at DESC) AS rn
             FROM context_health_snapshots
@@ -2325,110 +2510,129 @@ pub fn get_portfolio_health(pool: &DbPool) -> Result<PortfolioHealthSummary, App
         |r| r.get(0),
     ).unwrap_or(None);
 
-    let mut projects = Vec::new();
-    let mut stmt = conn.prepare("SELECT * FROM dev_projects ORDER BY name")?;
-    let project_rows = stmt.query_map([], row_to_project)?;
-    for project_result in project_rows {
-        let p = project_result?;
-        let context_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_contexts WHERE project_id = ?1", params![p.id], |r| r.get(0)
-        )?;
-        let idea_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1", params![p.id], |r| r.get(0)
-        )?;
-        let task_count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM dev_tasks WHERE project_id = ?1", params![p.id], |r| r.get(0)
-        )?;
-        let latest_health_score: Option<i32> = conn.query_row(
+        let mut projects = Vec::new();
+        let mut stmt = conn.prepare("SELECT * FROM dev_projects ORDER BY name")?;
+        let project_rows = stmt.query_map([], row_to_project)?;
+        for project_result in project_rows {
+            let p = project_result?;
+            let context_count: i32 = conn.query_row(
+                "SELECT COUNT(*) FROM dev_contexts WHERE project_id = ?1",
+                params![p.id],
+                |r| r.get(0),
+            )?;
+            let idea_count: i32 = conn.query_row(
+                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1",
+                params![p.id],
+                |r| r.get(0),
+            )?;
+            let task_count: i32 = conn.query_row(
+                "SELECT COUNT(*) FROM dev_tasks WHERE project_id = ?1",
+                params![p.id],
+                |r| r.get(0),
+            )?;
+            let latest_health_score: Option<i32> = conn.query_row(
             "SELECT overall_score FROM context_health_snapshots WHERE project_id = ?1 ORDER BY scanned_at DESC LIMIT 1",
             params![p.id], |r| r.get(0),
         ).ok();
-        let open_risk_count: i32 = conn.query_row(
+            let open_risk_count: i32 = conn.query_row(
             "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 7",
             params![p.id], |r| r.get(0),
         )?;
 
-        projects.push(ProjectHealthEntry {
-            project_id: p.id,
-            project_name: p.name,
-            status: p.status,
-            tech_stack: p.tech_stack,
-            context_count,
-            idea_count,
-            task_count,
-            latest_health_score,
-            open_risk_count,
-        });
-    }
+            projects.push(ProjectHealthEntry {
+                project_id: p.id,
+                project_name: p.name,
+                status: p.status,
+                tech_stack: p.tech_stack,
+                context_count,
+                idea_count,
+                task_count,
+                latest_health_score,
+                open_risk_count,
+            });
+        }
 
-    Ok(PortfolioHealthSummary {
-        total_projects,
-        active_projects,
-        total_ideas,
-        pending_ideas,
-        total_tasks,
-        running_tasks,
-        avg_health_score,
-        projects,
-    })
+        Ok(PortfolioHealthSummary {
+            total_projects,
+            active_projects,
+            total_ideas,
+            pending_ideas,
+            total_tasks,
+            running_tasks,
+            avg_health_score,
+            projects,
+        })
     })
 }
 
 /// Build tech radar by aggregating tech_stack across all projects.
 pub fn get_tech_radar(pool: &DbPool) -> Result<Vec<TechRadarEntry>, AppError> {
     timed_query!("dev_projects", "dev_projects::get_tech_radar", {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare("SELECT id, name, tech_stack FROM dev_projects WHERE tech_stack IS NOT NULL AND tech_stack != ''")?;
-    let rows = stmt.query_map([], |row| {
-        Ok((
-            row.get::<_, String>("id")?,
-            row.get::<_, String>("name")?,
-            row.get::<_, String>("tech_stack")?,
-        ))
-    })?;
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare("SELECT id, name, tech_stack FROM dev_projects WHERE tech_stack IS NOT NULL AND tech_stack != ''")?;
+        let rows = stmt.query_map([], |row| {
+            Ok((
+                row.get::<_, String>("id")?,
+                row.get::<_, String>("name")?,
+                row.get::<_, String>("tech_stack")?,
+            ))
+        })?;
 
-    // Accumulate: tech -> list of project names
-    let mut tech_map: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
-    for row_result in rows {
-        let (_id, name, stack) = row_result?;
-        for tech in stack.split(',').map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty()) {
-            tech_map.entry(tech).or_default().push(name.clone());
+        // Accumulate: tech -> list of project names
+        let mut tech_map: std::collections::HashMap<String, Vec<String>> =
+            std::collections::HashMap::new();
+        for row_result in rows {
+            let (_id, name, stack) = row_result?;
+            for tech in stack
+                .split(',')
+                .map(|s| s.trim().to_lowercase())
+                .filter(|s| !s.is_empty())
+            {
+                tech_map.entry(tech).or_default().push(name.clone());
+            }
         }
-    }
 
-    let total_projects: i32 = conn.query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get(0))?;
+        let total_projects: i32 =
+            conn.query_row("SELECT COUNT(*) FROM dev_projects", [], |r| r.get(0))?;
 
-    let mut entries: Vec<TechRadarEntry> = tech_map.into_iter().map(|(tech, names)| {
-        let count = names.len() as i32;
-        let category = categorize_tech(&tech);
-        let status = if count as f64 / total_projects.max(1) as f64 > 0.6 {
-            "adopt"
-        } else if count > 1 {
-            "trial"
-        } else {
-            "assess"
-        };
-        TechRadarEntry {
-            technology: tech,
-            category: category.to_string(),
-            project_count: count,
-            project_names: names,
-            status: status.to_string(),
-        }
-    }).collect();
+        let mut entries: Vec<TechRadarEntry> = tech_map
+            .into_iter()
+            .map(|(tech, names)| {
+                let count = names.len() as i32;
+                let category = categorize_tech(&tech);
+                let status = if count as f64 / total_projects.max(1) as f64 > 0.6 {
+                    "adopt"
+                } else if count > 1 {
+                    "trial"
+                } else {
+                    "assess"
+                };
+                TechRadarEntry {
+                    technology: tech,
+                    category: category.to_string(),
+                    project_count: count,
+                    project_names: names,
+                    status: status.to_string(),
+                }
+            })
+            .collect();
 
-    entries.sort_by(|a, b| b.project_count.cmp(&a.project_count));
-    Ok(entries)
+        entries.sort_by(|a, b| b.project_count.cmp(&a.project_count));
+        Ok(entries)
     })
 }
 
 /// Simple heuristic to categorize a technology string.
 fn categorize_tech(tech: &str) -> &'static str {
     match tech {
-        "rust" | "python" | "typescript" | "javascript" | "go" | "java" | "c#" | "ruby" | "swift" | "kotlin" => "language",
-        "react" | "vue" | "angular" | "svelte" | "next.js" | "nuxt" | "fastapi" | "express" | "django" | "rails" | "actix" | "axum" | "tauri" => "framework",
-        "postgres" | "postgresql" | "mysql" | "sqlite" | "mongodb" | "redis" | "dynamodb" | "supabase" | "neon" | "planetscale" => "database",
-        "docker" | "kubernetes" | "terraform" | "github actions" | "circleci" | "vercel" | "netlify" | "aws" | "gcp" | "azure" => "tool",
+        "rust" | "python" | "typescript" | "javascript" | "go" | "java" | "c#" | "ruby"
+        | "swift" | "kotlin" => "language",
+        "react" | "vue" | "angular" | "svelte" | "next.js" | "nuxt" | "fastapi" | "express"
+        | "django" | "rails" | "actix" | "axum" | "tauri" => "framework",
+        "postgres" | "postgresql" | "mysql" | "sqlite" | "mongodb" | "redis" | "dynamodb"
+        | "supabase" | "neon" | "planetscale" => "database",
+        "docker" | "kubernetes" | "terraform" | "github actions" | "circleci" | "vercel"
+        | "netlify" | "aws" | "gcp" | "azure" => "tool",
         _ => "library",
     }
 }
@@ -2436,90 +2640,104 @@ fn categorize_tech(tech: &str) -> &'static str {
 /// Build risk matrix by analyzing multiple risk dimensions across projects.
 pub fn get_risk_matrix(pool: &DbPool) -> Result<Vec<RiskMatrixEntry>, AppError> {
     timed_query!("dev_projects", "dev_projects::get_risk_matrix", {
-    let conn = pool.get()?;
-    let mut risks = Vec::new();
+        let conn = pool.get()?;
+        let mut risks = Vec::new();
 
-    let mut stmt = conn.prepare("SELECT * FROM dev_projects WHERE status = 'active' ORDER BY name")?;
-    let project_rows = stmt.query_map([], row_to_project)?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM dev_projects WHERE status = 'active' ORDER BY name")?;
+        let project_rows = stmt.query_map([], row_to_project)?;
 
-    for project_result in project_rows {
-        let p = project_result?;
+        for project_result in project_rows {
+            let p = project_result?;
 
-        // Check for high-risk pending ideas
-        let high_risk_count: i32 = conn.query_row(
+            // Check for high-risk pending ideas
+            let high_risk_count: i32 = conn.query_row(
             "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending' AND risk >= 8",
             params![p.id], |r| r.get(0),
         )?;
-        if high_risk_count > 0 {
-            let affected: Vec<String> = {
-                let mut s = conn.prepare(
+            if high_risk_count > 0 {
+                let affected: Vec<String> = {
+                    let mut s = conn.prepare(
                     "SELECT DISTINCT c.name FROM dev_ideas i JOIN dev_contexts c ON i.context_id = c.id WHERE i.project_id = ?1 AND i.status = 'pending' AND i.risk >= 8"
                 )?;
-                let rows = s.query_map(params![p.id], |r| r.get::<_, String>(0))?;
-                rows.filter_map(|r| r.ok()).collect()
-            };
-            risks.push(RiskMatrixEntry {
-                project_id: p.id.clone(),
-                project_name: p.name.clone(),
-                risk_category: "security".to_string(),
-                severity: if high_risk_count > 3 { "critical" } else { "high" }.to_string(),
-                description: format!("{} high-risk ideas pending review", high_risk_count),
-                affected_contexts: affected,
-            });
-        }
-
-        // Check for stale projects (no scans in 30 days)
-        let latest_scan: Option<String> = conn.query_row(
-            "SELECT MAX(created_at) FROM dev_scans WHERE project_id = ?1",
-            params![p.id], |r| r.get(0),
-        ).unwrap_or(None);
-        let is_stale = match &latest_scan {
-            Some(ts) => {
-                if let Ok(parsed) = chrono::DateTime::parse_from_rfc3339(ts) {
-                    chrono::Utc::now().signed_duration_since(parsed).num_days() > 30
-                } else {
-                    true
-                }
+                    let rows = s.query_map(params![p.id], |r| r.get::<_, String>(0))?;
+                    rows.filter_map(|r| r.ok()).collect()
+                };
+                risks.push(RiskMatrixEntry {
+                    project_id: p.id.clone(),
+                    project_name: p.name.clone(),
+                    risk_category: "security".to_string(),
+                    severity: if high_risk_count > 3 {
+                        "critical"
+                    } else {
+                        "high"
+                    }
+                    .to_string(),
+                    description: format!("{} high-risk ideas pending review", high_risk_count),
+                    affected_contexts: affected,
+                });
             }
-            None => true,
-        };
-        if is_stale {
-            risks.push(RiskMatrixEntry {
-                project_id: p.id.clone(),
-                project_name: p.name.clone(),
-                risk_category: "stale_project".to_string(),
-                severity: "medium".to_string(),
-                description: match &latest_scan {
-                    Some(ts) => format!("Last scan: {}", &ts[..10]),
-                    None => "Never scanned".to_string(),
-                },
-                affected_contexts: vec![],
-            });
-        }
 
-        // Check for tech debt accumulation
-        let debt_ideas: i32 = conn.query_row(
+            // Check for stale projects (no scans in 30 days)
+            let latest_scan: Option<String> = conn
+                .query_row(
+                    "SELECT MAX(created_at) FROM dev_scans WHERE project_id = ?1",
+                    params![p.id],
+                    |r| r.get(0),
+                )
+                .unwrap_or(None);
+            let is_stale = match &latest_scan {
+                Some(ts) => {
+                    if let Ok(parsed) = chrono::DateTime::parse_from_rfc3339(ts) {
+                        chrono::Utc::now().signed_duration_since(parsed).num_days() > 30
+                    } else {
+                        true
+                    }
+                }
+                None => true,
+            };
+            if is_stale {
+                risks.push(RiskMatrixEntry {
+                    project_id: p.id.clone(),
+                    project_name: p.name.clone(),
+                    risk_category: "stale_project".to_string(),
+                    severity: "medium".to_string(),
+                    description: match &latest_scan {
+                        Some(ts) => format!("Last scan: {}", &ts[..10]),
+                        None => "Never scanned".to_string(),
+                    },
+                    affected_contexts: vec![],
+                });
+            }
+
+            // Check for tech debt accumulation
+            let debt_ideas: i32 = conn.query_row(
             "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND scan_type = 'tech-debt-tracker' AND status = 'pending'",
             params![p.id], |r| r.get(0),
         )?;
-        if debt_ideas > 5 {
-            risks.push(RiskMatrixEntry {
-                project_id: p.id.clone(),
-                project_name: p.name.clone(),
-                risk_category: "tech_debt".to_string(),
-                severity: if debt_ideas > 15 { "high" } else { "medium" }.to_string(),
-                description: format!("{} unaddressed tech debt items", debt_ideas),
-                affected_contexts: vec![],
-            });
+            if debt_ideas > 5 {
+                risks.push(RiskMatrixEntry {
+                    project_id: p.id.clone(),
+                    project_name: p.name.clone(),
+                    risk_category: "tech_debt".to_string(),
+                    severity: if debt_ideas > 15 { "high" } else { "medium" }.to_string(),
+                    description: format!("{} unaddressed tech debt items", debt_ideas),
+                    affected_contexts: vec![],
+                });
+            }
         }
-    }
 
-    risks.sort_by(|a, b| {
-        let sev_order = |s: &str| match s { "critical" => 0, "high" => 1, "medium" => 2, _ => 3 };
-        sev_order(&a.severity).cmp(&sev_order(&b.severity))
-    });
+        risks.sort_by(|a, b| {
+            let sev_order = |s: &str| match s {
+                "critical" => 0,
+                "high" => 1,
+                "medium" => 2,
+                _ => 3,
+            };
+            sev_order(&a.severity).cmp(&sev_order(&b.severity))
+        });
 
-    Ok(risks)
+        Ok(risks)
     })
 }
 
@@ -2538,7 +2756,10 @@ fn row_to_competition(row: &Row) -> rusqlite::Result<DevCompetition> {
         slot_count: row.get("slot_count")?,
         status: row.get("status")?,
         winner_task_id: row.get("winner_task_id")?,
-        winner_insight: row.get::<_, Option<String>>("winner_insight").ok().flatten(),
+        winner_insight: row
+            .get::<_, Option<String>>("winner_insight")
+            .ok()
+            .flatten(),
         baseline_json: row.get::<_, Option<String>>("baseline_json").ok().flatten(),
         reviewer_notes: row.get("reviewer_notes")?,
         created_at: row.get("created_at")?,
@@ -2557,10 +2778,19 @@ fn row_to_competition_slot(row: &Row) -> rusqlite::Result<DevCompetitionSlot> {
         branch_name: row.get("branch_name")?,
         slot_index: row.get("slot_index")?,
         disqualified: row.get::<_, i32>("disqualified").unwrap_or(0) != 0,
-        disqualify_reason: row.get::<_, Option<String>>("disqualify_reason").ok().flatten(),
+        disqualify_reason: row
+            .get::<_, Option<String>>("disqualify_reason")
+            .ok()
+            .flatten(),
         diff_hash: row.get::<_, Option<String>>("diff_hash").ok().flatten(),
-        diff_stats_json: row.get::<_, Option<String>>("diff_stats_json").ok().flatten(),
-        diff_analyzed_at: row.get::<_, Option<String>>("diff_analyzed_at").ok().flatten(),
+        diff_stats_json: row
+            .get::<_, Option<String>>("diff_stats_json")
+            .ok()
+            .flatten(),
+        diff_analyzed_at: row
+            .get::<_, Option<String>>("diff_analyzed_at")
+            .ok()
+            .flatten(),
         created_at: row.get("created_at")?,
     })
 }
@@ -2575,7 +2805,9 @@ pub fn create_competition(
     slot_count: i32,
 ) -> Result<DevCompetition, AppError> {
     if task_title.trim().is_empty() {
-        return Err(AppError::Validation("Competition title cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Competition title cannot be empty".into(),
+        ));
     }
     if !(2..=4).contains(&slot_count) {
         return Err(AppError::Validation("slot_count must be 2..=4".into()));
@@ -2619,7 +2851,8 @@ pub fn list_competitions_by_project(
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 AND status = ?2 ORDER BY created_at DESC",
             )?;
-            let result = stmt.query_map(params![project_id, s], row_to_competition)?
+            let result = stmt
+                .query_map(params![project_id, s], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)?;
             result
@@ -2627,7 +2860,8 @@ pub fn list_competitions_by_project(
             let mut stmt = conn.prepare(
                 "SELECT * FROM dev_competitions WHERE project_id = ?1 ORDER BY created_at DESC",
             )?;
-            let result = stmt.query_map(params![project_id], row_to_competition)?
+            let result = stmt
+                .query_map(params![project_id], row_to_competition)?
                 .collect::<Result<Vec<_>, _>>()
                 .map_err(AppError::Database)?;
             result
@@ -2669,26 +2903,37 @@ pub fn update_slot_diff_analysis(
     disqualified: bool,
     disqualify_reason: Option<&str>,
 ) -> Result<DevCompetitionSlot, AppError> {
-    timed_query!("dev_competition_slots", "dev_competition_slots::update_diff", {
-        let conn = pool.get()?;
-        let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
-            "UPDATE dev_competition_slots SET
+    timed_query!(
+        "dev_competition_slots",
+        "dev_competition_slots::update_diff",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "UPDATE dev_competition_slots SET
                 diff_hash = ?1,
                 diff_stats_json = ?2,
                 disqualified = ?3,
                 disqualify_reason = ?4,
                 diff_analyzed_at = ?5
              WHERE id = ?6",
-            params![diff_hash, diff_stats_json, disqualified as i32, disqualify_reason, now, slot_id],
-        )?;
-        conn.query_row(
-            "SELECT * FROM dev_competition_slots WHERE id = ?1",
-            params![slot_id],
-            row_to_competition_slot,
-        )
-        .map_err(AppError::Database)
-    })
+                params![
+                    diff_hash,
+                    diff_stats_json,
+                    disqualified as i32,
+                    disqualify_reason,
+                    now,
+                    slot_id
+                ],
+            )?;
+            conn.query_row(
+                "SELECT * FROM dev_competition_slots WHERE id = ?1",
+                params![slot_id],
+                row_to_competition_slot,
+            )
+            .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Aggregate per-strategy win/loss/DQ stats across all resolved competitions in a project.
@@ -2697,9 +2942,12 @@ pub fn get_strategy_leaderboard(
     project_id: &str,
 ) -> Result<Vec<crate::db::models::DevStrategyStats>, AppError> {
     use crate::db::models::DevStrategyStats;
-    timed_query!("dev_competition_slots", "dev_competition_slots::leaderboard", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "dev_competition_slots",
+        "dev_competition_slots::leaderboard",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT
                 s.strategy_label,
                 SUM(CASE WHEN c.winner_task_id = s.task_id THEN 1 ELSE 0 END) AS wins,
@@ -2712,21 +2960,27 @@ pub fn get_strategy_leaderboard(
              GROUP BY s.strategy_label
              ORDER BY wins DESC, total DESC",
         )?;
-        let rows = stmt.query_map(params![project_id], |row| {
-            let wins: i32 = row.get("wins")?;
-            let total: i32 = row.get("total")?;
-            let dq: i32 = row.get("dq_count")?;
-            Ok(DevStrategyStats {
-                label: row.get("strategy_label")?,
-                wins,
-                total,
-                disqualified_count: dq,
-                win_rate: if total > 0 { wins as f64 / total as f64 } else { 0.0 },
-                last_win_at: row.get::<_, Option<String>>("last_win_at").ok().flatten(),
-            })
-        })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![project_id], |row| {
+                let wins: i32 = row.get("wins")?;
+                let total: i32 = row.get("total")?;
+                let dq: i32 = row.get("dq_count")?;
+                Ok(DevStrategyStats {
+                    label: row.get("strategy_label")?,
+                    wins,
+                    total,
+                    disqualified_count: dq,
+                    win_rate: if total > 0 {
+                        wins as f64 / total as f64
+                    } else {
+                        0.0
+                    },
+                    last_win_at: row.get::<_, Option<String>>("last_win_at").ok().flatten(),
+                })
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn create_competition_slot(
@@ -2766,6 +3020,7 @@ pub fn list_competition_slots(
             "SELECT * FROM dev_competition_slots WHERE competition_id = ?1 ORDER BY slot_index ASC",
         )?;
         let rows = stmt.query_map(params![competition_id], row_to_competition_slot)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }

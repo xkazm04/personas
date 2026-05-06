@@ -19,9 +19,10 @@ pub async fn get_discovered_peers(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<Vec<DiscoveredPeer>, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     net.mdns.get_discovered_peers()
 }
 
@@ -33,9 +34,10 @@ pub async fn connect_to_peer(
     peer_id: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     let result = net
         .connections
         .connect_to_peer(&peer_id, net.manifest_sync.clone(), net.messages.clone())
@@ -51,9 +53,10 @@ pub async fn disconnect_peer(
     peer_id: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     let result = net.connections.disconnect_peer(&peer_id).await;
     // Push updated snapshot for instant UI feedback
     net.emit_snapshot().await;
@@ -66,9 +69,10 @@ pub async fn get_connection_status(
     peer_id: String,
 ) -> Result<ConnectionState, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     Ok(net.connections.get_state(&peer_id).await)
 }
 
@@ -80,9 +84,10 @@ pub async fn get_peer_manifest(
     peer_id: String,
 ) -> Result<Vec<PeerManifestEntry>, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     net.manifest_sync.get_peer_manifest(&peer_id)
 }
 
@@ -92,9 +97,10 @@ pub async fn sync_peer_manifest(
     peer_id: String,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     net.manifest_sync.sync_manifest(&peer_id).await
 }
 
@@ -105,9 +111,10 @@ pub async fn get_network_status(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<NetworkStatusInfo, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
 
     let is_running = net.is_running().await;
     let listening_port = net.listening_port().await;
@@ -140,9 +147,10 @@ pub async fn get_connection_health(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<ConnectionHealth, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     Ok(net.connections.get_connection_health().await)
 }
 
@@ -153,9 +161,10 @@ pub async fn get_network_snapshot(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<NetworkSnapshot, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
 
     let is_running = net.is_running().await;
     let listening_port = net.listening_port().await;
@@ -198,9 +207,10 @@ pub async fn get_messaging_metrics(
     state: State<'_, std::sync::Arc<AppState>>,
 ) -> Result<crate::engine::p2p::messaging::MessagingMetrics, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     Ok(net.messages.get_metrics())
 }
 
@@ -215,9 +225,10 @@ pub async fn send_agent_message(
     payload: Vec<u8>,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
 
     let envelope = AgentEnvelope {
         id: uuid::Uuid::new_v4().to_string(),
@@ -236,9 +247,10 @@ pub async fn get_received_messages(
     persona_id: String,
 ) -> Result<Vec<AgentEnvelope>, AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     Ok(net.messages.get_messages(&persona_id).await)
 }
 
@@ -250,9 +262,10 @@ pub async fn set_network_config(
     config: NetworkConfig,
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
-    let net = state.network.as_ref().ok_or_else(|| {
-        AppError::Internal("Network service not initialized".into())
-    })?;
+    let net = state
+        .network
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Network service not initialized".into()))?;
     net.set_config(config).await;
     Ok(())
 }

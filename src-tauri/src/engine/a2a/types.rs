@@ -276,10 +276,7 @@ impl A2AResponse {
             result: Some(A2AResultMessage {
                 kind: "message",
                 role: "agent",
-                parts: vec![A2AResponsePart {
-                    kind: "text",
-                    text,
-                }],
+                parts: vec![A2AResponsePart { kind: "text", text }],
                 message_id: uuid::Uuid::new_v4().to_string(),
             }),
             error: None,
@@ -388,7 +385,10 @@ mod tests {
         assert_eq!(json["result"]["id"], "exec-1");
         assert_eq!(json["result"]["kind"], "task");
         assert_eq!(json["result"]["status"]["state"], "completed");
-        assert_eq!(json["result"]["artifacts"][0]["parts"][0]["text"], "final output");
+        assert_eq!(
+            json["result"]["artifacts"][0]["parts"][0]["text"],
+            "final output"
+        );
         assert!(json.get("error").is_none() || json["error"].is_null());
     }
 
@@ -397,8 +397,14 @@ mod tests {
         let msg = A2AMessage {
             role: Some("user".into()),
             parts: vec![
-                A2AMessagePart { kind: Some("text".into()), text: Some("part one".into()) },
-                A2AMessagePart { kind: Some("text".into()), text: Some("part two".into()) },
+                A2AMessagePart {
+                    kind: Some("text".into()),
+                    text: Some("part one".into()),
+                },
+                A2AMessagePart {
+                    kind: Some("text".into()),
+                    text: Some("part two".into()),
+                },
             ],
             message_id: None,
         };
@@ -410,8 +416,14 @@ mod tests {
         let msg = A2AMessage {
             role: None,
             parts: vec![
-                A2AMessagePart { kind: Some("file".into()), text: Some("ignored".into()) },
-                A2AMessagePart { kind: Some("text".into()), text: Some("kept".into()) },
+                A2AMessagePart {
+                    kind: Some("file".into()),
+                    text: Some("ignored".into()),
+                },
+                A2AMessagePart {
+                    kind: Some("text".into()),
+                    text: Some("kept".into()),
+                },
             ],
             message_id: None,
         };
@@ -420,7 +432,11 @@ mod tests {
 
     #[test]
     fn empty_text_returns_none() {
-        let msg = A2AMessage { role: None, parts: vec![], message_id: None };
+        let msg = A2AMessage {
+            role: None,
+            parts: vec![],
+            message_id: None,
+        };
         assert!(msg.collect_text().is_none());
     }
 

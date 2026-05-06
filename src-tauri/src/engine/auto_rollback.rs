@@ -11,9 +11,9 @@ use tauri::Emitter;
 use super::event_registry::event_name;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::core::settings;
 use crate::db::repos::execution::metrics as metric_repo;
-use crate::db::repos::core::personas as persona_repo;
 use crate::db::settings_keys;
 use crate::db::DbPool;
 
@@ -31,10 +31,11 @@ pub struct AutoRollbackEvent {
 
 /// Compute the execution-weighted average error rate across a set of daily
 /// performance points.  Returns 0.0 when the total execution count is zero.
-fn compute_weighted_error_rate(
-    points: &[&crate::db::models::PromptPerformancePoint],
-) -> f64 {
-    let total = points.iter().map(|p| p.total_executions as f64).sum::<f64>();
+fn compute_weighted_error_rate(points: &[&crate::db::models::PromptPerformancePoint]) -> f64 {
+    let total = points
+        .iter()
+        .map(|p| p.total_executions as f64)
+        .sum::<f64>();
     if total > 0.0 {
         points
             .iter()
@@ -60,12 +61,17 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
 
     // Batch-load all auto-rollback settings in a single query to avoid N
     // per-persona settings lookups.
-    let enabled_ids: std::collections::HashSet<String> = settings::get_by_prefix(pool, settings_keys::AUTO_ROLLBACK_PREFIX)
-        .unwrap_or_default()
-        .into_iter()
-        .filter(|(_, v)| v == "true")
-        .map(|(k, _)| k.strip_prefix(settings_keys::AUTO_ROLLBACK_PREFIX).unwrap_or(&k).to_string())
-        .collect();
+    let enabled_ids: std::collections::HashSet<String> =
+        settings::get_by_prefix(pool, settings_keys::AUTO_ROLLBACK_PREFIX)
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(_, v)| v == "true")
+            .map(|(k, _)| {
+                k.strip_prefix(settings_keys::AUTO_ROLLBACK_PREFIX)
+                    .unwrap_or(&k)
+                    .to_string()
+            })
+            .collect();
 
     let total_personas = personas.len();
     let mut checked: u32 = 0;
@@ -162,8 +168,14 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
         };
 
         // Find version deployment dates from markers
-        let current_marker = perf.version_markers.iter().find(|m| m.version_number == current.version_number);
-        let previous_marker = perf.version_markers.iter().find(|m| m.version_number == previous.version_number);
+        let current_marker = perf
+            .version_markers
+            .iter()
+            .find(|m| m.version_number == current.version_number);
+        let previous_marker = perf
+            .version_markers
+            .iter()
+            .find(|m| m.version_number == previous.version_number);
 
         let current_date = match current_marker {
             Some(m) => match m.created_at.get(..10) {
@@ -216,8 +228,16 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
         };
 
         // Compute error rates for each version's active period
-        let current_points: Vec<_> = perf.daily_points.iter().filter(|p| p.date.as_str() >= current_date).collect();
-        let previous_points: Vec<_> = perf.daily_points.iter().filter(|p| p.date.as_str() >= previous_date && p.date.as_str() < current_date).collect();
+        let current_points: Vec<_> = perf
+            .daily_points
+            .iter()
+            .filter(|p| p.date.as_str() >= current_date)
+            .collect();
+        let previous_points: Vec<_> = perf
+            .daily_points
+            .iter()
+            .filter(|p| p.date.as_str() >= previous_date && p.date.as_str() < current_date)
+            .collect();
 
         if current_points.is_empty() || previous_points.is_empty() {
             tracing::debug!(
@@ -358,7 +378,11 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
 /// fields are written, absent fields are NULLed.  This prevents "Frankenstein"
 /// personas where prompts come from two different versions that were never designed
 /// to work together.
-fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result<(), crate::error::AppError> {
+fn perform_rollback(
+    pool: &DbPool,
+    persona_id: &str,
+    version_id: &str,
+) -> Result<(), crate::error::AppError> {
     let version = metric_repo::get_prompt_version_by_id(pool, version_id)?;
 
     // Abort if the version has no prompt content at all — nothing to restore.
@@ -388,7 +412,9 @@ fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result
     }
 
     let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(crate::error::AppError::Database)?;
+    let tx = conn
+        .transaction()
+        .map_err(crate::error::AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
 
     // Restore both fields atomically from the version snapshot.  Fields that
@@ -408,12 +434,14 @@ fn perform_rollback(pool: &DbPool, persona_id: &str, version_id: &str) -> Result
         "UPDATE persona_prompt_versions SET tag = 'experimental' \
          WHERE persona_id = ?1 AND tag = 'production' AND id != ?2",
         rusqlite::params![persona_id, version_id],
-    ).map_err(crate::error::AppError::Database)?;
+    )
+    .map_err(crate::error::AppError::Database)?;
 
     tx.execute(
         "UPDATE persona_prompt_versions SET tag = ?1 WHERE id = ?2",
         rusqlite::params!["production", version_id],
-    ).map_err(crate::error::AppError::Database)?;
+    )
+    .map_err(crate::error::AppError::Database)?;
 
     tx.commit().map_err(crate::error::AppError::Database)?;
 

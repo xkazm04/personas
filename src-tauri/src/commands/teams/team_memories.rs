@@ -39,10 +39,7 @@ pub fn create_team_memory(
 }
 
 #[tauri::command]
-pub fn delete_team_memory(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_team_memory(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
@@ -95,7 +92,13 @@ pub fn get_team_memory_count(
     search: Option<String>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
-    repo::get_total_count(&state.db, &team_id, run_id.as_deref(), category.as_deref(), search.as_deref())
+    repo::get_total_count(
+        &state.db,
+        &team_id,
+        run_id.as_deref(),
+        category.as_deref(),
+        search.as_deref(),
+    )
 }
 
 #[tauri::command]

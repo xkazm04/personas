@@ -10,7 +10,9 @@ use crate::AppState;
 // =============================================================================
 
 #[tauri::command]
-pub fn get_crash_logs(app: tauri::AppHandle) -> Result<Vec<crate::logging::CrashLogEntry>, AppError> {
+pub fn get_crash_logs(
+    app: tauri::AppHandle,
+) -> Result<Vec<crate::logging::CrashLogEntry>, AppError> {
     let app_data_dir = app
         .path()
         .app_data_dir()
@@ -62,9 +64,7 @@ pub async fn get_frontend_crashes(
 }
 
 #[tauri::command]
-pub async fn clear_frontend_crashes(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn clear_frontend_crashes(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     crate::db::repos::core::frontend_crashes::clear_all(&state.db)
 }
 

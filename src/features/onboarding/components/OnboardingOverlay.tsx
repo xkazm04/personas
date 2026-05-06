@@ -73,7 +73,9 @@ export default function OnboardingOverlay() {
     selectedReview,
     createdPersona,
     discoveredApps,
+    discoveryState,
     isScanning,
+    retryDesktopScan,
     approvedApps,
     approvingApp,
     handleApproveApp,
@@ -154,10 +156,11 @@ export default function OnboardingOverlay() {
             {onboardingStep === 'discover' && (
               <DesktopDiscoveryStep
                 apps={discoveredApps}
-                isScanning={isScanning}
+                scanState={discoveryState}
                 approvedApps={approvedApps}
                 approvingApp={approvingApp}
                 onApprove={handleApproveApp}
+                onRetry={retryDesktopScan}
               />
             )}
 

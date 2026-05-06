@@ -83,9 +83,7 @@ impl TopologyGraph {
             }
         }
 
-        let cycle_nodes: Vec<usize> = (0..self.node_count)
-            .filter(|i| in_degree[*i] > 0)
-            .collect();
+        let cycle_nodes: Vec<usize> = (0..self.node_count).filter(|i| in_degree[*i] > 0).collect();
 
         TopoSortResult { order, cycle_nodes }
     }
@@ -186,8 +184,16 @@ impl NamedTopologyGraph {
     pub fn topological_sort(&self) -> NamedTopoSortResult {
         let result = self.graph.topological_sort();
         NamedTopoSortResult {
-            order: result.order.iter().map(|&i| self.index_to_id[i].clone()).collect(),
-            cycle_nodes: result.cycle_nodes.iter().map(|&i| self.index_to_id[i].clone()).collect(),
+            order: result
+                .order
+                .iter()
+                .map(|&i| self.index_to_id[i].clone())
+                .collect(),
+            cycle_nodes: result
+                .cycle_nodes
+                .iter()
+                .map(|&i| self.index_to_id[i].clone())
+                .collect(),
         }
     }
 

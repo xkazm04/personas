@@ -69,7 +69,11 @@ pub async fn system_health_check(
         .flatten()
         .unwrap_or_else(|| "claude_code".to_string());
 
-    let local_section = build_local_section(&active_engine, state.scheduler.is_running(), &state.binary_probe_cache);
+    let local_section = build_local_section(
+        &active_engine,
+        state.scheduler.is_running(),
+        &state.binary_probe_cache,
+    );
     sections.push(local_section);
 
     // -- Section 2: Agents --
@@ -92,18 +96,27 @@ pub async fn system_health_check(
     sections.push(build_subscriptions_section(&state));
 
     // -- Section 7: Frontend Stability --
-    let crash_count_24h = crate::db::repos::core::frontend_crashes::count_since(&state.db, 24)
-        .unwrap_or(0);
-    let crash_count_7d = crate::db::repos::core::frontend_crashes::count_since(&state.db, 168)
-        .unwrap_or(0);
+    let crash_count_24h =
+        crate::db::repos::core::frontend_crashes::count_since(&state.db, 24).unwrap_or(0);
+    let crash_count_7d =
+        crate::db::repos::core::frontend_crashes::count_since(&state.db, 168).unwrap_or(0);
 
     if crash_count_7d > 0 {
         let (fe_status, fe_detail) = if crash_count_24h >= 5 {
-            (HealthCheckStatus::Warn, format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"))
+            (
+                HealthCheckStatus::Warn,
+                format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"),
+            )
         } else if crash_count_24h > 0 {
-            (HealthCheckStatus::Info, format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"))
+            (
+                HealthCheckStatus::Info,
+                format!("{crash_count_24h} crash(es) in the last 24h ({crash_count_7d} in 7d)"),
+            )
         } else {
-            (HealthCheckStatus::Ok, format!("No recent crashes (past 24h), {crash_count_7d} in last 7d"))
+            (
+                HealthCheckStatus::Ok,
+                format!("No recent crashes (past 24h), {crash_count_7d} in last 7d"),
+            )
         };
 
         sections.push(HealthCheckSection {
@@ -120,9 +133,12 @@ pub async fn system_health_check(
     }
 
     let all_ok = sections.iter().all(|s| {
-        s.items
-            .iter()
-            .all(|c| matches!(c.status, HealthCheckStatus::Ok | HealthCheckStatus::Info | HealthCheckStatus::Inactive))
+        s.items.iter().all(|c| {
+            matches!(
+                c.status,
+                HealthCheckStatus::Ok | HealthCheckStatus::Info | HealthCheckStatus::Inactive
+            )
+        })
     });
 
     Ok(SystemHealthReport { sections, all_ok })
@@ -142,7 +158,11 @@ pub async fn health_check_local(
         .flatten()
         .unwrap_or_else(|| "claude_code".to_string());
 
-    Ok(build_local_section(&active_engine, state.scheduler.is_running(), &state.binary_probe_cache))
+    Ok(build_local_section(
+        &active_engine,
+        state.scheduler.is_running(),
+        &state.binary_probe_cache,
+    ))
 }
 
 #[tauri::command]
@@ -200,21 +220,23 @@ struct EngineProbe {
     candidates: &'static [&'static str],
 }
 
-fn build_local_section(active_engine: &str, sched_running: bool, cache: &BinaryProbeCache) -> HealthCheckSection {
+fn build_local_section(
+    active_engine: &str,
+    sched_running: bool,
+    cache: &BinaryProbeCache,
+) -> HealthCheckSection {
     let mut local_items = Vec::new();
 
-    let engines = [
-        EngineProbe {
-            id: "claude_cli",
-            label: "Claude Code CLI",
-            setting_key: "claude_code",
-            candidates: if cfg!(target_os = "windows") {
-                &["claude", "claude.cmd", "claude.exe", "claude-code"]
-            } else {
-                &["claude", "claude-code"]
-            },
+    let engines = [EngineProbe {
+        id: "claude_cli",
+        label: "Claude Code CLI",
+        setting_key: "claude_code",
+        candidates: if cfg!(target_os = "windows") {
+            &["claude", "claude.cmd", "claude.exe", "claude-code"]
+        } else {
+            &["claude", "claude-code"]
         },
-    ];
+    }];
 
     for engine in &engines {
         let is_active = active_engine == engine.setting_key;
@@ -256,9 +278,14 @@ fn build_local_section(active_engine: &str, sched_running: bool, cache: &BinaryP
             local_items.push(HealthCheckItem {
                 id: engine.id.into(),
                 label: format!("{}{}", engine.label, suffix),
-                status: if is_active { HealthCheckStatus::Error } else { HealthCheckStatus::Inactive },
+                status: if is_active {
+                    HealthCheckStatus::Error
+                } else {
+                    HealthCheckStatus::Inactive
+                },
                 detail: Some(if is_active {
-                    "Not found. Click Install to set up, or select a different engine in Settings.".into()
+                    "Not found. Click Install to set up, or select a different engine in Settings."
+                        .into()
                 } else {
                     "Not installed (optional)".into()
                 }),
@@ -304,7 +331,11 @@ fn build_local_section(active_engine: &str, sched_running: bool, cache: &BinaryP
     local_items.push(HealthCheckItem {
         id: "claude_desktop_mcp".into(),
         label: "Claude Desktop Integration".into(),
-        status: if mcp_registered { HealthCheckStatus::Ok } else { HealthCheckStatus::Inactive },
+        status: if mcp_registered {
+            HealthCheckStatus::Ok
+        } else {
+            HealthCheckStatus::Inactive
+        },
         detail: Some(if mcp_registered {
             "Personas MCP server registered in Claude Desktop".into()
         } else {
@@ -316,7 +347,11 @@ fn build_local_section(active_engine: &str, sched_running: bool, cache: &BinaryP
     local_items.push(HealthCheckItem {
         id: "scheduler".into(),
         label: "Event Bus".into(),
-        status: if sched_running { HealthCheckStatus::Ok } else { HealthCheckStatus::Warn },
+        status: if sched_running {
+            HealthCheckStatus::Ok
+        } else {
+            HealthCheckStatus::Warn
+        },
         detail: Some(if sched_running {
             "Running -- processing events and triggers".into()
         } else {
@@ -335,10 +370,11 @@ fn build_local_section(active_engine: &str, sched_running: bool, cache: &BinaryP
 fn build_agents_section(db: &crate::db::DbPool) -> HealthCheckSection {
     let mut agent_items = Vec::new();
 
-    let ollama_key_configured = crate::db::repos::core::settings::get(db, settings_keys::OLLAMA_API_KEY)
-        .ok()
-        .flatten()
-        .is_some_and(|k| !k.is_empty());
+    let ollama_key_configured =
+        crate::db::repos::core::settings::get(db, settings_keys::OLLAMA_API_KEY)
+            .ok()
+            .flatten()
+            .is_some_and(|k| !k.is_empty());
 
     agent_items.push(HealthCheckItem {
         id: "ollama_api_key".into(),
@@ -352,14 +388,16 @@ fn build_agents_section(db: &crate::db::DbPool) -> HealthCheckSection {
         installable: false,
     });
 
-    let litellm_url_configured = crate::db::repos::core::settings::get(db, settings_keys::LITELLM_BASE_URL)
-        .ok()
-        .flatten()
-        .is_some_and(|u| !u.is_empty());
-    let litellm_key_configured = crate::db::repos::core::settings::get(db, settings_keys::LITELLM_MASTER_KEY)
-        .ok()
-        .flatten()
-        .is_some_and(|k| !k.is_empty());
+    let litellm_url_configured =
+        crate::db::repos::core::settings::get(db, settings_keys::LITELLM_BASE_URL)
+            .ok()
+            .flatten()
+            .is_some_and(|u| !u.is_empty());
+    let litellm_key_configured =
+        crate::db::repos::core::settings::get(db, settings_keys::LITELLM_MASTER_KEY)
+            .ok()
+            .flatten()
+            .is_some_and(|k| !k.is_empty());
     let litellm_configured = litellm_url_configured && litellm_key_configured;
 
     agent_items.push(HealthCheckItem {
@@ -394,7 +432,11 @@ fn build_cloud_section(cloud_connected: bool) -> HealthCheckSection {
         items: vec![HealthCheckItem {
             id: "cloud_orchestrator".into(),
             label: "Cloud Orchestrator".into(),
-            status: if cloud_connected { HealthCheckStatus::Ok } else { HealthCheckStatus::Info },
+            status: if cloud_connected {
+                HealthCheckStatus::Ok
+            } else {
+                HealthCheckStatus::Info
+            },
             detail: Some(if cloud_connected {
                 "Connected -- agents can run when this device is off".into()
             } else {
@@ -425,7 +467,11 @@ fn build_account_section(auth_resp: &super::super::auth::AuthStateResponse) -> H
         auth_items.push(HealthCheckItem {
             id: "google_auth".into(),
             label: "Google Account".into(),
-            status: if auth_resp.is_offline { HealthCheckStatus::Warn } else { HealthCheckStatus::Ok },
+            status: if auth_resp.is_offline {
+                HealthCheckStatus::Warn
+            } else {
+                HealthCheckStatus::Ok
+            },
             detail: Some(user_detail),
             installable: false,
         });
@@ -462,7 +508,11 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
         } else if p.consecutive_failures > 0 {
             (
                 HealthCheckStatus::Warn,
-                format!("{} consecutive failure{}", p.consecutive_failures, if p.consecutive_failures > 1 { "s" } else { "" }),
+                format!(
+                    "{} consecutive failure{}",
+                    p.consecutive_failures,
+                    if p.consecutive_failures > 1 { "s" } else { "" }
+                ),
             )
         } else {
             (HealthCheckStatus::Ok, "Healthy — no recent failures".into())
@@ -492,11 +542,18 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
             format!(
                 "{} failure{} in rolling window (threshold: 10)",
                 cb_status.global_failure_count,
-                if cb_status.global_failure_count > 1 { "s" } else { "" },
+                if cb_status.global_failure_count > 1 {
+                    "s"
+                } else {
+                    ""
+                },
             ),
         )
     } else {
-        (HealthCheckStatus::Ok, "No failures in rolling window".into())
+        (
+            HealthCheckStatus::Ok,
+            "No failures in rolling window".into(),
+        )
     };
 
     items.push(HealthCheckItem {
@@ -603,11 +660,26 @@ mod tests {
 
     #[test]
     fn test_health_check_status_variants() {
-        assert_eq!(serde_json::to_string(&HealthCheckStatus::Ok).unwrap(), "\"ok\"");
-        assert_eq!(serde_json::to_string(&HealthCheckStatus::Warn).unwrap(), "\"warn\"");
-        assert_eq!(serde_json::to_string(&HealthCheckStatus::Error).unwrap(), "\"error\"");
-        assert_eq!(serde_json::to_string(&HealthCheckStatus::Inactive).unwrap(), "\"inactive\"");
-        assert_eq!(serde_json::to_string(&HealthCheckStatus::Info).unwrap(), "\"info\"");
+        assert_eq!(
+            serde_json::to_string(&HealthCheckStatus::Ok).unwrap(),
+            "\"ok\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HealthCheckStatus::Warn).unwrap(),
+            "\"warn\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HealthCheckStatus::Error).unwrap(),
+            "\"error\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HealthCheckStatus::Inactive).unwrap(),
+            "\"inactive\""
+        );
+        assert_eq!(
+            serde_json::to_string(&HealthCheckStatus::Info).unwrap(),
+            "\"info\""
+        );
     }
 
     #[test]

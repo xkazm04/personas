@@ -13,8 +13,7 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    AuditIncident, AuditIncidentSummary, CreateAuditIncidentInput, IncidentFilters,
-    IncidentStatus,
+    AuditIncident, AuditIncidentSummary, CreateAuditIncidentInput, IncidentFilters, IncidentStatus,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::repos::utils::collect_rows;
@@ -190,9 +189,8 @@ pub fn summary(pool: &DbPool) -> Result<AuditIncidentSummary, AppError> {
         let mut resolved = 0i64;
         let mut dismissed = 0i64;
         {
-            let mut totals_stmt = conn.prepare(
-                "SELECT status, COUNT(*) FROM audit_incidents GROUP BY status",
-            )?;
+            let mut totals_stmt =
+                conn.prepare("SELECT status, COUNT(*) FROM audit_incidents GROUP BY status")?;
             let mut totals_rows = totals_stmt.query([])?;
             while let Some(row) = totals_rows.next()? {
                 let status: String = row.get(0)?;
@@ -211,18 +209,22 @@ pub fn summary(pool: &DbPool) -> Result<AuditIncidentSummary, AppError> {
             "SELECT severity, COUNT(*) FROM audit_incidents
              WHERE status = 'open' GROUP BY severity ORDER BY severity",
         )?;
-        let sev_iter = sev_stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?;
-        let open_by_severity: Vec<(String, i64)> = collect_rows(sev_iter, "audit_incidents::summary/sev");
+        let sev_iter = sev_stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        let open_by_severity: Vec<(String, i64)> =
+            collect_rows(sev_iter, "audit_incidents::summary/sev");
         drop(sev_stmt);
 
         let mut src_stmt = conn.prepare(
             "SELECT source_table, COUNT(*) FROM audit_incidents
              WHERE status = 'open' GROUP BY source_table ORDER BY source_table",
         )?;
-        let src_iter = src_stmt
-            .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)))?;
-        let open_by_source: Vec<(String, i64)> = collect_rows(src_iter, "audit_incidents::summary/src");
+        let src_iter = src_stmt.query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?;
+        let open_by_source: Vec<(String, i64)> =
+            collect_rows(src_iter, "audit_incidents::summary/src");
 
         Ok(AuditIncidentSummary {
             open,
@@ -265,7 +267,10 @@ fn apply_transition(
 ) -> Result<bool, AppError> {
     let current = get_by_id(pool, id)?;
     let from = IncidentStatus::from_str(&current.status).ok_or_else(|| {
-        AppError::Internal(format!("audit_incident {id} has invalid status {}", current.status))
+        AppError::Internal(format!(
+            "audit_incident {id} has invalid status {}",
+            current.status
+        ))
     })?;
 
     if from == target {
@@ -370,7 +375,12 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
-    fn make_input(source_table: &str, source_id: &str, severity: &str, title: &str) -> CreateAuditIncidentInput {
+    fn make_input(
+        source_table: &str,
+        source_id: &str,
+        severity: &str,
+        title: &str,
+    ) -> CreateAuditIncidentInput {
         CreateAuditIncidentInput {
             source_table: source_table.into(),
             source_id: source_id.into(),
@@ -403,8 +413,11 @@ mod tests {
     #[test]
     fn promote_inserts_new_incident() {
         let pool = init_test_db().unwrap();
-        let id = promote(&pool, make_input("fired_alerts", "a-1", "warning", "Latency spike"))
-            .unwrap();
+        let id = promote(
+            &pool,
+            make_input("fired_alerts", "a-1", "warning", "Latency spike"),
+        )
+        .unwrap();
         assert!(id.is_some());
 
         let row = get_by_id(&pool, &id.unwrap()).unwrap();
@@ -422,8 +435,7 @@ mod tests {
         assert!(first.is_some());
 
         // Second promote of the same source_table+source_id is a no-op.
-        let second = promote(&pool, make_input("fired_alerts", "a-1", "critical", "T2"))
-            .unwrap();
+        let second = promote(&pool, make_input("fired_alerts", "a-1", "critical", "T2")).unwrap();
         assert!(second.is_none(), "duplicate dedup_key must not insert");
 
         // The original row's severity/title are preserved (no overwrite).
@@ -435,9 +447,12 @@ mod tests {
     #[test]
     fn lifecycle_transitions_follow_the_state_machine() {
         let pool = init_test_db().unwrap();
-        let id = promote(&pool, make_input("tool_execution_audit_log", "t-1", "error", "Tool failed"))
-            .unwrap()
-            .unwrap();
+        let id = promote(
+            &pool,
+            make_input("tool_execution_audit_log", "t-1", "error", "Tool failed"),
+        )
+        .unwrap()
+        .unwrap();
 
         assert!(acknowledge(&pool, &id).unwrap());
         let after_ack = get_by_id(&pool, &id).unwrap();
@@ -461,7 +476,9 @@ mod tests {
     #[test]
     fn invalid_transitions_are_rejected() {
         let pool = init_test_db().unwrap();
-        let id = promote(&pool, make_input("policy_events", "pe-1", "low", "Drop")).unwrap().unwrap();
+        let id = promote(&pool, make_input("policy_events", "pe-1", "low", "Drop"))
+            .unwrap()
+            .unwrap();
 
         // Set to resolved
         resolve(&pool, &id, None).unwrap();
@@ -475,8 +492,16 @@ mod tests {
     fn list_filters_apply_correctly() {
         let pool = init_test_db().unwrap();
         promote(&pool, make_input("fired_alerts", "a-1", "critical", "A")).unwrap();
-        promote(&pool, make_input("tool_execution_audit_log", "t-1", "medium", "B")).unwrap();
-        promote(&pool, make_input("credential_audit_log", "c-1", "high", "C")).unwrap();
+        promote(
+            &pool,
+            make_input("tool_execution_audit_log", "t-1", "medium", "B"),
+        )
+        .unwrap();
+        promote(
+            &pool,
+            make_input("credential_audit_log", "c-1", "high", "C"),
+        )
+        .unwrap();
 
         let all = list(&pool, &IncidentFilters::default(), 50, 0).unwrap();
         assert_eq!(all.len(), 3);
@@ -510,9 +535,15 @@ mod tests {
     #[test]
     fn summary_counts_are_accurate() {
         let pool = init_test_db().unwrap();
-        let a = promote(&pool, make_input("fired_alerts", "a-1", "critical", "A")).unwrap().unwrap();
+        let a = promote(&pool, make_input("fired_alerts", "a-1", "critical", "A"))
+            .unwrap()
+            .unwrap();
         promote(&pool, make_input("fired_alerts", "a-2", "high", "B")).unwrap();
-        promote(&pool, make_input("tool_execution_audit_log", "t-1", "medium", "C")).unwrap();
+        promote(
+            &pool,
+            make_input("tool_execution_audit_log", "t-1", "medium", "C"),
+        )
+        .unwrap();
 
         // Move one to acknowledged
         acknowledge(&pool, &a).unwrap();
@@ -534,7 +565,12 @@ mod tests {
         for i in 0..5 {
             let id = promote(
                 &pool,
-                make_input("fired_alerts", &format!("a-{i}"), "medium", &format!("T{i}")),
+                make_input(
+                    "fired_alerts",
+                    &format!("a-{i}"),
+                    "medium",
+                    &format!("T{i}"),
+                ),
             )
             .unwrap()
             .unwrap();

@@ -163,7 +163,11 @@ pub fn eval_keyword_match(input: &EvalInput) -> EvalResult {
         strategy: EvalStrategyKind::KeywordMatch,
         score,
         confidence,
-        explanation: format!("{}/{} expected keywords found in output", found, keywords.len()),
+        explanation: format!(
+            "{}/{} expected keywords found in output",
+            found,
+            keywords.len()
+        ),
         passed: Some(score >= 40),
     }
 }
@@ -215,7 +219,11 @@ pub fn eval_tool_accuracy(input: &EvalInput) -> EvalResult {
             "{}/{} expected tools called{}",
             matched,
             expected.len(),
-            if extra > 0 { format!(", {} extra calls (-{} penalty)", extra, penalty as i32) } else { String::new() }
+            if extra > 0 {
+                format!(", {} extra calls (-{} penalty)", extra, penalty as i32)
+            } else {
+                String::new()
+            }
         ),
         passed: Some(score >= 50),
     }
@@ -252,7 +260,11 @@ pub fn eval_protocol_compliance(input: &EvalInput) -> EvalResult {
         strategy: EvalStrategyKind::ProtocolCompliance,
         score,
         confidence: 0.6,
-        explanation: format!("{}/{} expected protocol patterns found", found, expected.len()),
+        explanation: format!(
+            "{}/{} expected protocol patterns found",
+            found,
+            expected.len()
+        ),
         passed: Some(score >= 50),
     }
 }
@@ -467,7 +479,11 @@ pub async fn eval_with_llm(
     scenario_description: &str,
 ) -> LlmEvalResult {
     let eval_prompt = build_llm_eval_prompt(
-        input, persona_name, persona_description, scenario_name, scenario_description,
+        input,
+        persona_name,
+        persona_description,
+        scenario_name,
+        scenario_description,
     );
 
     // Try LLM eval up to 2 times before falling back to heuristic
@@ -487,8 +503,15 @@ pub async fn eval_with_llm(
 
     // Distinguish timeout from other failures
     let is_timeout = last_err.contains("timed out");
-    let method = if is_timeout { EvalMethod::Timeout } else { EvalMethod::HeuristicFallback };
-    tracing::warn!("LLM eval failed after 2 attempts (method={:?}), falling back to heuristic: {last_err}", method);
+    let method = if is_timeout {
+        EvalMethod::Timeout
+    } else {
+        EvalMethod::HeuristicFallback
+    };
+    tracing::warn!(
+        "LLM eval failed after 2 attempts (method={:?}), falling back to heuristic: {last_err}",
+        method
+    );
     fallback_heuristic(input, method)
 }
 
@@ -499,10 +522,12 @@ fn build_llm_eval_prompt(
     scenario_name: &str,
     scenario_description: &str,
 ) -> String {
-    let tool_calls_actual = input.actual_tools
+    let tool_calls_actual = input
+        .actual_tools
         .map(|t| t.join(", "))
         .unwrap_or_else(|| "(none)".to_string());
-    let tool_calls_expected = input.expected_tools
+    let tool_calls_expected = input
+        .expected_tools
         .map(|t| t.join(", "))
         .unwrap_or_else(|| "(none specified)".to_string());
     let output_preview = if input.output.len() > 3000 {
@@ -585,13 +610,16 @@ async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
     let mut assistant_text = String::new();
     let timeout = tokio::time::Duration::from_secs(180);
 
-    driver.collect_lines_with_timeout(timeout, |line| {
-        let (line_type, _) = parser::parse_stream_line(line);
-        if let StreamLineType::AssistantText { text } = line_type {
-            assistant_text.push_str(&text);
-            assistant_text.push('\n');
-        }
-    }).await.map_err(|e| format!("LLM eval timed out or failed: {e}"))?;
+    driver
+        .collect_lines_with_timeout(timeout, |line| {
+            let (line_type, _) = parser::parse_stream_line(line);
+            if let StreamLineType::AssistantText { text } = line_type {
+                assistant_text.push_str(&text);
+                assistant_text.push('\n');
+            }
+        })
+        .await
+        .map_err(|e| format!("LLM eval timed out or failed: {e}"))?;
 
     let _ = driver.finish().await;
 
@@ -659,11 +687,15 @@ fn fallback_heuristic(input: &EvalInput<'_>, method: EvalMethod) -> LlmEvalResul
         protocol_compliance: protocol.score,
         rationale: format!(
             "Heuristic fallback: tool_accuracy={} ({}), output_quality={} ({}), protocol={}  ({})",
-            tool.score, tool.explanation,
-            keyword.score, keyword.explanation,
-            protocol.score, protocol.explanation,
+            tool.score,
+            tool.explanation,
+            keyword.score,
+            keyword.explanation,
+            protocol.score,
+            protocol.explanation,
         ),
-        suggestions: "LLM evaluation unavailable; consider re-running with LLM eval enabled.".to_string(),
+        suggestions: "LLM evaluation unavailable; consider re-running with LLM eval enabled."
+            .to_string(),
         tool_accuracy_rationale: Some(tool.explanation.clone()),
         output_quality_rationale: Some(keyword.explanation.clone()),
         protocol_rationale: Some(protocol.explanation.clone()),
@@ -750,10 +782,18 @@ mod tests {
     #[test]
     fn test_tool_accuracy_extra_calls() {
         let expected = vec!["gmail_send".to_string()];
-        let actual = vec!["gmail_send".to_string(), "slack_post".to_string(), "drive_upload".to_string()];
+        let actual = vec![
+            "gmail_send".to_string(),
+            "slack_post".to_string(),
+            "drive_upload".to_string(),
+        ];
         let input = make_input("output", None, Some(&expected), Some(&actual));
         let result = eval_tool_accuracy(&input);
-        assert!(result.score < 100, "Extra calls should reduce score: {}", result.score);
+        assert!(
+            result.score < 100,
+            "Extra calls should reduce score: {}",
+            result.score
+        );
         assert!(result.score > 70, "But not by too much: {}", result.score);
     }
 
@@ -850,7 +890,11 @@ mod tests {
             has_tools: true,
         };
         let result = eval_composite(&input);
-        assert!(result.composite.score > 60, "Composite should be decent: {}", result.composite.score);
+        assert!(
+            result.composite.score > 60,
+            "Composite should be decent: {}",
+            result.composite.score
+        );
         assert_eq!(result.individual.len(), 4);
     }
 
@@ -865,7 +909,10 @@ mod tests {
             has_tools: true,
         };
         let result = eval_composite(&input);
-        assert_eq!(result.composite.score, 0, "Confusion should override composite");
+        assert_eq!(
+            result.composite.score, 0,
+            "Confusion should override composite"
+        );
         assert!(result.composite.explanation.contains("confusion"));
     }
 }

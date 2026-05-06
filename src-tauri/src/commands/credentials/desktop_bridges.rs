@@ -34,11 +34,7 @@ pub async fn execute_desktop_bridge(
         _ => return Err(AppError::Validation(format!("Unknown bridge: {bridge}"))),
     };
 
-    desktop_security::check_permission(
-        &state.desktop_approvals,
-        &connector_name,
-        &required_cap,
-    )?;
+    desktop_security::check_permission(&state.desktop_approvals, &connector_name, &required_cap)?;
 
     let config = config.unwrap_or_default();
 
@@ -48,10 +44,12 @@ pub async fn execute_desktop_bridge(
                 .map_err(|e| AppError::Validation(format!("Invalid VS Code action: {e}")))?;
             let binary = config.vscode_binary.as_deref().unwrap_or("code");
             if let Some(manifest) = desktop_security::get_manifest(&connector_name)
-                .or_else(|| desktop_security::get_manifest("desktop_vscode")) {
+                .or_else(|| desktop_security::get_manifest("desktop_vscode"))
+            {
                 if !manifest.is_binary_allowed(binary) {
                     return Err(AppError::Validation(format!(
-                        "Binary '{}' is not in the allowed list for {}", binary, connector_name
+                        "Binary '{}' is not in the allowed list for {}",
+                        binary, connector_name
                     )));
                 }
             }
@@ -62,10 +60,12 @@ pub async fn execute_desktop_bridge(
                 .map_err(|e| AppError::Validation(format!("Invalid Docker action: {e}")))?;
             let binary = config.docker_binary.as_deref().unwrap_or("docker");
             if let Some(manifest) = desktop_security::get_manifest(&connector_name)
-                .or_else(|| desktop_security::get_manifest("desktop_docker")) {
+                .or_else(|| desktop_security::get_manifest("desktop_docker"))
+            {
                 if !manifest.is_binary_allowed(binary) {
                     return Err(AppError::Validation(format!(
-                        "Binary '{}' is not in the allowed list for {}", binary, connector_name
+                        "Binary '{}' is not in the allowed list for {}",
+                        binary, connector_name
                     )));
                 }
             }
@@ -78,8 +78,13 @@ pub async fn execute_desktop_bridge(
             let mut manifest = crate::engine::desktop_security::get_manifest("desktop_terminal")
                 .expect("desktop_terminal manifest is always defined");
             manifest.allowed_paths = config.terminal_allowed_paths.clone();
-            crate::engine::desktop_bridges::terminal::execute(shell, action, &config.env_vars, &manifest)
-                .await
+            crate::engine::desktop_bridges::terminal::execute(
+                shell,
+                action,
+                &config.env_vars,
+                &manifest,
+            )
+            .await
         }
         "obsidian" => {
             let action = serde_json::from_value(action)

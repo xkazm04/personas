@@ -63,7 +63,8 @@ impl FromStr for AutomationPlatform {
 impl rusqlite::types::FromSql for AutomationPlatform {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s = value.as_str()?;
-        s.parse().map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
+        s.parse()
+            .map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
     }
 }
 
@@ -117,7 +118,8 @@ impl FromStr for AutomationFallbackMode {
 impl rusqlite::types::FromSql for AutomationFallbackMode {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s = value.as_str()?;
-        s.parse().map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
+        s.parse()
+            .map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
     }
 }
 
@@ -177,7 +179,8 @@ impl FromStr for AutomationRunStatus {
 impl rusqlite::types::FromSql for AutomationRunStatus {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let s = value.as_str()?;
-        s.parse().map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
+        s.parse()
+            .map_err(|e: String| rusqlite::types::FromSqlError::Other(e.into()))
     }
 }
 

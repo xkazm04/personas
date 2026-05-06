@@ -35,7 +35,8 @@ pub struct N8nTransformSnapshotExtras {
 }
 
 /// Full snapshot type alias for convenience.
-pub type N8nTransformSnapshot = crate::background_job::BackgroundTaskSnapshot<N8nTransformSnapshotExtras>;
+pub type N8nTransformSnapshot =
+    crate::background_job::BackgroundTaskSnapshot<N8nTransformSnapshotExtras>;
 
 static N8N_JOBS: BackgroundJobManager<N8nTransformExtra> = BackgroundJobManager::new(
     "n8n transform job lock poisoned",
@@ -59,7 +60,11 @@ pub fn set_n8n_transform_status(
     N8N_JOBS.set_status(app, transform_id, status, error);
 }
 
-pub fn emit_n8n_transform_line(app: &tauri::AppHandle, transform_id: &str, line: impl Into<String>) {
+pub fn emit_n8n_transform_line(
+    app: &tauri::AppHandle,
+    transform_id: &str,
+    line: impl Into<String>,
+) {
     N8N_JOBS.emit_line(app, transform_id, line);
 }
 
@@ -87,10 +92,7 @@ pub fn get_n8n_transform_snapshot_internal(transform_id: &str) -> Option<N8nTran
 
 /// Store a streaming section in the job state.
 /// (The frontend retrieves sections via snapshot polling, not direct events.)
-pub fn store_n8n_transform_section(
-    transform_id: &str,
-    section: serde_json::Value,
-) {
+pub fn store_n8n_transform_section(transform_id: &str, section: serde_json::Value) {
     N8N_JOBS.update_extra(transform_id, |extra| {
         extra.sections.push(section);
     });

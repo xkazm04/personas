@@ -4,9 +4,9 @@
 //! or re-exported `pub(crate)` for a small, named set of callers
 //! (build_session, tool_runner, mcp_tools).
 
+mod credentials;
 mod env;
 mod globals;
-mod credentials;
 mod stages;
 
 // Cross-module re-exports. These paths are what external callers (outside
@@ -17,11 +17,11 @@ pub(crate) use credentials::{
     inject_connector_credentials, inject_credential, resolve_credential_env_vars,
 };
 
+use super::events::emit_to;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use super::events::emit_to;
 use tokio::sync::Mutex;
 
 use super::cli_process::{read_line_limited, CliProcessDriver};
@@ -54,7 +54,6 @@ use self::stages::RunnerStage;
 pub(crate) const DEFAULT_EXECUTION_TIMEOUT_MS: u64 = 660_000;
 use super::trace::{SpanType, TraceCollector, TraceSpanEvent};
 use super::types::*;
-
 
 /// Run a persona execution: spawn Claude CLI, stream output, capture results.
 ///
@@ -117,11 +116,8 @@ pub async fn run_execution(
         .as_deref()
         .and_then(|gid| group_repo::get_by_id(&pool, gid).ok());
 
-    let effective = super::config_merge::resolve_effective_config(
-        &pool,
-        &persona,
-        workspace.as_ref(),
-    );
+    let effective =
+        super::config_merge::resolve_effective_config(&pool, &persona, workspace.as_ref());
 
     // Apply the resolved effective values back onto the persona so that
     // downstream code (prompt building, budget enforcement, etc.) sees the
@@ -130,12 +126,17 @@ pub async fn run_execution(
     if let Some(ref model_json) = effective.model.value {
         // Reconstruct a ModelProfile JSON that reflects all resolved fields,
         // preserving any agent-level fields not part of the cascade.
-        let mut base = persona.model_profile.as_deref()
+        let mut base = persona
+            .model_profile
+            .as_deref()
             .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
             .and_then(|v| v.as_object().cloned())
             .unwrap_or_default();
 
-        base.insert("model".into(), serde_json::Value::String(model_json.clone()));
+        base.insert(
+            "model".into(),
+            serde_json::Value::String(model_json.clone()),
+        );
         if let Some(ref p) = effective.provider.value {
             base.insert("provider".into(), serde_json::Value::String(p.clone()));
         }
@@ -146,7 +147,10 @@ pub async fn run_execution(
             base.insert("auth_token".into(), serde_json::Value::String(t.clone()));
         }
         if let Some(ref c) = effective.prompt_cache_policy.value {
-            base.insert("prompt_cache_policy".into(), serde_json::Value::String(c.clone()));
+            base.insert(
+                "prompt_cache_policy".into(),
+                serde_json::Value::String(c.clone()),
+            );
         }
         persona.model_profile = Some(serde_json::to_string(&base).unwrap_or_default());
     } else if effective.provider.value.is_some() || effective.base_url.value.is_some() {
@@ -223,7 +227,8 @@ pub async fn run_execution(
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
             let uc_override = crate::engine::design_context::pick_use_cases_array(&dc)
                 .and_then(|arr| {
-                    arr.iter().find(|uc| uc.get("id").and_then(|i| i.as_str()) == Some(uc_id.as_str()))
+                    arr.iter()
+                        .find(|uc| uc.get("id").and_then(|i| i.as_str()) == Some(uc_id.as_str()))
                 })
                 .and_then(|uc| uc.get("model_override"))
                 .filter(|v| !v.is_null())
@@ -272,7 +277,10 @@ pub async fn run_execution(
             .as_ref()
             .and_then(|v| v.as_object().cloned())
             .unwrap_or_default();
-        obj.insert("_resume_hint".to_string(), serde_json::Value::String(hint.clone()));
+        obj.insert(
+            "_resume_hint".to_string(),
+            serde_json::Value::String(hint.clone()),
+        );
         input_data = Some(serde_json::Value::Object(obj));
     }
 
@@ -281,7 +289,8 @@ pub async fn run_execution(
     // as a trace warning *before* the hard credential resolution gate.
     // This gives the UI and healing system richer diagnostics.
     {
-        let contract_report = super::capability_contract::validate_persona_contracts(&pool, &persona.id);
+        let contract_report =
+            super::capability_contract::validate_persona_contracts(&pool, &persona.id);
         if let Ok(ref report) = contract_report {
             if !report.all_satisfied {
                 let issues: Vec<String> = report.unmet.iter().map(|u| u.reason.clone()).collect();
@@ -303,13 +312,23 @@ pub async fn run_execution(
         None,
         Some(serde_json::json!({ "tool_count": tools.len() })),
     );
-    let (mut cred_env, mut cred_hints, cred_failures, mut injected_connectors) = resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
+    let (mut cred_env, mut cred_hints, cred_failures, mut injected_connectors) =
+        resolve_credential_env_vars(&pool, &tools, &persona.id, &persona.name).await;
 
     // Second pass: inject credentials for ALL connectors referenced in the persona's
     // design_context, not just those matched by tool name. This ensures that generic
     // tools like http_request can access connector credentials (e.g. alpha_vantage API key)
     // even if the tool name doesn't match the connector name.
-    inject_design_context_credentials(&pool, &persona, &mut cred_env, &mut cred_hints, &mut injected_connectors, &persona.id, &persona.name).await;
+    inject_design_context_credentials(
+        &pool,
+        &persona,
+        &mut cred_env,
+        &mut cred_hints,
+        &mut injected_connectors,
+        &persona.id,
+        &persona.name,
+    )
+    .await;
 
     // Resolve connector usage hints (metadata.llm_usage_hint) for every
     // connector whose credentials were actually injected. Passed into
@@ -321,9 +340,15 @@ pub async fn run_execution(
             if let Ok(all_conns) = connector_repo::get_all(&pool) {
                 let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
                 for name in &injected_connectors {
-                    if !seen.insert(name.clone()) { continue; }
-                    let Some(conn) = all_conns.iter().find(|c| &c.name == name) else { continue };
-                    let Some(meta_str) = conn.metadata.as_deref() else { continue };
+                    if !seen.insert(name.clone()) {
+                        continue;
+                    }
+                    let Some(conn) = all_conns.iter().find(|c| &c.name == name) else {
+                        continue;
+                    };
+                    let Some(meta_str) = conn.metadata.as_deref() else {
+                        continue;
+                    };
                     let parsed: Option<crate::db::models::ConnectorMetadataPartial> =
                         serde_json::from_str(meta_str).ok();
                     if let Some(partial) = parsed {
@@ -399,16 +424,21 @@ pub async fn run_execution(
 
     // Load engine kind once and reuse for both config snapshot and provider selection
     let engine_kind = {
-        let raw = crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::CLI_ENGINE)
-            .ok()
-            .flatten();
+        let raw =
+            crate::db::repos::core::settings::get(&pool, crate::db::settings_keys::CLI_ENGINE)
+                .ok()
+                .flatten();
         match raw {
             Some(ref s) if s.parse::<provider::EngineKind>().is_err() => {
                 let kind = provider::EngineKind::from_setting(s);
-                emit_to(&*emitter, event_name::ENGINE_FALLBACK, &serde_json::json!({
-                    "requested": s,
-                    "actual": kind.as_setting(),
-                }));
+                emit_to(
+                    &*emitter,
+                    event_name::ENGINE_FALLBACK,
+                    &serde_json::json!({
+                        "requested": s,
+                        "actual": kind.as_setting(),
+                    }),
+                );
                 kind
             }
             Some(ref s) => provider::EngineKind::from_setting(s),
@@ -419,7 +449,9 @@ pub async fn run_execution(
     // Assemble immutable ExecutionConfig snapshot from all resolved sources.
     // This is the single source of truth for what config this execution used.
     let execution_config = ExecutionConfig {
-        model_profile: model_profile.as_ref().map(RedactedModelProfile::from_profile),
+        model_profile: model_profile
+            .as_ref()
+            .map(RedactedModelProfile::from_profile),
         engine: engine_kind.as_setting().to_string(),
         max_budget_usd: persona.max_budget_usd,
         max_turns: persona.max_turns,
@@ -475,16 +507,21 @@ pub async fn run_execution(
         Some(serde_json::json!({ "is_resume": is_session_resume })),
     );
     let hint_refs: Vec<&str> = cred_hints.iter().map(|s| s.as_str()).collect();
-    let connector_hints_opt: Option<&[prompt::ResolvedConnectorHint]> = if connector_usage_hints.is_empty() {
-        None
-    } else {
-        Some(&connector_usage_hints)
-    };
+    let connector_hints_opt: Option<&[prompt::ResolvedConnectorHint]> =
+        if connector_usage_hints.is_empty() {
+            None
+        } else {
+            Some(&connector_usage_hints)
+        };
     let prompt_text = if is_session_resume {
         // For session resume, send a lighter prompt -- the session already has context
         prompt::assemble_resume_prompt(
             input_data.as_ref(),
-            if hint_refs.is_empty() { None } else { Some(&hint_refs) },
+            if hint_refs.is_empty() {
+                None
+            } else {
+                Some(&hint_refs)
+            },
             connector_hints_opt,
         )
     } else {
@@ -550,11 +587,15 @@ pub async fn run_execution(
                 let total = tiered.core.len() + tiered.active.len();
                 logger.log(&format!(
                     "[MEMORY] Injected {} memories ({} core, {} active)",
-                    total, tiered.core.len(), tiered.active.len()
+                    total,
+                    tiered.core.len(),
+                    tiered.active.len()
                 ));
 
                 // Track access: increment counters for all injected memories
-                let all_ids: Vec<String> = tiered.core.iter()
+                let all_ids: Vec<String> = tiered
+                    .core
+                    .iter()
                     .chain(tiered.active.iter())
                     .map(|m| m.id.clone())
                     .collect();
@@ -647,9 +688,13 @@ pub async fn run_execution(
         &persona.id,
         execution_use_case_id.as_deref(),
     ) {
-        Ok(true) => logger.log("[projection] wrote tiered memories to exec_dir/.claude/persona-memory.md"),
+        Ok(true) => {
+            logger.log("[projection] wrote tiered memories to exec_dir/.claude/persona-memory.md")
+        }
         Ok(false) => {} // disabled, no memories, or skipped
-        Err(e) => logger.log(&format!("[projection] CLAUDE.md projection failed (non-fatal): {e}")),
+        Err(e) => logger.log(&format!(
+            "[projection] CLAUDE.md projection failed (non-fatal): {e}"
+        )),
     }
 
     // Snapshot the managed drive before the CLI runs so we can diff post-run
@@ -687,7 +732,8 @@ pub async fn run_execution(
             tracing::error!(error = %e, "BYOM policy is corrupt — blocking execution");
             logger.log(&format!("BYOM policy is corrupt — execution blocked: {e}"));
             let err_msg = "BYOM policy is corrupt and cannot be loaded. \
-                     Please reset or fix the policy in Settings → BYOM before running executions.".to_string();
+                     Please reset or fix the policy in Settings → BYOM before running executions."
+                .to_string();
             let _ = exec_repo::update_status(
                 &pool,
                 &execution_id,
@@ -707,6 +753,17 @@ pub async fn run_execution(
             };
         }
     };
+    // BYOM policy inputs are placeholders today:
+    //   - `&[]` for persona_tags: `Persona` has no tags/categories field that
+    //     feeds compliance matching yet. Compliance rules with non-empty
+    //     `workflow_tags` therefore never match.
+    //   - `None` for complexity: nothing classifies the task (no per-execution
+    //     override, no persona-default field, no heuristic). The evaluator
+    //     falls back to `TaskComplexity::DEFAULT` (`Standard`), which is why
+    //     `Simple` and `Critical` routing rules silently no-op. See the
+    //     canonical-source contract on `engine::byom::TaskComplexity` for the
+    //     intended precedence (explicit > persona-default > heuristic >
+    //     Standard) before adding a source here.
     let policy_decision = byom_policy
         .as_ref()
         .map(|p| p.evaluate(&[], None))
@@ -751,7 +808,8 @@ pub async fn run_execution(
     #[allow(unused_assignments)]
     let mut active_engine_kind = primary_engine; // overwritten per-candidate in failover loop
     #[allow(unused_assignments)]
-    let mut cli_provider: Box<dyn provider::CliProvider> = provider::resolve_provider(primary_engine); // overwritten per-candidate
+    let mut cli_provider: Box<dyn provider::CliProvider> =
+        provider::resolve_provider(primary_engine); // overwritten per-candidate
     let mut cli_args;
 
     let mut driver = 'failover: {
@@ -814,26 +872,28 @@ pub async fn run_execution(
             // For non-Stdin providers, rebuild args with the prompt embedded
             match cli_provider.prompt_delivery() {
                 PromptDelivery::PositionalArg | PromptDelivery::Flag(_) => {
-                    cli_args = if let Some(Continuation::SessionResume(ref session_id)) = continuation {
-                        let mut args = cli_provider.build_resume_args_with_prompt(session_id, &prompt_text);
-                        if let Some(profile) = candidate_profile.as_ref() {
-                            cli_provider.apply_provider_env(&mut args, profile);
-                        }
-                        for (key, val) in &cred_env_clone {
-                            args.env_overrides.push((key.clone(), val.clone()));
-                        }
-                        args
-                    } else {
-                        let mut args = cli_provider.build_execution_args_with_prompt(
-                            Some(&persona),
-                            candidate_profile.as_ref(),
-                            &prompt_text,
-                        );
-                        for (key, val) in &cred_env_clone {
-                            args.env_overrides.push((key.clone(), val.clone()));
-                        }
-                        args
-                    };
+                    cli_args =
+                        if let Some(Continuation::SessionResume(ref session_id)) = continuation {
+                            let mut args = cli_provider
+                                .build_resume_args_with_prompt(session_id, &prompt_text);
+                            if let Some(profile) = candidate_profile.as_ref() {
+                                cli_provider.apply_provider_env(&mut args, profile);
+                            }
+                            for (key, val) in &cred_env_clone {
+                                args.env_overrides.push((key.clone(), val.clone()));
+                            }
+                            args
+                        } else {
+                            let mut args = cli_provider.build_execution_args_with_prompt(
+                                Some(&persona),
+                                candidate_profile.as_ref(),
+                                &prompt_text,
+                            );
+                            for (key, val) in &cred_env_clone {
+                                args.env_overrides.push((key.clone(), val.clone()));
+                            }
+                            args
+                        };
                 }
                 PromptDelivery::Stdin => {}
             }
@@ -843,12 +903,13 @@ pub async fn run_execution(
             // spans it emits for its internal API / tool calls. Harmless no-op
             // for providers that don't read it (e.g. Codex) — OTEL collectors
             // simply ignore unrelated env vars.
-            cli_args.env_overrides.push((
-                "TRACEPARENT".to_string(),
-                traceparent_header.clone(),
-            ));
+            cli_args
+                .env_overrides
+                .push(("TRACEPARENT".to_string(), traceparent_header.clone()));
             if let Some(state) = w3c_trace.tracestate_header() {
-                cli_args.env_overrides.push(("TRACESTATE".to_string(), state));
+                cli_args
+                    .env_overrides
+                    .push(("TRACESTATE".to_string(), state));
             }
 
             if candidate_idx > 0 {
@@ -874,7 +935,16 @@ pub async fn run_execution(
                 trace.end_span_error(&spawn_engine_stage, "Cancelled before spawn");
                 logger.close();
 
-                emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
+                emit_to(
+                    &*emitter,
+                    event_name::PROCESS_ACTIVITY,
+                    &super::process_activity::ProcessActivityEvent::new(
+                        "execution",
+                        "cancelled",
+                        Some(&execution_id),
+                        Some(&persona.name),
+                    ),
+                );
 
                 let duration_ms = start_time.elapsed().as_millis() as u64;
                 emit_to(
@@ -914,12 +984,23 @@ pub async fn run_execution(
                     // Record failure in circuit breaker and emit transition events
                     let transitions = circuit_breaker.record_failure(candidate.engine_kind);
                     for transition in &transitions {
-                        emit_to(&*emitter, event_name::CIRCUIT_BREAKER_TRANSITION, transition);
+                        emit_to(
+                            &*emitter,
+                            event_name::CIRCUIT_BREAKER_TRANSITION,
+                            transition,
+                        );
                     }
                     if transitions.iter().any(|t| t.provider == "global") {
-                        emit_to(&*emitter, event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, &circuit_breaker.get_status());
+                        emit_to(
+                            &*emitter,
+                            event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED,
+                            &circuit_breaker.get_status(),
+                        );
                     }
-                    logger.log(&format!("[FAILOVER] {} failed: {}", candidate.label, error_msg));
+                    logger.log(&format!(
+                        "[FAILOVER] {} failed: {}",
+                        candidate.label, error_msg
+                    ));
                     last_spawn_error = Some(error_msg);
                     // Continue to next candidate
                 }
@@ -927,9 +1008,8 @@ pub async fn run_execution(
         }
 
         // All candidates exhausted
-        let error_msg = last_spawn_error.unwrap_or_else(|| {
-            "All providers failed or have open circuit breakers".to_string()
-        });
+        let error_msg = last_spawn_error
+            .unwrap_or_else(|| "All providers failed or have open circuit breakers".to_string());
         trace.end_span_error(&spawn_engine_stage, &error_msg);
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
@@ -937,7 +1017,16 @@ pub async fn run_execution(
         logger.log(&format!("[ERROR] {error_msg}"));
         logger.close();
 
-        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "failed", Some(&execution_id), Some(&persona.name)));
+        emit_to(
+            &*emitter,
+            event_name::PROCESS_ACTIVITY,
+            &super::process_activity::ProcessActivityEvent::new(
+                "execution",
+                "failed",
+                Some(&execution_id),
+                Some(&persona.name),
+            ),
+        );
 
         emit_to(
             &*emitter,
@@ -997,7 +1086,16 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
+        emit_to(
+            &*emitter,
+            event_name::PROCESS_ACTIVITY,
+            &super::process_activity::ProcessActivityEvent::new(
+                "execution",
+                "cancelled",
+                Some(&execution_id),
+                Some(&persona.name),
+            ),
+        );
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
         emit_to(
@@ -1030,7 +1128,16 @@ pub async fn run_execution(
     }
 
     // Emit process activity: execution started
-    emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "started", Some(&execution_id), Some(&persona.name)));
+    emit_to(
+        &*emitter,
+        event_name::PROCESS_ACTIVITY,
+        &super::process_activity::ProcessActivityEvent::new(
+            "execution",
+            "started",
+            Some(&execution_id),
+            Some(&persona.name),
+        ),
+    );
 
     // Provider spawn succeeded -- record in trace
     let spawn_span = trace.start_span(
@@ -1070,7 +1177,16 @@ pub async fn run_execution(
         driver.unregister_pid(&child_pids, &execution_id).await;
         logger.close();
 
-        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", "cancelled", Some(&execution_id), Some(&persona.name)));
+        emit_to(
+            &*emitter,
+            event_name::PROCESS_ACTIVITY,
+            &super::process_activity::ProcessActivityEvent::new(
+                "execution",
+                "cancelled",
+                Some(&execution_id),
+                Some(&persona.name),
+            ),
+        );
 
         let duration_ms = start_time.elapsed().as_millis() as u64;
         emit_to(
@@ -1152,27 +1268,27 @@ pub async fn run_execution(
     // Read stderr in background (capped at 100KB to prevent OOM)
     let stderr_handle = if let Some(mut stderr_reader) = stderr_opt {
         tokio::spawn(async move {
-        const MAX_STDERR_BYTES: usize = 100 * 1024;
-        let mut buf = vec![0u8; MAX_STDERR_BYTES];
-        let mut total = 0;
-        loop {
-            match tokio::io::AsyncReadExt::read(&mut stderr_reader, &mut buf[total..]).await {
-                Ok(0) => break,
-                Ok(n) => {
-                    total += n;
-                    if total >= MAX_STDERR_BYTES {
-                        break;
+            const MAX_STDERR_BYTES: usize = 100 * 1024;
+            let mut buf = vec![0u8; MAX_STDERR_BYTES];
+            let mut total = 0;
+            loop {
+                match tokio::io::AsyncReadExt::read(&mut stderr_reader, &mut buf[total..]).await {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        total += n;
+                        if total >= MAX_STDERR_BYTES {
+                            break;
+                        }
                     }
+                    Err(_) => break,
                 }
-                Err(_) => break,
             }
-        }
-        let mut s = String::from_utf8_lossy(&buf[..total]).into_owned();
-        if total >= MAX_STDERR_BYTES {
-            s.push_str("\n... [stderr truncated at 100KB]");
-        }
-        s
-    })
+            let mut s = String::from_utf8_lossy(&buf[..total]).into_owned();
+            if total >= MAX_STDERR_BYTES {
+                s.push_str("\n... [stderr truncated at 100KB]");
+            }
+            s
+        })
     } else {
         // stderr was piped to null (Windows deadlock prevention) — return empty string
         tokio::spawn(async { String::new() })
@@ -1210,12 +1326,7 @@ pub async fn run_execution(
     let gate_config = super::quality_gate::load(&pool_for_stream);
 
     // Start stream processing span
-    let stream_span = trace.start_span(
-        SpanType::StreamProcessing,
-        "Stream Processing",
-        None,
-        None,
-    );
+    let stream_span = trace.start_span(SpanType::StreamProcessing, "Stream Processing", None, None);
 
     // Process stdout lines with timeout
     let mut last_activity = std::time::Instant::now();
@@ -1704,7 +1815,9 @@ pub async fn run_execution(
         &execution_id,
     ) {
         Ok(0) => {}
-        Ok(n) => logger.log(&format!("[hooks] captured {n} session event(s) into persona_memories")),
+        Ok(n) => logger.log(&format!(
+            "[hooks] captured {n} session event(s) into persona_memories"
+        )),
         Err(e) => logger.log(&format!("[hooks] reactor failed (non-fatal): {e}")),
     }
 
@@ -1713,11 +1826,15 @@ pub async fn run_execution(
     // every file that changed. Lets personas that write outputs through the
     // built-in Local Drive surface them on the event bus without needing a
     // dedicated `drive_write_text` MCP tool registered with the CLI.
-    if let (Some(ref drive_root), Some(before)) = (drive_root_for_sync.as_ref(), pre_drive_snapshot.as_ref()) {
+    if let (Some(ref drive_root), Some(before)) =
+        (drive_root_for_sync.as_ref(), pre_drive_snapshot.as_ref())
+    {
         let after = crate::commands::drive::snapshot_drive(drive_root);
         let emitted = crate::commands::drive::diff_and_emit_drive_events(&pool, before, &after);
         if emitted > 0 {
-            logger.log(&format!("[drive-sync] emitted {emitted} drive.document.* events from post-exec diff"));
+            logger.log(&format!(
+                "[drive-sync] emitted {emitted} drive.document.* events from post-exec diff"
+            ));
         }
     }
 
@@ -1733,7 +1850,8 @@ pub async fn run_execution(
     // dedup that would either skip recovery or duplicate across executions.
     {
         let mid_stream_events = stream_events_dispatched.load(std::sync::atomic::Ordering::Relaxed);
-        let mid_stream_memories = stream_memories_dispatched.load(std::sync::atomic::Ordering::Relaxed);
+        let mid_stream_memories =
+            stream_memories_dispatched.load(std::sync::atomic::Ordering::Relaxed);
 
         let need_events = mid_stream_events == 0;
         let need_memories = mid_stream_memories == 0;
@@ -1816,7 +1934,11 @@ pub async fn run_execution(
     };
 
     // Check outcome assessment: CLI exited 0 but task may not have been accomplished
-    let mut final_status = if success { ExecutionState::Completed } else { ExecutionState::Failed };
+    let mut final_status = if success {
+        ExecutionState::Completed
+    } else {
+        ExecutionState::Failed
+    };
     if success {
         if let Some((accomplished, ref _summary)) =
             parser::parse_outcome_assessment(&assistant_text)
@@ -1863,10 +1985,18 @@ pub async fn run_execution(
         if failover::classify_error(err).is_some() {
             let transitions = circuit_breaker.record_failure(active_engine_kind);
             for transition in &transitions {
-                emit_to(&*emitter, event_name::CIRCUIT_BREAKER_TRANSITION, transition);
+                emit_to(
+                    &*emitter,
+                    event_name::CIRCUIT_BREAKER_TRANSITION,
+                    transition,
+                );
             }
             if transitions.iter().any(|t| t.provider == "global") {
-                emit_to(&*emitter, event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED, &circuit_breaker.get_status());
+                emit_to(
+                    &*emitter,
+                    event_name::CIRCUIT_BREAKER_GLOBAL_TRIPPED,
+                    &circuit_breaker.get_status(),
+                );
             }
         }
     } else {
@@ -1916,7 +2046,16 @@ pub async fn run_execution(
     // Emit process activity: final outcome
     {
         let action = if success { "completed" } else { "failed" };
-        emit_to(&*emitter, event_name::PROCESS_ACTIVITY, &super::process_activity::ProcessActivityEvent::new("execution", action, Some(&execution_id), Some(&persona.name)));
+        emit_to(
+            &*emitter,
+            event_name::PROCESS_ACTIVITY,
+            &super::process_activity::ProcessActivityEvent::new(
+                "execution",
+                action,
+                Some(&execution_id),
+                Some(&persona.name),
+            ),
+        );
     }
 
     // Emit final status
@@ -1937,8 +2076,13 @@ pub async fn run_execution(
     // When a protocol UserMessage exists, it IS the report — the raw dump is redundant.
     // The INSERT is conditional on the execution NOT already being terminal in the DB,
     // checked atomically to avoid a race with cancel/timeout handlers.
-    let protocol_messages_sent = stream_messages_dispatched.load(std::sync::atomic::Ordering::Relaxed);
-    if success && !assistant_text.is_empty() && protocol_messages_sent == 0 && !cancelled.load(std::sync::atomic::Ordering::Acquire) {
+    let protocol_messages_sent =
+        stream_messages_dispatched.load(std::sync::atomic::Ordering::Relaxed);
+    if success
+        && !assistant_text.is_empty()
+        && protocol_messages_sent == 0
+        && !cancelled.load(std::sync::atomic::Ordering::Acquire)
+    {
         // Generate a descriptive title: use the first heading, first sentence,
         // or persona name + date range as fallback instead of generic "Execution output"
         let title = {
@@ -1949,7 +2093,11 @@ pub async fn run_execution(
                 clean.to_string()
             } else {
                 // Use persona name + date for a more descriptive fallback
-                format!("{} — {}", persona.name, chrono::Local::now().format("%b %d, %H:%M"))
+                format!(
+                    "{} — {}",
+                    persona.name,
+                    chrono::Local::now().format("%b %d, %H:%M")
+                )
             }
         };
         let content = if assistant_text.len() > 50_000 {
@@ -1978,7 +2126,11 @@ pub async fn run_execution(
 
     ExecutionResult {
         success,
-        output: if assistant_text.is_empty() { None } else { Some(assistant_text.clone()) },
+        output: if assistant_text.is_empty() {
+            None
+        } else {
+            Some(assistant_text.clone())
+        },
         error,
         session_limit_reached,
         log_file_path: Some(log_file_path),
@@ -1995,7 +2147,6 @@ pub async fn run_execution(
         log_truncated,
     }
 }
-
 
 #[cfg(test)]
 mod tests {

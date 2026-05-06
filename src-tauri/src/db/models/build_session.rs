@@ -40,7 +40,10 @@ impl BuildPhase {
     }
 
     pub fn is_terminal(&self) -> bool {
-        matches!(self, Self::Completed | Self::Failed | Self::Cancelled | Self::Promoted)
+        matches!(
+            self,
+            Self::Completed | Self::Failed | Self::Cancelled | Self::Promoted
+        )
     }
 
     /// Parse a phase string (as stored in SQLite) back into a `BuildPhase`.
@@ -71,7 +74,10 @@ impl BuildPhase {
 
         let allowed = match self {
             Self::Initializing => matches!(next, Self::Analyzing),
-            Self::Analyzing => matches!(next, Self::Resolving | Self::AwaitingInput | Self::DraftReady),
+            Self::Analyzing => matches!(
+                next,
+                Self::Resolving | Self::AwaitingInput | Self::DraftReady
+            ),
             Self::AwaitingInput => matches!(next, Self::Resolving),
             Self::Resolving => matches!(next, Self::AwaitingInput | Self::DraftReady),
             Self::DraftReady => matches!(next, Self::Testing | Self::Resolving | Self::Promoted),
@@ -157,7 +163,6 @@ pub enum BuildEvent {
     // existing 3×3 matrix UI keeps rendering during the migration window
     // (§3.8 + §4.5 of C4-build-from-scratch-v3-handoff.md).
     // ------------------------------------------------------------------
-
     /// Phase A output: persona behavior core (mission + identity + voice +
     /// principles + constraints + decision_principles + verbosity_default).
     BehaviorCoreUpdate {

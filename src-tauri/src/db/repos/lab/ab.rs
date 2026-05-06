@@ -1,6 +1,8 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateAbResultInput, LabAbResult, LabAbRun, LabRunStatus, row_to_lab_result_base};
+use crate::db::models::{
+    row_to_lab_result_base, CreateAbResultInput, LabAbResult, LabAbRun, LabRunStatus,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -91,10 +93,7 @@ pub fn update_llm_summary(pool: &DbPool, id: &str, llm_summary: &str) -> Result<
     })
 }
 
-pub fn create_result(
-    pool: &DbPool,
-    input: &CreateAbResultInput,
-) -> Result<LabAbResult, AppError> {
+pub fn create_result(pool: &DbPool, input: &CreateAbResultInput) -> Result<LabAbResult, AppError> {
     timed_query!("lab_ab_results", "lab_ab_results::create_result", {
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();

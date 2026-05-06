@@ -40,7 +40,7 @@ use std::time::Duration;
 
 use app_lib::daemon::lock::{DaemonLock, LockError, TriggerKind, HEARTBEAT_INTERVAL};
 use app_lib::daemon::runtime;
-use app_lib::daemon::{SchedulerState, ProviderCircuitBreaker};
+use app_lib::daemon::{ProviderCircuitBreaker, SchedulerState};
 use tokio::sync::{mpsc, Mutex};
 
 /// Exit codes — stable so the future Task Scheduler install script can
@@ -93,7 +93,10 @@ async fn main() -> ExitCode {
     let app_data_dir = match db_path.parent() {
         Some(p) => p.to_path_buf(),
         None => {
-            eprintln!("Database path has no parent directory: {}", db_path.display());
+            eprintln!(
+                "Database path has no parent directory: {}",
+                db_path.display()
+            );
             return ExitCode::from(EXIT_BAD_ARGS);
         }
     };
@@ -395,8 +398,7 @@ mod tests {
 
     #[test]
     fn parse_args_rejects_missing_value() {
-        let err = parse_args(vec!["personas-daemon".into(), "--db-path".into()])
-            .unwrap_err();
+        let err = parse_args(vec!["personas-daemon".into(), "--db-path".into()]).unwrap_err();
         assert!(err.contains("requires a value"));
     }
 }

@@ -1,5 +1,8 @@
 use super::cli_runner::truncate_utf8;
-use super::prompt_sanitizer::{sanitize_workflow_name, sanitize_json_payload, sanitize_free_text, wrap_xml_boundary, canary_instruction};
+use super::prompt_sanitizer::{
+    canary_instruction, sanitize_free_text, sanitize_json_payload, sanitize_workflow_name,
+    wrap_xml_boundary,
+};
 use crate::engine::platform_rules;
 
 /// Wraps a persona-generation prompt with section-delimited output instructions.
@@ -328,7 +331,10 @@ pub fn build_n8n_transform_prompt(
         .filter(|a| !a.trim().is_empty())
         .map(|a| {
             let sanitized = sanitize_free_text(a);
-            format!("\nUser adjustment request:\n{}\n", wrap_xml_boundary("adjustment_request", &sanitized))
+            format!(
+                "\nUser adjustment request:\n{}\n",
+                wrap_xml_boundary("adjustment_request", &sanitized)
+            )
         })
         .unwrap_or_default();
 
@@ -336,7 +342,10 @@ pub fn build_n8n_transform_prompt(
         .filter(|d| !d.trim().is_empty())
         .map(|d| {
             let sanitized = sanitize_json_payload(d);
-            format!("\nPrevious draft JSON to refine:\n{}\n", wrap_xml_boundary("previous_draft", &sanitized))
+            format!(
+                "\nPrevious draft JSON to refine:\n{}\n",
+                wrap_xml_boundary("previous_draft", &sanitized)
+            )
         })
         .unwrap_or_default();
 

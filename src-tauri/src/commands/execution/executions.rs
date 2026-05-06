@@ -10,12 +10,17 @@ use crate::engine::automation_runner::automation_to_virtual_tool;
 use crate::engine::failover::CircuitBreakerStatus;
 use crate::engine::scheduler as sched_logic;
 use crate::error::AppError;
-use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged, require_privileged_sync};
+use crate::ipc_auth::{
+    require_auth, require_auth_sync, require_privileged, require_privileged_sync,
+};
 use crate::validation::safe_resolve_log_path;
 use crate::AppState;
 
 /// Verify that the execution belongs to the expected persona.
-fn verify_execution_owner(exec: &PersonaExecution, caller_persona_id: &str) -> Result<(), AppError> {
+fn verify_execution_owner(
+    exec: &PersonaExecution,
+    caller_persona_id: &str,
+) -> Result<(), AppError> {
     if exec.persona_id != caller_persona_id {
         return Err(AppError::Auth(
             "Execution does not belong to the specified persona".into(),
@@ -80,7 +85,14 @@ pub fn create_execution(
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     require_privileged_sync(&state, "create_execution")?;
-    repo::create(&state.db, &persona_id, trigger_id, input_data, model_used, use_case_id)
+    repo::create(
+        &state.db,
+        &persona_id,
+        trigger_id,
+        input_data,
+        model_used,
+        use_case_id,
+    )
 }
 
 /// Start a persona execution: create record, spawn Claude CLI, stream output.
@@ -171,7 +183,10 @@ pub(crate) async fn execute_persona_inner(
             AppError::Validation(format!("design_context is not valid JSON: {}", e))
         })?;
         let use_case = crate::engine::design_context::pick_use_cases_array(&dc)
-            .and_then(|arr| arr.iter().find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id)))
+            .and_then(|arr| {
+                arr.iter()
+                    .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id))
+            })
             .cloned()
             .ok_or_else(|| {
                 AppError::Validation(format!(
@@ -182,9 +197,7 @@ pub(crate) async fn execute_persona_inner(
 
         // Simulations deliberately bypass the enable gate so users can test
         // a disabled capability before activating it. Real executions reject.
-        if !is_simulation
-            && use_case.get("enabled").and_then(|v| v.as_bool()) == Some(false)
-        {
+        if !is_simulation && use_case.get("enabled").and_then(|v| v.as_bool()) == Some(false) {
             return Err(AppError::Validation(format!(
                 "Capability '{}' is disabled on persona '{}'",
                 uc_id, persona.name
@@ -200,7 +213,9 @@ pub(crate) async fn execute_persona_inner(
             .and_then(|v| v.as_object().cloned())
             .unwrap_or_default();
 
-        merged.entry("_use_case".to_string()).or_insert_with(|| use_case.clone());
+        merged
+            .entry("_use_case".to_string())
+            .or_insert_with(|| use_case.clone());
         if let Some(tf) = use_case.get("time_filter").cloned() {
             merged.entry("_time_filter".to_string()).or_insert(tf);
         }
@@ -218,10 +233,8 @@ pub(crate) async fn execute_persona_inner(
     // 2. Check budget limit (concurrency is handled by the engine's queue)
     if let Some(budget) = persona.max_budget_usd {
         if budget > 0.0 {
-            let monthly_spend = crate::db::repos::execution::executions::get_monthly_spend(
-                &state.db,
-                &persona_id,
-            )?;
+            let monthly_spend =
+                crate::db::repos::execution::executions::get_monthly_spend(&state.db, &persona_id)?;
             if monthly_spend >= budget {
                 pipeline.fail_stage("budget limit exceeded");
                 return Err(AppError::Validation(format!(
@@ -233,9 +246,8 @@ pub(crate) async fn execute_persona_inner(
     }
 
     // 3. Parse model from profile
-    let model_used =
-        crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
-            .and_then(|mp| mp.model);
+    let model_used = crate::engine::prompt::parse_model_profile(persona.model_profile.as_deref())
+        .and_then(|mp| mp.model);
 
     // -- Stage: CreateRecord ------------------------------------------
     pipeline.enter_stage(PipelineStage::CreateRecord);
@@ -330,7 +342,11 @@ pub(crate) async fn execute_persona_inner(
                 .as_deref()
                 .unwrap_or("")
                 .hash(&mut hasher);
-            persona.model_profile.as_deref().unwrap_or("").hash(&mut hasher);
+            persona
+                .model_profile
+                .as_deref()
+                .unwrap_or("")
+                .hash(&mut hasher);
             tools.len().hash(&mut hasher);
             crate::engine::prompt::active_capabilities_fingerprint(
                 persona.design_context.as_deref(),
@@ -341,7 +357,9 @@ pub(crate) async fn execute_persona_inner(
         match state.session_pool.take(&persona_id, config_hash).await {
             Some(session_id) => {
                 tracing::info!(persona_id = %persona_id, "Warm session reuse from pool");
-                Some(crate::engine::types::Continuation::SessionResume(session_id))
+                Some(crate::engine::types::Continuation::SessionResume(
+                    session_id,
+                ))
             }
             None => None,
         }
@@ -487,7 +505,8 @@ pub fn get_execution_log_lines(
                 .lines()
                 .filter_map(|l| l.ok())
                 .filter_map(|line| {
-                    line.find("[STDOUT] ").map(|pos| line[pos + 9..].to_string())
+                    line.find("[STDOUT] ")
+                        .map(|pos| line[pos + 9..].to_string())
                 })
                 .skip(skip)
                 .take(max_lines)
@@ -555,7 +574,8 @@ pub fn get_chain_trace(
     caller_persona_id: String,
 ) -> Result<Vec<crate::engine::trace::ExecutionTrace>, AppError> {
     require_auth_sync(&state)?;
-    let traces = crate::db::repos::execution::traces::get_by_chain_trace_id(&state.db, &chain_trace_id)?;
+    let traces =
+        crate::db::repos::execution::traces::get_by_chain_trace_id(&state.db, &chain_trace_id)?;
     // Filter to only traces owned by the caller's persona
     let owned: Vec<_> = traces
         .into_iter()
@@ -626,9 +646,9 @@ pub fn preview_execution(
         .unwrap_or_else(|| "claude-sonnet-4-20250514".to_string());
 
     // Monthly spend
-    let monthly_spend = crate::db::repos::execution::executions::get_monthly_spend(
-        &state.db, &persona_id,
-    ).unwrap_or(0.0);
+    let monthly_spend =
+        crate::db::repos::execution::executions::get_monthly_spend(&state.db, &persona_id)
+            .unwrap_or(0.0);
     let budget_limit = persona.max_budget_usd.unwrap_or(0.0);
 
     Ok(crate::engine::cost::build_preview(
@@ -650,13 +670,11 @@ pub fn preview_execution(
 /// Each section is best-effort — failures are silently omitted so the advisory
 /// prompt still works with partial context.
 fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_json::Value {
+    use crate::db::repos::core::memories as memory_repo;
     use crate::db::repos::execution::{
-        assertions as assertion_repo,
-        executions as exec_repo,
-        knowledge as knowledge_repo,
+        assertions as assertion_repo, executions as exec_repo, knowledge as knowledge_repo,
         metrics as metrics_repo,
     };
-    use crate::db::repos::core::memories as memory_repo;
 
     let mut ctx = serde_json::Map::new();
 
@@ -668,35 +686,48 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
         } else {
             0.0
         };
-        ctx.insert("execution_metrics".into(), serde_json::json!({
-            "period_days": 30,
-            "total": total,
-            "successful": metrics.successful_executions,
-            "failed": metrics.failed_executions,
-            "success_rate_pct": success_rate,
-            "total_cost_usd": (metrics.total_cost_usd * 10000.0).round() / 10000.0,
-        }));
+        ctx.insert(
+            "execution_metrics".into(),
+            serde_json::json!({
+                "period_days": 30,
+                "total": total,
+                "successful": metrics.successful_executions,
+                "failed": metrics.failed_executions,
+                "success_rate_pct": success_rate,
+                "total_cost_usd": (metrics.total_cost_usd * 10000.0).round() / 10000.0,
+            }),
+        );
     }
 
     // 2. Recent executions (last 10) — status, duration, cost, error summaries
     if let Ok(recent) = exec_repo::get_by_persona_id(pool, persona_id, Some(10)) {
-        let exec_summaries: Vec<serde_json::Value> = recent.iter().map(|e| {
-            let mut obj = serde_json::json!({
-                "status": e.status,
-                "started_at": e.started_at,
-                "cost_usd": (e.cost_usd * 10000.0).round() / 10000.0,
-            });
-            if let Some(dur) = e.duration_ms {
-                obj["duration_ms"] = serde_json::json!(dur);
-            }
-            if let Some(ref err) = e.error_message {
-                // Truncate error to keep context compact
-                let truncated = if err.len() > 200 { &err[..200] } else { err.as_str() };
-                obj["error"] = serde_json::json!(truncated);
-            }
-            obj
-        }).collect();
-        ctx.insert("recent_executions".into(), serde_json::json!(exec_summaries));
+        let exec_summaries: Vec<serde_json::Value> = recent
+            .iter()
+            .map(|e| {
+                let mut obj = serde_json::json!({
+                    "status": e.status,
+                    "started_at": e.started_at,
+                    "cost_usd": (e.cost_usd * 10000.0).round() / 10000.0,
+                });
+                if let Some(dur) = e.duration_ms {
+                    obj["duration_ms"] = serde_json::json!(dur);
+                }
+                if let Some(ref err) = e.error_message {
+                    // Truncate error to keep context compact
+                    let truncated = if err.len() > 200 {
+                        &err[..200]
+                    } else {
+                        err.as_str()
+                    };
+                    obj["error"] = serde_json::json!(truncated);
+                }
+                obj
+            })
+            .collect();
+        ctx.insert(
+            "recent_executions".into(),
+            serde_json::json!(exec_summaries),
+        );
     }
 
     // 3. Consecutive failure streak
@@ -717,15 +748,20 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
         });
         // Include top patterns with confidence
         if !kg.top_patterns.is_empty() {
-            let patterns: Vec<serde_json::Value> = kg.top_patterns.iter().take(5).map(|p| {
-                serde_json::json!({
-                    "type": p.knowledge_type,
-                    "key": p.pattern_key,
-                    "confidence": (p.confidence * 100.0).round() / 100.0,
-                    "successes": p.success_count,
-                    "failures": p.failure_count,
+            let patterns: Vec<serde_json::Value> = kg
+                .top_patterns
+                .iter()
+                .take(5)
+                .map(|p| {
+                    serde_json::json!({
+                        "type": p.knowledge_type,
+                        "key": p.pattern_key,
+                        "confidence": (p.confidence * 100.0).round() / 100.0,
+                        "successes": p.success_count,
+                        "failures": p.failure_count,
+                    })
                 })
-            }).collect();
+                .collect();
             kg_obj["top_patterns"] = serde_json::json!(patterns);
         }
         ctx.insert("knowledge_graph".into(), kg_obj);
@@ -734,23 +770,26 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
     // 5. Assertions summary — pass/fail counts per rule
     if let Ok(assertions) = assertion_repo::list_by_persona(pool, persona_id) {
         if !assertions.is_empty() {
-            let assertion_summaries: Vec<serde_json::Value> = assertions.iter().map(|a| {
-                let total = a.pass_count + a.fail_count;
-                let pass_rate = if total > 0 {
-                    (a.pass_count as f64 / total as f64 * 100.0).round()
-                } else {
-                    0.0
-                };
-                serde_json::json!({
-                    "name": a.name,
-                    "type": a.assertion_type,
-                    "severity": a.severity,
-                    "enabled": a.enabled,
-                    "pass_count": a.pass_count,
-                    "fail_count": a.fail_count,
-                    "pass_rate_pct": pass_rate,
+            let assertion_summaries: Vec<serde_json::Value> = assertions
+                .iter()
+                .map(|a| {
+                    let total = a.pass_count + a.fail_count;
+                    let pass_rate = if total > 0 {
+                        (a.pass_count as f64 / total as f64 * 100.0).round()
+                    } else {
+                        0.0
+                    };
+                    serde_json::json!({
+                        "name": a.name,
+                        "type": a.assertion_type,
+                        "severity": a.severity,
+                        "enabled": a.enabled,
+                        "pass_count": a.pass_count,
+                        "fail_count": a.fail_count,
+                        "pass_rate_pct": pass_rate,
+                    })
                 })
-            }).collect();
+                .collect();
             ctx.insert("assertions".into(), serde_json::json!(assertion_summaries));
         }
     }
@@ -761,7 +800,8 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
             let mut core_count = 0u32;
             let mut active_count = 0u32;
             let mut archive_count = 0u32;
-            let mut by_category: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+            let mut by_category: std::collections::HashMap<String, u32> =
+                std::collections::HashMap::new();
             for m in &memories {
                 match m.tier.as_str() {
                     "core" => core_count += 1,
@@ -770,13 +810,16 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
                 }
                 *by_category.entry(m.category.clone()).or_default() += 1;
             }
-            ctx.insert("memory_state".into(), serde_json::json!({
-                "total": memories.len(),
-                "core": core_count,
-                "active": active_count,
-                "archive": archive_count,
-                "by_category": by_category,
-            }));
+            ctx.insert(
+                "memory_state".into(),
+                serde_json::json!({
+                    "total": memories.len(),
+                    "core": core_count,
+                    "active": active_count,
+                    "archive": archive_count,
+                    "by_category": by_category,
+                }),
+            );
         }
     }
 

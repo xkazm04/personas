@@ -1,8 +1,9 @@
 import { FileCode2, FileJson } from 'lucide-react';
+import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
 
-// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
-export const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-export const MAX_PASTE_LENGTH = 5 * 1024 * 1024; // 5MB text
+// Single source of truth: src-tauri/src/commands/design/n8n_limits.rs
+export const MAX_FILE_SIZE = MAX_WORKFLOW_JSON_BYTES;
+export const MAX_PASTE_LENGTH = MAX_WORKFLOW_JSON_BYTES;
 
 export type ImportMode = 'file' | 'paste' | 'url';
 

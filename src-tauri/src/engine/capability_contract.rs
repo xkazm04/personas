@@ -29,9 +29,7 @@ use ts_rs::TS;
 
 use crate::db::models::{PersonaAutomation, PersonaToolDefinition, PersonaTrigger};
 use crate::db::repos::core::personas as persona_repo;
-use crate::db::repos::resources::{
-    connectors as connector_repo, credentials as cred_repo,
-};
+use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -77,16 +75,28 @@ impl Requirement {
     #[allow(dead_code)]
     pub fn summary(&self) -> String {
         match self {
-            Self::Credential { service_type, needed_by } => {
+            Self::Credential {
+                service_type,
+                needed_by,
+            } => {
                 format!("Credential '{service_type}' required by {needed_by}")
             }
-            Self::Connector { connector_name, needed_by } => {
+            Self::Connector {
+                connector_name,
+                needed_by,
+            } => {
                 format!("Connector '{connector_name}' required by {needed_by}")
             }
-            Self::Persona { persona_id, needed_by } => {
+            Self::Persona {
+                persona_id,
+                needed_by,
+            } => {
                 format!("Persona '{persona_id}' required by {needed_by}")
             }
-            Self::Automation { automation_id, needed_by } => {
+            Self::Automation {
+                automation_id,
+                needed_by,
+            } => {
                 format!("Automation '{automation_id}' required by {needed_by}")
             }
         }
@@ -360,8 +370,12 @@ mod tests {
         ];
         deduplicate(&mut reqs);
         assert_eq!(reqs.len(), 2);
-        assert!(matches!(&reqs[0], Requirement::Credential { service_type, .. } if service_type == "notion"));
-        assert!(matches!(&reqs[1], Requirement::Credential { service_type, .. } if service_type == "slack"));
+        assert!(
+            matches!(&reqs[0], Requirement::Credential { service_type, .. } if service_type == "notion")
+        );
+        assert!(
+            matches!(&reqs[1], Requirement::Credential { service_type, .. } if service_type == "slack")
+        );
     }
 
     #[test]
@@ -393,7 +407,9 @@ mod tests {
         };
         let reqs = collect_tool_requirements(&[tool]);
         assert_eq!(reqs.len(), 1);
-        assert!(matches!(&reqs[0], Requirement::Credential { service_type, .. } if service_type == "notion"));
+        assert!(
+            matches!(&reqs[0], Requirement::Credential { service_type, .. } if service_type == "notion")
+        );
     }
 
     #[test]
@@ -434,6 +450,8 @@ mod tests {
         };
         let reqs = collect_tool_requirements(&[tool]);
         assert_eq!(reqs.len(), 1);
-        assert!(matches!(&reqs[0], Requirement::Automation { automation_id, .. } if automation_id == "aut-abc123"));
+        assert!(
+            matches!(&reqs[0], Requirement::Automation { automation_id, .. } if automation_id == "aut-abc123")
+        );
     }
 }

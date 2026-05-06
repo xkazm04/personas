@@ -9,8 +9,8 @@ use tauri::State;
 use tauri::AppHandle;
 
 use crate::db::models::{
-    CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput,
-    EventFilterInput, PaginatedEvents, PersonaEvent, PersonaEventStatus, PersonaEventSubscription,
+    CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput, EventFilterInput,
+    PaginatedEvents, PersonaEvent, PersonaEventStatus, PersonaEventSubscription,
     UpdateEventSubscriptionInput,
 };
 use crate::db::repos::communication::events as repo;
@@ -38,12 +38,10 @@ pub fn list_events_in_range(
     limit: Option<i64>,
 ) -> Result<PaginatedEvents, AppError> {
     require_auth_sync(&state)?;
-    DateTime::parse_from_rfc3339(&since).map_err(|e| {
-        AppError::Validation(format!("'since' is not a valid RFC3339 date: {e}"))
-    })?;
-    DateTime::parse_from_rfc3339(&until).map_err(|e| {
-        AppError::Validation(format!("'until' is not a valid RFC3339 date: {e}"))
-    })?;
+    DateTime::parse_from_rfc3339(&since)
+        .map_err(|e| AppError::Validation(format!("'since' is not a valid RFC3339 date: {e}")))?;
+    DateTime::parse_from_rfc3339(&until)
+        .map_err(|e| AppError::Validation(format!("'until' is not a valid RFC3339 date: {e}")))?;
     let (events, has_more) = repo::get_in_range(&state.db, &since, &until, limit)?;
     Ok(PaginatedEvents { events, has_more })
 }
@@ -65,9 +63,17 @@ pub fn publish_event(
     input: CreatePersonaEventInput,
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
-    let event_source_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).event_source_max;
+    let event_source_max = state
+        .tier_config
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .event_source_max;
     let rate_key = format!("event:{}", input.source_type);
-    if let Err(retry_after) = state.rate_limiter.check(&rate_key, event_source_max, EVENT_SOURCE_WINDOW) {
+    if let Err(retry_after) =
+        state
+            .rate_limiter
+            .check(&rate_key, event_source_max, EVENT_SOURCE_WINDOW)
+    {
         return Err(AppError::RateLimited(format!(
             "Event source '{}' exceeded {} events/minute. Retry after {}s",
             input.source_type, event_source_max, retry_after
@@ -130,10 +136,7 @@ pub fn update_subscription(
 }
 
 #[tauri::command]
-pub fn delete_subscription(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_subscription(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_subscription(&state.db, &id)
 }
@@ -146,8 +149,16 @@ pub fn test_event_flow(
     payload: Option<String>,
 ) -> Result<PersonaEvent, AppError> {
     require_auth_sync(&state)?;
-    let event_source_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).event_source_max;
-    if let Err(retry_after) = state.rate_limiter.check("event:test", event_source_max, EVENT_SOURCE_WINDOW) {
+    let event_source_max = state
+        .tier_config
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .event_source_max;
+    if let Err(retry_after) =
+        state
+            .rate_limiter
+            .check("event:test", event_source_max, EVENT_SOURCE_WINDOW)
+    {
         return Err(AppError::RateLimited(format!(
             "Test event flow exceeded {} events/minute. Retry after {}s",
             event_source_max, retry_after
@@ -180,9 +191,7 @@ pub fn list_dead_letter_events(
 }
 
 #[tauri::command]
-pub fn count_dead_letter_events(
-    state: State<'_, Arc<AppState>>,
-) -> Result<i64, AppError> {
+pub fn count_dead_letter_events(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::count_dead_letter(&state.db)
 }
@@ -209,6 +218,33 @@ pub fn discard_dead_letter_event(
     Ok(true)
 }
 
+/// Configuration values the dead-letter UI needs to mirror exactly.
+///
+/// Exposed as a runtime ts-rs binding so the frontend never hardcodes a
+/// number that can drift from the Rust source of truth — drift previously
+/// caused either "Retry" buttons that lied (UI says exhausted while
+/// backend still allows) or buttons that produced `RetryExhausted`
+/// errors after click. Add fields here as more dead-letter knobs become
+/// frontend-visible.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DeadLetterConfig {
+    /// Maximum number of *manual* retries from the DLQ. Mirrors
+    /// `repo::MAX_MANUAL_RETRIES`.
+    pub max_manual_retries: i32,
+}
+
+#[tauri::command]
+pub fn get_dead_letter_config(
+    state: State<'_, Arc<AppState>>,
+) -> Result<DeadLetterConfig, AppError> {
+    require_auth_sync(&state)?;
+    Ok(DeadLetterConfig {
+        max_manual_retries: repo::MAX_MANUAL_RETRIES,
+    })
+}
+
 // -- Dev seed: mock event -------------------------------------------------------
 
 #[tauri::command]
@@ -229,7 +265,8 @@ pub fn seed_mock_event(
         "mock": true,
         "timestamp": now,
         "detail": format!("Mock {} event from {}", tpl.event_type, tpl.source),
-    }).to_string();
+    })
+    .to_string();
 
     // Route through publish() to ensure validation and encryption are applied,
     // keeping mock events structurally identical to production events.

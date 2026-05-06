@@ -6,9 +6,7 @@ use rusqlite::params;
 use tauri::{AppHandle, Emitter, State};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::db::models::{
-    KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult,
-};
+use crate::db::models::{KbDocument, KbSearchQuery, KnowledgeBase, VectorSearchResult};
 use crate::db::repos::resources::audit_log;
 use crate::db::{DbPool, UserDbPool};
 use crate::engine::event_registry::event_name;
@@ -96,14 +94,23 @@ pub async fn create_knowledge_base(
             let _ = conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![id]);
         }
         if let Ok(conn) = state.db.get() {
-            let _ = conn.execute("DELETE FROM persona_credentials WHERE id = ?1", params![credential_id]);
+            let _ = conn.execute(
+                "DELETE FROM persona_credentials WHERE id = ?1",
+                params![credential_id],
+            );
         }
         return Err(e);
     }
 
     let kb = kb_ingest::get_kb(&state.user_db, &id)?;
 
-    audit_log::insert_warn(&state.db, &credential_id, &name, "kb_create", Some(&format!("model={model_name}, dims={dims}")));
+    audit_log::insert_warn(
+        &state.db,
+        &credential_id,
+        &name,
+        "kb_create",
+        Some(&format!("model={model_name}, dims={dims}")),
+    );
 
     Ok(kb)
 }
@@ -241,17 +248,10 @@ const SENSITIVE_FILE_NAMES: &[&str] = &[
 ];
 
 #[cfg(target_os = "windows")]
-const SENSITIVE_PREFIXES: &[&str] = &[
-    "C:\\Windows\\",
-    "C:\\ProgramData\\",
-];
+const SENSITIVE_PREFIXES: &[&str] = &["C:\\Windows\\", "C:\\ProgramData\\"];
 
 #[cfg(not(target_os = "windows"))]
-const SENSITIVE_PREFIXES: &[&str] = &[
-    "/etc/",
-    "/var/",
-    "/private/etc/",
-];
+const SENSITIVE_PREFIXES: &[&str] = &["/etc/", "/var/", "/private/etc/"];
 
 /// Reject paths that point to known sensitive files or system directories.
 fn validate_path_safety(path: &str) -> Result<(), AppError> {
@@ -288,7 +288,10 @@ fn validate_path_safety(path: &str) -> Result<(), AppError> {
     }
 
     // Block sensitive file names
-    if let Some(file_name) = std::path::Path::new(path).file_name().and_then(|f| f.to_str()) {
+    if let Some(file_name) = std::path::Path::new(path)
+        .file_name()
+        .and_then(|f| f.to_str())
+    {
         let file_lower = file_name.to_lowercase();
         for sensitive in SENSITIVE_FILE_NAMES {
             if file_lower == sensitive.to_lowercase() {
@@ -321,10 +324,13 @@ pub async fn kb_pick_files(
             .dialog()
             .file()
             .set_title("Select files to ingest")
-            .add_filter("Supported Files", &[
-                "txt", "md", "html", "htm", "csv", "json", "yaml", "yml",
-                "toml", "log", "rs", "py", "js", "ts", "tsx", "jsx",
-            ])
+            .add_filter(
+                "Supported Files",
+                &[
+                    "txt", "md", "html", "htm", "csv", "json", "yaml", "yml", "toml", "log", "rs",
+                    "py", "js", "ts", "tsx", "jsx",
+                ],
+            )
             .blocking_pick_files()
     })
     .await
@@ -541,9 +547,7 @@ pub async fn kb_ingest_directory(
     let canonical_dir = std::fs::canonicalize(&dir_path)
         .map_err(|_| AppError::Validation(format!("Invalid directory path: {dir_path}")))?;
     if !canonical_dir.is_dir() {
-        return Err(AppError::Validation(format!(
-            "Not a directory: {dir_path}"
-        )));
+        return Err(AppError::Validation(format!("Not a directory: {dir_path}")));
     }
     validate_path_safety(&canonical_dir.to_string_lossy())?;
 
@@ -558,12 +562,22 @@ pub async fn kb_ingest_directory(
     } else {
         patterns
             .iter()
-            .map(|p| p.trim_start_matches("*.").trim_start_matches('.').to_string())
+            .map(|p| {
+                p.trim_start_matches("*.")
+                    .trim_start_matches('.')
+                    .to_string()
+            })
             .collect()
     };
 
     let mut file_paths = Vec::new();
-    collect_files_recursive(&canonical_dir, &allowed_exts, &mut file_paths, 0, &canonical_dir)?;
+    collect_files_recursive(
+        &canonical_dir,
+        &allowed_exts,
+        &mut file_paths,
+        0,
+        &canonical_dir,
+    )?;
 
     if file_paths.is_empty() {
         return Err(AppError::Validation(
@@ -665,7 +679,13 @@ pub async fn kb_search(
     let top_k = query.top_k.unwrap_or(10).min(MAX_TOP_K);
 
     // Audit log the search (log query length, not raw text)
-    audit_log::insert_warn(&state.db, &format!("kb:{}", query.kb_id), &query.kb_id, "kb_search", Some(&format!("query_len={}, top_k={top_k}", query.query.len())));
+    audit_log::insert_warn(
+        &state.db,
+        &format!("kb:{}", query.kb_id),
+        &query.kb_id,
+        "kb_search",
+        Some(&format!("query_len={}, top_k={top_k}", query.query.len())),
+    );
 
     // Embed the query
     let query_vec = embedder.embed_query(&query.query).await?;
@@ -674,7 +694,9 @@ pub async fn kb_search(
     // ranking is canonical — `score`/`distance` per chunk are unchanged. Only
     // the result ordering (and which chunks fall outside the top_k cut) can
     // shift relative to pure-vector behavior.
-    let pool_size = top_k.saturating_mul(RERANK_OVERFETCH).clamp(top_k, MAX_TOP_K);
+    let pool_size = top_k
+        .saturating_mul(RERANK_OVERFETCH)
+        .clamp(top_k, MAX_TOP_K);
     let mut matches = vector_store.search(&query.kb_id, &query_vec, pool_size)?;
 
     if matches.is_empty() {
@@ -699,26 +721,27 @@ pub async fn kb_search(
         if !chunk_ids_json.is_empty() {
             let fts_ranks: std::collections::HashMap<String, usize> = match state.user_db.get() {
                 Ok(conn) => {
-                    let result: Result<std::collections::HashMap<String, usize>, rusqlite::Error> = (|| {
-                        let mut stmt = conn.prepare_cached(
-                            "SELECT c.id
+                    let result: Result<std::collections::HashMap<String, usize>, rusqlite::Error> =
+                        (|| {
+                            let mut stmt = conn.prepare_cached(
+                                "SELECT c.id
                              FROM kb_chunks_fts f
                              JOIN kb_chunks c ON c.rowid = f.rowid
                              WHERE f.content MATCH ?1
                                AND c.kb_id = ?2
                                AND c.id IN (SELECT value FROM json_each(?3))
                              ORDER BY bm25(kb_chunks_fts) ASC",
-                        )?;
-                        let mut map = std::collections::HashMap::new();
-                        let rows = stmt.query_map(
-                            params![fts_query, query.kb_id, chunk_ids_json],
-                            |row| row.get::<_, String>(0),
-                        )?;
-                        for (i, row) in rows.flatten().enumerate() {
-                            map.insert(row, i + 1);
-                        }
-                        Ok(map)
-                    })();
+                            )?;
+                            let mut map = std::collections::HashMap::new();
+                            let rows = stmt.query_map(
+                                params![fts_query, query.kb_id, chunk_ids_json],
+                                |row| row.get::<_, String>(0),
+                            )?;
+                            for (i, row) in rows.flatten().enumerate() {
+                                map.insert(row, i + 1);
+                            }
+                            Ok(map)
+                        })();
                     match result {
                         Ok(map) => map,
                         Err(e) => {
@@ -772,7 +795,10 @@ pub async fn kb_search(
     let conn = state.user_db.get()?;
 
     let chunk_ids_json = serde_json::to_string(
-        &matches.iter().map(|(id, _)| id.as_str()).collect::<Vec<_>>(),
+        &matches
+            .iter()
+            .map(|(id, _)| id.as_str())
+            .collect::<Vec<_>>(),
     )
     .map_err(|e| AppError::Internal(format!("Failed to serialize chunk IDs: {e}")))?;
 
@@ -797,8 +823,10 @@ pub async fn kb_search(
 
     // Collect hydrated rows keyed by chunk_id
     #[allow(clippy::type_complexity)]
-    let mut hydrated: std::collections::HashMap<String, (String, String, Option<String>, String, Option<String>)> =
-        std::collections::HashMap::with_capacity(matches.len());
+    let mut hydrated: std::collections::HashMap<
+        String,
+        (String, String, Option<String>, String, Option<String>),
+    > = std::collections::HashMap::with_capacity(matches.len());
     for (cid, doc_id, content, meta_json, doc_title, source_path) in rows.flatten() {
         hydrated.insert(cid, (doc_id, content, meta_json, doc_title, source_path));
     }
@@ -806,7 +834,8 @@ pub async fn kb_search(
     // Rebuild results in original vector-search ranking order
     let mut results = Vec::with_capacity(matches.len());
     for (chunk_id, distance) in &matches {
-        let Some((doc_id, content, meta_json, doc_title, source_path)) = hydrated.remove(chunk_id) else {
+        let Some((doc_id, content, meta_json, doc_title, source_path)) = hydrated.remove(chunk_id)
+        else {
             continue;
         };
 
@@ -919,7 +948,13 @@ pub async fn kb_delete_document(
 
     tx.commit()?;
 
-    audit_log::insert_warn(&state.db, &format!("kb:{kb_id}"), &kb_id, "kb_doc_delete", Some(&format!("doc={document_id}, chunks={}", chunk_ids.len())));
+    audit_log::insert_warn(
+        &state.db,
+        &format!("kb:{kb_id}"),
+        &kb_id,
+        "kb_doc_delete",
+        Some(&format!("doc={document_id}, chunks={}", chunk_ids.len())),
+    );
 
     Ok(())
 }
@@ -947,9 +982,7 @@ pub fn reconcile_orphaned_kb_records(
     // Case 1: KB rows in user_db without a matching credential in main db
     if let Ok(user_conn) = user_db.get() {
         let kb_rows: Vec<(String, String)> = (|| -> Result<Vec<_>, rusqlite::Error> {
-            let mut stmt = user_conn.prepare(
-                "SELECT id, credential_id FROM knowledge_bases",
-            )?;
+            let mut stmt = user_conn.prepare("SELECT id, credential_id FROM knowledge_bases")?;
             let rows = stmt
                 .query_map([], |row| {
                     Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
@@ -961,9 +994,9 @@ pub fn reconcile_orphaned_kb_records(
 
         for (kb_id, cred_id) in &kb_rows {
             let cred_exists = (|| -> Result<bool, rusqlite::Error> {
-                let conn = db.get().map_err(|e| {
-                    rusqlite::Error::InvalidParameterName(e.to_string())
-                })?;
+                let conn = db
+                    .get()
+                    .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
                 let count: i64 = conn.query_row(
                     "SELECT COUNT(*) FROM persona_credentials WHERE id = ?1",
                     params![cred_id],
@@ -981,8 +1014,10 @@ pub fn reconcile_orphaned_kb_records(
                 );
                 let _ = vector_store.drop_index(kb_id);
                 let _ = user_conn.execute("DELETE FROM kb_chunks WHERE kb_id = ?1", params![kb_id]);
-                let _ = user_conn.execute("DELETE FROM kb_documents WHERE kb_id = ?1", params![kb_id]);
-                let _ = user_conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![kb_id]);
+                let _ =
+                    user_conn.execute("DELETE FROM kb_documents WHERE kb_id = ?1", params![kb_id]);
+                let _ =
+                    user_conn.execute("DELETE FROM knowledge_bases WHERE id = ?1", params![kb_id]);
                 cleaned += 1;
             }
         }
@@ -1012,9 +1047,9 @@ pub fn reconcile_orphaned_kb_records(
             let Some(kb_id) = kb_id else { continue };
 
             let kb_exists = (|| -> Result<bool, rusqlite::Error> {
-                let conn = user_db.get().map_err(|e| {
-                    rusqlite::Error::InvalidParameterName(e.to_string())
-                })?;
+                let conn = user_db
+                    .get()
+                    .map_err(|e| rusqlite::Error::InvalidParameterName(e.to_string()))?;
                 let count: i64 = conn.query_row(
                     "SELECT COUNT(*) FROM knowledge_bases WHERE id = ?1",
                     params![kb_id],

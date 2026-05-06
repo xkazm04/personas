@@ -283,7 +283,10 @@ mod tests {
             ErrorCategory::Validation,
             ErrorCategory::Unknown,
         ] {
-            assert!(!is_technical_failure(&cat), "{cat:?} should NOT be technical");
+            assert!(
+                !is_technical_failure(&cat),
+                "{cat:?} should NOT be technical"
+            );
         }
     }
 

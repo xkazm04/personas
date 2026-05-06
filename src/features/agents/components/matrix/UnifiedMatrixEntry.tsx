@@ -119,6 +119,11 @@ export function UnifiedMatrixEntry() {
   // need to reactively sync.
   const initialIntent = (() => {
     const s = useSystemStore.getState();
+    // Phase F: Athena's prefill_persona_create wins over setup-goal
+    // bridging — it's a more recent, more deliberate signal.
+    if (s.companionPrefill && s.companionPrefill.intent) {
+      return s.companionPrefill.intent;
+    }
     const bridgeIsActive = s.onboardingActive || s.tourActive;
     return bridgeIsActive && typeof s.setupGoal === 'string' ? s.setupGoal : '';
   })();
@@ -129,10 +134,33 @@ export function UnifiedMatrixEntry() {
     intentTextRef.current = v;
     _setIntentText(v);
   }, []);
-  const [agentName, setAgentName] = useState("");
+  // Pre-seed agentName from a companion prefill so the wizard shows
+  // both fields filled. Cleared along with the prefill below.
+  const [agentName, setAgentName] = useState(() => {
+    const s = useSystemStore.getState();
+    return s.companionPrefill?.name ?? "";
+  });
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+
+  // Phase F: pending auto-launch from Athena's prefill_persona_create.
+  // Captured at mount time (so a prefill landing later doesn't surprise
+  // the user). When true, an effect fires `handleLaunch` once the
+  // intent is in state. Cleared after the first fire.
+  const pendingAutoLaunchRef = useRef(false);
+  useEffect(() => {
+    const s = useSystemStore.getState();
+    if (s.companionPrefill?.autoLaunch && s.companionPrefill.intent.trim()) {
+      pendingAutoLaunchRef.current = true;
+    }
+    // Consume the prefill regardless — it's a one-shot bridge. If
+    // autoLaunch was false, the user just sees a prefilled wizard
+    // and decides for themselves.
+    if (s.companionPrefill) {
+      s.setCompanionPrefill(null);
+    }
+  }, []);
 
   // -- Post-promotion: navigate to the promoted agent with fade transition --
 
@@ -390,6 +418,20 @@ export function UnifiedMatrixEntry() {
       setIsLaunching(false);
     }
   }, [build, draftPersonaId, createPersona, deletePersona, isLaunching]); // intentText read via ref
+
+  // Phase F: if a prefill carried `autoLaunch`, fire handleLaunch once
+  // intent is non-empty and we're not already mid-launch. The ref
+  // guard prevents re-firing on subsequent renders.
+  useEffect(() => {
+    if (
+      pendingAutoLaunchRef.current &&
+      intentText.trim() &&
+      !isLaunching
+    ) {
+      pendingAutoLaunchRef.current = false;
+      void handleLaunch();
+    }
+  }, [intentText, isLaunching, handleLaunch]);
 
   // -- Inline edit handlers (use --continue session for CLI refine) --------
 

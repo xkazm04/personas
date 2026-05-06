@@ -2,7 +2,7 @@ use rusqlite::params;
 use url::Url;
 use uuid::Uuid;
 
-use crate::db::models::{SmeeRelay, CreateSmeeRelayInput, UpdateSmeeRelayInput};
+use crate::db::models::{CreateSmeeRelayInput, SmeeRelay, UpdateSmeeRelayInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -34,9 +34,9 @@ fn validate_channel_url(channel_url: &str) -> Result<(), AppError> {
         ));
     }
 
-    let host = parsed.host_str().ok_or_else(|| {
-        AppError::Validation("Smee relay channel URL must have a host".into())
-    })?;
+    let host = parsed
+        .host_str()
+        .ok_or_else(|| AppError::Validation("Smee relay channel URL must have a host".into()))?;
 
     if !ALLOWED_SMEE_HOSTS.contains(&host) {
         return Err(AppError::Validation(format!(
@@ -56,9 +56,7 @@ row_mapper!(row_to_relay -> SmeeRelay {
 pub fn list(pool: &DbPool) -> Result<Vec<SmeeRelay>, AppError> {
     timed_query!("smee_relays", "smee_relays::list", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM smee_relays ORDER BY created_at DESC"
-        )?;
+        let mut stmt = conn.prepare("SELECT * FROM smee_relays ORDER BY created_at DESC")?;
         let rows = stmt.query_map([], row_to_relay)?;
         Ok(rows.filter_map(|r| r.ok()).collect())
     })
@@ -71,8 +69,11 @@ pub fn get(pool: &DbPool, id: &str) -> Result<SmeeRelay, AppError> {
             "SELECT * FROM smee_relays WHERE id = ?1",
             params![id],
             row_to_relay,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Smee relay {id} not found")),
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Smee relay {id} not found"))
+            }
             e => AppError::Database(e),
         })
     })
@@ -191,11 +192,13 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<(), AppError> {
 pub fn list_active_urls(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("smee_relays", "smee_relays::list_active_urls", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, channel_url FROM smee_relays WHERE status = 'active'"
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT id, channel_url FROM smee_relays WHERE status = 'active'")?;
         let rows = stmt.query_map([], |row| {
-            Ok((row.get::<_, String>("id")?, row.get::<_, String>("channel_url")?))
+            Ok((
+                row.get::<_, String>("id")?,
+                row.get::<_, String>("channel_url")?,
+            ))
         })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
     })

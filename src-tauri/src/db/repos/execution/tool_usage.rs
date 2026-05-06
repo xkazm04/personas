@@ -1,6 +1,8 @@
 use rusqlite::params;
 
-use crate::db::models::{PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary};
+use crate::db::models::{
+    PersonaToolUsage, PersonaUsageSummary, ToolUsageOverTime, ToolUsageSummary,
+};
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -8,18 +10,35 @@ use crate::error::AppError;
 /// Internal CLI tools that should be excluded from usage analytics charts.
 /// These are Claude Code's built-in tools, not persona-defined use-case tools.
 const INTERNAL_TOOLS: &[&str] = &[
-    "bash", "Bash",
-    "read", "Read", "read_file",
-    "write", "Write", "write_file",
-    "edit", "Edit", "edit_file",
-    "glob", "Glob",
-    "grep", "Grep",
-    "list_directory", "ListDirectory",
-    "search_replace", "SearchReplace",
-    "notebook_edit", "NotebookEdit",
-    "web_search", "WebSearch",
-    "web_fetch", "WebFetch",
-    "todoread", "TodoRead", "todowrite", "TodoWrite",
+    "bash",
+    "Bash",
+    "read",
+    "Read",
+    "read_file",
+    "write",
+    "Write",
+    "write_file",
+    "edit",
+    "Edit",
+    "edit_file",
+    "glob",
+    "Glob",
+    "grep",
+    "Grep",
+    "list_directory",
+    "ListDirectory",
+    "search_replace",
+    "SearchReplace",
+    "notebook_edit",
+    "NotebookEdit",
+    "web_search",
+    "WebSearch",
+    "web_fetch",
+    "WebFetch",
+    "todoread",
+    "TodoRead",
+    "todowrite",
+    "TodoWrite",
 ];
 
 /// Build a SQL NOT IN clause for excluding internal tools.
@@ -75,7 +94,9 @@ pub fn get_by_execution(
              ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![execution_id], row_to_usage)?;
-        let usages = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let usages = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(usages)
     })
 }
@@ -86,15 +107,15 @@ pub fn get_usage_summary(
     persona_id: Option<&str>,
 ) -> Result<Vec<ToolUsageSummary>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_summary", {
-    let conn = pool.get()?;
-    let mut qb = QueryBuilder::new();
-    qb.where_gte("created_at", since.to_string());
-    if let Some(pid) = persona_id {
-        qb.where_eq("persona_id", pid.to_string());
-    }
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
+        qb.where_gte("created_at", since.to_string());
+        if let Some(pid) = persona_id {
+            qb.where_eq("persona_id", pid.to_string());
+        }
 
-    let sql = format!(
-        "SELECT tool_name,
+        let sql = format!(
+            "SELECT tool_name,
                 SUM(invocation_count) as total_invocations,
                 COUNT(DISTINCT execution_id) as unique_executions,
                 COUNT(DISTINCT persona_id) as unique_personas
@@ -102,20 +123,21 @@ pub fn get_usage_summary(
          {} AND {}
          GROUP BY tool_name
          ORDER BY total_invocations DESC",
-        qb.where_clause(),
-        internal_tools_exclusion("tool_name")
-    );
+            qb.where_clause(),
+            internal_tools_exclusion("tool_name")
+        );
 
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
-        Ok(ToolUsageSummary {
-            tool_name: row.get("tool_name")?,
-            total_invocations: row.get("total_invocations")?,
-            unique_executions: row.get("unique_executions")?,
-            unique_personas: row.get("unique_personas")?,
-        })
-    })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
+            Ok(ToolUsageSummary {
+                tool_name: row.get("tool_name")?,
+                total_invocations: row.get("total_invocations")?,
+                unique_executions: row.get("unique_executions")?,
+                unique_personas: row.get("unique_personas")?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -125,34 +147,35 @@ pub fn get_usage_over_time(
     persona_id: Option<&str>,
 ) -> Result<Vec<ToolUsageOverTime>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_over_time", {
-    let conn = pool.get()?;
-    let mut qb = QueryBuilder::new();
-    qb.where_gte("created_at", since.to_string());
-    if let Some(pid) = persona_id {
-        qb.where_eq("persona_id", pid.to_string());
-    }
+        let conn = pool.get()?;
+        let mut qb = QueryBuilder::new();
+        qb.where_gte("created_at", since.to_string());
+        if let Some(pid) = persona_id {
+            qb.where_eq("persona_id", pid.to_string());
+        }
 
-    let sql = format!(
-        "SELECT DATE(created_at) as date,
+        let sql = format!(
+            "SELECT DATE(created_at) as date,
                 tool_name,
                 SUM(invocation_count) as invocations
          FROM persona_tool_usage
          {} AND {}
          GROUP BY date, tool_name
          ORDER BY date ASC, tool_name ASC",
-        qb.where_clause(),
-        internal_tools_exclusion("tool_name")
-    );
+            qb.where_clause(),
+            internal_tools_exclusion("tool_name")
+        );
 
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
-        Ok(ToolUsageOverTime {
-            date: row.get("date")?,
-            tool_name: row.get("tool_name")?,
-            invocations: row.get("invocations")?,
-        })
-    })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), |row| {
+            Ok(ToolUsageOverTime {
+                date: row.get("date")?,
+                tool_name: row.get("tool_name")?,
+                invocations: row.get("invocations")?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -161,9 +184,9 @@ pub fn get_usage_by_persona(
     since: &str,
 ) -> Result<Vec<PersonaUsageSummary>, AppError> {
     timed_query!("tool_usage", "tool_usage::get_usage_by_persona", {
-    let conn = pool.get()?;
-    let sql = format!(
-        "SELECT u.persona_id,
+        let conn = pool.get()?;
+        let sql = format!(
+            "SELECT u.persona_id,
                 p.name as persona_name,
                 p.icon as persona_icon,
                 p.color as persona_color,
@@ -174,20 +197,21 @@ pub fn get_usage_by_persona(
          WHERE u.created_at >= ?1 AND {}
          GROUP BY u.persona_id
          ORDER BY total_invocations DESC",
-        internal_tools_exclusion("u.tool_name")
-    );
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params![since], |row| {
-        Ok(PersonaUsageSummary {
-            persona_id: row.get("persona_id")?,
-            persona_name: row.get("persona_name")?,
-            persona_icon: row.get("persona_icon")?,
-            persona_color: row.get("persona_color")?,
-            total_invocations: row.get("total_invocations")?,
-            unique_tools: row.get("unique_tools")?,
-        })
-    })?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            internal_tools_exclusion("u.tool_name")
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params![since], |row| {
+            Ok(PersonaUsageSummary {
+                persona_id: row.get("persona_id")?,
+                persona_name: row.get("persona_name")?,
+                persona_icon: row.get("persona_icon")?,
+                persona_color: row.get("persona_color")?,
+                total_invocations: row.get("total_invocations")?,
+                unique_tools: row.get("unique_tools")?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 

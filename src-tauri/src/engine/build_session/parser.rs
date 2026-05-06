@@ -91,9 +91,7 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
     let mut events = Vec::new();
 
     // Strip markdown code fences
-    let cleaned = text
-        .replace("```json", "")
-        .replace("```", "");
+    let cleaned = text.replace("```json", "").replace("```", "");
 
     // Try each line as a potential JSON object
     for line in cleaned.lines() {
@@ -210,7 +208,8 @@ pub(super) fn parse_json_object(
             }];
             // Legacy mirror: map field → legacy dimension key and surface as CellUpdate.
             if let Some(legacy_key) = map_capability_field_to_legacy_dimension(&field) {
-                let legacy_data = wrap_value_in_legacy_dimension_shape(&field, &value, &capability_id);
+                let legacy_data =
+                    wrap_value_in_legacy_dimension_shape(&field, &value, &capability_id);
                 out.push(BuildEvent::CellUpdate {
                     session_id: session_id.to_string(),
                     cell_key: legacy_key.to_string(),
@@ -363,7 +362,10 @@ pub(super) fn parse_json_object(
             .unwrap_or(false);
         return vec![BuildEvent::Error {
             session_id: session_id.to_string(),
-            cell_key: obj.get("cell_key").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            cell_key: obj
+                .get("cell_key")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
             message,
             retryable,
         }];
@@ -519,10 +521,7 @@ fn wrap_value_in_legacy_dimension_shape(
             let mut trig = value.clone();
             if let Some(obj) = trig.as_object_mut() {
                 if !capability_id.is_empty() {
-                    obj.insert(
-                        "use_case_id".to_string(),
-                        json!(capability_id),
-                    );
+                    obj.insert("use_case_id".to_string(), json!(capability_id));
                 }
             }
             let desc = trig
@@ -576,7 +575,10 @@ fn wrap_value_in_legacy_dimension_shape(
         }
 
         "review_policy" => {
-            let mode = value.get("mode").and_then(|v| v.as_str()).unwrap_or("never");
+            let mode = value
+                .get("mode")
+                .and_then(|v| v.as_str())
+                .unwrap_or("never");
             let ctx = value.get("context").and_then(|v| v.as_str()).unwrap_or("");
             json!({
                 "items": [format!("{}: {}{}", mode, ctx, suffix)],
@@ -585,7 +587,10 @@ fn wrap_value_in_legacy_dimension_shape(
         }
 
         "memory_policy" => {
-            let enabled = value.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+            let enabled = value
+                .get("enabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
             let ctx = value.get("context").and_then(|v| v.as_str()).unwrap_or("");
             json!({
                 "items": [format!("enabled={}: {}{}", enabled, ctx, suffix)],
@@ -609,7 +614,10 @@ fn wrap_value_in_legacy_dimension_shape(
                 .iter()
                 .map(|e| {
                     let typ = e.get("event_type").and_then(|v| v.as_str()).unwrap_or("");
-                    let dir = e.get("direction").and_then(|v| v.as_str()).unwrap_or("subscribe");
+                    let dir = e
+                        .get("direction")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("subscribe");
                     format!("{}: {}{}", dir, typ, suffix)
                 })
                 .collect();
@@ -649,7 +657,10 @@ fn capabilities_to_legacy_use_cases(enu: &serde_json::Value) -> serde_json::Valu
         .iter()
         .map(|c| {
             let title = c.get("title").and_then(|v| v.as_str()).unwrap_or("");
-            let sum = c.get("capability_summary").and_then(|v| v.as_str()).unwrap_or("");
+            let sum = c
+                .get("capability_summary")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             if sum.is_empty() {
                 title.to_string()
             } else {
@@ -661,7 +672,10 @@ fn capabilities_to_legacy_use_cases(enu: &serde_json::Value) -> serde_json::Valu
         .iter()
         .map(|c| {
             let title = c.get("title").and_then(|v| v.as_str()).unwrap_or("");
-            let sum = c.get("capability_summary").and_then(|v| v.as_str()).unwrap_or("");
+            let sum = c
+                .get("capability_summary")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let id = c.get("id").and_then(|v| v.as_str()).unwrap_or("");
             json!({
                 "id": id,
@@ -701,4 +715,3 @@ fn parse_agent_ir(output: &str) -> Option<String> {
     }
     None
 }
-

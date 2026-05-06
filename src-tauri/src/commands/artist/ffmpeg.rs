@@ -175,8 +175,10 @@ pub async fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, A
 
     let mut cmd = TokioCommand::new(&ffprobe_path);
     cmd.args([
-        "-v", "quiet",
-        "-print_format", "json",
+        "-v",
+        "quiet",
+        "-print_format",
+        "json",
         "-show_format",
         "-show_streams",
         &file_path,
@@ -203,13 +205,15 @@ pub async fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, A
         .unwrap_or(0.0);
 
     let streams = data["streams"].as_array();
-    let video_stream = streams
-        .and_then(|ss| ss.iter().find(|s| s["codec_type"] == "video"));
-    let audio_stream = streams
-        .and_then(|ss| ss.iter().find(|s| s["codec_type"] == "audio"));
+    let video_stream = streams.and_then(|ss| ss.iter().find(|s| s["codec_type"] == "video"));
+    let audio_stream = streams.and_then(|ss| ss.iter().find(|s| s["codec_type"] == "audio"));
 
-    let width = video_stream.and_then(|s| s["width"].as_i64()).map(|w| w as i32);
-    let height = video_stream.and_then(|s| s["height"].as_i64()).map(|h| h as i32);
+    let width = video_stream
+        .and_then(|s| s["width"].as_i64())
+        .map(|w| w as i32);
+    let height = video_stream
+        .and_then(|s| s["height"].as_i64())
+        .map(|h| h as i32);
     let codec = video_stream
         .and_then(|s| s["codec_name"].as_str())
         .or_else(|| audio_stream.and_then(|s| s["codec_name"].as_str()))
@@ -229,9 +233,13 @@ pub async fn artist_probe_media(file_path: String) -> Result<MediaProbeResult, A
 async fn find_ffprobe_path() -> Option<PathBuf> {
     // ffprobe is co-located with ffmpeg
     if let Some(ffmpeg) = find_ffmpeg_path().await {
-        let ffprobe = ffmpeg
-            .parent()
-            .map(|dir| dir.join(if cfg!(target_os = "windows") { "ffprobe.exe" } else { "ffprobe" }));
+        let ffprobe = ffmpeg.parent().map(|dir| {
+            dir.join(if cfg!(target_os = "windows") {
+                "ffprobe.exe"
+            } else {
+                "ffprobe"
+            })
+        });
         if let Some(p) = ffprobe {
             if p.exists() {
                 return Some(p);
@@ -250,9 +258,7 @@ async fn find_ffprobe_path() -> Option<PathBuf> {
 /// needs no auth guard. Preview mode uses Fold + frame-snap + !for_export;
 /// export still calls `render_plan::compile` directly in its own command.
 #[tauri::command]
-pub async fn artist_compile_render_plan(
-    composition_json: String,
-) -> Result<RenderPlan, AppError> {
+pub async fn artist_compile_render_plan(composition_json: String) -> Result<RenderPlan, AppError> {
     let composition: RpComposition = serde_json::from_str(&composition_json)
         .map_err(|e| AppError::Validation(format!("Invalid composition: {e}")))?;
 
@@ -324,7 +330,12 @@ pub async fn artist_export_composition(
             }
             Err(e) => {
                 let msg = format!("{e}");
-                MEDIA_EXPORT_JOBS.set_status(&app_handle, &job_id_clone, "failed", Some(msg.clone()));
+                MEDIA_EXPORT_JOBS.set_status(
+                    &app_handle,
+                    &job_id_clone,
+                    "failed",
+                    Some(msg.clone()),
+                );
                 MEDIA_EXPORT_JOBS.emit_line(&app_handle, &job_id_clone, format!("[Error] {msg}"));
             }
         }
@@ -429,9 +440,7 @@ pub async fn artist_save_thumbnail(
 /// returned `integrated` LUFS to apply a true linear gain equivalent to what
 /// the export's loudnorm pass will produce.
 #[tauri::command]
-pub async fn artist_measure_loudness(
-    file_path: String,
-) -> Result<LoudnessStats, AppError> {
+pub async fn artist_measure_loudness(file_path: String) -> Result<LoudnessStats, AppError> {
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -461,9 +470,9 @@ pub async fn artist_measure_loudness(
     let start = stderr.find('{').ok_or_else(|| {
         AppError::Internal("loudnorm: no JSON block found in ffmpeg stderr".into())
     })?;
-    let end = stderr.rfind('}').ok_or_else(|| {
-        AppError::Internal("loudnorm: unterminated JSON block".into())
-    })?;
+    let end = stderr
+        .rfind('}')
+        .ok_or_else(|| AppError::Internal("loudnorm: unterminated JSON block".into()))?;
     if end <= start {
         return Err(AppError::Internal("loudnorm: malformed JSON region".into()));
     }
@@ -609,7 +618,9 @@ async fn run_ffmpeg_export(
         .spawn()
         .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn ffmpeg: {e}")))?;
 
-    let stderr = child.stderr.take()
+    let stderr = child
+        .stderr
+        .take()
         .ok_or_else(|| AppError::Internal("No stderr from ffmpeg".into()))?;
 
     let mut reader = BufReader::new(stderr).lines();
@@ -632,7 +643,9 @@ async fn run_ffmpeg_export(
         MEDIA_EXPORT_JOBS.emit_line(app, job_id, line);
     }
 
-    let status = child.wait().await
+    let status = child
+        .wait()
+        .await
         .map_err(|e| AppError::Internal(format!("ffmpeg process error: {e}")))?;
 
     if !status.success() {
@@ -797,7 +810,11 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     // emit a cascading `xfade` chain instead — one xfade filter per pair.
     let has_overlap = plan.video_track.iter().any(|s| s.overlap_next.is_some());
     let mut base_video_label: Option<String> = if has_overlap && plan.video_track.len() >= 2 {
-        Some(build_xfade_chain(&plan.video_track, &video_labels, &mut filters))
+        Some(build_xfade_chain(
+            &plan.video_track,
+            &video_labels,
+            &mut filters,
+        ))
     } else if video_labels.len() >= 2 {
         let inputs: String = video_labels.iter().map(|l| format!("[{l}]")).collect();
         filters.push(format!(
@@ -817,7 +834,8 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
         // Currently OverlayStage has only the Image variant; the `let...else`
         // is forward-compatible with future variants.
         #[allow(irrefutable_let_patterns)]
-        let OverlayStage::Image(img) = overlay else {
+        let OverlayStage::Image(img) = overlay
+        else {
             continue;
         };
         let Some(&img_idx) = image_input_idx.get(&img.id) else {
@@ -908,14 +926,22 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     }
 
     args.extend_from_slice(&[
-        "-c:v".into(), "libx264".into(),
-        "-preset".into(), "medium".into(),
-        "-crf".into(), "23".into(),
-        "-c:a".into(), "aac".into(),
-        "-b:a".into(), "192k".into(),
-        "-movflags".into(), "+faststart".into(),
-        "-r".into(), plan.fps.to_string(),
-        "-s".into(), format!("{}x{}", plan.width, plan.height),
+        "-c:v".into(),
+        "libx264".into(),
+        "-preset".into(),
+        "medium".into(),
+        "-crf".into(),
+        "23".into(),
+        "-c:a".into(),
+        "aac".into(),
+        "-b:a".into(),
+        "192k".into(),
+        "-movflags".into(),
+        "+faststart".into(),
+        "-r".into(),
+        plan.fps.to_string(),
+        "-s".into(),
+        format!("{}x{}", plan.width, plan.height),
     ]);
 
     args.push(output_path.to_string_lossy().into_owned());
@@ -937,7 +963,10 @@ fn build_video_stage_filter(input_idx: usize, label: &str, stage: &VideoStage) -
     ];
     let out_dur = stage.output_end - stage.output_start;
     if stage.fade_in > 0.01 {
-        vf.push(format!("fade=t=in:st=0:d={:.3}", stage.fade_in.min(out_dur)));
+        vf.push(format!(
+            "fade=t=in:st=0:d={:.3}",
+            stage.fade_in.min(out_dur)
+        ));
     }
     if stage.fade_out > 0.01 {
         let st = (out_dur - stage.fade_out).max(0.0);
@@ -1051,8 +1080,25 @@ fn bg_source_hex(plan: &RenderPlan) -> String {
 
 /// `atempo` only accepts factors in [0.5, 2.0]. For values outside the range,
 /// chain multiple atempo stages so the product equals `speed`.
+///
+/// **Bounds**: input is clamped to `[ATEMPO_MIN_SPEED, ATEMPO_MAX_SPEED]`
+/// and non-finite values (NaN, ±∞) are coerced to `1.0` (passthrough). This
+/// is a defensive guard, not a contract — the UI is supposed to keep speed
+/// well inside this range, but a malformed `.mstudio.json` (manual edit,
+/// schema migration, corrupt drag-drop) could otherwise wedge the export
+/// thread in an unkillable busy loop:
+/// - `speed = 0.0` → `0.0 / 0.5 == 0.0` → `while remaining < 0.5` infinite loop.
+/// - `speed = +∞` → `inf / 2.0 == inf` → `while remaining > 2.0` infinite loop.
+/// - `speed < 0`  → `−x / 0.5 == −2x`, diverges → `while remaining < 0.5` infinite loop.
+/// The cancel token is only checked at await points, so this hang is
+/// unrecoverable from the UI; the user must kill the app.
 fn atempo_chain(speed: f64) -> Vec<String> {
-    let mut remaining = speed;
+    let safe_speed = if !speed.is_finite() {
+        1.0
+    } else {
+        speed.clamp(ATEMPO_MIN_SPEED, ATEMPO_MAX_SPEED)
+    };
+    let mut remaining = safe_speed;
     let mut out = Vec::new();
     while remaining > 2.0 {
         out.push("atempo=2.0".to_string());
@@ -1065,6 +1111,12 @@ fn atempo_chain(speed: f64) -> Vec<String> {
     out.push(format!("atempo={remaining:.4}"));
     out
 }
+
+/// Floor on `atempo` input — `0.05` is 20× slowdown, well past anything the
+/// UI exposes. Anything below this is treated as a malformed value.
+const ATEMPO_MIN_SPEED: f64 = 0.05;
+/// Ceiling on `atempo` input — `100.0` is 100× speedup. Same rationale.
+const ATEMPO_MAX_SPEED: f64 = 100.0;
 
 /// Parse ffmpeg's progress line: `time=HH:MM:SS.ms` → seconds
 fn parse_ffmpeg_time(line: &str) -> Option<f64> {
@@ -1080,4 +1132,95 @@ fn parse_ffmpeg_time(line: &str) -> Option<f64> {
     let minutes: f64 = parts[1].parse().ok()?;
     let seconds: f64 = parts[2].parse().ok()?;
     Some(hours * 3600.0 + minutes * 60.0 + seconds)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Each pathological input must terminate AND emit at least one `atempo=`
+    /// step — never return an empty Vec or hang the test runner. The exact
+    /// step count is a clamp consequence (e.g. clamp(0.0, 0.05) = 0.05 → no
+    /// halving needed), which we verify separately to lock in the bounds.
+    #[test]
+    fn atempo_chain_zero_does_not_loop_forever() {
+        let out = atempo_chain(0.0);
+        assert!(!out.is_empty(), "must emit at least one atempo step");
+        // Clamped to 0.05 → repeated doublings (0.05 * 2^4 = 0.8 ≥ 0.5).
+        // 4 "atempo=0.5" stages + a final "atempo=0.8000".
+        assert_eq!(out.iter().filter(|s| *s == "atempo=0.5").count(), 4);
+        assert_eq!(out.last().unwrap(), "atempo=0.8000");
+    }
+
+    #[test]
+    fn atempo_chain_nan_falls_back_to_passthrough() {
+        let out = atempo_chain(f64::NAN);
+        // Non-finite → 1.0 → no halving/doubling → single passthrough step.
+        assert_eq!(out, vec!["atempo=1.0000".to_string()]);
+    }
+
+    #[test]
+    fn atempo_chain_negative_does_not_loop_forever() {
+        let out = atempo_chain(-3.0);
+        // Clamped up to 0.05 — same shape as the zero case.
+        assert_eq!(out.iter().filter(|s| *s == "atempo=0.5").count(), 4);
+        assert_eq!(out.last().unwrap(), "atempo=0.8000");
+    }
+
+    #[test]
+    fn atempo_chain_positive_infinity_does_not_loop_forever() {
+        let out = atempo_chain(f64::INFINITY);
+        // Non-finite → 1.0.
+        assert_eq!(out, vec!["atempo=1.0000".to_string()]);
+    }
+
+    #[test]
+    fn atempo_chain_negative_infinity_does_not_loop_forever() {
+        let out = atempo_chain(f64::NEG_INFINITY);
+        assert_eq!(out, vec!["atempo=1.0000".to_string()]);
+    }
+
+    #[test]
+    fn atempo_chain_passthrough_unity() {
+        assert_eq!(atempo_chain(1.0), vec!["atempo=1.0000".to_string()]);
+    }
+
+    #[test]
+    fn atempo_chain_within_native_range() {
+        // 1.5 is inside [0.5, 2.0] so a single stage suffices.
+        assert_eq!(atempo_chain(1.5), vec!["atempo=1.5000".to_string()]);
+    }
+
+    #[test]
+    fn atempo_chain_above_two_chains_halvings() {
+        // 4.0 → 2.0 → final 2.0 step
+        assert_eq!(
+            atempo_chain(4.0),
+            vec!["atempo=2.0".to_string(), "atempo=2.0000".to_string()]
+        );
+    }
+
+    #[test]
+    fn atempo_chain_below_half_chains_doublings() {
+        // 0.25 → 0.5 → final 0.5 step
+        assert_eq!(
+            atempo_chain(0.25),
+            vec!["atempo=0.5".to_string(), "atempo=0.5000".to_string()]
+        );
+    }
+
+    #[test]
+    fn atempo_chain_clamp_ceiling_does_not_loop_forever() {
+        // Above the 100.0 ceiling — must be clamped, not allowed to hang in the
+        // upper while-loop on a numerically-unbounded large input.
+        let out = atempo_chain(1.0e6);
+        // Clamped to 100.0 → 100/2=50/2=25/2=12.5/2=6.25/2=3.125/2=1.5625
+        // (six halvings) then a final stage. Just assert the count + first/last.
+        assert!(!out.is_empty());
+        assert_eq!(out.iter().filter(|s| *s == "atempo=2.0").count(), 6);
+        assert_eq!(
+            out.last().unwrap(),
+            &format!("atempo={:.4}", 100.0_f64 / 64.0)
+        );
+    }
 }

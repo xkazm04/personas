@@ -2,8 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateExposedResourceInput, ExposedResource, ExposureManifest,
-    ResourceProvenance, UpdateExposedResourceInput,
+    CreateExposedResourceInput, ExposedResource, ExposureManifest, ResourceProvenance,
+    UpdateExposedResourceInput,
 };
 use crate::db::repos::resources::exposure as exposure_repo;
 use crate::engine::identity as identity_engine;

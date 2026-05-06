@@ -150,7 +150,8 @@ pub async fn introspect_db_tables(
     credential_id: String,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "introspect_db_tables").await?;
-    crate::engine::db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db)).await
+    crate::engine::db_query::introspect_tables(&state.db, &credential_id, Some(&state.user_db))
+        .await
 }
 
 #[tauri::command]
@@ -160,7 +161,13 @@ pub async fn introspect_db_columns(
     table_name: String,
 ) -> Result<QueryResult, AppError> {
     require_privileged(&state, "introspect_db_columns").await?;
-    crate::engine::db_query::introspect_columns(&state.db, &credential_id, &table_name, Some(&state.user_db)).await
+    crate::engine::db_query::introspect_columns(
+        &state.db,
+        &credential_id,
+        &table_name,
+        Some(&state.user_db),
+    )
+    .await
 }
 
 // ============================================================================
@@ -184,7 +191,8 @@ pub async fn execute_db_query(
         Some(&state.user_db),
         allow_mutation.unwrap_or(false),
         ddl_only.unwrap_or(false),
-    ).await;
+    )
+    .await;
 
     if let Some(id) = saved_query_id {
         let success = result.is_ok();

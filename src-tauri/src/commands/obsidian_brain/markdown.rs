@@ -44,14 +44,8 @@ updated: "{updated}"
 
 /// Convert a Persona to an Obsidian-compatible markdown profile document.
 pub fn persona_to_markdown(persona: &Persona) -> String {
-    let desc = persona
-        .description
-        .as_deref()
-        .unwrap_or("No description");
-    let model = persona
-        .model_profile
-        .as_deref()
-        .unwrap_or("default");
+    let desc = persona.description.as_deref().unwrap_or("No description");
+    let model = persona.model_profile.as_deref().unwrap_or("default");
 
     format!(
         r#"---

@@ -10,7 +10,10 @@ use crate::error::AppError;
 
 /// Escape LIKE metacharacters (%, _) so they are matched literally.
 fn escape_like(input: &str) -> String {
-    input.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_")
+    input
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_")
 }
 
 // ============================================================================
@@ -83,13 +86,15 @@ pub fn get_reviews(
                 "SELECT * FROM persona_design_reviews WHERE test_run_id = ?1 ORDER BY created_at DESC LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![run_id, limit], row_to_review)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_design_reviews ORDER BY created_at DESC LIMIT ?1",
             )?;
             let rows = stmt.query_map(params![limit], row_to_review)?;
-            rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
         }
     })
 }
@@ -103,65 +108,77 @@ pub fn search_reviews_compact(
     keywords: &[String],
     limit: i64,
 ) -> Result<(Vec<SmartSearchRow>, i64), AppError> {
-    timed_query!("design_reviews", "design_reviews::search_reviews_compact", {
-        let conn = pool.get()?;
+    timed_query!(
+        "design_reviews",
+        "design_reviews::search_reviews_compact",
+        {
+            let conn = pool.get()?;
 
-        // Count total templates (for truncation detection)
-        let total: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_design_reviews",
-            [],
-            |row| row.get(0),
-        )?;
+            // Count total templates (for truncation detection)
+            let total: i64 =
+                conn.query_row("SELECT COUNT(*) FROM persona_design_reviews", [], |row| {
+                    row.get(0)
+                })?;
 
-        if keywords.is_empty() {
-            let mut stmt = conn.prepare(
+            if keywords.is_empty() {
+                let mut stmt = conn.prepare(
                 "SELECT id, test_case_name, instruction, category, connectors_used, trigger_types \
                  FROM persona_design_reviews ORDER BY adoption_count DESC, created_at DESC LIMIT ?1",
             )?;
-            let rows = stmt.query_map(params![limit], row_to_smart)?;
-            let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-            Ok((results, total))
-        } else {
-            // Build OR conditions: any keyword matches any of name/instruction/connectors/category
-            let mut conditions = Vec::new();
-            let mut param_values: Vec<String> = Vec::new();
-            let search_cols = ["test_case_name", "instruction", "connectors_used", "COALESCE(category, '')"];
-            let mut idx = 1usize;
-            for kw in keywords {
-                let like = format!("%{}%", escape_like(kw));
-                let col_conds: Vec<String> = search_cols
-                    .iter()
-                    .map(|col| {
-                        let cond = format!("{col} LIKE ?{idx} ESCAPE '\\'");
-                        idx += 1;
-                        param_values.push(like.clone());
-                        cond
-                    })
-                    .collect();
-                conditions.push(format!("({})", col_conds.join(" OR ")));
-            }
-            let where_clause = conditions.join(" OR ");
-            let sql = format!(
+                let rows = stmt.query_map(params![limit], row_to_smart)?;
+                let results = rows
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?;
+                Ok((results, total))
+            } else {
+                // Build OR conditions: any keyword matches any of name/instruction/connectors/category
+                let mut conditions = Vec::new();
+                let mut param_values: Vec<String> = Vec::new();
+                let search_cols = [
+                    "test_case_name",
+                    "instruction",
+                    "connectors_used",
+                    "COALESCE(category, '')",
+                ];
+                let mut idx = 1usize;
+                for kw in keywords {
+                    let like = format!("%{}%", escape_like(kw));
+                    let col_conds: Vec<String> = search_cols
+                        .iter()
+                        .map(|col| {
+                            let cond = format!("{col} LIKE ?{idx} ESCAPE '\\'");
+                            idx += 1;
+                            param_values.push(like.clone());
+                            cond
+                        })
+                        .collect();
+                    conditions.push(format!("({})", col_conds.join(" OR ")));
+                }
+                let where_clause = conditions.join(" OR ");
+                let sql = format!(
                 "SELECT id, test_case_name, instruction, category, connectors_used, trigger_types \
                  FROM persona_design_reviews WHERE {where_clause} \
                  ORDER BY adoption_count DESC, created_at DESC LIMIT ?{idx}"
             );
 
-            let mut stmt = conn.prepare(&sql)?;
-            let mut bound_params: Vec<Box<dyn rusqlite::types::ToSql>> = param_values
-                .iter()
-                .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
-                .collect();
-            bound_params.push(Box::new(limit));
+                let mut stmt = conn.prepare(&sql)?;
+                let mut bound_params: Vec<Box<dyn rusqlite::types::ToSql>> = param_values
+                    .iter()
+                    .map(|v| Box::new(v.clone()) as Box<dyn rusqlite::types::ToSql>)
+                    .collect();
+                bound_params.push(Box::new(limit));
 
-            let rows = stmt.query_map(
-                rusqlite::params_from_iter(bound_params.iter().map(|b| b.as_ref())),
-                row_to_smart,
-            )?;
-            let results = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-            Ok((results, total))
+                let rows = stmt.query_map(
+                    rusqlite::params_from_iter(bound_params.iter().map(|b| b.as_ref())),
+                    row_to_smart,
+                )?;
+                let results = rows
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?;
+                Ok((results, total))
+            }
         }
-    })
+    )
 }
 
 pub fn get_review_by_id(pool: &DbPool, id: &str) -> Result<PersonaDesignReview, AppError> {
@@ -186,16 +203,16 @@ pub fn create_review(
     input: &CreateDesignReviewInput,
 ) -> Result<PersonaDesignReview, AppError> {
     timed_query!("design_reviews", "design_reviews::create_review", {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    let had_refs_int: Option<i32> = input.had_references.map(|b| b as i32);
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let had_refs_int: Option<i32> = input.had_references.map(|b| b as i32);
 
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    // Upsert: if a review with the same (test_case_name, test_run_id) already exists,
-    // update it instead of creating a duplicate. Different runs preserve their own results.
-    conn.execute(
-        "INSERT INTO persona_design_reviews
+        // Upsert: if a review with the same (test_case_name, test_run_id) already exists,
+        // update it instead of creating a duplicate. Different runs preserve their own results.
+        conn.execute(
+            "INSERT INTO persona_design_reviews
          (id, test_case_id, test_case_name, instruction, status,
           structural_score, semantic_score, connectors_used, trigger_types,
           design_result, structural_evaluation, semantic_evaluation,
@@ -220,38 +237,38 @@ pub fn create_review(
            reviewed_at = excluded.reviewed_at,
            created_at = excluded.created_at,
            category = excluded.category",
-        params![
-            id,
-            input.test_case_id,
-            input.test_case_name,
-            input.instruction,
-            input.status,
-            input.structural_score,
-            input.semantic_score,
-            input.connectors_used,
-            input.trigger_types,
-            input.design_result,
-            input.structural_evaluation,
-            input.semantic_evaluation,
-            input.test_run_id,
-            had_refs_int,
-            input.suggested_adjustment,
-            input.adjustment_generation,
-            input.use_case_flows,
-            input.reviewed_at,
-            now,
-            input.category,
-        ],
-    )?;
+            params![
+                id,
+                input.test_case_id,
+                input.test_case_name,
+                input.instruction,
+                input.status,
+                input.structural_score,
+                input.semantic_score,
+                input.connectors_used,
+                input.trigger_types,
+                input.design_result,
+                input.structural_evaluation,
+                input.semantic_evaluation,
+                input.test_run_id,
+                had_refs_int,
+                input.suggested_adjustment,
+                input.adjustment_generation,
+                input.use_case_flows,
+                input.reviewed_at,
+                now,
+                input.category,
+            ],
+        )?;
 
-    // After upsert, the row might have the old id (if updated) or the new id (if inserted).
-    // Fetch by (test_case_name, test_run_id) to get the correct row.
-    let row = conn.query_row(
-        "SELECT * FROM persona_design_reviews WHERE test_case_name = ?1 AND test_run_id = ?2",
-        params![input.test_case_name, input.test_run_id],
-        row_to_review,
-    )?;
-    Ok(row)
+        // After upsert, the row might have the old id (if updated) or the new id (if inserted).
+        // Fetch by (test_case_name, test_run_id) to get the correct row.
+        let row = conn.query_row(
+            "SELECT * FROM persona_design_reviews WHERE test_case_name = ?1 AND test_run_id = ?2",
+            params![input.test_case_name, input.test_run_id],
+            row_to_review,
+        )?;
+        Ok(row)
     })
 }
 
@@ -348,28 +365,32 @@ pub fn delete_stale_seed_templates(
     seed_run_id: &str,
     active_ids: &[String],
 ) -> Result<usize, AppError> {
-    timed_query!("design_reviews", "design_reviews::delete_stale_seed_templates", {
-    let conn = pool.get()?;
-    if active_ids.is_empty() {
-        // If the catalog is empty (shouldn't happen), don't mass-delete
-        return Ok(0);
-    }
-    let mut qb = QueryBuilder::new();
-    qb.where_eq("test_run_id", seed_run_id.to_string());
-    // Build NOT IN manually using push_param
-    let placeholders: Vec<String> = active_ids
-        .iter()
-        .map(|id| qb.push_param(id.clone()))
-        .collect();
-    qb.where_raw(
-        |_| format!("test_case_id NOT IN ({})", placeholders.join(",")),
-        vec![],
-    );
-    let sql = format!("DELETE FROM persona_design_reviews {}", qb.where_clause());
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.execute(qb.params_ref().as_slice())?;
-    Ok(rows)
-    })
+    timed_query!(
+        "design_reviews",
+        "design_reviews::delete_stale_seed_templates",
+        {
+            let conn = pool.get()?;
+            if active_ids.is_empty() {
+                // If the catalog is empty (shouldn't happen), don't mass-delete
+                return Ok(0);
+            }
+            let mut qb = QueryBuilder::new();
+            qb.where_eq("test_run_id", seed_run_id.to_string());
+            // Build NOT IN manually using push_param
+            let placeholders: Vec<String> = active_ids
+                .iter()
+                .map(|id| qb.push_param(id.clone()))
+                .collect();
+            qb.where_raw(
+                |_| format!("test_case_id NOT IN ({})", placeholders.join(",")),
+                vec![],
+            );
+            let sql = format!("DELETE FROM persona_design_reviews {}", qb.where_clause());
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.execute(qb.params_ref().as_slice())?;
+            Ok(rows)
+        }
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -387,28 +408,28 @@ pub fn update_review_result(
     reviewed_at: &str,
 ) -> Result<PersonaDesignReview, AppError> {
     timed_query!("design_reviews", "design_reviews::update_review_result", {
-    let conn = pool.get()?;
-    conn.execute(
-        "UPDATE persona_design_reviews
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_design_reviews
          SET status = ?1, structural_score = ?2, semantic_score = ?3,
              connectors_used = ?4, trigger_types = ?5, design_result = ?6,
              use_case_flows = ?7, suggested_adjustment = ?8, reviewed_at = ?9,
              structural_evaluation = NULL, semantic_evaluation = NULL
          WHERE id = ?10",
-        params![
-            status,
-            structural_score,
-            semantic_score,
-            connectors_used,
-            trigger_types,
-            design_result,
-            use_case_flows,
-            suggested_adjustment,
-            reviewed_at,
-            id,
-        ],
-    )?;
-    get_review_by_id(pool, id)
+            params![
+                status,
+                structural_score,
+                semantic_score,
+                connectors_used,
+                trigger_types,
+                design_result,
+                use_case_flows,
+                suggested_adjustment,
+                reviewed_at,
+                id,
+            ],
+        )?;
+        get_review_by_id(pool, id)
     })
 }
 
@@ -431,141 +452,153 @@ pub fn get_reviews_paginated(
     coverage_service_types: Option<&[String]>,
 ) -> Result<PaginatedReviewResult, AppError> {
     timed_query!("design_reviews", "design_reviews::get_reviews_paginated", {
-    let conn = pool.get()?;
+        let conn = pool.get()?;
 
-    // Build WHERE clause
-    let mut qb = QueryBuilder::new();
+        // Build WHERE clause
+        let mut qb = QueryBuilder::new();
 
-    if let Some(q) = search {
-        if !q.trim().is_empty() {
-            let like = format!("%{}%", escape_like(q.trim()));
-            qb.where_like_escape_any(&["test_case_name", "instruction"], like);
+        if let Some(q) = search {
+            if !q.trim().is_empty() {
+                let like = format!("%{}%", escape_like(q.trim()));
+                qb.where_like_escape_any(&["test_case_name", "instruction"], like);
+            }
         }
-    }
 
-    if let Some(connectors) = connector_filter {
-        if !connectors.is_empty() {
-            // Each connector has its own LIKE pattern: connectors_used LIKE '%"name"%'
-            // ANY connector matches (OR logic)
-            let param_boxes: Vec<Box<dyn rusqlite::types::ToSql>> = connectors
-                .iter()
-                .map(|c| Box::new(format!("%\"{c}\"%")) as Box<dyn rusqlite::types::ToSql>)
-                .collect();
-            let count = connectors.len();
-            qb.where_raw(
-                |idx| {
-                    let parts: Vec<String> = (0..count)
-                        .map(|i| format!("connectors_used LIKE ?{}", idx + i))
-                        .collect();
-                    format!("({})", parts.join(" OR "))
-                },
-                param_boxes,
-            );
+        if let Some(connectors) = connector_filter {
+            if !connectors.is_empty() {
+                // Each connector has its own LIKE pattern: connectors_used LIKE '%"name"%'
+                // ANY connector matches (OR logic)
+                let param_boxes: Vec<Box<dyn rusqlite::types::ToSql>> = connectors
+                    .iter()
+                    .map(|c| Box::new(format!("%\"{c}\"%")) as Box<dyn rusqlite::types::ToSql>)
+                    .collect();
+                let count = connectors.len();
+                qb.where_raw(
+                    |idx| {
+                        let parts: Vec<String> = (0..count)
+                            .map(|i| format!("connectors_used LIKE ?{}", idx + i))
+                            .collect();
+                        format!("({})", parts.join(" OR "))
+                    },
+                    param_boxes,
+                );
+            }
         }
-    }
 
-    if let Some(categories) = category_filter {
-        if !categories.is_empty() {
-            qb.where_in("COALESCE(category, 'Other')", categories.to_vec());
+        if let Some(categories) = category_filter {
+            if !categories.is_empty() {
+                qb.where_in("COALESCE(category, 'Other')", categories.to_vec());
+            }
         }
-    }
 
-    let where_clause = qb.where_clause();
-    let where_with_space = if where_clause.is_empty() {
-        String::new()
-    } else {
-        format!(" {where_clause}")
-    };
-
-    // Determine if we need coverage post-filtering
-    let needs_coverage_filter = matches!(coverage_filter, Some("full") | Some("partial"));
-
-    if needs_coverage_filter {
-        // Coverage filter: fetch all WHERE-matched rows, post-filter in Rust, paginate manually
-        let cred_set: std::collections::HashSet<&str> = coverage_service_types
-            .map(|types| types.iter().map(|s| s.as_str()).collect())
-            .unwrap_or_default();
-        let is_full = coverage_filter == Some("full");
-
-        // Sort
-        let order_col = match sort_by.unwrap_or("created_at") {
-            "name" => "test_case_name",
-            "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
-            "trending" => "adoption_count",
-            _ => "created_at",
-        };
-        let order_dir = match sort_dir.unwrap_or("desc") {
-            "asc" => "ASC",
-            _ => "DESC",
+        let where_clause = qb.where_clause();
+        let where_with_space = if where_clause.is_empty() {
+            String::new()
+        } else {
+            format!(" {where_clause}")
         };
 
-        let select_sql = format!(
+        // Determine if we need coverage post-filtering
+        let needs_coverage_filter = matches!(coverage_filter, Some("full") | Some("partial"));
+
+        if needs_coverage_filter {
+            // Coverage filter: fetch all WHERE-matched rows, post-filter in Rust, paginate manually
+            let cred_set: std::collections::HashSet<&str> = coverage_service_types
+                .map(|types| types.iter().map(|s| s.as_str()).collect())
+                .unwrap_or_default();
+            let is_full = coverage_filter == Some("full");
+
+            // Sort
+            let order_col = match sort_by.unwrap_or("created_at") {
+                "name" => "test_case_name",
+                "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
+                "trending" => "adoption_count",
+                _ => "created_at",
+            };
+            let order_dir = match sort_dir.unwrap_or("desc") {
+                "asc" => "ASC",
+                _ => "DESC",
+            };
+
+            let select_sql = format!(
             "SELECT * FROM persona_design_reviews{where_with_space} ORDER BY {order_col} {order_dir}",
         );
 
-        let mut stmt = conn.prepare(&select_sql)?;
-        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
-        let all_rows = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+            let mut stmt = conn.prepare(&select_sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
+            let all_rows = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
 
-        // Post-filter by coverage
-        let filtered: Vec<PersonaDesignReview> = all_rows
-            .into_iter()
-            .filter(|review| {
-                let required: Vec<String> = review
-                    .connectors_used
-                    .as_deref()
-                    .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
-                    .unwrap_or_default();
-                let total_required = required.len();
-                let covered = required.iter().filter(|c| cred_set.contains(c.as_str())).count();
+            // Post-filter by coverage
+            let filtered: Vec<PersonaDesignReview> = all_rows
+                .into_iter()
+                .filter(|review| {
+                    let required: Vec<String> = review
+                        .connectors_used
+                        .as_deref()
+                        .and_then(|s| serde_json::from_str::<Vec<String>>(s).ok())
+                        .unwrap_or_default();
+                    let total_required = required.len();
+                    let covered = required
+                        .iter()
+                        .filter(|c| cred_set.contains(c.as_str()))
+                        .count();
 
-                if is_full {
-                    // Full: all connectors covered (includes zero-connector templates)
-                    covered == total_required
-                } else {
-                    // Partial: some but not all covered
-                    covered > 0 && covered < total_required
-                }
-            })
-            .collect();
+                    if is_full {
+                        // Full: all connectors covered (includes zero-connector templates)
+                        covered == total_required
+                    } else {
+                        // Partial: some but not all covered
+                        covered > 0 && covered < total_required
+                    }
+                })
+                .collect();
 
-        let total = filtered.len() as i64;
-        let offset = (page * per_page) as usize;
-        let items: Vec<PersonaDesignReview> =
-            filtered.into_iter().skip(offset).take(per_page as usize).collect();
+            let total = filtered.len() as i64;
+            let offset = (page * per_page) as usize;
+            let items: Vec<PersonaDesignReview> = filtered
+                .into_iter()
+                .skip(offset)
+                .take(per_page as usize)
+                .collect();
 
-        Ok(PaginatedReviewResult { items, total })
-    } else {
-        // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
-        // Count total
-        let count_sql = format!("SELECT COUNT(*) FROM persona_design_reviews{where_with_space}");
-        let total: i64 = conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get(0))?;
+            Ok(PaginatedReviewResult { items, total })
+        } else {
+            // Fast path: no coverage filter -- use SQL LIMIT/OFFSET
+            // Count total
+            let count_sql =
+                format!("SELECT COUNT(*) FROM persona_design_reviews{where_with_space}");
+            let total: i64 =
+                conn.query_row(&count_sql, qb.params_ref().as_slice(), |row| row.get(0))?;
 
-        // Sort
-        let order_col = match sort_by.unwrap_or("created_at") {
-            "name" => "test_case_name",
-            "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
-            "trending" => "adoption_count",
-            _ => "created_at",
-        };
-        let order_dir = match sort_dir.unwrap_or("desc") {
-            "asc" => "ASC",
-            _ => "DESC",
-        };
+            // Sort
+            let order_col = match sort_by.unwrap_or("created_at") {
+                "name" => "test_case_name",
+                "quality" => "COALESCE(structural_score,0) + COALESCE(semantic_score,0)",
+                "trending" => "adoption_count",
+                _ => "created_at",
+            };
+            let order_dir = match sort_dir.unwrap_or("desc") {
+                "asc" => "ASC",
+                _ => "DESC",
+            };
 
-        let offset = page * per_page;
-        let limit_ph = qb.push_param(per_page);
-        let offset_ph = qb.push_param(offset);
-        let select_sql = format!(
+            let offset = page * per_page;
+            let limit_ph = qb.push_param(per_page);
+            let offset_ph = qb.push_param(offset);
+            let select_sql = format!(
             "SELECT * FROM persona_design_reviews{where_with_space} ORDER BY {order_col} {order_dir} LIMIT {limit_ph} OFFSET {offset_ph}",
         );
 
-        let mut stmt = conn.prepare(&select_sql)?;
-        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
-        let items = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+            let mut stmt = conn.prepare(&select_sql)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_review)?;
+            let items = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
 
-        Ok(PaginatedReviewResult { items, total })
-    }
+            Ok(PaginatedReviewResult { items, total })
+        }
     })
 }
 
@@ -576,41 +609,45 @@ pub fn increment_adoption_count(
     template_name: &str,
     persona_id: Option<&str>,
 ) -> Result<(), AppError> {
-    timed_query!("design_reviews", "design_reviews::increment_adoption_count", {
-    let now = chrono::Utc::now().to_rfc3339();
-    let mut conn = pool.get()?;
-    let tx = conn.transaction().map_err(|e| {
-        AppError::Internal(format!("Failed to begin adoption transaction: {e}"))
-    })?;
+    timed_query!(
+        "design_reviews",
+        "design_reviews::increment_adoption_count",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(|e| {
+                AppError::Internal(format!("Failed to begin adoption transaction: {e}"))
+            })?;
 
-    // Atomic increment
-    tx.execute(
-        "UPDATE persona_design_reviews
+            // Atomic increment
+            tx.execute(
+                "UPDATE persona_design_reviews
          SET adoption_count = adoption_count + 1, last_adopted_at = ?1
          WHERE test_case_name = ?2",
-        params![now, template_name],
-    )?;
+                params![now, template_name],
+            )?;
 
-    // Look up the review id for the audit log
-    let review_id: Option<String> = tx
-        .prepare("SELECT id FROM persona_design_reviews WHERE test_case_name = ?1")?
-        .query_row(params![template_name], |row| row.get(0))
-        .ok();
+            // Look up the review id for the audit log
+            let review_id: Option<String> = tx
+                .prepare("SELECT id FROM persona_design_reviews WHERE test_case_name = ?1")?
+                .query_row(params![template_name], |row| row.get(0))
+                .ok();
 
-    // Insert audit log entry
-    let log_id = uuid::Uuid::new_v4().to_string();
-    tx.execute(
+            // Insert audit log entry
+            let log_id = uuid::Uuid::new_v4().to_string();
+            tx.execute(
         "INSERT INTO adoption_log (id, template_name, source_review_id, persona_id, adopted_at)
          VALUES (?1, ?2, ?3, ?4, ?5)",
         params![log_id, template_name, review_id, persona_id, now],
     )?;
 
-    tx.commit().map_err(|e| {
-        AppError::Internal(format!("Failed to commit adoption transaction: {e}"))
-    })?;
+            tx.commit().map_err(|e| {
+                AppError::Internal(format!("Failed to commit adoption transaction: {e}"))
+            })?;
 
-    Ok(())
-    })
+            Ok(())
+        }
+    )
 }
 
 /// Get the top adopted templates in the last 7 days (trending).
@@ -618,65 +655,80 @@ pub fn get_trending_templates(
     pool: &DbPool,
     limit: i64,
 ) -> Result<Vec<PersonaDesignReview>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_trending_templates", {
-        let conn = pool.get()?;
-        let cutoff = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_design_reviews
+    timed_query!(
+        "design_reviews",
+        "design_reviews::get_trending_templates",
+        {
+            let conn = pool.get()?;
+            let cutoff = (chrono::Utc::now() - chrono::Duration::days(7)).to_rfc3339();
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_design_reviews
              WHERE adoption_count > 0 AND last_adopted_at >= ?1
              ORDER BY adoption_count DESC, last_adopted_at DESC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![cutoff, limit], row_to_review)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![cutoff, limit], row_to_review)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn get_distinct_connectors(pool: &DbPool) -> Result<Vec<ConnectorWithCount>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_distinct_connectors", {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
+    timed_query!(
+        "design_reviews",
+        "design_reviews::get_distinct_connectors",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
         "SELECT connectors_used FROM persona_design_reviews WHERE connectors_used IS NOT NULL",
     )?;
-    let rows = stmt.query_map([], |row| {
-        let json_str: String = row.get(0)?;
-        Ok(json_str)
-    })?;
+            let rows = stmt.query_map([], |row| {
+                let json_str: String = row.get(0)?;
+                Ok(json_str)
+            })?;
 
-    let mut counts: std::collections::HashMap<String, i64> = std::collections::HashMap::new();
-    for json_str in rows.flatten() {
-        if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
-            for name in arr {
-                *counts.entry(name).or_insert(0) += 1;
+            let mut counts: std::collections::HashMap<String, i64> =
+                std::collections::HashMap::new();
+            for json_str in rows.flatten() {
+                if let Ok(arr) = serde_json::from_str::<Vec<String>>(&json_str) {
+                    for name in arr {
+                        *counts.entry(name).or_insert(0) += 1;
+                    }
+                }
             }
+            let mut result: Vec<ConnectorWithCount> = counts
+                .into_iter()
+                .map(|(name, count)| ConnectorWithCount { name, count })
+                .collect();
+            result.sort_by(|a, b| a.name.cmp(&b.name));
+            Ok(result)
         }
-    }
-    let mut result: Vec<ConnectorWithCount> = counts
-        .into_iter()
-        .map(|(name, count)| ConnectorWithCount { name, count })
-        .collect();
-    result.sort_by(|a, b| a.name.cmp(&b.name));
-    Ok(result)
-    })
+    )
 }
 
 pub fn get_distinct_categories(pool: &DbPool) -> Result<Vec<CategoryWithCount>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_distinct_categories", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT COALESCE(category, 'Other') AS cat, COUNT(*) AS cnt
+    timed_query!(
+        "design_reviews",
+        "design_reviews::get_distinct_categories",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT COALESCE(category, 'Other') AS cat, COUNT(*) AS cnt
              FROM persona_design_reviews
              GROUP BY cat
              ORDER BY cnt DESC",
-        )?;
-        let rows = stmt.query_map([], |row| {
-            Ok(CategoryWithCount {
-                name: row.get(0)?,
-                count: row.get(1)?,
-            })
-        })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map([], |row| {
+                Ok(CategoryWithCount {
+                    name: row.get(0)?,
+                    count: row.get(1)?,
+                })
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Get all reviews that have no category (NULL).
@@ -684,73 +736,93 @@ pub fn get_distinct_categories(pool: &DbPool) -> Result<Vec<CategoryWithCount>, 
 pub fn get_uncategorized_reviews(
     pool: &DbPool,
 ) -> Result<Vec<(String, String, Option<String>)>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_uncategorized_reviews", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "design_reviews",
+        "design_reviews::get_uncategorized_reviews",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT id, instruction, connectors_used FROM persona_design_reviews WHERE category IS NULL",
         )?;
-        let rows = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-                row.get::<_, Option<String>>(2)?,
-            ))
-        })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Update the category for a single review.
 pub fn update_review_category(pool: &DbPool, id: &str, category: &str) -> Result<(), AppError> {
-    timed_query!("design_reviews", "design_reviews::update_review_category", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_design_reviews SET category = ?1 WHERE id = ?2",
-            params![category, id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "design_reviews",
+        "design_reviews::update_review_category",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_design_reviews SET category = ?1 WHERE id = ?2",
+                params![category, id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// Get all reviews that have a design_result (for service_flow backfill).
 /// Returns (id, design_result) tuples.
-pub fn get_reviews_with_design_result(
-    pool: &DbPool,
-) -> Result<Vec<(String, String)>, AppError> {
-    timed_query!("design_reviews", "design_reviews::get_reviews_with_design_result", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+pub fn get_reviews_with_design_result(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
+    timed_query!(
+        "design_reviews",
+        "design_reviews::get_reviews_with_design_result",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT id, design_result FROM persona_design_reviews WHERE design_result IS NOT NULL",
         )?;
-        let rows = stmt.query_map([], |row| {
-            Ok((
-                row.get::<_, String>(0)?,
-                row.get::<_, String>(1)?,
-            ))
-        })?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map([], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Update only the design_result JSON for a single review.
-pub fn update_review_design_result(pool: &DbPool, id: &str, design_result: &str) -> Result<(), AppError> {
-    timed_query!("design_reviews", "design_reviews::update_review_design_result", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_design_reviews SET design_result = ?1 WHERE id = ?2",
-            params![design_result, id],
-        )?;
-        Ok(())
-    })
+pub fn update_review_design_result(
+    pool: &DbPool,
+    id: &str,
+    design_result: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "design_reviews",
+        "design_reviews::update_review_design_result",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_design_reviews SET design_result = ?1 WHERE id = ?2",
+                params![design_result, id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// Delete duplicate reviews, keeping only the newest per test_case_name.
 /// Returns the number of rows deleted.
 pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {
-    timed_query!("design_reviews", "design_reviews::cleanup_duplicate_reviews", {
-        let conn = pool.get()?;
-        // Delete all rows that are NOT the newest per test_case_name
-        let deleted = conn.execute(
+    timed_query!(
+        "design_reviews",
+        "design_reviews::cleanup_duplicate_reviews",
+        {
+            let conn = pool.get()?;
+            // Delete all rows that are NOT the newest per test_case_name
+            let deleted = conn.execute(
             "DELETE FROM persona_design_reviews
              WHERE id NOT IN (
                SELECT id FROM (
@@ -761,8 +833,9 @@ pub fn cleanup_duplicate_reviews(pool: &DbPool) -> Result<i64, AppError> {
              )",
             [],
         )?;
-        Ok(deleted as i64)
-    })
+            Ok(deleted as i64)
+        }
+    )
 }
 
 // ============================================================================
@@ -776,7 +849,8 @@ pub fn get_active_patterns(pool: &DbPool) -> Result<Vec<PersonaDesignPattern>, A
             "SELECT * FROM persona_design_patterns WHERE is_active = 1 ORDER BY confidence DESC",
         )?;
         let rows = stmt.query_map([], row_to_pattern)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -788,29 +862,36 @@ pub fn create_pattern(
     confidence: i32,
 ) -> Result<PersonaDesignPattern, AppError> {
     timed_query!("design_reviews", "design_reviews::create_pattern", {
-    let id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
 
-    let conn = pool.get()?;
-    conn.execute(
-        "INSERT INTO persona_design_patterns
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO persona_design_patterns
          (id, pattern_type, pattern_text, trigger_condition, confidence,
           usage_count, is_active, created_at)
          VALUES (?1,?2,?3,?4,?5,0,1,?6)",
-        params![id, pattern_type, pattern_text, trigger_condition, confidence, now],
-    )?;
+            params![
+                id,
+                pattern_type,
+                pattern_text,
+                trigger_condition,
+                confidence,
+                now
+            ],
+        )?;
 
-    Ok(PersonaDesignPattern {
-        id,
-        pattern_type: pattern_type.to_string(),
-        pattern_text: pattern_text.to_string(),
-        trigger_condition: trigger_condition.to_string(),
-        confidence,
-        usage_count: 0,
-        last_validated_at: None,
-        is_active: true,
-        created_at: now,
-    })
+        Ok(PersonaDesignPattern {
+            id,
+            pattern_type: pattern_type.to_string(),
+            pattern_text: pattern_text.to_string(),
+            trigger_condition: trigger_condition.to_string(),
+            confidence,
+            usage_count: 0,
+            last_validated_at: None,
+            is_active: true,
+            created_at: now,
+        })
     })
 }
 

@@ -1,14 +1,14 @@
-use std::sync::Arc;
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::models::webhook_log::WebhookRequestLog;
-use crate::db::repos::resources::triggers as repo;
-use crate::db::repos::resources::tools as tool_repo;
-use crate::db::repos::resources::webhook_log as webhook_log_repo;
+use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::resources::tools as tool_repo;
+use crate::db::repos::resources::triggers as repo;
+use crate::db::repos::resources::webhook_log as webhook_log_repo;
 use crate::engine::chain;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync, require_privileged};
@@ -17,9 +17,7 @@ use crate::validation::trigger as tv;
 use crate::AppState;
 
 #[tauri::command]
-pub fn list_all_triggers(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<PersonaTrigger>, AppError> {
+pub fn list_all_triggers(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaTrigger>, AppError> {
     require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
@@ -38,7 +36,10 @@ fn validate_trigger_input(trigger_type: &str, config: Option<&str>) -> Result<()
     let mut errors = Vec::new();
     errors.extend(tv::validate_config_json(config));
     errors.extend(tv::validate_polling_url(trigger_type, config));
-    errors.extend(tv::validate_schedule_has_cron_or_interval(trigger_type, config));
+    errors.extend(tv::validate_schedule_has_cron_or_interval(
+        trigger_type,
+        config,
+    ));
     check(errors)
 }
 
@@ -54,24 +55,22 @@ fn validate_chain_cycle(
     if trigger_type != "chain" {
         return Ok(());
     }
-    let val = config
-        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok());
+    let val = config.and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok());
 
     // Validate condition type if present
     if let Some(ref v) = val {
         if let Some(condition) = v.get("condition") {
             if let Some(ctype) = condition.get("type").and_then(|t| t.as_str()) {
                 use crate::db::models::ChainConditionType;
-                ctype.parse::<ChainConditionType>().map_err(|e| {
-                    AppError::Validation(e)
-                })?;
+                ctype
+                    .parse::<ChainConditionType>()
+                    .map_err(|e| AppError::Validation(e))?;
             }
         }
     }
 
     // Cycle detection
-    let source = val
-        .and_then(|v| v.get("source_persona_id")?.as_str().map(String::from));
+    let source = val.and_then(|v| v.get("source_persona_id")?.as_str().map(String::from));
     if let Some(src) = source {
         chain::detect_chain_cycle(pool, &src, target_persona_id, exclude_trigger_id)?;
     }
@@ -115,13 +114,25 @@ pub fn update_trigger(
     // For chain cycle detection and polling URL validation on update, we need
     // the existing trigger's data to fill in fields not being changed.
     if input.trigger_type.is_some() || input.config.is_some() {
-        let trigger_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
+        let trigger_type = input
+            .trigger_type
+            .as_deref()
+            .unwrap_or(&existing.trigger_type);
         let config = input.config.as_deref().or(existing.config.as_deref());
         let mut errors = Vec::new();
         errors.extend(tv::validate_polling_url(trigger_type, config));
-        errors.extend(tv::validate_schedule_has_cron_or_interval(trigger_type, config));
+        errors.extend(tv::validate_schedule_has_cron_or_interval(
+            trigger_type,
+            config,
+        ));
         check(errors)?;
-        validate_chain_cycle(&state.db, trigger_type, config, &existing.persona_id, Some(&id))?;
+        validate_chain_cycle(
+            &state.db,
+            trigger_type,
+            config,
+            &existing.persona_id,
+            Some(&id),
+        )?;
     }
     repo::update(&state.db, &id, input)
 }
@@ -215,7 +226,10 @@ pub async fn validate_trigger(
                     passed: true,
                     message: "Skipped (config invalid)".into(),
                 });
-                return Ok(TriggerValidationResult { valid: false, checks });
+                return Ok(TriggerValidationResult {
+                    valid: false,
+                    checks,
+                });
             }
         },
         _ => serde_json::Value::Null,
@@ -224,14 +238,25 @@ pub async fn validate_trigger(
     match trigger.trigger_type.as_str() {
         "schedule" => {
             // Validate cron expression if present
-            if let Some(cron_expr) = config.get("cron").or(config.get("cron_expression")).and_then(|v| v.as_str()) {
+            if let Some(cron_expr) = config
+                .get("cron")
+                .or(config.get("cron_expression"))
+                .and_then(|v| v.as_str())
+            {
                 match crate::engine::cron::parse_cron(cron_expr) {
                     Ok(schedule) => {
                         let tz_str = config.get("timezone").and_then(|v| v.as_str());
                         let tz = tz_str.and_then(|s| s.parse::<chrono_tz::Tz>().ok());
                         let next = match tz {
-                            Some(t) => crate::engine::cron::next_fire_time_in_tz(&schedule, chrono::Utc::now(), t),
-                            None => crate::engine::cron::next_fire_time_local(&schedule, chrono::Utc::now()),
+                            Some(t) => crate::engine::cron::next_fire_time_in_tz(
+                                &schedule,
+                                chrono::Utc::now(),
+                                t,
+                            ),
+                            None => crate::engine::cron::next_fire_time_local(
+                                &schedule,
+                                chrono::Utc::now(),
+                            ),
                         };
                         let next_msg = next
                             .map(|t| match tz {
@@ -305,7 +330,8 @@ pub async fn validate_trigger(
             // Validate polling URL reachability.
             // The engine reads `url` from TriggerConfig::Polling; fall back to
             // `endpoint` for backward compatibility with older configs.
-            let polling_url = config.get("url")
+            let polling_url = config
+                .get("url")
                 .or_else(|| config.get("endpoint"))
                 .and_then(|v| v.as_str());
             if let Some(endpoint) = polling_url {
@@ -351,7 +377,8 @@ pub async fn validate_trigger(
                                                 message: "Reachable (HEAD not allowed, but server responded)".into(),
                                             });
                                         } else if (300..400).contains(&status) {
-                                            let location = resp.headers()
+                                            let location = resp
+                                                .headers()
                                                 .get("location")
                                                 .and_then(|v| v.to_str().ok())
                                                 .unwrap_or("unknown");
@@ -384,7 +411,7 @@ pub async fn validate_trigger(
                                     message: format!("Invalid URL: {endpoint}"),
                                 });
                             }
-                        }
+                        },
                     }
                 }
             }
@@ -401,7 +428,11 @@ pub async fn validate_trigger(
                     "Webhook server is not running -- webhook won't receive events".into()
                 },
             });
-            if let Some(secret) = config.get("hmac_secret").or(config.get("webhook_secret")).and_then(|v| v.as_str()) {
+            if let Some(secret) = config
+                .get("hmac_secret")
+                .or(config.get("webhook_secret"))
+                .and_then(|v| v.as_str())
+            {
                 if secret.is_empty() {
                     checks.push(TriggerValidationCheck {
                         label: "HMAC secret".into(),
@@ -438,7 +469,12 @@ pub async fn validate_trigger(
                 }
 
                 // Check for circular chain dependencies
-                match chain::detect_chain_cycle(&state.db, source_id, &trigger.persona_id, Some(&trigger.id)) {
+                match chain::detect_chain_cycle(
+                    &state.db,
+                    source_id,
+                    &trigger.persona_id,
+                    Some(&trigger.id),
+                ) {
                     Ok(()) => {
                         checks.push(TriggerValidationCheck {
                             label: "Cycle check".into(),
@@ -478,7 +514,8 @@ pub async fn validate_trigger(
         }
         "file_watcher" => {
             if let Some(paths) = config.get("watch_paths").and_then(|v| v.as_array()) {
-                let valid_paths: Vec<_> = paths.iter()
+                let valid_paths: Vec<_> = paths
+                    .iter()
                     .filter_map(|p| p.as_str())
                     .filter(|p| std::path::Path::new(p).exists())
                     .collect();
@@ -511,9 +548,9 @@ pub async fn validate_trigger(
             }
             if let Some(events) = config.get("events").and_then(|v| v.as_array()) {
                 let valid_events = ["create", "modify", "delete", "rename"];
-                let all_valid = events.iter().all(|e| {
-                    e.as_str().is_some_and(|s| valid_events.contains(&s))
-                });
+                let all_valid = events
+                    .iter()
+                    .all(|e| e.as_str().is_some_and(|s| valid_events.contains(&s)));
                 checks.push(TriggerValidationCheck {
                     label: "Event types".into(),
                     passed: all_valid,
@@ -526,7 +563,10 @@ pub async fn validate_trigger(
             }
         }
         "clipboard" => {
-            let ct = config.get("content_type").and_then(|v| v.as_str()).unwrap_or("text");
+            let ct = config
+                .get("content_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("text");
             let valid_types = ["text", "image", "any"];
             checks.push(TriggerValidationCheck {
                 label: "Content type".into(),
@@ -591,7 +631,9 @@ pub async fn validate_trigger(
                     });
                 } else {
                     let all_have_type = conditions.iter().all(|c| {
-                        c.get("event_type").and_then(|v| v.as_str()).is_some_and(|s| !s.is_empty())
+                        c.get("event_type")
+                            .and_then(|v| v.as_str())
+                            .is_some_and(|s| !s.is_empty())
                     });
                     checks.push(TriggerValidationCheck {
                         label: "Conditions".into(),
@@ -627,7 +669,10 @@ pub async fn validate_trigger(
                     message: "No window_seconds configured".into(),
                 });
             }
-            let op = config.get("operator").and_then(|v| v.as_str()).unwrap_or("all");
+            let op = config
+                .get("operator")
+                .and_then(|v| v.as_str())
+                .unwrap_or("all");
             let valid_ops = ["all", "any", "sequence"];
             checks.push(TriggerValidationCheck {
                 label: "Operator".into(),
@@ -721,7 +766,9 @@ pub fn preview_cron_schedule(
         }
     };
 
-    let tz = timezone.as_deref().and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+    let tz = timezone
+        .as_deref()
+        .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
 
     // Compute next N fire times (in the supplied IANA tz, else system local).
     let mut runs = Vec::with_capacity(count);
@@ -775,11 +822,13 @@ pub fn cron_fire_times_in_range(
         Err(_) => return Ok(vec![]),
     };
 
-    let start_utc: chrono::DateTime<chrono::Utc> = match start.parse::<chrono::DateTime<chrono::Utc>>() {
-        Ok(t) => t,
-        Err(e) => return Err(AppError::Internal(format!("invalid start RFC3339: {e}"))),
-    };
-    let end_utc: chrono::DateTime<chrono::Utc> = match end.parse::<chrono::DateTime<chrono::Utc>>() {
+    let start_utc: chrono::DateTime<chrono::Utc> =
+        match start.parse::<chrono::DateTime<chrono::Utc>>() {
+            Ok(t) => t,
+            Err(e) => return Err(AppError::Internal(format!("invalid start RFC3339: {e}"))),
+        };
+    let end_utc: chrono::DateTime<chrono::Utc> = match end.parse::<chrono::DateTime<chrono::Utc>>()
+    {
         Ok(t) => t,
         Err(e) => return Err(AppError::Internal(format!("invalid end RFC3339: {e}"))),
     };
@@ -787,7 +836,9 @@ pub fn cron_fire_times_in_range(
         return Ok(vec![]);
     }
 
-    let tz = timezone.as_deref().and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+    let tz = timezone
+        .as_deref()
+        .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
 
     let mut runs = Vec::with_capacity(cap.min(64));
     // next_fire_time_* returns a time strictly after `from`. To include a fire
@@ -879,7 +930,15 @@ fn format_time_from_cron(min: &str, hour: &str) -> String {
 }
 
 fn format_dow(dow: &str) -> String {
-    const DAYS: &[&str] = &["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const DAYS: &[&str] = &[
+        "Sunday",
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+    ];
     let parts: Vec<&str> = dow.split(',').collect();
 
     // Common patterns
@@ -1080,7 +1139,15 @@ pub fn list_trigger_chains(
     Ok(rows
         .into_iter()
         .map(
-            |(trigger_id, source_persona_id, source_persona_name, target_persona_id, target_persona_name, condition_type, enabled)| {
+            |(
+                trigger_id,
+                source_persona_id,
+                source_persona_name,
+                target_persona_id,
+                target_persona_name,
+                condition_type,
+                enabled,
+            )| {
                 TriggerChainLink {
                     trigger_id,
                     source_persona_id,
@@ -1109,9 +1176,7 @@ pub struct WebhookStatus {
 
 /// Get the webhook server status.
 #[tauri::command]
-pub fn get_webhook_status(
-    state: State<'_, Arc<AppState>>,
-) -> Result<WebhookStatus, AppError> {
+pub fn get_webhook_status(state: State<'_, Arc<AppState>>) -> Result<WebhookStatus, AppError> {
     require_auth_sync(&state)?;
     Ok(WebhookStatus {
         listening: state.scheduler.is_webhook_alive(),
@@ -1200,12 +1265,12 @@ pub async fn dry_run_trigger(
     };
 
     // 3. Find matching event subscriptions
-    let subs = event_repo::get_subscriptions_by_event_type(&state.db, &event_type)
-        .unwrap_or_default();
+    let subs =
+        event_repo::get_subscriptions_by_event_type(&state.db, &event_type).unwrap_or_default();
 
     // 4. Find downstream chain triggers using SQL-level filtering instead of get_all
-    let chain_triggers = repo::get_chain_triggers_for_source(&state.db, &target_persona_id)
-        .unwrap_or_default();
+    let chain_triggers =
+        repo::get_chain_triggers_for_source(&state.db, &target_persona_id).unwrap_or_default();
 
     // 5. Batch-fetch all persona names needed for subscriptions + chain targets
     let mut persona_ids_needed: Vec<String> = subs.iter().map(|s| s.persona_id.clone()).collect();
@@ -1215,10 +1280,8 @@ pub async fn dry_run_trigger(
 
     let personas = crate::db::repos::core::personas::get_by_ids(&state.db, &persona_ids_needed)
         .unwrap_or_default();
-    let persona_name_map: std::collections::HashMap<String, String> = personas
-        .into_iter()
-        .map(|p| (p.id, p.name))
-        .collect();
+    let persona_name_map: std::collections::HashMap<String, String> =
+        personas.into_iter().map(|p| (p.id, p.name)).collect();
 
     let matched_subscriptions: Vec<DryRunMatchedSubscription> = subs
         .into_iter()
@@ -1240,10 +1303,13 @@ pub async fn dry_run_trigger(
     let chain_targets: Vec<DryRunChainTarget> = chain_triggers
         .into_iter()
         .map(|t| {
-            let config: serde_json::Value = t.config.as_deref()
+            let config: serde_json::Value = t
+                .config
+                .as_deref()
                 .and_then(|c| serde_json::from_str(c).ok())
                 .unwrap_or(serde_json::Value::Null);
-            let condition_type = config.get("condition")
+            let condition_type = config
+                .get("condition")
                 .and_then(|c| c.get("type"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("any")
@@ -1304,9 +1370,7 @@ pub struct CronAgent {
 /// List all personas that have at least one schedule trigger, enriched with
 /// cron metadata and recent execution stats. This powers the "Cron Agents" panel.
 #[tauri::command]
-pub fn list_cron_agents(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<CronAgent>, AppError> {
+pub fn list_cron_agents(state: State<'_, Arc<AppState>>) -> Result<Vec<CronAgent>, AppError> {
     require_auth_sync(&state)?;
 
     let conn = state.db.get()?;
@@ -1334,7 +1398,7 @@ pub fn list_cron_agents(
          FROM persona_triggers t
          JOIN personas p ON p.id = t.persona_id
          WHERE t.trigger_type = 'schedule'
-         ORDER BY t.next_trigger_at ASC NULLS LAST"
+         ORDER BY t.next_trigger_at ASC NULLS LAST",
     )?;
 
     let rows = stmt.query_map([&cutoff], |row| {
@@ -1354,10 +1418,15 @@ pub fn list_cron_agents(
         let description = cron_expression
             .as_deref()
             .map(cron_to_human)
-            .or_else(|| interval_seconds.map(|s| {
-                if s >= 3600 { format!("Every {} hours", s / 3600) }
-                else { format!("Every {} minutes", s / 60) }
-            }))
+            .or_else(|| {
+                interval_seconds.map(|s| {
+                    if s >= 3600 {
+                        format!("Every {} hours", s / 3600)
+                    } else {
+                        format!("Every {} minutes", s / 60)
+                    }
+                })
+            })
             .unwrap_or_else(|| "No schedule configured".into());
 
         Ok(CronAgent {
@@ -1388,18 +1457,16 @@ pub fn list_cron_agents(
 
 #[allow(dead_code)]
 const MOCK_CRON_EXPRESSIONS: &[&str] = &[
-    "*/5 * * * *",   // every 5 minutes
-    "0 * * * *",     // every hour
-    "0 */6 * * *",   // every 6 hours
-    "0 9 * * 1-5",   // weekdays at 9am
-    "0 0 * * *",     // daily at midnight
-    "*/15 * * * *",  // every 15 minutes
+    "*/5 * * * *",  // every 5 minutes
+    "0 * * * *",    // every hour
+    "0 */6 * * *",  // every 6 hours
+    "0 9 * * 1-5",  // weekdays at 9am
+    "0 0 * * *",    // daily at midnight
+    "*/15 * * * *", // every 15 minutes
 ];
 
 #[tauri::command]
-pub fn seed_mock_cron_agent(
-    state: State<'_, Arc<AppState>>,
-) -> Result<CronAgent, AppError> {
+pub fn seed_mock_cron_agent(state: State<'_, Arc<AppState>>) -> Result<CronAgent, AppError> {
     require_auth_sync(&state)?;
 
     #[cfg(not(debug_assertions))]
@@ -1411,64 +1478,79 @@ pub fn seed_mock_cron_agent(
 
     #[cfg(debug_assertions)]
     {
-    let personas = crate::db::repos::core::personas::get_all(&state.db)?;
-    let t = chrono::Utc::now().timestamp_millis() as usize;
-    let idx = t % std::cmp::max(personas.len(), 1);
+        let personas = crate::db::repos::core::personas::get_all(&state.db)?;
+        let t = chrono::Utc::now().timestamp_millis() as usize;
+        let idx = t % std::cmp::max(personas.len(), 1);
 
-    // Fallback persona info when no real personas exist
-    let fallback_id = "mock-persona".to_string();
-    let fallback_name = "Mock Agent".to_string();
-    let (p_id, p_name, p_icon, p_color, p_enabled, p_headless) = if let Some(p) = personas.get(idx) {
-        (p.id.clone(), p.name.clone(), p.icon.clone(), p.color.clone(), p.enabled, p.headless)
-    } else {
-        (fallback_id, fallback_name, Some("\u{1F916}".to_string()), Some("#6366f1".to_string()), true, false)
-    };
+        // Fallback persona info when no real personas exist
+        let fallback_id = "mock-persona".to_string();
+        let fallback_name = "Mock Agent".to_string();
+        let (p_id, p_name, p_icon, p_color, p_enabled, p_headless) =
+            if let Some(p) = personas.get(idx) {
+                (
+                    p.id.clone(),
+                    p.name.clone(),
+                    p.icon.clone(),
+                    p.color.clone(),
+                    p.enabled,
+                    p.headless,
+                )
+            } else {
+                (
+                    fallback_id,
+                    fallback_name,
+                    Some("\u{1F916}".to_string()),
+                    Some("#6366f1".to_string()),
+                    true,
+                    false,
+                )
+            };
 
-    let cron_expr = MOCK_CRON_EXPRESSIONS[t % MOCK_CRON_EXPRESSIONS.len()];
-    let config = serde_json::json!({ "cron": cron_expr }).to_string();
-    let trigger_id = uuid::Uuid::new_v4().to_string();
-    let now = chrono::Utc::now();
-    let now_str = now.to_rfc3339();
-    let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
+        let cron_expr = MOCK_CRON_EXPRESSIONS[t % MOCK_CRON_EXPRESSIONS.len()];
+        let config = serde_json::json!({ "cron": cron_expr }).to_string();
+        let trigger_id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now();
+        let now_str = now.to_rfc3339();
+        let next = (now + chrono::Duration::minutes(((t % 60) + 5) as i64)).to_rfc3339();
 
-    let conn = state.db.get()?;
+        let conn = state.db.get()?;
 
-    // Ensure the persona row exists so list_cron_agents JOIN succeeds
-    if personas.is_empty() {
-        conn.execute(
+        // Ensure the persona row exists so list_cron_agents JOIN succeeds
+        if personas.is_empty() {
+            conn.execute(
             "INSERT OR IGNORE INTO personas (id, name, system_prompt, icon, color, enabled, headless, created_at, updated_at)
              VALUES (?1, ?2, 'Mock scheduled agent for development testing', ?3, ?4, 1, 0, ?5, ?5)",
             rusqlite::params![p_id, p_name, p_icon, p_color, now_str],
         )?;
-    }
+        }
 
-    conn.execute(
+        conn.execute(
         "INSERT INTO persona_triggers
          (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
          VALUES (?1, ?2, 'schedule', ?3, 1, ?4, ?5, ?4, ?4)",
         rusqlite::params![trigger_id, p_id, config, now_str, next],
     )?;
 
-    let description = cron_to_human(cron_expr);
+        let description = cron_to_human(cron_expr);
 
-    Ok(CronAgent {
-        persona_id: p_id,
-        persona_name: p_name,
-        persona_icon: p_icon,
-        persona_color: p_color,
-        persona_enabled: p_enabled,
-        headless: p_headless,
-        trigger_id,
-        cron_expression: Some(cron_expr.to_string()),
-        interval_seconds: None,
-        timezone: None,
-        trigger_enabled: true,
-        last_triggered_at: Some(now_str.clone()),
-        next_trigger_at: Some(next),
-        description,
-        recent_executions: 0,
-        recent_failures: 0,
-    })
+        Ok(CronAgent {
+            persona_id: p_id,
+            persona_name: p_name,
+            persona_icon: p_icon,
+            persona_color: p_color,
+            persona_enabled: p_enabled,
+            headless: p_headless,
+            trigger_id,
+            cron_expression: Some(cron_expr.to_string()),
+            interval_seconds: None,
+            timezone: None,
+            trigger_enabled: true,
+            last_triggered_at: Some(now_str.clone()),
+            next_trigger_at: Some(next),
+            description,
+            recent_executions: 0,
+            recent_failures: 0,
+        })
     }
 }
 
@@ -1552,7 +1634,9 @@ pub async fn replay_webhook_request(
         }
         Ok(resp_body)
     } else {
-        Err(AppError::Internal(format!("Replay failed with status {status}: {resp_body}")))
+        Err(AppError::Internal(format!(
+            "Replay failed with status {status}: {resp_body}"
+        )))
     }
 }
 
@@ -1570,7 +1654,9 @@ pub fn webhook_request_to_curl(
 
     // Add headers (skip content-length and host as curl handles them)
     if let Some(ref headers_json) = log_entry.headers {
-        if let Ok(headers) = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(headers_json) {
+        if let Ok(headers) =
+            serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(headers_json)
+        {
             for (key, value) in &headers {
                 let k = key.to_lowercase();
                 if k == "content-length" || k == "host" {
@@ -1660,7 +1746,10 @@ pub fn get_persona_config_warnings(
             continue;
         }
         let has_script = !tool.script_path.is_empty();
-        let has_api = tool.implementation_guide.as_ref().is_some_and(|g| !g.is_empty());
+        let has_api = tool
+            .implementation_guide
+            .as_ref()
+            .is_some_and(|g| !g.is_empty());
         if has_script && has_api {
             warnings.push(ConfigWarning {
                 id: format!("tool_conflict_{}", tool.id),

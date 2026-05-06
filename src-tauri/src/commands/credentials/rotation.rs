@@ -94,8 +94,14 @@ pub async fn rotate_credential_now(
     let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
     let result = rotation_engine::rotate_now(&state.db, &credential_id, "manual").await;
     let (op, detail) = match &result {
-        Ok(_) => ("credential_rotated", "manual rotation succeeded".to_string()),
-        Err(e) => ("credential_rotation_failed", format!("manual rotation failed: {e}")),
+        Ok(_) => (
+            "credential_rotated",
+            "manual rotation succeeded".to_string(),
+        ),
+        Err(e) => (
+            "credential_rotation_failed",
+            format!("manual rotation failed: {e}"),
+        ),
     };
     audit_log::insert_warn(&state.db, &credential_id, &cred.name, op, Some(&detail));
     result
@@ -108,12 +114,13 @@ pub async fn refresh_credential_cli_now(
 ) -> Result<String, AppError> {
     require_privileged(&state, "refresh_credential_cli_now").await?;
     let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
-    let result = crate::commands::credentials::cli_capture::recapture_for_credential(
-        &state.db, &cred,
-    )
-    .await;
+    let result =
+        crate::commands::credentials::cli_capture::recapture_for_credential(&state.db, &cred).await;
     let (op, detail) = match &result {
-        Ok(_) => ("credential_cli_recaptured", "manual CLI recapture succeeded".to_string()),
+        Ok(_) => (
+            "credential_cli_recaptured",
+            "manual CLI recapture succeeded".to_string(),
+        ),
         Err(e) => (
             "credential_cli_recapture_failed",
             format!("manual CLI recapture failed: {e}"),
@@ -132,8 +139,14 @@ pub async fn refresh_credential_oauth_now(
     let cred = crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
     let result = crate::engine::oauth_refresh::refresh_single_credential(&state.db, &cred).await;
     let (op, detail) = match &result {
-        Ok(_) => ("credential_oauth_refreshed", "manual OAuth token refresh succeeded".to_string()),
-        Err(e) => ("credential_oauth_refresh_failed", format!("manual OAuth refresh failed: {e}")),
+        Ok(_) => (
+            "credential_oauth_refreshed",
+            "manual OAuth token refresh succeeded".to_string(),
+        ),
+        Err(e) => (
+            "credential_oauth_refresh_failed",
+            format!("manual OAuth refresh failed: {e}"),
+        ),
     };
     audit_log::insert_warn(&state.db, &credential_id, &cred.name, op, Some(&detail));
     result

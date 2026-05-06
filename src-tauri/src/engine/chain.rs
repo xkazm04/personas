@@ -1,3 +1,28 @@
+//! Chain-trigger cascade evaluator — **NOT a `CompilationPipeline`**.
+//!
+//! Despite living next to the three compiler modules and sharing the
+//! "chain"/"compile" vocabulary, this file does no prompt assembly. It is the
+//! runtime fan-out evaluator that fires follow-up triggers after one persona
+//! execution completes. See [`engine/README.md`](./README.md) for the full
+//! decision matrix.
+//!
+//! - **Input:** a finished execution (`source_persona_id`, `execution_status`,
+//!   optional `execution_output` JSON, `chain_depth`, `visited_personas` for
+//!   cycle detection).
+//! - **Output:** zero-or-more `PersonaEvent` rows persisted via
+//!   `event_repo::record`, plus a [`CascadeMetrics`] hop summary returned to
+//!   the scheduler. No LLM is invoked, no prompt is assembled.
+//! - **Caller:** [`engine::handle_completion`](super::mod) calls
+//!   [`evaluate_chain_triggers`] exactly once per execution result. Tests use
+//!   the same entry point.
+//! - **Duplicated vs. delegated:** uses the same [`AppError`] and
+//!   `event_repo`/`trigger_repo` plumbing as the compilers, but shares **no
+//!   prompt-assembly or LLM code path**. The only conceptual overlap is the
+//!   word "chain" — chain-triggers are an event-cascade primitive, while the
+//!   compilers in `compiler.rs` / `intent_compiler.rs` / `workflow_compiler.rs`
+//!   implement [`CompilationPipeline`](super::compilation_pipeline) for
+//!   LLM-driven artifact production.
+
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Instant;
 
@@ -83,7 +108,8 @@ pub fn evaluate_chain_triggers(
         return metrics;
     }
     // Get only enabled chain triggers matching this source persona (filtered at SQL level)
-    let chain_triggers = match trigger_repo::get_chain_triggers_for_source(pool, source_persona_id) {
+    let chain_triggers = match trigger_repo::get_chain_triggers_for_source(pool, source_persona_id)
+    {
         Ok(t) => t,
         Err(e) => {
             tracing::error!("Chain trigger evaluation failed: {}", e);
@@ -206,12 +232,8 @@ pub fn evaluate_chain_triggers(
         // next startup, causing a duplicate downstream execution.
         // Retry once on failure; if both attempts fail, disable the trigger and
         // skip publishing to prevent cascade re-fire loops.
-        let mark_result = trigger_repo::mark_triggered(
-            pool,
-            &trigger.id,
-            None,
-            trigger.trigger_version,
-        );
+        let mark_result =
+            trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.trigger_version);
         let mark_ok = match mark_result {
             Ok(_) => true,
             Err(first_err) => {
@@ -221,12 +243,8 @@ pub fn evaluate_chain_triggers(
                     "Chain trigger mark_triggered failed, retrying once"
                 );
                 // Retry once
-                match trigger_repo::mark_triggered(
-                    pool,
-                    &trigger.id,
-                    None,
-                    trigger.trigger_version,
-                ) {
+                match trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.trigger_version)
+                {
                     Ok(_) => true,
                     Err(retry_err) => {
                         metrics.mark_failures += 1;
@@ -246,12 +264,9 @@ pub fn evaluate_chain_triggers(
 
                         // Try set_status(Errored) first (writes both status + enabled columns),
                         // fall back to set_enabled(false) if the status column is unavailable.
-                        let quarantined = trigger_repo::set_status(
-                            pool,
-                            &trigger.id,
-                            TriggerStatus::Errored,
-                        )
-                        .or_else(|_| trigger_repo::set_enabled(pool, &trigger.id, false));
+                        let quarantined =
+                            trigger_repo::set_status(pool, &trigger.id, TriggerStatus::Errored)
+                                .or_else(|_| trigger_repo::set_enabled(pool, &trigger.id, false));
 
                         if let Err(quarantine_err) = quarantined {
                             // Both disable paths failed — record the event in the dead
@@ -506,12 +521,12 @@ pub fn detect_chain_cycle(
 /// Resolve persona IDs to "name (id-prefix)" for human-readable error messages.
 fn resolve_persona_names(pool: &DbPool, ids: &[String]) -> Vec<String> {
     ids.iter()
-        .map(|id| {
-            match crate::db::repos::core::personas::get_by_id(pool, id) {
+        .map(
+            |id| match crate::db::repos::core::personas::get_by_id(pool, id) {
                 Ok(p) => format!("\"{}\"", p.name),
                 Err(_) => format!("({})", &id[..id.len().min(8)]),
-            }
-        })
+            },
+        )
         .collect()
 }
 
@@ -883,9 +898,8 @@ mod tests {
         let a = make_persona(&pool, "Agent A");
 
         let visited = HashSet::new();
-        let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, None,
-        );
+        let metrics =
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None);
 
         assert_eq!(metrics.chain_depth, 0);
         assert_eq!(metrics.triggers_evaluated, 0);
@@ -922,7 +936,14 @@ mod tests {
 
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 0, &visited, Some("trace-1"),
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            0,
+            &visited,
+            Some("trace-1"),
         );
 
         assert_eq!(metrics.chain_depth, 0);
@@ -961,9 +982,8 @@ mod tests {
 
         let visited = HashSet::new();
         // Execution failed, so predicate should not match
-        let metrics = evaluate_chain_triggers(
-            &pool, &a, "failed", None, "exec-1", 0, &visited, None,
-        );
+        let metrics =
+            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None);
 
         assert_eq!(metrics.triggers_evaluated, 1);
         assert_eq!(metrics.predicates_matched, 0);
@@ -997,9 +1017,8 @@ mod tests {
         // B is already visited — should detect cycle
         let mut visited = HashSet::new();
         visited.insert(b.clone());
-        let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", 1, &visited, None,
-        );
+        let metrics =
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None);
 
         assert_eq!(metrics.chain_depth, 1);
         assert_eq!(metrics.triggers_evaluated, 1);
@@ -1015,7 +1034,14 @@ mod tests {
 
         let visited = HashSet::new();
         let metrics = evaluate_chain_triggers(
-            &pool, &a, "completed", None, "exec-1", MAX_CHAIN_DEPTH, &visited, None,
+            &pool,
+            &a,
+            "completed",
+            None,
+            "exec-1",
+            MAX_CHAIN_DEPTH,
+            &visited,
+            None,
         );
 
         assert_eq!(metrics.chain_depth, MAX_CHAIN_DEPTH);

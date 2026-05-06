@@ -4,8 +4,19 @@ import type { PersonaSlaStats } from '@/api/overview/sla';
 import { formatPercent, formatDuration, formatMtbf } from '../libs/slaHelpers';
 import { rateToHealth, healthClasses, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 
-export function SlaCard({ label, value, sub, color, icon }: {
+export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
   label: string; value: string; sub: string; color: string; icon: React.ReactNode;
+  /** Optional native tooltip — used to surface the metric's denominator
+   *  policy (e.g. "cancelled runs are excluded") so a user comparing
+   *  this number to an external SRE dashboard can see why the values
+   *  may differ. */
+  tooltip?: string;
+  /** Optional scope badge (e.g. "All-time"). When set, renders a small
+   *  pill in the top-right corner of the card so users can tell at a
+   *  glance which numbers are bound to the selected time window and
+   *  which are not. The healing summary cards are all-time / snapshot;
+   *  see `get_sla_dashboard` in `sla.rs` for the policy. */
+  scope?: string;
 }) {
   const colorMap: Record<string, string> = {
     emerald: healthClasses('healthy'),
@@ -17,7 +28,12 @@ export function SlaCard({ label, value, sub, color, icon }: {
   const cls = colorMap[color] || colorMap['emerald'];
 
   return (
-    <div className={`rounded-modal border p-4 ${cls}`}>
+    <div className={`rounded-modal border p-4 relative ${cls}`} title={tooltip}>
+      {scope && (
+        <span className="absolute top-2 right-2 typo-caption font-mono uppercase tracking-wider opacity-60 px-1.5 py-0.5 rounded-full border border-current/20 bg-current/5">
+          {scope}
+        </span>
+      )}
       <div className="flex items-center gap-2 mb-2">
         {icon}
         <span className="typo-label font-mono opacity-80">{label}</span>
@@ -44,7 +60,25 @@ export function PersonaRow({ stats, expanded, onToggle }: {
           <span className="typo-caption text-foreground">{stats.total_executions} executions</span>
         </div>
         <span className={`typo-heading px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
-        {stats.consecutive_failures > 0 && <span className="typo-caption px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">{stats.consecutive_failures} failing</span>}
+        {stats.consecutive_failures > 0 && (() => {
+          // Cap the displayed streak at the lookback window: the SLA
+          // query only inspects the most recent N executions per persona
+          // (see CONSECUTIVE_FAILURE_LOOKBACK in sla.rs), so a true
+          // streak of 25 saturates at 20. Render "20+" so users know
+          // the actual streak may be longer.
+          const capped = stats.consecutive_failures >= stats.consecutive_failure_lookback;
+          const label = capped
+            ? `${stats.consecutive_failure_lookback}+ failing`
+            : `${stats.consecutive_failures} failing`;
+          return (
+            <span
+              className="typo-caption px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25"
+              title={capped ? `At least ${stats.consecutive_failure_lookback} consecutive failures (lookback cap reached)` : undefined}
+            >
+              {label}
+            </span>
+          );
+        })()}
         {stats.auto_healed_count > 0 && <span className="typo-caption px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-400 border border-violet-500/25">{stats.auto_healed_count} healed</span>}
         {expanded ? <ChevronUp className="w-4 h-4 text-foreground" /> : <ChevronDown className="w-4 h-4 text-foreground" />}
       </button>

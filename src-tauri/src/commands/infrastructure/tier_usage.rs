@@ -54,7 +54,10 @@ pub async fn get_tier_usage(
 
     // Return cached snapshot if still fresh
     {
-        let cache = state.tier_usage_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let cache = state
+            .tier_usage_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         if let Some((cached_at, ref snapshot)) = *cache {
             if cached_at.elapsed() < TIER_USAGE_CACHE_TTL {
                 return Ok(snapshot.clone());
@@ -63,7 +66,11 @@ pub async fn get_tier_usage(
     }
 
     // Cache miss or expired — compute fresh snapshot
-    let tier = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    let tier = state
+        .tier_config
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .clone();
 
     // Snapshot rate limiter buckets
     let raw_buckets = state.rate_limiter.usage_snapshot(EVENT_SOURCE_WINDOW);
@@ -81,7 +88,12 @@ pub async fn get_tier_usage(
             } else {
                 (current as f64 / limit as f64 * 100.0).min(100.0)
             };
-            RateBucketUsage { key, current, limit, percent }
+            RateBucketUsage {
+                key,
+                current,
+                limit,
+                percent,
+            }
         })
         .collect();
 
@@ -105,7 +117,10 @@ pub async fn get_tier_usage(
 
     // Store in cache
     {
-        let mut cache = state.tier_usage_cache.lock().unwrap_or_else(|e| e.into_inner());
+        let mut cache = state
+            .tier_usage_cache
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
         *cache = Some((Instant::now(), snapshot.clone()));
     }
 

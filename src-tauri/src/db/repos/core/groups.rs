@@ -16,7 +16,12 @@ row_mapper!(row_to_group -> PersonaGroup {
 });
 
 crud_get_by_id!(PersonaGroup, "persona_groups", "PersonaGroup", row_to_group);
-crud_get_all!(PersonaGroup, "persona_groups", row_to_group, "sort_order, created_at");
+crud_get_all!(
+    PersonaGroup,
+    "persona_groups",
+    row_to_group,
+    "sort_order, created_at"
+);
 
 crud_update! {
     model: PersonaGroup,
@@ -47,7 +52,9 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
             "Group name exceeds maximum length of {MAX_GROUP_NAME_LEN} characters"
         )));
     }
-    let description = input.description.map(|d| crate::validation::strip_html_tags(&d));
+    let description = input
+        .description
+        .map(|d| crate::validation::strip_html_tags(&d));
 
     timed_query!("persona_groups", "persona_groups::create", {
         let id = uuid::Uuid::new_v4().to_string();
@@ -86,7 +93,10 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
 
-        tx.execute("UPDATE personas SET group_id = NULL WHERE group_id = ?1", params![id])?;
+        tx.execute(
+            "UPDATE personas SET group_id = NULL WHERE group_id = ?1",
+            params![id],
+        )?;
         let rows = tx.execute("DELETE FROM persona_groups WHERE id = ?1", params![id])?;
 
         tx.commit()?;
@@ -204,7 +214,10 @@ mod tests {
         assert!(updated.default_model_profile.is_some());
         assert_eq!(updated.default_max_budget_usd, Some(2.5));
         assert_eq!(updated.default_max_turns, Some(15));
-        assert_eq!(updated.shared_instructions.as_deref(), Some("Always be concise."));
+        assert_eq!(
+            updated.shared_instructions.as_deref(),
+            Some("Always be concise.")
+        );
 
         // Reorder: Gamma, Beta, Alpha Prime
         reorder(&pool, &[g3.id.clone(), g2.id.clone(), g1.id.clone()]).unwrap();

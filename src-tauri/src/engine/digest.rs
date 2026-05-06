@@ -53,7 +53,8 @@ pub fn load_config(pool: &DbPool) -> DigestConfig {
 
 /// Persist digest config to app_settings.
 pub fn save_config(pool: &DbPool, config: &DigestConfig) -> Result<(), crate::error::AppError> {
-    let json = serde_json::to_string(config).map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
+    let json = serde_json::to_string(config)
+        .map_err(|e| crate::error::AppError::Internal(e.to_string()))?;
     settings::set(pool, crate::db::settings_keys::PERFORMANCE_DIGEST, &json)
 }
 
@@ -163,13 +164,26 @@ pub fn generate_digest(pool: &DbPool, period_days: i64) -> PerformanceDigest {
     // Current period summary
     let (total, success, failed, cost) = query_period_summary(pool, period_days);
     // Previous period summary (for trend)
-    let (prev_total, prev_success, _prev_failed, prev_cost) = query_prev_period_summary(pool, period_days);
+    let (prev_total, prev_success, _prev_failed, prev_cost) =
+        query_prev_period_summary(pool, period_days);
 
-    let success_rate = if total > 0 { success as f64 / total as f64 } else { 0.0 };
-    let prev_success_rate = if prev_total > 0 { prev_success as f64 / prev_total as f64 } else { 0.0 };
+    let success_rate = if total > 0 {
+        success as f64 / total as f64
+    } else {
+        0.0
+    };
+    let prev_success_rate = if prev_total > 0 {
+        prev_success as f64 / prev_total as f64
+    } else {
+        0.0
+    };
 
     // Projected monthly cost
-    let daily_cost = if period_days > 0 { cost / period_days as f64 } else { 0.0 };
+    let daily_cost = if period_days > 0 {
+        cost / period_days as f64
+    } else {
+        0.0
+    };
     let projected_monthly_cost = daily_cost * 30.0;
 
     let persona_trends = query_persona_trends(pool, period_days);
@@ -263,7 +277,13 @@ fn query_persona_trends(pool: &DbPool, days: i64) -> Vec<DigestPersonaTrend> {
 
     let current_rows: Vec<(String, String, i64, i64, f64)> = stmt
         .query_map(params![format!("-{days} days")], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?))
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            ))
         })
         .ok()
         .map(|rows| rows.filter_map(|r| r.ok()).collect())
@@ -283,11 +303,22 @@ fn query_persona_trends(pool: &DbPool, days: i64) -> Vec<DigestPersonaTrend> {
         .prepare(prev_sql)
         .ok()
         .map(|mut s| {
-            s.query_map(params![format!("-{} days", days * 2), format!("-{days} days")], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?, row.get::<_, i64>(2)?))
-            })
+            s.query_map(
+                params![format!("-{} days", days * 2), format!("-{days} days")],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, i64>(2)?,
+                    ))
+                },
+            )
             .ok()
-            .map(|rows| rows.filter_map(|r| r.ok()).map(|(id, t, s)| (id, (t, s))).collect())
+            .map(|rows| {
+                rows.filter_map(|r| r.ok())
+                    .map(|(id, t, s)| (id, (t, s)))
+                    .collect()
+            })
             .unwrap_or_default()
         })
         .unwrap_or_default();
@@ -295,9 +326,17 @@ fn query_persona_trends(pool: &DbPool, days: i64) -> Vec<DigestPersonaTrend> {
     current_rows
         .into_iter()
         .map(|(persona_id, persona_name, total, success, cost)| {
-            let sr = if total > 0 { success as f64 / total as f64 } else { 0.0 };
+            let sr = if total > 0 {
+                success as f64 / total as f64
+            } else {
+                0.0
+            };
             let (prev_total, prev_success) = prev_map.get(&persona_id).copied().unwrap_or((0, 0));
-            let prev_sr = if prev_total > 0 { prev_success as f64 / prev_total as f64 } else { 0.0 };
+            let prev_sr = if prev_total > 0 {
+                prev_success as f64 / prev_total as f64
+            } else {
+                0.0
+            };
             DigestPersonaTrend {
                 persona_id,
                 persona_name,
@@ -430,7 +469,11 @@ fn query_anomalies(pool: &DbPool, days: i64) -> Vec<DigestAnomaly> {
     }
 
     // Limit to top 5 anomalies
-    anomalies.sort_by(|a, b| b.deviation_pct.partial_cmp(&a.deviation_pct).unwrap_or(std::cmp::Ordering::Equal));
+    anomalies.sort_by(|a, b| {
+        b.deviation_pct
+            .partial_cmp(&a.deviation_pct)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     anomalies.truncate(5);
     anomalies
 }
@@ -443,7 +486,11 @@ fn query_anomalies(pool: &DbPool, days: i64) -> Vec<DigestAnomaly> {
 fn format_digest_text(digest: &PerformanceDigest) -> (String, String) {
     let title = format!(
         "Performance Digest ({})",
-        if digest.period == "daily" { "Daily" } else { "Weekly" }
+        if digest.period == "daily" {
+            "Daily"
+        } else {
+            "Weekly"
+        }
     );
 
     let mut body = String::new();
@@ -468,7 +515,13 @@ fn format_digest_text(digest: &PerformanceDigest) -> (String, String) {
     ));
 
     // Cost
-    let cost_trend = if digest.total_cost > digest.prev_total_cost { "^" } else if digest.total_cost < digest.prev_total_cost { "v" } else { "=" };
+    let cost_trend = if digest.total_cost > digest.prev_total_cost {
+        "^"
+    } else if digest.total_cost < digest.prev_total_cost {
+        "v"
+    } else {
+        "="
+    };
     body.push_str(&format!(
         "Cost: ${:.2} {} (was ${:.2}) | Projected: ${:.2}/mo\n",
         digest.total_cost, cost_trend, digest.prev_total_cost, digest.projected_monthly_cost,
@@ -478,7 +531,13 @@ fn format_digest_text(digest: &PerformanceDigest) -> (String, String) {
     if !digest.persona_trends.is_empty() {
         body.push_str("\nAgent Trends:\n");
         for pt in digest.persona_trends.iter().take(5) {
-            let arrow = if pt.trend > 0.01 { "^" } else if pt.trend < -0.01 { "v" } else { "=" };
+            let arrow = if pt.trend > 0.01 {
+                "^"
+            } else if pt.trend < -0.01 {
+                "v"
+            } else {
+                "="
+            };
             body.push_str(&format!(
                 "  {} {:.0}% {} ({} runs, ${:.2})\n",
                 pt.persona_name,
@@ -546,12 +605,20 @@ pub fn deliver_digest(pool: &DbPool, app: &AppHandle) {
         deliver_digest_to_channels(app, channels_json, &title, &body);
     }
 
-    // Store last digest timestamp
-    let _ = settings::set(
+    // Store last digest timestamp. A failure here is logged loudly because
+    // the scheduled `digest_tick` path uses this row to gate the next tick;
+    // if the write silently fails, the tick path's pre-delivery refresh is
+    // the safety net (see `digest_tick`).
+    if let Err(e) = settings::set(
         pool,
         crate::db::settings_keys::PERFORMANCE_DIGEST_LAST,
         &chrono::Utc::now().to_rfc3339(),
-    );
+    ) {
+        tracing::warn!(
+            error = %e,
+            "failed to persist performance_digest_last after delivery; relying on tick-time refresh to prevent retry storm"
+        );
+    }
 
     tracing::info!(
         period = %config.cadence,
@@ -589,6 +656,17 @@ fn deliver_digest_to_channels(app: &AppHandle, channels_json: &str, title: &str,
 
 /// Called by the DigestSubscription on each tick. Checks if a digest is due
 /// and delivers it if so.
+///
+/// ## Retry-storm hardening
+///
+/// A corrupted `performance_digest_last` row (manual SQLite edit, partial
+/// write, schema drift) used to set `should_send = true` AND leave the bad
+/// row in place — if the post-delivery write inside `deliver_digest` also
+/// failed, the next tick (every 30 minutes) would re-fire and spam every
+/// notification channel. We now refresh the timestamp **before** delivery,
+/// so the cadence is honored even if delivery fails or panics. If the
+/// pre-delivery refresh itself fails we abort the tick rather than risk
+/// re-firing on every tick.
 pub fn digest_tick(pool: &DbPool, app: &AppHandle) {
     let config = load_config(pool);
     if !config.enabled {
@@ -596,26 +674,120 @@ pub fn digest_tick(pool: &DbPool, app: &AppHandle) {
     }
 
     let interval_hours: i64 = if config.cadence == "daily" { 24 } else { 168 };
+    let now = chrono::Utc::now();
 
-    // Check last digest timestamp
     let last_sent = settings::get(pool, crate::db::settings_keys::PERFORMANCE_DIGEST_LAST)
         .ok()
         .flatten();
 
-    let should_send = match last_sent {
-        Some(ts) => {
-            match chrono::DateTime::parse_from_rfc3339(&ts) {
-                Ok(last) => {
-                    let elapsed = chrono::Utc::now().signed_duration_since(last.with_timezone(&chrono::Utc));
-                    elapsed.num_hours() >= interval_hours
-                }
-                Err(_) => true, // Corrupted timestamp, send digest
-            }
-        }
-        None => true, // Never sent
-    };
+    let decision = decide_send(last_sent.as_deref(), now, interval_hours);
+    if !decision.should_send {
+        return;
+    }
+    if decision.corrupted {
+        tracing::warn!(
+            raw = ?last_sent,
+            "performance_digest_last is corrupted; healing timestamp before delivery to prevent retry storm"
+        );
+    }
 
-    if should_send {
-        deliver_digest(pool, app);
+    // Refresh the cadence timestamp BEFORE delivery. This both heals a
+    // corrupted row and rate-limits the tick: if `deliver_digest` itself
+    // fails (network, panic, channel error), the next tick will see a
+    // fresh `now()` and back off until the cadence elapses again.
+    if let Err(e) = settings::set(
+        pool,
+        crate::db::settings_keys::PERFORMANCE_DIGEST_LAST,
+        &now.to_rfc3339(),
+    ) {
+        tracing::error!(
+            error = %e,
+            "failed to refresh performance_digest_last; skipping delivery to avoid retry storm"
+        );
+        return;
+    }
+
+    deliver_digest(pool, app);
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct TickDecision {
+    should_send: bool,
+    corrupted: bool,
+}
+
+/// Pure cadence decision used by `digest_tick`. Extracted so the retry-storm
+/// healing logic can be unit-tested without spinning up a Tauri app handle.
+fn decide_send(
+    last_sent: Option<&str>,
+    now: chrono::DateTime<chrono::Utc>,
+    interval_hours: i64,
+) -> TickDecision {
+    match last_sent {
+        Some(ts) => match chrono::DateTime::parse_from_rfc3339(ts) {
+            Ok(last) => {
+                let elapsed = now.signed_duration_since(last.with_timezone(&chrono::Utc));
+                TickDecision {
+                    should_send: elapsed.num_hours() >= interval_hours,
+                    corrupted: false,
+                }
+            }
+            Err(_) => TickDecision {
+                should_send: true,
+                corrupted: true,
+            },
+        },
+        None => TickDecision {
+            should_send: true,
+            corrupted: false,
+        },
+    }
+}
+
+#[cfg(test)]
+mod tick_tests {
+    use super::*;
+    use chrono::{Duration, Utc};
+
+    #[test]
+    fn fresh_timestamp_within_interval_does_not_send() {
+        let now = Utc::now();
+        let last = (now - Duration::hours(2)).to_rfc3339();
+        let d = decide_send(Some(&last), now, 24);
+        assert!(!d.should_send);
+        assert!(!d.corrupted);
+    }
+
+    #[test]
+    fn elapsed_timestamp_sends() {
+        let now = Utc::now();
+        let last = (now - Duration::hours(25)).to_rfc3339();
+        let d = decide_send(Some(&last), now, 24);
+        assert!(d.should_send);
+        assert!(!d.corrupted);
+    }
+
+    #[test]
+    fn missing_timestamp_sends_without_corruption_flag() {
+        let d = decide_send(None, Utc::now(), 24);
+        assert!(d.should_send);
+        assert!(!d.corrupted);
+    }
+
+    #[test]
+    fn corrupted_timestamp_flags_corruption_and_sends() {
+        let d = decide_send(Some("not-a-timestamp"), Utc::now(), 24);
+        assert!(d.should_send, "corrupted timestamp must send digest");
+        assert!(
+            d.corrupted,
+            "corrupted timestamp must be flagged so the caller refreshes the row before delivery"
+        );
+    }
+
+    #[test]
+    fn empty_string_treated_as_corrupted() {
+        let d = decide_send(Some(""), Utc::now(), 24);
+        assert!(d.should_send);
+        assert!(d.corrupted);
     }
 }

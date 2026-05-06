@@ -15,12 +15,7 @@ pub fn list_execution_knowledge(
     limit: Option<i64>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_for_persona(
-        &state.db,
-        &persona_id,
-        knowledge_type.as_deref(),
-        limit,
-    )
+    repo::list_for_persona(&state.db, &persona_id, knowledge_type.as_deref(), limit)
 }
 
 #[tauri::command]
@@ -30,11 +25,7 @@ pub fn get_knowledge_injection(
     use_case_id: Option<String>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_injection_guidance(
-        &state.db,
-        &persona_id,
-        use_case_id.as_deref(),
-    )
+    repo::get_injection_guidance(&state.db, &persona_id, use_case_id.as_deref())
 }
 
 #[tauri::command]
@@ -54,26 +45,29 @@ pub fn list_scoped_knowledge(
     limit: Option<i64>,
 ) -> Result<Vec<ExecutionKnowledge>, AppError> {
     require_auth_sync(&state)?;
-    repo::list_by_scope(
-        &state.db,
-        &scope_type,
-        scope_id.as_deref(),
-        limit,
-    )
+    repo::list_by_scope(&state.db, &scope_type, scope_id.as_deref(), limit)
 }
 
 // -- Dev seed: mock knowledge pattern (debug builds only) -----------------------
 
 #[cfg(debug_assertions)]
 const MOCK_KNOWLEDGE_TYPES: &[&str] = &[
-    "tool_sequence", "failure_pattern", "cost_quality", "model_performance",
-    "data_flow", "agent_annotation",
+    "tool_sequence",
+    "failure_pattern",
+    "cost_quality",
+    "model_performance",
+    "data_flow",
+    "agent_annotation",
 ];
 
 #[cfg(debug_assertions)]
 const MOCK_PATTERN_KEYS: &[&str] = &[
-    "gmail→sheets_sync", "slack_timeout_retry", "gpt4_vs_haiku_cost",
-    "sonnet_accuracy_report", "jira→github_flow", "memory_cleanup_rule",
+    "gmail→sheets_sync",
+    "slack_timeout_retry",
+    "gpt4_vs_haiku_cost",
+    "sonnet_accuracy_report",
+    "jira→github_flow",
+    "memory_cleanup_rule",
 ];
 
 #[cfg(debug_assertions)]
@@ -103,7 +97,9 @@ pub fn seed_mock_knowledge(
     {
         let personas = crate::db::repos::core::personas::get_all(&state.db)?;
         if personas.is_empty() {
-            return Err(AppError::Validation("No personas exist. Create an agent first.".into()));
+            return Err(AppError::Validation(
+                "No personas exist. Create an agent first.".into(),
+            ));
         }
         let idx = (chrono::Utc::now().timestamp_millis() as usize) % personas.len();
         let persona_id = &personas[idx].id;

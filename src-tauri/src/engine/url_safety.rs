@@ -22,7 +22,7 @@ fn is_private_ip(ip: IpAddr) -> bool {
             || v4.is_broadcast()          // 255.255.255.255
             || is_v4_shared(v4)           // 100.64.0.0/10 (CGN / shared)
             || is_v4_documentation(v4)    // 192.0.2.0/24, 198.51.100.0/24, 203.0.113.0/24
-            || is_cloud_metadata(v4)      // 169.254.169.254 specifically
+            || is_cloud_metadata(v4) // 169.254.169.254 specifically
         }
         IpAddr::V6(v6) => {
             v6.is_loopback()              // ::1
@@ -77,11 +77,7 @@ const BLOCKED_HOSTNAMES: &[&str] = &[
 ];
 
 /// Hostname suffixes that indicate internal/cloud infrastructure.
-const BLOCKED_HOSTNAME_SUFFIXES: &[&str] = &[
-    ".internal",
-    ".local",
-    ".localhost",
-];
+const BLOCKED_HOSTNAME_SUFFIXES: &[&str] = &[".internal", ".local", ".localhost"];
 
 /// Returns true if the hostname matches a known cloud metadata or internal service pattern.
 fn is_blocked_hostname(host: &str) -> bool {
@@ -104,16 +100,20 @@ fn is_blocked_hostname(host: &str) -> bool {
 /// Performs DNS resolution to catch hostnames that resolve to private IPs
 /// (e.g., `http://metadata.internal/` -> 169.254.169.254).
 pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
-    let parsed = url::Url::parse(url_str)
-        .map_err(|e| format!("Invalid URL: {e}"))?;
+    let parsed = url::Url::parse(url_str).map_err(|e| format!("Invalid URL: {e}"))?;
 
     // Only allow http and https schemes
     match parsed.scheme() {
         "http" | "https" => {}
-        scheme => return Err(format!("Blocked scheme '{scheme}': only http/https allowed")),
+        scheme => {
+            return Err(format!(
+                "Blocked scheme '{scheme}': only http/https allowed"
+            ))
+        }
     }
 
-    let host = parsed.host_str()
+    let host = parsed
+        .host_str()
         .ok_or_else(|| "URL has no host".to_string())?;
 
     // Block well-known cloud metadata hostnames before DNS resolution.
@@ -161,6 +161,23 @@ pub fn validate_url_safety(url_str: &str) -> Result<(), String> {
     }
 }
 
+/// Cheap host-only safety check — no DNS lookup. Returns true if the URL's
+/// host is a literal private/internal IP, an unspecified address, or a known
+/// blocked hostname (cloud metadata, `.internal`, `.local`, …).
+///
+/// Use this in synchronous contexts that cannot afford a DNS round-trip,
+/// such as a `reqwest::redirect::Policy::custom` callback, where the DNS
+/// resolver attached to the client already covers hostname-based redirects
+/// but the redirect `Location` may carry a raw IP literal that bypasses DNS.
+pub fn is_url_target_private(url: &url::Url) -> bool {
+    match url.host() {
+        Some(url::Host::Ipv4(v4)) => is_private_ip(IpAddr::V4(v4)),
+        Some(url::Host::Ipv6(v6)) => is_private_ip(IpAddr::V6(v6)),
+        Some(url::Host::Domain(domain)) => is_blocked_hostname(&domain.to_ascii_lowercase()),
+        None => false,
+    }
+}
+
 /// A DNS resolver for `reqwest` that rejects private/internal IPs at connect
 /// time, preventing DNS-rebinding SSRF attacks.
 ///
@@ -177,7 +194,9 @@ impl reqwest::dns::Resolve for SsrfSafeResolver {
                 // Resolve using the system resolver (getaddrinfo).
                 // Port 0 is a placeholder; reqwest overrides it with the URL port.
                 let lookup = format!("{host_for_resolve}:0");
-                lookup.to_socket_addrs().map(|iter| iter.collect::<Vec<_>>())
+                lookup
+                    .to_socket_addrs()
+                    .map(|iter| iter.collect::<Vec<_>>())
             })
             .await
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
@@ -186,20 +205,19 @@ impl reqwest::dns::Resolve for SsrfSafeResolver {
             .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { Box::new(e) })?;
 
             if addrs.is_empty() {
-                return Err(Box::new(std::io::Error::other(
-                    format!("DNS resolution returned no addresses for '{host}'"),
-                )) as Box<dyn std::error::Error + Send + Sync>);
+                return Err(Box::new(std::io::Error::other(format!(
+                    "DNS resolution returned no addresses for '{host}'"
+                )))
+                    as Box<dyn std::error::Error + Send + Sync>);
             }
 
             // Reject if ANY resolved address is private/internal
             for addr in &addrs {
                 if is_private_ip(addr.ip()) {
-                    return Err(Box::new(std::io::Error::other(
-                        format!(
-                            "SSRF protection: '{host}' resolves to private address {}",
-                            addr.ip()
-                        ),
-                    ))
+                    return Err(Box::new(std::io::Error::other(format!(
+                        "SSRF protection: '{host}' resolves to private address {}",
+                        addr.ip()
+                    )))
                         as Box<dyn std::error::Error + Send + Sync>);
                 }
             }
@@ -304,7 +322,9 @@ mod tests {
 
     #[test]
     fn test_blocks_cloud_metadata_hostnames() {
-        assert!(validate_url_safety("http://metadata.google.internal/computeMetadata/v1/").is_err());
+        assert!(
+            validate_url_safety("http://metadata.google.internal/computeMetadata/v1/").is_err()
+        );
         assert!(validate_url_safety("http://metadata.goog/computeMetadata/v1/").is_err());
     }
 
@@ -318,7 +338,10 @@ mod tests {
     #[test]
     fn test_dns_failure_is_blocked() {
         // A hostname that won't resolve should be rejected (fail-closed)
-        assert!(validate_url_safety("http://this-domain-will-never-resolve-3829482.example.test/secret").is_err());
+        assert!(validate_url_safety(
+            "http://this-domain-will-never-resolve-3829482.example.test/secret"
+        )
+        .is_err());
     }
 
     #[tokio::test]
@@ -335,5 +358,56 @@ mod tests {
     fn test_build_ssrf_safe_client() {
         // Smoke test: client construction should not panic
         let _client = build_ssrf_safe_client(std::time::Duration::from_secs(10));
+    }
+
+    #[test]
+    fn test_is_url_target_private_blocks_ip_literals() {
+        let cases = [
+            "http://127.0.0.1/admin",
+            "http://10.0.0.1/api",
+            "http://192.168.1.1/",
+            "http://169.254.169.254/latest/meta-data/",
+            "http://[::1]/admin",
+            "http://0.0.0.0/",
+        ];
+        for url_str in cases {
+            let parsed = url::Url::parse(url_str).unwrap();
+            assert!(
+                is_url_target_private(&parsed),
+                "{url_str} should be flagged private"
+            );
+        }
+    }
+
+    #[test]
+    fn test_is_url_target_private_blocks_internal_hostnames() {
+        let cases = [
+            "http://metadata.google.internal/x",
+            "http://service.local/api",
+            "http://anything.internal/secret",
+        ];
+        for url_str in cases {
+            let parsed = url::Url::parse(url_str).unwrap();
+            assert!(
+                is_url_target_private(&parsed),
+                "{url_str} should be flagged private"
+            );
+        }
+    }
+
+    #[test]
+    fn test_is_url_target_private_allows_public_ips() {
+        let cases = [
+            "https://8.8.8.8/dns",
+            "https://1.1.1.1/test",
+            "https://example.com/path",
+        ];
+        for url_str in cases {
+            let parsed = url::Url::parse(url_str).unwrap();
+            assert!(
+                !is_url_target_private(&parsed),
+                "{url_str} should be allowed"
+            );
+        }
     }
 }

@@ -23,7 +23,11 @@ pub struct PersonaSlaStats {
     pub successful: i64,
     pub failed: i64,
     pub cancelled: i64,
-    /// Success rate as 0.0--1.0.
+    /// Success rate as 0.0--1.0.  Denominator is `successful + failed`
+    /// only; cancelled executions are excluded because they are
+    /// user-initiated and do not reflect system reliability. The same
+    /// rule is used for the global rate and the daily trend so a single
+    /// dashboard never mixes definitions.
     pub success_rate: f64,
     pub avg_duration_ms: f64,
     pub p95_duration_ms: f64,
@@ -31,8 +35,16 @@ pub struct PersonaSlaStats {
     /// Mean time between failures in seconds (null if < 2 failures).
     #[ts(type = "number | null")]
     pub mtbf_seconds: Option<f64>,
-    /// Count of consecutive recent failures (0 = healthy).
+    /// Count of consecutive recent failures (0 = healthy). Capped at
+    /// `consecutive_failure_lookback`; render as "{cap}+" in the UI when
+    /// the two are equal so users know the streak may be longer.
     pub consecutive_failures: i64,
+    /// Number of recent executions inspected when computing
+    /// `consecutive_failures`. Always equal to the
+    /// `CONSECUTIVE_FAILURE_LOOKBACK` constant in the SLA repository;
+    /// surfaced on the row so the frontend can render a "{cap}+"
+    /// boundary indicator without hard-coding the cap.
+    pub consecutive_failure_lookback: i64,
     /// Number of healing issues auto-fixed for this persona.
     pub auto_healed_count: i64,
 }

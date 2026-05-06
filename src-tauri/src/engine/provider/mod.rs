@@ -1,10 +1,12 @@
 pub mod claude;
 
-use crate::db::DbPool;
-use crate::db::models::Persona;
 use super::types::{CliArgs, ModelProfile, StreamLineType};
+use crate::db::models::Persona;
+use crate::db::DbPool;
+use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // pending: re-emit engine-fallback event from this module
 use tauri::Emitter;
+use ts_rs::TS;
 
 // =============================================================================
 // PromptDelivery -- how the provider sends the prompt to the CLI process
@@ -16,7 +18,8 @@ pub enum PromptDelivery {
     /// Write prompt to stdin, then close (Claude Code).
     Stdin,
     /// Prompt is embedded as a positional argument (Codex: `exec "<prompt>"`).
-    #[allow(dead_code)] // pending: Codex provider currently uses Stdin; PositionalArg lands ahead of consumer
+    #[allow(dead_code)]
+    // pending: Codex provider currently uses Stdin; PositionalArg lands ahead of consumer
     PositionalArg,
     /// Prompt is passed via a flag (Codex: `-p "<prompt>"`).
     #[allow(dead_code)]
@@ -28,7 +31,9 @@ pub enum PromptDelivery {
 // =============================================================================
 
 /// Supported CLI engine backends.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "snake_case")]
 pub enum EngineKind {
     ClaudeCode,
 }
@@ -170,11 +175,7 @@ pub trait CliProvider: Send + Sync {
     }
 
     /// Build CLI arguments for resume with prompt text embedded.
-    fn build_resume_args_with_prompt(
-        &self,
-        session_id: &str,
-        _prompt_text: &str,
-    ) -> CliArgs {
+    fn build_resume_args_with_prompt(&self, session_id: &str, _prompt_text: &str) -> CliArgs {
         self.build_resume_args(session_id)
     }
 }
@@ -205,7 +206,10 @@ pub fn load_engine_kind(pool: &DbPool) -> EngineKind {
 /// frontend when an unrecognized engine setting triggers the ClaudeCode
 /// fallback, so the user sees a toast notification.
 #[allow(dead_code)] // pending: wire from engine startup once fallback toast is desired
-pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::ExecutionEventEmitter) -> EngineKind {
+pub fn load_engine_kind_notified(
+    pool: &DbPool,
+    emitter: &dyn super::events::ExecutionEventEmitter,
+) -> EngineKind {
     use super::event_registry::event_name;
 
     let raw = crate::db::repos::core::settings::get(pool, crate::db::settings_keys::CLI_ENGINE)
@@ -216,10 +220,14 @@ pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::Exe
         Some(ref s) if s.parse::<EngineKind>().is_err() => {
             // Unrecognized value — from_setting will log the warning
             let kind = EngineKind::from_setting(s);
-            super::events::emit_to(emitter, event_name::ENGINE_FALLBACK, &serde_json::json!({
+            super::events::emit_to(
+                emitter,
+                event_name::ENGINE_FALLBACK,
+                &serde_json::json!({
                     "requested": s,
                     "actual": kind.as_setting(),
-                }));
+                }),
+            );
             kind
         }
         Some(ref s) => EngineKind::from_setting(s),
@@ -234,10 +242,7 @@ pub fn load_engine_kind_notified(pool: &DbPool, emitter: &dyn super::events::Exe
 
 #[allow(dead_code)]
 fn parse_version_tuple(version: &str) -> Option<Vec<u64>> {
-    let parts: Vec<u64> = version
-        .split('.')
-        .filter_map(|p| p.parse().ok())
-        .collect();
+    let parts: Vec<u64> = version.split('.').filter_map(|p| p.parse().ok()).collect();
     if parts.len() >= 2 {
         Some(parts)
     } else {
@@ -291,10 +296,7 @@ pub fn extract_version(output: &str) -> Option<String> {
 /// the provider's minimum. Returns `Ok(version_string)` if OK or no version
 /// could be determined, `Err(warning_message)` if below minimum.
 #[allow(dead_code)]
-pub async fn check_cli_version(
-    binary_path: &str,
-    minimum: &str,
-) -> Result<String, String> {
+pub async fn check_cli_version(binary_path: &str, minimum: &str) -> Result<String, String> {
     let mut cmd = tokio::process::Command::new(binary_path);
     cmd.arg("--version");
 
@@ -305,12 +307,7 @@ pub async fn check_cli_version(
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let output = match tokio::time::timeout(
-        std::time::Duration::from_secs(2),
-        cmd.output(),
-    )
-    .await
-    {
+    let output = match tokio::time::timeout(std::time::Duration::from_secs(2), cmd.output()).await {
         Ok(Ok(out)) => out,
         Ok(Err(e)) => {
             tracing::debug!(binary = binary_path, error = %e, "Failed to run --version");
@@ -438,10 +435,7 @@ mod tests {
 
     #[test]
     fn extract_version_bare() {
-        assert_eq!(
-            extract_version("2.1.98"),
-            Some("2.1.98".to_string())
-        );
+        assert_eq!(extract_version("2.1.98"), Some("2.1.98".to_string()));
     }
 
     #[test]
@@ -463,5 +457,4 @@ mod tests {
         let provider = resolve_provider(EngineKind::ClaudeCode);
         assert!(provider.minimum_version().is_some());
     }
-
 }

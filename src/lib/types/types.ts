@@ -401,7 +401,10 @@ export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" |
 export type ArtistTab = "blender" | "gallery" | "media-studio";
 export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
-export type CliEngine = "claude_code" | "ollama";
+// Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts
+// and src-tauri/src/engine/ollama.rs (gated behind the `ollama` Cargo feature).
+// BYOM-level Ollama (model provider) is unrelated and lives in sub_byom / sub_model_config.
+export type CliEngine = "claude_code";
 
 // -- Analytics Types (re-exported from ts-rs bindings) ---------------------
 

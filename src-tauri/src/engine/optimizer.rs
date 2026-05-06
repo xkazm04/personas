@@ -71,8 +71,14 @@ pub fn analyze_pipeline(
     connections: &[PersonaTeamConnection],
 ) -> PipelineAnalytics {
     let total_runs = runs.len() as i64;
-    let completed_runs = runs.iter().filter(|r| r.state() == crate::engine::types::ExecutionState::Completed).count() as i64;
-    let failed_runs = runs.iter().filter(|r| r.state() == crate::engine::types::ExecutionState::Failed).count() as i64;
+    let completed_runs = runs
+        .iter()
+        .filter(|r| r.state() == crate::engine::types::ExecutionState::Completed)
+        .count() as i64;
+    let failed_runs = runs
+        .iter()
+        .filter(|r| r.state() == crate::engine::types::ExecutionState::Failed)
+        .count() as i64;
     let success_rate = if total_runs > 0 {
         completed_runs as f64 / total_runs as f64
     } else {
@@ -119,9 +125,16 @@ fn compute_avg_duration(runs: &[PipelineRun]) -> f64 {
         .iter()
         .filter_map(|r| {
             let started = parse_timestamp_secs(&r.started_at)?;
-            let completed = r.completed_at.as_ref().and_then(|c| parse_timestamp_secs(c))?;
+            let completed = r
+                .completed_at
+                .as_ref()
+                .and_then(|c| parse_timestamp_secs(c))?;
             let diff = completed - started;
-            if diff >= 0 { Some(diff as f64) } else { None }
+            if diff >= 0 {
+                Some(diff as f64)
+            } else {
+                None
+            }
         })
         .collect();
 
@@ -139,10 +152,7 @@ fn compute_node_analytics(
     let mut member_stats: HashMap<String, (i64, i64, i64, String)> = HashMap::new();
 
     for member in members {
-        member_stats.insert(
-            member.id.clone(),
-            (0, 0, 0, member.persona_id.clone()),
-        );
+        member_stats.insert(member.id.clone(), (0, 0, 0, member.persona_id.clone()));
     }
 
     for run in runs {
@@ -335,7 +345,11 @@ fn generate_suggestions(
     }
 
     // Sort by confidence descending
-    suggestions.sort_by(|a, b| b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal));
+    suggestions.sort_by(|a, b| {
+        b.confidence
+            .partial_cmp(&a.confidence)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     suggestions
 }

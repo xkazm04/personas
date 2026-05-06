@@ -10,8 +10,8 @@
 //! [`get_or_create_system_api_key`].
 
 use std::collections::HashMap;
-use std::sync::{Arc, OnceLock};
 use std::sync::Mutex;
+use std::sync::{Arc, OnceLock};
 use tauri::Manager;
 
 use axum::{
@@ -22,18 +22,18 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use tower_http::cors::{Any, CorsLayer};
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
+use tower_http::cors::{Any, CorsLayer};
 
 use crate::db::models::*;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::metrics as metrics_repo;
-use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
-use crate::db::repos::lab::matrix as matrix_repo;
+use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::eval as eval_repo;
+use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::resources::external_api_keys as api_key_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
@@ -78,15 +78,27 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/api/lab/cancel/{run_id}", post(cancel_lab_run))
         .route("/api/lab/runs/{run_id}/delete", post(delete_lab_run))
         .route("/api/lab/runs/{run_id}/status", get(get_lab_run_status))
-        .route("/api/lab/improve/{persona_id}/{run_id}", post(improve_prompt))
+        .route(
+            "/api/lab/improve/{persona_id}/{run_id}",
+            post(improve_prompt),
+        )
         // Versions
         .route("/api/versions/{persona_id}", get(list_versions))
         .route("/api/versions/{version_id}/tag", post(tag_version))
-        .route("/api/versions/{version_id}/rollback", post(rollback_version))
+        .route(
+            "/api/versions/{version_id}/rollback",
+            post(rollback_version),
+        )
         .route("/api/versions/{run_id}/accept", post(accept_draft))
         // Automation settings
-        .route("/api/settings/auto-optimize/{persona_id}", get(get_auto_optimize).post(set_auto_optimize))
-        .route("/api/settings/health-watch/{persona_id}", get(get_health_watch).post(set_health_watch))
+        .route(
+            "/api/settings/auto-optimize/{persona_id}",
+            get(get_auto_optimize).post(set_auto_optimize),
+        )
+        .route(
+            "/api/settings/health-watch/{persona_id}",
+            get(get_health_watch).post(set_health_watch),
+        )
         // Credential proxy -- route HTTP calls through stored credentials
         .route("/api/proxy/{credential_id}", post(proxy_request))
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
@@ -133,10 +145,7 @@ async fn require_api_key(
             tracing::debug!(prefix = %key.key_prefix, "external api key accepted");
             Ok(next.run(req).await)
         }
-        Ok(None) => Err(err_json_tuple(
-            StatusCode::UNAUTHORIZED,
-            "invalid api key",
-        )),
+        Ok(None) => Err(err_json_tuple(StatusCode::UNAUTHORIZED, "invalid api key")),
         Err(e) => {
             tracing::error!(error = %e, "api key lookup failed");
             Err(err_json_tuple(
@@ -251,11 +260,14 @@ fn ok_json(data: impl Serialize) -> impl IntoResponse {
 }
 
 fn err_json(status: StatusCode, msg: &str) -> (StatusCode, Json<ApiResult>) {
-    (status, Json(ApiResult {
-        success: false,
-        data: None,
-        error: Some(msg.to_string()),
-    }))
+    (
+        status,
+        Json(ApiResult {
+            success: false,
+            data: None,
+            error: Some(msg.to_string()),
+        }),
+    )
 }
 
 /// Variant of `err_json` whose return type is the exact tuple expected by
@@ -294,7 +306,9 @@ async fn proxy_request(
         &input.path,
         input.headers,
         input.body,
-    ).await {
+    )
+    .await
+    {
         Ok(resp) => ok_json(resp).into_response(),
         Err(e) => {
             let msg = format!("{e}");
@@ -307,21 +321,22 @@ async fn proxy_request(
 // Persona endpoints
 // =============================================================================
 
-async fn list_personas(
-    AxumState(state): AxumState<Arc<ManagementState>>,
-) -> impl IntoResponse {
+async fn list_personas(AxumState(state): AxumState<Arc<ManagementState>>) -> impl IntoResponse {
     match persona_repo::get_all(&state.pool) {
         Ok(personas) => {
-            let summary: Vec<serde_json::Value> = personas.iter().map(|p| {
-                serde_json::json!({
-                    "id": p.id,
-                    "name": p.name,
-                    "description": p.description,
-                    "enabled": p.enabled,
-                    "icon": p.icon,
-                    "color": p.color,
+            let summary: Vec<serde_json::Value> = personas
+                .iter()
+                .map(|p| {
+                    serde_json::json!({
+                        "id": p.id,
+                        "name": p.name,
+                        "description": p.description,
+                        "enabled": p.enabled,
+                        "icon": p.icon,
+                        "color": p.color,
+                    })
                 })
-            }).collect();
+                .collect();
             ok_json(summary).into_response()
         }
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
@@ -339,7 +354,8 @@ async fn get_persona(
             "description": p.description,
             "enabled": p.enabled,
             "system_prompt": p.system_prompt.chars().take(500).collect::<String>(),
-        })).into_response(),
+        }))
+        .into_response(),
         Err(_) => err_json(StatusCode::NOT_FOUND, "Persona not found").into_response(),
     }
 }
@@ -366,7 +382,13 @@ async fn execute_persona(
     let input_str = input.input_data.as_ref().map(|v| v.to_string());
     let execution = match exec_repo::create(&state.pool, &persona_id, None, input_str, None, None) {
         Ok(e) => e,
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Failed to create execution: {e}")).into_response(),
+        Err(e) => {
+            return err_json(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &format!("Failed to create execution: {e}"),
+            )
+            .into_response()
+        }
     };
 
     // Get tools
@@ -375,22 +397,30 @@ async fn execute_persona(
     // Start via engine
     let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
         Some(s) => s,
-        None => return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available").into_response(),
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response()
+        }
     };
 
-    match app_state.engine.start_execution(
-        state.app.clone(),
-        state.pool.clone(),
-        execution.id.clone(),
-        persona,
-        tools,
-        input.input_data,
-        None,
-    ).await {
+    match app_state
+        .engine
+        .start_execution(
+            state.app.clone(),
+            state.pool.clone(),
+            execution.id.clone(),
+            persona,
+            tools,
+            input.input_data,
+            None,
+        )
+        .await
+    {
         Ok(()) => ok_json(serde_json::json!({
             "execution_id": execution.id,
             "status": "queued",
-        })).into_response(),
+        }))
+        .into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
 }
@@ -399,7 +429,12 @@ async fn list_executions(
     AxumState(state): AxumState<Arc<ManagementState>>,
     Query(q): Query<ListQuery>,
 ) -> impl IntoResponse {
-    match exec_repo::get_all_global(&state.pool, q.limit, q.status.as_deref(), q.persona_id.as_deref()) {
+    match exec_repo::get_all_global(
+        &state.pool,
+        q.limit,
+        q.status.as_deref(),
+        q.persona_id.as_deref(),
+    ) {
         Ok(rows) => ok_json(rows).into_response(),
         Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
     }
@@ -435,13 +470,20 @@ async fn start_arena(
         return err_json(StatusCode::BAD_REQUEST, "No models provided").into_response();
     }
 
-    let models_json = serde_json::to_string(
-        &input.models.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    ).unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&input.models.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
-    let run = match arena_repo::create_run(&state.pool, &persona_id, &models_json, input.use_case_filter.as_deref()) {
+    let run = match arena_repo::create_run(
+        &state.pool,
+        &persona_id,
+        &models_json,
+        input.use_case_filter.as_deref(),
+    ) {
         Ok(r) => r,
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
 
     let run_id = run.id.clone();
@@ -453,7 +495,17 @@ async fn start_arena(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_arena_test(app, pool, run_id, ephemeral, models, std::env::temp_dir(), cancelled, use_case_filter).await;
+        test_runner::run_arena_test(
+            app,
+            pool,
+            run_id,
+            ephemeral,
+            models,
+            std::env::temp_dir(),
+            cancelled,
+            use_case_filter,
+        )
+        .await;
     });
 
     ok_json(serde_json::json!({ "run_id": run.id, "status": "started" })).into_response()
@@ -466,7 +518,13 @@ async fn start_matrix(
 ) -> impl IntoResponse {
     let instruction = match input.instruction {
         Some(ref i) if !i.is_empty() => i.clone(),
-        _ => return err_json(StatusCode::BAD_REQUEST, "instruction is required for matrix runs").into_response(),
+        _ => {
+            return err_json(
+                StatusCode::BAD_REQUEST,
+                "instruction is required for matrix runs",
+            )
+            .into_response()
+        }
     };
 
     let persona = match persona_repo::get_by_id(&state.pool, &persona_id) {
@@ -480,13 +538,21 @@ async fn start_matrix(
         return err_json(StatusCode::BAD_REQUEST, "No models provided").into_response();
     }
 
-    let models_json = serde_json::to_string(
-        &input.models.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    ).unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&input.models.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
-    let run = match matrix_repo::create_run(&state.pool, &persona_id, &instruction, &models_json, input.use_case_filter.as_deref()) {
+    let run = match matrix_repo::create_run(
+        &state.pool,
+        &persona_id,
+        &instruction,
+        &models_json,
+        input.use_case_filter.as_deref(),
+    ) {
         Ok(r) => r,
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
 
     let run_id = run.id.clone();
@@ -498,7 +564,17 @@ async fn start_matrix(
 
     tokio::spawn(async move {
         let _guard = run_guard;
-        test_runner::run_matrix_test(app, pool, run_id, ephemeral, instruction, models, cancelled, use_case_filter).await;
+        test_runner::run_matrix_test(
+            app,
+            pool,
+            run_id,
+            ephemeral,
+            instruction,
+            models,
+            cancelled,
+            use_case_filter,
+        )
+        .await;
     });
 
     ok_json(serde_json::json!({ "run_id": run.id, "status": "started" })).into_response()
@@ -512,10 +588,42 @@ async fn cancel_lab_run(
     let now = chrono::Utc::now().to_rfc3339();
 
     // Try cancelling in each lab table (only one will match)
-    let _ = arena_repo::update_run_status(&state.pool, &run_id, LabRunStatus::Cancelled, None, None, None, Some(&now));
-    let _ = matrix_repo::update_run_status(&state.pool, &run_id, LabRunStatus::Cancelled, None, None, None, Some(&now));
-    let _ = ab_repo::update_run_status(&state.pool, &run_id, LabRunStatus::Cancelled, None, None, None, Some(&now));
-    let _ = eval_repo::update_run_status(&state.pool, &run_id, LabRunStatus::Cancelled, None, None, None, Some(&now));
+    let _ = arena_repo::update_run_status(
+        &state.pool,
+        &run_id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    );
+    let _ = matrix_repo::update_run_status(
+        &state.pool,
+        &run_id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    );
+    let _ = ab_repo::update_run_status(
+        &state.pool,
+        &run_id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    );
+    let _ = eval_repo::update_run_status(
+        &state.pool,
+        &run_id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    );
 
     ok_json(serde_json::json!({ "run_id": run_id, "status": "cancelled" }))
 }
@@ -541,16 +649,20 @@ async fn delete_lab_run(
     }
 
     if let Ok(true) = arena_repo::delete_run(&state.pool, &run_id) {
-        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "arena" })).into_response();
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "arena" }))
+            .into_response();
     }
     if let Ok(true) = matrix_repo::delete_run(&state.pool, &run_id) {
-        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "matrix" })).into_response();
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "matrix" }))
+            .into_response();
     }
     if let Ok(true) = ab_repo::delete_run(&state.pool, &run_id) {
-        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "ab" })).into_response();
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "ab" }))
+            .into_response();
     }
     if let Ok(true) = eval_repo::delete_run(&state.pool, &run_id) {
-        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "eval" })).into_response();
+        return ok_json(serde_json::json!({ "run_id": run_id, "deleted": true, "type": "eval" }))
+            .into_response();
     }
 
     err_json(StatusCode::NOT_FOUND, "Lab run not found").into_response()
@@ -566,7 +678,9 @@ async fn get_lab_run_status(
 ) -> impl IntoResponse {
     let conn = match state.pool.get() {
         Ok(c) => c,
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
 
     let run_row = conn.query_row(
@@ -597,9 +711,9 @@ async fn get_lab_run_status(
     };
 
     let mut counts: HashMap<String, i64> = HashMap::new();
-    if let Ok(mut stmt) = conn.prepare(
-        "SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status",
-    ) {
+    if let Ok(mut stmt) = conn
+        .prepare("SELECT status, COUNT(*) FROM lab_arena_results WHERE run_id = ?1 GROUP BY status")
+    {
         let rows = stmt.query_map(rusqlite::params![run_id], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
         });
@@ -617,7 +731,8 @@ async fn get_lab_run_status(
         "result_counts": counts,
         "results_total": total,
         "results_completed": completed,
-    })).into_response()
+    }))
+    .into_response()
 }
 
 async fn improve_prompt(
@@ -638,7 +753,9 @@ async fn improve_prompt(
     };
 
     // Generate improvement via LLM
-    match test_runner::generate_targeted_improvements(&state.pool, &persona, &results_text, None).await {
+    match test_runner::generate_targeted_improvements(&state.pool, &persona, &results_text, None)
+        .await
+    {
         Ok((_, version_text)) => {
             // Save as new prompt version
             let version_id = metrics_repo::create_prompt_version_if_changed(
@@ -651,20 +768,31 @@ async fn improve_prompt(
                 "improved": true,
                 "version_id": version_id.ok().flatten(),
                 "preview": version_text.chars().take(500).collect::<String>(),
-            })).into_response()
+            }))
+            .into_response()
         }
-        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &format!("Improvement failed: {e}")).into_response(),
+        Err(e) => err_json(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            &format!("Improvement failed: {e}"),
+        )
+        .into_response(),
     }
 }
 
-fn load_lab_results_for_improvement(pool: &DbPool, run_id: &str, mode: &str) -> Result<String, String> {
+fn load_lab_results_for_improvement(
+    pool: &DbPool,
+    run_id: &str,
+    mode: &str,
+) -> Result<String, String> {
     let text = match mode {
         "arena" => {
-            let results = arena_repo::get_results_by_run(pool, run_id).map_err(|e| e.to_string())?;
+            let results =
+                arena_repo::get_results_by_run(pool, run_id).map_err(|e| e.to_string())?;
             serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?
         }
         "matrix" => {
-            let results = matrix_repo::get_results_by_run(pool, run_id).map_err(|e| e.to_string())?;
+            let results =
+                matrix_repo::get_results_by_run(pool, run_id).map_err(|e| e.to_string())?;
             serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?
         }
         "ab" => {
@@ -675,7 +803,11 @@ fn load_lab_results_for_improvement(pool: &DbPool, run_id: &str, mode: &str) -> 
             let results = eval_repo::get_results_by_run(pool, run_id).map_err(|e| e.to_string())?;
             serde_json::to_string_pretty(&results).map_err(|e| e.to_string())?
         }
-        _ => return Err(format!("Unknown mode: {mode}. Use arena, matrix, ab, or eval.")),
+        _ => {
+            return Err(format!(
+                "Unknown mode: {mode}. Use arena, matrix, ab, or eval."
+            ))
+        }
     };
     Ok(text)
 }
@@ -732,7 +864,9 @@ async fn accept_draft(
     // Apply draft to persona
     let conn = match state.pool.get() {
         Ok(c) => c,
-        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+        Err(e) => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response()
+        }
     };
     let now = chrono::Utc::now().to_rfc3339();
     if let Err(e) = conn.execute(
@@ -743,7 +877,12 @@ async fn accept_draft(
     }
 
     let _ = matrix_repo::accept_draft(&state.pool, &run_id);
-    let _ = metrics_repo::create_prompt_version_if_changed(&state.pool, &run.persona_id, Some(draft_json), None);
+    let _ = metrics_repo::create_prompt_version_if_changed(
+        &state.pool,
+        &run.persona_id,
+        Some(draft_json),
+        None,
+    );
 
     ok_json(serde_json::json!({ "accepted": true, "persona_id": run.persona_id })).into_response()
 }
@@ -752,8 +891,8 @@ async fn accept_draft(
 // Automation settings endpoints
 // =============================================================================
 
-use crate::db::settings_keys;
 use crate::db::repos::core::settings;
+use crate::db::settings_keys;
 
 #[derive(Deserialize, Serialize)]
 struct AutoOptimizeConfig {
@@ -766,9 +905,15 @@ struct AutoOptimizeConfig {
     models: Vec<String>,
 }
 
-fn default_optimize_cron() -> String { "0 2 * * 0".into() } // Sunday 2 AM
-fn default_min_score() -> u32 { 80 }
-fn default_models() -> Vec<String> { vec!["sonnet".into()] }
+fn default_optimize_cron() -> String {
+    "0 2 * * 0".into()
+} // Sunday 2 AM
+fn default_min_score() -> u32 {
+    80
+}
+fn default_models() -> Vec<String> {
+    vec!["sonnet".into()]
+}
 
 #[derive(Deserialize, Serialize)]
 struct HealthWatchConfig {
@@ -779,8 +924,12 @@ struct HealthWatchConfig {
     error_threshold: u32,
 }
 
-fn default_interval_hours() -> u32 { 6 }
-fn default_error_threshold() -> u32 { 30 }
+fn default_interval_hours() -> u32 {
+    6
+}
+fn default_error_threshold() -> u32 {
+    30
+}
 
 async fn get_auto_optimize(
     AxumState(state): AxumState<Arc<ManagementState>>,
@@ -789,14 +938,22 @@ async fn get_auto_optimize(
     let key = format!("{}{}", settings_keys::AUTO_OPTIMIZE_PREFIX, persona_id);
     match settings::get(&state.pool, &key) {
         Ok(Some(json)) => {
-            let config: AutoOptimizeConfig = serde_json::from_str(&json).unwrap_or(AutoOptimizeConfig {
-                enabled: false, cron: default_optimize_cron(), min_score: default_min_score(), models: default_models(),
-            });
+            let config: AutoOptimizeConfig =
+                serde_json::from_str(&json).unwrap_or(AutoOptimizeConfig {
+                    enabled: false,
+                    cron: default_optimize_cron(),
+                    min_score: default_min_score(),
+                    models: default_models(),
+                });
             ok_json(config).into_response()
         }
         _ => ok_json(AutoOptimizeConfig {
-            enabled: false, cron: default_optimize_cron(), min_score: default_min_score(), models: default_models(),
-        }).into_response(),
+            enabled: false,
+            cron: default_optimize_cron(),
+            min_score: default_min_score(),
+            models: default_models(),
+        })
+        .into_response(),
     }
 }
 
@@ -820,14 +977,20 @@ async fn get_health_watch(
     let key = format!("{}{}", settings_keys::HEALTH_WATCH_PREFIX, persona_id);
     match settings::get(&state.pool, &key) {
         Ok(Some(json)) => {
-            let config: HealthWatchConfig = serde_json::from_str(&json).unwrap_or(HealthWatchConfig {
-                enabled: false, interval_hours: default_interval_hours(), error_threshold: default_error_threshold(),
-            });
+            let config: HealthWatchConfig =
+                serde_json::from_str(&json).unwrap_or(HealthWatchConfig {
+                    enabled: false,
+                    interval_hours: default_interval_hours(),
+                    error_threshold: default_error_threshold(),
+                });
             ok_json(config).into_response()
         }
         _ => ok_json(HealthWatchConfig {
-            enabled: false, interval_hours: default_interval_hours(), error_threshold: default_error_threshold(),
-        }).into_response(),
+            enabled: false,
+            interval_hours: default_interval_hours(),
+            error_threshold: default_error_threshold(),
+        })
+        .into_response(),
     }
 }
 
@@ -922,10 +1085,7 @@ async fn get_agent_card(
             return Err(err_json(StatusCode::NOT_FOUND, "Persona not found"));
         }
         Err(e) => {
-            return Err(err_json(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                &e.to_string(),
-            ));
+            return Err(err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()));
         }
     };
     let origin = host_origin_from_request(&headers);
@@ -960,7 +1120,11 @@ async fn handle_a2a_request(
         "tasks/cancel" => handle_tasks_cancel(&state, &persona_id, req_id, req.params).await,
         _ => {
             let body = A2AResponse::error(req_id, -32601, "Method not found");
-            (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+            (
+                StatusCode::OK,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response()
         }
     }
 }
@@ -979,7 +1143,11 @@ async fn handle_message_send(
         Ok(p) => p,
         Err(_) => {
             let body = A2AResponse::error(req_id, -32602, "Invalid params: missing message");
-            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -991,7 +1159,11 @@ async fn handle_message_send(
                 -32602,
                 "Invalid params: message must contain at least one text part",
             );
-            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1001,26 +1173,30 @@ async fn handle_message_send(
     let persona = match persona_repo::find_by_id_if_exposed(&state.pool, persona_id) {
         Ok(Some(p)) => p,
         Ok(None) => {
-            let body = A2AResponse::error(
-                req_id,
-                -32602,
-                "Agent not found or not exposed",
-            );
-            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            let body = A2AResponse::error(req_id, -32602, "Agent not found or not exposed");
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
         Err(e) => {
-            let body = A2AResponse::error(
-                req_id,
-                -32603,
-                format!("Internal error: {e}"),
-            );
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            let body = A2AResponse::error(req_id, -32603, format!("Internal error: {e}"));
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
     if !persona.enabled {
         let body = A2AResponse::error(req_id, -32603, "Agent is disabled");
-        return (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        return (
+            StatusCode::OK,
+            Json(serde_json::to_value(body).unwrap_or_default()),
+        )
+            .into_response();
     }
 
     // InviteOnly is treated identically to Public for now; scope-based
@@ -1038,11 +1214,19 @@ async fn handle_message_send(
     match run_persona_synchronous(state, persona, input_value).await {
         Ok(text) => {
             let body = A2AResponse::success(req_id, text);
-            (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+            (
+                StatusCode::OK,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response()
         }
         Err(e) => {
             let body = A2AResponse::error(req_id, -32603, format!("Internal error: {e}"));
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response()
         }
     }
 }
@@ -1067,7 +1251,11 @@ async fn handle_tasks_get(
         Ok(p) => p,
         Err(_) => {
             let body = A2ATaskResponse::error(req_id, -32602, "Invalid params: missing task id");
-            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1076,11 +1264,19 @@ async fn handle_tasks_get(
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
         Err(e) => {
             let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1089,7 +1285,11 @@ async fn handle_tasks_get(
         Err(_) => {
             // -32001 is the A2A spec's "TaskNotFoundError" code.
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1098,12 +1298,20 @@ async fn handle_tasks_get(
     // key could enumerate executions across personas by guessing IDs.
     if row.persona_id != persona.id {
         let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-        return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::to_value(body).unwrap_or_default()),
+        )
+            .into_response();
     }
 
     let task = build_a2a_task(&row, &persona.id);
     let body = A2ATaskResponse::success(req_id, task);
-    (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+    (
+        StatusCode::OK,
+        Json(serde_json::to_value(body).unwrap_or_default()),
+    )
+        .into_response()
 }
 
 /// `tasks/cancel` — cooperatively cancel a running execution and return the
@@ -1123,7 +1331,11 @@ async fn handle_tasks_cancel(
         Ok(p) => p,
         Err(_) => {
             let body = A2ATaskResponse::error(req_id, -32602, "Invalid params: missing task id");
-            return (StatusCode::BAD_REQUEST, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1131,11 +1343,19 @@ async fn handle_tasks_cancel(
         Ok(Some(p)) => p,
         Ok(None) => {
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
         Err(e) => {
             let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
@@ -1143,13 +1363,21 @@ async fn handle_tasks_cancel(
         Ok(r) => r,
         Err(_) => {
             let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-            return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::NOT_FOUND,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
 
     if row.persona_id != persona.id {
         let body = A2ATaskResponse::error(req_id, -32001, "Task not found");
-        return (StatusCode::NOT_FOUND, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+        return (
+            StatusCode::NOT_FOUND,
+            Json(serde_json::to_value(body).unwrap_or_default()),
+        )
+            .into_response();
     }
 
     let already_terminal = matches!(
@@ -1164,7 +1392,11 @@ async fn handle_tasks_cancel(
             Some(s) => s,
             None => {
                 let body = A2ATaskResponse::error(req_id, -32603, "App state not available");
-                return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Json(serde_json::to_value(body).unwrap_or_default()),
+                )
+                    .into_response();
             }
         };
 
@@ -1182,12 +1414,20 @@ async fn handle_tasks_cancel(
         Ok(r) => r,
         Err(e) => {
             let body = A2ATaskResponse::error(req_id, -32603, format!("Internal error: {e}"));
-            return (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::to_value(body).unwrap_or_default())).into_response();
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::to_value(body).unwrap_or_default()),
+            )
+                .into_response();
         }
     };
     let task = build_a2a_task(&updated, &persona.id);
     let body = A2ATaskResponse::success(req_id, task);
-    (StatusCode::OK, Json(serde_json::to_value(body).unwrap_or_default())).into_response()
+    (
+        StatusCode::OK,
+        Json(serde_json::to_value(body).unwrap_or_default()),
+    )
+        .into_response()
 }
 
 /// Convert an `executions` row into the A2A `Task` shape.
@@ -1305,9 +1545,7 @@ async fn run_persona_synchronous(
         let status = row.status.as_str();
         match status {
             "completed" | "success" => {
-                return Ok(row
-                    .output_data
-                    .unwrap_or_else(|| "".to_string()));
+                return Ok(row.output_data.unwrap_or_else(|| "".to_string()));
             }
             "failed" | "error" | "cancelled" | "timeout" => {
                 return Err(AppError::Execution(
@@ -1478,7 +1716,10 @@ mod tests {
     fn host_origin_uses_supplied_host_header() {
         let mut headers = axum::http::HeaderMap::new();
         headers.insert(header::HOST, "personas.local:8080".parse().unwrap());
-        assert_eq!(host_origin_from_request(&headers), "http://personas.local:8080");
+        assert_eq!(
+            host_origin_from_request(&headers),
+            "http://personas.local:8080"
+        );
     }
 
     /// Build a `PersonaExecution` with the minimum fields needed by

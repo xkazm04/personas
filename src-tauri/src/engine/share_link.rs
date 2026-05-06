@@ -179,7 +179,8 @@ pub fn resolve_deep_link(url: &str) -> Result<ResolvedShareLink, AppError> {
         ));
     }
 
-    let params: HashMap<String, String> = parsed.query_pairs()
+    let params: HashMap<String, String> = parsed
+        .query_pairs()
         .map(|(k, v)| (k.to_string(), v.to_string()))
         .collect();
 
@@ -199,10 +200,7 @@ pub fn resolve_deep_link(url: &str) -> Result<ResolvedShareLink, AppError> {
         .get("port")
         .and_then(|p| p.parse().ok())
         .unwrap_or(SERVER_PORT);
-    let resource_count: u32 = params
-        .get("n")
-        .and_then(|n| n.parse().ok())
-        .unwrap_or(0);
+    let resource_count: u32 = params.get("n").and_then(|n| n.parse().ok()).unwrap_or(0);
 
     let http_url = format!("http://{}:{}/share/{}", host, port, token);
 
@@ -286,9 +284,7 @@ fn is_safe_share_host(host: &str) -> bool {
     // Allow private network ranges (RFC 1918) and link-local
     if let Ok(ip) = host.parse::<std::net::IpAddr>() {
         return match ip {
-            std::net::IpAddr::V4(v4) => {
-                v4.is_private() || v4.is_link_local() || v4.is_loopback()
-            }
+            std::net::IpAddr::V4(v4) => v4.is_private() || v4.is_link_local() || v4.is_loopback(),
             std::net::IpAddr::V6(v6) => v6.is_loopback(),
         };
     }

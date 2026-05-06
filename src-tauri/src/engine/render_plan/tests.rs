@@ -131,7 +131,11 @@ fn worked_example_fold_matches_doc() {
 
     let plan = compile(
         &comp,
-        &CompileOptions { transition_mode: TransitionMode::Fold, frame_snap: true, for_export: true },
+        &CompileOptions {
+            transition_mode: TransitionMode::Fold,
+            frame_snap: true,
+            for_export: true,
+        },
         &CompileDeps::none(),
     )
     .expect("worked example compiles");
@@ -147,7 +151,11 @@ fn worked_example_fold_matches_doc() {
     assert!((v1.output_start - 0.0).abs() < 1e-9);
     assert!((v1.output_end - 5.0).abs() < 1e-9);
     assert!((v1.fade_in - 0.0).abs() < 1e-9);
-    assert!((v1.fade_out - 1.0).abs() < 1e-9, "v1 fade_out={}", v1.fade_out);
+    assert!(
+        (v1.fade_out - 1.0).abs() < 1e-9,
+        "v1 fade_out={}",
+        v1.fade_out
+    );
     assert!(v1.overlap_next.is_none());
 
     let v2 = &plan.video_track[1];
@@ -187,7 +195,11 @@ fn worked_example_overlap_shortens_total_duration() {
 
     let v2 = &plan.video_track[1];
     // v2 pulled 1s earlier by the preceding overlap.
-    assert!((v2.output_start - 4.0).abs() < 1e-9, "v2 starts at {}", v2.output_start);
+    assert!(
+        (v2.output_start - 4.0).abs() < 1e-9,
+        "v2 starts at {}",
+        v2.output_start
+    );
     assert!((v2.output_end - 8.0).abs() < 1e-9);
     assert!((v2.fade_in - 0.0).abs() < 1e-9);
 
@@ -200,12 +212,7 @@ fn single_video_clip_produces_embedded_audio_track() {
     let mut comp = empty_comp();
     comp.items = vec![video_clip("v1", "/a.mp4", 0.0, 3.0, "cut", 0.0)];
 
-    let plan = compile(
-        &comp,
-        &CompileOptions::fold_default(),
-        &CompileDeps::none(),
-    )
-    .unwrap();
+    let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
 
     assert_invariants(&plan).unwrap();
     let embedded = plan
@@ -243,10 +250,7 @@ fn strip_audio_flag_omits_embedded_stage() {
         transcript_status: None,
     })];
     let plan = compile(&comp, &CompileOptions::fold_default(), &CompileDeps::none()).unwrap();
-    assert!(plan
-        .audio_tracks
-        .iter()
-        .all(|t| t.id != "embedded"));
+    assert!(plan.audio_tracks.iter().all(|t| t.id != "embedded"));
 }
 
 #[test]
@@ -383,12 +387,13 @@ fn source_out_of_bounds_is_compile_error() {
     // Without a mediaProbe the compiler expands the fallback to fit the clip,
     // so out-of-bounds can only fire when a probe delivers authoritative
     // media-duration that disagrees with clip consumption.
-    let probe: &dyn Fn(&str) -> Option<crate::engine::render_plan::compile::MediaProbe> =
-        &|_| Some(crate::engine::render_plan::compile::MediaProbe {
+    let probe: &dyn Fn(&str) -> Option<crate::engine::render_plan::compile::MediaProbe> = &|_| {
+        Some(crate::engine::render_plan::compile::MediaProbe {
             duration_seconds: 10.0,
             has_audio: true,
             has_video: true,
-        });
+        })
+    };
     let deps = CompileDeps {
         proxy_lookup: None,
         font_probe: None,
@@ -579,7 +584,9 @@ fn proxy_lookup_used_for_preview_compile() {
         .iter()
         .find(|s| matches!(s, SourceEntry::Proxy { .. }))
         .expect("proxy source emitted in preview mode");
-    assert!(matches!(source, SourceEntry::Proxy { path, original_path, .. } if path == "/original.proxy.mp4" && original_path == "/original.mp4"));
+    assert!(
+        matches!(source, SourceEntry::Proxy { path, original_path, .. } if path == "/original.proxy.mp4" && original_path == "/original.mp4")
+    );
 }
 
 #[test]
@@ -600,7 +607,10 @@ fn proxy_not_used_for_export_emits_warning() {
         media_probe: None,
     };
     let plan = compile(&comp, &CompileOptions::for_export_default(), &deps).unwrap();
-    assert!(plan.warnings.iter().any(|w| matches!(w, CompileWarning::ProxyMissing { .. })));
+    assert!(plan
+        .warnings
+        .iter()
+        .any(|w| matches!(w, CompileWarning::ProxyMissing { .. })));
     assert!(plan
         .sources
         .iter()

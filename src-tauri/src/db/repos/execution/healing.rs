@@ -12,7 +12,12 @@ row_mapper!(row_to_healing_issue -> PersonaHealingIssue {
     created_at, resolved_at,
 });
 
-crud_get_by_id!(PersonaHealingIssue, "persona_healing_issues", "PersonaHealingIssue", row_to_healing_issue);
+crud_get_by_id!(
+    PersonaHealingIssue,
+    "persona_healing_issues",
+    "PersonaHealingIssue",
+    row_to_healing_issue
+);
 
 pub fn get_all(
     pool: &DbPool,
@@ -35,7 +40,10 @@ pub fn get_all(
 
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_healing_issue)?;
-        Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_list"))
+        Ok(crate::db::repos::utils::collect_rows(
+            rows,
+            "healing_issues_list",
+        ))
     })
 }
 
@@ -101,8 +109,55 @@ pub fn create(
     })
 }
 
-/// Valid healing issue statuses. The issue lifecycle is:
-/// `open` -> `auto_fix_pending` -> `resolved` (or back to `open` on revert).
+/// TTL after which an `auto_fix_pending` issue is reverted back to `open` if
+/// no terminal transition (`confirm_auto_fix` or `revert_auto_fix_pending`)
+/// has fired. Bound by the worst-case retry latency the user is willing to
+/// stare at "pending" before suspecting a stuck issue.
+///
+/// This is the *deterministic* TTL — driven by a scheduled scheduler tick
+/// (see `HealingTtlSubscription` in `engine/subscription.rs`) — not the
+/// previous opportunistic sweep that only ran when the user happened to
+/// trigger a fresh healing analysis.
+pub const AUTO_FIX_PENDING_TTL_MINUTES: i64 = 10;
+
+/// Valid healing issue statuses and their transitions.
+///
+/// ```text
+///                       create()
+///                          │
+///                          ▼
+///                 ┌──────────────────┐
+///                 │       open       │◀────────────┐
+///                 └─────────┬────────┘             │
+///                           │ mark_auto_fix_pending│ revert_auto_fix_pending
+///                           ▼                      │   (retry failed)
+///                 ┌──────────────────┐             │
+///                 │ auto_fix_pending │─────────────┘
+///                 │                  │ revert_stale_auto_fix_pending /
+///                 │                  │ revert_all_stale_auto_fix_pending
+///                 │                  │   (TTL exceeded — see
+///                 │                  │   AUTO_FIX_PENDING_TTL_MINUTES)
+///                 │                  │   audit reason='ttl_exceeded'
+///                 │                  │
+///                 └─────────┬────────┘
+///                           │ confirm_auto_fix
+///                           ▼
+///                 ┌──────────────────┐
+///                 │     resolved     │  (terminal)
+///                 └──────────────────┘
+/// ```
+///
+/// The `auto_fix_pending` state has three exits:
+/// 1. `resolved` (success, via [`confirm_auto_fix`])
+/// 2. `open` (retry failed, via [`revert_auto_fix_pending`])
+/// 3. `open` (TTL exceeded, via [`revert_stale_auto_fix_pending`] or
+///    [`revert_all_stale_auto_fix_pending`] — emitted as an audit event
+///    with `event_type='stale_pending_reverted'` and reason
+///    `'ttl_exceeded'` in the message)
+///
+/// Without exit 3, a process crash between `mark_auto_fix_pending` and the
+/// retry firing would leave issues "pending forever" — silently lying to
+/// the user about healing progress.
 const VALID_STATUSES: &[&str] = &["open", "auto_fix_pending", "resolved"];
 
 pub fn update_status(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
@@ -174,25 +229,34 @@ pub fn confirm_auto_fix(pool: &DbPool, id: &str) -> Result<(), AppError> {
 /// Revert a healing issue from `auto_fix_pending` back to `open` after the
 /// retry execution fails — the problem was not actually fixed.
 pub fn revert_auto_fix_pending(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    timed_query!("healing_events", "healing_events::revert_auto_fix_pending", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
+    timed_query!(
+        "healing_events",
+        "healing_events::revert_auto_fix_pending",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
             "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' WHERE id = ?1 AND status = 'auto_fix_pending'",
             params![id],
         )?;
-        if rows == 0 {
-            tracing::warn!("revert_auto_fix_pending: 0 rows updated for issue {id} — status was not 'auto_fix_pending' (possible race condition)");
-            return Err(AppError::Execution(format!(
+            if rows == 0 {
+                tracing::warn!("revert_auto_fix_pending: 0 rows updated for issue {id} — status was not 'auto_fix_pending' (possible race condition)");
+                return Err(AppError::Execution(format!(
                 "Healing issue {id} is not in 'auto_fix_pending' status; revert to 'open' was lost"
             )));
+            }
+            Ok(())
         }
-        Ok(())
-    })
+    )
 }
 
-/// Revert stale `auto_fix_pending` issues back to `open` if they have been
-/// stuck for longer than `ttl_minutes`.  This prevents zombie issues when
-/// the retry job crashes or the app closes mid-healing.
+/// Revert stale `auto_fix_pending` issues back to `open` for a single persona
+/// if they have been stuck for longer than `ttl_minutes`.
+///
+/// This is the per-persona variant called opportunistically at the start of
+/// `run_healing_analysis`. It catches the common case where a fresh failure
+/// arrives for a persona that has lingering pending issues, but it is **not**
+/// sufficient on its own — see [`revert_all_stale_auto_fix_pending`] for the
+/// global, scheduler-driven sweep.
 pub fn revert_stale_auto_fix_pending(pool: &DbPool, persona_id: &str, ttl_minutes: i64) {
     let cutoff = (chrono::Utc::now() - chrono::Duration::minutes(ttl_minutes)).to_rfc3339();
     match pool.get() {
@@ -210,9 +274,15 @@ pub fn revert_stale_auto_fix_pending(pool: &DbPool, persona_id: &str, ttl_minute
                         "Reverted stale auto_fix_pending issues back to open",
                     );
                     create_audit_entry(
-                        pool, Some(persona_id), None,
-                        "stale_pending_reverted", "healing_analysis",
-                        &format!("Reverted {} stale auto_fix_pending issue(s) (TTL {}m)", n, ttl_minutes),
+                        pool,
+                        Some(persona_id),
+                        None,
+                        "stale_pending_reverted",
+                        "healing_analysis",
+                        &format!(
+                            "Reverted {} stale auto_fix_pending issue(s) (reason='ttl_exceeded', TTL {}m)",
+                            n, ttl_minutes
+                        ),
                         None,
                     );
                 }
@@ -220,20 +290,118 @@ pub fn revert_stale_auto_fix_pending(pool: &DbPool, persona_id: &str, ttl_minute
                 Err(e) => tracing::warn!("Failed to revert stale auto_fix_pending: {}", e),
             }
         }
-        Err(e) => tracing::warn!("Failed to get DB connection for stale pending revert: {}", e),
+        Err(e) => tracing::warn!(
+            "Failed to get DB connection for stale pending revert: {}",
+            e
+        ),
     }
+}
+
+/// Global TTL sweep: revert **every** persona's stale `auto_fix_pending`
+/// issues back to `open`. Driven by the scheduler so the `auto_fix_pending`
+/// state has a deterministic exit independent of whether new healing
+/// analyses ever run again — i.e. the case where the app crashes between
+/// `mark_auto_fix_pending` and the retry, then no further failures occur
+/// for that persona, would otherwise leave `pending` rows forever.
+///
+/// Returns the number of rows reverted (caller may log/emit metrics).
+pub fn revert_all_stale_auto_fix_pending(pool: &DbPool, ttl_minutes: i64) -> usize {
+    let cutoff = (chrono::Utc::now() - chrono::Duration::minutes(ttl_minutes)).to_rfc3339();
+
+    // Collect distinct persona_ids about to be touched so we can write
+    // per-persona audit rows. The audit log is per-persona by convention,
+    // and an aggregate "global sweep reverted N" entry would be useless for
+    // the user wondering "why did *my* persona's pending row flip?".
+    let conn = match pool.get() {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "Global stale-pending sweep: failed to acquire DB connection"
+            );
+            return 0;
+        }
+    };
+
+    let affected_personas: Vec<String> = match conn.prepare(
+        "SELECT DISTINCT persona_id FROM persona_healing_issues \
+         WHERE status = 'auto_fix_pending' AND created_at <= ?1",
+    ) {
+        Ok(mut stmt) => match stmt.query_map(params![cutoff], |row| row.get::<_, String>(0)) {
+            Ok(rows) => rows.filter_map(Result::ok).collect(),
+            Err(e) => {
+                tracing::warn!(error = %e, "Global stale-pending sweep: query failed");
+                return 0;
+            }
+        },
+        Err(e) => {
+            tracing::warn!(error = %e, "Global stale-pending sweep: prepare failed");
+            return 0;
+        }
+    };
+
+    if affected_personas.is_empty() {
+        return 0;
+    }
+
+    let total_reverted = match conn.execute(
+        "UPDATE persona_healing_issues SET auto_fixed = 0, status = 'open' \
+         WHERE status = 'auto_fix_pending' AND created_at <= ?1",
+        params![cutoff],
+    ) {
+        Ok(n) => n,
+        Err(e) => {
+            tracing::warn!(error = %e, "Global stale-pending sweep: update failed");
+            return 0;
+        }
+    };
+
+    drop(conn);
+
+    if total_reverted == 0 {
+        return 0;
+    }
+
+    tracing::info!(
+        reverted = total_reverted,
+        affected_personas = affected_personas.len(),
+        ttl_minutes,
+        "Global stale-pending sweep reverted auto_fix_pending issues back to open",
+    );
+
+    for persona_id in &affected_personas {
+        create_audit_entry(
+            pool,
+            Some(persona_id),
+            None,
+            "stale_pending_reverted",
+            "scheduler",
+            &format!(
+                "Global TTL sweep reverted auto_fix_pending issue(s) (reason='ttl_exceeded', TTL {}m)",
+                ttl_minutes
+            ),
+            None,
+        );
+    }
+
+    total_reverted
 }
 
 /// Find healing issues associated with an execution ID (used to update status
 /// after a retry completes).
-pub fn get_by_execution_id(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaHealingIssue>, AppError> {
+pub fn get_by_execution_id(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Vec<PersonaHealingIssue>, AppError> {
     timed_query!("healing_events", "healing_events::get_by_execution_id", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_healing_issues WHERE execution_id = ?1",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM persona_healing_issues WHERE execution_id = ?1")?;
         let rows = stmt.query_map(params![execution_id], row_to_healing_issue)?;
-        Ok(crate::db::repos::utils::collect_rows(rows, "healing_issues_by_exec"))
+        Ok(crate::db::repos::utils::collect_rows(
+            rows,
+            "healing_issues_by_exec",
+        ))
     })
 }
 
@@ -275,45 +443,51 @@ pub fn upsert_knowledge(
     recommended_delay_secs: Option<i64>,
 ) -> Result<HealingKnowledge, AppError> {
     timed_query!("healing_events", "healing_events::upsert_knowledge", {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
 
-    // Try to update existing entry
-    let updated = conn.execute(
-        "UPDATE healing_knowledge SET
+        // Try to update existing entry
+        let updated = conn.execute(
+            "UPDATE healing_knowledge SET
             occurrence_count = occurrence_count + 1,
             last_seen_at = ?1,
             description = ?2,
             recommended_delay_secs = COALESCE(?3, recommended_delay_secs)
          WHERE service_type = ?4 AND pattern_key = ?5",
-        params![now, description, recommended_delay_secs, service_type, pattern_key],
-    )?;
-
-    if updated > 0 {
-        // Return the updated entry
-        let entry = conn.query_row(
-            "SELECT * FROM healing_knowledge WHERE service_type = ?1 AND pattern_key = ?2",
-            params![service_type, pattern_key],
-            row_to_knowledge,
+            params![
+                now,
+                description,
+                recommended_delay_secs,
+                service_type,
+                pattern_key
+            ],
         )?;
-        return Ok(entry);
-    }
 
-    // Insert new entry
-    let id = uuid::Uuid::new_v4().to_string();
-    conn.execute(
+        if updated > 0 {
+            // Return the updated entry
+            let entry = conn.query_row(
+                "SELECT * FROM healing_knowledge WHERE service_type = ?1 AND pattern_key = ?2",
+                params![service_type, pattern_key],
+                row_to_knowledge,
+            )?;
+            return Ok(entry);
+        }
+
+        // Insert new entry
+        let id = uuid::Uuid::new_v4().to_string();
+        conn.execute(
         "INSERT INTO healing_knowledge
          (id, service_type, pattern_key, description, recommended_delay_secs, occurrence_count, last_seen_at, created_at)
          VALUES (?1, ?2, ?3, ?4, ?5, 1, ?6, ?6)",
         params![id, service_type, pattern_key, description, recommended_delay_secs, now],
     )?;
 
-    conn.query_row(
-        "SELECT * FROM healing_knowledge WHERE id = ?1",
-        params![id],
-        row_to_knowledge,
-    )
-    .map_err(AppError::Database)
+        conn.query_row(
+            "SELECT * FROM healing_knowledge WHERE id = ?1",
+            params![id],
+            row_to_knowledge,
+        )
+        .map_err(AppError::Database)
     })
 }
 
@@ -322,14 +496,19 @@ pub fn get_knowledge_by_service(
     pool: &DbPool,
     service_type: &str,
 ) -> Result<Vec<HealingKnowledge>, AppError> {
-    timed_query!("healing_events", "healing_events::get_knowledge_by_service", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "healing_events",
+        "healing_events::get_knowledge_by_service",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM healing_knowledge WHERE service_type = ?1 ORDER BY occurrence_count DESC",
         )?;
-        let rows = stmt.query_map(params![service_type], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![service_type], row_to_knowledge)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Get all knowledge entries.
@@ -340,7 +519,8 @@ pub fn get_all_knowledge(pool: &DbPool) -> Result<Vec<HealingKnowledge>, AppErro
             "SELECT * FROM healing_knowledge ORDER BY occurrence_count DESC, last_seen_at DESC",
         )?;
         let rows = stmt.query_map([], row_to_knowledge)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -436,7 +616,9 @@ pub fn list_audit_log(
 ) -> Result<Vec<HealingAuditEntry>, AppError> {
     timed_query!("healing_audit", "healing_audit::list_audit_log", {
         let conn = pool.get()?;
-        let (sql, param_values): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = if let Some(pid) = persona_id {
+        let (sql, param_values): (String, Vec<Box<dyn rusqlite::types::ToSql>>) = if let Some(pid) =
+            persona_id
+        {
             (
                 "SELECT * FROM healing_audit_log WHERE persona_id = ?1 ORDER BY created_at DESC LIMIT ?2".into(),
                 vec![Box::new(pid.to_string()), Box::new(limit)],
@@ -451,7 +633,10 @@ pub fn list_audit_log(
             param_values.iter().map(|p| p.as_ref()).collect();
         let mut stmt = conn.prepare(&sql)?;
         let rows = stmt.query_map(params_ref.as_slice(), row_to_audit_entry)?;
-        Ok(crate::db::repos::utils::collect_rows(rows, "healing_audit_log"))
+        Ok(crate::db::repos::utils::collect_rows(
+            rows,
+            "healing_audit_log",
+        ))
     })
 }
 
@@ -530,7 +715,10 @@ mod tests {
 
         // Read by id
         let fetched = get_by_id(&pool, &issue1.id).unwrap();
-        assert_eq!(fetched.description, "The system prompt exceeds 8000 tokens and causes timeouts.");
+        assert_eq!(
+            fetched.description,
+            "The system prompt exceeds 8000 tokens and causes timeouts."
+        );
 
         // Get all (no filters)
         let all = get_all(&pool, None, None).unwrap();
@@ -613,16 +801,30 @@ mod tests {
 
         // First insert succeeds
         let first = create(
-            &pool, &persona.id, "Error A", "desc", false,
-            None, None, Some(exec_id), None,
+            &pool,
+            &persona.id,
+            "Error A",
+            "desc",
+            false,
+            None,
+            None,
+            Some(exec_id),
+            None,
         )
         .unwrap();
         assert!(first.is_some(), "first insert should succeed");
 
         // Second insert with same (persona_id, execution_id) returns None
         let second = create(
-            &pool, &persona.id, "Error B", "desc2", false,
-            None, None, Some(exec_id), None,
+            &pool,
+            &persona.id,
+            "Error B",
+            "desc2",
+            false,
+            None,
+            None,
+            Some(exec_id),
+            None,
         )
         .unwrap();
         assert!(second.is_none(), "duplicate should be silently ignored");
@@ -661,8 +863,15 @@ mod tests {
         .unwrap();
 
         let issue = create(
-            &pool, &persona.id, "Flaky API", "timeout", false,
-            None, None, None, None,
+            &pool,
+            &persona.id,
+            "Flaky API",
+            "timeout",
+            false,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap()
         .expect("should create");
@@ -714,8 +923,15 @@ mod tests {
         .unwrap();
 
         let issue = create(
-            &pool, &persona.id, "Bad config", "missing key", false,
-            None, None, None, None,
+            &pool,
+            &persona.id,
+            "Bad config",
+            "missing key",
+            false,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap()
         .expect("should create");
@@ -760,14 +976,28 @@ mod tests {
         .unwrap();
 
         let issue = create(
-            &pool, &persona.id, "Test issue", "desc", false,
-            None, None, None, None,
+            &pool,
+            &persona.id,
+            "Test issue",
+            "desc",
+            false,
+            None,
+            None,
+            None,
+            None,
         )
         .unwrap()
         .expect("should create");
 
         // Invalid statuses should be rejected
-        for bad in &["", "Resolved", "OPEN", "investigating", "closed", "nonsense"] {
+        for bad in &[
+            "",
+            "Resolved",
+            "OPEN",
+            "investigating",
+            "closed",
+            "nonsense",
+        ] {
             let err = update_status(&pool, &issue.id, bad);
             assert!(err.is_err(), "status '{}' should be rejected", bad);
         }
@@ -776,5 +1006,122 @@ mod tests {
         for good in &["open", "auto_fix_pending", "resolved"] {
             update_status(&pool, &issue.id, good).unwrap();
         }
+    }
+
+    /// Pin the deterministic-TTL contract: the global sweep must revert
+    /// stale `auto_fix_pending` rows across **every** persona, even if
+    /// no fresh healing analysis has run for that persona. This is the
+    /// safety net that previously didn't exist — issues used to stay
+    /// pending forever if the app crashed before the retry fired.
+    #[test]
+    fn revert_all_stale_auto_fix_pending_sweeps_across_personas() {
+        let pool = init_test_db().unwrap();
+
+        let mk = |name: &str| {
+            personas::create(
+                &pool,
+                CreatePersonaInput {
+                    name: name.into(),
+                    system_prompt: "test".into(),
+                    project_id: None,
+                    description: None,
+                    structured_prompt: None,
+                    icon: None,
+                    color: None,
+                    enabled: Some(true),
+                    max_concurrent: None,
+                    timeout_ms: None,
+                    model_profile: None,
+                    max_budget_usd: None,
+                    max_turns: None,
+                    design_context: None,
+                    group_id: None,
+                    notification_channels: None,
+                },
+            )
+            .unwrap()
+            .id
+        };
+
+        let p1 = mk("p1");
+        let p2 = mk("p2");
+        let p3 = mk("p3");
+
+        let mk_issue = |persona_id: &str| {
+            create(&pool, persona_id, "t", "d", false, None, None, None, None)
+                .unwrap()
+                .expect("created")
+                .id
+        };
+
+        let i1 = mk_issue(&p1);
+        let i2 = mk_issue(&p2);
+        let i3_recent = mk_issue(&p3);
+        let i4_open = mk_issue(&p1);
+
+        mark_auto_fix_pending(&pool, &i1).unwrap();
+        mark_auto_fix_pending(&pool, &i2).unwrap();
+        mark_auto_fix_pending(&pool, &i3_recent).unwrap();
+        // i4 stays in 'open' — must not be touched.
+        let _ = i4_open;
+
+        // Backdate i1 and i2 past the TTL boundary; leave i3_recent fresh.
+        let conn = pool.get().unwrap();
+        let stale = (chrono::Utc::now() - chrono::Duration::minutes(30)).to_rfc3339();
+        conn.execute(
+            "UPDATE persona_healing_issues SET created_at = ?1 WHERE id IN (?2, ?3)",
+            params![stale, i1, i2],
+        )
+        .unwrap();
+        drop(conn);
+
+        let n = revert_all_stale_auto_fix_pending(&pool, AUTO_FIX_PENDING_TTL_MINUTES);
+        assert_eq!(n, 2, "exactly two stale rows must flip back to open");
+
+        let i1_after = get_by_id(&pool, &i1).unwrap();
+        let i2_after = get_by_id(&pool, &i2).unwrap();
+        let i3_after = get_by_id(&pool, &i3_recent).unwrap();
+        let i4_after = get_by_id(&pool, &i4_open).unwrap();
+
+        assert_eq!(i1_after.status, "open");
+        assert_eq!(i2_after.status, "open");
+        assert!(!i1_after.auto_fixed);
+        assert!(!i2_after.auto_fixed);
+        // Fresh row inside the TTL stays pending.
+        assert_eq!(i3_after.status, "auto_fix_pending");
+        // Always-open row must not be churned.
+        assert_eq!(i4_after.status, "open");
+
+        // Per-persona audit trail: each affected persona gets its own
+        // 'stale_pending_reverted' entry so the user can trace why a row
+        // they were watching flipped status.
+        let p1_audit = list_audit_log(&pool, Some(&p1), 10).unwrap();
+        let p2_audit = list_audit_log(&pool, Some(&p2), 10).unwrap();
+        let p3_audit = list_audit_log(&pool, Some(&p3), 10).unwrap();
+
+        assert!(
+            p1_audit.iter().any(|e| e.event_type == "stale_pending_reverted"
+                && e.message.contains("ttl_exceeded")),
+            "p1 must have a ttl_exceeded audit row",
+        );
+        assert!(
+            p2_audit.iter().any(|e| e.event_type == "stale_pending_reverted"
+                && e.message.contains("ttl_exceeded")),
+            "p2 must have a ttl_exceeded audit row",
+        );
+        assert!(
+            !p3_audit.iter().any(|e| e.event_type == "stale_pending_reverted"),
+            "p3 was inside the TTL — must not have a sweep audit entry",
+        );
+    }
+
+    #[test]
+    fn revert_all_stale_auto_fix_pending_no_op_when_empty() {
+        let pool = init_test_db().unwrap();
+        // Empty DB: must return 0 and not panic.
+        assert_eq!(
+            revert_all_stale_auto_fix_pending(&pool, AUTO_FIX_PENDING_TTL_MINUTES),
+            0,
+        );
     }
 }

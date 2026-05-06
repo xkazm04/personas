@@ -262,18 +262,31 @@ fn structured_error(
 
 /// Build the prompt for Claude to drive Playwright and extract credentials.
 fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
-    let fields_desc: Vec<String> = req.fields.iter().map(|f| {
-        let mut desc = format!("- `{}` ({})", f.key, f.label);
-        if f.required { desc.push_str(" [REQUIRED]"); }
-        if let Some(ref ph) = f.placeholder { desc.push_str(&format!(" placeholder: {ph}")); }
-        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" -- {ht}")); }
-        desc
-    }).collect();
+    let fields_desc: Vec<String> = req
+        .fields
+        .iter()
+        .map(|f| {
+            let mut desc = format!("- `{}` ({})", f.key, f.label);
+            if f.required {
+                desc.push_str(" [REQUIRED]");
+            }
+            if let Some(ref ph) = f.placeholder {
+                desc.push_str(&format!(" placeholder: {ph}"));
+            }
+            if let Some(ref ht) = f.help_text {
+                desc.push_str(&format!(" -- {ht}"));
+            }
+            desc
+        })
+        .collect();
 
     let docs_section = if let Some(ref url) = req.docs_url {
         format!("Start by navigating to: {url}")
     } else {
-        format!("Find the {} developer/API settings page.", req.connector_label)
+        format!(
+            "Find the {} developer/API settings page.",
+            req.connector_label
+        )
     };
 
     let instructions_section = if let Some(ref instructions) = req.setup_instructions {
@@ -289,7 +302,7 @@ fn build_browser_prompt(req: &AutoCredBrowserRequest) -> String {
     };
 
     format!(
-r#"You are an automated credential setup assistant. Your job is to use the Playwright browser tools to create API credentials for {connector_label} ({connector_name}).
+        r#"You are an automated credential setup assistant. Your job is to use the Playwright browser tools to create API credentials for {connector_label} ({connector_name}).
 
 ## Goal
 Navigate to the {connector_label} API/developer dashboard, create a new API key or credential, and extract the generated values.
@@ -338,18 +351,31 @@ IMPORTANT:
 /// Build the prompt for the guided (non-browser) fallback mode.
 /// Claude guides the user step-by-step through manual credential creation.
 fn build_guided_prompt(req: &AutoCredBrowserRequest) -> String {
-    let fields_desc: Vec<String> = req.fields.iter().map(|f| {
-        let mut desc = format!("- `{}` ({})", f.key, f.label);
-        if f.required { desc.push_str(" [REQUIRED]"); }
-        if let Some(ref ph) = f.placeholder { desc.push_str(&format!(" placeholder: {ph}")); }
-        if let Some(ref ht) = f.help_text { desc.push_str(&format!(" -- {ht}")); }
-        desc
-    }).collect();
+    let fields_desc: Vec<String> = req
+        .fields
+        .iter()
+        .map(|f| {
+            let mut desc = format!("- `{}` ({})", f.key, f.label);
+            if f.required {
+                desc.push_str(" [REQUIRED]");
+            }
+            if let Some(ref ph) = f.placeholder {
+                desc.push_str(&format!(" placeholder: {ph}"));
+            }
+            if let Some(ref ht) = f.help_text {
+                desc.push_str(&format!(" -- {ht}"));
+            }
+            desc
+        })
+        .collect();
 
     let docs_section = if let Some(ref url) = req.docs_url {
         format!("The setup page is at: {url}\nFirst output: OPEN_URL:{url}")
     } else {
-        format!("Find the {} developer/API settings page and output the URL with the OPEN_URL: prefix.", req.connector_label)
+        format!(
+            "Find the {} developer/API settings page and output the URL with the OPEN_URL: prefix.",
+            req.connector_label
+        )
     };
 
     let instructions_section = if let Some(ref instructions) = req.setup_instructions {
@@ -359,7 +385,7 @@ fn build_guided_prompt(req: &AutoCredBrowserRequest) -> String {
     };
 
     format!(
-r#"You are a guided credential setup assistant for {connector_label} ({connector_name}).
+        r#"You are a guided credential setup assistant for {connector_label} ({connector_name}).
 
 Browser automation is NOT available. Instead, you will guide the user step-by-step through creating API credentials manually in their own browser.
 
@@ -419,11 +445,17 @@ IMPORTANT:
 /// Build the prompt for universal mode (no pre-defined connector).
 /// Claude discovers fields dynamically and auto-generates a connector definition.
 fn build_universal_browser_prompt(req: &AutoCredBrowserRequest) -> String {
-    let service_url = req.service_url.as_deref().unwrap_or("the service's website");
-    let service_desc = req.service_description.as_deref().unwrap_or("API credentials");
+    let service_url = req
+        .service_url
+        .as_deref()
+        .unwrap_or("the service's website");
+    let service_desc = req
+        .service_description
+        .as_deref()
+        .unwrap_or("API credentials");
 
     format!(
-r##"You are an automated credential discovery and extraction assistant. Your job is to use the Playwright browser tools to find and create API credentials for a web service.
+        r##"You are an automated credential discovery and extraction assistant. Your job is to use the Playwright browser tools to find and create API credentials for a web service.
 
 ## Goal
 Navigate to the service, locate the developer settings or API key management page, create a new API key or credential, and extract ALL the generated values.
@@ -488,11 +520,17 @@ IMPORTANT:
 
 /// Build the guided prompt for universal mode (no browser automation).
 fn build_universal_guided_prompt(req: &AutoCredBrowserRequest) -> String {
-    let service_url = req.service_url.as_deref().unwrap_or("the service's website");
-    let service_desc = req.service_description.as_deref().unwrap_or("API credentials");
+    let service_url = req
+        .service_url
+        .as_deref()
+        .unwrap_or("the service's website");
+    let service_desc = req
+        .service_description
+        .as_deref()
+        .unwrap_or("API credentials");
 
     format!(
-r##"You are a guided credential discovery assistant. Browser automation is NOT available. You will guide the user step-by-step through finding and creating API credentials for a web service.
+        r##"You are a guided credential discovery assistant. Browser automation is NOT available. You will guide the user step-by-step through finding and creating API credentials for a web service.
 
 ## Communication Protocol
 
@@ -574,7 +612,9 @@ pub async fn start_auto_cred_browser(
     state: State<'_, Arc<AppState>>,
     request: AutoCredBrowserRequest,
 ) -> Result<AutoCredBrowserResult, String> {
-    require_privileged(&state, "start_auto_cred_browser").await.map_err(|e| e.to_string())?;
+    require_privileged(&state, "start_auto_cred_browser")
+        .await
+        .map_err(|e| e.to_string())?;
     let registry = Arc::clone(&state.process_registry);
     let session_id = request.session_id.clone();
     let force_guided = request.force_guided.unwrap_or(false);
@@ -615,7 +655,9 @@ pub async fn start_auto_cred_browser(
             // Add Playwright MCP server configuration via secure temp file.
             let mcp_file = build_playwright_mcp_config()?;
             cli_args.args.push("--mcp-config".to_string());
-            cli_args.args.push(mcp_file.path().to_string_lossy().to_string());
+            cli_args
+                .args
+                .push(mcp_file.path().to_string_lossy().to_string());
             _mcp_config_file = Some(mcp_file);
 
             // Restrict to only Playwright tools
@@ -645,11 +687,14 @@ pub async fn start_auto_cred_browser(
     };
 
     // Emit initial status
-    let _ = app.emit(STATUS_EVENT, json!({
-        "session_id": session_id,
-        "status": "running",
-        "mode": mode,
-    }));
+    let _ = app.emit(
+        STATUS_EVENT,
+        json!({
+            "session_id": session_id,
+            "status": "running",
+            "mode": mode,
+        }),
+    );
     let _ = app.emit(PROGRESS_EVENT, json!({
         "session_id": session_id,
         "type": "info",
@@ -896,11 +941,14 @@ pub async fn start_auto_cred_browser(
             true,
             session_ctx,
         );
-        let _ = app.emit(STATUS_EVENT, json!({
-            "session_id": session_id,
-            "status": "failed",
-            "error": &err,
-        }));
+        let _ = app.emit(
+            STATUS_EVENT,
+            json!({
+                "session_id": session_id,
+                "status": "failed",
+                "error": &err,
+            }),
+        );
         return Err(err);
     }
 
@@ -908,11 +956,19 @@ pub async fn start_auto_cred_browser(
         Err(error_msg) => {
             // Classify the spawn error
             let (kind, guidance, retryable) = if error_msg.contains("CLI not found") {
-                ("cli_not_found", "Install Claude CLI from https://docs.anthropic.com/en/docs/claude-code", false)
+                (
+                    "cli_not_found",
+                    "Install Claude CLI from https://docs.anthropic.com/en/docs/claude-code",
+                    false,
+                )
             } else if error_msg.contains("timed out after") {
                 ("timeout", "The browser session exceeded 5 minutes. The page may require manual interaction or the service is slow. Try again or set up manually.", true)
             } else if error_msg.contains("conflicting CLAUDECODE") {
-                ("env_conflict", "Restart the app to clear the environment conflict, then try again.", false)
+                (
+                    "env_conflict",
+                    "Restart the app to clear the environment conflict, then try again.",
+                    false,
+                )
             } else if error_msg.contains("exited with error") {
                 ("cli_error", "Claude CLI encountered an error. Check that your API key is valid and you have available credits.", true)
             } else {
@@ -921,26 +977,37 @@ pub async fn start_auto_cred_browser(
 
             // Write crash report for System Checks
             write_subprocess_crash_report(
-                &app, &session_id, &request.connector_name, &mode,
-                kind, &error_msg, session_ctx.as_ref(),
+                &app,
+                &session_id,
+                &request.connector_name,
+                &mode,
+                kind,
+                &error_msg,
+                session_ctx.as_ref(),
             );
 
             let err = structured_error(kind, &error_msg, guidance, retryable, session_ctx);
-            let _ = app.emit(STATUS_EVENT, json!({
-                "session_id": session_id,
-                "status": "failed",
-                "error": &err,
-            }));
+            let _ = app.emit(
+                STATUS_EVENT,
+                json!({
+                    "session_id": session_id,
+                    "status": "failed",
+                    "error": &err,
+                }),
+            );
             Err(err)
         }
         Ok(spawn_result) => {
             // Try to extract JSON from the output
             match extract_browser_result(&spawn_result.text_output) {
                 Some((values, procedure_log, discovered_fields, discovered_connector)) => {
-                    let _ = app.emit(STATUS_EVENT, json!({
-                        "session_id": session_id,
-                        "status": "completed",
-                    }));
+                    let _ = app.emit(
+                        STATUS_EVENT,
+                        json!({
+                            "session_id": session_id,
+                            "status": "completed",
+                        }),
+                    );
                     Ok(AutoCredBrowserResult {
                         session_id,
                         extracted_values: values,
@@ -952,16 +1019,21 @@ pub async fn start_auto_cred_browser(
                 }
                 None => {
                     // Attempt partial extraction before giving up
-                    if let Some(partial_values) = extract_partial_values(&spawn_result.text_output, &field_keys) {
+                    if let Some(partial_values) =
+                        extract_partial_values(&spawn_result.text_output, &field_keys)
+                    {
                         tracing::info!(
                             session_id = %session_id,
                             found_keys = ?partial_values.as_object().map(|m| m.len()).unwrap_or(0),
                             "Partial extraction recovered some values"
                         );
-                        let _ = app.emit(STATUS_EVENT, json!({
-                            "session_id": session_id,
-                            "status": "completed",
-                        }));
+                        let _ = app.emit(
+                            STATUS_EVENT,
+                            json!({
+                                "session_id": session_id,
+                                "status": "completed",
+                            }),
+                        );
                         Ok(AutoCredBrowserResult {
                             session_id,
                             extracted_values: partial_values,
@@ -1010,8 +1082,13 @@ pub async fn start_auto_cred_browser(
                             output_tail,
                         );
                         write_subprocess_crash_report(
-                            &app, &session_id, &request.connector_name, &mode,
-                            "extraction_failed", &extraction_detail, session_ctx.as_ref(),
+                            &app,
+                            &session_id,
+                            &request.connector_name,
+                            &mode,
+                            "extraction_failed",
+                            &extraction_detail,
+                            session_ctx.as_ref(),
                         );
 
                         let err = structured_error(
@@ -1021,11 +1098,14 @@ pub async fn start_auto_cred_browser(
                             true,
                             session_ctx,
                         );
-                        let _ = app.emit(STATUS_EVENT, json!({
-                            "session_id": session_id,
-                            "status": "failed",
-                            "error": &err,
-                        }));
+                        let _ = app.emit(
+                            STATUS_EVENT,
+                            json!({
+                                "session_id": session_id,
+                                "status": "failed",
+                                "error": &err,
+                            }),
+                        );
                         tracing::warn!(
                             session_id = %session_id,
                             output_len = spawn_result.text_output.len(),
@@ -1047,13 +1127,16 @@ pub async fn save_playwright_procedure(
     procedure_json: String,
     field_keys: String,
 ) -> Result<serde_json::Value, String> {
-    require_privileged(&state, "save_playwright_procedure").await.map_err(|e| e.to_string())?;
+    require_privileged(&state, "save_playwright_procedure")
+        .await
+        .map_err(|e| e.to_string())?;
     let proc = crate::db::repos::resources::playwright_procedures::save(
         &state.db,
         &connector_name,
         &procedure_json,
         &field_keys,
-    ).map_err(|e| e.to_string())?;
+    )
+    .map_err(|e| e.to_string())?;
 
     Ok(json!({
         "id": proc.id,
@@ -1068,20 +1151,23 @@ pub async fn get_playwright_procedure(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Option<serde_json::Value>, String> {
-    require_privileged(&state, "get_playwright_procedure").await.map_err(|e| e.to_string())?;
-    let proc = crate::db::repos::resources::playwright_procedures::get_active(
-        &state.db,
-        &connector_name,
-    ).map_err(|e| e.to_string())?;
+    require_privileged(&state, "get_playwright_procedure")
+        .await
+        .map_err(|e| e.to_string())?;
+    let proc =
+        crate::db::repos::resources::playwright_procedures::get_active(&state.db, &connector_name)
+            .map_err(|e| e.to_string())?;
 
-    Ok(proc.map(|p| json!({
-        "id": p.id,
-        "connector_name": p.connector_name,
-        "procedure_json": p.procedure_json,
-        "field_keys": p.field_keys,
-        "is_active": p.is_active,
-        "created_at": p.created_at,
-    })))
+    Ok(proc.map(|p| {
+        json!({
+            "id": p.id,
+            "connector_name": p.connector_name,
+            "procedure_json": p.procedure_json,
+            "field_keys": p.field_keys,
+            "is_active": p.is_active,
+            "created_at": p.created_at,
+        })
+    }))
 }
 
 /// Build a temporary MCP config JSON for the Playwright server.
@@ -1132,8 +1218,10 @@ fn cleanup_stale_mcp_temp_files() {
         for entry in entries.flatten() {
             let name = entry.file_name();
             let name_str = name.to_string_lossy();
-            if name_str.starts_with("personas_mcp_") && name_str.ends_with(".json")
-                && std::fs::remove_file(entry.path()).is_ok() {
+            if name_str.starts_with("personas_mcp_")
+                && name_str.ends_with(".json")
+                && std::fs::remove_file(entry.path()).is_ok()
+            {
                 tracing::debug!(file = %name_str, "Cleaned up stale MCP temp file");
             }
         }
@@ -1175,7 +1263,6 @@ fn cleanup_orphaned_browsers() {
     }
 }
 
-
 /// Check if Playwright MCP is likely to work (npx and @playwright/mcp available).
 fn check_playwright_available() -> bool {
     let npx_cmd = if cfg!(windows) { "cmd" } else { "npx" };
@@ -1214,7 +1301,17 @@ fn extract_urls(text: &str) -> Vec<String> {
         let url_text = &text[url_start..];
         // Find end of URL: stop at whitespace, ), ], >, ", markdown chars, or end of string
         let end = url_text
-            .find(|c: char| c.is_whitespace() || c == ')' || c == ']' || c == '>' || c == '"' || c == '\'' || c == '`' || c == '*' || c == '_')
+            .find(|c: char| {
+                c.is_whitespace()
+                    || c == ')'
+                    || c == ']'
+                    || c == '>'
+                    || c == '"'
+                    || c == '\''
+                    || c == '`'
+                    || c == '*'
+                    || c == '_'
+            })
             .unwrap_or(url_text.len());
         let url = &url_text[..end];
         // Strip trailing punctuation
@@ -1229,9 +1326,7 @@ fn extract_urls(text: &str) -> Vec<String> {
 
 /// Cancel a running auto-cred browser session by killing the CLI subprocess.
 #[tauri::command]
-pub async fn cancel_auto_cred_browser(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), String> {
+pub async fn cancel_auto_cred_browser(state: State<'_, Arc<AppState>>) -> Result<(), String> {
     let pid = state.process_registry.take_pid("auto_cred");
     if let Some(pid) = pid {
         tracing::info!(pid, "Killing auto-cred CLI subprocess");
@@ -1249,7 +1344,9 @@ pub async fn cancel_auto_cred_browser(
         }
         #[cfg(all(not(windows), not(target_os = "android")))]
         {
-            unsafe { libc::kill(pid as i32, libc::SIGTERM); }
+            unsafe {
+                libc::kill(pid as i32, libc::SIGTERM);
+            }
         }
     }
     Ok(())
@@ -1307,10 +1404,7 @@ fn extract_partial_values(text: &str, field_keys: &[String]) -> Option<serde_jso
                     if let Some(end_quote) = stripped.find('"') {
                         let val = &stripped[..end_quote];
                         if !val.is_empty() {
-                            found.insert(
-                                key.clone(),
-                                serde_json::Value::String(val.to_string()),
-                            );
+                            found.insert(key.clone(), serde_json::Value::String(val.to_string()));
                         }
                     }
                 }
@@ -1328,10 +1422,25 @@ fn extract_partial_values(text: &str, field_keys: &[String]) -> Option<serde_jso
 /// Extract the JSON result from Claude's text output.
 /// Looks for a JSON block containing `extracted_values`.
 /// Returns (values, procedure_log, discovered_fields, connector_definition).
-fn extract_browser_result(text: &str) -> Option<(serde_json::Value, String, Option<serde_json::Value>, Option<serde_json::Value>)> {
-    fn extract_from_parsed(parsed: &serde_json::Value) -> Option<(serde_json::Value, String, Option<serde_json::Value>, Option<serde_json::Value>)> {
+fn extract_browser_result(
+    text: &str,
+) -> Option<(
+    serde_json::Value,
+    String,
+    Option<serde_json::Value>,
+    Option<serde_json::Value>,
+)> {
+    fn extract_from_parsed(
+        parsed: &serde_json::Value,
+    ) -> Option<(
+        serde_json::Value,
+        String,
+        Option<serde_json::Value>,
+        Option<serde_json::Value>,
+    )> {
         let values = parsed.get("extracted_values")?;
-        let log = parsed.get("procedure_log")
+        let log = parsed
+            .get("procedure_log")
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string();

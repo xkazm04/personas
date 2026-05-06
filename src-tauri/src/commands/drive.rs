@@ -331,9 +331,7 @@ pub(crate) fn resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError> 
                 ));
             }
             Component::RootDir | Component::Prefix(_) => {
-                return Err(AppError::Validation(
-                    "Drive paths must be relative".into(),
-                ));
+                return Err(AppError::Validation("Drive paths must be relative".into()));
             }
         }
     }
@@ -346,9 +344,9 @@ pub(crate) fn resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError> 
     let canonical = if joined.exists() {
         std::fs::canonicalize(&joined)?
     } else {
-        let parent = joined.parent().ok_or_else(|| {
-            AppError::Validation("Drive path has no parent directory".into())
-        })?;
+        let parent = joined
+            .parent()
+            .ok_or_else(|| AppError::Validation("Drive path has no parent directory".into()))?;
         // Walk up until we find an existing ancestor to canonicalise. This
         // lets mkdir build a deep chain in one call.
         let mut ancestor = parent.to_path_buf();
@@ -437,7 +435,11 @@ fn build_entry(root: &Path, abs: &Path) -> Result<DriveEntry, AppError> {
     } else {
         DriveEntryKind::File
     };
-    let size = if kind == DriveEntryKind::File { meta.len() } else { 0 };
+    let size = if kind == DriveEntryKind::File {
+        meta.len()
+    } else {
+        0
+    };
     let modified = meta
         .modified()
         .ok()
@@ -600,10 +602,7 @@ pub fn drive_list(app: AppHandle, rel_path: String) -> Result<Vec<DriveEntry>, A
     let root = managed_root(&app)?;
     let dir = resolve_safe(&root, &rel_path)?;
     if !dir.is_dir() {
-        return Err(AppError::NotFound(format!(
-            "Not a directory: {}",
-            rel_path
-        )));
+        return Err(AppError::NotFound(format!("Not a directory: {}", rel_path)));
     }
 
     let mut entries = Vec::new();
@@ -635,10 +634,7 @@ pub fn drive_list_tree(
     let root = managed_root(&app)?;
     let base = resolve_safe(&root, &rel_path)?;
     if !base.is_dir() {
-        return Err(AppError::NotFound(format!(
-            "Not a directory: {}",
-            rel_path
-        )));
+        return Err(AppError::NotFound(format!("Not a directory: {}", rel_path)));
     }
     let depth = max_depth.unwrap_or(4);
     Ok(walk_tree(&root, &base, depth))
@@ -661,7 +657,12 @@ fn walk_tree(root: &Path, dir: &Path, depth_remaining: u32) -> DriveTreeNode {
                 .flatten()
                 .any(|e| e.file_type().map(|f| f.is_dir()).unwrap_or(false));
         }
-        return DriveTreeNode { name, path, children, has_more_children: has_more };
+        return DriveTreeNode {
+            name,
+            path,
+            children,
+            has_more_children: has_more,
+        };
     }
 
     if let Ok(read) = std::fs::read_dir(dir) {
@@ -687,7 +688,12 @@ fn walk_tree(root: &Path, dir: &Path, depth_remaining: u32) -> DriveTreeNode {
         }
     }
 
-    DriveTreeNode { name, path, children, has_more_children: has_more }
+    DriveTreeNode {
+        name,
+        path,
+        children,
+        has_more_children: has_more,
+    }
 }
 
 #[tauri::command]
@@ -785,16 +791,40 @@ pub fn drive_mkdir(app: AppHandle, rel_path: String) -> Result<DriveEntry, AppEr
     build_entry(&root, &abs)
 }
 
+/// Returns true when `rel_path` would resolve to the managed root itself —
+/// either an all-separator string ("", "/", "\\") or one whose segments are
+/// all `.` ("./", "./.", ".\\."). Used by [`drive_delete`] to refuse a
+/// `remove_dir_all` on the root, which would wipe the entire sandbox.
+fn rel_path_targets_root(rel_path: &str) -> bool {
+    // Normalise Windows separators so a single split handles both.
+    let normalized = rel_path.replace('\\', "/");
+    let trimmed = normalized.trim_matches('/');
+    if trimmed.is_empty() {
+        return true;
+    }
+    trimmed.split('/').all(|seg| seg.is_empty() || seg == ".")
+}
+
 #[tauri::command]
 pub fn drive_delete(app: AppHandle, rel_path: String) -> Result<(), AppError> {
     let root = managed_root(&app)?;
-    // Refuse to delete the root itself.
-    if rel_path.trim_matches(|c| c == '/' || c == '\\').is_empty() {
+    // Refuse anything that addresses the managed root itself. Catches both
+    // separator-only inputs ("", "/", "\\") and CurDir-only inputs
+    // (".", "./", "./.") that would otherwise resolve to the root and let
+    // `remove_dir_all` wipe every file in the sandbox.
+    if rel_path_targets_root(&rel_path) {
         return Err(AppError::Validation("Refusing to delete drive root".into()));
     }
     let abs = resolve_safe(&root, &rel_path)?;
     if !abs.exists() {
         return Err(AppError::NotFound(format!("Not found: {}", rel_path)));
+    }
+    // Belt-and-braces: canonicalise the resolved target and refuse if it
+    // equals the (already-canonical) managed root. Defends against any future
+    // `resolve_safe` change that lets a different input map to the root.
+    let canonical_target = std::fs::canonicalize(&abs).unwrap_or_else(|_| abs.clone());
+    if canonical_target == root {
+        return Err(AppError::Validation("Refusing to delete drive root".into()));
     }
     let was_dir = abs.is_dir();
     if was_dir {
@@ -951,7 +981,9 @@ fn validate_basename(name: &str) -> Result<(), AppError> {
         return Err(AppError::Validation("Name cannot be empty".into()));
     }
     if name.len() > 255 {
-        return Err(AppError::Validation("Name is too long (max 255 chars)".into()));
+        return Err(AppError::Validation(
+            "Name is too long (max 255 chars)".into(),
+        ));
     }
     if name.contains('/') || name.contains('\\') {
         return Err(AppError::Validation(
@@ -1018,7 +1050,9 @@ pub fn drive_reveal_in_os(app: AppHandle, rel_path: String) -> Result<(), AppErr
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
         // Linux: no universal "select item" affordance, so open the parent.
-        let target = if abs.is_dir() { abs.clone() } else {
+        let target = if abs.is_dir() {
+            abs.clone()
+        } else {
             abs.parent().map(Path::to_path_buf).unwrap_or(abs.clone())
         };
         open::that(&target)
@@ -1037,10 +1071,8 @@ mod tests {
     use std::fs;
 
     fn temp_root() -> PathBuf {
-        let base = std::env::temp_dir().join(format!(
-            "personas-drive-test-{}",
-            uuid::Uuid::new_v4()
-        ));
+        let base =
+            std::env::temp_dir().join(format!("personas-drive-test-{}", uuid::Uuid::new_v4()));
         fs::create_dir_all(&base).unwrap();
         fs::canonicalize(&base).unwrap()
     }
@@ -1070,6 +1102,29 @@ mod tests {
         let root = temp_root();
         assert_eq!(resolve_safe(&root, "").unwrap(), root);
         assert_eq!(resolve_safe(&root, ".").unwrap(), root);
+    }
+
+    #[test]
+    fn rel_path_targets_root_catches_all_curdir_forms() {
+        // Separator-only forms — already covered by the original guard.
+        assert!(rel_path_targets_root(""));
+        assert!(rel_path_targets_root("/"));
+        assert!(rel_path_targets_root("\\"));
+        assert!(rel_path_targets_root("//"));
+        // CurDir-only forms — these are the ones the original guard missed
+        // and which previously let `drive_delete` wipe the whole sandbox.
+        assert!(rel_path_targets_root("."));
+        assert!(rel_path_targets_root("./"));
+        assert!(rel_path_targets_root("/."));
+        assert!(rel_path_targets_root("./."));
+        assert!(rel_path_targets_root(".\\."));
+        assert!(rel_path_targets_root("/./"));
+        // Real targets must NOT be classified as root.
+        assert!(!rel_path_targets_root("foo"));
+        assert!(!rel_path_targets_root("foo/."));
+        assert!(!rel_path_targets_root("./foo"));
+        assert!(!rel_path_targets_root(".."));
+        assert!(!rel_path_targets_root("a/b/c.txt"));
     }
 
     #[test]

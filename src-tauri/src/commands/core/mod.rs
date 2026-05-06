@@ -1,11 +1,11 @@
-pub mod personas;
+pub mod chat;
+pub mod data_portability;
+pub mod export_types;
 pub mod groups;
+pub mod import_export;
 pub mod memories;
 pub mod memory_compile;
-pub mod export_types;
-pub mod import_export;
-pub mod data_portability;
+pub mod personas;
 pub mod saved_views;
-pub mod chat;
 pub mod use_cases;
 pub mod validation;

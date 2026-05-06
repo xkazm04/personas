@@ -11,35 +11,24 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
 
     // Pre-schema migrations: add columns that the SCHEMA's CREATE INDEX statements depend on.
     // These must run before SCHEMA so that indexes on new columns don't fail for existing DBs.
-    let _ = conn.execute_batch(
-        "ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"
-    ); // ignore "duplicate column" error on re-run
+    let _ = conn.execute_batch("ALTER TABLE persona_messages ADD COLUMN thread_id TEXT;"); // ignore "duplicate column" error on re-run
     let _ = conn.execute_batch(
         "ALTER TABLE dev_goals ADD COLUMN parent_goal_id TEXT REFERENCES dev_goals(id) ON DELETE SET NULL;"
     ); // ignore "duplicate column" error on re-run
 
     // Competition slot diff metadata + auto-DQ (safe to run on existing DBs)
     let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN disqualified INTEGER NOT NULL DEFAULT 0;"
+        "ALTER TABLE dev_competition_slots ADD COLUMN disqualified INTEGER NOT NULL DEFAULT 0;",
     );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN disqualify_reason TEXT;"
-    );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN diff_hash TEXT;"
-    );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN diff_stats_json TEXT;"
-    );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competition_slots ADD COLUMN diff_analyzed_at TEXT;"
-    );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;"
-    );
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;"
-    );
+    let _ =
+        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN disqualify_reason TEXT;");
+    let _ = conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_hash TEXT;");
+    let _ =
+        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_stats_json TEXT;");
+    let _ =
+        conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_analyzed_at TEXT;");
+    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;");
+    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;");
 
     conn.execute_batch(SCHEMA)?;
 
@@ -58,7 +47,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             created_at      TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_smee_relays_status ON smee_relays(status);"
+        CREATE INDEX IF NOT EXISTS idx_smee_relays_status ON smee_relays(status);",
     )?;
 
     // -- Lab User Ratings table -----------------------------------------------
@@ -72,7 +61,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             feedback        TEXT,
             created_at      TEXT NOT NULL DEFAULT (datetime('now'))
         );
-        CREATE INDEX IF NOT EXISTS idx_lab_ratings_run ON lab_user_ratings(run_id);"
+        CREATE INDEX IF NOT EXISTS idx_lab_ratings_run ON lab_user_ratings(run_id);",
     )?;
 
     // Deduplicate any pre-existing rows that share (run_id, scenario_name, result_id),
@@ -85,7 +74,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
              GROUP BY run_id, scenario_name, COALESCE(result_id, '')
          );
          CREATE UNIQUE INDEX IF NOT EXISTS idx_lab_ratings_unique
-            ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));"
+            ON lab_user_ratings(run_id, scenario_name, COALESCE(result_id, ''));",
     )?;
 
     // -- Extend persona_prompt_versions with full persona snapshot fields ------
@@ -118,13 +107,11 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_deploy_hist_persona_project
             ON deployment_history(persona_id, project_id);
         CREATE INDEX IF NOT EXISTS idx_deploy_hist_created
-            ON deployment_history(created_at DESC);"
+            ON deployment_history(created_at DESC);",
     )?;
 
     // -- Immutable ExecutionConfig snapshot per execution ----------------------
-    let _ = conn.execute_batch(
-        "ALTER TABLE persona_executions ADD COLUMN execution_config TEXT;"
-    ); // ignore "duplicate column" error on re-run
+    let _ = conn.execute_batch("ALTER TABLE persona_executions ADD COLUMN execution_config TEXT;"); // ignore "duplicate column" error on re-run
 
     // -- Alert Rules (moved from frontend localStorage to backend DB) ----------
     conn.execute_batch(
@@ -156,13 +143,12 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             dismissed   INTEGER NOT NULL DEFAULT 0
         );
         CREATE INDEX IF NOT EXISTS idx_fired_alerts_fired_at ON fired_alerts(fired_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_fired_alerts_rule_id ON fired_alerts(rule_id);"
+        CREATE INDEX IF NOT EXISTS idx_fired_alerts_rule_id ON fired_alerts(rule_id);",
     )?;
 
     // -- Trust score for graduated autonomy (Agent Trust Ladder) ---------------
-    let _ = conn.execute_batch(
-        "ALTER TABLE personas ADD COLUMN trust_score REAL NOT NULL DEFAULT 0.0;"
-    ); // ignore "duplicate column" error on re-run
+    let _ = conn
+        .execute_batch("ALTER TABLE personas ADD COLUMN trust_score REAL NOT NULL DEFAULT 0.0;"); // ignore "duplicate column" error on re-run
 
     // -- Shared Events Marketplace: catalog cache + subscriptions ---------------
     conn.execute_batch(
@@ -212,14 +198,14 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             last_received_at TEXT,
             hourly_buckets   TEXT NOT NULL DEFAULT '[]',
             updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
-        );"
+        );",
     )?;
 
     // thread_id migration moved to pre-schema block (top of run())
 
     // -- Dead Letter Queue: add retry_count to persona_events ----------------
     let _ = conn.execute_batch(
-        "ALTER TABLE persona_events ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;"
+        "ALTER TABLE persona_events ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;",
     ); // ignore "duplicate column" error on re-run
 
     // -- Composite trigger suppression persistence ----------------------------
@@ -232,7 +218,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
 
     // -- Track whether execution log files may be incomplete ------------------
     let _ = conn.execute_batch(
-        "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;"
+        "ALTER TABLE persona_executions ADD COLUMN log_truncated INTEGER NOT NULL DEFAULT 0;",
     ); // ignore "duplicate column" error on re-run
 
     // -- Enforce at most one production version per persona --------------------
@@ -249,11 +235,11 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
                    FROM persona_prompt_versions
                    WHERE tag = 'production'
                ) WHERE rn = 1
-           );"
+           );",
     )?;
     conn.execute_batch(
         "CREATE UNIQUE INDEX IF NOT EXISTS idx_ppv_one_production
-         ON persona_prompt_versions(persona_id) WHERE tag = 'production';"
+         ON persona_prompt_versions(persona_id) WHERE tag = 'production';",
     )?;
 
     // -- Healing audit log (surface silent failures) --------------------------
@@ -270,13 +256,11 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_hal_persona  ON healing_audit_log(persona_id);
         CREATE INDEX IF NOT EXISTS idx_hal_created  ON healing_audit_log(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_hal_type     ON healing_audit_log(event_type);"
+        CREATE INDEX IF NOT EXISTS idx_hal_type     ON healing_audit_log(event_type);",
     )?;
 
     // -- Add github_url to dev_projects ----------------------------------------
-    let _ = conn.execute_batch(
-        "ALTER TABLE dev_projects ADD COLUMN github_url TEXT;"
-    ); // ignore "duplicate column" error on re-run
+    let _ = conn.execute_batch("ALTER TABLE dev_projects ADD COLUMN github_url TEXT;"); // ignore "duplicate column" error on re-run
 
     // -- Index on n8n_transform_sessions(status, updated_at DESC) for list queries
     conn.execute_batch(
@@ -317,7 +301,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             UNIQUE(persona_id, skill_id)
         );
         CREATE INDEX IF NOT EXISTS idx_persona_skills_persona ON persona_skills(persona_id);
-        CREATE INDEX IF NOT EXISTS idx_persona_skills_skill ON persona_skills(skill_id);"
+        CREATE INDEX IF NOT EXISTS idx_persona_skills_skill ON persona_skills(skill_id);",
     )?;
 
     // -- A2A Gateway: external API keys for management API auth ---------------
@@ -334,12 +318,12 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             revoked_at    TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_external_api_keys_hash ON external_api_keys(key_hash);
-        CREATE INDEX IF NOT EXISTS idx_external_api_keys_prefix ON external_api_keys(key_prefix);"
+        CREATE INDEX IF NOT EXISTS idx_external_api_keys_prefix ON external_api_keys(key_prefix);",
     )?;
 
     // -- A2A Gateway: gateway_exposure column on personas (default local_only) -
     let _ = conn.execute_batch(
-        "ALTER TABLE personas ADD COLUMN gateway_exposure TEXT NOT NULL DEFAULT 'local_only';"
+        "ALTER TABLE personas ADD COLUMN gateway_exposure TEXT NOT NULL DEFAULT 'local_only';",
     ); // ignore "duplicate column" error on re-run
 
     // -- Research Lab plugin tables -------------------------------------------

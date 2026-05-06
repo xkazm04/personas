@@ -1,18 +1,20 @@
 /**
- * useBadgeCounts — lightweight hook for Sidebar badge indicators.
+ * useBadgeCounts — Sidebar badge polling driver.
  *
- * Dynamically imports the overviewStore to avoid pulling all 7 overview slices
- * (~85 KB) into the main bundle. Badge counts are non-critical UI that can
- * load a frame after the Sidebar shell renders.
+ * Owns the consolidated polling timer (badge counts + budget spend in one
+ * tick) and exposes the canonical sidebar-scoped fields drawn from
+ * `useAttention("sidebar")`. The unified attention registry is the single
+ * source of truth — this hook just wires polling and projects the counts
+ * the sidebar cares about.
  *
- * Also consolidates budget spend polling into the same timer tick so the
- * sidebar runs a single coordinated polling loop instead of two independent
- * timers (badge counts + budget).
+ * Dynamically imports the overviewStore to avoid pulling all overview slices
+ * into the main bundle on first paint.
  */
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useAgentStore } from "@/stores/agentStore";
 import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
+import { useAttention } from "@/hooks/useAttention";
 
 interface BadgeCounts {
   pendingReviewCount: number;
@@ -20,17 +22,15 @@ interface BadgeCounts {
   pendingEventCount: number;
 }
 
-const INITIAL: BadgeCounts = { pendingReviewCount: 0, unreadMessageCount: 0, pendingEventCount: 0 };
-
 export function useBadgeCounts(): BadgeCounts {
-  const [counts, setCounts] = useState<BadgeCounts>(INITIAL);
   const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
+  const { counts } = useAttention("sidebar");
 
   const fetchAll = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
     const state = useOverviewStore.getState();
-    // Stagger fetches across frames to avoid a burst of 4 simultaneous
+    // Stagger fetches across frames to avoid a burst of simultaneous
     // set() calls that cause cascading React re-renders in one frame.
     await state.fetchPendingReviewCount();
     state.fetchUnreadMessageCount().catch(() => {});
@@ -40,55 +40,22 @@ export function useBadgeCounts(): BadgeCounts {
   }, [fetchBudgetSpend]);
 
   useEffect(() => {
-    let unsub: (() => void) | undefined;
     let cancelled = false;
-
-    void import("@/stores/overviewStore").then(({ useOverviewStore }) => {
+    void import("@/stores/overviewStore").then(() => {
       if (cancelled) return;
-      // Initial read
-      const state = useOverviewStore.getState();
-      setCounts({
-        pendingReviewCount: state.pendingReviewCount,
-        unreadMessageCount: state.unreadMessageCount,
-        pendingEventCount: state.pendingEventCount,
-      });
-
       // Fire initial fetches (badge counts + budget in one tick)
       void fetchAll();
-
-      // Single consolidated polling interval for all sidebar data
       timerRef.current = setInterval(fetchAll, POLLING_CONFIG.dashboardRefresh.interval);
-
-      // Subscribe to store changes — only track the 3 badge fields to avoid
-      // re-renders when unrelated overview state changes.
-      let prev: BadgeCounts = {
-        pendingReviewCount: state.pendingReviewCount,
-        unreadMessageCount: state.unreadMessageCount,
-        pendingEventCount: state.pendingEventCount,
-      };
-      unsub = useOverviewStore.subscribe((s) => {
-        if (
-          s.pendingReviewCount !== prev.pendingReviewCount ||
-          s.unreadMessageCount !== prev.unreadMessageCount ||
-          s.pendingEventCount !== prev.pendingEventCount
-        ) {
-          const next: BadgeCounts = {
-            pendingReviewCount: s.pendingReviewCount,
-            unreadMessageCount: s.unreadMessageCount,
-            pendingEventCount: s.pendingEventCount,
-          };
-          prev = next;
-          setCounts(next);
-        }
-      });
     });
-
     return () => {
       cancelled = true;
-      unsub?.();
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [fetchAll]);
 
-  return counts;
+  return {
+    pendingReviewCount: counts.pending_reviews,
+    unreadMessageCount: counts.unread_messages,
+    pendingEventCount: counts.pending_events,
+  };
 }

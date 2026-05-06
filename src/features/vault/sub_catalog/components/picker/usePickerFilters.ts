@@ -3,7 +3,8 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { getPurposeForConnector, PURPOSE_GROUPS, resolvePurposeLabel } from '@/lib/credentials/connectorRoles';
 import { getLicenseTier, resolveTierLabel, type LicenseTier } from '@/lib/credentials/connectorLicensing';
-import { ROLE_PRESETS, type RolePreset, assertRolePresetCategoriesValid } from './catalogRolePresets';
+import type { RolePreset } from './catalogRolePresets';
+import { connectorMatchesAudience } from '@/lib/credentials/connectorAudiences';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -48,21 +49,15 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
     return set;
   }, [credentials]);
 
-  // Dev-mode contract assertion: every category referenced by ROLE_PRESETS
-  // must appear in at least one live connector. A Rust-side rename of
-  // `connector-categories.json` without an update to `catalogRolePresets.ts`
-  // would otherwise produce silent zero-result filters with no telemetry.
-  // The check console.warns once whenever the connector list shape changes.
-  useEffect(() => {
-    if (connectors.length === 0) return;
-    const live = new Set<string>();
-    for (const c of connectors) live.add(c.category);
-    assertRolePresetCategoriesValid(live);
-  }, [connectors]);
-
   // Single filter pipeline. Pass `except` when computing the option list for a
   // given filter — the dropdown for "Purpose" should reflect counts after the
   // OTHER filters apply, not after the purpose filter applies to itself.
+  //
+  // Role-filter note: matching is per-connector via `connectorMatchesAudience`,
+  // not via a category-to-role preset map. A connector declares its audiences
+  // (`metadata.audiences`, falling back to `connectorAudiences.ts`) and the
+  // filter aggregates emergently. Adding a new connector with a new category
+  // no longer requires editing a separate ROLE_PRESETS table.
   const applyFilters = useCallback((list: ConnectorDefinition[], except?: FilterKey) => {
     let result = list;
     if (except !== 'category' && activeCategory) {
@@ -79,8 +74,7 @@ export function usePickerFilters(connectors: ConnectorDefinition[], credentials:
       else if (connectedFilter === 'new') result = result.filter((c) => !ownedServiceTypes.has(c.name));
     }
     if (except !== 'role' && activeRole) {
-      const cats = ROLE_PRESETS[activeRole].categories;
-      result = result.filter((c) => cats.includes(c.category));
+      result = result.filter((c) => connectorMatchesAudience(c.name, c.metadata, activeRole));
     }
     return result;
   }, [activeCategory, activePurpose, activeLicense, connectedFilter, activeRole, ownedServiceTypes]);

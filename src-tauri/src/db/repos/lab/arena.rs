@@ -1,6 +1,8 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{CreateArenaResultInput, LabArenaResult, LabArenaRun, LabRunStatus, row_to_lab_result_base};
+use crate::db::models::{
+    row_to_lab_result_base, CreateArenaResultInput, LabArenaResult, LabArenaRun, LabRunStatus,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 

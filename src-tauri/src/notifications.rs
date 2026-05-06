@@ -181,13 +181,17 @@ impl ChannelMetrics {
     fn record_success(&self, latency_ms: u64) {
         self.attempted.fetch_add(1, Ordering::Relaxed);
         self.succeeded.fetch_add(1, Ordering::Relaxed);
-        self.total_latency_ms.fetch_add(latency_ms, Ordering::Relaxed);
+        self.total_latency_ms
+            .fetch_add(latency_ms, Ordering::Relaxed);
         self.consecutive_failures.store(0, Ordering::Relaxed);
         // Update max latency (CAS loop)
         let mut current = self.max_latency_ms.load(Ordering::Relaxed);
         while latency_ms > current {
             match self.max_latency_ms.compare_exchange_weak(
-                current, latency_ms, Ordering::Relaxed, Ordering::Relaxed,
+                current,
+                latency_ms,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
             ) {
                 Ok(_) => break,
                 Err(actual) => current = actual,
@@ -206,7 +210,11 @@ impl ChannelMetrics {
         let succeeded = self.succeeded.load(Ordering::Relaxed);
         let failed = self.failed.load(Ordering::Relaxed);
         let total_latency_ms = self.total_latency_ms.load(Ordering::Relaxed);
-        let avg_latency_ms = if succeeded > 0 { total_latency_ms as f64 / succeeded as f64 } else { 0.0 };
+        let avg_latency_ms = if succeeded > 0 {
+            total_latency_ms as f64 / succeeded as f64
+        } else {
+            0.0
+        };
         ChannelDeliveryStats {
             attempted,
             succeeded,
@@ -357,9 +365,7 @@ fn deliver_v2_channels(
                 // True no-op: the messages table insert already happened
                 // upstream in dispatch.rs::dispatch() before channels are resolved.
                 // No metrics, no event. (DELIV-01, D-03)
-                tracing::trace!(
-                    "built-in channel: delivery is a no-op (message already in inbox)"
-                );
+                tracing::trace!("built-in channel: delivery is a no-op (message already in inbox)");
             }
             ChannelSpecV2Type::Titlebar => {
                 let payload = TitlebarNotificationPayload {
@@ -369,10 +375,7 @@ fn deliver_v2_channels(
                     event_type: ctx.emit_event_type.clone(),
                     title: title.to_string(),
                     body: body.to_string(),
-                    priority: ctx
-                        .priority
-                        .clone()
-                        .unwrap_or_else(|| "normal".to_string()),
+                    priority: ctx.priority.clone().unwrap_or_else(|| "normal".to_string()),
                 };
                 emit_event(app, event_name::TITLEBAR_NOTIFICATION, &payload);
                 DELIVERY_METRICS.for_channel("titlebar").record_success(0);
@@ -513,11 +516,7 @@ pub(crate) fn deliver_to_channels(
 }
 
 /// POST to Slack incoming webhook URL.
-async fn deliver_slack(
-    ch: &ExternalChannel,
-    title: &str,
-    body: &str,
-) -> Result<(), String> {
+async fn deliver_slack(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
     let webhook_url = SecureString::new(
         ch.config
             .get("webhook_url")
@@ -553,11 +552,7 @@ async fn deliver_slack(
 }
 
 /// Send message via Telegram Bot API.
-async fn deliver_telegram(
-    ch: &ExternalChannel,
-    title: &str,
-    body: &str,
-) -> Result<(), String> {
+async fn deliver_telegram(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
     let bot_token = SecureString::new(
         ch.config
             .get("bot_token")
@@ -603,11 +598,7 @@ async fn deliver_telegram(
 ///   - `sendgrid_api_key` -> SendGrid v3 API
 ///   - `resend_api_key`   -> Resend API
 ///     Falls back to no-op if neither is configured.
-async fn deliver_email(
-    ch: &ExternalChannel,
-    title: &str,
-    body: &str,
-) -> Result<(), String> {
+async fn deliver_email(ch: &ExternalChannel, title: &str, body: &str) -> Result<(), String> {
     let to = ch
         .config
         .get("to")
@@ -707,7 +698,16 @@ pub fn notify_execution_completed(
     duration_ms: u64,
     channels: Option<&str>,
 ) {
-    notify_execution_completed_rich(app, persona_name, status, duration_ms, channels, None, None, None);
+    notify_execution_completed_rich(
+        app,
+        persona_name,
+        status,
+        duration_ms,
+        channels,
+        None,
+        None,
+        None,
+    );
 }
 
 /// Richer execution notification with cost, model, and error context.
@@ -828,11 +828,7 @@ pub fn notify_healing_issue(
     deliver_to_channels(app, channels, &heading, &body, &delivery_ctx);
 }
 
-pub fn notify_n8n_transform_completed(
-    app: &AppHandle,
-    workflow_name: &str,
-    success: bool,
-) {
+pub fn notify_n8n_transform_completed(app: &AppHandle, workflow_name: &str, success: bool) {
     if success {
         send(
             app,
@@ -853,11 +849,7 @@ pub fn notify_n8n_transform_completed(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub fn send_app_notification(
-    app: tauri::AppHandle,
-    title: String,
-    body: String,
-) {
+pub fn send_app_notification(app: tauri::AppHandle, title: String, body: String) {
     send(&app, &title, &body);
 }
 
@@ -869,8 +861,9 @@ pub fn send_app_notification(
 /// Key = `channel_key(spec)` = "type:credential_id:config_hash"
 /// Value = Instant of last successful call for that channel.
 /// 1 req/sec per channel; in-memory only, resets on app restart. (DELIV-06, D-05)
-static TEST_DELIVERY_RATE_LIMIT: LazyLock<TokioMutex<std::collections::HashMap<String, std::time::Instant>>> =
-    LazyLock::new(|| TokioMutex::new(std::collections::HashMap::new()));
+static TEST_DELIVERY_RATE_LIMIT: LazyLock<
+    TokioMutex<std::collections::HashMap<String, std::time::Instant>>,
+> = LazyLock::new(|| TokioMutex::new(std::collections::HashMap::new()));
 
 const RATE_LIMIT_WINDOW: std::time::Duration = std::time::Duration::from_secs(1);
 
@@ -1013,8 +1006,8 @@ async fn test_deliver_built_in(
     title: &str,
     body: &str,
 ) -> Result<(), String> {
-    use crate::db::repos::communication::messages as msg_repo;
     use crate::db::models::CreateMessageInput;
+    use crate::db::repos::communication::messages as msg_repo;
     let input = CreateMessageInput {
         persona_id: "__test__".to_string(),
         execution_id: None,
@@ -1027,17 +1020,17 @@ async fn test_deliver_built_in(
         use_case_id: None,
     };
     // AppState field is `db` (not `pool`) — see lib.rs.
-    msg_repo::create(&state.db, input).map(|_| ()).map_err(|e| e.to_string())
+    msg_repo::create(&state.db, input)
+        .map(|_| ())
+        .map_err(|e| e.to_string())
 }
 
-fn test_deliver_titlebar(
-    app: &tauri::AppHandle,
-    spec: &ChannelSpecV2,
-    title: &str,
-    body: &str,
-) {
+fn test_deliver_titlebar(app: &tauri::AppHandle, spec: &ChannelSpecV2, title: &str, body: &str) {
     let payload = TitlebarNotificationPayload {
-        persona_id: spec.credential_id.clone().unwrap_or_else(|| "__test__".into()),
+        persona_id: spec
+            .credential_id
+            .clone()
+            .unwrap_or_else(|| "__test__".into()),
         persona_name: "Test".into(),
         use_case_id: None,
         event_type: None,
@@ -1106,11 +1099,9 @@ async fn test_deliver_external(
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn test_notification_channel(
-    channel_json: String,
-) -> Result<String, String> {
-    let channel: ExternalChannel = serde_json::from_str(&channel_json)
-        .map_err(|e| format!("Invalid channel config: {e}"))?;
+pub async fn test_notification_channel(channel_json: String) -> Result<String, String> {
+    let channel: ExternalChannel =
+        serde_json::from_str(&channel_json).map_err(|e| format!("Invalid channel config: {e}"))?;
 
     let title = "Personas -- Test Notification";
     let body = "If you see this, your notification channel is working correctly.";
@@ -1144,7 +1135,12 @@ pub fn get_notification_delivery_stats() -> NotificationDeliveryStats {
 
 /// Deliver a notification to external channels. Exposed for use by the
 /// performance digest and other system-level notifications.
-pub async fn deliver_to_external_channels(app: &AppHandle, channels_json: &str, title: &str, body: &str) {
+pub async fn deliver_to_external_channels(
+    app: &AppHandle,
+    channels_json: &str,
+    title: &str,
+    body: &str,
+) {
     let channels = parse_channels(Some(channels_json));
     let enabled: Vec<_> = channels.into_iter().filter(|c| c.enabled).collect();
     if enabled.is_empty() {
@@ -1370,10 +1366,16 @@ mod tests {
         let titlebar_before = DELIVERY_METRICS.for_channel("titlebar").attempted_count();
         let filtered = filter_channels_for_delivery(chans, &mk_ctx(None, None));
         assert_eq!(filtered.len(), 1, "built-in should pass through filter");
-        assert!(matches!(filtered[0].channel_type, ChannelSpecV2Type::BuiltIn));
+        assert!(matches!(
+            filtered[0].channel_type,
+            ChannelSpecV2Type::BuiltIn
+        ));
         // Titlebar counter unchanged because built-in arm does nothing
         let titlebar_after = DELIVERY_METRICS.for_channel("titlebar").attempted_count();
-        assert_eq!(titlebar_before, titlebar_after, "built-in must not touch titlebar metrics");
+        assert_eq!(
+            titlebar_before, titlebar_after,
+            "built-in must not touch titlebar metrics"
+        );
     }
 
     #[test]
@@ -1488,7 +1490,8 @@ mod tests {
 
     #[test]
     fn test_rate_limit_same_channel() {
-        let mut map: std::collections::HashMap<String, std::time::Instant> = std::collections::HashMap::new();
+        let mut map: std::collections::HashMap<String, std::time::Instant> =
+            std::collections::HashMap::new();
         let key = "slack:cred-1:abc123";
         let t0 = std::time::Instant::now();
         // First check: not in map → allowed
@@ -1506,10 +1509,17 @@ mod tests {
 
     #[test]
     fn test_rate_limit_key_independence() {
-        let mut map: std::collections::HashMap<String, std::time::Instant> = std::collections::HashMap::new();
+        let mut map: std::collections::HashMap<String, std::time::Instant> =
+            std::collections::HashMap::new();
         let t0 = std::time::Instant::now();
         map.insert("slack:cred-1:abc".into(), t0);
         // Different credential_id → independent bucket, not rate-limited
-        assert!(rate_limit_check(&map, t0 + std::time::Duration::from_millis(200), "slack:cred-2:abc", "slack").is_none());
+        assert!(rate_limit_check(
+            &map,
+            t0 + std::time::Duration::from_millis(200),
+            "slack:cred-2:abc",
+            "slack"
+        )
+        .is_none());
     }
 }

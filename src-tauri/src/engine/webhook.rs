@@ -16,8 +16,8 @@ use tokio::sync::watch;
 
 use rusqlite::params;
 
-use crate::db::models::CreatePersonaEventInput;
 use crate::db::models::webhook_log::CreateWebhookRequestLogInput;
+use crate::db::models::CreatePersonaEventInput;
 use crate::db::models::PersonaEvent;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
@@ -47,7 +47,11 @@ pub async fn start_webhook_server(
     tier_config: Arc<std::sync::Mutex<TierConfig>>,
     mut shutdown_rx: watch::Receiver<bool>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let state = WebhookState { pool, rate_limiter, tier_config };
+    let state = WebhookState {
+        pool,
+        rate_limiter,
+        tier_config,
+    };
 
     // 1 MB body limit to prevent OOM DoS via oversized payloads
     const MAX_BODY_BYTES: usize = 1024 * 1024;
@@ -216,9 +220,14 @@ async fn handle_webhook(
 ) -> impl IntoResponse {
     let headers_json = serialize_headers(&headers);
     let body_str = String::from_utf8_lossy(&body).to_string();
-    let body_for_log = if body_str.is_empty() { None } else { Some(body_str.clone()) };
+    let body_for_log = if body_str.is_empty() {
+        None
+    } else {
+        Some(body_str.clone())
+    };
 
-    let (status, extra_headers, response) = process_webhook(&state, &trigger_id, &headers, &body).await;
+    let (status, extra_headers, response) =
+        process_webhook(&state, &trigger_id, &headers, &body).await;
 
     // Log the request regardless of outcome
     let log_input = CreateWebhookRequestLogInput {
@@ -292,9 +301,17 @@ async fn process_webhook(
     }
 
     // 2b. Rate limit: max webhook calls per trigger per minute (tier-aware)
-    let webhook_trigger_max = state.tier_config.lock().unwrap_or_else(|e| e.into_inner()).webhook_trigger_max;
+    let webhook_trigger_max = state
+        .tier_config
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .webhook_trigger_max;
     let rate_key = format!("webhook:{}", trigger_id);
-    if let Err(retry_after) = state.rate_limiter.check(&rate_key, webhook_trigger_max, WEBHOOK_TRIGGER_WINDOW) {
+    if let Err(retry_after) =
+        state
+            .rate_limiter
+            .check(&rate_key, webhook_trigger_max, WEBHOOK_TRIGGER_WINDOW)
+    {
         tracing::warn!(
             trigger_id = %trigger_id,
             retry_after = retry_after,
@@ -318,7 +335,9 @@ async fn process_webhook(
     let cfg = trigger.parse_config();
     let (webhook_secret, cfg_event_type) = match &cfg {
         crate::db::models::TriggerConfig::Webhook {
-            webhook_secret, event_type, ..
+            webhook_secret,
+            event_type,
+            ..
         } => (webhook_secret.clone(), event_type.clone()),
         _ => (None, None),
     };
@@ -485,9 +504,7 @@ async fn process_webhook(
 /// Supports both `sha256=<hex>` format (GitHub-style) and plain hex.
 fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
     // Strip "sha256=" prefix if present
-    let hex_sig = signature
-        .strip_prefix("sha256=")
-        .unwrap_or(signature);
+    let hex_sig = signature.strip_prefix("sha256=").unwrap_or(signature);
 
     // Use a dummy 32-byte value when hex decode fails so that both valid-hex
     // and invalid-hex signatures follow the same constant-time comparison path,
@@ -523,28 +540,28 @@ fn mark_triggered_and_publish(
     let project_id = input.project_id.unwrap_or_else(|| "default".into());
 
     let (stored_payload, payload_iv) = match &input.payload {
-        Some(plaintext) if !plaintext.is_empty() => {
-            match crypto::encrypt_for_db(plaintext) {
-                Ok((ct, iv)) => (Some(ct), Some(iv)),
-                Err(e) => {
-                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                    (Some(plaintext.clone()), None)
-                }
+        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
+            Ok((ct, iv)) => (Some(ct), Some(iv)),
+            Err(e) => {
+                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                (Some(plaintext.clone()), None)
             }
-        }
+        },
         other => (other.clone(), None),
     };
 
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
-    let trigger_rows = tx.execute(
-        "UPDATE persona_triggers
+    let trigger_rows = tx
+        .execute(
+            "UPDATE persona_triggers
          SET last_triggered_at = ?1, next_trigger_at = NULL, updated_at = ?1,
              trigger_version = trigger_version + 1
          WHERE id = ?2 AND trigger_version = ?3",
-        params![now, trigger_id, expected_version],
-    ).map_err(AppError::Database)?;
+            params![now, trigger_id, expected_version],
+        )
+        .map_err(AppError::Database)?;
 
     if trigger_rows == 0 {
         return Err(AppError::Validation(
@@ -569,7 +586,8 @@ fn mark_triggered_and_publish(
             input.use_case_id,
             now,
         ],
-    ).map_err(AppError::Database)?;
+    )
+    .map_err(AppError::Database)?;
 
     tx.commit().map_err(AppError::Database)?;
 

@@ -41,11 +41,14 @@ fn cache_preview(preview_id: &str, bytes: Vec<u8>, bundle_hash: String) {
     let mut cache = PREVIEW_CACHE.lock().unwrap();
     // Evict expired entries opportunistically
     cache.retain(|_, v| v.created_at.elapsed().as_secs() < PREVIEW_TTL_SECS);
-    cache.insert(preview_id.to_string(), CachedPreview {
-        bytes,
-        bundle_hash,
-        created_at: Instant::now(),
-    });
+    cache.insert(
+        preview_id.to_string(),
+        CachedPreview {
+            bytes,
+            bundle_hash,
+            created_at: Instant::now(),
+        },
+    );
 }
 
 /// Consume cached preview bytes and their hash for use during import (TOCTOU mitigation).
@@ -305,10 +308,7 @@ pub fn export_bundle(
 // -- Import Preview ------------------------------------------------------
 
 /// Preview a .persona bundle without importing anything.
-pub fn preview_bundle(
-    pool: &DbPool,
-    bundle_bytes: &[u8],
-) -> Result<BundleImportPreview, AppError> {
+pub fn preview_bundle(pool: &DbPool, bundle_bytes: &[u8]) -> Result<BundleImportPreview, AppError> {
     let bundle_hash = hex::encode(Sha256::digest(bundle_bytes));
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
@@ -410,8 +410,7 @@ pub fn apply_import(
             };
 
             // Check for name conflicts with existing personas
-            let mut persona_value: serde_json::Value =
-                serde_json::from_str(&persona_json)?;
+            let mut persona_value: serde_json::Value = serde_json::from_str(&persona_json)?;
 
             // Check if a persona with this exact name already exists
             let original_name = persona_value
@@ -468,10 +467,7 @@ pub fn apply_import(
 // -- Verify Only ---------------------------------------------------------
 
 /// Verify a bundle's signature and integrity without importing.
-pub fn verify_bundle(
-    pool: &DbPool,
-    bundle_bytes: &[u8],
-) -> Result<BundleVerification, AppError> {
+pub fn verify_bundle(pool: &DbPool, bundle_bytes: &[u8]) -> Result<BundleVerification, AppError> {
     let bundle_hash = hex::encode(Sha256::digest(bundle_bytes));
     let (manifest, sig) = parse_bundle(bundle_bytes)?;
 
@@ -517,12 +513,9 @@ fn verify_against_trusted_key(
             );
             return (false, false);
         }
-        let valid = identity::verify_signature(
-            &peer.public_key_b64,
-            manifest_bytes,
-            &sig.signature_b64,
-        )
-        .unwrap_or(false);
+        let valid =
+            identity::verify_signature(&peer.public_key_b64, manifest_bytes, &sig.signature_b64)
+                .unwrap_or(false);
         return (valid, true);
     }
 
@@ -547,9 +540,7 @@ fn verify_against_trusted_key(
     (false, false)
 }
 
-fn parse_bundle(
-    bundle_bytes: &[u8],
-) -> Result<(BundleManifest, BundleSignature), AppError> {
+fn parse_bundle(bundle_bytes: &[u8]) -> Result<(BundleManifest, BundleSignature), AppError> {
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(bundle_bytes))
         .map_err(|e| AppError::Validation(format!("Invalid bundle ZIP: {e}")))?;
 
@@ -604,8 +595,7 @@ fn filter_fields(value: &mut serde_json::Value, resource: &ExposedResource) {
     }
 
     // Always include id and name for usability
-    let mut allowed: std::collections::HashSet<&str> =
-        fields.iter().map(|s| s.as_str()).collect();
+    let mut allowed: std::collections::HashSet<&str> = fields.iter().map(|s| s.as_str()).collect();
     allowed.insert("id");
     allowed.insert("name");
     allowed.insert("created_at");
@@ -623,10 +613,7 @@ fn filter_fields(value: &mut serde_json::Value, resource: &ExposedResource) {
 
 /// Import a persona from a JSON value using the standard create path.
 /// Returns the newly created persona's ID.
-fn import_persona_from_value(
-    pool: &DbPool,
-    value: &serde_json::Value,
-) -> Result<String, AppError> {
+fn import_persona_from_value(pool: &DbPool, value: &serde_json::Value) -> Result<String, AppError> {
     use crate::db::models::CreatePersonaInput;
 
     let obj = value
@@ -652,18 +639,36 @@ fn import_persona_from_value(
         name,
         description,
         system_prompt,
-        structured_prompt: obj.get("structured_prompt").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        icon: obj.get("icon").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        color: obj.get("color").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        model_profile: obj.get("model_profile").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        structured_prompt: obj
+            .get("structured_prompt")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        icon: obj
+            .get("icon")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        color: obj
+            .get("color")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        model_profile: obj
+            .get("model_profile")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         max_budget_usd: obj.get("max_budget_usd").and_then(|v| v.as_f64()),
-        max_turns: obj.get("max_turns").and_then(|v| v.as_i64()).map(|n| n as i32),
+        max_turns: obj
+            .get("max_turns")
+            .and_then(|v| v.as_i64())
+            .map(|n| n as i32),
         group_id: None,
         project_id: None,
         enabled: Some(true),
         max_concurrent: None,
         timeout_ms: None,
-        design_context: obj.get("design_context").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        design_context: obj
+            .get("design_context")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         notification_channels: None,
     };
 
@@ -671,14 +676,14 @@ fn import_persona_from_value(
     Ok(persona.id)
 }
 
-
 // -- Network scope extraction -------------------------------------------
 
 /// Simple URL regex: matches http(s)://domain paths.
 fn extract_urls(text: &str) -> Vec<String> {
     let mut urls = Vec::new();
     for word in text.split_whitespace() {
-        let trimmed = word.trim_matches(|c: char| c == '"' || c == '\'' || c == ',' || c == ')' || c == ']');
+        let trimmed =
+            word.trim_matches(|c: char| c == '"' || c == '\'' || c == ',' || c == ')' || c == ']');
         if trimmed.starts_with("http://") || trimmed.starts_with("https://") {
             urls.push(trimmed.to_string());
         }

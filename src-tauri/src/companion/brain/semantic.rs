@@ -295,7 +295,10 @@ pub fn delete_fact(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
         )
         .optional()?;
     let tx = conn.unchecked_transaction()?;
-    tx.execute("DELETE FROM companion_provenance WHERE fact_id = ?1", params![id])?;
+    tx.execute(
+        "DELETE FROM companion_provenance WHERE fact_id = ?1",
+        params![id],
+    )?;
     tx.execute("DELETE FROM companion_fact WHERE id = ?1", params![id])?;
     tx.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id])?;
     tx.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
@@ -333,9 +336,7 @@ pub fn touch_last_seen(pool: &UserDbPool, ids: &[String]) -> Result<(), AppError
     let conn = pool.get()?;
     let now = Utc::now().to_rfc3339();
     let placeholders = ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
-    let sql = format!(
-        "UPDATE companion_fact SET last_seen_at = ? WHERE id IN ({placeholders})"
-    );
+    let sql = format!("UPDATE companion_fact SET last_seen_at = ? WHERE id IN ({placeholders})");
     let mut p: Vec<&dyn rusqlite::ToSql> = Vec::with_capacity(ids.len() + 1);
     p.push(&now);
     for id in ids {

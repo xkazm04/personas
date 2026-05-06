@@ -1,138 +1,51 @@
+pub mod a2a;
 pub mod adoption_answers;
-pub mod template_v3;
+pub mod ai_healing;
+pub mod ai_helpers;
+#[cfg(feature = "desktop")]
+pub mod ambient_context;
+pub mod api_definition;
+pub mod api_proxy;
+#[cfg(feature = "desktop")]
+pub mod app_focus;
+pub mod audit_incidents_promoter;
 pub mod auto_rollback;
+pub mod auto_triage;
+pub mod automation_runner;
 pub mod backend;
+pub mod background;
 pub mod build_session;
-pub mod events;
-pub mod event_registry;
-pub mod config_merge;
-#[cfg(feature = "p2p")]
-pub mod identity;
 #[cfg(feature = "p2p")]
 pub mod bundle;
-#[cfg(feature = "p2p")]
-pub mod enclave;
-#[cfg(feature = "p2p")]
-pub mod p2p;
-pub mod background;
 pub mod bus;
 pub mod byom;
+pub mod capability;
+pub mod capability_contract;
 pub mod chain;
+pub mod chunker;
+pub mod claude_md_projection;
+pub mod cli_mcp_config;
+pub mod cli_process;
+#[cfg(feature = "desktop")]
+pub mod clipboard_error_detector;
+#[cfg(feature = "desktop")]
+pub mod clipboard_monitor;
 pub mod cloud_webhook_relay;
-pub mod shared_event_relay;
 pub mod compilation_pipeline;
 pub mod compiler;
-pub mod smee_relay;
+pub mod composite;
+pub mod config_merge;
 pub mod connector_strategy;
+#[cfg(feature = "desktop")]
+pub mod context_rules;
+pub mod cost;
 pub mod credential_design;
-pub mod auto_triage;
-pub mod design_context;
-pub mod dispatch;
-pub mod quality_gate;
-pub mod protocol;
 pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
-pub mod design;
-pub mod director;
-pub mod error_taxonomy;
-pub mod eval;
-pub mod failover;
-pub mod google_oauth;
-pub mod oauth_refresh;
-pub mod oauth_refresh_lock;
-pub mod healing;
-pub mod hooks_sidecar;
-pub mod claude_md_projection;
-pub mod audit_incidents_promoter;
-pub mod cli_mcp_config;
-pub mod healing_orchestrator;
-pub mod healing_timeline;
-pub mod ai_healing;
-pub mod ai_helpers;
-pub mod healthcheck;
-pub mod intent_compiler;
-pub mod knowledge;
-pub mod kb_index;
-pub mod llm_topology;
-pub mod logger;
-pub mod optimizer;
-pub mod ollama;
-pub mod parser;
-pub mod pipeline;
-pub mod polling;
-pub mod process_activity;
-pub mod topology_graph;
-pub mod topology_heuristic;
-pub mod topology_types;
-pub mod prompt;
-pub mod provider;
-pub mod queue;
-pub mod rate_limiter;
-pub mod render_plan;
-pub mod tier;
-pub mod rotation;
-pub mod runner;
-pub mod scheduler;
-pub mod subscription;
-pub mod test_runner;
-pub mod tool_runner;
-pub mod trace;
-pub mod dream_replay;
-pub mod types;
-pub mod lifecycle;
-pub mod process_session;
-pub mod webhook;
-pub mod workflow_compiler;
-pub mod platform_rules;
-pub mod url_safety;
-#[cfg(feature = "desktop")]
-pub mod file_watcher;
-#[cfg(feature = "desktop")]
-pub mod clipboard_monitor;
-#[cfg(feature = "desktop")]
-pub mod app_focus;
-#[cfg(feature = "desktop")]
-pub mod ambient_context;
-#[cfg(feature = "desktop")]
-pub mod context_rules;
-#[cfg(feature = "desktop")]
-pub mod clipboard_error_detector;
-pub mod capability;
-pub mod capability_contract;
-pub mod composite;
-pub mod digest;
 pub mod db_query;
-pub mod safe_json;
-pub mod output_assertions;
-pub mod genome;
-pub mod genome_critique;
-pub mod evolution;
-pub mod chunker;
-#[cfg(feature = "ml")]
-pub mod embedder;
-#[cfg(feature = "ml")]
-pub mod vector_store;
-#[cfg(feature = "ml")]
-pub mod kb_ingest;
-pub mod api_proxy;
-pub mod discovery;
-pub mod ssrf_safe_dns;
-pub mod api_definition;
-#[cfg(feature = "p2p")]
-pub mod share_link;
-pub mod mcp_tools;
-pub mod automation_runner;
-pub mod str_utils;
-pub mod cli_process;
-pub mod management_api;
-pub mod a2a;
-pub mod path_safety;
-pub mod platforms;
-pub mod cost;
-pub mod session_pool;
-pub mod pipeline_executor;
-pub mod template_checksums;
+pub mod design;
+pub mod design_context;
 #[cfg(feature = "desktop")]
 pub mod desktop_bridges;
 #[cfg(feature = "desktop")]
@@ -141,23 +54,121 @@ pub mod desktop_discovery;
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
 pub mod desktop_security;
-pub mod resource_listing;
-pub mod scope_enforcement;
+pub mod digest;
+pub mod director;
+pub mod discovery;
+pub mod dispatch;
+pub mod dream_replay;
+#[cfg(feature = "ml")]
+pub mod embedder;
+#[cfg(feature = "p2p")]
+pub mod enclave;
+pub mod error_taxonomy;
+pub mod eval;
+pub mod event_registry;
+pub mod events;
+pub mod evolution;
 mod execution_engine;
+pub mod failover;
+#[cfg(feature = "desktop")]
+pub mod file_watcher;
+pub mod genome;
+pub mod genome_critique;
+pub mod google_oauth;
+pub mod healing;
+pub mod healing_orchestrator;
+pub mod healing_timeline;
+pub mod healthcheck;
+pub mod hooks_sidecar;
+#[cfg(feature = "p2p")]
+pub mod identity;
+pub mod intent_compiler;
+pub mod kb_index;
+#[cfg(feature = "ml")]
+pub mod kb_ingest;
+pub mod knowledge;
+pub mod lifecycle;
+pub mod limits;
+pub mod llm_topology;
+pub mod logger;
+pub mod management_api;
+pub mod mcp_tools;
+pub mod oauth_refresh;
+pub mod oauth_refresh_lock;
+// Ollama-as-CLI-engine is deferred (decision recorded 2026-05-05). The native
+// HTTP path here is not dispatched from `runner` and is gated behind the
+// `ollama` Cargo feature so it does not get compiled into normal builds.
+// See ollama.rs module docs for the full revival checklist.
+#[cfg(feature = "ollama")]
+pub mod ollama;
+pub mod optimizer;
+pub mod output_assertions;
+#[cfg(feature = "p2p")]
+pub mod p2p;
+pub mod parser;
+pub mod path_safety;
+pub mod pipeline;
+pub mod pipeline_executor;
+pub mod platform_rules;
+pub mod platforms;
+pub mod polling;
+pub mod process_activity;
+pub mod process_session;
+pub mod prompt;
+pub mod protocol;
+pub mod provider;
+pub mod quality_gate;
+pub mod queue;
+pub mod rate_limiter;
+pub mod render_plan;
+pub mod resource_listing;
+pub mod rotation;
+pub mod runner;
+pub mod safe_json;
+pub mod scheduler;
+pub mod scope_enforcement;
+pub mod session_pool;
+#[cfg(feature = "p2p")]
+pub mod share_link;
+pub mod shared_event_relay;
+pub mod smee_relay;
+pub mod ssrf_safe_dns;
+pub mod str_utils;
+pub mod subscription;
+pub mod template_checksums;
+pub mod template_v3;
+pub mod test_runner;
+pub mod tier;
+pub mod tool_runner;
+pub mod topology_graph;
+pub mod topology_heuristic;
+pub mod topology_types;
+pub mod trace;
+pub mod types;
+pub mod url_safety;
+#[cfg(feature = "ml")]
+pub mod vector_store;
+pub mod webhook;
+pub mod workflow_compiler;
 
+#[cfg(test)]
+mod circuit_breakers_integration_tests;
+
+use futures_util::FutureExt;
 use std::collections::{HashMap, HashSet};
 use std::panic::AssertUnwindSafe;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use futures_util::FutureExt;
 use tauri::{AppHandle, Manager};
-use tokio::sync::Mutex;
 use tokio::sync::oneshot;
+use tokio::sync::Mutex;
 
 use tauri::Emitter;
 
-use crate::db::models::{ConnectorDefinition, Persona, PersonaToolDefinition, UpdateExecutionStatus};
+use crate::db::models::{
+    ConnectorDefinition, Persona, PersonaToolDefinition, UpdateExecutionStatus,
+};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
@@ -170,12 +181,9 @@ use crate::error::AppError;
 use self::event_registry::{emit_event, event_name};
 use self::types::{ExecutionResult, ExecutionState, HealingEventPayload, QueueStatusEvent};
 
-use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 pub(crate) use self::execution_engine::persist::persist_status_update;
-use self::execution_engine::persist::{
-    persist_status_if_not_final,
-    persist_status_if_running,
-};
+use self::execution_engine::persist::{persist_status_if_not_final, persist_status_if_running};
+use self::queue::{AdmitResult, ConcurrencyTracker, ExecutionPriority};
 
 /// Hard engine-level ceiling for any single execution (20 minutes).
 /// This is a non-overridable safety net that prevents runaway executions
@@ -209,8 +217,7 @@ async fn run_execution_with_ceiling(
 
     // Wrap the AppHandle in a TauriEmitter so runner::run_execution
     // works through the abstracted ExecutionEventEmitter trait.
-    let emitter: Arc<dyn events::ExecutionEventEmitter> =
-        Arc::new(events::TauriEmitter::new(app));
+    let emitter: Arc<dyn events::ExecutionEventEmitter> = Arc::new(events::TauriEmitter::new(app));
 
     match tokio::time::timeout(
         ceiling,
@@ -295,7 +302,11 @@ pub struct ExecutionEngine {
 }
 
 impl ExecutionEngine {
-    pub fn new(log_dir: PathBuf, scheduler: Arc<SchedulerState>, pool: Option<Arc<crate::db::DbPool>>) -> Self {
+    pub fn new(
+        log_dir: PathBuf,
+        scheduler: Arc<SchedulerState>,
+        pool: Option<Arc<crate::db::DbPool>>,
+    ) -> Self {
         let circuit_breaker = match pool {
             Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
             None => Arc::new(failover::ProviderCircuitBreaker::new()),
@@ -355,26 +366,17 @@ impl ExecutionEngine {
     /// Remove the "deleting" marker (called if deletion is aborted or after
     /// successful deletion).
     pub async fn unmark_deleting(&self, persona_id: &str) {
-        self.deleting_personas
-            .lock()
-            .await
-            .remove(persona_id);
+        self.deleting_personas.lock().await.remove(persona_id);
     }
 
     /// Check if a persona is currently marked for deletion.
     pub async fn is_deleting(&self, persona_id: &str) -> bool {
-        self.deleting_personas
-            .lock()
-            .await
-            .contains(persona_id)
+        self.deleting_personas.lock().await.contains(persona_id)
     }
 
     /// Check if a healing session is already active for a persona.
     pub async fn is_healing(&self, persona_id: &str) -> bool {
-        self.healing_personas
-            .lock()
-            .await
-            .contains(persona_id)
+        self.healing_personas.lock().await.contains(persona_id)
     }
 
     /// Atomically try to acquire the healing slot for a persona.
@@ -507,19 +509,20 @@ impl ExecutionEngine {
         // Atomically try to run or enqueue
         let admit_result = {
             let mut tracker = self.tracker.lock().await;
-            tracker.admit(
-                &persona.id,
-                &execution_id,
-                persona.max_concurrent,
-                priority,
-            )
+            tracker.admit(&persona.id, &execution_id, persona.max_concurrent, priority)
         };
 
         match admit_result {
             AdmitResult::Running => {
                 // Slot available -- spawn the execution task immediately
                 self.spawn_execution_task(
-                    app, pool, execution_id, persona, tools, input_data, continuation,
+                    app,
+                    pool,
+                    execution_id,
+                    persona,
+                    tools,
+                    input_data,
+                    continuation,
                 )
                 .await;
                 Ok(())
@@ -550,7 +553,11 @@ impl ExecutionEngine {
                 );
                 // Emit process activity so the drawer shows this process as queued
                 process_activity::emit_process_activity(
-                    &app, "execution", "queued", Some(&execution_id), Some(&persona.name),
+                    &app,
+                    "execution",
+                    "queued",
+                    Some(&execution_id),
+                    Some(&persona.name),
                 );
                 // Store the execution context for when a slot opens
                 self.queued_contexts.lock().await.insert(
@@ -716,9 +723,13 @@ impl ExecutionEngine {
                     )
                     .await;
                     // Signal frontend that persona health data has changed
-                    emit_event(&app_for_healing, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-                        "persona_id": persona_id,
-                    }));
+                    emit_event(
+                        &app_for_healing,
+                        event_name::PERSONA_HEALTH_CHANGED,
+                        &serde_json::json!({
+                            "persona_id": persona_id,
+                        }),
+                    );
                 } else {
                     handle_execution_result(
                         &pool_clone,
@@ -863,12 +874,7 @@ impl ExecutionEngine {
 
         // 4. Give the spawned task up to 5 seconds to finish writing metrics.
         if let Some(handle) = self.tasks.lock().await.remove(execution_id) {
-            match tokio::time::timeout(
-                std::time::Duration::from_secs(5),
-                handle,
-            )
-            .await
-            {
+            match tokio::time::timeout(std::time::Duration::from_secs(5), handle).await {
                 Ok(_) => {
                     // Task finished normally -- metrics written to DB
                 }
@@ -910,11 +916,7 @@ impl ExecutionEngine {
     /// this aborts task handles immediately and cleans up tracker slots.
     /// Used as a last resort when the deletion drain timeout has been reached
     /// and stale tasks would otherwise write to CASCADE-deleted DB rows.
-    pub async fn force_cancel_all_for_persona(
-        &self,
-        persona_id: &str,
-        pool: &DbPool,
-    ) -> usize {
+    pub async fn force_cancel_all_for_persona(&self, persona_id: &str, pool: &DbPool) -> usize {
         let mut force_count: usize = 0;
 
         // 1. Collect running execution IDs for this persona
@@ -1059,10 +1061,7 @@ impl ExecutionEngine {
     }
 
     /// Get the cancellation flag for an execution (used by cloud commands).
-    pub async fn get_cancelled_flag(
-        &self,
-        execution_id: &str,
-    ) -> Option<Arc<AtomicBool>> {
+    pub async fn get_cancelled_flag(&self, execution_id: &str) -> Option<Arc<AtomicBool>> {
         self.cancelled_flags.lock().await.get(execution_id).cloned()
     }
 
@@ -1225,227 +1224,230 @@ fn drain_and_start_next(
     healing_personas: Arc<Mutex<HashSet<String>>>,
 ) -> std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>> {
     Box::pin(async move {
-    // Atomically: scan all persona queues for the best candidate, check both
-    // per-persona and global capacity, dequeue, register as running.
-    let next = {
-        let mut t = tracker.lock().await;
-        t.drain_next_global()
-            .map(|queued| {
+        // Atomically: scan all persona queues for the best candidate, check both
+        // per-persona and global capacity, dequeue, register as running.
+        let next = {
+            let mut t = tracker.lock().await;
+            t.drain_next_global().map(|queued| {
                 let pid = queued.persona_id.clone();
                 let depth = t.queue_depth(&pid);
                 let global_running = t.total_running();
                 let global_capacity = t.global_max_concurrent();
                 (queued, pid, depth, global_running, global_capacity)
             })
-    };
+        };
 
-    if let Some((queued, persona_id, queue_depth, global_running, global_capacity)) = next {
-        let exec_id = queued.execution_id.clone();
-        let exec_id_for_tasks = exec_id.clone();
+        if let Some((queued, persona_id, queue_depth, global_running, global_capacity)) = next {
+            let exec_id = queued.execution_id.clone();
+            let exec_id_for_tasks = exec_id.clone();
 
-        // Emit promoted event
-        let _ = app.emit(
-            event_name::QUEUE_STATUS,
-            QueueStatusEvent {
-                execution_id: exec_id.clone(),
-                persona_id: persona_id.clone(),
-                action: "promoted".into(),
-                position: None,
-                queue_depth,
-                global_running,
-                global_capacity,
-            },
-        );
-
-        tracing::info!(
-            persona_id = %persona_id,
-            execution_id = %exec_id,
-            global_running = global_running,
-            "Queue: promoted execution to running slot (global {}/{})",
-            global_running, global_capacity,
-        );
-
-        // Retrieve the saved context
-        let ctx = queued_contexts.lock().await.remove(&exec_id);
-        if let Some(ctx) = ctx {
-            // Update status to running in DB
-            persist_status_update(
-                &pool,
-                Some(&app),
-                &exec_id,
-                UpdateExecutionStatus {
-                    status: ExecutionState::Running,
-                    ..Default::default()
-                },
-            )
-            .await;
+            // Emit promoted event
             let _ = app.emit(
-                event_name::EXECUTION_STATUS,
-                types::ExecutionStatusEvent {
+                event_name::QUEUE_STATUS,
+                QueueStatusEvent {
                     execution_id: exec_id.clone(),
-                    status: ExecutionState::Running,
-                    error: None,
-                    duration_ms: None,
-                    cost_usd: None,
+                    persona_id: persona_id.clone(),
+                    action: "promoted".into(),
+                    position: None,
+                    queue_depth,
+                    global_running,
+                    global_capacity,
                 },
             );
 
-            // Spawn the actual execution -- reuse the saved context.
-            // We build a mini execution task inline since we don't have &self here.
-            let persona = ctx.persona;
-            let persona_id_owned = persona.id.clone();
-            let persona_timeout_ms = persona.timeout_ms;
-            let pool_clone = ctx.pool.clone();
-            let pool_for_drain = ctx.pool.clone();
-            let app_handle = ctx.app.clone();
-            let app_for_healing = ctx.app.clone();
-            let app_for_drain = ctx.app.clone();
-            let child_pids = child_pids.clone();
-            let cancelled = Arc::new(AtomicBool::new(false));
-            cancelled_flags
-                .lock()
-                .await
-                .insert(exec_id.clone(), cancelled.clone());
+            tracing::info!(
+                persona_id = %persona_id,
+                execution_id = %exec_id,
+                global_running = global_running,
+                "Queue: promoted execution to running slot (global {}/{})",
+                global_running, global_capacity,
+            );
 
-            let log_dir = std::env::temp_dir().join("personas").join("logs");
-            let log_dir_for_retry = log_dir.clone();
+            // Retrieve the saved context
+            let ctx = queued_contexts.lock().await.remove(&exec_id);
+            if let Some(ctx) = ctx {
+                // Update status to running in DB
+                persist_status_update(
+                    &pool,
+                    Some(&app),
+                    &exec_id,
+                    UpdateExecutionStatus {
+                        status: ExecutionState::Running,
+                        ..Default::default()
+                    },
+                )
+                .await;
+                let _ = app.emit(
+                    event_name::EXECUTION_STATUS,
+                    types::ExecutionStatusEvent {
+                        execution_id: exec_id.clone(),
+                        status: ExecutionState::Running,
+                        error: None,
+                        duration_ms: None,
+                        cost_usd: None,
+                    },
+                );
 
-            let chain_trace_id = ctx
-                .input_data
-                .as_ref()
-                .and_then(|v| v.get("_chain_trace_id"))
-                .and_then(|t| t.as_str())
-                .map(String::from);
+                // Spawn the actual execution -- reuse the saved context.
+                // We build a mini execution task inline since we don't have &self here.
+                let persona = ctx.persona;
+                let persona_id_owned = persona.id.clone();
+                let persona_timeout_ms = persona.timeout_ms;
+                let pool_clone = ctx.pool.clone();
+                let pool_for_drain = ctx.pool.clone();
+                let app_handle = ctx.app.clone();
+                let app_for_healing = ctx.app.clone();
+                let app_for_drain = ctx.app.clone();
+                let child_pids = child_pids.clone();
+                let cancelled = Arc::new(AtomicBool::new(false));
+                cancelled_flags
+                    .lock()
+                    .await
+                    .insert(exec_id.clone(), cancelled.clone());
 
-            let tracker_clone = tracker.clone();
-            let tasks_clone = tasks.clone();
-            let queued_contexts_clone = queued_contexts.clone();
-            let cancelled_flags_clone = cancelled_flags.clone();
-            let child_pids_clone = child_pids.clone();
-            let circuit_breaker = circuit_breaker.clone();
-            let circuit_breaker_for_drain = circuit_breaker.clone();
-            let healing_personas = healing_personas.clone();
+                let log_dir = std::env::temp_dir().join("personas").join("logs");
+                let log_dir_for_retry = log_dir.clone();
 
-            let pool_for_cleanup = pool_clone.clone();
-            let exec_id_cleanup = exec_id.clone();
-            let persona_id_cleanup = persona_id_owned.clone();
+                let chain_trace_id = ctx
+                    .input_data
+                    .as_ref()
+                    .and_then(|v| v.get("_chain_trace_id"))
+                    .and_then(|t| t.as_str())
+                    .map(String::from);
 
-            let handle = tokio::spawn(async move {
-                let work = AssertUnwindSafe(async {
-                    let result = run_execution_with_ceiling(
-                        app_handle,
-                        pool_clone.clone(),
-                        exec_id.clone(),
-                        persona,
-                        ctx.tools,
-                        ctx.input_data,
-                        log_dir,
-                        child_pids.clone(),
-                        cancelled.clone(),
-                        ctx.continuation,
-                        chain_trace_id,
-                        circuit_breaker.clone(),
-                    )
-                    .await;
+                let tracker_clone = tracker.clone();
+                let tasks_clone = tasks.clone();
+                let queued_contexts_clone = queued_contexts.clone();
+                let cancelled_flags_clone = cancelled_flags.clone();
+                let child_pids_clone = child_pids.clone();
+                let circuit_breaker = circuit_breaker.clone();
+                let circuit_breaker_for_drain = circuit_breaker.clone();
+                let healing_personas = healing_personas.clone();
 
-                    if cancelled.load(Ordering::Acquire) {
+                let pool_for_cleanup = pool_clone.clone();
+                let exec_id_cleanup = exec_id.clone();
+                let persona_id_cleanup = persona_id_owned.clone();
+
+                let handle = tokio::spawn(async move {
+                    let work = AssertUnwindSafe(async {
+                        let result = run_execution_with_ceiling(
+                            app_handle,
+                            pool_clone.clone(),
+                            exec_id.clone(),
+                            persona,
+                            ctx.tools,
+                            ctx.input_data,
+                            log_dir,
+                            child_pids.clone(),
+                            cancelled.clone(),
+                            ctx.continuation,
+                            chain_trace_id,
+                            circuit_breaker.clone(),
+                        )
+                        .await;
+
+                        if cancelled.load(Ordering::Acquire) {
+                            persist_status_if_not_final(
+                                &pool_clone,
+                                Some(&app_for_healing),
+                                &exec_id,
+                                UpdateExecutionStatus {
+                                    status: ExecutionState::Cancelled,
+                                    error_message: Some("Cancelled by user".into()),
+                                    duration_ms: Some(result.duration_ms as i64),
+                                    log_file_path: result.log_file_path.clone(),
+                                    input_tokens: Some(result.input_tokens as i64),
+                                    output_tokens: Some(result.output_tokens as i64),
+                                    cost_usd: Some(result.cost_usd),
+                                    tool_steps: result.tool_steps.clone(),
+                                    log_truncated: result.log_truncated,
+                                    ..Default::default()
+                                },
+                            )
+                            .await;
+                            emit_event(
+                                &app_for_healing,
+                                event_name::PERSONA_HEALTH_CHANGED,
+                                &serde_json::json!({
+                                    "persona_id": persona_id_owned,
+                                }),
+                            );
+                        } else {
+                            handle_execution_result(
+                                &pool_clone,
+                                &app_for_healing,
+                                &exec_id,
+                                &persona_id_owned,
+                                persona_timeout_ms,
+                                &result,
+                                tracker_clone.clone(),
+                                child_pids.clone(),
+                                cancelled_flags.clone(),
+                                log_dir_for_retry.clone(),
+                                circuit_breaker,
+                                None,
+                                healing_personas.clone(),
+                            )
+                            .await;
+                        }
+                    });
+
+                    if let Err(panic_info) = work.catch_unwind().await {
+                        let panic_msg = match panic_info.downcast_ref::<&str>() {
+                            Some(s) => s.to_string(),
+                            None => match panic_info.downcast_ref::<String>() {
+                                Some(s) => s.clone(),
+                                None => "unknown panic".to_string(),
+                            },
+                        };
+                        tracing::error!(
+                            execution_id = %exec_id_cleanup,
+                            persona_id = %persona_id_cleanup,
+                            panic = %panic_msg,
+                            "Queued execution task panicked — releasing concurrency slot",
+                        );
                         persist_status_if_not_final(
-                            &pool_clone,
-                            Some(&app_for_healing),
-                            &exec_id,
+                            &pool_for_cleanup,
+                            Some(&app_for_drain),
+                            &exec_id_cleanup,
                             UpdateExecutionStatus {
-                                status: ExecutionState::Cancelled,
-                                error_message: Some("Cancelled by user".into()),
-                                duration_ms: Some(result.duration_ms as i64),
-                                log_file_path: result.log_file_path.clone(),
-                                input_tokens: Some(result.input_tokens as i64),
-                                output_tokens: Some(result.output_tokens as i64),
-                                cost_usd: Some(result.cost_usd),
-                                tool_steps: result.tool_steps.clone(),
-                                log_truncated: result.log_truncated,
+                                status: ExecutionState::Failed,
+                                error_message: Some(format!("Internal error (panic): {panic_msg}")),
                                 ..Default::default()
                             },
                         )
                         .await;
-                        emit_event(&app_for_healing, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-                            "persona_id": persona_id_owned,
-                        }));
-                    } else {
-                        handle_execution_result(
-                            &pool_clone,
-                            &app_for_healing,
-                            &exec_id,
-                            &persona_id_owned,
-                            persona_timeout_ms,
-                            &result,
-                            tracker_clone.clone(),
-                            child_pids.clone(),
-                            cancelled_flags.clone(),
-                            log_dir_for_retry.clone(),
-                            circuit_breaker,
-                            None,
-                            healing_personas.clone(),
-                        )
-                        .await;
                     }
-                });
 
-                if let Err(panic_info) = work.catch_unwind().await {
-                    let panic_msg = match panic_info.downcast_ref::<&str>() {
-                        Some(s) => s.to_string(),
-                        None => match panic_info.downcast_ref::<String>() {
-                            Some(s) => s.clone(),
-                            None => "unknown panic".to_string(),
-                        },
-                    };
-                    tracing::error!(
-                        execution_id = %exec_id_cleanup,
-                        persona_id = %persona_id_cleanup,
-                        panic = %panic_msg,
-                        "Queued execution task panicked — releasing concurrency slot",
-                    );
-                    persist_status_if_not_final(
-                        &pool_for_cleanup,
-                        Some(&app_for_drain),
-                        &exec_id_cleanup,
-                        UpdateExecutionStatus {
-                            status: ExecutionState::Failed,
-                            error_message: Some(format!("Internal error (panic): {panic_msg}")),
-                            ..Default::default()
-                        },
+                    // Clean up (always, regardless of panic)
+                    tracker_clone
+                        .lock()
+                        .await
+                        .remove_running(&persona_id_cleanup, &exec_id_cleanup);
+                    tasks_clone.lock().await.remove(&exec_id_cleanup);
+                    cancelled_flags.lock().await.remove(&exec_id_cleanup);
+
+                    // Recursively drain next globally (owned types for Send safety)
+                    drain_and_start_next(
+                        tracker_clone,
+                        tasks_clone.clone(),
+                        queued_contexts_clone,
+                        cancelled_flags_clone,
+                        child_pids_clone,
+                        app_for_drain,
+                        pool_for_drain,
+                        circuit_breaker_for_drain,
+                        healing_personas,
                     )
                     .await;
-                }
+                });
 
-                // Clean up (always, regardless of panic)
-                tracker_clone
-                    .lock()
-                    .await
-                    .remove_running(&persona_id_cleanup, &exec_id_cleanup);
-                tasks_clone.lock().await.remove(&exec_id_cleanup);
-                cancelled_flags.lock().await.remove(&exec_id_cleanup);
-
-                // Recursively drain next globally (owned types for Send safety)
-                drain_and_start_next(
-                    tracker_clone,
-                    tasks_clone.clone(),
-                    queued_contexts_clone,
-                    cancelled_flags_clone,
-                    child_pids_clone,
-                    app_for_drain,
-                    pool_for_drain,
-                    circuit_breaker_for_drain,
-                    healing_personas,
-                )
-                .await;
-            });
-
-            tasks.lock().await.insert(exec_id_for_tasks, handle);
-        } else {
-            // Context was missing (e.g., cancelled while queued) -- release the slot
-            tracker.lock().await.remove_running(&persona_id, &exec_id);
+                tasks.lock().await.insert(exec_id_for_tasks, handle);
+            } else {
+                // Context was missing (e.g., cancelled while queued) -- release the slot
+                tracker.lock().await.remove_running(&persona_id, &exec_id);
+            }
         }
-    }
     }) // close Box::pin(async move { ... })
 }
 
@@ -1480,7 +1482,9 @@ async fn handle_execution_result(
     // a `warning` in the TitleBar bell.
     let pre_output = result.output.as_deref().unwrap_or("");
     let assertion_summary = if result.success && !pre_output.is_empty() {
-        Some(output_assertions::evaluate_assertions(pool, exec_id, persona_id, pre_output))
+        Some(output_assertions::evaluate_assertions(
+            pool, exec_id, persona_id, pre_output,
+        ))
     } else {
         None
     };
@@ -1500,7 +1504,10 @@ async fn handle_execution_result(
     // as the execution's error message so the notification center shows the
     // reason ("Baseline blocker detection: ...") instead of a blank warning.
     let effective_error = match (&assertion_downgrade, &result.error) {
-        (Some(summary), _) => summary.first_critical_failure.clone().or_else(|| result.error.clone()),
+        (Some(summary), _) => summary
+            .first_critical_failure
+            .clone()
+            .or_else(|| result.error.clone()),
         (None, err) => err.clone(),
     };
 
@@ -1536,7 +1543,11 @@ async fn handle_execution_result(
                 let config_hash = {
                     use std::hash::{Hash, Hasher};
                     let mut hasher = std::collections::hash_map::DefaultHasher::new();
-                    result.execution_config.as_deref().unwrap_or("").hash(&mut hasher);
+                    result
+                        .execution_config
+                        .as_deref()
+                        .unwrap_or("")
+                        .hash(&mut hasher);
                     hasher.finish()
                 };
                 let pool_ref = state.session_pool.clone();
@@ -1581,7 +1592,11 @@ async fn handle_execution_result(
             result.cost_usd,
             result.duration_ms as i64,
             result.model_used.as_deref(),
-            result.tool_steps.as_ref().map(|j| serde_json::to_string(&j.0).unwrap_or_default()).as_deref(),
+            result
+                .tool_steps
+                .as_ref()
+                .map(|j| serde_json::to_string(&j.0).unwrap_or_default())
+                .as_deref(),
             result.error.as_deref(),
         );
     }
@@ -1621,18 +1636,16 @@ async fn handle_execution_result(
 
     // Chain triggers -- extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
-    let (chain_depth, mut visited, existing_chain_trace_id) =
-        exec_repo::get_by_id(pool, exec_id)
-            .ok()
-            .and_then(|exec| exec.input_data)
-            .map(|input| chain::extract_chain_metadata(Some(&input)))
-            .unwrap_or_default();
+    let (chain_depth, mut visited, existing_chain_trace_id) = exec_repo::get_by_id(pool, exec_id)
+        .ok()
+        .and_then(|exec| exec.input_data)
+        .map(|input| chain::extract_chain_metadata(Some(&input)))
+        .unwrap_or_default();
     visited.insert(persona_id.to_string());
 
     // Use existing chain_trace_id if this execution is part of a chain,
     // otherwise use this execution's trace_id as the root of a new chain trace
-    let chain_trace_id = existing_chain_trace_id
-        .or_else(|| result.trace_id.clone());
+    let chain_trace_id = existing_chain_trace_id.or_else(|| result.trace_id.clone());
 
     let cascade_metrics = chain::evaluate_chain_triggers(
         pool,
@@ -1688,9 +1701,13 @@ async fn handle_execution_result(
     }
 
     // Signal frontend that persona health data has changed
-    emit_event(app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-        "persona_id": persona_id,
-    }));
+    emit_event(
+        app,
+        event_name::PERSONA_HEALTH_CHANGED,
+        &serde_json::json!({
+            "persona_id": persona_id,
+        }),
+    );
 
     // Refresh system tray
     #[cfg(feature = "desktop")]
@@ -1707,7 +1724,9 @@ fn notify_execution(
     duration_ms: u64,
 ) {
     let persona = persona_repo::get_by_id(pool, persona_id).ok();
-    let channels = persona.as_ref().and_then(|p| p.notification_channels.as_deref());
+    let channels = persona
+        .as_ref()
+        .and_then(|p| p.notification_channels.as_deref());
     let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
     crate::notifications::notify_execution_completed(app, name, status, duration_ms, channels);
 }
@@ -1720,7 +1739,9 @@ fn notify_execution_rich(
     result: &ExecutionResult,
 ) {
     let persona = persona_repo::get_by_id(pool, persona_id).ok();
-    let channels = persona.as_ref().and_then(|p| p.notification_channels.as_deref());
+    let channels = persona
+        .as_ref()
+        .and_then(|p| p.notification_channels.as_deref());
     let name = persona.as_ref().map(|p| p.name.as_str()).unwrap_or("Agent");
     crate::notifications::notify_execution_completed_rich(
         app,
@@ -1800,10 +1821,14 @@ fn evaluate_healing_and_retry(
     let error_str = result.error.as_deref().unwrap_or("");
     let timed_out = error_str.contains("timed out");
 
-    let is_dev_mode = cfg!(debug_assertions)
-        || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true");
+    let is_dev_mode =
+        cfg!(debug_assertions) || std::env::var("VITE_DEVELOPMENT").as_deref() == Ok("true");
 
-    let exec_state_str = if result.success { "incomplete" } else { "failed" };
+    let exec_state_str = if result.success {
+        "incomplete"
+    } else {
+        "failed"
+    };
 
     let category = healing::classify_error(error_str, timed_out, result.session_limit_reached);
 
@@ -1859,7 +1884,10 @@ fn evaluate_healing_and_retry(
         persona_id,
         &diagnosis.title,
         &diagnosis.description,
-        diagnosis.title.to_ascii_lowercase().contains("circuit breaker"),
+        diagnosis
+            .title
+            .to_ascii_lowercase()
+            .contains("circuit breaker"),
         Some(&diagnosis.severity),
         Some(&diagnosis.db_category),
         Some(exec_id),
@@ -1885,11 +1913,25 @@ fn evaluate_healing_and_retry(
         .unwrap_or_else(|| "Agent".into());
 
     // Circuit breaker: disable persona after too many consecutive failures.
-    if matches!(strategy, healing_orchestrator::HealingStrategy::CircuitBreakerTripped { .. }) {
-        check_circuit_breaker(pool, app, exec_id, persona_id, consecutive, &issue.id, &heal_name);
+    if matches!(
+        strategy,
+        healing_orchestrator::HealingStrategy::CircuitBreakerTripped { .. }
+    ) {
+        check_circuit_breaker(
+            pool,
+            app,
+            exec_id,
+            persona_id,
+            consecutive,
+            &issue.id,
+            &heal_name,
+        );
     }
 
-    let auto_fix_persisted = if matches!(strategy, healing_orchestrator::HealingStrategy::RuleBasedRetry { .. }) {
+    let auto_fix_persisted = if matches!(
+        strategy,
+        healing_orchestrator::HealingStrategy::RuleBasedRetry { .. }
+    ) {
         match healing_repo::mark_auto_fix_pending(pool, &issue.id) {
             Ok(()) => true,
             Err(e) => {
@@ -1927,9 +1969,10 @@ fn evaluate_healing_and_retry(
             healing::HealingAction::RetryWithBackoff { delay_secs } => {
                 (Some("Exponential backoff".to_string()), Some(*delay_secs))
             }
-            healing::HealingAction::RetryWithTimeout { new_timeout_ms } => {
-                (Some(format!("Increased timeout to {new_timeout_ms}ms")), Some(5u64))
-            }
+            healing::HealingAction::RetryWithTimeout { new_timeout_ms } => (
+                Some(format!("Increased timeout to {new_timeout_ms}ms")),
+                Some(5u64),
+            ),
             _ => (None, None),
         }
     } else {
@@ -1955,7 +1998,11 @@ fn evaluate_healing_and_retry(
             description: Some(diagnosis.description.clone()),
             strategy: strategy_label,
             backoff_seconds,
-            retry_number: if auto_fixed { Some(current_retry_count + 1) } else { None },
+            retry_number: if auto_fixed {
+                Some(current_retry_count + 1)
+            } else {
+                None
+            },
             max_retries: Some(healing::MAX_RETRY_COUNT),
         },
     );
@@ -2207,19 +2254,15 @@ fn spawn_healing_chain(
         let retry_count = exec_repo::get_by_id(&pool, &original_exec_id)
             .map(|e| e.retry_count)
             .unwrap_or(0);
-        let exec = match exec_repo::create_retry(
-            &pool,
-            &persona_id,
-            &original_exec_id,
-            retry_count + 1,
-        ) {
-            Ok(e) => e,
-            Err(e) => {
-                tracing::error!("AI healing: failed to create execution record: {}", e);
-                healing_personas.lock().await.remove(&persona_id);
-                return;
-            }
-        };
+        let exec =
+            match exec_repo::create_retry(&pool, &persona_id, &original_exec_id, retry_count + 1) {
+                Ok(e) => e,
+                Err(e) => {
+                    tracing::error!("AI healing: failed to create execution record: {}", e);
+                    healing_personas.lock().await.remove(&persona_id);
+                    return;
+                }
+            };
 
         let exec_id = exec.id.clone();
 
@@ -2265,8 +2308,7 @@ fn spawn_healing_chain(
         .await;
 
         // 7. Get tools for persona
-        let tools = tool_repo::get_tools_for_persona(&pool, &persona_id)
-            .unwrap_or_default();
+        let tools = tool_repo::get_tools_for_persona(&pool, &persona_id).unwrap_or_default();
 
         // 8. Create cancellation flag
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -2353,9 +2395,13 @@ fn spawn_healing_chain(
             );
 
             // Signal frontend that persona health data has changed
-            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-                "persona_id": persona_id,
-            }));
+            emit_event(
+                &app,
+                event_name::PERSONA_HEALTH_CHANGED,
+                &serde_json::json!({
+                    "persona_id": persona_id,
+                }),
+            );
 
             // 11. Process healing output: parse fixes and apply to DB
             let _ = app.emit(
@@ -2459,7 +2505,10 @@ fn spawn_healing_chain(
         }
 
         // 12. Cleanup (always, regardless of panic)
-        tracker.lock().await.remove_running(&persona_id_cleanup, &exec_id_cleanup);
+        tracker
+            .lock()
+            .await
+            .remove_running(&persona_id_cleanup, &exec_id_cleanup);
         cancelled_flags.lock().await.remove(&exec_id_cleanup);
         healing_personas.lock().await.remove(&persona_id_cleanup);
 
@@ -2555,12 +2604,8 @@ fn spawn_delayed_retry(
         }
 
         // 5. Create retry execution record with lineage
-        let exec = match exec_repo::create_retry(
-            &pool,
-            &persona_id,
-            &original_exec_id,
-            retry_count,
-        ) {
+        let exec = match exec_repo::create_retry(&pool, &persona_id, &original_exec_id, retry_count)
+        {
             Ok(e) => e,
             Err(e) => {
                 tracing::error!(
@@ -2598,8 +2643,7 @@ fn spawn_delayed_retry(
         .await;
 
         // 9. Get tools for persona
-        let tools = tool_repo::get_tools_for_persona(&pool, &persona_id)
-            .unwrap_or_default();
+        let tools = tool_repo::get_tools_for_persona(&pool, &persona_id).unwrap_or_default();
 
         // 10. Create cancellation flag
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -2654,11 +2698,19 @@ fn spawn_delayed_retry(
                 },
             )
             .await;
-            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-                "persona_id": persona_id,
-            }));
+            emit_event(
+                &app,
+                event_name::PERSONA_HEALTH_CHANGED,
+                &serde_json::json!({
+                    "persona_id": persona_id,
+                }),
+            );
         } else {
-            let status = if result.success { ExecutionState::Completed } else { ExecutionState::Failed };
+            let status = if result.success {
+                ExecutionState::Completed
+            } else {
+                ExecutionState::Failed
+            };
             persist_status_if_not_final(
                 &pool,
                 Some(&app),
@@ -2693,9 +2745,13 @@ fn spawn_delayed_retry(
                 },
             );
 
-            emit_event(&app, event_name::PERSONA_HEALTH_CHANGED, &serde_json::json!({
-                "persona_id": persona_id,
-            }));
+            emit_event(
+                &app,
+                event_name::PERSONA_HEALTH_CHANGED,
+                &serde_json::json!({
+                    "persona_id": persona_id,
+                }),
+            );
 
             if result.success {
                 tracing::info!(
@@ -2715,8 +2771,8 @@ fn spawn_delayed_retry(
 
             // Transition healing issues tied to the original execution:
             // confirm (resolved) on success, revert (open) on failure.
-            let pending_issues = healing_repo::get_by_execution_id(&pool, &original_exec_id)
-                .unwrap_or_default();
+            let pending_issues =
+                healing_repo::get_by_execution_id(&pool, &original_exec_id).unwrap_or_default();
             for hi in &pending_issues {
                 if hi.status == "auto_fix_pending" {
                     let (transition, new_status) = if result.success {
@@ -2742,8 +2798,7 @@ fn spawn_delayed_retry(
 
             // Notification
             {
-                let persona_for_notify =
-                    persona_repo::get_by_id(&pool, &persona_id).ok();
+                let persona_for_notify = persona_repo::get_by_id(&pool, &persona_id).ok();
                 let notif_channels = persona_for_notify
                     .as_ref()
                     .and_then(|p| p.notification_channels.as_deref());
@@ -2831,9 +2886,7 @@ fn resolve_service_knowledge_hint(
     let connectors = crate::db::repos::resources::connectors::get_all(pool).ok()?;
 
     for service_name in find_matching_connector_names(&tools, &connectors) {
-        if let Ok(Some(hint)) =
-            healing_repo::get_knowledge_hint(pool, &service_name, pattern_key)
-        {
+        if let Ok(Some(hint)) = healing_repo::get_knowledge_hint(pool, &service_name, pattern_key) {
             return Some(hint);
         }
     }

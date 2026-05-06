@@ -13,6 +13,8 @@ export const EVENT_BUS_LIMITS = {
   maxReturnFlows: 50,
   /** Ceiling for the `spawnedRef` dedupe set before it is cleared to avoid unbounded growth in long sessions. */
   spawnedSetCeiling: 200,
+  /** Hard cap on the discovered-sources map. Prevents unbounded growth when ephemeral source IDs (per-PR webhook IDs, commit SHAs) flow through. Beyond this, least-recently-seen entries are evicted. */
+  maxDiscoveredSources: 500,
 } as const;
 
 /** Timings for particle/flow animations. All values in milliseconds. */
@@ -23,6 +25,8 @@ export const EVENT_BUS_TIMING_MS = {
   processingJitterMs: 1800,
   /** Polling interval for expiring stale return-flows. 300ms is tight enough for perceived smoothness without re-rendering every frame. */
   returnFlowSweepIntervalMs: 300,
+  /** Discovered-source TTL. Entries with no traffic for this long are dropped from the map entirely (not just visually faded). 5 min covers the FADE_AFTER_MS visual decay plus a generous tail. */
+  discoveredSourceEvictMs: 300_000,
 } as const;
 
 /** Sizing coefficients applied to source nodes based on traffic volume. */

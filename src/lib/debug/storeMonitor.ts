@@ -41,7 +41,10 @@ function getHeapMB(): number {
 }
 
 function getStack(): string {
-  return (new Error().stack ?? '').split('\n').slice(3, 8).join('\n');
+  // Keep enough frames to show the application caller above zustand internals;
+  // the previous slice(3, 8) only captured zustand's own frames, leaving loop
+  // diagnoses guess-only.
+  return (new Error().stack ?? '').split('\n').slice(3, 25).join('\n');
 }
 
 /**

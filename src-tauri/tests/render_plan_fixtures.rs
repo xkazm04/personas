@@ -14,8 +14,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use app_lib::render_plan::compile::{Composition, CompileDeps, CompileOptions};
 use app_lib::render_plan::compile as render_plan_compile;
+use app_lib::render_plan::compile::{CompileDeps, CompileOptions, Composition};
 
 fn fixtures_dir() -> PathBuf {
     // tests/ runs from the src-tauri directory; fixtures live up one level.
@@ -62,7 +62,11 @@ fn render_plan_fixtures_match() {
     let mut failures: Vec<String> = Vec::new();
 
     for input_path in &inputs {
-        let name = input_path.file_name().unwrap().to_string_lossy().into_owned();
+        let name = input_path
+            .file_name()
+            .unwrap()
+            .to_string_lossy()
+            .into_owned();
         let expected_path = dir.join("expected").join(&name);
         let actual = compile_fixture(input_path);
 
@@ -72,8 +76,7 @@ fn render_plan_fixtures_match() {
             continue;
         }
 
-        let expected =
-            fs::read_to_string(&expected_path).expect("read committed expected fixture");
+        let expected = fs::read_to_string(&expected_path).expect("read committed expected fixture");
 
         if actual != expected {
             failures.push(format!(

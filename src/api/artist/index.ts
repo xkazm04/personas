@@ -241,6 +241,21 @@ export const artistTranscribeMedia = (
     600_000,
   );
 
+/** Static capability map of which transcribe providers are actually wired up. */
+export interface TranscribeProviderAvailability {
+  localWhisper: boolean;
+  elevenlabs: boolean;
+  openaiWhisper: boolean;
+}
+
+/**
+ * Static capability map of which transcribe providers are actually wired up
+ * on the Rust side. Lets the UI grey out (or hide) variants that always
+ * return a NotImplemented error.
+ */
+export const artistTranscribeProvidersAvailable = () =>
+  invoke<TranscribeProviderAvailability>("artist_transcribe_providers_available");
+
 /** Probe whether the local `whisper` binary is installed. */
 export const artistCheckLocalWhisper = () =>
   invoke<boolean>("artist_check_local_whisper");

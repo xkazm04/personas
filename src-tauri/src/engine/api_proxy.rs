@@ -42,7 +42,9 @@ static CONNECTOR_CACHE: LazyLock<std::sync::Mutex<Option<ConnectorCache>>> =
     LazyLock::new(|| std::sync::Mutex::new(None));
 
 /// Return the full connector list, reusing a cached copy when fresh.
-pub(crate) fn get_all_connectors_cached(pool: &DbPool) -> Result<Vec<ConnectorDefinition>, AppError> {
+pub(crate) fn get_all_connectors_cached(
+    pool: &DbPool,
+) -> Result<Vec<ConnectorDefinition>, AppError> {
     let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
     if let Some(ref entry) = *cache {
         if entry.fetched_at.elapsed().as_secs_f64() < CONNECTOR_CACHE_TTL_SECS {
@@ -192,8 +194,9 @@ impl RateLimiterRegistry {
             return;
         }
         self.last_sweep = now;
-        self.buckets
-            .retain(|_, b| now.duration_since(b.last_used).as_secs_f64() < BUCKET_IDLE_EVICTION_SECS);
+        self.buckets.retain(|_, b| {
+            now.duration_since(b.last_used).as_secs_f64() < BUCKET_IDLE_EVICTION_SECS
+        });
     }
 }
 
@@ -223,8 +226,7 @@ async fn check_rate_limit(
 
     // Enforce hard capacity: if at the limit and this is a new credential,
     // evict the least-recently-used entry to make room.
-    if registry.buckets.len() >= MAX_BUCKET_ENTRIES
-        && !registry.buckets.contains_key(credential_id)
+    if registry.buckets.len() >= MAX_BUCKET_ENTRIES && !registry.buckets.contains_key(credential_id)
     {
         if let Some(oldest_key) = registry
             .buckets
@@ -325,7 +327,12 @@ static METRICS_REGISTRY: LazyLock<Mutex<MetricsRegistry>> =
     LazyLock::new(|| Mutex::new(MetricsRegistry::new()));
 
 /// Record a request outcome in the per-credential metrics buffer.
-async fn record_metric(credential_id: &str, service_type: &str, status_code: u16, duration_ms: u64) {
+async fn record_metric(
+    credential_id: &str,
+    service_type: &str,
+    status_code: u16,
+    duration_ms: u64,
+) {
     let mut registry = METRICS_REGISTRY.lock().await;
     registry.sweep_stale();
 
@@ -378,7 +385,11 @@ pub async fn get_all_proxy_metrics() -> Vec<ApiProxyCredentialMetrics> {
             continue;
         }
 
-        let errors_4xx = buf.entries.iter().filter(|e| (400..500).contains(&e.status_code)).count();
+        let errors_4xx = buf
+            .entries
+            .iter()
+            .filter(|e| (400..500).contains(&e.status_code))
+            .count();
         let errors_5xx = buf.entries.iter().filter(|e| e.status_code >= 500).count();
         let total_errors = errors_4xx + errors_5xx;
         let error_rate = total_errors as f64 / count as f64;
@@ -567,7 +578,14 @@ pub async fn execute_api_request(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
 
-    if let Err(e) = audit_log::log_decrypt(pool, &credential.id, &credential.name, "api_proxy", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        &credential.id,
+        &credential.name,
+        "api_proxy",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
@@ -632,9 +650,8 @@ pub async fn execute_api_request(
     // when the credential is broad-scoped or the connector declares no
     // `enforce` rules. Mode comes from the credential's metadata
     // (`scope_enforcement: "block"` flips warn-only to hard reject).
-    let enforcement_mode = super::scope_enforcement::EnforcementMode::from_metadata(
-        credential.metadata.as_deref(),
-    );
+    let enforcement_mode =
+        super::scope_enforcement::EnforcementMode::from_metadata(credential.metadata.as_deref());
     let connector_resources = connector.and_then(|c| c.resources.as_deref());
     let outcome = super::scope_enforcement::evaluate(
         connector_resources,
@@ -645,7 +662,10 @@ pub async fn execute_api_request(
     use super::scope_enforcement::EnforcementOutcome;
     match outcome {
         EnforcementOutcome::Allow => {}
-        EnforcementOutcome::WarnOnly { resource, attempted_id } => {
+        EnforcementOutcome::WarnOnly {
+            resource,
+            attempted_id,
+        } => {
             tracing::warn!(
                 credential_id = %credential.id,
                 service_type = %credential.service_type,
@@ -655,7 +675,10 @@ pub async fn execute_api_request(
                 "scope_enforcement: out-of-scope request (warn-only mode)"
             );
         }
-        EnforcementOutcome::Block { resource, attempted_id } => {
+        EnforcementOutcome::Block {
+            resource,
+            attempted_id,
+        } => {
             tracing::warn!(
                 credential_id = %credential.id,
                 service_type = %credential.service_type,
@@ -684,7 +707,14 @@ pub async fn execute_api_request(
         // Re-read fields inside the lock — a concurrent refresh may have persisted
         // a fresh access_token while we were waiting.
         let fresh = cred_repo::get_decrypted_fields(pool, &credential)?;
-        if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "api_proxy_locked", None, None) {
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            credential_id,
+            &credential.name,
+            "api_proxy_locked",
+            None,
+            None,
+        ) {
             tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
         }
         (Some(lock), fresh)
@@ -743,7 +773,10 @@ pub async fn execute_api_request(
                 MAX_REQUEST_BODY_BYTES,
             )));
         }
-        if !custom_headers.keys().any(|k| k.to_lowercase() == "content-type") {
+        if !custom_headers
+            .keys()
+            .any(|k| k.to_lowercase() == "content-type")
+        {
             request = request.header("Content-Type", "application/json");
         }
         request = request.body(body_str.clone());
@@ -756,11 +789,7 @@ pub async fn execute_api_request(
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let status = resp.status().as_u16();
-    let status_text = resp
-        .status()
-        .canonical_reason()
-        .unwrap_or("")
-        .to_string();
+    let status_text = resp.status().canonical_reason().unwrap_or("").to_string();
     let content_type = resp
         .headers()
         .get("content-type")

@@ -24,9 +24,7 @@ impl Resolve for SsrfSafeDnsResolver {
             // Use tokio's built-in async DNS resolution.
             let addrs: Vec<SocketAddr> = tokio::net::lookup_host(format!("{host}:0"))
                 .await
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> {
-                    Box::new(e)
-                })?
+                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { Box::new(e) })?
                 .collect();
 
             // Filter out any addresses in private/internal ranges.

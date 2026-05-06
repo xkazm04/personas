@@ -20,11 +20,53 @@ use crate::error::AppError;
 const KEYRING_SERVICE: &str = "personas-desktop";
 const KEYRING_ENTRY: &str = "ed25519-identity-key";
 
-/// Cached local identity (immutable after creation).
-static IDENTITY_CACHE: std::sync::OnceLock<PeerIdentity> = std::sync::OnceLock::new();
+/// Cached local identity. Mutable so `reinitialize_identity` can atomically
+/// publish the new identity to in-flight callers (mDNS register, Hello
+/// handshake, get_network_status) without requiring a process restart.
+static IDENTITY_CACHE: std::sync::RwLock<Option<PeerIdentity>> = std::sync::RwLock::new(None);
 
 /// Cached signing key (loaded from keyring once, cleared on reinitialize).
 static SIGNING_KEY_CACHE: std::sync::RwLock<Option<SigningKey>> = std::sync::RwLock::new(None);
+
+/// Serializes identity *write* paths (first-launch generation and explicit
+/// re-initialization) so concurrent callers can never produce two keypairs
+/// and a desync between the keyring private key and the database public
+/// key.
+///
+/// Why this exists: on a fresh install, mDNS startup and the first
+/// front-end IPC call both reach `get_or_create_identity` within
+/// milliseconds of each other. Without serialization, both threads miss
+/// the cache, both find an empty DB, both call `SigningKey::generate`,
+/// both write the keyring entry (the second write wins) and both upsert
+/// `local_identity` (the second peer_id wins) — and there's no
+/// guarantee the surviving keyring private key matches the surviving DB
+/// public key. The next `sign_message` call then fails with
+/// `AppError::KeyringLost` because the verifying_key derived from the
+/// stored private key no longer matches the persisted public key. The
+/// user sees an inexplicable post-fresh-install hang.
+///
+/// Steady-state reads (cache hit) never touch this lock. The DB-fast-path
+/// also avoids it. Only the create / reinit paths take it. After
+/// acquisition we re-check the cache and re-read the DB so a racing
+/// caller observes the just-created identity instead of generating a
+/// duplicate.
+///
+/// `std::sync::Mutex<()>` rather than `OnceLock<PeerIdentity>` because
+/// the cache must be invalidatable in place by `reinitialize_identity` —
+/// `OnceLock` is one-shot.
+static IDENTITY_WRITE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+/// Helper: acquire the write lock or convert the (rare) poison error
+/// into an `AppError::Internal`. Poisoning means a previous holder
+/// panicked while writing identity state; the safest move is to surface
+/// the failure to the user rather than silently retry on potentially
+/// torn state.
+fn acquire_write_lock(
+) -> Result<std::sync::MutexGuard<'static, ()>, AppError> {
+    IDENTITY_WRITE_LOCK
+        .lock()
+        .map_err(|e| AppError::Internal(format!("Identity write lock poisoned: {e}")))
+}
 
 // -- PeerId derivation ---------------------------------------------------
 
@@ -41,15 +83,38 @@ pub fn public_key_to_peer_id(public_key: &VerifyingKey) -> String {
 /// On first call: generates a keypair, stores private key in OS keyring,
 /// writes identity to the database.
 /// On subsequent calls: returns the cached in-memory identity.
+///
+/// **Concurrency**: this function is safe to call from many threads
+/// simultaneously even on first launch. See [`IDENTITY_WRITE_LOCK`] for
+/// the contract — only one keypair is ever generated, regardless of how
+/// many callers race the create branch.
 pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
-    // Return cached identity if available (identity is immutable after creation)
-    if let Some(cached) = IDENTITY_CACHE.get() {
+    // Fast path 1: cache hit (lock-free read).
+    if let Some(cached) = IDENTITY_CACHE.read().unwrap().as_ref() {
         return Ok(cached.clone());
     }
 
-    // Check DB for existing identity
+    // Fast path 2: DB hit (no write lock). Returning users — DB has the
+    // identity but the in-process cache is cold (post-restart, post-HMR,
+    // post-reinit) — never block on the write mutex.
     if let Some(existing) = identity_repo::get_local_identity(pool)? {
-        let _ = IDENTITY_CACHE.set(existing.clone());
+        *IDENTITY_CACHE.write().unwrap() = Some(existing.clone());
+        return Ok(existing);
+    }
+
+    // Slow path: first-launch create. Serialize so two racing callers
+    // (e.g. mDNS register + first IPC) cannot both generate keypairs.
+    let _guard = acquire_write_lock()?;
+
+    // Double-check: a racing caller may have created the identity
+    // between our DB read above and our lock acquisition. Re-check both
+    // cache and DB so we observe the just-created identity instead of
+    // generating a duplicate.
+    if let Some(cached) = IDENTITY_CACHE.read().unwrap().as_ref() {
+        return Ok(cached.clone());
+    }
+    if let Some(existing) = identity_repo::get_local_identity(pool)? {
+        *IDENTITY_CACHE.write().unwrap() = Some(existing.clone());
         return Ok(existing);
     }
 
@@ -75,7 +140,7 @@ pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
         &display_name,
     )?;
 
-    let _ = IDENTITY_CACHE.set(identity.clone());
+    *IDENTITY_CACHE.write().unwrap() = Some(identity.clone());
     tracing::info!(peer_id = %peer_id, "New identity created");
     Ok(identity)
 }
@@ -118,9 +183,9 @@ fn load_private_key() -> Result<SigningKey, AppError> {
         let encoded = entry
             .get_password()
             .map_err(|e| AppError::Internal(format!("Keyring load failed: {e}")))?;
-        let mut key_bytes = B64
-            .decode(&encoded)
-            .map_err(|e| AppError::Internal(format!("Base64 decode of identity key failed: {e}")))?;
+        let mut key_bytes = B64.decode(&encoded).map_err(|e| {
+            AppError::Internal(format!("Base64 decode of identity key failed: {e}"))
+        })?;
         if key_bytes.len() != 32 {
             key_bytes.zeroize();
             return Err(AppError::Internal("Invalid identity key length".into()));
@@ -171,12 +236,11 @@ pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
 
     // Verify the loaded key matches the identity stored in the database.
     if let Some(db_identity) = identity_repo::get_local_identity(pool)? {
-        let pk_bytes = B64.decode(&db_identity.public_key_b64).map_err(|e| {
-            AppError::Internal(format!("Corrupt public key in DB: {e}"))
-        })?;
-        let db_public_key = VerifyingKey::try_from(pk_bytes.as_slice()).map_err(|e| {
-            AppError::Internal(format!("Invalid Ed25519 public key in DB: {e}"))
-        })?;
+        let pk_bytes = B64
+            .decode(&db_identity.public_key_b64)
+            .map_err(|e| AppError::Internal(format!("Corrupt public key in DB: {e}")))?;
+        let db_public_key = VerifyingKey::try_from(pk_bytes.as_slice())
+            .map_err(|e| AppError::Internal(format!("Invalid Ed25519 public key in DB: {e}")))?;
 
         if signing_key.verifying_key() != db_public_key {
             return Err(AppError::KeyringLost(
@@ -204,6 +268,12 @@ pub fn sign_message(pool: &DbPool, message: &[u8]) -> Result<String, AppError> {
 ///
 /// Returns the new `PeerIdentity`.
 pub fn reinitialize_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
+    // Take the same lock as the create branch so a `get_or_create_identity`
+    // call racing a user-initiated reinit can't observe a torn state where
+    // the keyring has the new key but the DB still has the old peer_id
+    // (or vice versa).
+    let _guard = acquire_write_lock()?;
+
     tracing::warn!("Re-initializing identity — generating new Ed25519 keypair (old trust relationships will be invalidated)");
 
     let mut csprng = rand::rngs::OsRng;
@@ -227,10 +297,11 @@ pub fn reinitialize_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
         &display_name,
     )?;
 
-    // Invalidate cached signing key (new key was generated)
+    // Atomically publish the fresh identity and invalidate the cached signing
+    // key so mDNS register, Hello handshake, and get_network_status all see
+    // the new peer_id on the next call.
+    *IDENTITY_CACHE.write().unwrap() = Some(identity.clone());
     *SIGNING_KEY_CACHE.write().unwrap() = None;
-    // Note: IDENTITY_CACHE is OnceLock so cannot be reset — but reinitialize
-    // is extremely rare (only after keyring loss) and requires app restart.
 
     tracing::info!(peer_id = %peer_id, "Identity re-initialized with new keypair");
     Ok(identity)
@@ -294,4 +365,137 @@ pub fn parse_identity_card(card_b64: &str) -> Result<IdentityCard, AppError> {
     }
 
     Ok(card)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+
+    /// Tests in this module share the global `IDENTITY_CACHE` and
+    /// `IDENTITY_WRITE_LOCK` statics. cargo runs tests in parallel by
+    /// default — without serialization, one test's reset_identity_caches
+    /// race-overlaps with another's pre-populated cache and they see
+    /// each other's identity. Take this top-level mutex at the start of
+    /// every test so tests in this module run strictly sequentially
+    /// regardless of `--test-threads`.
+    static TESTS_SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    /// Reset the in-process identity caches so tests don't bleed state
+    /// into each other. The write lock is taken to flush any racing
+    /// writer that's mid-create.
+    fn reset_identity_caches() {
+        let _g = IDENTITY_WRITE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        *IDENTITY_CACHE.write().unwrap() = None;
+        *SIGNING_KEY_CACHE.write().unwrap() = None;
+    }
+
+    /// Pin the cache-fill race contract: many concurrent callers, all
+    /// hitting `get_or_create_identity` against a DB that already has
+    /// the local_identity row but with a cold in-process cache, must
+    /// all observe the same identity (the persisted one) without one
+    /// of them producing a divergent view.
+    ///
+    /// This is the most common version of the race in practice — fresh
+    /// app launch with persisted identity from a prior session, mDNS
+    /// startup and the first IPC call both arriving before the cache
+    /// has been warmed.
+    #[test]
+    fn concurrent_get_or_create_returns_same_identity_with_warm_db() {
+        let _serial = TESTS_SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        reset_identity_caches();
+        let pool = Arc::new(init_test_db().unwrap());
+
+        // Pre-populate the DB so every thread takes the DB-fast path or
+        // the post-lock re-check path; nothing exercises the keyring
+        // (which is unavailable in test builds without `desktop`).
+        let signing_key = SigningKey::generate(&mut rand::rngs::OsRng);
+        let verifying_key = signing_key.verifying_key();
+        let peer_id = public_key_to_peer_id(&verifying_key);
+        let display_name = format!("User-{}", &peer_id[..8]);
+        identity_repo::upsert_local_identity(
+            &pool,
+            &peer_id,
+            verifying_key.as_bytes(),
+            &display_name,
+        )
+        .unwrap();
+
+        const N: usize = 16;
+        let barrier = Arc::new(Barrier::new(N));
+        let mut handles = Vec::with_capacity(N);
+        for _ in 0..N {
+            let pool = pool.clone();
+            let barrier = barrier.clone();
+            handles.push(thread::spawn(move || {
+                barrier.wait();
+                get_or_create_identity(&pool).expect("identity must succeed under contention")
+            }));
+        }
+
+        let results: Vec<PeerIdentity> = handles.into_iter().map(|h| h.join().unwrap()).collect();
+        for r in &results {
+            assert_eq!(r.peer_id, peer_id, "all racing callers must observe the persisted peer_id");
+            assert_eq!(r.public_key_b64, results[0].public_key_b64);
+        }
+
+        // Cache must be populated and consistent with what was returned.
+        let cached = IDENTITY_CACHE.read().unwrap().clone();
+        let cached = cached.expect("cache must be warm after concurrent get_or_create");
+        assert_eq!(cached.peer_id, peer_id);
+    }
+
+    /// Pin the lock-acquisition contract: when the cache is warm, the
+    /// fast path must NOT take the write lock. We assert this by
+    /// holding the lock externally while a concurrent caller hits
+    /// `get_or_create_identity` against a cache already populated. If
+    /// the function tried to take the lock it would block, and the
+    /// short-bounded `recv_timeout` would expire.
+    #[test]
+    fn cache_hit_path_does_not_take_write_lock() {
+        let _serial = TESTS_SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        reset_identity_caches();
+        let pool = Arc::new(init_test_db().unwrap());
+
+        // Warm the cache directly without going through the create
+        // path (no keyring dependency).
+        let signing_key = SigningKey::generate(&mut rand::rngs::OsRng);
+        let verifying_key = signing_key.verifying_key();
+        let peer_id = public_key_to_peer_id(&verifying_key);
+        let pre = identity_repo::upsert_local_identity(
+            &pool,
+            &peer_id,
+            verifying_key.as_bytes(),
+            "User-test",
+        )
+        .unwrap();
+        *IDENTITY_CACHE.write().unwrap() = Some(pre.clone());
+
+        // Hold the write lock from another thread for 250ms. If
+        // `get_or_create_identity` takes the lock during cache-hit, our
+        // call would block until that thread releases.
+        let (tx, rx) = std::sync::mpsc::channel::<()>();
+        let lock_holder = thread::spawn(move || {
+            let _g = IDENTITY_WRITE_LOCK.lock().unwrap();
+            // Signal acquisition.
+            tx.send(()).unwrap();
+            thread::sleep(std::time::Duration::from_millis(250));
+        });
+        rx.recv().unwrap();
+
+        // While the writer holds the lock, the cache-hit path must
+        // return promptly.
+        let started = std::time::Instant::now();
+        let got = get_or_create_identity(&pool).unwrap();
+        let elapsed = started.elapsed();
+        assert_eq!(got.peer_id, peer_id);
+        assert!(
+            elapsed < std::time::Duration::from_millis(100),
+            "cache-hit path must not block on the write lock; took {elapsed:?}",
+        );
+
+        lock_holder.join().unwrap();
+    }
 }

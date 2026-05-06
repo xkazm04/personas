@@ -22,16 +22,44 @@ const VALID_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
+const VALID_COMPANION_TABS = ['setup', 'memory', 'voice', 'dashboard'] as const;
+
 function applyClientAction(action: ClientAction) {
-  // Currently only `navigate` exists, and that's handled directly via
-  // the `companion://navigate` event (open_route bypasses approvals).
-  // This stays as a defensive future-proof: if a *different* UI op
-  // needs an approval gate later (e.g., prefill_persona_create), the
-  // backend can populate clientAction and we'll dispatch from here.
   if (action.type === 'navigate') {
     const route = action.route as SidebarSection;
     if (!VALID_ROUTES.includes(route)) return;
     useSystemStore.getState().setSidebarSection(route);
+    return;
+  }
+  if (action.type === 'prefill_persona_create') {
+    // Phase F: stash the prefill payload, then switch to the personas
+    // section. UnifiedMatrixEntry consumes the payload on mount (or on
+    // next render if it's already mounted) and clears it.
+    useSystemStore.getState().setCompanionPrefill({
+      intent: action.intent,
+      name: action.name,
+      autoLaunch: action.autoLaunch,
+    });
+    useSystemStore.getState().setSidebarSection('personas');
+    return;
+  }
+  if (action.type === 'open_companion_tab') {
+    // Phase F: deep-link into a specific tab inside the Companion
+    // plugin. Three layers of state to set: top-level sidebar section
+    // (`plugins`), which plugin is active (`companion`), and which
+    // sub-tab inside the companion plugin. Order matters — sidebar
+    // first so the route renders, then the tabs land before the
+    // plugin page reads them on mount.
+    if (
+      !(VALID_COMPANION_TABS as readonly string[]).includes(action.tab)
+    ) {
+      return;
+    }
+    const sys = useSystemStore.getState();
+    sys.setSidebarSection('plugins');
+    sys.setPluginTab('companion');
+    sys.setCompanionPluginTab(action.tab as (typeof VALID_COMPANION_TABS)[number]);
+    return;
   }
 }
 

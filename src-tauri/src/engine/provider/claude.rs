@@ -105,7 +105,11 @@ mod tests {
         let (st, display) = provider.parse_stream_line(line);
 
         match st {
-            StreamLineType::SystemInit { model, session_id, plugin_errors } => {
+            StreamLineType::SystemInit {
+                model,
+                session_id,
+                plugin_errors,
+            } => {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
                 assert!(plugin_errors.is_empty());

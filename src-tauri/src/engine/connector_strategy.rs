@@ -31,12 +31,20 @@ pub struct ResolvedToken {
 
 impl ResolvedToken {
     pub fn plain(token: String) -> Self {
-        Self { token, expires_in_secs: None, refresh_token: None }
+        Self {
+            token,
+            expires_in_secs: None,
+            refresh_token: None,
+        }
     }
 
     #[allow(dead_code)]
     pub fn with_expiry(token: String, expires_in_secs: u64) -> Self {
-        Self { token, expires_in_secs: Some(expires_in_secs), refresh_token: None }
+        Self {
+            token,
+            expires_in_secs: Some(expires_in_secs),
+            refresh_token: None,
+        }
     }
 }
 
@@ -66,11 +74,7 @@ pub trait ConnectorStrategy: Send + Sync {
 
     /// Apply authentication to an outgoing healthcheck request.
     /// Default: `Authorization: Bearer <token>`.
-    fn apply_auth(
-        &self,
-        request: reqwest::RequestBuilder,
-        token: &str,
-    ) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
         request.bearer_auth(token)
     }
 
@@ -83,8 +87,16 @@ pub trait ConnectorStrategy: Send + Sync {
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
         // 1. Snapshot current fields before rotation attempt
-        let original_fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
-        if let Err(e) = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate_snapshot", None, None) {
+        let original_fields =
+            crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            &credential.id,
+            &credential.name,
+            "connector_strategy:rotate_snapshot",
+            None,
+            None,
+        ) {
             tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
         }
 
@@ -93,26 +105,47 @@ pub trait ConnectorStrategy: Send + Sync {
 
         match result {
             Ok(hc) if hc.success => {
-                let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
-                if let Err(e) = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate_verify", None, None) {
+                let fields = crate::db::repos::resources::credentials::get_decrypted_fields(
+                    pool, credential,
+                )?;
+                if let Err(e) = audit_log::log_decrypt(
+                    pool,
+                    &credential.id,
+                    &credential.name,
+                    "connector_strategy:rotate_verify",
+                    None,
+                    None,
+                ) {
                     tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
                 }
                 if self.is_oauth(&fields) {
-                    Ok(format!("OAuth token refreshed and verified: {}", hc.message))
+                    Ok(format!(
+                        "OAuth token refreshed and verified: {}",
+                        hc.message
+                    ))
                 } else {
                     Ok(format!("API key verified healthy: {}", hc.message))
                 }
             }
             Ok(hc) => {
                 // 3. Failed -- restore original credentials
-                let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                let _ = crate::db::repos::resources::credentials::save_fields(
+                    pool,
+                    &credential.id,
+                    &original_fields,
+                );
                 Err(AppError::Internal(format!(
-                    "Rotation failed (credentials restored): {}", hc.message
+                    "Rotation failed (credentials restored): {}",
+                    hc.message
                 )))
             }
             Err(e) => {
                 // Restore original credentials on error
-                let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                let _ = crate::db::repos::resources::credentials::save_fields(
+                    pool,
+                    &credential.id,
+                    &original_fields,
+                );
                 Err(e)
             }
         }
@@ -256,9 +289,11 @@ pub fn init_registry() {
 /// Get a reference to the global strategy registry.
 /// Returns an error if called before `init_registry()`.
 pub fn registry() -> Result<&'static StrategyRegistry, crate::error::AppError> {
-    REGISTRY.get().ok_or_else(|| crate::error::AppError::Internal(
-        "Connector strategy registry not initialised -- call init_registry() first".into()
-    ))
+    REGISTRY.get().ok_or_else(|| {
+        crate::error::AppError::Internal(
+            "Connector strategy registry not initialised -- call init_registry() first".into(),
+        )
+    })
 }
 
 // -- Shared helpers -------------------------------------------------
@@ -320,16 +355,28 @@ impl ConnectorStrategy for DefaultStrategy {
         pool: &DbPool,
         credential: &PersonaCredential,
     ) -> Result<String, AppError> {
-        let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
-        if let Err(e) = audit_log::log_decrypt(pool, &credential.id, &credential.name, "connector_strategy:rotate", None, None) {
+        let fields =
+            crate::db::repos::resources::credentials::get_decrypted_fields(pool, credential)?;
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            &credential.id,
+            &credential.name,
+            "connector_strategy:rotate",
+            None,
+            None,
+        ) {
             tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
         }
         if self.is_oauth(&fields) {
             // OAuth path: refresh + verify
-            let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
+            let refresh_msg =
+                super::oauth_refresh::refresh_single_credential(pool, credential).await?;
             match super::healthcheck::run_healthcheck(pool, &credential.id).await {
                 Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
-                Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+                Ok(hc) => Ok(format!(
+                    "{refresh_msg} -- healthcheck warning: {}",
+                    hc.message
+                )),
                 Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
             }
         } else {
@@ -339,11 +386,22 @@ impl ConnectorStrategy for DefaultStrategy {
             match result {
                 Ok(hc) if hc.success => Ok(format!("API key verified healthy: {}", hc.message)),
                 Ok(hc) => {
-                    let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
-                    Err(AppError::Internal(format!("Rotation failed (credentials restored): {}", hc.message)))
+                    let _ = crate::db::repos::resources::credentials::save_fields(
+                        pool,
+                        &credential.id,
+                        &original_fields,
+                    );
+                    Err(AppError::Internal(format!(
+                        "Rotation failed (credentials restored): {}",
+                        hc.message
+                    )))
                 }
                 Err(e) => {
-                    let _ = crate::db::repos::resources::credentials::save_fields(pool, &credential.id, &original_fields);
+                    let _ = crate::db::repos::resources::credentials::save_fields(
+                        pool,
+                        &credential.id,
+                        &original_fields,
+                    );
                     Err(e)
                 }
             }
@@ -463,25 +521,31 @@ async fn exchange_oauth_refresh_token(
     ];
 
     let label = format!("{provider} token refresh");
-    let value = crate::commands::credentials::oauth::token_endpoint_request(token_url, &params, &label)
-        .await
-        .map_err(|e| {
-            // Detect revocation-class errors from the provider's error response.
-            if let Some(ref body) = e.body {
-                if is_revocation_error(body) {
-                    return AppError::OAuthRevoked(format!(
-                        "{provider} grant revoked: {}", e.message
-                    ));
+    let value =
+        crate::commands::credentials::oauth::token_endpoint_request(token_url, &params, &label)
+            .await
+            .map_err(|e| {
+                // Detect revocation-class errors from the provider's error response.
+                if let Some(ref body) = e.body {
+                    if is_revocation_error(body) {
+                        return AppError::OAuthRevoked(format!(
+                            "{provider} grant revoked: {}",
+                            e.message
+                        ));
+                    }
                 }
-            }
-            AppError::Internal(e.message)
-        })?;
+                AppError::Internal(e.message)
+            })?;
 
     let token = value
         .get("access_token")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .ok_or_else(|| AppError::Internal(format!("{provider} token refresh did not return access_token")))?;
+        .ok_or_else(|| {
+            AppError::Internal(format!(
+                "{provider} token refresh did not return access_token"
+            ))
+        })?;
 
     let expires_in = value.get("expires_in").and_then(|v| v.as_u64());
     let new_refresh_token = value
@@ -526,12 +590,19 @@ async fn resolve_oauth_token(
         );
     }
 
-    let refresh_token = find_nonempty(fields, &["refresh_token"])
-        .ok_or_else(|| AppError::Validation(format!("{provider} credential is missing refresh_token")))?;
+    let refresh_token = find_nonempty(fields, &["refresh_token"]).ok_or_else(|| {
+        AppError::Validation(format!("{provider} credential is missing refresh_token"))
+    })?;
 
     let (client_id, client_secret) = resolve_credentials()?;
-    let resolved =
-        exchange_oauth_refresh_token(provider, token_url, &client_id, &client_secret, &refresh_token).await?;
+    let resolved = exchange_oauth_refresh_token(
+        provider,
+        token_url,
+        &client_id,
+        &client_secret,
+        &refresh_token,
+    )
+    .await?;
     Ok(Some(resolved))
 }
 
@@ -543,7 +614,10 @@ async fn rotate_via_refresh_and_healthcheck(
     let refresh_msg = super::oauth_refresh::refresh_single_credential(pool, credential).await?;
     match super::healthcheck::run_healthcheck(pool, &credential.id).await {
         Ok(hc) if hc.success => Ok(format!("{refresh_msg} -- verified: {}", hc.message)),
-        Ok(hc) => Ok(format!("{refresh_msg} -- healthcheck warning: {}", hc.message)),
+        Ok(hc) => Ok(format!(
+            "{refresh_msg} -- healthcheck warning: {}",
+            hc.message
+        )),
         Err(_) => Ok(format!("{refresh_msg} -- healthcheck skipped")),
     }
 }
@@ -559,11 +633,7 @@ impl ConnectorStrategy for BufferStrategy {
     }
 
     /// Buffer expects the access token as a query parameter, not a header.
-    fn apply_auth(
-        &self,
-        request: reqwest::RequestBuilder,
-        token: &str,
-    ) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
         request.query(&[("access_token", token)])
     }
 }
@@ -579,11 +649,7 @@ impl ConnectorStrategy for CircleCIStrategy {
     }
 
     /// CircleCI expects a `Circle-Token` header, not Bearer.
-    fn apply_auth(
-        &self,
-        request: reqwest::RequestBuilder,
-        token: &str,
-    ) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
         request.header("Circle-Token", token)
     }
 }
@@ -595,11 +661,7 @@ pub struct ClickUpStrategy;
 #[async_trait]
 impl ConnectorStrategy for ClickUpStrategy {
     /// ClickUp expects a raw `Authorization: <token>` header, not Bearer.
-    fn apply_auth(
-        &self,
-        request: reqwest::RequestBuilder,
-        token: &str,
-    ) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
         request.header("Authorization", token)
     }
 }
@@ -650,11 +712,7 @@ impl ConnectorStrategy for AtlassianBasicAuthStrategy {
 
     /// Apply the Basic auth header directly. The `token` here is the
     /// base64-encoded `email:api_token` pair produced in `resolve_auth_token`.
-    fn apply_auth(
-        &self,
-        request: reqwest::RequestBuilder,
-        token: &str,
-    ) -> reqwest::RequestBuilder {
+    fn apply_auth(&self, request: reqwest::RequestBuilder, token: &str) -> reqwest::RequestBuilder {
         request.header("Authorization", format!("Basic {token}"))
     }
 }
@@ -663,8 +721,7 @@ impl ConnectorStrategy for AtlassianBasicAuthStrategy {
 /// graph untouched — Atlassian tokens are small so a hand-rolled encoder is
 /// perfectly fine here.
 fn base64_encode(input: &[u8]) -> String {
-    const ALPHABET: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
     let mut i = 0;
     while i + 3 <= input.len() {

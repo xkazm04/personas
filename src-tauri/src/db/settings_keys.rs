@@ -134,6 +134,14 @@ pub const OBSIDIAN_BRAIN_CONFIG: &str = "obsidian_brain_config";
 /// agents connecting via the management API.
 pub const DEV_TOOLS_CROSS_PROJECT_METADATA: &str = "dev_tools_cross_project_metadata";
 
+/// Stamped version number of the canonical companion `constitution.md` content
+/// last installed on disk. Used by `companion::disk::ensure_initialized` to
+/// gate per-version upgrades so a user's edits aren't replayed-over on every
+/// app start (the legacy marker-based check did exactly that). Value: a
+/// non-negative integer matching `CONSTITUTION_VERSION` in
+/// `companion::templates`.
+pub const COMPANION_CONSTITUTION_VERSION: &str = "companion_constitution_version";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -157,6 +165,7 @@ const ALLOWED_KEYS: &[&str] = &[
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
     OBSIDIAN_BRAIN_CONFIG,
     DEV_TOOLS_CROSS_PROJECT_METADATA,
+    COMPANION_CONSTITUTION_VERSION,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -220,14 +229,19 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 /// - `FILE_WATCHER_DEBOUNCE_MS` → non-negative integer (u32 range, milliseconds)
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     match key {
-        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => value
-            .parse::<u32>()
-            .map(|_| ())
-            .map_err(|_| format!("value for '{key}' must be a non-negative integer (days), got {value:?}")),
-        FILE_WATCHER_DEBOUNCE_MS => value
-            .parse::<u32>()
-            .map(|_| ())
-            .map_err(|_| format!("value for '{key}' must be a non-negative integer (milliseconds), got {value:?}")),
+        EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => {
+            value.parse::<u32>().map(|_| ()).map_err(|_| {
+                format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
+            })
+        }
+        FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
+            format!(
+                "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
+            )
+        }),
+        COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
+            format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
+        }),
         _ => Ok(()),
     }
 }

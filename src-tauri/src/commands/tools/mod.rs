@@ -1,8 +1,8 @@
+pub mod automation_design;
+pub mod automations;
+pub mod deploy_automation;
+pub mod github_platform;
+pub mod n8n_platform;
 #[allow(clippy::module_inception)]
 pub mod tools;
 pub mod triggers;
-pub mod automations;
-pub mod automation_design;
-pub mod n8n_platform;
-pub mod github_platform;
-pub mod deploy_automation;

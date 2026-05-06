@@ -1,14 +1,14 @@
 use std::sync::Arc;
 use tauri::State;
 
-pub mod workspace;
 mod triage;
+pub mod workspace;
 
 use crate::db::models::{
-    DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup, DevContextGroupRelationship,
-    DevGoal, DevGoalDependency, DevGoalSignal, DevIdea, DevPipeline, DevProject, DevScan, DevTask,
-    ContextHealthSnapshot, TriageRule, CrossProjectRelation, PortfolioHealthSummary,
-    TechRadarEntry, RiskMatrixEntry, TestRunResult, GitOperationResult,
+    ContextHealthSnapshot, CrossProjectRelation, DevCompetition, DevCompetitionSlot, DevContext,
+    DevContextGroup, DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalSignal,
+    DevIdea, DevPipeline, DevProject, DevScan, DevTask, GitOperationResult, PortfolioHealthSummary,
+    RiskMatrixEntry, TechRadarEntry, TestRunResult, TriageRule,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -242,7 +242,12 @@ pub fn dev_tools_add_goal_dependency(
     dependency_type: Option<String>,
 ) -> Result<DevGoalDependency, AppError> {
     require_auth_sync(&state)?;
-    repo::add_goal_dependency(&state.db, &goal_id, &depends_on_id, dependency_type.as_deref())
+    repo::add_goal_dependency(
+        &state.db,
+        &goal_id,
+        &depends_on_id,
+        dependency_type.as_deref(),
+    )
 }
 
 #[tauri::command]
@@ -992,7 +997,6 @@ pub fn dev_tools_list_health_snapshots(
     repo::list_health_snapshots(&state.db, &project_id, limit)
 }
 #[allow(clippy::too_many_arguments)]
-
 #[tauri::command]
 pub fn dev_tools_save_health_snapshot(
     state: State<'_, Arc<AppState>>,
@@ -1067,7 +1071,10 @@ pub fn dev_tools_get_cross_project_map(
     require_auth_sync(&state)?;
 
     // Prefer the rich cached metadata map if it exists
-    if let Some(cached) = crate::db::repos::core::settings::get(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA)? {
+    if let Some(cached) = crate::db::repos::core::settings::get(
+        &state.db,
+        crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA,
+    )? {
         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&cached) {
             return Ok(parsed);
         }
@@ -1134,7 +1141,10 @@ fn top_n_by_count(counts: std::collections::HashMap<String, u32>, n: usize) -> V
     pairs.into_iter().take(n).map(|(k, _)| k).collect()
 }
 
-fn detect_tech_layers(tech_stack_fields: &[Vec<String>], declared_tech_stack: &Option<String>) -> Vec<String> {
+fn detect_tech_layers(
+    tech_stack_fields: &[Vec<String>],
+    declared_tech_stack: &Option<String>,
+) -> Vec<String> {
     let mut layers = std::collections::HashSet::new();
     let all: Vec<String> = tech_stack_fields
         .iter()
@@ -1143,26 +1153,46 @@ fn detect_tech_layers(tech_stack_fields: &[Vec<String>], declared_tech_stack: &O
         .chain(
             declared_tech_stack
                 .as_deref()
-                .map(|s| s.split(',').map(|x| x.trim().to_string()).collect::<Vec<_>>())
+                .map(|s| {
+                    s.split(',')
+                        .map(|x| x.trim().to_string())
+                        .collect::<Vec<_>>()
+                })
                 .unwrap_or_default(),
         )
         .collect();
 
     for item in &all {
         let lower = item.to_lowercase();
-        if lower.contains("react") || lower.contains("vue") || lower.contains("svelte") || lower.contains("angular") {
+        if lower.contains("react")
+            || lower.contains("vue")
+            || lower.contains("svelte")
+            || lower.contains("angular")
+        {
             layers.insert("frontend".to_string());
         }
         if lower.contains("rust") || lower.contains("tauri") || lower.contains("actix") {
             layers.insert("rust-backend".to_string());
         }
-        if lower.contains("node") || lower.contains("express") || lower.contains("nest") || lower.contains("fastify") {
+        if lower.contains("node")
+            || lower.contains("express")
+            || lower.contains("nest")
+            || lower.contains("fastify")
+        {
             layers.insert("node-backend".to_string());
         }
-        if lower.contains("python") || lower.contains("fastapi") || lower.contains("django") || lower.contains("flask") {
+        if lower.contains("python")
+            || lower.contains("fastapi")
+            || lower.contains("django")
+            || lower.contains("flask")
+        {
             layers.insert("python-backend".to_string());
         }
-        if lower.contains("postgres") || lower.contains("mysql") || lower.contains("sqlite") || lower.contains("mongo") {
+        if lower.contains("postgres")
+            || lower.contains("mysql")
+            || lower.contains("sqlite")
+            || lower.contains("mongo")
+        {
             layers.insert("database".to_string());
         }
         if lower.contains("typescript") || lower.contains("ts") {
@@ -1186,7 +1216,11 @@ fn jaccard_similarity(a: &[String], b: &[String]) -> f64 {
     let set_b: std::collections::HashSet<&String> = b.iter().collect();
     let intersection = set_a.intersection(&set_b).count() as f64;
     let union = set_a.union(&set_b).count() as f64;
-    if union == 0.0 { 0.0 } else { intersection / union }
+    if union == 0.0 {
+        0.0
+    } else {
+        intersection / union
+    }
 }
 
 /// Aggregate metadata for a single project from its existing context map.
@@ -1202,7 +1236,10 @@ fn aggregate_project_metadata(
     let capabilities: Vec<serde_json::Value> = groups
         .iter()
         .map(|g| {
-            let count = contexts.iter().filter(|c| c.group_id.as_deref() == Some(&g.id)).count();
+            let count = contexts
+                .iter()
+                .filter(|c| c.group_id.as_deref() == Some(&g.id))
+                .count();
             serde_json::json!({
                 "name": g.name,
                 "color": g.color,
@@ -1213,13 +1250,15 @@ fn aggregate_project_metadata(
         .collect();
 
     // Aggregate arrays from every context
-    let mut keyword_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut keyword_counts: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
     let mut all_entry_points: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut all_db_tables: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut all_api_surface: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut all_cross_refs: std::collections::HashSet<String> = std::collections::HashSet::new();
     let mut tech_stack_fields: Vec<Vec<String>> = Vec::new();
-    let mut file_path_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut file_path_counts: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
 
     for ctx in &contexts {
         for k in parse_json_array(&Some(ctx.keywords.clone().unwrap_or_default())) {
@@ -1229,16 +1268,24 @@ fn aggregate_project_metadata(
             }
         }
         for ep in parse_json_array(&ctx.entry_points) {
-            if !ep.trim().is_empty() { all_entry_points.insert(ep); }
+            if !ep.trim().is_empty() {
+                all_entry_points.insert(ep);
+            }
         }
         for db in parse_json_array(&ctx.db_tables) {
-            if !db.trim().is_empty() { all_db_tables.insert(db); }
+            if !db.trim().is_empty() {
+                all_db_tables.insert(db);
+            }
         }
         for api in parse_json_array(&ctx.api_surface) {
-            if !api.trim().is_empty() { all_api_surface.insert(api); }
+            if !api.trim().is_empty() {
+                all_api_surface.insert(api);
+            }
         }
         for xref in parse_json_array(&ctx.cross_refs) {
-            if !xref.trim().is_empty() { all_cross_refs.insert(xref); }
+            if !xref.trim().is_empty() {
+                all_cross_refs.insert(xref);
+            }
         }
         tech_stack_fields.push(parse_json_array(&ctx.tech_stack));
 
@@ -1269,7 +1316,11 @@ fn aggregate_project_metadata(
             contexts.len(),
             groups.len(),
             capability_list.join(", "),
-            if tech_layers.is_empty() { "unspecified".to_string() } else { tech_layers.join(", ") },
+            if tech_layers.is_empty() {
+                "unspecified".to_string()
+            } else {
+                tech_layers.join(", ")
+            },
             project.description.as_deref().unwrap_or("No description.")
         )
     };
@@ -1322,21 +1373,33 @@ pub fn dev_tools_generate_cross_project_metadata(
     let project_keyword_sets: Vec<(String, Vec<String>)> = project_metadata
         .iter()
         .map(|p| {
-            let name = p.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let name = p
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
             let keywords: Vec<String> = p
                 .get("keywords")
                 .and_then(|v| v.as_array())
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect()
+                })
                 .unwrap_or_default();
             (name, keywords)
         })
         .collect();
 
     // Shared keywords: appearing in 2+ projects
-    let mut keyword_project_count: std::collections::HashMap<String, Vec<String>> = std::collections::HashMap::new();
+    let mut keyword_project_count: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
     for (name, keywords) in &project_keyword_sets {
         for kw in keywords {
-            keyword_project_count.entry(kw.clone()).or_default().push(name.clone());
+            keyword_project_count
+                .entry(kw.clone())
+                .or_default()
+                .push(name.clone());
         }
     }
     let shared_keywords: Vec<serde_json::Value> = keyword_project_count
@@ -1363,7 +1426,8 @@ pub fn dev_tools_generate_cross_project_metadata(
     }
 
     // Shared tech layers across projects
-    let mut tech_layer_counts: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+    let mut tech_layer_counts: std::collections::HashMap<String, u32> =
+        std::collections::HashMap::new();
     for p in &project_metadata {
         if let Some(layers) = p.get("tech_layers").and_then(|v| v.as_array()) {
             for l in layers {
@@ -1405,7 +1469,11 @@ pub fn dev_tools_generate_cross_project_metadata(
     // Cache result in app_settings
     let json_str = serde_json::to_string(&result)
         .map_err(|e| AppError::Validation(format!("Failed to serialize metadata: {e}")))?;
-    crate::db::repos::core::settings::set(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA, &json_str)?;
+    crate::db::repos::core::settings::set(
+        &state.db,
+        crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA,
+        &json_str,
+    )?;
 
     Ok(result)
 }
@@ -1416,7 +1484,10 @@ pub fn dev_tools_get_cross_project_metadata(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Option<serde_json::Value>, AppError> {
     require_auth_sync(&state)?;
-    match crate::db::repos::core::settings::get(&state.db, crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA)? {
+    match crate::db::repos::core::settings::get(
+        &state.db,
+        crate::db::settings_keys::DEV_TOOLS_CROSS_PROJECT_METADATA,
+    )? {
         Some(json_str) => {
             let parsed: serde_json::Value = serde_json::from_str(&json_str)
                 .map_err(|e| AppError::Validation(format!("Corrupted metadata cache: {e}")))?;
@@ -1437,14 +1508,39 @@ pub fn dev_tools_create_idea_batch(
     for idea in &ideas {
         let project_id = idea.get("project_id").and_then(|v| v.as_str());
         let context_id = idea.get("context_id").and_then(|v| v.as_str());
-        let scan_type = idea.get("scan_type").and_then(|v| v.as_str()).unwrap_or("cross-impact");
-        let category = idea.get("category").and_then(|v| v.as_str()).unwrap_or("technical");
-        let title = idea.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled");
+        let scan_type = idea
+            .get("scan_type")
+            .and_then(|v| v.as_str())
+            .unwrap_or("cross-impact");
+        let category = idea
+            .get("category")
+            .and_then(|v| v.as_str())
+            .unwrap_or("technical");
+        let title = idea
+            .get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled");
         let description = idea.get("description").and_then(|v| v.as_str());
-        let effort = idea.get("effort").and_then(|v| v.as_i64()).map(|v| v as i32);
-        let impact = idea.get("impact").and_then(|v| v.as_i64()).map(|v| v as i32);
+        let effort = idea
+            .get("effort")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32);
+        let impact = idea
+            .get("impact")
+            .and_then(|v| v.as_i64())
+            .map(|v| v as i32);
         let risk = idea.get("risk").and_then(|v| v.as_i64()).map(|v| v as i32);
-        tuples.push((project_id, context_id, scan_type, category, title, description, effort, impact, risk));
+        tuples.push((
+            project_id,
+            context_id,
+            scan_type,
+            category,
+            title,
+            description,
+            effort,
+            impact,
+            risk,
+        ));
     }
     repo::bulk_create_ideas_cross_project(&state.db, &tuples)
 }
@@ -1576,7 +1672,9 @@ pub async fn dev_tools_apply_diff(
         drop(stdin);
     }
 
-    let output = child.wait_with_output().await
+    let output = child
+        .wait_with_output()
+        .await
         .map_err(|e| AppError::Internal(format!("git apply failed: {e}")))?;
 
     let success = output.status.success();
@@ -1585,7 +1683,11 @@ pub async fn dev_tools_apply_diff(
 
     Ok(GitOperationResult {
         success,
-        message: if success { stdout.trim().to_string() } else { stderr.trim().to_string() },
+        message: if success {
+            stdout.trim().to_string()
+        } else {
+            stderr.trim().to_string()
+        },
         branch_name: None,
         commit_hash: None,
         files_changed: None,
@@ -1613,7 +1715,9 @@ pub async fn dev_tools_run_tests(
     } else if root.join("pyproject.toml").exists() || root.join("setup.py").exists() {
         "python -m pytest -v 2>&1".to_string()
     } else {
-        return Err(AppError::Validation("Could not detect test runner. Provide test_command.".into()));
+        return Err(AppError::Validation(
+            "Could not detect test runner. Provide test_command.".into(),
+        ));
     };
 
     let start = std::time::Instant::now();
@@ -1677,19 +1781,38 @@ fn parse_test_counts(output: &str) -> (i32, i32, i32, i32) {
         .ok()
         .and_then(|re| re.captures(output))
     {
-        let p: i32 = caps.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
-        let f: i32 = caps.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
-        let s: i32 = caps.get(3).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
+        let p: i32 = caps
+            .get(1)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
+        let f: i32 = caps
+            .get(2)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
+        let s: i32 = caps
+            .get(3)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
         return (p + f + s, p, f, s);
     }
     // Jest/Vitest: "Tests: X passed, Y failed, Z total"
-    if let Some(caps) = regex::Regex::new(r"Tests:\s+(?:(\d+) passed)?[,\s]*(?:(\d+) failed)?[,\s]*(\d+) total")
-        .ok()
-        .and_then(|re| re.captures(output))
+    if let Some(caps) =
+        regex::Regex::new(r"Tests:\s+(?:(\d+) passed)?[,\s]*(?:(\d+) failed)?[,\s]*(\d+) total")
+            .ok()
+            .and_then(|re| re.captures(output))
     {
-        let p: i32 = caps.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
-        let f: i32 = caps.get(2).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
-        let t: i32 = caps.get(3).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
+        let p: i32 = caps
+            .get(1)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
+        let f: i32 = caps
+            .get(2)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
+        let t: i32 = caps
+            .get(3)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
         return (t, p, f, t - p - f);
     }
     // pytest: "X passed, Y failed"
@@ -1697,7 +1820,10 @@ fn parse_test_counts(output: &str) -> (i32, i32, i32, i32) {
         .ok()
         .and_then(|re| re.captures(output))
     {
-        let p: i32 = caps.get(1).and_then(|m| m.as_str().parse().ok()).unwrap_or(0);
+        let p: i32 = caps
+            .get(1)
+            .and_then(|m| m.as_str().parse().ok())
+            .unwrap_or(0);
         let f: i32 = regex::Regex::new(r"(\d+) failed")
             .ok()
             .and_then(|re| re.captures(output))
@@ -1739,7 +1865,9 @@ pub async fn dev_tools_get_git_status(
         .await
         .map_err(|e| AppError::Internal(format!("git log failed: {e}")))?;
 
-    let branch = String::from_utf8_lossy(&branch_output.stdout).trim().to_string();
+    let branch = String::from_utf8_lossy(&branch_output.stdout)
+        .trim()
+        .to_string();
     let status = String::from_utf8_lossy(&status_output.stdout).to_string();
     let log = String::from_utf8_lossy(&log_output.stdout).to_string();
 
@@ -1778,7 +1906,9 @@ pub async fn dev_tools_commit_changes(
         if !add_output.status.success() {
             return Ok(GitOperationResult {
                 success: false,
-                message: String::from_utf8_lossy(&add_output.stderr).trim().to_string(),
+                message: String::from_utf8_lossy(&add_output.stderr)
+                    .trim()
+                    .to_string(),
                 branch_name: None,
                 commit_hash: None,
                 files_changed: None,
@@ -1813,7 +1943,11 @@ pub async fn dev_tools_commit_changes(
 
     Ok(GitOperationResult {
         success,
-        message: if success { stdout.trim().to_string() } else { stderr.trim().to_string() },
+        message: if success {
+            stdout.trim().to_string()
+        } else {
+            stderr.trim().to_string()
+        },
         branch_name: None,
         commit_hash,
         files_changed,
@@ -1865,7 +1999,10 @@ pub fn dev_tools_get_project_summary(
     let pending_ideas = ideas.iter().filter(|i| i.status == "pending").count();
     let accepted_ideas = ideas.iter().filter(|i| i.status == "accepted").count();
     let running_tasks = tasks.iter().filter(|t| t.status == "running").count();
-    let active_goals = goals.iter().filter(|g| g.status == "in-progress" || g.status == "open").count();
+    let active_goals = goals
+        .iter()
+        .filter(|g| g.status == "in-progress" || g.status == "open")
+        .count();
 
     Ok(serde_json::json!({
         "project": {
@@ -1908,11 +2045,13 @@ pub async fn dev_tools_get_dependency_graph(
     require_auth_sync(&state)?;
     let projects = repo::list_projects(&state.db, Some("active"))?;
 
-    let mut all_deps: std::collections::HashMap<String, Vec<serde_json::Value>> = std::collections::HashMap::new();
+    let mut all_deps: std::collections::HashMap<String, Vec<serde_json::Value>> =
+        std::collections::HashMap::new();
 
     let section_re = regex::Regex::new(r"\[((?:dev-|build-)?dependencies)\]").unwrap();
     let dep_inline_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*"([^"]+)""#).unwrap();
-    let dep_table_re = regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*\{.*version\s*=\s*"([^"]+)".*\}"#).unwrap();
+    let dep_table_re =
+        regex::Regex::new(r#"^(\w[\w-]*)\s*=\s*\{.*version\s*=\s*"([^"]+)".*\}"#).unwrap();
 
     for project in &projects {
         let root = std::path::Path::new(&project.root_path);
@@ -1925,13 +2064,16 @@ pub async fn dev_tools_get_dependency_graph(
                     for section in ["dependencies", "devDependencies"] {
                         if let Some(deps) = pkg.get(section).and_then(|d| d.as_object()) {
                             for (name, version) in deps {
-                                all_deps.entry(name.clone()).or_default().push(serde_json::json!({
-                                    "project_id": project.id,
-                                    "project_name": project.name,
-                                    "version": version,
-                                    "section": section,
-                                    "manifest": "package.json",
-                                }));
+                                all_deps
+                                    .entry(name.clone())
+                                    .or_default()
+                                    .push(serde_json::json!({
+                                        "project_id": project.id,
+                                        "project_name": project.name,
+                                        "version": version,
+                                        "section": section,
+                                        "manifest": "package.json",
+                                    }));
                             }
                         }
                     }
@@ -1963,9 +2105,15 @@ pub async fn dev_tools_get_dependency_graph(
                     }
                     if let Some(section) = current_section {
                         let (name, version) = if let Some(caps) = dep_inline_re.captures(trimmed) {
-                            (caps.get(1).map(|m| m.as_str().to_string()), caps.get(2).map(|m| m.as_str().to_string()))
+                            (
+                                caps.get(1).map(|m| m.as_str().to_string()),
+                                caps.get(2).map(|m| m.as_str().to_string()),
+                            )
                         } else if let Some(caps) = dep_table_re.captures(trimmed) {
-                            (caps.get(1).map(|m| m.as_str().to_string()), caps.get(2).map(|m| m.as_str().to_string()))
+                            (
+                                caps.get(1).map(|m| m.as_str().to_string()),
+                                caps.get(2).map(|m| m.as_str().to_string()),
+                            )
                         } else {
                             (None, None)
                         };
@@ -1985,15 +2133,18 @@ pub async fn dev_tools_get_dependency_graph(
     }
 
     // Find shared deps (used by 2+ projects)
-    let shared: Vec<serde_json::Value> = all_deps.iter()
+    let shared: Vec<serde_json::Value> = all_deps
+        .iter()
         .filter(|(_, usages)| {
-            let unique_projects: std::collections::HashSet<&str> = usages.iter()
+            let unique_projects: std::collections::HashSet<&str> = usages
+                .iter()
                 .filter_map(|u| u.get("project_id").and_then(|p| p.as_str()))
                 .collect();
             unique_projects.len() > 1
         })
         .map(|(name, usages)| {
-            let versions: Vec<&str> = usages.iter()
+            let versions: Vec<&str> = usages
+                .iter()
                 .filter_map(|u| u.get("version").and_then(|v| v.as_str()))
                 .collect();
             let has_drift = {
@@ -2050,8 +2201,9 @@ fn capture_project_baseline(root_path: &str) -> serde_json::Value {
             .output()
             .ok()
             .map(|out| {
-                if out.status.success() { 0i32 }
-                else {
+                if out.status.success() {
+                    0i32
+                } else {
                     let stderr = String::from_utf8_lossy(&out.stderr);
                     stderr.lines().filter(|l| l.contains("error[E")).count() as i32
                 }
@@ -2075,9 +2227,7 @@ fn capture_project_baseline(root_path: &str) -> serde_json::Value {
         .current_dir(root)
         .output()
         .ok()
-        .map(|out| {
-            out.status.success() && String::from_utf8_lossy(&out.stdout).trim().is_empty()
-        })
+        .map(|out| out.status.success() && String::from_utf8_lossy(&out.stdout).trim().is_empty())
         .unwrap_or(false);
 
     serde_json::json!({
@@ -2166,7 +2316,16 @@ pub fn dev_tools_start_competition(
             .chars()
             .take(20)
             .collect();
-        let worktree_name = format!("comp-{}-{}-{}", comp_tag, idx, if slug.is_empty() { "slot".to_string() } else { slug });
+        let worktree_name = format!(
+            "comp-{}-{}-{}",
+            comp_tag,
+            idx,
+            if slug.is_empty() {
+                "slot".to_string()
+            } else {
+                slug
+            }
+        );
 
         // Compose the per-slot prompt: base task + strategy prompt override if given
         let composed_description = match &slot_input.prompt {
@@ -2250,7 +2409,10 @@ pub fn dev_tools_get_competition(
     for slot in slots {
         let task = repo::get_task_by_id(&state.db, &slot.task_id).ok();
         let needs_analysis = slot.diff_analyzed_at.is_none()
-            && task.as_ref().map(|t| t.status == "completed").unwrap_or(false);
+            && task
+                .as_ref()
+                .map(|t| t.status == "completed")
+                .unwrap_or(false);
 
         let updated_slot = if needs_analysis {
             if let Some((_diff_text, diff_hash, files, added, removed)) =
@@ -2298,9 +2460,10 @@ pub fn dev_tools_get_competition(
     let mut after_dedup: Vec<crate::db::models::DevCompetitionSlot> = Vec::new();
     for slot in analyzed_slots {
         let is_dup = match (&slot.diff_hash, slot.disqualified) {
-            (Some(h), false) => {
-                first_seen.get(h).map(|&idx| idx < slot.slot_index).unwrap_or(false)
-            }
+            (Some(h), false) => first_seen
+                .get(h)
+                .map(|&idx| idx < slot.slot_index)
+                .unwrap_or(false),
             _ => false,
         };
         let resolved_slot = if is_dup {
@@ -2336,20 +2499,12 @@ pub fn dev_tools_get_competition(
             .map(|s| matches!(s, "completed" | "failed" | "cancelled"))
             .unwrap_or(false)
     });
-    let updated_competition =
-        if all_finished && competition.status == "running" {
-            repo::update_competition_status(
-                &state.db,
-                &id,
-                "awaiting_review",
-                None,
-                None,
-                None,
-            )
+    let updated_competition = if all_finished && competition.status == "running" {
+        repo::update_competition_status(&state.db, &id, "awaiting_review", None, None, None)
             .unwrap_or(competition)
-        } else {
-            competition
-        };
+    } else {
+        competition
+    };
 
     Ok(serde_json::json!({
         "competition": updated_competition,
@@ -2381,10 +2536,19 @@ pub fn dev_tools_refresh_competition_slot(
                     branch_name: row.get("branch_name")?,
                     slot_index: row.get("slot_index")?,
                     disqualified: row.get::<_, i32>("disqualified").unwrap_or(0) != 0,
-                    disqualify_reason: row.get::<_, Option<String>>("disqualify_reason").ok().flatten(),
+                    disqualify_reason: row
+                        .get::<_, Option<String>>("disqualify_reason")
+                        .ok()
+                        .flatten(),
                     diff_hash: row.get::<_, Option<String>>("diff_hash").ok().flatten(),
-                    diff_stats_json: row.get::<_, Option<String>>("diff_stats_json").ok().flatten(),
-                    diff_analyzed_at: row.get::<_, Option<String>>("diff_analyzed_at").ok().flatten(),
+                    diff_stats_json: row
+                        .get::<_, Option<String>>("diff_stats_json")
+                        .ok()
+                        .flatten(),
+                    diff_analyzed_at: row
+                        .get::<_, Option<String>>("diff_analyzed_at")
+                        .ok()
+                        .flatten(),
                     created_at: row.get("created_at")?,
                 })
             },
@@ -2555,13 +2719,23 @@ fn compute_slot_diff(
             let parts: Vec<&str> = line.split('\t').collect();
             if parts.len() >= 3 {
                 files_changed += 1;
-                if let Ok(a) = parts[0].parse::<i32>() { lines_added += a; }
-                if let Ok(r) = parts[1].parse::<i32>() { lines_removed += r; }
+                if let Ok(a) = parts[0].parse::<i32>() {
+                    lines_added += a;
+                }
+                if let Ok(r) = parts[1].parse::<i32>() {
+                    lines_removed += r;
+                }
             }
         }
     }
 
-    Some((diff_text, diff_hash, files_changed, lines_added, lines_removed))
+    Some((
+        diff_text,
+        diff_hash,
+        files_changed,
+        lines_added,
+        lines_removed,
+    ))
 }
 
 /// Open a competition slot's worktree directory for review.
@@ -2661,7 +2835,8 @@ fn remove_claude_worktree(project_root: &str, worktree_name: &str) -> bool {
             let stderr = String::from_utf8_lossy(&out.stderr);
             tracing::warn!(
                 "git worktree remove failed for {}: {}. Falling back to rm -rf.",
-                worktree_name, stderr
+                worktree_name,
+                stderr
             );
             // Fallback: direct filesystem removal if the git command refuses
             // (e.g. worktree was never properly registered).
@@ -2674,7 +2849,11 @@ fn remove_claude_worktree(project_root: &str, worktree_name: &str) -> bool {
             }
         }
         Err(e) => {
-            tracing::warn!("Failed to invoke git worktree remove for {}: {}", worktree_name, e);
+            tracing::warn!(
+                "Failed to invoke git worktree remove for {}: {}",
+                worktree_name,
+                e
+            );
             false
         }
     }
@@ -2794,10 +2973,10 @@ fn apply_winner_insight_to_dev_clone_memory(
     winning_strategy: &str,
     insight_text: &str,
 ) -> Result<(), AppError> {
-    use crate::db::repos::core::personas as persona_repo;
-    use crate::db::repos::core::memories as mem_repo;
     use crate::db::models::CreatePersonaMemoryInput;
     use crate::db::models::Json;
+    use crate::db::repos::core::memories as mem_repo;
+    use crate::db::repos::core::personas as persona_repo;
 
     // Find a persona whose name contains "dev clone" (case-insensitive)
     let personas = persona_repo::get_all(pool)?;
@@ -2880,7 +3059,8 @@ pub fn dev_tools_cancel_competition(
     }
     tracing::info!(
         "Competition {} cancelled: cancelled {} tasks and cleaned all worktrees",
-        id, slots.len(),
+        id,
+        slots.len(),
     );
 
     repo::update_competition_status(&state.db, &id, "cancelled", None, None, None)
@@ -2892,8 +3072,9 @@ pub fn dev_tools_cancel_competition(
 
 /// Global registry of running dev servers for competition worktrees.
 /// Key: slot_id, Value: (child PID, port)
-static DEV_SERVERS: std::sync::LazyLock<std::sync::Mutex<std::collections::HashMap<String, (u32, u16)>>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+static DEV_SERVERS: std::sync::LazyLock<
+    std::sync::Mutex<std::collections::HashMap<String, (u32, u16)>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
 
 /// Find a free TCP port by binding to port 0.
 fn find_free_port() -> Option<u16> {
@@ -2912,10 +3093,16 @@ fn detect_dev_command(dir: &std::path::Path) -> (String, Vec<String>) {
                 if let Some(s) = scripts {
                     // Prefer "dev" script, fall back to "start"
                     if s.contains_key("dev") {
-                        return ("npm".to_string(), vec!["run".to_string(), "dev".to_string()]);
+                        return (
+                            "npm".to_string(),
+                            vec!["run".to_string(), "dev".to_string()],
+                        );
                     }
                     if s.contains_key("start") {
-                        return ("npm".to_string(), vec!["run".to_string(), "start".to_string()]);
+                        return (
+                            "npm".to_string(),
+                            vec!["run".to_string(), "start".to_string()],
+                        );
                     }
                 }
             }
@@ -2923,9 +3110,15 @@ fn detect_dev_command(dir: &std::path::Path) -> (String, Vec<String>) {
     }
     // Fallback for Python/Rust
     if dir.join("manage.py").exists() {
-        return ("python".to_string(), vec!["manage.py".to_string(), "runserver".to_string()]);
+        return (
+            "python".to_string(),
+            vec!["manage.py".to_string(), "runserver".to_string()],
+        );
     }
-    ("npm".to_string(), vec!["run".to_string(), "dev".to_string()])
+    (
+        "npm".to_string(),
+        vec!["run".to_string(), "dev".to_string()],
+    )
 }
 
 /// Start a dev server in a competition slot's worktree.
@@ -2973,11 +3166,13 @@ pub fn dev_tools_start_slot_server(
         .join(&worktree_name);
 
     if !worktree_path.exists() {
-        return Err(AppError::Validation("Worktree directory does not exist".into()));
+        return Err(AppError::Validation(
+            "Worktree directory does not exist".into(),
+        ));
     }
 
-    let port = find_free_port()
-        .ok_or_else(|| AppError::Internal("Could not find a free port".into()))?;
+    let port =
+        find_free_port().ok_or_else(|| AppError::Internal("Could not find a free port".into()))?;
 
     let (cmd_name, mut cmd_args) = detect_dev_command(&worktree_path);
 
@@ -3006,14 +3201,22 @@ pub fn dev_tools_start_slot_server(
         command.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    let child = command.spawn().map_err(|e| {
-        AppError::Internal(format!("Failed to start dev server: {e}"))
-    })?;
+    let child = command
+        .spawn()
+        .map_err(|e| AppError::Internal(format!("Failed to start dev server: {e}")))?;
 
     let pid = child.id();
-    tracing::info!("Started dev server for slot {} on port {} (PID {})", slot_id, port, pid);
+    tracing::info!(
+        "Started dev server for slot {} on port {} (PID {})",
+        slot_id,
+        port,
+        pid
+    );
 
-    DEV_SERVERS.lock().unwrap().insert(slot_id.clone(), (pid, port));
+    DEV_SERVERS
+        .lock()
+        .unwrap()
+        .insert(slot_id.clone(), (pid, port));
 
     Ok(serde_json::json!({
         "status": "started",
@@ -3033,7 +3236,12 @@ pub fn dev_tools_stop_slot_server(
     require_auth_sync(&state)?;
     let entry = DEV_SERVERS.lock().unwrap().remove(&slot_id);
     if let Some((pid, port)) = entry {
-        tracing::info!("Stopping dev server for slot {} (PID {}, port {})", slot_id, pid, port);
+        tracing::info!(
+            "Stopping dev server for slot {} (PID {}, port {})",
+            slot_id,
+            pid,
+            port
+        );
 
         // Kill the process tree
         #[cfg(windows)]
@@ -3065,7 +3273,9 @@ pub fn dev_tools_delete_competition(
     require_auth_sync(&state)?;
     let competition = repo::get_competition_by_id(&state.db, &id)?;
     if competition.status != "resolved" && competition.status != "cancelled" {
-        return Err(AppError::Validation("Can only delete resolved or cancelled competitions".into()));
+        return Err(AppError::Validation(
+            "Can only delete resolved or cancelled competitions".into(),
+        ));
     }
     // Cleanup any remaining worktrees (winner's worktree may still exist)
     if let Ok(project) = repo::get_project_by_id(&state.db, &competition.project_id) {
@@ -3078,6 +3288,9 @@ pub fn dev_tools_delete_competition(
     }
     // CASCADE delete: slots are deleted automatically via foreign key
     let conn = state.db.get()?;
-    let count = conn.execute("DELETE FROM dev_competitions WHERE id = ?1", rusqlite::params![id])?;
+    let count = conn.execute(
+        "DELETE FROM dev_competitions WHERE id = ?1",
+        rusqlite::params![id],
+    )?;
     Ok(count > 0)
 }

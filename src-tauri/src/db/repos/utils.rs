@@ -2,10 +2,7 @@
 ///
 /// This keeps list endpoints resilient to individual corrupted rows and gives
 /// enough context in logs to debug schema/data issues.
-pub fn collect_rows<T>(
-    rows: impl Iterator<Item = rusqlite::Result<T>>,
-    context: &str,
-) -> Vec<T> {
+pub fn collect_rows<T>(rows: impl Iterator<Item = rusqlite::Result<T>>, context: &str) -> Vec<T> {
     let mut results = Vec::new();
     let mut skipped_count = 0usize;
     for (idx, row_result) in rows.enumerate() {
@@ -23,7 +20,11 @@ pub fn collect_rows<T>(
         }
     }
     if skipped_count > 0 {
-        tracing::warn!(context, skipped_count, "Skipped {skipped_count} rows due to mapping errors");
+        tracing::warn!(
+            context,
+            skipped_count,
+            "Skipped {skipped_count} rows due to mapping errors"
+        );
     }
     results
 }

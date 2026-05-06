@@ -38,10 +38,7 @@ pub fn create(
 
 crud_get_by_id!(PersonaTestSuite, "test_suites", "TestSuite", row_to_suite);
 
-pub fn list_by_persona(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<Vec<PersonaTestSuite>, AppError> {
+pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaTestSuite>, AppError> {
     timed_query!("test_suites", "test_suites::list_by_persona", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -60,27 +57,27 @@ pub fn list_by_persona_ids(
     persona_ids: &[String],
 ) -> Result<Vec<PersonaTestSuite>, AppError> {
     timed_query!("test_suites", "test_suites::list_by_persona_ids", {
-    if persona_ids.is_empty() {
-        return Ok(Vec::new());
-    }
-    let conn = pool.get()?;
-    let placeholders: Vec<String> = persona_ids
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect();
-    let sql = format!(
-        "SELECT * FROM test_suites WHERE persona_id IN ({}) ORDER BY updated_at DESC",
-        placeholders.join(", ")
-    );
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-        .iter()
-        .map(|s| s as &dyn rusqlite::types::ToSql)
-        .collect();
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(params_ref.as_slice(), row_to_suite)?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
+        if persona_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = pool.get()?;
+        let placeholders: Vec<String> = persona_ids
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("?{}", i + 1))
+            .collect();
+        let sql = format!(
+            "SELECT * FROM test_suites WHERE persona_id IN ({}) ORDER BY updated_at DESC",
+            placeholders.join(", ")
+        );
+        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+            .iter()
+            .map(|s| s as &dyn rusqlite::types::ToSql)
+            .collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), row_to_suite)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 

@@ -32,7 +32,16 @@ pub fn list_memories(
     sort_direction: Option<String>,
 ) -> Result<Vec<PersonaMemory>, AppError> {
     require_auth_sync(&state)?;
-    repo::get_all(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref(), limit, offset, sort_column.as_deref(), sort_direction.as_deref())
+    repo::get_all(
+        &state.db,
+        persona_id.as_deref(),
+        category.as_deref(),
+        search.as_deref(),
+        limit,
+        offset,
+        sort_column.as_deref(),
+        sort_direction.as_deref(),
+    )
 }
 
 #[tauri::command]
@@ -52,7 +61,12 @@ pub fn get_memory_count(
     search: Option<String>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
-    repo::get_total_count(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
+    repo::get_total_count(
+        &state.db,
+        persona_id.as_deref(),
+        category.as_deref(),
+        search.as_deref(),
+    )
 }
 
 #[tauri::command]
@@ -63,7 +77,12 @@ pub fn get_memory_stats(
     search: Option<String>,
 ) -> Result<repo::MemoryStats, AppError> {
     require_auth_sync(&state)?;
-    repo::get_stats(&state.db, persona_id.as_deref(), category.as_deref(), search.as_deref())
+    repo::get_stats(
+        &state.db,
+        persona_id.as_deref(),
+        category.as_deref(),
+        search.as_deref(),
+    )
 }
 
 #[tauri::command]
@@ -101,10 +120,7 @@ pub fn list_memories_by_execution(
 }
 
 #[tauri::command]
-pub fn delete_memory(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_memory(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }
@@ -298,12 +314,14 @@ Memories to review:
 
     // Write prompt to stdin
     if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(prompt.as_bytes()).await.map_err(|e| {
-            AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}"))
-        })?;
-        stdin.shutdown().await.map_err(|e| {
-            AppError::Internal(format!("Failed to close CLI stdin: {e}"))
-        })?;
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
+        stdin
+            .shutdown()
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to close CLI stdin: {e}")))?;
     }
 
     // Read stdout
@@ -467,9 +485,7 @@ Memories to review:
 // -- Dev seed: mock memory (debug builds only) -----------------------------------
 
 #[tauri::command]
-pub fn seed_mock_memory(
-    _state: State<'_, Arc<AppState>>,
-) -> Result<PersonaMemory, AppError> {
+pub fn seed_mock_memory(_state: State<'_, Arc<AppState>>) -> Result<PersonaMemory, AppError> {
     #[cfg(debug_assertions)]
     {
         require_auth_sync(&_state)?;
@@ -495,18 +511,32 @@ pub fn seed_mock_memory(
             "Business notifications should only be sent Mon-Fri 9am-6pm UTC. Queue weekend events for Monday.",
         ];
         const MOCK_CATEGORIES: &[&str] = &[
-            "preference", "instruction", "instruction", "preference",
-            "constraint", "instruction", "preference", "constraint",
+            "preference",
+            "instruction",
+            "instruction",
+            "preference",
+            "constraint",
+            "instruction",
+            "preference",
+            "constraint",
         ];
         const MOCK_TAGS: &[&str] = &[
-            r#"["formatting","output"]"#, r#"["reliability","api"]"#, r#"["timezone","standard"]"#,
-            r#"["communication","customer"]"#, r#"["api","rate-limit"]"#, r#"["logging","observability"]"#,
-            r#"["summarization","nlp"]"#, r#"["scheduling","notifications"]"#,
+            r#"["formatting","output"]"#,
+            r#"["reliability","api"]"#,
+            r#"["timezone","standard"]"#,
+            r#"["communication","customer"]"#,
+            r#"["api","rate-limit"]"#,
+            r#"["logging","observability"]"#,
+            r#"["summarization","nlp"]"#,
+            r#"["scheduling","notifications"]"#,
         ];
 
         let personas = crate::db::repos::core::personas::get_all(&_state.db)?;
-        let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
-        let persona_id = personas.get(idx).map(|p| p.id.clone())
+        let idx =
+            (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+        let persona_id = personas
+            .get(idx)
+            .map(|p| p.id.clone())
             .unwrap_or_else(|| "mock-persona".to_string());
 
         let t = (chrono::Utc::now().timestamp_millis() as usize) / 7;
@@ -517,7 +547,9 @@ pub fn seed_mock_memory(
             category: Some(MOCK_CATEGORIES[t % MOCK_CATEGORIES.len()].to_string()),
             source_execution_id: None,
             importance: Some(((t % 5) + 1) as i32),
-            tags: Some(crate::db::models::Json(vec![MOCK_TAGS[t % MOCK_TAGS.len()].to_string()])),
+            tags: Some(crate::db::models::Json(vec![MOCK_TAGS
+                [t % MOCK_TAGS.len()]
+            .to_string()])),
             use_case_id: None,
         };
 
@@ -525,7 +557,9 @@ pub fn seed_mock_memory(
     }
 
     #[allow(unreachable_code)]
-    Err(AppError::Internal("seed_mock_memory is only available in debug builds".into()))
+    Err(AppError::Internal(
+        "seed_mock_memory is only available in debug builds".into(),
+    ))
 }
 
 /// Extract the first top-level JSON array from mixed text output.

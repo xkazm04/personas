@@ -19,11 +19,7 @@ fn validate_path_segment(value: &str, name: &str) -> Result<(), AppError> {
     if value.is_empty() {
         return Err(AppError::Cloud(format!("{name} must not be empty")));
     }
-    if value.contains('/')
-        || value.contains('\\')
-        || value.contains("..")
-        || value.contains('\0')
-    {
+    if value.contains('/') || value.contains('\\') || value.contains("..") || value.contains('\0') {
         return Err(AppError::Cloud(format!(
             "{name} contains invalid characters"
         )));
@@ -411,7 +407,8 @@ impl CloudClient {
     /// Build an authenticated request to the given endpoint path.
     /// Includes the `X-User-Token` header when a Supabase JWT is available.
     async fn authed(&self, method: reqwest::Method, path: &str) -> reqwest::RequestBuilder {
-        let mut req = self.http
+        let mut req = self
+            .http
             .request(method, format!("{}{}", self.base_url, path))
             .bearer_auth(&self.api_key);
 
@@ -453,12 +450,14 @@ impl CloudClient {
 
     /// `GET /health` -- basic health check.
     pub async fn health(&self) -> Result<CloudHealthResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/health").await).await
+        self.send_json(self.authed(reqwest::Method::GET, "/health").await)
+            .await
     }
 
     /// `GET /api/status` -- orchestrator status including worker counts and OAuth state.
     pub async fn status(&self) -> Result<CloudStatusResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/status").await).await
+        self.send_json(self.authed(reqwest::Method::GET, "/api/status").await)
+            .await
     }
 
     // --------------------------------------------------------------------
@@ -473,8 +472,13 @@ impl CloudClient {
         timeout_ms: Option<u64>,
     ) -> Result<CloudSubmitResponse, AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/execute").await
-            .json(&SubmitExecutionBody { prompt, persona_id, timeout_ms });
+            .authed(reqwest::Method::POST, "/api/execute")
+            .await
+            .json(&SubmitExecutionBody {
+                prompt,
+                persona_id,
+                timeout_ms,
+            });
         self.send_json(req).await
     }
 
@@ -486,14 +490,16 @@ impl CloudClient {
     ) -> Result<CloudExecutionPoll, AppError> {
         validate_path_segment(execution_id, "execution_id")?;
         let path = format!("/api/executions/{execution_id}?offset={offset}");
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        self.send_json(self.authed(reqwest::Method::GET, &path).await)
+            .await
     }
 
     /// `POST /api/executions/{id}/cancel` -- cancel a running execution.
     pub async fn cancel_execution(&self, execution_id: &str) -> Result<(), AppError> {
         validate_path_segment(execution_id, "execution_id")?;
         let path = format!("/api/executions/{execution_id}/cancel");
-        self.send_ok(self.authed(reqwest::Method::POST, &path).await).await
+        self.send_ok(self.authed(reqwest::Method::POST, &path).await)
+            .await
     }
 
     // --------------------------------------------------------------------
@@ -502,7 +508,11 @@ impl CloudClient {
 
     /// `POST /api/oauth/authorize` -- initiate OAuth authorization flow.
     pub async fn oauth_authorize(&self) -> Result<CloudOAuthAuthorizeResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/authorize").await).await
+        self.send_json(
+            self.authed(reqwest::Method::POST, "/api/oauth/authorize")
+                .await,
+        )
+        .await
     }
 
     /// `POST /api/oauth/callback` -- exchange authorization code for tokens.
@@ -512,24 +522,34 @@ impl CloudClient {
         state: &str,
     ) -> Result<serde_json::Value, AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/oauth/callback").await
+            .authed(reqwest::Method::POST, "/api/oauth/callback")
+            .await
             .json(&OAuthCallbackBody { code, state });
         self.send_json(req).await
     }
 
     /// `GET /api/oauth/status` -- check current OAuth connection status.
     pub async fn oauth_status(&self) -> Result<CloudOAuthStatusResponse, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/oauth/status").await).await
+        self.send_json(self.authed(reqwest::Method::GET, "/api/oauth/status").await)
+            .await
     }
 
     /// `POST /api/oauth/refresh` -- refresh the OAuth token.
     pub async fn oauth_refresh(&self) -> Result<serde_json::Value, AppError> {
-        self.send_json(self.authed(reqwest::Method::POST, "/api/oauth/refresh").await).await
+        self.send_json(
+            self.authed(reqwest::Method::POST, "/api/oauth/refresh")
+                .await,
+        )
+        .await
     }
 
     /// `DELETE /api/oauth/disconnect` -- disconnect the OAuth integration.
     pub async fn oauth_disconnect(&self) -> Result<(), AppError> {
-        self.send_ok(self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect").await).await
+        self.send_ok(
+            self.authed(reqwest::Method::DELETE, "/api/oauth/disconnect")
+                .await,
+        )
+        .await
     }
 
     // --------------------------------------------------------------------
@@ -539,7 +559,8 @@ impl CloudClient {
     /// `POST /api/personas` -- upsert a persona on the cloud side.
     pub async fn upsert_persona(&self, body: &serde_json::Value) -> Result<(), AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/personas").await
+            .authed(reqwest::Method::POST, "/api/personas")
+            .await
             .json(body);
         self.send_ok(req).await
     }
@@ -556,42 +577,52 @@ impl CloudClient {
         max_monthly_budget_usd: Option<f64>,
     ) -> Result<CloudDeployment, AppError> {
         let req = self
-            .authed(reqwest::Method::POST, "/api/deployments").await
-            .json(&CreateDeploymentBody { persona_id, label, max_monthly_budget_usd });
+            .authed(reqwest::Method::POST, "/api/deployments")
+            .await
+            .json(&CreateDeploymentBody {
+                persona_id,
+                label,
+                max_monthly_budget_usd,
+            });
         self.send_json(req).await
     }
 
     /// `GET /api/deployments` -- list all deployments.
     pub async fn list_deployments(&self) -> Result<Vec<CloudDeployment>, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/deployments").await).await
+        self.send_json(self.authed(reqwest::Method::GET, "/api/deployments").await)
+            .await
     }
 
     /// `GET /api/deployments/{id}` -- get a single deployment.
     pub async fn get_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
         validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}", id);
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        self.send_json(self.authed(reqwest::Method::GET, &path).await)
+            .await
     }
 
     /// `POST /api/deployments/{id}/pause` -- pause a deployment.
     pub async fn pause_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
         validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}/pause", id);
-        self.send_json(self.authed(reqwest::Method::POST, &path).await).await
+        self.send_json(self.authed(reqwest::Method::POST, &path).await)
+            .await
     }
 
     /// `POST /api/deployments/{id}/resume` -- resume a paused deployment.
     pub async fn resume_deployment(&self, id: &str) -> Result<CloudDeployment, AppError> {
         validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}/resume", id);
-        self.send_json(self.authed(reqwest::Method::POST, &path).await).await
+        self.send_json(self.authed(reqwest::Method::POST, &path).await)
+            .await
     }
 
     /// `DELETE /api/deployments/{id}` -- undeploy (remove) a deployment.
     pub async fn delete_deployment(&self, id: &str) -> Result<(), AppError> {
         validate_path_segment(id, "deployment_id")?;
         let path = format!("/api/deployments/{}", id);
-        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
+        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await)
+            .await
     }
 
     // --------------------------------------------------------------------
@@ -600,7 +631,11 @@ impl CloudClient {
 
     /// `GET /api/reviews/pending` -- list pending review requests.
     pub async fn list_pending_reviews(&self) -> Result<Vec<CloudReviewRequest>, AppError> {
-        self.send_json(self.authed(reqwest::Method::GET, "/api/reviews/pending").await).await
+        self.send_json(
+            self.authed(reqwest::Method::GET, "/api/reviews/pending")
+                .await,
+        )
+        .await
     }
 
     /// `POST /api/executions/{execId}/reviews/{reviewId}/respond` -- respond to a review.
@@ -613,9 +648,13 @@ impl CloudClient {
     ) -> Result<serde_json::Value, AppError> {
         validate_path_segment(execution_id, "execution_id")?;
         validate_path_segment(review_id, "review_id")?;
-        let path = format!("/api/executions/{}/reviews/{}/respond", execution_id, review_id);
+        let path = format!(
+            "/api/executions/{}/reviews/{}/respond",
+            execution_id, review_id
+        );
         let req = self
-            .authed(reqwest::Method::POST, &path).await
+            .authed(reqwest::Method::POST, &path)
+            .await
             .json(&serde_json::json!({ "decision": decision, "message": message }));
         self.send_json(req).await
     }
@@ -633,11 +672,22 @@ impl CloudClient {
         offset: Option<u32>,
     ) -> Result<Vec<CloudExecution>, AppError> {
         let mut params: Vec<(&str, String)> = Vec::new();
-        if let Some(pid) = persona_id { params.push(("personaId", pid.to_string())); }
-        if let Some(s) = status { params.push(("status", s.to_string())); }
-        if let Some(l) = limit { params.push(("limit", l.to_string())); }
-        if let Some(o) = offset { params.push(("offset", o.to_string())); }
-        let req = self.authed(reqwest::Method::GET, "/api/executions").await.query(&params);
+        if let Some(pid) = persona_id {
+            params.push(("personaId", pid.to_string()));
+        }
+        if let Some(s) = status {
+            params.push(("status", s.to_string()));
+        }
+        if let Some(l) = limit {
+            params.push(("limit", l.to_string()));
+        }
+        if let Some(o) = offset {
+            params.push(("offset", o.to_string()));
+        }
+        let req = self
+            .authed(reqwest::Method::GET, "/api/executions")
+            .await
+            .query(&params);
         self.send_json(req).await
     }
 
@@ -648,9 +698,16 @@ impl CloudClient {
         period_days: Option<u32>,
     ) -> Result<CloudExecutionStats, AppError> {
         let mut params: Vec<(&str, String)> = Vec::new();
-        if let Some(pid) = persona_id { params.push(("personaId", pid.to_string())); }
-        if let Some(p) = period_days { params.push(("period", p.to_string())); }
-        let req = self.authed(reqwest::Method::GET, "/api/executions/stats").await.query(&params);
+        if let Some(pid) = persona_id {
+            params.push(("personaId", pid.to_string()));
+        }
+        if let Some(p) = period_days {
+            params.push(("period", p.to_string()));
+        }
+        let req = self
+            .authed(reqwest::Method::GET, "/api/executions/stats")
+            .await
+            .query(&params);
         self.send_json(req).await
     }
 
@@ -659,20 +716,34 @@ impl CloudClient {
     // --------------------------------------------------------------------
 
     /// `GET /api/personas/{id}/triggers` -- list triggers for a persona.
-    pub async fn list_persona_triggers(&self, persona_id: &str) -> Result<Vec<CloudTrigger>, AppError> {
+    pub async fn list_persona_triggers(
+        &self,
+        persona_id: &str,
+    ) -> Result<Vec<CloudTrigger>, AppError> {
         validate_path_segment(persona_id, "persona_id")?;
         let path = format!("/api/personas/{}/triggers", persona_id);
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        self.send_json(self.authed(reqwest::Method::GET, &path).await)
+            .await
     }
 
     /// `POST /api/triggers` -- create a new trigger.
-    pub async fn create_trigger(&self, body: &CreateCloudTriggerBody) -> Result<CloudTrigger, AppError> {
-        let req = self.authed(reqwest::Method::POST, "/api/triggers").await.json(body);
+    pub async fn create_trigger(
+        &self,
+        body: &CreateCloudTriggerBody,
+    ) -> Result<CloudTrigger, AppError> {
+        let req = self
+            .authed(reqwest::Method::POST, "/api/triggers")
+            .await
+            .json(body);
         self.send_json(req).await
     }
 
     /// `PUT /api/triggers/{id}` -- update an existing trigger.
-    pub async fn update_trigger(&self, id: &str, body: &UpdateCloudTriggerBody) -> Result<CloudTrigger, AppError> {
+    pub async fn update_trigger(
+        &self,
+        id: &str,
+        body: &UpdateCloudTriggerBody,
+    ) -> Result<CloudTrigger, AppError> {
         validate_path_segment(id, "trigger_id")?;
         let path = format!("/api/triggers/{}", id);
         let req = self.authed(reqwest::Method::PUT, &path).await.json(body);
@@ -683,16 +754,26 @@ impl CloudClient {
     pub async fn delete_trigger(&self, id: &str) -> Result<(), AppError> {
         validate_path_segment(id, "trigger_id")?;
         let path = format!("/api/triggers/{}", id);
-        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await).await
+        self.send_ok(self.authed(reqwest::Method::DELETE, &path).await)
+            .await
     }
 
     /// `GET /api/triggers/{id}/firings` -- list recent firings for a trigger.
-    pub async fn list_trigger_firings(&self, trigger_id: &str, limit: Option<u32>) -> Result<Vec<CloudTriggerFiring>, AppError> {
+    pub async fn list_trigger_firings(
+        &self,
+        trigger_id: &str,
+        limit: Option<u32>,
+    ) -> Result<Vec<CloudTriggerFiring>, AppError> {
         validate_path_segment(trigger_id, "trigger_id")?;
         let path = format!("/api/triggers/{}/firings", trigger_id);
         let mut params: Vec<(&str, String)> = Vec::new();
-        if let Some(l) = limit { params.push(("limit", l.to_string())); }
-        let req = self.authed(reqwest::Method::GET, &path).await.query(&params);
+        if let Some(l) = limit {
+            params.push(("limit", l.to_string()));
+        }
+        let req = self
+            .authed(reqwest::Method::GET, &path)
+            .await
+            .query(&params);
         self.send_json(req).await
     }
 
@@ -700,7 +781,8 @@ impl CloudClient {
     pub async fn trigger_stats(&self, trigger_id: &str) -> Result<serde_json::Value, AppError> {
         validate_path_segment(trigger_id, "trigger_id")?;
         let path = format!("/api/triggers/{}/stats", trigger_id);
-        self.send_json(self.authed(reqwest::Method::GET, &path).await).await
+        self.send_json(self.authed(reqwest::Method::GET, &path).await)
+            .await
     }
 
     /// Returns the base URL of the orchestrator (for building endpoint URLs).
@@ -729,10 +811,7 @@ impl CloudClient {
     }
 
     /// `POST /api/shared-events/subscribe` -- subscribe to a catalog feed.
-    pub async fn shared_events_subscribe(
-        &self,
-        catalog_entry_id: &str,
-    ) -> Result<(), AppError> {
+    pub async fn shared_events_subscribe(&self, catalog_entry_id: &str) -> Result<(), AppError> {
         let req = self
             .authed(reqwest::Method::POST, "/api/shared-events/subscribe")
             .await
@@ -741,10 +820,7 @@ impl CloudClient {
     }
 
     /// `POST /api/shared-events/unsubscribe` -- unsubscribe from a catalog feed.
-    pub async fn shared_events_unsubscribe(
-        &self,
-        catalog_entry_id: &str,
-    ) -> Result<(), AppError> {
+    pub async fn shared_events_unsubscribe(&self, catalog_entry_id: &str) -> Result<(), AppError> {
         let req = self
             .authed(reqwest::Method::POST, "/api/shared-events/unsubscribe")
             .await

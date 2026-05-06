@@ -14,29 +14,49 @@ const CHARS_PER_TOKEN: f64 = 3.8;
 /// These are approximate list prices — actual pricing may vary by contract.
 fn input_cost_per_million(model: &str) -> f64 {
     let lower = model.to_lowercase();
-    if lower.contains("opus") { 15.0 }
-    else if lower.contains("sonnet") { 3.0 }
-    else if lower.contains("haiku") { 0.25 }
-    else if lower.contains("gpt-4o") { 2.5 }
-    else if lower.contains("gpt-4") { 30.0 }
-    else if lower.contains("gpt-3.5") { 0.5 }
-    else if lower.contains("gemini-pro") { 1.25 }
-    else if lower.contains("gemini") { 0.075 }
-    else { 3.0 } // Default to Sonnet-class pricing
+    if lower.contains("opus") {
+        15.0
+    } else if lower.contains("sonnet") {
+        3.0
+    } else if lower.contains("haiku") {
+        0.25
+    } else if lower.contains("gpt-4o") {
+        2.5
+    } else if lower.contains("gpt-4") {
+        30.0
+    } else if lower.contains("gpt-3.5") {
+        0.5
+    } else if lower.contains("gemini-pro") {
+        1.25
+    } else if lower.contains("gemini") {
+        0.075
+    } else {
+        3.0
+    } // Default to Sonnet-class pricing
 }
 
 /// Cost per 1M output tokens by model family (USD).
 fn output_cost_per_million(model: &str) -> f64 {
     let lower = model.to_lowercase();
-    if lower.contains("opus") { 75.0 }
-    else if lower.contains("sonnet") { 15.0 }
-    else if lower.contains("haiku") { 1.25 }
-    else if lower.contains("gpt-4o") { 10.0 }
-    else if lower.contains("gpt-4") { 60.0 }
-    else if lower.contains("gpt-3.5") { 1.5 }
-    else if lower.contains("gemini-pro") { 5.0 }
-    else if lower.contains("gemini") { 0.30 }
-    else { 15.0 } // Default to Sonnet-class pricing
+    if lower.contains("opus") {
+        75.0
+    } else if lower.contains("sonnet") {
+        15.0
+    } else if lower.contains("haiku") {
+        1.25
+    } else if lower.contains("gpt-4o") {
+        10.0
+    } else if lower.contains("gpt-4") {
+        60.0
+    } else if lower.contains("gpt-3.5") {
+        1.5
+    } else if lower.contains("gemini-pro") {
+        5.0
+    } else if lower.contains("gemini") {
+        0.30
+    } else {
+        15.0
+    } // Default to Sonnet-class pricing
 }
 
 /// Estimate token count from character count.
@@ -100,7 +120,11 @@ pub fn build_preview(
 
     ExecutionPreview {
         prompt_preview: if prompt_text.len() > 5000 {
-            format!("{}...\n\n[{} characters total]", &prompt_text[..5000], prompt_text.len())
+            format!(
+                "{}...\n\n[{} characters total]",
+                &prompt_text[..5000],
+                prompt_text.len()
+            )
         } else {
             prompt_text.to_string()
         },

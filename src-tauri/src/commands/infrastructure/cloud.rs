@@ -2,20 +2,22 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
 
+use crate::engine::background::ZombieExecutionEvent;
+use crate::engine::event_registry::event_name;
 use serde::Serialize;
 use tauri::{Emitter, State};
-use crate::engine::event_registry::event_name;
-use crate::engine::background::ZombieExecutionEvent;
 use ts_rs::TS;
 use url::Url;
 
 use crate::cloud;
 use crate::cloud::client::CloudClient;
-use crate::db::models::{UpdateExecutionStatus, CreateSmeeRelayInput, UpdateSmeeRelayInput, SmeeRelay};
+use crate::db::models::{
+    CreateSmeeRelayInput, SmeeRelay, UpdateExecutionStatus, UpdateSmeeRelayInput,
+};
+use crate::db::repos::communication::smee_relays as smee_relay_repo;
 use crate::db::repos::core::personas;
 use crate::db::repos::execution::executions;
 use crate::db::repos::resources::tools;
-use crate::db::repos::communication::smee_relays as smee_relay_repo;
 use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_cloud_auth};
@@ -61,8 +63,8 @@ pub struct CloudDiagnostics {
 /// Enforces HTTPS for all remote hosts. HTTP is only permitted for loopback
 /// addresses (`localhost`, `127.0.0.1`, `[::1]`) to support local development.
 fn validate_cloud_url(raw: &str) -> Result<Url, AppError> {
-    let parsed = Url::parse(raw)
-        .map_err(|e| AppError::Cloud(format!("Invalid orchestrator URL: {e}")))?;
+    let parsed =
+        Url::parse(raw).map_err(|e| AppError::Cloud(format!("Invalid orchestrator URL: {e}")))?;
 
     match parsed.scheme() {
         "https" => Ok(parsed),
@@ -121,9 +123,11 @@ pub async fn cloud_connect(
     // and without this guard two calls could race through health, keyring write,
     // and mutex set — potentially interleaving URL from one call with the API
     // key from another.
-    if state.cloud_connecting.compare_exchange(
-        false, true, Ordering::SeqCst, Ordering::SeqCst,
-    ).is_err() {
+    if state
+        .cloud_connecting
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
         return Err(AppError::Cloud(
             "A cloud connection attempt is already in progress".into(),
         ));
@@ -132,7 +136,9 @@ pub async fn cloud_connect(
     let _guard = ConnectingGuard(Arc::clone(&state.cloud_connecting));
 
     if url.trim().is_empty() {
-        return Err(AppError::Cloud("Cloud orchestrator URL must not be empty".into()));
+        return Err(AppError::Cloud(
+            "Cloud orchestrator URL must not be empty".into(),
+        ));
     }
     if api_key.trim().is_empty() {
         return Err(AppError::Cloud("API key must not be empty".into()));
@@ -146,9 +152,10 @@ pub async fn cloud_connect(
     // Verify the orchestrator is actually reachable before storing credentials
     // and measure round-trip latency of the health check.
     let health_start = Instant::now();
-    client.health().await.map_err(|e| {
-        AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))
-    })?;
+    client
+        .health()
+        .await
+        .map_err(|e| AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}")))?;
     let latency_ms = health_start.elapsed().as_millis() as u64;
 
     // Only persist credentials after we've confirmed the connection works
@@ -157,7 +164,9 @@ pub async fn cloud_connect(
 
     // Push Supabase user token to the cloud client for per-user isolation
     if let Some(ref token) = state.auth.read().await.access_token {
-        client.set_user_token(Some(token.expose_secret().to_string())).await;
+        client
+            .set_user_token(Some(token.expose_secret().to_string()))
+            .await;
     }
 
     *state.cloud_client.lock().await = Some(client);
@@ -181,9 +190,11 @@ pub async fn cloud_reconnect_from_keyring(
     }
 
     // Reject concurrent reconnect attempts (same guard as cloud_connect).
-    if state.cloud_connecting.compare_exchange(
-        false, true, Ordering::SeqCst, Ordering::SeqCst,
-    ).is_err() {
+    if state
+        .cloud_connecting
+        .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
+        .is_err()
+    {
         return Err(AppError::Cloud(
             "A cloud connection attempt is already in progress".into(),
         ));
@@ -205,14 +216,17 @@ pub async fn cloud_reconnect_from_keyring(
     let client = Arc::new(CloudClient::new(url.clone(), api_key)?);
 
     let health_start = Instant::now();
-    client.health().await.map_err(|e| {
-        AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}"))
-    })?;
+    client
+        .health()
+        .await
+        .map_err(|e| AppError::Cloud(format!("Cloud orchestrator is not reachable: {e}")))?;
     let latency_ms = health_start.elapsed().as_millis() as u64;
 
     // Push Supabase user token to the cloud client for per-user isolation
     if let Some(ref token) = state.auth.read().await.access_token {
-        client.set_user_token(Some(token.expose_secret().to_string())).await;
+        client
+            .set_user_token(Some(token.expose_secret().to_string()))
+            .await;
     }
 
     *state.cloud_client.lock().await = Some(client);
@@ -225,19 +239,11 @@ pub async fn cloud_reconnect_from_keyring(
 /// Cancels all active cloud polling loops, clears keyring credentials and
 /// drops the in-memory client.
 #[tauri::command]
-pub async fn cloud_disconnect(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn cloud_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_cloud_auth(&state, "cloud_disconnect").await?;
     // Cancel every in-flight cloud execution so polling loops stop immediately
     // and no further requests are sent to the endpoint.
-    let active_ids: Vec<String> = state
-        .cloud_exec_ids
-        .lock()
-        .await
-        .keys()
-        .cloned()
-        .collect();
+    let active_ids: Vec<String> = state.cloud_exec_ids.lock().await.keys().cloned().collect();
 
     for exec_id in &active_ids {
         state
@@ -553,7 +559,10 @@ pub async fn cloud_execute_persona(
 
     let input_value: Option<serde_json::Value> = input_data
         .as_deref()
-        .map(|s| serde_json::from_str(s).map_err(|e| AppError::Validation(format!("Invalid JSON input: {e}"))))
+        .map(|s| {
+            serde_json::from_str(s)
+                .map_err(|e| AppError::Validation(format!("Invalid JSON input: {e}")))
+        })
         .transpose()?;
 
     let prompt = engine::prompt::assemble_prompt(
@@ -563,7 +572,8 @@ pub async fn cloud_execute_persona(
         None,
         None,
         None,
-        #[cfg(feature = "desktop")] None,
+        #[cfg(feature = "desktop")]
+        None,
     );
 
     let exec = executions::create(&state.db, &persona_id, None, input_data.clone(), None, None)?;
@@ -607,7 +617,11 @@ pub async fn cloud_execute_persona(
         .await;
 
         if !cancelled_clone.load(Ordering::Acquire) {
-            let status = if result.success { crate::engine::types::ExecutionState::Completed } else { crate::engine::types::ExecutionState::Failed };
+            let status = if result.success {
+                crate::engine::types::ExecutionState::Completed
+            } else {
+                crate::engine::types::ExecutionState::Failed
+            };
             let update = UpdateExecutionStatus {
                 status,
                 error_message: result.error,
@@ -654,10 +668,13 @@ pub async fn cloud_execute_persona(
                 );
                 // Notify frontend immediately so user doesn't wait for the
                 // periodic zombie sweep (up to 30 min) to discover the issue.
-                let _ = app_for_emit.emit(event_name::ZOMBIE_EXECUTIONS_DETECTED, ZombieExecutionEvent {
-                    zombie_ids: vec![exec_id.clone()],
-                    count: 1,
-                });
+                let _ = app_for_emit.emit(
+                    event_name::ZOMBIE_EXECUTIONS_DETECTED,
+                    ZombieExecutionEvent {
+                        zombie_ids: vec![exec_id.clone()],
+                        count: 1,
+                    },
+                );
             }
 
             tracing::info!(
@@ -772,9 +789,7 @@ pub async fn cloud_oauth_refresh(
 
 /// Disconnect OAuth credentials from the cloud orchestrator.
 #[tauri::command]
-pub async fn cloud_oauth_disconnect(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn cloud_oauth_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_cloud_auth(&state, "cloud_oauth_disconnect").await?;
     let client = get_cloud_client(&state).await?;
     client.oauth_disconnect().await
@@ -800,7 +815,16 @@ pub async fn cloud_deploy_persona(
 
     // First, sync the persona to the cloud orchestrator so it exists there
     let tools = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(&persona, &tools, None, None, None, None, #[cfg(feature = "desktop")] None);
+    let prompt = engine::prompt::assemble_prompt(
+        &persona,
+        &tools,
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
 
     // Upsert the persona on the cloud side
     let persona_body = serde_json::json!({
@@ -851,7 +875,16 @@ pub async fn cloud_sync_persona(
 
     let persona = personas::get_by_id(&state.db, &persona_id)?;
     let tools_list = tools::get_tools_for_persona(&state.db, &persona_id)?;
-    let prompt = engine::prompt::assemble_prompt(&persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
+    let prompt = engine::prompt::assemble_prompt(
+        &persona,
+        &tools_list,
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
 
     let persona_body = serde_json::json!({
         "id": persona.id,
@@ -957,7 +990,9 @@ pub async fn cloud_respond_to_review(
 ) -> Result<serde_json::Value, AppError> {
     require_cloud_auth(&state, "cloud_respond_to_review").await?;
     let client = get_cloud_client(&state).await?;
-    client.respond_to_review(&execution_id, &review_id, &decision, &message).await
+    client
+        .respond_to_review(&execution_id, &review_id, &decision, &message)
+        .await
 }
 
 // ---------------------------------------------------------------------------
@@ -976,12 +1011,7 @@ pub async fn cloud_list_executions(
     require_cloud_auth(&state, "cloud_list_executions").await?;
     let client = get_cloud_client(&state).await?;
     client
-        .list_executions(
-            persona_id.as_deref(),
-            status.as_deref(),
-            limit,
-            offset,
-        )
+        .list_executions(persona_id.as_deref(), status.as_deref(), limit, offset)
         .await
 }
 
@@ -1095,7 +1125,11 @@ pub async fn cloud_webhook_relay_status(
         active_webhook_triggers: relay.active_webhook_triggers,
         total_relayed: relay.total_relayed,
         error: relay.last_error.clone().or_else(|| {
-            if !connected { Some("Not connected to cloud orchestrator".into()) } else { None }
+            if !connected {
+                Some("Not connected to cloud orchestrator".into())
+            } else {
+                None
+            }
         }),
     })
 }
@@ -1123,9 +1157,7 @@ pub async fn cloud_list_trigger_firings(
 /// / delete commands stay cloud-gated since they interact with the
 /// smee.io forwarding service.
 #[tauri::command]
-pub async fn smee_relay_list(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<SmeeRelay>, AppError> {
+pub async fn smee_relay_list(state: State<'_, Arc<AppState>>) -> Result<Vec<SmeeRelay>, AppError> {
     require_auth(&state).await?;
     smee_relay_repo::list(&state.db)
 }
@@ -1138,10 +1170,14 @@ pub async fn smee_relay_create(
 ) -> Result<SmeeRelay, AppError> {
     require_cloud_auth(&state, "smee_relay_create").await?;
     // Validate URL
-    let stripped = input.channel_url.strip_prefix("https://smee.io/")
+    let stripped = input
+        .channel_url
+        .strip_prefix("https://smee.io/")
         .ok_or_else(|| AppError::Validation("Smee URL must be https://smee.io/<channel>".into()))?;
     if stripped.is_empty() || stripped.contains('/') {
-        return Err(AppError::Validation("Smee URL must be https://smee.io/<channel>".into()));
+        return Err(AppError::Validation(
+            "Smee URL must be https://smee.io/<channel>".into(),
+        ));
     }
     let relay = smee_relay_repo::create(&state.db, input)?;
     state.smee_relay_notifier.notify();
@@ -1170,7 +1206,9 @@ pub async fn smee_relay_set_status(
 ) -> Result<SmeeRelay, AppError> {
     require_cloud_auth(&state, "smee_relay_set_status").await?;
     if !["active", "paused"].contains(&status.as_str()) {
-        return Err(AppError::Validation("Status must be 'active' or 'paused'".into()));
+        return Err(AppError::Validation(
+            "Status must be 'active' or 'paused'".into(),
+        ));
     }
     let relay = smee_relay_repo::set_status(&state.db, &id, &status)?;
     state.smee_relay_notifier.notify();
@@ -1195,4 +1233,3 @@ pub async fn smee_relay_delete(
     state.smee_relay_notifier.notify();
     Ok(())
 }
-

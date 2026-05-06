@@ -2,10 +2,10 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useCallback } from 'react';
 import { parseWorkflowFile } from '@/lib/personas/parsers/workflowParser';
 import { isSupportedFile } from '@/lib/personas/parsers/workflowDetector';
+import { MAX_WORKFLOW_JSON_BYTES } from '@/lib/n8nLimits.generated';
 import type { N8nImportAction } from './useN8nImportReducer';
 
-// Keep in sync with backend: n8n_sessions.rs MAX_WORKFLOW_JSON_BYTES
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = MAX_WORKFLOW_JSON_BYTES;
 
 interface UseWorkflowImportOptions {
   dispatch: React.Dispatch<N8nImportAction>;
@@ -80,7 +80,8 @@ export function useWorkflowImport({
         }
 
         if (file.size > MAX_FILE_SIZE_BYTES) {
-          dispatch({ type: 'SET_ERROR', error: 'File is too large (max 5MB). Please use a smaller workflow export.' });
+          const limitMb = MAX_FILE_SIZE_BYTES / (1024 * 1024);
+          dispatch({ type: 'SET_ERROR', error: `File is too large (max ${limitMb}MB). Please use a smaller workflow export.` });
           return;
         }
 

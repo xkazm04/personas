@@ -4,6 +4,15 @@
 //! due to retryable errors (rate limits, binary not found, session limits).
 //! Implements a circuit breaker pattern: after N consecutive failures per provider,
 //! the provider is "open" (skipped) for a cooldown period before probing again.
+//!
+//! # Relationship to the persona-level circuit breaker
+//!
+//! This is one of **two** circuit breakers in Personas. The other lives in
+//! [`super::healing_orchestrator`] and trips on a persona's recent failed
+//! executions, disabling the persona via `personas.enabled = false`. The two
+//! are independent — they share no state and tripping one does not trip or
+//! reset the other. The full contract (precedence, what each disables, reset
+//! paths) is documented in `docs/architecture/circuit-breakers.md`.
 
 use std::collections::HashMap;
 use std::collections::VecDeque;
@@ -19,8 +28,8 @@ use ts_rs::TS;
 use super::byom::PolicyDecision;
 use super::provider::EngineKind;
 use super::types::ModelProfile;
-use crate::db::DbPool;
 use crate::db::repos::execution::circuit_breaker as cb_repo;
+use crate::db::DbPool;
 
 // =============================================================================
 // Constants
@@ -102,7 +111,6 @@ struct GlobalState {
     paused_at: Option<Instant>,
 }
 
-
 // =============================================================================
 // Diagnostic status types (exported to frontend via ts-rs)
 // =============================================================================
@@ -160,7 +168,11 @@ pub struct CircuitBreakerStatus {
 /// attempts are paused until the cooldown expires -- preventing the failover
 /// chain from amplifying load on already-stressed services.
 pub struct ProviderCircuitBreaker {
-    states: Mutex<(HashMap<EngineKind, CircuitState>, GlobalState, TransitionHistory)>,
+    states: Mutex<(
+        HashMap<EngineKind, CircuitState>,
+        GlobalState,
+        TransitionHistory,
+    )>,
     /// Optional DB pool for persisting state across restarts.
     pool: Option<Arc<DbPool>>,
 }
@@ -177,7 +189,11 @@ struct TransitionHistory {
 impl ProviderCircuitBreaker {
     pub fn new() -> Self {
         Self {
-            states: Mutex::new((HashMap::new(), GlobalState::default(), TransitionHistory::default())),
+            states: Mutex::new((
+                HashMap::new(),
+                GlobalState::default(),
+                TransitionHistory::default(),
+            )),
             pool: None,
         }
     }
@@ -205,16 +221,21 @@ impl ProviderCircuitBreaker {
                                     .signed_duration_since(dt.with_timezone(&Utc))
                                     .to_std()
                                     .unwrap_or(Duration::ZERO);
-                                Instant::now().checked_sub(elapsed).unwrap_or_else(Instant::now)
+                                Instant::now()
+                                    .checked_sub(elapsed)
+                                    .unwrap_or_else(Instant::now)
                             })
                     } else {
                         None
                     };
 
-                    states.insert(kind, CircuitState {
-                        consecutive_failures: row.consecutive_failures,
-                        opened_at,
-                    });
+                    states.insert(
+                        kind,
+                        CircuitState {
+                            consecutive_failures: row.consecutive_failures,
+                            opened_at,
+                        },
+                    );
 
                     tracing::info!(
                         event = "circuit_breaker.restored",
@@ -334,13 +355,16 @@ impl ProviderCircuitBreaker {
                 transition = "paused -> closed",
                 "Global circuit breaker reset after cooldown",
             );
-            Self::push_transition(history, CircuitTransitionEvent {
-                provider: "global".into(),
-                from_state: "paused".into(),
-                to_state: "closed".into(),
-                timestamp: Self::now_iso(),
-                failure_count: 0,
-            });
+            Self::push_transition(
+                history,
+                CircuitTransitionEvent {
+                    provider: "global".into(),
+                    from_state: "paused".into(),
+                    to_state: "closed".into(),
+                    timestamp: Self::now_iso(),
+                    failure_count: 0,
+                },
+            );
             global.paused_at = None;
             global.failure_times.clear();
         }
@@ -358,13 +382,16 @@ impl ProviderCircuitBreaker {
                         transition = "open -> half_open",
                         "Circuit breaker half-open: allowing probe after cooldown",
                     );
-                    Self::push_transition(history, CircuitTransitionEvent {
-                        provider: kind.as_setting().to_string(),
-                        from_state: "open".into(),
-                        to_state: "half_open".into(),
-                        timestamp: Self::now_iso(),
-                        failure_count: state.consecutive_failures,
-                    });
+                    Self::push_transition(
+                        history,
+                        CircuitTransitionEvent {
+                            provider: kind.as_setting().to_string(),
+                            from_state: "open".into(),
+                            to_state: "half_open".into(),
+                            timestamp: Self::now_iso(),
+                            failure_count: state.consecutive_failures,
+                        },
+                    );
                     state.opened_at = None;
                     state.consecutive_failures = 0;
                     true
@@ -401,9 +428,7 @@ impl ProviderCircuitBreaker {
             _ => 0.0,
         };
 
-        let all_kinds = [
-            EngineKind::ClaudeCode,
-        ];
+        let all_kinds = [EngineKind::ClaudeCode];
 
         let providers = all_kinds
             .iter()
@@ -473,13 +498,16 @@ impl ProviderCircuitBreaker {
                     "Circuit breaker closed for {:?} after successful probe",
                     kind,
                 );
-                Self::push_transition(history, CircuitTransitionEvent {
-                    provider: kind.as_setting().to_string(),
-                    from_state: "half_open".into(),
-                    to_state: "closed".into(),
-                    timestamp: Self::now_iso(),
-                    failure_count: 0,
-                });
+                Self::push_transition(
+                    history,
+                    CircuitTransitionEvent {
+                        provider: kind.as_setting().to_string(),
+                        from_state: "half_open".into(),
+                        to_state: "closed".into(),
+                        timestamp: Self::now_iso(),
+                        failure_count: 0,
+                    },
+                );
             }
 
             // Remove at most one failure entry for this provider (the most recent).
@@ -511,7 +539,8 @@ impl ProviderCircuitBreaker {
             // Per-provider tracking
             let state = states.entry(kind).or_default();
             state.consecutive_failures += 1;
-            if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none() {
+            if state.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD && state.opened_at.is_none()
+            {
                 tracing::warn!(
                     event = "circuit_breaker.provider.opened",
                     provider = ?kind,
@@ -619,7 +648,9 @@ pub fn build_failover_chain(
     let mut chain = Vec::new();
 
     // 1. Primary provider with configured model
-    let configured_model = model_profile.and_then(|p| p.model.clone()).filter(|m| !m.is_empty());
+    let configured_model = model_profile
+        .and_then(|p| p.model.clone())
+        .filter(|m| !m.is_empty());
     chain.push(FailoverCandidate {
         engine_kind: primary,
         model: configured_model.clone(),
@@ -631,8 +662,12 @@ pub fn build_failover_chain(
         // Find where the configured model sits in the chain, add everything below it
         let start_idx = configured_model
             .as_deref()
-            .and_then(|m| CLAUDE_MODEL_CHAIN.iter().position(|c| m.contains(c.split('-').nth(1).unwrap_or(""))))
-            .map(|i| i + 1)  // skip the already-added configured model
+            .and_then(|m| {
+                CLAUDE_MODEL_CHAIN
+                    .iter()
+                    .position(|c| m.contains(c.split('-').nth(1).unwrap_or("")))
+            })
+            .map(|i| i + 1) // skip the already-added configured model
             .unwrap_or(0);
 
         for &model in &CLAUDE_MODEL_CHAIN[start_idx..] {
@@ -728,16 +763,34 @@ mod tests {
 
     #[test]
     fn test_classify_error_rate_limit() {
-        assert_eq!(classify_error("rate limit exceeded"), Some(ErrorCategory::RateLimit));
-        assert_eq!(classify_error("Session limit reached"), Some(ErrorCategory::SessionLimit));
-        assert_eq!(classify_error("Usage Limit: quota exceeded"), Some(ErrorCategory::RateLimit));
-        assert_eq!(classify_error("Too many requests, slow down"), Some(ErrorCategory::RateLimit));
-        assert_eq!(classify_error("HTTP 429: rate limited"), Some(ErrorCategory::RateLimit));
+        assert_eq!(
+            classify_error("rate limit exceeded"),
+            Some(ErrorCategory::RateLimit)
+        );
+        assert_eq!(
+            classify_error("Session limit reached"),
+            Some(ErrorCategory::SessionLimit)
+        );
+        assert_eq!(
+            classify_error("Usage Limit: quota exceeded"),
+            Some(ErrorCategory::RateLimit)
+        );
+        assert_eq!(
+            classify_error("Too many requests, slow down"),
+            Some(ErrorCategory::RateLimit)
+        );
+        assert_eq!(
+            classify_error("HTTP 429: rate limited"),
+            Some(ErrorCategory::RateLimit)
+        );
     }
 
     #[test]
     fn test_classify_error_timeout() {
-        assert_eq!(classify_error("Execution timed out after 300s"), Some(ErrorCategory::Timeout));
+        assert_eq!(
+            classify_error("Execution timed out after 300s"),
+            Some(ErrorCategory::Timeout)
+        );
     }
 
     #[test]
@@ -751,7 +804,10 @@ mod tests {
         let before = unclassified_error_count();
         classify_error("some billing issue suspended");
         let after = unclassified_error_count();
-        assert!(after >= before + 1, "unclassified counter should increment for unknown patterns");
+        assert!(
+            after >= before + 1,
+            "unclassified counter should increment for unknown patterns"
+        );
     }
 
     #[test]
@@ -850,7 +906,7 @@ mod tests {
         // Each success removes 1 failure
         cb.record_success(EngineKind::ClaudeCode); // 7
         cb.record_success(EngineKind::ClaudeCode); // 6
-        // 2 more failures: 6 + 2 = 8 < 10
+                                                   // 2 more failures: 6 + 2 = 8 < 10
         cb.record_failure(EngineKind::ClaudeCode);
         cb.record_failure(EngineKind::ClaudeCode);
         assert!(!cb.is_globally_paused());
@@ -882,7 +938,9 @@ mod tests {
         assert!(chain.len() >= 2);
         assert_eq!(chain[0].engine_kind, EngineKind::ClaudeCode);
         // All entries should be ClaudeCode (no cross-provider alternates)
-        assert!(chain.iter().all(|c| c.engine_kind == EngineKind::ClaudeCode));
+        assert!(chain
+            .iter()
+            .all(|c| c.engine_kind == EngineKind::ClaudeCode));
     }
 
     #[test]
@@ -895,7 +953,10 @@ mod tests {
         // First should be configured (sonnet), then haiku, then alternates
         assert_eq!(chain[0].model.as_deref(), Some("claude-sonnet-4-20250514"));
         // Should not have sonnet duplicated
-        let sonnet_count = chain.iter().filter(|c| c.model.as_deref() == Some("claude-sonnet-4-20250514")).count();
+        let sonnet_count = chain
+            .iter()
+            .filter(|c| c.model.as_deref() == Some("claude-sonnet-4-20250514"))
+            .count();
         assert_eq!(sonnet_count, 1);
     }
 
@@ -925,7 +986,9 @@ mod tests {
         }
         // 10th failure: hits global threshold
         let transitions = cb.record_failure(EngineKind::ClaudeCode);
-        assert!(transitions.iter().any(|t| t.provider == "global" && t.to_state == "paused"));
+        assert!(transitions
+            .iter()
+            .any(|t| t.provider == "global" && t.to_state == "paused"));
     }
 
     #[test]
@@ -941,7 +1004,11 @@ mod tests {
         assert_eq!(status.recent_transitions[0].provider, "claude_code");
         assert_eq!(status.recent_transitions[0].to_state, "open");
         // trip_count_1h for Claude should be 1
-        let claude = status.providers.iter().find(|p| p.provider == "claude_code").unwrap();
+        let claude = status
+            .providers
+            .iter()
+            .find(|p| p.provider == "claude_code")
+            .unwrap();
         assert_eq!(claude.trip_count_1h, 1);
     }
 }

@@ -101,12 +101,11 @@ fn load_trusted_peer_ids(pool: &DbPool) -> std::collections::HashSet<String> {
         Ok(c) => c,
         Err(_) => return std::collections::HashSet::new(),
     };
-    let mut stmt = match conn.prepare(
-        "SELECT peer_id FROM trusted_peers WHERE trust_level != 'revoked'"
-    ) {
-        Ok(s) => s,
-        Err(_) => return std::collections::HashSet::new(),
-    };
+    let mut stmt =
+        match conn.prepare("SELECT peer_id FROM trusted_peers WHERE trust_level != 'revoked'") {
+            Ok(s) => s,
+            Err(_) => return std::collections::HashSet::new(),
+        };
     stmt.query_map([], |row| row.get::<_, String>(0))
         .map(|rows| rows.filter_map(|r| r.ok()).collect())
         .unwrap_or_default()
@@ -204,12 +203,7 @@ impl MdnsService {
     }
 
     /// Register this node on the LAN via mDNS.
-    pub fn register(
-        &self,
-        peer_id: &str,
-        display_name: &str,
-        port: u16,
-    ) -> Result<(), AppError> {
+    pub fn register(&self, peer_id: &str, display_name: &str, port: u16) -> Result<(), AppError> {
         let daemon = mdns_sd::ServiceDaemon::new()
             .map_err(|e| AppError::Internal(format!("mDNS daemon creation failed: {e}")))?;
 
@@ -371,12 +365,15 @@ impl MdnsService {
 
                 // Buffer the peer; later entries for the same peer_id overwrite earlier ones.
                 if let Ok(mut buf) = self.pending_peers.lock() {
-                    buf.insert(validated.peer_id, BufferedPeer {
-                        display_name: validated.display_name,
-                        addresses_json,
-                        trust_status: validated.trust_status,
-                        last_seen_at: now,
-                    });
+                    buf.insert(
+                        validated.peer_id,
+                        BufferedPeer {
+                            display_name: validated.display_name,
+                            addresses_json,
+                            trust_status: validated.trust_status,
+                            last_seen_at: now,
+                        },
+                    );
                 }
             }
             mdns_sd::ServiceEvent::ServiceRemoved(_type, fullname) => {
@@ -453,8 +450,7 @@ impl MdnsService {
 
     /// Prune peers not seen within the given timeout.
     pub fn prune_stale_peers(&self, timeout_secs: u64) -> Result<u64, AppError> {
-        let cutoff = chrono::Utc::now()
-            - chrono::Duration::seconds(timeout_secs as i64);
+        let cutoff = chrono::Utc::now() - chrono::Duration::seconds(timeout_secs as i64);
         let cutoff_str = cutoff.to_rfc3339();
 
         let conn = self.pool.get()?;
@@ -479,22 +475,26 @@ impl MdnsService {
              ORDER BY last_seen_at DESC"
         )?;
 
-        let peers = stmt.query_map([], |row| {
-            let addresses_json: String = row.get(2)?;
-            let addresses: Vec<String> =
-                serde_json::from_str(&addresses_json).unwrap_or_default();
+        let peers = stmt
+            .query_map([], |row| {
+                let addresses_json: String = row.get(2)?;
+                let addresses: Vec<String> =
+                    serde_json::from_str(&addresses_json).unwrap_or_default();
 
-            Ok(super::types::DiscoveredPeer {
-                peer_id: row.get(0)?,
-                display_name: row.get(1)?,
-                addresses,
-                last_seen_at: row.get(3)?,
-                first_seen_at: row.get(4)?,
-                is_connected: row.get::<_, i32>(5)? != 0,
-                metadata: row.get(6)?,
-                trust_status: row.get::<_, Option<String>>(7)?.unwrap_or_else(|| "unknown".to_string()),
-            })
-        })?.collect::<Result<Vec<_>, _>>()?;
+                Ok(super::types::DiscoveredPeer {
+                    peer_id: row.get(0)?,
+                    display_name: row.get(1)?,
+                    addresses,
+                    last_seen_at: row.get(3)?,
+                    first_seen_at: row.get(4)?,
+                    is_connected: row.get::<_, i32>(5)? != 0,
+                    metadata: row.get(6)?,
+                    trust_status: row
+                        .get::<_, Option<String>>(7)?
+                        .unwrap_or_else(|| "unknown".to_string()),
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(peers)
     }
@@ -524,7 +524,9 @@ mod tests {
     #[test]
     fn invalid_base58_rejected() {
         // '0', 'O', 'I', 'l' are not in the base58 alphabet
-        assert!(!validate_peer_id("0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl"));
+        assert!(!validate_peer_id(
+            "0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl0OIl"
+        ));
     }
 
     #[test]
@@ -573,9 +575,7 @@ mod tests {
 
     #[test]
     fn addresses_capped_at_max() {
-        let addrs: Vec<String> = (0..20)
-            .map(|i| format!("192.168.1.{}:4242", i))
-            .collect();
+        let addrs: Vec<String> = (0..20).map(|i| format!("192.168.1.{}:4242", i)).collect();
         let result = validate_addresses(addrs);
         assert_eq!(result.len(), MAX_ADDRESSES);
     }

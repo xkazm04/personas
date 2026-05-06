@@ -110,7 +110,8 @@ function computeStats(events: RealtimeEvent[]): RealtimeStats {
 // -- Hook ---------------------------------------------------------
 export function useRealtimeEvents(): UseRealtimeEventsReturn {
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
-  const [droppedCount, setDroppedCount] = useState(0);
+  const [capDroppedCount, setCapDroppedCount] = useState(0);
+  const [earlyDroppedCount, setEarlyDroppedCount] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<RealtimeEvent | null>(
     null
@@ -147,7 +148,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
       const next = [event, ...prev];
       const capped = next.length > 200 ? next.slice(0, 200) : next;
       if (next.length > 200) {
-        setDroppedCount((c) => c + next.length - 200);
+        setCapDroppedCount((c) => c + next.length - 200);
       }
       // Recompute stats from the new data state
       statsRef.current = computeStats(capped);
@@ -180,7 +181,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     }
     pushEvent(raw as RealtimeEvent);
   }, [registerAnimation, pushEvent]);
-  const isConnected = useEventBusListener(handleBusEvent);
+  const isConnected = useEventBusListener(handleBusEvent, setEarlyDroppedCount);
 
   const { wake } = useEventPhaseProgressor({
     active: !isPaused,
@@ -254,7 +255,7 @@ export function useRealtimeEvents(): UseRealtimeEventsReturn {
     isPaused,
     isConnected,
     selectedEvent,
-    droppedCount,
+    droppedCount: capDroppedCount + earlyDroppedCount,
     animationMapRef,
     animTick,
     togglePause,

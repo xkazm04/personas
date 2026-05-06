@@ -89,6 +89,41 @@ export default function ByomSettings() {
 
       <ContentBody centered>
         <div className="space-y-4">
+          {/* Top-level policy issues (unknown providers in allowed/blocked lists)
+              that aren't tied to a routing or compliance rule. Shown above the
+              tabs so the admin sees them no matter which section is active —
+              with a typo'd blocked entry, no per-rule chip would appear and the
+              save button just silently disables. */}
+          {bm.topLevelWarnings.length > 0 && (
+            <div
+              className={`rounded-modal border p-4 flex items-start gap-3 ${
+                bm.topLevelWarnings.some((w) => w.severity === 'error')
+                  ? 'border-red-500/30 bg-red-500/10'
+                  : 'border-amber-500/30 bg-amber-500/10'
+              }`}
+            >
+              <AlertTriangle
+                className={`w-5 h-5 shrink-0 mt-0.5 ${
+                  bm.topLevelWarnings.some((w) => w.severity === 'error')
+                    ? 'text-red-400'
+                    : 'text-amber-400'
+                }`}
+              />
+              <ul className="flex-1 min-w-0 space-y-1">
+                {bm.topLevelWarnings.map((w, i) => (
+                  <li
+                    key={i}
+                    className={`typo-body ${
+                      w.severity === 'error' ? 'text-red-300' : 'text-amber-300'
+                    }`}
+                  >
+                    {w.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Degraded-policy warning when stored JSON is corrupt */}
           {bm.corruptPolicyError && (
             <div className="rounded-modal border border-red-500/30 bg-red-500/10 p-4 flex items-start gap-3">

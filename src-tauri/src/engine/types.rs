@@ -46,10 +46,8 @@ impl ExecutionState {
     ];
 
     /// All active states (execution is in progress).
-    pub const ACTIVE: &'static [ExecutionState] = &[
-        ExecutionState::Queued,
-        ExecutionState::Running,
-    ];
+    pub const ACTIVE: &'static [ExecutionState] =
+        &[ExecutionState::Queued, ExecutionState::Running];
 
     /// Returns true if the execution is still active (not in a terminal state).
     pub fn is_active(&self) -> bool {
@@ -366,10 +364,7 @@ pub struct EphemeralPersona {
 
 impl EphemeralPersona {
     /// Create an EphemeralPersona from a DB-persisted persona and its tools.
-    pub fn from_persisted(
-        persona: Persona,
-        tools: Vec<PersonaToolDefinition>,
-    ) -> Self {
+    pub fn from_persisted(persona: Persona, tools: Vec<PersonaToolDefinition>) -> Self {
         Self {
             persona,
             tools,
@@ -416,8 +411,8 @@ impl EphemeralPersona {
             tools: Option<Vec<DraftToolInput>>,
         }
 
-        let draft: DraftInput = serde_json::from_str(draft_json)
-            .map_err(|e| format!("Invalid draft JSON: {e}"))?;
+        let draft: DraftInput =
+            serde_json::from_str(draft_json).map_err(|e| format!("Invalid draft JSON: {e}"))?;
 
         let now = chrono::Utc::now().to_rfc3339();
         let persona = Persona {
@@ -690,8 +685,14 @@ mod tests {
     #[test]
     fn terminal_set_matches_expected() {
         let expected: Vec<&str> = vec!["completed", "failed", "incomplete", "cancelled"];
-        let actual: Vec<&str> = ExecutionState::TERMINAL.iter().map(|s| s.as_str()).collect();
-        assert_eq!(actual, expected, "TERMINAL set changed — update the TS TERMINAL_STATES constant");
+        let actual: Vec<&str> = ExecutionState::TERMINAL
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
+        assert_eq!(
+            actual, expected,
+            "TERMINAL set changed — update the TS TERMINAL_STATES constant"
+        );
     }
 
     /// Verify the exact active set.
@@ -699,6 +700,9 @@ mod tests {
     fn active_set_matches_expected() {
         let expected: Vec<&str> = vec!["queued", "running"];
         let actual: Vec<&str> = ExecutionState::ACTIVE.iter().map(|s| s.as_str()).collect();
-        assert_eq!(actual, expected, "ACTIVE set changed — update the TS ACTIVE_STATES constant");
+        assert_eq!(
+            actual, expected,
+            "ACTIVE set changed — update the TS ACTIVE_STATES constant"
+        );
     }
 }

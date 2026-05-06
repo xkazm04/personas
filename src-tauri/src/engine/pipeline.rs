@@ -188,7 +188,13 @@ impl PipelineContext {
                     .as_ref()
                     .map(|e| format!(" [ERR: {e}]"))
                     .unwrap_or_default();
-                format!("  {} ({}): {}{}", s.stage.label(), s.stage.boundary(), dur, err)
+                format!(
+                    "  {} ({}): {}{}",
+                    s.stage.label(),
+                    s.stage.boundary(),
+                    dur,
+                    err
+                )
             })
             .collect();
 

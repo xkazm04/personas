@@ -5,7 +5,7 @@ import { useThemeStore } from "@/stores/themeStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
-import { getActiveTourSteps, getTourById, type TourEventKey } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
@@ -14,6 +14,15 @@ import { useTranslation } from '@/i18n/useTranslation';
 const DEFAULT_PANEL_WIDTH = 440;
 
 export default function GuidedTour() {
+  // Precedence contract — see `src/features/onboarding/README.md`
+  // ("Onboarding modal vs Guided Tour"): the modal owns the screen
+  // while it is open. The tour panel is a left-rail coach-mark and
+  // would otherwise paint underneath the BaseModal scrim, leaving the
+  // user with two competing prompts. We early-return null while
+  // `onboardingActive` and rely on `tourActive` itself to be untouched
+  // — when the modal closes (finish/dismiss), the panel naturally
+  // reappears at whatever step it was on.
+  const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourId = useSystemStore((s) => s.tourActiveTourId);
   const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
@@ -114,27 +123,6 @@ export default function GuidedTour() {
     navigateToStep(currentIndex);
   }, [currentIndex, tourActive, navigateToStep, isMinimized]);
 
-  // Auto-complete time-based steps for observability/events tours.
-  // The list is typed against TourEventKey so a typo is a compile error.
-  useEffect(() => {
-    if (!tourActive || !currentStep) return;
-    const timedSteps: readonly TourEventKey[] = [
-      'tour:dashboard-viewed',
-      'tour:activity-explored',
-      'tour:messages-explored',
-      'tour:health-explored',
-      'tour:lab-explored',
-      'tour:events-viewed',
-      'tour:triggers-explored',
-      'tour:chaining-understood',
-      'tour:livestream-viewed',
-    ];
-    if (timedSteps.includes(currentStep.completeOn)) {
-      const timer = setTimeout(() => useSystemStore.getState().emitTourEvent(currentStep.completeOn), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [tourActive, currentStep]);
-
   const handleNext = () => {
     if (allCompleted) { useSystemStore.getState().finishTour(); return; }
     advanceTour();
@@ -147,6 +135,8 @@ export default function GuidedTour() {
   };
 
   if (!tourActive || !currentStep || !tourDef) return null;
+  // Modal-owns-screen precedence (see README "Onboarding modal vs Guided Tour").
+  if (onboardingActive) return null;
   const colors = getStepColors(tourDef.color);
 
   if (isMinimized) {

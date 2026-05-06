@@ -81,7 +81,6 @@ pub fn get_all(
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
         Ok(results)
-
     })
 }
 
@@ -94,12 +93,9 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<TeamMemory, AppError> {
             row_to_team_memory,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("TeamMemory {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("TeamMemory {id}")),
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -115,7 +111,6 @@ pub fn get_by_run(pool: &DbPool, run_id: &str) -> Result<Vec<TeamMemory>, AppErr
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
         Ok(results)
-
     })
 }
 
@@ -136,7 +131,6 @@ pub fn get_for_injection(
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
         Ok(results)
-
     })
 }
 
@@ -175,7 +169,6 @@ pub fn create(pool: &DbPool, input: CreateTeamMemoryInput) -> Result<TeamMemory,
         )?;
 
         get_by_id(pool, &id)
-
     })
 }
 
@@ -189,7 +182,6 @@ pub fn update_importance(pool: &DbPool, id: &str, importance: i32) -> Result<boo
             params![importance, now, id],
         )?;
         Ok(rows > 0)
-
     })
 }
 
@@ -265,7 +257,6 @@ pub fn update(
         )?;
 
         get_by_id(pool, id)
-
     })
 }
 
@@ -274,7 +265,6 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM team_memories WHERE id = ?1", params![id])?;
         Ok(rows > 0)
-
     })
 }
 
@@ -307,7 +297,6 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 
         tx.commit()?;
         Ok(total_deleted)
-
     })
 }
 
@@ -337,7 +326,6 @@ pub fn get_total_count(
         let sql = qb.build_select("SELECT COUNT(*) FROM team_memories");
         let count: i64 = conn.query_row(&sql, qb.params_ref().as_slice(), |row| row.get(0))?;
         Ok(count)
-
     })
 }
 
@@ -383,7 +371,9 @@ pub fn get_stats(
         );
         let mut cat_stmt = conn.prepare(&sql_cat)?;
         let category_counts: Vec<(String, i64)> = cat_stmt
-            .query_map(qb.params_ref().as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+            .query_map(qb.params_ref().as_slice(), |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 
@@ -393,7 +383,9 @@ pub fn get_stats(
         );
         let mut run_stmt = conn.prepare(&sql_run)?;
         let run_counts: Vec<(String, i64)> = run_stmt
-            .query_map(qb.params_ref().as_slice(), |row| Ok((row.get(0)?, row.get(1)?)))?
+            .query_map(qb.params_ref().as_slice(), |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })?
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 
@@ -405,7 +397,6 @@ pub fn get_stats(
             category_counts,
             run_counts,
         })
-
     })
 }
 

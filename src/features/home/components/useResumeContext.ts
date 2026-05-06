@@ -47,6 +47,29 @@ interface PersistedEdit {
   at: number;
 }
 
+// In-process pub/sub for the LAST_EDITED_KEY marker.
+//
+// The hook can't rely on the `storage` event because that only fires in
+// *other* windows/tabs, not in the writer. In a single-window Tauri app
+// every write is same-window, so without an explicit signal the hook
+// wouldn't notice repeat edits to the same persona (no count change, no
+// route change, no Zustand mutation). We keep the marker in localStorage
+// (so it survives a reload) but layer a tiny module-level subscriber list
+// on top so live components can re-read on every write.
+type EditListener = () => void;
+const editListeners = new Set<EditListener>();
+
+function subscribeLastEdited(listener: EditListener): () => void {
+  editListeners.add(listener);
+  return () => { editListeners.delete(listener); };
+}
+
+function notifyLastEditedChange(): void {
+  for (const l of editListeners) {
+    try { l(); } catch { /* listener errors must not break others */ }
+  }
+}
+
 export function readLastEdited(): PersistedEdit | null {
   try {
     const raw = localStorage.getItem(LAST_EDITED_KEY);
@@ -60,17 +83,25 @@ export function readLastEdited(): PersistedEdit | null {
   }
 }
 
-/** Persist a "last edited persona" marker. Call from persona editor on save. */
+/**
+ * Persist a "last edited persona" marker and notify any in-process
+ * subscribers (the Resume banner hook) so they can re-read immediately,
+ * even when the persona count hasn't changed.
+ *
+ * Call from the persona editor on save.
+ */
 export function markPersonaEdited(personaId: string): void {
   try {
     localStorage.setItem(LAST_EDITED_KEY, JSON.stringify({ personaId, at: Date.now() }));
   } catch {
     /* storage full or unavailable */
   }
+  notifyLastEditedChange();
 }
 
 export function clearLastEdited(): void {
   try { localStorage.removeItem(LAST_EDITED_KEY); } catch { /* best-effort */ }
+  notifyLastEditedChange();
 }
 
 export function useResumeContext(): ResumeContext | null {
@@ -83,19 +114,35 @@ export function useResumeContext(): ResumeContext | null {
   const personas = useAgentStore((s) => s.personas);
   const executions = useAgentStore((s) => s.executions);
 
-  // Re-read localStorage when the dependencies change, since markPersonaEdited
-  // mutates a separate channel.
+  // Re-read the LAST_EDITED_KEY marker whenever a write happens.
+  //
+  // Invariant (intentional, documented contract): the only signal that
+  // causes a re-read is `markPersonaEdited`/`clearLastEdited` firing the
+  // in-process subscriber list. We do NOT key off `personas.length` (the
+  // old behavior), because editing the same persona twice in a row leaves
+  // the count stable and would surface a stale name. The cross-tab
+  // `storage` event isn't relevant for a single-window Tauri shell.
   const [lastEdited, setLastEdited] = useState<PersistedEdit | null>(() => readLastEdited());
-  useEffect(() => {
-    setLastEdited(readLastEdited());
-  }, [personas.length]);
+  useEffect(() => subscribeLastEdited(() => setLastEdited(readLastEdited())), []);
 
   // 1. Failure (highest priority). Only count failures within FAILURE_MAX_AGE_MS.
-  const recentFailure = executions.find((e) => {
-    if (e.status !== 'failed') return false;
-    const ts = e.created_at ? Date.parse(e.created_at) : NaN;
-    return Number.isFinite(ts) && Date.now() - ts < FAILURE_MAX_AGE_MS;
-  });
+  //    `executions` order is not guaranteed to be sorted by recency, so we
+  //    explicitly pick the most recent failure rather than `find()` which
+  //    would return whichever happened to be first in the array. We also
+  //    clamp negative age diffs (future-dated created_at from clock skew)
+  //    so they don't sneak past the FAILURE_MAX_AGE_MS check.
+  const now = Date.now();
+  const recentFailure = executions
+    .map((e) => {
+      if (e.status !== 'failed') return null;
+      const ts = e.created_at ? Date.parse(e.created_at) : NaN;
+      if (!Number.isFinite(ts)) return null;
+      const age = Math.max(0, now - ts);
+      if (age >= FAILURE_MAX_AGE_MS) return null;
+      return { execution: e, ts };
+    })
+    .filter((x): x is { execution: typeof executions[number]; ts: number } => x !== null)
+    .sort((a, b) => b.ts - a.ts)[0]?.execution;
   if (recentFailure) {
     const persona = personas.find((p) => p.id === recentFailure.persona_id);
     return {

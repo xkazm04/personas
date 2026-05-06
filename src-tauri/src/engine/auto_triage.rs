@@ -377,14 +377,8 @@ fn load_principles_and_context(
 
 fn apply_verdict(ctx: &SpawnedEvaluatorContext, decision: AutoTriageDecision) {
     let (status, audit_tag) = match decision.verdict {
-        AutoTriageVerdict::Approve => (
-            ManualReviewStatus::Approved,
-            "review.auto_triage.approved",
-        ),
-        AutoTriageVerdict::Reject => (
-            ManualReviewStatus::Rejected,
-            "review.auto_triage.rejected",
-        ),
+        AutoTriageVerdict::Approve => (ManualReviewStatus::Approved, "review.auto_triage.approved"),
+        AutoTriageVerdict::Reject => (ManualReviewStatus::Rejected, "review.auto_triage.rejected"),
     };
     let note = format!(
         "auto_triage LLM verdict: {} — {}",
@@ -523,7 +517,9 @@ mod tests {
     fn sample_request() -> AutoTriageRequest {
         AutoTriageRequest {
             review_title: "Outbound email draft for Q4 budget".to_string(),
-            review_description: Some("Drafted reply to CFO; flagging for human glance.".to_string()),
+            review_description: Some(
+                "Drafted reply to CFO; flagging for human glance.".to_string(),
+            ),
             review_severity: Some("medium".to_string()),
             review_context_data: Some(r#"{"recipient":"cfo@example.com"}"#.to_string()),
             review_suggested_actions: Some("Send as drafted".to_string()),
@@ -709,4 +705,3 @@ Done."#;
         assert_eq!(extract_review_policy_context(&json, "uc_missing"), None);
     }
 }
-

@@ -206,11 +206,7 @@ pub fn get_results_by_run(
     })
 }
 
-pub fn mark_adopted(
-    pool: &DbPool,
-    result_id: &str,
-    persona_id: &str,
-) -> Result<(), AppError> {
+pub fn mark_adopted(pool: &DbPool, result_id: &str, persona_id: &str) -> Result<(), AppError> {
     timed_query!("persona_genome", "persona_genome::mark_adopted", {
         let conn = pool.get()?;
         conn.execute(

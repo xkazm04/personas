@@ -5,7 +5,9 @@ use serde::Deserialize;
 use crate::db::models::{Persona, PersonaDesignReview};
 
 use super::str_utils::truncate_str;
-use super::topology_types::{BlueprintConnection, BlueprintMember, TopologyBlueprint, compute_dag_layout};
+use super::topology_types::{
+    compute_dag_layout, BlueprintConnection, BlueprintMember, TopologyBlueprint,
+};
 
 // ============================================================================
 // LLM response types (internal -- parsed from Claude output)

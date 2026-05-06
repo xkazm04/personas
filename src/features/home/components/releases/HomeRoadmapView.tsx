@@ -22,6 +22,7 @@
  *
  * i18n: see `.claude/CLAUDE.md` → "Internationalization".
  */
+import * as Sentry from '@sentry/react';
 import type { Release, ReleaseItem, ReleaseItemPriority, ReleaseItemStatus } from '@/data/releases';
 import type { LiveRoadmap, LiveRoadmapItem } from '@/api/liveRoadmap';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
@@ -63,12 +64,53 @@ const PRIORITIES: ReleaseItemPriority[] = ['now', 'next', 'later'];
 const KNOWN_STATUSES: ReadonlySet<ReleaseItemStatus> = new Set(['in_progress', 'planned', 'completed']);
 const KNOWN_PRIORITIES: ReadonlySet<ReleaseItemPriority> = new Set(['now', 'next', 'later']);
 
-function narrowStatus(raw: string | null | undefined): ReleaseItemStatus {
-  return raw && KNOWN_STATUSES.has(raw as ReleaseItemStatus) ? (raw as ReleaseItemStatus) : 'planned';
+/**
+ * Narrow a server-supplied `status` string to a `ReleaseItemStatus` known
+ * to this build.
+ *
+ * **Policy** (chosen 2026-05-05): unknown values fall back to `'planned'`
+ * so a future server-only status like `'archived'` still renders in the
+ * roadmap rather than being dropped. The fallback is a *visible* demotion
+ * (the item shows up in the planned bucket / lane), but to make the
+ * forward-compat trap observable we leave a Sentry breadcrumb whenever
+ * narrowing actually rewrites a value. If breadcrumbs start firing on a
+ * given build we know the desktop is running behind the live-roadmap
+ * schema and need to ship support for the new value.
+ *
+ * Live-roadmap is the one channel where the desktop binary can outpace the
+ * server schema in either direction; silent demotion would otherwise be
+ * invisible until a user complained.
+ */
+function narrowStatus(raw: string | null | undefined, itemId?: string): ReleaseItemStatus {
+  if (raw && KNOWN_STATUSES.has(raw as ReleaseItemStatus)) return raw as ReleaseItemStatus;
+  if (raw) {
+    Sentry.addBreadcrumb({
+      category: 'live-roadmap',
+      message: `narrowStatus: unknown value '${raw}' coerced to 'planned'`,
+      level: 'info',
+      data: itemId ? { itemId } : undefined,
+    });
+  }
+  return 'planned';
 }
 
-function narrowPriority(raw: string | null | undefined): ReleaseItemPriority {
-  return raw && KNOWN_PRIORITIES.has(raw as ReleaseItemPriority) ? (raw as ReleaseItemPriority) : 'later';
+/**
+ * Narrow a server-supplied `priority` string to a `ReleaseItemPriority`
+ * known to this build. Same forward-compat policy as {@link narrowStatus}:
+ * unknown → `'later'` lane, with a Sentry breadcrumb so we can see when
+ * the schema drifts ahead.
+ */
+function narrowPriority(raw: string | null | undefined, itemId?: string): ReleaseItemPriority {
+  if (raw && KNOWN_PRIORITIES.has(raw as ReleaseItemPriority)) return raw as ReleaseItemPriority;
+  if (raw) {
+    Sentry.addBreadcrumb({
+      category: 'live-roadmap',
+      message: `narrowPriority: unknown value '${raw}' coerced to 'later'`,
+      level: 'info',
+      data: itemId ? { itemId } : undefined,
+    });
+  }
+  return 'later';
 }
 
 /** Build a DisplayItem from the bundled JSON + i18n entry. */
@@ -99,10 +141,35 @@ function fromLive(
     id: item.id,
     title: content?.title ?? `[roadmap.${item.id}]`,
     description: content?.description ?? '',
-    status: narrowStatus(item.status),
-    priority: narrowPriority(item.priority),
+    status: narrowStatus(item.status, item.id),
+    priority: narrowPriority(item.priority, item.id),
     sort_order: item.sortOrder ?? fallbackOrder,
   };
+}
+
+/**
+ * Drop entries with duplicate ids, keeping the first occurrence. Live
+ * roadmap content is server-authored and only schema-validated, so a
+ * content-author mistake can ship duplicate ids. Without this dedupe the
+ * downstream `filter(i => i.id !== hero.id)` would strip *every* matching
+ * card, and React would log key-collision warnings for the lane lists.
+ */
+function dedupeById(items: DisplayItem[]): DisplayItem[] {
+  const seen = new Set<string>();
+  const out: DisplayItem[] = [];
+  for (const item of items) {
+    if (seen.has(item.id)) {
+      Sentry.addBreadcrumb({
+        category: 'live-roadmap',
+        message: `dedupeById: dropped duplicate id '${item.id}'`,
+        level: 'warning',
+      });
+      continue;
+    }
+    seen.add(item.id);
+    out.push(item);
+  }
+  return out;
 }
 
 function buildDisplayItems(
@@ -113,13 +180,11 @@ function buildDisplayItems(
 ): DisplayItem[] {
   if (liveOverride) {
     const locale = liveOverride.i18n[language] ?? liveOverride.i18n.en;
-    return liveOverride.release.items
-      .map((item, idx) => fromLive(item, idx + 1, locale))
-      .sort((a, b) => a.sort_order - b.sort_order);
+    const built = liveOverride.release.items.map((item, idx) => fromLive(item, idx + 1, locale));
+    return dedupeById(built).sort((a, b) => a.sort_order - b.sort_order);
   }
-  return release.items
-    .map((item, idx) => fromBundled(item, idx + 1, bundledItems))
-    .sort((a, b) => a.sort_order - b.sort_order);
+  const built = release.items.map((item, idx) => fromBundled(item, idx + 1, bundledItems));
+  return dedupeById(built).sort((a, b) => a.sort_order - b.sort_order);
 }
 
 function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {
@@ -253,9 +318,12 @@ export default function HomeRoadmapView({
 
   // Hero: first in-progress item, or fall back to the first overall.
   // The hero is excluded from the lanes below so it's not duplicated.
+  // Reference equality (not id equality) — `items` is deduped above, so
+  // every entry has a unique id, but matching by reference still keeps us
+  // robust if the dedupe is ever loosened or removed.
   const hero = items.find((i) => i.status === 'in_progress') ?? items[0];
   if (!hero) return null;
-  const remaining = items.filter((i) => i.id !== hero.id);
+  const remaining = items.filter((i) => i !== hero);
 
   return (
     <div className="relative">

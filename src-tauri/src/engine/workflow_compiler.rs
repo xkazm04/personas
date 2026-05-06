@@ -1,25 +1,34 @@
-//! Workflow Compiler — translates a natural-language workflow description into a
-//! deployable pipeline topology.
+//! `WorkflowCompiler` — natural-language workflow description → deployable
+//! multi-persona team topology.
 //!
-//! Implements `CompilationPipeline` for workflow compilation.  The compiler is
-//! the higher-order glue between the topology builder (which selects and
-//! arranges personas) and the persistence layer (teams, members, connections).
+//! See [`engine/README.md`](./README.md) for the full decision matrix and the
+//! boundary against `compiler.rs` and `intent_compiler.rs`. Those two compile
+//! a *single* persona; this one composes *N* existing personas into a graph.
 //!
-//! Given prose like:
-//!
-//!   "When a PR is opened, have a security reviewer check for vulnerabilities,
-//!    a code quality reviewer check style, and a technical writer draft
-//!    changelog entries, then aggregate results and post a summary comment"
-//!
-//! the compiler:
-//!   1. Calls [`build_llm_topology_prompt`] to produce a [`TopologyBlueprint`]
-//!   2. Persists the blueprint as a new [`PersonaTeam`] with members &
-//!      connections in the database
-//!   3. Optionally generates chain-trigger configurations and JSONPath
-//!      predicates for each connection so the pipeline is immediately
-//!      deployable
-//!   4. Returns a [`CompiledWorkflow`] that the frontend can visualise on the
-//!      composition canvas
+//! - **Input:** a `String` workflow description (e.g. "When a PR is opened,
+//!   have a security reviewer check for vulnerabilities…"). The trait
+//!   `Input` is `String`; the persistence entry point [`persist_blueprint`]
+//!   takes the description plus a pre-resolved [`TopologyBlueprint`] (the
+//!   blueprint is produced upstream by `engine::llm_topology`).
+//! - **Output:** [`CompiledWorkflow`] — a [`PersonaTeam`] plus its
+//!   [`PersonaTeamMember`] / [`PersonaTeamConnection`] rows persisted in a
+//!   single SQLite transaction, with the original blueprint preserved for
+//!   canvas rendering.
+//! - **Caller:** picked by
+//!   [`commands::teams::teams::compose_team_from_workflow`](crate::commands)
+//!   after `run_llm_topology_request` has produced the blueprint. The trait
+//!   impl's `assemble_prompt` is a vestigial stub — the real prompt comes
+//!   from `engine::llm_topology::build_llm_topology_prompt`, which needs
+//!   persona/template context this compiler doesn't carry.
+//! - **Delegated:** topology prompt assembly lives in
+//!   `engine::llm_topology`; blueprint type is in
+//!   `engine::topology_types`. This module owns persistence and the trait
+//!   wiring only.
+//! - **Duplicated vs. the persona compilers:** **none in the prompt-assembly
+//!   path** — workflow prompts have a different shape (topology blueprint
+//!   JSON) and a different output type (`TopologyBlueprint`, not the design
+//!   `serde_json::Value`). The only overlap is the [`CompilationPipeline`]
+//!   trait itself.
 
 use std::time::Instant;
 
@@ -149,7 +158,9 @@ pub fn persist_blueprint(
 
     // Use the pipeline's validate stage for connection validation.
     let mut blueprint_clone = blueprint.clone();
-    WorkflowCompiler.validate(&mut blueprint_clone).map_err(AppError::Validation)?;
+    WorkflowCompiler
+        .validate(&mut blueprint_clone)
+        .map_err(AppError::Validation)?;
 
     // --- Single connection + transaction for the entire persistence ---
     let mut conn = pool.get()?;
@@ -206,8 +217,7 @@ pub fn persist_blueprint(
     //    connection indices to actual member IDs.
     let members_start = Instant::now();
     let mut member_ids: Vec<String> = Vec::with_capacity(member_count);
-    let mut persisted_members: Vec<PersonaTeamMember> =
-        Vec::with_capacity(member_count);
+    let mut persisted_members: Vec<PersonaTeamMember> = Vec::with_capacity(member_count);
 
     for bm in &blueprint.members {
         let mid = uuid::Uuid::new_v4().to_string();
@@ -366,15 +376,13 @@ mod tests {
 
         let mut bp = TopologyBlueprint {
             description: "test".into(),
-            members: vec![
-                BlueprintMember {
-                    persona_id: "p1".into(),
-                    persona_name: "Test".into(),
-                    role: "worker".into(),
-                    position_x: 0.0,
-                    position_y: 0.0,
-                },
-            ],
+            members: vec![BlueprintMember {
+                persona_id: "p1".into(),
+                persona_name: "Test".into(),
+                role: "worker".into(),
+                position_x: 0.0,
+                position_y: 0.0,
+            }],
             connections: vec![BlueprintConnection {
                 source_index: 0,
                 target_index: 0,

@@ -191,8 +191,8 @@ pub async fn run_consolidation(pool: &UserDbPool) -> Result<String, AppError> {
                 continue;
             }
             let item_id = format!("citem_{}", short_uuid());
-            let sources_json = serde_json::to_string(&raw.sources)
-                .unwrap_or_else(|_| "[]".to_string());
+            let sources_json =
+                serde_json::to_string(&raw.sources).unwrap_or_else(|_| "[]".to_string());
             tx.execute(
                 "INSERT INTO companion_consolidation_item
                  (id, consolidation_id, kind, scope, fact_key, proposed_value, sources_json,
@@ -546,10 +546,7 @@ fn is_valid_scope(s: &str) -> bool {
     matches!(s, "user" | "project" | "world")
 }
 
-fn build_consolidation_prompt(
-    episodes: &[episodic::Episode],
-    facts: &[semantic::Fact],
-) -> String {
+fn build_consolidation_prompt(episodes: &[episodic::Episode], facts: &[semantic::Fact]) -> String {
     let mut p = String::new();
     p.push_str(
         "You are running a memory consolidation pass for Athena, a long-term \
@@ -612,7 +609,12 @@ fn build_consolidation_prompt(
                 key = f.key,
                 imp = f.importance,
                 conf = f.confidence,
-                value = f.value.replace('\n', " ").chars().take(280).collect::<String>(),
+                value = f
+                    .value
+                    .replace('\n', " ")
+                    .chars()
+                    .take(280)
+                    .collect::<String>(),
             ));
         }
         p.push('\n');
@@ -721,7 +723,12 @@ async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError>
 
     timeout(CONSOLIDATION_TIMEOUT, collect)
         .await
-        .map_err(|_| AppError::Internal(format!("consolidation timed out after {:?}", CONSOLIDATION_TIMEOUT)))??;
+        .map_err(|_| {
+            AppError::Internal(format!(
+                "consolidation timed out after {:?}",
+                CONSOLIDATION_TIMEOUT
+            ))
+        })??;
 
     let _ = stderr_handle.await;
     let status = child

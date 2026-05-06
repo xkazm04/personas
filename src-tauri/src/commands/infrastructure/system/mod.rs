@@ -23,8 +23,7 @@ pub async fn open_external_url(url: String) -> Result<(), AppError> {
 
     tracing::info!(url = %trimmed, "open_external_url requested");
 
-    open::that(trimmed)
-        .map_err(|e| AppError::Internal(format!("Failed to open URL: {e}")))?;
+    open::that(trimmed).map_err(|e| AppError::Internal(format!("Failed to open URL: {e}")))?;
 
     Ok(())
 }

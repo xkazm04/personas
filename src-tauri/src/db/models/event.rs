@@ -45,7 +45,10 @@ impl PersonaEventStatus {
             "dead_letter" => Self::DeadLetter,
             "discarded" => Self::Discarded,
             other => {
-                tracing::warn!("Unknown PersonaEventStatus '{}', defaulting to Pending", other);
+                tracing::warn!(
+                    "Unknown PersonaEventStatus '{}', defaulting to Pending",
+                    other
+                );
                 Self::Pending
             }
         }

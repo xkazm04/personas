@@ -24,29 +24,38 @@ use crate::keyed_pool::{KeyedResourcePool, PoolHandle};
 /// dropped with a warning.
 const BLOCKED_ENV_NAMES: &[&str] = &[
     // OS-level / linker injection
-    "PATH", "LD_PRELOAD", "LD_LIBRARY_PATH",
-    "DYLD_INSERT_LIBRARIES", "DYLD_LIBRARY_PATH",
+    "PATH",
+    "LD_PRELOAD",
+    "LD_LIBRARY_PATH",
+    "DYLD_INSERT_LIBRARIES",
+    "DYLD_LIBRARY_PATH",
     // System identity & shell
-    "HOME", "SHELL", "USER", "LOGNAME",
-    "SYSTEMROOT", "COMSPEC", "WINDIR",
-    "TEMP", "TMP",
+    "HOME",
+    "SHELL",
+    "USER",
+    "LOGNAME",
+    "SYSTEMROOT",
+    "COMSPEC",
+    "WINDIR",
+    "TEMP",
+    "TMP",
     // Language runtime code-execution vectors
-    "NODE_OPTIONS",       // --require= arbitrary module loading
-    "NODE_PATH",          // hijack Node module resolution
-    "PYTHONPATH",         // hijack Python imports
-    "PYTHONSTARTUP",      // execute Python script at interpreter start
-    "PERL5OPT",           // inject Perl command-line flags
-    "PERL5LIB",           // hijack Perl module search path
-    "RUBYOPT",            // inject Ruby flags (e.g. -r for require)
-    "RUBYLIB",            // hijack Ruby load path
-    "JAVA_TOOL_OPTIONS",  // JVM agent/flag injection
-    "JAVA_OPTIONS",       // alternative JVM flag injection
-    "_JAVA_OPTIONS",      // alternative JVM flag injection
-    "CLASSPATH",          // hijack Java class loading
+    "NODE_OPTIONS",         // --require= arbitrary module loading
+    "NODE_PATH",            // hijack Node module resolution
+    "PYTHONPATH",           // hijack Python imports
+    "PYTHONSTARTUP",        // execute Python script at interpreter start
+    "PERL5OPT",             // inject Perl command-line flags
+    "PERL5LIB",             // hijack Perl module search path
+    "RUBYOPT",              // inject Ruby flags (e.g. -r for require)
+    "RUBYLIB",              // hijack Ruby load path
+    "JAVA_TOOL_OPTIONS",    // JVM agent/flag injection
+    "JAVA_OPTIONS",         // alternative JVM flag injection
+    "_JAVA_OPTIONS",        // alternative JVM flag injection
+    "CLASSPATH",            // hijack Java class loading
     "DOTNET_STARTUP_HOOKS", // .NET assembly injection at startup
-    "BASH_ENV",           // execute script when bash starts non-interactively
-    "ENV",                // execute script when sh starts
-    "ZDOTDIR",            // redirect zsh config to attacker-controlled dir
+    "BASH_ENV",             // execute script when bash starts non-interactively
+    "ENV",                  // execute script when sh starts
+    "ZDOTDIR",              // redirect zsh config to attacker-controlled dir
 ];
 
 /// Sanitize an env var name: strip non-alphanumeric/underscore chars, uppercase,

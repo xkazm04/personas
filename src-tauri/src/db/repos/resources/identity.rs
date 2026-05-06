@@ -60,7 +60,6 @@ pub fn get_local_identity(pool: &DbPool) -> Result<Option<PeerIdentity>, AppErro
         )
         .optional()
         .map_err(AppError::Database)
-
     })
 }
 
@@ -83,7 +82,6 @@ pub fn upsert_local_identity(
             params![peer_id, public_key, display_name],
         )?;
         get_local_identity(pool)?.ok_or_else(|| AppError::Internal("Identity upsert failed".into()))
-
     })
 }
 
@@ -99,7 +97,6 @@ pub fn update_display_name(pool: &DbPool, display_name: &str) -> Result<PeerIden
             return Err(AppError::NotFound("Local identity not initialized".into()));
         }
         get_local_identity(pool)?.ok_or_else(|| AppError::NotFound("Local identity".into()))
-
     })
 }
 
@@ -115,7 +112,6 @@ pub fn list_trusted_peers(pool: &DbPool) -> Result<Vec<TrustedPeer>, AppError> {
         let rows = stmt.query_map([], row_to_trusted_peer)?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
-
     })
 }
 
@@ -134,7 +130,6 @@ pub fn get_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<TrustedPeer, App
             }
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -176,7 +171,6 @@ pub fn add_trusted_peer(
             params![peer_id, public_key, display_name, notes],
         )?;
         get_trusted_peer(pool, peer_id)
-
     })
 }
 
@@ -215,7 +209,8 @@ pub fn update_trusted_peer(
                 peer_idx,
             );
             params_vec.push(Box::new(peer_id.to_string()));
-            let params_ref: Vec<&dyn rusqlite::types::ToSql> = params_vec.iter().map(|p| p.as_ref()).collect();
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                params_vec.iter().map(|p| p.as_ref()).collect();
             let changed = conn.execute(&sql, params_ref.as_slice())?;
             if changed == 0 {
                 return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
@@ -223,7 +218,6 @@ pub fn update_trusted_peer(
         }
 
         get_trusted_peer(pool, peer_id)
-
     })
 }
 
@@ -239,7 +233,6 @@ pub fn revoke_peer_trust(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
             return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
         }
         Ok(())
-
     })
 }
 
@@ -255,7 +248,6 @@ pub fn delete_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<(), AppError>
             return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
         }
         Ok(())
-
     })
 }
 
@@ -268,7 +260,6 @@ pub fn update_last_seen(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
             params![peer_id],
         )?;
         Ok(())
-
     })
 }
 

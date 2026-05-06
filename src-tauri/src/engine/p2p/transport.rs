@@ -39,7 +39,8 @@ impl QuicTransport {
 
         endpoint.set_default_client_config(client_config);
 
-        let local = endpoint.local_addr()
+        let local = endpoint
+            .local_addr()
             .map_err(|e| AppError::Internal(format!("Failed to get local addr: {e}")))?;
 
         tracing::info!(addr = %local, "QUIC endpoint bound");
@@ -52,25 +53,26 @@ impl QuicTransport {
     /// Accept an incoming QUIC connection.
     pub async fn accept(&self) -> Result<quinn::Connection, AppError> {
         let endpoint = self.endpoint.read().await;
-        let endpoint = endpoint.as_ref().ok_or_else(|| {
-            AppError::Internal("QUIC endpoint not bound".into())
-        })?;
+        let endpoint = endpoint
+            .as_ref()
+            .ok_or_else(|| AppError::Internal("QUIC endpoint not bound".into()))?;
 
-        let incoming = endpoint.accept().await.ok_or_else(|| {
-            AppError::Internal("QUIC endpoint closed".into())
-        })?;
+        let incoming = endpoint
+            .accept()
+            .await
+            .ok_or_else(|| AppError::Internal("QUIC endpoint closed".into()))?;
 
-        incoming.await.map_err(|e| {
-            AppError::Internal(format!("Failed to accept QUIC connection: {e}"))
-        })
+        incoming
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to accept QUIC connection: {e}")))
     }
 
     /// Connect to a remote peer.
     pub async fn connect(&self, addr: SocketAddr) -> Result<quinn::Connection, AppError> {
         let endpoint = self.endpoint.read().await;
-        let endpoint = endpoint.as_ref().ok_or_else(|| {
-            AppError::Internal("QUIC endpoint not bound".into())
-        })?;
+        let endpoint = endpoint
+            .as_ref()
+            .ok_or_else(|| AppError::Internal("QUIC endpoint not bound".into()))?;
 
         // Use "personas" as the server name (SNI) -- our verifier ignores it
         let conn = endpoint
@@ -98,7 +100,8 @@ fn build_tls_configs(
         .map_err(|e| AppError::Internal(format!("Key pair generation error: {e}")))?;
     let cert_params = rcgen::CertificateParams::new(subject_alt_names)
         .map_err(|e| AppError::Internal(format!("Cert params error: {e}")))?;
-    let cert = cert_params.self_signed(&key_pair)
+    let cert = cert_params
+        .self_signed(&key_pair)
         .map_err(|e| AppError::Internal(format!("Self-signed cert error: {e}")))?;
 
     let cert_der = cert.der().clone();
@@ -118,7 +121,7 @@ fn build_tls_configs(
 
     let server_config = quinn::ServerConfig::with_crypto(Arc::new(
         quinn::crypto::rustls::QuicServerConfig::try_from(server_crypto)
-            .map_err(|e| AppError::Internal(format!("QUIC server config error: {e}")))?
+            .map_err(|e| AppError::Internal(format!("QUIC server config error: {e}")))?,
     ));
 
     // Client config: skip server cert verification (we verify peer_id in protocol)
@@ -133,7 +136,7 @@ fn build_tls_configs(
 
     let client_config = quinn::ClientConfig::new(Arc::new(
         quinn::crypto::rustls::QuicClientConfig::try_from(client_crypto)
-            .map_err(|e| AppError::Internal(format!("QUIC client config error: {e}")))?
+            .map_err(|e| AppError::Internal(format!("QUIC client config error: {e}")))?,
     ));
 
     Ok((server_config, client_config))

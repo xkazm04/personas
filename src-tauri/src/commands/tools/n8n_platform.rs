@@ -64,6 +64,9 @@ pub async fn n8n_trigger_webhook(
     require_privileged(&state, "n8n_trigger_webhook").await?;
     let client = n8n::build_client_from_credential(&state.db, &credential_id)?;
     client
-        .trigger_webhook(&webhook_url, &body.unwrap_or(serde_json::Value::Object(Default::default())))
+        .trigger_webhook(
+            &webhook_url,
+            &body.unwrap_or(serde_json::Value::Object(Default::default())),
+        )
         .await
 }

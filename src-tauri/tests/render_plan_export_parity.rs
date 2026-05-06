@@ -8,7 +8,7 @@
 use std::path::Path;
 
 use app_lib::render_plan::compile::{
-    AudioClipInput, Composition, CompileDeps, CompileOptions, ImageItemInput, TextItemInput,
+    AudioClipInput, CompileDeps, CompileOptions, Composition, ImageItemInput, TextItemInput,
     TimelineItem, TransitionMode, VideoClipInput,
 };
 use app_lib::render_plan::{build_ffmpeg_args, compile};
@@ -293,7 +293,9 @@ fn image_overlay_emits_overlay_filter_chain() {
     let args = args_for(&comp);
 
     // Image input comes with `-loop 1`
-    assert!(args.windows(3).any(|w| w == ["-loop".to_string(), "1".to_string(), "-i".to_string()]));
+    assert!(args
+        .windows(3)
+        .any(|w| w == ["-loop".to_string(), "1".to_string(), "-i".to_string()]));
 
     let fc = joined_filters(&args).unwrap();
     assert!(fc.contains("format=rgba"));
@@ -314,7 +316,10 @@ fn text_items_never_reach_export_as_drawtext() {
     ];
     let args = args_for(&comp);
     let joined = args.join(" ");
-    assert!(!joined.contains("drawtext"), "export emitted drawtext: {joined}");
+    assert!(
+        !joined.contains("drawtext"),
+        "export emitted drawtext: {joined}"
+    );
 }
 
 #[test]
@@ -389,7 +394,10 @@ fn overlap_mode_emits_xfade_filter_not_concat() {
 
     // xfade present, concat absent on the video chain.
     assert!(fc.contains("xfade=transition=fade"), "missing xfade: {fc}");
-    assert!(!fc.contains("concat=n="), "unexpected concat in overlap mode: {fc}");
+    assert!(
+        !fc.contains("concat=n="),
+        "unexpected concat in overlap mode: {fc}"
+    );
 
     // Duration telescopes: two 5s + 4s clips with 1s overlap = 8s, not 9s.
     assert_eq!(plan.duration_frames, 240);

@@ -50,10 +50,7 @@ fn hash_content(data: &[u8]) -> u64 {
 /// 1. Read current clipboard content.
 /// 2. Compare hash with last known state.
 /// 3. If changed, check against all enabled `clipboard` triggers and publish matching events.
-pub async fn clipboard_tick(
-    pool: &DbPool,
-    state: &Arc<Mutex<ClipboardState>>,
-) {
+pub async fn clipboard_tick(pool: &DbPool, state: &Arc<Mutex<ClipboardState>>) {
     // Read clipboard on a blocking thread (arboard is not async)
     let clip_result = tokio::task::spawn_blocking(|| {
         match arboard::Clipboard::new() {
@@ -117,7 +114,9 @@ pub async fn clipboard_tick(
         } = config
         {
             // Check content type filter
-            let ct_match = ct_filter.as_deref().map_or(true, |f| f == "any" || f == content_type);
+            let ct_match = ct_filter
+                .as_deref()
+                .map_or(true, |f| f == "any" || f == content_type);
             if !ct_match {
                 continue;
             }

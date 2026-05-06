@@ -67,7 +67,6 @@ impl std::str::FromStr for ChainConditionType {
     }
 }
 
-
 /// Condition for chain triggers: when a source persona finishes, what outcome
 /// should fire the chain?
 ///
@@ -136,8 +135,12 @@ pub struct ActiveWindow {
     pub timezone: Option<String>,
 }
 
-fn default_start_hour() -> u8 { 9 }
-fn default_end_hour() -> u8 { 18 }
+fn default_start_hour() -> u8 {
+    9
+}
+fn default_end_hour() -> u8 {
+    18
+}
 
 impl ActiveWindow {
     /// Resolve the configured timezone. Falls back to system local offset
@@ -166,11 +169,17 @@ impl ActiveWindow {
         let (weekday, now_minutes) = match self.resolve_tz() {
             Some(tz) => {
                 let t = utc_now.with_timezone(&tz);
-                (t.weekday().num_days_from_sunday() as u8, t.hour() as u16 * 60 + t.minute() as u16)
+                (
+                    t.weekday().num_days_from_sunday() as u8,
+                    t.hour() as u16 * 60 + t.minute() as u16,
+                )
             }
             None => {
                 let t = utc_now.with_timezone(&chrono::Local);
-                (t.weekday().num_days_from_sunday() as u8, t.hour() as u16 * 60 + t.minute() as u16)
+                (
+                    t.weekday().num_days_from_sunday() as u8,
+                    t.hour() as u16 * 60 + t.minute() as u16,
+                )
             }
         };
 
@@ -231,7 +240,8 @@ impl ActiveWindow {
             if self.days.contains(&candidate_day) {
                 let remaining_today_minutes = (24 * 60) - now_minutes as u64;
                 let full_days_between = (offset as u64 - 1) * 24 * 60;
-                let total_minutes = remaining_today_minutes + full_days_between + start_minutes as u64;
+                let total_minutes =
+                    remaining_today_minutes + full_days_between + start_minutes as u64;
                 return Some(total_minutes * 60 - seconds_into_minute);
             }
         }
@@ -382,7 +392,9 @@ impl TriggerConfig {
             TriggerConfig::Webhook { event_type, .. } => event_type.as_deref(),
             TriggerConfig::Chain { event_type, .. } => event_type.as_deref(),
             TriggerConfig::Manual { event_type, .. } => event_type.as_deref(),
-            TriggerConfig::EventListener { listen_event_type, .. } => listen_event_type.as_deref(),
+            TriggerConfig::EventListener {
+                listen_event_type, ..
+            } => listen_event_type.as_deref(),
             TriggerConfig::FileWatcher { event_type, .. } => event_type.as_deref(),
             TriggerConfig::Clipboard { event_type, .. } => event_type.as_deref(),
             TriggerConfig::AppFocus { event_type, .. } => event_type.as_deref(),
@@ -524,7 +536,10 @@ impl TriggerConfig {
             "schedule" => TriggerConfig::Schedule {
                 cron: val.get("cron").and_then(|v| v.as_str()).map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
-                timezone: val.get("timezone").and_then(|v| v.as_str()).map(String::from),
+                timezone: val
+                    .get("timezone")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 max_backfill: val
                     .get("max_backfill")
                     .and_then(|v| v.as_u64())
@@ -534,14 +549,11 @@ impl TriggerConfig {
             },
             "polling" => TriggerConfig::Polling {
                 url: val.get("url").and_then(|v| v.as_str()).map(String::from),
-                headers: val
-                    .get("headers")
-                    .and_then(|h| h.as_object())
-                    .map(|obj| {
-                        obj.iter()
-                            .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
-                            .collect()
-                    }),
+                headers: val.get("headers").and_then(|h| h.as_object()).map(|obj| {
+                    obj.iter()
+                        .filter_map(|(k, v)| v.as_str().map(|s| (k.clone(), s.to_string())))
+                        .collect()
+                }),
                 content_hash: val
                     .get("content_hash")
                     .and_then(|v| v.as_str())
@@ -577,7 +589,10 @@ impl TriggerConfig {
                 event_type,
                 payload,
             },
-            "manual" => TriggerConfig::Manual { event_type, payload },
+            "manual" => TriggerConfig::Manual {
+                event_type,
+                payload,
+            },
             "event_listener" => TriggerConfig::EventListener {
                 listen_event_type: val
                     .get("listen_event_type")
@@ -591,22 +606,35 @@ impl TriggerConfig {
             "file_watcher" => TriggerConfig::FileWatcher {
                 watch_paths: val.get("watch_paths").and_then(|v| {
                     v.as_array().map(|arr| {
-                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                        arr.iter()
+                            .filter_map(|s| s.as_str().map(String::from))
+                            .collect()
                     })
                 }),
                 events: val.get("events").and_then(|v| {
                     v.as_array().map(|arr| {
-                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                        arr.iter()
+                            .filter_map(|s| s.as_str().map(String::from))
+                            .collect()
                     })
                 }),
                 recursive: val.get("recursive").and_then(|v| v.as_bool()),
-                glob_filter: val.get("glob_filter").and_then(|v| v.as_str()).map(String::from),
+                glob_filter: val
+                    .get("glob_filter")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 event_type,
                 payload,
             },
             "clipboard" => TriggerConfig::Clipboard {
-                content_type: val.get("content_type").and_then(|v| v.as_str()).map(String::from),
-                pattern: val.get("pattern").and_then(|v| v.as_str()).map(String::from),
+                content_type: val
+                    .get("content_type")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
+                pattern: val
+                    .get("pattern")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
                 event_type,
                 payload,
@@ -614,24 +642,35 @@ impl TriggerConfig {
             "app_focus" => TriggerConfig::AppFocus {
                 app_names: val.get("app_names").and_then(|v| {
                     v.as_array().map(|arr| {
-                        arr.iter().filter_map(|s| s.as_str().map(String::from)).collect()
+                        arr.iter()
+                            .filter_map(|s| s.as_str().map(String::from))
+                            .collect()
                     })
                 }),
-                title_pattern: val.get("title_pattern").and_then(|v| v.as_str()).map(String::from),
+                title_pattern: val
+                    .get("title_pattern")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 interval_seconds: val.get("interval_seconds").and_then(|v| v.as_u64()),
                 event_type,
                 payload,
             },
             "composite" => TriggerConfig::Composite {
-                conditions: val.get("conditions").and_then(|v| {
-                    serde_json::from_value(v.clone()).ok()
-                }),
-                operator: val.get("operator").and_then(|v| v.as_str()).map(String::from),
+                conditions: val
+                    .get("conditions")
+                    .and_then(|v| serde_json::from_value(v.clone()).ok()),
+                operator: val
+                    .get("operator")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 window_seconds: val.get("window_seconds").and_then(|v| v.as_u64()),
                 event_type,
                 payload,
             },
-            _ => TriggerConfig::Unknown { event_type, payload },
+            _ => TriggerConfig::Unknown {
+                event_type,
+                payload,
+            },
         }
     }
 }
@@ -659,9 +698,17 @@ mod tests {
 
     #[test]
     fn test_parse_schedule_config() {
-        let t = make_trigger("schedule", Some(r#"{"cron":"0 * * * *","interval_seconds":300,"event_type":"build_check"}"#));
+        let t = make_trigger(
+            "schedule",
+            Some(r#"{"cron":"0 * * * *","interval_seconds":300,"event_type":"build_check"}"#),
+        );
         match t.parse_config() {
-            TriggerConfig::Schedule { cron, interval_seconds, event_type, .. } => {
+            TriggerConfig::Schedule {
+                cron,
+                interval_seconds,
+                event_type,
+                ..
+            } => {
                 assert_eq!(cron.as_deref(), Some("0 * * * *"));
                 assert_eq!(interval_seconds, Some(300));
                 assert_eq!(event_type.as_deref(), Some("build_check"));
@@ -674,12 +721,26 @@ mod tests {
     fn test_parse_polling_config() {
         let t = make_trigger(
             "polling",
-            Some(r#"{"url":"https://api.example.com","headers":{"Authorization":"Bearer x"},"content_hash":"abc123","interval_seconds":600}"#),
+            Some(
+                r#"{"url":"https://api.example.com","headers":{"Authorization":"Bearer x"},"content_hash":"abc123","interval_seconds":600}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::Polling { url, headers, content_hash, interval_seconds, .. } => {
+            TriggerConfig::Polling {
+                url,
+                headers,
+                content_hash,
+                interval_seconds,
+                ..
+            } => {
                 assert_eq!(url.as_deref(), Some("https://api.example.com"));
-                assert_eq!(headers.as_ref().and_then(|h| h.get("Authorization")).map(|s| s.as_str()), Some("Bearer x"));
+                assert_eq!(
+                    headers
+                        .as_ref()
+                        .and_then(|h| h.get("Authorization"))
+                        .map(|s| s.as_str()),
+                    Some("Bearer x")
+                );
                 assert_eq!(content_hash.as_deref(), Some("abc123"));
                 assert_eq!(interval_seconds, Some(600));
             }
@@ -689,9 +750,16 @@ mod tests {
 
     #[test]
     fn test_parse_webhook_config() {
-        let t = make_trigger("webhook", Some(r#"{"webhook_secret":"my-secret","event_type":"deploy"}"#));
+        let t = make_trigger(
+            "webhook",
+            Some(r#"{"webhook_secret":"my-secret","event_type":"deploy"}"#),
+        );
         match t.parse_config() {
-            TriggerConfig::Webhook { webhook_secret, event_type, .. } => {
+            TriggerConfig::Webhook {
+                webhook_secret,
+                event_type,
+                ..
+            } => {
                 assert_eq!(webhook_secret.as_deref(), Some("my-secret"));
                 assert_eq!(event_type.as_deref(), Some("deploy"));
             }
@@ -703,10 +771,16 @@ mod tests {
     fn test_parse_chain_config() {
         let t = make_trigger(
             "chain",
-            Some(r#"{"source_persona_id":"sp1","condition":{"type":"success","status":"completed"}}"#),
+            Some(
+                r#"{"source_persona_id":"sp1","condition":{"type":"success","status":"completed"}}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::Chain { source_persona_id, condition, .. } => {
+            TriggerConfig::Chain {
+                source_persona_id,
+                condition,
+                ..
+            } => {
                 assert_eq!(source_persona_id.as_deref(), Some("sp1"));
                 let cond = condition.unwrap();
                 assert_eq!(cond.condition_type, ChainConditionType::Success);
@@ -720,7 +794,10 @@ mod tests {
     fn test_parse_manual_config() {
         let t = make_trigger("manual", None);
         match t.parse_config() {
-            TriggerConfig::Manual { event_type, payload } => {
+            TriggerConfig::Manual {
+                event_type,
+                payload,
+            } => {
                 assert!(event_type.is_none());
                 assert!(payload.is_none());
             }
@@ -752,7 +829,10 @@ mod tests {
             Some(r#"{"listen_event_type":"file_changed","source_filter":"watcher-*"}"#),
         );
         match t.parse_config() {
-            TriggerConfig::EventListener { listen_event_type, source_filter } => {
+            TriggerConfig::EventListener {
+                listen_event_type,
+                source_filter,
+            } => {
                 assert_eq!(listen_event_type.as_deref(), Some("file_changed"));
                 assert_eq!(source_filter.as_deref(), Some("watcher-*"));
             }
@@ -762,10 +842,7 @@ mod tests {
 
     #[test]
     fn test_event_listener_event_type() {
-        let t = make_trigger(
-            "event_listener",
-            Some(r#"{"listen_event_type":"deploy"}"#),
-        );
+        let t = make_trigger("event_listener", Some(r#"{"listen_event_type":"deploy"}"#));
         // EventListener's event_type() returns the listen_event_type
         assert_eq!(t.parse_config().event_type(), "deploy");
     }
@@ -778,7 +855,10 @@ mod tests {
 
     #[test]
     fn test_chain_condition_default_type() {
-        let t = make_trigger("chain", Some(r#"{"source_persona_id":"sp1","condition":{}}"#));
+        let t = make_trigger(
+            "chain",
+            Some(r#"{"source_persona_id":"sp1","condition":{}}"#),
+        );
         if let TriggerConfig::Chain { condition, .. } = t.parse_config() {
             let cond = condition.unwrap();
             assert_eq!(cond.condition_type, ChainConditionType::Any);
@@ -787,10 +867,22 @@ mod tests {
 
     #[test]
     fn test_chain_condition_type_parse_valid() {
-        assert_eq!("any".parse::<ChainConditionType>().unwrap(), ChainConditionType::Any);
-        assert_eq!("success".parse::<ChainConditionType>().unwrap(), ChainConditionType::Success);
-        assert_eq!("failure".parse::<ChainConditionType>().unwrap(), ChainConditionType::Failure);
-        assert_eq!("jsonpath".parse::<ChainConditionType>().unwrap(), ChainConditionType::Jsonpath);
+        assert_eq!(
+            "any".parse::<ChainConditionType>().unwrap(),
+            ChainConditionType::Any
+        );
+        assert_eq!(
+            "success".parse::<ChainConditionType>().unwrap(),
+            ChainConditionType::Success
+        );
+        assert_eq!(
+            "failure".parse::<ChainConditionType>().unwrap(),
+            ChainConditionType::Failure
+        );
+        assert_eq!(
+            "jsonpath".parse::<ChainConditionType>().unwrap(),
+            ChainConditionType::Jsonpath
+        );
     }
 
     #[test]
@@ -824,10 +916,19 @@ mod tests {
     fn test_parse_file_watcher_config() {
         let t = make_trigger(
             "file_watcher",
-            Some(r#"{"watch_paths":["/home/user/src","/tmp"],"events":["create","modify"],"recursive":true,"glob_filter":"*.py","event_type":"file_changed"}"#),
+            Some(
+                r#"{"watch_paths":["/home/user/src","/tmp"],"events":["create","modify"],"recursive":true,"glob_filter":"*.py","event_type":"file_changed"}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::FileWatcher { watch_paths, events, recursive, glob_filter, event_type, .. } => {
+            TriggerConfig::FileWatcher {
+                watch_paths,
+                events,
+                recursive,
+                glob_filter,
+                event_type,
+                ..
+            } => {
                 assert_eq!(watch_paths.as_ref().map(|v| v.len()), Some(2));
                 assert_eq!(events.as_ref().map(|v| v.len()), Some(2));
                 assert_eq!(recursive, Some(true));
@@ -842,10 +943,18 @@ mod tests {
     fn test_parse_clipboard_config() {
         let t = make_trigger(
             "clipboard",
-            Some(r#"{"content_type":"text","pattern":"https?://","interval_seconds":5,"event_type":"clipboard_changed"}"#),
+            Some(
+                r#"{"content_type":"text","pattern":"https?://","interval_seconds":5,"event_type":"clipboard_changed"}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::Clipboard { content_type, pattern, interval_seconds, event_type, .. } => {
+            TriggerConfig::Clipboard {
+                content_type,
+                pattern,
+                interval_seconds,
+                event_type,
+                ..
+            } => {
                 assert_eq!(content_type.as_deref(), Some("text"));
                 assert_eq!(pattern.as_deref(), Some("https?://"));
                 assert_eq!(interval_seconds, Some(5));
@@ -859,10 +968,18 @@ mod tests {
     fn test_parse_app_focus_config() {
         let t = make_trigger(
             "app_focus",
-            Some(r#"{"app_names":["Code.exe","chrome.exe"],"title_pattern":".*\\.rs","interval_seconds":3,"event_type":"app_focused"}"#),
+            Some(
+                r#"{"app_names":["Code.exe","chrome.exe"],"title_pattern":".*\\.rs","interval_seconds":3,"event_type":"app_focused"}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::AppFocus { app_names, title_pattern, interval_seconds, event_type, .. } => {
+            TriggerConfig::AppFocus {
+                app_names,
+                title_pattern,
+                interval_seconds,
+                event_type,
+                ..
+            } => {
                 assert_eq!(app_names.as_ref().map(|v| v.len()), Some(2));
                 assert_eq!(title_pattern.as_deref(), Some(".*\\.rs"));
                 assert_eq!(interval_seconds, Some(3));
@@ -876,10 +993,18 @@ mod tests {
     fn test_parse_composite_config() {
         let t = make_trigger(
             "composite",
-            Some(r#"{"conditions":[{"event_type":"file_changed","source_filter":"watcher-*"},{"event_type":"build_complete"}],"operator":"all","window_seconds":300,"event_type":"composite_fired"}"#),
+            Some(
+                r#"{"conditions":[{"event_type":"file_changed","source_filter":"watcher-*"},{"event_type":"build_complete"}],"operator":"all","window_seconds":300,"event_type":"composite_fired"}"#,
+            ),
         );
         match t.parse_config() {
-            TriggerConfig::Composite { conditions, operator, window_seconds, event_type, .. } => {
+            TriggerConfig::Composite {
+                conditions,
+                operator,
+                window_seconds,
+                event_type,
+                ..
+            } => {
                 let conds = conditions.unwrap();
                 assert_eq!(conds.len(), 2);
                 assert_eq!(conds[0].event_type, "file_changed");

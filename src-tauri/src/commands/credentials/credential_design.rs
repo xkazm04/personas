@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use serde_json::json;
 use tauri::State;
@@ -15,7 +15,7 @@ use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
 
 use super::ai_artifact_flow::{
-    AiArtifactMessages, AiArtifactParams, run_ai_artifact_task, run_claude_prompt,
+    run_ai_artifact_task, run_claude_prompt, AiArtifactMessages, AiArtifactParams,
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
@@ -47,10 +47,8 @@ pub async fn start_credential_design(
     require_privileged(&state, "start_credential_design").await?;
     let connectors = connector_repo::get_all(&state.db)?;
 
-    let design_prompt = credential_design::build_credential_design_prompt(
-        &instruction,
-        &connectors,
-    );
+    let design_prompt =
+        credential_design::build_credential_design_prompt(&instruction, &connectors);
 
     let cli_args = build_credential_task_cli_args();
 
@@ -64,8 +62,12 @@ pub async fn start_credential_design(
         instruction.clone()
     };
     let _ = audit_log::insert(
-        &state.db, &design_id, "credential_design",
-        "design_started", None, None,
+        &state.db,
+        &design_id,
+        "credential_design",
+        "design_started",
+        None,
+        None,
         Some(&truncated),
     );
 
@@ -90,9 +92,7 @@ pub async fn start_credential_design(
 }
 
 #[tauri::command]
-pub fn cancel_credential_design(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub fn cancel_credential_design(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_privileged_sync(&state, "cancel_credential_design")?;
     // Cancel the active credential design and kill the CLI child process.
     if let Some(pid) = state.process_registry.cancel("credential_design") {
@@ -122,12 +122,19 @@ pub async fn test_credential_design_healthcheck(
     );
 
     let cli_args = build_credential_task_cli_args();
-    let output_text = run_claude_prompt(prompt_text, &cli_args, 300, "Claude produced no output for healthcheck generation")
-        .await
-        .map_err(AppError::Internal)?;
+    let output_text = run_claude_prompt(
+        prompt_text,
+        &cli_args,
+        300,
+        "Claude produced no output for healthcheck generation",
+    )
+    .await
+    .map_err(AppError::Internal)?;
 
-    let config = credential_design::extract_healthcheck_config_result(&output_text)
-        .ok_or_else(|| AppError::Internal("Failed to extract healthcheck config from Claude output".into()))?;
+    let config =
+        credential_design::extract_healthcheck_config_result(&output_text).ok_or_else(|| {
+            AppError::Internal("Failed to extract healthcheck config from Claude output".into())
+        })?;
 
     if config
         .get("skip")
@@ -148,7 +155,9 @@ pub async fn test_credential_design_healthcheck(
     let endpoint = config
         .get("endpoint")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("Claude did not provide a valid healthcheck endpoint".into()))?;
+        .ok_or_else(|| {
+            AppError::Internal("Claude did not provide a valid healthcheck endpoint".into())
+        })?;
 
     let method = config
         .get("method")
@@ -176,7 +185,9 @@ pub async fn test_credential_design_healthcheck(
     // to a private/internal IP at connection time.
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(10))
-        .dns_resolver(std::sync::Arc::new(crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver))
+        .dns_resolver(std::sync::Arc::new(
+            crate::engine::ssrf_safe_dns::SsrfSafeDnsResolver,
+        ))
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
@@ -201,7 +212,9 @@ pub async fn test_credential_design_healthcheck(
     match response {
         Ok(resp) => {
             let status = resp.status().as_u16();
-            let success = expected_status.map(|exp| exp == status).unwrap_or(resp.status().is_success());
+            let success = expected_status
+                .map(|exp| exp == status)
+                .unwrap_or(resp.status().is_success());
             let message = if success {
                 format!("Claude healthcheck passed (HTTP {status})")
             } else if let Some(exp) = expected_status {

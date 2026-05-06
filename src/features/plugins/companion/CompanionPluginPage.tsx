@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Bot, Settings, Brain, Mic } from 'lucide-react';
+import { Bot, Settings, Brain, LayoutDashboard, Mic } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -13,6 +13,7 @@ import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginS
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
+const DashboardPanel = lazy(() => import('./sub_dashboard/DashboardPanel'));
 
 /**
  * Companion plugin page — three-tab manager surface for Athena.
@@ -38,6 +39,7 @@ export default function CompanionPluginPage() {
     { id: 'setup', label: t.plugins.companion.tab_setup, icon: Settings },
     { id: 'memory', label: t.plugins.companion.tab_memory, icon: Brain },
     { id: 'voice', label: t.plugins.companion.tab_voice, icon: Mic },
+    { id: 'dashboard', label: t.plugins.companion.tab_dashboard, icon: LayoutDashboard },
   ];
 
   return (
@@ -82,6 +84,7 @@ export default function CompanionPluginPage() {
             {tab === 'setup' && <SetupPanel />}
             {tab === 'memory' && <MemoryPanel />}
             {tab === 'voice' && <VoicePanel />}
+            {tab === 'dashboard' && <DashboardPanel />}
           </Suspense>
         </div>
       </ContentBody>

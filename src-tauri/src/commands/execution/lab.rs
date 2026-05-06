@@ -7,11 +7,11 @@ use crate::db::models::*;
 use crate::db::repos::core::personas::{self as persona_repo, row_to_persona};
 use crate::db::repos::execution::metrics::{self as metrics_repo, row_to_prompt_version};
 use crate::db::repos::lab;
-use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
-use crate::db::repos::lab::matrix as matrix_repo;
+use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::repos::lab::events as events_repo;
+use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::ratings as ratings_repo;
 use crate::db::repos::resources::tools::{self as tool_repo, row_to_tool_def};
 use crate::engine::test_runner::{self, parse_model_configs};
@@ -57,16 +57,19 @@ pub async fn lab_start_arena(
 
     let model_configs = parse_model_configs(models)?;
 
-    let models_json = serde_json::to_string(
-        &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    )
-    .unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&model_configs.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
-    let run = arena_repo::create_run(&state.db, &persona_id, &models_json, use_case_filter.as_deref())?;
+    let run = arena_repo::create_run(
+        &state.db,
+        &persona_id,
+        &models_json,
+        use_case_filter.as_deref(),
+    )?;
     let run_id = run.id.clone();
 
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("test", &run_id);
+    let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
     let pool = state.db.clone();
     let cancelled_clone = cancelled.clone();
@@ -120,14 +123,19 @@ pub async fn lab_delete_arena_run(
 }
 
 #[tauri::command]
-pub fn lab_cancel_arena(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn lab_cancel_arena(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    arena_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
+    arena_repo::update_run_status(
+        &state.db,
+        &id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    )?;
     Ok(())
 }
 
@@ -155,32 +163,44 @@ pub async fn lab_start_ab(
         let conn = state.db.get()?;
         let tx = conn.unchecked_transaction()?;
 
-        let persona = tx.query_row(
-            "SELECT * FROM personas WHERE id = ?1",
-            params![persona_id],
-            row_to_persona,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Persona {persona_id}")),
-            other => AppError::Database(other),
-        })?;
+        let persona = tx
+            .query_row(
+                "SELECT * FROM personas WHERE id = ?1",
+                params![persona_id],
+                row_to_persona,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Persona {persona_id}"))
+                }
+                other => AppError::Database(other),
+            })?;
 
-        let version_a = tx.query_row(
-            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
-            params![version_a_id],
-            row_to_prompt_version,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {version_a_id}")),
-            other => AppError::Database(other),
-        })?;
+        let version_a = tx
+            .query_row(
+                "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+                params![version_a_id],
+                row_to_prompt_version,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Prompt version {version_a_id}"))
+                }
+                other => AppError::Database(other),
+            })?;
 
-        let version_b = tx.query_row(
-            "SELECT * FROM persona_prompt_versions WHERE id = ?1",
-            params![version_b_id],
-            row_to_prompt_version,
-        ).map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Prompt version {version_b_id}")),
-            other => AppError::Database(other),
-        })?;
+        let version_b = tx
+            .query_row(
+                "SELECT * FROM persona_prompt_versions WHERE id = ?1",
+                params![version_b_id],
+                row_to_prompt_version,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("Prompt version {version_b_id}"))
+                }
+                other => AppError::Database(other),
+            })?;
 
         let mut stmt = tx.prepare(
             "SELECT d.* FROM persona_tool_definitions d
@@ -188,7 +208,8 @@ pub async fn lab_start_ab(
              WHERE pt.persona_id = ?1
              ORDER BY d.category, d.name",
         )?;
-        let tools = stmt.query_map(params![persona_id], row_to_tool_def)?
+        let tools = stmt
+            .query_map(params![persona_id], row_to_tool_def)?
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?;
 
@@ -197,15 +218,16 @@ pub async fn lab_start_ab(
     };
 
     if version_a.persona_id != persona_id || version_b.persona_id != persona_id {
-        return Err(AppError::Validation("Both versions must belong to the specified persona".into()));
+        return Err(AppError::Validation(
+            "Both versions must belong to the specified persona".into(),
+        ));
     }
 
     let model_configs = parse_model_configs(models)?;
 
-    let models_json = serde_json::to_string(
-        &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    )
-    .unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&model_configs.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
     let run = ab_repo::create_run(
         &state.db,
@@ -220,8 +242,7 @@ pub async fn lab_start_ab(
     )?;
     let run_id = run.id.clone();
 
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("test", &run_id);
+    let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
     // Build persona variants — apply both fields from version to avoid hybrid state
     let mut persona_a = persona.clone();
@@ -246,10 +267,7 @@ pub async fn lab_start_ab(
             app,
             pool,
             run_id_clone.clone(),
-            vec![
-                (va_id, va_num, persona_a),
-                (vb_id, vb_num, persona_b),
-            ],
+            vec![(va_id, va_num, persona_a), (vb_id, vb_num, persona_b)],
             tools,
             model_configs,
             cancelled_clone,
@@ -291,14 +309,19 @@ pub async fn lab_delete_ab_run(
 }
 
 #[tauri::command]
-pub fn lab_cancel_ab(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn lab_cancel_ab(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    ab_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
+    ab_repo::update_run_status(
+        &state.db,
+        &id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    )?;
     Ok(())
 }
 
@@ -322,10 +345,9 @@ pub async fn lab_start_matrix(
 
     let model_configs = parse_model_configs(models)?;
 
-    let models_json = serde_json::to_string(
-        &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    )
-    .unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&model_configs.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
     let run = matrix_repo::create_run(
         &state.db,
@@ -336,8 +358,7 @@ pub async fn lab_start_matrix(
     )?;
     let run_id = run.id.clone();
 
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("test", &run_id);
+    let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
     let pool = state.db.clone();
     let cancelled_clone = cancelled.clone();
@@ -391,14 +412,19 @@ pub async fn lab_delete_matrix_run(
 }
 
 #[tauri::command]
-pub fn lab_cancel_matrix(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn lab_cancel_matrix(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    matrix_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
+    matrix_repo::update_run_status(
+        &state.db,
+        &id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    )?;
     Ok(())
 }
 
@@ -418,9 +444,9 @@ pub fn lab_accept_matrix_draft(
         return persona_repo::get_by_id(&state.db, &run.persona_id);
     }
 
-    let draft_json = run.draft_prompt_json.ok_or_else(|| {
-        AppError::Validation("No draft prompt available for this run".into())
-    })?;
+    let draft_json = run
+        .draft_prompt_json
+        .ok_or_else(|| AppError::Validation("No draft prompt available for this run".into()))?;
 
     // Validate the LLM-generated draft against the structured prompt schema
     // before writing it to the persona. This prevents silent corruption from
@@ -506,7 +532,9 @@ pub async fn lab_start_eval(
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
     if version_ids.len() < 2 {
-        return Err(AppError::Validation("Select at least 2 prompt versions for evaluation".into()));
+        return Err(AppError::Validation(
+            "Select at least 2 prompt versions for evaluation".into(),
+        ));
     }
 
     // Load and validate all versions
@@ -514,7 +542,9 @@ pub async fn lab_start_eval(
     for vid in &version_ids {
         let v = metrics_repo::get_prompt_version_by_id(&state.db, vid)?;
         if v.persona_id != persona_id {
-            return Err(AppError::Validation(format!("Version {vid} does not belong to this persona")));
+            return Err(AppError::Validation(format!(
+                "Version {vid} does not belong to this persona"
+            )));
         }
         versions.push(v);
     }
@@ -523,11 +553,15 @@ pub async fn lab_start_eval(
 
     let version_ids_json = serde_json::to_string(&version_ids).unwrap_or_default();
     let version_numbers_json = serde_json::to_string(
-        &versions.iter().map(|v| v.version_number).collect::<Vec<_>>(),
-    ).unwrap_or_default();
-    let models_json = serde_json::to_string(
-        &model_configs.iter().map(|m| &m.id).collect::<Vec<_>>(),
-    ).unwrap_or_default();
+        &versions
+            .iter()
+            .map(|v| v.version_number)
+            .collect::<Vec<_>>(),
+    )
+    .unwrap_or_default();
+    let models_json =
+        serde_json::to_string(&model_configs.iter().map(|m| &m.id).collect::<Vec<_>>())
+            .unwrap_or_default();
 
     let run = eval_repo::create_run(
         &state.db,
@@ -540,8 +574,7 @@ pub async fn lab_start_eval(
     )?;
     let run_id = run.id.clone();
 
-    let (cancelled, run_guard) =
-        state.process_registry.register_run_guarded("test", &run_id);
+    let (cancelled, run_guard) = state.process_registry.register_run_guarded("test", &run_id);
 
     // Build persona variants -- one per version, applying both fields to avoid hybrid state
     let mut variants: Vec<(String, i32, crate::db::models::Persona)> = Vec::new();
@@ -604,14 +637,19 @@ pub async fn lab_delete_eval_run(
 }
 
 #[tauri::command]
-pub fn lab_cancel_eval(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<(), AppError> {
+pub fn lab_cancel_eval(state: State<'_, Arc<AppState>>, id: String) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     state.process_registry.cancel_run("test", &id);
     let now = chrono::Utc::now().to_rfc3339();
-    eval_repo::update_run_status(&state.db, &id, LabRunStatus::Cancelled, None, None, None, Some(&now))?;
+    eval_repo::update_run_status(
+        &state.db,
+        &id,
+        LabRunStatus::Cancelled,
+        None,
+        None,
+        None,
+        Some(&now),
+    )?;
     Ok(())
 }
 
@@ -639,7 +677,9 @@ pub fn lab_tag_version(
     let valid_tags = ["production", "experimental", "archived"];
     if !valid_tags.contains(&tag.as_str()) {
         return Err(AppError::Validation(format!(
-            "Invalid tag '{}'. Must be one of: {}", tag, valid_tags.join(", ")
+            "Invalid tag '{}'. Must be one of: {}",
+            tag,
+            valid_tags.join(", ")
         )));
     }
 
@@ -670,7 +710,12 @@ pub fn lab_rollback_version(
     // Verify that the version snapshot has the core prompt data needed for a
     // clean restore. COALESCE fallbacks would silently produce a hybrid state
     // mixing old persona fields with the version's prompt — reject instead.
-    if version.structured_prompt.is_none() && version.system_prompt.as_deref().map_or(true, |s| s.trim().is_empty()) {
+    if version.structured_prompt.is_none()
+        && version
+            .system_prompt
+            .as_deref()
+            .map_or(true, |s| s.trim().is_empty())
+    {
         return Err(AppError::Validation(
             "Version snapshot is incomplete: missing both structured_prompt and system_prompt. Cannot rollback safely.".into(),
         ));
@@ -698,8 +743,14 @@ pub fn lab_rollback_version(
          updated_at = ?3
          WHERE id = ?4",
         rusqlite::params![
-            version.structured_prompt, version.system_prompt, now, version.persona_id,
-            version.design_context, version.last_design_result, version.icon, version.color,
+            version.structured_prompt,
+            version.system_prompt,
+            now,
+            version.persona_id,
+            version.design_context,
+            version.last_design_result,
+            version.icon,
+            version.color,
         ],
     )?;
 
@@ -815,7 +866,11 @@ pub async fn lab_improve_prompt(
         let feedback_parts: Vec<String> = ratings
             .iter()
             .map(|r| {
-                let rating_label = if r.rating > 0 { "thumbs-up" } else { "thumbs-down" };
+                let rating_label = if r.rating > 0 {
+                    "thumbs-up"
+                } else {
+                    "thumbs-down"
+                };
                 let fb = r.feedback.as_deref().unwrap_or("");
                 format!("- Scenario '{}': {} {}", r.scenario_name, rating_label, fb)
             })

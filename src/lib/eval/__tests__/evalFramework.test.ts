@@ -40,6 +40,20 @@ describe('compositeScore', () => {
     // Aggregators pass `avg / count` which can be non-integer
     expect(compositeScore(33.333, 66.666, 50)).toBe(Math.round(33.333 * 0.4 + 66.666 * 0.4 + 50 * 0.2));
   });
+
+  it('GOLDEN FORMULA — pins (0.4, 0.4, 0.2) so silent reweights fail loudly', () => {
+    // This test guards Arena `bestModelId`, A/B `winnerId`, and Matrix variant
+    // rank — i.e. "which model wins". A reweight (whether intentional or
+    // accidental) reshuffles every leaderboard the lab has ever produced.
+    // The case below is hand-computed against the canonical formula:
+    //   round(90 * 0.4 + 70 * 0.4 + 50 * 0.2)
+    // = round(36   + 28   + 10) = 74
+    // If anyone changes the weights, this fails — and the comments next to
+    // every aggregation call site (labAggregation.ts, evalAggregation.ts)
+    // and the JSDoc on `compositeScore` need to be updated in the same PR
+    // so the formula stays visible at the decision sites.
+    expect(compositeScore(90, 70, 50)).toBe(74);
+  });
 });
 
 describe('compositeScoreFromRow (null-aware)', () => {

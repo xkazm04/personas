@@ -1475,6 +1475,76 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Companion (Athena) state snapshot — used by `tests/playwright/`.
+   * Returns everything an end-to-end conversation test needs in one
+   * round-trip: panel visibility, streaming flag, message bubbles
+   * (in DOM order with role + truncated text), pending approvals
+   * count, and brain inventory (episodes / facts / reflections via
+   * direct invoke calls so the test exercises the real listing path).
+   *
+   * Truncation is applied to bubble text to keep payloads small —
+   * tests usually only care about whether the prompt landed and
+   * whether *something* came back, not the full assistant essay.
+   */
+  async companionInspect(): Promise<{
+    panelVisible: boolean;
+    streaming: boolean;
+    messages: Array<{ role: string; text: string }>;
+    streamingText: string | null;
+    approvals: number;
+    brain: {
+      episodes: number;
+      reflections: number;
+      facts: { user: number; project: number; world: number };
+      procedurals: number;
+      goals: number;
+      rituals: number;
+      backlog: number;
+    };
+  }> {
+    const panel = document.querySelector('[data-testid="companion-panel"]');
+    if (!panel) {
+      return {
+        panelVisible: false,
+        streaming: false,
+        messages: [],
+        streamingText: null,
+        approvals: 0,
+        brain: await collectBrainCounts(),
+      };
+    }
+    const streaming = panel.getAttribute("data-companion-streaming") === "true";
+    const bubbles = Array.from(
+      panel.querySelectorAll("[data-companion-bubble-role]"),
+    );
+    const persisted = bubbles.filter(
+      (b) => b.getAttribute("data-testid") !== "companion-bubble-streaming",
+    );
+    const messages = persisted
+      .map((b) => ({
+        role: b.getAttribute("data-companion-bubble-role") || "unknown",
+        index: Number(b.getAttribute("data-companion-bubble-index") || 0),
+        text: ((b.textContent || "").trim()).slice(0, 400),
+      }))
+      .sort((a, b) => a.index - b.index)
+      .map(({ role, text }) => ({ role, text }));
+    const streamingEl = panel.querySelector(
+      '[data-testid="companion-bubble-streaming"]',
+    );
+    const streamingText = streamingEl
+      ? ((streamingEl.textContent || "").trim()).slice(0, 400)
+      : null;
+    return {
+      panelVisible: true,
+      streaming,
+      messages,
+      streamingText,
+      approvals: panel.querySelectorAll("[data-companion-approval]").length,
+      brain: await collectBrainCounts(),
+    };
+  },
+
+  /**
    * Dispatcher called from Rust via eval().
    * Executes a bridge method and sends the result back via Tauri IPC.
    * Includes a 25s timeout to prevent bridge queue blocking.
@@ -1510,6 +1580,52 @@ const bridge: TestBridge = {
     }
   },
 };
+
+// ── Companion test helpers ──────────────────────────────────────────────────
+
+async function collectBrainCounts(): Promise<{
+  episodes: number;
+  reflections: number;
+  facts: { user: number; project: number; world: number };
+  procedurals: number;
+  goals: number;
+  rituals: number;
+  backlog: number;
+}> {
+  const safeList = async (kind: string): Promise<number> => {
+    try {
+      const items = await invoke<unknown[]>("companion_list_brain_items", { kind });
+      return Array.isArray(items) ? items.length : 0;
+    } catch {
+      // First run: companion brain isn't initialized yet — counts are 0
+      // and the test harness shouldn't blow up on a benign missing-tab.
+      return 0;
+    }
+  };
+  const [
+    episodes, reflections, factUser, factProject, factWorld,
+    procedurals, goals, rituals, backlog,
+  ] = await Promise.all([
+    safeList("episode"),
+    safeList("reflection"),
+    safeList("fact:user"),
+    safeList("fact:project"),
+    safeList("fact:world"),
+    safeList("procedural"),
+    safeList("goal"),
+    safeList("ritual"),
+    safeList("backlog"),
+  ]);
+  return {
+    episodes,
+    reflections,
+    facts: { user: factUser, project: factProject, world: factWorld },
+    procedurals,
+    goals,
+    rituals,
+    backlog,
+  };
+}
 
 // Expose on window for Rust eval() access
 (window as unknown as Record<string, unknown>).__TEST__ = bridge;

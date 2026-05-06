@@ -4973,6 +4973,7 @@ dependencies = [
  "url",
  "urlencoding",
  "uuid",
+ "walkdir",
  "which",
  "whoami",
  "windows 0.58.0",

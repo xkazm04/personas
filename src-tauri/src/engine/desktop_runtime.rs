@@ -166,9 +166,10 @@ impl DesktopRuntime {
             }
 
             // Resolve dependency context
-            let injected_context = step.depends_on.as_ref().and_then(|dep_id| {
-                step_outputs.get(dep_id).cloned()
-            });
+            let injected_context = step
+                .depends_on
+                .as_ref()
+                .and_then(|dep_id| step_outputs.get(dep_id).cloned());
 
             // Execute the step
             let bridge_result = execute_bridge_action(
@@ -321,13 +322,16 @@ async fn execute_bridge_action(
             let mut manifest = super::desktop_security::get_manifest("desktop_terminal")
                 .expect("desktop_terminal manifest is always defined");
             manifest.allowed_paths = config.terminal_allowed_paths.clone();
-            super::desktop_bridges::terminal::execute(shell, action, &config.env_vars, &manifest).await
+            super::desktop_bridges::terminal::execute(shell, action, &config.env_vars, &manifest)
+                .await
         }
         "obsidian" => {
             let action: super::desktop_bridges::obsidian::ObsidianAction =
                 serde_json::from_value(action_json.clone())
                     .map_err(|e| AppError::Validation(format!("Invalid Obsidian action: {e}")))?;
-            let vault = config.obsidian_vault_path.as_deref()
+            let vault = config
+                .obsidian_vault_path
+                .as_deref()
                 .ok_or_else(|| AppError::Validation("Obsidian vault path not configured".into()))?;
             super::desktop_bridges::obsidian::execute(
                 vault,

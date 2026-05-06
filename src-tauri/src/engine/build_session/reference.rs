@@ -40,11 +40,11 @@ const FENCE_CLOSE: &str = "--- END REFERENCE ---";
 /// File extensions we accept as text references. PDF/binary/Office formats
 /// would need extraction logic — deferred per slice scope.
 const ALLOWED_EXTENSIONS: &[&str] = &[
-    "txt", "md", "markdown", "json", "yaml", "yml", "toml", "csv", "tsv",
-    "html", "htm", "xml", "log", "ini", "conf", "cfg", "rst", "tex",
+    "txt", "md", "markdown", "json", "yaml", "yml", "toml", "csv", "tsv", "html", "htm", "xml",
+    "log", "ini", "conf", "cfg", "rst", "tex",
     // common source-file extensions a user might attach as a "format example"
-    "ts", "tsx", "js", "jsx", "py", "rs", "go", "java", "rb", "php", "sh",
-    "sql", "graphql", "proto",
+    "ts", "tsx", "js", "jsx", "py", "rs", "go", "java", "rb", "php", "sh", "sql", "graphql",
+    "proto",
 ];
 
 /// Content-type prefixes we accept on URL fetch responses. Anything outside
@@ -72,10 +72,12 @@ const URL_FETCH_TIMEOUT: Duration = Duration::from_secs(10);
 /// + truncation marker).
 pub fn inject_reference_into_answer(answer: &str, name: &str, content: &str) -> String {
     let trimmed_answer = answer.trim_end();
-    let separator = if trimmed_answer.is_empty() { "" } else { "\n\n" };
-    format!(
-        "{trimmed_answer}{separator}{FENCE_OPEN}: {name} ---\n{content}\n{FENCE_CLOSE}\n"
-    )
+    let separator = if trimmed_answer.is_empty() {
+        ""
+    } else {
+        "\n\n"
+    };
+    format!("{trimmed_answer}{separator}{FENCE_OPEN}: {name} ---\n{content}\n{FENCE_CLOSE}\n")
 }
 
 /// Append a fenced WEBHOOK SOURCE block to the answer text. Mirrors the
@@ -91,11 +93,12 @@ pub fn append_webhook_source_fence(
     event_filter: Option<&str>,
 ) -> String {
     let trimmed_answer = answer.trim_end();
-    let separator = if trimmed_answer.is_empty() { "" } else { "\n\n" };
-    let filter_line = match event_filter
-        .map(str::trim)
-        .filter(|s| !s.is_empty())
-    {
+    let separator = if trimmed_answer.is_empty() {
+        ""
+    } else {
+        "\n\n"
+    };
+    let filter_line = match event_filter.map(str::trim).filter(|s| !s.is_empty()) {
         Some(f) => f.to_string(),
         None => "(none)".to_string(),
     };
@@ -217,7 +220,9 @@ pub enum ReferenceSource<'a> {
 
 /// Resolve a reference source to `(name, content)` ready for injection.
 /// Routes to file/URL fetchers or returns the inline content directly.
-pub async fn materialise_reference(source: ReferenceSource<'_>) -> Result<(String, String), AppError> {
+pub async fn materialise_reference(
+    source: ReferenceSource<'_>,
+) -> Result<(String, String), AppError> {
     match source {
         ReferenceSource::File(path) => read_file_reference(path),
         ReferenceSource::Url(url) => fetch_url_reference(url).await,
@@ -431,7 +436,9 @@ mod tests {
     #[tokio::test]
     async fn fetch_url_reference_rejects_loopback() {
         // Pre-flight SSRF check should reject 127.0.0.1
-        let err = fetch_url_reference("http://127.0.0.1:9/anything").await.unwrap_err();
+        let err = fetch_url_reference("http://127.0.0.1:9/anything")
+            .await
+            .unwrap_err();
         match err {
             AppError::Validation(msg) => {
                 assert!(msg.contains("rejected") || msg.contains("private"))
@@ -445,10 +452,12 @@ mod tests {
         let err = fetch_url_reference("file:///etc/passwd").await.unwrap_err();
         match err {
             AppError::Validation(msg) => {
-                assert!(msg.to_lowercase().contains("scheme") || msg.to_lowercase().contains("rejected"))
+                assert!(
+                    msg.to_lowercase().contains("scheme")
+                        || msg.to_lowercase().contains("rejected")
+                )
             }
             other => panic!("expected Validation, got {other:?}"),
         }
     }
 }
-

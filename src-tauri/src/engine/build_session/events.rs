@@ -21,7 +21,11 @@ use super::super::event_registry::event_name;
 use super::SessionHandle;
 
 /// Update the session phase in the database.
-pub(super) fn update_phase(pool: &DbPool, session_id: &str, phase: BuildPhase) -> Result<(), AppError> {
+pub(super) fn update_phase(
+    pool: &DbPool,
+    session_id: &str,
+    phase: BuildPhase,
+) -> Result<(), AppError> {
     build_session_repo::update(
         pool,
         session_id,
@@ -52,11 +56,7 @@ pub(super) fn update_phase_with_error(
 
 /// Dual-emit a BuildEvent via both Channel (component-scoped) and Tauri events (global).
 /// Channel delivers to the attached component; Tauri event reaches the global listener.
-pub(super) fn dual_emit(
-    channel: &Channel<BuildEvent>,
-    app: &tauri::AppHandle,
-    event: &BuildEvent,
-) {
+pub(super) fn dual_emit(channel: &Channel<BuildEvent>, app: &tauri::AppHandle, event: &BuildEvent) {
     let _ = channel.send(event.clone());
     let _ = app.emit(event_name::BUILD_SESSION_EVENT, event);
 }

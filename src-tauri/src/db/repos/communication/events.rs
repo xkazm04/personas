@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{
     CreateEventSubscriptionInput, CreatePersonaEventInput, CreateTriggerInput, EventFilterInput,
@@ -30,8 +30,9 @@ pub(crate) fn is_safe_type_string(s: &str) -> bool {
     if !(first.is_ascii_alphanumeric() || first == b'_') {
         return false;
     }
-    s.bytes()
-        .all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'-' || b == b'.' || b == b':' || b == b'/')
+    s.bytes().all(|b| {
+        b.is_ascii_alphanumeric() || b == b'_' || b == b'-' || b == b'.' || b == b':' || b == b'/'
+    })
 }
 
 /// Validate and sanitize a `CreatePersonaEventInput` before publishing.
@@ -90,15 +91,13 @@ fn validate_event_input(input: &CreatePersonaEventInput) -> Result<(), AppError>
 /// is returned with `None` IV and a warning is logged.
 fn encrypt_optional_payload(payload: &Option<String>) -> (Option<String>, Option<String>) {
     match payload {
-        Some(plaintext) if !plaintext.is_empty() => {
-            match crypto::encrypt_for_db(plaintext) {
-                Ok((ct, iv)) => (Some(ct), Some(iv)),
-                Err(e) => {
-                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                    (Some(plaintext.clone()), None)
-                }
+        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
+            Ok((ct, iv)) => (Some(ct), Some(iv)),
+            Err(e) => {
+                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                (Some(plaintext.clone()), None)
             }
-        }
+        },
         other => (other.clone(), None),
     }
 }
@@ -116,20 +115,18 @@ fn row_to_event(row: &rusqlite::Row) -> rusqlite::Result<PersonaEvent> {
     // and surface the error in the error_message field.
     let raw_error: Option<String> = row.get("error_message")?;
     let (payload, error_message) = match (raw_payload, payload_iv) {
-        (Some(ct), Some(ref iv)) if !iv.is_empty() => {
-            match crypto::decrypt_from_db(&ct, iv) {
-                Ok(pt) => (Some(pt), raw_error),
-                Err(e) => {
-                    tracing::warn!("Failed to decrypt event payload: {}", e);
-                    let decrypt_err = format!("[Decryption failed: {}]", e);
-                    let combined = match raw_error {
-                        Some(existing) => Some(format!("{existing}; {decrypt_err}")),
-                        None => Some(decrypt_err),
-                    };
-                    (None, combined)
-                }
+        (Some(ct), Some(ref iv)) if !iv.is_empty() => match crypto::decrypt_from_db(&ct, iv) {
+            Ok(pt) => (Some(pt), raw_error),
+            Err(e) => {
+                tracing::warn!("Failed to decrypt event payload: {}", e);
+                let decrypt_err = format!("[Decryption failed: {}]", e);
+                let combined = match raw_error {
+                    Some(existing) => Some(format!("{existing}; {decrypt_err}")),
+                    None => Some(decrypt_err),
+                };
+                (None, combined)
             }
-        }
+        },
         (p, _) => (p, raw_error), // Plaintext or no payload
     };
 
@@ -215,7 +212,7 @@ pub fn get_pending(
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_events
                  WHERE status = 'pending' AND project_id = ?1
-                 ORDER BY created_at ASC
+                 ORDER BY created_at ASC, id ASC
                  LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
@@ -224,7 +221,7 @@ pub fn get_pending(
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_events
                  WHERE status = 'pending'
-                 ORDER BY created_at ASC
+                 ORDER BY created_at ASC, id ASC
                  LIMIT ?1",
             )?;
             let rows = stmt.query_map(params![limit], row_to_event)?;
@@ -237,10 +234,7 @@ pub fn get_pending(
 /// in a single UPDATE…RETURNING statement. This prevents duplicate processing
 /// when tick intervals overlap (the next tick cannot see rows that have already
 /// been claimed by a previous tick).
-pub fn claim_pending(
-    pool: &DbPool,
-    limit: i64,
-) -> Result<Vec<PersonaEvent>, AppError> {
+pub fn claim_pending(pool: &DbPool, limit: i64) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::claim_pending", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -249,7 +243,7 @@ pub fn claim_pending(
              WHERE id IN (
                  SELECT id FROM persona_events
                  WHERE status = 'pending'
-                 ORDER BY created_at ASC
+                 ORDER BY created_at ASC, id ASC
                  LIMIT ?1
              )
              RETURNING *",
@@ -325,7 +319,7 @@ pub fn get_recent(
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_events
                  WHERE project_id = ?1
-                 ORDER BY created_at DESC
+                 ORDER BY created_at DESC, id DESC
                  LIMIT ?2",
             )?;
             let rows = stmt.query_map(params![pid, limit], row_to_event)?;
@@ -333,7 +327,7 @@ pub fn get_recent(
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_events
-                 ORDER BY created_at DESC
+                 ORDER BY created_at DESC, id DESC
                  LIMIT ?1",
             )?;
             let rows = stmt.query_map(params![limit], row_to_event)?;
@@ -342,6 +336,16 @@ pub fn get_recent(
     })
 }
 
+/// Page through events in a `[since, until]` time window.
+///
+/// Pagination contract (see also `search`): the ORDER BY uses a composite
+/// `(created_at, id)` key as a deterministic tiebreaker, so two events
+/// inserted in the same millisecond — easy under burst load — are no longer
+/// ordered nondeterministically. Callers using `since` / `until` as cursors
+/// must pass back the values verbatim from a row's `created_at` and treat
+/// `(created_at, id)` as the opaque cursor; a backwards clock jump can
+/// produce duplicate timestamps but the `id` tiebreaker keeps the order
+/// stable.
 pub fn get_in_range(
     pool: &DbPool,
     since: &str,
@@ -355,7 +359,7 @@ pub fn get_in_range(
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_events
              WHERE created_at >= ?1 AND created_at <= ?2
-             ORDER BY created_at ASC
+             ORDER BY created_at ASC, id ASC
              LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![since, until, fetch], row_to_event)?;
@@ -403,14 +407,18 @@ pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppEr
 /// trigger is deleted to purge its event history from persona_events. Returns
 /// the number of deleted rows.
 pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32, AppError> {
-    timed_query!("persona_events", "persona_events::delete_events_by_source_id", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM persona_events WHERE source_id = ?1",
-            params![source_id],
-        )?;
-        Ok(rows as u32)
-    })
+    timed_query!(
+        "persona_events",
+        "persona_events::delete_events_by_source_id",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "DELETE FROM persona_events WHERE source_id = ?1",
+                params![source_id],
+            )?;
+            Ok(rows as u32)
+        }
+    )
 }
 
 /// Delete events emitted by triggers that no longer exist (or whose owning
@@ -418,22 +426,26 @@ pub fn delete_events_by_source_id(pool: &DbPool, source_id: &str) -> Result<u32,
 /// triggers that the cleanup sweep in background.rs then prunes. Returns
 /// the count deleted. Runs in one DELETE with a NOT EXISTS anti-join.
 pub fn delete_orphaned_trigger_events(pool: &DbPool) -> Result<u32, AppError> {
-    timed_query!("persona_events", "persona_events::delete_orphaned_trigger_events", {
-        let conn = pool.get()?;
-        // Events where source_type == 'trigger' but source_id no longer exists
-        // in persona_triggers. Left-join would be cleaner but sqlite's DELETE
-        // doesn't allow JOIN syntax — use NOT EXISTS instead.
-        let rows = conn.execute(
-            "DELETE FROM persona_events
+    timed_query!(
+        "persona_events",
+        "persona_events::delete_orphaned_trigger_events",
+        {
+            let conn = pool.get()?;
+            // Events where source_type == 'trigger' but source_id no longer exists
+            // in persona_triggers. Left-join would be cleaner but sqlite's DELETE
+            // doesn't allow JOIN syntax — use NOT EXISTS instead.
+            let rows = conn.execute(
+                "DELETE FROM persona_events
              WHERE source_type = 'trigger'
                AND source_id IS NOT NULL
                AND NOT EXISTS (
                  SELECT 1 FROM persona_triggers t WHERE t.id = persona_events.source_id
                )",
-            [],
-        )?;
-        Ok(rows as u32)
-    })
+                [],
+            )?;
+            Ok(rows as u32)
+        }
+    )
 }
 
 // ============================================================================
@@ -448,18 +460,22 @@ pub fn get_dead_letter_events(
     pool: &DbPool,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaEvent>, AppError> {
-    timed_query!("persona_events", "persona_events::get_dead_letter_events", {
-        let limit = limit.unwrap_or(100);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_events
+    timed_query!(
+        "persona_events",
+        "persona_events::get_dead_letter_events",
+        {
+            let limit = limit.unwrap_or(100);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_events
              WHERE status = 'dead_letter'
-             ORDER BY processed_at DESC, created_at DESC
+             ORDER BY processed_at DESC, created_at DESC, id DESC
              LIMIT ?1",
-        )?;
-        let rows = stmt.query_map(params![limit], row_to_event)?;
-        Ok(collect_rows(rows, "get_dead_letter_events"))
-    })
+            )?;
+            let rows = stmt.query_map(params![limit], row_to_event)?;
+            Ok(collect_rows(rows, "get_dead_letter_events"))
+        }
+    )
 }
 
 /// Count of events currently in dead_letter status.
@@ -566,32 +582,57 @@ pub fn retry_dead_letter(pool: &DbPool, id: &str) -> Result<PersonaEvent, AppErr
     timed_query!("persona_events", "persona_events::retry_dead_letter", {
         let conn = pool.get()?;
 
-        // Check current retry_count and preserve the original error before retry.
-        let (current_retries, original_error): (i32, Option<String>) = conn
-            .query_row(
-                "SELECT retry_count, error_message FROM persona_events WHERE id = ?1 AND status = 'dead_letter'",
-                params![id],
-                |row| Ok((row.get(0)?, row.get(1)?)),
-            )
-            .map_err(|_| AppError::NotFound(format!("Dead-lettered PersonaEvent {id}")))?;
+        // Single atomic UPDATE: flip status to 'pending', bump retry_count, and
+        // preserve the prior error message — all guarded by the dead_letter +
+        // retry-cap predicate. This closes the TOCTOU race where two concurrent
+        // retry callers could both pass a SELECT-side cap check and then both
+        // increment retry_count past MAX_MANUAL_RETRIES.
+        let rows = conn.execute(
+            "UPDATE persona_events
+             SET status = 'pending',
+                 retry_count = retry_count + 1,
+                 error_message = CASE
+                     WHEN error_message IS NOT NULL
+                     THEN '[Retry #' || (retry_count + 1) || ' — previous error: ' || error_message || ']'
+                     ELSE NULL
+                 END,
+                 processed_at = NULL
+             WHERE id = ?1
+               AND status = 'dead_letter'
+               AND retry_count < ?2",
+            params![id, MAX_MANUAL_RETRIES],
+        )?;
 
-        if current_retries >= MAX_MANUAL_RETRIES {
-            return Err(AppError::RetryExhausted(format!(
-                "Event {id} has exhausted all {MAX_MANUAL_RETRIES} retry attempts"
-            )));
+        if rows == 0 {
+            // Distinguish the three failure modes by reading current state.
+            let current: Option<(String, i32)> = conn
+                .query_row(
+                    "SELECT status, retry_count FROM persona_events WHERE id = ?1",
+                    params![id],
+                    |row| Ok((row.get(0)?, row.get(1)?)),
+                )
+                .optional()?;
+
+            return match current {
+                None => Err(AppError::NotFound(format!(
+                    "Dead-lettered PersonaEvent {id}"
+                ))),
+                Some((status, _)) if status != "dead_letter" => Err(AppError::NotFound(format!(
+                    "Dead-lettered PersonaEvent {id}"
+                ))),
+                Some((_, retry_count)) if retry_count >= MAX_MANUAL_RETRIES => {
+                    Err(AppError::RetryExhausted(format!(
+                        "Event {id} has exhausted all {MAX_MANUAL_RETRIES} retry attempts"
+                    )))
+                }
+                // Concurrent caller raced ahead and reset the row before we
+                // could observe it; surface as not-in-DLQ so the UI re-fetches.
+                Some(_) => Err(AppError::NotFound(format!(
+                    "Dead-lettered PersonaEvent {id}"
+                ))),
+            };
         }
 
-        let preserved_error = original_error.map(|err| {
-            format!("[Retry #{} — previous error: {}]", current_retries + 1, err)
-        });
-
-        conn.execute(
-            "UPDATE persona_events
-             SET status = 'pending', retry_count = retry_count + 1,
-                 error_message = ?2, processed_at = NULL
-             WHERE id = ?1 AND status = 'dead_letter'",
-            params![id, preserved_error],
-        )?;
         get_by_id(pool, id)
     })
 }
@@ -624,38 +665,44 @@ pub fn increment_retry_or_dead_letter(
     error_message: Option<String>,
     max_retries: i32,
 ) -> Result<bool, AppError> {
-    timed_query!("persona_events", "persona_events::increment_retry_or_dead_letter", {
-        let conn = pool.get()?;
+    timed_query!(
+        "persona_events",
+        "persona_events::increment_retry_or_dead_letter",
+        {
+            let conn = pool.get()?;
 
-        // Atomically increment retry_count and conditionally set status in a
-        // single UPDATE to avoid TOCTOU races with concurrent retry attempts.
-        let now = chrono::Utc::now().to_rfc3339();
+            // Atomically increment retry_count and conditionally set status in a
+            // single UPDATE to avoid TOCTOU races with concurrent retry attempts.
+            let now = chrono::Utc::now().to_rfc3339();
 
-        // Use a single atomic UPDATE that increments retry_count and conditionally
-        // sets status based on whether the new count exceeds max_retries.
-        let rows = conn.execute(
-            "UPDATE persona_events
+            // Use a single atomic UPDATE that increments retry_count and conditionally
+            // sets status based on whether the new count exceeds max_retries.
+            let rows = conn.execute(
+                "UPDATE persona_events
              SET retry_count = retry_count + 1,
                  error_message = ?1,
                  processed_at = ?2,
                  status = CASE WHEN retry_count + 1 >= ?3 THEN 'dead_letter' ELSE 'failed' END
              WHERE id = ?4",
-            params![error_message, now, max_retries, id],
-        )?;
+                params![error_message, now, max_retries, id],
+            )?;
 
-        if rows == 0 {
-            return Err(AppError::NotFound(format!("PersonaEvent {id}")));
+            if rows == 0 {
+                return Err(AppError::NotFound(format!("PersonaEvent {id}")));
+            }
+
+            // Check if it was moved to dead letter
+            let final_status: String = conn
+                .query_row(
+                    "SELECT status FROM persona_events WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
+
+            Ok(final_status == "dead_letter")
         }
-
-        // Check if it was moved to dead letter
-        let final_status: String = conn.query_row(
-            "SELECT status FROM persona_events WHERE id = ?1",
-            params![id],
-            |row| row.get(0),
-        ).map_err(|_| AppError::NotFound(format!("PersonaEvent {id}")))?;
-
-        Ok(final_status == "dead_letter")
-    })
+    )
 }
 
 /// Get events eligible for automatic retry (failed status, retry_count < max_retries).
@@ -670,7 +717,7 @@ pub fn get_retry_eligible(
             "SELECT * FROM persona_events
              WHERE status = 'failed'
                AND retry_count < ?1
-             ORDER BY created_at ASC
+             ORDER BY created_at ASC, id ASC
              LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![max_retries, limit], row_to_event)?;
@@ -687,49 +734,53 @@ pub fn search(
     filter: &EventFilterInput,
 ) -> Result<(Vec<PersonaEvent>, bool), AppError> {
     timed_query!("persona_events", "persona_events::search", {
-    let limit = filter.limit.unwrap_or(100).max(1);
-    let fetch = limit + 1;
-    let conn = pool.get()?;
+        let limit = filter.limit.unwrap_or(100).max(1);
+        let fetch = limit + 1;
+        let conn = pool.get()?;
 
-    let mut qb = crate::db::query_builder::QueryBuilder::new();
+        let mut qb = crate::db::query_builder::QueryBuilder::new();
 
-    if let Some(ref v) = filter.event_type {
-        qb.where_eq("event_type", v.clone());
-    }
-    if let Some(ref v) = filter.source_type {
-        qb.where_eq("source_type", v.clone());
-    }
-    if let Some(ref v) = filter.status {
-        qb.where_eq("status", v.clone());
-    }
-    if let Some(ref v) = filter.target_persona_id {
-        qb.where_eq("target_persona_id", v.clone());
-    }
-    if let Some(ref v) = filter.since {
-        qb.where_gte("created_at", v.clone());
-    }
-    if let Some(ref v) = filter.until {
-        qb.where_lte("created_at", v.clone());
-    }
-    if let Some(ref v) = filter.search {
-        if !v.is_empty() {
-            let pattern = format!("%{v}%");
-            qb.where_like_any(&["event_type", "source_type", "payload"], pattern);
+        if let Some(ref v) = filter.event_type {
+            qb.where_eq("event_type", v.clone());
         }
-    }
+        if let Some(ref v) = filter.source_type {
+            qb.where_eq("source_type", v.clone());
+        }
+        if let Some(ref v) = filter.status {
+            qb.where_eq("status", v.clone());
+        }
+        if let Some(ref v) = filter.target_persona_id {
+            qb.where_eq("target_persona_id", v.clone());
+        }
+        if let Some(ref v) = filter.since {
+            qb.where_gte("created_at", v.clone());
+        }
+        if let Some(ref v) = filter.until {
+            qb.where_lte("created_at", v.clone());
+        }
+        if let Some(ref v) = filter.search {
+            if !v.is_empty() {
+                let pattern = format!("%{v}%");
+                qb.where_like_any(&["event_type", "source_type", "payload"], pattern);
+            }
+        }
 
-    qb.order_by("created_at", "DESC");
-    qb.limit(fetch);
+        // Composite (created_at, id) ordering. The id tiebreaker is required
+        // for stable cursor pagination — without it, two events inserted in
+        // the same millisecond can be skipped or duplicated by since/until
+        // scrolling. See `get_in_range` for the cursor contract.
+        qb.order_by_multiple(&[("created_at", "DESC"), ("id", "DESC")]);
+        qb.limit(fetch);
 
-    let sql = qb.build_select("SELECT * FROM persona_events");
-    let mut stmt = conn.prepare(&sql)?;
-    let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_event)?;
-    let mut events = collect_rows(rows, "search_events");
-    let has_more = events.len() as i64 > limit;
-    if has_more {
-        events.truncate(limit as usize);
-    }
-    Ok((events, has_more))
+        let sql = qb.build_select("SELECT * FROM persona_events");
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_event)?;
+        let mut events = collect_rows(rows, "search_events");
+        let has_more = events.len() as i64 > limit;
+        if has_more {
+            events.truncate(limit as usize);
+        }
+        Ok((events, has_more))
     })
 }
 
@@ -741,36 +792,44 @@ pub fn get_subscription_by_id(
     pool: &DbPool,
     id: &str,
 ) -> Result<PersonaEventSubscription, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::get_subscription_by_id", {
-        let conn = pool.get()?;
-        conn.query_row(
-            "SELECT * FROM persona_event_subscriptions WHERE id = ?1",
-            params![id],
-            row_to_subscription,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("PersonaEventSubscription {id}"))
-            }
-            other => AppError::Database(other),
-        })
-    })
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_subscription_by_id",
+        {
+            let conn = pool.get()?;
+            conn.query_row(
+                "SELECT * FROM persona_event_subscriptions WHERE id = ?1",
+                params![id],
+                row_to_subscription,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::NotFound(format!("PersonaEventSubscription {id}"))
+                }
+                other => AppError::Database(other),
+            })
+        }
+    )
 }
 
 pub fn get_subscriptions_by_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::get_subscriptions_by_persona", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_event_subscriptions
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_subscriptions_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_event_subscriptions
              WHERE persona_id = ?1
              ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![persona_id], row_to_subscription)?;
-        Ok(collect_rows(rows, "get_subscriptions_by_persona"))
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id], row_to_subscription)?;
+            Ok(collect_rows(rows, "get_subscriptions_by_persona"))
+        }
+    )
 }
 
 /// Bulk-fetch subscriptions for multiple persona IDs in a single query.
@@ -781,54 +840,63 @@ pub fn get_subscriptions_by_persona_ids(
     if persona_ids.is_empty() {
         return Ok(Vec::new());
     }
-    timed_query!("event_subscriptions", "event_subscriptions::get_subscriptions_by_persona_ids", {
-        let conn = pool.get()?;
-        let placeholders: Vec<String> = persona_ids
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_subscriptions_by_persona_ids",
+        {
+            let conn = pool.get()?;
+            let placeholders: Vec<String> = persona_ids
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect();
+            let sql = format!(
             "SELECT * FROM persona_event_subscriptions WHERE persona_id IN ({}) ORDER BY created_at DESC",
             placeholders.join(", ")
         );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
-        Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
-    })
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            Ok(collect_rows(rows, "get_subscriptions_by_persona_ids"))
+        }
+    )
 }
 
-pub fn get_all_subscriptions(
-    pool: &DbPool,
-) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::get_all_subscriptions", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map([], row_to_subscription)?;
-        Ok(collect_rows(rows, "get_all_subscriptions"))
-    })
+pub fn get_all_subscriptions(pool: &DbPool) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_all_subscriptions",
+        {
+            let conn = pool.get()?;
+            let mut stmt =
+                conn.prepare("SELECT * FROM persona_event_subscriptions ORDER BY created_at DESC")?;
+            let rows = stmt.query_map([], row_to_subscription)?;
+            Ok(collect_rows(rows, "get_all_subscriptions"))
+        }
+    )
 }
 
 pub fn get_subscriptions_by_event_type(
     pool: &DbPool,
     event_type: &str,
 ) -> Result<Vec<PersonaEventSubscription>, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::get_subscriptions_by_event_type", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_event_subscriptions
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_subscriptions_by_event_type",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_event_subscriptions
              WHERE event_type = ?1 AND enabled = 1
              ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![event_type], row_to_subscription)?;
-        Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
-    })
+            )?;
+            let rows = stmt.query_map(params![event_type], row_to_subscription)?;
+            Ok(collect_rows(rows, "get_subscriptions_by_event_type"))
+        }
+    )
 }
 
 /// Bulk-fetch enabled subscriptions for multiple event types in a single query.
@@ -839,42 +907,49 @@ pub fn get_subscriptions_by_event_types(
     if event_types.is_empty() {
         return Ok(Vec::new());
     }
-    timed_query!("event_subscriptions", "event_subscriptions::get_subscriptions_by_event_types", {
-        let conn = pool.get()?;
-        let placeholders: Vec<String> = event_types
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM persona_event_subscriptions
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_subscriptions_by_event_types",
+        {
+            let conn = pool.get()?;
+            let placeholders: Vec<String> = event_types
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect();
+            let sql = format!(
+                "SELECT * FROM persona_event_subscriptions
              WHERE event_type IN ({}) AND enabled = 1
              ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
-        Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
-    })
+                placeholders.join(", ")
+            );
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), row_to_subscription)?;
+            Ok(collect_rows(rows, "get_subscriptions_by_event_types"))
+        }
+    )
 }
 
 pub fn create_subscription(
     pool: &DbPool,
     input: CreateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::create_subscription", {
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let enabled = input.enabled.unwrap_or(true) as i32;
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::create_subscription",
+        {
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let enabled = input.enabled.unwrap_or(true) as i32;
 
-        let conn = pool.get()?;
-        // Use INSERT OR IGNORE to silently skip if an identical subscription exists
-        // (unique index on persona_id, event_type, COALESCE(source_filter, '')).
-        let rows = conn.execute(
+            let conn = pool.get()?;
+            // Use INSERT OR IGNORE to silently skip if an identical subscription exists
+            // (unique index on persona_id, event_type, COALESCE(source_filter, '')).
+            let rows = conn.execute(
             "INSERT OR IGNORE INTO persona_event_subscriptions
              (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
@@ -889,20 +964,23 @@ pub fn create_subscription(
             ],
         )?;
 
-        if rows == 0 {
-            // Duplicate exists -- return the existing subscription
-            let existing = conn.query_row(
-                "SELECT * FROM persona_event_subscriptions
+            if rows == 0 {
+                // Duplicate exists -- return the existing subscription
+                let existing = conn
+                    .query_row(
+                        "SELECT * FROM persona_event_subscriptions
                  WHERE persona_id = ?1 AND event_type = ?2
                    AND COALESCE(source_filter, '') = COALESCE(?3, '')",
-                params![input.persona_id, input.event_type, input.source_filter],
-                row_to_subscription,
-            ).map_err(AppError::Database)?;
-            return Ok(existing);
-        }
+                        params![input.persona_id, input.event_type, input.source_filter],
+                        row_to_subscription,
+                    )
+                    .map_err(AppError::Database)?;
+                return Ok(existing);
+            }
 
-        get_subscription_by_id(pool, &id)
-    })
+            get_subscription_by_id(pool, &id)
+        }
+    )
 }
 
 /// Atomically create an event_listener trigger and a legacy subscription
@@ -912,22 +990,29 @@ pub fn create_subscription_with_trigger(
     input: CreateEventSubscriptionInput,
     trigger_input: CreateTriggerInput,
 ) -> Result<PersonaEventSubscription, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::create_subscription_with_trigger", {
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::create_subscription_with_trigger",
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1) Insert the event_listener trigger
-        let trigger_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
-        let trigger_enabled = trigger_input.enabled.unwrap_or(true);
-        let trigger_status = if trigger_enabled { "active" } else { "disabled" };
-        let encrypted_config = trigger_input.config.as_deref().map(|c| {
-            crypto::encrypt_trigger_config(c).unwrap_or_else(|e| {
-                tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                c.to_string()
-            })
-        });
-        tx.execute(
+            // 1) Insert the event_listener trigger
+            let trigger_id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
+            let trigger_enabled = trigger_input.enabled.unwrap_or(true);
+            let trigger_status = if trigger_enabled {
+                "active"
+            } else {
+                "disabled"
+            };
+            let encrypted_config = trigger_input.config.as_deref().map(|c| {
+                crypto::encrypt_trigger_config(c).unwrap_or_else(|e| {
+                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
+                    c.to_string()
+                })
+            });
+            tx.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
@@ -943,10 +1028,10 @@ pub fn create_subscription_with_trigger(
             ],
         )?;
 
-        // 2) Insert the legacy subscription
-        let sub_id = uuid::Uuid::new_v4().to_string();
-        let sub_enabled = input.enabled.unwrap_or(true) as i32;
-        let sub_rows = tx.execute(
+            // 2) Insert the legacy subscription
+            let sub_id = uuid::Uuid::new_v4().to_string();
+            let sub_enabled = input.enabled.unwrap_or(true) as i32;
+            let sub_rows = tx.execute(
             "INSERT OR IGNORE INTO persona_event_subscriptions
              (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)",
@@ -961,24 +1046,27 @@ pub fn create_subscription_with_trigger(
             ],
         )?;
 
-        tx.commit().map_err(AppError::Database)?;
+            tx.commit().map_err(AppError::Database)?;
 
-        // Return the subscription (existing or newly created)
-        if sub_rows == 0 {
-            // Duplicate existed -- find and return it
-            let conn = pool.get()?;
-            let existing = conn.query_row(
-                "SELECT * FROM persona_event_subscriptions
+            // Return the subscription (existing or newly created)
+            if sub_rows == 0 {
+                // Duplicate existed -- find and return it
+                let conn = pool.get()?;
+                let existing = conn
+                    .query_row(
+                        "SELECT * FROM persona_event_subscriptions
                  WHERE persona_id = ?1 AND event_type = ?2
                    AND COALESCE(source_filter, '') = COALESCE(?3, '')",
-                params![input.persona_id, input.event_type, input.source_filter],
-                row_to_subscription,
-            ).map_err(AppError::Database)?;
-            Ok(existing)
-        } else {
-            get_subscription_by_id(pool, &sub_id)
+                        params![input.persona_id, input.event_type, input.source_filter],
+                        row_to_subscription,
+                    )
+                    .map_err(AppError::Database)?;
+                Ok(existing)
+            } else {
+                get_subscription_by_id(pool, &sub_id)
+            }
         }
-    })
+    )
 }
 
 pub fn update_subscription(
@@ -986,149 +1074,161 @@ pub fn update_subscription(
     id: &str,
     input: UpdateEventSubscriptionInput,
 ) -> Result<PersonaEventSubscription, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::update_subscription", {
-        // Fetch the existing subscription so we can locate the paired trigger
-        let existing = get_subscription_by_id(pool, id)?;
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::update_subscription",
+        {
+            // Fetch the existing subscription so we can locate the paired trigger
+            let existing = get_subscription_by_id(pool, id)?;
 
-        let now = chrono::Utc::now().to_rfc3339();
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1) Update the subscription row
-        let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
-        let mut param_idx = 2u32;
+            // 1) Update the subscription row
+            let mut sets: Vec<String> = vec!["updated_at = ?1".into()];
+            let mut param_idx = 2u32;
 
-        push_field!(input.event_type, "event_type", sets, param_idx);
-        push_field!(input.source_filter, "source_filter", sets, param_idx);
-        push_field!(input.enabled, "enabled", sets, param_idx);
+            push_field!(input.event_type, "event_type", sets, param_idx);
+            push_field!(input.source_filter, "source_filter", sets, param_idx);
+            push_field!(input.enabled, "enabled", sets, param_idx);
 
-        let sql = format!(
-            "UPDATE persona_event_subscriptions SET {} WHERE id = ?{}",
-            sets.join(", "),
-            param_idx
-        );
+            let sql = format!(
+                "UPDATE persona_event_subscriptions SET {} WHERE id = ?{}",
+                sets.join(", "),
+                param_idx
+            );
 
-        let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> = vec![Box::new(now.clone())];
+            let mut param_values: Vec<Box<dyn rusqlite::types::ToSql>> =
+                vec![Box::new(now.clone())];
 
-        if let Some(ref v) = input.event_type {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(ref v) = input.source_filter {
-            param_values.push(Box::new(v.clone()));
-        }
-        if let Some(v) = input.enabled {
-            param_values.push(Box::new(v as i32));
-        }
-        param_values.push(Box::new(id.to_string()));
+            if let Some(ref v) = input.event_type {
+                param_values.push(Box::new(v.clone()));
+            }
+            if let Some(ref v) = input.source_filter {
+                param_values.push(Box::new(v.clone()));
+            }
+            if let Some(v) = input.enabled {
+                param_values.push(Box::new(v as i32));
+            }
+            param_values.push(Box::new(id.to_string()));
 
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-            param_values.iter().map(|p| p.as_ref()).collect();
-        tx.execute(&sql, params_ref.as_slice())?;
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                param_values.iter().map(|p| p.as_ref()).collect();
+            tx.execute(&sql, params_ref.as_slice())?;
 
-        // 2) Propagate changes to the paired event_listener trigger
-        let new_event_type = input.event_type.as_deref().unwrap_or(&existing.event_type);
-        let new_source_filter = input.source_filter.as_deref().or(existing.source_filter.as_deref());
+            // 2) Propagate changes to the paired event_listener trigger
+            let new_event_type = input.event_type.as_deref().unwrap_or(&existing.event_type);
+            let new_source_filter = input
+                .source_filter
+                .as_deref()
+                .or(existing.source_filter.as_deref());
 
-        let config = serde_json::json!({
-            "listen_event_type": new_event_type,
-            "source_filter": new_source_filter,
-        });
-        let encrypted_config = {
-            let raw = serde_json::to_string(&config).unwrap_or_default();
-            crypto::encrypt_trigger_config(&raw).unwrap_or_else(|e| {
-                tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
-                raw
-            })
-        };
+            let config = serde_json::json!({
+                "listen_event_type": new_event_type,
+                "source_filter": new_source_filter,
+            });
+            let encrypted_config = {
+                let raw = serde_json::to_string(&config).unwrap_or_default();
+                crypto::encrypt_trigger_config(&raw).unwrap_or_else(|e| {
+                    tracing::warn!("Failed to encrypt trigger config, storing as-is: {}", e);
+                    raw
+                })
+            };
 
-        if let Some(enabled) = input.enabled {
-            let status = if enabled { "active" } else { "disabled" };
-            tx.execute(
-                "UPDATE persona_triggers
+            if let Some(enabled) = input.enabled {
+                let status = if enabled { "active" } else { "disabled" };
+                tx.execute(
+                    "UPDATE persona_triggers
                  SET config = ?1, enabled = ?2, status = ?3, updated_at = ?4
                  WHERE persona_id = ?5
                    AND trigger_type = 'event_listener'
                    AND COALESCE(use_case_id, '') = COALESCE(?6, '')",
-                params![
-                    encrypted_config,
-                    enabled as i32,
-                    status,
-                    now,
-                    existing.persona_id,
-                    existing.use_case_id,
-                ],
-            )?;
-        } else if input.event_type.is_some() || input.source_filter.is_some() {
-            tx.execute(
-                "UPDATE persona_triggers
+                    params![
+                        encrypted_config,
+                        enabled as i32,
+                        status,
+                        now,
+                        existing.persona_id,
+                        existing.use_case_id,
+                    ],
+                )?;
+            } else if input.event_type.is_some() || input.source_filter.is_some() {
+                tx.execute(
+                    "UPDATE persona_triggers
                  SET config = ?1, updated_at = ?2
                  WHERE persona_id = ?3
                    AND trigger_type = 'event_listener'
                    AND COALESCE(use_case_id, '') = COALESCE(?4, '')",
-                params![
-                    encrypted_config,
-                    now,
-                    existing.persona_id,
-                    existing.use_case_id,
-                ],
-            )?;
+                    params![
+                        encrypted_config,
+                        now,
+                        existing.persona_id,
+                        existing.use_case_id,
+                    ],
+                )?;
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+
+            get_subscription_by_id(pool, id)
         }
-
-        tx.commit().map_err(AppError::Database)?;
-
-        get_subscription_by_id(pool, id)
-    })
+    )
 }
 
 pub fn delete_subscription(pool: &DbPool, id: &str) -> Result<bool, AppError> {
-    timed_query!("event_subscriptions", "event_subscriptions::delete_subscription", {
-        let mut conn = pool.get()?;
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::delete_subscription",
+        {
+            let mut conn = pool.get()?;
 
-        // Read the subscription first so we can find the paired trigger
-        let sub = conn.query_row(
-            "SELECT persona_id, event_type, source_filter, use_case_id
+            // Read the subscription first so we can find the paired trigger
+            let sub = conn.query_row(
+                "SELECT persona_id, event_type, source_filter, use_case_id
              FROM persona_event_subscriptions WHERE id = ?1",
-            params![id],
-            |row| {
-                Ok((
-                    row.get::<_, String>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, Option<String>>(2)?,
-                    row.get::<_, Option<String>>(3)?,
-                ))
-            },
-        );
+                params![id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, Option<String>>(3)?,
+                    ))
+                },
+            );
 
-        let sub = match sub {
-            Ok(s) => s,
-            Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
-            Err(e) => return Err(AppError::Database(e)),
-        };
+            let sub = match sub {
+                Ok(s) => s,
+                Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(false),
+                Err(e) => return Err(AppError::Database(e)),
+            };
 
-        let (persona_id, _event_type, _source_filter, use_case_id) = sub;
+            let (persona_id, _event_type, _source_filter, use_case_id) = sub;
 
-        let tx = conn.transaction().map_err(AppError::Database)?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // Delete the paired event_listener trigger created alongside this subscription.
-        // Match on persona_id, trigger_type, and use_case_id to find the paired trigger.
-        tx.execute(
-            "DELETE FROM persona_triggers
+            // Delete the paired event_listener trigger created alongside this subscription.
+            // Match on persona_id, trigger_type, and use_case_id to find the paired trigger.
+            tx.execute(
+                "DELETE FROM persona_triggers
              WHERE persona_id = ?1
                AND trigger_type = 'event_listener'
                AND COALESCE(use_case_id, '') = COALESCE(?2, '')",
-            params![persona_id, use_case_id],
-        )?;
+                params![persona_id, use_case_id],
+            )?;
 
-        // Delete the subscription itself
-        let rows = tx.execute(
-            "DELETE FROM persona_event_subscriptions WHERE id = ?1",
-            params![id],
-        )?;
+            // Delete the subscription itself
+            let rows = tx.execute(
+                "DELETE FROM persona_event_subscriptions WHERE id = ?1",
+                params![id],
+            )?;
 
-        tx.commit().map_err(AppError::Database)?;
+            tx.commit().map_err(AppError::Database)?;
 
-        Ok(rows > 0)
-    })
+            Ok(rows > 0)
+        }
+    )
 }
 
 // ============================================================================
@@ -1638,7 +1738,10 @@ mod tests {
             },
         );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("invalid characters"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("invalid characters"));
     }
 
     #[test]
@@ -1709,7 +1812,10 @@ mod tests {
                 use_case_id: None,
             },
         );
-        assert!(result.is_ok(), "payload at exactly MAX_PAYLOAD_BYTES should be accepted");
+        assert!(
+            result.is_ok(),
+            "payload at exactly MAX_PAYLOAD_BYTES should be accepted"
+        );
     }
 
     // ------------------------------------------------------------------
@@ -1810,7 +1916,13 @@ mod tests {
             },
         )
         .unwrap();
-        update_status(&pool, &evt.id, PersonaEventStatus::Failed, Some("boom".into())).unwrap();
+        update_status(
+            &pool,
+            &evt.id,
+            PersonaEventStatus::Failed,
+            Some("boom".into()),
+        )
+        .unwrap();
 
         let filter = EventFilterInput {
             event_type: None,

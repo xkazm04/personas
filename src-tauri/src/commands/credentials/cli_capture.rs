@@ -24,7 +24,7 @@ use tokio::process::Command;
 use tokio::time::timeout;
 
 use crate::commands::credentials::auth_detect::{
-    resolve_cli_path, read_limited, sanitized_env, MAX_CLI_OUTPUT_BYTES,
+    read_limited, resolve_cli_path, sanitized_env, MAX_CLI_OUTPUT_BYTES,
 };
 use crate::db::models::{CreateCredentialInput, PersonaCredential};
 use crate::db::repos::resources::credentials as cred_repo;
@@ -481,7 +481,9 @@ const CAPTURE_SPECS: &[CaptureSpec] = &[
 ];
 
 fn find_spec(service_type: &str) -> Option<&'static CaptureSpec> {
-    CAPTURE_SPECS.iter().find(|s| s.service_type == service_type)
+    CAPTURE_SPECS
+        .iter()
+        .find(|s| s.service_type == service_type)
 }
 
 // =============================================================================
@@ -612,10 +614,7 @@ const STEP_TIMEOUT: Duration = Duration::from_secs(5);
 
 /// Run a single CLI step in a sandboxed subprocess. Returns trimmed stdout on
 /// success or a structured error describing what went wrong.
-async fn run_step(
-    bin_path: &PathBuf,
-    step: &CliStep,
-) -> Result<String, CliCaptureError> {
+async fn run_step(bin_path: &PathBuf, step: &CliStep) -> Result<String, CliCaptureError> {
     let args: Vec<String> = step.args.iter().map(|a| a.to_string()).collect();
 
     let mut cmd = Command::new(bin_path);
@@ -832,10 +831,12 @@ pub async fn recapture_for_credential(
     pool: &DbPool,
     cred: &PersonaCredential,
 ) -> Result<String, AppError> {
-    let spec = find_spec(&cred.service_type)
-        .ok_or_else(|| AppError::NotFound(format!(
-            "No CLI capture spec for service_type `{}`", cred.service_type
-        )))?;
+    let spec = find_spec(&cred.service_type).ok_or_else(|| {
+        AppError::NotFound(format!(
+            "No CLI capture spec for service_type `{}`",
+            cred.service_type
+        ))
+    })?;
 
     let result = run_spec(spec).await.map_err(AppError::from)?;
 
@@ -856,7 +857,10 @@ pub async fn recapture_for_credential(
         );
     }
     // Reset failure counters on successful recapture.
-    patch.insert("oauth_refresh_fail_count".into(), serde_json::Value::Number(0.into()));
+    patch.insert(
+        "oauth_refresh_fail_count".into(),
+        serde_json::Value::Number(0.into()),
+    );
     patch.insert(
         "oauth_refresh_backoff_until".into(),
         serde_json::Value::Null,
@@ -892,9 +896,7 @@ pub struct CliSpecInfo {
 /// the frontend needs to know the spec exists even if the binary is missing,
 /// so it can show install instructions.
 #[tauri::command]
-pub async fn list_cli_specs(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<CliSpecInfo>, AppError> {
+pub async fn list_cli_specs(state: State<'_, Arc<AppState>>) -> Result<Vec<CliSpecInfo>, AppError> {
     require_auth(&state).await?;
 
     Ok(CAPTURE_SPECS
@@ -1045,15 +1047,26 @@ mod tests {
     #[test]
     fn all_phase_specs_are_registered() {
         let required = [
-            "gcp_cloud", "github", "vercel", "netlify", "heroku",
-            "azure_cloud", "aws_cloud",
-            "cloudflare", "convex", "supabase", "fly_io", "railway",
-            "stripe", "digitalocean",
+            "gcp_cloud",
+            "github",
+            "vercel",
+            "netlify",
+            "heroku",
+            "azure_cloud",
+            "aws_cloud",
+            "cloudflare",
+            "convex",
+            "supabase",
+            "fly_io",
+            "railway",
+            "stripe",
+            "digitalocean",
         ];
         for svc in required {
             assert!(
                 find_spec(svc).is_some(),
-                "CaptureSpec missing for service_type `{}`", svc,
+                "CaptureSpec missing for service_type `{}`",
+                svc,
             );
         }
     }
@@ -1064,10 +1077,26 @@ mod tests {
     #[test]
     fn every_spec_has_display_metadata() {
         for spec in CAPTURE_SPECS {
-            assert!(!spec.display_label.is_empty(), "missing display_label for {}", spec.service_type);
-            assert!(!spec.install_hint.is_empty(), "missing install_hint for {}", spec.service_type);
-            assert!(!spec.docs_url.is_empty(), "missing docs_url for {}", spec.service_type);
-            assert!(!spec.auth_instruction.is_empty(), "missing auth_instruction for {}", spec.service_type);
+            assert!(
+                !spec.display_label.is_empty(),
+                "missing display_label for {}",
+                spec.service_type
+            );
+            assert!(
+                !spec.install_hint.is_empty(),
+                "missing install_hint for {}",
+                spec.service_type
+            );
+            assert!(
+                !spec.docs_url.is_empty(),
+                "missing docs_url for {}",
+                spec.service_type
+            );
+            assert!(
+                !spec.auth_instruction.is_empty(),
+                "missing auth_instruction for {}",
+                spec.service_type
+            );
         }
     }
 
@@ -1079,7 +1108,8 @@ mod tests {
             if let Some(vs) = &spec.verify_step {
                 assert_eq!(
                     vs.cmd, spec.binary,
-                    "verify_step.cmd must match spec.binary for {}", spec.service_type,
+                    "verify_step.cmd must match spec.binary for {}",
+                    spec.service_type,
                 );
             }
         }

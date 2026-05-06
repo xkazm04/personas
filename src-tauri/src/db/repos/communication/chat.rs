@@ -1,8 +1,7 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    ChatMessage, ChatSession, ChatSessionContext, CreateChatMessageInput,
-    UpsertSessionContextInput,
+    ChatMessage, ChatSession, ChatSessionContext, CreateChatMessageInput, UpsertSessionContextInput,
 };
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
@@ -173,9 +172,7 @@ pub fn get_session_context(
 ) -> Result<Option<ChatSessionContext>, AppError> {
     timed_query!("chat_sessions", "chat_sessions::get_session_context", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM chat_session_context WHERE session_id = ?1",
-        )?;
+        let mut stmt = conn.prepare("SELECT * FROM chat_session_context WHERE session_id = ?1")?;
         let mut rows = stmt.query_map(params![session_id], row_to_session_context)?;
         match rows.next() {
             Some(Ok(ctx)) => Ok(Some(ctx)),

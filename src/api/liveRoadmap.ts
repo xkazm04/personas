@@ -52,7 +52,19 @@ export interface LiveRoadmap {
   i18n: Record<string, LiveRoadmapLocale>;
 }
 
-export type LiveRoadmapSource = 'network' | 'cache';
+/**
+ * Where a `LiveRoadmapResult` came from on this call.
+ *
+ * - `network` — fresh GET (or 304 against an existing cache) just completed.
+ * - `cache`   — disk cache was still fresh by TTL; network was deliberately
+ *               skipped. Healthy "we're current" path.
+ * - `stale`   — network was attempted but failed; we returned the cached
+ *               payload as a rescue. Degraded: the live channel is silently
+ *               broken and the user may be reading content the server has
+ *               already updated. UI should surface this as a warning, not
+ *               the same amber pill as a healthy cache hit.
+ */
+export type LiveRoadmapSource = 'network' | 'cache' | 'stale';
 
 export interface LiveRoadmapResult {
   roadmap: LiveRoadmap;

@@ -3,14 +3,14 @@
 //! Provides LAN peer discovery (mDNS), QUIC transport, connection management,
 //! manifest sync, and agent-to-agent messaging.
 
-pub mod types;
-pub mod protocol;
-pub mod transport;
-pub mod mdns;
 pub mod connection;
 pub mod manifest_sync;
+pub mod mdns;
 pub mod messaging;
 pub mod periodic;
+pub mod protocol;
+pub mod transport;
+pub mod types;
 
 use std::sync::Arc;
 use std::time::Duration;
@@ -62,9 +62,14 @@ impl NetworkService {
 
         // Reset stale is_connected flags from previous app session
         {
-            let conn = pool.get().map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
-            conn.execute("UPDATE discovered_peers SET is_connected = 0 WHERE is_connected = 1", [])
-                .map_err(|e| AppError::Internal(format!("Failed to reset peer connections: {e}")))?;
+            let conn = pool
+                .get()
+                .map_err(|e| AppError::Internal(format!("Pool error: {e}")))?;
+            conn.execute(
+                "UPDATE discovered_peers SET is_connected = 0 WHERE is_connected = 1",
+                [],
+            )
+            .map_err(|e| AppError::Internal(format!("Failed to reset peer connections: {e}")))?;
         }
 
         Ok(Self {
@@ -137,7 +142,8 @@ impl NetworkService {
             PeriodicTask::with_dynamic_interval(
                 "p2p_health_check",
                 move || {
-                    let secs = config_health.try_read()
+                    let secs = config_health
+                        .try_read()
                         .map(|c| c.health_check_interval_secs)
                         .unwrap_or(15);
                     Duration::from_secs(secs)
@@ -159,7 +165,8 @@ impl NetworkService {
             PeriodicTask::with_dynamic_interval(
                 "p2p_manifest_sync",
                 move || {
-                    let secs = config_manifest.try_read()
+                    let secs = config_manifest
+                        .try_read()
                         .map(|c| c.manifest_sync_interval_secs)
                         .unwrap_or(30);
                     Duration::from_secs(secs)
@@ -181,7 +188,8 @@ impl NetworkService {
             PeriodicTask::with_dynamic_interval(
                 "p2p_mdns_prune",
                 move || {
-                    let secs = config_prune.try_read()
+                    let secs = config_prune
+                        .try_read()
                         .map(|c| c.stale_peer_timeout_secs)
                         .unwrap_or(60);
                     Duration::from_secs(secs)
@@ -190,7 +198,11 @@ impl NetworkService {
             )
             .run(|| {
                 let m = mdns_prune.clone();
-                async move { m.prune_stale_peers(120).map(|_| ()).map_err(|e| e.to_string()) }
+                async move {
+                    m.prune_stale_peers(120)
+                        .map(|_| ())
+                        .map_err(|e| e.to_string())
+                }
             })
             .await;
         });
@@ -218,7 +230,8 @@ impl NetworkService {
                 PeriodicTask::with_dynamic_interval(
                     "p2p_snapshot_emitter",
                     move || {
-                        let secs = config_snap.try_read()
+                        let secs = config_snap
+                            .try_read()
                             .map(|c| c.health_check_interval_secs)
                             .unwrap_or(15);
                         // Emit at health-check cadence (default 15s)
@@ -240,7 +253,8 @@ impl NetworkService {
                             Some(a) => a,
                             None => return Ok(()),
                         };
-                        let snapshot = build_snapshot(&pool, &transport, &mdns, &conns, &msgs, &ms).await;
+                        let snapshot =
+                            build_snapshot(&pool, &transport, &mdns, &conns, &msgs, &ms).await;
                         emit_event(app, event_name::NETWORK_SNAPSHOT_UPDATED, &snapshot);
                         Ok(())
                     }
@@ -332,9 +346,14 @@ impl NetworkService {
         let guard = self.app_handle.read().await;
         if let Some(app) = guard.as_ref() {
             let snapshot = build_snapshot(
-                &self.pool, &self.transport, &self.mdns, &self.connections,
-                &self.messages, &self.manifest_sync,
-            ).await;
+                &self.pool,
+                &self.transport,
+                &self.mdns,
+                &self.connections,
+                &self.messages,
+                &self.manifest_sync,
+            )
+            .await;
             emit_event(app, event_name::NETWORK_SNAPSHOT_UPDATED, &snapshot);
         }
     }

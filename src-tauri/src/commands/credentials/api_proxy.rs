@@ -97,7 +97,8 @@ pub async fn save_api_definition(
     let endpoints = crate::engine::api_definition::parse_openapi_spec(&raw_spec)?;
 
     let dir = api_definitions_dir(&app)?;
-    tokio::fs::create_dir_all(&dir).await
+    tokio::fs::create_dir_all(&dir)
+        .await
         .map_err(|e| AppError::Internal(format!("Failed to create api_definitions dir: {e}")))?;
 
     let path = dir.join(format!("{}.json.enc", credential_id));
@@ -116,7 +117,8 @@ pub async fn save_api_definition(
     file_contents.push(ENC_SEPARATOR);
     file_contents.extend_from_slice(ciphertext_b64.as_bytes());
 
-    tokio::fs::write(&path, file_contents).await
+    tokio::fs::write(&path, file_contents)
+        .await
         .map_err(|e| AppError::Internal(format!("Failed to write API definition: {e}")))?;
 
     // Remove legacy plaintext file if it exists
@@ -147,9 +149,12 @@ pub fn load_api_definition(
         let raw = std::fs::read(&enc_path)
             .map_err(|e| AppError::Internal(format!("Failed to read API definition: {e}")))?;
 
-        let sep_pos = raw.iter().position(|&b| b == ENC_SEPARATOR).ok_or_else(|| {
-            AppError::Internal("Corrupted encrypted API definition: missing separator".into())
-        })?;
+        let sep_pos = raw
+            .iter()
+            .position(|&b| b == ENC_SEPARATOR)
+            .ok_or_else(|| {
+                AppError::Internal("Corrupted encrypted API definition: missing separator".into())
+            })?;
 
         let nonce_b64 = std::str::from_utf8(&raw[..sep_pos])
             .map_err(|e| AppError::Internal(format!("Invalid nonce encoding: {e}")))?;
@@ -248,12 +253,12 @@ fn verify_path_containment(
 
     // Canonicalize if the file exists to defeat symlink-based traversal
     if file_path.exists() {
-        let canonical_file = file_path.canonicalize().map_err(|e| {
-            AppError::Internal(format!("Failed to canonicalize file path: {e}"))
-        })?;
-        let canonical_base = base_dir.canonicalize().map_err(|e| {
-            AppError::Internal(format!("Failed to canonicalize base dir: {e}"))
-        })?;
+        let canonical_file = file_path
+            .canonicalize()
+            .map_err(|e| AppError::Internal(format!("Failed to canonicalize file path: {e}")))?;
+        let canonical_base = base_dir
+            .canonicalize()
+            .map_err(|e| AppError::Internal(format!("Failed to canonicalize base dir: {e}")))?;
 
         if !canonical_file.starts_with(&canonical_base) {
             return Err(AppError::Validation(

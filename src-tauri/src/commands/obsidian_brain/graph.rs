@@ -90,9 +90,7 @@ struct NoteEntry {
 
 fn wikilink_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"\[\[([^\]\|#]+)(?:[#\|][^\]]*)?\]\]").expect("wikilink regex")
-    })
+    RE.get_or_init(|| Regex::new(r"\[\[([^\]\|#]+)(?:[#\|][^\]]*)?\]\]").expect("wikilink regex"))
 }
 
 fn walk_vault(vault_root: &Path) -> Vec<NoteEntry> {
@@ -236,7 +234,9 @@ fn snippet_for(body: &str, query_lc: &str) -> String {
 }
 
 fn ensure_within_vault(vault_root: &Path, target: &Path) -> Result<(), AppError> {
-    let canonical_root = vault_root.canonicalize().unwrap_or(vault_root.to_path_buf());
+    let canonical_root = vault_root
+        .canonicalize()
+        .unwrap_or(vault_root.to_path_buf());
     let canonical_target = target.canonicalize().unwrap_or(target.to_path_buf());
     if !canonical_target.starts_with(&canonical_root) {
         return Err(AppError::Validation(
@@ -287,7 +287,11 @@ pub fn obsidian_graph_search(
             })
         })
         .collect();
-    hits.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+    hits.sort_by(|a, b| {
+        b.score
+            .partial_cmp(&a.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     hits.truncate(limit);
     Ok(hits)
 }
@@ -307,10 +311,8 @@ pub fn obsidian_graph_outgoing_links(
         .map_err(|e| AppError::Validation(format!("Failed to read note: {e}")))?;
 
     let notes = walk_vault(vault_root);
-    let title_index: HashMap<String, &NoteEntry> = notes
-        .iter()
-        .map(|n| (n.title.to_lowercase(), n))
-        .collect();
+    let title_index: HashMap<String, &NoteEntry> =
+        notes.iter().map(|n| (n.title.to_lowercase(), n)).collect();
 
     let mut out = Vec::new();
     let mut seen = HashSet::new();
@@ -430,9 +432,7 @@ pub fn obsidian_graph_list_mocs(
 }
 
 #[tauri::command]
-pub fn obsidian_graph_stats(
-    state: State<'_, Arc<AppState>>,
-) -> Result<VaultStats, AppError> {
+pub fn obsidian_graph_stats(state: State<'_, Arc<AppState>>) -> Result<VaultStats, AppError> {
     require_auth_sync(&state)?;
     let config = get_config_or_err(&state.db)?;
     let vault_root = Path::new(&config.vault_path);
@@ -448,10 +448,7 @@ pub fn obsidian_graph_stats(
 
     static DATE_RE: OnceLock<Regex> = OnceLock::new();
     let date_re = DATE_RE.get_or_init(|| Regex::new(r"^\d{4}-\d{2}-\d{2}").expect("date regex"));
-    let daily_note_count = notes
-        .iter()
-        .filter(|n| date_re.is_match(&n.title))
-        .count() as u32;
+    let daily_note_count = notes.iter().filter(|n| date_re.is_match(&n.title)).count() as u32;
 
     Ok(VaultStats {
         total_notes: notes.len() as u32,
@@ -506,7 +503,11 @@ pub fn obsidian_graph_append_daily_note(
     if !existing.ends_with('\n') {
         existing.push('\n');
     }
-    if let Some(s) = section.as_deref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+    if let Some(s) = section
+        .as_deref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    {
         if !existing.contains(&format!("## {}", s)) {
             existing.push_str(&format!("\n## {}\n\n", s));
         } else {
@@ -541,7 +542,9 @@ pub fn obsidian_graph_write_meeting_note(
 
     let trimmed_title = title.trim();
     if trimmed_title.is_empty() {
-        return Err(AppError::Validation("Meeting note title is required".into()));
+        return Err(AppError::Validation(
+            "Meeting note title is required".into(),
+        ));
     }
     let safe_title: String = trimmed_title
         .chars()
@@ -640,7 +643,9 @@ pub fn obsidian_graph_start_watcher(
     }
 
     let slot = watcher_slot();
-    let mut guard = slot.lock().map_err(|_| AppError::Internal("watcher mutex poisoned".into()))?;
+    let mut guard = slot
+        .lock()
+        .map_err(|_| AppError::Internal("watcher mutex poisoned".into()))?;
 
     // No-op if we're already watching this exact path
     if let Some(existing) = guard.as_ref() {
@@ -653,7 +658,8 @@ pub fn obsidian_graph_start_watcher(
 
     let app_for_thread = app.clone();
     let vault_clone = vault_path.clone();
-    let pending: Arc<Mutex<(Vec<PathBuf>, Option<Instant>)>> = Arc::new(Mutex::new((Vec::new(), None)));
+    let pending: Arc<Mutex<(Vec<PathBuf>, Option<Instant>)>> =
+        Arc::new(Mutex::new((Vec::new(), None)));
     let pending_for_callback = pending.clone();
 
     let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
@@ -691,34 +697,32 @@ pub fn obsidian_graph_start_watcher(
     // Debounce thread — flushes pending events 1s after the last hit.
     let debounce_pending = pending.clone();
     let debounce_vault = vault_clone.clone();
-    std::thread::spawn(move || {
-        loop {
-            std::thread::sleep(Duration::from_millis(500));
-            let to_emit: Option<Vec<PathBuf>> = {
-                let mut state = debounce_pending.lock().expect("pending mutex");
-                match state.1 {
-                    Some(last) if last.elapsed() >= Duration::from_secs(1) => {
-                        let drained = std::mem::take(&mut state.0);
-                        state.1 = None;
-                        if drained.is_empty() {
-                            None
-                        } else {
-                            Some(drained)
-                        }
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_millis(500));
+        let to_emit: Option<Vec<PathBuf>> = {
+            let mut state = debounce_pending.lock().expect("pending mutex");
+            match state.1 {
+                Some(last) if last.elapsed() >= Duration::from_secs(1) => {
+                    let drained = std::mem::take(&mut state.0);
+                    state.1 = None;
+                    if drained.is_empty() {
+                        None
+                    } else {
+                        Some(drained)
                     }
-                    _ => None,
                 }
-            };
-            if let Some(paths) = to_emit {
-                let payload = VaultChangedEvent {
-                    vault_path: debounce_vault.to_string_lossy().to_string(),
-                    changed_paths: paths
-                        .into_iter()
-                        .map(|p| p.to_string_lossy().to_string())
-                        .collect(),
-                };
-                let _ = app_for_thread.emit(VAULT_CHANGED_EVENT, payload);
+                _ => None,
             }
+        };
+        if let Some(paths) = to_emit {
+            let payload = VaultChangedEvent {
+                vault_path: debounce_vault.to_string_lossy().to_string(),
+                changed_paths: paths
+                    .into_iter()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .collect(),
+            };
+            let _ = app_for_thread.emit(VAULT_CHANGED_EVENT, payload);
         }
     });
 
@@ -734,7 +738,9 @@ pub fn obsidian_graph_start_watcher(
 pub fn obsidian_graph_stop_watcher(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     let slot = watcher_slot();
-    let mut guard = slot.lock().map_err(|_| AppError::Internal("watcher mutex poisoned".into()))?;
+    let mut guard = slot
+        .lock()
+        .map_err(|_| AppError::Internal("watcher mutex poisoned".into()))?;
     *guard = None;
     Ok(())
 }

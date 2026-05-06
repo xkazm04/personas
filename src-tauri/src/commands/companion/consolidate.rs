@@ -17,7 +17,7 @@ use std::sync::Arc;
 use serde::Serialize;
 use tauri::State;
 
-use crate::companion::brain::{consolidation, reflection};
+use crate::companion::brain::{consolidation, dashboard, reflection};
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
@@ -148,9 +148,7 @@ pub struct ReflectionDetail {
 /// Generate and persist a reflection. Returns the new node id; the UI
 /// switches to the detail view immediately to show the result.
 #[tauri::command]
-pub async fn companion_run_reflection(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub async fn companion_run_reflection(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     ipc_auth::require_auth(&state).await?;
     reflection::run_reflection(&state.user_db).await
 }
@@ -184,4 +182,29 @@ pub fn companion_get_reflection(
         body: r.body,
         created_at: r.created_at,
     })
+}
+
+// ── Dashboard (Phase F) ─────────────────────────────────────────────────
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DashboardSpec {
+    /// JSON spec the frontend parses into widgets. Stored verbatim so
+    /// composition shape can evolve without a backend migration.
+    pub spec_json: String,
+    pub updated_at: String,
+}
+
+/// Read the current dashboard composition (singleton). Returns null
+/// when Athena hasn't composed one yet — the UI shows an empty state.
+#[tauri::command]
+pub fn companion_get_dashboard(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Option<DashboardSpec>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let d = dashboard::load_dashboard(&state.user_db)?;
+    Ok(d.map(|d| DashboardSpec {
+        spec_json: d.spec_json,
+        updated_at: d.updated_at,
+    }))
 }

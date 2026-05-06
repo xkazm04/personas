@@ -36,23 +36,31 @@ row_mapper!(row_to_trigger -> PersonaTrigger {
     created_at, updated_at, use_case_id,
 });
 
-crud_get_by_id!(PersonaTrigger, "persona_triggers", "Trigger", row_to_trigger);
-crud_get_all!(PersonaTrigger, "persona_triggers", row_to_trigger, "created_at DESC");
+crud_get_by_id!(
+    PersonaTrigger,
+    "persona_triggers",
+    "Trigger",
+    row_to_trigger
+);
+crud_get_all!(
+    PersonaTrigger,
+    "persona_triggers",
+    row_to_trigger,
+    "created_at DESC"
+);
 crud_delete!("persona_triggers");
 
-pub fn get_by_persona_id(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<Vec<PersonaTrigger>, AppError> {
+pub fn get_by_persona_id(pool: &DbPool, persona_id: &str) -> Result<Vec<PersonaTrigger>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_by_persona_id", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM persona_triggers WHERE persona_id = ?1 ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_trigger)?;
-        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let triggers = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(triggers)
-
     })
 }
 
@@ -61,30 +69,35 @@ pub fn get_by_persona_ids(
     pool: &DbPool,
     persona_ids: &[String],
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::get_by_persona_ids", {
-        if persona_ids.is_empty() {
-            return Ok(Vec::new());
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::get_by_persona_ids",
+        {
+            if persona_ids.is_empty() {
+                return Ok(Vec::new());
+            }
+            let conn = pool.get()?;
+            let placeholders: Vec<String> = persona_ids
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect();
+            let sql = format!(
+                "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
+                placeholders.join(", ")
+            );
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+            let triggers = rows
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)?;
+            Ok(triggers)
         }
-        let conn = pool.get()?;
-        let placeholders: Vec<String> = persona_ids
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM persona_triggers WHERE persona_id IN ({}) ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = persona_ids
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
-        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
-        Ok(triggers)
-
-    })
+    )
 }
 
 pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTrigger, AppError> {
@@ -93,13 +106,18 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         validate_trigger_type(&input.trigger_type)?;
         validate_config(&input.trigger_type, input.config.as_deref())?;
 
-        // Chain triggers: reject configurations that would create a cycle
+        // Chain triggers: reject configurations that would create a cycle.
+        // A parse failure here used to be silently swallowed, which let a
+        // malformed-but-still-cyclic config slip past detection. Surface the
+        // parse error as a Validation failure so the cycle check is a guarantee
+        // rather than a coincidence.
         if input.trigger_type == "chain" {
             if let Some(ref config_str) = input.config {
-                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(config_str) {
-                    if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
-                        chain::detect_chain_cycle(pool, source_id, &input.persona_id, None)?;
-                    }
+                let parsed: serde_json::Value = serde_json::from_str(config_str).map_err(|e| {
+                    AppError::Validation(format!("Chain trigger config is not valid JSON: {e}"))
+                })?;
+                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                    chain::detect_chain_cycle(pool, source_id, &input.persona_id, None)?;
                 }
             }
         }
@@ -123,8 +141,7 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         // actually runs when the trigger fires. Without this, the scheduler would
         // publish an event into the bus that nothing listens to. See the
         // auto-listener helpers below + docs/design/event-routing-proposal.md.
-        let needs_auto_listener =
-            AUTO_LISTENER_SOURCE_TYPES.contains(&input.trigger_type.as_str());
+        let needs_auto_listener = AUTO_LISTENER_SOURCE_TYPES.contains(&input.trigger_type.as_str());
 
         let auto_listener_event_type: Option<String> = if needs_auto_listener {
             Some(parsed_cfg.event_type().to_string())
@@ -150,7 +167,6 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         }
 
         get_by_id(pool, &id)
-
     })
 }
 
@@ -171,20 +187,29 @@ pub fn update(
         // Verify exists
         let existing = get_by_id(pool, id)?;
 
-        let effective_type = input.trigger_type.as_deref().unwrap_or(&existing.trigger_type);
+        let effective_type = input
+            .trigger_type
+            .as_deref()
+            .unwrap_or(&existing.trigger_type);
 
         if let Some(ref cfg) = input.config {
             validate_config(effective_type, Some(cfg.as_str()))?;
         }
 
-        // Chain triggers: reject configurations that would create a cycle
+        // Chain triggers: reject configurations that would create a cycle.
+        // Only validate if the caller is passing a new config — falling back to
+        // the stored config can be parseable (sensitive fields are encrypted in
+        // place but the surrounding JSON envelope is intact) so we still run
+        // cycle detection on it, but a malformed payload from the caller now
+        // fails loudly instead of being silently dropped.
         if effective_type == "chain" {
             let config_str = input.config.as_deref().or(existing.config.as_deref());
             if let Some(cfg) = config_str {
-                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(cfg) {
-                    if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
-                        chain::detect_chain_cycle(pool, source_id, &existing.persona_id, Some(id))?;
-                    }
+                let parsed: serde_json::Value = serde_json::from_str(cfg).map_err(|e| {
+                    AppError::Validation(format!("Chain trigger config is not valid JSON: {e}"))
+                })?;
+                if let Some(source_id) = parsed.get("source_persona_id").and_then(|v| v.as_str()) {
+                    chain::detect_chain_cycle(pool, source_id, &existing.persona_id, Some(id))?;
                 }
             }
         }
@@ -197,7 +222,11 @@ pub fn update(
 
         // When `enabled` changes, derive the corresponding status string.
         let derived_status: Option<String> = input.enabled.map(|e| {
-            if e { "active".into() } else { "disabled".into() }
+            if e {
+                "active".into()
+            } else {
+                "disabled".into()
+            }
         });
 
         // Build dynamic SET clause
@@ -254,7 +283,6 @@ pub fn update(
         }
 
         get_by_id(pool, id)
-
     })
 }
 
@@ -381,7 +409,10 @@ fn remove_persona_event_handler_in_tx(
     let Some(sp_obj) = sp_val.as_object_mut() else {
         return Ok(());
     };
-    let Some(handlers) = sp_obj.get_mut("eventHandlers").and_then(|v| v.as_object_mut()) else {
+    let Some(handlers) = sp_obj
+        .get_mut("eventHandlers")
+        .and_then(|v| v.as_object_mut())
+    else {
         return Ok(());
     };
     if handlers.remove(event_type).is_none() {
@@ -426,35 +457,38 @@ pub fn link_persona_to_event(
     handler_text: Option<&str>,
     use_case_id: Option<&str>,
 ) -> Result<PersonaTrigger, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::link_persona_to_event", {
-        if event_type.trim().is_empty() {
-            return Err(AppError::Validation("event_type cannot be empty".into()));
-        }
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::link_persona_to_event",
+        {
+            if event_type.trim().is_empty() {
+                return Err(AppError::Validation("event_type cannot be empty".into()));
+            }
 
-        let handler = handler_text
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| default_handler_text(event_type));
+            let handler = handler_text
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| default_handler_text(event_type));
 
-        // Build the trigger config. Include advisory metadata so the Builder can
-        // recognize its own triggers later.
-        let config_json = serde_json::json!({
-            "listen_event_type": event_type,
-            "_managed_by": "builder",
-            "_handler_key": event_type,
-        })
-        .to_string();
-        validate_config("event_listener", Some(&config_json))?;
-        let encrypted_config = encrypt_config(&config_json)?;
+            // Build the trigger config. Include advisory metadata so the Builder can
+            // recognize its own triggers later.
+            let config_json = serde_json::json!({
+                "listen_event_type": event_type,
+                "_managed_by": "builder",
+                "_handler_key": event_type,
+            })
+            .to_string();
+            validate_config("event_listener", Some(&config_json))?;
+            let encrypted_config = encrypt_config(&config_json)?;
 
-        let trigger_id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+            let trigger_id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1. INSERT trigger (capability scope threaded through from builder UI;
-        //    NULL = persona-wide — Phase C4).
-        tx.execute(
+            // 1. INSERT trigger (capability scope threaded through from builder UI;
+            //    NULL = persona-wide — Phase C4).
+            tx.execute(
             "INSERT INTO persona_triggers
              (id, persona_id, trigger_type, config, enabled, status, use_case_id, created_at, updated_at)
              VALUES (?1, ?2, 'event_listener', ?3, 1, 'active', ?4, ?5, ?5)",
@@ -462,72 +496,74 @@ pub fn link_persona_to_event(
         )
         .map_err(AppError::Database)?;
 
-        // 2. PATCH persona.structured_prompt.eventHandlers
-        patch_persona_event_handler_in_tx(&tx, persona_id, event_type, &handler)?;
+            // 2. PATCH persona.structured_prompt.eventHandlers
+            patch_persona_event_handler_in_tx(&tx, persona_id, event_type, &handler)?;
 
-        tx.commit().map_err(AppError::Database)?;
+            tx.commit().map_err(AppError::Database)?;
 
-        get_by_id(pool, &trigger_id)
-    })
+            get_by_id(pool, &trigger_id)
+        }
+    )
 }
 
 /// Inverse of `link_persona_to_event`: remove the trigger AND the matching
 /// handler entry in a single transaction. If the trigger's config carries a
 /// `_handler_key` advisory field, that key is removed; otherwise the trigger's
 /// `listen_event_type` is used.
-pub fn unlink_persona_from_event(
-    pool: &DbPool,
-    trigger_id: &str,
-) -> Result<(), AppError> {
-    timed_query!("persona_triggers", "persona_triggers::unlink_persona_from_event", {
-        // Read trigger first (outside tx — read-only) to resolve persona_id + handler_key.
-        let trigger = get_by_id(pool, trigger_id)?;
+pub fn unlink_persona_from_event(pool: &DbPool, trigger_id: &str) -> Result<(), AppError> {
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::unlink_persona_from_event",
+        {
+            // Read trigger first (outside tx — read-only) to resolve persona_id + handler_key.
+            let trigger = get_by_id(pool, trigger_id)?;
 
-        if trigger.trigger_type != "event_listener" {
-            return Err(AppError::Validation(format!(
-                "Trigger {trigger_id} is not an event_listener (type: {})",
-                trigger.trigger_type
-            )));
-        }
+            if trigger.trigger_type != "event_listener" {
+                return Err(AppError::Validation(format!(
+                    "Trigger {trigger_id} is not an event_listener (type: {})",
+                    trigger.trigger_type
+                )));
+            }
 
-        // Decrypt config to extract handler_key / listen_event_type.
-        let config_str = trigger
-            .config
-            .as_deref()
-            .map(crypto::decrypt_trigger_config)
-            .transpose()
-            .map_err(|e| AppError::Internal(format!("decrypt_trigger_config failed: {e}")))?
-            .unwrap_or_default();
-        let cfg: serde_json::Value =
+            // Decrypt config to extract handler_key / listen_event_type.
+            let config_str = trigger
+                .config
+                .as_deref()
+                .map(crypto::decrypt_trigger_config)
+                .transpose()
+                .map_err(|e| AppError::Internal(format!("decrypt_trigger_config failed: {e}")))?
+                .unwrap_or_default();
+            let cfg: serde_json::Value =
             serde_json::from_str(&config_str).unwrap_or_else(|err| {
                 tracing::warn!(trigger_id = trigger_id, error = %err, "trigger config JSON corrupted; treating as empty");
                 serde_json::Value::Null
             });
-        let handler_key = cfg
-            .get("_handler_key")
-            .and_then(|v| v.as_str())
-            .or_else(|| cfg.get("listen_event_type").and_then(|v| v.as_str()))
-            .map(String::from);
+            let handler_key = cfg
+                .get("_handler_key")
+                .and_then(|v| v.as_str())
+                .or_else(|| cfg.get("listen_event_type").and_then(|v| v.as_str()))
+                .map(String::from);
 
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1. DELETE trigger
-        tx.execute(
-            "DELETE FROM persona_triggers WHERE id = ?1",
-            params![trigger_id],
-        )
-        .map_err(AppError::Database)?;
+            // 1. DELETE trigger
+            tx.execute(
+                "DELETE FROM persona_triggers WHERE id = ?1",
+                params![trigger_id],
+            )
+            .map_err(AppError::Database)?;
 
-        // 2. REMOVE handler entry (best effort — missing key is not fatal)
-        if let Some(key) = handler_key {
-            remove_persona_event_handler_in_tx(&tx, &trigger.persona_id, &key)?;
+            // 2. REMOVE handler entry (best effort — missing key is not fatal)
+            if let Some(key) = handler_key {
+                remove_persona_event_handler_in_tx(&tx, &trigger.persona_id, &key)?;
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+
+            Ok(())
         }
-
-        tx.commit().map_err(AppError::Database)?;
-
-        Ok(())
-    })
+    )
 }
 
 /// Backfill: seed a persona's `eventHandlers` from its existing event_listener
@@ -538,77 +574,81 @@ pub fn initialize_event_handlers_for_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<u32, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::initialize_event_handlers_for_persona", {
-        // Collect all event_types the persona already listens to via triggers.
-        let triggers = get_by_persona_id(pool, persona_id)?;
-        let mut event_types: Vec<String> = Vec::new();
-        for t in triggers {
-            if t.trigger_type != "event_listener" {
-                continue;
-            }
-            let Some(raw) = t.config.as_deref() else {
-                continue;
-            };
-            let Ok(decrypted) = crypto::decrypt_trigger_config(raw) else {
-                continue;
-            };
-            let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&decrypted) else {
-                continue;
-            };
-            if let Some(et) = cfg.get("listen_event_type").and_then(|v| v.as_str()) {
-                if !et.is_empty() && !event_types.contains(&et.to_string()) {
-                    event_types.push(et.to_string());
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::initialize_event_handlers_for_persona",
+        {
+            // Collect all event_types the persona already listens to via triggers.
+            let triggers = get_by_persona_id(pool, persona_id)?;
+            let mut event_types: Vec<String> = Vec::new();
+            for t in triggers {
+                if t.trigger_type != "event_listener" {
+                    continue;
+                }
+                let Some(raw) = t.config.as_deref() else {
+                    continue;
+                };
+                let Ok(decrypted) = crypto::decrypt_trigger_config(raw) else {
+                    continue;
+                };
+                let Ok(cfg) = serde_json::from_str::<serde_json::Value>(&decrypted) else {
+                    continue;
+                };
+                if let Some(et) = cfg.get("listen_event_type").and_then(|v| v.as_str()) {
+                    if !et.is_empty() && !event_types.contains(&et.to_string()) {
+                        event_types.push(et.to_string());
+                    }
                 }
             }
+
+            if event_types.is_empty() {
+                return Ok(0);
+            }
+
+            // Read current handlers to figure out which keys are already set.
+            let sp_opt: Option<String> = {
+                let conn = pool.get()?;
+                conn.query_row(
+                    "SELECT structured_prompt FROM personas WHERE id = ?1",
+                    params![persona_id],
+                    |row| row.get::<_, Option<String>>(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("Persona {persona_id}"))
+                    }
+                    other => AppError::Database(other),
+                })?
+            };
+            let existing_keys: std::collections::HashSet<String> = sp_opt
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                .and_then(|v| {
+                    v.get("eventHandlers")
+                        .and_then(|h| h.as_object())
+                        .map(|obj| obj.keys().cloned().collect())
+                })
+                .unwrap_or_default();
+
+            let missing: Vec<String> = event_types
+                .into_iter()
+                .filter(|et| !existing_keys.contains(et))
+                .collect();
+            if missing.is_empty() {
+                return Ok(0);
+            }
+
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            for et in &missing {
+                let handler = default_handler_text(et);
+                patch_persona_event_handler_in_tx(&tx, persona_id, et, &handler)?;
+            }
+            tx.commit().map_err(AppError::Database)?;
+
+            Ok(missing.len() as u32)
         }
-
-        if event_types.is_empty() {
-            return Ok(0);
-        }
-
-        // Read current handlers to figure out which keys are already set.
-        let sp_opt: Option<String> = {
-            let conn = pool.get()?;
-            conn.query_row(
-                "SELECT structured_prompt FROM personas WHERE id = ?1",
-                params![persona_id],
-                |row| row.get::<_, Option<String>>(0),
-            )
-            .map_err(|e| match e {
-                rusqlite::Error::QueryReturnedNoRows => {
-                    AppError::NotFound(format!("Persona {persona_id}"))
-                }
-                other => AppError::Database(other),
-            })?
-        };
-        let existing_keys: std::collections::HashSet<String> = sp_opt
-            .as_deref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
-            .and_then(|v| {
-                v.get("eventHandlers")
-                    .and_then(|h| h.as_object())
-                    .map(|obj| obj.keys().cloned().collect())
-            })
-            .unwrap_or_default();
-
-        let missing: Vec<String> = event_types
-            .into_iter()
-            .filter(|et| !existing_keys.contains(et))
-            .collect();
-        if missing.is_empty() {
-            return Ok(0);
-        }
-
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
-        for et in &missing {
-            let handler = default_handler_text(et);
-            patch_persona_event_handler_in_tx(&tx, persona_id, et, &handler)?;
-        }
-        tx.commit().map_err(AppError::Database)?;
-
-        Ok(missing.len() as u32)
-    })
+    )
 }
 
 /// Direct update to a single persona event handler's text. Used by the
@@ -621,16 +661,20 @@ pub fn update_persona_event_handler(
     event_type: &str,
     handler_text: &str,
 ) -> Result<(), AppError> {
-    timed_query!("persona_triggers", "persona_triggers::update_persona_event_handler", {
-        if event_type.trim().is_empty() {
-            return Err(AppError::Validation("event_type cannot be empty".into()));
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::update_persona_event_handler",
+        {
+            if event_type.trim().is_empty() {
+                return Err(AppError::Validation("event_type cannot be empty".into()));
+            }
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            patch_persona_event_handler_in_tx(&tx, persona_id, event_type, handler_text)?;
+            tx.commit().map_err(AppError::Database)?;
+            Ok(())
         }
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
-        patch_persona_event_handler_in_tx(&tx, persona_id, event_type, handler_text)?;
-        tx.commit().map_err(AppError::Database)?;
-        Ok(())
-    })
+    )
 }
 
 // ============================================================================
@@ -643,52 +687,54 @@ pub fn update_persona_event_handler(
 /// persona is gone. Also cascade-deletes the paired Fix 4a auto-listener
 /// event_listener trigger before removing the primary.
 pub fn delete_orphaned_triggers(pool: &DbPool) -> Result<u32, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::delete_orphaned_triggers", {
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::delete_orphaned_triggers",
+        {
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
 
-        // 1. Find all orphaned trigger IDs.
-        let orphan_ids: Vec<String> = {
-            let mut stmt = tx.prepare(
-                "SELECT t.id FROM persona_triggers t
+            // 1. Find all orphaned trigger IDs.
+            let orphan_ids: Vec<String> = {
+                let mut stmt = tx.prepare(
+                    "SELECT t.id FROM persona_triggers t
                  WHERE NOT EXISTS (SELECT 1 FROM personas p WHERE p.id = t.persona_id)",
-            )?;
-            let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
-            rows.collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
-        };
+                )?;
+                let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?
+            };
 
-        if orphan_ids.is_empty() {
-            return Ok(0);
-        }
+            if orphan_ids.is_empty() {
+                return Ok(0);
+            }
 
-        // 2. For each orphan, also delete any paired Fix 4a auto-listener.
-        //    (Their owning persona is gone too, so they'd be caught by step 3
-        //    anyway — but an explicit pass is cheap and makes the intent clear.)
-        let mut deleted: u32 = 0;
-        for id in &orphan_ids {
-            deleted += tx.execute(
-                "DELETE FROM persona_triggers
+            // 2. For each orphan, also delete any paired Fix 4a auto-listener.
+            //    (Their owning persona is gone too, so they'd be caught by step 3
+            //    anyway — but an explicit pass is cheap and makes the intent clear.)
+            let mut deleted: u32 = 0;
+            for id in &orphan_ids {
+                deleted += tx.execute(
+                    "DELETE FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
                    AND json_extract(config, '$._auto_for_trigger') = ?1",
-                params![id],
-            )? as u32;
-        }
+                    params![id],
+                )? as u32;
+            }
 
-        // 3. Delete the orphans themselves. Use a fresh NOT EXISTS query so
-        //    we skip rows that were already removed in step 2 (would return 0
-        //    rows affected and be counted as no-ops anyway, but this is more
-        //    explicit about what's happening).
-        for id in &orphan_ids {
-            deleted += tx.execute(
-                "DELETE FROM persona_triggers WHERE id = ?1",
-                params![id],
-            )? as u32;
-        }
+            // 3. Delete the orphans themselves. Use a fresh NOT EXISTS query so
+            //    we skip rows that were already removed in step 2 (would return 0
+            //    rows affected and be counted as no-ops anyway, but this is more
+            //    explicit about what's happening).
+            for id in &orphan_ids {
+                deleted +=
+                    tx.execute("DELETE FROM persona_triggers WHERE id = ?1", params![id])? as u32;
+            }
 
-        tx.commit().map_err(AppError::Database)?;
-        Ok(deleted)
-    })
+            tx.commit().map_err(AppError::Database)?;
+            Ok(deleted)
+        }
+    )
 }
 
 // ============================================================================
@@ -703,9 +749,31 @@ pub fn delete_orphaned_triggers(pool: &DbPool) -> Result<u32, AppError> {
 // `_auto_for_trigger` key so cleanup knows which listener to delete.
 // ============================================================================
 
-/// Trigger types that get an auto-created event_listener in Fix 4a.
-pub(crate) const AUTO_LISTENER_SOURCE_TYPES: &[&str] =
-    &["schedule", "polling", "webhook"];
+/// Trigger types that get a paired auto-created `event_listener` row at
+/// create time (and a matching cascade-delete on teardown).
+///
+/// ## Membership policy — pinned by `auto_listener_policy_tests`
+///
+/// A trigger type belongs in this set **iff all three** of the following hold:
+///
+///   1. **It publishes** at least one event onto the in-process event bus
+///      during normal firing. (i.e. there's something for a listener to hear.)
+///   2. **It does not also self-listen.** Triggers that are *themselves* the
+///      consumer side of the bus (`event_listener`) must be excluded — pairing
+///      one with another listener would loop.
+///   3. **No other code path registers a listener for the published event.**
+///      Triggers whose pairing is implicit elsewhere (e.g. `composite`'s
+///      inner triggers carry their own auto-listeners; `chain` is invoked
+///      directly by an upstream execution; OS event sources like
+///      `file_watcher` / `clipboard` / `app_focus` callback into their own
+///      handlers) don't need this safety net.
+///
+/// The exhaustive-classification test in this module forces every entry in
+/// `VALID_TRIGGER_TYPES` to be tagged either `Auto { … }` or
+/// `NoListener { reason }`, so adding a new trigger type without making this
+/// decision fails the test rather than silently producing events nothing
+/// listens for.
+pub(crate) const AUTO_LISTENER_SOURCE_TYPES: &[&str] = &["schedule", "polling", "webhook"];
 
 /// Build the JSON config string for an auto-listener. Stores advisory fields
 /// so cleanup can identify it later.
@@ -746,16 +814,20 @@ fn insert_auto_listener_in_tx(
 /// pool (no outer transaction) — used by the primary `delete` path. Returns
 /// the number of listeners deleted (usually 0 or 1).
 pub fn delete_auto_listeners_for(pool: &DbPool, source_trigger_id: &str) -> Result<u32, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::delete_auto_listeners_for", {
-        let conn = pool.get()?;
-        let rows = conn.execute(
-            "DELETE FROM persona_triggers
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::delete_auto_listeners_for",
+        {
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "DELETE FROM persona_triggers
              WHERE trigger_type = 'event_listener'
                AND json_extract(config, '$._auto_for_trigger') = ?1",
-            params![source_trigger_id],
-        )?;
-        Ok(rows as u32)
-    })
+                params![source_trigger_id],
+            )?;
+            Ok(rows as u32)
+        }
+    )
 }
 
 // ============================================================================
@@ -1010,10 +1082,7 @@ pub fn rename_event_type(
                        AND json_extract(structured_prompt, '$.eventHandlers') IS NOT NULL",
                 )?;
                 let rows = stmt.query_map([], |row| {
-                    Ok((
-                        row.get::<_, String>(0)?,
-                        row.get::<_, String>(1)?,
-                    ))
+                    Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
                 })?;
                 rows.collect::<Result<Vec<_>, _>>()
                     .map_err(AppError::Database)?
@@ -1080,60 +1149,64 @@ pub fn rename_event_type(
 /// a matching event_listener auto-listener for any that don't already have
 /// one. Idempotent. Returns (triggers_scanned, listeners_created).
 pub fn backfill_auto_listeners(pool: &DbPool) -> Result<(u32, u32), AppError> {
-    timed_query!("persona_triggers", "persona_triggers::backfill_auto_listeners", {
-        // 1. Load all source triggers that need auto-listeners.
-        let candidates: Vec<PersonaTrigger> = {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT * FROM persona_triggers
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::backfill_auto_listeners",
+        {
+            // 1. Load all source triggers that need auto-listeners.
+            let candidates: Vec<PersonaTrigger> = {
+                let conn = pool.get()?;
+                let mut stmt = conn.prepare(
+                    "SELECT * FROM persona_triggers
                  WHERE trigger_type IN ('schedule', 'polling', 'webhook')
                  ORDER BY created_at",
-            )?;
-            let rows = stmt.query_map([], row_to_trigger)?;
-            rows.collect::<Result<Vec<_>, _>>()
-                .map_err(AppError::Database)?
-        };
+                )?;
+                let rows = stmt.query_map([], row_to_trigger)?;
+                rows.collect::<Result<Vec<_>, _>>()
+                    .map_err(AppError::Database)?
+            };
 
-        if candidates.is_empty() {
-            return Ok((0, 0));
-        }
+            if candidates.is_empty() {
+                return Ok((0, 0));
+            }
 
-        let scanned = candidates.len() as u32;
+            let scanned = candidates.len() as u32;
 
-        // 2. Load existing auto-listener source_trigger ids so we can skip ones that
-        //    already have a pair. json_extract with plaintext config works fine; for
-        //    encrypted configs the extract silently returns NULL, which is also fine
-        //    (we just skip them — if decrypt is needed, user already created it).
-        let existing_pairs: std::collections::HashSet<String> = {
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare(
-                "SELECT json_extract(config, '$._auto_for_trigger')
+            // 2. Load existing auto-listener source_trigger ids so we can skip ones that
+            //    already have a pair. json_extract with plaintext config works fine; for
+            //    encrypted configs the extract silently returns NULL, which is also fine
+            //    (we just skip them — if decrypt is needed, user already created it).
+            let existing_pairs: std::collections::HashSet<String> = {
+                let conn = pool.get()?;
+                let mut stmt = conn.prepare(
+                    "SELECT json_extract(config, '$._auto_for_trigger')
                  FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
                    AND json_extract(config, '$._auto_for_trigger') IS NOT NULL",
-            )?;
-            let rows = stmt.query_map([], |row| row.get::<_, Option<String>>(0))?;
-            rows.filter_map(|r| r.ok().flatten()).collect()
-        };
+                )?;
+                let rows = stmt.query_map([], |row| row.get::<_, Option<String>>(0))?;
+                rows.filter_map(|r| r.ok().flatten()).collect()
+            };
 
-        // 3. Create missing listeners in one transaction.
-        let mut conn = pool.get()?;
-        let tx = conn.transaction().map_err(AppError::Database)?;
-        let mut created = 0u32;
-        for src in &candidates {
-            if existing_pairs.contains(&src.id) {
-                continue;
+            // 3. Create missing listeners in one transaction.
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+            let mut created = 0u32;
+            for src in &candidates {
+                if existing_pairs.contains(&src.id) {
+                    continue;
+                }
+                // Parse config to get the event_type the trigger publishes.
+                let cfg = src.parse_config();
+                let event_type = cfg.event_type().to_string();
+                insert_auto_listener_in_tx(&tx, &src.persona_id, &src.id, &event_type)?;
+                created += 1;
             }
-            // Parse config to get the event_type the trigger publishes.
-            let cfg = src.parse_config();
-            let event_type = cfg.event_type().to_string();
-            insert_auto_listener_in_tx(&tx, &src.persona_id, &src.id, &event_type)?;
-            created += 1;
-        }
-        tx.commit().map_err(AppError::Database)?;
+            tx.commit().map_err(AppError::Database)?;
 
-        Ok((scanned, created))
-    })
+            Ok((scanned, created))
+        }
+    )
 }
 
 /// Get enabled chain triggers whose source_persona_id matches the given value.
@@ -1142,19 +1215,23 @@ pub fn get_chain_triggers_for_source(
     pool: &DbPool,
     source_persona_id: &str,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::get_chain_triggers_for_source", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_triggers
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::get_chain_triggers_for_source",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_triggers
              WHERE trigger_type = 'chain'
                AND status = 'active'
                AND json_extract(config, '$.source_persona_id') = ?1
              ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
-    })
+            )?;
+            let rows = stmt.query_map(params![source_persona_id], row_to_trigger)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Get enabled event_listener triggers whose listen_event_type matches the given event type.
@@ -1163,19 +1240,23 @@ pub fn get_event_listeners_for_event_type(
     pool: &DbPool,
     event_type: &str,
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::get_event_listeners_for_event_type", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_triggers
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::get_event_listeners_for_event_type",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_triggers
              WHERE trigger_type = 'event_listener'
                AND status = 'active'
                AND json_extract(config, '$.listen_event_type') = ?1
              ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![event_type], row_to_trigger)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
-    })
+            )?;
+            let rows = stmt.query_map(params![event_type], row_to_trigger)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Bulk-fetch enabled event_listener triggers for multiple event types in a single query.
@@ -1183,50 +1264,61 @@ pub fn get_event_listeners_for_event_types(
     pool: &DbPool,
     event_types: &[String],
 ) -> Result<Vec<PersonaTrigger>, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::get_event_listeners_for_event_types", {
-        if event_types.is_empty() {
-            return Ok(Vec::new());
-        }
-        let conn = pool.get()?;
-        let placeholders: Vec<String> = event_types
-            .iter()
-            .enumerate()
-            .map(|(i, _)| format!("?{}", i + 1))
-            .collect();
-        let sql = format!(
-            "SELECT * FROM persona_triggers
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::get_event_listeners_for_event_types",
+        {
+            if event_types.is_empty() {
+                return Ok(Vec::new());
+            }
+            let conn = pool.get()?;
+            let placeholders: Vec<String> = event_types
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect();
+            let sql = format!(
+                "SELECT * FROM persona_triggers
              WHERE trigger_type = 'event_listener'
                AND status = 'active'
                AND json_extract(config, '$.listen_event_type') IN ({})
              ORDER BY created_at DESC",
-            placeholders.join(", ")
-        );
-        let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
-            .iter()
-            .map(|s| s as &dyn rusqlite::types::ToSql)
-            .collect();
-        let mut stmt = conn.prepare(&sql)?;
-        let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
-    })
+                placeholders.join(", ")
+            );
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> = event_types
+                .iter()
+                .map(|s| s as &dyn rusqlite::types::ToSql)
+                .collect();
+            let mut stmt = conn.prepare(&sql)?;
+            let rows = stmt.query_map(params_ref.as_slice(), row_to_trigger)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Get enabled triggers of a specific type using SQL-level filtering.
 /// Avoids loading all triggers and filtering in Rust — mirrors the pattern
 /// used by `get_chain_triggers_for_source` and `get_event_listeners_for_event_type`.
-pub fn get_enabled_by_type(pool: &DbPool, trigger_type: &str) -> Result<Vec<PersonaTrigger>, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::get_enabled_by_type", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_triggers
+pub fn get_enabled_by_type(
+    pool: &DbPool,
+    trigger_type: &str,
+) -> Result<Vec<PersonaTrigger>, AppError> {
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::get_enabled_by_type",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_triggers
              WHERE trigger_type = ?1 AND status = 'active'
              ORDER BY created_at DESC",
-        )?;
-        let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
-    })
+            )?;
+            let rows = stmt.query_map(params![trigger_type], row_to_trigger)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError> {
@@ -1247,15 +1339,18 @@ pub fn get_due(pool: &DbPool, now: &str) -> Result<Vec<PersonaTrigger>, AppError
              ORDER BY t.next_trigger_at ASC",
         )?;
         let rows = stmt.query_map(params![now], row_to_trigger)?;
-        let triggers = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let triggers = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(triggers)
-
     })
 }
 
 /// Returns a map of trigger_id -> health status ("healthy", "degraded", "failing", "unknown")
 /// by joining triggers with the 3 most recent executions per trigger in a single query.
-pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String, String>, AppError> {
+pub fn get_health_map(
+    pool: &DbPool,
+) -> Result<std::collections::HashMap<String, String>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_health_map", {
         let conn = pool.get()?;
         // For each trigger, get the 3 most recent executions (ranked by created_at DESC).
@@ -1295,7 +1390,8 @@ pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String,
         })?;
 
         for row in rows {
-            let (trigger_id, total, fail_count, top2_non_completed) = row.map_err(AppError::Database)?;
+            let (trigger_id, total, fail_count, top2_non_completed) =
+                row.map_err(AppError::Database)?;
             let health = if total == 0 {
                 "unknown"
             } else if fail_count == 0 {
@@ -1309,7 +1405,6 @@ pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String,
         }
 
         Ok(health_map)
-
     })
 }
 
@@ -1318,10 +1413,7 @@ pub fn get_health_map(pool: &DbPool) -> Result<std::collections::HashMap<String,
 #[allow(clippy::type_complexity)]
 pub fn get_chain_links(
     pool: &DbPool,
-) -> Result<
-    Vec<(String, String, String, String, String, String, bool)>,
-    AppError,
-> {
+) -> Result<Vec<(String, String, String, String, String, String, bool)>, AppError> {
     timed_query!("persona_triggers", "persona_triggers::get_chain_links", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -1352,8 +1444,8 @@ pub fn get_chain_links(
             ))
         })?;
 
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -1380,7 +1472,6 @@ pub fn mark_triggered(
             params![now, next_trigger_at, id, expected_version],
         )?;
         Ok(rows > 0)
-
     })
 }
 
@@ -1406,7 +1497,6 @@ pub fn advance_schedule(
             params![now, next_trigger_at, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -1427,13 +1517,16 @@ pub fn mark_triggered_with_hash(
     expected_old_hash: Option<&str>,
     next_trigger_at: Option<String>,
 ) -> Result<bool, AppError> {
-    timed_query!("persona_triggers", "persona_triggers::mark_triggered_with_hash", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::mark_triggered_with_hash",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
 
-        let rows = match expected_old_hash {
-            Some(old) => conn.execute(
-                "UPDATE persona_triggers
+            let rows = match expected_old_hash {
+                Some(old) => conn.execute(
+                    "UPDATE persona_triggers
                  SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
                      last_triggered_at = ?2,
                      next_trigger_at = ?3,
@@ -1441,10 +1534,10 @@ pub fn mark_triggered_with_hash(
                      trigger_version = trigger_version + 1
                  WHERE id = ?4
                    AND json_extract(config, '$.content_hash') = ?5",
-                params![new_hash, now, next_trigger_at, id, old],
-            )?,
-            None => conn.execute(
-                "UPDATE persona_triggers
+                    params![new_hash, now, next_trigger_at, id, old],
+                )?,
+                None => conn.execute(
+                    "UPDATE persona_triggers
                  SET config = json_set(COALESCE(config, '{}'), '$.content_hash', ?1),
                      last_triggered_at = ?2,
                      next_trigger_at = ?3,
@@ -1452,13 +1545,13 @@ pub fn mark_triggered_with_hash(
                      trigger_version = trigger_version + 1
                  WHERE id = ?4
                    AND json_extract(config, '$.content_hash') IS NULL",
-                params![new_hash, now, next_trigger_at, id],
-            )?,
-        };
+                    params![new_hash, now, next_trigger_at, id],
+                )?,
+            };
 
-        Ok(rows > 0)
-
-    })
+            Ok(rows > 0)
+        }
+    )
 }
 
 /// Set the `enabled` flag on a trigger. Used as a safety valve to disable
@@ -1474,7 +1567,6 @@ pub fn set_enabled(pool: &DbPool, id: &str, enabled: bool) -> Result<(), AppErro
             params![enabled as i32, status, now, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -1495,7 +1587,6 @@ pub fn set_status(
             params![status.as_str(), status.is_enabled() as i32, now, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -1507,9 +1598,7 @@ pub fn set_status(
 pub fn load_composite_fires(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
     timed_query!("composite_trigger_fires", "composite_fires::load_all", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT trigger_id, fired_at FROM composite_trigger_fires"
-        )?;
+        let mut stmt = conn.prepare("SELECT trigger_id, fired_at FROM composite_trigger_fires")?;
         let rows = stmt.query_map([], |row| {
             Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
         })?;
@@ -1522,7 +1611,11 @@ pub fn load_composite_fires(pool: &DbPool) -> Result<Vec<(String, String)>, AppE
 }
 
 /// Upsert a composite trigger fire timestamp.
-pub fn upsert_composite_fire(pool: &DbPool, trigger_id: &str, fired_at: &str) -> Result<(), AppError> {
+pub fn upsert_composite_fire(
+    pool: &DbPool,
+    trigger_id: &str,
+    fired_at: &str,
+) -> Result<(), AppError> {
     timed_query!("composite_trigger_fires", "composite_fires::upsert", {
         let conn = pool.get()?;
         conn.execute(
@@ -1555,6 +1648,96 @@ mod tests {
 
     fn create_test_persona(pool: &DbPool) -> crate::db::models::Persona {
         test_fixtures::create_test_persona(pool, "Trigger Test Agent", "You handle triggers.")
+    }
+
+    /// Exhaustive classification gate for `AUTO_LISTENER_SOURCE_TYPES`.
+    ///
+    /// The const itself is a `&[&str]`, so Rust can't exhaustiveness-check
+    /// it at compile time. This test does it at *test* time: every entry in
+    /// `VALID_TRIGGER_TYPES` is forced through a `match` with no wildcard
+    /// arm. Adding a new trigger type without a corresponding arm trips the
+    /// `panic!()` and the test fails with a directive pointing at the
+    /// policy doc on `AUTO_LISTENER_SOURCE_TYPES`. The next contributor
+    /// can't ship a trigger that publishes events nothing listens for —
+    /// the bug Fix 4a was created to prevent.
+    #[test]
+    fn auto_listener_policy_covers_every_trigger_type() {
+        use crate::validation::trigger::VALID_TRIGGER_TYPES;
+
+        enum Decision {
+            Auto,
+            NoListener(&'static str),
+        }
+
+        let classify = |t: &str| -> Decision {
+            match t {
+                // Auto-listener: publishes events into the bus, doesn't
+                // self-listen, no other code registers a paired listener.
+                "schedule" => Decision::Auto,
+                "polling" => Decision::Auto,
+                "webhook" => Decision::Auto,
+
+                // No listener — each carries an explicit reason:
+                "manual" => Decision::NoListener(
+                    "user-initiated; firing is direct, no event published",
+                ),
+                "chain" => Decision::NoListener(
+                    "downstream of another execution; the upstream's listener \
+                     owns the wakeup",
+                ),
+                "event_listener" => Decision::NoListener(
+                    "IS the listener side; pairing it with another listener would loop",
+                ),
+                "file_watcher" => Decision::NoListener(
+                    "OS-level filesystem watcher publishes into its own native \
+                     callback, not the event bus",
+                ),
+                "clipboard" => Decision::NoListener(
+                    "OS-level clipboard event source; no event-bus publication",
+                ),
+                "app_focus" => Decision::NoListener(
+                    "OS-level focus event source; no event-bus publication",
+                ),
+                "composite" => Decision::NoListener(
+                    "aggregates other triggers; pairings are owned by the inner triggers",
+                ),
+
+                other => panic!(
+                    "unclassified trigger type {other:?} — adding a new entry to \
+                     VALID_TRIGGER_TYPES requires deciding whether it needs a paired \
+                     auto-listener. See the membership policy on \
+                     AUTO_LISTENER_SOURCE_TYPES."
+                ),
+            }
+        };
+
+        for &t in VALID_TRIGGER_TYPES {
+            let in_set = AUTO_LISTENER_SOURCE_TYPES.contains(&t);
+            match classify(t) {
+                Decision::Auto => assert!(
+                    in_set,
+                    "policy classifies {t:?} as auto-listener but it is missing \
+                     from AUTO_LISTENER_SOURCE_TYPES — add it to the const"
+                ),
+                Decision::NoListener(reason) => assert!(
+                    !in_set,
+                    "policy classifies {t:?} as no-listener (reason: {reason}) but \
+                     it is *present* in AUTO_LISTENER_SOURCE_TYPES — remove it from \
+                     the const or update the policy"
+                ),
+            }
+        }
+
+        // Belt-and-suspenders: every entry in AUTO_LISTENER_SOURCE_TYPES must
+        // also exist in VALID_TRIGGER_TYPES (catches drift if a string in the
+        // const is renamed/removed without updating the registry).
+        for &t in AUTO_LISTENER_SOURCE_TYPES {
+            assert!(
+                VALID_TRIGGER_TYPES.contains(&t),
+                "AUTO_LISTENER_SOURCE_TYPES contains {t:?} which is not a valid \
+                 trigger type — registry drift"
+            );
+        }
     }
 
     #[test]
@@ -1821,6 +2004,72 @@ mod tests {
     }
 
     #[test]
+    fn test_create_chain_rejects_malformed_json_config() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        let result = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "chain".into(),
+                config: Some("{not-json".into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        );
+        match result {
+            Err(AppError::Validation(msg)) => {
+                assert!(
+                    msg.contains("Chain trigger config is not valid JSON"),
+                    "expected JSON-parse validation error, got: {msg}"
+                );
+            }
+            other => panic!("expected Validation error, got: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_update_chain_rejects_malformed_json_config() {
+        let pool = init_test_db().unwrap();
+        let persona = create_test_persona(&pool);
+
+        // Seed a valid chain trigger we can target with a bad-config update.
+        let trigger = create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: persona.id.clone(),
+                trigger_type: "chain".into(),
+                config: Some(r#"{"source_persona_id":"some-other-persona"}"#.into()),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        let result = update(
+            &pool,
+            &trigger.id,
+            UpdateTriggerInput {
+                trigger_type: None,
+                config: Some("not-json".into()),
+                enabled: None,
+                next_trigger_at: None,
+            },
+        );
+        match result {
+            Err(AppError::Validation(msg)) => {
+                assert!(
+                    msg.contains("Chain trigger config is not valid JSON")
+                        || msg.contains("Invalid config JSON"),
+                    "expected JSON-parse validation error, got: {msg}"
+                );
+            }
+            other => panic!("expected Validation error, got: {other:?}"),
+        }
+    }
+
+    #[test]
     fn test_update_rejects_invalid_trigger_type() {
         let pool = init_test_db().unwrap();
         let persona = create_test_persona(&pool);
@@ -1889,9 +2138,15 @@ mod tests {
 
         let decrypted = crypto::decrypt_trigger_config(trigger.config.as_deref().unwrap()).unwrap();
         let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
-        assert_eq!(cfg.get("listen_event_type").unwrap().as_str().unwrap(), "stock.signal.strong_buy");
+        assert_eq!(
+            cfg.get("listen_event_type").unwrap().as_str().unwrap(),
+            "stock.signal.strong_buy"
+        );
         assert_eq!(cfg.get("_managed_by").unwrap().as_str().unwrap(), "builder");
-        assert_eq!(cfg.get("_handler_key").unwrap().as_str().unwrap(), "stock.signal.strong_buy");
+        assert_eq!(
+            cfg.get("_handler_key").unwrap().as_str().unwrap(),
+            "stock.signal.strong_buy"
+        );
 
         // Persona structured_prompt patched with eventHandlers entry
         let sp = read_structured_prompt(&pool, &persona.id);
@@ -1939,7 +2194,8 @@ mod tests {
         let persona = create_test_persona(&pool);
 
         let trigger =
-            link_persona_to_event(&pool, &persona.id, "stock.signal.strong_buy", None, None).unwrap();
+            link_persona_to_event(&pool, &persona.id, "stock.signal.strong_buy", None, None)
+                .unwrap();
 
         // Verify both exist
         assert!(get_by_id(&pool, &trigger.id).is_ok());
@@ -2071,9 +2327,18 @@ mod tests {
 
         let sp = read_structured_prompt(&pool, &persona.id);
         // Original fields preserved
-        assert_eq!(sp.get("identity").and_then(|v| v.as_str()).unwrap(), "I am a test persona.");
-        assert_eq!(sp.get("instructions").and_then(|v| v.as_str()).unwrap(), "Do test things.");
-        assert_eq!(sp.get("toolGuidance").and_then(|v| v.as_str()).unwrap(), "Use test tools.");
+        assert_eq!(
+            sp.get("identity").and_then(|v| v.as_str()).unwrap(),
+            "I am a test persona."
+        );
+        assert_eq!(
+            sp.get("instructions").and_then(|v| v.as_str()).unwrap(),
+            "Do test things."
+        );
+        assert_eq!(
+            sp.get("toolGuidance").and_then(|v| v.as_str()).unwrap(),
+            "Use test tools."
+        );
         // New handler added
         assert!(sp
             .get("eventHandlers")
@@ -2194,11 +2459,13 @@ mod tests {
             .expect("should have created an auto-listener");
 
         // Decrypt and inspect its config
-        let decrypted = crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap())
-            .unwrap();
+        let decrypted =
+            crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap()).unwrap();
         let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
         assert_eq!(
-            cfg.get("listen_event_type").and_then(|v| v.as_str()).unwrap(),
+            cfg.get("listen_event_type")
+                .and_then(|v| v.as_str())
+                .unwrap(),
             "trigger_fired",
             "default event_type should be trigger_fired",
         );
@@ -2208,7 +2475,9 @@ mod tests {
             "source_filter should be the source trigger id"
         );
         assert_eq!(
-            cfg.get("_auto_for_trigger").and_then(|v| v.as_str()).unwrap(),
+            cfg.get("_auto_for_trigger")
+                .and_then(|v| v.as_str())
+                .unwrap(),
             src.id.as_str(),
             "_auto_for_trigger advisory must match source id"
         );
@@ -2236,11 +2505,13 @@ mod tests {
             .iter()
             .find(|t| t.trigger_type == "event_listener")
             .unwrap();
-        let decrypted = crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap())
-            .unwrap();
+        let decrypted =
+            crypto::decrypt_trigger_config(auto_listener.config.as_deref().unwrap()).unwrap();
         let cfg: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
         assert_eq!(
-            cfg.get("listen_event_type").and_then(|v| v.as_str()).unwrap(),
+            cfg.get("listen_event_type")
+                .and_then(|v| v.as_str())
+                .unwrap(),
             "morning_digest",
         );
     }
@@ -2268,7 +2539,10 @@ mod tests {
             .iter()
             .filter(|t| t.trigger_type == "event_listener")
             .count();
-        assert_eq!(event_listeners, 0, "manual triggers should not auto-create listeners");
+        assert_eq!(
+            event_listeners, 0,
+            "manual triggers should not auto-create listeners"
+        );
     }
 
     #[test]
@@ -2449,7 +2723,9 @@ mod tests {
             CreateTriggerInput {
                 persona_id: persona.id.clone(),
                 trigger_type: "schedule".into(),
-                config: Some(r#"{"cron":"*/15 * * * *","event_type":"stock.alert.old_name"}"#.into()),
+                config: Some(
+                    r#"{"cron":"*/15 * * * *","event_type":"stock.alert.old_name"}"#.into(),
+                ),
                 enabled: Some(true),
                 use_case_id: None,
             },
@@ -2458,7 +2734,14 @@ mod tests {
 
         // 4. S3 link_persona_to_event creates another event_listener with the
         //    _handler_key advisory set to the event_type.
-        link_persona_to_event(&pool, &persona.id, "stock.alert.old_name", Some("Handle old name."), None).unwrap();
+        link_persona_to_event(
+            &pool,
+            &persona.id,
+            "stock.alert.old_name",
+            Some("Handle old name."),
+            None,
+        )
+        .unwrap();
 
         // 5. Persona handler entry — already seeded by the S3 link above.
         //    Confirm it's there before rename.
@@ -2466,10 +2749,17 @@ mod tests {
         assert!(before.get("stock.alert.old_name").is_some());
 
         // ── Rename ──
-        let result = rename_event_type(&pool, "stock.alert.old_name", "stock.alert.new_name").unwrap();
+        let result =
+            rename_event_type(&pool, "stock.alert.old_name", "stock.alert.new_name").unwrap();
 
-        assert_eq!(result.events_updated, 1, "historical events should be rewritten");
-        assert_eq!(result.subscriptions_updated, 1, "legacy subs should be rewritten");
+        assert_eq!(
+            result.events_updated, 1,
+            "historical events should be rewritten"
+        );
+        assert_eq!(
+            result.subscriptions_updated, 1,
+            "legacy subs should be rewritten"
+        );
         assert_eq!(
             result.trigger_publishers_updated, 1,
             "the schedule trigger's config.event_type should be rewritten",
@@ -2492,7 +2782,10 @@ mod tests {
         let after = read_handlers(&pool, &persona.id);
         assert!(after.get("stock.alert.old_name").is_none());
         assert_eq!(
-            after.get("stock.alert.new_name").and_then(|v| v.as_str()).unwrap(),
+            after
+                .get("stock.alert.new_name")
+                .and_then(|v| v.as_str())
+                .unwrap(),
             "Handle old name.",
             "handler text is preserved verbatim, only the key name changes",
         );
@@ -2602,7 +2895,10 @@ mod tests {
         let handlers = read_handlers(&pool, &persona.id);
         assert!(handlers.get("event.one").is_none());
         assert_eq!(
-            handlers.get("event.renamed").and_then(|v| v.as_str()).unwrap(),
+            handlers
+                .get("event.renamed")
+                .and_then(|v| v.as_str())
+                .unwrap(),
             "handler one",
         );
         // Untouched sibling

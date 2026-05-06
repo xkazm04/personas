@@ -6,9 +6,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::director::{
-    self, DirectorReport, DirectorVerdictRow,
-};
+use crate::engine::director::{self, DirectorReport, DirectorVerdictRow};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -16,9 +14,7 @@ use crate::AppState;
 /// Returns the id of the system-owned Director persona. Frontend uses this
 /// to hide the Director row from coaching target lists.
 #[tauri::command]
-pub fn get_director_persona_id(
-    state: State<'_, Arc<AppState>>,
-) -> Result<String, AppError> {
+pub fn get_director_persona_id(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
     require_auth_sync(&state)?;
     director::get_director_persona_id(&state.db)
 }

@@ -3,10 +3,13 @@ import {
   Check,
   ShieldCheck,
   AlertTriangle,
+  AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { DiscoveredApp } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { DiscoveryScanState } from './useOnboardingState';
 
 const APP_ICONS: Record<string, string> = {
   desktop_docker: 'Docker',
@@ -35,16 +38,18 @@ const HIGH_RISK_APPS = new Set(['desktop_docker']);
 
 export function DesktopDiscoveryStep({
   apps,
-  isScanning,
+  scanState,
   approvedApps,
   approvingApp,
   onApprove,
+  onRetry,
 }: {
   apps: DiscoveredApp[];
-  isScanning: boolean;
+  scanState: DiscoveryScanState;
   approvedApps: Set<string>;
   approvingApp: string | null;
   onApprove: (connectorName: string) => void;
+  onRetry: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -55,11 +60,30 @@ export function DesktopDiscoveryStep({
     safeTooltip: t.onboarding.risk_safe_tooltip,
   };
 
-  if (isScanning) {
+  if (scanState.phase === 'scanning') {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3">
         <LoadingSpinner size="xl" className="text-violet-400" />
         <span className="typo-body text-foreground">{t.onboarding.scanning_desktop}</span>
+      </div>
+    );
+  }
+
+  if (scanState.phase === 'error') {
+    return (
+      <div className="text-center py-16">
+        <AlertCircle className="w-10 h-10 mx-auto text-amber-400 mb-3" />
+        <p className="typo-body text-foreground">{t.onboarding.desktop_scan_error}</p>
+        <p className="typo-body text-foreground/70 mt-1">
+          {scanState.error ?? t.onboarding.desktop_scan_error_hint}
+        </p>
+        <button
+          onClick={onRetry}
+          className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 typo-heading rounded-card bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25 transition-colors"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          {t.onboarding.desktop_scan_retry}
+        </button>
       </div>
     );
   }

@@ -38,12 +38,14 @@ pub fn search_kb_for_error(
     query: &str,
     limit: usize,
 ) -> Result<Vec<KbMatch>, AppError> {
-    let embedding_manager = state.embedding_manager.as_ref().ok_or_else(|| {
-        AppError::Internal("Embedding manager not available".into())
-    })?;
-    let vector_store = state.vector_store.as_ref().ok_or_else(|| {
-        AppError::Internal("Vector store not available".into())
-    })?;
+    let embedding_manager = state
+        .embedding_manager
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Embedding manager not available".into()))?;
+    let vector_store = state
+        .vector_store
+        .as_ref()
+        .ok_or_else(|| AppError::Internal("Vector store not available".into()))?;
 
     // Get the query embedding synchronously via a blocking spawn
     let query_text = query.to_string();
@@ -92,7 +94,11 @@ pub fn search_kb_for_error(
     }
 
     // Sort by similarity descending (best first)
-    all_matches.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap_or(std::cmp::Ordering::Equal));
+    all_matches.sort_by(|a, b| {
+        b.similarity
+            .partial_cmp(&a.similarity)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     all_matches.truncate(limit);
 
     Ok(all_matches)
@@ -119,7 +125,9 @@ fn list_all_kbs(conn: &rusqlite::Connection) -> Result<Vec<(String, String)>, Ap
         "SELECT id, name FROM knowledge_bases WHERE status = 'ready' ORDER BY created_at DESC",
     )?;
     let rows = stmt
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))?
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })?
         .collect::<Result<Vec<_>, _>>()?;
     Ok(rows)
 }
@@ -136,10 +144,7 @@ fn lookup_chunk_content(
          WHERE c.id = ?1",
     )?;
     let result = stmt.query_row(params![chunk_id], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, Option<String>>(1)?,
-        ))
+        Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
     })?;
     Ok(result)
 }

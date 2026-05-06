@@ -62,7 +62,9 @@ impl FromSql for SessionStatus {
 
 impl ToSql for SessionStatus {
     fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
-        Ok(ToSqlOutput::Borrowed(ValueRef::Text(self.as_str().as_bytes())))
+        Ok(ToSqlOutput::Borrowed(ValueRef::Text(
+            self.as_str().as_bytes(),
+        )))
     }
 }
 
@@ -115,7 +117,11 @@ pub struct N8nSessionResponse {
 
 impl From<N8nTransformSession> for N8nSessionResponse {
     fn from(s: N8nTransformSession) -> Self {
-        fn parse_json_field(raw: Option<String>, field: &str, session_id: &str) -> Option<serde_json::Value> {
+        fn parse_json_field(
+            raw: Option<String>,
+            field: &str,
+            session_id: &str,
+        ) -> Option<serde_json::Value> {
             raw.and_then(|text| {
                 serde_json::from_str(&text).unwrap_or_else(|err| {
                     tracing::warn!(

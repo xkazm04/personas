@@ -28,8 +28,7 @@ pub fn export_persona_bundle(
 
     let (bytes, result) = bundle::export_bundle(&state.db, &resource_ids)?;
 
-    std::fs::write(&save_path, &bytes)
-        .map_err(AppError::Io)?;
+    std::fs::write(&save_path, &bytes).map_err(AppError::Io)?;
 
     tracing::info!(
         path = %save_path,
@@ -50,8 +49,7 @@ pub fn preview_bundle_import(
     file_path: String,
 ) -> Result<BundleImportPreview, AppError> {
     require_auth_sync(&state)?;
-    let bytes = std::fs::read(&file_path)
-        .map_err(AppError::Io)?;
+    let bytes = std::fs::read(&file_path).map_err(AppError::Io)?;
     bundle::preview_bundle(&state.db, &bytes)
 }
 
@@ -77,12 +75,13 @@ pub fn apply_bundle_import(
             }
         }
     } else {
-        std::fs::read(&file_path)
-            .map_err(AppError::Io)?
+        std::fs::read(&file_path).map_err(AppError::Io)?
     };
 
     if bytes.is_empty() {
-        return Err(AppError::Validation("Bundle file is empty or unreadable".into()));
+        return Err(AppError::Validation(
+            "Bundle file is empty or unreadable".into(),
+        ));
     }
 
     // TOCTOU mitigation: when a preview was performed, the hash check is mandatory.
@@ -228,7 +227,9 @@ pub fn apply_bundle_from_clipboard(
     };
 
     if bytes.is_empty() {
-        return Err(AppError::Validation("Bundle data is empty or unreadable".into()));
+        return Err(AppError::Validation(
+            "Bundle data is empty or unreadable".into(),
+        ));
     }
 
     // TOCTOU mitigation: verify the bundle hash matches what was shown at preview time.
@@ -269,8 +270,7 @@ pub fn verify_bundle(
     file_path: String,
 ) -> Result<BundleVerification, AppError> {
     require_auth_sync(&state)?;
-    let bytes = std::fs::read(&file_path)
-        .map_err(AppError::Io)?;
+    let bytes = std::fs::read(&file_path).map_err(AppError::Io)?;
     bundle::verify_bundle(&state.db, &bytes)
 }
 
@@ -303,9 +303,7 @@ pub fn create_share_link(
 /// Resolve a `personas://share` deep link URL to its HTTP fetch URL
 /// and metadata. The frontend uses this before preview/import.
 #[tauri::command]
-pub fn resolve_share_deep_link(
-    url: String,
-) -> Result<ResolvedShareLink, AppError> {
+pub fn resolve_share_deep_link(url: String) -> Result<ResolvedShareLink, AppError> {
     share_link::resolve_deep_link(&url)
 }
 
@@ -331,7 +329,9 @@ pub async fn import_from_share_link(
     let bytes = share_link::fetch_share_link(&http_url).await?;
 
     if bytes.is_empty() {
-        return Err(AppError::Validation("Share link returned empty data".into()));
+        return Err(AppError::Validation(
+            "Share link returned empty data".into(),
+        ));
     }
 
     let result = bundle::apply_import(&state.db, &bytes, options)?;
@@ -358,7 +358,9 @@ pub async fn preview_share_link(
     let bytes = share_link::fetch_share_link(&http_url).await?;
 
     if bytes.is_empty() {
-        return Err(AppError::Validation("Share link returned empty data".into()));
+        return Err(AppError::Validation(
+            "Share link returned empty data".into(),
+        ));
     }
 
     bundle::preview_bundle(&state.db, &bytes)

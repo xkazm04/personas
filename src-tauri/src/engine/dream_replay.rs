@@ -127,7 +127,8 @@ pub fn build_dream_replay(trace: &ExecutionTrace) -> DreamReplaySession {
     // `visiting` tracks spans on the current recursion stack to detect circular
     // parent_span_id references (e.g. A->B->C->A or self-refs) and break them
     // with depth 0 instead of overflowing the stack.
-    let mut depth_cache: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
+    let mut depth_cache: std::collections::HashMap<String, usize> =
+        std::collections::HashMap::new();
     let mut visiting: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     fn compute_depth(
@@ -237,8 +238,12 @@ pub fn build_dream_replay(trace: &ExecutionTrace) -> DreamReplaySession {
     // Extract root span totals
     let root = spans.iter().find(|s| s.parent_span_id.is_none());
     let total_cost = root.and_then(|s| s.cost_usd).unwrap_or(cumulative_cost);
-    let total_input = root.and_then(|s| s.input_tokens).unwrap_or(cumulative_input);
-    let total_output = root.and_then(|s| s.output_tokens).unwrap_or(cumulative_output);
+    let total_input = root
+        .and_then(|s| s.input_tokens)
+        .unwrap_or(cumulative_input);
+    let total_output = root
+        .and_then(|s| s.output_tokens)
+        .unwrap_or(cumulative_output);
 
     DreamReplaySession {
         execution_id: trace.execution_id.clone(),

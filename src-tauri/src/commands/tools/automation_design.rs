@@ -13,7 +13,7 @@ use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 use crate::commands::credentials::ai_artifact_flow::{
-    AiArtifactMessages, AiArtifactParams, run_ai_artifact_task,
+    run_ai_artifact_task, AiArtifactMessages, AiArtifactParams,
 };
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 
@@ -233,8 +233,14 @@ pub async fn start_automation_design(
     });
 
     let (persona_res, tools_res, connectors_res, credentials_res, automations_res) =
-        tokio::try_join!(persona_fut, tools_fut, connectors_fut, credentials_fut, automations_fut)
-            .map_err(|e| AppError::Internal(format!("Task join error: {e}")))?;
+        tokio::try_join!(
+            persona_fut,
+            tools_fut,
+            connectors_fut,
+            credentials_fut,
+            automations_fut
+        )
+        .map_err(|e| AppError::Internal(format!("Task join error: {e}")))?;
 
     let persona = persona_res?;
     let tools = tools_res?;
@@ -317,9 +323,7 @@ pub async fn start_automation_design(
 }
 
 #[tauri::command]
-pub fn cancel_automation_design(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub fn cancel_automation_design(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     if let Some(pid) = state.process_registry.cancel("automation_design") {
         tracing::info!(pid = pid, "Killing automation design CLI child process");

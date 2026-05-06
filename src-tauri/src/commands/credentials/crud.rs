@@ -1,11 +1,10 @@
-use std::sync::Arc;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tauri::State;
 
 use crate::commands::core::personas::BlastRadiusItem;
 use crate::db::models::{
-    CreateCredentialEventInput, CreateCredentialInput,
-    CredentialEvent, PersonaCredential,
+    CreateCredentialEventInput, CreateCredentialInput, CredentialEvent, PersonaCredential,
     UpdateCredentialEventInput, UpdateCredentialInput,
 };
 use crate::db::repos::resources::audit_log;
@@ -25,9 +24,7 @@ pub fn list_credentials(
 }
 
 #[tauri::command]
-pub fn get_session_public_key(
-    state: State<'_, Arc<AppState>>,
-) -> String {
+pub fn get_session_public_key(state: State<'_, Arc<AppState>>) -> String {
     state.session_key.public_key_pem().to_string()
 }
 
@@ -73,7 +70,10 @@ pub fn create_credential(
     // Persist pre-creation healthcheck result so credential appears as "healthy"
     if healthcheck_passed {
         if let Err(e) = repo::append_healthcheck_metadata(
-            &state.db, &cred.id, true, "Connection verified during setup",
+            &state.db,
+            &cred.id,
+            true,
+            "Connection verified during setup",
         ) {
             tracing::warn!(credential_id = %cred.id, error = %e, "Failed to set initial healthcheck metadata");
         } else {
@@ -111,11 +111,13 @@ pub fn update_credential(
     let has_data_change = input.encrypted_data.is_some();
 
     // Parse plaintext fields for field-level storage
-    let field_map: Option<HashMap<String, String>> = match input.encrypted_data.as_ref() {
-        Some(data) => Some(serde_json::from_str(data)
-            .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?),
-        None => None,
-    };
+    let field_map: Option<HashMap<String, String>> =
+        match input.encrypted_data.as_ref() {
+            Some(data) => Some(serde_json::from_str(data).map_err(|e| {
+                AppError::Validation(format!("Invalid credential field data: {}", e))
+            })?),
+            None => None,
+        };
 
     // Strip blob columns -- all secrets live in credential_fields now.
     // Update metadata + fields in a single transaction to prevent inconsistent state.
@@ -127,7 +129,11 @@ pub fn update_credential(
     };
     let cred = repo::update_with_fields(&state.db, &id, metadata_input, field_map.as_ref())?;
 
-    let detail = if has_data_change { "credential data changed" } else { "metadata updated" };
+    let detail = if has_data_change {
+        "credential data changed"
+    } else {
+        "metadata updated"
+    };
     audit_log::insert_warn(&state.db, &id, &cred.name, "update", Some(detail));
 
     // Auto-provision a keepalive rotation policy if this is now an OAuth credential
@@ -161,15 +167,15 @@ pub fn credential_blast_radius(
     let items = repo::blast_radius(&state.db, &id)?;
     Ok(items
         .into_iter()
-        .map(|(category, description)| BlastRadiusItem { category, description })
+        .map(|(category, description)| BlastRadiusItem {
+            category,
+            description,
+        })
         .collect())
 }
 
 #[tauri::command]
-pub fn delete_credential(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_credential(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_privileged_sync(&state, "delete_credential")?;
     // Capture name before deletion for audit trail.
     // NotFound means the credential is already gone — skip silently.
@@ -235,14 +241,24 @@ pub async fn healthcheck_credential(
     state: State<'_, Arc<AppState>>,
     credential_id: String,
 ) -> Result<HealthcheckResult, AppError> {
-    let result =
-        crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
-    let cred = repo::get_by_id(&state.db, &credential_id)
-        .ok();
-    let name = cred.as_ref().map(|c| c.name.clone())
+    let result = crate::engine::healthcheck::run_healthcheck(&state.db, &credential_id).await?;
+    let cred = repo::get_by_id(&state.db, &credential_id).ok();
+    let name = cred
+        .as_ref()
+        .map(|c| c.name.clone())
         .unwrap_or_else(|| credential_id.clone());
-    let detail = if result.success { "passed" } else { &result.message };
-    audit_log::insert_warn(&state.db, &credential_id, &name, "healthcheck", Some(detail));
+    let detail = if result.success {
+        "passed"
+    } else {
+        &result.message
+    };
+    audit_log::insert_warn(
+        &state.db,
+        &credential_id,
+        &name,
+        "healthcheck",
+        Some(detail),
+    );
 
     // Record credential usage
     if let Err(e) = repo::record_usage(&state.db, &credential_id) {
@@ -252,7 +268,10 @@ pub async fn healthcheck_credential(
     // Append to healthcheck ring buffer atomically to prevent concurrent overwrites
     if cred.is_some() {
         if let Err(e) = repo::append_healthcheck_metadata(
-            &state.db, &credential_id, result.success, &result.message,
+            &state.db,
+            &credential_id,
+            result.success,
+            &result.message,
         ) {
             tracing::warn!(credential_id = %credential_id, error = %e, "Failed to update healthcheck metadata");
         }
@@ -268,14 +287,16 @@ pub async fn healthcheck_credential_preview(
     session_encrypted_data: String,
 ) -> Result<HealthcheckResult, AppError> {
     // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
-    let field_values: HashMap<String, String> = match state.session_key.decrypt(&session_encrypted_data) {
-        Ok(decrypted) => serde_json::from_str(&decrypted)
-            .map_err(|e| AppError::Validation(format!("Invalid decrypted field data: {}", e)))?,
-        Err(e) => {
-            tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
-            return Err(AppError::Internal("Decryption failed".into()));
-        }
-    };
+    let field_values: HashMap<String, String> =
+        match state.session_key.decrypt(&session_encrypted_data) {
+            Ok(decrypted) => serde_json::from_str(&decrypted).map_err(|e| {
+                AppError::Validation(format!("Invalid decrypted field data: {}", e))
+            })?,
+            Err(e) => {
+                tracing::error!("Failed to decrypt session-encrypted payload: {}", e);
+                return Err(AppError::Internal("Decryption failed".into()));
+            }
+        };
 
     let result = crate::engine::healthcheck::run_healthcheck_with_fields(
         &state.db,
@@ -287,9 +308,7 @@ pub async fn healthcheck_credential_preview(
 }
 
 #[tauri::command]
-pub fn vault_status(
-    state: State<'_, Arc<AppState>>,
-) -> Result<serde_json::Value, AppError> {
+pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value, AppError> {
     // Public command — no IPC token required (read-only status check)
     let (total, plaintext) = repo::count_vault_status(&state.db)?;
     let encrypted = total - plaintext;
@@ -366,9 +385,21 @@ pub fn update_credential_field(
     let sens_map = repo::sensitivity_map_for_connector(&state.db, &cred.service_type);
     let is_sensitive = repo::is_field_sensitive(sens_map.as_ref(), &field_key);
 
-    repo::upsert_field(&state.db, &credential_id, &field_key, &field_value, is_sensitive)?;
+    repo::upsert_field(
+        &state.db,
+        &credential_id,
+        &field_key,
+        &field_value,
+        is_sensitive,
+    )?;
 
-    audit_log::insert_warn(&state.db, &credential_id, &cred.name, "field_update", Some(&format!("field '{field_key}' updated")));
+    audit_log::insert_warn(
+        &state.db,
+        &credential_id,
+        &cred.name,
+        "field_update",
+        Some(&format!("field '{field_key}' updated")),
+    );
     Ok(true)
 }
 

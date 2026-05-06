@@ -82,32 +82,33 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
             );
         }
         if s.fade_in < 0.0 || s.fade_out < 0.0 {
-            return violation(
-                "I3",
-                format!("stage {} negative fade", s.id),
-                Some(&s.id),
-            );
+            return violation("I3", format!("stage {} negative fade", s.id), Some(&s.id));
         }
 
         // I4 — source range inside media for non-color sources.
-        let src = source_by_id.get(&s.source_id).ok_or_else(|| InvariantViolation {
-            code: "I4",
-            message: format!("stage {} references unknown sourceId {}", s.id, s.source_id),
-            offending_id: Some(s.id.clone()),
-        })?;
+        let src = source_by_id
+            .get(&s.source_id)
+            .ok_or_else(|| InvariantViolation {
+                code: "I4",
+                message: format!("stage {} references unknown sourceId {}", s.id, s.source_id),
+                offending_id: Some(s.id.clone()),
+            })?;
         match src {
             SourceEntry::Color { .. } => {
                 return violation(
                     "I4",
-                    format!(
-                        "video stage {} must not reference a Color source",
-                        s.id
-                    ),
+                    format!("video stage {} must not reference a Color source", s.id),
                     Some(&s.id),
                 );
             }
-            SourceEntry::File { media_duration_seconds, .. }
-            | SourceEntry::Proxy { media_duration_seconds, .. } => {
+            SourceEntry::File {
+                media_duration_seconds,
+                ..
+            }
+            | SourceEntry::Proxy {
+                media_duration_seconds,
+                ..
+            } => {
                 if s.source_in < 0.0 {
                     return violation("I4", format!("stage {} sourceIn < 0", s.id), Some(&s.id));
                 }
@@ -182,7 +183,11 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
     for track in &plan.audio_tracks {
         for s in &track.stages {
             if s.output_start < 0.0 {
-                return violation("I2", format!("audio stage {} outputStart < 0", s.id), Some(&s.id));
+                return violation(
+                    "I2",
+                    format!("audio stage {} outputStart < 0", s.id),
+                    Some(&s.id),
+                );
             }
             if s.output_end <= s.output_start {
                 return violation(
@@ -206,20 +211,22 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
             if s.fade_in + s.fade_out > dur + 1e-9 {
                 return violation(
                     "I3",
-                    format!(
-                        "audio stage {} fadeIn+fadeOut > duration",
-                        s.id
-                    ),
+                    format!("audio stage {} fadeIn+fadeOut > duration", s.id),
                     Some(&s.id),
                 );
             }
 
             // I4 for audio
-            let src = source_by_id.get(&s.source_id).ok_or_else(|| InvariantViolation {
-                code: "I4",
-                message: format!("audio stage {} references unknown sourceId {}", s.id, s.source_id),
-                offending_id: Some(s.id.clone()),
-            })?;
+            let src = source_by_id
+                .get(&s.source_id)
+                .ok_or_else(|| InvariantViolation {
+                    code: "I4",
+                    message: format!(
+                        "audio stage {} references unknown sourceId {}",
+                        s.id, s.source_id
+                    ),
+                    offending_id: Some(s.id.clone()),
+                })?;
             match src {
                 SourceEntry::Color { .. } => {
                     return violation(
@@ -228,8 +235,14 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
                         Some(&s.id),
                     );
                 }
-                SourceEntry::File { media_duration_seconds, .. }
-                | SourceEntry::Proxy { media_duration_seconds, .. } => {
+                SourceEntry::File {
+                    media_duration_seconds,
+                    ..
+                }
+                | SourceEntry::Proxy {
+                    media_duration_seconds,
+                    ..
+                } => {
                     if s.source_in < 0.0 || s.source_end <= s.source_in {
                         return violation(
                             "I4",
@@ -311,16 +324,22 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
             return violation("I3", format!("overlay {id} fades > duration"), Some(&id));
         }
         if !(0.0..=1.0).contains(&o.position_x()) || !(0.0..=1.0).contains(&o.position_y()) {
-            return violation("I7", format!("overlay {id} position out of [0,1]"), Some(&id));
+            return violation(
+                "I7",
+                format!("overlay {id} position out of [0,1]"),
+                Some(&id),
+            );
         }
         // OverlayStage is single-variant today; pattern stays for future variants.
         #[allow(irrefutable_let_patterns)]
         if let OverlayStage::Image(img) = o {
-            let src = source_by_id.get(&img.source_id).ok_or_else(|| InvariantViolation {
-                code: "I4",
-                message: format!("image overlay {} references unknown sourceId", img.id),
-                offending_id: Some(img.id.clone()),
-            })?;
+            let src = source_by_id
+                .get(&img.source_id)
+                .ok_or_else(|| InvariantViolation {
+                    code: "I4",
+                    message: format!("image overlay {} references unknown sourceId", img.id),
+                    offending_id: Some(img.id.clone()),
+                })?;
             if matches!(src, SourceEntry::Color { .. }) {
                 return violation(
                     "I4",
@@ -364,7 +383,9 @@ pub fn assert_invariants(plan: &RenderPlan) -> Result<(), InvariantViolation> {
                 if !known {
                     return violation(
                         "I10",
-                        format!("loudnormUnmeasured references unknown audioStageId {audio_stage_id}"),
+                        format!(
+                            "loudnormUnmeasured references unknown audioStageId {audio_stage_id}"
+                        ),
                         Some(audio_stage_id),
                     );
                 }
@@ -408,7 +429,11 @@ fn is_frame_aligned(v: f64, fps: f64) -> bool {
     (n - n.round()).abs() < 1e-6
 }
 
-fn violation(code: &'static str, message: String, id: Option<&str>) -> Result<(), InvariantViolation> {
+fn violation(
+    code: &'static str,
+    message: String,
+    id: Option<&str>,
+) -> Result<(), InvariantViolation> {
     Err(InvariantViolation {
         code,
         message,

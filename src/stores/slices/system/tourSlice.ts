@@ -1,5 +1,8 @@
 import type { StateCreator } from "zustand";
+import * as Sentry from "@sentry/react";
 import type { SystemStore } from "../../storeTypes";
+import { useToastStore } from "@/stores/toastStore";
+import { en } from "@/i18n/en";
 
 // -- Types --------------------------------------------------------------
 
@@ -44,6 +47,64 @@ export const TOUR_EVENTS = [
 ] as const;
 
 export type TourEventKey = (typeof TOUR_EVENTS)[number];
+
+/**
+ * Exploration steps — informational tour stops where there is no concrete
+ * user action that can be detected in code (no setting change, no credential
+ * interaction, no persona promotion). The user is meant to look around the
+ * dashboard, activity, messages, health, lab, events canvas, etc.
+ *
+ * Historically these advanced via a hard-coded 5s `setTimeout` in
+ * `GuidedTour.tsx` (no rationale, no countdown, no opt-out). Five seconds
+ * is too short for a slow loader and too long for a power user, and Sentry
+ * surfaced "it said complete but I never saw the page" complaints.
+ *
+ * We no longer auto-complete on a timer. Instead, the tour panel renders an
+ * explicit "I've explored this" button for these events; the user decides
+ * when they are done. Keep this set as the single source of truth — both
+ * the panel (button visibility) and any future heuristics consult it.
+ */
+export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
+  // Execution & Observability
+  'tour:dashboard-viewed',
+  'tour:activity-explored',
+  'tour:messages-explored',
+  'tour:health-explored',
+  'tour:lab-explored',
+  // Orchestration & Events
+  'tour:events-viewed',
+  'tour:triggers-explored',
+  'tour:chaining-understood',
+  'tour:livestream-viewed',
+]);
+
+/** True when a step's completion is gated on the user clicking acknowledge rather than a real interaction. */
+export function isExplorationTourEvent(eventKey: TourEventKey | undefined): boolean {
+  return eventKey !== undefined && EXPLORATION_TOUR_EVENTS.has(eventKey);
+}
+
+/**
+ * Allowed character set for `data-testid` values surfaced to
+ * `TourSpotlight` via `tourHighlightTestId`. Mirrors the testid
+ * convention used across the codebase ([a-zA-Z0-9_-]+).
+ *
+ * The spotlight builds a CSS selector with this string interpolated
+ * inside double quotes:
+ *   document.querySelector(`[data-testid="${id}"]`)
+ *
+ * A future caller passing a string with a quote, bracket, or backslash
+ * (e.g. a templated id like `agent-${name}` for a persona named
+ * `Joe "rocket" Smith`) would crash querySelector with SyntaxError and
+ * kill the spotlight effect for the rest of the session. Keep the
+ * pattern strict so the trust boundary lives at the slice setter, not
+ * in every callsite.
+ */
+export const TOUR_TEST_ID_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+/** True if `id` is safe to embed in a `[data-testid="…"]` selector. */
+export function isSafeTourTestId(id: string | null | undefined): id is string {
+  return typeof id === "string" && id.length > 0 && TOUR_TEST_ID_PATTERN.test(id);
+}
 
 export interface TourSubStepDef {
   id: string;
@@ -331,6 +392,103 @@ export function getActiveTourSteps(tourId: TourId): TourStepDef[] {
 const TOUR_STORAGE_KEY = "guided-tour-state";
 const TOUR_STATE_VERSION = 3;
 
+/**
+ * Probe key separate from the real state key so a probe failure can't
+ * corrupt persisted progress, and so the probe is non-destructive on
+ * success (we delete it immediately).
+ */
+const TOUR_STORAGE_PROBE_KEY = "guided-tour-storage-probe";
+
+/**
+ * Set once per app session so the user gets exactly one toast about
+ * persistence being unavailable, no matter how many tour transitions
+ * happen afterwards. Surviving HMR via globalThis matches the pattern
+ * used elsewhere (executionBuffers, eventBus).
+ */
+declare global {
+  var __personasTourStorageProbed: boolean | undefined;
+  var __personasTourStorageAvailable: boolean | undefined;
+  var __personasTourStorageToastShown: boolean | undefined;
+}
+
+/**
+ * Run a one-time `setItem`/`getItem`/`removeItem` round-trip against
+ * `localStorage` and cache the result on `globalThis`. Subsequent calls
+ * are a single property read.
+ *
+ * Why this matters: Safari private-mode, Firefox storage-full, NS_ERROR_FILE_CORRUPTED
+ * on locked-down corporate Windows profiles, and a few mobile WebViews
+ * all throw on the first write attempt. Previously `persistState()`
+ * swallowed those errors silently, leaving the user with a tour that
+ * resets every session and zero feedback. Now we probe at slice boot
+ * (and the first call is guaranteed to be at boot via
+ * `loadPersistedState()` and `createTourSlice()`), surface a one-time
+ * toast, log a Sentry breadcrumb so support can correlate
+ * "tour-restarting-on-launch" reports, and downgrade `persistState()`
+ * to an in-memory no-op so the rest of the tour still works.
+ */
+function probeTourStorage(): boolean {
+  if (typeof globalThis.__personasTourStorageProbed !== "undefined") {
+    return globalThis.__personasTourStorageAvailable === true;
+  }
+  globalThis.__personasTourStorageProbed = true;
+
+  let available = false;
+  let errorMessage = "unknown";
+  try {
+    if (typeof localStorage === "undefined") {
+      errorMessage = "localStorage is undefined (SSR/sandbox)";
+    } else {
+      localStorage.setItem(TOUR_STORAGE_PROBE_KEY, "1");
+      const readBack = localStorage.getItem(TOUR_STORAGE_PROBE_KEY);
+      localStorage.removeItem(TOUR_STORAGE_PROBE_KEY);
+      available = readBack === "1";
+      if (!available) errorMessage = "round-trip mismatch";
+    }
+  } catch (err) {
+    available = false;
+    errorMessage = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  }
+
+  globalThis.__personasTourStorageAvailable = available;
+
+  if (available) {
+    Sentry.addBreadcrumb({
+      category: "tour.persistence",
+      message: "Tour storage probe passed",
+      level: "info",
+    });
+    return true;
+  }
+
+  // Persistence is broken. Surface it once.
+  Sentry.addBreadcrumb({
+    category: "tour.persistence",
+    message: `Tour storage probe failed: ${errorMessage}`,
+    level: "warning",
+  });
+  Sentry.captureMessage(
+    `[tour] localStorage unavailable — tour progress will not persist (${errorMessage})`,
+    "warning",
+  );
+
+  if (!globalThis.__personasTourStorageToastShown) {
+    globalThis.__personasTourStorageToastShown = true;
+    // Guard the toast call: in a unit-test harness the toast store may
+    // not be initialized. We never want a probe-failure path to crash.
+    try {
+      useToastStore
+        .getState()
+        .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
+    } catch {
+      // intentional: see comment above. The probe still records the
+      // breadcrumb above so support has the diagnostic trail.
+    }
+  }
+
+  return false;
+}
+
 interface PersistedTourState {
   version: number;
   /** Per-tour completion state */
@@ -344,6 +502,9 @@ interface PersistedTourState {
 }
 
 function loadPersistedState(): PersistedTourState | null {
+  // Probe runs the first time we touch storage (slice construction).
+  // If unavailable, treat the same as "no persisted state".
+  if (!probeTourStorage()) return null;
   try {
     const raw = localStorage.getItem(TOUR_STORAGE_KEY);
     if (!raw) return null;
@@ -353,19 +514,86 @@ function loadPersistedState(): PersistedTourState | null {
       return null;
     }
     return parsed;
-  } catch {
+  } catch (err) {
+    // The data was on disk but failed to parse — JSON corruption or a
+    // schema change we didn't anticipate. Distinct from "unavailable":
+    // log it but don't toast (the user's not stuck — they just lose
+    // this one session's persisted progress).
+    Sentry.addBreadcrumb({
+      category: "tour.persistence",
+      message: `loadPersistedState parse failure: ${err instanceof Error ? err.message : String(err)}`,
+      level: "warning",
+    });
     return null;
   }
 }
 
 function persistState(state: Omit<PersistedTourState, 'version'>) {
+  // Persistence-disabled mode: in-memory state is still authoritative
+  // for the current session, but we don't try writes that we know will
+  // throw (also avoids burning Sentry quota on QuotaExceededError every
+  // step transition).
+  if (!probeTourStorage()) return;
   try {
     localStorage.setItem(TOUR_STORAGE_KEY, JSON.stringify({ ...state, version: TOUR_STATE_VERSION }));
-  } catch { /* storage full or unavailable */ }
+  } catch (err) {
+    // The probe passed at boot but a later write failed (e.g. quota
+    // filled up mid-session). Mark storage unavailable so we stop
+    // retrying, log a breadcrumb, and surface the toast once.
+    globalThis.__personasTourStorageAvailable = false;
+    Sentry.addBreadcrumb({
+      category: "tour.persistence",
+      message: `persistState failed mid-session: ${err instanceof Error ? `${err.name}: ${err.message}` : String(err)}`,
+      level: "error",
+    });
+    Sentry.captureMessage(
+      "[tour] persistState write failed mid-session — disabling further writes",
+      "warning",
+    );
+    if (!globalThis.__personasTourStorageToastShown) {
+      globalThis.__personasTourStorageToastShown = true;
+      try {
+        useToastStore
+          .getState()
+          .addToast(en.onboarding.tour_storage_unavailable_toast, "error", 8000);
+      } catch {
+        // see probeTourStorage(): toast may not be initialized in tests
+      }
+    }
+  }
 }
 
 function getDefaultTourState() {
   return { completed: false, dismissed: false, currentStepIndex: 0, completedSteps: {} as Record<string, boolean>, subStepIndex: 0 };
+}
+
+/**
+ * The Starter ("getting-started-simple") and Power ("getting-started")
+ * tours share a step-id schema: `appearance-setup`, `credentials-intro`,
+ * `persona-creation`. The Starter tour stops there; the Power tour adds
+ * later steps. When a user changes tier mid-tour we want their progress
+ * on those shared ids to carry over so they don't lose context after an
+ * upgrade.
+ *
+ * This map is the single source of truth for which tours are migration
+ * partners. If you ever add a third Starter-vs-Power split (e.g. a
+ * separate tour for an Enterprise tier), extend this map AND the test
+ * `migrates_completed_steps_when_switching_starter_to_power` in
+ * `tourSlice.test.ts`.
+ */
+const TIER_PARTNER: Partial<Record<TourId, TourId>> = {
+  "getting-started": "getting-started-simple",
+  "getting-started-simple": "getting-started",
+};
+
+/**
+ * Return shared step ids between the source and target tour, used to
+ * carry completion state across a tier switch.
+ */
+function sharedStepIds(sourceId: TourId, targetId: TourId): Set<string> {
+  const sourceSteps = new Set(getActiveTourSteps(sourceId).map((s) => s.id));
+  const targetIds = getActiveTourSteps(targetId).map((s) => s.id);
+  return new Set(targetIds.filter((id) => sourceSteps.has(id)));
 }
 
 // -- Slice interface -----------------------------------------------------
@@ -474,13 +702,57 @@ export const createTourSlice: StateCreator<
       ts.completed = false;
       ts.dismissed = false;
 
+      // Tier-switch migration. When a user upgrades from Starter to Power
+      // (or downgrades) mid-tour, TourLauncher selects a different tourId
+      // on the next click. Without migration, the user re-does steps they
+      // already completed under the other tour id — paying customers see
+      // "Restart your tour", lose context, churn. Policy (option 1 from
+      // the requirement: auto-migrate via shared step ids) is documented
+      // in `src/features/onboarding/README.md` ("Tier-switch policy").
+      //
+      // Carry over completed steps for any id that exists in both
+      // registries. We do NOT overwrite work the target tour has already
+      // recorded (treat completion as monotonic — once done, stays done).
+      const partner = TIER_PARTNER[id];
+      if (partner) {
+        const partnerState = tours[partner];
+        if (partnerState) {
+          const shared = sharedStepIds(partner, id);
+          if (shared.size > 0) {
+            const merged: Record<string, boolean> = { ...ts.completedSteps };
+            for (const stepId of shared) {
+              if (partnerState.completedSteps[stepId]) merged[stepId] = true;
+            }
+            ts.completedSteps = merged;
+          }
+        }
+      }
+
       const hasProgress = Object.values(ts.completedSteps).some(Boolean);
+
+      // If migration brought in new completed steps, advance the cursor
+      // so the user lands on their next *unfinished* step rather than
+      // staring at a step they already did.
+      const targetSteps = getActiveTourSteps(id);
+      const firstUnfinished = targetSteps.findIndex((s) => !ts.completedSteps[s.id]);
+      const resumeIndex =
+        hasProgress && firstUnfinished >= 0
+          ? Math.max(ts.currentStepIndex, firstUnfinished)
+          : hasProgress
+            ? ts.currentStepIndex
+            : 0;
+
+      // Persist the migrated state back to localStorage so a refresh
+      // doesn't undo the merge.
+      tours[id] = ts;
+      persistState({ tours });
+
       set({
         tourActive: true,
         tourActiveTourId: id,
         tourCompleted: false,
         tourDismissed: false,
-        tourCurrentStepIndex: hasProgress ? ts.currentStepIndex : 0,
+        tourCurrentStepIndex: resumeIndex,
         tourStepCompleted: ts.completedSteps,
         tourSubStepIndex: hasProgress ? ts.subStepIndex : 0,
         tourCredentialInteractions: { categoriesBrowsed: [], connectorsViewed: 0 },
@@ -601,7 +873,22 @@ export const createTourSlice: StateCreator<
       }
     },
 
-    setHighlightTestId: (testId) => set({ tourHighlightTestId: testId }),
+    setHighlightTestId: (testId) => {
+      // Trust boundary: reject anything outside the testid convention so a
+      // future caller can't smuggle quotes/brackets into the selector that
+      // TourSpotlight builds. Clearing the highlight (null) is always allowed.
+      if (testId !== null && !isSafeTourTestId(testId)) {
+        if (typeof console !== "undefined") {
+          console.warn(
+            "[tourSlice] setHighlightTestId rejected unsafe testid; expected /^[a-zA-Z0-9_-]+$/",
+            { received: testId },
+          );
+        }
+        set({ tourHighlightTestId: null });
+        return;
+      }
+      set({ tourHighlightTestId: testId });
+    },
 
     captureAppearanceBaseline: (baseline) => set({ tourAppearanceBaseline: baseline }),
 

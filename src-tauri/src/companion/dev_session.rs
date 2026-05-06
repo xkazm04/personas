@@ -315,9 +315,7 @@ pub async fn recover_orphan_improvements(
 }
 
 #[cfg(not(feature = "ml"))]
-pub async fn recover_orphan_improvements(
-    user_db: &UserDbPool,
-) -> Result<usize, AppError> {
+pub async fn recover_orphan_improvements(user_db: &UserDbPool) -> Result<usize, AppError> {
     let dir = match ensure_pending_dir() {
         Ok(d) => d,
         Err(_) => return Ok(0),
@@ -391,7 +389,10 @@ async fn spawn_detached(
 
     let repo_root = resolve_repo_root();
     let (cmd_program, mut argv) = if cfg!(windows) {
-        ("cmd".to_string(), vec!["/C".to_string(), "claude.cmd".to_string()])
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
     } else {
         ("claude".to_string(), Vec::new())
     };
@@ -494,9 +495,7 @@ fn finalize_from_disk(
                     for block in content {
                         match block.get("type").and_then(|v| v.as_str()) {
                             Some("text") => {
-                                if let Some(text) =
-                                    block.get("text").and_then(|v| v.as_str())
-                                {
+                                if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
                                     if !summary.is_empty() {
                                         summary.push('\n');
                                     }
@@ -504,8 +503,7 @@ fn finalize_from_disk(
                                 }
                             }
                             Some("tool_use") => {
-                                let name =
-                                    block.get("name").and_then(|v| v.as_str()).unwrap_or("");
+                                let name = block.get("name").and_then(|v| v.as_str()).unwrap_or("");
                                 if matches!(name, "Edit" | "Write" | "MultiEdit") {
                                     if let Some(fp) = block
                                         .get("input")
@@ -626,12 +624,7 @@ async fn log_outcome_episode(
             )
             .await
         }
-        None => episodic::append_episode(
-            user_db,
-            DEFAULT_SESSION_ID,
-            EpisodeRole::System,
-            &text,
-        ),
+        None => episodic::append_episode(user_db, DEFAULT_SESSION_ID, EpisodeRole::System, &text),
     };
     if let Err(e) = result {
         tracing::warn!(error = %e, "self-improve: failed to log outcome episode");
@@ -648,13 +641,7 @@ fn pid_alive(pid: u32) -> bool {
     {
         use std::process::Command as StdCommand;
         match StdCommand::new("tasklist")
-            .args([
-                "/FI",
-                &format!("PID eq {pid}"),
-                "/FO",
-                "CSV",
-                "/NH",
-            ])
+            .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
             .output()
         {
             Ok(out) => {
@@ -662,8 +649,7 @@ fn pid_alive(pid: u32) -> bool {
                 // tasklist with /NH prints "INFO: No tasks..." to stdout
                 // when nothing matches. A live row contains the quoted
                 // PID. Match on the PID specifically to be robust.
-                s.lines()
-                    .any(|l| l.contains(&format!("\"{pid}\"")))
+                s.lines().any(|l| l.contains(&format!("\"{pid}\"")))
             }
             Err(_) => false,
         }

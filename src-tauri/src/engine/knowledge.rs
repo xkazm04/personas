@@ -173,17 +173,20 @@ fn extract_tool_sequence(ctx: &ExecutionContext<'_>, steps_json: &str) {
     })
     .to_string();
 
-    persist_knowledge(ctx, "tool_sequence", &pattern_key, &pattern_data, ctx.success);
+    persist_knowledge(
+        ctx,
+        "tool_sequence",
+        &pattern_key,
+        &pattern_data,
+        ctx.success,
+    );
 }
 
 /// Extract a failure pattern from the error message.
 /// Groups errors by their normalized prefix (first 100 chars, stripped of IDs).
 fn extract_failure_pattern(ctx: &ExecutionContext<'_>, error_message: &str) {
     // Normalize error: take first 100 chars, strip UUIDs and numbers
-    let normalized = error_message
-        .chars()
-        .take(100)
-        .collect::<String>();
+    let normalized = error_message.chars().take(100).collect::<String>();
     let pattern_key = normalize_error_pattern(&normalized);
 
     let pattern_data = serde_json::json!({

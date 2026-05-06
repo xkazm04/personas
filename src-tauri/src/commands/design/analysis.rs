@@ -13,9 +13,9 @@ use crate::engine::compiler::{self, CompilationInput, ParseOutcome};
 use crate::engine::design;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
-use crate::ActiveProcessRegistry;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
+use crate::ActiveProcessRegistry;
 use crate::AppState;
 
 // -- Event payloads ----------------------------------------------
@@ -62,7 +62,10 @@ fn spawn_design_run(
     // overwritten by a newer run and silently discards a valid result.
     let (old_pid, cancelled) = registry.begin_run("design", design_id.clone());
     if let Some(pid) = old_pid {
-        tracing::info!(pid = pid, "Killing previous design analysis before starting new one");
+        tracing::info!(
+            pid = pid,
+            "Killing previous design analysis before starting new one"
+        );
         engine::kill_process(pid);
     }
 
@@ -116,7 +119,16 @@ pub async fn start_design_analysis(
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
-    spawn_design_run(&state, app, &persona_id, design_prompt, cli_args, tool_names, connector_names, design_id)
+    spawn_design_run(
+        &state,
+        app,
+        &persona_id,
+        design_prompt,
+        cli_args,
+        tool_names,
+        connector_names,
+        design_id,
+    )
 }
 
 #[tauri::command]
@@ -168,7 +180,16 @@ pub async fn refine_design(
     let tool_names = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
-    spawn_design_run(&state, app, &persona_id, refinement_prompt, cli_args, tool_names, connector_names, design_id)
+    spawn_design_run(
+        &state,
+        app,
+        &persona_id,
+        refinement_prompt,
+        cli_args,
+        tool_names,
+        connector_names,
+        design_id,
+    )
 }
 
 #[tauri::command]
@@ -226,9 +247,8 @@ pub async fn compile_from_intent(
     let connectors = connector_repo::get_all(&state.db)?;
 
     // Build the intent compilation prompt (extended output schema)
-    let intent_prompt = engine::intent_compiler::build_intent_prompt(
-        &persona, &tools, &connectors, &intent,
-    );
+    let intent_prompt =
+        engine::intent_compiler::build_intent_prompt(&persona, &tools, &connectors, &intent);
 
     let model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
     let cli_args = prompt::build_cli_args(Some(&persona), model_profile.as_ref());
@@ -236,8 +256,14 @@ pub async fn compile_from_intent(
     let connector_names = connectors.iter().map(|c| c.name.clone()).collect();
 
     spawn_design_run(
-        &state, app, &persona_id, intent_prompt, cli_args,
-        tool_names, connector_names, design_id,
+        &state,
+        app,
+        &persona_id,
+        intent_prompt,
+        cli_args,
+        tool_names,
+        connector_names,
+        design_id,
     )
 }
 
@@ -322,7 +348,14 @@ async fn run_design_analysis(params: DesignRunParams) {
     let mut reader = match driver.take_stdout_reader().map(|r| r.lines()) {
         Some(r) => r,
         None => {
-            emit_design_status(&app, &design_id, "failed", None, Some("Failed to capture stdout from CLI process".to_string()), None);
+            emit_design_status(
+                &app,
+                &design_id,
+                "failed",
+                None,
+                Some("Failed to capture stdout from CLI process".to_string()),
+                None,
+            );
             return;
         }
     };
@@ -357,7 +390,14 @@ async fn run_design_analysis(params: DesignRunParams) {
     if stream_result.is_err() {
         driver.kill().await;
         registry.clear_pid("design");
-        emit_design_status(&app, &design_id, "failed", None, Some("Design analysis timed out after 10 minutes".into()), None);
+        emit_design_status(
+            &app,
+            &design_id,
+            "failed",
+            None,
+            Some("Design analysis timed out after 10 minutes".into()),
+            None,
+        );
         return;
     }
 
@@ -378,7 +418,14 @@ async fn run_design_analysis(params: DesignRunParams) {
     match compiler::parse_output(&full_output) {
         ParseOutcome::Question(question) => {
             tracing::info!(design_id = %design_id, "Design analysis paused -- question emitted");
-            emit_design_status(&app, &design_id, "awaiting-input", None, None, Some(question));
+            emit_design_status(
+                &app,
+                &design_id,
+                "awaiting-input",
+                None,
+                None,
+                Some(question),
+            );
         }
         ParseOutcome::Result(mut result) => {
             // Stage 4: Feasibility Check via PersonaCompiler
@@ -395,7 +442,14 @@ async fn run_design_analysis(params: DesignRunParams) {
                 },
             ) {
                 tracing::error!(design_id = %design_id, error = %e, "Failed to save design result to DB");
-                emit_design_status(&app, &design_id, "failed", Some(result), Some(format!("Design completed but failed to save: {e}")), None);
+                emit_design_status(
+                    &app,
+                    &design_id,
+                    "failed",
+                    Some(result),
+                    Some(format!("Design completed but failed to save: {e}")),
+                    None,
+                );
                 return;
             }
 
@@ -404,7 +458,14 @@ async fn run_design_analysis(params: DesignRunParams) {
         }
         ParseOutcome::Failed => {
             registry.clear_id_if("design", &design_id);
-            emit_design_status(&app, &design_id, "failed", None, Some("Failed to extract design result from Claude output".into()), None);
+            emit_design_status(
+                &app,
+                &design_id,
+                "failed",
+                None,
+                Some("Failed to extract design result from Claude output".into()),
+                None,
+            );
         }
     }
 }
@@ -466,5 +527,14 @@ pub fn preview_prompt(
 
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
-    Ok(prompt::assemble_prompt(&persona, &tools, None, None, None, None, #[cfg(feature = "desktop")] None))
+    Ok(prompt::assemble_prompt(
+        &persona,
+        &tools,
+        None,
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    ))
 }

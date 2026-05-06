@@ -45,6 +45,13 @@
 //! After `CIRCUIT_BREAKER_THRESHOLD` (5) consecutive failures, the persona
 //! is disabled entirely. This takes priority over all strategies — no retry
 //! or AI healing is attempted once the breaker trips.
+//!
+//! Note: this is the **persona-level** breaker. A separate **provider-level**
+//! breaker lives in [`super::failover`] and gates the runner's failover chain
+//! per `EngineKind`. The two are independent — they share no state, and
+//! tripping one never trips or resets the other. See
+//! `docs/architecture/circuit-breakers.md` for the full contract,
+//! precedence, and reset paths.
 
 use super::healing::{self, HealingDiagnosis, KnowledgeHint, MAX_RETRY_COUNT};
 
@@ -57,22 +64,14 @@ pub const CIRCUIT_BREAKER_THRESHOLD: u32 = 5;
 pub enum HealingStrategy {
     /// Rule-based retry: backoff or timeout increase.
     /// The caller should spawn a retry execution after the prescribed delay.
-    RuleBasedRetry {
-        diagnosis: HealingDiagnosis,
-    },
+    RuleBasedRetry { diagnosis: HealingDiagnosis },
     /// AI-powered healing: resume the original session to diagnose and fix.
     /// Only valid in dev-mode and when a session ID is available.
-    AiHealing {
-        diagnosis: HealingDiagnosis,
-    },
+    AiHealing { diagnosis: HealingDiagnosis },
     /// No automated healing — create an issue for manual investigation.
-    CreateIssue {
-        diagnosis: HealingDiagnosis,
-    },
+    CreateIssue { diagnosis: HealingDiagnosis },
     /// Persona disabled by circuit breaker — no healing attempted.
-    CircuitBreakerTripped {
-        diagnosis: HealingDiagnosis,
-    },
+    CircuitBreakerTripped { diagnosis: HealingDiagnosis },
 }
 
 impl HealingStrategy {
@@ -152,12 +151,14 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
 
     // Step 5: AI Healing — third priority.
     // Dev-mode only. Mutually exclusive with rule-based retry.
-    if ctx.is_dev_mode && ctx.has_session_id
+    if ctx.is_dev_mode
+        && ctx.has_session_id
         && super::ai_healing::should_trigger_ai_healing(
             &category,
             ctx.execution_state,
             ctx.consecutive_failures,
-        ) {
+        )
+    {
         return HealingStrategy::AiHealing { diagnosis };
     }
 
@@ -197,7 +198,10 @@ mod tests {
             consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CircuitBreakerTripped { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CircuitBreakerTripped { .. }
+        ));
     }
 
     #[test]
@@ -209,7 +213,10 @@ mod tests {
             has_session_id: true,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CircuitBreakerTripped { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CircuitBreakerTripped { .. }
+        ));
     }
 
     // --- Rule-based retry (second priority) ---
@@ -220,7 +227,10 @@ mod tests {
             error: "rate limit exceeded",
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::RuleBasedRetry { .. }
+        ));
     }
 
     #[test]
@@ -230,7 +240,10 @@ mod tests {
             timed_out: true,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::RuleBasedRetry { .. }
+        ));
     }
 
     #[test]
@@ -240,7 +253,10 @@ mod tests {
             retry_count: MAX_RETRY_COUNT,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     #[test]
@@ -252,7 +268,10 @@ mod tests {
             ..base_ctx()
         };
         // Not auto_fixable, no dev mode → CreateIssue
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     // --- Rule-based retry blocks AI healing (mutual exclusion) ---
@@ -267,7 +286,10 @@ mod tests {
             ..base_ctx()
         };
         // Rate limit is auto-fixable → rule-based retry wins
-        assert!(matches!(evaluate(&ctx), HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::RuleBasedRetry { .. }
+        ));
     }
 
     // --- AI healing (third priority) ---
@@ -327,7 +349,10 @@ mod tests {
             ..base_ctx()
         };
         // Falls through to CreateIssue
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     #[test]
@@ -338,7 +363,10 @@ mod tests {
             has_session_id: true,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     // --- Fallback to CreateIssue ---
@@ -349,7 +377,10 @@ mod tests {
             error: "Claude CLI not found",
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     #[test]
@@ -359,7 +390,10 @@ mod tests {
             session_limit_reached: true,
             ..base_ctx()
         };
-        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 
     // --- Strategy accessors ---

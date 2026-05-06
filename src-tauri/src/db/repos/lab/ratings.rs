@@ -12,7 +12,22 @@ row_mapper!(row_to_rating -> LabUserRating {
 
 // -- CRUD -------------------------------------------------------
 
+/// Valid rating range, inclusive. The UI is a five-star widget; values
+/// outside this range either come from a buggy renderer (e.g. a divide
+/// returning Infinity) or from a future feature accepting raw user input.
+/// Reject at the trust boundary so neither aggregations nor "top rationale"
+/// summaries get poisoned with -5 / 999 / NaN-shaped junk.
+const RATING_MIN: i32 = 1;
+const RATING_MAX: i32 = 5;
+
 pub fn upsert_rating(pool: &DbPool, input: &CreateRatingInput) -> Result<LabUserRating, AppError> {
+    if !(RATING_MIN..=RATING_MAX).contains(&input.rating) {
+        return Err(AppError::Validation(format!(
+            "rating must be in {RATING_MIN}..={RATING_MAX}, got {}",
+            input.rating
+        )));
+    }
+
     timed_query!("lab_ratings", "lab_ratings::upsert_rating", {
         let conn = pool.get()?;
         let id = uuid::Uuid::new_v4().to_string();
@@ -46,9 +61,8 @@ pub fn upsert_rating(pool: &DbPool, input: &CreateRatingInput) -> Result<LabUser
 pub fn get_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<Vec<LabUserRating>, AppError> {
     timed_query!("lab_ratings", "lab_ratings::get_ratings_for_run", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM lab_user_ratings WHERE run_id = ?1 ORDER BY created_at DESC",
-        )?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM lab_user_ratings WHERE run_id = ?1 ORDER BY created_at DESC")?;
         let ratings = stmt
             .query_map(params![run_id], row_to_rating)?
             .filter_map(|r| r.ok())

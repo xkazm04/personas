@@ -8,7 +8,10 @@ use aes_gcm::aead::{Aead, KeyInit, OsRng};
 use aes_gcm::{Aes256Gcm, Key, Nonce};
 use base64::engine::general_purpose::STANDARD as B64;
 use base64::Engine as _;
-use rsa::{pkcs8::{EncodePublicKey, LineEnding}, Oaep, RsaPrivateKey, RsaPublicKey};
+use rsa::{
+    pkcs8::{EncodePublicKey, LineEnding},
+    Oaep, RsaPrivateKey, RsaPublicKey,
+};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 use crate::db::DbPool;
@@ -32,7 +35,7 @@ impl SessionKeyPair {
         let private_key = RsaPrivateKey::new(&mut rng, 2048)
             .map_err(|e| CryptoError::KeyManagement(format!("RSA generation failed: {e}")))?;
         let public_key = RsaPublicKey::from(&private_key);
-        
+
         let public_key_pem = public_key
             .to_public_key_pem(LineEnding::LF)
             .map_err(|e| CryptoError::KeyManagement(format!("RSA PEM export failed: {e}")))?;
@@ -81,16 +84,21 @@ impl SessionKeyPair {
             let aes_part = &ciphertext_b64[dot_pos + 1..];
 
             // 1. RSA-decrypt the AES key (32 bytes)
-            let encrypted_aes_key = B64.decode(rsa_part)
-                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (RSA part) failed: {e}")))?;
+            let encrypted_aes_key = B64.decode(rsa_part).map_err(|e| {
+                CryptoError::Decrypt(format!("Base64 decode (RSA part) failed: {e}"))
+            })?;
             let padding = Oaep::new::<sha2::Sha256>();
-            let raw_aes_key = self.private_key
+            let raw_aes_key = self
+                .private_key
                 .decrypt(padding, &encrypted_aes_key)
-                .map_err(|e| CryptoError::Decrypt(format!("RSA decryption of AES key failed: {e}")))?;
+                .map_err(|e| {
+                    CryptoError::Decrypt(format!("RSA decryption of AES key failed: {e}"))
+                })?;
 
             // 2. Split IV (12 bytes) from AES ciphertext
-            let iv_and_ciphertext = B64.decode(aes_part)
-                .map_err(|e| CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {e}")))?;
+            let iv_and_ciphertext = B64.decode(aes_part).map_err(|e| {
+                CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {e}"))
+            })?;
             if iv_and_ciphertext.len() < 13 {
                 return Err(CryptoError::Decrypt("AES payload too short".into()));
             }
@@ -100,7 +108,8 @@ impl SessionKeyPair {
             let aes_key = Key::<Aes256Gcm>::from_slice(&raw_aes_key);
             let cipher = Aes256Gcm::new(aes_key);
             let nonce = Nonce::from_slice(iv_bytes);
-            let plaintext_bytes = cipher.decrypt(nonce, aes_ciphertext)
+            let plaintext_bytes = cipher
+                .decrypt(nonce, aes_ciphertext)
                 .map_err(|e| CryptoError::Decrypt(format!("AES-GCM decryption failed: {e}")))?;
 
             String::from_utf8(plaintext_bytes)
@@ -118,10 +127,12 @@ impl SessionKeyPair {
                 "legacy RSA-only IPC decrypt path used; schedule caller migration to hybrid RSA+AES-GCM"
             );
 
-            let ciphertext = B64.decode(ciphertext_b64)
+            let ciphertext = B64
+                .decode(ciphertext_b64)
                 .map_err(|e| CryptoError::Decrypt(format!("Base64 decode failed: {e}")))?;
             let padding = Oaep::new::<sha2::Sha256>();
-            let plaintext_bytes = self.private_key
+            let plaintext_bytes = self
+                .private_key
                 .decrypt(padding, &ciphertext)
                 .map_err(|e| CryptoError::Decrypt(format!("RSA decryption failed: {e}")))?;
 
@@ -279,9 +290,7 @@ impl ProtectedKey {
         let ptr = inner.as_ptr();
         let len = std::mem::size_of::<[u8; 32]>();
         if !memory_lock(ptr, len) {
-            tracing::warn!(
-                "Failed to lock master key memory page -- key may be swappable to disk"
-            );
+            tracing::warn!("Failed to lock master key memory page -- key may be swappable to disk");
         }
 
         Self { inner }
@@ -319,7 +328,9 @@ fn memory_lock(ptr: *const u8, len: usize) -> bool {
 
 #[cfg(windows)]
 fn memory_unlock(ptr: *const u8, len: usize) {
-    unsafe { VirtualUnlock(ptr as *mut std::ffi::c_void, len); }
+    unsafe {
+        VirtualUnlock(ptr as *mut std::ffi::c_void, len);
+    }
 }
 
 #[cfg(unix)]
@@ -335,7 +346,9 @@ fn memory_lock(ptr: *const u8, len: usize) -> bool {
 
 #[cfg(unix)]
 fn memory_unlock(ptr: *const u8, len: usize) {
-    unsafe { munlock(ptr as *const std::ffi::c_void, len); }
+    unsafe {
+        munlock(ptr as *const std::ffi::c_void, len);
+    }
 }
 
 #[cfg(not(any(windows, unix)))]
@@ -499,7 +512,9 @@ fn try_keychain() -> Result<[u8; 32], CryptoError> {
 /// On mobile, keychain is not available -- always return an error to fall through to fallback.
 #[cfg(not(feature = "desktop"))]
 fn try_keychain() -> Result<[u8; 32], CryptoError> {
-    Err(CryptoError::KeyManagement("Keychain not available on this platform".into()))
+    Err(CryptoError::KeyManagement(
+        "Keychain not available on this platform".into(),
+    ))
 }
 
 /// Generate or load a random fallback key when the OS keychain is unavailable
@@ -586,7 +601,9 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
     };
     let trimmed = raw.trim();
 
-    let (mut key_bytes, needs_resave) = if let Some(protected_b64) = trimmed.strip_prefix(DPAPI_PREFIX) {
+    let (mut key_bytes, needs_resave) = if let Some(protected_b64) =
+        trimmed.strip_prefix(DPAPI_PREFIX)
+    {
         let protected_bytes = B64.decode(protected_b64)?;
         let decrypted = platform_unprotect(&protected_bytes)?;
         // On Unix, platform_unprotect may have used the legacy key derivation.
@@ -696,21 +713,19 @@ fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> 
                 stderr.trim()
             )))
         }
-        Err(e) => {
-            Err(CryptoError::KeyManagement(format!(
-                "Failed to run icacls for key file permissions: {}", e
-            )))
-        }
+        Err(e) => Err(CryptoError::KeyManagement(format!(
+            "Failed to run icacls for key file permissions: {}",
+            e
+        ))),
     }
 }
 
 #[cfg(unix)]
 fn restrict_file_permissions(path: &std::path::Path) -> Result<(), CryptoError> {
     use std::os::unix::fs::PermissionsExt;
-    fs::set_permissions(path, fs::Permissions::from_mode(0o600))
-        .map_err(|e| CryptoError::KeyManagement(format!(
-            "Failed to set key file permissions to 0600: {}", e
-        )))?;
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).map_err(|e| {
+        CryptoError::KeyManagement(format!("Failed to set key file permissions to 0600: {}", e))
+    })?;
     tracing::debug!("Restricted key file permissions to owner-only (0600)");
     Ok(())
 }
@@ -732,11 +747,7 @@ fn repair_key_file_permissions(path: &std::path::Path) -> bool {
 
     // Grant current user full control (additive, then re-restrict)
     let result = std::process::Command::new("icacls")
-        .args([
-            &*path_str,
-            "/grant",
-            &format!("{username}:(F)"),
-        ])
+        .args([&*path_str, "/grant", &format!("{username}:(F)")])
         .output();
 
     match result {
@@ -858,17 +869,15 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 /// specific machine/user as defense-in-depth.
 #[cfg(not(windows))]
 fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
-    use sha2::Sha256;
     use hkdf::Hkdf;
+    use sha2::Sha256;
 
     let machine_secret = load_or_create_machine_secret()?;
 
     // Gather machine-specific entropy (belt-and-suspenders alongside the secret)
     let machine_id = fs::read_to_string("/etc/machine-id")
         .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
-        .unwrap_or_else(|_| {
-            whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into())
-        });
+        .unwrap_or_else(|_| whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into()));
 
     let uid = unsafe { libc::getuid() };
 
@@ -877,10 +886,7 @@ fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
     ikm.extend_from_slice(&machine_secret);
     ikm.extend_from_slice(format!("personas-desktop:{}:{}", machine_id.trim(), uid).as_bytes());
 
-    let hk = Hkdf::<Sha256>::new(
-        Some(b"personas-fallback-key-protection"),
-        &ikm,
-    );
+    let hk = Hkdf::<Sha256>::new(Some(b"personas-fallback-key-protection"), &ikm);
     ikm.zeroize();
 
     let mut okm = [0u8; 32];
@@ -894,22 +900,17 @@ fn derive_unix_local_key() -> Result<[u8; 32], CryptoError> {
 /// Used solely for migrating existing encrypted fallback files.
 #[cfg(not(windows))]
 fn derive_unix_local_key_legacy() -> Result<[u8; 32], CryptoError> {
-    use sha2::Sha256;
     use hkdf::Hkdf;
+    use sha2::Sha256;
 
     let machine_id = fs::read_to_string("/etc/machine-id")
         .or_else(|_| fs::read_to_string("/var/lib/dbus/machine-id"))
-        .unwrap_or_else(|_| {
-            whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into())
-        });
+        .unwrap_or_else(|_| whoami::fallible::hostname().unwrap_or_else(|_| "unknown-host".into()));
 
     let uid = unsafe { libc::getuid() };
     let ikm = format!("personas-desktop:{}:{}", machine_id.trim(), uid);
 
-    let hk = Hkdf::<Sha256>::new(
-        Some(b"personas-fallback-key-protection"),
-        ikm.as_bytes(),
-    );
+    let hk = Hkdf::<Sha256>::new(Some(b"personas-fallback-key-protection"), ikm.as_bytes());
     let mut okm = [0u8; 32];
     hk.expand(b"local-key-encryption", &mut okm)
         .map_err(|e| CryptoError::KeyManagement(format!("HKDF expand failed: {e}")))?;
@@ -1079,10 +1080,8 @@ extern "system" {
 #[cfg(windows)]
 fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use std::ptr;
-    use windows::Win32::Security::Cryptography::{
-        CryptProtectData, CRYPT_INTEGER_BLOB,
-    };
     use windows::core::PCWSTR;
+    use windows::Win32::Security::Cryptography::{CryptProtectData, CRYPT_INTEGER_BLOB};
 
     unsafe {
         let data_in = CRYPT_INTEGER_BLOB {
@@ -1094,18 +1093,12 @@ fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
             pbData: ptr::null_mut(),
         };
 
-        CryptProtectData(
-            &data_in,
-            PCWSTR::null(),
-            None,
-            None,
-            None,
-            0,
-            &mut data_out,
-        )
-        .map_err(|e| CryptoError::KeyManagement(format!("DPAPI CryptProtectData failed: {}", e)))?;
+        CryptProtectData(&data_in, PCWSTR::null(), None, None, None, 0, &mut data_out).map_err(
+            |e| CryptoError::KeyManagement(format!("DPAPI CryptProtectData failed: {}", e)),
+        )?;
 
-        let protected = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
+        let protected =
+            std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
 
         // Free the buffer allocated by CryptProtectData
         LocalFree(data_out.pbData as *mut _);
@@ -1117,9 +1110,7 @@ fn dpapi_protect(plaintext: &[u8]) -> Result<Vec<u8>, CryptoError> {
 #[cfg(windows)]
 fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
     use std::ptr;
-    use windows::Win32::Security::Cryptography::{
-        CryptUnprotectData, CRYPT_INTEGER_BLOB,
-    };
+    use windows::Win32::Security::Cryptography::{CryptUnprotectData, CRYPT_INTEGER_BLOB};
 
     unsafe {
         let data_in = CRYPT_INTEGER_BLOB {
@@ -1131,18 +1122,12 @@ fn dpapi_unprotect(ciphertext: &[u8]) -> Result<Vec<u8>, CryptoError> {
             pbData: ptr::null_mut(),
         };
 
-        CryptUnprotectData(
-            &data_in,
-            None,
-            None,
-            None,
-            None,
-            0,
-            &mut data_out,
-        )
-        .map_err(|e| CryptoError::KeyManagement(format!("DPAPI CryptUnprotectData failed: {}", e)))?;
+        CryptUnprotectData(&data_in, None, None, None, None, 0, &mut data_out).map_err(|e| {
+            CryptoError::KeyManagement(format!("DPAPI CryptUnprotectData failed: {}", e))
+        })?;
 
-        let decrypted = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
+        let decrypted =
+            std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize).to_vec();
 
         // Free the buffer allocated by CryptUnprotectData
         LocalFree(data_out.pbData as *mut _);
@@ -1277,7 +1262,8 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
                     failures += 1;
                     tracing::error!(
                         "migrate_plaintext_credentials: failed to parse row at index {}: {}",
-                        idx, e
+                        idx,
+                        e
                     );
                 }
             }
@@ -1346,7 +1332,9 @@ const SENSITIVE_CHANNEL_KEYS: &[&str] = &[
 /// sensitive config values that are still in plaintext (no corresponding
 /// `_enc`/`_iv` pair). Runs inside a transaction for atomicity.
 /// Returns `(migrated_persona_count, skipped_count)`.
-pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
+pub fn migrate_plaintext_notification_secrets(
+    pool: &DbPool,
+) -> Result<(usize, usize), CryptoError> {
     let mut conn = pool
         .get()
         .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
@@ -1400,7 +1388,10 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
     for (id, channels_json) in &rows {
         let channels_orig: Vec<serde_json::Value> = match serde_json::from_str(channels_json) {
             Ok(v) => v,
-            Err(_) => { skipped += 1; continue; }
+            Err(_) => {
+                skipped += 1;
+                continue;
+            }
         };
 
         let mut channels = channels_orig.clone();
@@ -1434,7 +1425,9 @@ pub fn migrate_plaintext_notification_secrets(pool: &DbPool) -> Result<(usize, u
                 "UPDATE personas SET notification_channels = ?1 WHERE id = ?2",
                 rusqlite::params![updated_json, id],
             )
-            .map_err(|e| CryptoError::KeyManagement(format!("Update error for persona {id}: {e}")))?;
+            .map_err(|e| {
+                CryptoError::KeyManagement(format!("Update error for persona {id}: {e}"))
+            })?;
             migrated += 1;
         }
     }
@@ -1593,7 +1586,8 @@ pub fn migrate_plaintext_trigger_secrets(pool: &DbPool) -> Result<(usize, usize)
                     failures += 1;
                     tracing::error!(
                         "migrate_plaintext_trigger_secrets: failed to parse row at index {}: {}",
-                        idx, e
+                        idx,
+                        e
                     );
                 }
             }
@@ -1620,9 +1614,7 @@ pub fn migrate_plaintext_trigger_secrets(pool: &DbPool) -> Result<(usize, usize)
                         rusqlite::params![encrypted_json, id],
                     )
                     .map_err(|e| {
-                        CryptoError::KeyManagement(format!(
-                            "Update error for trigger {id}: {e}"
-                        ))
+                        CryptoError::KeyManagement(format!("Update error for trigger {id}: {e}"))
                     })?;
                     migrated += 1;
                 }
@@ -1749,7 +1741,10 @@ mod tests {
         // Decrypt roundtrip
         let decrypted = decrypt_trigger_config(&encrypted).unwrap();
         let dec_val: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
-        assert_eq!(dec_val.get("webhook_secret").unwrap().as_str().unwrap(), "my-hmac-key");
+        assert_eq!(
+            dec_val.get("webhook_secret").unwrap().as_str().unwrap(),
+            "my-hmac-key"
+        );
         assert!(dec_val.get("webhook_secret_enc").is_none());
     }
 
@@ -1763,13 +1758,19 @@ mod tests {
         assert!(val.get("headers_enc").is_some());
         assert!(val.get("headers_iv").is_some());
         // Non-sensitive fields preserved
-        assert_eq!(val.get("url").unwrap().as_str().unwrap(), "https://api.example.com");
+        assert_eq!(
+            val.get("url").unwrap().as_str().unwrap(),
+            "https://api.example.com"
+        );
         assert_eq!(val.get("interval_seconds").unwrap().as_u64().unwrap(), 60);
 
         let decrypted = decrypt_trigger_config(&encrypted).unwrap();
         let dec_val: serde_json::Value = serde_json::from_str(&decrypted).unwrap();
         let headers = dec_val.get("headers").unwrap().as_object().unwrap();
-        assert_eq!(headers.get("Authorization").unwrap().as_str().unwrap(), "Bearer tok123");
+        assert_eq!(
+            headers.get("Authorization").unwrap().as_str().unwrap(),
+            "Bearer tok123"
+        );
     }
 
     #[test]

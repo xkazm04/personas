@@ -28,7 +28,9 @@ pub struct HealthcheckResult {
 /// healthcheck path can route CLI-owned credentials to the CLI verify helper
 /// instead of the HTTP path.
 fn is_cli_sourced(metadata: &Option<String>) -> bool {
-    let Some(raw) = metadata.as_deref() else { return false };
+    let Some(raw) = metadata.as_deref() else {
+        return false;
+    };
     serde_json::from_str::<serde_json::Value>(raw)
         .ok()
         .and_then(|v| v.get("source").and_then(|s| s.as_str()).map(str::to_string))
@@ -59,13 +61,25 @@ const CLI_HEALTH_PROBES: &[CliHealthProbe] = &[
     CliHealthProbe {
         service_type: "aws_cloud",
         cmd: "aws",
-        args: &["sts", "get-caller-identity", "--output", "text", "--query", "Arn"],
+        args: &[
+            "sts",
+            "get-caller-identity",
+            "--output",
+            "text",
+            "--query",
+            "Arn",
+        ],
         tool_name: "AWS CLI (aws)",
     },
     CliHealthProbe {
         service_type: "gcp_cloud",
         cmd: "gcloud",
-        args: &["auth", "list", "--filter=status:ACTIVE", "--format=value(account)"],
+        args: &[
+            "auth",
+            "list",
+            "--filter=status:ACTIVE",
+            "--format=value(account)",
+        ],
         tool_name: "Google Cloud CLI (gcloud)",
     },
     CliHealthProbe {
@@ -111,7 +125,9 @@ const CLI_HEALTH_PROBES: &[CliHealthProbe] = &[
 /// Returns `Some(result)` if a CLI probe exists for this service type,
 /// `None` if no probe is defined (caller should fall back to skip behaviour).
 async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
-    let probe = CLI_HEALTH_PROBES.iter().find(|p| p.service_type == service_type)?;
+    let probe = CLI_HEALTH_PROBES
+        .iter()
+        .find(|p| p.service_type == service_type)?;
 
     tracing::debug!(
         service_type = %service_type,
@@ -119,44 +135,89 @@ async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
         "running CLI healthcheck probe"
     );
 
-    let result = timeout(Duration::from_secs(5), async {
-        let mut cmd = Command::new(probe.cmd);
-        cmd.args(probe.args)
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped());
-        // Prevent empty console windows flashing on Windows.
-        #[cfg(windows)]
-        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
-        cmd.spawn()
-            .ok()?
-            .wait_with_output()
-            .await
-            .ok()
+    run_cli_probe(probe, Duration::from_secs(5)).await
+}
+
+/// Spawn a CLI probe and run it under a timeout, killing the child if it
+/// doesn't finish in time.
+///
+/// The earlier shape of this code wrapped `spawn().wait_with_output()` in
+/// `tokio::time::timeout`. On timeout the inner future was simply dropped —
+/// Tokio's runtime drops the awaited future, but the spawned OS process
+/// continues running, holding file descriptors and (for `gh`/`aws`/`gcloud`)
+/// network sockets. Daily bulk healthcheck sweeps probing a hung CLI then
+/// accumulated one zombie per probe per day, invisible to the user until the
+/// machine ran out of PIDs or RAM months later.
+///
+/// The fix: hold the `Child` handle through the timeout, and on `Err` call
+/// `child.kill().await` so the process is reaped immediately. `kill_on_drop`
+/// is also set as belt-and-suspenders for any panic / cancellation path that
+/// bypasses the explicit kill.
+async fn run_cli_probe(probe: &CliHealthProbe, deadline: Duration) -> Option<HealthcheckResult> {
+    let mut cmd = Command::new(probe.cmd);
+    cmd.args(probe.args)
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .kill_on_drop(true);
+    // Prevent empty console windows flashing on Windows.
+    #[cfg(windows)]
+    cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+    let mut child = match cmd.spawn() {
+        Ok(c) => c,
+        Err(_) => {
+            // spawn() failed -- command not found on PATH
+            return Some(HealthcheckResult {
+                success: false,
+                message: format!(
+                    "{} is not installed — install it and try again",
+                    probe.tool_name
+                ),
+            });
+        }
+    };
+
+    let pid = child.id();
+
+    // Take stdio handles out so we can keep `child` for an explicit kill on
+    // timeout. `wait_with_output()` would consume self and leave us no handle
+    // to terminate a hung CLI -- the bug we're fixing here.
+    let mut stdout = child.stdout.take();
+    let mut stderr = child.stderr.take();
+
+    let read_outputs = async {
+        use tokio::io::AsyncReadExt;
+        let mut stdout_buf = Vec::new();
+        let mut stderr_buf = Vec::new();
+        if let Some(s) = stdout.as_mut() {
+            let _ = s.read_to_end(&mut stdout_buf).await;
+        }
+        if let Some(s) = stderr.as_mut() {
+            let _ = s.read_to_end(&mut stderr_buf).await;
+        }
+        (stdout_buf, stderr_buf)
+    };
+
+    let outcome = timeout(deadline, async {
+        let (wait_res, (stdout_buf, stderr_buf)) = tokio::join!(child.wait(), read_outputs);
+        wait_res.ok().map(|status| (status, stdout_buf, stderr_buf))
     })
     .await;
 
-    match result {
-        Ok(Some(output)) => {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
+    match outcome {
+        Ok(Some((status, stdout_buf, stderr_buf))) => {
+            let stdout = String::from_utf8_lossy(&stdout_buf);
+            let stderr = String::from_utf8_lossy(&stderr_buf);
             let combined = format!("{}\n{}", stdout, stderr).trim().to_string();
 
-            if output.status.success() && !combined.is_empty() {
+            if status.success() && !combined.is_empty() {
                 Some(HealthcheckResult {
                     success: true,
                     message: format!("{} is installed and authenticated", probe.tool_name),
                 })
-            } else if combined.is_empty() && !output.status.success() {
-                // Command found but returned error with no output — not authenticated
-                Some(HealthcheckResult {
-                    success: false,
-                    message: format!(
-                        "{} is installed but not authenticated — run `{} auth` or equivalent",
-                        probe.tool_name, probe.cmd,
-                    ),
-                })
             } else {
-                // Command ran but exited non-zero — likely not authenticated
+                // Either non-zero exit, or zero exit with no output. Both
+                // indicate the CLI ran but isn't authenticated.
                 Some(HealthcheckResult {
                     success: false,
                     message: format!(
@@ -167,17 +228,28 @@ async fn try_cli_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
             }
         }
         Ok(None) => {
-            // spawn() returned None — command not found on PATH
+            // wait() failed -- treat as command unusable. Drop will reap.
             Some(HealthcheckResult {
                 success: false,
-                message: format!("{} is not installed — install it and try again", probe.tool_name),
+                message: format!(
+                    "{} is not installed — install it and try again",
+                    probe.tool_name
+                ),
             })
         }
         Err(_) => {
-            // Timeout
+            tracing::warn!(
+                cmd = %probe.cmd,
+                pid = ?pid,
+                "CLI healthcheck probe timed out — killing child to avoid zombie",
+            );
+            let _ = child.kill().await;
             Some(HealthcheckResult {
                 success: false,
-                message: format!("{} timed out — the tool may be unresponsive", probe.tool_name),
+                message: format!(
+                    "{} timed out — the tool may be unresponsive",
+                    probe.tool_name
+                ),
             })
         }
     }
@@ -212,9 +284,7 @@ fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
     let (installed, binary_path): (bool, Option<String>) = (false, None);
 
     if installed {
-        let path_info = binary_path
-            .map(|p| format!(" ({})", p))
-            .unwrap_or_default();
+        let path_info = binary_path.map(|p| format!(" ({})", p)).unwrap_or_default();
         Some(HealthcheckResult {
             success: true,
             message: format!("{label} is installed{path_info}"),
@@ -234,8 +304,12 @@ fn try_desktop_healthcheck(service_type: &str) -> Option<HealthcheckResult> {
 /// neither probe exists, returns `None` so the caller can fall back to a
 /// generic "stored" message.
 async fn race_local_probes(service_type: &str) -> Option<HealthcheckResult> {
-    let has_cli = CLI_HEALTH_PROBES.iter().any(|p| p.service_type == service_type);
-    let has_desktop = DESKTOP_CONNECTOR_MAP.iter().any(|(n, _)| *n == service_type);
+    let has_cli = CLI_HEALTH_PROBES
+        .iter()
+        .any(|p| p.service_type == service_type);
+    let has_desktop = DESKTOP_CONNECTOR_MAP
+        .iter()
+        .any(|(n, _)| *n == service_type);
 
     match (has_cli, has_desktop) {
         (true, true) => {
@@ -285,7 +359,8 @@ pub async fn run_healthcheck(
     // stored field values are short-lived access tokens that won't satisfy
     // HTTP healthcheck contracts, so re-run the CLI verify step instead.
     if is_cli_sourced(&cred.metadata) {
-        let verify = crate::commands::credentials::cli_capture::run_verify(&cred.service_type).await;
+        let verify =
+            crate::commands::credentials::cli_capture::run_verify(&cred.service_type).await;
         return Ok(HealthcheckResult {
             success: verify.authenticated,
             message: verify.message,
@@ -294,11 +369,14 @@ pub async fn run_healthcheck(
 
     let fields = cred_repo::get_decrypted_fields(pool, &cred)?;
 
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck", None, None) {
+    if let Err(e) =
+        audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck", None, None)
+    {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
-    let (connector, hc_config) = resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
+    let (connector, hc_config) =
+        resolve_connector_healthcheck(pool, &cred.service_type, Some(&fields))?;
 
     // If the matched variant says to skip HTTP healthcheck, race CLI + desktop probes
     if hc_config.skip {
@@ -318,35 +396,53 @@ pub async fn run_healthcheck(
         );
         return Ok(HealthcheckResult {
             success: true,
-            message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
+            message: "Connection type does not support HTTP healthcheck -- credentials stored"
+                .into(),
         });
     }
 
     // Resolve auth token via connector strategy.
     // For OAuth credentials, acquire a per-credential lock to prevent concurrent
     // token exchanges with the background refresh tick (see oauth_refresh_lock).
-    let strategy = connector_strategy::registry()?.get(&cred.service_type, connector.metadata.as_deref());
+    let strategy =
+        connector_strategy::registry()?.get(&cred.service_type, connector.metadata.as_deref());
     let (token, fields) = if strategy.is_oauth(&fields) {
         let _lock = super::oauth_refresh_lock::acquire(credential_id).await;
         // Re-read fields inside the lock — a concurrent refresh may have already
         // persisted a fresh access_token while we were waiting.
         let fresh_fields = cred_repo::get_decrypted_fields(pool, &cred)?;
-        if let Err(e) = audit_log::log_decrypt(pool, credential_id, &cred.name, "healthcheck_locked", None, None) {
+        if let Err(e) = audit_log::log_decrypt(
+            pool,
+            credential_id,
+            &cred.name,
+            "healthcheck_locked",
+            None,
+            None,
+        ) {
             tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
         }
-        let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fresh_fields).await?
+        let token = strategy
+            .resolve_auth_token(connector.metadata.as_deref(), &fresh_fields)
+            .await?
             .map(|r| r.token);
         (token, fresh_fields)
     } else {
-        let token = strategy.resolve_auth_token(connector.metadata.as_deref(), &fields).await?
+        let token = strategy
+            .resolve_auth_token(connector.metadata.as_deref(), &fields)
+            .await?
             .map(|r| r.token);
         (token, fields)
     };
 
     execute_healthcheck_request_with_strategy(
-        strategy, &hc_config, &fields, token,
-        credential_id, &cred.service_type,
-    ).await
+        strategy,
+        &hc_config,
+        &fields,
+        token,
+        credential_id,
+        &cred.service_type,
+    )
+    .await
 }
 
 pub async fn run_healthcheck_with_fields(
@@ -372,18 +468,19 @@ pub async fn run_healthcheck_with_fields(
         );
         return Ok(HealthcheckResult {
             success: true,
-            message: "Connection type does not support HTTP healthcheck -- credentials stored".into(),
+            message: "Connection type does not support HTTP healthcheck -- credentials stored"
+                .into(),
         });
     }
 
     let strategy = connector_strategy::registry()?.get(service_type, connector.metadata.as_deref());
-    let token = strategy.resolve_auth_token(connector.metadata.as_deref(), fields).await?
+    let token = strategy
+        .resolve_auth_token(connector.metadata.as_deref(), fields)
+        .await?
         .map(|r| r.token);
 
-    execute_healthcheck_request_with_strategy(
-        strategy, &hc_config, fields, token,
-        "", service_type,
-    ).await
+    execute_healthcheck_request_with_strategy(strategy, &hc_config, fields, token, "", service_type)
+        .await
 }
 
 /// Try to find a matching auth_variant for the given fields and return its
@@ -394,10 +491,7 @@ fn resolve_connector_healthcheck(
     fields: Option<&HashMap<String, String>>,
 ) -> Result<(crate::db::models::ConnectorDefinition, HealthcheckConfig), AppError> {
     let connectors = connector_repo::get_all(pool)?;
-    let connector = connectors
-        .iter()
-        .find(|c| c.name == service_type)
-        .cloned();
+    let connector = connectors.iter().find(|c| c.name == service_type).cloned();
 
     let connector = match connector {
         Some(c) => c,
@@ -427,28 +521,42 @@ fn resolve_connector_healthcheck(
         None => {
             // Check if credential fields or connector metadata indicate an OAuth provider
             let provider = fields
-                .and_then(|f| f.get("oauth_provider").or_else(|| f.get("oauth_scope").and(None)))
+                .and_then(|f| {
+                    f.get("oauth_provider")
+                        .or_else(|| f.get("oauth_scope").and(None))
+                })
                 .cloned()
                 .or_else(|| {
-                    connector.metadata.as_deref()
+                    connector
+                        .metadata
+                        .as_deref()
                         .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
-                        .and_then(|v| v.get("oauth_type").and_then(|t| t.as_str().map(String::from)))
+                        .and_then(|v| {
+                            v.get("oauth_type")
+                                .and_then(|t| t.as_str().map(String::from))
+                        })
                 });
 
-            match provider.as_deref().and_then(resolve_oauth_provider_healthcheck) {
+            match provider
+                .as_deref()
+                .and_then(resolve_oauth_provider_healthcheck)
+            {
                 Some(hc) => {
                     return Ok((connector, hc));
                 }
                 None => {
                     // No healthcheck configured -- return a skip-flagged config
                     // so callers treat it as a non-error success.
-                    return Ok((connector, HealthcheckConfig {
-                        endpoint: String::new(),
-                        method: None,
-                        headers: HashMap::new(),
-                        body: None,
-                        skip: true,
-                    }));
+                    return Ok((
+                        connector,
+                        HealthcheckConfig {
+                            endpoint: String::new(),
+                            method: None,
+                            headers: HashMap::new(),
+                            body: None,
+                            skip: true,
+                        },
+                    ));
                 }
             }
         }
@@ -476,16 +584,24 @@ fn resolve_variant_healthcheck(
             Some(a) => a,
             None => continue,
         };
-        let filled = vf.iter().filter(|k| {
-            k.as_str()
-                .map(|s| fields.get(s).is_some_and(|val| !val.is_empty()))
-                .unwrap_or(false)
-        }).count();
-        if filled == 0 { continue; }
+        let filled = vf
+            .iter()
+            .filter(|k| {
+                k.as_str()
+                    .map(|s| fields.get(s).is_some_and(|val| !val.is_empty()))
+                    .unwrap_or(false)
+            })
+            .count();
+        if filled == 0 {
+            continue;
+        }
         // Prefer the variant where ALL declared fields are filled
         if filled == vf.len() {
             // Exact match -- check for variant-level healthcheck
-            if v.get("healthcheck_skip").and_then(|s| s.as_bool()).unwrap_or(false) {
+            if v.get("healthcheck_skip")
+                .and_then(|s| s.as_bool())
+                .unwrap_or(false)
+            {
                 return Some(HealthcheckConfig {
                     endpoint: String::new(),
                     method: None,
@@ -506,13 +622,18 @@ fn resolve_variant_healthcheck(
         // Track partial best match
         match &best {
             Some((_, score)) if filled <= *score => {}
-            _ => { best = Some((v, filled)); }
+            _ => {
+                best = Some((v, filled));
+            }
         }
     }
 
     // If no exact match, try best partial match
     if let Some((v, _)) = best {
-        if v.get("healthcheck_skip").and_then(|s| s.as_bool()).unwrap_or(false) {
+        if v.get("healthcheck_skip")
+            .and_then(|s| s.as_bool())
+            .unwrap_or(false)
+        {
             return Some(HealthcheckConfig {
                 endpoint: String::new(),
                 method: None,
@@ -542,30 +663,10 @@ fn resolve_oauth_provider_healthcheck(provider: &str) -> Option<HealthcheckConfi
             vec![("User-Agent", "Personas-Desktop/1.0")],
             None,
         ),
-        "slack" => (
-            "https://slack.com/api/auth.test",
-            "POST",
-            vec![],
-            None,
-        ),
-        "microsoft" => (
-            "https://graph.microsoft.com/v1.0/me",
-            "GET",
-            vec![],
-            None,
-        ),
-        "atlassian" => (
-            "https://api.atlassian.com/me",
-            "GET",
-            vec![],
-            None,
-        ),
-        "discord" => (
-            "https://discord.com/api/v10/users/@me",
-            "GET",
-            vec![],
-            None,
-        ),
+        "slack" => ("https://slack.com/api/auth.test", "POST", vec![], None),
+        "microsoft" => ("https://graph.microsoft.com/v1.0/me", "GET", vec![], None),
+        "atlassian" => ("https://api.atlassian.com/me", "GET", vec![], None),
+        "discord" => ("https://discord.com/api/v10/users/@me", "GET", vec![], None),
         "linear" => (
             "https://api.linear.app/graphql",
             "POST",
@@ -578,12 +679,7 @@ fn resolve_oauth_provider_healthcheck(provider: &str) -> Option<HealthcheckConfi
             vec![("Notion-Version", "2022-06-28")],
             None,
         ),
-        "spotify" => (
-            "https://api.spotify.com/v1/me",
-            "GET",
-            vec![],
-            None,
-        ),
+        "spotify" => ("https://api.spotify.com/v1/me", "GET", vec![], None),
         _ => return None,
     };
 
@@ -651,11 +747,7 @@ async fn execute_healthcheck_request_with_strategy(
         .build()
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
-    let method = hc_config
-        .method
-        .as_deref()
-        .unwrap_or("GET")
-        .to_uppercase();
+    let method = hc_config.method.as_deref().unwrap_or("GET").to_uppercase();
 
     let mut request = match method.as_str() {
         "POST" => client.post(&resolved_endpoint),
@@ -798,7 +890,9 @@ pub(crate) fn resolve_template(template: &str, values: &HashMap<String, String>)
 
 fn resolve_token(inner: &str, values: &HashMap<String, String>) -> Option<String> {
     if let Some(rest) = inner.strip_prefix("base64(") {
-        return rest.strip_suffix(')').and_then(|args| resolve_base64(args, values));
+        return rest
+            .strip_suffix(')')
+            .and_then(|args| resolve_base64(args, values));
     }
     if let Some((key, fallback)) = inner.split_once('|') {
         if let Some(v) = values.get(key) {
@@ -910,9 +1004,7 @@ pub(crate) fn validate_template_url(template: &str) -> Result<(), AppError> {
 /// connectors legitimately store full URLs (e.g. Supabase `project_url`).
 /// Post-resolution validation via `validate_healthcheck_url` catches SSRF on
 /// the final resolved URL.
-pub(crate) fn validate_field_values(
-    values: &HashMap<String, String>,
-) -> Result<(), AppError> {
+pub(crate) fn validate_field_values(values: &HashMap<String, String>) -> Result<(), AppError> {
     for (key, value) in values {
         let lower = value.to_lowercase();
 
@@ -924,7 +1016,8 @@ pub(crate) fn validate_field_values(
             authority.split(':').next().unwrap_or(authority).to_string()
         } else {
             // Non-URL value: check the whole value
-            value.split(&[':', '/', '?', '#'][..])
+            value
+                .split(&[':', '/', '?', '#'][..])
                 .next()
                 .unwrap_or(value)
                 .to_string()
@@ -971,9 +1064,8 @@ pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
         ));
     }
 
-    let parsed = url::Url::parse(url).map_err(|e| {
-        AppError::Validation(format!("Invalid healthcheck URL: {e}"))
-    })?;
+    let parsed = url::Url::parse(url)
+        .map_err(|e| AppError::Validation(format!("Invalid healthcheck URL: {e}")))?;
 
     // Only allow HTTP and HTTPS schemes
     match parsed.scheme() {
@@ -1029,7 +1121,7 @@ pub(crate) fn is_private_ip(ip: &IpAddr) -> bool {
                 || v4.is_private()        // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
                 || v4.is_link_local()     // 169.254.0.0/16 (cloud metadata!)
                 || v4.is_unspecified()    // 0.0.0.0
-                || v4.is_broadcast()      // 255.255.255.255
+                || v4.is_broadcast() // 255.255.255.255
         }
         IpAddr::V6(v6) => {
             v6.is_loopback()             // ::1
@@ -1048,7 +1140,6 @@ fn is_ipv6_private(v6: &std::net::Ipv6Addr) -> bool {
     // fe80::/10 -- Link-Local
     || (first & 0xffc0) == 0xfe80
 }
-
 
 // Auth token resolution and OAuth token exchange are now handled by
 // connector strategies in `connector_strategy.rs`.
@@ -1202,7 +1293,10 @@ mod tests {
     fn test_validate_url_blocks_cloud_metadata() {
         // AWS/GCP/Azure metadata endpoint
         assert!(validate_healthcheck_url("http://169.254.169.254/latest/meta-data/").is_err());
-        assert!(validate_healthcheck_url("http://metadata.google.internal/computeMetadata/v1/").is_err());
+        assert!(
+            validate_healthcheck_url("http://metadata.google.internal/computeMetadata/v1/")
+                .is_err()
+        );
     }
 
     #[test]
@@ -1362,7 +1456,10 @@ mod tests {
     fn test_ssrf_via_field_value_with_private_url() {
         // Attack: field value contains a URL targeting cloud metadata
         let mut values = HashMap::new();
-        values.insert("url".into(), "http://169.254.169.254/latest/meta-data/".into());
+        values.insert(
+            "url".into(),
+            "http://169.254.169.254/latest/meta-data/".into(),
+        );
         assert!(validate_field_values(&values).is_err());
     }
 
@@ -1447,7 +1544,10 @@ mod tests {
 
         let mut values = HashMap::new();
         values.insert("project_url".into(), "https://xxxx.supabase.co".into());
-        values.insert("anon_key".into(), "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9".into());
+        values.insert(
+            "anon_key".into(),
+            "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9".into(),
+        );
         assert!(validate_field_values(&values).is_ok());
 
         let resolved = resolve_template(template, &values);
@@ -1494,7 +1594,10 @@ mod tests {
         );
         assert_eq!(
             resolved,
-            format!("https://acme.atlassian.net/rest/api/3/myself|Basic {}", b64("u@acme.com:tok"))
+            format!(
+                "https://acme.atlassian.net/rest/api/3/myself|Basic {}",
+                b64("u@acme.com:tok")
+            )
         );
     }
 
@@ -1538,20 +1641,14 @@ mod tests {
     fn test_resolve_template_fallback_uses_field_when_present() {
         let mut values = HashMap::new();
         values.insert("host".into(), "https://eu.posthog.com".into());
-        let resolved = resolve_template(
-            "{{host|https://us.posthog.com}}/api/projects/",
-            &values,
-        );
+        let resolved = resolve_template("{{host|https://us.posthog.com}}/api/projects/", &values);
         assert_eq!(resolved, "https://eu.posthog.com/api/projects/");
     }
 
     #[test]
     fn test_resolve_template_fallback_uses_default_when_missing() {
         let values = HashMap::new();
-        let resolved = resolve_template(
-            "{{host|https://us.posthog.com}}/api/projects/",
-            &values,
-        );
+        let resolved = resolve_template("{{host|https://us.posthog.com}}/api/projects/", &values);
         assert_eq!(resolved, "https://us.posthog.com/api/projects/");
     }
 
@@ -1559,10 +1656,7 @@ mod tests {
     fn test_resolve_template_fallback_uses_default_when_empty() {
         let mut values = HashMap::new();
         values.insert("host".into(), "".into());
-        let resolved = resolve_template(
-            "{{host|https://us.posthog.com}}/api/projects/",
-            &values,
-        );
+        let resolved = resolve_template("{{host|https://us.posthog.com}}/api/projects/", &values);
         assert_eq!(resolved, "https://us.posthog.com/api/projects/");
     }
 
@@ -1586,6 +1680,69 @@ mod tests {
         assert_eq!(
             resolved,
             "https://app.asana.com/api/1.0/workspaces/ws_42/projects"
+        );
+    }
+
+    // ---- run_cli_probe timeout/zombie-prevention tests ----
+
+    #[tokio::test]
+    async fn test_run_cli_probe_returns_promptly_on_timeout() {
+        // Regression: prior shape wrapped `spawn().wait_with_output()` in
+        // `tokio::time::timeout`; on timeout the future was dropped but the OS
+        // process kept running. Here we spawn a 30s sleep with a 200ms
+        // deadline and assert the function returns well within 30s -- proof
+        // that the kill path runs.
+        #[cfg(unix)]
+        let probe = CliHealthProbe {
+            service_type: "test_hang",
+            cmd: "sleep",
+            args: &["30"],
+            tool_name: "Test Sleep",
+        };
+        #[cfg(windows)]
+        let probe = CliHealthProbe {
+            service_type: "test_hang",
+            cmd: "powershell",
+            args: &["-NoProfile", "-Command", "Start-Sleep -Seconds 30"],
+            tool_name: "Test Sleep",
+        };
+
+        let start = std::time::Instant::now();
+        let result = run_cli_probe(&probe, Duration::from_millis(200))
+            .await
+            .expect("probe should yield a result");
+        let elapsed = start.elapsed();
+
+        assert!(!result.success);
+        assert!(
+            result.message.contains("timed out"),
+            "expected timeout message, got: {}",
+            result.message,
+        );
+        // 10s gives generous headroom for cold powershell startup on Windows
+        // CI; well under the 30s sleep that would indicate a leaked child.
+        assert!(
+            elapsed < Duration::from_secs(10),
+            "run_cli_probe did not return promptly after a 200ms timeout (took {elapsed:?})",
+        );
+    }
+
+    #[tokio::test]
+    async fn test_run_cli_probe_command_not_found() {
+        let probe = CliHealthProbe {
+            service_type: "test_missing",
+            cmd: "this-binary-does-not-exist-on-any-system-x9z",
+            args: &[],
+            tool_name: "Imaginary CLI",
+        };
+        let result = run_cli_probe(&probe, Duration::from_secs(5))
+            .await
+            .expect("probe should yield a result");
+        assert!(!result.success);
+        assert!(
+            result.message.contains("not installed"),
+            "expected not-installed message, got: {}",
+            result.message,
         );
     }
 }

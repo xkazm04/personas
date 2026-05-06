@@ -1,7 +1,10 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{CreateTemplateFeedbackInput, FeedbackLabel, FeedbackRating, TemplateFeedback, TemplatePerformance};
+use crate::db::models::{
+    CreateTemplateFeedbackInput, FeedbackLabel, FeedbackRating, TemplateFeedback,
+    TemplatePerformance,
+};
 use crate::db::repos::communication::template_feedback as repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;

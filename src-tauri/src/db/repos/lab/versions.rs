@@ -1,11 +1,8 @@
-use crate::db::DbPool;
 use crate::db::models::lab::PersonaVersion;
+use crate::db::DbPool;
 use crate::error::AppError;
 
-pub fn create_version(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<PersonaVersion, AppError> {
+pub fn create_version(pool: &DbPool, persona_id: &str) -> Result<PersonaVersion, AppError> {
     timed_query!("persona_versions", "persona_versions::create_version", {
         let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
 
@@ -63,7 +60,8 @@ pub fn get_versions(
              ORDER BY version_number DESC LIMIT ?2"
         ).map_err(|e| AppError::Internal(e.to_string()))?;
 
-        let versions = stmt.query_map(rusqlite::params![persona_id, limit], row_to_version)
+        let versions = stmt
+            .query_map(rusqlite::params![persona_id, limit], row_to_version)
             .map_err(|e| AppError::Internal(e.to_string()))?
             .filter_map(|r| r.ok())
             .collect();
@@ -72,19 +70,22 @@ pub fn get_versions(
     })
 }
 
-pub fn get_version_tool_count(
-    pool: &DbPool,
-    version_id: &str,
-) -> Result<i32, AppError> {
-    timed_query!("persona_versions", "persona_versions::get_version_tool_count", {
-        let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
-        let count: i32 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_version_tools WHERE version_id = ?1",
-            rusqlite::params![version_id],
-            |row| row.get(0),
-        ).unwrap_or(0);
-        Ok(count)
-    })
+pub fn get_version_tool_count(pool: &DbPool, version_id: &str) -> Result<i32, AppError> {
+    timed_query!(
+        "persona_versions",
+        "persona_versions::get_version_tool_count",
+        {
+            let conn = pool.get().map_err(|e| AppError::Internal(e.to_string()))?;
+            let count: i32 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM persona_version_tools WHERE version_id = ?1",
+                    rusqlite::params![version_id],
+                    |row| row.get(0),
+                )
+                .unwrap_or(0);
+            Ok(count)
+        }
+    )
 }
 
 fn row_to_version(row: &rusqlite::Row<'_>) -> rusqlite::Result<PersonaVersion> {

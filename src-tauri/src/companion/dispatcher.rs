@@ -31,6 +31,17 @@ pub struct Dispatched {
     /// chat-driven navigation that doesn't interrupt the conversation.
     /// Each entry is the validated sidebar route name.
     pub navigations: Vec<String>,
+    /// UI-only "open this persona's lab tab" requests Athena fired
+    /// (`open_lab`). Bypasses approval like `open_route`. Each entry
+    /// is `(persona_id, mode)` where mode is one of the lab modes
+    /// (`arena`, `ab`, `versions`, etc.).
+    pub lab_opens: Vec<(String, String)>,
+    /// `compose_dashboard` payloads — already-serialized JSON spec
+    /// strings, one per op. session.rs persists each via
+    /// `dashboard::save_dashboard` and emits a navigate event. Auto-fire
+    /// (no approval) because the user already asked for the dashboard;
+    /// the click would just be friction.
+    pub dashboards: Vec<String>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -66,6 +77,36 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "update_identity",
     "write_fact",
     "delete_fact",
+    // Phase D — procedurals/goals/rituals/backlog.
+    "write_procedural",
+    "delete_procedural",
+    "write_goal",
+    "update_goal_status",
+    "delete_goal",
+    "write_ritual",
+    "set_ritual_active",
+    "delete_ritual",
+    "write_backlog_item",
+    "resolve_backlog_item",
+    // Phase F — advanced UI control.
+    "prefill_persona_create",
+    "run_arena",
+    // `compose_dashboard` is auto-fire — handled below alongside
+    // `open_route` / `open_lab`. No approval card; the user already
+    // asked for the dashboard, the click is friction.
+    // `use_connector` is intentionally NOT here — it auto-fires
+    // through the background-job worker (no approval card) so
+    // connector calls don't block the chat. See the special-case
+    // match arm below alongside `open_route` / `compose_dashboard`.
+    // Phase G — project registry + background jobs.
+    "register_project",
+    "enqueue_dev_job",
+];
+
+/// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
+/// `src/features/agents/sub_lab/components/shared/LabTab.tsx`.
+const ALLOWED_LAB_MODES: &[&str] = &[
+    "arena", "ab", "matrix", "breed", "evolve", "versions", "regression",
 ];
 
 /// Allowed sidebar routes for `open_route`. Mirrors the SidebarSection
@@ -114,7 +155,8 @@ pub fn dispatch(
             let candidate = serde_json::from_str::<String>(rest)
                 .ok()
                 .unwrap_or_else(|| {
-                    rest.trim_matches(|c: char| c == '"' || c == '\'').to_string()
+                    rest.trim_matches(|c: char| c == '"' || c == '\'')
+                        .to_string()
                 });
             let trimmed_text = candidate.trim().to_string();
             if !trimmed_text.is_empty() {
@@ -164,6 +206,149 @@ pub fn dispatch(
             // open_route bypasses the approval flow: validate the route
             // and queue a navigation event. No card, no click. The chat
             // panel stays open; the sidebar switches behind it.
+            // open_lab also bypasses approval — pure UI navigation
+            // (jump to a persona's editor + select a lab mode).
+            // compose_dashboard auto-fires too: validate the widgets
+            // array, build a JSON spec body, queue it for session.rs
+            // to persist + emit a navigate event. The dashboard write
+            // is a small idempotent overwrite — friction-free.
+            Ok(env) if env.op == "propose_action" && env.action == "compose_dashboard" => {
+                let widgets = env.params.get("widgets");
+                let widgets_arr = widgets.and_then(|v| v.as_array());
+                if widgets_arr.is_none() || widgets_arr.unwrap().is_empty() {
+                    out.warnings.push(
+                        "compose_dashboard: `widgets` must be a non-empty array".into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Athena dashboard");
+                let now = chrono::Utc::now().to_rfc3339();
+                let spec = serde_json::json!({
+                    "title": title,
+                    "widgets": widgets,
+                    "updated_at": now,
+                });
+                out.dashboards.push(spec.to_string());
+            }
+            Ok(env) if env.op == "propose_action" && env.action == "open_lab" => {
+                let persona_id = env
+                    .params
+                    .get("persona_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let mode = env
+                    .params
+                    .get("mode")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if persona_id.is_empty() || mode.is_empty() {
+                    out.warnings.push("open_lab: missing `persona_id` or `mode`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !ALLOWED_LAB_MODES.contains(&mode) {
+                    out.warnings.push(format!(
+                        "rejected lab mode `{mode}` (expected one of {ALLOWED_LAB_MODES:?})"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.lab_opens.push((persona_id.to_string(), mode.to_string()));
+            }
+            // Phase F/G: `use_connector` auto-fires through the
+            // background-job worker. No approval card — friction the
+            // user explicitly rejected. Validation happens here so a
+            // hallucinated connector/capability surfaces as a warning
+            // (Athena reads it next turn) instead of a wasted job
+            // queue slot.
+            Ok(env) if env.op == "propose_action" && env.action == "use_connector" => {
+                let connector_name = env
+                    .params
+                    .get("connector_name")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let capability = env
+                    .params
+                    .get("capability")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if connector_name.is_empty() || capability.is_empty() {
+                    out.warnings.push(
+                        "use_connector: missing `connector_name` or `capability`".into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Verify the connector is pinned + enabled in the
+                // sidebar before queuing — saves the worker from
+                // running with no credentials accessible.
+                match crate::companion::connectors::list(pool) {
+                    Ok(active) => {
+                        let row = active.iter().find(|c| c.connector_name == connector_name);
+                        match row {
+                            Some(r) if !r.enabled => {
+                                out.warnings.push(format!(
+                                    "use_connector: `{connector_name}` is pinned but disabled — toggle it on first"
+                                ));
+                                cleaned_lines.push(line);
+                                continue;
+                            }
+                            None => {
+                                out.warnings.push(format!(
+                                    "use_connector: `{connector_name}` is not pinned in the sidebar"
+                                ));
+                                cleaned_lines.push(line);
+                                continue;
+                            }
+                            _ => {} // pinned + enabled — proceed.
+                        }
+                    }
+                    Err(e) => {
+                        out.warnings
+                            .push(format!("use_connector: connector list failed: {e}"));
+                        cleaned_lines.push(line);
+                        continue;
+                    }
+                }
+                // Validate capability against the registry.
+                let caps = crate::companion::connectors::capabilities_for(connector_name);
+                let known = caps.is_some_and(|cs| cs.iter().any(|c| c.slug == capability));
+                if !known {
+                    let known_list: Vec<&str> = caps
+                        .map(|cs| cs.iter().map(|c| c.slug).collect())
+                        .unwrap_or_default();
+                    out.warnings.push(format!(
+                        "use_connector: capability `{capability}` not in `{connector_name}` registry. Known: {known_list:?}"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Enqueue. Job worker picks it up within seconds and
+                // appends a system episode with the result; chat is
+                // never blocked.
+                let job_params = serde_json::json!({
+                    "connector_name": connector_name,
+                    "capability": capability,
+                    "args": env.params.get("args").cloned().unwrap_or(serde_json::json!({})),
+                });
+                if let Err(e) = crate::companion::jobs::enqueue(
+                    pool,
+                    "connector_use",
+                    &job_params,
+                    None,
+                ) {
+                    out.warnings.push(format!("use_connector: enqueue failed: {e}"));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                // Strip the OP line from display — Athena's prose
+                // around it remains. Don't push to cleaned_lines.
+            }
             Ok(env) if env.op == "propose_action" && env.action == "open_route" => {
                 let route = env
                     .params
@@ -176,8 +361,7 @@ pub fn dispatch(
                     continue;
                 }
                 if !ALLOWED_ROUTES.contains(&route) {
-                    out.warnings
-                        .push(format!("rejected route `{route}`"));
+                    out.warnings.push(format!("rejected route `{route}`"));
                     cleaned_lines.push(line);
                     continue;
                 }
@@ -194,17 +378,20 @@ pub fn dispatch(
                 // any source episodes is rejected at parse time. Athena
                 // sees the warning in the next turn's system context and
                 // can re-propose with proper provenance.
-                if env.action == "write_fact" {
+                if env.action == "write_fact" || env.action == "write_procedural" {
                     let has_sources = env
                         .params
                         .get("sources")
                         .and_then(|v| v.as_array())
-                        .is_some_and(|arr| arr.iter().any(|x| x.as_str().is_some_and(|s| !s.is_empty())));
+                        .is_some_and(|arr| {
+                            arr.iter()
+                                .any(|x| x.as_str().is_some_and(|s| !s.is_empty()))
+                        });
                     if !has_sources {
-                        out.warnings.push(
-                            "rejected write_fact: `sources` (episode_id list) must be non-empty"
-                                .into(),
-                        );
+                        out.warnings.push(format!(
+                            "rejected {action}: `sources` (episode_id list) must be non-empty",
+                            action = env.action
+                        ));
                         cleaned_lines.push(line);
                         continue;
                     }
@@ -212,8 +399,7 @@ pub fn dispatch(
                 match insert_approval(pool, session_id, &env) {
                     Ok(created) => out.approvals.push(created),
                     Err(e) => {
-                        out.warnings
-                            .push(format!("approval insert failed: {e}"));
+                        out.warnings.push(format!("approval insert failed: {e}"));
                         cleaned_lines.push(line);
                     }
                 }

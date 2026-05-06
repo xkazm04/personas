@@ -58,7 +58,10 @@ impl CloudWebhookRelayState {
             HashMap::new()
         });
         if !last_seen.is_empty() {
-            tracing::info!(count = last_seen.len(), "Loaded cloud webhook watermarks from DB");
+            tracing::info!(
+                count = last_seen.len(),
+                "Loaded cloud webhook watermarks from DB"
+            );
         }
         Self {
             last_seen,
@@ -134,27 +137,29 @@ pub async fn cloud_webhook_relay_tick(
         .collect();
 
     // 2. Parallel round 1: fetch triggers for ALL deployments concurrently
-    let trigger_futs: Vec<_> = webhook_deployments.iter().enumerate().map(|(i, dep)| {
-        let client = Arc::clone(client);
-        let persona_id = dep.persona_id.clone();
-        async move {
-            let result = client.list_persona_triggers(&persona_id).await;
-            (i, result)
-        }
-    }).collect();
-    let trigger_results = match tokio::time::timeout(
-        Duration::from_secs(30),
-        join_all(trigger_futs),
-    ).await {
-        Ok(results) => results,
-        Err(_) => {
-            let mut s = state.lock().await;
-            s.last_poll_at = Some(now.clone());
-            s.last_error = Some("Timed out fetching cloud triggers (30s)".into());
-            emit_status(app, &s, true);
-            return;
-        }
-    };
+    let trigger_futs: Vec<_> = webhook_deployments
+        .iter()
+        .enumerate()
+        .map(|(i, dep)| {
+            let client = Arc::clone(client);
+            let persona_id = dep.persona_id.clone();
+            async move {
+                let result = client.list_persona_triggers(&persona_id).await;
+                (i, result)
+            }
+        })
+        .collect();
+    let trigger_results =
+        match tokio::time::timeout(Duration::from_secs(30), join_all(trigger_futs)).await {
+            Ok(results) => results,
+            Err(_) => {
+                let mut s = state.lock().await;
+                s.last_poll_at = Some(now.clone());
+                s.last_error = Some("Timed out fetching cloud triggers (30s)".into());
+                emit_status(app, &s, true);
+                return;
+            }
+        };
 
     // Collect webhook triggers with their parent deployment index
     let mut webhook_triggers_with_deployment: Vec<(usize, CloudTrigger)> = Vec::new();
@@ -184,28 +189,30 @@ pub async fn cloud_webhook_relay_tick(
     let trigger_count = webhook_triggers_with_deployment.len() as u32;
 
     // 3. Parallel round 2: fetch firings for ALL triggers concurrently
-    let firing_futs: Vec<_> = webhook_triggers_with_deployment.iter().enumerate().map(|(i, (dep_idx, trigger))| {
-        let client = Arc::clone(client);
-        let trigger_id = trigger.id.clone();
-        let dep_idx = *dep_idx;
-        async move {
-            let result = client.list_trigger_firings(&trigger_id, Some(20)).await;
-            (i, dep_idx, result)
-        }
-    }).collect();
-    let firing_results = match tokio::time::timeout(
-        Duration::from_secs(30),
-        join_all(firing_futs),
-    ).await {
-        Ok(results) => results,
-        Err(_) => {
-            let mut s = state.lock().await;
-            s.last_poll_at = Some(now.clone());
-            s.last_error = Some("Timed out fetching trigger firings (30s)".into());
-            emit_status(app, &s, true);
-            return;
-        }
-    };
+    let firing_futs: Vec<_> = webhook_triggers_with_deployment
+        .iter()
+        .enumerate()
+        .map(|(i, (dep_idx, trigger))| {
+            let client = Arc::clone(client);
+            let trigger_id = trigger.id.clone();
+            let dep_idx = *dep_idx;
+            async move {
+                let result = client.list_trigger_firings(&trigger_id, Some(20)).await;
+                (i, dep_idx, result)
+            }
+        })
+        .collect();
+    let firing_results =
+        match tokio::time::timeout(Duration::from_secs(30), join_all(firing_futs)).await {
+            Ok(results) => results,
+            Err(_) => {
+                let mut s = state.lock().await;
+                s.last_poll_at = Some(now.clone());
+                s.last_error = Some("Timed out fetching trigger firings (30s)".into());
+                emit_status(app, &s, true);
+                return;
+            }
+        };
 
     // 4. Process firings sequentially (DB writes + state updates)
     let mut total_new = 0u32;
@@ -289,7 +296,11 @@ pub async fn cloud_webhook_relay_tick(
                         (Ok(f), Ok(p)) => f > p,
                         _ => fired_at > *prev,
                     };
-                    if is_newer { fired_at.clone() } else { prev.clone() }
+                    if is_newer {
+                        fired_at.clone()
+                    } else {
+                        prev.clone()
+                    }
                 }
                 None => fired_at.clone(),
             };
@@ -356,15 +367,13 @@ fn publish_and_upsert_watermark(
 
     // Encrypt payload at rest if present
     let (stored_payload, payload_iv) = match &input.payload {
-        Some(plaintext) if !plaintext.is_empty() => {
-            match crypto::encrypt_for_db(plaintext) {
-                Ok((ct, iv)) => (Some(ct), Some(iv)),
-                Err(e) => {
-                    tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
-                    (Some(plaintext.clone()), None)
-                }
+        Some(plaintext) if !plaintext.is_empty() => match crypto::encrypt_for_db(plaintext) {
+            Ok((ct, iv)) => (Some(ct), Some(iv)),
+            Err(e) => {
+                tracing::warn!("Failed to encrypt event payload, storing plaintext: {}", e);
+                (Some(plaintext.clone()), None)
             }
-        }
+        },
         other => (other.clone(), None),
     };
 
@@ -394,7 +403,8 @@ fn publish_and_upsert_watermark(
          VALUES (?1, ?2, ?3)
          ON CONFLICT(trigger_id) DO UPDATE SET last_seen_ts = ?2, updated_at = ?3",
         params![trigger_id, fired_at, now],
-    ).map_err(AppError::Database)?;
+    )
+    .map_err(AppError::Database)?;
 
     tx.commit().map_err(AppError::Database)?;
 

@@ -41,9 +41,7 @@ pub struct ApiRequestBody {
     pub required: bool,
 }
 
-const VALID_METHODS: &[&str] = &[
-    "get", "post", "put", "patch", "delete", "head", "options",
-];
+const VALID_METHODS: &[&str] = &["get", "post", "put", "patch", "delete", "head", "options"];
 
 /// Parse an OpenAPI/Swagger specification into a list of endpoints.
 ///
@@ -60,9 +58,7 @@ pub fn parse_openapi_spec(raw: &str) -> Result<Vec<ApiEndpoint>, AppError> {
     let paths = spec
         .get("paths")
         .and_then(|p| p.as_object())
-        .ok_or_else(|| {
-            AppError::Validation("API definition has no 'paths' object".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("API definition has no 'paths' object".into()))?;
 
     let mut endpoints = Vec::new();
 
@@ -165,7 +161,10 @@ fn parse_parameters(operation: &serde_json::Value) -> Vec<ApiParameter> {
 fn parse_request_body(operation: &serde_json::Value) -> Option<ApiRequestBody> {
     // OpenAPI 3.x: requestBody.content.application/json.schema
     if let Some(rb) = operation.get("requestBody") {
-        let required = rb.get("required").and_then(|v| v.as_bool()).unwrap_or(false);
+        let required = rb
+            .get("required")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false);
         let content = rb.get("content").and_then(|c| c.as_object())?;
 
         // Prefer application/json
@@ -195,10 +194,7 @@ fn parse_request_body(operation: &serde_json::Value) -> Option<ApiRequestBody> {
                 return Some(ApiRequestBody {
                     content_type: "application/json".to_string(),
                     schema_json,
-                    required: p
-                        .get("required")
-                        .and_then(|v| v.as_bool())
-                        .unwrap_or(false),
+                    required: p.get("required").and_then(|v| v.as_bool()).unwrap_or(false),
                 });
             }
         }
@@ -256,12 +252,18 @@ mod tests {
         let result = parse_openapi_spec(&spec.to_string()).unwrap();
         assert_eq!(result.len(), 3);
 
-        let get_users = result.iter().find(|e| e.path == "/users" && e.method == "GET").unwrap();
+        let get_users = result
+            .iter()
+            .find(|e| e.path == "/users" && e.method == "GET")
+            .unwrap();
         assert_eq!(get_users.summary.as_deref(), Some("List users"));
         assert_eq!(get_users.parameters.len(), 1);
         assert_eq!(get_users.parameters[0].name, "limit");
 
-        let post_users = result.iter().find(|e| e.path == "/users" && e.method == "POST").unwrap();
+        let post_users = result
+            .iter()
+            .find(|e| e.path == "/users" && e.method == "POST")
+            .unwrap();
         assert!(post_users.request_body.is_some());
         assert!(post_users.request_body.as_ref().unwrap().required);
 

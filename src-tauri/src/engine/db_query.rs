@@ -52,22 +52,25 @@ fn sanitize_error(msg: &str, fields: &HashMap<String, String>) -> String {
     }
 
     // Strip common connection string patterns (postgresql://user:pass@host/db)
-    let re_connstr = RE_CONNSTR.get_or_init(|| {
-        regex::Regex::new(r"(?i)postgres(?:ql)?://[^\s,\]})']+" ).unwrap()
-    });
-    sanitized = re_connstr.replace_all(&sanitized, "[REDACTED:connection_string]").to_string();
+    let re_connstr = RE_CONNSTR
+        .get_or_init(|| regex::Regex::new(r"(?i)postgres(?:ql)?://[^\s,\]})']+").unwrap());
+    sanitized = re_connstr
+        .replace_all(&sanitized, "[REDACTED:connection_string]")
+        .to_string();
 
     // Strip Bearer tokens that may appear in echoed headers
-    let re_bearer = RE_BEARER.get_or_init(|| {
-        regex::Regex::new(r"(?i)Bearer\s+[A-Za-z0-9._\-]+").unwrap()
-    });
-    sanitized = re_bearer.replace_all(&sanitized, "Bearer [REDACTED]").to_string();
+    let re_bearer =
+        RE_BEARER.get_or_init(|| regex::Regex::new(r"(?i)Bearer\s+[A-Za-z0-9._\-]+").unwrap());
+    sanitized = re_bearer
+        .replace_all(&sanitized, "Bearer [REDACTED]")
+        .to_string();
 
     // Strip Basic auth credentials
-    let re_basic = RE_BASIC.get_or_init(|| {
-        regex::Regex::new(r"(?i)Basic\s+[A-Za-z0-9+/=]+").unwrap()
-    });
-    sanitized = re_basic.replace_all(&sanitized, "Basic [REDACTED]").to_string();
+    let re_basic =
+        RE_BASIC.get_or_init(|| regex::Regex::new(r"(?i)Basic\s+[A-Za-z0-9+/=]+").unwrap());
+    sanitized = re_basic
+        .replace_all(&sanitized, "Basic [REDACTED]")
+        .to_string();
 
     sanitized
 }
@@ -168,7 +171,11 @@ fn extract_first_keyword(query_text: &str) -> Option<String> {
         .collect::<String>()
         .to_ascii_uppercase();
 
-    if kw.is_empty() { None } else { Some(kw) }
+    if kw.is_empty() {
+        None
+    } else {
+        Some(kw)
+    }
 }
 
 /// Returns `true` when the query is a read-only statement **in SQLite**.
@@ -205,7 +212,7 @@ pub fn is_sqlite_read(query_text: &str) -> bool {
 /// SQLite-specific keyword list.**
 pub fn is_mutation(query_text: &str) -> bool {
     match extract_first_keyword(query_text) {
-        None => false,  // comment-only — not a mutation
+        None => false,                                        // comment-only — not a mutation
         Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => true, // fail-safe
         Some(kw) => !matches!(
             kw.as_str(),
@@ -307,9 +314,8 @@ pub async fn execute_query(
 
     // Built-in local database -- no external credentials needed
     if service == "personas_database" {
-        let udb = user_db.ok_or_else(|| {
-            AppError::Internal("User database pool not available".to_string())
-        })?;
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
         let mut qr = execute_local_sqlite(udb, query_text)?;
         qr.duration_ms = start.elapsed().as_millis() as u64;
         qr.row_count = qr.rows.len();
@@ -317,7 +323,14 @@ pub async fn execute_query(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:execute", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:execute",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
@@ -334,7 +347,15 @@ pub async fn execute_query(
     };
 
     let duration_ms = start.elapsed().as_millis() as u64;
-    finalize_result(result, duration_ms, service, credential_id, &fields, "execute_query", None)
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "execute_query",
+        None,
+    )
 }
 
 // ============================================================================
@@ -351,9 +372,8 @@ pub async fn introspect_tables(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
     if credential.service_type == "personas_database" {
-        let udb = user_db.ok_or_else(|| {
-            AppError::Internal("User database pool not available".to_string())
-        })?;
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
         let start = Instant::now();
         let mut qr = introspect_local_sqlite_tables(udb)?;
         qr.duration_ms = start.elapsed().as_millis() as u64;
@@ -362,7 +382,14 @@ pub async fn introspect_tables(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_tables", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:introspect_tables",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
     let start = Instant::now();
@@ -377,9 +404,7 @@ pub async fn introspect_tables(
             let q = "SELECT table_name, table_type FROM information_schema.tables WHERE table_schema = DATABASE() ORDER BY table_name";
             execute_planetscale(&fields, q).await
         }
-        "upstash" | "redis" => {
-            execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100").await
-        }
+        "upstash" | "redis" => execute_upstash(&fields, "SCAN 0 MATCH * COUNT 100").await,
         "convex" => introspect_convex_tables(&fields).await,
         "notion" => introspect_notion_tables(&fields).await,
         "airtable" => introspect_airtable_tables(&fields).await,
@@ -390,7 +415,15 @@ pub async fn introspect_tables(
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let service = credential.service_type.as_str();
-    finalize_result(result, duration_ms, service, credential_id, &fields, "introspect_tables", None)
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "introspect_tables",
+        None,
+    )
 }
 
 /// Introspect columns for a specific table. Supabase uses OpenAPI spec;
@@ -404,9 +437,8 @@ pub async fn introspect_columns(
     let credential = cred_repo::get_by_id(pool, credential_id)?;
 
     if credential.service_type == "personas_database" {
-        let udb = user_db.ok_or_else(|| {
-            AppError::Internal("User database pool not available".to_string())
-        })?;
+        let udb = user_db
+            .ok_or_else(|| AppError::Internal("User database pool not available".to_string()))?;
         let start = Instant::now();
         let mut qr = introspect_local_sqlite_columns(udb, table_name)?;
         qr.duration_ms = start.elapsed().as_millis() as u64;
@@ -415,7 +447,14 @@ pub async fn introspect_columns(
     }
 
     let fields = cred_repo::get_decrypted_fields(pool, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(pool, credential_id, &credential.name, "db_query:introspect_columns", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        pool,
+        credential_id,
+        &credential.name,
+        "db_query:introspect_columns",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id, error = %e, "Failed to write audit log for credential decrypt");
     }
     let start = Instant::now();
@@ -455,7 +494,15 @@ pub async fn introspect_columns(
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let service = credential.service_type.as_str();
-    finalize_result(result, duration_ms, service, credential_id, &fields, "introspect_columns", Some(&safe_name))
+    finalize_result(
+        result,
+        duration_ms,
+        service,
+        credential_id,
+        &fields,
+        "introspect_columns",
+        Some(&safe_name),
+    )
 }
 
 // -- Supabase OpenAPI spec cache ------------------------------------------
@@ -618,9 +665,7 @@ async fn introspect_supabase_columns(
 }
 
 /// Fetch the PostgREST OpenAPI spec from `GET {project_url}/rest/v1/`.
-async fn fetch_supabase_openapi_spec(
-    fields: &HashMap<String, String>,
-) -> Result<Value, AppError> {
+async fn fetch_supabase_openapi_spec(fields: &HashMap<String, String>) -> Result<Value, AppError> {
     let project_url = fields
         .get("project_url")
         .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
@@ -628,9 +673,7 @@ async fn fetch_supabase_openapi_spec(
     let api_key = fields
         .get("service_role_key")
         .or_else(|| fields.get("anon_key"))
-        .ok_or_else(|| {
-            AppError::Validation("Missing service_role_key or anon_key field".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
 
     let spec_url = format!("{}/rest/v1/", project_url.trim_end_matches('/'));
 
@@ -675,9 +718,7 @@ pub(crate) async fn execute_supabase(
     let api_key = fields
         .get("service_role_key")
         .or_else(|| fields.get("anon_key"))
-        .ok_or_else(|| {
-            AppError::Validation("Missing service_role_key or anon_key field".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
 
     let base = project_url.trim_end_matches('/');
     let sql = query_text.trim().trim_end_matches(';').trim();
@@ -774,7 +815,9 @@ fn parse_select_to_postgrest(sql: &str) -> Option<PostgrestSelect> {
     }
 
     // Reject unsupported constructs
-    for kw in &["JOIN ", "GROUP BY", "HAVING ", "UNION ", "WITH ", "INSERT ", "UPDATE ", "DELETE "] {
+    for kw in &[
+        "JOIN ", "GROUP BY", "HAVING ", "UNION ", "WITH ", "INSERT ", "UPDATE ", "DELETE ",
+    ] {
         if upper.contains(kw) {
             return None;
         }
@@ -1092,9 +1135,7 @@ pub(crate) async fn execute_upstash(
         .get("redis_rest_token")
         .or_else(|| fields.get("token"))
         .or_else(|| fields.get("password"))
-        .ok_or_else(|| {
-            AppError::Validation("Missing redis_rest_token field for Upstash".into())
-        })?;
+        .ok_or_else(|| AppError::Validation("Missing redis_rest_token field for Upstash".into()))?;
 
     // Split the query into command parts (e.g., "GET mykey" -> ["GET", "mykey"])
     let parts: Vec<&str> = query_text.split_whitespace().collect();
@@ -1303,7 +1344,10 @@ pub(crate) fn parse_postgres_json_response(body: &str) -> Result<QueryResult, Ap
         .iter()
         .map(|row| {
             if let Some(obj) = row.as_object() {
-                columns.iter().map(|c| obj.get(c).cloned().unwrap_or(serde_json::Value::Null)).collect()
+                columns
+                    .iter()
+                    .map(|c| obj.get(c).cloned().unwrap_or(serde_json::Value::Null))
+                    .collect()
             } else {
                 vec![row.clone()]
             }
@@ -1327,7 +1371,8 @@ pub(crate) fn parse_neon_response(body: &str) -> Result<QueryResult, AppError> {
         safe_json::from_str(body).map_err(|e| AppError::Internal(format!("Invalid JSON: {e}")))?;
 
     // Neon response: { fields: [{name, dataTypeID}], rows: [[val, ...]], ...}
-    let columns: Vec<String> = if let Some(fields) = parsed.get("fields").and_then(|f| f.as_array()) {
+    let columns: Vec<String> = if let Some(fields) = parsed.get("fields").and_then(|f| f.as_array())
+    {
         fields
             .iter()
             .filter_map(|f| f.get("name").and_then(|n| n.as_str()).map(String::from))
@@ -1511,9 +1556,8 @@ async fn execute_convex(
 
     // If it looks like JSON, treat as a raw function call
     if trimmed.starts_with('{') {
-        let body: Value = safe_json::from_str(trimmed).map_err(|e| {
-            AppError::Validation(format!("Invalid JSON body: {e}"))
-        })?;
+        let body: Value = safe_json::from_str(trimmed)
+            .map_err(|e| AppError::Validation(format!("Invalid JSON body: {e}")))?;
 
         // Determine endpoint: presence of "mutation" key or path containing "mutation" -> /api/mutation
         let path_str = body.get("path").and_then(|p| p.as_str()).unwrap_or("");
@@ -1542,26 +1586,30 @@ async fn execute_convex(
             .await
             .map_err(|e| AppError::Internal(format!("Failed to parse Convex response: {e}")))?;
 
-        if !status.is_success() || resp_body.get("status").and_then(|s| s.as_str()) == Some("error") {
+        if !status.is_success() || resp_body.get("status").and_then(|s| s.as_str()) == Some("error")
+        {
             let msg = resp_body
                 .get("errorMessage")
                 .and_then(|m| m.as_str())
                 .unwrap_or("Unknown error");
-            return Err(AppError::Internal(format!("Convex {endpoint} failed: {msg}")));
+            return Err(AppError::Internal(format!(
+                "Convex {endpoint} failed: {msg}"
+            )));
         }
 
-        return convex_value_to_query_result(&resp_body.get("value").cloned().unwrap_or(Value::Null));
+        return convex_value_to_query_result(
+            &resp_body.get("value").cloned().unwrap_or(Value::Null),
+        );
     }
 
     // Shorthand: treat as table name -- list documents via /api/list_snapshot
-    let table_name = trimmed
-        .trim_matches('"')
-        .trim_matches('\'');
+    let table_name = trimmed.trim_matches('"').trim_matches('\'');
 
     // Validate table name: only alphanumeric and underscores allowed
     if !table_name.chars().all(|c| c.is_alphanumeric() || c == '_') {
         return Err(AppError::Validation(
-            "Invalid Convex table name: only alphanumeric characters and underscores are allowed".into(),
+            "Invalid Convex table name: only alphanumeric characters and underscores are allowed"
+                .into(),
         ));
     }
 
@@ -1946,7 +1994,11 @@ fn convex_value_to_query_result(value: &Value) -> Result<QueryResult, AppError> 
             // Single document result -- present as single-row table
             let columns: Vec<String> = value
                 .as_object()
-                .map(|o| { let mut v: Vec<String> = o.keys().cloned().collect(); v.sort(); v })
+                .map(|o| {
+                    let mut v: Vec<String> = o.keys().cloned().collect();
+                    v.sort();
+                    v
+                })
                 .unwrap_or_default();
             let row: Vec<Value> = columns
                 .iter()
@@ -1983,16 +2035,16 @@ pub fn execute_local_sqlite(
     user_db: &UserDbPool,
     query_text: &str,
 ) -> Result<QueryResult, AppError> {
-    let conn = user_db.get().map_err(|e| {
-        AppError::Internal(format!("Failed to connect to user database: {e}"))
-    })?;
+    let conn = user_db
+        .get()
+        .map_err(|e| AppError::Internal(format!("Failed to connect to user database: {e}")))?;
 
     let trimmed = query_text.trim();
 
     if is_sqlite_read(trimmed) {
-        let mut stmt = conn.prepare(trimmed).map_err(|e| {
-            AppError::Internal(format!("SQL prepare error: {e}"))
-        })?;
+        let mut stmt = conn
+            .prepare(trimmed)
+            .map_err(|e| AppError::Internal(format!("SQL prepare error: {e}")))?;
 
         let col_count = stmt.column_count();
         let columns: Vec<String> = (0..col_count)
@@ -2000,13 +2052,14 @@ pub fn execute_local_sqlite(
             .collect();
 
         let mut rows_out: Vec<Vec<Value>> = Vec::new();
-        let mut rows_iter = stmt.query([]).map_err(|e| {
-            AppError::Internal(format!("SQL query error: {e}"))
-        })?;
+        let mut rows_iter = stmt
+            .query([])
+            .map_err(|e| AppError::Internal(format!("SQL query error: {e}")))?;
 
-        while let Some(row) = rows_iter.next().map_err(|e| {
-            AppError::Internal(format!("Row fetch error: {e}"))
-        })? {
+        while let Some(row) = rows_iter
+            .next()
+            .map_err(|e| AppError::Internal(format!("Row fetch error: {e}")))?
+        {
             if rows_out.len() >= MAX_ROWS {
                 break;
             }
@@ -2015,11 +2068,9 @@ pub fn execute_local_sqlite(
                 let val: Value = match row.get_ref(i) {
                     Ok(rusqlite::types::ValueRef::Null) => Value::Null,
                     Ok(rusqlite::types::ValueRef::Integer(n)) => Value::Number(n.into()),
-                    Ok(rusqlite::types::ValueRef::Real(f)) => {
-                        serde_json::Number::from_f64(f)
-                            .map(Value::Number)
-                            .unwrap_or(Value::Null)
-                    }
+                    Ok(rusqlite::types::ValueRef::Real(f)) => serde_json::Number::from_f64(f)
+                        .map(Value::Number)
+                        .unwrap_or(Value::Null),
                     Ok(rusqlite::types::ValueRef::Text(t)) => {
                         Value::String(String::from_utf8_lossy(t).to_string())
                     }
@@ -2046,14 +2097,17 @@ pub fn execute_local_sqlite(
         let forbidden = ["ATTACH ", "DETACH ", "VACUUM INTO"];
         for kw in &forbidden {
             if upper.starts_with(kw) {
-                return Err(AppError::Validation(format!("Statement type '{}' is not allowed", kw.trim())));
+                return Err(AppError::Validation(format!(
+                    "Statement type '{}' is not allowed",
+                    kw.trim()
+                )));
             }
         }
 
         // Write statement (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
-        let affected = conn.execute(trimmed, []).map_err(|e| {
-            AppError::Internal(format!("SQL execute error: {e}"))
-        })?;
+        let affected = conn
+            .execute(trimmed, [])
+            .map_err(|e| AppError::Internal(format!("SQL execute error: {e}")))?;
 
         Ok(QueryResult {
             columns: vec!["affected_rows".to_string()],
@@ -2066,9 +2120,7 @@ pub fn execute_local_sqlite(
 }
 
 /// Introspect tables in the local user database.
-pub fn introspect_local_sqlite_tables(
-    user_db: &UserDbPool,
-) -> Result<QueryResult, AppError> {
+pub fn introspect_local_sqlite_tables(user_db: &UserDbPool) -> Result<QueryResult, AppError> {
     execute_local_sqlite(
         user_db,
         "SELECT name AS table_name, type AS table_type FROM sqlite_master WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%' ORDER BY name",
@@ -2081,10 +2133,7 @@ pub fn introspect_local_sqlite_columns(
     table_name: &str,
 ) -> Result<QueryResult, AppError> {
     let safe_name = table_name.replace(|c: char| !c.is_alphanumeric() && c != '_', "");
-    execute_local_sqlite(
-        user_db,
-        &format!("PRAGMA table_info('{}')", safe_name),
-    )
+    execute_local_sqlite(user_db, &format!("PRAGMA table_info('{}')", safe_name))
 }
 
 // ============================================================================
@@ -2159,7 +2208,11 @@ async fn introspect_notion_tables(
 
     let row_count = rows.len();
     Ok(QueryResult {
-        columns: vec!["table_name".into(), "display_label".into(), "table_type".into()],
+        columns: vec![
+            "table_name".into(),
+            "display_label".into(),
+            "table_type".into(),
+        ],
         rows,
         row_count,
         duration_ms: 0,
@@ -2333,10 +2386,7 @@ async fn introspect_airtable_tables(
     let mut rows: Vec<Vec<Value>> = Vec::new();
 
     for (base_id, base_name) in &bases {
-        let url = format!(
-            "https://api.airtable.com/v0/meta/bases/{}/tables",
-            base_id
-        );
+        let url = format!("https://api.airtable.com/v0/meta/bases/{}/tables", base_id);
 
         let resp = client
             .get(&url)
@@ -2394,7 +2444,11 @@ async fn introspect_airtable_tables(
 
     let row_count = rows.len();
     Ok(QueryResult {
-        columns: vec!["table_name".into(), "display_label".into(), "table_type".into()],
+        columns: vec![
+            "table_name".into(),
+            "display_label".into(),
+            "table_type".into(),
+        ],
         rows,
         row_count,
         duration_ms: 0,
@@ -2414,18 +2468,13 @@ async fn introspect_airtable_columns(
         .ok_or_else(|| AppError::Validation("Missing api_key field".into()))?;
 
     // Parse compound ID (base_id:table_id)
-    let (base_id, table_id) = table_name
-        .split_once(':')
-        .ok_or_else(|| {
-            AppError::Validation(format!(
-                "Invalid Airtable table reference '{table_name}'. Expected format: base_id:table_id"
-            ))
-        })?;
+    let (base_id, table_id) = table_name.split_once(':').ok_or_else(|| {
+        AppError::Validation(format!(
+            "Invalid Airtable table reference '{table_name}'. Expected format: base_id:table_id"
+        ))
+    })?;
 
-    let url = format!(
-        "https://api.airtable.com/v0/meta/bases/{}/tables",
-        base_id
-    );
+    let url = format!("https://api.airtable.com/v0/meta/bases/{}/tables", base_id);
 
     let client = http_client();
     let resp = client
@@ -2459,9 +2508,7 @@ async fn introspect_airtable_columns(
             })
         })
         .ok_or_else(|| {
-            AppError::Internal(format!(
-                "Table '{table_id}' not found in base '{base_id}'"
-            ))
+            AppError::Internal(format!("Table '{table_id}' not found in base '{base_id}'"))
         })?;
 
     let airtable_fields = table
@@ -2512,7 +2559,10 @@ fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
     let msg = json
         .get("error")
         .and_then(|e| e.get("message").and_then(|m| m.as_str()))
-        .or_else(|| json.get("error").and_then(|e| e.get("type").and_then(|t| t.as_str())))
+        .or_else(|| {
+            json.get("error")
+                .and_then(|e| e.get("type").and_then(|t| t.as_str()))
+        })
         .unwrap_or("Unknown error");
     format!("Airtable API request failed (HTTP {status}): {msg}")
 }
@@ -2651,9 +2701,7 @@ mod tests {
 
     #[test]
     fn test_parse_pg_exactly_max_rows() {
-        let rows: Vec<serde_json::Value> = (0..500)
-            .map(|i| json!({"id": i}))
-            .collect();
+        let rows: Vec<serde_json::Value> = (0..500).map(|i| json!({"id": i})).collect();
         let body = serde_json::to_string(&rows).unwrap();
 
         let result = parse_postgres_json_response(&body).unwrap();
@@ -2837,10 +2885,13 @@ mod tests {
     #[tokio::test]
     #[ignore] // Run with: cargo test -- --ignored (requires Docker SRH)
     async fn test_upstash_live_set_get() {
-        let fields = upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
 
         // SET
-        let set_result = execute_upstash(&fields, "SET test_key hello_world").await.unwrap();
+        let set_result = execute_upstash(&fields, "SET test_key hello_world")
+            .await
+            .unwrap();
         assert_eq!(set_result.rows[0][0], json!("OK"));
 
         // GET
@@ -2854,10 +2905,13 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_upstash_live_hset_hgetall() {
-        let fields = upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
 
         let _ = execute_upstash(&fields, "DEL test_hash").await;
-        let _ = execute_upstash(&fields, "HSET test_hash name alice age 30").await.unwrap();
+        let _ = execute_upstash(&fields, "HSET test_hash name alice age 30")
+            .await
+            .unwrap();
 
         let result = execute_upstash(&fields, "HGETALL test_hash").await.unwrap();
         assert!(result.row_count >= 4); // ["name", "alice", "age", "30"]
@@ -2868,16 +2922,20 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_upstash_live_nonexistent_key() {
-        let fields = upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
 
-        let result = execute_upstash(&fields, "GET __surely_nonexistent_key__").await.unwrap();
+        let result = execute_upstash(&fields, "GET __surely_nonexistent_key__")
+            .await
+            .unwrap();
         assert_eq!(result.rows[0][0], serde_json::Value::Null);
     }
 
     #[tokio::test]
     #[ignore]
     async fn test_upstash_live_del() {
-        let fields = upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
+        let fields =
+            upstash_test_fields().expect("UPSTASH_TEST_URL and UPSTASH_TEST_TOKEN required");
 
         let _ = execute_upstash(&fields, "SET del_test_key value").await;
         let result = execute_upstash(&fields, "DEL del_test_key").await.unwrap();
@@ -2888,7 +2946,10 @@ mod tests {
     #[tokio::test]
     async fn test_upstash_empty_command() {
         let mut fields = HashMap::new();
-        fields.insert("redis_rest_url".to_string(), "http://localhost:8079".to_string());
+        fields.insert(
+            "redis_rest_url".to_string(),
+            "http://localhost:8079".to_string(),
+        );
         fields.insert("redis_rest_token".to_string(), "token".to_string());
 
         let result = execute_upstash(&fields, "").await;
@@ -2916,14 +2977,17 @@ mod tests {
 
     #[test]
     fn test_postgrest_select_columns() {
-        let result = parse_select_to_postgrest("SELECT id, name, email FROM users LIMIT 50").unwrap();
+        let result =
+            parse_select_to_postgrest("SELECT id, name, email FROM users LIMIT 50").unwrap();
         assert_eq!(result.select, "id,name,email");
         assert_eq!(result.limit, Some(50));
     }
 
     #[test]
     fn test_postgrest_select_with_order() {
-        let result = parse_select_to_postgrest("SELECT * FROM messages ORDER BY created_at DESC LIMIT 100").unwrap();
+        let result =
+            parse_select_to_postgrest("SELECT * FROM messages ORDER BY created_at DESC LIMIT 100")
+                .unwrap();
         assert_eq!(result.table, "messages");
         assert_eq!(result.order.as_deref(), Some("created_at.desc"));
         assert_eq!(result.limit, Some(100));
@@ -2931,7 +2995,8 @@ mod tests {
 
     #[test]
     fn test_postgrest_select_with_where() {
-        let result = parse_select_to_postgrest("SELECT * FROM users WHERE active = true LIMIT 100").unwrap();
+        let result =
+            parse_select_to_postgrest("SELECT * FROM users WHERE active = true LIMIT 100").unwrap();
         assert_eq!(result.filters.len(), 1);
         assert_eq!(result.filters[0], "active=eq.true");
     }
@@ -2944,13 +3009,16 @@ mod tests {
 
     #[test]
     fn test_postgrest_strip_quotes() {
-        let result = parse_select_to_postgrest("SELECT * FROM \"agent_messages\" LIMIT 100").unwrap();
+        let result =
+            parse_select_to_postgrest("SELECT * FROM \"agent_messages\" LIMIT 100").unwrap();
         assert_eq!(result.table, "agent_messages");
     }
 
     #[test]
     fn test_postgrest_rejects_join() {
-        let result = parse_select_to_postgrest("SELECT * FROM users JOIN orders ON users.id = orders.user_id");
+        let result = parse_select_to_postgrest(
+            "SELECT * FROM users JOIN orders ON users.id = orders.user_id",
+        );
         assert!(result.is_none());
     }
 
@@ -2981,7 +3049,8 @@ mod tests {
     #[test]
     fn test_sanitize_strips_bearer_token() {
         let fields = HashMap::new();
-        let msg = "Request failed with header Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.sig";
+        let msg =
+            "Request failed with header Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.payload.sig";
         let result = sanitize_error(msg, &fields);
         assert!(!result.contains("eyJhbGciOiJIUzI1NiJ9"));
         assert!(result.contains("Bearer [REDACTED]"));
@@ -2999,7 +3068,10 @@ mod tests {
     #[test]
     fn test_sanitize_strips_field_values() {
         let mut fields = HashMap::new();
-        fields.insert("api_key".to_string(), "sk-super-secret-key-12345".to_string());
+        fields.insert(
+            "api_key".to_string(),
+            "sk-super-secret-key-12345".to_string(),
+        );
         fields.insert("port".to_string(), "5432".to_string()); // short -- should NOT be redacted
         let msg = "Failed with key sk-super-secret-key-12345 on port 5432";
         let result = sanitize_error(msg, &fields);

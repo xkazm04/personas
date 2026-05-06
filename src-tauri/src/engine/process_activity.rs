@@ -1,6 +1,6 @@
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,10 +28,21 @@ impl ProcessActivityEvent {
     }
 }
 
-pub fn emit_process_activity(app: &AppHandle, domain: &str, action: &str, run_id: Option<&str>, label: Option<&str>) {
+pub fn emit_process_activity(
+    app: &AppHandle,
+    domain: &str,
+    action: &str,
+    run_id: Option<&str>,
+    label: Option<&str>,
+) {
     let event = ProcessActivityEvent::new(domain, action, run_id, label);
     if let Err(e) = app.emit(super::event_registry::event_name::PROCESS_ACTIVITY, event) {
-        tracing::warn!(domain, action, ?run_id, "Failed to emit process activity event: {e}");
+        tracing::warn!(
+            domain,
+            action,
+            ?run_id,
+            "Failed to emit process activity event: {e}"
+        );
     }
 }
 
@@ -39,7 +50,17 @@ pub fn emit_process_activity(app: &AppHandle, domain: &str, action: &str, run_id
 /// object instead of an `AppHandle`. Used by `runner.rs` after the emitter
 /// refactor so the runner no longer needs a concrete `AppHandle`.
 #[allow(dead_code)] // pending: runner currently calls emit_process_activity directly with an AppHandle
-pub fn emit_process_activity_via(emitter: &dyn super::events::ExecutionEventEmitter, domain: &str, action: &str, run_id: Option<&str>, label: Option<&str>) {
+pub fn emit_process_activity_via(
+    emitter: &dyn super::events::ExecutionEventEmitter,
+    domain: &str,
+    action: &str,
+    run_id: Option<&str>,
+    label: Option<&str>,
+) {
     let event = ProcessActivityEvent::new(domain, action, run_id, label);
-    super::events::emit_to(emitter, super::event_registry::event_name::PROCESS_ACTIVITY, &event);
+    super::events::emit_to(
+        emitter,
+        super::event_registry::event_name::PROCESS_ACTIVITY,
+        &event,
+    );
 }

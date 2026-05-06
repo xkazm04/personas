@@ -10,12 +10,12 @@
 //! in `src/lib/bindings/` (the canonical TS_RS_EXPORT_DIR set in
 //! src-tauri/.cargo/config.toml) regardless of lib-test health.
 
+use app_lib::artist_persistence::{AutosaveInfo, CompositionLoad};
 use app_lib::render_plan::{
     AudioStage, AudioTrack, CompileWarning, ImageOverlayStage, LoudnormMeasurements,
     NormalizeDirective, OverlapKind, OverlapNext, OverlayStage, RenderPlan, SourceEntry,
     VideoStage,
 };
-use app_lib::artist_persistence::{AutosaveInfo, CompositionLoad};
 use ts_rs::TS;
 
 #[test]

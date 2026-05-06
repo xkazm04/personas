@@ -16,6 +16,8 @@ import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
 import * as api from "@/api/agents/lab";
 import { createRunLifecycle } from "./runLifecycle";
+import { useToastStore } from "@/stores/toastStore";
+import * as Sentry from "@sentry/react";
 
 const logger = createLogger("lab-slice");
 
@@ -40,15 +42,50 @@ export interface BaselinePin {
   pinnedAt: string;
 }
 
+/**
+ * Load the per-persona baseline-pin map from localStorage, defending
+ * against corrupted writes from outside this store. We require a plain
+ * object record — anything else (array, string, number, null) is
+ * treated as missing so the user never sees garbage "champion" fields.
+ */
 function loadBaselines(): Record<string, BaselinePin> {
   try {
     const raw = localStorage.getItem(BASELINE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      parsed === null ||
+      typeof parsed !== 'object' ||
+      Array.isArray(parsed)
+    ) {
+      logger.warn(`Discarding corrupted baselines value (not a plain object)`, { type: typeof parsed });
+      return {};
+    }
+    return parsed as Record<string, BaselinePin>;
   } catch { return {}; }
 }
 
-function saveBaselines(baselines: Record<string, BaselinePin>) {
-  localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baselines));
+/**
+ * Persist the baseline map. Returns `true` on success, `false` if the
+ * write failed (typically `QuotaExceededError` on Safari private mode,
+ * disk full, or another feature filling the quota). Caller is expected
+ * to surface a toast and roll back any optimistic in-memory state on
+ * `false` so the UI doesn't claim "pinned" while disk has nothing.
+ */
+function saveBaselines(baselines: Record<string, BaselinePin>): boolean {
+  try {
+    localStorage.setItem(BASELINE_STORAGE_KEY, JSON.stringify(baselines));
+    return true;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn(`Failed to persist baselines to localStorage: ${msg}`);
+    Sentry.addBreadcrumb({
+      category: 'lab.baseline',
+      message: `saveBaselines failed: ${msg}`,
+      level: 'warning',
+    });
+    return false;
+  }
 }
 
 export interface LabRunProgress {
@@ -116,7 +153,14 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
       } catch (err) {
         reportError(err, `Failed to cancel ${label} test`, set, { action: `lab.${label}.cancelRun` });
       } finally {
-        labLifecycle.markCancelled(set);
+        // Use the per-mode lifecycle (`lc`), not the legacy `labLifecycle`.
+        // arena, ab, matrix, eval each pass their own RunLifecycle instance
+        // with mode-specific state keys (isArenaRunning, isMatrixRunning, …).
+        // Calling `labLifecycle.markCancelled` here only resets the legacy
+        // `isLabRunning` flag and leaves the per-mode flag stuck `true` —
+        // the cancel button stays visible, the launch button stays disabled,
+        // and the persona orbit dot never clears until app restart.
+        lc.markCancelled(set);
       }
     },
     fetchResults: async (runId) => {
@@ -519,17 +563,41 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     pinBaseline: (personaId, versionId, versionNumber, runId) => {
       const pin: BaselinePin = { versionId, versionNumber, runId, pinnedAt: new Date().toISOString() };
       const all = loadBaselines();
+      const prior = all[personaId];
       all[personaId] = pin;
-      saveBaselines(all);
+      // Persist FIRST. If it fails (Safari private, quota exceeded, etc.) we
+      // must NOT flash the in-memory "pinned" state — the user would see a
+      // success badge that disappears on next reload.
+      if (!saveBaselines(all)) {
+        useToastStore.getState().addToast(
+          'Failed to save baseline pin. Browser storage may be full or unavailable.',
+          'error',
+          5000,
+        );
+        return;
+      }
       set({ baselinePin: pin });
       logger.info(`Pinned baseline for ${personaId}: v${versionNumber} (run ${runId})`);
+      // Silence the unused `prior` lint hint. Kept for readability — makes
+      // it obvious that the previous value is shadowed only after a
+      // successful disk write.
+      void prior;
     },
     unpinBaseline: (personaId) => {
       const all = loadBaselines();
+      const prior = all[personaId] ?? null;
       delete all[personaId];
-      saveBaselines(all);
+      if (!saveBaselines(all)) {
+        useToastStore.getState().addToast(
+          'Failed to unpin baseline. Browser storage may be unavailable.',
+          'error',
+          5000,
+        );
+        return;
+      }
       set({ baselinePin: null });
       logger.info(`Unpinned baseline for ${personaId}`);
+      void prior;
     },
     loadBaseline: (personaId) => {
       const all = loadBaselines();

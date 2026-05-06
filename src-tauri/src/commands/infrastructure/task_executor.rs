@@ -125,7 +125,12 @@ fn gather_task_context(
         }
     };
 
-    TaskContext { idea, goal, codebase, warnings }
+    TaskContext {
+        idea,
+        goal,
+        codebase,
+        warnings,
+    }
 }
 
 // =============================================================================
@@ -162,12 +167,17 @@ fn build_task_prompt(
         }
         "deep_build" => {
             prompt.push_str("## Execution Strategy: Deep Build\n");
-            prompt.push_str("This is a complex task requiring thorough planning before implementation:\n");
+            prompt.push_str(
+                "This is a complex task requiring thorough planning before implementation:\n",
+            );
             prompt.push_str("1. **Research phase**: Explore the codebase, identify all affected files and dependencies\n");
             prompt.push_str("2. **Planning phase**: Write a detailed plan with specific file changes, new files, and test strategy\n");
             prompt.push_str("3. **Implementation phase**: Execute the plan methodically, one component at a time\n");
-            prompt.push_str("4. **Validation phase**: Run tests, verify correctness, check for regressions\n");
-            prompt.push_str("5. **Summary**: Provide a comprehensive report of all changes made\n\n");
+            prompt.push_str(
+                "4. **Validation phase**: Run tests, verify correctness, check for regressions\n",
+            );
+            prompt
+                .push_str("5. **Summary**: Provide a comprehensive report of all changes made\n\n");
         }
         _ => {
             prompt.push_str("## Execution Strategy: Quick Task\n");
@@ -240,15 +250,15 @@ pub async fn dev_tools_execute_task(
     let _ = repo::update_task(
         &state.db,
         &task_id,
-        None,          // title
-        None,          // description
+        None, // title
+        None, // description
         Some("running"),
-        None,          // session_id
-        Some(0),       // progress_pct
-        None,          // output_lines
-        None,          // error
+        None,             // session_id
+        Some(0),          // progress_pct
+        None,             // output_lines
+        None,             // error
         Some(Some(&now)), // started_at
-        None,          // completed_at
+        None,             // completed_at
     );
 
     let cancel_token = CancellationToken::new();
@@ -348,11 +358,7 @@ pub async fn dev_tools_execute_task(
                     "failed",
                     Some(msg.clone()),
                 );
-                TASK_EXEC_JOBS.emit_line(
-                    &app_handle,
-                    &task_id_for_spawn,
-                    format!("[Error] {msg}"),
-                );
+                TASK_EXEC_JOBS.emit_line(&app_handle, &task_id_for_spawn, format!("[Error] {msg}"));
                 crate::notifications::send(
                     &app_handle,
                     "Task Failed",
@@ -757,7 +763,9 @@ async fn run_task_execution(
                 if trimmed.starts_with("[Progress]") {
                     if let Some(json_str) = trimmed.strip_prefix("[Progress]").map(|s| s.trim()) {
                         if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(json_str) {
-                            if let Some(milestone) = parsed.get("milestone").and_then(|v| v.as_str()) {
+                            if let Some(milestone) =
+                                parsed.get("milestone").and_then(|v| v.as_str())
+                            {
                                 let pct = match milestone {
                                     "analyzing" => 10,
                                     "planning" => 25,
@@ -769,8 +777,17 @@ async fn run_task_execution(
                                 };
                                 if pct > 0 {
                                     let _ = repo::update_task(
-                                        pool, task_id, None, None, None, None,
-                                        Some(pct), Some(output_lines), None, None, None,
+                                        pool,
+                                        task_id,
+                                        None,
+                                        None,
+                                        None,
+                                        None,
+                                        Some(pct),
+                                        Some(output_lines),
+                                        None,
+                                        None,
+                                        None,
                                     );
                                 }
                             }
@@ -787,8 +804,17 @@ async fn run_task_execution(
                     let estimated = output_lines.min(90);
                     if estimated > current {
                         let _ = repo::update_task(
-                            pool, task_id, None, None, None, None,
-                            Some(estimated), Some(output_lines), None, None, None,
+                            pool,
+                            task_id,
+                            None,
+                            None,
+                            None,
+                            None,
+                            Some(estimated),
+                            Some(output_lines),
+                            None,
+                            None,
+                            None,
                         );
                     }
                 }
@@ -861,11 +887,7 @@ async fn run_one_task_for_auto(
     let task = match repo::get_task_by_id(&pool, &task_id) {
         Ok(t) => t,
         Err(e) => {
-            TASK_EXEC_JOBS.emit_line(
-                &app,
-                &task_id,
-                format!("[Error] Failed to read task: {e}"),
-            );
+            TASK_EXEC_JOBS.emit_line(&app, &task_id, format!("[Error] Failed to read task: {e}"));
             return "failed".to_string();
         }
     };
@@ -873,11 +895,7 @@ async fn run_one_task_for_auto(
     let project_id = match task.project_id.as_deref() {
         Some(pid) => pid.to_string(),
         None => {
-            TASK_EXEC_JOBS.emit_line(
-                &app,
-                &task_id,
-                "[Error] Task has no project_id".to_string(),
-            );
+            TASK_EXEC_JOBS.emit_line(&app, &task_id, "[Error] Task has no project_id".to_string());
             return "failed".to_string();
         }
     };
@@ -1071,17 +1089,17 @@ pub async fn dev_tools_start_auto_run(
                     break;
                 }
 
-                let ready =
-                    match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel) {
-                        Ok(v) => v
-                            .into_iter()
-                            .filter(|t| snapshot_ids.contains(&t.id))
-                            .collect::<Vec<_>>(),
-                        Err(e) => {
-                            tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
-                            break;
-                        }
-                    };
+                let ready = match repo::list_ready_tasks(&pool, &project_id_for_spawn, max_parallel)
+                {
+                    Ok(v) => v
+                        .into_iter()
+                        .filter(|t| snapshot_ids.contains(&t.id))
+                        .collect::<Vec<_>>(),
+                    Err(e) => {
+                        tracing::warn!(error = %e, "auto-run: list_ready_tasks failed");
+                        break;
+                    }
+                };
 
                 if ready.is_empty() {
                     break 'outer;

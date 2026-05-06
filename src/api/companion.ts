@@ -66,14 +66,24 @@ export interface SendTurnResult {
  * normal markdown reply. When false (default), no spoken summary is
  * generated and `ttsText` in the result is null.
  */
+/** Hard ceiling for a single chat turn. Athena is designed to run long
+ * background tasks (codebase scans, idea generation, multi-step
+ * reasoning); the default 90s invoke timeout is too short and surfaces
+ * as a confusing "Tauri invoke timed out" error even though the
+ * backend is still working. 15 minutes matches the backend's own
+ * `TURN_TIMEOUT` so the frontend never gives up before the CLI does.
+ */
+const COMPANION_TURN_TIMEOUT_MS = 15 * 60 * 1000;
+
 export async function companionSendMessage(
   message: string,
   voiceEnabled: boolean = false,
 ): Promise<SendTurnResult> {
-  return invoke<SendTurnResult>('companion_send_message', {
-    message,
-    voiceEnabled,
-  });
+  return invoke<SendTurnResult>(
+    'companion_send_message',
+    { message, voiceEnabled },
+    { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
+  );
 }
 
 /**
@@ -167,7 +177,27 @@ export interface ApprovalOutcome {
   clientAction?: ClientAction | null;
 }
 
-export type ClientAction = { type: 'navigate'; route: string };
+/**
+ * Client-side follow-up the frontend runs after an approval lands.
+ * Discriminated by `type`. Backend mirror: `commands::companion::approvals::ClientAction`.
+ *
+ * - `navigate`: switch the sidebar to a top-level section.
+ * - `prefill_persona_create`: stash a prefill payload + route to
+ *   `personas`. UnifiedMatrixEntry reads it and (if `auto_launch`)
+ *   kicks off the build.
+ */
+export type ClientAction =
+  | { type: 'navigate'; route: string }
+  | {
+      type: 'prefill_persona_create';
+      intent: string;
+      name: string | null;
+      autoLaunch: boolean;
+    }
+  | {
+      type: 'open_companion_tab';
+      tab: 'setup' | 'memory' | 'voice' | 'dashboard' | string;
+    };
 
 export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
   return invoke<PendingApproval[]>('companion_list_pending_approvals');
@@ -188,6 +218,27 @@ export async function companionRejectAction(
 
 /** Tauri event channel emitted when a turn produces new approval rows. */
 export const COMPANION_APPROVALS_EVENT = 'companion://approvals';
+
+/**
+ * Phase F: emitted when Athena's `open_lab` op fires. Bypasses
+ * approvals like NAVIGATE_EVENT. Payload selects which persona's lab
+ * to open and which mode (`arena`, `ab`, `versions`, etc.).
+ */
+export const COMPANION_OPEN_LAB_EVENT = 'companion://open-lab';
+
+export interface OpenLabEvent {
+  personaId: string;
+  mode: string;
+}
+
+/**
+ * Phase F: emitted when Athena's `compose_dashboard` op fires (auto-
+ * approve path). The spec is already persisted server-side; the
+ * frontend just navigates to the Companion → Dashboard tab. Empty
+ * payload — no need to ship the spec across IPC, the dashboard panel
+ * re-fetches from `companion_get_dashboard` on mount.
+ */
+export const COMPANION_COMPOSE_DASHBOARD_EVENT = 'companion://compose-dashboard';
 
 /**
  * Tauri event for direct sidebar navigation triggered by Athena's
@@ -228,7 +279,25 @@ export type BrainKind =
   | 'fact:user'
   | 'fact:project'
   | 'fact:world'
-  | 'reflection';
+  | 'reflection'
+  // Phase D
+  | 'procedural'
+  | 'procedural:chat'
+  | 'procedural:action'
+  | 'procedural:memory'
+  | 'procedural:build'
+  | 'goal'
+  | 'goal:active'
+  | 'goal:paused'
+  | 'goal:completed'
+  | 'goal:abandoned'
+  | 'ritual'
+  | 'ritual:quiet_hours'
+  | 'ritual:cadence'
+  | 'ritual:focus_window'
+  | 'backlog'
+  | 'backlog:self_promise'
+  | 'backlog:capability_gap';
 
 export interface BrainListItem {
   id: string;
@@ -369,6 +438,248 @@ export interface ReflectionDetail {
 
 export async function companionRunReflection(): Promise<string> {
   return invoke<string>('companion_run_reflection');
+}
+
+// ── Phase E: proactive messaging ──────────────────────────────────────
+
+/**
+ * One nudge Athena drafted on her own initiative. `triggerKind`
+ * tells the UI what kind of context to show (goal target, aging
+ * promise, ritual cadence) and `triggerRef` is the row id of the
+ * thing that fired (used for deep-linking from the card to the
+ * brain inspector — e.g., clicking a goal-approaching nudge could
+ * open the goal detail).
+ */
+export interface ProactiveMessage {
+  id: string;
+  triggerKind: 'goal_target_approaching' | 'backlog_aging' | 'cadence_due' | string;
+  triggerRef: string | null;
+  message: string;
+  status: 'queued' | 'delivered' | 'engaged' | 'dismissed' | 'expired';
+  createdAt: string;
+  deliveredAt: string | null;
+  resolvedAt: string | null;
+}
+
+/** Tauri event channel — new proactive messages arriving from the engine. */
+export const COMPANION_PROACTIVE_EVENT = 'companion://proactive';
+
+export interface ProactiveDeliveryEvent {
+  messages: ProactiveMessage[];
+}
+
+/** Force a trigger evaluation pass (in addition to the 5-min scheduler). */
+export async function companionEvaluateProactiveNow(): Promise<number> {
+  return invoke<number>('companion_evaluate_proactive_now');
+}
+
+export async function companionListProactiveMessages(
+  onlyUnresolved?: boolean,
+  limit?: number,
+): Promise<ProactiveMessage[]> {
+  return invoke<ProactiveMessage[]>('companion_list_proactive_messages', {
+    onlyUnresolved: onlyUnresolved ?? null,
+    limit: limit ?? null,
+  });
+}
+
+export interface EngageProactiveOutcome {
+  messageId: string;
+  /** The message body — caller fires it through the normal chat-send path. */
+  message: string;
+}
+
+export async function companionEngageProactive(
+  messageId: string,
+): Promise<EngageProactiveOutcome> {
+  return invoke<EngageProactiveOutcome>('companion_engage_proactive', { messageId });
+}
+
+export async function companionDismissProactive(messageId: string): Promise<void> {
+  return invoke<void>('companion_dismiss_proactive', { messageId });
+}
+
+// ── Phase F: dashboard composition (chat-driven UI playground) ─────────
+
+/**
+ * Widget kinds Athena can compose. Backend doesn't validate the kind
+ * — it stores the spec as opaque JSON. The frontend's `widgetRegistry`
+ * is the single source of truth for which kinds render and what
+ * config shape each accepts.
+ */
+export type CompanionDashboardWidgetKind =
+  | 'kpi_tile'
+  | 'executions_status_chart'
+  | 'cost_per_day_chart'
+  | 'top_personas_list'
+  // Round-2 additions — extend the visual palette without breaking
+  // existing dashboards. Backend doesn't validate kinds, so old specs
+  // keep rendering through the registry.
+  | 'latency_distribution_chart'
+  | 'success_rate_gauge'
+  | 'persona_cost_donut'
+  | 'activity_heatmap'
+  | 'recent_executions_table';
+
+/**
+ * Spec for one widget. `config` is widget-specific — see
+ * `widgetRegistry` in `sub_dashboard/`. `span` is a 1-12 grid hint;
+ * the layout component clamps to row width.
+ */
+export interface CompanionDashboardWidget {
+  id: string;
+  kind: CompanionDashboardWidgetKind | string;
+  title?: string;
+  span?: number;
+  config?: Record<string, unknown>;
+}
+
+export interface CompanionDashboardSpecBody {
+  title?: string;
+  widgets: CompanionDashboardWidget[];
+  updatedAt?: string;
+}
+
+/** Wire shape returned by `companion_get_dashboard`. `null` when unset. */
+export interface CompanionDashboardSpec {
+  specJson: string;
+  updatedAt: string;
+}
+
+export async function companionGetDashboard(): Promise<CompanionDashboardSpec | null> {
+  return invoke<CompanionDashboardSpec | null>('companion_get_dashboard');
+}
+
+// ── Phase F: connectors pinned in the chat sidebar ────────────────────
+
+export interface CompanionConnector {
+  connectorName: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function companionListActiveConnectors(): Promise<CompanionConnector[]> {
+  return invoke<CompanionConnector[]>('companion_list_active_connectors');
+}
+
+/**
+ * Replace the entire pinned set with `connectorNames`. Names already
+ * pinned keep their `enabled` state; new names default to enabled.
+ * Used by the "Apply" button on the picker modal.
+ */
+export async function companionSetActiveConnectors(
+  connectorNames: string[],
+): Promise<CompanionConnector[]> {
+  return invoke<CompanionConnector[]>('companion_set_active_connectors', {
+    connectorNames,
+  });
+}
+
+export async function companionSetConnectorEnabled(
+  connectorName: string,
+  enabled: boolean,
+): Promise<void> {
+  return invoke<void>('companion_set_connector_enabled', {
+    connectorName,
+    enabled,
+  });
+}
+
+export async function companionRemoveConnector(
+  connectorName: string,
+): Promise<void> {
+  return invoke<void>('companion_remove_connector', { connectorName });
+}
+
+// ── Phase F: plugin toggles (dev_tools, future) ────────────────────────
+
+export interface PluginToggle {
+  pluginName: string;
+  enabled: boolean;
+  updatedAt: string;
+}
+
+export async function companionListPluginToggles(): Promise<PluginToggle[]> {
+  return invoke<PluginToggle[]>('companion_list_plugin_toggles');
+}
+
+export async function companionSetPluginEnabled(
+  pluginName: string,
+  enabled: boolean,
+): Promise<void> {
+  return invoke<void>('companion_set_plugin_enabled', { pluginName, enabled });
+}
+
+// ── Phase G: project registry + background jobs ───────────────────────
+
+export interface KnownProject {
+  id: string;
+  name: string;
+  path: string;
+  description: string | null;
+  lastScanAt: string | null;
+  lastScanSummary: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackgroundJob {
+  id: string;
+  kind: string;
+  status: 'queued' | 'running' | 'completed' | 'failed' | string;
+  paramsJson: string;
+  resultText: string | null;
+  errorText: string | null;
+  projectId: string | null;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+/** Tauri event emitted on job status transitions (queued→running, completion). */
+export const COMPANION_JOB_EVENT = 'companion://job';
+
+export async function companionListProjects(): Promise<KnownProject[]> {
+  return invoke<KnownProject[]>('companion_list_projects');
+}
+
+export async function companionRegisterProject(
+  name: string,
+  path: string,
+  description?: string,
+): Promise<string> {
+  return invoke<string>('companion_register_project', {
+    name,
+    path,
+    description: description ?? null,
+  });
+}
+
+export async function companionListJobs(
+  onlyUnresolved?: boolean,
+  limit?: number,
+): Promise<BackgroundJob[]> {
+  return invoke<BackgroundJob[]>('companion_list_jobs', {
+    onlyUnresolved: onlyUnresolved ?? null,
+    limit: limit ?? null,
+  });
+}
+
+export async function companionGetJob(id: string): Promise<BackgroundJob | null> {
+  return invoke<BackgroundJob | null>('companion_get_job', { id });
+}
+
+export async function companionEnqueueJob(
+  kind: string,
+  params?: Record<string, unknown>,
+  projectId?: string,
+): Promise<string> {
+  return invoke<string>('companion_enqueue_job', {
+    kind,
+    params: params ?? null,
+    projectId: projectId ?? null,
+  });
 }
 
 export async function companionListReflections(

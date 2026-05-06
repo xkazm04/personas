@@ -24,12 +24,13 @@ const TASKS = {
   i18n:      "scripts/i18n/gen-types.mjs",
   connectors:"scripts/generate-connector-seed.mjs",
   checksums: "scripts/generate-template-checksums.mjs",
+  "n8n-limits": "scripts/generate-n8n-limits.mjs",
   "host-check": "scripts/check-build-cache.mjs",
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "connectors", "host-check"],
-  prebuild: ["commands", "i18n", "connectors", "checksums"],
+  predev:   ["commands", "i18n", "connectors", "n8n-limits", "host-check"],
+  prebuild: ["commands", "i18n", "connectors", "n8n-limits", "checksums"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

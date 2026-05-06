@@ -25,8 +25,7 @@ use super::n8n_transform::{
 /// Returns `Err(AppError::Validation)` if the template is known but its
 /// content does not match the expected hash (possible tampering).
 fn check_template_integrity(template_name: &str, content_json: &str) -> Result<(), AppError> {
-    let integrity =
-        crate::engine::template_checksums::verify_template(template_name, content_json);
+    let integrity = crate::engine::template_checksums::verify_template(template_name, content_json);
     if integrity.is_known_template && !integrity.valid {
         tracing::warn!(
             template = %template_name,
@@ -101,7 +100,9 @@ fn get_adopt_claude_session(adopt_id: &str) -> Option<String> {
     ADOPT_JOBS.read_extra(adopt_id, |extra| extra.claude_session_id.clone())?
 }
 
-fn get_adopt_snapshot_internal(adopt_id: &str) -> Option<crate::background_job::BackgroundTaskSnapshot<AdoptSnapshotExtras>> {
+fn get_adopt_snapshot_internal(
+    adopt_id: &str,
+) -> Option<crate::background_job::BackgroundTaskSnapshot<AdoptSnapshotExtras>> {
     sweep_adopt_jobs();
     ADOPT_JOBS.get_task_snapshot(adopt_id, |extra| AdoptSnapshotExtras {
         adopt_id: adopt_id.to_string(),
@@ -122,12 +123,18 @@ pub fn list_generate_jobs() -> Vec<crate::background_job::JobSnapshot> {
 }
 
 /// Cancel an adopt job (non-command wrapper for workflows).
-pub fn cancel_adopt_job(app: &tauri::AppHandle, adopt_id: &str) -> Result<(), crate::error::AppError> {
+pub fn cancel_adopt_job(
+    app: &tauri::AppHandle,
+    adopt_id: &str,
+) -> Result<(), crate::error::AppError> {
     ADOPT_JOBS.cancel(app, adopt_id)
 }
 
 /// Cancel a generate job (non-command wrapper for workflows).
-pub fn cancel_generate_job(app: &tauri::AppHandle, gen_id: &str) -> Result<(), crate::error::AppError> {
+pub fn cancel_generate_job(
+    app: &tauri::AppHandle,
+    gen_id: &str,
+) -> Result<(), crate::error::AppError> {
     GEN_JOBS.cancel(app, gen_id)
 }
 
@@ -195,12 +202,20 @@ pub async fn start_template_adopt_background(
     check_template_integrity(&template_name, &design_result_json)?;
 
     let cancel_token = CancellationToken::new();
-    ADOPT_JOBS.insert_running(adopt_id.clone(), cancel_token.clone(), AdoptExtra::default())?;
+    ADOPT_JOBS.insert_running(
+        adopt_id.clone(),
+        cancel_token.clone(),
+        AdoptExtra::default(),
+    )?;
     ADOPT_JOBS.set_status(&app, &adopt_id, "running", None);
 
     // Determine if this is an adjustment re-run or initial transform
-    let is_adjustment = adjustment_request.as_ref().is_some_and(|a| !a.trim().is_empty())
-        || previous_draft_json.as_ref().is_some_and(|d| !d.trim().is_empty());
+    let is_adjustment = adjustment_request
+        .as_ref()
+        .is_some_and(|a| !a.trim().is_empty())
+        || previous_draft_json
+            .as_ref()
+            .is_some_and(|d| !d.trim().is_empty());
 
     let app_handle = app.clone();
     let adopt_id_for_task = adopt_id.clone();
@@ -264,7 +279,9 @@ pub async fn start_template_adopt_background(
                 Ok((None, false)) => {
                     // No questions and no persona -- unusual, treat as failure
                     handle_adopt_result(
-                        Err(AppError::Internal("No output from unified transform".into())),
+                        Err(AppError::Internal(
+                            "No output from unified transform".into(),
+                        )),
                         &app_handle,
                         &adopt_id_for_task,
                         &template_name_clone,
@@ -344,7 +361,11 @@ pub async fn continue_template_adopt(
             if !unknown.is_empty() {
                 return Err(AppError::Validation(format!(
                     "Unknown question IDs in answers: {}",
-                    unknown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ")
+                    unknown
+                        .iter()
+                        .map(|s| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )));
             }
         }
@@ -486,16 +507,20 @@ pub fn confirm_template_adopt_draft(
         }
 
         // Atomic import: persona + tools + triggers in a single SQLite transaction
-        let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
-            &state.db,
-            &draft,
-            None, // no n8n session for template adopt
-        )?;
+        let (response, _import_result) =
+            super::n8n_transform::confirmation::create_persona_atomically(
+                &state.db, &draft, None, // no n8n session for template adopt
+            )?;
 
         // Track adoption count for the source template (with audit log)
-        let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
+        let created_persona_id = response
+            .get("persona")
+            .and_then(|p| p.get("id"))
+            .and_then(|v| v.as_str());
         if let Some(name) = template_name.as_deref().or(draft.name.as_deref()) {
-            if let Err(e) = reviews_repo::increment_adoption_count(&state.db, name, created_persona_id) {
+            if let Err(e) =
+                reviews_repo::increment_adoption_count(&state.db, name, created_persona_id)
+            {
                 tracing::warn!(template = %name, error = %e, "Failed to increment adoption count");
             }
         }
@@ -527,11 +552,15 @@ pub fn instant_adopt_template_inner(
     template_name: String,
     design_result_json: String,
 ) -> Result<serde_json::Value, AppError> {
-    use super::n8n_transform::types::{N8nPersonaOutput, N8nToolDraft, N8nTriggerDraft, N8nConnectorRef};
+    use super::n8n_transform::types::{
+        N8nConnectorRef, N8nPersonaOutput, N8nToolDraft, N8nTriggerDraft,
+    };
 
     tracing::info!(template_id = %template_name, "instant_adopt_template: start");
     if design_result_json.trim().is_empty() {
-        return Err(AppError::Validation("Design result JSON cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Design result JSON cannot be empty".into(),
+        ));
     }
     validate_json_field("design_result_json", &design_result_json)?;
 
@@ -542,12 +571,14 @@ pub fn instant_adopt_template_inner(
     let design: serde_json::Value = serde_json::from_str(&design_result_json)
         .map_err(|e| AppError::Validation(format!("Invalid design result JSON: {e}")))?;
 
-    let full_prompt = design.get("full_prompt_markdown")
+    let full_prompt = design
+        .get("full_prompt_markdown")
         .and_then(|v| v.as_str())
         .unwrap_or("You are a helpful AI assistant.")
         .to_string();
 
-    let summary = design.get("summary")
+    let summary = design
+        .get("summary")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .or_else(|| Some(format!("Adopted from template: {template_name}")));
@@ -556,57 +587,115 @@ pub fn instant_adopt_template_inner(
     let structured_prompt = design.get("structured_prompt").cloned();
 
     let persona_meta = design.get("persona_meta");
-    let icon = persona_meta.and_then(|m| m.get("icon")).and_then(|v| v.as_str()).map(|s| s.to_string());
-    let color = persona_meta.and_then(|m| m.get("color")).and_then(|v| v.as_str()).map(|s| s.to_string());
-    let model_profile = persona_meta.and_then(|m| m.get("model_profile")).and_then(|v| v.as_str()).map(|s| s.to_string());
+    let icon = persona_meta
+        .and_then(|m| m.get("icon"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let color = persona_meta
+        .and_then(|m| m.get("color"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let model_profile = persona_meta
+        .and_then(|m| m.get("model_profile"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     let persona_name = persona_meta
-        .and_then(|m| m.get("name")).and_then(|v| v.as_str())
+        .and_then(|m| m.get("name"))
+        .and_then(|v| v.as_str())
         .filter(|n| !n.trim().is_empty())
         .map(|s| s.to_string())
         .unwrap_or(template_name.clone());
 
     // Build tools from suggested_tools
-    let tools: Option<Vec<N8nToolDraft>> = design.get("suggested_tools")
+    let tools: Option<Vec<N8nToolDraft>> = design
+        .get("suggested_tools")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|t| {
-            let name = t.as_str().map(|s| s.to_string())
-                .or_else(|| t.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()))?;
-            Some(N8nToolDraft {
-                name: name.clone(),
-                category: t.get("category").and_then(|v| v.as_str()).unwrap_or("api").to_string(),
-                description: t.get("description").and_then(|v| v.as_str()).unwrap_or(&name).to_string(),
-                requires_credential_type: t.get("requires_credential_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                input_schema: t.get("input_schema").cloned(),
-                implementation_guide: t.get("implementation_guide").and_then(|v| v.as_str()).map(|s| s.to_string()),
-            })
-        }).collect());
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|t| {
+                    let name = t.as_str().map(|s| s.to_string()).or_else(|| {
+                        t.get("name")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string())
+                    })?;
+                    Some(N8nToolDraft {
+                        name: name.clone(),
+                        category: t
+                            .get("category")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("api")
+                            .to_string(),
+                        description: t
+                            .get("description")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or(&name)
+                            .to_string(),
+                        requires_credential_type: t
+                            .get("requires_credential_type")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                        input_schema: t.get("input_schema").cloned(),
+                        implementation_guide: t
+                            .get("implementation_guide")
+                            .and_then(|v| v.as_str())
+                            .map(|s| s.to_string()),
+                    })
+                })
+                .collect()
+        });
 
     // Build triggers from suggested_triggers
-    let triggers: Option<Vec<N8nTriggerDraft>> = design.get("suggested_triggers")
+    let triggers: Option<Vec<N8nTriggerDraft>> = design
+        .get("suggested_triggers")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().map(|t| {
-            N8nTriggerDraft {
-                trigger_type: t.get("trigger_type").and_then(|v| v.as_str()).unwrap_or("manual").to_string(),
-                config: t.get("config").cloned(),
-                description: t.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
-                use_case_id: None,
-            }
-        }).collect());
+        .map(|arr| {
+            arr.iter()
+                .map(|t| N8nTriggerDraft {
+                    trigger_type: t
+                        .get("trigger_type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("manual")
+                        .to_string(),
+                    config: t.get("config").cloned(),
+                    description: t
+                        .get("description")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string()),
+                    use_case_id: None,
+                })
+                .collect()
+        });
 
     // Build required_connectors from suggested_connectors
-    let required_connectors: Option<Vec<N8nConnectorRef>> = design.get("suggested_connectors")
+    let required_connectors: Option<Vec<N8nConnectorRef>> = design
+        .get("suggested_connectors")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|c| {
-            let name = c.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-            if name.is_empty() { return None; }
-            Some(N8nConnectorRef {
-                name: name.clone(),
-                n8n_credential_type: c.get("auth_type").and_then(|v| v.as_str()).unwrap_or("api_key").to_string(),
-                has_credential: true,
-            })
-        }).collect());
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|c| {
+                    let name = c
+                        .get("name")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .to_string();
+                    if name.is_empty() {
+                        return None;
+                    }
+                    Some(N8nConnectorRef {
+                        name: name.clone(),
+                        n8n_credential_type: c
+                            .get("auth_type")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("api_key")
+                            .to_string(),
+                        has_credential: true,
+                    })
+                })
+                .collect()
+        });
 
-    let notification_channels = design.get("suggested_notification_channels")
+    let notification_channels = design
+        .get("suggested_notification_channels")
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
     // Build proper DesignContextData-format design_context instead of raw design_result
@@ -627,7 +716,8 @@ pub fn instant_adopt_template_inner(
             "creationMethod": "template_adopt"
         }
     });
-    let design_context_str = serde_json::to_string(&design_context_obj).unwrap_or_else(|_| "{}".to_string());
+    let design_context_str =
+        serde_json::to_string(&design_context_obj).unwrap_or_else(|_| "{}".to_string());
 
     // Phase 17: derive template_category from the instruction text + connector names
     // so Simple-mode's tier-3 illustration resolver can bucket this persona.
@@ -662,15 +752,17 @@ pub fn instant_adopt_template_inner(
     let draft = super::n8n_transform::types::normalize_n8n_persona_draft(draft, &template_name);
 
     // Atomic create: persona + tools + triggers in one transaction
-    let (response, _import_result) = super::n8n_transform::confirmation::create_persona_atomically(
-        &state.db,
-        &draft,
-        None,
-    )?;
+    let (response, _import_result) =
+        super::n8n_transform::confirmation::create_persona_atomically(&state.db, &draft, None)?;
 
     // Track adoption count
-    let created_persona_id = response.get("persona").and_then(|p| p.get("id")).and_then(|v| v.as_str());
-    if let Err(e) = reviews_repo::increment_adoption_count(&state.db, &template_name, created_persona_id) {
+    let created_persona_id = response
+        .get("persona")
+        .and_then(|p| p.get("id"))
+        .and_then(|v| v.as_str());
+    if let Err(e) =
+        reviews_repo::increment_adoption_count(&state.db, &template_name, created_persona_id)
+    {
         tracing::warn!(template = %template_name, error = %e, "Failed to increment adoption count");
     }
 
@@ -769,9 +861,10 @@ Rules:
     cli_args.args.push("claude-sonnet-4-6".to_string());
 
     let llm_start = std::time::Instant::now();
-    let (output, _session_id, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, None, None, None, 180)
-        .await
-        .map_err(AppError::Internal)?;
+    let (output, _session_id, _) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, None, None, None, 180)
+            .await
+            .map_err(AppError::Internal)?;
     let elapsed_ms = llm_start.elapsed().as_millis();
     tracing::info!(elapsed_ms = %elapsed_ms, phase = "unified_questions", "LLM call completed");
 
@@ -788,9 +881,7 @@ Rules:
             }
             None
         })
-        .ok_or_else(|| {
-            AppError::Internal("No valid JSON in question generation output".into())
-        })?;
+        .ok_or_else(|| AppError::Internal("No valid JSON in question generation output".into()))?;
 
     let questions: serde_json::Value = serde_json::from_str(&json_str)?;
     let question_count = questions.as_array().map_or(0, |a| a.len());
@@ -815,10 +906,8 @@ fn handle_adopt_result(
             // instruction stand-in since that's what the LLM authored.
             if draft.template_category.is_none() {
                 let connectors_json = draft.required_connectors.as_ref().and_then(|conns| {
-                    serde_json::to_string(
-                        &conns.iter().map(|c| c.name.clone()).collect::<Vec<_>>(),
-                    )
-                    .ok()
+                    serde_json::to_string(&conns.iter().map(|c| c.name.clone()).collect::<Vec<_>>())
+                        .ok()
                 });
                 draft.template_category = Some(super::reviews::infer_template_category(
                     &draft.system_prompt,
@@ -878,7 +967,10 @@ fn summarize_design_result(design_result_json: &str) -> String {
         if let Some(cs) = sp.get("customSections") {
             sp_summary.insert("customSections".into(), cs.clone());
         }
-        summary.insert("structured_prompt".into(), serde_json::Value::Object(sp_summary));
+        summary.insert(
+            "structured_prompt".into(),
+            serde_json::Value::Object(sp_summary),
+        );
     }
 
     // Always include: connectors (critical for credential questions)
@@ -887,9 +979,17 @@ fn summarize_design_result(design_result_json: &str) -> String {
     }
 
     // Always include: triggers, tools, summary, service_flow
-    for key in &["suggested_tools", "suggested_triggers", "summary", "service_flow",
-                  "suggested_notification_channels", "suggested_event_subscriptions",
-                  "protocol_capabilities", "adoption_questions", "adoption_requirements"] {
+    for key in &[
+        "suggested_tools",
+        "suggested_triggers",
+        "summary",
+        "service_flow",
+        "suggested_notification_channels",
+        "suggested_event_subscriptions",
+        "protocol_capabilities",
+        "adoption_questions",
+        "adoption_requirements",
+    ] {
         if let Some(v) = design.get(*key) {
             summary.insert(key.to_string(), v.clone());
         }
@@ -1122,11 +1222,7 @@ async fn run_unified_adopt_turn1(
 
     let draft = parse_persona_output(&output_text, template_name)?;
 
-    ADOPT_JOBS.emit_line(
-        app,
-        adopt_id,
-        "[Milestone] Draft ready for review.",
-    );
+    ADOPT_JOBS.emit_line(app, adopt_id, "[Milestone] Draft ready for review.");
 
     Ok((Some(draft), false))
 }
@@ -1239,9 +1335,10 @@ Return ONLY valid JSON (no markdown fences, no commentary):
         ADOPT_JOBS.emit_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
     };
     let llm_start = std::time::Instant::now();
-    let (output_text, _, _) = run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), None, None, 420)
-        .await
-        .map_err(AppError::Internal)?;
+    let (output_text, _, _) =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&on_line2), None, None, 420)
+            .await
+            .map_err(AppError::Internal)?;
     let elapsed_ms = llm_start.elapsed().as_millis();
     tracing::info!(elapsed_ms = %elapsed_ms, adopt_id = %adopt_id, phase = "continue_adopt", "LLM call completed");
 
@@ -1284,8 +1381,9 @@ fn build_template_adopt_prompt(
 
     let user_answers_section = user_answers_json
         .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
-        .map(|a| format!(
-            r#"
+        .map(|a| {
+            format!(
+                r#"
 ## User Configuration Answers (MUST shape the persona)
 The user answered these questions during adoption. Each answer has a "dimension" field.
 You MUST structurally integrate every answer into the corresponding persona section:
@@ -1298,7 +1396,8 @@ You MUST structurally integrate every answer into the corresponding persona sect
 
 {a}
 "#
-        ))
+            )
+        })
         .unwrap_or_default();
 
     let connector_swaps_section = connector_swaps_json
@@ -1529,22 +1628,27 @@ pub fn save_custom_template(
     }
 
     // Extract connectors_used from the design result if available
-    let connectors_used: Option<String> = serde_json::from_str::<serde_json::Value>(&design_result_json)
-        .ok()
-        .and_then(|design| {
-            design.get("suggested_connectors").and_then(|conns| {
-                let names: Vec<String> = conns
-                    .as_array()?
-                    .iter()
-                    .filter_map(|c| c.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
-                    .collect();
-                if names.is_empty() {
-                    None
-                } else {
-                    Some(names.join(","))
-                }
-            })
-        });
+    let connectors_used: Option<String> =
+        serde_json::from_str::<serde_json::Value>(&design_result_json)
+            .ok()
+            .and_then(|design| {
+                design.get("suggested_connectors").and_then(|conns| {
+                    let names: Vec<String> = conns
+                        .as_array()?
+                        .iter()
+                        .filter_map(|c| {
+                            c.get("name")
+                                .and_then(|n| n.as_str())
+                                .map(|s| s.to_string())
+                        })
+                        .collect();
+                    if names.is_empty() {
+                        None
+                    } else {
+                        Some(names.join(","))
+                    }
+                })
+            });
 
     let now = chrono::Utc::now().to_rfc3339();
     let test_case_id = uuid::Uuid::new_v4().to_string();
@@ -1588,7 +1692,11 @@ async fn run_template_generate_job(
 ) -> Result<String, AppError> {
     tracing::info!(gen_id = %gen_id, "Starting template generation");
 
-    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Preparing template generation prompt...");
+    GEN_JOBS.emit_line(
+        app,
+        gen_id,
+        "[Milestone] Preparing template generation prompt...",
+    );
 
     let prompt_text = format!(
         r##"You are a senior Personas architect. Generate a complete template design (DesignAnalysisResult)
@@ -1705,7 +1813,11 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     let elapsed_ms = llm_start.elapsed().as_millis();
     tracing::info!(elapsed_ms = %elapsed_ms, gen_id = %gen_id, phase = "generate_template", "LLM call completed");
 
-    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Claude output received. Extracting design JSON...");
+    GEN_JOBS.emit_line(
+        app,
+        gen_id,
+        "[Milestone] Claude output received. Extracting design JSON...",
+    );
 
     // Extract JSON from output
     let json_str = extract_first_json_object(&output_text).ok_or_else(|| {
@@ -1716,7 +1828,11 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     let _: serde_json::Value = serde_json::from_str(&json_str)
         .map_err(|e| AppError::Internal(format!("Invalid JSON in generation output: {e}")))?;
 
-    GEN_JOBS.emit_line(app, gen_id, "[Milestone] Template design generated successfully.");
+    GEN_JOBS.emit_line(
+        app,
+        gen_id,
+        "[Milestone] Template design generated successfully.",
+    );
 
     Ok(json_str)
 }
@@ -1803,7 +1919,9 @@ pub fn verify_template_integrity(
     content: String,
 ) -> Result<crate::engine::template_checksums::TemplateIntegrityResult, AppError> {
     require_auth_sync(&state)?;
-    Ok(crate::engine::template_checksums::verify_template(&path, &content))
+    Ok(crate::engine::template_checksums::verify_template(
+        &path, &content,
+    ))
 }
 
 /// Input for batch template verification.
@@ -1823,20 +1941,16 @@ pub fn verify_template_integrity_batch(
     templates: Vec<TemplateVerifyEntry>,
 ) -> Result<crate::engine::template_checksums::BatchIntegrityResult, AppError> {
     require_auth_sync(&state)?;
-    let pairs: Vec<(String, String)> = templates
-        .into_iter()
-        .map(|t| (t.path, t.content))
-        .collect();
-    Ok(crate::engine::template_checksums::verify_templates_batch(&pairs))
+    let pairs: Vec<(String, String)> = templates.into_iter().map(|t| (t.path, t.content)).collect();
+    Ok(crate::engine::template_checksums::verify_templates_batch(
+        &pairs,
+    ))
 }
 
 /// Get the count of templates in the backend's embedded checksum manifest.
 /// Useful for the frontend to detect manifest staleness.
 #[tauri::command]
-pub fn get_template_manifest_count(
-    state: State<'_, Arc<AppState>>,
-) -> Result<usize, AppError> {
+pub fn get_template_manifest_count(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
     require_auth_sync(&state)?;
     Ok(crate::engine::template_checksums::manifest_entry_count())
 }
-

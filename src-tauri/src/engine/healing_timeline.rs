@@ -143,10 +143,13 @@ pub fn run_healing_analysis(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<(HealingAnalysisResult, Vec<HealingRetryRequest>), AppError> {
-    // Revert stale auto_fix_pending issues back to open (TTL: 10 minutes).
-    // This prevents zombie healing issues when the retry job crashes or the
-    // app closes mid-healing.
-    repo::revert_stale_auto_fix_pending(pool, persona_id, 10);
+    // Per-persona stale-pending sweep, opportunistic at analysis time.
+    // The deterministic safety net is the scheduler-driven global sweep
+    // (`HealingTtlSubscription`); this call covers the common case where a
+    // fresh failure arrives for a persona that already has stale pending
+    // rows, so the new analysis sees a clean slate without waiting for the
+    // next scheduler tick.
+    repo::revert_stale_auto_fix_pending(pool, persona_id, repo::AUTO_FIX_PENDING_TTL_MINUTES);
 
     let failures = exec_repo::get_recent_failures(pool, persona_id, 10)?;
 
@@ -195,17 +198,30 @@ pub fn run_healing_analysis(
             .unwrap_or(300_000);
 
         let category = healing::classify_error(error, timed_out, session_limit);
-        let kb_hint =
-            resolve_knowledge_hint_with_cache(pool, &category, tools.as_deref(), connectors.as_deref());
-        let diagnosis =
-            healing::diagnose(&category, error, timeout_ms, consecutive, exec.retry_count, kb_hint.as_ref());
+        let kb_hint = resolve_knowledge_hint_with_cache(
+            pool,
+            &category,
+            tools.as_deref(),
+            connectors.as_deref(),
+        );
+        let diagnosis = healing::diagnose(
+            &category,
+            error,
+            timeout_ms,
+            consecutive,
+            exec.retry_count,
+            kb_hint.as_ref(),
+        );
 
         let issue = match repo::create(
             pool,
             persona_id,
             &diagnosis.title,
             &diagnosis.description,
-            diagnosis.title.to_ascii_lowercase().contains("circuit breaker"),
+            diagnosis
+                .title
+                .to_ascii_lowercase()
+                .contains("circuit breaker"),
             Some(&diagnosis.severity),
             Some(&diagnosis.db_category),
             Some(&exec.id),
@@ -214,8 +230,11 @@ pub fn run_healing_analysis(
             Some(issue) => issue,
             None => {
                 repo::create_audit_entry(
-                    pool, Some(persona_id), Some(&exec.id),
-                    "dedup_skipped", "healing_analysis",
+                    pool,
+                    Some(persona_id),
+                    Some(&exec.id),
+                    "dedup_skipped",
+                    "healing_analysis",
                     "Healing issue creation skipped (duplicate for this persona+execution)",
                     Some(&diagnosis.title),
                 );

@@ -18,8 +18,8 @@ use crate::AppState;
 
 /// Hash file contents with SHA-256, return hex string prefixed with "sha256:".
 fn hash_file(path: &Path) -> Result<String, AppError> {
-    let bytes = std::fs::read(path)
-        .map_err(|e| AppError::Validation(format!("Cannot read file: {e}")))?;
+    let bytes =
+        std::fs::read(path).map_err(|e| AppError::Validation(format!("Cannot read file: {e}")))?;
     Ok(hash_bytes(&bytes))
 }
 
@@ -40,8 +40,7 @@ pub fn sign_document(
 ) -> Result<SignDocumentResult, AppError> {
     require_auth_sync(&state)?;
 
-    let path = validate_file_access_path(&file_path, None)
-        .map_err(AppError::Validation)?;
+    let path = validate_file_access_path(&file_path, None).map_err(AppError::Validation)?;
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
     }

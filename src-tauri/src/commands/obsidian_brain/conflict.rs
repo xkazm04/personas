@@ -13,7 +13,22 @@ pub enum ThreeWayResult {
     AppChanged,
     /// Only the vault side changed — safe to pull.
     VaultChanged,
-    /// Both sides changed — conflict.
+    /// Both sides changed AND ended up with identical content (lucky
+    /// convergence). Functionally safe — there's nothing to merge — but
+    /// informationally distinct from `NoChange`: the user edited both sides
+    /// and the system avoided a real conflict by chance. Surfaced as a
+    /// confirmation toast in the SyncBridge UI so the audit trail records
+    /// "both sides edited X and ended up identical — keeping shared
+    /// version".
+    ///
+    /// Carries both hashes (which are equal) so callers can update sync
+    /// state to the converged hash and log the event with full context.
+    ConvergedConflict {
+        app_hash: String,
+        vault_hash: String,
+        base_hash: String,
+    },
+    /// Both sides changed and diverged — real conflict.
     Conflict(SyncConflict),
 }
 
@@ -37,9 +52,17 @@ pub fn three_way_compare(
         (true, false) => ThreeWayResult::AppChanged,
         (false, true) => ThreeWayResult::VaultChanged,
         (true, true) => {
-            // Both changed — but if they converged to the same content, no conflict
+            // Both sides changed. If they converged to the same content,
+            // surface that as a distinct event rather than collapsing it
+            // into NoChange — the user did edit both sides, and we want
+            // the audit trail to show that a real conflict was avoided
+            // by chance.
             if app_hash == vault_hash {
-                return ThreeWayResult::NoChange;
+                return ThreeWayResult::ConvergedConflict {
+                    app_hash,
+                    vault_hash,
+                    base_hash: base_hash.to_string(),
+                };
             }
             ThreeWayResult::Conflict(SyncConflict {
                 id: Uuid::new_v4().to_string(),
@@ -53,6 +76,60 @@ pub fn three_way_compare(
                 base_hash: base_hash.to_string(),
                 detected_at: Utc::now().to_rfc3339(),
             })
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn no_change_when_neither_side_moves() {
+        let base = compute_content_hash("hello");
+        let r = three_way_compare("memory", "id", "p", &base, "hello", "hello");
+        assert!(matches!(r, ThreeWayResult::NoChange));
+    }
+
+    #[test]
+    fn app_only_change_pushes() {
+        let base = compute_content_hash("hello");
+        let r = three_way_compare("memory", "id", "p", &base, "hello v2", "hello");
+        assert!(matches!(r, ThreeWayResult::AppChanged));
+    }
+
+    #[test]
+    fn vault_only_change_pulls() {
+        let base = compute_content_hash("hello");
+        let r = three_way_compare("memory", "id", "p", &base, "hello", "hello v2");
+        assert!(matches!(r, ThreeWayResult::VaultChanged));
+    }
+
+    #[test]
+    fn divergent_edits_conflict() {
+        let base = compute_content_hash("hello");
+        let r = three_way_compare("memory", "id", "p", &base, "app side", "vault side");
+        assert!(matches!(r, ThreeWayResult::Conflict(_)));
+    }
+
+    #[test]
+    fn convergent_edits_yield_converged_conflict_not_no_change() {
+        // Both sides moved off base AND landed on identical content. This
+        // must be reported as ConvergedConflict, not NoChange — the latter
+        // hides the audit trail from the user.
+        let base = compute_content_hash("hello");
+        let r = three_way_compare("memory", "id", "p", &base, "shared", "shared");
+        match r {
+            ThreeWayResult::ConvergedConflict {
+                app_hash,
+                vault_hash,
+                base_hash,
+            } => {
+                assert_eq!(app_hash, vault_hash);
+                assert_ne!(app_hash, base_hash);
+                assert_eq!(base_hash, base);
+            }
+            _ => panic!("expected ConvergedConflict for lucky convergence"),
         }
     }
 }

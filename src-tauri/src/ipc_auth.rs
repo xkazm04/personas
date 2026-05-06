@@ -82,9 +82,8 @@ fn is_ipc_validated() -> bool {
 
 /// Static set of all commands that require IPC session token validation.
 /// This includes all credential/vault commands plus other sensitive operations.
-static PRIVILEGED_COMMANDS_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
-    PRIVILEGED_COMMANDS.iter().copied().collect()
-});
+static PRIVILEGED_COMMANDS_SET: LazyLock<HashSet<&'static str>> =
+    LazyLock::new(|| PRIVILEGED_COMMANDS.iter().copied().collect());
 
 /// Returns true if the command requires IPC session token validation.
 pub fn is_privileged_command(command: &str) -> bool {
@@ -377,13 +376,11 @@ pub async fn require_cloud_auth(state: &Arc<AppState>, command: &str) -> Result<
                 "Blocked offline-only cloud IPC call -- no access token"
             );
             return Err(AppError::Auth(
-                "Cloud features are unavailable in offline mode. Reconnect to use this feature.".into(),
+                "Cloud features are unavailable in offline mode. Reconnect to use this feature."
+                    .into(),
             ));
         }
-        tracing::warn!(
-            command = command,
-            "Blocked unauthenticated cloud IPC call"
-        );
+        tracing::warn!(command = command, "Blocked unauthenticated cloud IPC call");
         return Err(AppError::Auth(
             "Sign in with Google to use cloud features.".into(),
         ));
@@ -426,17 +423,13 @@ pub fn wrap_invoke_handler<R: tauri::Runtime>(
         if is_privileged_command(&cmd) {
             // Extract and validate the IPC session token from headers
             let token_valid = match IPC_SESSION_TOKEN.get() {
-                Some(expected) => {
-                    match invoke.message.headers().get("x-ipc-token") {
-                        Some(provided) => {
-                            match provided.to_str() {
-                                Ok(provided_str) => constant_time_eq(provided_str, expected),
-                                Err(_) => false,
-                            }
-                        }
-                        None => false,
-                    }
-                }
+                Some(expected) => match invoke.message.headers().get("x-ipc-token") {
+                    Some(provided) => match provided.to_str() {
+                        Ok(provided_str) => constant_time_eq(provided_str, expected),
+                        Err(_) => false,
+                    },
+                    None => false,
+                },
                 None => {
                     // Token not initialised -- fail closed
                     tracing::error!(
@@ -560,9 +553,8 @@ pub fn generate_ipc_auth_script(token: &str) -> String {
 // ---------------------------------------------------------------------------
 
 /// Static HashSet for O(1) cloud command lookup.
-static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> = LazyLock::new(|| {
-    CLOUD_COMMANDS.iter().copied().collect()
-});
+static CLOUD_COMMANDS_SET: LazyLock<HashSet<&'static str>> =
+    LazyLock::new(|| CLOUD_COMMANDS.iter().copied().collect());
 
 /// Commands that require cloud authentication (Google OAuth).
 /// Read-only config/status checks (cloud_get_config, cloud_status,
@@ -660,7 +652,10 @@ mod tests {
         // Write/delete operations are privileged
         assert_eq!(command_tier("create_credential"), AuthTier::Privileged);
         assert_eq!(command_tier("delete_credential"), AuthTier::Privileged);
-        assert_eq!(command_tier("scan_credential_sources"), AuthTier::Privileged);
+        assert_eq!(
+            command_tier("scan_credential_sources"),
+            AuthTier::Privileged
+        );
         assert_eq!(command_tier("execute_api_request"), AuthTier::Privileged);
         assert_eq!(command_tier("sign_document"), AuthTier::Privileged);
     }
@@ -707,4 +702,3 @@ mod tests {
         assert!(token.chars().all(|c| c.is_ascii_hexdigit()));
     }
 }
-

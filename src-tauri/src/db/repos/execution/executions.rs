@@ -1,6 +1,8 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{ExecutionCounts, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus};
+use crate::db::models::{
+    ExecutionCounts, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus,
+};
 use crate::db::DbPool;
 use crate::engine::types::ExecutionState;
 use crate::error::AppError;
@@ -30,8 +32,12 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         completed_at: row.get("completed_at")?,
         created_at: row.get("created_at")?,
         execution_config: row.get("execution_config").unwrap_or(None),
-        log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
-        is_simulation: row.get::<_, Option<bool>>("is_simulation")?.unwrap_or(false),
+        log_truncated: row
+            .get::<_, Option<bool>>("log_truncated")?
+            .unwrap_or(false),
+        is_simulation: row
+            .get::<_, Option<bool>>("is_simulation")?
+            .unwrap_or(false),
     })
 }
 
@@ -40,20 +46,25 @@ pub fn get_by_persona_id(
     persona_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_by_persona_id", {
-        let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        // Exclude ops chat executions (input_data contains "_ops") — those are
-        // conversational queries from the Chat tab, not real agent executions.
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_executions
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_by_persona_id",
+        {
+            let limit = limit.unwrap_or(50);
+            let conn = pool.get()?;
+            // Exclude ops chat executions (input_data contains "_ops") — those are
+            // conversational queries from the Chat tab, not real agent executions.
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_executions
              WHERE persona_id = ?1
                AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')
              ORDER BY created_at DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Fetch executions across all personas in a single query with persona metadata.
@@ -64,70 +75,82 @@ pub fn get_all_global(
     status: Option<&str>,
     persona_id: Option<&str>,
 ) -> Result<Vec<GlobalExecutionRow>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_all_global", {
-    let limit = limit.unwrap_or(200);
-    let conn = pool.get()?;
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_all_global",
+        {
+            let limit = limit.unwrap_or(200);
+            let conn = pool.get()?;
 
-    let base = "SELECT e.*, \
+            let base = "SELECT e.*, \
                 COALESCE(p.name, 'Unknown') as persona_name, \
                 p.icon as persona_icon, \
                 p.color as persona_color \
              FROM persona_executions e \
              LEFT JOIN personas p ON p.id = e.persona_id";
 
-    let mut qb = crate::db::query_builder::QueryBuilder::new();
+            let mut qb = crate::db::query_builder::QueryBuilder::new();
 
-    // Exclude ops chat executions from all execution lists
-    qb.where_raw(|_| "(e.input_data IS NULL OR e.input_data NOT LIKE '%\"_ops\"%')".to_string(), vec![]);
-    if let Some(s) = status {
-        qb.where_eq("e.status", s.to_string());
-    }
-    if let Some(pid) = persona_id {
-        qb.where_eq("e.persona_id", pid.to_string());
-    }
-    qb.order_by("e.created_at", "DESC");
-    qb.limit(limit);
+            // Exclude ops chat executions from all execution lists
+            qb.where_raw(
+                |_| "(e.input_data IS NULL OR e.input_data NOT LIKE '%\"_ops\"%')".to_string(),
+                vec![],
+            );
+            if let Some(s) = status {
+                qb.where_eq("e.status", s.to_string());
+            }
+            if let Some(pid) = persona_id {
+                qb.where_eq("e.persona_id", pid.to_string());
+            }
+            qb.order_by("e.created_at", "DESC");
+            qb.limit(limit);
 
-    let sql = qb.build_select(base);
-    let mut stmt = conn.prepare(&sql)?;
+            let sql = qb.build_select(base);
+            let mut stmt = conn.prepare(&sql)?;
 
-    let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
-        Ok(GlobalExecutionRow {
-            id: row.get("id")?,
-            persona_id: row.get("persona_id")?,
-            trigger_id: row.get("trigger_id")?,
-            use_case_id: row.get("use_case_id")?,
-            status: row.get("status")?,
-            input_data: row.get("input_data")?,
-            output_data: row.get("output_data")?,
-            claude_session_id: row.get("claude_session_id")?,
-            log_file_path: row.get("log_file_path")?,
-            execution_flows: row.get("execution_flows")?,
-            model_used: row.get("model_used")?,
-            input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
-            output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
-            cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
-            error_message: row.get("error_message")?,
-            duration_ms: row.get("duration_ms")?,
-            tool_steps: row.get("tool_steps")?,
-            retry_of_execution_id: row.get("retry_of_execution_id")?,
-            retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
-            started_at: row.get("started_at")?,
-            completed_at: row.get("completed_at")?,
-            created_at: row.get("created_at")?,
-            execution_config: row.get("execution_config").unwrap_or(None),
-            log_truncated: row.get::<_, Option<bool>>("log_truncated")?.unwrap_or(false),
-            is_simulation: row.get::<_, Option<bool>>("is_simulation")?.unwrap_or(false),
-            persona_name: row.get("persona_name")?,
-            persona_icon: row.get("persona_icon")?,
-            persona_color: row.get("persona_color")?,
-        })
-    };
+            let row_mapper = |row: &Row| -> rusqlite::Result<GlobalExecutionRow> {
+                Ok(GlobalExecutionRow {
+                    id: row.get("id")?,
+                    persona_id: row.get("persona_id")?,
+                    trigger_id: row.get("trigger_id")?,
+                    use_case_id: row.get("use_case_id")?,
+                    status: row.get("status")?,
+                    input_data: row.get("input_data")?,
+                    output_data: row.get("output_data")?,
+                    claude_session_id: row.get("claude_session_id")?,
+                    log_file_path: row.get("log_file_path")?,
+                    execution_flows: row.get("execution_flows")?,
+                    model_used: row.get("model_used")?,
+                    input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
+                    output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
+                    cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+                    error_message: row.get("error_message")?,
+                    duration_ms: row.get("duration_ms")?,
+                    tool_steps: row.get("tool_steps")?,
+                    retry_of_execution_id: row.get("retry_of_execution_id")?,
+                    retry_count: row.get::<_, Option<i64>>("retry_count")?.unwrap_or(0),
+                    started_at: row.get("started_at")?,
+                    completed_at: row.get("completed_at")?,
+                    created_at: row.get("created_at")?,
+                    execution_config: row.get("execution_config").unwrap_or(None),
+                    log_truncated: row
+                        .get::<_, Option<bool>>("log_truncated")?
+                        .unwrap_or(false),
+                    is_simulation: row
+                        .get::<_, Option<bool>>("is_simulation")?
+                        .unwrap_or(false),
+                    persona_name: row.get("persona_name")?,
+                    persona_icon: row.get("persona_icon")?,
+                    persona_color: row.get("persona_color")?,
+                })
+            };
 
-    let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
+            let rows = stmt.query_map(qb.params_ref().as_slice(), row_mapper)?;
 
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Aggregate execution counts by high-level status bucket, optionally
@@ -137,42 +160,46 @@ pub fn count_all_global(
     pool: &DbPool,
     persona_id: Option<&str>,
 ) -> Result<ExecutionCounts, AppError> {
-    timed_query!("persona_executions", "persona_executions::count_all_global", {
-        let conn = pool.get()?;
-        let mut sql = String::from(
-            "SELECT status, COUNT(*) AS n FROM persona_executions \
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_all_global",
+        {
+            let conn = pool.get()?;
+            let mut sql = String::from(
+                "SELECT status, COUNT(*) AS n FROM persona_executions \
              WHERE (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
-        );
-        if persona_id.is_some() {
-            sql.push_str(" AND persona_id = ?1");
-        }
-        sql.push_str(" GROUP BY status");
+            );
+            if persona_id.is_some() {
+                sql.push_str(" AND persona_id = ?1");
+            }
+            sql.push_str(" GROUP BY status");
 
-        let mut stmt = conn.prepare(&sql)?;
-        let mut counts = ExecutionCounts::default();
-        let map_row = |row: &Row| -> rusqlite::Result<(String, i64)> {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        };
-
-        let iter: Box<dyn Iterator<Item = rusqlite::Result<(String, i64)>>> =
-            if let Some(pid) = persona_id {
-                Box::new(stmt.query_map(params![pid], map_row)?)
-            } else {
-                Box::new(stmt.query_map([], map_row)?)
+            let mut stmt = conn.prepare(&sql)?;
+            let mut counts = ExecutionCounts::default();
+            let map_row = |row: &Row| -> rusqlite::Result<(String, i64)> {
+                Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
             };
 
-        for row in iter {
-            let (status, n) = row.map_err(AppError::Database)?;
-            counts.total += n;
-            match status.as_str() {
-                "running" | "pending" => counts.running += n,
-                "completed" => counts.completed += n,
-                "failed" => counts.failed += n,
-                _ => {}
+            let iter: Box<dyn Iterator<Item = rusqlite::Result<(String, i64)>>> =
+                if let Some(pid) = persona_id {
+                    Box::new(stmt.query_map(params![pid], map_row)?)
+                } else {
+                    Box::new(stmt.query_map([], map_row)?)
+                };
+
+            for row in iter {
+                let (status, n) = row.map_err(AppError::Database)?;
+                counts.total += n;
+                match status.as_str() {
+                    "running" | "pending" => counts.running += n,
+                    "completed" => counts.completed += n,
+                    "failed" => counts.failed += n,
+                    _ => {}
+                }
             }
+            Ok(counts)
         }
-        Ok(counts)
-    })
+    )
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> {
@@ -184,9 +211,7 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> 
             row_to_execution,
         )
         .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::NotFound(format!("Execution {id}"))
-            }
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Execution {id}")),
             other => AppError::Database(other),
         })
     })
@@ -201,7 +226,16 @@ pub fn create(
     use_case_id: Option<String>,
 ) -> Result<PersonaExecution, AppError> {
     timed_query!("persona_executions", "persona_executions::create", {
-        create_with_idempotency(pool, persona_id, trigger_id, input_data, model_used, use_case_id, None, false)
+        create_with_idempotency(
+            pool,
+            persona_id,
+            trigger_id,
+            input_data,
+            model_used,
+            use_case_id,
+            None,
+            false,
+        )
     })
 }
 
@@ -222,32 +256,36 @@ pub fn create_with_idempotency(
     idempotency_key: Option<String>,
     is_simulation: bool,
 ) -> Result<PersonaExecution, AppError> {
-    timed_query!("persona_executions", "persona_executions::create_with_idempotency", {
-        // Check for existing execution with this idempotency key
-        if let Some(ref key) = idempotency_key {
-            if let Some(existing) = get_by_idempotency_key(pool, key)? {
-                tracing::info!(
-                    idempotency_key = %key,
-                    execution_id = %existing.id,
-                    "Returning existing execution for idempotency key (dedup)"
-                );
-                return Ok(existing);
+    timed_query!(
+        "persona_executions",
+        "persona_executions::create_with_idempotency",
+        {
+            // Check for existing execution with this idempotency key
+            if let Some(ref key) = idempotency_key {
+                if let Some(existing) = get_by_idempotency_key(pool, key)? {
+                    tracing::info!(
+                        idempotency_key = %key,
+                        execution_id = %existing.id,
+                        "Returning existing execution for idempotency key (dedup)"
+                    );
+                    return Ok(existing);
+                }
             }
-        }
 
-        let id = uuid::Uuid::new_v4().to_string();
-        let now = chrono::Utc::now().to_rfc3339();
+            let id = uuid::Uuid::new_v4().to_string();
+            let now = chrono::Utc::now().to_rfc3339();
 
-        let conn = pool.get()?;
-        conn.execute(
+            let conn = pool.get()?;
+            conn.execute(
             "INSERT INTO persona_executions
              (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
              VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)",
             params![id, persona_id, trigger_id, input_data, model_used, use_case_id, idempotency_key, is_simulation as i64, now],
         )?;
 
-        get_by_id(pool, &id)
-    })
+            get_by_id(pool, &id)
+        }
+    )
 }
 
 /// Look up an execution by its idempotency key.
@@ -255,18 +293,22 @@ pub fn get_by_idempotency_key(
     pool: &DbPool,
     key: &str,
 ) -> Result<Option<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_by_idempotency_key", {
-        let conn = pool.get()?;
-        match conn.query_row(
-            "SELECT * FROM persona_executions WHERE idempotency_key = ?1",
-            params![key],
-            row_to_execution,
-        ) {
-            Ok(exec) => Ok(Some(exec)),
-            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-            Err(e) => Err(AppError::Database(e)),
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_by_idempotency_key",
+        {
+            let conn = pool.get()?;
+            match conn.query_row(
+                "SELECT * FROM persona_executions WHERE idempotency_key = ?1",
+                params![key],
+                row_to_execution,
+            ) {
+                Ok(exec) => Ok(Some(exec)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
         }
-    })
+    )
 }
 
 pub fn get_by_trigger_id(
@@ -274,15 +316,20 @@ pub fn get_by_trigger_id(
     trigger_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_by_trigger_id", {
-        let limit = limit.unwrap_or(10);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_by_trigger_id",
+        {
+            let limit = limit.unwrap_or(10);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM persona_executions WHERE trigger_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![trigger_id, limit], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![trigger_id, limit], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn get_by_use_case_id(
@@ -291,15 +338,20 @@ pub fn get_by_use_case_id(
     use_case_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_by_use_case_id", {
-        let limit = limit.unwrap_or(20);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_by_use_case_id",
+        {
+            let limit = limit.unwrap_or(20);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND use_case_id = ?2 ORDER BY created_at DESC LIMIT ?3",
         )?;
-        let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![persona_id, use_case_id, limit], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn update_status(
@@ -379,26 +431,29 @@ pub fn update_status_if_running(
     id: &str,
     input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
-    timed_query!("persona_executions", "persona_executions::update_status_if_running", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+    timed_query!(
+        "persona_executions",
+        "persona_executions::update_status_if_running",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
 
-        let started_at: Option<String> = if input.status == ExecutionState::Running {
-            Some(now.clone())
-        } else {
-            None
-        };
+            let started_at: Option<String> = if input.status == ExecutionState::Running {
+                Some(now.clone())
+            } else {
+                None
+            };
 
-        let completed_at: Option<String> = if input.status.is_terminal() {
-            Some(now)
-        } else {
-            None
-        };
+            let completed_at: Option<String> = if input.status.is_terminal() {
+                Some(now)
+            } else {
+                None
+            };
 
-        let status_str = input.status.as_str();
+            let status_str = input.status.as_str();
 
-        let rows_changed = conn.execute(
-            "UPDATE persona_executions SET
+            let rows_changed = conn.execute(
+                "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
                 error_message = COALESCE(?3, error_message),
@@ -415,28 +470,29 @@ pub fn update_status_if_running(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16
              WHERE id = ?12 AND status = 'running'",
-            params![
-                status_str,
-                input.output_data,
-                input.error_message,
-                input.duration_ms,
-                input.log_file_path,
-                input.execution_flows,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                started_at,
-                completed_at,
-                id,
-                input.tool_steps,
-                input.claude_session_id,
-                input.execution_config,
-                input.log_truncated,
-            ],
-        )?;
+                params![
+                    status_str,
+                    input.output_data,
+                    input.error_message,
+                    input.duration_ms,
+                    input.log_file_path,
+                    input.execution_flows,
+                    input.input_tokens,
+                    input.output_tokens,
+                    input.cost_usd,
+                    started_at,
+                    completed_at,
+                    id,
+                    input.tool_steps,
+                    input.claude_session_id,
+                    input.execution_config,
+                    input.log_truncated,
+                ],
+            )?;
 
-        Ok(rows_changed > 0)
-    })
+            Ok(rows_changed > 0)
+        }
+    )
 }
 
 /// Compare-and-swap status update: only writes if the current DB status is
@@ -450,28 +506,31 @@ pub fn update_status_if_not_final(
     id: &str,
     input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
-    timed_query!("persona_executions", "persona_executions::update_status_if_not_final", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
+    timed_query!(
+        "persona_executions",
+        "persona_executions::update_status_if_not_final",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
 
-        let started_at: Option<String> = if input.status == ExecutionState::Running {
-            Some(now.clone())
-        } else {
-            None
-        };
+            let started_at: Option<String> = if input.status == ExecutionState::Running {
+                Some(now.clone())
+            } else {
+                None
+            };
 
-        let completed_at: Option<String> = if input.status.is_terminal() {
-            Some(now)
-        } else {
-            None
-        };
+            let completed_at: Option<String> = if input.status.is_terminal() {
+                Some(now)
+            } else {
+                None
+            };
 
-        let status_str = input.status.as_str();
+            let status_str = input.status.as_str();
 
-        // Allow overwrite when status is 'running' (normal path) or 'cancelled'
-        // (safety-net wrote a bare cancel that we can now enrich with metrics).
-        let rows_changed = conn.execute(
-            "UPDATE persona_executions SET
+            // Allow overwrite when status is 'running' (normal path) or 'cancelled'
+            // (safety-net wrote a bare cancel that we can now enrich with metrics).
+            let rows_changed = conn.execute(
+                "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
                 error_message = COALESCE(?3, error_message),
@@ -488,39 +547,40 @@ pub fn update_status_if_not_final(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16
              WHERE id = ?12 AND status IN ('running', 'cancelled')",
-            params![
-                status_str,
-                input.output_data,
-                input.error_message,
-                input.duration_ms,
-                input.log_file_path,
-                input.execution_flows,
-                input.input_tokens,
-                input.output_tokens,
-                input.cost_usd,
-                started_at,
-                completed_at,
-                id,
-                input.tool_steps,
-                input.claude_session_id,
-                input.execution_config,
-                input.log_truncated,
-            ],
-        )?;
+                params![
+                    status_str,
+                    input.output_data,
+                    input.error_message,
+                    input.duration_ms,
+                    input.log_file_path,
+                    input.execution_flows,
+                    input.input_tokens,
+                    input.output_tokens,
+                    input.cost_usd,
+                    started_at,
+                    completed_at,
+                    id,
+                    input.tool_steps,
+                    input.claude_session_id,
+                    input.execution_config,
+                    input.log_truncated,
+                ],
+            )?;
 
-        Ok(rows_changed > 0)
-    })
+            Ok(rows_changed > 0)
+        }
+    )
 }
 
 pub fn get_recent(pool: &DbPool, limit: Option<i64>) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_recent", {
         let limit = limit.unwrap_or(20);
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM persona_executions ORDER BY created_at DESC LIMIT ?1")?;
         let rows = stmt.query_map(params![limit], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -529,14 +589,19 @@ pub fn get_recent_failures(
     persona_id: &str,
     limit: i64,
 ) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_recent_failures", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_recent_failures",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM persona_executions WHERE persona_id = ?1 AND status = 'failed' ORDER BY created_at DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![persona_id, limit], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
@@ -546,34 +611,43 @@ pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
             "SELECT * FROM persona_executions WHERE status IN ('queued', 'running') ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map([], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
 /// Lightweight check: are any executions currently in-flight?
 /// Used by the adaptive polling system to decide between active/idle intervals.
 pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
-    timed_query!("persona_executions", "persona_executions::has_running_executions", {
-        let conn = pool.get()?;
-        let exists: bool = conn.query_row(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::has_running_executions",
+        {
+            let conn = pool.get()?;
+            let exists: bool = conn.query_row(
             "SELECT EXISTS(SELECT 1 FROM persona_executions WHERE status IN ('queued', 'running'))",
             [],
             |row| row.get(0),
         )?;
-        Ok(exists)
-    })
+            Ok(exists)
+        }
+    )
 }
 
 pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<i64, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_running_count_for_persona", {
-        let conn = pool.get()?;
-        let count: i64 = conn.query_row(
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_running_count_for_persona",
+        {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
             "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND status IN ('queued', 'running')",
             params![persona_id],
             |row| row.get(0),
         )?;
-        Ok(count)
-    })
+            Ok(count)
+        }
+    )
 }
 
 /// Capability-scoped running-count: how many executions are queued/running for
@@ -585,16 +659,20 @@ pub fn get_running_count_for_persona_use_case(
     persona_id: &str,
     use_case_id: &str,
 ) -> Result<i64, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_running_count_for_persona_use_case", {
-        let conn = pool.get()?;
-        let count: i64 = conn.query_row(
-            "SELECT COUNT(*) FROM persona_executions \
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_running_count_for_persona_use_case",
+        {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_executions \
              WHERE persona_id = ?1 AND use_case_id = ?2 AND status IN ('queued', 'running')",
-            params![persona_id, use_case_id],
-            |row| row.get(0),
-        )?;
-        Ok(count)
-    })
+                params![persona_id, use_case_id],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        }
+    )
 }
 
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
@@ -608,15 +686,23 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
 /// Persist the W3C traceparent header generated for an execution so downstream
 /// observability pipelines can correlate personas' trace with the CLI's spans.
 /// Called near execution start, after `create()`.
-pub fn set_traceparent(pool: &DbPool, execution_id: &str, traceparent: &str) -> Result<(), AppError> {
-    timed_query!("persona_executions", "persona_executions::set_traceparent", {
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_executions SET traceparent = ?1 WHERE id = ?2",
-            params![traceparent, execution_id],
-        )?;
-        Ok(())
-    })
+pub fn set_traceparent(
+    pool: &DbPool,
+    execution_id: &str,
+    traceparent: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::set_traceparent",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_executions SET traceparent = ?1 WHERE id = ?2",
+                params![traceparent, execution_id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// Stamp the supervisory `last_heartbeat_at` column whenever the runner emits
@@ -624,15 +710,19 @@ pub fn set_traceparent(pool: &DbPool, execution_id: &str, traceparent: &str) -> 
 /// detect long-silent runs without changing the canonical status lifecycle.
 /// Errors are non-fatal — heartbeat is best-effort.
 pub fn touch_last_heartbeat(pool: &DbPool, execution_id: &str) -> Result<(), AppError> {
-    timed_query!("persona_executions", "persona_executions::touch_last_heartbeat", {
-        let conn = pool.get()?;
-        let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
-            "UPDATE persona_executions SET last_heartbeat_at = ?1 WHERE id = ?2",
-            params![now, execution_id],
-        )?;
-        Ok(())
-    })
+    timed_query!(
+        "persona_executions",
+        "persona_executions::touch_last_heartbeat",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now().to_rfc3339();
+            conn.execute(
+                "UPDATE persona_executions SET last_heartbeat_at = ?1 WHERE id = ?2",
+                params![now, execution_id],
+            )?;
+            Ok(())
+        }
+    )
 }
 
 /// Find still-running executions whose last heartbeat is older than the given
@@ -644,19 +734,26 @@ pub fn find_silent_running(
     cutoff_rfc3339: &str,
     limit: i64,
 ) -> Result<Vec<String>, AppError> {
-    timed_query!("persona_executions", "persona_executions::find_silent_running", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id FROM persona_executions
+    timed_query!(
+        "persona_executions",
+        "persona_executions::find_silent_running",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT id FROM persona_executions
              WHERE status = 'running'
                AND last_heartbeat_at IS NOT NULL
                AND last_heartbeat_at < ?1
              ORDER BY last_heartbeat_at ASC
              LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![cutoff_rfc3339, limit], |row| row.get::<_, String>(0))?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![cutoff_rfc3339, limit], |row| {
+                row.get::<_, String>(0)
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Create an execution record that is a healing retry of `original_exec_id`.
@@ -685,43 +782,58 @@ pub fn create_retry(
 /// Count consecutive recent failures for a persona (unbroken streak of 'failed' status
 /// from the most recent execution backwards).
 pub fn get_consecutive_failure_count(pool: &DbPool, persona_id: &str) -> Result<u32, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_consecutive_failure_count", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT status FROM persona_executions
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_consecutive_failure_count",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT status FROM persona_executions
              WHERE persona_id = ?1
              ORDER BY created_at DESC
              LIMIT 20",
-        )?;
-        let statuses: Vec<String> = stmt
-            .query_map(params![persona_id], |row| row.get::<_, String>(0))?
-            .filter_map(|r| r.ok())
-            .collect();
+            )?;
+            let statuses: Vec<String> = stmt
+                .query_map(params![persona_id], |row| row.get::<_, String>(0))?
+                .filter_map(|r| r.ok())
+                .collect();
 
-        let count = statuses
-            .iter()
-            .take_while(|s| s.as_str() == "failed")
-            .count();
-        Ok(count as u32)
-    })
+            let count = statuses
+                .iter()
+                .take_while(|s| s.as_str() == "failed")
+                .count();
+            Ok(count as u32)
+        }
+    )
 }
 
 /// Get the retry chain for an execution (all retries linked to the same original).
-pub fn get_retry_chain(pool: &DbPool, execution_id: &str) -> Result<Vec<PersonaExecution>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_retry_chain", {
-        // First, find the root execution
-        let exec = get_by_id(pool, execution_id)?;
-        let root_id = exec.retry_of_execution_id.as_deref().unwrap_or(execution_id);
+pub fn get_retry_chain(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Vec<PersonaExecution>, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_retry_chain",
+        {
+            // First, find the root execution
+            let exec = get_by_id(pool, execution_id)?;
+            let root_id = exec
+                .retry_of_execution_id
+                .as_deref()
+                .unwrap_or(execution_id);
 
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM persona_executions
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM persona_executions
              WHERE id = ?1 OR retry_of_execution_id = ?1
              ORDER BY retry_count ASC, created_at ASC",
-        )?;
-        let rows = stmt.query_map(params![root_id], row_to_execution)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            )?;
+            let rows = stmt.query_map(params![root_id], row_to_execution)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Batch-fetch retry chains for multiple execution IDs in a single query.
@@ -732,146 +844,155 @@ pub fn get_retry_chains_batch(
     pool: &DbPool,
     execution_ids: &[&str],
 ) -> Result<std::collections::HashMap<String, Vec<PersonaExecution>>, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_retry_chains_batch", {
-    if execution_ids.is_empty() {
-        return Ok(std::collections::HashMap::new());
-    }
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_retry_chains_batch",
+        {
+            if execution_ids.is_empty() {
+                return Ok(std::collections::HashMap::new());
+            }
 
-    let conn = pool.get()?;
+            let conn = pool.get()?;
 
-    // Step 1: resolve root IDs for all requested execution_ids
-    let placeholders: String = execution_ids
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect::<Vec<_>>()
-        .join(", ");
+            // Step 1: resolve root IDs for all requested execution_ids
+            let placeholders: String = execution_ids
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect::<Vec<_>>()
+                .join(", ");
 
-    let root_sql = format!(
+            let root_sql = format!(
         "SELECT id, retry_of_execution_id FROM persona_executions WHERE id IN ({placeholders})"
     );
-    let params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = execution_ids
-        .iter()
-        .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    let params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        params_boxed.iter().map(|p| p.as_ref()).collect();
+            let params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = execution_ids
+                .iter()
+                .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
+                .collect();
+            let params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                params_boxed.iter().map(|p| p.as_ref()).collect();
 
-    let mut root_stmt = conn.prepare(&root_sql)?;
-    let root_rows = root_stmt.query_map(params_ref.as_slice(), |row| {
-        let id: String = row.get(0)?;
-        let retry_of: Option<String> = row.get(1)?;
-        Ok((id, retry_of))
-    })?;
+            let mut root_stmt = conn.prepare(&root_sql)?;
+            let root_rows = root_stmt.query_map(params_ref.as_slice(), |row| {
+                let id: String = row.get(0)?;
+                let retry_of: Option<String> = row.get(1)?;
+                Ok((id, retry_of))
+            })?;
 
-    // Map: original exec_id -> root_id
-    let mut exec_to_root: std::collections::HashMap<String, String> = std::collections::HashMap::new();
-    let mut root_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
-    for row in root_rows {
-        let (id, retry_of) = row.map_err(AppError::Database)?;
-        let root = retry_of.unwrap_or_else(|| id.clone());
-        root_ids.insert(root.clone());
-        exec_to_root.insert(id, root);
-    }
+            // Map: original exec_id -> root_id
+            let mut exec_to_root: std::collections::HashMap<String, String> =
+                std::collections::HashMap::new();
+            let mut root_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+            for row in root_rows {
+                let (id, retry_of) = row.map_err(AppError::Database)?;
+                let root = retry_of.unwrap_or_else(|| id.clone());
+                root_ids.insert(root.clone());
+                exec_to_root.insert(id, root);
+            }
 
-    if root_ids.is_empty() {
-        return Ok(std::collections::HashMap::new());
-    }
+            if root_ids.is_empty() {
+                return Ok(std::collections::HashMap::new());
+            }
 
-    // Step 2: fetch all retry executions for these roots in one query
-    let root_list: Vec<&str> = root_ids.iter().map(|s| s.as_str()).collect();
-    let root_placeholders: String = root_list
-        .iter()
-        .enumerate()
-        .map(|(i, _)| format!("?{}", i + 1))
-        .collect::<Vec<_>>()
-        .join(", ");
+            // Step 2: fetch all retry executions for these roots in one query
+            let root_list: Vec<&str> = root_ids.iter().map(|s| s.as_str()).collect();
+            let root_placeholders: String = root_list
+                .iter()
+                .enumerate()
+                .map(|(i, _)| format!("?{}", i + 1))
+                .collect::<Vec<_>>()
+                .join(", ");
 
-    let _chain_sql = format!(
-        "SELECT * FROM persona_executions
+            let _chain_sql = format!(
+                "SELECT * FROM persona_executions
          WHERE (id IN ({root_placeholders}) OR retry_of_execution_id IN ({root_placeholders}))
          ORDER BY retry_count ASC, created_at ASC",
-        root_placeholders = root_placeholders
-    );
-    let root_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = root_list
-        .iter()
-        .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
-        .collect();
-    // Duplicate for both IN clauses
-    let mut all_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    for p in &root_params_boxed {
-        all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
-    }
-    for p in &root_params_boxed {
-        all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
-    }
+                root_placeholders = root_placeholders
+            );
+            let root_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = root_list
+                .iter()
+                .map(|id| Box::new(id.to_string()) as Box<dyn rusqlite::types::ToSql>)
+                .collect();
+            // Duplicate for both IN clauses
+            let mut all_params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+            for p in &root_params_boxed {
+                all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
+            }
+            for p in &root_params_boxed {
+                all_params.push(Box::new(p.as_ref().to_sql().unwrap().to_owned()));
+            }
 
-    // Use simpler approach: single IN clause with OR
-    let chain_sql = format!(
-        "SELECT * FROM persona_executions
+            // Use simpler approach: single IN clause with OR
+            let chain_sql = format!(
+                "SELECT * FROM persona_executions
          WHERE id IN ({placeholders}) OR retry_of_execution_id IN ({placeholders})
          ORDER BY retry_count ASC, created_at ASC",
-        placeholders = root_placeholders
-    );
-    // Params need to be repeated for both IN clauses
-    let mut chain_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
-    for id in &root_list {
-        chain_params_boxed.push(Box::new(id.to_string()));
-    }
-    for id in &root_list {
-        chain_params_boxed.push(Box::new(id.to_string()));
-    }
-    let chain_params_ref: Vec<&dyn rusqlite::types::ToSql> =
-        chain_params_boxed.iter().map(|p| p.as_ref()).collect();
+                placeholders = root_placeholders
+            );
+            // Params need to be repeated for both IN clauses
+            let mut chain_params_boxed: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+            for id in &root_list {
+                chain_params_boxed.push(Box::new(id.to_string()));
+            }
+            for id in &root_list {
+                chain_params_boxed.push(Box::new(id.to_string()));
+            }
+            let chain_params_ref: Vec<&dyn rusqlite::types::ToSql> =
+                chain_params_boxed.iter().map(|p| p.as_ref()).collect();
 
-    let mut chain_stmt = conn.prepare(&chain_sql)?;
-    let chain_rows = chain_stmt.query_map(chain_params_ref.as_slice(), row_to_execution)?;
-    let all_executions: Vec<PersonaExecution> =
-        crate::db::repos::utils::collect_rows(chain_rows, "retry_chains_batch");
+            let mut chain_stmt = conn.prepare(&chain_sql)?;
+            let chain_rows = chain_stmt.query_map(chain_params_ref.as_slice(), row_to_execution)?;
+            let all_executions: Vec<PersonaExecution> =
+                crate::db::repos::utils::collect_rows(chain_rows, "retry_chains_batch");
 
-    // Step 3: group by root_id, then map back to original exec_ids
-    let mut root_to_chain: std::collections::HashMap<String, Vec<PersonaExecution>> =
-        std::collections::HashMap::new();
-    for exec in all_executions {
-        let root = exec
-            .retry_of_execution_id
-            .as_deref()
-            .unwrap_or(&exec.id)
-            .to_string();
-        root_to_chain.entry(root).or_default().push(exec);
-    }
+            // Step 3: group by root_id, then map back to original exec_ids
+            let mut root_to_chain: std::collections::HashMap<String, Vec<PersonaExecution>> =
+                std::collections::HashMap::new();
+            for exec in all_executions {
+                let root = exec
+                    .retry_of_execution_id
+                    .as_deref()
+                    .unwrap_or(&exec.id)
+                    .to_string();
+                root_to_chain.entry(root).or_default().push(exec);
+            }
 
-    // Build result keyed by original execution_id
-    let mut result: std::collections::HashMap<String, Vec<PersonaExecution>> =
-        std::collections::HashMap::new();
-    for (exec_id, root_id) in &exec_to_root {
-        if let Some(chain) = root_to_chain.get(root_id) {
-            result.insert(exec_id.clone(), chain.clone());
+            // Build result keyed by original execution_id
+            let mut result: std::collections::HashMap<String, Vec<PersonaExecution>> =
+                std::collections::HashMap::new();
+            for (exec_id, root_id) in &exec_to_root {
+                if let Some(chain) = root_to_chain.get(root_id) {
+                    result.insert(exec_id.clone(), chain.clone());
+                }
+            }
+
+            Ok(result)
         }
-    }
-
-    Ok(result)
-    })
+    )
 }
 
 pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
-    timed_query!("persona_executions", "persona_executions::get_monthly_spend", {
-        let conn = pool.get()?;
-        // Include completed, failed, incomplete, and cancelled executions in spend
-        // tracking. Cancelled executions may have consumed API credits before the
-        // process was killed, and those costs must count toward budget enforcement.
-        // Exclude ops chat executions from spend tracking — they are conversational
-        // queries from the Chat tab, not billable agent executions.
-        let spend: f64 = conn.query_row(
-            "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
+    timed_query!(
+        "persona_executions",
+        "persona_executions::get_monthly_spend",
+        {
+            let conn = pool.get()?;
+            // Include completed, failed, incomplete, and cancelled executions in spend
+            // tracking. Cancelled executions may have consumed API credits before the
+            // process was killed, and those costs must count toward budget enforcement.
+            // Exclude ops chat executions from spend tracking — they are conversational
+            // queries from the Chat tab, not billable agent executions.
+            let spend: f64 = conn.query_row(
+                "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
              WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
              AND created_at >= datetime('now', 'start of month')
              AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
-            params![persona_id],
-            |row| row.get(0),
-        )?;
-        Ok(spend)
-    })
+                params![persona_id],
+                |row| row.get(0),
+            )?;
+            Ok(spend)
+        }
+    )
 }
 
 /// Default zombie threshold: 30 minutes.
@@ -880,65 +1001,68 @@ const DEFAULT_ZOMBIE_THRESHOLD_SECS: i64 = 30 * 60;
 /// Find executions stuck in 'running' state for longer than the zombie threshold
 /// and transition them to 'incomplete'. Returns the IDs of transitioned executions.
 pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
-    timed_query!("persona_executions", "persona_executions::sweep_zombie_executions", {
-    let conn = pool.get()?;
-    let now = chrono::Utc::now();
-    let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
+    timed_query!(
+        "persona_executions",
+        "persona_executions::sweep_zombie_executions",
+        {
+            let conn = pool.get()?;
+            let now = chrono::Utc::now();
+            let threshold_secs = DEFAULT_ZOMBIE_THRESHOLD_SECS;
 
-    // Find running executions whose started_at is older than the threshold
-    let mut stmt = conn.prepare(
-        "SELECT id, started_at FROM persona_executions WHERE status = 'running'"
-    )?;
-    let candidates: Vec<(String, Option<String>)> = stmt
-        .query_map([], |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
-        })?
-        .filter_map(|r| r.ok())
-        .collect();
+            // Find running executions whose started_at is older than the threshold
+            let mut stmt = conn.prepare(
+                "SELECT id, started_at FROM persona_executions WHERE status = 'running'",
+            )?;
+            let candidates: Vec<(String, Option<String>)> = stmt
+                .query_map([], |row| {
+                    Ok((row.get::<_, String>(0)?, row.get::<_, Option<String>>(1)?))
+                })?
+                .filter_map(|r| r.ok())
+                .collect();
 
-    let mut zombie_ids = Vec::new();
-    for (id, started_at) in candidates {
-        let is_zombie = match &started_at {
-            Some(ts) => {
-                if let Ok(started) = chrono::DateTime::parse_from_rfc3339(ts) {
-                    (now - started.with_timezone(&chrono::Utc)).num_seconds() > threshold_secs
-                } else {
-                    // Unparseable timestamp — treat as zombie
-                    true
-                }
-            }
-            None => {
-                // No started_at — check created_at instead (shouldn't happen, but defensive)
-                true
-            }
-        };
+            let mut zombie_ids = Vec::new();
+            for (id, started_at) in candidates {
+                let is_zombie = match &started_at {
+                    Some(ts) => {
+                        if let Ok(started) = chrono::DateTime::parse_from_rfc3339(ts) {
+                            (now - started.with_timezone(&chrono::Utc)).num_seconds()
+                                > threshold_secs
+                        } else {
+                            // Unparseable timestamp — treat as zombie
+                            true
+                        }
+                    }
+                    None => {
+                        // No started_at — check created_at instead (shouldn't happen, but defensive)
+                        true
+                    }
+                };
 
-        if is_zombie {
-            let elapsed_str = started_at
-                .as_deref()
-                .unwrap_or("unknown");
-            conn.execute(
-                "UPDATE persona_executions SET
+                if is_zombie {
+                    let elapsed_str = started_at.as_deref().unwrap_or("unknown");
+                    conn.execute(
+                        "UPDATE persona_executions SET
                     status = 'incomplete',
                     error_message = ?1,
                     completed_at = ?2
                  WHERE id = ?3 AND status = 'running'",
-                params![
-                    format!(
-                        "Execution stalled: running since {} (>{} min) — marked as zombie",
-                        elapsed_str,
-                        threshold_secs / 60,
-                    ),
-                    now.to_rfc3339(),
-                    id,
-                ],
-            )?;
-            zombie_ids.push(id);
-        }
-    }
+                        params![
+                            format!(
+                                "Execution stalled: running since {} (>{} min) — marked as zombie",
+                                elapsed_str,
+                                threshold_secs / 60,
+                            ),
+                            now.to_rfc3339(),
+                            id,
+                        ],
+                    )?;
+                    zombie_ids.push(id);
+                }
+            }
 
-    Ok(zombie_ids)
-    })
+            Ok(zombie_ids)
+        }
+    )
 }
 
 /// Delete old terminal executions beyond the retention period, but always keep
@@ -953,74 +1077,78 @@ pub fn cleanup_old_executions(
     retention_days: i64,
     min_keep_per_persona: usize,
 ) -> Result<usize, AppError> {
-    timed_query!("persona_executions", "persona_executions::cleanup_old_executions", {
-    let conn = pool.get()?;
+    timed_query!(
+        "persona_executions",
+        "persona_executions::cleanup_old_executions",
+        {
+            let conn = pool.get()?;
 
-    // Two-phase approach:
-    // 1. Find all persona_ids that have terminal executions older than the cutoff.
-    // 2. For each persona, delete old terminal executions while preserving the
-    //    most recent `min_keep_per_persona` rows.
+            // Two-phase approach:
+            // 1. Find all persona_ids that have terminal executions older than the cutoff.
+            // 2. For each persona, delete old terminal executions while preserving the
+            //    most recent `min_keep_per_persona` rows.
 
-    let cutoff = format!("-{retention_days} days");
+            let cutoff = format!("-{retention_days} days");
 
-    // Get distinct persona_ids with old terminal executions
-    let mut persona_stmt = conn.prepare(
-        "SELECT DISTINCT persona_id FROM persona_executions
+            // Get distinct persona_ids with old terminal executions
+            let mut persona_stmt = conn.prepare(
+                "SELECT DISTINCT persona_id FROM persona_executions
          WHERE status IN ('completed', 'failed', 'incomplete', 'cancelled')
            AND created_at < datetime('now', ?1)",
-    )?;
-    let persona_ids: Vec<String> = persona_stmt
-        .query_map(params![cutoff], |row| row.get::<_, String>(0))?
-        .filter_map(|r| r.ok())
-        .collect();
+            )?;
+            let persona_ids: Vec<String> = persona_stmt
+                .query_map(params![cutoff], |row| row.get::<_, String>(0))?
+                .filter_map(|r| r.ok())
+                .collect();
 
-    let mut total_deleted: usize = 0;
+            let mut total_deleted: usize = 0;
 
-    for pid in &persona_ids {
-        // Find the created_at threshold: the min_keep_per_persona-th most recent
-        // terminal execution for this persona. Anything older AND beyond the
-        // retention cutoff gets deleted.
-        let keep_threshold: Option<String> = conn
-            .query_row(
-                "SELECT created_at FROM persona_executions
+            for pid in &persona_ids {
+                // Find the created_at threshold: the min_keep_per_persona-th most recent
+                // terminal execution for this persona. Anything older AND beyond the
+                // retention cutoff gets deleted.
+                let keep_threshold: Option<String> = conn
+                    .query_row(
+                        "SELECT created_at FROM persona_executions
                  WHERE persona_id = ?1
                    AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
                  ORDER BY created_at DESC
                  LIMIT 1 OFFSET ?2",
-                params![pid, min_keep_per_persona as i64],
-                |row| row.get(0),
-            )
-            .ok();
+                        params![pid, min_keep_per_persona as i64],
+                        |row| row.get(0),
+                    )
+                    .ok();
 
-        // If there aren't enough rows to reach the offset, this persona has
-        // fewer than min_keep_per_persona terminal executions -- skip it.
-        let keep_threshold = match keep_threshold {
-            Some(t) => t,
-            None => continue,
-        };
+                // If there aren't enough rows to reach the offset, this persona has
+                // fewer than min_keep_per_persona terminal executions -- skip it.
+                let keep_threshold = match keep_threshold {
+                    Some(t) => t,
+                    None => continue,
+                };
 
-        let deleted = conn.execute(
-            "DELETE FROM persona_executions
+                let deleted = conn.execute(
+                    "DELETE FROM persona_executions
              WHERE persona_id = ?1
                AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
                AND created_at < datetime('now', ?2)
                AND created_at <= ?3",
-            params![pid, cutoff, keep_threshold],
-        )?;
+                    params![pid, cutoff, keep_threshold],
+                )?;
 
-        total_deleted += deleted;
-    }
+                total_deleted += deleted;
+            }
 
-    Ok(total_deleted)
-    })
+            Ok(total_deleted)
+        }
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db::init_test_db;
-    use crate::db::repos::core::personas;
     use crate::db::models::{CreatePersonaInput, Json};
+    use crate::db::repos::core::personas;
 
     #[test]
     fn test_execution_crud() {

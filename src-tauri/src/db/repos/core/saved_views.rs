@@ -39,16 +39,15 @@ pub fn create(pool: &DbPool, input: CreateSavedViewInput) -> Result<SavedView, A
             ],
         )?;
 
-        get_by_id(pool, &id)?.ok_or_else(|| AppError::Internal("Failed to create saved view".to_string()))
+        get_by_id(pool, &id)?
+            .ok_or_else(|| AppError::Internal("Failed to create saved view".to_string()))
     })
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<SavedView>, AppError> {
     timed_query!("saved_views", "saved_views::get_by_id", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM saved_views WHERE id = ?1",
-        )?;
+        let mut stmt = conn.prepare("SELECT * FROM saved_views WHERE id = ?1")?;
 
         let view = stmt.query_row(params![id], row_to_view).optional()?;
         Ok(view)
@@ -58,9 +57,8 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<Option<SavedView>, AppError>
 pub fn list_all(pool: &DbPool) -> Result<Vec<SavedView>, AppError> {
     timed_query!("saved_views", "saved_views::list_all", {
         let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM saved_views ORDER BY is_smart DESC, name ASC",
-        )?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM saved_views ORDER BY is_smart DESC, name ASC")?;
 
         let rows = stmt.query_map([], row_to_view)?;
         Ok(collect_rows(rows, "saved_views::list_all"))

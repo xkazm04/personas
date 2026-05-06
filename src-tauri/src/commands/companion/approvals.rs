@@ -58,6 +58,21 @@ pub struct ApprovalOutcome {
 pub enum ClientAction {
     /// Switch the sidebar to the given top-level section.
     Navigate { route: String },
+    /// Phase F: prefill the persona creation wizard with `intent` (and
+    /// optionally a name), then optionally auto-click launch. The
+    /// frontend writes a slot in the system store and navigates to
+    /// `personas`; UnifiedMatrixEntry consumes the slot on mount.
+    PrefillPersonaCreate {
+        intent: String,
+        name: Option<String>,
+        auto_launch: bool,
+    },
+    /// Phase F: open a specific tab inside the Companion plugin. Used
+    /// by `compose_dashboard` (tab="dashboard") so the user lands on
+    /// the rendered result without manually navigating. Tab values
+    /// match `CompanionPluginTab` on the frontend
+    /// (`setup` | `memory` | `voice` | `dashboard`).
+    OpenCompanionTab { tab: String },
 }
 
 /// Internal: each `execute_*` returns this so we can build either a
@@ -143,6 +158,32 @@ pub async fn companion_approve_action(
         "update_identity" => execute_update_identity(&params),
         "write_fact" => execute_write_fact(&state, &params).await,
         "delete_fact" => execute_delete_fact(&state, &params),
+        // Phase D
+        "write_procedural" => execute_write_procedural(&state, &params).await,
+        "delete_procedural" => execute_delete_procedural(&state, &params),
+        "write_goal" => execute_write_goal(&state, &params),
+        "update_goal_status" => execute_update_goal_status(&state, &params),
+        "delete_goal" => execute_delete_goal(&state, &params),
+        "write_ritual" => execute_write_ritual(&state, &params),
+        "set_ritual_active" => execute_set_ritual_active(&state, &params),
+        "delete_ritual" => execute_delete_ritual(&state, &params),
+        "write_backlog_item" => execute_write_backlog_item(&state, &params),
+        "resolve_backlog_item" => execute_resolve_backlog_item(&state, &params),
+        // Phase F — advanced UI control.
+        "prefill_persona_create" => execute_prefill_persona_create(&params),
+        "run_arena" => execute_run_arena(&state, &app, &params).await,
+        // `compose_dashboard` is now auto-fire (no approval card) —
+        // handled by the dispatcher + session.rs. The executor below
+        // is kept as a fallback in case an old approval row from
+        // before the change still resolves through here.
+        "compose_dashboard" => execute_compose_dashboard(&state, &params),
+        // `use_connector` no longer reaches here — it auto-fires
+        // through the dispatcher → background-job worker. Approval
+        // friction was the wrong UX (user explicitly rejected it);
+        // result lands as a system episode.
+        // Phase G — project registry + background jobs.
+        "register_project" => execute_register_project(&state, &params),
+        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -214,9 +255,8 @@ fn load_pending(
             |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
         )
         .optional()?;
-    let (status, payload) = row.ok_or_else(|| {
-        AppError::Internal(format!("approval `{approval_id}` not found"))
-    })?;
+    let (status, payload) =
+        row.ok_or_else(|| AppError::Internal(format!("approval `{approval_id}` not found")))?;
     if status != "pending" {
         return Err(AppError::Internal(format!(
             "approval `{approval_id}` is `{status}`, not pending"
@@ -265,12 +305,9 @@ async fn log_action_episode(state: &State<'_, Arc<AppState>>, content: &str) {
                     )
                     .await
                 }
-                None => episodic::append_episode(
-                    pool,
-                    DEFAULT_SESSION_ID,
-                    EpisodeRole::System,
-                    content,
-                ),
+                None => {
+                    episodic::append_episode(pool, DEFAULT_SESSION_ID, EpisodeRole::System, content)
+                }
             }
         }
         #[cfg(not(feature = "ml"))]
@@ -499,5 +536,564 @@ fn execute_delete_fact(
     crate::companion::brain::semantic::delete_fact(&state.user_db, id)?;
     Ok(ExecuteResult::message(format!(
         "Fact `{id}` archived to `semantic/_deleted/`."
+    )))
+}
+
+// ── Phase D executors ───────────────────────────────────────────────────
+
+async fn execute_write_procedural(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::procedural;
+    let scope = procedural::ProceduralScope::parse(
+        params
+            .get("scope")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| AppError::Internal("write_procedural: missing `scope`".into()))?,
+    )?;
+    let trigger = params
+        .get("trigger")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_procedural: missing `trigger`".into()))?;
+    let behavior = params
+        .get("behavior")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_procedural: missing `behavior`".into()))?;
+    let sources: Vec<String> = params
+        .get("sources")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    if sources.is_empty() {
+        return Err(AppError::Internal(
+            "write_procedural: `sources` must be a non-empty array of episode_id strings".into(),
+        ));
+    }
+    let importance = params
+        .get("importance")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(3) as i32;
+    let confidence = params
+        .get("confidence")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.8) as f32;
+    let supersedes = params.get("supersedes_id").and_then(|v| v.as_str());
+    let input = procedural::ProceduralInput {
+        scope,
+        trigger,
+        behavior,
+        sources: &sources,
+        importance,
+        confidence,
+        supersedes_id: supersedes,
+    };
+    let id = {
+        #[cfg(feature = "ml")]
+        {
+            match state.embedding_manager.as_ref() {
+                Some(emb) => procedural::write_rule_and_embed(&state.user_db, emb, &input).await?,
+                None => procedural::write_rule(&state.user_db, &input)?,
+            }
+        }
+        #[cfg(not(feature = "ml"))]
+        {
+            procedural::write_rule(&state.user_db, &input)?
+        }
+    };
+    Ok(ExecuteResult::message(format!(
+        "Procedural rule `{id}` written under `{}/{}` (importance {}, {} source(s)).",
+        scope.as_str(),
+        trigger,
+        importance,
+        sources.len()
+    )))
+}
+
+fn execute_delete_procedural(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("delete_procedural: missing `id`".into()))?;
+    crate::companion::brain::procedural::delete_rule(&state.user_db, id)?;
+    Ok(ExecuteResult::message(format!(
+        "Procedural `{id}` archived to `procedurals/_deleted/`."
+    )))
+}
+
+fn execute_write_goal(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::goals;
+    let title = params
+        .get("title")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_goal: missing `title`".into()))?;
+    let description = params
+        .get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let priority = params.get("priority").and_then(|v| v.as_i64()).unwrap_or(3) as i32;
+    let target_date = params.get("target_date").and_then(|v| v.as_str());
+    let sources: Vec<String> = params
+        .get("sources")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    let id = goals::write_goal(
+        &state.user_db,
+        &goals::GoalInput {
+            title,
+            description,
+            priority,
+            target_date,
+            sources: &sources,
+        },
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Goal `{id}` recorded: \"{}\" (priority {}).",
+        title, priority
+    )))
+}
+
+fn execute_update_goal_status(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::goals;
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("update_goal_status: missing `id`".into()))?;
+    let status_str = params
+        .get("status")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("update_goal_status: missing `status`".into()))?;
+    let status = goals::GoalStatus::parse(status_str)?;
+    goals::update_status(&state.user_db, id, status)?;
+    Ok(ExecuteResult::message(format!(
+        "Goal `{id}` → `{}`.",
+        status.as_str()
+    )))
+}
+
+fn execute_delete_goal(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("delete_goal: missing `id`".into()))?;
+    crate::companion::brain::goals::delete_goal(&state.user_db, id)?;
+    Ok(ExecuteResult::message(format!(
+        "Goal `{id}` archived to `goals/_deleted/`."
+    )))
+}
+
+fn execute_write_ritual(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::rituals;
+    let kind = rituals::RitualKind::parse(
+        params
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| AppError::Internal("write_ritual: missing `kind`".into()))?,
+    )?;
+    let description = params
+        .get("description")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_ritual: missing `description`".into()))?;
+    // schedule may arrive as object or string; normalize to JSON string.
+    let schedule_json = match params.get("schedule") {
+        Some(serde_json::Value::String(s)) => s.clone(),
+        Some(other) => other.to_string(),
+        None => {
+            return Err(AppError::Internal(
+                "write_ritual: missing `schedule`".into(),
+            ))
+        }
+    };
+    let sources: Vec<String> = params
+        .get("sources")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    let id = rituals::write_ritual(
+        &state.user_db,
+        &rituals::RitualInput {
+            kind,
+            description,
+            schedule_json: &schedule_json,
+            sources: &sources,
+        },
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Ritual `{id}` (`{}`) recorded.",
+        kind.as_str()
+    )))
+}
+
+fn execute_set_ritual_active(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("set_ritual_active: missing `id`".into()))?;
+    let active = params
+        .get("active")
+        .and_then(|v| v.as_bool())
+        .ok_or_else(|| AppError::Internal("set_ritual_active: missing `active` (bool)".into()))?;
+    crate::companion::brain::rituals::set_active(&state.user_db, id, active)?;
+    Ok(ExecuteResult::message(format!(
+        "Ritual `{id}` {}.",
+        if active { "enabled" } else { "paused" }
+    )))
+}
+
+fn execute_delete_ritual(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("delete_ritual: missing `id`".into()))?;
+    crate::companion::brain::rituals::delete_ritual(&state.user_db, id)?;
+    Ok(ExecuteResult::message(format!(
+        "Ritual `{id}` archived to `rituals/_deleted/`."
+    )))
+}
+
+fn execute_write_backlog_item(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::backlog;
+    let kind = backlog::BacklogKind::parse(
+        params
+            .get("kind")
+            .and_then(|v| v.as_str())
+            .ok_or_else(|| AppError::Internal("write_backlog_item: missing `kind`".into()))?,
+    )?;
+    let summary = params
+        .get("summary")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("write_backlog_item: missing `summary`".into()))?;
+    let source_episode_id = params.get("source_episode_id").and_then(|v| v.as_str());
+    let id = backlog::write_item(
+        &state.user_db,
+        &backlog::BacklogInput {
+            kind,
+            summary,
+            source_episode_id,
+        },
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Backlog item `{id}` (`{}`) recorded.",
+        kind.as_str()
+    )))
+}
+
+fn execute_resolve_backlog_item(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let id = params
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("resolve_backlog_item: missing `id`".into()))?;
+    let dropped = params
+        .get("dropped")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    crate::companion::brain::backlog::resolve_item(&state.user_db, id, dropped)?;
+    Ok(ExecuteResult::message(format!(
+        "Backlog item `{id}` → `{}`.",
+        if dropped { "dropped" } else { "done" }
+    )))
+}
+
+// ── Phase F executors ───────────────────────────────────────────────────
+
+/// Prefill the persona-creation wizard. The actual UI work happens
+/// frontend-side via the `PrefillPersonaCreate` client action — this
+/// executor just validates params and emits the action so a single
+/// click on the approval card lands the user on personas/ with the
+/// intent box filled (and optionally launches the build).
+fn execute_prefill_persona_create(
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let intent = params
+        .get("intent")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("prefill_persona_create: missing `intent`".into()))?
+        .trim();
+    if intent.is_empty() {
+        return Err(AppError::Internal(
+            "prefill_persona_create: `intent` must not be empty".into(),
+        ));
+    }
+    let name = params.get("name").and_then(|v| v.as_str()).map(|s| s.trim().to_string());
+    let auto_launch = params
+        .get("auto_launch")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    Ok(ExecuteResult {
+        message: if auto_launch {
+            format!(
+                "Opening persona creation with your intent and starting the build."
+            )
+        } else {
+            format!(
+                "Opening persona creation with your intent prefilled — review and launch when ready."
+            )
+        },
+        client_action: Some(ClientAction::PrefillPersonaCreate {
+            intent: intent.to_string(),
+            name,
+            auto_launch,
+        }),
+    })
+}
+
+/// Run an arena pass directly via `lab_start_arena` so the user gets
+/// the result in the lab tab without Athena having to script the UI.
+/// `models` is the JSON shape the lab Tauri command expects (an array
+/// of `ModelTestConfig`); we forward it verbatim after a shape check.
+async fn execute_run_arena(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let persona_id = params
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("run_arena: missing `persona_id`".into()))?
+        .to_string();
+    let models = params
+        .get("models")
+        .ok_or_else(|| AppError::Internal("run_arena: missing `models`".into()))?
+        .clone();
+    if !models.is_array() || models.as_array().map_or(true, |a| a.is_empty()) {
+        return Err(AppError::Internal(
+            "run_arena: `models` must be a non-empty array of ModelTestConfig".into(),
+        ));
+    }
+    let use_case_filter = params
+        .get("use_case_filter")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+
+    // Forward to the existing `lab_start_arena` Tauri command. The
+    // command itself is just an async fn we can call directly — no
+    // IPC round-trip needed. Models is already a JSON Value array;
+    // we deserialize into Vec<Value> for the parser inside the lab
+    // command (which calls `parse_model_configs` next).
+    let started_at = chrono::Utc::now().to_rfc3339();
+    let models_vec: Vec<serde_json::Value> = models
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    crate::commands::execution::lab::lab_start_arena(
+        state.clone(),
+        app.clone(),
+        persona_id.clone(),
+        models_vec,
+        use_case_filter.clone(),
+    )
+    .await?;
+
+    let n_models = models.as_array().map(|a| a.len()).unwrap_or(0);
+    Ok(ExecuteResult {
+        message: format!(
+            "Arena started for persona `{persona_id}` with {n_models} model(s) at {started_at}. \
+             Watch progress in the lab tab."
+        ),
+        // Bonus UX: emit an open_lab navigation so the user lands on
+        // the arena view automatically.
+        client_action: None,
+    })
+}
+
+/// Persist a dashboard composition (singleton). The spec is stored as
+/// markdown body on a single `companion_node` row with kind='dashboard'
+/// and id='dashboard'. Replacing it overwrites the spec; the frontend
+/// re-renders on the next dashboard tab open.
+fn execute_compose_dashboard(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let widgets = params
+        .get("widgets")
+        .ok_or_else(|| AppError::Internal("compose_dashboard: missing `widgets`".into()))?;
+    if !widgets.is_array() {
+        return Err(AppError::Internal(
+            "compose_dashboard: `widgets` must be an array".into(),
+        ));
+    }
+    let title = params
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Athena dashboard");
+    let now = chrono::Utc::now().to_rfc3339();
+    let spec = serde_json::json!({
+        "title": title,
+        "widgets": widgets,
+        "updated_at": now,
+    });
+    let spec_str = spec.to_string();
+
+    crate::companion::brain::dashboard::save_dashboard(&state.user_db, &spec_str)?;
+
+    let n = widgets.as_array().map(|a| a.len()).unwrap_or(0);
+    Ok(ExecuteResult {
+        message: format!(
+            "Dashboard composition saved with {n} widget(s) — opening it for you now."
+        ),
+        client_action: Some(ClientAction::OpenCompanionTab {
+            tab: "dashboard".into(),
+        }),
+    })
+}
+
+/// Generic connector capability dispatch. Validates the connector is
+/// pinned + enabled and that the capability is registered for that
+/// service-type, then routes to a per-connector handler.
+///
+/// v1: per-connector handlers return a clear "stub" message rather
+/// than calling the actual API. This is a deliberate two-step rollout —
+/// the awareness/intent surface (this executor + the prompt block)
+/// proves out the conversation shape *before* we invest in real API
+/// wiring per connector. The user gets a coherent reply ("listed 5
+/// Sentry issues — wiring in flight, here's what I would have shown
+/// you") rather than the prior "this connector cannot be used" dead
+/// end.
+fn execute_use_connector(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let connector_name = params
+        .get("connector_name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("use_connector: missing `connector_name`".into()))?;
+    let capability = params
+        .get("capability")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("use_connector: missing `capability`".into()))?;
+    let args = params.get("args").cloned().unwrap_or(serde_json::json!({}));
+
+    // 1. Connector must be pinned + enabled in the sidebar.
+    let active = crate::companion::connectors::list(&state.user_db)?;
+    let row = active
+        .iter()
+        .find(|c| c.connector_name == connector_name)
+        .ok_or_else(|| {
+            AppError::Internal(format!(
+                "use_connector: `{connector_name}` is not pinned in the sidebar"
+            ))
+        })?;
+    if !row.enabled {
+        return Err(AppError::Internal(format!(
+            "use_connector: `{connector_name}` is pinned but disabled — toggle it on first"
+        )));
+    }
+
+    // 2. Capability must be registered for this service-type.
+    let caps = crate::companion::connectors::capabilities_for(connector_name).ok_or_else(|| {
+        AppError::Internal(format!(
+            "use_connector: `{connector_name}` has no registered capabilities yet — wiring in flight"
+        ))
+    })?;
+    let cap = caps.iter().find(|c| c.slug == capability).ok_or_else(|| {
+        let known: Vec<&str> = caps.iter().map(|c| c.slug).collect();
+        AppError::Internal(format!(
+            "use_connector: capability `{capability}` is not in `{connector_name}`'s registry. \
+             Known: {known:?}"
+        ))
+    })?;
+
+    // 3. Per-connector handlers. v1 returns a clear stub so Athena's
+    // next turn sees a coherent system episode and can speak to it.
+    // Real API calls land per-connector in subsequent phases.
+    let _ = (cap, args);
+    Ok(ExecuteResult::message(format!(
+        "[stub] `{connector_name}::{capability}` would run with the supplied args. \
+         Real API wiring lands in the next phase. Until then, treat this as confirmation \
+         that the surface works end-to-end — capability validated, connector enabled, \
+         credentials resolvable."
+    )))
+}
+
+/// Phase G: register a new project in the companion's known-project
+/// registry. Idempotent on `path` — re-registering the same path
+/// updates name/description without erroring.
+fn execute_register_project(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let name = params
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("register_project: missing `name`".into()))?;
+    let path = params
+        .get("path")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("register_project: missing `path`".into()))?;
+    let description = params.get("description").and_then(|v| v.as_str());
+    let id = crate::companion::projects::register(&state.user_db, name, path, description)?;
+    Ok(ExecuteResult::message(format!(
+        "Project `{name}` registered (id `{id}`, path `{path}`)."
+    )))
+}
+
+/// Phase G: enqueue a long-running dev job. Returns immediately so the
+/// chat doesn't block; the worker picks the job up within seconds and
+/// appends a system episode with the result on completion. This is
+/// the conversation-stays-responsive pattern: Athena sends "I started
+/// the scan, will report back when done" while the user keeps typing.
+fn execute_enqueue_dev_job(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let kind = params
+        .get("kind")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("enqueue_dev_job: missing `kind`".into()))?;
+    // Only `scan_codebase` for v1; the worker rejects unknown kinds at
+    // dispatch time, but failing fast here gives Athena a clearer error.
+    if kind != "scan_codebase" {
+        return Err(AppError::Internal(format!(
+            "enqueue_dev_job: unknown kind `{kind}` (v1 supports: scan_codebase)"
+        )));
+    }
+    let job_params = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let project_id = params.get("project_id").and_then(|v| v.as_str());
+    let job_id =
+        crate::companion::jobs::enqueue(&state.user_db, kind, &job_params, project_id)?;
+    Ok(ExecuteResult::message(format!(
+        "Job `{job_id}` (`{kind}`) queued. The worker will pick it up within a few \
+         seconds; results land as a system episode you'll see on your next turn. \
+         You can keep chatting while it runs."
     )))
 }

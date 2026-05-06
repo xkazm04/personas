@@ -20,7 +20,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 
 use crate::db::models::{PersonaEventStatus, UpdateExecutionStatus};
-use crate::engine::types::ExecutionState;
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
@@ -30,6 +29,7 @@ use crate::engine::background::SchedulerState;
 use crate::engine::events::NoOpEmitter;
 use crate::engine::failover::ProviderCircuitBreaker;
 use crate::engine::runner;
+use crate::engine::types::ExecutionState;
 
 use super::lock::TriggerKind;
 
@@ -92,12 +92,8 @@ async fn consume_headless_events(
             Some(id) => id.clone(),
             None => {
                 // No target persona — mark processed and skip
-                let _ = event_repo::update_status(
-                    pool,
-                    &event.id,
-                    PersonaEventStatus::Delivered,
-                    None,
-                );
+                let _ =
+                    event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
                 continue;
             }
         };
@@ -120,23 +116,13 @@ async fn consume_headless_events(
         // Only execute headless personas. Release non-headless events back
         // to pending so the windowed app can pick them up.
         if !persona.headless {
-            let _ = event_repo::update_status(
-                pool,
-                &event.id,
-                PersonaEventStatus::Pending,
-                None,
-            );
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Pending, None);
             continue;
         }
 
         if !persona.enabled {
             tracing::debug!(persona_id, "daemon: persona disabled, skipping");
-            let _ = event_repo::update_status(
-                pool,
-                &event.id,
-                PersonaEventStatus::Delivered,
-                None,
-            );
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
             continue;
         }
 
@@ -147,9 +133,9 @@ async fn consume_headless_events(
         let exec = match exec_repo::create(
             pool,
             &persona_id,
-            event.source_id.clone(),  // trigger_id
-            event.payload.clone(),    // input_data
-            None,                     // model_used
+            event.source_id.clone(), // trigger_id
+            event.payload.clone(),   // input_data
+            None,                    // model_used
             event.use_case_id.clone(),
         ) {
             Ok(e) => e,
@@ -173,12 +159,7 @@ async fn consume_headless_events(
         );
 
         // Mark event as processed before execution starts
-        let _ = event_repo::update_status(
-            pool,
-            &event.id,
-            PersonaEventStatus::Delivered,
-            None,
-        );
+        let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
 
         // Build input JSON from event payload
         let input_data: Option<serde_json::Value> = event

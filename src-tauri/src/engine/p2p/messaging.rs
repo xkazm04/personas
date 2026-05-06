@@ -112,7 +112,9 @@ impl MessageRouter {
         .await?;
 
         self.counters.messages_sent.fetch_add(1, Ordering::Relaxed);
-        self.counters.bytes_sent.fetch_add(payload_bytes, Ordering::Relaxed);
+        self.counters
+            .bytes_sent
+            .fetch_add(payload_bytes, Ordering::Relaxed);
 
         tracing::debug!(
             target_peer = %target_peer_id,
@@ -126,10 +128,16 @@ impl MessageRouter {
     }
 
     /// Store a received message in the inbox ring buffer.
-    pub async fn store_received(&self, source_peer_id: &str, envelope: AgentEnvelope) -> Result<(), AppError> {
+    pub async fn store_received(
+        &self,
+        source_peer_id: &str,
+        envelope: AgentEnvelope,
+    ) -> Result<(), AppError> {
         // Rate limit check
         if !self.check_rate_limit(source_peer_id) {
-            self.counters.messages_rate_limited.fetch_add(1, Ordering::Relaxed);
+            self.counters
+                .messages_rate_limited
+                .fetch_add(1, Ordering::Relaxed);
             tracing::warn!(
                 peer = %source_peer_id,
                 "Message rate-limited and dropped"
@@ -148,15 +156,21 @@ impl MessageRouter {
         // Ring buffer: evict oldest if at capacity
         if queue.len() >= MAX_MESSAGES_PER_PERSONA {
             queue.pop_front();
-            self.counters.messages_dropped_buffer_full.fetch_add(1, Ordering::Relaxed);
+            self.counters
+                .messages_dropped_buffer_full
+                .fetch_add(1, Ordering::Relaxed);
             tracing::debug!(
                 target_persona = %target,
                 "Ring buffer full — oldest message evicted"
             );
         }
 
-        self.counters.messages_received.fetch_add(1, Ordering::Relaxed);
-        self.counters.bytes_received.fetch_add(payload_bytes, Ordering::Relaxed);
+        self.counters
+            .messages_received
+            .fetch_add(1, Ordering::Relaxed);
+        self.counters
+            .bytes_received
+            .fetch_add(payload_bytes, Ordering::Relaxed);
         queue.push_back(envelope);
         Ok(())
     }
@@ -238,7 +252,10 @@ impl MessageRouter {
         MessagingMetrics {
             messages_sent: self.counters.messages_sent.load(Ordering::Relaxed),
             messages_received: self.counters.messages_received.load(Ordering::Relaxed),
-            messages_dropped_buffer_full: self.counters.messages_dropped_buffer_full.load(Ordering::Relaxed),
+            messages_dropped_buffer_full: self
+                .counters
+                .messages_dropped_buffer_full
+                .load(Ordering::Relaxed),
             messages_rate_limited: self.counters.messages_rate_limited.load(Ordering::Relaxed),
             bytes_sent: self.counters.bytes_sent.load(Ordering::Relaxed),
             bytes_received: self.counters.bytes_received.load(Ordering::Relaxed),

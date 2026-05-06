@@ -42,9 +42,13 @@ struct ResourceSpec {
     cache_ttl_seconds: u32,
 }
 
-fn default_selection() -> String { "multi".to_string() }
+fn default_selection() -> String {
+    "multi".to_string()
+}
 
-fn default_ttl() -> u32 { 600 }
+fn default_ttl() -> u32 {
+    600
+}
 
 #[derive(Debug, Deserialize)]
 struct ListEndpoint {
@@ -59,13 +63,18 @@ struct ListEndpoint {
     pagination: Option<Pagination>,
 }
 
-fn default_method() -> String { "GET".to_string() }
+fn default_method() -> String {
+    "GET".to_string()
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 enum Pagination {
     None,
-    LinkHeader { #[serde(default = "default_pages")] max_pages: u32 },
+    LinkHeader {
+        #[serde(default = "default_pages")]
+        max_pages: u32,
+    },
     PageParam {
         page_param: String,
         #[serde(default)]
@@ -81,7 +90,9 @@ enum Pagination {
     },
 }
 
-fn default_pages() -> u32 { 5 }
+fn default_pages() -> u32 {
+    5
+}
 
 #[derive(Debug, Deserialize)]
 struct ResponseMapping {
@@ -193,19 +204,23 @@ pub async fn list_resources(
         .ok_or_else(|| AppError::NotFound(format!("Connector {}", cred.service_type)))?;
 
     // 2. Parse resources spec and find the requested one
-    let resources_json = connector
-        .resources
-        .ok_or_else(|| AppError::Validation(format!(
-            "Connector {} declares no resources[]", cred.service_type
-        )))?;
+    let resources_json = connector.resources.ok_or_else(|| {
+        AppError::Validation(format!(
+            "Connector {} declares no resources[]",
+            cred.service_type
+        ))
+    })?;
     let specs: Vec<ResourceSpec> = serde_json::from_str(&resources_json)
         .map_err(|e| AppError::Internal(format!("Malformed resources[] JSON: {e}")))?;
     let spec = specs
         .into_iter()
         .find(|s| s.id == resource_id)
-        .ok_or_else(|| AppError::NotFound(format!(
-            "Resource spec '{resource_id}' on connector '{}'", cred.service_type
-        )))?;
+        .ok_or_else(|| {
+            AppError::NotFound(format!(
+                "Resource spec '{resource_id}' on connector '{}'",
+                cred.service_type
+            ))
+        })?;
 
     // 3. Verify dependent resources are in context
     for dep in &spec.depends_on {
@@ -286,7 +301,8 @@ async fn fetch_all_pages(
         Pagination::LinkHeader { max_pages } => {
             let mut next_url: Option<String> = None;
             for _ in 0..*max_pages {
-                let (body, next) = fetch_one_with_headers(&client, spec, values, next_url.as_deref()).await?;
+                let (body, next) =
+                    fetch_one_with_headers(&client, spec, values, next_url.as_deref()).await?;
                 all.extend(extract_items(&body, &spec.response_mapping.items_path));
                 match next {
                     Some(n) => next_url = Some(n),
@@ -294,7 +310,11 @@ async fn fetch_all_pages(
                 }
             }
         }
-        Pagination::PageParam { page_param, per_page, max_pages } => {
+        Pagination::PageParam {
+            page_param,
+            per_page,
+            max_pages,
+        } => {
             for page in 1..=*max_pages {
                 let mut query = vec![(page_param.clone(), page.to_string())];
                 if let Some(pp) = per_page {
@@ -304,20 +324,29 @@ async fn fetch_all_pages(
                 let items = extract_items(&body, &spec.response_mapping.items_path);
                 let empty = items.is_empty();
                 all.extend(items);
-                if empty { break; }
+                if empty {
+                    break;
+                }
             }
         }
-        Pagination::Cursor { cursor_param, cursor_path, max_pages } => {
+        Pagination::Cursor {
+            cursor_param,
+            cursor_path,
+            max_pages,
+        } => {
             let mut cursor: Option<String> = None;
             for _ in 0..*max_pages {
-                let query = cursor.as_ref()
+                let query = cursor
+                    .as_ref()
                     .map(|c| vec![(cursor_param.clone(), c.clone())])
                     .unwrap_or_default();
                 let body = fetch_one(&client, spec, values, None, Some(&query), None).await?;
                 all.extend(extract_items(&body, &spec.response_mapping.items_path));
-                cursor = jsonpath_get(&body, cursor_path)
-                    .and_then(|v| v.as_str().map(String::from));
-                if cursor.is_none() { break; }
+                cursor =
+                    jsonpath_get(&body, cursor_path).and_then(|v| v.as_str().map(String::from));
+                if cursor.is_none() {
+                    break;
+                }
             }
         }
     }
@@ -332,7 +361,8 @@ async fn fetch_one(
     extra_query: Option<&[(String, String)]>,
     _page: Option<u32>,
 ) -> Result<serde_json::Value, AppError> {
-    let (body, _link) = fetch_one_with_headers_inner(client, spec, values, override_url, extra_query).await?;
+    let (body, _link) =
+        fetch_one_with_headers_inner(client, spec, values, override_url, extra_query).await?;
     Ok(body)
 }
 
@@ -361,7 +391,8 @@ async fn fetch_one_with_headers_inner(
     // Reject credentials still containing `{{...}}` placeholders
     if url.contains("{{") {
         return Err(AppError::Validation(
-            "Unresolved template variables in list_endpoint.url — credential fields missing?".into(),
+            "Unresolved template variables in list_endpoint.url — credential fields missing?"
+                .into(),
         ));
     }
     validate_healthcheck_url(&url)?;
@@ -386,7 +417,10 @@ async fn fetch_one_with_headers_inner(
     }
 
     let resp = req.send().await.map_err(|e| {
-        AppError::External(format!("Resource list request failed: {}", sanitize_secrets(&e.to_string())))
+        AppError::External(format!(
+            "Resource list request failed: {}",
+            sanitize_secrets(&e.to_string())
+        ))
     })?;
     let status = resp.status();
     let next_link = parse_link_header_next(resp.headers().get("link"));
@@ -396,12 +430,18 @@ async fn fetch_one_with_headers_inner(
         return Err(AppError::External(format!(
             "Resource list returned HTTP {}: {}",
             status.as_u16(),
-            sanitize_secrets(&body_text).chars().take(200).collect::<String>()
+            sanitize_secrets(&body_text)
+                .chars()
+                .take(200)
+                .collect::<String>()
         )));
     }
 
     let body = resp.json::<serde_json::Value>().await.map_err(|e| {
-        AppError::External(format!("Response not JSON: {}", sanitize_secrets(&e.to_string())))
+        AppError::External(format!(
+            "Response not JSON: {}",
+            sanitize_secrets(&e.to_string())
+        ))
     })?;
     Ok((body, next_link))
 }
@@ -411,7 +451,9 @@ fn parse_link_header_next(hv: Option<&reqwest::header::HeaderValue>) -> Option<S
     // Parse RFC 5988: `<url>; rel="next", <url>; rel="prev"`
     for part in s.split(',') {
         let part = part.trim();
-        if !part.contains("rel=\"next\"") { continue; }
+        if !part.contains("rel=\"next\"") {
+            continue;
+        }
         if let Some(start) = part.find('<') {
             if let Some(end) = part.find('>') {
                 return Some(part[start + 1..end].to_string());
@@ -432,7 +474,10 @@ fn extract_items(root: &serde_json::Value, items_path: &str) -> Vec<serde_json::
             _ => Vec::new(),
         };
     }
-    match jsonpath_get(root, items_path.trim_start_matches('$').trim_start_matches('.')) {
+    match jsonpath_get(
+        root,
+        items_path.trim_start_matches('$').trim_start_matches('.'),
+    ) {
         Some(serde_json::Value::Array(arr)) => arr,
         _ => Vec::new(),
     }
@@ -469,9 +514,9 @@ pub fn validate_scoped_resources_payload(
 ) -> Result<(), AppError> {
     let parsed: serde_json::Value = serde_json::from_str(payload)
         .map_err(|e| AppError::Validation(format!("scoped_resources must be valid JSON: {e}")))?;
-    let obj = parsed.as_object().ok_or_else(|| {
-        AppError::Validation("scoped_resources must be a JSON object".into())
-    })?;
+    let obj = parsed
+        .as_object()
+        .ok_or_else(|| AppError::Validation("scoped_resources must be a JSON object".into()))?;
 
     if obj.is_empty() {
         return Ok(()); // Picker-skipped form is allowed.
@@ -486,12 +531,11 @@ pub fn validate_scoped_resources_payload(
         .map_err(|e| AppError::Internal(format!("Malformed connector resources[]: {e}")))?;
 
     for (key, value) in obj {
-        let spec = specs
-            .iter()
-            .find(|s| s.id == *key)
-            .ok_or_else(|| AppError::Validation(format!(
+        let spec = specs.iter().find(|s| s.id == *key).ok_or_else(|| {
+            AppError::Validation(format!(
                 "Unknown resource id '{key}' — not declared on the connector"
-            )))?;
+            ))
+        })?;
 
         let arr = value.as_array().ok_or_else(|| {
             AppError::Validation(format!("Picks for '{key}' must be a JSON array"))
@@ -500,7 +544,8 @@ pub fn validate_scoped_resources_payload(
         if matches!(spec.selection.as_str(), "single" | "single_or_all") && arr.len() > 1 {
             return Err(AppError::Validation(format!(
                 "Resource '{key}' has selection='{}' but {} picks were submitted",
-                spec.selection, arr.len()
+                spec.selection,
+                arr.len()
             )));
         }
 
@@ -545,5 +590,10 @@ fn map_item(raw: &serde_json::Value, mapping: &ResponseMapping) -> Option<Resour
             meta.insert(k.clone(), v);
         }
     }
-    Some(ResourceItem { id, label, sublabel, meta })
+    Some(ResourceItem {
+        id,
+        label,
+        sublabel,
+        meta,
+    })
 }

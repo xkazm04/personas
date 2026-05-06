@@ -157,7 +157,12 @@ pub async fn file_watcher_tick(
         .filter(|t| t.is_within_active_window(now_utc))
         .map(|t| {
             let config = t.parse_config();
-            (t.id.clone(), t.persona_id.clone(), t.use_case_id.clone(), config)
+            (
+                t.id.clone(),
+                t.persona_id.clone(),
+                t.use_case_id.clone(),
+                config,
+            )
         })
         .collect();
 
@@ -238,11 +243,7 @@ fn coalesce_events(raw: &[RawFsEvent]) -> Vec<(String, String, Vec<String>)> {
 
 /// Remove `last_fired` entries older than 2× the debounce window to prevent
 /// unbounded growth. Entries within the window are kept for active debouncing.
-fn prune_last_fired(
-    last_fired: &mut HashMap<String, Instant>,
-    debounce: Duration,
-    now: Instant,
-) {
+fn prune_last_fired(last_fired: &mut HashMap<String, Instant>, debounce: Duration, now: Instant) {
     let prune_threshold = debounce * 2;
     last_fired.retain(|_, t| now.duration_since(*t) < prune_threshold);
 }
@@ -265,9 +266,9 @@ fn matches_trigger(config: &TriggerConfig, kind: &str, paths: &[String]) -> bool
         // Check path prefix match
         let path_matches = paths.iter().any(|rp| {
             let rp_lower = rp.to_lowercase().replace('\\', "/");
-            wpaths.iter().any(|wp| {
-                rp_lower.starts_with(&wp.to_lowercase().replace('\\', "/"))
-            })
+            wpaths
+                .iter()
+                .any(|wp| rp_lower.starts_with(&wp.to_lowercase().replace('\\', "/")))
         });
         if !path_matches {
             return false;
@@ -325,14 +326,18 @@ async fn reconcile_watches(
                     EventKind::Remove(_) => "delete",
                     _ => return,
                 };
-                let paths: Vec<String> = event.paths.iter()
+                let paths: Vec<String> = event
+                    .paths
+                    .iter()
                     .filter_map(|p| p.to_str().map(String::from))
                     .collect();
                 if !paths.is_empty()
-                    && tx.try_send(RawFsEvent {
-                        kind: kind_str.into(),
-                        paths,
-                    }).is_err()
+                    && tx
+                        .try_send(RawFsEvent {
+                            kind: kind_str.into(),
+                            paths,
+                        })
+                        .is_err()
                 {
                     dropped.fetch_add(1, Ordering::Relaxed);
                 }
@@ -348,7 +353,12 @@ async fn reconcile_watches(
     let mut changed_triggers: Vec<(String, HashSet<String>)> = Vec::new();
     for trigger in triggers {
         let config = trigger.parse_config();
-        if let TriggerConfig::FileWatcher { watch_paths: Some(ref paths), recursive, .. } = config {
+        if let TriggerConfig::FileWatcher {
+            watch_paths: Some(ref paths),
+            recursive,
+            ..
+        } = config
+        {
             let mode = if recursive.unwrap_or(true) {
                 RecursiveMode::Recursive
             } else {
@@ -379,7 +389,10 @@ async fn reconcile_watches(
                 }
             }
             if !stale_paths.is_empty() {
-                tracing::debug!(count = stale_paths.len(), "file_watcher: unwatched stale paths");
+                tracing::debug!(
+                    count = stale_paths.len(),
+                    "file_watcher: unwatched stale paths"
+                );
             }
 
             // Apply new registrations
@@ -455,9 +468,9 @@ fn simple_glob_match(pattern: &str, text: &str) -> bool {
             if let (Some(start), Some(end)) = (ext.find('{'), ext.find('}')) {
                 let prefix = &ext[..start];
                 let alternatives = &ext[start + 1..end];
-                return alternatives.split(',').any(|alt| {
-                    text.ends_with(&format!("{prefix}{}", alt.trim()))
-                });
+                return alternatives
+                    .split(',')
+                    .any(|alt| text.ends_with(&format!("{prefix}{}", alt.trim())));
             }
         }
         return text.ends_with(ext);
@@ -506,7 +519,10 @@ mod tests {
     #[test]
     fn test_stale_paths_shared_path_not_unwatched() {
         let mut registered = HashMap::new();
-        registered.insert("t1".into(), HashSet::from(["/shared".into(), "/only_t1".into()]));
+        registered.insert(
+            "t1".into(),
+            HashSet::from(["/shared".into(), "/only_t1".into()]),
+        );
         registered.insert("t2".into(), HashSet::from(["/shared".into()]));
 
         // t1 deleted, t2 remains — /shared must NOT be stale
@@ -519,11 +535,17 @@ mod tests {
     #[test]
     fn test_stale_paths_trigger_paths_changed() {
         let mut registered = HashMap::new();
-        registered.insert("t1".into(), HashSet::from(["/old_a".into(), "/keep".into()]));
+        registered.insert(
+            "t1".into(),
+            HashSet::from(["/old_a".into(), "/keep".into()]),
+        );
 
         // t1 changes paths: /old_a → /new_a, keeps /keep
         let wanted = HashSet::from(["t1".into()]);
-        let changed = vec![("t1".into(), HashSet::from(["/new_a".into(), "/keep".into()]))];
+        let changed = vec![(
+            "t1".into(),
+            HashSet::from(["/new_a".into(), "/keep".into()]),
+        )];
         let stale = compute_stale_paths(&registered, &wanted, &changed);
         assert!(stale.contains("/old_a"));
         assert!(!stale.contains("/keep"));
@@ -564,9 +586,18 @@ mod tests {
     #[test]
     fn test_coalesce_deduplicates_same_path() {
         let events = vec![
-            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
-            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
-            RawFsEvent { kind: "modify".into(), paths: vec!["/src/main.rs".into()] },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["/src/main.rs".into()],
+            },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["/src/main.rs".into()],
+            },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["/src/main.rs".into()],
+            },
         ];
         let coalesced = coalesce_events(&events);
         assert_eq!(coalesced.len(), 1);
@@ -576,8 +607,14 @@ mod tests {
     #[test]
     fn test_coalesce_keeps_distinct_paths() {
         let events = vec![
-            RawFsEvent { kind: "modify".into(), paths: vec!["/src/a.rs".into()] },
-            RawFsEvent { kind: "create".into(), paths: vec!["/src/b.rs".into()] },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["/src/a.rs".into()],
+            },
+            RawFsEvent {
+                kind: "create".into(),
+                paths: vec!["/src/b.rs".into()],
+            },
         ];
         let coalesced = coalesce_events(&events);
         assert_eq!(coalesced.len(), 2);
@@ -586,8 +623,14 @@ mod tests {
     #[test]
     fn test_coalesce_last_kind_wins() {
         let events = vec![
-            RawFsEvent { kind: "create".into(), paths: vec!["/src/file.rs".into()] },
-            RawFsEvent { kind: "modify".into(), paths: vec!["/src/file.rs".into()] },
+            RawFsEvent {
+                kind: "create".into(),
+                paths: vec!["/src/file.rs".into()],
+            },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["/src/file.rs".into()],
+            },
         ];
         let coalesced = coalesce_events(&events);
         assert_eq!(coalesced.len(), 1);
@@ -597,8 +640,14 @@ mod tests {
     #[test]
     fn test_coalesce_normalizes_backslashes() {
         let events = vec![
-            RawFsEvent { kind: "modify".into(), paths: vec!["C:\\src\\file.rs".into()] },
-            RawFsEvent { kind: "modify".into(), paths: vec!["c:/src/file.rs".into()] },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["C:\\src\\file.rs".into()],
+            },
+            RawFsEvent {
+                kind: "modify".into(),
+                paths: vec!["c:/src/file.rs".into()],
+            },
         ];
         let coalesced = coalesce_events(&events);
         assert_eq!(coalesced.len(), 1);

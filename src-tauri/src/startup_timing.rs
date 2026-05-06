@@ -65,10 +65,7 @@ impl StartupTimer {
     pub fn new() -> Self {
         Self {
             phases: Vec::with_capacity(16),
-            last_checkpoint: PROCESS_START
-                .get()
-                .copied()
-                .unwrap_or_else(Instant::now),
+            last_checkpoint: PROCESS_START.get().copied().unwrap_or_else(Instant::now),
         }
     }
 

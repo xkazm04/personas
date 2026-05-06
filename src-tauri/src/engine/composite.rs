@@ -12,8 +12,8 @@
 //!    to prevent re-firing until conditions reset.
 //! 4. Log partial-match diagnostics for near-miss evaluations.
 
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 
 use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
@@ -153,7 +153,9 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
     let composite_triggers = match trigger_repo::get_enabled_by_type(pool, "composite") {
         Ok(t) => t,
         Err(e) => {
-            tracing::error!("Failed to load composite triggers: {e} — composite evaluation skipped this tick");
+            tracing::error!(
+                "Failed to load composite triggers: {e} — composite evaluation skipped this tick"
+            );
             return;
         }
     };
@@ -208,11 +210,9 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
             let op = operator.as_deref().unwrap_or("all");
 
             // Check if we already fired within the window (suppress re-firing)
-            let suppressed = state.last_fired
-                .get(&trigger.id)
-                .is_some_and(|last| {
-                    now.signed_duration_since(last).num_seconds() < window_secs as i64
-                });
+            let suppressed = state.last_fired.get(&trigger.id).is_some_and(|last| {
+                now.signed_duration_since(last).num_seconds() < window_secs as i64
+            });
 
             let window_start = now - Duration::seconds(window_secs as i64);
 
@@ -276,7 +276,9 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
             if fired {
                 // Record firing in memory and persist to DB
                 state.last_fired.insert(trigger.id.clone(), now);
-                if let Err(e) = trigger_repo::upsert_composite_fire(pool, &trigger.id, &now.to_rfc3339()) {
+                if let Err(e) =
+                    trigger_repo::upsert_composite_fire(pool, &trigger.id, &now.to_rfc3339())
+                {
                     tracing::warn!(trigger_id = %trigger.id, "Failed to persist composite fire: {e}");
                 }
 

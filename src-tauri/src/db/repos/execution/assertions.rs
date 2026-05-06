@@ -89,19 +89,22 @@ pub fn create(
     })
 }
 
-crud_get_by_id!(OutputAssertion, "output_assertions", "OutputAssertion", row_to_assertion);
+crud_get_by_id!(
+    OutputAssertion,
+    "output_assertions",
+    "OutputAssertion",
+    row_to_assertion
+);
 
-pub fn list_by_persona(
-    pool: &DbPool,
-    persona_id: &str,
-) -> Result<Vec<OutputAssertion>, AppError> {
+pub fn list_by_persona(pool: &DbPool, persona_id: &str) -> Result<Vec<OutputAssertion>, AppError> {
     timed_query!("output_assertions", "output_assertions::list_by_persona", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM output_assertions WHERE persona_id = ?1 ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![persona_id], row_to_assertion)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }
 
@@ -109,14 +112,19 @@ pub fn list_enabled_by_persona(
     pool: &DbPool,
     persona_id: &str,
 ) -> Result<Vec<OutputAssertion>, AppError> {
-    timed_query!("output_assertions", "output_assertions::list_enabled_by_persona", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "output_assertions",
+        "output_assertions::list_enabled_by_persona",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM output_assertions WHERE persona_id = ?1 AND enabled = 1 ORDER BY created_at DESC",
         )?;
-        let rows = stmt.query_map(params![persona_id], row_to_assertion)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![persona_id], row_to_assertion)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -145,7 +153,16 @@ pub fn update(
                 enabled = COALESCE(?6, enabled),
                 updated_at = ?7
              WHERE id = ?8",
-            params![name, description, config, severity, on_failure, enabled_int, now, id],
+            params![
+                name,
+                description,
+                config,
+                severity,
+                on_failure,
+                enabled_int,
+                now,
+                id
+            ],
         )?;
 
         get_by_id(pool, id)
@@ -183,40 +200,49 @@ pub fn get_results_by_execution(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Vec<AssertionResult>, AppError> {
-    timed_query!("output_assertions", "output_assertions::get_results_by_execution", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM assertion_results WHERE execution_id = ?1 ORDER BY created_at ASC",
-        )?;
-        let rows = stmt.query_map(params![execution_id], row_to_result)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+    timed_query!(
+        "output_assertions",
+        "output_assertions::get_results_by_execution",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT * FROM assertion_results WHERE execution_id = ?1 ORDER BY created_at ASC",
+            )?;
+            let rows = stmt.query_map(params![execution_id], row_to_result)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 pub fn get_summary_by_execution(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<ExecutionAssertionSummary, AppError> {
-    timed_query!("output_assertions", "output_assertions::get_summary_by_execution", {
-        let results = get_results_by_execution(pool, execution_id)?;
-        let total = results.len() as i64;
-        let passed = results.iter().filter(|r| r.passed).count() as i64;
-        let failed = total - passed;
+    timed_query!(
+        "output_assertions",
+        "output_assertions::get_summary_by_execution",
+        {
+            let results = get_results_by_execution(pool, execution_id)?;
+            let total = results.len() as i64;
+            let passed = results.iter().filter(|r| r.passed).count() as i64;
+            let failed = total - passed;
 
-        // `critical_failures` and `first_critical_failure` aren't stored
-        // alongside results today — they're only meaningful in the live
-        // evaluation summary emitted by `evaluate_assertions`. Historical
-        // summaries read back from the DB leave them zeroed/None.
-        Ok(ExecutionAssertionSummary {
-            execution_id: execution_id.to_string(),
-            total,
-            passed,
-            failed,
-            critical_failures: 0,
-            first_critical_failure: None,
-            results,
-        })
-    })
+            // `critical_failures` and `first_critical_failure` aren't stored
+            // alongside results today — they're only meaningful in the live
+            // evaluation summary emitted by `evaluate_assertions`. Historical
+            // summaries read back from the DB leave them zeroed/None.
+            Ok(ExecutionAssertionSummary {
+                execution_id: execution_id.to_string(),
+                total,
+                passed,
+                failed,
+                critical_failures: 0,
+                first_critical_failure: None,
+                results,
+            })
+        }
+    )
 }
 
 pub fn get_results_by_assertion(
@@ -224,29 +250,38 @@ pub fn get_results_by_assertion(
     assertion_id: &str,
     limit: Option<i64>,
 ) -> Result<Vec<AssertionResult>, AppError> {
-    timed_query!("output_assertions", "output_assertions::get_results_by_assertion", {
-        let limit = limit.unwrap_or(50);
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
+    timed_query!(
+        "output_assertions",
+        "output_assertions::get_results_by_assertion",
+        {
+            let limit = limit.unwrap_or(50);
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
             "SELECT * FROM assertion_results WHERE assertion_id = ?1 ORDER BY created_at DESC LIMIT ?2",
         )?;
-        let rows = stmt.query_map(params![assertion_id, limit], row_to_result)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![assertion_id, limit], row_to_result)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Increment pass/fail counter and update last_evaluated_at on an assertion.
 pub fn increment_counter(pool: &DbPool, assertion_id: &str, passed: bool) -> Result<(), AppError> {
-    timed_query!("output_assertions", "output_assertions::increment_counter", {
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        let col = if passed { "pass_count" } else { "fail_count" };
-        conn.execute(
+    timed_query!(
+        "output_assertions",
+        "output_assertions::increment_counter",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            let col = if passed { "pass_count" } else { "fail_count" };
+            conn.execute(
             &format!(
                 "UPDATE output_assertions SET {col} = {col} + 1, last_evaluated_at = ?1 WHERE id = ?2"
             ),
             params![now, assertion_id],
         )?;
-        Ok(())
-    })
+            Ok(())
+        }
+    )
 }

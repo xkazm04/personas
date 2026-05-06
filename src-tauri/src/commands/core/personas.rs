@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
@@ -14,9 +14,9 @@ use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::automations as automation_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
+use crate::engine;
 use crate::engine::config_merge::{self, EffectiveModelConfig};
 use crate::engine::types::ExecutionState;
-use crate::engine;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::validation::contract::check;
@@ -111,7 +111,9 @@ pub fn update_persona(
     // Invalidate cached session AFTER successful DB update
     let pool = state.session_pool.clone();
     let pid = id.clone();
-    tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
+    tauri::async_runtime::spawn(async move {
+        pool.invalidate(&pid).await;
+    });
 
     // Auto-sync to cloud if connected (fire-and-forget).
     // Use the already-fetched result to avoid re-reading stale data if
@@ -135,11 +137,21 @@ pub fn update_persona(
             return;
         }
         // Use the already-updated persona snapshot; only tools need a DB read
-        let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-            Ok(t) => t,
-            Err(_) => return,
-        };
-        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
+        let tools_list =
+            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+                Ok(t) => t,
+                Err(_) => return,
+            };
+        let prompt = engine::prompt::assemble_prompt(
+            &sync_persona,
+            &tools_list,
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         let body = serde_json::json!({
             "id": sync_persona.id,
             "name": sync_persona.name,
@@ -190,9 +202,8 @@ pub fn update_persona_parameters(
         }
         // Verify it's valid JSON
         if !params_json.is_empty() {
-            serde_json::from_str::<serde_json::Value>(params_json).map_err(|e| {
-                AppError::Validation(format!("Parameters must be valid JSON: {e}"))
-            })?;
+            serde_json::from_str::<serde_json::Value>(params_json)
+                .map_err(|e| AppError::Validation(format!("Parameters must be valid JSON: {e}")))?;
         }
     }
 
@@ -208,7 +219,9 @@ pub fn update_persona_parameters(
     // Invalidate cached session so the engine uses updated parameter values
     let pool = state.session_pool.clone();
     let pid = id.clone();
-    tauri::async_runtime::spawn(async move { pool.invalidate(&pid).await; });
+    tauri::async_runtime::spawn(async move {
+        pool.invalidate(&pid).await;
+    });
 
     // Auto-sync to cloud if connected (fire-and-forget).
     // Use the already-fetched result to avoid re-reading stale data.
@@ -228,11 +241,21 @@ pub fn update_persona_parameters(
         if !deployments.iter().any(|d| d.persona_id == sync_id) {
             return;
         }
-        let tools_list = match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
-            Ok(t) => t,
-            Err(_) => return,
-        };
-        let prompt = engine::prompt::assemble_prompt(&sync_persona, &tools_list, None, None, None, None, #[cfg(feature = "desktop")] None);
+        let tools_list =
+            match crate::db::repos::resources::tools::get_tools_for_persona(&db, &sync_id) {
+                Ok(t) => t,
+                Err(_) => return,
+            };
+        let prompt = engine::prompt::assemble_prompt(
+            &sync_persona,
+            &tools_list,
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
         let body = serde_json::json!({
             "id": sync_persona.id,
             "name": sync_persona.name,
@@ -403,7 +426,10 @@ pub fn persona_blast_radius(
     let items = repo::blast_radius(&state.db, &id)?;
     Ok(items
         .into_iter()
-        .map(|(category, description)| BlastRadiusItem { category, description })
+        .map(|(category, description)| BlastRadiusItem {
+            category,
+            description,
+        })
         .collect())
 }
 
@@ -413,7 +439,10 @@ const DELETION_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_se
 const DELETION_DRAIN_POLL: std::time::Duration = std::time::Duration::from_millis(250);
 
 #[tauri::command]
-pub async fn delete_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<DeletePersonaResult, AppError> {
+pub async fn delete_persona(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DeletePersonaResult, AppError> {
     require_auth(&state).await?;
 
     // ── Phase 1: Mark persona as "deleting" to block new executions ──

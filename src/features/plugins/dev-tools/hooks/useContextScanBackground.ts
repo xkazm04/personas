@@ -46,21 +46,33 @@ export function useContextScanBackground() {
     }
   }, [t, tx]);
 
-  // Listen for scan completion event from backend
+  // Listen for scan completion event from backend.
+  //
+  // Track the `listen()` promise itself (not just the resolved unlisten fn)
+  // so that an unmount which fires before the promise resolves still tears
+  // the listener down via `.then((fn) => fn())`. The previous fire-and-forget
+  // pattern (`listen(...).then((fn) => unlisten = fn)`) leaked the listener
+  // forever in that race window: the cleanup ran with `unlisten=null` and
+  // the next mount registered a duplicate. After N flips between Dev Tools
+  // and other tabs, OS notifications and `processEnded()` fired N times per
+  // scan — corrupting Overview metrics. Same shape as the listeners in
+  // `useCreativeSession.ts`.
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    listen<{ scan_id: string; success: boolean }>(EventName.CONTEXT_GEN_COMPLETE, (event) => {
-      const name = pendingProjectName.current ?? 'project';
-      pendingProjectName.current = null;
-      setContextScanActive(false);
-      setContextScanComplete(event.payload.success);
-      useOverviewStore.getState().processEnded(
-        'context_scan',
-        event.payload.success ? 'completed' : 'failed',
-      );
-      notifyCompletion(name, event.payload.success);
-    }).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
+    const unsub = listen<{ scan_id: string; success: boolean }>(
+      EventName.CONTEXT_GEN_COMPLETE,
+      (event) => {
+        const name = pendingProjectName.current ?? 'project';
+        pendingProjectName.current = null;
+        setContextScanActive(false);
+        setContextScanComplete(event.payload.success);
+        useOverviewStore.getState().processEnded(
+          'context_scan',
+          event.payload.success ? 'completed' : 'failed',
+        );
+        notifyCompletion(name, event.payload.success);
+      },
+    );
+    return () => { unsub.then((fn) => fn()); };
   }, [setContextScanActive, setContextScanComplete, notifyCompletion]);
 
   const startBackgroundScan = useCallback(

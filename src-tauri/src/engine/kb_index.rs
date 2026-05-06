@@ -18,7 +18,7 @@
 //! with headings extracted so the agent can tell what each note is about
 //! before opening it.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 
 use chrono::Utc;
@@ -36,6 +36,13 @@ const MAX_HEADINGS_PER_FILE: usize = 3;
 /// more than this get a count + the most-recently-modified subset.
 const MAX_FILES_PER_FOLDER: usize = 50;
 
+/// Hard cap on directory recursion depth. Defends against pathological
+/// nesting and exotic filesystems that defeat the symlink/canonical-path
+/// guards below. The Karpathy-style index is pitched at Obsidian users;
+/// real vaults rarely exceed 6–8 levels, so 32 is comfortably above any
+/// legitimate layout.
+const MAX_WALK_DEPTH: usize = 32;
+
 /// Build the index for a knowledge base directory tree.
 ///
 /// Returns the index content as a string. Caller decides whether to write
@@ -49,8 +56,18 @@ pub fn build_index(root: &Path) -> Result<String, AppError> {
     }
 
     // Group .md files by their containing directory (relative to root).
+    //
+    // `visited` carries canonical paths of every directory we descend into
+    // so the recursion short-circuits on cycles. Symlinks (common on
+    // Obsidian + iCloud setups, Dropbox shared notes, vaults re-linked into
+    // themselves) used to send `walk` into an infinite recursion that blew
+    // the thread stack and crashed the entire Tauri backend.
     let mut by_folder: BTreeMap<String, Vec<NoteEntry>> = BTreeMap::new();
-    walk(root, root, &mut by_folder)?;
+    let mut visited: HashSet<PathBuf> = HashSet::new();
+    if let Ok(canonical_root) = std::fs::canonicalize(root) {
+        visited.insert(canonical_root);
+    }
+    walk(root, root, &mut by_folder, &mut visited, 0)?;
 
     let total_files: usize = by_folder.values().map(|v| v.len()).sum();
     let folder_count = by_folder.len();
@@ -67,9 +84,11 @@ pub fn build_index(root: &Path) -> Result<String, AppError> {
         folder_count,
         total_files
     ));
-    out.push_str("This file is the agent's entry point. Each section below \
+    out.push_str(
+        "This file is the agent's entry point. Each section below \
 is a folder; each bullet is a note. Use the headings under each note to \
-decide whether to open it.\n\n");
+decide whether to open it.\n\n",
+    );
 
     if by_folder.is_empty() {
         out.push_str("_(No markdown files found.)_\n");
@@ -77,7 +96,11 @@ decide whether to open it.\n\n");
     }
 
     for (folder, notes) in &by_folder {
-        let folder_label = if folder.is_empty() { "/ (root)" } else { folder };
+        let folder_label = if folder.is_empty() {
+            "/ (root)"
+        } else {
+            folder
+        };
         out.push_str(&format!("## {}\n\n", folder_label));
 
         if notes.len() > MAX_FILES_PER_FOLDER {
@@ -91,7 +114,10 @@ decide whether to open it.\n\n");
         let limit = MAX_FILES_PER_FOLDER.min(notes.len());
         for note in notes.iter().take(limit) {
             // Bullet line: filename (linked) + first heading if any.
-            let title = note.first_heading.clone().unwrap_or_else(|| note.filename.clone());
+            let title = note
+                .first_heading
+                .clone()
+                .unwrap_or_else(|| note.filename.clone());
             out.push_str(&format!("- **{}** — `{}`\n", title, note.relative_path));
 
             // Subsequent headings as nested bullets, capped to keep the file readable.
@@ -131,12 +157,32 @@ fn walk(
     root: &Path,
     dir: &Path,
     out: &mut BTreeMap<String, Vec<NoteEntry>>,
+    visited: &mut HashSet<PathBuf>,
+    depth: usize,
 ) -> Result<(), AppError> {
+    if depth >= MAX_WALK_DEPTH {
+        tracing::warn!(dir = %dir.display(), depth, "kb_index: max walk depth reached, stopping descent");
+        return Ok(());
+    }
+
     let entries = std::fs::read_dir(dir)
         .map_err(|e| AppError::Internal(format!("read_dir {}: {e}", dir.display())))?;
 
     for entry in entries.flatten() {
         let path = entry.path();
+
+        // Skip symlinks outright. `is_dir()` and `read_dir()` both follow
+        // symlinks transparently, so a directory symlink that points at an
+        // ancestor would otherwise re-enter `walk` forever. Skipping is the
+        // safe default for a knowledge index — the tradeoff is that linked
+        // notes don't appear in the index, which is far better than a
+        // backend crash.
+        match std::fs::symlink_metadata(&path) {
+            Ok(meta) if meta.file_type().is_symlink() => continue,
+            Ok(_) => {}
+            Err(_) => continue, // unreadable entry — skip silently
+        }
+
         if path.is_dir() {
             // Skip dot-dirs (.obsidian, .git, .trash, etc.) and the index file itself.
             if path
@@ -147,7 +193,15 @@ fn walk(
             {
                 continue;
             }
-            walk(root, &path, out)?;
+            // Cycle short-circuit via canonical path. Belt-and-braces with
+            // the symlink skip above, because some filesystems (bind mounts,
+            // junctions on Windows, hard-linked dirs) report `is_symlink()`
+            // as false yet still loop on naive descent.
+            let canonical = std::fs::canonicalize(&path).unwrap_or_else(|_| path.clone());
+            if !visited.insert(canonical) {
+                continue;
+            }
+            walk(root, &path, out, visited, depth + 1)?;
         } else if path.extension().map(|e| e == "md").unwrap_or(false) {
             // Skip the index.md itself if it lives in this tree, so the
             // index doesn't reference itself.
@@ -310,6 +364,32 @@ mod tests {
         assert!(written.ends_with(DEFAULT_INDEX_FILENAME));
         let body = fs::read_to_string(&written).unwrap();
         assert!(body.contains("Knowledge Base Index"));
+    }
+
+    /// Regression: a directory symlink that points at an ancestor used to
+    /// crash the backend with stack overflow. After the fix, `build_index`
+    /// must terminate AND exclude the symlinked subtree (we skip symlinks
+    /// rather than trying to canonicalize-and-include them).
+    ///
+    /// `#[cfg(unix)]` because `std::os::unix::fs::symlink` is the only stable
+    /// way to make a directory symlink that won't trigger Windows admin
+    /// prompts in CI. The Windows case is covered by the symlink-metadata
+    /// guard in code review; CI runs the test on Linux/macOS runners.
+    #[cfg(unix)]
+    #[test]
+    fn build_index_terminates_on_symlink_loop() {
+        use std::os::unix::fs::symlink;
+
+        let tmp = tempfile::tempdir().unwrap();
+        let root = tmp.path();
+        write(&root.join("notes/real.md"), "# Real Note\n");
+        // Create `notes/loop_back` -> the parent directory, which without
+        // the fix would re-enter `notes/loop_back/loop_back/...` forever.
+        let loop_path = root.join("notes/loop_back");
+        symlink(root, &loop_path).unwrap();
+
+        let idx = build_index(root).expect("walk must terminate, not stack-overflow");
+        assert!(idx.contains("Real Note"));
     }
 
     #[test]

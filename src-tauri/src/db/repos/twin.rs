@@ -1,6 +1,8 @@
 use rusqlite::{params, Row};
 
-use crate::db::models::{TwinProfile, TwinTone, TwinPendingMemory, TwinCommunication, TwinVoiceProfile, TwinChannel};
+use crate::db::models::{
+    TwinChannel, TwinCommunication, TwinPendingMemory, TwinProfile, TwinTone, TwinVoiceProfile,
+};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -83,9 +85,8 @@ fn unique_slug(pool: &DbPool, base: &str) -> Result<String, AppError> {
 
 pub fn list_profiles(pool: &DbPool) -> Result<Vec<TwinProfile>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM twin_profiles ORDER BY is_active DESC, updated_at DESC",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT * FROM twin_profiles ORDER BY is_active DESC, updated_at DESC")?;
     let rows = stmt.query_map([], row_to_twin_profile)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
@@ -231,7 +232,10 @@ pub fn set_active_profile(pool: &DbPool, id: &str) -> Result<TwinProfile, AppErr
     get_profile_by_id(pool, id)?;
     let mut conn = pool.get()?;
     let tx = conn.transaction()?;
-    tx.execute("UPDATE twin_profiles SET is_active = 0 WHERE is_active = 1", [])?;
+    tx.execute(
+        "UPDATE twin_profiles SET is_active = 0 WHERE is_active = 1",
+        [],
+    )?;
     tx.execute(
         "UPDATE twin_profiles SET is_active = 1, updated_at = ?2 WHERE id = ?1",
         params![id, chrono::Utc::now().to_rfc3339()],
@@ -260,9 +264,7 @@ fn row_to_tone(row: &Row) -> rusqlite::Result<TwinTone> {
 /// List all tone profiles for a twin, ordered by channel name.
 pub fn list_tones(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinTone>, AppError> {
     let conn = pool.get()?;
-    let mut stmt = conn.prepare(
-        "SELECT * FROM twin_tones WHERE twin_id = ?1 ORDER BY channel",
-    )?;
+    let mut stmt = conn.prepare("SELECT * FROM twin_tones WHERE twin_id = ?1 ORDER BY channel")?;
     let rows = stmt.query_map(params![twin_id], row_to_tone)?;
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)
@@ -294,9 +296,9 @@ pub fn get_tone(pool: &DbPool, twin_id: &str, channel: &str) -> Result<TwinTone,
                 other => AppError::Database(other),
             })
         }
-        Err(rusqlite::Error::QueryReturnedNoRows) => {
-            Err(AppError::NotFound(format!("Twin tone for {twin_id}/{channel}")))
-        }
+        Err(rusqlite::Error::QueryReturnedNoRows) => Err(AppError::NotFound(format!(
+            "Twin tone for {twin_id}/{channel}"
+        ))),
         Err(e) => Err(AppError::Database(e)),
     }
 }
@@ -333,17 +335,18 @@ pub fn upsert_tone(
 
     // Return the resulting row (might be the existing row with updated fields).
     let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
-        params![twin_id, channel],
-        row_to_tone,
-    )
-    .map_err(|e| match e {
-        rusqlite::Error::QueryReturnedNoRows => {
-            AppError::NotFound(format!("Twin tone for {twin_id}/{channel}"))
-        }
-        other => AppError::Database(other),
-    })
+    conn2
+        .query_row(
+            "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
+            params![twin_id, channel],
+            row_to_tone,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Twin tone for {twin_id}/{channel}"))
+            }
+            other => AppError::Database(other),
+        })
 }
 
 /// Delete a specific tone profile by id.
@@ -415,13 +418,15 @@ pub fn list_pending_memories(
             "SELECT * FROM twin_pending_memories WHERE twin_id = ?1 AND status = ?2 ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![twin_id, s], row_to_pending_memory)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     } else {
         let mut stmt = conn.prepare(
             "SELECT * FROM twin_pending_memories WHERE twin_id = ?1 ORDER BY created_at DESC",
         )?;
         let rows = stmt.query_map(params![twin_id], row_to_pending_memory)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     }
 }
 
@@ -506,13 +511,15 @@ pub fn list_communications(
             "SELECT * FROM twin_communications WHERE twin_id = ?1 AND channel = ?2 ORDER BY occurred_at DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![twin_id, ch, limit], row_to_communication)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     } else {
         let mut stmt = conn.prepare(
             "SELECT * FROM twin_communications WHERE twin_id = ?1 ORDER BY occurred_at DESC LIMIT ?2",
         )?;
         let rows = stmt.query_map(params![twin_id, limit], row_to_communication)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     }
 }
 
@@ -584,7 +591,10 @@ fn row_to_voice_profile(row: &Row) -> rusqlite::Result<TwinVoiceProfile> {
     })
 }
 
-pub fn get_voice_profile(pool: &DbPool, twin_id: &str) -> Result<Option<TwinVoiceProfile>, AppError> {
+pub fn get_voice_profile(
+    pool: &DbPool,
+    twin_id: &str,
+) -> Result<Option<TwinVoiceProfile>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
         "SELECT * FROM twin_voice_profiles WHERE twin_id = ?1",
@@ -631,13 +641,18 @@ pub fn upsert_voice_profile(
     // Return the resulting row
     match get_voice_profile(pool, twin_id)? {
         Some(v) => Ok(v),
-        None => Err(AppError::NotFound(format!("Voice profile for twin {twin_id}"))),
+        None => Err(AppError::NotFound(format!(
+            "Voice profile for twin {twin_id}"
+        ))),
     }
 }
 
 pub fn delete_voice_profile(pool: &DbPool, twin_id: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
-    let rows = conn.execute("DELETE FROM twin_voice_profiles WHERE twin_id = ?1", params![twin_id])?;
+    let rows = conn.execute(
+        "DELETE FROM twin_voice_profiles WHERE twin_id = ?1",
+        params![twin_id],
+    )?;
     Ok(rows > 0)
 }
 
@@ -665,7 +680,8 @@ pub fn list_channels(pool: &DbPool, twin_id: &str) -> Result<Vec<TwinChannel>, A
         "SELECT * FROM twin_channels WHERE twin_id = ?1 ORDER BY is_active DESC, channel_type",
     )?;
     let rows = stmt.query_map(params![twin_id], row_to_channel)?;
-    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)
 }
 
 pub fn create_channel(

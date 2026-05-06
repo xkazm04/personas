@@ -27,12 +27,26 @@ export default function EventBusVisualization({ events, personas, animationMapRe
 
   useEffect(() => {
     const map = discoveredRef.current;
+    const now = Date.now();
     for (const evt of events) {
       const key = evt.source_id || evt.source_type || 'unknown';
       if (key === 'unknown') continue;
       const existing = map.get(key);
-      if (existing) { existing.count++; existing.lastSeen = Date.now(); }
-      else { map.set(key, { id: key, label: labelForSource(key), count: 1, lastSeen: Date.now() }); }
+      if (existing) { existing.count++; existing.lastSeen = now; }
+      else { map.set(key, { id: key, label: labelForSource(key), count: 1, lastSeen: now }); }
+    }
+    // TTL eviction: entries not seen for >discoveredSourceEvictMs drop out entirely.
+    const evictBefore = now - EVENT_BUS_TIMING_MS.discoveredSourceEvictMs;
+    for (const [key, src] of map) {
+      if (src.lastSeen < evictBefore) map.delete(key);
+    }
+    // Hard cap (LRU): if still over limit, drop the least-recently-seen entries.
+    if (map.size > EVENT_BUS_LIMITS.maxDiscoveredSources) {
+      const overage = map.size - EVENT_BUS_LIMITS.maxDiscoveredSources;
+      const oldest = Array.from(map.entries())
+        .sort((a, b) => a[1].lastSeen - b[1].lastSeen)
+        .slice(0, overage);
+      for (const [key] of oldest) map.delete(key);
     }
   }, [events]);
 

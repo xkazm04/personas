@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 
 use crate::db::models::{Persona, PersonaToolDefinition};
-use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
 use crate::db::repos::resources::audit_log;
+use crate::db::repos::resources::{connectors as connector_repo, credentials as cred_repo};
 use crate::db::DbPool;
 use crate::engine;
 use crate::gitlab::types::{
@@ -38,8 +38,15 @@ pub fn resolve_credentials_for_gitlab(
     let connectors = match connector_repo::get_all(pool) {
         Ok(c) => c,
         Err(e) => {
-            tracing::warn!("Failed to load connectors for GitLab credential provisioning: {}", e);
-            return ResolvedCredentials { variables, hints, entries };
+            tracing::warn!(
+                "Failed to load connectors for GitLab credential provisioning: {}",
+                e
+            );
+            return ResolvedCredentials {
+                variables,
+                hints,
+                entries,
+            };
         }
     };
 
@@ -75,7 +82,14 @@ pub fn resolve_credentials_for_gitlab(
                         continue;
                     }
                 };
-                if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "gitlab:provision_variables", None, None) {
+                if let Err(e) = audit_log::log_decrypt(
+                    pool,
+                    &cred.id,
+                    &cred.name,
+                    "gitlab:provision_variables",
+                    None,
+                    None,
+                ) {
                     tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
                 }
                 let prefix = connector.name.to_uppercase().replace('-', "_");
@@ -122,7 +136,11 @@ pub fn resolve_credentials_for_gitlab(
         }
     }
 
-    ResolvedCredentials { variables, hints, entries }
+    ResolvedCredentials {
+        variables,
+        hints,
+        entries,
+    }
 }
 
 /// Convert a Persona and its tools into a GitLab Duo Agent definition.
@@ -136,7 +154,16 @@ pub fn persona_to_agent(
     tools: &[PersonaToolDefinition],
     credential_hints: Option<&[&str]>,
 ) -> GitLabAgentDefinition {
-    let system_prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints, None, None, #[cfg(feature = "desktop")] None);
+    let system_prompt = engine::prompt::assemble_prompt(
+        persona,
+        tools,
+        None,
+        credential_hints,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
     build_agent_definition(persona, tools, system_prompt)
 }
 
@@ -195,7 +222,16 @@ pub fn persona_to_agents_md(
     tools: &[PersonaToolDefinition],
     credential_hints: Option<&[&str]>,
 ) -> String {
-    let prompt = engine::prompt::assemble_prompt(persona, tools, None, credential_hints, None, None, #[cfg(feature = "desktop")] None);
+    let prompt = engine::prompt::assemble_prompt(
+        persona,
+        tools,
+        None,
+        credential_hints,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
     build_agents_md(persona, tools, &prompt)
 }
 
@@ -208,11 +244,47 @@ pub fn persona_to_agents_md_with_prompt(
     build_agents_md(persona, tools, &system_prompt)
 }
 
-fn build_agents_md(
-    persona: &Persona,
-    tools: &[PersonaToolDefinition],
-    prompt: &str,
-) -> String {
+/// Pick a backtick-fence length that is strictly longer than any run of
+/// backticks already present in `content`, with a minimum of 3.
+///
+/// CommonMark requires the closing fence to be at least as long as the
+/// opening fence; by ensuring our fence is *longer* than any inner run we
+/// guarantee the prompt round-trips even when it itself contains fenced
+/// code blocks (examples, JSON, regex, etc.). Both writer and reader rely
+/// on this convention — see `extract_prompt_from_agents_md` in
+/// `commands/infrastructure/gitlab.rs`.
+pub(crate) fn choose_code_fence_length(content: &str) -> usize {
+    let mut max_run = 0usize;
+    let mut current = 0usize;
+    for ch in content.chars() {
+        if ch == '`' {
+            current += 1;
+            if current > max_run {
+                max_run = current;
+            }
+        } else {
+            current = 0;
+        }
+    }
+    std::cmp::max(3, max_run + 1)
+}
+
+/// Render the `### System Prompt` section using a dynamically sized fence so
+/// the prompt round-trips even when it embeds its own fenced code blocks.
+pub(crate) fn format_system_prompt_section(prompt: &str) -> String {
+    let fence = "`".repeat(choose_code_fence_length(prompt));
+    let mut out = String::with_capacity(prompt.len() + fence.len() * 2 + 32);
+    out.push_str("### System Prompt\n\n");
+    out.push_str(&fence);
+    out.push('\n');
+    out.push_str(prompt);
+    out.push('\n');
+    out.push_str(&fence);
+    out.push_str("\n\n");
+    out
+}
+
+fn build_agents_md(persona: &Persona, tools: &[PersonaToolDefinition], prompt: &str) -> String {
     let mut md = String::new();
     md.push_str("# AGENTS.md\n\n");
     md.push_str("<!-- Generated by Personas Desktop -->\n\n");
@@ -225,10 +297,7 @@ fn build_agents_md(
         }
     }
 
-    md.push_str("### System Prompt\n\n");
-    md.push_str("```\n");
-    md.push_str(prompt);
-    md.push_str("\n```\n\n");
+    md.push_str(&format_system_prompt_section(prompt));
 
     if !tools.is_empty() {
         md.push_str("### Tools\n\n");
@@ -244,4 +313,40 @@ fn build_agents_md(
     ));
 
     md
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fence_length_is_three_for_plain_content() {
+        assert_eq!(choose_code_fence_length("hello world"), 3);
+        assert_eq!(choose_code_fence_length(""), 3);
+    }
+
+    #[test]
+    fn fence_length_grows_past_inner_runs() {
+        // Inner triple-fence => need 4 backticks.
+        assert_eq!(
+            choose_code_fence_length("example:\n```python\nprint(1)\n```"),
+            4
+        );
+        // Inner quadruple-fence => need 5.
+        assert_eq!(choose_code_fence_length("````nested````"), 5);
+    }
+
+    #[test]
+    fn system_prompt_section_uses_long_enough_fence() {
+        let prompt = "Quote me:\n```json\n{\"a\": 1}\n```";
+        let section = format_system_prompt_section(prompt);
+        assert!(
+            section.starts_with("### System Prompt\n\n````\n"),
+            "expected 4-backtick fence, got: {section}"
+        );
+        assert!(
+            section.contains("\n````\n\n"),
+            "expected matching 4-backtick close fence, got: {section}"
+        );
+    }
 }

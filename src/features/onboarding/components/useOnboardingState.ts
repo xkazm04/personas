@@ -23,6 +23,14 @@ export interface TemplateLoadState {
   error: string | null;
 }
 
+/** Observable scan state for desktop app discovery. */
+export type DiscoveryScanPhase = 'scanning' | 'success' | 'error';
+
+export interface DiscoveryScanState {
+  phase: DiscoveryScanPhase;
+  error: string | null;
+}
+
 function countTemplateLoad(phase: TemplateLoadPhase, source: 'trending' | 'fallback' | null) {
   try {
     Sentry.metrics.count('onboarding.templates.load', 1, {
@@ -68,29 +76,60 @@ export function useOnboardingState() {
 
   // -- Desktop discovery state --
   const [discoveredApps, setDiscoveredApps] = useState<DiscoveredApp[]>([]);
-  const [isScanning, setIsScanning] = useState(true);
+  const [discoveryState, setDiscoveryState] = useState<DiscoveryScanState>({
+    phase: 'scanning',
+    error: null,
+  });
+  const [discoveryReloadNonce, setDiscoveryReloadNonce] = useState(0);
   const [approvedApps, setApprovedApps] = useState<Set<string>>(new Set());
   const [approvingApp, setApprovingApp] = useState<string | null>(null);
 
-  // Run desktop discovery on mount
+  // Run desktop discovery on mount and on retry. We track an explicit
+  // (scanning | success | error) phase so a network blip or missing native
+  // binary surfaces a Retry button instead of silently rendering the same
+  // empty state a user with zero installed apps would see.
   useEffect(() => {
     if (!onboardingActive) return;
     let cancelled = false;
-    setIsScanning(true);
+    setDiscoveryState({ phase: 'scanning', error: null });
+    Sentry.addBreadcrumb({
+      category: 'onboarding.discover',
+      message: 'Desktop discovery started',
+      level: 'info',
+    });
 
     discoverDesktopApps()
       .then((apps) => {
-        if (!cancelled) setDiscoveredApps(apps);
+        if (cancelled) return;
+        setDiscoveredApps(apps);
+        setDiscoveryState({ phase: 'success', error: null });
+        Sentry.addBreadcrumb({
+          category: 'onboarding.discover',
+          message: `Desktop discovery succeeded (${apps.length} apps)`,
+          level: 'info',
+        });
       })
-      .catch(() => {
-        if (!cancelled) setDiscoveredApps([]);
-      })
-      .finally(() => {
-        if (!cancelled) setIsScanning(false);
+      .catch((err) => {
+        if (cancelled) return;
+        const message = err instanceof Error ? err.message : String(err);
+        setDiscoveredApps([]);
+        setDiscoveryState({ phase: 'error', error: message });
+        Sentry.addBreadcrumb({
+          category: 'onboarding.discover',
+          message: `Desktop discovery failed: ${message}`,
+          level: 'error',
+        });
+        Sentry.captureException(err, {
+          tags: { event: 'onboarding.discover.failed' },
+        });
       });
 
     return () => { cancelled = true; };
-  }, [onboardingActive]);
+  }, [onboardingActive, discoveryReloadNonce]);
+
+  const retryDesktopScan = useCallback(() => {
+    setDiscoveryReloadNonce((n) => n + 1);
+  }, []);
 
   const handleApproveApp = useCallback(async (connectorName: string) => {
     setApprovingApp(connectorName);
@@ -270,7 +309,9 @@ export function useOnboardingState() {
     createdPersona,
     // Desktop discovery
     discoveredApps,
-    isScanning,
+    discoveryState,
+    isScanning: discoveryState.phase === 'scanning',
+    retryDesktopScan,
     approvedApps,
     approvingApp,
     handleApproveApp,

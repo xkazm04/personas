@@ -18,7 +18,9 @@ pub fn build_negotiation_prompt(
     let mut prompt = String::new();
 
     prompt.push_str("# API Credential Provisioning Plan\n\n");
-    prompt.push_str("You are an expert developer relations engineer. The user needs to obtain API credentials ");
+    prompt.push_str(
+        "You are an expert developer relations engineer. The user needs to obtain API credentials ",
+    );
     prompt.push_str("for a service. Generate a detailed, step-by-step provisioning plan that walks them through ");
     prompt.push_str("the exact process of getting the required credentials.\n\n");
 
@@ -29,14 +31,30 @@ pub fn build_negotiation_prompt(
     // Include auth detection results so the AI can adapt the plan
     if !authenticated_services.is_empty() {
         prompt.push_str("## Detected Authentication Sessions\n");
-        prompt.push_str("The following services were detected as already authenticated on this machine. ");
-        prompt.push_str("If the target service is among them, **skip account-creation and sign-in steps** ");
+        prompt.push_str(
+            "The following services were detected as already authenticated on this machine. ",
+        );
+        prompt.push_str(
+            "If the target service is among them, **skip account-creation and sign-in steps** ",
+        );
         prompt.push_str("and instead start from the API key / token generation page directly.\n\n");
         for svc in authenticated_services {
-            let stype = svc.get("service_type").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let method = svc.get("method").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let identity = svc.get("identity").and_then(|v| v.as_str()).unwrap_or("unknown");
-            let confidence = svc.get("confidence").and_then(|v| v.as_str()).unwrap_or("low");
+            let stype = svc
+                .get("service_type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let method = svc
+                .get("method")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let identity = svc
+                .get("identity")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let confidence = svc
+                .get("confidence")
+                .and_then(|v| v.as_str())
+                .unwrap_or("low");
             prompt.push_str(&format!(
                 "- **{stype}**: authenticated via {method} as `{identity}` (confidence: {confidence})\n"
             ));
@@ -296,7 +314,8 @@ mod tests {
 
     #[test]
     fn test_build_step_help_prompt() {
-        let prompt = build_step_help_prompt("GitHub", 1, "Configure Token", "Where do I find scopes?");
+        let prompt =
+            build_step_help_prompt("GitHub", 1, "Configure Token", "Where do I find scopes?");
         assert!(prompt.contains("GitHub"));
         assert!(prompt.contains("Configure Token"));
         assert!(prompt.contains("Where do I find scopes?"));

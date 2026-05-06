@@ -67,10 +67,7 @@ pub fn get_design_review(
 }
 
 #[tauri::command]
-pub fn delete_design_review(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_design_review(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete_review(&state.db, &id)
 }
@@ -178,8 +175,9 @@ pub async fn start_design_review_run(
 
     // Register cancellation flag in process registry.
     // The guard ensures unregister_run is called even if the task panics.
-    let (cancel_flag, run_guard) =
-        state.process_registry.register_run_guarded("review", &run_id);
+    let (cancel_flag, run_guard) = state
+        .process_registry
+        .register_run_guarded("review", &run_id);
     let registry = state.process_registry.clone();
 
     tokio::spawn(async move {
@@ -268,15 +266,9 @@ pub async fn start_design_review_run(
 
             // Spawn Claude CLI and collect output
             let cli_args = prompt::build_cli_args(None, None);
-            let cli_result = run_cli_for_template(
-                &cli_args,
-                &design_prompt,
-                &app,
-                &run_id_clone,
-                i,
-                &registry,
-            )
-            .await;
+            let cli_result =
+                run_cli_for_template(&cli_args, &design_prompt, &app, &run_id_clone, i, &registry)
+                    .await;
 
             let elapsed = start_time.elapsed().as_millis() as u64;
 
@@ -326,16 +318,24 @@ pub async fn start_design_review_run(
                                 "Failed to persist design review to database"
                             );
                             emit_status(
-                                &app, &run_id_clone, i, total,
-                                "error", &test_case_name,
+                                &app,
+                                &run_id_clone,
+                                i,
+                                total,
+                                "error",
+                                &test_case_name,
                                 Some(format!("DB write failed: {e}")),
                                 Some(elapsed),
                             );
                             continue;
                         }
                         emit_status(
-                            &app, &run_id_clone, i, total,
-                            "error", &test_case_name,
+                            &app,
+                            &run_id_clone,
+                            i,
+                            total,
+                            "error",
+                            &test_case_name,
                             Some("Claude asked a question instead of generating".into()),
                             Some(elapsed),
                         );
@@ -394,16 +394,25 @@ pub async fn start_design_review_run(
                                     "Failed to persist design review to database"
                                 );
                                 emit_status(
-                                    &app, &run_id_clone, i, total,
-                                    "error", &test_case_name,
+                                    &app,
+                                    &run_id_clone,
+                                    i,
+                                    total,
+                                    "error",
+                                    &test_case_name,
                                     Some(format!("DB write failed: {e}")),
                                     Some(elapsed),
                                 );
                             } else {
                                 emit_status(
-                                    &app, &run_id_clone, i, total,
-                                    status, &test_case_name,
-                                    None, Some(elapsed),
+                                    &app,
+                                    &run_id_clone,
+                                    i,
+                                    total,
+                                    status,
+                                    &test_case_name,
+                                    None,
+                                    Some(elapsed),
                                 );
                             }
                         }
@@ -414,9 +423,8 @@ pub async fn start_design_review_run(
                             );
                             input.structural_score = Some(0);
                             input.semantic_score = Some(0);
-                            input.suggested_adjustment = Some(
-                                "Failed to extract valid JSON from Claude output".into(),
-                            );
+                            input.suggested_adjustment =
+                                Some("Failed to extract valid JSON from Claude output".into());
                             if let Err(e) = repo::create_review(&pool, &input) {
                                 tracing::error!(
                                     test_case = %test_case_name,
@@ -425,8 +433,12 @@ pub async fn start_design_review_run(
                                 );
                             }
                             emit_status(
-                                &app, &run_id_clone, i, total,
-                                "error", &test_case_name,
+                                &app,
+                                &run_id_clone,
+                                i,
+                                total,
+                                "error",
+                                &test_case_name,
                                 Some("Failed to extract design result".into()),
                                 Some(elapsed),
                             );
@@ -450,9 +462,14 @@ pub async fn start_design_review_run(
                         );
                     }
                     emit_status(
-                        &app, &run_id_clone, i, total,
-                        "error", &test_case_name,
-                        Some(error_msg), Some(elapsed),
+                        &app,
+                        &run_id_clone,
+                        i,
+                        total,
+                        "error",
+                        &test_case_name,
+                        Some(error_msg),
+                        Some(elapsed),
                     );
                 }
             }
@@ -657,7 +674,11 @@ pub async fn rebuild_design_review(
     let rebuild_id_ret = rebuild_id.clone();
 
     tokio::spawn(async move {
-        n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Building design prompt...");
+        n8n_job_state::emit_n8n_transform_line(
+            &app,
+            &rebuild_id,
+            "[Milestone] Building design prompt...",
+        );
 
         // Build the rich rebuild prompt
         let design_prompt = build_rebuild_prompt(
@@ -669,22 +690,26 @@ pub async fn rebuild_design_review(
             &connectors,
         );
 
-        n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Running Claude CLI...");
+        n8n_job_state::emit_n8n_transform_line(
+            &app,
+            &rebuild_id,
+            "[Milestone] Running Claude CLI...",
+        );
 
         // Use the n8n CLI runner with streaming output
         let cli_args = prompt::build_cli_args(None, None);
-        let cli_result = run_claude_prompt_text(
-            design_prompt,
-            &cli_args,
-            Some((&app, &rebuild_id)),
-        )
-        .await;
+        let cli_result =
+            run_claude_prompt_text(design_prompt, &cli_args, Some((&app, &rebuild_id))).await;
 
         let now = chrono::Utc::now().to_rfc3339();
 
         match cli_result {
             Ok((full_output, _session_id)) => {
-                n8n_job_state::emit_n8n_transform_line(&app, &rebuild_id, "[Milestone] Extracting design result...");
+                n8n_job_state::emit_n8n_transform_line(
+                    &app,
+                    &rebuild_id,
+                    "[Milestone] Extracting design result...",
+                );
 
                 match design::extract_design_result(&full_output) {
                     Some(mut result) => {
@@ -732,10 +757,16 @@ pub async fn rebuild_design_review(
                         );
 
                         n8n_job_state::emit_n8n_transform_line(
-                            &app, &rebuild_id,
+                            &app,
+                            &rebuild_id,
                             format!("[Milestone] Rebuild complete -- quality: {structural_score}%"),
                         );
-                        n8n_job_state::set_n8n_transform_status(&app, &rebuild_id, "completed", None);
+                        n8n_job_state::set_n8n_transform_status(
+                            &app,
+                            &rebuild_id,
+                            "completed",
+                            None,
+                        );
                     }
                     None => {
                         let _ = repo::update_review_result(
@@ -752,7 +783,9 @@ pub async fn rebuild_design_review(
                             &now,
                         );
                         n8n_job_state::set_n8n_transform_status(
-                            &app, &rebuild_id, "failed",
+                            &app,
+                            &rebuild_id,
+                            "failed",
                             Some("Failed to extract design result from Claude output".into()),
                         );
                     }
@@ -773,7 +806,9 @@ pub async fn rebuild_design_review(
                     &now,
                 );
                 n8n_job_state::set_n8n_transform_status(
-                    &app, &rebuild_id, "failed",
+                    &app,
+                    &rebuild_id,
+                    "failed",
                     Some(error_msg),
                 );
             }
@@ -789,7 +824,10 @@ pub fn get_rebuild_snapshot(
     rebuild_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth_sync(&state)?;
-    let snapshot = crate::commands::design::n8n_transform::job_state::get_n8n_transform_snapshot_internal(&rebuild_id)
+    let snapshot =
+        crate::commands::design::n8n_transform::job_state::get_n8n_transform_snapshot_internal(
+            &rebuild_id,
+        )
         .ok_or_else(|| AppError::NotFound("rebuild not found".into()))?;
     Ok(serde_json::to_value(snapshot).unwrap_or_else(|_| serde_json::json!({})))
 }
@@ -801,8 +839,11 @@ pub fn cancel_rebuild(
     rebuild_id: String,
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
-    crate::commands::design::n8n_transform::job_state::manager()
-        .cancel_or_preempt(&app, &rebuild_id, crate::commands::design::n8n_transform::job_state::N8nTransformExtra::default())
+    crate::commands::design::n8n_transform::job_state::manager().cancel_or_preempt(
+        &app,
+        &rebuild_id,
+        crate::commands::design::n8n_transform::job_state::N8nTransformExtra::default(),
+    )
 }
 
 // -- Manual Review Commands -----------------------------------
@@ -896,7 +937,12 @@ pub fn update_manual_review_status(
     manual_repo::update_status(&state.db, &id, status, reviewer_notes)?;
     let review = manual_repo::get_by_id(&state.db, &id)?;
 
-    if matches!(review.status, crate::db::models::ManualReviewStatus::Approved | crate::db::models::ManualReviewStatus::Rejected | crate::db::models::ManualReviewStatus::Resolved) {
+    if matches!(
+        review.status,
+        crate::db::models::ManualReviewStatus::Approved
+            | crate::db::models::ManualReviewStatus::Rejected
+            | crate::db::models::ManualReviewStatus::Resolved
+    ) {
         // Notify frontend via Tauri IPC (existing behavior)
         let _ = app.emit(
             event_name::MANUAL_REVIEW_RESOLVED,
@@ -911,7 +957,10 @@ pub fn update_manual_review_status(
         // Create a memory from the review decision so the persona can learn over time.
         // The memory records the review title, decision, and any reviewer notes.
         let decision = review.status.as_str();
-        let notes = review.reviewer_notes.as_deref().unwrap_or("No notes provided");
+        let notes = review
+            .reviewer_notes
+            .as_deref()
+            .unwrap_or("No notes provided");
         let memory_content = format!(
             "Review decision: {decision}\nReview: {}\n{}\nReviewer notes: {notes}",
             review.title,
@@ -926,7 +975,10 @@ pub fn update_manual_review_status(
                 content: memory_content,
                 category: Some("learned".to_string()),
                 importance: Some(5),
-                tags: Some(crate::db::models::Json(vec!["review".to_string(), decision.to_string()])),
+                tags: Some(crate::db::models::Json(vec![
+                    "review".to_string(),
+                    decision.to_string(),
+                ])),
                 use_case_id: None,
             },
         );
@@ -1082,9 +1134,12 @@ pub fn seed_mock_manual_review(
     {
         // Pick a random persona (or use a fallback id)
         let personas = persona_repo::get_all(&state.db)?;
-        let idx = (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
+        let idx =
+            (chrono::Utc::now().timestamp_millis() as usize) % std::cmp::max(personas.len(), 1);
 
-        let persona_id = personas.get(idx).map(|p| p.id.clone())
+        let persona_id = personas
+            .get(idx)
+            .map(|p| p.id.clone())
             .unwrap_or_else(|| "mock-persona".to_string());
 
         // Create a dummy execution id
@@ -1108,7 +1163,17 @@ pub fn seed_mock_manual_review(
                  (id, execution_id, persona_id, title, description, severity, status,
                   context_data, suggested_actions, created_at, updated_at)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9)",
-                rusqlite::params![id, execution_id, persona_id, title, description, sev, context_data, suggested_actions, now],
+                rusqlite::params![
+                    id,
+                    execution_id,
+                    persona_id,
+                    title,
+                    description,
+                    sev,
+                    context_data,
+                    suggested_actions,
+                    now
+                ],
             )
         }; // _fk_guard dropped here → FK restored
         result?;
@@ -1137,7 +1202,11 @@ pub fn backfill_review_categories(
         }
     }
 
-    tracing::info!(total = uncategorized.len(), updated = updated, "Backfilled review categories");
+    tracing::info!(
+        total = uncategorized.len(),
+        updated = updated,
+        "Backfilled review categories"
+    );
     Ok(serde_json::json!({ "total": uncategorized.len(), "updated": updated }))
 }
 
@@ -1207,10 +1276,7 @@ pub fn backfill_service_flow(
                         .enumerate()
                         .filter_map(|(i, c)| {
                             let name = c.get("name").and_then(|v| v.as_str())?;
-                            let label = c
-                                .get("role")
-                                .and_then(|v| v.as_str())
-                                .unwrap_or(name);
+                            let label = c.get("role").and_then(|v| v.as_str()).unwrap_or(name);
                             Some(json!({
                                 "connector_name": name,
                                 "action_label": label.to_string(),
@@ -1227,7 +1293,10 @@ pub fn backfill_service_flow(
             continue;
         }
 
-        obj.insert("service_flow".to_string(), serde_json::Value::Array(new_flow));
+        obj.insert(
+            "service_flow".to_string(),
+            serde_json::Value::Array(new_flow),
+        );
 
         let updated_json = match serde_json::to_string(&result) {
             Ok(j) => j,
@@ -1241,7 +1310,12 @@ pub fn backfill_service_flow(
         }
     }
 
-    tracing::info!(total = reviews.len(), updated = updated, skipped = skipped, "Backfilled service_flow");
+    tracing::info!(
+        total = reviews.len(),
+        updated = updated,
+        skipped = skipped,
+        "Backfilled service_flow"
+    );
     Ok(json!({ "total": reviews.len(), "updated": updated, "skipped": skipped }))
 }
 
@@ -1293,12 +1367,10 @@ pub fn backfill_related_tools(
             }
         };
 
-        let any_missing = connectors.iter().any(|c| {
-            match c.get("related_tools") {
-                None | Some(serde_json::Value::Null) => true,
-                Some(serde_json::Value::Array(arr)) if arr.is_empty() => true,
-                _ => false,
-            }
+        let any_missing = connectors.iter().any(|c| match c.get("related_tools") {
+            None | Some(serde_json::Value::Null) => true,
+            Some(serde_json::Value::Array(arr)) if arr.is_empty() => true,
+            _ => false,
         });
 
         if !any_missing {
@@ -1363,7 +1435,12 @@ pub fn backfill_related_tools(
         }
     }
 
-    tracing::info!(total = reviews.len(), updated = updated, skipped = skipped, "Backfilled related_tools");
+    tracing::info!(
+        total = reviews.len(),
+        updated = updated,
+        skipped = skipped,
+        "Backfilled related_tools"
+    );
     Ok(json!({ "total": reviews.len(), "updated": updated, "skipped": skipped }))
 }
 
@@ -1530,26 +1607,182 @@ pub(crate) fn infer_template_category(instruction: &str, connectors_used: Option
 
     // Ordered by specificity -- more specific patterns first.
     static RULES: &[(&[&str], &str)] = &[
-        (&["security", "vulnerability", "audit", "cve", "penetration", "pentest"], "security"),
-        (&["deploy", "ci/cd", "ci-cd", "infrastructure", "docker", "kubernetes", "k8s", "terraform"], "devops"),
-        (&["test", "qa ", "quality assurance", "coverage", "e2e"], "testing"),
-        (&["code review", "pull request", "merge request", "commit", "branch", "refactor"], "development"),
-        (&["monitor", "alert", "uptime", "health check", "incident", "error track", "observ"], "monitoring"),
-        (&["support", "ticket", "customer service", "helpdesk", "escalat", "sla"], "support"),
-        (&["market", "campaign", "advertis", "seo", "audience", "newsletter", "social media"], "marketing"),
-        (&["sales", "lead", "prospect", "deal", "quota", "pipeline"], "sales"),
-        (&["financ", "invoice", "billing", "payment", "accounting", "revenue", "expense"], "finance"),
-        (&["recruit", "hiring", "onboard", "candidate", "applicant", "hr "], "hr"),
-        (&["legal", "contract", "compliance", "gdpr", "regulation", "nda"], "legal"),
-        (&["email", "inbox", "deliverability", "newsletter", "mail"], "email"),
-        (&["content", "cms", "blog", "publish", "editorial", "article"], "content"),
-        (&["document", "wiki", "knowledge base", "confluence", "readme"], "documentation"),
-        (&["research", "intelligence", "insight", "competitive", "trend"], "research"),
-        (&["analytic", "metric", "dashboard", "report", "data analysis"], "research"),
-        (&["project", "sprint", "backlog", "kanban", "deadline", "roadmap", "milestone"], "project-management"),
-        (&["standup", "communication", "notify", "announce", "digest"], "communication"),
-        (&["database", "etl", "sync", "migration", "data pipeline", "warehouse"], "data"),
-        (&["schedule", "cron", "automat", "workflow", "task", "productiv"], "productivity"),
+        (
+            &[
+                "security",
+                "vulnerability",
+                "audit",
+                "cve",
+                "penetration",
+                "pentest",
+            ],
+            "security",
+        ),
+        (
+            &[
+                "deploy",
+                "ci/cd",
+                "ci-cd",
+                "infrastructure",
+                "docker",
+                "kubernetes",
+                "k8s",
+                "terraform",
+            ],
+            "devops",
+        ),
+        (
+            &["test", "qa ", "quality assurance", "coverage", "e2e"],
+            "testing",
+        ),
+        (
+            &[
+                "code review",
+                "pull request",
+                "merge request",
+                "commit",
+                "branch",
+                "refactor",
+            ],
+            "development",
+        ),
+        (
+            &[
+                "monitor",
+                "alert",
+                "uptime",
+                "health check",
+                "incident",
+                "error track",
+                "observ",
+            ],
+            "monitoring",
+        ),
+        (
+            &[
+                "support",
+                "ticket",
+                "customer service",
+                "helpdesk",
+                "escalat",
+                "sla",
+            ],
+            "support",
+        ),
+        (
+            &[
+                "market",
+                "campaign",
+                "advertis",
+                "seo",
+                "audience",
+                "newsletter",
+                "social media",
+            ],
+            "marketing",
+        ),
+        (
+            &["sales", "lead", "prospect", "deal", "quota", "pipeline"],
+            "sales",
+        ),
+        (
+            &[
+                "financ",
+                "invoice",
+                "billing",
+                "payment",
+                "accounting",
+                "revenue",
+                "expense",
+            ],
+            "finance",
+        ),
+        (
+            &[
+                "recruit",
+                "hiring",
+                "onboard",
+                "candidate",
+                "applicant",
+                "hr ",
+            ],
+            "hr",
+        ),
+        (
+            &[
+                "legal",
+                "contract",
+                "compliance",
+                "gdpr",
+                "regulation",
+                "nda",
+            ],
+            "legal",
+        ),
+        (
+            &["email", "inbox", "deliverability", "newsletter", "mail"],
+            "email",
+        ),
+        (
+            &["content", "cms", "blog", "publish", "editorial", "article"],
+            "content",
+        ),
+        (
+            &["document", "wiki", "knowledge base", "confluence", "readme"],
+            "documentation",
+        ),
+        (
+            &[
+                "research",
+                "intelligence",
+                "insight",
+                "competitive",
+                "trend",
+            ],
+            "research",
+        ),
+        (
+            &["analytic", "metric", "dashboard", "report", "data analysis"],
+            "research",
+        ),
+        (
+            &[
+                "project",
+                "sprint",
+                "backlog",
+                "kanban",
+                "deadline",
+                "roadmap",
+                "milestone",
+            ],
+            "project-management",
+        ),
+        (
+            &["standup", "communication", "notify", "announce", "digest"],
+            "communication",
+        ),
+        (
+            &[
+                "database",
+                "etl",
+                "sync",
+                "migration",
+                "data pipeline",
+                "warehouse",
+            ],
+            "data",
+        ),
+        (
+            &[
+                "schedule",
+                "cron",
+                "automat",
+                "workflow",
+                "task",
+                "productiv",
+            ],
+            "productivity",
+        ),
     ];
 
     for (keywords, category) in RULES {
@@ -1563,16 +1796,27 @@ pub(crate) fn infer_template_category(instruction: &str, connectors_used: Option
         if let Ok(names) = serde_json::from_str::<Vec<String>>(json_str) {
             let joined = names.join(" ").to_lowercase();
 
-            if joined.contains("sentry") || joined.contains("datadog") || joined.contains("pagerduty") {
+            if joined.contains("sentry")
+                || joined.contains("datadog")
+                || joined.contains("pagerduty")
+            {
                 return "monitoring".into();
             }
-            if joined.contains("github") || joined.contains("gitlab") || joined.contains("jira") || joined.contains("linear") {
+            if joined.contains("github")
+                || joined.contains("gitlab")
+                || joined.contains("jira")
+                || joined.contains("linear")
+            {
                 return "development".into();
             }
-            if joined.contains("stripe") || joined.contains("quickbooks") || joined.contains("xero") {
+            if joined.contains("stripe") || joined.contains("quickbooks") || joined.contains("xero")
+            {
                 return "finance".into();
             }
-            if joined.contains("zendesk") || joined.contains("freshdesk") || joined.contains("intercom") {
+            if joined.contains("zendesk")
+                || joined.contains("freshdesk")
+                || joined.contains("intercom")
+            {
                 return "support".into();
             }
             if joined.contains("hubspot") {
@@ -1792,7 +2036,8 @@ fn score_design_result(result: &serde_json::Value) -> (i32, i32) {
         semantic_passed += 1;
     }
 
-    let structural_score = ((structural_passed as f64 / structural_total as f64) * 100.0).round() as i32;
+    let structural_score =
+        ((structural_passed as f64 / structural_total as f64) * 100.0).round() as i32;
     let semantic_score = ((semantic_passed as f64 / semantic_total as f64) * 100.0).round() as i32;
     (structural_score, semantic_score)
 }

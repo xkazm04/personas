@@ -44,6 +44,10 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'Failed to extract connector design', keyPrefix: 'connector_design', category: 'user_action' },
   { match: 'Failed to generate', keyPrefix: 'generation_failed', category: 'recoverable' },
   { match: 'Invalid JSON', keyPrefix: 'invalid_json', category: 'user_action' },
+  // Must come before the generic 'Validation' rule — n8n shape errors are
+  // emitted from create_n8n_session (commands/design/n8n_sessions.rs) and need
+  // a more actionable, link-bearing message than the generic validation copy.
+  { match: 'is not a valid n8n workflow export', keyPrefix: 'n8n_invalid_shape', category: 'user_action' },
   { match: 'Validation', keyPrefix: 'validation', category: 'user_action' },
   { match: 'Request body too large', keyPrefix: 'body_too_large', category: 'user_action' },
   { match: 'is too large for OCR', keyPrefix: 'ocr_file_too_large', category: 'user_action' },

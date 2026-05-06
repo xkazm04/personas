@@ -150,7 +150,9 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                 .min_by_key(|(_, j)| j.created_at)
                 .map(|(id, _)| id.clone());
             match oldest {
-                Some(id) => { jobs.remove(&id); }
+                Some(id) => {
+                    jobs.remove(&id);
+                }
                 None => break, // all entries are running, can't evict more
             }
         }
@@ -193,9 +195,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         let jobs = self.lock()?;
         if let Some(existing) = jobs.get(job_id) {
             if existing.status == "running" {
-                return Err(AppError::Validation(
-                    "Job is already running".into(),
-                ));
+                return Err(AppError::Validation("Job is already running".into()));
             }
         }
         Ok(())
@@ -240,9 +240,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     ) {
         {
             let mut jobs = self.lock_or_recover();
-            let entry = jobs
-                .entry(job_id.to_string())
-                .or_default();
+            let entry = jobs.entry(job_id.to_string()).or_default();
             entry.status = status.to_string();
             entry.error = error.clone();
         }
@@ -262,9 +260,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         let line = line.into();
         {
             let mut jobs = self.lock_or_recover();
-            let entry = jobs
-                .entry(job_id.to_string())
-                .or_default();
+            let entry = jobs.entry(job_id.to_string()).or_default();
             if entry.lines.len() < MAX_LINES {
                 entry.lines.push(line.clone());
             }
@@ -282,9 +278,7 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     /// Mutate the extra state of a job entry.
     pub fn update_extra(&self, job_id: &str, f: impl FnOnce(&mut E)) {
         let mut jobs = self.lock_or_recover();
-        let entry = jobs
-            .entry(job_id.to_string())
-            .or_default();
+        let entry = jobs.entry(job_id.to_string()).or_default();
         f(&mut entry.extra);
     }
 
@@ -324,14 +318,10 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
             let mut jobs = self.lock()?;
             if let Some(existing) = jobs.get(job_id) {
                 if existing.status == "running" {
-                    return Err(AppError::Validation(
-                        "Job is already running".into(),
-                    ));
+                    return Err(AppError::Validation("Job is already running".into()));
                 }
             }
-            let entry = jobs
-                .entry(job_id.to_string())
-                .or_default();
+            let entry = jobs.entry(job_id.to_string()).or_default();
             entry.status = "running".to_string();
             entry.error = None;
             entry.cancel_token = Some(token);
@@ -367,7 +357,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
 
     /// Cancel a job, or pre-emptively insert a cancelled entry if the job
     /// doesn't exist yet (race condition guard for start-then-cancel).
-    pub fn cancel_or_preempt(&self, app: &tauri::AppHandle, job_id: &str, extra: E) -> Result<(), AppError> {
+    pub fn cancel_or_preempt(
+        &self,
+        app: &tauri::AppHandle,
+        job_id: &str,
+        extra: E,
+    ) -> Result<(), AppError> {
         let token = {
             let mut jobs = self.lock()?;
             if let Some(job) = jobs.get_mut(job_id) {
@@ -478,7 +473,12 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     }
 
     /// Update the status field directly on a locked job (no event emission).
-    pub fn set_status_quiet(&self, job_id: &str, status: &str, error: Option<String>) -> Result<(), AppError> {
+    pub fn set_status_quiet(
+        &self,
+        job_id: &str,
+        status: &str,
+        error: Option<String>,
+    ) -> Result<(), AppError> {
         let mut jobs = self.lock()?;
         if let Some(job) = jobs.get_mut(job_id) {
             job.status = status.to_string();

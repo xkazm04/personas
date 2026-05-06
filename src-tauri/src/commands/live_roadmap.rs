@@ -31,6 +31,12 @@ const ROADMAP_URL: &str = "https://personas.so/roadmap/v1.json";
 
 /// Schema version this build understands. Payloads with a different version
 /// are rejected; the frontend falls back to bundled content.
+///
+/// **Policy:** unlike the local artist artifacts (`commands/artist/schema_policy.rs`)
+/// which permissively accept older versions and reject newer ones, the
+/// remote roadmap rejects ANY mismatch — old or new. The fallback is cheap
+/// (bundled content) and a strict check ensures a stale CDN never bricks
+/// rendering.
 const SCHEMA_VERSION: u32 = 1;
 
 /// How long a successful fetch stays fresh before we re-check on demand.
@@ -125,8 +131,16 @@ pub struct LiveRoadmapResult {
 #[ts(export)]
 #[serde(rename_all = "lowercase")]
 pub enum LiveRoadmapSource {
+    /// Fresh GET just completed (or 304 against an existing cache).
     Network,
+    /// Disk cache was still fresh by TTL — network was deliberately skipped.
+    /// "Healthy by policy."
     Cache,
+    /// Network was attempted (cache was expired or `force=true`) but failed,
+    /// and we returned the stale cached payload as a rescue. This is the
+    /// degraded path: the user is reading content the server may have
+    /// already updated, and the live channel is silently broken.
+    Stale,
 }
 
 // ---------------------------------------------------------------------------
@@ -145,10 +159,7 @@ struct CachedRoadmap {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-pub async fn fetch_roadmap(
-    app: AppHandle,
-    force: bool,
-) -> Result<LiveRoadmapResult, String> {
+pub async fn fetch_roadmap(app: AppHandle, force: bool) -> Result<LiveRoadmapResult, String> {
     let cache_path = cache_path(&app).map_err(|e| e.to_string())?;
     let cached = read_cache(&cache_path);
 
@@ -201,8 +212,8 @@ pub async fn fetch_roadmap(
         }
         Ok(FetchOutcome::NotModified) => {
             // 304 → bump freshness on the existing cache and return it.
-            let mut c = cached
-                .ok_or_else(|| "304 Not Modified but no cache available".to_string())?;
+            let mut c =
+                cached.ok_or_else(|| "304 Not Modified but no cache available".to_string())?;
             let now = Utc::now();
             c.cached_at = now;
             let _ = write_cache(&cache_path, &c);
@@ -214,10 +225,15 @@ pub async fn fetch_roadmap(
         }
         Err(err) => {
             if let Some(c) = cached {
+                tracing::warn!(
+                    error = %err,
+                    cached_at = %c.cached_at.to_rfc3339(),
+                    "Roadmap network fetch failed; serving stale cache as fallback"
+                );
                 return Ok(LiveRoadmapResult {
                     roadmap: c.roadmap,
                     fetched_at: c.cached_at.to_rfc3339(),
-                    source: LiveRoadmapSource::Cache,
+                    source: LiveRoadmapSource::Stale,
                 });
             }
             Err(err)
@@ -237,9 +253,7 @@ enum FetchOutcome {
     NotModified,
 }
 
-async fn fetch_from_network(
-    cached: Option<&CachedRoadmap>,
-) -> Result<FetchOutcome, String> {
+async fn fetch_from_network(cached: Option<&CachedRoadmap>) -> Result<FetchOutcome, String> {
     let client = reqwest::Client::builder()
         .connect_timeout(REQUEST_TIMEOUT)
         .timeout(REQUEST_TIMEOUT)
@@ -252,10 +266,7 @@ async fn fetch_from_network(
         req = req.header("If-None-Match", etag);
     }
 
-    let resp = req
-        .send()
-        .await
-        .map_err(|e| format!("fetch failed: {e}"))?;
+    let resp = req.send().await.map_err(|e| format!("fetch failed: {e}"))?;
 
     if resp.status().as_u16() == 304 {
         return Ok(FetchOutcome::NotModified);
@@ -283,8 +294,8 @@ async fn fetch_from_network(
         ));
     }
 
-    let roadmap: LiveRoadmap = serde_json::from_slice(&bytes)
-        .map_err(|e| format!("parse failed: {e}"))?;
+    let roadmap: LiveRoadmap =
+        serde_json::from_slice(&bytes).map_err(|e| format!("parse failed: {e}"))?;
     validate(&roadmap)?;
 
     Ok(FetchOutcome::Fresh { roadmap, etag })
@@ -339,7 +350,13 @@ fn write_cache(path: &PathBuf, cache: &CachedRoadmap) -> std::io::Result<()> {
     // back to bundled content instead of the previously-cached roadmap.
     // `fs::rename` is atomic on POSIX and on Windows (MoveFileEx semantics
     // for same-volume rename; app_data_dir keeps tmp and dest on one volume).
-    let tmp_path = path.with_extension("json.tmp");
+    //
+    // Per-call uuid suffix on the tmp name prevents two concurrent
+    // `fetch_roadmap` writers (e.g. a `force=true` user refresh racing the
+    // post-startup background refetch) from clobbering each other's tmp file
+    // — that race used to surface as either a truncated cache or an
+    // `io::Error` ("rename failed: file not found") bubbling to the UI.
+    let tmp_path = path.with_extension(format!("json.{}.tmp", uuid::Uuid::new_v4().simple()));
     std::fs::write(&tmp_path, bytes)?;
     std::fs::rename(&tmp_path, path)
 }
@@ -444,6 +461,9 @@ mod tests {
             "i18n": {"en": {"items": {}}}
         }"#;
         let parsed: LiveRoadmap = serde_json::from_str(payload).expect("parses");
-        assert_eq!(parsed.release.items[0].status.as_deref(), Some("future_unknown_state"));
+        assert_eq!(
+            parsed.release.items[0].status.as_deref(),
+            Some("future_unknown_state")
+        );
     }
 }

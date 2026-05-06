@@ -2,7 +2,10 @@ use crate::db::models::DocumentSignature;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-pub fn insert_signature(pool: &DbPool, sig: &DocumentSignature) -> Result<DocumentSignature, AppError> {
+pub fn insert_signature(
+    pool: &DbPool,
+    sig: &DocumentSignature,
+) -> Result<DocumentSignature, AppError> {
     timed_query!("signing_sessions", "signing_sessions::insert_signature", {
         let conn = pool.get()?;
         conn.execute(
@@ -23,7 +26,6 @@ pub fn insert_signature(pool: &DbPool, sig: &DocumentSignature) -> Result<Docume
             ],
         )?;
         get_signature(pool, &sig.id)
-
     })
 }
 
@@ -50,7 +52,6 @@ pub fn list_signatures(pool: &DbPool) -> Result<Vec<DocumentSignature>, AppError
             })
         })?;
         rows.collect::<Result<Vec<_>, _>>().map_err(AppError::from)
-
     })
 }
 
@@ -83,7 +84,6 @@ pub fn get_signature(pool: &DbPool, id: &str) -> Result<DocumentSignature, AppEr
             }
             other => AppError::from(other),
         })
-
     })
 }
 
@@ -92,6 +92,5 @@ pub fn delete_signature(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let rows = conn.execute("DELETE FROM document_signatures WHERE id = ?1", [id])?;
         Ok(rows > 0)
-
     })
 }

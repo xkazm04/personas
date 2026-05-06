@@ -5,8 +5,8 @@ use std::time::Instant;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
 
-use super::event_registry::event_name;
 use super::cli_process::CliProcessDriver;
+use super::event_registry::event_name;
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -19,7 +19,11 @@ static SCENARIO_CACHE: std::sync::LazyLock<Mutex<HashMap<u64, (Instant, Vec<Test
 
 const SCENARIO_CACHE_TTL_SECS: u64 = 600;
 
-fn scenario_cache_key(persona: &crate::db::models::Persona, tools: &[crate::db::models::PersonaToolDefinition], use_case_filter: Option<&str>) -> u64 {
+fn scenario_cache_key(
+    persona: &crate::db::models::Persona,
+    tools: &[crate::db::models::PersonaToolDefinition],
+    use_case_filter: Option<&str>,
+) -> u64 {
     use std::hash::{Hash, Hasher};
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     persona.id.hash(&mut hasher);
@@ -35,23 +39,24 @@ fn scenario_cache_key(persona: &crate::db::models::Persona, tools: &[crate::db::
     hasher.finish()
 }
 
-use crate::db::models::{
-    CreateTestResultInput, CreateArenaResultInput, CreateAbResultInput, CreateConsensusResultInput,
-    CreateMatrixResultInput, CreateEvalResultInput, CreateLabResultBaseInput,
-    CreateLabResultEventInput, LabResultKind, LabRunStatus,
-    Persona, PersonaToolDefinition,
-};
 use super::types::EphemeralPersona;
+use crate::db::models::{
+    CreateAbResultInput, CreateArenaResultInput, CreateConsensusResultInput, CreateEvalResultInput,
+    CreateLabResultBaseInput, CreateLabResultEventInput, CreateMatrixResultInput,
+    CreateTestResultInput, LabResultKind, LabRunStatus, Persona, PersonaToolDefinition,
+};
 use crate::db::repos::execution::test_runs as repo;
-use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::ab as ab_repo;
+use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::consensus as consensus_repo;
-use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::repos::lab::events as events_repo;
+use crate::db::repos::lab::matrix as matrix_repo;
 use crate::db::DbPool;
 
-use super::eval::{self, EvalInput, WEIGHT_TOOL_ACCURACY, WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE};
+use super::eval::{
+    self, EvalInput, WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE, WEIGHT_TOOL_ACCURACY,
+};
 use super::parser;
 use super::prompt;
 use super::types::*;
@@ -74,16 +79,24 @@ pub struct TestModelConfig {
 }
 
 /// Parse and validate model configs from frontend JSON values.
-pub fn parse_model_configs(models: Vec<serde_json::Value>) -> Result<Vec<TestModelConfig>, crate::error::AppError> {
+pub fn parse_model_configs(
+    models: Vec<serde_json::Value>,
+) -> Result<Vec<TestModelConfig>, crate::error::AppError> {
     let mut configs: Vec<TestModelConfig> = Vec::new();
     for v in models {
         match serde_json::from_value(v.clone()) {
             Ok(config) => configs.push(config),
-            Err(e) => return Err(crate::error::AppError::Validation(format!("Invalid model config: {e}"))),
+            Err(e) => {
+                return Err(crate::error::AppError::Validation(format!(
+                    "Invalid model config: {e}"
+                )))
+            }
         }
     }
     if configs.is_empty() {
-        return Err(crate::error::AppError::Validation("No valid models provided".into()));
+        return Err(crate::error::AppError::Validation(
+            "No valid models provided".into(),
+        ));
     }
     Ok(configs)
 }
@@ -180,14 +193,26 @@ pub async fn run_test(
     } else {
         emit_status(&app, &run_id, "generating", None);
 
-        match generate_scenarios(persona, tools, use_case_filter.as_deref(), fixture_inputs.as_deref()).await {
+        match generate_scenarios(
+            persona,
+            tools,
+            use_case_filter.as_deref(),
+            fixture_inputs.as_deref(),
+        )
+        .await
+        {
             Ok(s) if s.is_empty() => {
                 finish_with_error(&app, &pool, &run_id, "No test scenarios were generated");
                 return;
             }
             Ok(s) => s,
             Err(e) => {
-                finish_with_error(&app, &pool, &run_id, &format!("Scenario generation failed: {e}"));
+                finish_with_error(
+                    &app,
+                    &pool,
+                    &run_id,
+                    &format!("Scenario generation failed: {e}"),
+                );
                 return;
             }
         }
@@ -204,7 +229,13 @@ pub async fn run_test(
         None,
     );
 
-    super::process_activity::emit_process_activity(&app, "test", "started", Some(&run_id), Some(&persona.name));
+    super::process_activity::emit_process_activity(
+        &app,
+        "test",
+        "started",
+        Some(&run_id),
+        Some(&persona.name),
+    );
 
     let _ = app.emit(
         event_name::TEST_RUN_STATUS,
@@ -223,14 +254,21 @@ pub async fn run_test(
 
     // Track results for summary
     #[allow(clippy::type_complexity)]
-    let results_tracker: Arc<Mutex<Vec<(String, Option<i32>, Option<i32>, Option<i32>, f64, i64)>>> =
-        Arc::new(Mutex::new(Vec::new()));
+    let results_tracker: Arc<
+        Mutex<Vec<(String, Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
+    > = Arc::new(Mutex::new(Vec::new()));
 
     for scenario in &scenarios {
         // Check cancellation before each scenario
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
             let _ = repo::update_run_status(
-                &pool, &run_id, LabRunStatus::Cancelled, None, None, None, None,
+                &pool,
+                &run_id,
+                LabRunStatus::Cancelled,
+                None,
+                None,
+                None,
+                None,
             );
             emit_status(&app, &run_id, "cancelled", None);
             return;
@@ -247,13 +285,26 @@ pub async fn run_test(
 
             handles.push(tokio::spawn(async move {
                 if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
-                    return (mi, "cancelled".to_string(), ScoreResult {
-                        tool_accuracy: None, output_quality: None, protocol_compliance: None,
-                        output_preview: None, tool_calls_actual: None,
-                        input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                        error_message: Some("Cancelled".to_string()), rationale: None, suggestions: None, eval_method: None,
-                        events: Vec::new(),
-                    });
+                    return (
+                        mi,
+                        "cancelled".to_string(),
+                        ScoreResult {
+                            tool_accuracy: None,
+                            output_quality: None,
+                            protocol_compliance: None,
+                            output_preview: None,
+                            tool_calls_actual: None,
+                            input_tokens: 0,
+                            output_tokens: 0,
+                            cost_usd: 0.0,
+                            duration_ms: 0,
+                            error_message: Some("Cancelled".to_string()),
+                            rationale: None,
+                            suggestions: None,
+                            eval_method: None,
+                            events: Vec::new(),
+                        },
+                    );
                 }
                 let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                 let (status, scores) = match &result {
@@ -264,10 +315,19 @@ pub async fn run_test(
                     Err(e) => (
                         "error".to_string(),
                         ScoreResult {
-                            tool_accuracy: None, output_quality: None, protocol_compliance: None,
-                            output_preview: Some(e.clone()), tool_calls_actual: None,
-                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                            error_message: Some(e.clone()), rationale: None, suggestions: None, eval_method: None,
+                            tool_accuracy: None,
+                            output_quality: None,
+                            protocol_compliance: None,
+                            output_preview: Some(e.clone()),
+                            tool_calls_actual: None,
+                            input_tokens: 0,
+                            output_tokens: 0,
+                            cost_usd: 0.0,
+                            duration_ms: 0,
+                            error_message: Some(e.clone()),
+                            rationale: None,
+                            suggestions: None,
+                            eval_method: None,
                             events: Vec::new(),
                         },
                     ),
@@ -288,30 +348,33 @@ pub async fn run_test(
         }
 
         // Build batch inputs for DB write
-        let batch_inputs: Vec<CreateTestResultInput> = scenario_results.iter().map(|(mi, status, scores)| {
-            let model = &model_configs[*mi];
-            CreateTestResultInput {
-                test_run_id: run_id.clone(),
-                scenario_name: scenario.name.clone(),
-                model_id: model.id.clone(),
-                provider: model.provider.clone(),
-                status: status.clone(),
-                output_preview: scores.output_preview.clone(),
-                tool_calls_expected: scenario
-                    .expected_tool_sequence
-                    .as_ref()
-                    .map(|v| crate::db::models::Json(v.clone())),
-                tool_calls_actual: scores.tool_calls_actual.clone(),
-                tool_accuracy_score: scores.tool_accuracy,
-                output_quality_score: scores.output_quality,
-                protocol_compliance: scores.protocol_compliance,
-                input_tokens: scores.input_tokens,
-                output_tokens: scores.output_tokens,
-                cost_usd: scores.cost_usd,
-                duration_ms: scores.duration_ms,
-                error_message: scores.error_message.clone(),
-            }
-        }).collect();
+        let batch_inputs: Vec<CreateTestResultInput> = scenario_results
+            .iter()
+            .map(|(mi, status, scores)| {
+                let model = &model_configs[*mi];
+                CreateTestResultInput {
+                    test_run_id: run_id.clone(),
+                    scenario_name: scenario.name.clone(),
+                    model_id: model.id.clone(),
+                    provider: model.provider.clone(),
+                    status: status.clone(),
+                    output_preview: scores.output_preview.clone(),
+                    tool_calls_expected: scenario
+                        .expected_tool_sequence
+                        .as_ref()
+                        .map(|v| crate::db::models::Json(v.clone())),
+                    tool_calls_actual: scores.tool_calls_actual.clone(),
+                    tool_accuracy_score: scores.tool_accuracy,
+                    output_quality_score: scores.output_quality,
+                    protocol_compliance: scores.protocol_compliance,
+                    input_tokens: scores.input_tokens,
+                    output_tokens: scores.output_tokens,
+                    cost_usd: scores.cost_usd,
+                    duration_ms: scores.duration_ms,
+                    error_message: scores.error_message.clone(),
+                }
+            })
+            .collect();
 
         // Batch-write all results for this scenario in a single transaction
         if let Err(e) = repo::batch_create_results(&pool, &batch_inputs) {
@@ -404,7 +467,13 @@ pub async fn run_test(
         Some(&now),
     );
 
-    super::process_activity::emit_process_activity(&app, "test", "completed", Some(&run_id), Some(&persona.name));
+    super::process_activity::emit_process_activity(
+        &app,
+        "test",
+        "completed",
+        Some(&run_id),
+        Some(&persona.name),
+    );
 
     let _ = app.emit(
         event_name::TEST_RUN_STATUS,
@@ -441,7 +510,8 @@ pub(crate) async fn generate_scenarios(
         drop(cache);
     }
 
-    let coordinator_prompt = build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
+    let coordinator_prompt =
+        build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--max-turns".to_string());
@@ -469,7 +539,12 @@ pub(crate) async fn generate_scenarios(
     Ok(scenarios)
 }
 
-fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], use_case_filter: Option<&str>, fixture_inputs: Option<&str>) -> String {
+fn build_coordinator_prompt(
+    persona: &Persona,
+    tools: &[PersonaToolDefinition],
+    use_case_filter: Option<&str>,
+    fixture_inputs: Option<&str>,
+) -> String {
     let mut p = String::new();
 
     p.push_str("# Test Scenario Generator\n\n");
@@ -489,7 +564,13 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
     p.push_str("### Agent Prompt\n");
     if let Some(ref sp_json) = persona.structured_prompt {
         if let Ok(sp) = serde_json::from_str::<serde_json::Value>(sp_json) {
-            for section in &["identity", "instructions", "toolGuidance", "examples", "errorHandling"] {
+            for section in &[
+                "identity",
+                "instructions",
+                "toolGuidance",
+                "examples",
+                "errorHandling",
+            ] {
                 if let Some(val) = sp.get(section).and_then(|v| v.as_str()) {
                     if !val.is_empty() {
                         p.push_str(&format!("**{section}**: {val}\n\n"));
@@ -506,7 +587,10 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
     if !tools.is_empty() {
         p.push_str("### Available Tools\n");
         for tool in tools {
-            p.push_str(&format!("- **{}** ({}): {}\n", tool.name, tool.category, tool.description));
+            p.push_str(&format!(
+                "- **{}** ({}): {}\n",
+                tool.name, tool.category, tool.description
+            ));
             if let Some(ref schema) = tool.input_schema {
                 p.push_str(&format!("  Input schema: {schema}\n"));
             }
@@ -524,7 +608,8 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
     // Output format
     p.push_str("## Output Format\n");
     p.push_str("Respond with ONLY a JSON array (no markdown fences, no extra text):\n");
-    p.push_str(r#"[{
+    p.push_str(
+        r#"[{
   "name": "Short scenario name",
   "description": "What this scenario tests",
   "input_data": {},
@@ -536,7 +621,8 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
   "expected_behavior": "Description of what a good response looks like",
   "expected_tool_sequence": ["tool1", "tool2"],
   "expected_protocols": ["user_message"]
-}]"#);
+}]"#,
+    );
 
     // If a use case filter is provided, extract the matching use case from design_context
     // and append focused instructions
@@ -547,12 +633,18 @@ fn build_coordinator_prompt(persona: &Persona, tools: &[PersonaToolDefinition], 
                     for uc in use_cases {
                         let id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
                         if id == uc_id {
-                            let title = uc.get("title").and_then(|v| v.as_str()).unwrap_or("Unknown");
+                            let title = uc
+                                .get("title")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("Unknown");
                             let desc = uc.get("description").and_then(|v| v.as_str()).unwrap_or("");
-                            let category = uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
+                            let category =
+                                uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
 
                             p.push_str("\n\n## FOCUS: Specific Use Case\n");
-                            p.push_str("Generate ALL test scenarios specifically for this use case:\n");
+                            p.push_str(
+                                "Generate ALL test scenarios specifically for this use case:\n",
+                            );
                             p.push_str(&format!("- **Title**: {title}\n"));
                             if !desc.is_empty() {
                                 p.push_str(&format!("- **Description**: {desc}\n"));
@@ -651,7 +743,16 @@ pub(crate) async fn execute_scenario(
     model: &TestModelConfig,
 ) -> Result<ExecutionOutput, String> {
     // Build the base prompt
-    let base_prompt = prompt::assemble_prompt(persona, tools, scenario.input_data.as_ref(), None, None, None, #[cfg(feature = "desktop")] None);
+    let base_prompt = prompt::assemble_prompt(
+        persona,
+        tools,
+        scenario.input_data.as_ref(),
+        None,
+        None,
+        None,
+        #[cfg(feature = "desktop")]
+        None,
+    );
 
     // Inject sandbox mock section before the EXECUTE NOW section
     let sandbox_section = build_sandbox_section(&scenario.mock_tools);
@@ -690,7 +791,10 @@ async fn execute_scenario_ollama(
     prompt: &str,
     profile: &ModelProfile,
 ) -> Result<ExecutionOutput, String> {
-    let base_url = profile.base_url.as_deref().unwrap_or("http://localhost:11434");
+    let base_url = profile
+        .base_url
+        .as_deref()
+        .unwrap_or("http://localhost:11434");
     let model = profile.model.as_deref().unwrap_or("gemma4");
     let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
 
@@ -715,10 +819,16 @@ async fn execute_scenario_ollama(
     if !response.status().is_success() {
         let status = response.status();
         let text = response.text().await.unwrap_or_default();
-        return Err(format!("Ollama API error ({}): {}", status, &text[..text.len().min(200)]));
+        return Err(format!(
+            "Ollama API error ({}): {}",
+            status,
+            &text[..text.len().min(200)]
+        ));
     }
 
-    let json: serde_json::Value = response.json().await
+    let json: serde_json::Value = response
+        .json()
+        .await
         .map_err(|e| format!("Ollama JSON parse failed: {e}"))?;
 
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -728,7 +838,10 @@ async fn execute_scenario_ollama(
         .unwrap_or("")
         .to_string();
     let eval_count = json.get("eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
-    let prompt_eval_count = json.get("prompt_eval_count").and_then(|v| v.as_u64()).unwrap_or(0);
+    let prompt_eval_count = json
+        .get("prompt_eval_count")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
 
     let events = if assistant_text.is_empty() {
         Vec::new()
@@ -760,10 +873,14 @@ fn build_sandbox_section(mock_tools: &[MockToolResponse]) -> String {
     let mut section = String::new();
     section.push_str("\n## SANDBOX TESTING MODE -- Simulated Tool Environment\n");
     section.push_str("You are running in test mode. Do NOT call actual tools.\n");
-    section.push_str("Instead, use these simulated tool responses as if the tools returned them:\n\n");
+    section
+        .push_str("Instead, use these simulated tool responses as if the tools returned them:\n\n");
 
     for mock in mock_tools {
-        section.push_str(&format!("### Simulated response for `{}`\n", mock.tool_name));
+        section.push_str(&format!(
+            "### Simulated response for `{}`\n",
+            mock.tool_name
+        ));
         if let Some(ref desc) = mock.description {
             section.push_str(&format!("Context: {desc}\n"));
         }
@@ -795,7 +912,11 @@ fn inject_sandbox_into_prompt(base_prompt: &str, sandbox_section: &str) -> Strin
 
 // -- Scoring (delegates to unified eval framework + LLM eval) ---
 
-pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenario, persona: &Persona) -> ScoreResult {
+pub(crate) async fn score_result(
+    output: &ExecutionOutput,
+    scenario: &TestScenario,
+    persona: &Persona,
+) -> ScoreResult {
     let expected_tools = scenario.expected_tool_sequence.as_deref();
     let expected_protocols = scenario.expected_protocols.as_deref();
 
@@ -829,7 +950,8 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
         persona.description.as_deref().unwrap_or(""),
         &scenario.name,
         &scenario.description,
-    ).await;
+    )
+    .await;
 
     // Serialize structured rationale as JSON for rich frontend display.
     // The rationale field stores a JSON object with per-metric breakdowns
@@ -866,7 +988,11 @@ pub(crate) async fn score_result(output: &ExecutionOutput, scenario: &TestScenar
 /// Returns None if no scored values exist.
 fn avg_scored(iter: impl Iterator<Item = Option<i32>>) -> Option<f64> {
     let scored: Vec<i32> = iter.flatten().collect();
-    if scored.is_empty() { None } else { Some(scored.iter().map(|&v| v as f64).sum::<f64>() / scored.len() as f64) }
+    if scored.is_empty() {
+        None
+    } else {
+        Some(scored.iter().map(|&v| v as f64).sum::<f64>() / scored.len() as f64)
+    }
 }
 
 /// Compute value_score on a consistent 0-100 scale for both free and paid models.
@@ -890,7 +1016,8 @@ async fn build_summary(
 ) -> serde_json::Value {
     let data = results.lock().await;
 
-    let mut per_model: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> = HashMap::new();
+    let mut per_model: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
+        HashMap::new();
     for (model_id, ta, oq, pc, cost, duration) in data.iter() {
         per_model
             .entry(model_id.clone())
@@ -931,8 +1058,14 @@ async fn build_summary(
 
     // Sort by composite score descending
     rankings.sort_by(|a, b| {
-        let sa = a.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
-        let sb = b.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
+        let sa = a
+            .get("composite_score")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let sb = b
+            .get("composite_score")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         sb.cmp(&sa)
     });
 
@@ -989,13 +1122,15 @@ async fn spawn_cli_and_collect(cli_args: &CliArgs, prompt_text: &str) -> Result<
     let mut assistant_text = String::new();
     let timeout = tokio::time::Duration::from_secs(300);
 
-    driver.collect_lines_with_timeout(timeout, |line| {
-        let (line_type, _) = parser::parse_stream_line(line);
-        if let StreamLineType::AssistantText { text } = line_type {
-            assistant_text.push_str(&text);
-            assistant_text.push('\n');
-        }
-    }).await?;
+    driver
+        .collect_lines_with_timeout(timeout, |line| {
+            let (line_type, _) = parser::parse_stream_line(line);
+            if let StreamLineType::AssistantText { text } = line_type {
+                assistant_text.push_str(&text);
+                assistant_text.push('\n');
+            }
+        })
+        .await?;
 
     let _ = driver.finish().await;
     Ok(assistant_text)
@@ -1018,87 +1153,92 @@ async fn spawn_cli_and_collect_structured(
     let mut events: Vec<CreateLabResultEventInput> = Vec::new();
 
     let timeout = tokio::time::Duration::from_secs(300);
-    let stream_err = driver.collect_lines_with_timeout(timeout, |line| {
-        let (line_type, _) = parser::parse_stream_line(line);
-        let ts_ms = start.elapsed().as_millis() as i64;
-        let idx = events.len() as i32;
+    let stream_err = driver
+        .collect_lines_with_timeout(timeout, |line| {
+            let (line_type, _) = parser::parse_stream_line(line);
+            let ts_ms = start.elapsed().as_millis() as i64;
+            let idx = events.len() as i32;
 
-        match line_type {
-            StreamLineType::AssistantText { text } => {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "assistant_text".to_string(),
-                    tool_name: None,
-                    tool_args_preview: None,
-                    tool_result_preview: None,
-                    text_preview: Some(text),
-                    ts_ms_relative: ts_ms,
-                });
+            match line_type {
+                StreamLineType::AssistantText { text } => {
+                    assistant_text.push_str(&text);
+                    assistant_text.push('\n');
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "assistant_text".to_string(),
+                        tool_name: None,
+                        tool_args_preview: None,
+                        tool_result_preview: None,
+                        text_preview: Some(text),
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::AssistantToolUse {
+                    tool_name,
+                    input_preview,
+                } => {
+                    tool_calls.push(tool_name.clone());
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "tool_use".to_string(),
+                        tool_name: Some(tool_name),
+                        tool_args_preview: Some(input_preview),
+                        tool_result_preview: None,
+                        text_preview: None,
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::AssistantTodoWrite { items } => {
+                    tool_calls.push("TodoWrite".to_string());
+                    let preview = serde_json::to_string(&items).unwrap_or_default();
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "tool_use".to_string(),
+                        tool_name: Some("TodoWrite".to_string()),
+                        tool_args_preview: Some(preview),
+                        tool_result_preview: None,
+                        text_preview: None,
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::ToolResult { content_preview } => {
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "tool_result".to_string(),
+                        tool_name: None,
+                        tool_args_preview: None,
+                        tool_result_preview: Some(content_preview),
+                        text_preview: None,
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::SystemInit { ref model, .. } => {
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "system_init".to_string(),
+                        tool_name: None,
+                        tool_args_preview: None,
+                        tool_result_preview: None,
+                        text_preview: Some(model.clone()),
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::Result { .. } => {
+                    parser::update_metrics_from_result(&mut metrics, &line_type);
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "result".to_string(),
+                        tool_name: None,
+                        tool_args_preview: None,
+                        tool_result_preview: None,
+                        text_preview: None,
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::Unknown => {}
             }
-            StreamLineType::AssistantToolUse { tool_name, input_preview } => {
-                tool_calls.push(tool_name.clone());
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "tool_use".to_string(),
-                    tool_name: Some(tool_name),
-                    tool_args_preview: Some(input_preview),
-                    tool_result_preview: None,
-                    text_preview: None,
-                    ts_ms_relative: ts_ms,
-                });
-            }
-            StreamLineType::AssistantTodoWrite { items } => {
-                tool_calls.push("TodoWrite".to_string());
-                let preview = serde_json::to_string(&items).unwrap_or_default();
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "tool_use".to_string(),
-                    tool_name: Some("TodoWrite".to_string()),
-                    tool_args_preview: Some(preview),
-                    tool_result_preview: None,
-                    text_preview: None,
-                    ts_ms_relative: ts_ms,
-                });
-            }
-            StreamLineType::ToolResult { content_preview } => {
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "tool_result".to_string(),
-                    tool_name: None,
-                    tool_args_preview: None,
-                    tool_result_preview: Some(content_preview),
-                    text_preview: None,
-                    ts_ms_relative: ts_ms,
-                });
-            }
-            StreamLineType::SystemInit { ref model, .. } => {
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "system_init".to_string(),
-                    tool_name: None,
-                    tool_args_preview: None,
-                    tool_result_preview: None,
-                    text_preview: Some(model.clone()),
-                    ts_ms_relative: ts_ms,
-                });
-            }
-            StreamLineType::Result { .. } => {
-                parser::update_metrics_from_result(&mut metrics, &line_type);
-                events.push(CreateLabResultEventInput {
-                    event_index: idx,
-                    event_type: "result".to_string(),
-                    tool_name: None,
-                    tool_args_preview: None,
-                    tool_result_preview: None,
-                    text_preview: None,
-                    ts_ms_relative: ts_ms,
-                });
-            }
-            StreamLineType::Unknown => {}
-        }
-    }).await;
+        })
+        .await;
 
     let exit = driver.wait().await;
     let duration_ms = start.elapsed().as_millis() as u64;
@@ -1108,7 +1248,10 @@ async fn spawn_cli_and_collect_structured(
         Some("Execution timed out after 300 seconds".to_string())
     } else if let Ok(status) = exit {
         if !status.success() {
-            Some(format!("CLI exited with code {}", status.code().unwrap_or(-1)))
+            Some(format!(
+                "CLI exited with code {}",
+                status.code().unwrap_or(-1)
+            ))
         } else {
             None
         }
@@ -1153,7 +1296,15 @@ fn emit_status(app: &AppHandle, run_id: &str, phase: &str, error: Option<&str>) 
 
 fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) {
     let now = chrono::Utc::now().to_rfc3339();
-    let _ = repo::update_run_status(pool, run_id, LabRunStatus::Failed, None, None, Some(error), Some(&now));
+    let _ = repo::update_run_status(
+        pool,
+        run_id,
+        LabRunStatus::Failed,
+        None,
+        None,
+        Some(error),
+        Some(&now),
+    );
     super::process_activity::emit_process_activity(app, "test", "failed", Some(run_id), None);
     emit_status(app, run_id, "failed", Some(error));
 }
@@ -1162,7 +1313,13 @@ fn finish_with_error(app: &AppHandle, pool: &DbPool, run_id: &str, error: &str) 
 // Lab: Generic executor for arena, A/B, eval, and matrix modes
 // ============================================================================
 
-fn emit_lab_status(app: &AppHandle, event_name: &str, run_id: &str, phase: &str, error: Option<&str>) {
+fn emit_lab_status(
+    app: &AppHandle,
+    event_name: &str,
+    run_id: &str,
+    phase: &str,
+    error: Option<&str>,
+) {
     let _ = app.emit(
         event_name,
         TestRunStatusEvent {
@@ -1196,9 +1353,27 @@ struct LabVariant<'a> {
 #[allow(clippy::type_complexity)]
 struct LabCallbacks<'a> {
     event_name: &'a str,
-    update_status: Box<dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>) + Send + Sync + 'a>,
-    persist_result: Box<dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult) + Send + Sync + 'a>,
-    build_summary: Box<dyn Fn(&HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>, &[TestModelConfig]) -> serde_json::Value + Send + Sync + 'a>,
+    update_status: Box<
+        dyn Fn(&DbPool, &str, LabRunStatus, Option<i32>, Option<&str>, Option<&str>, Option<&str>)
+            + Send
+            + Sync
+            + 'a,
+    >,
+    persist_result: Box<
+        dyn Fn(&DbPool, &str, &LabVariant<'_>, &TestScenario, &TestModelConfig, &str, &ScoreResult)
+            + Send
+            + Sync
+            + 'a,
+    >,
+    build_summary: Box<
+        dyn Fn(
+                &HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
+                &[TestModelConfig],
+            ) -> serde_json::Value
+            + Send
+            + Sync
+            + 'a,
+    >,
     update_llm_summary: Box<dyn Fn(&DbPool, &str, &str) + Send + Sync + 'a>,
 }
 
@@ -1213,7 +1388,9 @@ async fn generate_llm_run_summary(
     let mut results_text = String::new();
     for (key, entries) in tracker.iter() {
         let n = entries.len() as f64;
-        if n == 0.0 { continue; }
+        if n == 0.0 {
+            continue;
+        }
         let avg_ta = avg_scored(entries.iter().map(|r| r.0)).unwrap_or(0.0);
         let avg_oq = avg_scored(entries.iter().map(|r| r.1)).unwrap_or(0.0);
         let avg_pc = avg_scored(entries.iter().map(|r| r.2)).unwrap_or(0.0);
@@ -1249,7 +1426,11 @@ Rules:
     match spawn_cli_and_collect(&cli_args, &prompt).await {
         Ok(output) => {
             let text = output.trim().to_string();
-            if text.is_empty() { None } else { Some(text) }
+            if text.is_empty() {
+                None
+            } else {
+                Some(text)
+            }
         }
         Err(e) => {
             tracing::warn!("LLM run summary generation failed: {e}");
@@ -1276,41 +1457,85 @@ async fn run_lab_loop(
 
     emit_lab_status(app, cb.event_name, run_id, "generating", None);
 
-    let scenarios = match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
-        Ok(s) if s.is_empty() => {
-            let now = chrono::Utc::now().to_rfc3339();
-            (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some("No test scenarios were generated"), Some(&now));
-            emit_lab_status(app, cb.event_name, run_id, "failed", Some("No test scenarios were generated"));
-            return;
-        }
-        Ok(s) => s,
-        Err(e) => {
-            let msg = format!("Scenario generation failed: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            (cb.update_status)(pool, run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
-            emit_lab_status(app, cb.event_name, run_id, "failed", Some(&msg));
-            return;
-        }
-    };
+    let scenarios =
+        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
+            Ok(s) if s.is_empty() => {
+                let now = chrono::Utc::now().to_rfc3339();
+                (cb.update_status)(
+                    pool,
+                    run_id,
+                    LabRunStatus::Failed,
+                    None,
+                    None,
+                    Some("No test scenarios were generated"),
+                    Some(&now),
+                );
+                emit_lab_status(
+                    app,
+                    cb.event_name,
+                    run_id,
+                    "failed",
+                    Some("No test scenarios were generated"),
+                );
+                return;
+            }
+            Ok(s) => s,
+            Err(e) => {
+                let msg = format!("Scenario generation failed: {e}");
+                let now = chrono::Utc::now().to_rfc3339();
+                (cb.update_status)(
+                    pool,
+                    run_id,
+                    LabRunStatus::Failed,
+                    None,
+                    None,
+                    Some(&msg),
+                    Some(&now),
+                );
+                emit_lab_status(app, cb.event_name, run_id, "failed", Some(&msg));
+                return;
+            }
+        };
 
     let scenario_count = scenarios.len();
-    (cb.update_status)(pool, run_id, LabRunStatus::Running, Some(scenario_count as i32), None, None, None);
+    (cb.update_status)(
+        pool,
+        run_id,
+        LabRunStatus::Running,
+        Some(scenario_count as i32),
+        None,
+        None,
+        None,
+    );
 
-    let _ = app.emit(cb.event_name, TestRunStatusEvent {
-        run_id: run_id.to_string(), phase: "generated".into(),
-        scenarios_count: Some(scenario_count),
-        elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
-        ..Default::default()
-    });
+    let _ = app.emit(
+        cb.event_name,
+        TestRunStatusEvent {
+            run_id: run_id.to_string(),
+            phase: "generated".into(),
+            scenarios_count: Some(scenario_count),
+            elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+            ..Default::default()
+        },
+    );
 
     let total = scenario_count * model_configs.len() * variants.len();
     let mut current = 0usize;
     #[allow(clippy::type_complexity)]
-    let mut tracker: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> = HashMap::new();
+    let mut tracker: HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>> =
+        HashMap::new();
 
     for scenario in &scenarios {
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-            (cb.update_status)(pool, run_id, LabRunStatus::Cancelled, None, None, None, None);
+            (cb.update_status)(
+                pool,
+                run_id,
+                LabRunStatus::Cancelled,
+                None,
+                None,
+                None,
+                None,
+            );
             emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
             return;
         }
@@ -1320,33 +1545,65 @@ async fn run_lab_loop(
         for (mi, model) in model_configs.iter().enumerate() {
             for (vi, variant) in variants.iter().enumerate() {
                 let persona_c = variant.persona.clone();
-                let tools_c = if variant.tools.is_empty() { tools.to_vec() } else { variant.tools.clone() };
+                let tools_c = if variant.tools.is_empty() {
+                    tools.to_vec()
+                } else {
+                    variant.tools.clone()
+                };
                 let scenario_c = scenario.clone();
                 let model_c = model.clone();
                 let cancelled_c = cancelled.clone();
 
                 handles.push(tokio::spawn(async move {
                     if cancelled_c.load(std::sync::atomic::Ordering::Acquire) {
-                        return (mi, vi, "cancelled".to_string(), ScoreResult {
-                            tool_accuracy: None, output_quality: None, protocol_compliance: None,
-                            output_preview: None, tool_calls_actual: None,
-                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                            error_message: Some("Cancelled".to_string()),
-                            rationale: None, suggestions: None, eval_method: None,
-                            events: Vec::new(),
-                        });
+                        return (
+                            mi,
+                            vi,
+                            "cancelled".to_string(),
+                            ScoreResult {
+                                tool_accuracy: None,
+                                output_quality: None,
+                                protocol_compliance: None,
+                                output_preview: None,
+                                tool_calls_actual: None,
+                                input_tokens: 0,
+                                output_tokens: 0,
+                                cost_usd: 0.0,
+                                duration_ms: 0,
+                                error_message: Some("Cancelled".to_string()),
+                                rationale: None,
+                                suggestions: None,
+                                eval_method: None,
+                                events: Vec::new(),
+                            },
+                        );
                     }
-                    let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
+                    let result =
+                        execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                     let (status, scores) = match &result {
-                        Ok(r) => ("passed".to_string(), score_result(r, &scenario_c, &persona_c).await),
-                        Err(e) => ("error".to_string(), ScoreResult {
-                            tool_accuracy: None, output_quality: None, protocol_compliance: None,
-                            output_preview: Some(e.clone()), tool_calls_actual: None,
-                            input_tokens: 0, output_tokens: 0, cost_usd: 0.0, duration_ms: 0,
-                            error_message: Some(e.clone()),
-                            rationale: None, suggestions: None, eval_method: None,
-                            events: Vec::new(),
-                        }),
+                        Ok(r) => (
+                            "passed".to_string(),
+                            score_result(r, &scenario_c, &persona_c).await,
+                        ),
+                        Err(e) => (
+                            "error".to_string(),
+                            ScoreResult {
+                                tool_accuracy: None,
+                                output_quality: None,
+                                protocol_compliance: None,
+                                output_preview: Some(e.clone()),
+                                tool_calls_actual: None,
+                                input_tokens: 0,
+                                output_tokens: 0,
+                                cost_usd: 0.0,
+                                duration_ms: 0,
+                                error_message: Some(e.clone()),
+                                rationale: None,
+                                suggestions: None,
+                                eval_method: None,
+                                events: Vec::new(),
+                            },
+                        ),
                     };
                     (mi, vi, status, scores)
                 }));
@@ -1372,22 +1629,37 @@ async fn run_lab_loop(
                 format!("{}:{}", variant.label, model.id)
             };
             tracker.entry(key).or_default().push((
-                scores.tool_accuracy, scores.output_quality, scores.protocol_compliance,
-                scores.cost_usd, scores.duration_ms,
+                scores.tool_accuracy,
+                scores.output_quality,
+                scores.protocol_compliance,
+                scores.cost_usd,
+                scores.duration_ms,
             ));
 
             (cb.persist_result)(pool, run_id, variant, scenario, model, &status, &scores);
 
-            let _ = app.emit(cb.event_name, TestRunStatusEvent {
-                run_id: run_id.to_string(), phase: "executing".into(),
-                scenarios_count: Some(scenario_count), current: Some(current), total: Some(total),
-                model_id: Some(model.id.clone()), scenario_name: Some(scenario.name.clone()),
-                status: Some(status),
-                scores: Some(TestScores { tool_accuracy: scores.tool_accuracy, output_quality: scores.output_quality, protocol_compliance: scores.protocol_compliance }),
-                summary: None, error: scores.error_message,
-                scenarios: None,
-                elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
-            });
+            let _ = app.emit(
+                cb.event_name,
+                TestRunStatusEvent {
+                    run_id: run_id.to_string(),
+                    phase: "executing".into(),
+                    scenarios_count: Some(scenario_count),
+                    current: Some(current),
+                    total: Some(total),
+                    model_id: Some(model.id.clone()),
+                    scenario_name: Some(scenario.name.clone()),
+                    status: Some(status),
+                    scores: Some(TestScores {
+                        tool_accuracy: scores.tool_accuracy,
+                        output_quality: scores.output_quality,
+                        protocol_compliance: scores.protocol_compliance,
+                    }),
+                    summary: None,
+                    error: scores.error_message,
+                    scenarios: None,
+                    elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+                },
+            );
         }
     }
 
@@ -1401,7 +1673,8 @@ async fn run_lab_loop(
         persona_for_scenarios.description.as_deref().unwrap_or(""),
         &tracker,
         scenario_count as usize,
-    ).await;
+    )
+    .await;
 
     // Persist the LLM summary if available (best-effort, non-fatal)
     if let Some(ref text) = llm_summary {
@@ -1413,20 +1686,37 @@ async fn run_lab_loop(
     // Guard: if the run was cancelled while we were finishing, do not overwrite
     // the "cancelled" status with "completed" — that would corrupt the state.
     if cancelled.load(std::sync::atomic::Ordering::Acquire) {
-        tracing::info!(run_id, "Skipping completed status write — run was cancelled");
+        tracing::info!(
+            run_id,
+            "Skipping completed status write — run was cancelled"
+        );
         emit_lab_status(app, cb.event_name, run_id, "cancelled", None);
         return;
     }
 
-    (cb.update_status)(pool, run_id, LabRunStatus::Completed, None, Some(&summary_str), None, Some(&now));
+    (cb.update_status)(
+        pool,
+        run_id,
+        LabRunStatus::Completed,
+        None,
+        Some(&summary_str),
+        None,
+        Some(&now),
+    );
 
-    let _ = app.emit(cb.event_name, TestRunStatusEvent {
-        run_id: run_id.to_string(), phase: "completed".into(),
-        scenarios_count: Some(scenario_count), current: Some(total), total: Some(total),
-        summary: Some(summary),
-        elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
-        ..Default::default()
-    });
+    let _ = app.emit(
+        cb.event_name,
+        TestRunStatusEvent {
+            run_id: run_id.to_string(),
+            phase: "completed".into(),
+            scenarios_count: Some(scenario_count),
+            current: Some(total),
+            total: Some(total),
+            summary: Some(summary),
+            elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
+            ..Default::default()
+        },
+    );
 }
 
 /// Build a keyed summary (used by A/B, eval, matrix modes).
@@ -1442,15 +1732,20 @@ fn build_keyed_summary(
         let avg_oq = avg_scored(results.iter().map(|r| r.1)).unwrap_or(0.0);
         let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
         let total_cost: f64 = results.iter().map(|r| r.3).sum();
-        let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
-        summary_obj.insert(key.clone(), serde_json::json!({
-            "avg_tool_accuracy": avg_ta.round() as i32,
-            "avg_output_quality": avg_oq.round() as i32,
-            "avg_protocol_compliance": avg_pc.round() as i32,
-            "composite_score": composite.round() as i32,
-            "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
-            "scenarios_tested": count as i32,
-        }));
+        let composite = avg_ta * WEIGHT_TOOL_ACCURACY
+            + avg_oq * WEIGHT_OUTPUT_QUALITY
+            + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+        summary_obj.insert(
+            key.clone(),
+            serde_json::json!({
+                "avg_tool_accuracy": avg_ta.round() as i32,
+                "avg_output_quality": avg_oq.round() as i32,
+                "avg_protocol_compliance": avg_pc.round() as i32,
+                "composite_score": composite.round() as i32,
+                "total_cost_usd": (total_cost * 10000.0).round() / 10000.0,
+                "scenarios_tested": count as i32,
+            }),
+        );
     }
     serde_json::Value::Object(summary_obj)
 }
@@ -1470,7 +1765,9 @@ fn build_arena_summary(
             let avg_pc = avg_scored(results.iter().map(|r| r.2)).unwrap_or(0.0);
             let total_cost: f64 = results.iter().map(|r| r.3).sum();
             let avg_duration = results.iter().map(|r| r.4 as f64).sum::<f64>() / count;
-            let composite = avg_ta * WEIGHT_TOOL_ACCURACY + avg_oq * WEIGHT_OUTPUT_QUALITY + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
+            let composite = avg_ta * WEIGHT_TOOL_ACCURACY
+                + avg_oq * WEIGHT_OUTPUT_QUALITY
+                + avg_pc * WEIGHT_PROTOCOL_COMPLIANCE;
             let value_score = compute_value_score(composite, total_cost);
             rankings.push(serde_json::json!({
                 "model_id": model.id,
@@ -1487,13 +1784,29 @@ fn build_arena_summary(
         }
     }
     rankings.sort_by(|a, b| {
-        let sa = a.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
-        let sb = b.get("composite_score").and_then(|v| v.as_i64()).unwrap_or(0);
+        let sa = a
+            .get("composite_score")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
+        let sb = b
+            .get("composite_score")
+            .and_then(|v| v.as_i64())
+            .unwrap_or(0);
         sb.cmp(&sa)
     });
-    let best_model = rankings.first().and_then(|r| r.get("model_id")).and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
-    let best_value = rankings.iter().max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
-        .and_then(|r| r.get("model_id")).and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
+    let best_model = rankings
+        .first()
+        .and_then(|r| r.get("model_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+    let best_value = rankings
+        .iter()
+        .max_by_key(|r| r.get("value_score").and_then(|v| v.as_i64()).unwrap_or(0))
+        .and_then(|r| r.get("model_id"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
     serde_json::json!({
         "best_quality_model": best_model,
         "best_value_model": best_value,
@@ -1502,14 +1815,22 @@ fn build_arena_summary(
 }
 
 /// Common fields extracted from a scenario + model + scores for persisting lab results.
-fn make_common_result_fields(scenario: &TestScenario, model: &TestModelConfig, status: &str, scores: &ScoreResult) -> CreateLabResultBaseInput {
+fn make_common_result_fields(
+    scenario: &TestScenario,
+    model: &TestModelConfig,
+    status: &str,
+    scores: &ScoreResult,
+) -> CreateLabResultBaseInput {
     CreateLabResultBaseInput {
         scenario_name: scenario.name.clone(),
         model_id: model.id.clone(),
         provider: model.provider.clone(),
         status: status.to_string(),
         output_preview: scores.output_preview.clone(),
-        tool_calls_expected: scenario.expected_tool_sequence.as_ref().map(|v| crate::db::models::Json(v.clone())),
+        tool_calls_expected: scenario
+            .expected_tool_sequence
+            .as_ref()
+            .map(|v| crate::db::models::Json(v.clone())),
         tool_calls_actual: scores.tool_calls_actual.clone(),
         tool_accuracy_score: scores.tool_accuracy,
         output_quality_score: scores.output_quality,
@@ -1542,7 +1863,11 @@ pub async fn run_arena_test(
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
-    let variants = vec![LabVariant { persona, label: String::new(), tools: Vec::new() }];
+    let variants = vec![LabVariant {
+        persona,
+        label: String::new(),
+        tools: Vec::new(),
+    }];
 
     let cb = LabCallbacks {
         event_name: "lab-arena-status",
@@ -1551,12 +1876,24 @@ pub async fn run_arena_test(
         }),
         persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            match arena_repo::create_result(pool, &CreateArenaResultInput {
-                run_id: run_id.to_string(), base,
-            }) {
+            match arena_repo::create_result(
+                pool,
+                &CreateArenaResultInput {
+                    run_id: run_id.to_string(),
+                    base,
+                },
+            ) {
                 Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Arena, &scores.events) {
-                        tracing::warn!("Failed to persist arena event stream for result {}: {e}", result.id);
+                    if let Err(e) = events_repo::insert_events_batch(
+                        pool,
+                        &result.id,
+                        LabResultKind::Arena,
+                        &scores.events,
+                    ) {
+                        tracing::warn!(
+                            "Failed to persist arena event stream for result {}: {e}",
+                            result.id
+                        );
                     }
                 }
                 Err(e) => tracing::error!("Arena result create failed: {e}"),
@@ -1568,7 +1905,19 @@ pub async fn run_arena_test(
         }),
     };
 
-    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+    run_lab_loop(
+        &app,
+        &pool,
+        &run_id,
+        persona,
+        tools,
+        &model_configs,
+        &variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        &cb,
+    )
+    .await;
 }
 
 // ============================================================================
@@ -1596,7 +1945,11 @@ pub async fn run_consensus_test(
 
     // Create N identical variants labeled sample-0..sample-N
     let variants: Vec<LabVariant<'_>> = (0..n)
-        .map(|i| LabVariant { persona, label: format!("sample-{i}"), tools: Vec::new() })
+        .map(|i| LabVariant {
+            persona,
+            label: format!("sample-{i}"),
+            tools: Vec::new(),
+        })
         .collect();
 
     // Track sample index from label
@@ -1607,22 +1960,39 @@ pub async fn run_consensus_test(
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
             let _ = consensus_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
-        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
-            let idx: i32 = variant.label.strip_prefix("sample-")
-                .and_then(|s| s.parse().ok())
-                .unwrap_or(0);
-            let base = make_common_result_fields(scenario, model, status, scores);
-            match consensus_repo::create_result(pool, &CreateConsensusResultInput {
-                run_id: run_id.to_string(), sample_index: idx, base,
-            }) {
-                Ok(result) => {
-                    if let Err(e) = events_repo::insert_events_batch(pool, &result.id, LabResultKind::Consensus, &scores.events) {
-                        tracing::warn!("Failed to persist consensus event stream for result {}: {e}", result.id);
+        persist_result: Box::new(
+            move |pool, run_id, variant, scenario, model, status, scores| {
+                let idx: i32 = variant
+                    .label
+                    .strip_prefix("sample-")
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(0);
+                let base = make_common_result_fields(scenario, model, status, scores);
+                match consensus_repo::create_result(
+                    pool,
+                    &CreateConsensusResultInput {
+                        run_id: run_id.to_string(),
+                        sample_index: idx,
+                        base,
+                    },
+                ) {
+                    Ok(result) => {
+                        if let Err(e) = events_repo::insert_events_batch(
+                            pool,
+                            &result.id,
+                            LabResultKind::Consensus,
+                            &scores.events,
+                        ) {
+                            tracing::warn!(
+                                "Failed to persist consensus event stream for result {}: {e}",
+                                result.id
+                            );
+                        }
                     }
+                    Err(e) => tracing::error!("Consensus result create failed: {e}"),
                 }
-                Err(e) => tracing::error!("Consensus result create failed: {e}"),
-            }
-        }),
+            },
+        ),
         build_summary: Box::new(build_consensus_summary),
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = consensus_repo::update_llm_summary(pool, id, text);
@@ -1630,7 +2000,19 @@ pub async fn run_consensus_test(
     };
 
     let model_configs = vec![model_config];
-    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+    run_lab_loop(
+        &app,
+        &pool,
+        &run_id,
+        persona,
+        tools,
+        &model_configs,
+        &variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        &cb,
+    )
+    .await;
 
     // After the loop, compute and persist agreement rate
     if let Ok(results) = consensus_repo::get_results_by_run(&pool, &run_id) {
@@ -1646,9 +2028,13 @@ fn compute_agreement_rate(results: &[crate::db::models::LabConsensusResult]) -> 
     use std::collections::HashMap;
 
     // Group results by scenario
-    let mut by_scenario: HashMap<&str, Vec<&crate::db::models::LabConsensusResult>> = HashMap::new();
+    let mut by_scenario: HashMap<&str, Vec<&crate::db::models::LabConsensusResult>> =
+        HashMap::new();
     for r in results {
-        by_scenario.entry(&r.base.scenario_name).or_default().push(r);
+        by_scenario
+            .entry(&r.base.scenario_name)
+            .or_default()
+            .push(r);
     }
 
     if by_scenario.is_empty() {
@@ -1658,7 +2044,10 @@ fn compute_agreement_rate(results: &[crate::db::models::LabConsensusResult]) -> 
     let mut total_agreement = 0.0;
     for (_scenario, samples) in &by_scenario {
         let n = samples.len() as f64;
-        if n <= 1.0 { total_agreement += 1.0; continue; }
+        if n <= 1.0 {
+            total_agreement += 1.0;
+            continue;
+        }
 
         // Bucket each sample by quality score tier: high(>=80), medium(50-79), low(<50)
         let mut buckets = [0i32; 3]; // [low, medium, high]
@@ -1720,12 +2109,18 @@ pub async fn run_ab_test(
     use_case_filter: Option<String>,
 ) {
     // Capture version lookup data before borrowing personas
-    let version_lookup: Vec<(String, i32)> = variants.iter()
+    let version_lookup: Vec<(String, i32)> = variants
+        .iter()
         .map(|(vid, vnum, _)| (vid.clone(), *vnum))
         .collect();
 
-    let lab_variants: Vec<LabVariant<'_>> = variants.iter()
-        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num), tools: Vec::new() })
+    let lab_variants: Vec<LabVariant<'_>> = variants
+        .iter()
+        .map(|(_, num, p)| LabVariant {
+            persona: p,
+            label: format!("v{}", num),
+            tools: Vec::new(),
+        })
         .collect();
     let primary_persona = &variants[0].2;
 
@@ -1734,23 +2129,49 @@ pub async fn run_ab_test(
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
             let _ = ab_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
-        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
-            let Some(src) = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label) else {
-                tracing::error!("Version lookup failed for label '{}' during A/B persist_result", variant.label);
-                return;
-            };
-            let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = ab_repo::create_result(pool, &CreateAbResultInput {
-                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            });
-        }),
+        persist_result: Box::new(
+            move |pool, run_id, variant, scenario, model, status, scores| {
+                let Some(src) = version_lookup
+                    .iter()
+                    .find(|(_, num)| format!("v{}", num) == variant.label)
+                else {
+                    tracing::error!(
+                        "Version lookup failed for label '{}' during A/B persist_result",
+                        variant.label
+                    );
+                    return;
+                };
+                let base = make_common_result_fields(scenario, model, status, scores);
+                let _ = ab_repo::create_result(
+                    pool,
+                    &CreateAbResultInput {
+                        run_id: run_id.to_string(),
+                        version_id: src.0.clone(),
+                        version_number: src.1,
+                        base,
+                    },
+                );
+            },
+        ),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = ab_repo::update_llm_summary(pool, id, text);
         }),
     };
 
-    run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+    run_lab_loop(
+        &app,
+        &pool,
+        &run_id,
+        primary_persona,
+        &tools,
+        &model_configs,
+        &lab_variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        &cb,
+    )
+    .await;
 }
 
 // ============================================================================
@@ -1768,12 +2189,18 @@ pub async fn run_eval_test(
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
 ) {
-    let version_lookup: Vec<(String, i32)> = variants.iter()
+    let version_lookup: Vec<(String, i32)> = variants
+        .iter()
         .map(|(vid, vnum, _)| (vid.clone(), *vnum))
         .collect();
 
-    let lab_variants: Vec<LabVariant<'_>> = variants.iter()
-        .map(|(_, num, p)| LabVariant { persona: p, label: format!("v{}", num), tools: Vec::new() })
+    let lab_variants: Vec<LabVariant<'_>> = variants
+        .iter()
+        .map(|(_, num, p)| LabVariant {
+            persona: p,
+            label: format!("v{}", num),
+            tools: Vec::new(),
+        })
         .collect();
     let primary_persona = &variants[0].2;
 
@@ -1782,23 +2209,49 @@ pub async fn run_eval_test(
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
             let _ = eval_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
-        persist_result: Box::new(move |pool, run_id, variant, scenario, model, status, scores| {
-            let Some(src) = version_lookup.iter().find(|(_, num)| format!("v{}", num) == variant.label) else {
-                tracing::error!("Version lookup failed for label '{}' during eval persist_result", variant.label);
-                return;
-            };
-            let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = eval_repo::create_result(pool, &CreateEvalResultInput {
-                run_id: run_id.to_string(), version_id: src.0.clone(), version_number: src.1, base,
-            });
-        }),
+        persist_result: Box::new(
+            move |pool, run_id, variant, scenario, model, status, scores| {
+                let Some(src) = version_lookup
+                    .iter()
+                    .find(|(_, num)| format!("v{}", num) == variant.label)
+                else {
+                    tracing::error!(
+                        "Version lookup failed for label '{}' during eval persist_result",
+                        variant.label
+                    );
+                    return;
+                };
+                let base = make_common_result_fields(scenario, model, status, scores);
+                let _ = eval_repo::create_result(
+                    pool,
+                    &CreateEvalResultInput {
+                        run_id: run_id.to_string(),
+                        version_id: src.0.clone(),
+                        version_number: src.1,
+                        base,
+                    },
+                );
+            },
+        ),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
             let _ = eval_repo::update_llm_summary(pool, id, text);
         }),
     };
 
-    run_lab_loop(&app, &pool, &run_id, primary_persona, &tools, &model_configs, &lab_variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+    run_lab_loop(
+        &app,
+        &pool,
+        &run_id,
+        primary_persona,
+        &tools,
+        &model_configs,
+        &lab_variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        &cb,
+    )
+    .await;
 }
 
 // ============================================================================
@@ -1832,22 +2285,39 @@ pub async fn run_matrix_test(
         Err(e) => {
             let msg = format!("Draft generation failed: {e}");
             let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
+            let _ = matrix_repo::update_run_status(
+                &pool,
+                &run_id,
+                LabRunStatus::Failed,
+                None,
+                None,
+                Some(&msg),
+                Some(&now),
+            );
             emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
             return;
         }
     };
 
-    let (draft_structured_prompt, draft_change_summary) = match parse_draft_from_output(&draft_output) {
-        Ok(v) => v,
-        Err(e) => {
-            let msg = format!("Failed to parse draft: {e}");
-            let now = chrono::Utc::now().to_rfc3339();
-            let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Failed, None, None, Some(&msg), Some(&now));
-            emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
-            return;
-        }
-    };
+    let (draft_structured_prompt, draft_change_summary) =
+        match parse_draft_from_output(&draft_output) {
+            Ok(v) => v,
+            Err(e) => {
+                let msg = format!("Failed to parse draft: {e}");
+                let now = chrono::Utc::now().to_rfc3339();
+                let _ = matrix_repo::update_run_status(
+                    &pool,
+                    &run_id,
+                    LabRunStatus::Failed,
+                    None,
+                    None,
+                    Some(&msg),
+                    Some(&now),
+                );
+                emit_lab_status(&app, "lab-matrix-status", &run_id, "failed", Some(&msg));
+                return;
+            }
+        };
 
     let draft_json_str = serde_json::to_string(&draft_structured_prompt).unwrap_or_default();
     let _ = matrix_repo::update_run_draft(&pool, &run_id, &draft_json_str, &draft_change_summary);
@@ -1856,8 +2326,16 @@ pub async fn run_matrix_test(
     draft_persona.structured_prompt = Some(draft_json_str.clone());
 
     let variants = vec![
-        LabVariant { persona, label: "current".to_string(), tools: Vec::new() },
-        LabVariant { persona: &draft_persona, label: "draft".to_string(), tools: Vec::new() },
+        LabVariant {
+            persona,
+            label: "current".to_string(),
+            tools: Vec::new(),
+        },
+        LabVariant {
+            persona: &draft_persona,
+            label: "draft".to_string(),
+            tools: Vec::new(),
+        },
     ];
 
     let cb = LabCallbacks {
@@ -1867,9 +2345,14 @@ pub async fn run_matrix_test(
         }),
         persist_result: Box::new(|pool, run_id, variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
-            let _ = matrix_repo::create_result(pool, &CreateMatrixResultInput {
-                run_id: run_id.to_string(), variant: variant.label.clone(), base,
-            });
+            let _ = matrix_repo::create_result(
+                pool,
+                &CreateMatrixResultInput {
+                    run_id: run_id.to_string(),
+                    variant: variant.label.clone(),
+                    base,
+                },
+            );
         }),
         build_summary: Box::new(build_keyed_summary),
         update_llm_summary: Box::new(|pool, id, text| {
@@ -1878,14 +2361,38 @@ pub async fn run_matrix_test(
     };
 
     // Transition Drafting -> Generating so run_lab_loop can then go Generating -> Running -> Completed
-    let _ = matrix_repo::update_run_status(&pool, &run_id, LabRunStatus::Generating, None, None, None, None);
+    let _ = matrix_repo::update_run_status(
+        &pool,
+        &run_id,
+        LabRunStatus::Generating,
+        None,
+        None,
+        None,
+        None,
+    );
 
-    run_lab_loop(&app, &pool, &run_id, persona, tools, &model_configs, &variants, &cancelled, use_case_filter.as_deref(), &cb).await;
+    run_lab_loop(
+        &app,
+        &pool,
+        &run_id,
+        persona,
+        tools,
+        &model_configs,
+        &variants,
+        &cancelled,
+        use_case_filter.as_deref(),
+        &cb,
+    )
+    .await;
 }
 
 // -- Matrix helpers ---------------------------------------------
 
-fn build_draft_generation_prompt(persona: &Persona, user_instruction: &str, previous_results_summary: Option<&str>) -> String {
+fn build_draft_generation_prompt(
+    persona: &Persona,
+    user_instruction: &str,
+    previous_results_summary: Option<&str>,
+) -> String {
     let sp_json = persona.structured_prompt.as_deref().unwrap_or("{}");
 
     // Extract use cases from design_context if available
@@ -1968,7 +2475,11 @@ fn parse_draft_from_output(output: &str) -> Result<(serde_json::Value, String), 
     // Try direct parse
     if let Ok(obj) = serde_json::from_str::<serde_json::Value>(trimmed) {
         if let Some(sp) = obj.get("structured_prompt") {
-            let summary = obj.get("change_summary").and_then(|v| v.as_str()).unwrap_or("Draft generated").to_string();
+            let summary = obj
+                .get("change_summary")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Draft generated")
+                .to_string();
             return Ok((sp.clone(), summary));
         }
     }
@@ -1979,7 +2490,11 @@ fn parse_draft_from_output(output: &str) -> Result<(serde_json::Value, String), 
             let json_str = &trimmed[start..=end];
             if let Ok(obj) = serde_json::from_str::<serde_json::Value>(json_str) {
                 if let Some(sp) = obj.get("structured_prompt") {
-                    let summary = obj.get("change_summary").and_then(|v| v.as_str()).unwrap_or("Draft generated").to_string();
+                    let summary = obj
+                        .get("change_summary")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("Draft generated")
+                        .to_string();
                     return Ok((sp.clone(), summary));
                 }
             }
@@ -2028,14 +2543,16 @@ fn build_improvement_prompt(
 
     let user_feedback_section = user_feedback
         .filter(|f| !f.is_empty())
-        .map(|f| format!(
-            r#"
+        .map(|f| {
+            format!(
+                r#"
 ## User Feedback
 The user provided the following feedback on the results:
 {f}
 
 Prioritize addressing the user's specific concerns alongside the data-driven improvements."#
-        ))
+            )
+        })
         .unwrap_or_default();
 
     format!(

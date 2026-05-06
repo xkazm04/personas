@@ -6,8 +6,9 @@ mod companion;
 pub mod daemon;
 mod db;
 mod engine;
-pub use engine::render_plan;
 pub use commands::artist::persistence as artist_persistence;
+pub use engine::provider::EngineKind;
+pub use engine::render_plan;
 mod error;
 pub mod freeze_monitor;
 mod gitlab;
@@ -47,9 +48,8 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 /// HTTP client with SSRF-safe DNS resolver that rejects private/internal IPs
 /// at connection time.  Used by the API proxy and any other path where the
 /// target URL is influenced by user-supplied credential data.
-pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
-    engine::ssrf_safe_dns::build_ssrf_safe_client()
-});
+pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
+    LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
 
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {
@@ -332,7 +332,14 @@ pub struct AppState {
     pub tier_config: Arc<Mutex<engine::tier::TierConfig>>,
     /// TTL-cached tier usage snapshot (avoids repeated lock contention on
     /// tier_config + concurrency tracker for dashboard polling).
-    pub tier_usage_cache: Arc<Mutex<Option<(std::time::Instant, commands::infrastructure::tier_usage::TierUsageSnapshot)>>>,
+    pub tier_usage_cache: Arc<
+        Mutex<
+            Option<(
+                std::time::Instant,
+                commands::infrastructure::tier_usage::TierUsageSnapshot,
+            )>,
+        >,
+    >,
     /// Desktop connector capability approvals.
     #[cfg(feature = "desktop")]
     pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
@@ -350,7 +357,14 @@ pub struct AppState {
     pub network: Option<Arc<engine::p2p::NetworkService>>,
     /// Cached auth detection results with expiry time.
     /// Avoids re-spawning 9 CLI probes + cookie DB copies on repeated wizard calls.
-    pub auth_detect_cache: Arc<tokio::sync::Mutex<Option<(std::time::Instant, Vec<commands::credentials::auth_detect::AuthDetection>)>>>,
+    pub auth_detect_cache: Arc<
+        tokio::sync::Mutex<
+            Option<(
+                std::time::Instant,
+                Vec<commands::credentials::auth_detect::AuthDetection>,
+            )>,
+        >,
+    >,
     /// Embedding manager for vector knowledge bases (lazy-loaded model).
     #[cfg(feature = "ml")]
     pub embedding_manager: Option<Arc<engine::embedder::EmbeddingManager>>,
@@ -360,13 +374,16 @@ pub struct AppState {
     /// Active KB ingestion jobs: maps kb_id → CancellationToken so that
     /// `delete_knowledge_base` can cancel in-flight ingestion before dropping tables.
     #[cfg(feature = "ml")]
-    pub kb_ingest_jobs: Arc<tokio::sync::Mutex<HashMap<String, tokio_util::sync::CancellationToken>>>,
+    pub kb_ingest_jobs:
+        Arc<tokio::sync::Mutex<HashMap<String, tokio_util::sync::CancellationToken>>>,
     /// Cloud webhook relay state — shared with the background subscription so
     /// that the `cloud_webhook_relay_status` command can read live counters.
-    pub cloud_webhook_relay_state: Arc<tokio::sync::Mutex<engine::cloud_webhook_relay::CloudWebhookRelayState>>,
+    pub cloud_webhook_relay_state:
+        Arc<tokio::sync::Mutex<engine::cloud_webhook_relay::CloudWebhookRelayState>>,
     /// Shared event relay state — polls subscribed shared event feeds from
     /// the FastAPI facade and injects them into the local event bus.
-    pub shared_event_relay_state: Arc<tokio::sync::Mutex<engine::shared_event_relay::SharedEventRelayState>>,
+    pub shared_event_relay_state:
+        Arc<tokio::sync::Mutex<engine::shared_event_relay::SharedEventRelayState>>,
     /// Build session manager for multi-turn agent builder sessions.
     pub build_session_manager: Arc<engine::build_session::BuildSessionManager>,
     /// Composite trigger evaluation state (suppression cache + partial matches).
@@ -453,10 +470,9 @@ pub fn run() {
         // can run side by side on the same machine.
         #[cfg(not(debug_assertions))]
         {
-            builder = builder
-                .plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
-                    tracing::info!("Single-instance callback fired, argv: {:?}", argv);
-                }));
+            builder = builder.plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
+                tracing::info!("Single-instance callback fired, argv: {:?}", argv);
+            }));
         }
 
         builder = builder
@@ -473,12 +489,11 @@ pub fn run() {
     // If PERSONAS_TEST_PORT is set, inject a flag before page JS so the
     // frontend knows to load the test automation bridge.
     let test_port = test_automation::env_test_port();
-    let mut final_builder = builder
-        .plugin(
-            tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
-                .js_init_script(ipc_auth_script)
-                .build(),
-        );
+    let mut final_builder = builder.plugin(
+        tauri::plugin::Builder::<tauri::Wry, ()>::new("ipc-auth")
+            .js_init_script(ipc_auth_script)
+            .build(),
+    );
     if test_port.is_some() {
         final_builder = final_builder.plugin(
             tauri::plugin::Builder::<tauri::Wry, ()>::new("test-mode-flag")
@@ -1220,6 +1235,8 @@ pub fn run() {
             commands::design::n8n_transform::job_state::cancel_n8n_transform,
             commands::design::n8n_transform::confirmation::confirm_n8n_persona_draft,
             commands::design::n8n_transform::cli_runner::continue_n8n_transform,
+            // Design -- N8n Limits (canonical payload caps)
+            commands::design::n8n_limits::get_n8n_payload_limits,
             // Design -- N8n Sessions
             commands::design::n8n_sessions::create_n8n_session,
             commands::design::n8n_sessions::get_n8n_session,
@@ -1533,6 +1550,7 @@ pub fn run() {
             commands::communication::events::count_dead_letter_events,
             commands::communication::events::retry_dead_letter_event,
             commands::communication::events::discard_dead_letter_event,
+            commands::communication::events::get_dead_letter_config,
             // Communication -- Shared Events
             commands::communication::shared_events::shared_events_browse_catalog,
             commands::communication::shared_events::shared_events_refresh_catalog,
@@ -1745,6 +1763,7 @@ pub fn run() {
             commands::artist::persistence::artist_default_save_dir,
             commands::artist::persistence::artist_composition_file_extension,
             commands::artist::transcribe::artist_transcribe_media,
+            commands::artist::transcribe::artist_transcribe_providers_available,
             commands::artist::transcribe::artist_check_local_whisper,
             commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
@@ -1822,6 +1841,22 @@ pub fn run() {
             commands::companion::consolidate::companion_run_reflection,
             commands::companion::consolidate::companion_list_reflections,
             commands::companion::consolidate::companion_get_reflection,
+            commands::companion::consolidate::companion_get_dashboard,
+            commands::companion::proactive::companion_evaluate_proactive_now,
+            commands::companion::proactive::companion_list_proactive_messages,
+            commands::companion::proactive::companion_engage_proactive,
+            commands::companion::proactive::companion_dismiss_proactive,
+            commands::companion::connectors::companion_list_active_connectors,
+            commands::companion::connectors::companion_set_active_connectors,
+            commands::companion::connectors::companion_set_connector_enabled,
+            commands::companion::connectors::companion_remove_connector,
+            commands::companion::plugins::companion_list_plugin_toggles,
+            commands::companion::plugins::companion_set_plugin_enabled,
+            commands::companion::jobs::companion_list_projects,
+            commands::companion::jobs::companion_register_project,
+            commands::companion::jobs::companion_list_jobs,
+            commands::companion::jobs::companion_get_job,
+            commands::companion::jobs::companion_enqueue_job,
             // Infrastructure -- Auth
             commands::infrastructure::auth::login_with_google,
             commands::infrastructure::auth::get_auth_state,

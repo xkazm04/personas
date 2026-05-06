@@ -16,7 +16,7 @@ use super::types::ExecutionResult;
 
 // Bounds for AI-healing config changes. Values outside these ranges are
 // rejected to prevent a misdiagnosis from bricking a persona.
-const TIMEOUT_MS_MIN: i32 = 1_000;     // 1 second
+const TIMEOUT_MS_MIN: i32 = 1_000; // 1 second
 const TIMEOUT_MS_MAX: i32 = 1_800_000; // 30 minutes
 const MAX_TURNS_MIN: i32 = 1;
 const MAX_TURNS_MAX: i32 = 100;
@@ -94,7 +94,10 @@ pub fn should_trigger_ai_healing(
     consecutive_failures: u32,
 ) -> bool {
     // Never trigger for rate limits (backoff handles it) or CLI not found
-    if matches!(category, FailureCategory::RateLimit | FailureCategory::ProviderNotFound) {
+    if matches!(
+        category,
+        FailureCategory::RateLimit | FailureCategory::ProviderNotFound
+    ) {
         return false;
     }
 
@@ -278,7 +281,10 @@ fn apply_db_fixes(
 
     // Write audit entries into the active transaction so they commit/rollback
     // atomically with the fixes they describe.
-    let tx_audit = |tx: &rusqlite::Transaction<'_>, event_type: &str, message: &str, detail: Option<&str>| {
+    let tx_audit = |tx: &rusqlite::Transaction<'_>,
+                    event_type: &str,
+                    message: &str,
+                    detail: Option<&str>| {
         let id = uuid::Uuid::new_v4().to_string();
         let ts = chrono::Utc::now().to_rfc3339();
         let _ = tx.execute(
@@ -296,7 +302,8 @@ fn apply_db_fixes(
                         tx.execute(
                             "UPDATE personas SET system_prompt = ?1, updated_at = ?2 WHERE id = ?3",
                             params![fix.payload, now, persona_id],
-                        ).map_err(AppError::Database)?;
+                        )
+                        .map_err(AppError::Database)?;
                         applied.push(format!("Updated system_prompt: {}", fix.description));
                     }
                     "structured_prompt" => {
@@ -308,11 +315,13 @@ fn apply_db_fixes(
                     }
                     other => {
                         // Try to patch a specific section within structured_prompt
-                        let sp: Option<String> = tx.query_row(
-                            "SELECT structured_prompt FROM personas WHERE id = ?1",
-                            params![persona_id],
-                            |row| row.get(0),
-                        ).map_err(AppError::Database)?;
+                        let sp: Option<String> = tx
+                            .query_row(
+                                "SELECT structured_prompt FROM personas WHERE id = ?1",
+                                params![persona_id],
+                                |row| row.get(0),
+                            )
+                            .map_err(AppError::Database)?;
 
                         let sp = sp.unwrap_or_default();
                         if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&sp) {
@@ -327,15 +336,24 @@ fn apply_db_fixes(
                                         "UPDATE personas SET structured_prompt = ?1, updated_at = ?2 WHERE id = ?3",
                                         params![updated, now, persona_id],
                                     ).map_err(AppError::Database)?;
-                                    applied.push(format!("Patched section '{}': {}", other, fix.description));
+                                    applied.push(format!(
+                                        "Patched section '{}': {}",
+                                        other, fix.description
+                                    ));
                                 } else {
                                     tracing::warn!(
                                         "AI healing: section '{}' not found in structured_prompt",
                                         other
                                     );
-                                    tx_audit(&tx, "ai_heal_section_missing",
-                                        &format!("Section '{}' not found in structured_prompt", other),
-                                        Some(&fix.description));
+                                    tx_audit(
+                                        &tx,
+                                        "ai_heal_section_missing",
+                                        &format!(
+                                            "Section '{}' not found in structured_prompt",
+                                            other
+                                        ),
+                                        Some(&fix.description),
+                                    );
                                 }
                             } else {
                                 tracing::error!(
@@ -364,80 +382,101 @@ fn apply_db_fixes(
                     }
                 }
             }
-            "update_config" => match fix.target.as_str() {
-                "timeout_ms" => {
-                    if let Ok(timeout) = fix.payload.parse::<i32>() {
-                        if !(TIMEOUT_MS_MIN..=TIMEOUT_MS_MAX).contains(&timeout) {
-                            tracing::warn!(
-                                "AI healing: timeout_ms {} out of bounds [{}, {}], rejecting",
-                                timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
-                            );
-                            tx_audit(&tx, "ai_heal_value_rejected",
-                                &format!(
-                                    "Rejected timeout_ms={} (must be {}-{})",
-                                    timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
-                                ),
-                                Some(&fix.description));
-                        } else {
-                            tx.execute(
+            "update_config" => {
+                match fix.target.as_str() {
+                    "timeout_ms" => {
+                        if let Ok(timeout) = fix.payload.parse::<i32>() {
+                            if !(TIMEOUT_MS_MIN..=TIMEOUT_MS_MAX).contains(&timeout) {
+                                tracing::warn!(
+                                    "AI healing: timeout_ms {} out of bounds [{}, {}], rejecting",
+                                    timeout,
+                                    TIMEOUT_MS_MIN,
+                                    TIMEOUT_MS_MAX,
+                                );
+                                tx_audit(
+                                    &tx,
+                                    "ai_heal_value_rejected",
+                                    &format!(
+                                        "Rejected timeout_ms={} (must be {}-{})",
+                                        timeout, TIMEOUT_MS_MIN, TIMEOUT_MS_MAX,
+                                    ),
+                                    Some(&fix.description),
+                                );
+                            } else {
+                                tx.execute(
                                 "UPDATE personas SET timeout_ms = ?1, updated_at = ?2 WHERE id = ?3",
                                 params![timeout, now, persona_id],
                             ).map_err(AppError::Database)?;
-                            applied.push(format!("Updated timeout_ms to {}: {}", timeout, fix.description));
+                                applied.push(format!(
+                                    "Updated timeout_ms to {}: {}",
+                                    timeout, fix.description
+                                ));
+                            }
                         }
                     }
-                }
-                "max_turns" => {
-                    if let Ok(turns) = fix.payload.parse::<i32>() {
-                        if !(MAX_TURNS_MIN..=MAX_TURNS_MAX).contains(&turns) {
-                            tracing::warn!(
-                                "AI healing: max_turns {} out of bounds [{}, {}], rejecting",
-                                turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
-                            );
-                            tx_audit(&tx, "ai_heal_value_rejected",
-                                &format!(
-                                    "Rejected max_turns={} (must be {}-{})",
-                                    turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
-                                ),
-                                Some(&fix.description));
-                        } else {
-                            tx.execute(
+                    "max_turns" => {
+                        if let Ok(turns) = fix.payload.parse::<i32>() {
+                            if !(MAX_TURNS_MIN..=MAX_TURNS_MAX).contains(&turns) {
+                                tracing::warn!(
+                                    "AI healing: max_turns {} out of bounds [{}, {}], rejecting",
+                                    turns,
+                                    MAX_TURNS_MIN,
+                                    MAX_TURNS_MAX,
+                                );
+                                tx_audit(
+                                    &tx,
+                                    "ai_heal_value_rejected",
+                                    &format!(
+                                        "Rejected max_turns={} (must be {}-{})",
+                                        turns, MAX_TURNS_MIN, MAX_TURNS_MAX,
+                                    ),
+                                    Some(&fix.description),
+                                );
+                            } else {
+                                tx.execute(
                                 "UPDATE personas SET max_turns = ?1, updated_at = ?2 WHERE id = ?3",
                                 params![turns, now, persona_id],
                             ).map_err(AppError::Database)?;
-                            applied.push(format!("Updated max_turns to {}: {}", turns, fix.description));
+                                applied.push(format!(
+                                    "Updated max_turns to {}: {}",
+                                    turns, fix.description
+                                ));
+                            }
                         }
                     }
-                }
-                "enabled" => {
-                    // AI healing must never disable a persona -- that requires human approval.
-                    // Only allow setting enabled=true (re-enabling).
-                    if let Ok(enabled) = fix.payload.parse::<bool>() {
-                        if !enabled {
-                            tracing::warn!(
-                                "AI healing: blocked attempt to disable persona {}",
-                                persona_id,
-                            );
-                            tx_audit(&tx, "ai_heal_disable_blocked",
+                    "enabled" => {
+                        // AI healing must never disable a persona -- that requires human approval.
+                        // Only allow setting enabled=true (re-enabling).
+                        if let Ok(enabled) = fix.payload.parse::<bool>() {
+                            if !enabled {
+                                tracing::warn!(
+                                    "AI healing: blocked attempt to disable persona {}",
+                                    persona_id,
+                                );
+                                tx_audit(&tx, "ai_heal_disable_blocked",
                                 "Blocked AI healing from setting enabled=false (requires human approval)",
                                 Some(&fix.description));
-                        } else {
-                            let enabled_int = 1;
-                            tx.execute(
+                            } else {
+                                let enabled_int = 1;
+                                tx.execute(
                                 "UPDATE personas SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
                                 params![enabled_int, now, persona_id],
                             ).map_err(AppError::Database)?;
-                            applied.push(format!("Set enabled=true: {}", fix.description));
+                                applied.push(format!("Set enabled=true: {}", fix.description));
+                            }
                         }
                     }
+                    other => {
+                        tracing::warn!("AI healing: unknown config target '{}'", other);
+                        tx_audit(
+                            &tx,
+                            "ai_heal_unknown_target",
+                            &format!("Unknown config target '{}'", other),
+                            Some(&fix.description),
+                        );
+                    }
                 }
-                other => {
-                    tracing::warn!("AI healing: unknown config target '{}'", other);
-                    tx_audit(&tx, "ai_heal_unknown_target",
-                        &format!("Unknown config target '{}'", other),
-                        Some(&fix.description));
-                }
-            },
+            }
             "modify_file" | "run_command" => {
                 // File modifications and commands are handled directly by the CLI's
                 // own tool use -- we just log that they were requested.
@@ -478,9 +517,12 @@ fn apply_db_fixes(
             }
             other => {
                 tracing::warn!("AI healing: unknown fix type '{}'", other);
-                tx_audit(&tx, "ai_heal_unknown_fix_type",
+                tx_audit(
+                    &tx,
+                    "ai_heal_unknown_fix_type",
                     &format!("Unknown fix type '{}'", other),
-                    Some(&fix.description));
+                    Some(&fix.description),
+                );
             }
         }
     }
@@ -507,7 +549,6 @@ fn apply_db_fixes(
 
     Ok(applied)
 }
-
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -636,9 +677,18 @@ mod tests {
     fn test_healing_prompt_documents_bounds() {
         let input = build_healing_input("err", "Unknown");
         let prompt = input.get("_healing_prompt").unwrap().as_str().unwrap();
-        assert!(prompt.contains("1000-1800000"), "prompt should document timeout_ms bounds");
-        assert!(prompt.contains("1-100"), "prompt should document max_turns bounds");
-        assert!(prompt.contains("true only"), "prompt should note enabled=true only");
+        assert!(
+            prompt.contains("1000-1800000"),
+            "prompt should document timeout_ms bounds"
+        );
+        assert!(
+            prompt.contains("1-100"),
+            "prompt should document max_turns bounds"
+        );
+        assert!(
+            prompt.contains("true only"),
+            "prompt should note enabled=true only"
+        );
     }
 
     #[test]
@@ -696,6 +746,9 @@ mod tests {
         let payload = r#"[{"line": 42, "expr": "value of x"}, {"line": 88, "expr": "len(items)"}, {"line": 120, "expr": "is_dirty"}]"#;
         let parsed: serde_json::Value = serde_json::from_str(payload).unwrap();
         let count = parsed.as_array().map(|a| a.len()).unwrap_or(0);
-        assert_eq!(count, 3, "instrument payload must be a JSON array of log points");
+        assert_eq!(
+            count, 3,
+            "instrument payload must be a JSON array of log points"
+        );
     }
 }

@@ -11,14 +11,14 @@
 //! - `require_auth_sync` (also) — `test_provider_connection`, since probing
 //!   binary availability is non-sensitive.
 
-use std::sync::Arc;
 use serde::Serialize;
+use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
+use crate::db::repos::execution::provider_audit;
 use crate::engine::byom::{ByomPolicy, PolicyWarning, ProviderAuditEntry};
 use crate::engine::provider::{resolve_provider, EngineKind};
-use crate::db::repos::execution::provider_audit;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth_sync, require_privileged_sync};
 use crate::AppState;

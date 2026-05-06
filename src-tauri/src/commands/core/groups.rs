@@ -8,9 +8,7 @@ use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
 #[tauri::command]
-pub fn list_groups(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<PersonaGroup>, AppError> {
+pub fn list_groups(state: State<'_, Arc<AppState>>) -> Result<Vec<PersonaGroup>, AppError> {
     require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
@@ -35,10 +33,7 @@ pub fn update_group(
 }
 
 #[tauri::command]
-pub fn delete_group(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_group(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }

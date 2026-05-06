@@ -326,7 +326,10 @@ mod tests {
     fn test_match_with_target_persona() {
         let mut event = make_event("file_changed");
         event.target_persona_id = Some("p2".into());
-        let subs = vec![make_sub("p1", "file_changed"), make_sub("p2", "file_changed")];
+        let subs = vec![
+            make_sub("p1", "file_changed"),
+            make_sub("p2", "file_changed"),
+        ];
         let matches = match_event(&event, &subs);
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0].persona_id, "p2");
@@ -355,7 +358,11 @@ mod tests {
 
     // -- Event listener trigger tests ---------------------------------
 
-    fn make_listener(persona_id: &str, listen_event_type: &str, source_filter: Option<&str>) -> PersonaTrigger {
+    fn make_listener(
+        persona_id: &str,
+        listen_event_type: &str,
+        source_filter: Option<&str>,
+    ) -> PersonaTrigger {
         let config = serde_json::json!({
             "listen_event_type": listen_event_type,
             "source_filter": source_filter,
@@ -509,7 +516,11 @@ mod tests {
         let scoped = make_match("p1", Some("uc_a"), "sub-scoped");
         let wide = make_match("p1", None, "sub-wide");
         let out = prefer_capability_scoped(vec![wide.clone(), scoped.clone()]);
-        assert_eq!(out.len(), 1, "persona-wide dropped when a scoped match exists");
+        assert_eq!(
+            out.len(),
+            1,
+            "persona-wide dropped when a scoped match exists"
+        );
         assert_eq!(out[0].subscription_id, "sub-scoped");
         assert_eq!(out[0].use_case_id.as_deref(), Some("uc_a"));
     }
@@ -519,7 +530,11 @@ mod tests {
         let a = make_match("p1", Some("uc_a"), "sub-a");
         let b = make_match("p1", Some("uc_b"), "sub-b");
         let out = prefer_capability_scoped(vec![a, b]);
-        assert_eq!(out.len(), 2, "different capabilities dispatch independently");
+        assert_eq!(
+            out.len(),
+            2,
+            "different capabilities dispatch independently"
+        );
     }
 
     #[test]
@@ -556,7 +571,10 @@ mod tests {
         let m2 = make_match("p1", Some("uc_a"), "trigger-row");
         let out = prefer_capability_scoped(vec![m1, m2]);
         assert_eq!(out.len(), 1, "same (persona, use_case) dedupes");
-        assert_eq!(out[0].subscription_id, "legacy-sub", "first wins (stable order)");
+        assert_eq!(
+            out[0].subscription_id, "legacy-sub",
+            "first wins (stable order)"
+        );
     }
 
     #[test]

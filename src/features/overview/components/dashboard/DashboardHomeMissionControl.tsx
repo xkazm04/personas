@@ -17,7 +17,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { selectActiveAlertCount } from '@/stores/selectors/activeAlertCount';
+import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { ContentBox, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -54,10 +54,9 @@ export default function DashboardHomeMissionControl() {
   const user = useAuthStore((s) => s.user);
   const personas = useAgentStore((s) => s.personas);
   const {
-    globalExecutions, globalExecutionCounts, pendingReviewCount,
-    unreadMessageCount, memoryActions, executionDashboard, pipelineErrors,
-    pipelineFetchedAt, setOverviewTab, dismissMemoryAction, setPipelineError,
-    activeAlertCount,
+    globalExecutions, globalExecutionCounts, memoryActions, executionDashboard,
+    pipelineErrors, pipelineFetchedAt, setOverviewTab, dismissMemoryAction,
+    setPipelineError,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     // Use the authoritative server-side counts for any "total executions"
@@ -65,8 +64,6 @@ export default function DashboardHomeMissionControl() {
     // not a row count, and previously misnamed `globalExecutionsTotal` was
     // being passed to UIs that wanted the real total.
     globalExecutionCounts: s.globalExecutionCounts,
-    pendingReviewCount: s.pendingReviewCount,
-    unreadMessageCount: s.unreadMessageCount,
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
     pipelineErrors: s.pipelineErrors,
@@ -74,8 +71,11 @@ export default function DashboardHomeMissionControl() {
     setOverviewTab: s.setOverviewTab,
     dismissMemoryAction: s.dismissMemoryAction,
     setPipelineError: s.setPipelineError,
-    activeAlertCount: selectActiveAlertCount(s),
   })));
+  const { counts: attention } = useAttention("dashboard");
+  const pendingReviewCount = attention.pending_reviews;
+  const unreadMessageCount = attention.unread_messages;
+  const activeAlertCount = attention.active_alerts;
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
 

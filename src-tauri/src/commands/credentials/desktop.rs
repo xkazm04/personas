@@ -44,7 +44,9 @@ pub async fn get_desktop_connector_manifest(
     _state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Option<DesktopConnectorManifest>, AppError> {
-    Ok(crate::engine::desktop_security::get_manifest(&connector_name))
+    Ok(crate::engine::desktop_security::get_manifest(
+        &connector_name,
+    ))
 }
 
 /// Get pending (unapproved) capabilities for a desktop connector.
@@ -53,10 +55,10 @@ pub async fn get_pending_desktop_capabilities(
     state: State<'_, Arc<AppState>>,
     connector_name: String,
 ) -> Result<Vec<DesktopCapability>, AppError> {
-    let manifest = crate::engine::desktop_security::get_manifest(&connector_name)
-        .ok_or_else(|| AppError::Validation(format!(
-            "Unknown desktop connector: {connector_name}"
-        )))?;
+    let manifest =
+        crate::engine::desktop_security::get_manifest(&connector_name).ok_or_else(|| {
+            AppError::Validation(format!("Unknown desktop connector: {connector_name}"))
+        })?;
 
     Ok(state.desktop_approvals.pending_capabilities(&manifest))
 }
@@ -73,10 +75,10 @@ pub async fn approve_desktop_capabilities(
     }
 
     // Validate all capabilities are declared in the manifest
-    let manifest = crate::engine::desktop_security::get_manifest(&connector_name)
-        .ok_or_else(|| AppError::Validation(format!(
-            "Unknown desktop connector: {connector_name}"
-        )))?;
+    let manifest =
+        crate::engine::desktop_security::get_manifest(&connector_name).ok_or_else(|| {
+            AppError::Validation(format!("Unknown desktop connector: {connector_name}"))
+        })?;
 
     for cap in &capabilities {
         if !manifest.capabilities.contains(cap) {
@@ -87,7 +89,9 @@ pub async fn approve_desktop_capabilities(
         }
     }
 
-    state.desktop_approvals.approve(&state.db, &connector_name, &capabilities)?;
+    state
+        .desktop_approvals
+        .approve(&state.db, &connector_name, &capabilities)?;
     Ok(())
 }
 

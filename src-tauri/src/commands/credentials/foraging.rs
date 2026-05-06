@@ -116,7 +116,11 @@ const ENV_PATTERNS: &[(&str, &str, &str)] = &[
     ("AWS_SECRET_ACCESS_KEY", "aws", "secret_access_key"),
     ("BUFFER_ACCESS_TOKEN", "buffer", "access_token"),
     ("MONDAY_API_TOKEN", "monday", "api_token"),
-    ("CALENDLY_PERSONAL_TOKEN", "calendly", "personal_access_token"),
+    (
+        "CALENDLY_PERSONAL_TOKEN",
+        "calendly",
+        "personal_access_token",
+    ),
     ("DROPBOX_ACCESS_TOKEN", "dropbox", "access_token"),
     ("CONVEX_DEPLOY_KEY", "convex", "deploy_key"),
     ("BETTERSTACK_API_TOKEN", "betterstack", "api_token"),
@@ -205,7 +209,9 @@ fn scan_env_vars() -> Vec<ForagedCredential> {
 /// Values are masked immediately on parse — raw secrets are never stored.
 fn scan_aws_credentials() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let path = home.join(".aws").join("credentials");
 
     let content = match std::fs::read_to_string(&path) {
@@ -217,7 +223,9 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
     // Store already-masked values only.
     let mut current_masked_fields: HashMap<String, String> = HashMap::new();
 
-    let flush = |profile: &str, masked_fields: &HashMap<String, String>, out: &mut Vec<ForagedCredential>| {
+    let flush = |profile: &str,
+                 masked_fields: &HashMap<String, String>,
+                 out: &mut Vec<ForagedCredential>| {
         if masked_fields.is_empty() {
             return;
         }
@@ -261,7 +269,9 @@ fn scan_aws_credentials() -> Vec<ForagedCredential> {
 /// Scan ~/.kube/config for Kubernetes contexts.
 fn scan_kube_config() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let path = home.join(".kube").join("config");
 
     let content = match std::fs::read_to_string(&path) {
@@ -284,7 +294,10 @@ fn scan_kube_config() -> Vec<ForagedCredential> {
                 break; // Left the contexts block
             }
             if trimmed.starts_with("- name:") {
-                let name = trimmed.trim_start_matches("- name:").trim().trim_matches('"');
+                let name = trimmed
+                    .trim_start_matches("- name:")
+                    .trim()
+                    .trim_matches('"');
                 context_names.push(name.to_string());
             }
         }
@@ -336,9 +349,14 @@ fn parse_dotenv_content(content: &str, source_label: &str) -> Vec<ForagedCredent
         if trimmed.is_empty() || trimmed.starts_with('#') {
             continue;
         }
-        let Some(eq_pos) = trimmed.find('=') else { continue };
+        let Some(eq_pos) = trimmed.find('=') else {
+            continue;
+        };
         let key = trimmed[..eq_pos].trim();
-        let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
+        let val = trimmed[eq_pos + 1..]
+            .trim()
+            .trim_matches('"')
+            .trim_matches('\'');
         if val.is_empty() {
             continue;
         }
@@ -369,7 +387,9 @@ fn parse_dotenv_content(content: &str, source_label: &str) -> Vec<ForagedCredent
 /// Scan ~/.npmrc for auth tokens.
 fn scan_npmrc() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let path = home.join(".npmrc");
 
     let content = match std::fs::read_to_string(&path) {
@@ -401,7 +421,9 @@ fn scan_npmrc() -> Vec<ForagedCredential> {
 /// Scan ~/.docker/config.json for registry credentials.
 fn scan_docker_config() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let path = home.join(".docker").join("config.json");
 
     let content = match std::fs::read_to_string(&path) {
@@ -433,11 +455,17 @@ fn scan_docker_config() -> Vec<ForagedCredential> {
 /// Scan ~/.config/gh/hosts.yml for GitHub CLI tokens.
 fn scan_github_cli() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let path = home.join(".config").join("gh").join("hosts.yml");
 
     // On Windows, also check AppData
-    let win_path = home.join("AppData").join("Roaming").join("GitHub CLI").join("hosts.yml");
+    let win_path = home
+        .join("AppData")
+        .join("Roaming")
+        .join("GitHub CLI")
+        .join("hosts.yml");
 
     let content = match std::fs::read_to_string(&path) {
         Ok(c) => c,
@@ -456,7 +484,9 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
         } else if trimmed.starts_with("oauth_token:") {
             let token = trimmed.trim_start_matches("oauth_token:").trim();
             if !token.is_empty() {
-                let host = current_host.clone().unwrap_or_else(|| "github.com".to_string());
+                let host = current_host
+                    .clone()
+                    .unwrap_or_else(|| "github.com".to_string());
                 let mut fields = HashMap::new();
                 fields.insert("api_key".to_string(), mask_value(token));
                 results.push(ForagedCredential {
@@ -478,7 +508,9 @@ fn scan_github_cli() -> Vec<ForagedCredential> {
 /// Scan ~/.ssh/ for SSH key files (detection only, no secret import).
 fn scan_ssh_keys() -> Vec<ForagedCredential> {
     let mut results = Vec::new();
-    let Some(home) = home_dir() else { return results };
+    let Some(home) = home_dir() else {
+        return results;
+    };
     let ssh_dir = home.join(".ssh");
 
     let entries = match std::fs::read_dir(&ssh_dir) {
@@ -509,10 +541,7 @@ fn scan_ssh_keys() -> Vec<ForagedCredential> {
 }
 
 /// Mark credentials that already exist in the vault.
-fn mark_existing(
-    results: &mut [ForagedCredential],
-    existing_service_types: &HashSet<String>,
-) {
+fn mark_existing(results: &mut [ForagedCredential], existing_service_types: &HashSet<String>) {
     for cred in results.iter_mut() {
         if existing_service_types.contains(&cred.service_type) {
             cred.already_imported = true;
@@ -625,7 +654,10 @@ pub fn import_foraged_credential(
         .map_err(|e| format!("Failed to read credential values: {e}"))?;
 
     if fields.is_empty() {
-        return Err("No credential values found at source. The credential may have been removed.".to_string());
+        return Err(
+            "No credential values found at source. The credential may have been removed."
+                .to_string(),
+        );
     }
 
     let input = crate::db::models::CreateCredentialInput {
@@ -638,14 +670,18 @@ pub fn import_foraged_credential(
         healthcheck_passed: None,
     };
 
-    let mut conn = state.db.get()
+    let mut conn = state
+        .db
+        .get()
         .map_err(|e| format!("Failed to get DB connection: {e}"))?;
-    let tx = conn.transaction()
+    let tx = conn
+        .transaction()
         .map_err(|e| format!("Failed to start transaction: {e}"))?;
 
     let cred_id = crate::db::repos::resources::credentials::insert_credential_and_fields_tx(
         &state.db, &tx, &input, &fields,
-    ).map_err(|e| format!("Failed to create credential: {e}"))?;
+    )
+    .map_err(|e| format!("Failed to create credential: {e}"))?;
 
     // Audit log in the same transaction
     let audit_id = uuid::Uuid::new_v4().to_string();
@@ -673,10 +709,7 @@ pub fn import_foraged_credential(
 /// Check that a string component contains no path traversal sequences or
 /// directory separators that could escape expected filesystem boundaries.
 fn is_safe_path_component(s: &str) -> bool {
-    !s.contains("..")
-        && !s.contains('/')
-        && !s.contains('\\')
-        && !s.contains('\0')
+    !s.contains("..") && !s.contains('/') && !s.contains('\\') && !s.contains('\0')
 }
 
 /// The only dotenv source labels the scanner produces.
@@ -688,8 +721,7 @@ const ALLOWED_DOTENV_SOURCES: &[&str] = &[".env (cwd)", "~/.env"];
 fn read_home_file(relative: &[&str]) -> Result<String, String> {
     let home = home_dir().ok_or("Cannot determine home directory")?;
     let path = relative.iter().fold(home, |p, seg| p.join(seg));
-    std::fs::read_to_string(&path)
-        .map_err(|e| format!("Cannot read {}: {e}", path.display()))
+    std::fs::read_to_string(&path).map_err(|e| format!("Cannot read {}: {e}", path.display()))
 }
 
 /// Trait for resolving real (unmasked) credential values from a foraged source.
@@ -785,17 +817,22 @@ impl ForageSourceResolver for DotenvResolver {
             PathBuf::from(".env")
         };
 
-        let content = std::fs::read_to_string(&path)
-            .map_err(|e| format!("Cannot read {source}: {e}"))?;
+        let content =
+            std::fs::read_to_string(&path).map_err(|e| format!("Cannot read {source}: {e}"))?;
 
         for line in content.lines() {
             let trimmed = line.trim();
             if trimmed.is_empty() || trimmed.starts_with('#') {
                 continue;
             }
-            let Some(eq_pos) = trimmed.find('=') else { continue };
+            let Some(eq_pos) = trimmed.find('=') else {
+                continue;
+            };
             let k = trimmed[..eq_pos].trim();
-            let val = trimmed[eq_pos + 1..].trim().trim_matches('"').trim_matches('\'');
+            let val = trimmed[eq_pos + 1..]
+                .trim()
+                .trim_matches('"')
+                .trim_matches('\'');
             if k == *key && !val.is_empty() {
                 for &(env_key, _svc, field_key) in ENV_PATTERNS {
                     if env_key == *key {

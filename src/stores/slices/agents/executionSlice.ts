@@ -44,6 +44,16 @@ const COMPLETED_OUTPUT_TTL_MS = 30 * 60 * 1000;
 /** Finish-time map keyed by executionId. Module-local (not persisted). */
 const completedOutputFinishedAt = new Map<string, number>();
 
+/**
+ * Per-execution output snapshots, keyed by executionId. Module-local Map
+ * (not in store state) so finishExecution doesn't churn the store tree on
+ * every completion. DAG walkers retrieve via consumeCompletedOutput().
+ *
+ * Insertion order is preserved by Map, used for FIFO eviction past
+ * MAX_COMPLETED_SNAPSHOTS.
+ */
+const completedOutputs = new Map<string, string[]>();
+
 /** Queue status event emitted from the engine when an execution is queued/promoted. */
 export interface QueueStatusPayload {
   execution_id: string;
@@ -85,13 +95,6 @@ export interface ExecutionSlice {
   executionOutput: string[];
   /** Total bytes accumulated in executionOutput (for budget enforcement). */
   executionOutputBytes: number;
-  /**
-   * Per-execution output snapshots, keyed by execution ID.
-   * Populated by `finishExecution` so that DAG walkers can retrieve
-   * output for a completed execution even after the shared
-   * `executionOutput` array has been cleared by a subsequent run.
-   */
-  completedExecutionOutputs: Record<string, string[]>;
   isExecuting: boolean;
   /** Structured progress tracking (managed by RunLifecycle). */
   executionProgress: ExecutionRunProgress | null;
@@ -146,10 +149,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   if (import.meta.env.DEV) {
     (globalThis as unknown as { __executionBufferProbe__?: () => unknown }).__executionBufferProbe__ = () => {
       const sink = executionSink.probe();
-      const completed = get().completedExecutionOutputs;
       return {
         ...sink,
-        completedSnapshots: Object.keys(completed).length,
+        completedSnapshots: completedOutputs.size,
         completedMaxSnapshots: MAX_COMPLETED_SNAPSHOTS,
         completedTtlMs: COMPLETED_OUTPUT_TTL_MS,
       };
@@ -214,7 +216,6 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   activeUseCaseId: null,
   executionOutput: [],
   executionOutputBytes: 0,
-  completedExecutionOutputs: {},
   isExecuting: recoveredState?.isExecuting ?? false,
   executionProgress: null,
   pipelineTrace: null,
@@ -375,35 +376,33 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
     // Snapshot the output for this execution so DAG walkers can retrieve it
     // after the shared executionOutput array is cleared by the next run.
-    // Evict oldest entries beyond MAX_COMPLETED_SNAPSHOTS to prevent unbounded
-    // memory growth in long-running sessions.
+    // Snapshots live in a module-local Map (NOT store state) so finishExecution
+    // doesn't churn the store tree on every completion. Evict oldest entries
+    // beyond MAX_COMPLETED_SNAPSHOTS to prevent unbounded memory growth.
     const finishedExecId = get().activeExecutionId;
     if (finishedExecId) {
       const snapshot = [...get().executionOutput];
-      const prev = get().completedExecutionOutputs;
-      const updated = { ...prev, [finishedExecId]: snapshot };
+      completedOutputs.set(finishedExecId, snapshot);
       const now = Date.now();
       completedOutputFinishedAt.set(finishedExecId, now);
 
       // TTL sweep — drop any snapshot older than COMPLETED_OUTPUT_TTL_MS.
-      for (const key of Object.keys(updated)) {
+      for (const key of completedOutputs.keys()) {
         const finishedAt = completedOutputFinishedAt.get(key);
         if (finishedAt !== undefined && now - finishedAt > COMPLETED_OUTPUT_TTL_MS) {
-          delete updated[key];
+          completedOutputs.delete(key);
           completedOutputFinishedAt.delete(key);
         }
       }
 
-      const keys = Object.keys(updated);
-      if (keys.length > MAX_COMPLETED_SNAPSHOTS) {
-        // Keys preserve insertion order for non-integer strings (UUIDs) — evict oldest.
-        for (const key of keys.slice(0, keys.length - MAX_COMPLETED_SNAPSHOTS)) {
-          delete updated[key];
-          completedOutputFinishedAt.delete(key);
-        }
+      // Cap-based eviction. Map iteration is insertion-ordered, so the first
+      // keys are the oldest.
+      while (completedOutputs.size > MAX_COMPLETED_SNAPSHOTS) {
+        const oldest = completedOutputs.keys().next().value;
+        if (oldest === undefined) break;
+        completedOutputs.delete(oldest);
+        completedOutputFinishedAt.delete(oldest);
       }
-
-      set({ completedExecutionOutputs: updated });
     }
 
     // If a chat stream is active, finalize it now -- this runs at the store
@@ -533,12 +532,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   },
 
   consumeCompletedOutput: (executionId) => {
-    const map = get().completedExecutionOutputs;
-    const output = map[executionId];
+    const output = completedOutputs.get(executionId);
     if (output) {
-      const { [executionId]: _, ...rest } = map;
+      completedOutputs.delete(executionId);
       completedOutputFinishedAt.delete(executionId);
-      set({ completedExecutionOutputs: rest });
     }
     return output;
   },

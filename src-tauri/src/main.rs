@@ -16,7 +16,10 @@ fn main() {
 
     // Install the rustls CryptoProvider before any TLS connections are made.
     // Required since rustls 0.23 when no single default feature is enabled.
-    if rustls::crypto::ring::default_provider().install_default().is_err() {
+    if rustls::crypto::ring::default_provider()
+        .install_default()
+        .is_err()
+    {
         // Already installed by a dependency — safe to continue
     }
 
@@ -33,7 +36,10 @@ fn run_health_check() {
     println!("health-check: personas-desktop v{version}");
 
     // 1. TLS provider
-    if rustls::crypto::ring::default_provider().install_default().is_err() {
+    if rustls::crypto::ring::default_provider()
+        .install_default()
+        .is_err()
+    {
         // Already installed — fine
     }
     println!("health-check: tls provider ok");
@@ -148,28 +154,27 @@ fn sentry_options() -> sentry::ClientOptions {
 /// - Credential-sensitive key-value pairs (password, token, secret, api_key, bearer, etc.)
 /// - Long base64-encoded strings that could be encrypted credential blobs
 mod pii {
-    use std::sync::OnceLock;
     use regex::Regex;
+    use std::sync::OnceLock;
 
     fn uuid_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
         RE.get_or_init(|| {
-            Regex::new(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}").unwrap()
+            Regex::new(
+                r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}",
+            )
+            .unwrap()
         })
     }
 
     fn quoted_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
-        RE.get_or_init(|| {
-            Regex::new(r#"'[^']{1,200}'|"[^"]{1,200}""#).unwrap()
-        })
+        RE.get_or_init(|| Regex::new(r#"'[^']{1,200}'|"[^"]{1,200}""#).unwrap())
     }
 
     fn url_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
-        RE.get_or_init(|| {
-            Regex::new(r"https?://[^\s,)}\]]+").unwrap()
-        })
+        RE.get_or_init(|| Regex::new(r"https?://[^\s,)}\]]+").unwrap())
     }
 
     /// Matches sensitive key-value pairs like `password: foo`, `api_key=bar`, `token is xyz`.
@@ -186,9 +191,7 @@ mod pii {
     /// Matches `Authorization: bearer <token>` or `bearer <token>` patterns.
     fn bearer_re() -> &'static Regex {
         static RE: OnceLock<Regex> = OnceLock::new();
-        RE.get_or_init(|| {
-            Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap()
-        })
+        RE.get_or_init(|| Regex::new(r"(?i)\b(bearer|basic)\b\s+([a-zA-Z0-9\-_.~+/=]+)").unwrap())
     }
 
     /// Matches well-known service token prefixes (GitHub PATs, AWS keys, Stripe keys, etc.).
@@ -211,32 +214,44 @@ mod pii {
     /// Scrub PII from a log message string.
     pub fn scrub(input: &str) -> String {
         // 1. Replace UUIDs with a short prefix for correlation
-        let mut result = uuid_re().replace_all(input, |caps: &regex::Captures| {
-            let full = caps.get(0).unwrap().as_str();
-            format!("[id:{}]", &full[..6])
-        }).into_owned();
+        let mut result = uuid_re()
+            .replace_all(input, |caps: &regex::Captures| {
+                let full = caps.get(0).unwrap().as_str();
+                format!("[id:{}]", &full[..6])
+            })
+            .into_owned();
 
         // 2. Reduce URLs to scheme + host only
-        result = url_re().replace_all(&result, |caps: &regex::Captures| {
-            let url = caps.get(0).unwrap().as_str();
-            redact_url(url)
-        }).into_owned();
+        result = url_re()
+            .replace_all(&result, |caps: &regex::Captures| {
+                let url = caps.get(0).unwrap().as_str();
+                redact_url(url)
+            })
+            .into_owned();
 
         // 3. Redact credential-sensitive key-value pairs
-        result = credential_kv_re().replace_all(&result, |caps: &regex::Captures| {
-            format!("{}: [credential-redacted]", &caps[1])
-        }).into_owned();
+        result = credential_kv_re()
+            .replace_all(&result, |caps: &regex::Captures| {
+                format!("{}: [credential-redacted]", &caps[1])
+            })
+            .into_owned();
 
         // 4. Redact bearer/basic auth tokens
-        result = bearer_re().replace_all(&result, |caps: &regex::Captures| {
-            format!("{} [credential-redacted]", &caps[1])
-        }).into_owned();
+        result = bearer_re()
+            .replace_all(&result, |caps: &regex::Captures| {
+                format!("{} [credential-redacted]", &caps[1])
+            })
+            .into_owned();
 
         // 5. Redact well-known service token prefixes
-        result = prefixed_token_re().replace_all(&result, "[credential-redacted]").into_owned();
+        result = prefixed_token_re()
+            .replace_all(&result, "[credential-redacted]")
+            .into_owned();
 
         // 6. Redact long base64-encoded strings (potential encrypted blobs)
-        result = base64_blob_re().replace_all(&result, "${1}[encrypted-blob-redacted]${3}").into_owned();
+        result = base64_blob_re()
+            .replace_all(&result, "${1}[encrypted-blob-redacted]${3}")
+            .into_owned();
 
         // 7. Redact quoted strings (credential names, persona names, etc.)
         result = quoted_re().replace_all(&result, "[redacted]").into_owned();

@@ -8,7 +8,10 @@ pub fn resolve_mcp_server_path() -> Option<std::path::PathBuf> {
     // Dev: the script is at project_root/scripts/mcp-server/index.mjs
     // Walk up from src-tauri/target/debug to project root
     for ancestor in exe_dir.ancestors() {
-        let candidate = ancestor.join("scripts").join("mcp-server").join("index.mjs");
+        let candidate = ancestor
+            .join("scripts")
+            .join("mcp-server")
+            .join("index.mjs");
         if candidate.exists() {
             return Some(candidate);
         }
@@ -21,23 +24,35 @@ fn claude_desktop_config_path() -> Option<std::path::PathBuf> {
     #[cfg(target_os = "windows")]
     {
         if let Ok(appdata) = std::env::var("APPDATA") {
-            return Some(std::path::PathBuf::from(appdata).join("Claude").join("claude_desktop_config.json"));
+            return Some(
+                std::path::PathBuf::from(appdata)
+                    .join("Claude")
+                    .join("claude_desktop_config.json"),
+            );
         }
     }
     #[cfg(target_os = "macos")]
     {
         if let Ok(home) = std::env::var("HOME") {
-            return Some(std::path::PathBuf::from(home)
-                .join("Library/Application Support/Claude/claude_desktop_config.json"));
+            return Some(
+                std::path::PathBuf::from(home)
+                    .join("Library/Application Support/Claude/claude_desktop_config.json"),
+            );
         }
     }
     #[cfg(target_os = "linux")]
     {
         if let Ok(config) = std::env::var("XDG_CONFIG_HOME") {
-            return Some(std::path::PathBuf::from(config).join("claude").join("claude_desktop_config.json"));
+            return Some(
+                std::path::PathBuf::from(config)
+                    .join("claude")
+                    .join("claude_desktop_config.json"),
+            );
         }
         if let Ok(home) = std::env::var("HOME") {
-            return Some(std::path::PathBuf::from(home).join(".config/claude/claude_desktop_config.json"));
+            return Some(
+                std::path::PathBuf::from(home).join(".config/claude/claude_desktop_config.json"),
+            );
         }
     }
     None
@@ -51,7 +66,8 @@ pub(crate) fn is_personas_mcp_registered() -> bool {
     };
     let content = std::fs::read_to_string(&config_path).unwrap_or_default();
     let config: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
-    config.get("mcpServers")
+    config
+        .get("mcpServers")
         .and_then(|s| s.get("personas"))
         .is_some()
 }
@@ -72,8 +88,9 @@ pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
 
     // Read existing config or start fresh
     let mut config: serde_json::Value = if config_path.exists() {
-        let content = std::fs::read_to_string(&config_path)
-            .map_err(|e| AppError::Internal(format!("Failed to read Claude Desktop config: {e}")))?;
+        let content = std::fs::read_to_string(&config_path).map_err(|e| {
+            AppError::Internal(format!("Failed to read Claude Desktop config: {e}"))
+        })?;
         serde_json::from_str(&content).unwrap_or(serde_json::json!({}))
     } else {
         serde_json::json!({})
@@ -81,16 +98,20 @@ pub fn register_claude_desktop_mcp() -> Result<String, AppError> {
 
     // Add mcpServers.personas entry
     let server_path_str = mcp_server_path.to_string_lossy().to_string();
-    let servers = config.as_object_mut()
+    let servers = config
+        .as_object_mut()
         .ok_or_else(|| AppError::Internal("Invalid config format".into()))?
         .entry("mcpServers")
         .or_insert(serde_json::json!({}));
 
     if let Some(obj) = servers.as_object_mut() {
-        obj.insert("personas".into(), serde_json::json!({
-            "command": "node",
-            "args": [server_path_str]
-        }));
+        obj.insert(
+            "personas".into(),
+            serde_json::json!({
+                "command": "node",
+                "args": [server_path_str]
+            }),
+        );
     }
 
     // Write via temp file + rename for atomicity

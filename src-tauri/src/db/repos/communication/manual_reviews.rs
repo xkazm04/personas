@@ -1,6 +1,9 @@
 use rusqlite::params;
 
-use crate::db::models::{CreateManualReviewInput, CreateReviewMessageInput, ManualReviewStatus, PersonaManualReview, ReviewMessage};
+use crate::db::models::{
+    CreateManualReviewInput, CreateReviewMessageInput, ManualReviewStatus, PersonaManualReview,
+    ReviewMessage,
+};
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -28,7 +31,12 @@ row_mapper!(row_to_message -> ReviewMessage {
     id, review_id, role, content, metadata, created_at,
 });
 
-crud_get_by_id!(PersonaManualReview, "persona_manual_reviews", "Manual review", row_to_review);
+crud_get_by_id!(
+    PersonaManualReview,
+    "persona_manual_reviews",
+    "Manual review",
+    row_to_review
+);
 
 pub fn create(
     pool: &DbPool,
@@ -78,7 +86,10 @@ pub fn get_by_persona(
                  ORDER BY created_at DESC",
             )?;
             let rows = stmt.query_map(params![persona_id, status_filter], row_to_review)?;
-            Ok(collect_rows(rows, "manual_reviews::get_by_persona(filtered)"))
+            Ok(collect_rows(
+                rows,
+                "manual_reviews::get_by_persona(filtered)",
+            ))
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_manual_reviews
@@ -91,10 +102,7 @@ pub fn get_by_persona(
     })
 }
 
-pub fn get_all(
-    pool: &DbPool,
-    status: Option<&str>,
-) -> Result<Vec<PersonaManualReview>, AppError> {
+pub fn get_all(pool: &DbPool, status: Option<&str>) -> Result<Vec<PersonaManualReview>, AppError> {
     timed_query!("manual_reviews", "manual_reviews::get_all", {
         let conn = pool.get()?;
 
@@ -162,8 +170,14 @@ pub fn get_by_use_case_id(
                  WHERE persona_id = ?1 AND use_case_id = ?2 AND status = ?3
                  ORDER BY created_at DESC",
             )?;
-            let rows = stmt.query_map(params![persona_id, use_case_id, status_filter], row_to_review)?;
-            Ok(collect_rows(rows, "manual_reviews::get_by_use_case_id(filtered)"))
+            let rows = stmt.query_map(
+                params![persona_id, use_case_id, status_filter],
+                row_to_review,
+            )?;
+            Ok(collect_rows(
+                rows,
+                "manual_reviews::get_by_use_case_id(filtered)",
+            ))
         } else {
             let mut stmt = conn.prepare(
                 "SELECT * FROM persona_manual_reviews
@@ -219,10 +233,15 @@ pub fn update_status(
 
         // Fetch current status and validate the transition
         let current = get_by_id(pool, id)?;
-        current.status.validate_transition(status).map_err(AppError::Validation)?;
+        current
+            .status
+            .validate_transition(status)
+            .map_err(AppError::Validation)?;
 
         let resolved_at = match status {
-            ManualReviewStatus::Approved | ManualReviewStatus::Rejected | ManualReviewStatus::Resolved => Some(now.clone()),
+            ManualReviewStatus::Approved
+            | ManualReviewStatus::Rejected
+            | ManualReviewStatus::Resolved => Some(now.clone()),
             ManualReviewStatus::Pending => None,
         };
 
@@ -369,7 +388,14 @@ pub fn create_message(
         conn.execute(
             "INSERT INTO review_messages (id, review_id, role, content, metadata, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-            params![id, input.review_id, input.role, input.content, input.metadata, now],
+            params![
+                id,
+                input.review_id,
+                input.role,
+                input.content,
+                input.metadata,
+                now
+            ],
         )?;
 
         conn.query_row(
@@ -381,10 +407,7 @@ pub fn create_message(
     })
 }
 
-pub fn list_messages(
-    pool: &DbPool,
-    review_id: &str,
-) -> Result<Vec<ReviewMessage>, AppError> {
+pub fn list_messages(pool: &DbPool, review_id: &str) -> Result<Vec<ReviewMessage>, AppError> {
     timed_query!("manual_reviews", "manual_reviews::list_messages", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
@@ -481,11 +504,20 @@ mod tests {
         assert_eq!(count_all, 1);
 
         // Update status
-        update_status(&pool, &review.id, ManualReviewStatus::Approved, Some("Looks good".into())).unwrap();
+        update_status(
+            &pool,
+            &review.id,
+            ManualReviewStatus::Approved,
+            Some("Looks good".into()),
+        )
+        .unwrap();
         let updated = get_by_id(&pool, &review.id).unwrap();
         assert_eq!(updated.status, ManualReviewStatus::Approved);
         assert_eq!(updated.reviewer_notes, Some("Looks good".into()));
-        assert!(updated.resolved_at.is_some(), "resolved_at should be set when status is resolved");
+        assert!(
+            updated.resolved_at.is_some(),
+            "resolved_at should be set when status is resolved"
+        );
 
         // Pending count should now be 0
         let count_after = get_pending_count(&pool, Some(&persona_id)).unwrap();

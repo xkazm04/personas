@@ -37,14 +37,46 @@ pub struct MockEventTemplate {
 }
 
 pub const MOCK_EVENT_TEMPLATES: &[MockEventTemplate] = &[
-    MockEventTemplate { event_type: "webhook_received",    source: "webhook",         status: PersonaEventStatus::Completed  },
-    MockEventTemplate { event_type: "execution_completed", source: "scheduler",       status: PersonaEventStatus::Completed  },
-    MockEventTemplate { event_type: "trigger_fired",       source: "trigger_engine",  status: PersonaEventStatus::Processing },
-    MockEventTemplate { event_type: "credential_rotated",  source: "vault",           status: PersonaEventStatus::Completed  },
-    MockEventTemplate { event_type: "health_check_failed", source: "health_monitor",  status: PersonaEventStatus::Failed     },
-    MockEventTemplate { event_type: "deployment_started",  source: "cloud_deploy",    status: PersonaEventStatus::Processing },
-    MockEventTemplate { event_type: "memory_created",      source: "memory_engine",   status: PersonaEventStatus::Completed  },
-    MockEventTemplate { event_type: "review_submitted",    source: "review_pipeline", status: PersonaEventStatus::Pending    },
+    MockEventTemplate {
+        event_type: "webhook_received",
+        source: "webhook",
+        status: PersonaEventStatus::Completed,
+    },
+    MockEventTemplate {
+        event_type: "execution_completed",
+        source: "scheduler",
+        status: PersonaEventStatus::Completed,
+    },
+    MockEventTemplate {
+        event_type: "trigger_fired",
+        source: "trigger_engine",
+        status: PersonaEventStatus::Processing,
+    },
+    MockEventTemplate {
+        event_type: "credential_rotated",
+        source: "vault",
+        status: PersonaEventStatus::Completed,
+    },
+    MockEventTemplate {
+        event_type: "health_check_failed",
+        source: "health_monitor",
+        status: PersonaEventStatus::Failed,
+    },
+    MockEventTemplate {
+        event_type: "deployment_started",
+        source: "cloud_deploy",
+        status: PersonaEventStatus::Processing,
+    },
+    MockEventTemplate {
+        event_type: "memory_created",
+        source: "memory_engine",
+        status: PersonaEventStatus::Completed,
+    },
+    MockEventTemplate {
+        event_type: "review_submitted",
+        source: "review_pipeline",
+        status: PersonaEventStatus::Pending,
+    },
 ];
 
 // ---------------------------------------------------------------------------

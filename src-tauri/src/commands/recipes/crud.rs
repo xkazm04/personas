@@ -8,16 +8,15 @@ static PLACEHOLDER_RE: LazyLock<Regex> =
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::commands::credentials::ai_artifact_flow::{AiArtifactParams, spawn_ai_artifact_task};
+use crate::commands::credentials::ai_artifact_flow::{spawn_ai_artifact_task, AiArtifactParams};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
-use crate::engine::event_registry::event_name;
 use crate::db::models::{
-    CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink,
-    RecipeDefinition, RecipeExecutionInput, RecipeExecutionResult, RecipeVersion,
-    UpdateRecipeInput,
+    CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink, RecipeDefinition,
+    RecipeExecutionInput, RecipeExecutionResult, RecipeVersion, UpdateRecipeInput,
 };
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::recipes as repo;
+use crate::engine::event_registry::event_name;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
@@ -28,19 +27,17 @@ use super::recipe_versioning;
 
 /// Single-pass substitution of `{{key}}` placeholders using a precompiled regex.
 /// Builds the output string in one scan instead of O(n*m) repeated `String::replace` calls.
-fn render_template(
-    template: &str,
-    input_data: &HashMap<String, serde_json::Value>,
-) -> String {
-    PLACEHOLDER_RE.replace_all(template, |caps: &regex::Captures| {
-        let key = &caps[1];
-        match input_data.get(key) {
-            Some(serde_json::Value::String(s)) => s.clone(),
-            Some(other) => other.to_string(),
-            None => caps[0].to_string(), // leave unmatched placeholders for validation
-        }
-    })
-    .into_owned()
+fn render_template(template: &str, input_data: &HashMap<String, serde_json::Value>) -> String {
+    PLACEHOLDER_RE
+        .replace_all(template, |caps: &regex::Captures| {
+            let key = &caps[1];
+            match input_data.get(key) {
+                Some(serde_json::Value::String(s)) => s.clone(),
+                Some(other) => other.to_string(),
+                None => caps[0].to_string(), // leave unmatched placeholders for validation
+            }
+        })
+        .into_owned()
 }
 
 /// Scan rendered prompt for unreplaced `{{variable}}` placeholders and return
@@ -52,7 +49,11 @@ fn validate_no_unreplaced_placeholders(rendered: &str) -> Result<(), AppError> {
         .collect::<Vec<_>>();
     // deduplicate while preserving order
     let mut seen = std::collections::HashSet::new();
-    let unique: Vec<&str> = missing.iter().filter(|s| seen.insert(s.as_str())).map(|s| s.as_str()).collect();
+    let unique: Vec<&str> = missing
+        .iter()
+        .filter(|s| seen.insert(s.as_str()))
+        .map(|s| s.as_str())
+        .collect();
     if unique.is_empty() {
         Ok(())
     } else {
@@ -64,9 +65,7 @@ fn validate_no_unreplaced_placeholders(rendered: &str) -> Result<(), AppError> {
 }
 
 #[tauri::command]
-pub fn list_recipes(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<RecipeDefinition>, AppError> {
+pub fn list_recipes(state: State<'_, Arc<AppState>>) -> Result<Vec<RecipeDefinition>, AppError> {
     require_auth_sync(&state)?;
     repo::get_all(&state.db)
 }
@@ -100,10 +99,7 @@ pub fn update_recipe(
 }
 
 #[tauri::command]
-pub fn delete_recipe(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_recipe(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
 
     // Check for in-flight tasks referencing this recipe and reject deletion
@@ -223,12 +219,15 @@ pub async fn cancel_recipe_execution(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe execution");
-        let _ = app.emit(event_name::RECIPE_EXECUTION_STATUS, json!({
-            "execution_id": id,
-            "status": "cancelled",
-            "result": null,
-            "error": null,
-        }));
+        let _ = app.emit(
+            event_name::RECIPE_EXECUTION_STATUS,
+            json!({
+                "execution_id": id,
+                "status": "cancelled",
+                "result": null,
+                "error": null,
+            }),
+        );
     } else {
         tracing::debug!("cancel_recipe_execution called but nothing was running");
     }
@@ -299,12 +298,15 @@ pub async fn cancel_recipe_generation(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe generation");
-        let _ = app.emit(event_name::RECIPE_GENERATION_STATUS, json!({
-            "generation_id": id,
-            "status": "cancelled",
-            "result": null,
-            "error": null,
-        }));
+        let _ = app.emit(
+            event_name::RECIPE_GENERATION_STATUS,
+            json!({
+                "generation_id": id,
+                "status": "cancelled",
+                "result": null,
+                "error": null,
+            }),
+        );
     } else {
         tracing::debug!("cancel_recipe_generation called but nothing was running");
     }
@@ -427,12 +429,15 @@ pub async fn cancel_recipe_versioning(
 
     if let Some(ref id) = cancelled_id {
         tracing::info!(cancelled_id = %id, "Cancelled recipe versioning");
-        let _ = app.emit(event_name::RECIPE_VERSIONING_STATUS, json!({
-            "versioning_id": id,
-            "status": "cancelled",
-            "result": null,
-            "error": null,
-        }));
+        let _ = app.emit(
+            event_name::RECIPE_VERSIONING_STATUS,
+            json!({
+                "versioning_id": id,
+                "status": "cancelled",
+                "result": null,
+                "error": null,
+            }),
+        );
     } else {
         tracing::debug!("cancel_recipe_versioning called but nothing was running");
     }
@@ -486,12 +491,18 @@ mod tests {
     use serde_json::Value;
 
     fn data(pairs: &[(&str, Value)]) -> HashMap<String, Value> {
-        pairs.iter().map(|(k, v)| ((*k).to_string(), v.clone())).collect()
+        pairs
+            .iter()
+            .map(|(k, v)| ((*k).to_string(), v.clone()))
+            .collect()
     }
 
     #[test]
     fn render_template_substitutes_strings_without_quotes() {
-        let out = render_template("Hello {{name}}.", &data(&[("name", Value::String("Ada".into()))]));
+        let out = render_template(
+            "Hello {{name}}.",
+            &data(&[("name", Value::String("Ada".into()))]),
+        );
         assert_eq!(out, "Hello Ada.");
     }
 
@@ -499,10 +510,7 @@ mod tests {
     fn render_template_renders_numbers_as_bare_decimals() {
         let out = render_template(
             "i={{i}} f={{f}}",
-            &data(&[
-                ("i", serde_json::json!(42)),
-                ("f", serde_json::json!(1.5)),
-            ]),
+            &data(&[("i", serde_json::json!(42)), ("f", serde_json::json!(1.5))]),
         );
         assert_eq!(out, "i=42 f=1.5");
     }
@@ -530,7 +538,10 @@ mod tests {
 
     #[test]
     fn render_template_leaves_missing_keys_as_placeholders() {
-        let out = render_template("Hello {{name}} {{missing}}.", &data(&[("name", Value::String("Ada".into()))]));
+        let out = render_template(
+            "Hello {{name}} {{missing}}.",
+            &data(&[("name", Value::String("Ada".into()))]),
+        );
         assert_eq!(out, "Hello Ada {{missing}}.");
     }
 
@@ -546,7 +557,10 @@ mod tests {
     #[test]
     fn render_template_does_not_match_whitespace_inside_braces() {
         // `{{ name }}` (with spaces) is NOT a valid placeholder and is left as-is.
-        let out = render_template("{{ name }}", &data(&[("name", Value::String("ada".into()))]));
+        let out = render_template(
+            "{{ name }}",
+            &data(&[("name", Value::String("ada".into()))]),
+        );
         assert_eq!(out, "{{ name }}");
     }
 
@@ -596,7 +610,11 @@ mod tests {
         let err = validate_no_unreplaced_placeholders("{{a}} {{b}} {{a}} {{c}}").unwrap_err();
         let msg = format!("{:?}", err);
         // Deduped, first-seen order: a, b, c
-        assert!(msg.contains("a, b, c"), "expected 'a, b, c' in error, got: {}", msg);
+        assert!(
+            msg.contains("a, b, c"),
+            "expected 'a, b, c' in error, got: {}",
+            msg
+        );
     }
 
     #[test]

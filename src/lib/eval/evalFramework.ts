@@ -121,7 +121,35 @@ export function compositeScoreFromRow(
   return Math.round(weightedSum / presentWeight);
 }
 
-/** Compute the weighted composite score from individual metric scores. */
+/**
+ * Weighted composite of the three lab metric scores.
+ *
+ * **Formula** (canonical, mirrored from `src-tauri/src/engine/eval.rs::SCORE_WEIGHTS`):
+ * ```
+ *   composite = round(tool_accuracy * 0.4
+ *                   + output_quality * 0.4
+ *                   + protocol_compliance * 0.2)
+ * ```
+ *
+ * **Inputs**: each metric is on a 0–100 scale (or fractional 0–100 when
+ * pre-averaged by an aggregator — see `labAggregation.ts`). Inputs are
+ * trusted, not clamped — passing a value outside 0–100 produces an
+ * out-of-range composite without complaint.
+ *
+ * **Output**: integer 0–100, rounded with `Math.round`.
+ *
+ * **What about null?** This function is the all-present-metrics fast path
+ * and does NOT accept null. For raw lab result rows where any of the three
+ * metrics may be unscored, use {@link compositeScoreFromRow}, which
+ * re-weights the present metrics so missing scores don't bias toward zero.
+ *
+ * **Why this matters**: this single number drives Arena `bestModelId`,
+ * A/B `winnerId`, and Matrix variant rank — i.e. "which model is best".
+ * Reweighting silently would shuffle leaderboards across versions of the
+ * app. The `compositeScore golden formula` test in
+ * `__tests__/evalFramework.test.ts` pins the exact arithmetic so a
+ * reweight that wasn't intended fails CI loudly.
+ */
 export function compositeScore(
   toolAccuracy: number,
   outputQuality: number,

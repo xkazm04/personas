@@ -58,7 +58,14 @@ pub async fn invoke_automation(
     let timeout_ms = automation.timeout_ms;
     let max_attempts = (automation.retry_count.clamp(1, 5)) as u32;
 
-    let mut result = invoke_webhook(webhook_url, method, body, &auth_resolution.headers, timeout_ms).await;
+    let mut result = invoke_webhook(
+        webhook_url,
+        method,
+        body,
+        &auth_resolution.headers,
+        timeout_ms,
+    )
+    .await;
 
     // Retry on transient errors with exponential backoff (capped at 30s).
     // On HTTP 401, re-resolve auth headers to pick up rotated/refreshed credentials.
@@ -210,16 +217,26 @@ async fn resolve_auth_headers(
     })?;
 
     if let Err(e) = audit_log::log_decrypt(
-        pool, cred_id, &credential.name,
+        pool,
+        cred_id,
+        &credential.name,
         &format!("automation_runner:{}", automation.name),
-        None, None,
+        None,
+        None,
     ) {
         tracing::warn!(credential_id = cred_id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
     // Common patterns for webhook auth
-    if let Some(token) = fields.get("api_key").or(fields.get("access_token")).or(fields.get("token")) {
-        headers.insert("Authorization".into(), sanitize_header_value(&format!("Bearer {token}")));
+    if let Some(token) = fields
+        .get("api_key")
+        .or(fields.get("access_token"))
+        .or(fields.get("token"))
+    {
+        headers.insert(
+            "Authorization".into(),
+            sanitize_header_value(&format!("Bearer {token}")),
+        );
     }
     if let Some(header_name) = fields.get("header_name") {
         if let Some(header_value) = fields.get("header_value") {
@@ -353,7 +370,9 @@ async fn invoke_webhook(
 
     // Set content-type for body methods
     if upper != "GET" {
-        req = req.header("Content-Type", "application/json").body(body.to_string());
+        req = req
+            .header("Content-Type", "application/json")
+            .body(body.to_string());
     }
 
     // Add auth headers
@@ -453,31 +472,26 @@ async fn invoke_github_dispatch(
 ) -> Result<AutomationRun, AppError> {
     // Parse dispatch metadata from credential_mapping
     let raw_mapping = automation.credential_mapping.as_deref().unwrap_or("{}");
-    let mapping: serde_json::Value =
-        serde_json::from_str(raw_mapping).map_err(|e| {
-            AppError::Validation(format!(
-                "Automation '{}' has malformed credential_mapping JSON: {e}",
-                automation.name
-            ))
-        })?;
+    let mapping: serde_json::Value = serde_json::from_str(raw_mapping).map_err(|e| {
+        AppError::Validation(format!(
+            "Automation '{}' has malformed credential_mapping JSON: {e}",
+            automation.name
+        ))
+    })?;
 
-    let event_type = mapping["event_type"]
-        .as_str()
-        .ok_or_else(|| {
-            AppError::Validation(format!(
-                "Automation '{}' missing dispatch event_type in credential_mapping",
-                automation.name
-            ))
-        })?;
+    let event_type = mapping["event_type"].as_str().ok_or_else(|| {
+        AppError::Validation(format!(
+            "Automation '{}' missing dispatch event_type in credential_mapping",
+            automation.name
+        ))
+    })?;
 
-    let repo = mapping["repo"]
-        .as_str()
-        .ok_or_else(|| {
-            AppError::Validation(format!(
-                "Automation '{}' missing repo in credential_mapping",
-                automation.name
-            ))
-        })?;
+    let repo = mapping["repo"].as_str().ok_or_else(|| {
+        AppError::Validation(format!(
+            "Automation '{}' missing repo in credential_mapping",
+            automation.name
+        ))
+    })?;
 
     let parts: Vec<&str> = repo.splitn(2, '/').collect();
     if parts.len() != 2 {
@@ -487,12 +501,15 @@ async fn invoke_github_dispatch(
     }
     let (owner, repo_name) = (parts[0], parts[1]);
 
-    let cred_id = automation.platform_credential_id.as_deref().ok_or_else(|| {
-        AppError::Validation(format!(
-            "Automation '{}' has no platform credential configured",
-            automation.name
-        ))
-    })?;
+    let cred_id = automation
+        .platform_credential_id
+        .as_deref()
+        .ok_or_else(|| {
+            AppError::Validation(format!(
+                "Automation '{}' has no platform credential configured",
+                automation.name
+            ))
+        })?;
 
     // Resolve credential BEFORE creating the run record to prevent
     // orphaned runs stuck in running status when credential resolution fails.
@@ -515,10 +532,14 @@ async fn invoke_github_dispatch(
         pool,
         &run.id,
         &automation.id,
-        result.map(|()| (
-            serde_json::json!({"dispatched": true, "event_type": event_type}).to_string(),
-            Some(format!("https://github.com/{repo}/actions")),
-        )).map_err(|e| e.to_string()),
+        result
+            .map(|()| {
+                (
+                    serde_json::json!({"dispatched": true, "event_type": event_type}).to_string(),
+                    Some(format!("https://github.com/{repo}/actions")),
+                )
+            })
+            .map_err(|e| e.to_string()),
         duration_ms,
         &[], // GitHub dispatch has no auth fallback path
     )

@@ -225,9 +225,10 @@ Raw memories:
     })?;
 
     if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(prompt.as_bytes()).await.map_err(|e| {
-            AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}"))
-        })?;
+        stdin
+            .write_all(prompt.as_bytes())
+            .await
+            .map_err(|e| AppError::Internal(format!("Failed to write prompt to CLI stdin: {e}")))?;
         stdin
             .shutdown()
             .await
@@ -273,8 +274,7 @@ Raw memories:
         .map_err(|e| AppError::Internal(format!("Invalid JSON in compile output: {e}")))?;
 
     // 6. Validate + insert. Reject hallucinated source IDs.
-    let valid_ids: std::collections::HashSet<&str> =
-        raw.iter().map(|m| m.id.as_str()).collect();
+    let valid_ids: std::collections::HashSet<&str> = raw.iter().map(|m| m.id.as_str()).collect();
 
     let mut created_ids = Vec::new();
     let mut titles = Vec::new();
@@ -315,10 +315,7 @@ Raw memories:
             category: Some("fact".to_string()),
             source_execution_id: None,
             importance: Some(4),
-            tags: Some(Json(vec![
-                "compiled".to_string(),
-                "wiki".to_string(),
-            ])),
+            tags: Some(Json(vec!["compiled".to_string(), "wiki".to_string()])),
             use_case_id: None,
         };
 

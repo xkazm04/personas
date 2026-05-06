@@ -85,7 +85,7 @@ pub fn promote_fired_alert(pool: &DbPool, alert: &FiredAlert) {
             persona_id: alert.persona_id.clone(),
             persona_name: None, // FiredAlert doesn't carry the name; UI joins lazily
             execution_id: None,
-            severity: alert.severity.clone(),
+            severity: alert.severity.to_string(),
             kind: format!("alert.{}", alert.metric),
             title: alert.message.clone(),
             detail: Some(format!(
@@ -108,14 +108,13 @@ pub fn promote_tool_audit(pool: &DbPool, entry: &ToolExecutionAuditEntry) {
     if entry.result_status != "error" {
         return;
     }
-    let title = format!(
-        "Tool '{}' returned an error",
-        entry.tool_name
-    );
-    let detail = entry
-        .error_message
-        .clone()
-        .or_else(|| Some(format!("tool_id={}, type={}", entry.tool_id, entry.tool_type)));
+    let title = format!("Tool '{}' returned an error", entry.tool_name);
+    let detail = entry.error_message.clone().or_else(|| {
+        Some(format!(
+            "tool_id={}, type={}",
+            entry.tool_id, entry.tool_type
+        ))
+    });
     try_promote(
         pool,
         "tool_execution_audit_log",
@@ -214,7 +213,10 @@ pub fn promote_provider_audit(pool: &DbPool, entry: &ProviderAuditEntry) {
     if !entry.was_failover {
         return;
     }
-    let model = entry.model_used.clone().unwrap_or_else(|| "(unknown model)".into());
+    let model = entry
+        .model_used
+        .clone()
+        .unwrap_or_else(|| "(unknown model)".into());
     try_promote(
         pool,
         "provider_audit_log",
@@ -226,11 +228,11 @@ pub fn promote_provider_audit(pool: &DbPool, entry: &ProviderAuditEntry) {
             execution_id: Some(entry.execution_id.clone()),
             severity: "low".into(),
             kind: "provider_failover".into(),
-            title: format!(
-                "Provider failover ({} → {})",
-                entry.engine_kind, model
-            ),
-            detail: entry.routing_rule_name.clone().or_else(|| entry.compliance_rule_name.clone()),
+            title: format!("Provider failover ({} → {})", entry.engine_kind, model),
+            detail: entry
+                .routing_rule_name
+                .clone()
+                .or_else(|| entry.compliance_rule_name.clone()),
         },
     );
 }
@@ -310,12 +312,14 @@ mod tests {
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     fn fired_alert(id: &str, severity: &str) -> FiredAlert {
+        use std::str::FromStr;
         FiredAlert {
             id: id.into(),
             rule_id: "r-1".into(),
             rule_name: "Latency".into(),
-            metric: "latency_ms".into(),
-            severity: severity.into(),
+            metric: crate::db::models::AlertMetric::ErrorRate,
+            severity: crate::db::models::AlertSeverity::from_str(severity)
+                .expect("test severity must be one of info|warning|critical"),
             message: "Latency spike".into(),
             value: 1500.0,
             threshold: 1000.0,
@@ -366,7 +370,10 @@ mod tests {
         promote_policy_event(&pool, &policy_event("pe-1", "dropped"));
 
         let s = repo::summary(&pool).unwrap();
-        assert_eq!(s.open, 0, "no incidents should be created when env is unset");
+        assert_eq!(
+            s.open, 0,
+            "no incidents should be created when env is unset"
+        );
     }
 
     #[test]

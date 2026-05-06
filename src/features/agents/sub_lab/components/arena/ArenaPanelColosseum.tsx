@@ -16,12 +16,12 @@
  * as a popover (no more left "Ground" rail).
  */
 
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle, Shield, Flame, Trophy, Swords, Sparkles, Crown, Scroll,
   ScrollText, BookOpen, Zap, Cloud, HardDrive, Medal, Circle, Coins,
-  Sword, Feather, ChevronDown, Check, DollarSign,
+  Sword, Feather, ChevronDown, Check, DollarSign, Pin, Plus,
 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
@@ -76,6 +76,22 @@ const ARENA_ROSTER: ModelOption[] = [...ANTHROPIC_MODELS, ...OLLAMA_LOCAL_MODELS
 /* All-time champion derived from past runs                           */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Pick the model that has won the most arena matches across `runs`.
+ *
+ * Two correctness guards beyond the obvious tally:
+ *
+ * 1. **Type-safe parse.** A backend that emits `best_quality_model` as
+ *    anything other than a string (e.g. `{ foo: 'bar' }`, `42`, an array)
+ *    would otherwise pass the truthiness check and feed a non-string into
+ *    Map keys, corrupting the tally arithmetic. We require `typeof === 'string'`.
+ * 2. **Deterministic tie-breaker.** The previous implementation iterated
+ *    the Map in insertion order, so when two models were tied the
+ *    "Standing Champion" depended on which run JSON happened to be
+ *    processed first — re-fetching `arenaRuns` could flip the displayed
+ *    champion. Ties are now broken alphabetically on the model id, which
+ *    is stable across fetches and makes the verdict reproducible.
+ */
 function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: number; total: number } | null {
   if (runs.length === 0) return null;
   const tally = new Map<string, number>();
@@ -83,16 +99,25 @@ function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: num
   for (const r of runs) {
     if (!r.summary) continue;
     try {
-      const parsed = JSON.parse(r.summary) as { best_quality_model?: string };
-      if (parsed.best_quality_model) {
-        tally.set(parsed.best_quality_model, (tally.get(parsed.best_quality_model) ?? 0) + 1);
-        total++;
-      }
+      const parsed = JSON.parse(r.summary) as { best_quality_model?: unknown };
+      const winner = parsed.best_quality_model;
+      if (typeof winner !== 'string' || winner.length === 0) continue;
+      tally.set(winner, (tally.get(winner) ?? 0) + 1);
+      total++;
     } catch { /* ignore malformed summary */ }
   }
   let best: { model: string; wins: number } | null = null;
   for (const [model, wins] of tally) {
-    if (!best || wins > best.wins) best = { model, wins };
+    if (
+      !best ||
+      wins > best.wins ||
+      // Stable tie-breaker: alphabetically first wins. Ties are common
+      // after a few runs, and without this the champion silently flipped
+      // depending on backend ordering on each refetch.
+      (wins === best.wins && model < best.model)
+    ) {
+      best = { model, wins };
+    }
   }
   return best ? { ...best, total } : null;
 }
@@ -130,13 +155,22 @@ export function ArenaPanelColosseum() {
     [useCases, selectedUseCaseId],
   );
 
-  useEffect(() => {
-    if (selectedUseCase?.model_override) {
-      const override = selectedUseCase.model_override;
-      const match = ALL_MODELS.find((m) => m.provider === override.provider && m.model === override.model);
-      if (match) setSelectedModels(new Set([match.id]));
+  // Read-only override hint: previously a useEffect here silently replaced
+  // selectedModels with a single-element Set whenever the chosen use case
+  // had a model_override, defeating the arena's multi-model premise. We now
+  // surface the override as an opt-in chip; the user adds it explicitly.
+  const overrideHint = useMemo(() => {
+    const override = selectedUseCase?.model_override;
+    if (!override) return null;
+    const match = ALL_MODELS.find((m) => m.provider === override.provider && m.model === override.model);
+    if (!match) return null;
+    return { id: match.id, label: match.label };
+  }, [selectedUseCase?.model_override]);
+  const addOverrideToRoster = () => {
+    if (overrideHint && !selectedModels.has(overrideHint.id)) {
+      setSelectedModels(new Set([...selectedModels, overrideHint.id]));
     }
-  }, [selectedUseCase, setSelectedModels]);
+  };
 
   const handleStart = async () => {
     if (!selectedPersona || selectedModels.size === 0) return;
@@ -198,6 +232,12 @@ export function ArenaPanelColosseum() {
           onSelectUseCase={setSelectedUseCaseId}
           allLabel={t.agents.lab.all_use_cases}
           ready={canLaunch}
+          overrideHint={overrideHint}
+          overrideAlreadyInRoster={overrideHint ? selectedModels.has(overrideHint.id) : false}
+          onAddOverrideToRoster={addOverrideToRoster}
+          prefersLabel={t.agents.lab.arena_use_case_prefers}
+          addToRosterLabel={t.agents.lab.arena_add_pinned_to_roster}
+          inRosterLabel={t.agents.lab.arena_pinned_in_roster}
         />
 
         {/* Stage body: 3-column [persona | roster grid | conditions] */}
@@ -214,8 +254,8 @@ export function ArenaPanelColosseum() {
             />
           </div>
 
-          {/* CENTER : Roster grid — row cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 content-start">
+          {/* CENTER : Roster grid — row cards (5-col on wide screens, fits 10 in 2 rows) */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 content-start">
             {ARENA_ROSTER.map((m) => {
               const isSelected = selectedModels.has(m.id);
               const heraldry = heraldryFor(m.id, m.provider);
@@ -409,6 +449,8 @@ type UseCaseLite = { id: string; title: string };
 
 function ArenaMarquee({
   personaName, selectedUseCase, useCases, onSelectUseCase, allLabel, ready,
+  overrideHint, overrideAlreadyInRoster, onAddOverrideToRoster,
+  prefersLabel, addToRosterLabel, inRosterLabel,
 }: {
   personaName: string | undefined;
   selectedUseCase: UseCaseLite | null;
@@ -416,6 +458,12 @@ function ArenaMarquee({
   onSelectUseCase: (id: string | null) => void;
   allLabel: string;
   ready: boolean;
+  overrideHint: { id: string; label: string } | null;
+  overrideAlreadyInRoster: boolean;
+  onAddOverrideToRoster: () => void;
+  prefersLabel: string;
+  addToRosterLabel: string;
+  inRosterLabel: string;
 }) {
   return (
     <div className="relative px-16 pt-6 pb-3 flex flex-wrap items-center justify-between gap-3">
@@ -438,6 +486,16 @@ function ArenaMarquee({
                   onSelect={onSelectUseCase}
                   allLabel={allLabel}
                 />
+                {overrideHint && (
+                  <OverrideChip
+                    modelLabel={overrideHint.label}
+                    inRoster={overrideAlreadyInRoster}
+                    onAdd={onAddOverrideToRoster}
+                    prefersLabel={prefersLabel}
+                    addLabel={addToRosterLabel}
+                    inRosterLabel={inRosterLabel}
+                  />
+                )}
               </>
             ) : (
               <span>Select a persona to open the gates</span>
@@ -523,6 +581,42 @@ function UseCasePopover({
         </div>
       )}
     </Listbox>
+  );
+}
+
+function OverrideChip({
+  modelLabel, inRoster, onAdd, prefersLabel, addLabel, inRosterLabel,
+}: {
+  modelLabel: string;
+  inRoster: boolean;
+  onAdd: () => void;
+  prefersLabel: string;
+  addLabel: string;
+  inRosterLabel: string;
+}) {
+  const trailing = inRoster
+    ? <span className="flex items-center gap-1 text-emerald-300/90"><Check className="w-3 h-3" strokeWidth={3} />{inRosterLabel}</span>
+    : <span className="flex items-center gap-1 text-primary"><Plus className="w-3 h-3" strokeWidth={2.5} />{addLabel}</span>;
+  return (
+    <button
+      type="button"
+      onClick={inRoster ? undefined : onAdd}
+      disabled={inRoster}
+      data-testid="arena-override-chip"
+      data-in-roster={inRoster ? 'true' : 'false'}
+      title={`${prefersLabel} ${modelLabel}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-interactive border typo-body transition-colors focus-ring ${
+        inRoster
+          ? 'bg-emerald-500/10 border-emerald-400/25 text-foreground/90 cursor-default'
+          : 'bg-amber-500/10 border-amber-400/30 text-foreground hover:bg-amber-500/15 hover:border-amber-400/50'
+      }`}
+    >
+      <Pin className="w-3 h-3 text-amber-300" strokeWidth={2} />
+      <span className="text-foreground/85">{prefersLabel}</span>
+      <span className="font-medium text-foreground">{modelLabel}</span>
+      <span className="mx-0.5 text-foreground/30" aria-hidden>·</span>
+      {trailing}
+    </button>
   );
 }
 
@@ -629,7 +723,7 @@ function ModelRowCard({
       onClick={onToggle}
       aria-pressed={selected}
       data-testid={`arena-model-card-${option.id}`}
-      className={`relative overflow-hidden rounded-card border-2 px-3.5 py-3 text-left transition-all focus-ring ${
+      className={`relative overflow-hidden rounded-card border-2 px-3 py-2.5 text-left transition-all focus-ring ${
         selected
           ? 'bg-primary/15 border-primary/55 shadow-elevation-3 shadow-primary/15'
           : 'bg-secondary/40 border-primary/20 hover:bg-secondary/60 hover:border-primary/40 hover:shadow-elevation-2'
@@ -638,7 +732,7 @@ function ModelRowCard({
       {/* Sigil — semi-transparent backdrop */}
       <Sigil
         aria-hidden
-        className={`pointer-events-none absolute -right-3 -bottom-3 w-24 h-24 transition-colors ${
+        className={`pointer-events-none absolute -right-2 -bottom-2 w-20 h-20 transition-colors ${
           selected ? 'text-primary/20' : 'text-foreground/[0.06]'
         }`}
         strokeWidth={1}
@@ -648,21 +742,21 @@ function ModelRowCard({
       {selected && (
         <span
           aria-hidden
-          className="absolute top-2 right-2 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-[0_0_8px_rgba(var(--color-primary-rgb,180,140,255),0.6)]"
+          className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center shadow-[0_0_8px_rgba(var(--color-primary-rgb,180,140,255),0.6)]"
         >
-          <Check className="w-3 h-3 text-background" strokeWidth={3} />
+          <Check className="w-2.5 h-2.5 text-background" strokeWidth={3} />
         </span>
       )}
 
       {/* Model name — top row */}
-      <p className="relative typo-heading-lg text-foreground font-semibold truncate pr-7">
+      <p className="relative typo-heading text-foreground font-semibold truncate pr-6">
         {option.label}
       </p>
 
       {/* Stats — N icons indicate level */}
-      <div className="relative mt-3 flex items-center gap-4">
+      <div className="relative mt-2.5 flex items-center gap-2.5">
         <IconLevel level={heraldry.cost}  icon={DollarSign} active={selected} title="cost"  />
-        <span className={`h-5 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
+        <span className={`h-4 w-px ${selected ? 'bg-primary/45' : 'bg-foreground/20'}`} aria-hidden />
         <IconLevel level={heraldry.speed} icon={Zap}        active={selected} title="speed" />
       </div>
     </button>
@@ -677,7 +771,7 @@ function IconLevel({
       {Array.from({ length: level }).map((_, i) => (
         <Icon
           key={i}
-          className={`w-5 h-5 ${active ? 'text-primary' : 'text-foreground/85'}`}
+          className={`w-4 h-4 ${active ? 'text-primary' : 'text-foreground/85'}`}
           strokeWidth={2}
         />
       ))}

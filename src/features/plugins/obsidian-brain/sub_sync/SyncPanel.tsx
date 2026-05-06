@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -92,6 +92,16 @@ export default function SyncPanel() {
       setPendingConflicts(result.conflicts.length);
       setLastSyncAt(new Date().toISOString());
       addToast(`Pull: ${result.created} created, ${result.updated} updated${result.conflicts.length > 0 ? `, ${result.conflicts.length} conflicts` : ''}`, result.conflicts.length > 0 ? 'error' : 'success');
+      // Lucky-convergence audit trail: both sides edited but ended up
+      // identical. Distinct from a no-op so the user sees the avoided
+      // conflict instead of nothing.
+      if (result.converged && result.converged > 0) {
+        const noun = result.converged === 1 ? 'entry' : 'entries';
+        addToast(
+          `Both sides edited ${result.converged} ${noun} and ended up identical — keeping shared version`,
+          'success',
+        );
+      }
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
     } catch (e) {
       addToast(`Pull failed: ${e}`, 'error');
@@ -272,8 +282,9 @@ export default function SyncPanel() {
                 {entry.action === 'created' && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />}
                 {entry.action === 'updated' && <RefreshCw className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />}
                 {entry.action === 'conflict' && <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                {entry.action === 'converged' && <GitMerge className="w-3.5 h-3.5 text-violet-400 flex-shrink-0" />}
                 {entry.action === 'skipped' && <XCircle className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
-                {!['created', 'updated', 'conflict', 'skipped'].includes(entry.action) && <Clock className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
+                {!['created', 'updated', 'conflict', 'converged', 'skipped'].includes(entry.action) && <Clock className="w-3.5 h-3.5 text-foreground flex-shrink-0" />}
                 <div className="flex-1 min-w-0">
                   <span className="typo-caption text-foreground">
                     {entry.syncType} {entry.entityType}

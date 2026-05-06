@@ -60,32 +60,32 @@ const MEDIUM_PATTERNS: &[(&str, &str)] = &[
     ("Error:", "error_message"),
     ("ERROR:", "error_message"),
     ("FAILED", "error_message"),
-    ("error[E", "error_message"),     // Rust compiler errors
+    ("error[E", "error_message"), // Rust compiler errors
     ("caused by:", "error_message"),
     ("Caused by:", "error_message"),
 ];
 
 /// Stack-trace line indicators (each matching line adds 0.15 confidence).
 const STACK_LINE_PREFIXES: &[&str] = &[
-    "    at ",       // JS/Java/C# stack frames
-    "\tat ",         // Java tab-indented frames
-    "  at ",         // JS stack frames
-    "  File \"",     // Python stack frames
-    "    File \"",   // Python stack frames (deeper)
-    "      ",        // Generic deep indentation (often stack continuation)
+    "    at ",     // JS/Java/C# stack frames
+    "\tat ",       // Java tab-indented frames
+    "  at ",       // JS stack frames
+    "  File \"",   // Python stack frames
+    "    File \"", // Python stack frames (deeper)
+    "      ",      // Generic deep indentation (often stack continuation)
 ];
 
 /// Stack-trace line patterns checked via contains (each adds 0.1 confidence).
 const STACK_LINE_CONTAINS: &[&str] = &[
-    ", line ",          // Python "File ..., line N"
-    ".rs:",             // Rust source locations
-    ".go:",             // Go source locations
-    ".java:",           // Java source locations
-    ".py:",             // Python source locations
-    ".js:",             // JS source locations
-    ".ts:",             // TS source locations
-    ".cs:",             // C# source locations
-    ".cpp:",            // C++ source locations
+    ", line ", // Python "File ..., line N"
+    ".rs:",    // Rust source locations
+    ".go:",    // Go source locations
+    ".java:",  // Java source locations
+    ".py:",    // Python source locations
+    ".js:",    // JS source locations
+    ".ts:",    // TS source locations
+    ".cs:",    // C# source locations
+    ".cpp:",   // C++ source locations
 ];
 
 /// Detect whether clipboard text looks like an error, stack trace, or exception.

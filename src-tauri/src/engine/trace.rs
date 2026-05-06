@@ -173,11 +173,17 @@ impl SpanStore {
     }
 
     fn get_mut(&mut self, span_id: &str) -> Option<&mut TraceSpan> {
-        self.index.get(span_id).copied().and_then(|i| self.vec.get_mut(i))
+        self.index
+            .get(span_id)
+            .copied()
+            .and_then(|i| self.vec.get_mut(i))
     }
 
     fn get(&self, span_id: &str) -> Option<&TraceSpan> {
-        self.index.get(span_id).copied().and_then(|i| self.vec.get(i))
+        self.index
+            .get(span_id)
+            .copied()
+            .and_then(|i| self.vec.get(i))
     }
 
     /// Remove span at `pos` and fix up the index for the swapped-in element.
@@ -206,11 +212,7 @@ impl SpanStore {
 
 impl TraceCollector {
     /// Create a new trace collector for an execution.
-    pub fn new(
-        execution_id: &str,
-        persona_id: &str,
-        chain_trace_id: Option<String>,
-    ) -> Self {
+    pub fn new(execution_id: &str, persona_id: &str, chain_trace_id: Option<String>) -> Self {
         let trace_id = uuid::Uuid::new_v4().to_string();
         let root_span_id = uuid::Uuid::new_v4().to_string();
         let epoch = Instant::now();
@@ -276,11 +278,7 @@ impl TraceCollector {
 
         let span = TraceSpan {
             span_id: span_id.clone(),
-            parent_span_id: Some(
-                parent_span_id
-                    .unwrap_or(&self.root_span_id)
-                    .to_string(),
-            ),
+            parent_span_id: Some(parent_span_id.unwrap_or(&self.root_span_id).to_string()),
             span_type,
             name: name.to_string(),
             start_ms,
@@ -511,15 +509,22 @@ mod w3c_tests {
         let ctx = W3cTraceContext::new_root();
         let header = ctx.traceparent_header();
         let parts: Vec<&str> = header.split('-').collect();
-        assert_eq!(parts.len(), 4, "expected 4 dash-separated segments, got: {header}");
+        assert_eq!(
+            parts.len(),
+            4,
+            "expected 4 dash-separated segments, got: {header}"
+        );
         assert_eq!(parts[0], "00", "version must be 00");
         assert_eq!(parts[1].len(), 32, "trace_id hex length must be 32");
         assert_eq!(parts[2].len(), 16, "span_id hex length must be 16");
         assert_eq!(parts[3].len(), 2, "flags hex length must be 2");
         // All lowercase hex.
         for seg in &parts[1..] {
-            assert!(seg.chars().all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
-                "segment {seg} must be lowercase hex");
+            assert!(
+                seg.chars()
+                    .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
+                "segment {seg} must be lowercase hex"
+            );
         }
     }
 
@@ -527,8 +532,14 @@ mod w3c_tests {
     fn traceparent_is_unique_per_context() {
         let a = W3cTraceContext::new_root();
         let b = W3cTraceContext::new_root();
-        assert_ne!(a.trace_id, b.trace_id, "trace_ids should differ across contexts");
-        assert_ne!(a.span_id, b.span_id, "span_ids should differ across contexts");
+        assert_ne!(
+            a.trace_id, b.trace_id,
+            "trace_ids should differ across contexts"
+        );
+        assert_ne!(
+            a.span_id, b.span_id,
+            "span_ids should differ across contexts"
+        );
     }
 
     #[test]

@@ -65,9 +65,9 @@ const SKIP_DIRS: &[&str] = &[
 /// purpose — false negatives here just mean "this file won't drive a context
 /// update", not "this file is invisible".
 const SOURCE_EXTENSIONS: &[&str] = &[
-    "rs", "ts", "tsx", "js", "jsx", "mjs", "py", "go", "java", "kt", "swift",
-    "c", "cpp", "cc", "h", "hpp", "cs", "rb", "php", "scala", "lua", "ex",
-    "exs", "vue", "svelte", "sql", "toml", "yaml", "yml", "json", "md", "mdx",
+    "rs", "ts", "tsx", "js", "jsx", "mjs", "py", "go", "java", "kt", "swift", "c", "cpp", "cc",
+    "h", "hpp", "cs", "rb", "php", "scala", "lua", "ex", "exs", "vue", "svelte", "sql", "toml",
+    "yaml", "yml", "json", "md", "mdx",
 ];
 
 /// Cap per-file size; anything larger is skipped entirely (no hash, no scan).
@@ -123,11 +123,7 @@ pub fn walk_project_files(root: &Path) -> Result<Vec<ScanFileEntry>, AppError> {
     Ok(out)
 }
 
-fn walk_recursive(
-    base: &Path,
-    cur: &Path,
-    out: &mut Vec<ScanFileEntry>,
-) -> Result<(), AppError> {
+fn walk_recursive(base: &Path, cur: &Path, out: &mut Vec<ScanFileEntry>) -> Result<(), AppError> {
     let entries = match std::fs::read_dir(cur) {
         Ok(e) => e,
         Err(e) => {
@@ -207,10 +203,7 @@ fn walk_recursive(
 }
 
 /// Diff a fresh walk result against the cached hashes. Caller owns both sides.
-pub fn compute_delta(
-    cached: &HashMap<String, String>,
-    current: &[ScanFileEntry],
-) -> ScanDelta {
+pub fn compute_delta(cached: &HashMap<String, String>, current: &[ScanFileEntry]) -> ScanDelta {
     let cache_empty = cached.is_empty();
     let mut added = Vec::new();
     let mut modified = Vec::new();
@@ -269,7 +262,11 @@ mod tests {
     use super::*;
 
     fn entry(path: &str, sha: &str) -> ScanFileEntry {
-        ScanFileEntry { path: path.to_string(), sha256: sha.to_string(), size_bytes: 100 }
+        ScanFileEntry {
+            path: path.to_string(),
+            sha256: sha.to_string(),
+            size_bytes: 100,
+        }
     }
 
     #[test]
@@ -289,9 +286,9 @@ mod tests {
         cached.insert("gone.rs".to_string(), "z".to_string());
 
         let current = vec![
-            entry("a.rs", "x"),       // unchanged
-            entry("b.rs", "y2"),      // modified
-            entry("new.rs", "n"),     // added
+            entry("a.rs", "x"),   // unchanged
+            entry("b.rs", "y2"),  // modified
+            entry("new.rs", "n"), // added
         ];
 
         let delta = compute_delta(&cached, &current);

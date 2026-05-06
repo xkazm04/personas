@@ -64,8 +64,12 @@ struct DesignResult {
     workflow_definition: Option<Value>,
 }
 
-fn default_timeout() -> i64 { 30 }
-fn default_fallback() -> AutomationFallbackMode { AutomationFallbackMode::Connector }
+fn default_timeout() -> i64 {
+    30
+}
+fn default_fallback() -> AutomationFallbackMode {
+    AutomationFallbackMode::Connector
+}
 
 /// Convert seconds (from AI design output / frontend) to milliseconds (DB storage).
 /// Clamps to a sane range: minimum 1 second, maximum 1 hour.
@@ -79,9 +83,8 @@ pub async fn deploy_automation(
     pool: &DbPool,
     input: DeployAutomationInput,
 ) -> Result<DeployAutomationResult, AppError> {
-    let design: DesignResult = serde_json::from_value(input.design_result.clone()).map_err(|e| {
-        AppError::Validation(format!("Invalid design result: {e}"))
-    })?;
+    let design: DesignResult = serde_json::from_value(input.design_result.clone())
+        .map_err(|e| AppError::Validation(format!("Invalid design result: {e}")))?;
 
     match design.platform {
         AutomationPlatform::N8n => deploy_n8n(pool, &input, &design).await,
@@ -135,9 +138,15 @@ async fn deploy_n8n(
 
     // Resolve the base URL from credential to build platform URL
     let cred = crate::db::repos::resources::credentials::get_by_id(pool, &input.credential_id)?;
-    let fields =
-        crate::db::repos::resources::credentials::get_decrypted_fields(pool, &cred)?;
-    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(pool, &cred.id, &cred.name, "platform:deploy", None, None) {
+    let fields = crate::db::repos::resources::credentials::get_decrypted_fields(pool, &cred)?;
+    if let Err(e) = crate::db::repos::resources::audit_log::log_decrypt(
+        pool,
+        &cred.id,
+        &cred.name,
+        "platform:deploy",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
     }
     let base_url = fields.get("base_url").cloned().unwrap_or_default();
@@ -145,7 +154,11 @@ async fn deploy_n8n(
     let platform_url = if base_url.is_empty() {
         None
     } else {
-        Some(format!("{}/workflow/{}", base_url.trim_end_matches('/'), workflow_id))
+        Some(format!(
+            "{}/workflow/{}",
+            base_url.trim_end_matches('/'),
+            workflow_id
+        ))
     };
 
     // Extract webhook URL from the created workflow's nodes

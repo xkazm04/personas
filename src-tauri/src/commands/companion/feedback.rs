@@ -46,9 +46,7 @@ pub async fn companion_request_improvement(
     }
 
     if feedback.trim().is_empty() {
-        return Err(AppError::Internal(
-            "self-improve: feedback is empty".into(),
-        ));
+        return Err(AppError::Internal("self-improve: feedback is empty".into()));
     }
 
     #[cfg(feature = "ml")]

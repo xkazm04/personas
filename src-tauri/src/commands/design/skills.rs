@@ -33,9 +33,7 @@ pub async fn get_skill(
 
 /// List all skills.
 #[tauri::command]
-pub async fn list_skills(
-    state: State<'_, Arc<AppState>>,
-) -> Result<Vec<Skill>, AppError> {
+pub async fn list_skills(state: State<'_, Arc<AppState>>) -> Result<Vec<Skill>, AppError> {
     require_auth(&state).await?;
     skill_repo::list_skills(&state.db)
 }
@@ -53,10 +51,7 @@ pub async fn update_skill(
 
 /// Delete a skill and cascade to components and persona assignments.
 #[tauri::command]
-pub async fn delete_skill(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub async fn delete_skill(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth(&state).await?;
     skill_repo::delete_skill(&state.db, &id)
 }

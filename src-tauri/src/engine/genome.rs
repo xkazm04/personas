@@ -230,12 +230,22 @@ impl PersonaGenome {
 ///
 /// Selects a random crossover point and swaps genome segments between the two
 /// parents. Returns two offspring genomes.
-pub fn crossover(parent_a: &PersonaGenome, parent_b: &PersonaGenome) -> (PersonaGenome, PersonaGenome) {
+pub fn crossover(
+    parent_a: &PersonaGenome,
+    parent_b: &PersonaGenome,
+) -> (PersonaGenome, PersonaGenome) {
     let mut rng = rand::thread_rng();
 
     // For prompt segments, do single-point crossover at paragraph level
-    let max_seg = parent_a.prompt_segments.len().max(parent_b.prompt_segments.len());
-    let crossover_point = if max_seg > 1 { rng.gen_range(1..max_seg) } else { 1 };
+    let max_seg = parent_a
+        .prompt_segments
+        .len()
+        .max(parent_b.prompt_segments.len());
+    let crossover_point = if max_seg > 1 {
+        rng.gen_range(1..max_seg)
+    } else {
+        1
+    };
 
     let (segs_a, segs_b) = crossover_segments(
         &parent_a.prompt_segments,
@@ -262,14 +272,26 @@ pub fn crossover(parent_a: &PersonaGenome, parent_b: &PersonaGenome) -> (Persona
 
     // Structured prompt: one child gets A's, the other gets B's
     let (struct_a, struct_b) = if rng.gen_bool(0.5) {
-        (parent_a.structured_prompt.clone(), parent_b.structured_prompt.clone())
+        (
+            parent_a.structured_prompt.clone(),
+            parent_b.structured_prompt.clone(),
+        )
     } else {
-        (parent_b.structured_prompt.clone(), parent_a.structured_prompt.clone())
+        (
+            parent_b.structured_prompt.clone(),
+            parent_a.structured_prompt.clone(),
+        )
     };
 
     let offspring_a = PersonaGenome {
-        source_persona_id: format!("{}+{}", parent_a.source_persona_id, parent_b.source_persona_id),
-        source_persona_name: format!("{} × {}", parent_a.source_persona_name, parent_b.source_persona_name),
+        source_persona_id: format!(
+            "{}+{}",
+            parent_a.source_persona_id, parent_b.source_persona_id
+        ),
+        source_persona_name: format!(
+            "{} × {}",
+            parent_a.source_persona_name, parent_b.source_persona_name
+        ),
         prompt_segments: segs_a,
         structured_prompt: struct_a,
         tools: tools_a,
@@ -279,8 +301,14 @@ pub fn crossover(parent_a: &PersonaGenome, parent_b: &PersonaGenome) -> (Persona
     };
 
     let offspring_b = PersonaGenome {
-        source_persona_id: format!("{}+{}", parent_b.source_persona_id, parent_a.source_persona_id),
-        source_persona_name: format!("{} × {}", parent_b.source_persona_name, parent_a.source_persona_name),
+        source_persona_id: format!(
+            "{}+{}",
+            parent_b.source_persona_id, parent_a.source_persona_id
+        ),
+        source_persona_name: format!(
+            "{} × {}",
+            parent_b.source_persona_name, parent_a.source_persona_name
+        ),
         prompt_segments: segs_b,
         structured_prompt: struct_b,
         tools: tools_b,
@@ -439,7 +467,10 @@ pub fn mutate(genome: &mut PersonaGenome, mutation_rate: f64) {
         // Adjust timeout by ±20%
         let factor = rng.gen_range(0.8..1.2);
         genome.model.timeout_ms = ((genome.model.timeout_ms as f64) * factor) as i32;
-        genome.model.timeout_ms = genome.model.timeout_ms.clamp(5_000, super::ENGINE_MAX_EXECUTION_MS); // floor 5s, ceiling engine max
+        genome.model.timeout_ms = genome
+            .model
+            .timeout_ms
+            .clamp(5_000, super::ENGINE_MAX_EXECUTION_MS); // floor 5s, ceiling engine max
     }
 
     // Mutate max_concurrent
@@ -462,8 +493,9 @@ pub fn compute_fitness(
     objective: &FitnessObjective,
 ) -> FitnessScore {
     // Load cost_quality knowledge for this persona
-    let entries = knowledge_repo::list_for_persona(pool, persona_id, Some("cost_quality"), Some(50))
-        .unwrap_or_default();
+    let entries =
+        knowledge_repo::list_for_persona(pool, persona_id, Some("cost_quality"), Some(50))
+            .unwrap_or_default();
 
     if entries.is_empty() {
         return FitnessScore {
@@ -496,8 +528,16 @@ pub fn compute_fitness(
         0.0
     };
 
-    let avg_cost = if count > 0 { total_cost / count as f64 } else { 0.0 };
-    let avg_duration = if count > 0 { total_duration / count as f64 } else { 0.0 };
+    let avg_cost = if count > 0 {
+        total_cost / count as f64
+    } else {
+        0.0
+    };
+    let avg_duration = if count > 0 {
+        total_duration / count as f64
+    } else {
+        0.0
+    };
 
     // Normalize: speed = 1.0 - (duration / 60_000ms), clamped to [0, 1]
     let speed = (1.0 - (avg_duration / 60_000.0)).clamp(0.0, 1.0);
@@ -647,7 +687,10 @@ mod tests {
 
     #[test]
     fn test_genome_extraction() {
-        let persona = make_test_persona("Alpha", "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.");
+        let persona = make_test_persona(
+            "Alpha",
+            "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.",
+        );
         let genome = PersonaGenome::from_persona(&persona, vec!["tool-1".into(), "tool-2".into()]);
 
         assert_eq!(genome.prompt_segments.len(), 3);

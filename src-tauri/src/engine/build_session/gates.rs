@@ -55,7 +55,9 @@ impl CapabilityGates {
     }
 
     pub(super) fn is_gate_open(&self, field: &str) -> bool {
-        self.field_state(field).map(|g| g == Gate::Open).unwrap_or(true)
+        self.field_state(field)
+            .map(|g| g == Gate::Open)
+            .unwrap_or(true)
     }
 
     pub(super) fn mark_pending(&mut self, field: &str) {
@@ -85,10 +87,18 @@ impl CapabilityGates {
     /// field name. Order matters — the most-load-bearing gate goes first so
     /// we don't interview the user for a field that's about to be moot.
     pub(super) fn first_unopen_field(&self) -> Option<&'static str> {
-        if self.trigger != Gate::Open { return Some("suggested_trigger"); }
-        if self.connectors != Gate::Open { return Some("connectors"); }
-        if self.review_policy != Gate::Open { return Some("review_policy"); }
-        if self.memory_policy != Gate::Open { return Some("memory_policy"); }
+        if self.trigger != Gate::Open {
+            return Some("suggested_trigger");
+        }
+        if self.connectors != Gate::Open {
+            return Some("connectors");
+        }
+        if self.review_policy != Gate::Open {
+            return Some("review_policy");
+        }
+        if self.memory_policy != Gate::Open {
+            return Some("memory_policy");
+        }
         None
     }
 }
@@ -102,8 +112,12 @@ pub(super) struct PendingGate {
     pub(super) field: String,
 }
 
-pub(super) const GATED_CAPABILITY_FIELDS: &[&str] =
-    &["suggested_trigger", "connectors", "review_policy", "memory_policy"];
+pub(super) const GATED_CAPABILITY_FIELDS: &[&str] = &[
+    "suggested_trigger",
+    "connectors",
+    "review_policy",
+    "memory_policy",
+];
 
 pub(super) fn is_gated_field(field: &str) -> bool {
     GATED_CAPABILITY_FIELDS.contains(&field)
@@ -129,9 +143,19 @@ pub(super) fn legacy_cell_to_v3_field(cell_key: &str) -> Option<&'static str> {
 
 fn intent_implies_trigger(intent_lower: &str) -> Gate {
     const EVENT_KW: &[&str] = &[
-        "whenever", "when a ", "when an ", "when new ", "on new ",
-        "as soon as", "reacts to", "react to", "listen for", "listening for",
-        "incoming ", "arrives", "when arrives",
+        "whenever",
+        "when a ",
+        "when an ",
+        "when new ",
+        "on new ",
+        "as soon as",
+        "reacts to",
+        "react to",
+        "listen for",
+        "listening for",
+        "incoming ",
+        "arrives",
+        "when arrives",
     ];
     // Bare "weekly"/"monthly" are intentionally NOT keywords — in English
     // they more often modify a content noun ("draft a weekly report",
@@ -140,38 +164,87 @@ fn intent_implies_trigger(intent_lower: &str) -> Gate {
     // "daily " is kept because the dominant phrasing ("daily digest",
     // "daily report") is genuinely schedule-leaning here.
     const SCHEDULE_KW: &[&str] = &[
-        "every morning", "every evening", "every day", "every night",
-        "every hour", "every week", "every weekday", "every month",
-        "every two hours", "every few hours",
-        "every monday", "every tuesday", "every wednesday", "every thursday",
-        "every friday", "every saturday", "every sunday",
-        "daily ", "daily.",
-        "runs daily", "runs weekly", "runs monthly",
-        "weekly at", "monthly at",
-        "each morning", "each evening", "each weekday", "each friday",
-        "each monday", "each tuesday", "each wednesday", "each thursday",
-        "each saturday", "each sunday",
-        "at 9am", "at 8am", "at 7am", "at 6am", "at 5pm", "at 6pm",
-        "at 7pm", "at 8pm", "at noon", "cron",
-        "once an hour", "once a day", "once a week",
+        "every morning",
+        "every evening",
+        "every day",
+        "every night",
+        "every hour",
+        "every week",
+        "every weekday",
+        "every month",
+        "every two hours",
+        "every few hours",
+        "every monday",
+        "every tuesday",
+        "every wednesday",
+        "every thursday",
+        "every friday",
+        "every saturday",
+        "every sunday",
+        "daily ",
+        "daily.",
+        "runs daily",
+        "runs weekly",
+        "runs monthly",
+        "weekly at",
+        "monthly at",
+        "each morning",
+        "each evening",
+        "each weekday",
+        "each friday",
+        "each monday",
+        "each tuesday",
+        "each wednesday",
+        "each thursday",
+        "each saturday",
+        "each sunday",
+        "at 9am",
+        "at 8am",
+        "at 7am",
+        "at 6am",
+        "at 5pm",
+        "at 6pm",
+        "at 7pm",
+        "at 8pm",
+        "at noon",
+        "cron",
+        "once an hour",
+        "once a day",
+        "once a week",
     ];
     const MANUAL_KW: &[&str] = &[
-        "on command", "when i ask", "manually", "on demand",
-        "i'll trigger", "i will trigger",
+        "on command",
+        "when i ask",
+        "manually",
+        "on demand",
+        "i'll trigger",
+        "i will trigger",
     ];
     for kw in EVENT_KW.iter().chain(SCHEDULE_KW).chain(MANUAL_KW) {
-        if intent_lower.contains(kw) { return Gate::Open; }
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
     }
     Gate::Closed
 }
 
 fn intent_implies_review(intent_lower: &str) -> Gate {
     const KW: &[&str] = &[
-        "automatically", "auto-publish", "auto publish",
-        "no review", "no approval", "without asking",
-        "without approval", "no human", "fully automated",
+        "automatically",
+        "auto-publish",
+        "auto publish",
+        "no review",
+        "no approval",
+        "without asking",
+        "without approval",
+        "no human",
+        "fully automated",
     ];
-    for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    for kw in KW {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
     // 2026-05-04 — Phase 1's `intent_is_simple_periodic_report` short-circuit
     // was removed. Combined with the trigger + connectors keyword auto-opens,
     // it caused common intents like "track tasks in Linear daily and
@@ -184,11 +257,22 @@ fn intent_implies_review(intent_lower: &str) -> Gate {
 
 fn intent_implies_memory(intent_lower: &str) -> Gate {
     const KW: &[&str] = &[
-        "stateless", "independently", "each run is independent",
-        "each independently", "no memory", "independent runs",
-        "remember my", "remember user", "learn over time", "remember preferences",
+        "stateless",
+        "independently",
+        "each run is independent",
+        "each independently",
+        "no memory",
+        "independent runs",
+        "remember my",
+        "remember user",
+        "learn over time",
+        "remember preferences",
     ];
-    for kw in KW { if intent_lower.contains(kw) { return Gate::Open; } }
+    for kw in KW {
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
+    }
     // 2026-05-04 — see `intent_implies_review` above for context. Phase 1's
     // simple-periodic-report shortcut was the load-bearing reason the
     // questionnaire skipped straight to test on Project-Coordinator-style
@@ -223,52 +307,130 @@ fn intent_is_simple_periodic_report(intent_lower: &str) -> bool {
     // tighten to schedule-only (event/manual triggers don't count as
     // "periodic").
     const SCHEDULE_KW: &[&str] = &[
-        "every morning", "every evening", "every day", "every night",
-        "every hour", "every week", "every weekday", "every month",
-        "every two hours", "every few hours",
-        "every monday", "every tuesday", "every wednesday", "every thursday",
-        "every friday", "every saturday", "every sunday",
-        "daily ", "daily.", "runs daily", "runs weekly", "runs monthly",
-        "weekly at", "monthly at", "each morning", "each evening",
-        "each weekday", "each friday", "each monday", "each sunday",
-        "each tuesday", "each wednesday", "each thursday", "each saturday",
-        "at 9am", "at 8am", "at 7am", "at 6am", "at 5pm", "at 6pm",
-        "at 7pm", "at 8pm", "at noon", "cron",
-        "once an hour", "once a day", "once a week",
+        "every morning",
+        "every evening",
+        "every day",
+        "every night",
+        "every hour",
+        "every week",
+        "every weekday",
+        "every month",
+        "every two hours",
+        "every few hours",
+        "every monday",
+        "every tuesday",
+        "every wednesday",
+        "every thursday",
+        "every friday",
+        "every saturday",
+        "every sunday",
+        "daily ",
+        "daily.",
+        "runs daily",
+        "runs weekly",
+        "runs monthly",
+        "weekly at",
+        "monthly at",
+        "each morning",
+        "each evening",
+        "each weekday",
+        "each friday",
+        "each monday",
+        "each sunday",
+        "each tuesday",
+        "each wednesday",
+        "each thursday",
+        "each saturday",
+        "at 9am",
+        "at 8am",
+        "at 7am",
+        "at 6am",
+        "at 5pm",
+        "at 6pm",
+        "at 7pm",
+        "at 8pm",
+        "at noon",
+        "cron",
+        "once an hour",
+        "once a day",
+        "once a week",
     ];
     let has_schedule = SCHEDULE_KW.iter().any(|k| intent_lower.contains(k));
-    if !has_schedule { return false; }
+    if !has_schedule {
+        return false;
+    }
 
     // (2) Informational output verb.
     const INFORMATIONAL_KW: &[&str] = &[
-        "summarize", "summarise", "summary", "summari",
-        "digest", "brief", "briefing",
-        "list ", "compile", "snapshot", "log them", "log it",
-        "report on", "report ", "scan ", "monitor ", "monitor for",
-        "check ", "count ", "track ", "tracking ",
-        "export ", "save ", "save the", "save my", "save a",
-        "build a ", "build one ", "fetch ",
-        "gather ", "ingest ",
+        "summarize",
+        "summarise",
+        "summary",
+        "summari",
+        "digest",
+        "brief",
+        "briefing",
+        "list ",
+        "compile",
+        "snapshot",
+        "log them",
+        "log it",
+        "report on",
+        "report ",
+        "scan ",
+        "monitor ",
+        "monitor for",
+        "check ",
+        "count ",
+        "track ",
+        "tracking ",
+        "export ",
+        "save ",
+        "save the",
+        "save my",
+        "save a",
+        "build a ",
+        "build one ",
+        "fetch ",
+        "gather ",
+        "ingest ",
     ];
     let has_informational = INFORMATIONAL_KW.iter().any(|k| intent_lower.contains(k));
-    if !has_informational { return false; }
+    if !has_informational {
+        return false;
+    }
 
     // (3) NOT external-publishing — these patterns produce content that
     // leaves the user's local context and warrants review/memory questions.
     const EXTERNAL_PUBLISH_KW: &[&str] = &[
-        " email me ", " message me ", "send me an email", "send an email",
+        " email me ",
+        " message me ",
+        "send me an email",
+        "send an email",
         // Slack/Discord/Teams as a destination — substring forms catch
         // both "post TO slack" and "post a digest...to slack".
-        "post to slack", "post to discord", "post to teams",
-        " to slack", " to discord", " to teams",
-        " in slack", " in discord", " in teams",
+        "post to slack",
+        "post to discord",
+        "post to teams",
+        " to slack",
+        " to discord",
+        " to teams",
+        " in slack",
+        " in discord",
+        " in teams",
         // Direct messaging shapes
-        "draft a reply", "draft replies", "draft a response",
-        "reply to ", "respond to ", "auto-respond",
-        "approve", "escalate to",
+        "draft a reply",
+        "draft replies",
+        "draft a response",
+        "reply to ",
+        "respond to ",
+        "auto-respond",
+        "approve",
+        "escalate to",
     ];
     let has_external_publish = EXTERNAL_PUBLISH_KW.iter().any(|k| intent_lower.contains(k));
-    if has_external_publish { return false; }
+    if has_external_publish {
+        return false;
+    }
 
     true
 }
@@ -279,16 +441,29 @@ fn intent_is_simple_periodic_report(intent_lower: &str) -> bool {
 /// works even when the registry only has the canonical name. Real connectors
 /// added to the DB are picked up dynamically via `registry_keywords`.
 const FUZZY_CONNECTOR_ALIASES: &[&str] = &[
-    "google drive", "google sheets", "google calendar",
-    "local drive", "local-drive", "local_drive", "built-in drive", "built in drive",
+    "google drive",
+    "google sheets",
+    "google calendar",
+    "local drive",
+    "local-drive",
+    "local_drive",
+    "built-in drive",
+    "built in drive",
 ];
 
-fn intent_implies_connectors_with_registry(intent_lower: &str, registry_keywords: &[String]) -> Gate {
+fn intent_implies_connectors_with_registry(
+    intent_lower: &str,
+    registry_keywords: &[String],
+) -> Gate {
     for kw in FUZZY_CONNECTOR_ALIASES {
-        if intent_lower.contains(kw) { return Gate::Open; }
+        if intent_lower.contains(kw) {
+            return Gate::Open;
+        }
     }
     for kw in registry_keywords {
-        if !kw.is_empty() && intent_lower.contains(kw.as_str()) { return Gate::Open; }
+        if !kw.is_empty() && intent_lower.contains(kw.as_str()) {
+            return Gate::Open;
+        }
     }
     Gate::Closed
 }
@@ -305,27 +480,64 @@ fn intent_implies_connectors_with_registry(intent_lower: &str, registry_keywords
 fn intent_implies_connectors(intent_lower: &str) -> Gate {
     const KNOWN_FALLBACK: &[&str] = &[
         // Email / messaging
-        "gmail", "outlook", "slack", "discord", "teams", "telegram",
-        "whatsapp", "twilio",
+        "gmail",
+        "outlook",
+        "slack",
+        "discord",
+        "teams",
+        "telegram",
+        "whatsapp",
+        "twilio",
         // Code / VCS
-        "github", "gitlab", "bitbucket",
+        "github",
+        "gitlab",
+        "bitbucket",
         // Project management / docs
-        "linear", "jira", "notion", "trello", "asana", "clickup", "attio",
-        "monday", "basecamp",
+        "linear",
+        "jira",
+        "notion",
+        "trello",
+        "asana",
+        "clickup",
+        "attio",
+        "monday",
+        "basecamp",
         // Storage / database
-        "airtable", "supabase", "postgres", "google sheets", "google drive",
+        "airtable",
+        "supabase",
+        "postgres",
+        "google sheets",
+        "google drive",
         "dropbox",
         // Calendar / scheduling
-        "cal.com", "calcom", "google calendar", "calendly",
+        "cal.com",
+        "calcom",
+        "google calendar",
+        "calendly",
         // CRM / sales
-        "hubspot", "salesforce", "pipedrive",
+        "hubspot",
+        "salesforce",
+        "pipedrive",
         // Payments / finance
-        "stripe", "alpha vantage", "alpha_vantage", "alphavantage",
+        "stripe",
+        "alpha vantage",
+        "alpha_vantage",
+        "alphavantage",
         // Observability
-        "sentry", "betterstack", "better stack", "datadog", "pagerduty",
+        "sentry",
+        "betterstack",
+        "better stack",
+        "datadog",
+        "pagerduty",
         // AI / image
-        "leonardo", "leonardo ai", "leonardo_ai", "openai", "anthropic",
-        "midjourney", "elevenlabs", "gemini",
+        "leonardo",
+        "leonardo ai",
+        "leonardo_ai",
+        "openai",
+        "anthropic",
+        "midjourney",
+        "elevenlabs",
+        "gemini",
     ];
     let registry = crate::engine::api_proxy::connector_keyword_snapshot();
     if registry.is_empty() {
@@ -390,15 +602,23 @@ pub(super) fn init_gates_from_enumeration(
     data: &serde_json::Value,
     intent: &str,
 ) {
-    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else { return };
+    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else {
+        return;
+    };
     let seed = gate_seed_for_intent(intent);
 
     for cap in caps {
-        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else { continue };
+        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else {
+            continue;
+        };
         if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
-            titles.entry(id.to_string()).or_insert_with(|| title.to_string());
+            titles
+                .entry(id.to_string())
+                .or_insert_with(|| title.to_string());
         }
-        coverage.entry(id.to_string()).or_insert_with(|| seed.clone());
+        coverage
+            .entry(id.to_string())
+            .or_insert_with(|| seed.clone());
     }
 }
 
@@ -435,16 +655,24 @@ pub(super) fn find_first_unopen_gate(
 
 /// Look up the catalog category for a named connector. Used to pick the
 /// `category` token on synthesized `scope=connector_category` questions.
-fn infer_connector_category(
-    value: &serde_json::Value,
-    pool: &DbPool,
-) -> Option<String> {
+fn infer_connector_category(value: &serde_json::Value, pool: &DbPool) -> Option<String> {
     let names: Vec<String> = if let Some(arr) = value.as_array() {
-        arr.iter().filter_map(|v| {
-            v.as_str().map(|s| s.to_string())
-             .or_else(|| v.get("name").and_then(|n| n.as_str()).map(|s| s.to_string()))
-             .or_else(|| v.get("service_type").and_then(|n| n.as_str()).map(|s| s.to_string()))
-        }).collect()
+        arr.iter()
+            .filter_map(|v| {
+                v.as_str()
+                    .map(|s| s.to_string())
+                    .or_else(|| {
+                        v.get("name")
+                            .and_then(|n| n.as_str())
+                            .map(|s| s.to_string())
+                    })
+                    .or_else(|| {
+                        v.get("service_type")
+                            .and_then(|n| n.as_str())
+                            .map(|s| s.to_string())
+                    })
+            })
+            .collect()
     } else {
         Vec::new()
     };
@@ -586,32 +814,51 @@ pub(super) fn synthesize_gate_question(
     let display_title = display_title_for_cap(Some(title), cap_id);
     let title = display_title.as_str();
     let mut obj = serde_json::Map::new();
-    obj.insert("capability_id".into(), serde_json::Value::String(cap_id.to_string()));
+    obj.insert(
+        "capability_id".into(),
+        serde_json::Value::String(cap_id.to_string()),
+    );
 
     match field {
         "suggested_trigger" => {
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
-            obj.insert("field".into(), serde_json::Value::String("suggested_trigger".into()));
-            obj.insert("question".into(), serde_json::Value::String(
-                format!("How should \"{title}\" fire?")
-            ));
-            obj.insert("options".into(), serde_json::json!([
-                "A: On demand — I'll trigger it manually",
-                "B: On a schedule (daily/weekly/…)",
-                "C: When an external event occurs (e.g. new document, inbound message)",
-            ]));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("suggested_trigger".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!("How should \"{title}\" fire?")),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "A: On demand — I'll trigger it manually",
+                    "B: On a schedule (daily/weekly/…)",
+                    "C: When an external event occurs (e.g. new document, inbound message)",
+                ]),
+            );
         }
         "review_policy" => {
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
-            obj.insert("field".into(), serde_json::Value::String("review_policy".into()));
-            obj.insert("question".into(), serde_json::Value::String(
-                format!("Should \"{title}\" wait for your approval before publishing its output?")
-            ));
-            obj.insert("options".into(), serde_json::json!([
-                "Never — auto-publish; I can undo/discard myself",
-                "On low confidence — only pause when unsure",
-                "Always — I want to sign off every run",
-            ]));
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("review_policy".into()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
+                    "Should \"{title}\" wait for your approval before publishing its output?"
+                )),
+            );
+            obj.insert(
+                "options".into(),
+                serde_json::json!([
+                    "Never — auto-publish; I can undo/discard myself",
+                    "On low confidence — only pause when unsure",
+                    "Always — I want to sign off every run",
+                ]),
+            );
         }
         "memory_policy" => {
             obj.insert("scope".into(), serde_json::Value::String("field".into()));
@@ -634,12 +881,24 @@ pub(super) fn synthesize_gate_question(
         "connectors" => {
             let category = infer_connector_category(proposed_value, pool)
                 .unwrap_or_else(|| "storage".to_string());
-            obj.insert("scope".into(), serde_json::Value::String("connector_category".into()));
-            obj.insert("field".into(), serde_json::Value::String("connectors".into()));
-            obj.insert("category".into(), serde_json::Value::String(category.clone()));
-            obj.insert("question".into(), serde_json::Value::String(
-                format!("Which {category} connector should \"{title}\" use?")
-            ));
+            obj.insert(
+                "scope".into(),
+                serde_json::Value::String("connector_category".into()),
+            );
+            obj.insert(
+                "field".into(),
+                serde_json::Value::String("connectors".into()),
+            );
+            obj.insert(
+                "category".into(),
+                serde_json::Value::String(category.clone()),
+            );
+            obj.insert(
+                "question".into(),
+                serde_json::Value::String(format!(
+                    "Which {category} connector should \"{title}\" use?"
+                )),
+            );
             obj.insert("options".into(), serde_json::json!([]));
         }
         _ => return Vec::new(),
@@ -1084,8 +1343,14 @@ mod tests {
         assert_eq!(coverage.len(), 2);
         assert!(coverage.contains_key("uc_morning_digest"));
         assert!(coverage.contains_key("uc_weekly_review"));
-        assert_eq!(titles.get("uc_morning_digest").map(String::as_str), Some("Morning Digest"));
-        assert_eq!(titles.get("uc_weekly_review").map(String::as_str), Some("Weekly Review"));
+        assert_eq!(
+            titles.get("uc_morning_digest").map(String::as_str),
+            Some("Morning Digest")
+        );
+        assert_eq!(
+            titles.get("uc_weekly_review").map(String::as_str),
+            Some("Weekly Review")
+        );
     }
 
     #[test]
@@ -1144,12 +1409,7 @@ mod tests {
         // Missing `capabilities` array → no-op, no panic.
         let mut coverage = HashMap::new();
         let mut titles = HashMap::new();
-        init_gates_from_enumeration(
-            &mut coverage,
-            &mut titles,
-            &serde_json::json!({}),
-            "intent",
-        );
+        init_gates_from_enumeration(&mut coverage, &mut titles, &serde_json::json!({}), "intent");
         assert!(coverage.is_empty());
         assert!(titles.is_empty());
     }
@@ -1200,7 +1460,10 @@ mod tests {
         coverage.insert("uc_c".to_string(), CapabilityGates::default());
 
         let (cap, field) = find_first_unopen_gate(&coverage).expect("at least one closed gate");
-        assert_eq!(cap, "uc_a", "must walk in sorted cap_id order for determinism");
+        assert_eq!(
+            cap, "uc_a",
+            "must walk in sorted cap_id order for determinism"
+        );
         assert_eq!(field, "suggested_trigger");
     }
 
@@ -1247,7 +1510,10 @@ mod tests {
             events.len()
         );
         let has_v3 = events.iter().any(|e| matches!(e, BuildEvent::ClarifyingQuestionV3 { field, .. } if field.as_deref() == Some(expected_field)));
-        assert!(has_v3, "expected v3 ClarifyingQuestionV3 for field {expected_field}");
+        assert!(
+            has_v3,
+            "expected v3 ClarifyingQuestionV3 for field {expected_field}"
+        );
     }
 
     #[test]

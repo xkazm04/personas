@@ -139,10 +139,11 @@ pub struct PlaygroundTestResult {
 
 /// Parse an OpenAPI/Swagger spec from JSON content.
 fn parse_openapi_spec(content: &str) -> Result<OpenApiParseResult, AppError> {
-    let doc: serde_json::Value = serde_json::from_str(content)
-        .or_else(|_| serde_yaml::from_str::<serde_json::Value>(content).map_err(|e| {
+    let doc: serde_json::Value = serde_json::from_str(content).or_else(|_| {
+        serde_yaml::from_str::<serde_json::Value>(content).map_err(|e| {
             AppError::Validation(format!("Failed to parse spec as JSON or YAML: {}", e))
-        }))?;
+        })
+    })?;
 
     let spec_format = if doc.get("openapi").is_some() {
         "openapi3"
@@ -150,15 +151,27 @@ fn parse_openapi_spec(content: &str) -> Result<OpenApiParseResult, AppError> {
         "swagger2"
     } else {
         return Err(AppError::Validation(
-            "Not a valid OpenAPI 3.x or Swagger 2.x spec: missing 'openapi' or 'swagger' field".into(),
+            "Not a valid OpenAPI 3.x or Swagger 2.x spec: missing 'openapi' or 'swagger' field"
+                .into(),
         ));
     };
 
     // Info
     let info = doc.get("info").unwrap_or(&serde_json::Value::Null);
-    let title = info.get("title").and_then(|v| v.as_str()).unwrap_or("Untitled API").to_string();
-    let version = info.get("version").and_then(|v| v.as_str()).unwrap_or("0.0.0").to_string();
-    let description = info.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let title = info
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("Untitled API")
+        .to_string();
+    let version = info
+        .get("version")
+        .and_then(|v| v.as_str())
+        .unwrap_or("0.0.0")
+        .to_string();
+    let description = info
+        .get("description")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
     // Base URL
     let base_url = extract_base_url(&doc, spec_format);
@@ -194,9 +207,13 @@ fn extract_base_url(doc: &serde_json::Value, spec_format: &str) -> Option<String
             .map(|s| s.to_string())
     } else {
         // Swagger 2
-        let host = doc.get("host").and_then(|v| v.as_str()).unwrap_or("localhost");
+        let host = doc
+            .get("host")
+            .and_then(|v| v.as_str())
+            .unwrap_or("localhost");
         let base_path = doc.get("basePath").and_then(|v| v.as_str()).unwrap_or("/");
-        let scheme = doc.get("schemes")
+        let scheme = doc
+            .get("schemes")
             .and_then(|s| s.as_array())
             .and_then(|a| a.first())
             .and_then(|v| v.as_str())
@@ -218,11 +235,27 @@ fn extract_auth_schemes(doc: &serde_json::Value, spec_format: &str) -> Vec<OpenA
 
     defs.iter()
         .map(|(name, def)| {
-            let scheme_type = def.get("type").and_then(|v| v.as_str()).unwrap_or("unknown").to_string();
-            let location = def.get("in").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let param_name = def.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let scheme = def.get("scheme").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let description = def.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let scheme_type = def
+                .get("type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let location = def
+                .get("in")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let param_name = def
+                .get("name")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let scheme = def
+                .get("scheme")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let description = def
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
             let flows = def.get("flows").cloned();
 
             OpenApiAuthScheme {
@@ -247,24 +280,43 @@ fn extract_endpoints(doc: &serde_json::Value, _spec_format: &str) -> Vec<OpenApi
     let methods = ["get", "post", "put", "patch", "delete", "head", "options"];
 
     for (path, path_item) in paths {
-        let Some(path_obj) = path_item.as_object() else { continue };
+        let Some(path_obj) = path_item.as_object() else {
+            continue;
+        };
 
         // Path-level parameters
-        let path_params = path_obj.get("parameters")
+        let path_params = path_obj
+            .get("parameters")
             .and_then(|v| v.as_array())
             .map(|arr| extract_parameters(arr))
             .unwrap_or_default();
 
         for method in &methods {
-            let Some(operation) = path_obj.get(*method) else { continue };
+            let Some(operation) = path_obj.get(*method) else {
+                continue;
+            };
 
-            let operation_id = operation.get("operationId").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let summary = operation.get("summary").and_then(|v| v.as_str()).map(|s| s.to_string());
-            let description = operation.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let operation_id = operation
+                .get("operationId")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let summary = operation
+                .get("summary")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+            let description = operation
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
-            let tags = operation.get("tags")
+            let tags = operation
+                .get("tags")
                 .and_then(|v| v.as_array())
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
 
             // Merge path-level and operation-level parameters
@@ -273,18 +325,27 @@ fn extract_endpoints(doc: &serde_json::Value, _spec_format: &str) -> Vec<OpenApi
                 parameters.extend(extract_parameters(op_params));
             }
 
-            let request_body_type = operation.get("requestBody")
+            let request_body_type = operation
+                .get("requestBody")
                 .and_then(|rb| rb.pointer("/content/application/json/schema/$ref"))
-                .or_else(|| operation.get("requestBody").and_then(|rb| rb.pointer("/content/application/json/schema/type")))
+                .or_else(|| {
+                    operation
+                        .get("requestBody")
+                        .and_then(|rb| rb.pointer("/content/application/json/schema/type"))
+                })
                 .and_then(|v| v.as_str())
                 .map(ref_to_name);
 
-            let response_type = operation.get("responses")
+            let response_type = operation
+                .get("responses")
                 .and_then(|r| r.get("200").or_else(|| r.get("201")))
                 .and_then(|r| r.pointer("/content/application/json/schema/$ref"))
-                .or_else(|| operation.get("responses")
-                    .and_then(|r| r.get("200").or_else(|| r.get("201")))
-                    .and_then(|r| r.pointer("/schema/$ref"))) // Swagger 2
+                .or_else(|| {
+                    operation
+                        .get("responses")
+                        .and_then(|r| r.get("200").or_else(|| r.get("201")))
+                        .and_then(|r| r.pointer("/schema/$ref"))
+                }) // Swagger 2
                 .and_then(|v| v.as_str())
                 .map(ref_to_name);
 
@@ -306,20 +367,31 @@ fn extract_endpoints(doc: &serde_json::Value, _spec_format: &str) -> Vec<OpenApi
 }
 
 fn extract_parameters(params: &[serde_json::Value]) -> Vec<OpenApiParameter> {
-    params.iter()
+    params
+        .iter()
         .filter_map(|p| {
             let name = p.get("name")?.as_str()?.to_string();
             let location = p.get("in")?.as_str()?.to_string();
             let required = p.get("required").and_then(|v| v.as_bool()).unwrap_or(false);
-            let param_type = p.get("schema")
+            let param_type = p
+                .get("schema")
                 .and_then(|s| s.get("type"))
                 .or_else(|| p.get("type"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("string")
                 .to_string();
-            let description = p.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let description = p
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
-            Some(OpenApiParameter { name, location, required, param_type, description })
+            Some(OpenApiParameter {
+                name,
+                location,
+                required,
+                param_type,
+                description,
+            })
         })
         .collect()
 }
@@ -337,25 +409,43 @@ fn extract_models(doc: &serde_json::Value, spec_format: &str) -> Vec<OpenApiMode
 
     defs.iter()
         .map(|(name, schema)| {
-            let model_type = schema.get("type").and_then(|v| v.as_str()).unwrap_or("object").to_string();
-            let description = schema.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let model_type = schema
+                .get("type")
+                .and_then(|v| v.as_str())
+                .unwrap_or("object")
+                .to_string();
+            let description = schema
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
 
-            let required_fields: Vec<String> = schema.get("required")
+            let required_fields: Vec<String> = schema
+                .get("required")
                 .and_then(|v| v.as_array())
-                .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
 
-            let properties = schema.get("properties")
+            let properties = schema
+                .get("properties")
                 .and_then(|v| v.as_object())
                 .map(|props| {
-                    props.iter()
+                    props
+                        .iter()
                         .map(|(pname, pval)| {
-                            let property_type = pval.get("type")
+                            let property_type = pval
+                                .get("type")
                                 .and_then(|v| v.as_str())
                                 .or_else(|| pval.get("$ref").and_then(|v| v.as_str()))
                                 .map(ref_to_name)
                                 .unwrap_or_else(|| "any".to_string());
-                            let pdesc = pval.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+                            let pdesc = pval
+                                .get("description")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string());
                             OpenApiModelProperty {
                                 name: pname.clone(),
                                 property_type,
@@ -367,7 +457,12 @@ fn extract_models(doc: &serde_json::Value, spec_format: &str) -> Vec<OpenApiMode
                 })
                 .unwrap_or_default();
 
-            OpenApiModel { name: name.clone(), model_type, description, properties }
+            OpenApiModel {
+                name: name.clone(),
+                model_type,
+                description,
+                properties,
+            }
         })
         .collect()
 }
@@ -461,16 +556,22 @@ fn generate_credential_fields(auth_schemes: &[OpenApiAuthScheme]) -> Vec<serde_j
 }
 
 fn generate_tool_definitions(endpoints: &[OpenApiEndpoint]) -> Vec<GeneratedToolDefinition> {
-    endpoints.iter()
+    endpoints
+        .iter()
         .map(|ep| {
             let tool_name = ep.operation_id.clone().unwrap_or_else(|| {
                 let clean_path = ep.path.replace('/', "_").replace(['{', '}'], "");
-                format!("{}_{}", ep.method.to_lowercase(), clean_path.trim_start_matches('_'))
+                format!(
+                    "{}_{}",
+                    ep.method.to_lowercase(),
+                    clean_path.trim_start_matches('_')
+                )
             });
 
-            let label = ep.summary.clone().unwrap_or_else(|| {
-                format!("{} {}", ep.method, ep.path)
-            });
+            let label = ep
+                .summary
+                .clone()
+                .unwrap_or_else(|| format!("{} {}", ep.method, ep.path));
 
             let description = ep.description.clone().unwrap_or_else(|| label.clone());
 
@@ -488,15 +589,31 @@ fn generate_tool_definitions(endpoints: &[OpenApiEndpoint]) -> Vec<GeneratedTool
 
 fn find_healthcheck_endpoint(endpoints: &[OpenApiEndpoint]) -> Option<String> {
     // Prefer common health/status endpoints
-    let health_patterns = ["/health", "/status", "/ping", "/api/health", "/api/status", "/api/v1/health"];
+    let health_patterns = [
+        "/health",
+        "/status",
+        "/ping",
+        "/api/health",
+        "/api/status",
+        "/api/v1/health",
+    ];
     for pattern in &health_patterns {
-        if let Some(ep) = endpoints.iter().find(|e| e.path == *pattern && e.method == "GET") {
+        if let Some(ep) = endpoints
+            .iter()
+            .find(|e| e.path == *pattern && e.method == "GET")
+        {
             return Some(ep.path.clone());
         }
     }
     // Fall back to first GET endpoint with no required params
-    endpoints.iter()
-        .find(|e| e.method == "GET" && e.parameters.iter().all(|p| !p.required || p.location == "path"))
+    endpoints
+        .iter()
+        .find(|e| {
+            e.method == "GET"
+                && e.parameters
+                    .iter()
+                    .all(|p| !p.required || p.location == "path")
+        })
         .map(|e| e.path.clone())
 }
 
@@ -527,15 +644,21 @@ pub async fn openapi_parse_from_url(
 ) -> Result<OpenApiParseResult, AppError> {
     require_privileged_sync(&state, "openapi_parse_from_url")?;
 
-    let parsed_url = url::Url::parse(&url).map_err(|e| {
-        AppError::Validation(format!("Invalid URL: {}", e))
-    })?;
+    let parsed_url =
+        url::Url::parse(&url).map_err(|e| AppError::Validation(format!("Invalid URL: {}", e)))?;
 
     // Only allow HTTPS URLs (or HTTP for localhost)
     match parsed_url.scheme() {
         "https" => {}
-        "http" if parsed_url.host_str().is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
-        _ => return Err(AppError::Validation("Only HTTPS URLs are allowed (HTTP only for localhost)".into())),
+        "http"
+            if parsed_url
+                .host_str()
+                .is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
+        _ => {
+            return Err(AppError::Validation(
+                "Only HTTPS URLs are allowed (HTTP only for localhost)".into(),
+            ))
+        }
     }
 
     let response = crate::SHARED_HTTP
@@ -551,9 +674,10 @@ pub async fn openapi_parse_from_url(
         )));
     }
 
-    let body = response.text().await.map_err(|e| {
-        AppError::Validation(format!("Failed to read response body: {}", e))
-    })?;
+    let body = response
+        .text()
+        .await
+        .map_err(|e| AppError::Validation(format!("Failed to read response body: {}", e)))?;
 
     parse_openapi_spec(&body)
 }
@@ -586,21 +710,28 @@ pub fn openapi_generate_connector(
 
     // Filter endpoints if selection provided
     let endpoints: Vec<&OpenApiEndpoint> = if let Some(ref indices) = selected_endpoints {
-        indices.iter().filter_map(|&i| parsed.endpoints.get(i)).collect()
+        indices
+            .iter()
+            .filter_map(|&i| parsed.endpoints.get(i))
+            .collect()
     } else {
         parsed.endpoints.iter().collect()
     };
 
     let credential_fields = generate_credential_fields(&parsed.auth_schemes);
     let tools = generate_tool_definitions(&endpoints.iter().cloned().cloned().collect::<Vec<_>>());
-    let healthcheck_ep = find_healthcheck_endpoint(&endpoints.iter().cloned().cloned().collect::<Vec<_>>());
+    let healthcheck_ep =
+        find_healthcheck_endpoint(&endpoints.iter().cloned().cloned().collect::<Vec<_>>());
 
     // Build services JSON for the connector
-    let services_json: Vec<serde_json::Value> = tools.iter()
-        .map(|t| serde_json::json!({
-            "toolName": t.tool_name,
-            "label": t.label,
-        }))
+    let services_json: Vec<serde_json::Value> = tools
+        .iter()
+        .map(|t| {
+            serde_json::json!({
+                "toolName": t.tool_name,
+                "label": t.label,
+            })
+        })
         .collect();
 
     // Build healthcheck config
@@ -609,7 +740,8 @@ pub fn openapi_generate_connector(
             "endpoint": ep,
             "method": "GET",
             "description": format!("Health check via {}", ep),
-        }).to_string()
+        })
+        .to_string()
     });
 
     // Build metadata
@@ -667,15 +799,21 @@ pub async fn openapi_playground_test(
 
     // Validate URL
     let full_url = format!("{}{}", base_url.trim_end_matches('/'), path);
-    let parsed = url::Url::parse(&full_url).map_err(|e| {
-        AppError::Validation(format!("Invalid URL: {}", e))
-    })?;
+    let parsed = url::Url::parse(&full_url)
+        .map_err(|e| AppError::Validation(format!("Invalid URL: {}", e)))?;
 
     // SSRF protection: only allow HTTPS or localhost HTTP
     match parsed.scheme() {
         "https" => {}
-        "http" if parsed.host_str().is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
-        _ => return Err(AppError::Validation("Only HTTPS URLs are allowed (HTTP only for localhost)".into())),
+        "http"
+            if parsed
+                .host_str()
+                .is_some_and(|h| h == "localhost" || h == "127.0.0.1") => {}
+        _ => {
+            return Err(AppError::Validation(
+                "Only HTTPS URLs are allowed (HTTP only for localhost)".into(),
+            ))
+        }
     }
 
     let client = &crate::SSRF_SAFE_HTTP;
@@ -688,7 +826,12 @@ pub async fn openapi_playground_test(
         "PATCH" => client.patch(&full_url),
         "DELETE" => client.delete(&full_url),
         "HEAD" => client.head(&full_url),
-        other => return Err(AppError::Validation(format!("Unsupported HTTP method: {}", other))),
+        other => {
+            return Err(AppError::Validation(format!(
+                "Unsupported HTTP method: {}",
+                other
+            )))
+        }
     };
 
     for (key, value) in &headers {
@@ -705,15 +848,17 @@ pub async fn openapi_playground_test(
             .body(body_str.clone());
     }
 
-    let response = request.send().await.map_err(|e| {
-        AppError::Validation(format!("Request failed: {}", e))
-    })?;
+    let response = request
+        .send()
+        .await
+        .map_err(|e| AppError::Validation(format!("Request failed: {}", e)))?;
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let status_code = response.status().as_u16();
     let success = response.status().is_success();
 
-    let resp_headers: HashMap<String, String> = response.headers()
+    let resp_headers: HashMap<String, String> = response
+        .headers()
         .iter()
         .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
         .collect();

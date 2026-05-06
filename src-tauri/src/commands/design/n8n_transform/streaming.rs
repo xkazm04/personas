@@ -49,7 +49,11 @@ pub struct SectionValidation {
 #[allow(dead_code)]
 impl SectionValidation {
     pub fn ok() -> Self {
-        Self { valid: true, errors: vec![], warnings: vec![] }
+        Self {
+            valid: true,
+            errors: vec![],
+            warnings: vec![],
+        }
     }
 }
 
@@ -355,10 +359,7 @@ impl SectionAccumulator {
                 .get("model_profile")
                 .and_then(|v| v.as_str())
                 .map(String::from),
-            max_budget_usd: identity
-                .data
-                .get("max_budget_usd")
-                .and_then(|v| v.as_f64()),
+            max_budget_usd: identity.data.get("max_budget_usd").and_then(|v| v.as_f64()),
             max_turns: identity
                 .data
                 .get("max_turns")
@@ -487,9 +488,7 @@ fn validate_tool(data: &serde_json::Value, known_connectors: &[String]) -> Secti
                 .iter()
                 .any(|c| c.eq_ignore_ascii_case(cred_type))
         {
-            warnings.push(format!(
-                "References unknown connector '{cred_type}'"
-            ));
+            warnings.push(format!("References unknown connector '{cred_type}'"));
         }
     }
 

@@ -4,22 +4,22 @@ use rusqlite::params;
 use serde_json::json;
 use tauri::State;
 
+use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::resources::n8n_sessions as session_repo;
-use crate::db::models::{SessionStatus, UpdateN8nSessionInput};
 use crate::db::DbPool;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
-use super::types::{N8nPersonaOutput, normalize_n8n_persona_draft};
+use super::types::{normalize_n8n_persona_draft, N8nPersonaOutput};
 
 // -- Per-entity error tracking --------------------------------------------
 
 /// A single entity that failed during import.
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct EntityError {
-    pub entity_type: String,   // "trigger", "tool", "connector"
+    pub entity_type: String, // "trigger", "tool", "connector"
     pub entity_name: String,
     pub error: String,
 }
@@ -82,13 +82,15 @@ pub fn create_persona_atomically(
         .as_ref()
         .and_then(|v| serde_json::to_string(v).ok());
 
-    // Encrypt notification channel secrets before storing
+    // Encrypt notification channel secrets before storing.
+    // Never fall back to the original plaintext on failure: this column is
+    // read as ciphertext, so persisting plaintext would leak webhook secrets
+    // and break decryption on every subsequent read. If encryption fails
+    // (e.g. keyring unavailable), surface the error so the transaction rolls
+    // back — the user can retry once the keyring is healthy.
     let encrypted_channels = match &draft.notification_channels {
         Some(json) if !json.trim().is_empty() => {
-            match persona_repo::encrypt_notification_channels(json) {
-                Ok(enc) => Some(enc),
-                Err(_) => draft.notification_channels.clone(),
-            }
+            Some(persona_repo::encrypt_notification_channels(json)?)
         }
         other => other.clone(),
     };
@@ -142,7 +144,10 @@ pub fn create_persona_atomically(
             };
 
             let trigger_id = uuid::Uuid::new_v4().to_string();
-            let trigger_config = trigger_draft.config.as_ref().and_then(|c| serde_json::to_string(c).ok());
+            let trigger_config = trigger_draft
+                .config
+                .as_ref()
+                .and_then(|c| serde_json::to_string(c).ok());
             let trigger_enabled = 1i32;
 
             match tx.execute(
@@ -195,13 +200,18 @@ pub fn create_persona_atomically(
             let tool_name = tool_draft.name.replace(' ', "_").to_lowercase();
 
             // Check if a definition already exists
-            let tool_def_id = if let Some((id, _)) = existing_defs.iter().find(|(_, n)| n == &tool_name) {
+            let tool_def_id = if let Some((id, _)) =
+                existing_defs.iter().find(|(_, n)| n == &tool_name)
+            {
                 id.clone()
             } else {
                 // Create new definition
                 let new_id = uuid::Uuid::new_v4().to_string();
                 let is_builtin = 0i32;
-                let input_schema = tool_draft.input_schema.as_ref().and_then(|s| serde_json::to_string(s).ok());
+                let input_schema = tool_draft
+                    .input_schema
+                    .as_ref()
+                    .and_then(|s| serde_json::to_string(s).ok());
 
                 match tx.execute(
                     "INSERT INTO persona_tool_definitions
@@ -215,7 +225,7 @@ pub fn create_persona_atomically(
                         tool_name,
                         tool_draft.category,
                         tool_draft.description,
-                        "",  // script_path
+                        "", // script_path
                         input_schema,
                         Option::<String>::None, // output_schema
                         tool_draft.requires_credential_type,
@@ -256,7 +266,13 @@ pub fn create_persona_atomically(
                 match tx.execute(
                     "INSERT INTO persona_tools (id, persona_id, tool_id, tool_config, created_at)
                      VALUES (?1, ?2, ?3, ?4, ?5)",
-                    params![assignment_id, persona_id, tool_def_id, Option::<String>::None, now],
+                    params![
+                        assignment_id,
+                        persona_id,
+                        tool_def_id,
+                        Option::<String>::None,
+                        now
+                    ],
                 ) {
                     Ok(_) => tools_created += 1,
                     Err(e) => {
@@ -291,10 +307,7 @@ pub fn create_persona_atomically(
 
     if total_requested > 0 && total_created == 0 && !entity_errors.is_empty() {
         // Complete failure -- roll back everything
-        let error_summary = format!(
-            "All {} entities failed to create",
-            entity_errors.len()
-        );
+        let error_summary = format!("All {} entities failed to create", entity_errors.len());
         tx.rollback().map_err(AppError::Database)?;
 
         record_import_tx_status(
@@ -308,7 +321,11 @@ pub fn create_persona_atomically(
         return Err(AppError::Validation(format!(
             "Import rolled back: {}. Errors: {}",
             error_summary,
-            entity_errors.iter().map(|e| format!("{} '{}': {}", e.entity_type, e.entity_name, e.error)).collect::<Vec<_>>().join("; "),
+            entity_errors
+                .iter()
+                .map(|e| format!("{} '{}': {}", e.entity_type, e.entity_name, e.error))
+                .collect::<Vec<_>>()
+                .join("; "),
         )));
     }
 
@@ -413,8 +430,7 @@ fn register_connector_services_txn(
                 let prefix_matches: Vec<_> = connectors
                     .iter()
                     .filter(|(_, name, _)| {
-                        name.starts_with(cred_type.as_str())
-                            || cred_type.starts_with(name.as_str())
+                        name.starts_with(cred_type.as_str()) || cred_type.starts_with(name.as_str())
                     })
                     .collect();
                 if prefix_matches.len() == 1 {
@@ -489,11 +505,15 @@ pub fn confirm_n8n_persona_draft(
 
                 if was_rolled_back {
                     // Clear the stale persona_id so we can retry
-                    let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
-                        persona_id: Some(None),
-                        status: Some(SessionStatus::Transforming),
-                        ..Default::default()
-                    });
+                    let _ = session_repo::update(
+                        &state.db,
+                        sid,
+                        &UpdateN8nSessionInput {
+                            persona_id: Some(None),
+                            status: Some(SessionStatus::Transforming),
+                            ..Default::default()
+                        },
+                    );
                     tracing::info!(
                         session_id = %sid,
                         persona_id = %existing_pid,
@@ -519,25 +539,28 @@ pub fn confirm_n8n_persona_draft(
     let draft = normalize_n8n_persona_draft(draft, "Imported n8n Workflow");
 
     if draft.system_prompt.trim().is_empty() {
-        return Err(AppError::Validation("Draft system_prompt cannot be empty".into()));
+        return Err(AppError::Validation(
+            "Draft system_prompt cannot be empty".into(),
+        ));
     }
 
     // Perform atomic import
-    let (response, import_result) = create_persona_atomically(
-        &state.db,
-        &draft,
-        session_id.as_deref(),
-    )?;
+    let (response, import_result) =
+        create_persona_atomically(&state.db, &draft, session_id.as_deref())?;
 
     // Stamp the persona_id on the session (outside the transaction -- the persona is committed)
     if let Some(ref sid) = session_id {
         if let Some(persona_val) = response.get("persona") {
             if let Some(pid) = persona_val.get("id").and_then(|v| v.as_str()) {
-                let _ = session_repo::update(&state.db, sid, &UpdateN8nSessionInput {
-                    persona_id: Some(Some(pid.to_string())),
-                    status: Some(SessionStatus::Confirmed),
-                    ..Default::default()
-                });
+                let _ = session_repo::update(
+                    &state.db,
+                    sid,
+                    &UpdateN8nSessionInput {
+                        persona_id: Some(Some(pid.to_string())),
+                        status: Some(SessionStatus::Confirmed),
+                        ..Default::default()
+                    },
+                );
             }
         }
     }

@@ -5,7 +5,7 @@
 //! "code-optimizer") and outputs structured idea protocol messages. Ideas are
 //! persisted as DevIdea records. Progress streams via Tauri events.
 
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use serde::Deserialize;
 use serde_json::json;
@@ -13,6 +13,37 @@ use tauri::{Emitter, State};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
+
+/// Bounded ring buffer for captured Claude CLI stderr. The buffer holds
+/// the most recent ~32 KB of stderr so an auth error / rate limit / missing
+/// `scan_agents.toml` failure can be attributed in the AppError message
+/// instead of being drained and dropped silently.
+const STDERR_RING_CAP: usize = 32 * 1024;
+
+/// Append a line to a bounded ring buffer (drop oldest bytes when over cap).
+fn push_stderr_line(buf: &Mutex<String>, line: &str) {
+    if let Ok(mut s) = buf.lock() {
+        s.push_str(line);
+        if !line.ends_with('\n') {
+            s.push('\n');
+        }
+        if s.len() > STDERR_RING_CAP {
+            // Drop oldest bytes; align on a UTF-8 boundary so we don't
+            // truncate mid-char.
+            let drop = s.len() - STDERR_RING_CAP;
+            let mut idx = drop;
+            while idx < s.len() && !s.is_char_boundary(idx) {
+                idx += 1;
+            }
+            s.drain(..idx);
+        }
+    }
+}
+
+/// Snapshot the captured stderr buffer for inclusion in error messages.
+fn snapshot_stderr(buf: &Mutex<String>) -> String {
+    buf.lock().map(|s| s.clone()).unwrap_or_default()
+}
 
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
@@ -53,8 +84,7 @@ static SCAN_AGENTS: OnceLock<Vec<ScanAgentMeta>> = OnceLock::new();
 fn get_scan_agents() -> &'static Vec<ScanAgentMeta> {
     SCAN_AGENTS.get_or_init(|| {
         let raw = include_str!("scan_agents.toml");
-        let registry: ScanAgentRegistry =
-            toml::from_str(raw).expect("scan_agents.toml is invalid");
+        let registry: ScanAgentRegistry = toml::from_str(raw).expect("scan_agents.toml is invalid");
         registry.agents
     })
 }
@@ -80,6 +110,10 @@ fn build_idea_scan_prompt(
         .map(|s| format!("\n## Existing Context Map\n{s}\n"))
         .unwrap_or_default();
 
+    // The `category` token list MUST stay in sync with `db::models::IdeaCategory`.
+    // That enum is the canonical vocabulary; legacy values from older code
+    // paths or LLM hallucinations are remapped at insert time by
+    // `repo::create_idea`. See `db::models::dev_tools` for the mapping.
     format!(
         r#"# Idea Scanner
 
@@ -107,7 +141,7 @@ Output each idea as a JSON object on its own line:
 
 Field guidelines:
 - **scan_type**: The agent key that found this (e.g., "security-auditor")
-- **category**: One of: technical, user, business, mastermind
+- **category**: One of: technical, user, business, mastermind (canonical IdeaCategory enum)
 - **title**: Concise action item (max ~80 chars)
 - **description**: What to do and how (2-3 sentences)
 - **reasoning**: Evidence from the codebase that supports this idea
@@ -154,10 +188,39 @@ enum IdeaProtocol {
     },
 }
 
+/// Score fields (effort/impact/risk) must be present and inside 1..=10. The LLM
+/// can hallucinate any integer (negative, 0, 999, INT64_MAX) and that value
+/// would otherwise be persisted unchanged. Returns `None` if missing or out of
+/// range so the caller can drop the idea entirely.
+fn validate_score(idea: &serde_json::Value, field: &str) -> Option<i32> {
+    let raw = idea.get(field).and_then(|v| v.as_i64())?;
+    if (1..=10).contains(&raw) {
+        Some(raw as i32)
+    } else {
+        None
+    }
+}
+
 fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
     let val: serde_json::Value = serde_json::from_str(text).ok()?;
 
     if let Some(idea) = val.get("scan_idea") {
+        let title = idea.get("title")?.as_str()?.to_string();
+        let effort = validate_score(idea, "effort");
+        let impact = validate_score(idea, "impact");
+        let risk = validate_score(idea, "risk");
+
+        if effort.is_none() || impact.is_none() || risk.is_none() {
+            tracing::warn!(
+                title = %title,
+                effort = ?idea.get("effort"),
+                impact = ?idea.get("impact"),
+                risk = ?idea.get("risk"),
+                "Dropping idea with missing or out-of-range score (must be 1..=10)"
+            );
+            return None;
+        }
+
         return Some(IdeaProtocol::Idea {
             project_id: idea.get("project_id")?.as_str()?.to_string(),
             scan_type: idea.get("scan_type")?.as_str()?.to_string(),
@@ -166,7 +229,7 @@ fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
                 .and_then(|c| c.as_str())
                 .unwrap_or("technical")
                 .to_string(),
-            title: idea.get("title")?.as_str()?.to_string(),
+            title,
             description: idea
                 .get("description")
                 .and_then(|d| d.as_str())
@@ -175,15 +238,9 @@ fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
                 .get("reasoning")
                 .and_then(|r| r.as_str())
                 .map(|s| s.to_string()),
-            effort: idea
-                .get("effort")
-                .and_then(|v| v.as_i64())
-                .map(|v| v as i32),
-            impact: idea
-                .get("impact")
-                .and_then(|v| v.as_i64())
-                .map(|v| v as i32),
-            risk: idea.get("risk").and_then(|v| v.as_i64()).map(|v| v as i32),
+            effort,
+            impact,
+            risk,
         });
     }
 
@@ -460,12 +517,28 @@ async fn run_idea_scan(
         });
     }
 
-    // Drain stderr
+    // Capture stderr into a bounded ring buffer AND tee it to the live log
+    // panel so the user can see auth errors / rate-limit notices / missing
+    // config in real time. The buffer is also attached to any Err the
+    // outer scan returns, turning "scan timed out" into actionable detail.
+    let stderr_ring: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     if let Some(stderr) = child.stderr.take() {
+        let ring = stderr_ring.clone();
+        let app_clone = app.clone();
+        let scan_id_clone = scan_id.to_string();
         tokio::spawn(async move {
-            let mut reader = BufReader::new(stderr);
-            let mut buf = String::new();
-            let _ = tokio::io::AsyncReadExt::read_to_string(&mut reader, &mut buf).await;
+            let mut reader = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = reader.next_line().await {
+                if line.trim().is_empty() {
+                    continue;
+                }
+                push_stderr_line(&ring, &line);
+                IDEA_SCAN_JOBS.emit_line(
+                    &app_clone,
+                    &scan_id_clone,
+                    format!("[stderr] {line}"),
+                );
+            }
         });
     }
 
@@ -584,11 +657,7 @@ async fn run_idea_scan(
     if stream_result.is_err() {
         // Timeout fired — explicitly kill the child to prevent zombie processes.
         let _ = child.kill().await;
-        let _ = tokio::time::timeout(
-            std::time::Duration::from_secs(5),
-            child.wait(),
-        )
-        .await;
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
 
         // Smart timeout handling: if ideas were created, treat as partial success.
         if ideas_created > 0 {
@@ -601,12 +670,45 @@ async fn run_idea_scan(
             );
             return Ok(ideas_created);
         }
-        return Err(AppError::Internal(
-            "Idea scan timed out after 20 minutes with no ideas created".into(),
-        ));
+        // Attach captured stderr so the user can attribute the timeout —
+        // an auth error / rate limit / missing config produces stderr
+        // long before the 20-minute timeout fires, and we now surface it.
+        let stderr_tail = snapshot_stderr(&stderr_ring);
+        let detail = if stderr_tail.is_empty() {
+            String::from("Idea scan timed out after 20 minutes with no ideas created (no Claude CLI stderr captured)")
+        } else {
+            format!(
+                "Idea scan timed out after 20 minutes with no ideas created. Claude CLI stderr (last {} bytes):\n{stderr_tail}",
+                stderr_tail.len()
+            )
+        };
+        IDEA_SCAN_JOBS.emit_line(app, scan_id, format!("[Error] {detail}"));
+        return Err(AppError::Internal(detail));
     }
 
-    let _ = child.wait().await;
+    let exit = child.wait().await;
+    // If the CLI exited non-zero AND we have nothing to show for it, treat
+    // it as a failure even if stdout closed normally — and attach stderr
+    // so the user can see the cause.
+    if let Ok(status) = exit {
+        if !status.success() && ideas_created == 0 {
+            let stderr_tail = snapshot_stderr(&stderr_ring);
+            let detail = if stderr_tail.is_empty() {
+                format!(
+                    "Claude CLI exited with status {} and produced no ideas (no stderr captured)",
+                    status.code().unwrap_or(-1)
+                )
+            } else {
+                format!(
+                    "Claude CLI exited with status {} and produced no ideas. stderr (last {} bytes):\n{stderr_tail}",
+                    status.code().unwrap_or(-1),
+                    stderr_tail.len()
+                )
+            };
+            IDEA_SCAN_JOBS.emit_line(app, scan_id, format!("[Error] {detail}"));
+            return Err(AppError::Internal(detail));
+        }
+    }
 
     IDEA_SCAN_JOBS.emit_line(
         app,

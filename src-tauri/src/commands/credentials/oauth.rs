@@ -1,27 +1,27 @@
-use std::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine as _;
+use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use hmac::{Hmac, Mac};
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use tauri::State;
-use tokio::io::AsyncWriteExt;
 use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpListener;
 use url::Url;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
-use std::sync::Arc;
 use crate::db::repos::resources::audit_log;
 use crate::engine::crypto::{EncryptedToken, SecureString};
 use crate::error::AppError;
 use crate::ipc_auth::{require_privileged, require_privileged_sync};
 use crate::AppState;
+use std::sync::Arc;
 
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);
@@ -172,7 +172,10 @@ where
                 // Check for end-of-headers marker in the data read so far.
                 // Only need to scan from where the new data could complete the pattern.
                 let search_start = total_read.saturating_sub(n + 3);
-                if buffer[search_start..total_read].windows(4).any(|w| w == b"\r\n\r\n") {
+                if buffer[search_start..total_read]
+                    .windows(4)
+                    .any(|w| w == b"\r\n\r\n")
+                {
                     break;
                 }
             }
@@ -185,10 +188,18 @@ where
 
             let outcome = match parsed_url {
                 Ok(url) => {
-                    let code = url.query_pairs().find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
-                    let oauth_error = url.query_pairs().find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
-                    let error_desc = url.query_pairs().find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
-                    let callback_state = url.query_pairs().find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
+                    let code = url
+                        .query_pairs()
+                        .find_map(|(k, v)| (k == "code").then(|| v.into_owned()));
+                    let oauth_error = url
+                        .query_pairs()
+                        .find_map(|(k, v)| (k == "error").then(|| v.into_owned()));
+                    let error_desc = url
+                        .query_pairs()
+                        .find_map(|(k, v)| (k == "error_description").then(|| v.into_owned()));
+                    let callback_state = url
+                        .query_pairs()
+                        .find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
 
                     // Validate state: must match expected value AND pass HMAC verification
                     // to prevent both CSRF and cross-instance replay attacks.
@@ -203,7 +214,9 @@ where
                         );
                     }
                     if !hmac_valid {
-                        tracing::warn!("OAuth state HMAC/timestamp verification failed for expected_state");
+                        tracing::warn!(
+                            "OAuth state HMAC/timestamp verification failed for expected_state"
+                        );
                     }
                     if !strings_match || !hmac_valid {
                         OAuthCallbackOutcome::Error(
@@ -243,16 +256,16 @@ where
 
             outcome
         }
-        Ok(Err(e)) => OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {e}")),
+        Ok(Err(e)) => {
+            OAuthCallbackOutcome::AcceptFailed(format!("OAuth callback server failed: {e}"))
+        }
         Err(_) => OAuthCallbackOutcome::Timeout,
     }
 }
 
 /// Identity scopes required in every Google OAuth request.
-const GOOGLE_IDENTITY_SCOPES: &[&str] = &[
-    "openid",
-    "https://www.googleapis.com/auth/userinfo.email",
-];
+const GOOGLE_IDENTITY_SCOPES: &[&str] =
+    &["openid", "https://www.googleapis.com/auth/userinfo.email"];
 
 /// Default Google OAuth scopes for the generic/workspace connector.
 /// This is the single source of truth -- the frontend delegates scope
@@ -280,17 +293,24 @@ enum OAuthSessionStatus {
 
 impl OAuthSessionStatus {
     /// Transition to a successful terminal state.
-    fn complete() -> Self { Self::Success }
+    fn complete() -> Self {
+        Self::Success
+    }
     /// Transition to a failed terminal state.
-    fn fail() -> Self { Self::Error }
+    fn fail() -> Self {
+        Self::Error
+    }
     /// Whether the session has reached a final state and should be cleaned up.
-    fn is_terminal(self) -> bool { matches!(self, Self::Success | Self::Error) }
+    fn is_terminal(self) -> bool {
+        matches!(self, Self::Success | Self::Error)
+    }
 }
 
 impl Zeroize for OAuthSessionStatus {
-    fn zeroize(&mut self) { *self = Self::Pending; }
+    fn zeroize(&mut self) {
+        *self = Self::Pending;
+    }
 }
-
 
 fn now_unix_secs() -> u64 {
     SystemTime::now()
@@ -318,9 +338,12 @@ fn evict_oldest_sessions<V>(
     for (key, _) in entries.into_iter().take(to_evict) {
         sessions.remove(&key);
     }
-    tracing::info!(evicted = to_evict, remaining = sessions.len(), "Evicted oldest OAuth sessions (cap: {max_size})");
+    tracing::info!(
+        evicted = to_evict,
+        remaining = sessions.len(),
+        "Evicted oldest OAuth sessions (cap: {max_size})"
+    );
 }
-
 
 // -- Token encryption helpers ------------------------------------
 
@@ -375,7 +398,9 @@ pub async fn start_google_credential_oauth(
         .port();
 
     {
-        let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
+        let mut sessions = oauth_sessions()
+            .lock()
+            .map_err(|_| AppError::Internal("Lock poisoned".into()))?;
         sessions.insert(
             session_id.clone(),
             OAuthSession {
@@ -424,8 +449,12 @@ pub async fn start_google_credential_oauth(
     }
 
     let _ = audit_log::insert(
-        &state.db, &session_id, &connector_name,
-        "oauth_initiated", None, None,
+        &state.db,
+        &session_id,
+        &connector_name,
+        "oauth_initiated",
+        None,
+        None,
         Some(&format!("google oauth for {connector_name}")),
     );
 
@@ -464,9 +493,8 @@ pub async fn start_google_credential_oauth(
         )
         .await;
 
-        let is_success = apply_oauth_outcome(
-            &session_id_clone, outcome, &db_pool, &audit_connector,
-        );
+        let is_success =
+            apply_oauth_outcome(&session_id_clone, outcome, &db_pool, &audit_connector);
 
         // Invalidate auth detection cache so the negotiator sees fresh results immediately
         if is_success {
@@ -513,7 +541,10 @@ fn default_google_scopes_for_connector(connector_name: &str) -> Vec<String> {
             "https://www.googleapis.com/auth/spreadsheets.readonly".into(),
             "https://www.googleapis.com/auth/drive.file".into(),
         ],
-        _ => DEFAULT_GOOGLE_OAUTH_SCOPES.iter().map(|s| (*s).to_string()).collect(),
+        _ => DEFAULT_GOOGLE_OAUTH_SCOPES
+            .iter()
+            .map(|s| (*s).to_string())
+            .collect(),
     };
     // Always include identity scopes regardless of connector
     for s in GOOGLE_IDENTITY_SCOPES {
@@ -651,7 +682,12 @@ static PROVIDER_REGISTRY: &[OAuthProviderConfig] = &[
         token_url: "https://auth.atlassian.com/oauth/token",
         supports_pkce: true,
         extra_auth_params: &[("audience", "api.atlassian.com"), ("prompt", "consent")],
-        default_scopes: &["read:jira-work", "write:jira-work", "read:confluence-content.all", "offline_access"],
+        default_scopes: &[
+            "read:jira-work",
+            "write:jira-work",
+            "read:confluence-content.all",
+            "offline_access",
+        ],
     },
     OAuthProviderConfig {
         id: "salesforce",
@@ -728,7 +764,12 @@ static PROVIDER_REGISTRY: &[OAuthProviderConfig] = &[
         token_url: "https://api.ramp.com/developer/v1/token",
         supports_pkce: true,
         extra_auth_params: &[],
-        default_scopes: &["transactions:read", "cards:read", "users:read", "reimbursements:read"],
+        default_scopes: &[
+            "transactions:read",
+            "cards:read",
+            "users:read",
+            "reimbursements:read",
+        ],
     },
 ];
 
@@ -747,14 +788,14 @@ struct OidcDiscovery {
 
 /// Validate that a URL is safe for outbound requests (HTTPS, no private IPs).
 fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
-    let parsed = url::Url::parse(raw)
-        .map_err(|e| format!("Invalid issuer URL: {e}"))?;
+    let parsed = url::Url::parse(raw).map_err(|e| format!("Invalid issuer URL: {e}"))?;
 
     if parsed.scheme() != "https" {
         return Err("OIDC issuer must use HTTPS".into());
     }
 
-    let host = parsed.host_str()
+    let host = parsed
+        .host_str()
         .ok_or_else(|| "OIDC issuer URL has no host".to_string())?;
 
     // Block localhost hostnames
@@ -772,11 +813,11 @@ fn validate_issuer_url(raw: &str) -> Result<url::Url, String> {
                 || v4.is_link_local()        // 169.254/16
                 || v4.is_broadcast()         // 255.255.255.255
                 || v4.is_unspecified()       // 0.0.0.0
-                || v4.octets()[0] == 100 && (v4.octets()[1] & 0xC0) == 64  // 100.64/10 (CGN)
+                || v4.octets()[0] == 100 && (v4.octets()[1] & 0xC0) == 64 // 100.64/10 (CGN)
             }
             std::net::IpAddr::V6(v6) => {
                 v6.is_loopback()             // ::1
-                || v6.is_unspecified()       // ::
+                || v6.is_unspecified() // ::
             }
         };
         if is_private {
@@ -877,7 +918,11 @@ async fn discover_oidc(issuer_url: &str) -> Result<OidcDiscovery, String> {
     // Validate that discovered endpoints belong to the same domain as the issuer.
     // This prevents a tampered discovery response from redirecting authorization
     // codes or client secrets to attacker-controlled servers.
-    validate_endpoint_domain(&parsed, &discovery.authorization_endpoint, "authorization_endpoint")?;
+    validate_endpoint_domain(
+        &parsed,
+        &discovery.authorization_endpoint,
+        "authorization_endpoint",
+    )?;
     validate_endpoint_domain(&parsed, &discovery.token_endpoint, "token_endpoint")?;
 
     Ok(discovery)
@@ -914,47 +959,46 @@ fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
     static CACHED: std::sync::OnceLock<[u8; 32]> = std::sync::OnceLock::new();
 
     *CACHED.get_or_init(|| {
-    #[cfg(feature = "desktop")]
-    {
-        const SERVICE: &str = "personas-desktop";
-        const KEY: &str = "oauth-state-hmac-secret";
+        #[cfg(feature = "desktop")]
+        {
+            const SERVICE: &str = "personas-desktop";
+            const KEY: &str = "oauth-state-hmac-secret";
 
-        // Try to load existing secret from keyring
-        if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
-            if let Ok(b64) = entry.get_password() {
-                if let Ok(bytes) = URL_SAFE_NO_PAD.decode(&b64) {
-                    if bytes.len() == 32 {
-                        let mut arr = [0u8; 32];
-                        arr.copy_from_slice(&bytes);
-                        return arr;
+            // Try to load existing secret from keyring
+            if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
+                if let Ok(b64) = entry.get_password() {
+                    if let Ok(bytes) = URL_SAFE_NO_PAD.decode(&b64) {
+                        if bytes.len() == 32 {
+                            let mut arr = [0u8; 32];
+                            arr.copy_from_slice(&bytes);
+                            return arr;
+                        }
                     }
                 }
+                tracing::warn!("OAuth HMAC secret not found in keyring — generating ephemeral");
+            } else {
+                tracing::warn!("Failed to access keyring for OAuth HMAC secret");
             }
-            tracing::warn!("OAuth HMAC secret not found in keyring — generating ephemeral");
-        } else {
-            tracing::warn!("Failed to access keyring for OAuth HMAC secret");
+
+            // Generate a new secret
+            let mut secret = [0u8; 32];
+            OsRng.fill_bytes(&mut secret);
+
+            // Persist to keyring (best-effort; if it fails we still use the ephemeral secret)
+            if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
+                let _ = entry.set_password(&URL_SAFE_NO_PAD.encode(secret));
+            }
+
+            secret
         }
 
-        // Generate a new secret
-        let mut secret = [0u8; 32];
-        OsRng.fill_bytes(&mut secret);
-
-        // Persist to keyring (best-effort; if it fails we still use the ephemeral secret)
-        if let Ok(entry) = keyring::Entry::new(SERVICE, KEY) {
-            let _ = entry.set_password(&URL_SAFE_NO_PAD.encode(secret));
+        #[cfg(not(feature = "desktop"))]
+        {
+            let mut s = [0u8; 32];
+            OsRng.fill_bytes(&mut s);
+            s
         }
-
-        secret
-    }
-
-    #[cfg(not(feature = "desktop"))]
-    {
-        let mut s = [0u8; 32];
-        OsRng.fill_bytes(&mut s);
-        s
-    }
     })
-
 }
 
 type HmacSha256 = Hmac<Sha256>;
@@ -978,8 +1022,7 @@ fn generate_oauth_state() -> String {
     let message = format!("{nonce}.{timestamp}");
 
     let secret = get_or_create_oauth_hmac_secret();
-    let mut mac = HmacSha256::new_from_slice(&secret)
-        .expect("HMAC accepts any key size");
+    let mut mac = HmacSha256::new_from_slice(&secret).expect("HMAC accepts any key size");
     mac.update(message.as_bytes());
     let tag = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
 
@@ -1128,32 +1171,52 @@ fn apply_oauth_outcome(
                 s.expires_in = tokens.expires_in;
                 s.extra = tokens.extra;
                 let _ = audit_log::insert(
-                    db_pool, session_id, audit_subject,
-                    "oauth_completed", None, None, Some(&format!("oauth succeeded for {audit_subject}")),
+                    db_pool,
+                    session_id,
+                    audit_subject,
+                    "oauth_completed",
+                    None,
+                    None,
+                    Some(&format!("oauth succeeded for {audit_subject}")),
                 );
             }
             OAuthCallbackOutcome::Error(ref e) => {
                 s.status = OAuthSessionStatus::fail();
                 s.error = Some(e.clone());
                 let _ = audit_log::insert(
-                    db_pool, session_id, audit_subject,
-                    "oauth_failed", None, None, Some(e),
+                    db_pool,
+                    session_id,
+                    audit_subject,
+                    "oauth_failed",
+                    None,
+                    None,
+                    Some(e),
                 );
             }
             OAuthCallbackOutcome::Timeout => {
                 s.status = OAuthSessionStatus::fail();
                 s.error = Some("OAuth callback timed out".into());
                 let _ = audit_log::insert(
-                    db_pool, session_id, audit_subject,
-                    "oauth_failed", None, None, Some("callback timed out"),
+                    db_pool,
+                    session_id,
+                    audit_subject,
+                    "oauth_failed",
+                    None,
+                    None,
+                    Some("callback timed out"),
                 );
             }
             OAuthCallbackOutcome::AcceptFailed(ref e) => {
                 s.status = OAuthSessionStatus::fail();
                 s.error = Some(e.clone());
                 let _ = audit_log::insert(
-                    db_pool, session_id, audit_subject,
-                    "oauth_failed", None, None, Some(e),
+                    db_pool,
+                    session_id,
+                    audit_subject,
+                    "oauth_failed",
+                    None,
+                    None,
+                    Some(e),
                 );
             }
         }
@@ -1244,9 +1307,8 @@ pub async fn start_oauth(
     require_privileged(&state, "start_oauth").await?;
 
     // Resolve app-managed credentials when user doesn't provide their own.
-    let (client_id, client_secret) = resolve_universal_oauth_credentials(
-        &provider_id, client_id, client_secret,
-    )?;
+    let (client_id, client_secret) =
+        resolve_universal_oauth_credentials(&provider_id, client_id, client_secret)?;
     let client_secret: Option<SecureString> = client_secret.map(SecureString::new);
 
     cleanup_oauth_sessions();
@@ -1258,19 +1320,39 @@ pub async fn start_oauth(
                 provider.authorize_url.to_string(),
                 provider.token_url.to_string(),
                 use_pkce.unwrap_or(provider.supports_pkce),
-                provider.default_scopes.iter().map(|s| (*s).to_string()).collect::<Vec<_>>(),
-                provider.extra_auth_params.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect::<Vec<_>>(),
+                provider
+                    .default_scopes
+                    .iter()
+                    .map(|s| (*s).to_string())
+                    .collect::<Vec<_>>(),
+                provider
+                    .extra_auth_params
+                    .iter()
+                    .map(|(k, v)| (k.to_string(), v.to_string()))
+                    .collect::<Vec<_>>(),
             )
         } else if let Some(issuer) = oidc_issuer.as_deref().filter(|s| !s.is_empty()) {
-            let discovery = discover_oidc(issuer)
-                .await
-                .map_err(AppError::Internal)?;
+            let discovery = discover_oidc(issuer).await.map_err(AppError::Internal)?;
             let pkce = use_pkce.unwrap_or_else(|| {
-                discovery.code_challenge_methods_supported.contains(&"S256".to_string())
+                discovery
+                    .code_challenge_methods_supported
+                    .contains(&"S256".to_string())
             });
-            (discovery.authorization_endpoint, discovery.token_endpoint, pkce, vec!["openid".to_string()], vec![])
+            (
+                discovery.authorization_endpoint,
+                discovery.token_endpoint,
+                pkce,
+                vec!["openid".to_string()],
+                vec![],
+            )
         } else if let (Some(auth), Some(tok)) = (authorize_url.as_deref(), token_url.as_deref()) {
-            (auth.to_string(), tok.to_string(), use_pkce.unwrap_or(false), vec![], vec![])
+            (
+                auth.to_string(),
+                tok.to_string(),
+                use_pkce.unwrap_or(false),
+                vec![],
+                vec![],
+            )
         } else {
             return Err(AppError::Validation(
                 "Unknown provider. Supply authorize_url + token_url, or an oidc_issuer for auto-discovery.".into(),
@@ -1337,24 +1419,33 @@ pub async fn start_oauth(
     let session_id = format!("oauth_{}_{}", now_unix_secs(), uuid::Uuid::new_v4());
 
     {
-        let mut sessions = oauth_sessions().lock().map_err(|_| AppError::Internal("Lock poisoned".into()))?;
-        sessions.insert(session_id.clone(), OAuthSession {
-            status: OAuthSessionStatus::Pending,
-            provider_id: provider_id.clone(),
-            access_token: None,
-            refresh_token: None,
-            scope: None,
-            token_type: None,
-            expires_in: None,
-            extra: None,
-            error: None,
-            created_at: now_unix_secs(),
-        });
+        let mut sessions = oauth_sessions()
+            .lock()
+            .map_err(|_| AppError::Internal("Lock poisoned".into()))?;
+        sessions.insert(
+            session_id.clone(),
+            OAuthSession {
+                status: OAuthSessionStatus::Pending,
+                provider_id: provider_id.clone(),
+                access_token: None,
+                refresh_token: None,
+                scope: None,
+                token_type: None,
+                expires_in: None,
+                extra: None,
+                error: None,
+                created_at: now_unix_secs(),
+            },
+        );
     }
 
     let _ = audit_log::insert(
-        &state.db, &session_id, &provider_id,
-        "oauth_initiated", None, None,
+        &state.db,
+        &session_id,
+        &provider_id,
+        "oauth_initiated",
+        None,
+        None,
         Some(&format!("universal oauth for provider '{provider_id}'")),
     );
 
@@ -1396,9 +1487,7 @@ pub async fn start_oauth(
         )
         .await;
 
-        let is_success = apply_oauth_outcome(
-            &sid, outcome, &db_pool, &audit_provider,
-        );
+        let is_success = apply_oauth_outcome(&sid, outcome, &db_pool, &audit_provider);
 
         // Invalidate auth detection cache so the negotiator sees fresh results immediately
         if is_success {
@@ -1445,9 +1534,7 @@ pub async fn refresh_oauth_token(
     } else if let Some(url) = token_url.filter(|s| !s.is_empty()) {
         url
     } else if let Some(issuer) = oidc_issuer.filter(|s| !s.is_empty()) {
-        let discovery = discover_oidc(&issuer)
-            .await
-            .map_err(AppError::Internal)?;
+        let discovery = discover_oidc(&issuer).await.map_err(AppError::Internal)?;
         discovery.token_endpoint
     } else {
         return Err(AppError::Validation(
@@ -1469,8 +1556,12 @@ pub async fn refresh_oauth_token(
         Err(e) => {
             if let Some(status) = e.status {
                 let _ = audit_log::insert(
-                    &state.db, &provider_id, &provider_id,
-                    "token_refresh_failed", None, None,
+                    &state.db,
+                    &provider_id,
+                    &provider_id,
+                    "token_refresh_failed",
+                    None,
+                    None,
                     Some(&format!("HTTP {status}")),
                 );
             }
@@ -1479,8 +1570,12 @@ pub async fn refresh_oauth_token(
     };
 
     let _ = audit_log::insert(
-        &state.db, &provider_id, &provider_id,
-        "token_refreshed", None, None,
+        &state.db,
+        &provider_id,
+        &provider_id,
+        "token_refreshed",
+        None,
+        None,
         Some(&format!("provider '{provider_id}'")),
     );
 
@@ -1531,21 +1626,46 @@ async fn exchange_oauth_code(
         .map_err(|e| e.message)?;
 
     Ok(OAuthTokenResult {
-        access_token: value.get("access_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
-        refresh_token: value.get("refresh_token").and_then(|v| v.as_str()).map(|s| SecureString::new(s.to_string())),
-        scope: value.get("scope").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        token_type: value.get("token_type").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        access_token: value
+            .get("access_token")
+            .and_then(|v| v.as_str())
+            .map(|s| SecureString::new(s.to_string())),
+        refresh_token: value
+            .get("refresh_token")
+            .and_then(|v| v.as_str())
+            .map(|s| SecureString::new(s.to_string())),
+        scope: value
+            .get("scope")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
+        token_type: value
+            .get("token_type")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string()),
         expires_in: value.get("expires_in").and_then(|v| v.as_u64()),
         extra: {
             // Capture any provider-specific extra fields (e.g. Slack's team, Atlassian's cloud IDs)
-            let known_keys = ["access_token", "refresh_token", "scope", "token_type", "expires_in"];
-            let extras: serde_json::Map<String, serde_json::Value> = value.as_object()
-                .map(|obj| obj.iter()
-                    .filter(|(k, _)| !known_keys.contains(&k.as_str()))
-                    .map(|(k, v)| (k.clone(), v.clone()))
-                    .collect())
+            let known_keys = [
+                "access_token",
+                "refresh_token",
+                "scope",
+                "token_type",
+                "expires_in",
+            ];
+            let extras: serde_json::Map<String, serde_json::Value> = value
+                .as_object()
+                .map(|obj| {
+                    obj.iter()
+                        .filter(|(k, _)| !known_keys.contains(&k.as_str()))
+                        .map(|(k, v)| (k.clone(), v.clone()))
+                        .collect()
+                })
                 .unwrap_or_default();
-            if extras.is_empty() { None } else { Some(serde_json::Value::Object(extras)) }
+            if extras.is_empty() {
+                None
+            } else {
+                Some(serde_json::Value::Object(extras))
+            }
         },
     })
 }

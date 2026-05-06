@@ -13,9 +13,8 @@ use crate::db::models::{PlatformDefinition, PlatformFormat};
 // Cached built-in platform definitions (built once, reused on every IPC call)
 // ============================================================================
 
-static BUILTIN_DEFS: LazyLock<Vec<PlatformDefinition>> = LazyLock::new(|| {
-    vec![builtin_n8n(), builtin_zapier(), builtin_make()]
-});
+static BUILTIN_DEFS: LazyLock<Vec<PlatformDefinition>> =
+    LazyLock::new(|| vec![builtin_n8n(), builtin_zapier(), builtin_make()]);
 
 // ============================================================================
 // Built-in platform definitions
@@ -70,8 +69,13 @@ pub fn builtin_n8n() -> PlatformDefinition {
         ],
         credential_consolidation: vec![
             cc(
-                &["gmailOAuth2", "googleSheetsOAuth2Api", "googleCalendarOAuth2Api",
-                  "googleDriveOAuth2Api", "google*"],
+                &[
+                    "gmailOAuth2",
+                    "googleSheetsOAuth2Api",
+                    "googleCalendarOAuth2Api",
+                    "googleDriveOAuth2Api",
+                    "google*",
+                ],
                 "google",
                 "All Google OAuth credential types -> single 'google' connector",
             ),
@@ -81,8 +85,11 @@ pub fn builtin_n8n() -> PlatformDefinition {
                 "All Slack credential types -> single 'slack' connector",
             ),
             cc(
-                &["microsoftOutlookOAuth2Api", "microsoftOneDriveOAuth2Api",
-                  "microsoftTeamsOAuth2Api"],
+                &[
+                    "microsoftOutlookOAuth2Api",
+                    "microsoftOneDriveOAuth2Api",
+                    "microsoftTeamsOAuth2Api",
+                ],
                 "microsoft",
                 "All Microsoft credential types -> single 'microsoft' connector",
             ),
@@ -107,26 +114,33 @@ pub fn builtin_n8n() -> PlatformDefinition {
             nr("function", "utility"),
             nr("code$", "utility"),
         ],
-        excluded_credential_types: vec![
-            "anthropicApi".into(),
-            "openAiApi".into(),
-        ],
+        excluded_credential_types: vec!["anthropicApi".into(), "openAiApi".into()],
         protocol_map_rules: vec![
-            pm("Send email, post to Slack, modify database, or any externally-visible action",
-               "manual_review",
-               "Node performs external side-effects"),
-            pm("Set variable, store data, extract information",
-               "agent_memory",
-               "Node captures or stores data for reuse"),
-            pm("Wait node, Approval node, IF node requiring human judgment",
-               "manual_review",
-               "Node pauses for human confirmation"),
-            pm("Webhook output, Execute Workflow, chain to other workflow",
-               "emit_event",
-               "Node triggers downstream workflows"),
-            pm("Notification node, alert node, status update",
-               "user_message",
-               "Node sends notifications to users"),
+            pm(
+                "Send email, post to Slack, modify database, or any externally-visible action",
+                "manual_review",
+                "Node performs external side-effects",
+            ),
+            pm(
+                "Set variable, store data, extract information",
+                "agent_memory",
+                "Node captures or stores data for reuse",
+            ),
+            pm(
+                "Wait node, Approval node, IF node requiring human judgment",
+                "manual_review",
+                "Node pauses for human confirmation",
+            ),
+            pm(
+                "Webhook output, Execute Workflow, chain to other workflow",
+                "emit_event",
+                "Node triggers downstream workflows",
+            ),
+            pm(
+                "Notification node, alert node, status update",
+                "user_message",
+                "Node sends notifications to users",
+            ),
         ],
         is_builtin: true,
     }
@@ -171,8 +185,15 @@ pub fn builtin_zapier() -> PlatformDefinition {
         ],
         credential_consolidation: vec![
             cc(
-                &["gmail", "google-mail", "google-sheets", "google-drive",
-                  "google-calendar", "google-contacts", "google*"],
+                &[
+                    "gmail",
+                    "google-mail",
+                    "google-sheets",
+                    "google-drive",
+                    "google-calendar",
+                    "google-contacts",
+                    "google*",
+                ],
                 "google",
                 "All Zapier Google app types -> single 'google' connector",
             ),
@@ -182,8 +203,12 @@ pub fn builtin_zapier() -> PlatformDefinition {
                 "All Zapier Slack app types -> single 'slack' connector",
             ),
             cc(
-                &["microsoft-outlook", "microsoft-onedrive", "microsoft-teams",
-                  "microsoft-*"],
+                &[
+                    "microsoft-outlook",
+                    "microsoft-onedrive",
+                    "microsoft-teams",
+                    "microsoft-*",
+                ],
                 "microsoft",
                 "All Zapier Microsoft app types -> single 'microsoft' connector",
             ),
@@ -198,26 +223,33 @@ pub fn builtin_zapier() -> PlatformDefinition {
             nr("paths", "decision"),
             nr("delay", "utility"),
         ],
-        excluded_credential_types: vec![
-            "openai".into(),
-            "chatgpt".into(),
-        ],
+        excluded_credential_types: vec!["openai".into(), "chatgpt".into()],
         protocol_map_rules: vec![
-            pm("Send email, post message, create record in external service",
-               "manual_review",
-               "Step performs external side-effects"),
-            pm("Formatter, lookup, search, read data",
-               "agent_memory",
-               "Step processes or extracts reusable data"),
-            pm("Delay step, approval step, filter with human judgment",
-               "manual_review",
-               "Step pauses for human confirmation"),
-            pm("Webhook output, trigger another Zap",
-               "emit_event",
-               "Step triggers downstream Zaps"),
-            pm("Email notification, Slack message, SMS alert",
-               "user_message",
-               "Step sends notifications"),
+            pm(
+                "Send email, post message, create record in external service",
+                "manual_review",
+                "Step performs external side-effects",
+            ),
+            pm(
+                "Formatter, lookup, search, read data",
+                "agent_memory",
+                "Step processes or extracts reusable data",
+            ),
+            pm(
+                "Delay step, approval step, filter with human judgment",
+                "manual_review",
+                "Step pauses for human confirmation",
+            ),
+            pm(
+                "Webhook output, trigger another Zap",
+                "emit_event",
+                "Step triggers downstream Zaps",
+            ),
+            pm(
+                "Email notification, Slack message, SMS alert",
+                "user_message",
+                "Step sends notifications",
+            ),
         ],
         is_builtin: true,
     }
@@ -285,22 +317,28 @@ pub fn builtin_make() -> PlatformDefinition {
             nr("csv", "utility"),
             nr("builtin:router", "decision"),
         ],
-        excluded_credential_types: vec![
-            "openai:*".into(),
-        ],
+        excluded_credential_types: vec!["openai:*".into()],
         protocol_map_rules: vec![
-            pm("Module creates, updates, or sends to external service",
-               "manual_review",
-               "Module performs external side-effects"),
-            pm("Module reads, searches, or transforms data",
-               "agent_memory",
-               "Module processes or extracts reusable data"),
-            pm("Webhook output, trigger another scenario",
-               "emit_event",
-               "Module triggers downstream scenarios"),
-            pm("Email, Slack, notification modules",
-               "user_message",
-               "Module sends notifications"),
+            pm(
+                "Module creates, updates, or sends to external service",
+                "manual_review",
+                "Module performs external side-effects",
+            ),
+            pm(
+                "Module reads, searches, or transforms data",
+                "agent_memory",
+                "Module processes or extracts reusable data",
+            ),
+            pm(
+                "Webhook output, trigger another scenario",
+                "emit_event",
+                "Module triggers downstream scenarios",
+            ),
+            pm(
+                "Email, Slack, notification modules",
+                "user_message",
+                "Module sends notifications",
+            ),
         ],
         is_builtin: true,
     }
@@ -336,22 +374,33 @@ impl PlatformDefinition {
         ];
 
         for rule in &self.credential_consolidation {
-            let sources = rule.source_patterns.iter()
+            let sources = rule
+                .source_patterns
+                .iter()
                 .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- {} -> single connector \"{}\"", sources, rule.target_connector));
+            lines.push(format!(
+                "- {} -> single connector \"{}\"",
+                sources, rule.target_connector
+            ));
         }
 
         if !self.excluded_credential_types.is_empty() {
-            let excluded = self.excluded_credential_types.iter()
+            let excluded = self
+                .excluded_credential_types
+                .iter()
                 .map(|s| format!("\"{s}\""))
                 .collect::<Vec<_>>()
                 .join(", ");
-            lines.push(format!("- {excluded} -> NOT mapped (Personas has built-in LLM)"));
+            lines.push(format!(
+                "- {excluded} -> NOT mapped (Personas has built-in LLM)"
+            ));
         }
 
-        lines.push("- For other credential types, map to the closest connector by service name".into());
+        lines.push(
+            "- For other credential types, map to the closest connector by service name".into(),
+        );
         lines.join("\n")
     }
 
@@ -361,17 +410,17 @@ impl PlatformDefinition {
             return String::new();
         }
 
-        let mut lines = vec![
-            format!("\n## {} Node Classification", self.label),
-        ];
+        let mut lines = vec![format!("\n## {} Node Classification", self.label)];
 
-        let mut roles: std::collections::HashMap<&str, Vec<&str>> = std::collections::HashMap::new();
+        let mut roles: std::collections::HashMap<&str, Vec<&str>> =
+            std::collections::HashMap::new();
         for nrp in &self.node_role_classification {
             roles.entry(&nrp.role).or_default().push(&nrp.pattern);
         }
 
         for (role, patterns) in &roles {
-            let pats = patterns.iter()
+            let pats = patterns
+                .iter()
                 .map(|p| format!("/{p}/i"))
                 .collect::<Vec<_>>()
                 .join(", ");
@@ -387,15 +436,13 @@ impl PlatformDefinition {
             return String::new();
         }
 
-        let mut lines = vec![
-            format!("\n## {} -> Persona Protocol Mapping", self.label),
-        ];
+        let mut lines = vec![format!("\n## {} -> Persona Protocol Mapping", self.label)];
 
         for rule in &self.protocol_map_rules {
-            lines.push(format!("- {} -> `{}` ({})",
-                rule.platform_pattern,
-                rule.target_protocol,
-                rule.condition));
+            lines.push(format!(
+                "- {} -> `{}` ({})",
+                rule.platform_pattern, rule.target_protocol, rule.condition
+            ));
         }
 
         lines.join("\n")
@@ -417,9 +464,7 @@ impl PlatformDefinition {
         // Strip platform prefix (e.g., "n8n-nodes-base.gmailTrigger" -> "gmailtrigger")
         let name = lower.rsplit('.').next().unwrap_or(&lower);
         // Remove common suffixes
-        let cleaned = name
-            .trim_end_matches("trigger")
-            .trim_end_matches("node");
+        let cleaned = name.trim_end_matches("trigger").trim_end_matches("node");
 
         for mapping in &self.node_type_map {
             if cleaned.starts_with(&mapping.source_pattern) || cleaned == mapping.source_pattern {
@@ -485,7 +530,11 @@ fn nt(source: &str, target: &str) -> crate::db::models::NodeTypeMapping {
     }
 }
 
-fn cc(sources: &[&str], target: &str, desc: &str) -> crate::db::models::CredentialConsolidationRule {
+fn cc(
+    sources: &[&str],
+    target: &str,
+    desc: &str,
+) -> crate::db::models::CredentialConsolidationRule {
     crate::db::models::CredentialConsolidationRule {
         source_patterns: sources.iter().map(|s| s.to_string()).collect(),
         target_connector: target.into(),

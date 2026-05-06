@@ -37,9 +37,12 @@ pub fn get_by_execution_id(
     pool: &DbPool,
     execution_id: &str,
 ) -> Result<Option<ExecutionTrace>, AppError> {
-    timed_query!("execution_traces", "execution_traces::get_by_execution_id", {
-    let conn = pool.get()?;
-    let result = conn.query_row(
+    timed_query!(
+        "execution_traces",
+        "execution_traces::get_by_execution_id",
+        {
+            let conn = pool.get()?;
+            let result = conn.query_row(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE execution_id = ?1 ORDER BY created_at DESC LIMIT 1",
         params![execution_id],
@@ -60,12 +63,13 @@ pub fn get_by_execution_id(
         },
     );
 
-    match result {
-        Ok(trace) => Ok(Some(trace)),
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
-        Err(e) => Err(AppError::Database(e)),
-    }
-    })
+            match result {
+                Ok(trace) => Ok(Some(trace)),
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(AppError::Database(e)),
+            }
+        }
+    )
 }
 
 /// Get all traces sharing a chain_trace_id (distributed trace across chain executions).
@@ -73,28 +77,34 @@ pub fn get_by_chain_trace_id(
     pool: &DbPool,
     chain_trace_id: &str,
 ) -> Result<Vec<ExecutionTrace>, AppError> {
-    timed_query!("execution_traces", "execution_traces::get_by_chain_trace_id", {
-    let conn = pool.get()?;
-    let mut stmt = conn.prepare(
+    timed_query!(
+        "execution_traces",
+        "execution_traces::get_by_chain_trace_id",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
         "SELECT trace_id, execution_id, persona_id, chain_trace_id, spans, total_duration_ms, evicted_span_count, created_at
          FROM execution_traces WHERE chain_trace_id = ?1 ORDER BY created_at ASC",
     )?;
-    let rows = stmt.query_map(params![chain_trace_id], |row| {
-        let spans_json: String = row.get("spans")?;
-        let total_duration_ms: Option<i64> = row.get("total_duration_ms")?;
-        let evicted: i64 = row.get::<_, Option<i64>>("evicted_span_count")?.unwrap_or(0);
-        Ok(ExecutionTrace {
-            trace_id: row.get("trace_id")?,
-            execution_id: row.get("execution_id")?,
-            persona_id: row.get("persona_id")?,
-            chain_trace_id: row.get("chain_trace_id")?,
-            spans: serde_json::from_str(&spans_json).unwrap_or_default(),
-            total_duration_ms: total_duration_ms.map(|d| d as u64),
-            evicted_span_count: evicted as u64,
-            created_at: row.get("created_at")?,
-        })
-    })?;
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(AppError::Database)
-    })
+            let rows = stmt.query_map(params![chain_trace_id], |row| {
+                let spans_json: String = row.get("spans")?;
+                let total_duration_ms: Option<i64> = row.get("total_duration_ms")?;
+                let evicted: i64 = row
+                    .get::<_, Option<i64>>("evicted_span_count")?
+                    .unwrap_or(0);
+                Ok(ExecutionTrace {
+                    trace_id: row.get("trace_id")?,
+                    execution_id: row.get("execution_id")?,
+                    persona_id: row.get("persona_id")?,
+                    chain_trace_id: row.get("chain_trace_id")?,
+                    spans: serde_json::from_str(&spans_json).unwrap_or_default(),
+                    total_duration_ms: total_duration_ms.map(|d| d as u64),
+                    evicted_span_count: evicted as u64,
+                    created_at: row.get("created_at")?,
+                })
+            })?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }

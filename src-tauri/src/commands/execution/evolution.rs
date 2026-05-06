@@ -41,8 +41,9 @@ pub fn evolution_upsert_policy(
     require_auth_sync(&state)?;
 
     let obj_json = match fitness_objective {
-        Some(o) => Some(serde_json::to_string(&o)
-            .map_err(|e| AppError::Internal(format!("Failed to serialize fitness objective: {e}")))?),
+        Some(o) => Some(serde_json::to_string(&o).map_err(|e| {
+            AppError::Internal(format!("Failed to serialize fitness objective: {e}"))
+        })?),
         None => None,
     };
 

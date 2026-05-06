@@ -61,9 +61,10 @@ pub async fn gitlab_connect(
         token.trim().to_string(),
     )?);
 
-    let user = client.validate_token().await.map_err(|e| {
-        AppError::GitLab(format!("Failed to validate GitLab token: {e}"))
-    })?;
+    let user = client
+        .validate_token()
+        .await
+        .map_err(|e| AppError::GitLab(format!("Failed to validate GitLab token: {e}")))?;
 
     gitlab::config::store_gitlab_config(token.trim())
         .map_err(|e| AppError::GitLab(format!("Failed to store GitLab config: {e}")))?;
@@ -71,7 +72,8 @@ pub async fn gitlab_connect(
         .map_err(|e| AppError::GitLab(format!("Failed to store GitLab instance URL: {e}")))?;
 
     *state.gitlab_client.lock().await = Some(client);
-    *state.gitlab_config_cache.lock().await = Some((std::time::Instant::now(), user.username.clone()));
+    *state.gitlab_config_cache.lock().await =
+        Some((std::time::Instant::now(), user.username.clone()));
 
     tracing::info!(username = %user.username, base_url = %base_url, "Connected to GitLab");
     Ok(user)
@@ -92,15 +94,20 @@ pub async fn gitlab_connect_from_vault(
 
     let credential = cred_repo::get_by_id(&state.db, &credential_id)?;
     let fields = cred_repo::get_decrypted_fields(&state.db, &credential)?;
-    if let Err(e) = audit_log::log_decrypt(&state.db, &credential.id, &credential.name, "gitlab:connect_from_vault", None, None) {
+    if let Err(e) = audit_log::log_decrypt(
+        &state.db,
+        &credential.id,
+        &credential.name,
+        "gitlab:connect_from_vault",
+        None,
+        None,
+    ) {
         tracing::warn!(credential_id = %credential.id, error = %e, "Failed to write audit log for credential decrypt");
     }
 
-    let token = fields
-        .get("personal_access_token")
-        .ok_or_else(|| {
-            AppError::GitLab("Vault credential missing personal_access_token field".into())
-        })?;
+    let token = fields.get("personal_access_token").ok_or_else(|| {
+        AppError::GitLab("Vault credential missing personal_access_token field".into())
+    })?;
 
     if token.trim().is_empty() {
         return Err(AppError::GitLab("GitLab token in vault is empty".into()));
@@ -116,9 +123,10 @@ pub async fn gitlab_connect_from_vault(
         token.trim().to_string(),
     )?);
 
-    let user = client.validate_token().await.map_err(|e| {
-        AppError::GitLab(format!("Failed to validate GitLab token: {e}"))
-    })?;
+    let user = client
+        .validate_token()
+        .await
+        .map_err(|e| AppError::GitLab(format!("Failed to validate GitLab token: {e}")))?;
 
     gitlab::config::store_gitlab_config(token.trim())
         .map_err(|e| AppError::GitLab(format!("Failed to store GitLab config: {e}")))?;
@@ -133,9 +141,7 @@ pub async fn gitlab_connect_from_vault(
 
 /// Disconnect from GitLab. Clears keyring and drops in-memory client.
 #[tauri::command]
-pub async fn gitlab_disconnect(
-    state: State<'_, Arc<AppState>>,
-) -> Result<(), AppError> {
+pub async fn gitlab_disconnect(state: State<'_, Arc<AppState>>) -> Result<(), AppError> {
     require_cloud_auth(&state, "gitlab_disconnect").await?;
     gitlab::config::clear_gitlab_config();
     *state.gitlab_client.lock().await = None;
@@ -329,10 +335,7 @@ pub async fn gitlab_deploy_persona(
 
             GitLabDeployResult {
                 agent_id: None,
-                web_url: Some(format!(
-                    "{}/blob/{}/AGENTS.md",
-                    project.web_url, branch
-                )),
+                web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned,
             }
@@ -475,24 +478,49 @@ fn build_persona_tag(persona_name: &str, version: u32, environment: Option<&str>
 
 /// Extract the system prompt from an AGENTS.md file.
 ///
-/// Looks for the content between the `### System Prompt` heading's code block
-/// (``` delimiters). Returns `None` if the expected structure is not found.
+/// Locates the `### System Prompt` heading, reads the next fenced code block,
+/// and returns its body. The opening fence may be 3+ backticks (CommonMark);
+/// the closing fence must be a backtick run of at least the same length on
+/// its own line. This keeps round-trips lossless when the prompt itself
+/// contains fenced code blocks — see `format_system_prompt_section` in
+/// `gitlab/converter.rs`.
 fn extract_prompt_from_agents_md(content: &str) -> Option<String> {
     let heading_marker = "### System Prompt";
     let heading_pos = content.find(heading_marker)?;
     let after_heading = &content[heading_pos + heading_marker.len()..];
-    let start = after_heading.find("```")?;
-    let after_open = &after_heading[start + 3..];
-    // Skip optional language identifier on the opening fence line
-    let body_start = after_open.find('\n').map(|i| i + 1).unwrap_or(0);
-    let body = &after_open[body_start..];
-    let end = body.find("```")?;
-    let prompt = body[..end].trim().to_string();
-    if prompt.is_empty() {
-        None
-    } else {
-        Some(prompt)
+
+    let mut open_fence_len: Option<usize> = None;
+    let mut body = String::new();
+
+    for line in after_heading.split_inclusive('\n') {
+        let trimmed = line.trim_start();
+        let backticks = trimmed.chars().take_while(|&c| c == '`').count();
+
+        match open_fence_len {
+            None => {
+                if backticks >= 3 {
+                    open_fence_len = Some(backticks);
+                }
+                // Lines before the opening fence are skipped (info string,
+                // blank lines, etc.).
+            }
+            Some(open_len) => {
+                // A closing fence is a backtick run >= open_len followed only
+                // by whitespace. Anything else is part of the body, including
+                // shorter inner fences.
+                if backticks >= open_len && trimmed[backticks..].trim().is_empty() {
+                    let prompt = body.trim_end_matches('\n').trim().to_string();
+                    return if prompt.is_empty() {
+                        None
+                    } else {
+                        Some(prompt)
+                    };
+                }
+                body.push_str(line);
+            }
+        }
     }
+    None
 }
 
 /// List version history for a persona deployed to a GitLab project.
@@ -521,9 +549,9 @@ pub async fn gitlab_list_persona_versions(
     );
     let tags = tags_result?;
     let agents = agents_result.unwrap_or_default();
-    let current_agent = agents.iter().find(|a| {
-        a.name.to_lowercase().replace(' ', "-") == slug
-    });
+    let current_agent = agents
+        .iter()
+        .find(|a| a.name.to_lowercase().replace(' ', "-") == slug);
 
     let mut versions: Vec<GitLabPersonaVersion> = tags
         .into_iter()
@@ -621,7 +649,8 @@ pub async fn gitlab_deploy_persona_versioned(
     let project = client.get_project(project_id).await?;
 
     // Compute the tag search prefix before spawning concurrent work
-    let slug = persona.name
+    let slug = persona
+        .name
         .to_lowercase()
         .replace(' ', "-")
         .chars()
@@ -630,10 +659,13 @@ pub async fn gitlab_deploy_persona_versioned(
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     // Deploy the agent and fetch existing tags concurrently — they are independent
-    let (agent_result, existing_tags) = tokio::join!(
-        client.create_duo_agent(project_id, &definition),
-        async { client.list_tags(project_id, Some(&search_prefix)).await.unwrap_or_default() },
-    );
+    let (agent_result, existing_tags) =
+        tokio::join!(client.create_duo_agent(project_id, &definition), async {
+            client
+                .list_tags(project_id, Some(&search_prefix))
+                .await
+                .unwrap_or_default()
+        },);
 
     let deploy_result = match agent_result {
         Ok(agent) => {
@@ -661,10 +693,7 @@ pub async fn gitlab_deploy_persona_versioned(
 
             GitLabDeployResult {
                 agent_id: None,
-                web_url: Some(format!(
-                    "{}/blob/{}/AGENTS.md",
-                    project.web_url, branch
-                )),
+                web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned,
             }
@@ -808,8 +837,8 @@ pub async fn gitlab_rollback_persona(
         })?;
 
     // Extract the system prompt from the historical AGENTS.md
-    let snapshot_prompt = extract_prompt_from_agents_md(&historical_agents_md)
-        .unwrap_or_else(|| {
+    let snapshot_prompt =
+        extract_prompt_from_agents_md(&historical_agents_md).unwrap_or_else(|| {
             tracing::warn!(
                 target_tag = %target_tag,
                 "Could not parse system prompt from historical AGENTS.md, using raw content"
@@ -834,10 +863,13 @@ pub async fn gitlab_rollback_persona(
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     // Deploy the agent and fetch existing tags concurrently — they are independent
-    let (agent_result, existing_tags) = tokio::join!(
-        client.create_duo_agent(project_id, &definition),
-        async { client.list_tags(project_id, Some(&search_prefix)).await.unwrap_or_default() },
-    );
+    let (agent_result, existing_tags) =
+        tokio::join!(client.create_duo_agent(project_id, &definition), async {
+            client
+                .list_tags(project_id, Some(&search_prefix))
+                .await
+                .unwrap_or_default()
+        },);
 
     let deploy_result = match agent_result {
         Ok(agent) => GitLabDeployResult {
@@ -855,10 +887,7 @@ pub async fn gitlab_rollback_persona(
 
             GitLabDeployResult {
                 agent_id: None,
-                web_url: Some(format!(
-                    "{}/blob/{}/AGENTS.md",
-                    project.web_url, branch
-                )),
+                web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned: 0,
             }
@@ -882,7 +911,12 @@ pub async fn gitlab_rollback_persona(
     );
 
     let new_tag = match client
-        .create_tag(project_id, &rollback_tag, default_branch, Some(&rollback_msg))
+        .create_tag(
+            project_id,
+            &rollback_tag,
+            default_branch,
+            Some(&rollback_msg),
+        )
         .await
     {
         Ok(_) => {
@@ -1007,7 +1041,11 @@ pub async fn gitlab_setup_persona_branches(
             Ok(branch) => {
                 created.push(GitLabPersonaBranch {
                     name: branch.name,
-                    commit_sha: branch.commit.as_ref().map(|c| c.id.clone()).unwrap_or_default(),
+                    commit_sha: branch
+                        .commit
+                        .as_ref()
+                        .map(|c| c.id.clone())
+                        .unwrap_or_default(),
                     commit_message: branch.commit.and_then(|c| c.message),
                     is_protected: branch.protected,
                     environment: env.to_string(),
@@ -1113,10 +1151,7 @@ pub async fn gitlab_rollback_from_history(
 
             GitLabDeployResult {
                 agent_id: None,
-                web_url: Some(format!(
-                    "{}/blob/{}/AGENTS.md",
-                    project.web_url, branch
-                )),
+                web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned: 0,
             }
@@ -1154,4 +1189,71 @@ pub async fn gitlab_rollback_from_history(
     );
 
     Ok(deploy_result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gitlab::converter::format_system_prompt_section;
+
+    fn wrap_section(section: &str) -> String {
+        // Embed the System Prompt section in a realistic AGENTS.md skeleton so
+        // we exercise the heading/look-ahead logic too.
+        format!("# AGENTS.md\n\n## Agent: Test\n\n{section}### Tools\n\n- **t**: x\n")
+    }
+
+    #[test]
+    fn extract_handles_simple_block() {
+        let md = wrap_section(&format_system_prompt_section("You are helpful."));
+        assert_eq!(
+            extract_prompt_from_agents_md(&md).as_deref(),
+            Some("You are helpful.")
+        );
+    }
+
+    #[test]
+    fn extract_returns_none_when_heading_missing() {
+        assert!(extract_prompt_from_agents_md("no heading anywhere").is_none());
+    }
+
+    #[test]
+    fn extract_returns_none_when_no_fence() {
+        let md = "### System Prompt\n\nplain text\n";
+        assert!(extract_prompt_from_agents_md(md).is_none());
+    }
+
+    #[test]
+    fn extract_returns_none_when_block_empty() {
+        let md = wrap_section(&format_system_prompt_section(""));
+        assert!(extract_prompt_from_agents_md(&md).is_none());
+    }
+
+    #[test]
+    fn round_trip_preserves_inner_fenced_code_block() {
+        // Persona prompts often embed examples inside triple-backtick fences.
+        // Pre-fix, the reader truncated at the first inner ``` — losing the
+        // tail of the prompt and silently corrupting rollback snapshots.
+        let prompt = "You answer with examples like:\n\n```python\nprint(\"hello\")\n```\n\nAlways close with a sign-off.";
+        let md = wrap_section(&format_system_prompt_section(prompt));
+        let extracted = extract_prompt_from_agents_md(&md).expect("extract");
+        assert_eq!(extracted, prompt);
+    }
+
+    #[test]
+    fn round_trip_preserves_nested_quad_fence() {
+        // Pathological case: prompt itself documents a 4-backtick fence.
+        let prompt = "Use ````md\n```inner```\n```` to wrap content with inner fences.";
+        let md = wrap_section(&format_system_prompt_section(prompt));
+        let extracted = extract_prompt_from_agents_md(&md).expect("extract");
+        assert_eq!(extracted, prompt);
+    }
+
+    #[test]
+    fn close_fence_with_info_string_is_treated_as_body() {
+        // CommonMark: a closing fence may not carry an info string. So a line
+        // like "```rust" inside a 4-backtick block is body, not the close.
+        let prompt = "Open another block:\n```rust\nlet x = 1;\n```";
+        let md = wrap_section(&format_system_prompt_section(prompt));
+        assert_eq!(extract_prompt_from_agents_md(&md).as_deref(), Some(prompt));
+    }
 }

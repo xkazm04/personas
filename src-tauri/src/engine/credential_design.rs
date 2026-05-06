@@ -1,5 +1,5 @@
-use crate::db::models::ConnectorDefinition;
 use super::design::extract_json_by_key;
+use crate::db::models::ConnectorDefinition;
 
 // ============================================================================
 // Credential Design Prompt Builder
@@ -13,8 +13,12 @@ pub fn build_credential_design_prompt(
     let mut prompt = String::new();
 
     prompt.push_str("# Credential & Connector Design\n\n");
-    prompt.push_str("You are an expert integration architect. The user wants to connect a tool or service.\n");
-    prompt.push_str("The user may provide just a service name (e.g. \"Slack\", \"OpenAI\", \"GitHub\"), ");
+    prompt.push_str(
+        "You are an expert integration architect. The user wants to connect a tool or service.\n",
+    );
+    prompt.push_str(
+        "The user may provide just a service name (e.g. \"Slack\", \"OpenAI\", \"GitHub\"), ",
+    );
     prompt.push_str("a service with credential type (e.g. \"GitHub personal access token\"), ");
     prompt.push_str("or a longer description. In all cases, design the appropriate connector and credential fields.\n\n");
 
@@ -24,7 +28,10 @@ pub fn build_credential_design_prompt(
         prompt.push_str("These connectors are already registered in the system. ");
         prompt.push_str("If the user's request matches one, set `match_existing` to its name instead of creating a duplicate.\n\n");
         for conn in existing_connectors {
-            prompt.push_str(&format!("- **{}** ({}) -- {}\n", conn.name, conn.category, conn.label));
+            prompt.push_str(&format!(
+                "- **{}** ({}) -- {}\n",
+                conn.name, conn.category, conn.label
+            ));
         }
         prompt.push('\n');
     }
@@ -62,7 +69,9 @@ pub fn build_credential_healthcheck_prompt(
     prompt.push_str("\n\n");
 
     prompt.push_str("## Connector\n");
-    prompt.push_str(&serde_json::to_string_pretty(connector).unwrap_or_else(|_| connector.to_string()));
+    prompt.push_str(
+        &serde_json::to_string_pretty(connector).unwrap_or_else(|_| connector.to_string()),
+    );
     prompt.push_str("\n\n");
 
     prompt.push_str("## Available Credential Fields\n");
@@ -102,9 +111,17 @@ pub fn extract_healthcheck_config_result(output: &str) -> Option<serde_json::Val
 fn instruction_mentions_google(instruction: &str) -> bool {
     let lower = instruction.to_lowercase();
     const KEYWORDS: &[&str] = &[
-        "google", "gmail", "gcal", "gdrive", "gcloud",
-        "google calendar", "google drive", "google workspace",
-        "google sheets", "google docs", "google cloud",
+        "google",
+        "gmail",
+        "gcal",
+        "gdrive",
+        "gcloud",
+        "google calendar",
+        "google drive",
+        "google workspace",
+        "google sheets",
+        "google docs",
+        "google cloud",
     ];
     KEYWORDS.iter().any(|kw| lower.contains(kw))
 }
@@ -324,7 +341,10 @@ mod tests {
         let val = result.unwrap();
         assert!(val.get("connector").is_some());
         assert_eq!(
-            val.get("connector").unwrap().get("name").and_then(|v| v.as_str()),
+            val.get("connector")
+                .unwrap()
+                .get("name")
+                .and_then(|v| v.as_str()),
             Some("github")
         );
     }

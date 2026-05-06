@@ -1,12 +1,12 @@
-pub mod arena;
 pub mod ab;
+pub mod arena;
 pub mod consensus;
-pub mod matrix;
 pub mod eval;
 pub mod events;
-pub mod ratings;
-pub mod genome;
 pub mod evolution;
+pub mod genome;
+pub mod matrix;
+pub mod ratings;
 pub mod versions;
 
 use crate::db::models::{Json, LabResultKind, LabToolCall};
@@ -23,29 +23,34 @@ pub fn list_tool_calls_for_result(
     result_id: &str,
     result_kind: LabResultKind,
 ) -> Result<Vec<LabToolCall>, AppError> {
-    timed_query!("lab_tool_calls", "lab_tool_calls::list_tool_calls_for_result", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT id, result_kind, result_id, sequence, tool_name, variant, created_at
+    timed_query!(
+        "lab_tool_calls",
+        "lab_tool_calls::list_tool_calls_for_result",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT id, result_kind, result_id, sequence, tool_name, variant, created_at
              FROM lab_tool_calls
              WHERE result_id = ?1 AND result_kind = ?2
              ORDER BY variant, sequence",
-        )?;
-        let rows = stmt
-            .query_map(params![result_id, result_kind.as_str()], |row| {
-                Ok(LabToolCall {
-                    id: row.get(0)?,
-                    result_kind: row.get(1)?,
-                    result_id: row.get(2)?,
-                    sequence: row.get(3)?,
-                    tool_name: row.get(4)?,
-                    variant: row.get(5)?,
-                    created_at: row.get(6)?,
+            )?;
+            let rows = stmt
+                .query_map(params![result_id, result_kind.as_str()], |row| {
+                    Ok(LabToolCall {
+                        id: row.get(0)?,
+                        result_kind: row.get(1)?,
+                        result_id: row.get(2)?,
+                        sequence: row.get(3)?,
+                        tool_name: row.get(4)?,
+                        variant: row.get(5)?,
+                        created_at: row.get(6)?,
+                    })
                 })
-            })
-            .map_err(AppError::Database)?;
-        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
-    })
+                .map_err(AppError::Database)?;
+            rows.collect::<Result<Vec<_>, _>>()
+                .map_err(AppError::Database)
+        }
+    )
 }
 
 /// Dual-write tool calls into the `lab_tool_calls` child table alongside the
@@ -77,7 +82,14 @@ pub(crate) fn write_tool_calls_child_rows(
                 "INSERT OR IGNORE INTO lab_tool_calls
                     (id, result_kind, result_id, sequence, tool_name, variant)
                  VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                params![id, result_kind, result_id, sequence as i64, tool_name, variant],
+                params![
+                    id,
+                    result_kind,
+                    result_id,
+                    sequence as i64,
+                    tool_name,
+                    variant
+                ],
             ) {
                 tracing::warn!(
                     result_kind = %result_kind,

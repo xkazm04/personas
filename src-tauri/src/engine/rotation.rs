@@ -17,8 +17,8 @@ use ts_rs::TS;
 
 use crate::db::repos::resources::credentials as cred_repo;
 use crate::db::repos::resources::rotation as rotation_repo;
-use crate::engine::lifecycle::RotationEntryStatus;
 use crate::db::DbPool;
+use crate::engine::lifecycle::RotationEntryStatus;
 use crate::error::AppError;
 
 use tauri::AppHandle;
@@ -47,14 +47,18 @@ static ROTATING_CREDENTIALS: Mutex<Option<HashSet<String>>> = Mutex::new(None);
 
 /// Try to acquire a per-credential rotation lock. Returns `true` if acquired.
 fn try_lock_credential(credential_id: &str) -> bool {
-    let mut guard = ROTATING_CREDENTIALS.lock().unwrap_or_else(|e| e.into_inner());
+    let mut guard = ROTATING_CREDENTIALS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     let set = guard.get_or_insert_with(HashSet::new);
     set.insert(credential_id.to_string())
 }
 
 /// Release a per-credential rotation lock.
 fn unlock_credential(credential_id: &str) {
-    let mut guard = ROTATING_CREDENTIALS.lock().unwrap_or_else(|e| e.into_inner());
+    let mut guard = ROTATING_CREDENTIALS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner());
     if let Some(set) = guard.as_mut() {
         set.remove(credential_id);
     }
@@ -115,10 +119,16 @@ impl ErrorClass {
             return Self::from_status_code(code);
         }
         let lower = msg.to_lowercase();
-        if lower.contains("timeout") || lower.contains("timed out") || lower.contains("connection refused") {
+        if lower.contains("timeout")
+            || lower.contains("timed out")
+            || lower.contains("connection refused")
+        {
             return Self::Transient;
         }
-        if lower.contains("unauthorized") || lower.contains("forbidden") || lower.contains("revoked") {
+        if lower.contains("unauthorized")
+            || lower.contains("forbidden")
+            || lower.contains("revoked")
+        {
             return Self::Permanent;
         }
         Self::Unknown
@@ -269,10 +279,7 @@ pub fn compute_anomaly_score(entries: &[HealthcheckEntry], tolerance: Option<f64
                 count_1h += 1;
                 if !entry.success {
                     fail_1h += 1;
-                    let ec = entry
-                        .error_class
-                        .as_deref()
-                        .unwrap_or("unknown");
+                    let ec = entry.error_class.as_deref().unwrap_or("unknown");
                     if ec == "permanent" {
                         perm_fail_1h += 1;
                     } else if ec == "transient" {
@@ -614,11 +621,14 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                     "Rotation: successful -- {}",
                     detail
                 );
-                let _ = app.emit(event_name::ROTATION_COMPLETED, serde_json::json!({
-                    "credential_id": policy.credential_id,
-                    "status": "success",
-                    "detail": detail,
-                }));
+                let _ = app.emit(
+                    event_name::ROTATION_COMPLETED,
+                    serde_json::json!({
+                        "credential_id": policy.credential_id,
+                        "status": "success",
+                        "detail": detail,
+                    }),
+                );
             }
             Err(e) => {
                 let msg = sanitize_secrets(&e.to_string());
@@ -753,12 +763,15 @@ pub async fn evaluate_due_rotations(pool: &DbPool, app: &AppHandle) {
                         );
                     }
                 }
-                let _ = app.emit(event_name::ROTATION_COMPLETED, serde_json::json!({
-                    "credential_id": policy.credential_id,
-                    "status": "failed",
-                    "detail": msg,
-                    "remediation": score.remediation.as_str(),
-                }));
+                let _ = app.emit(
+                    event_name::ROTATION_COMPLETED,
+                    serde_json::json!({
+                        "credential_id": policy.credential_id,
+                        "status": "failed",
+                        "detail": msg,
+                        "remediation": score.remediation.as_str(),
+                    }),
+                );
             }
         }
 
@@ -795,9 +808,10 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
             );
             // Record corruption as an anomaly so it surfaces in the UI
             let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
-            let already_recorded = history
-                .first()
-                .is_some_and(|h| h.rotation_type == "anomaly" && h.detail.as_deref().unwrap_or("").contains("corrupted"));
+            let already_recorded = history.first().is_some_and(|h| {
+                h.rotation_type == "anomaly"
+                    && h.detail.as_deref().unwrap_or("").contains("corrupted")
+            });
             if !already_recorded {
                 let _ = rotation_repo::record_rotation(
                     pool,
@@ -816,7 +830,8 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                 let had_previous = ledger.healthcheck_last_success_at.is_some();
 
                 if had_previous {
-                    let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
+                    let history =
+                        rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
                     let already_recorded = history
                         .first()
                         .is_some_and(|h| h.rotation_type == "anomaly");
@@ -906,11 +921,14 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                     remediation = %score.remediation.as_str(),
                     "Rotation anomaly detected via windowed scoring"
                 );
-                let _ = app.emit(event_name::ROTATION_ANOMALY, serde_json::json!({
-                    "credential_id": cred.id,
-                    "remediation": score.remediation.as_str(),
-                    "failure_rate_1h": score.failure_rate_1h,
-                }));
+                let _ = app.emit(
+                    event_name::ROTATION_ANOMALY,
+                    serde_json::json!({
+                        "credential_id": cred.id,
+                        "remediation": score.remediation.as_str(),
+                        "failure_rate_1h": score.failure_rate_1h,
+                    }),
+                );
             }
         }
     }
@@ -967,8 +985,8 @@ pub async fn rotate_now(
                 Some(detail),
             );
             // Update all enabled policies for this credential
-            let policies = rotation_repo::get_policies_by_credential(pool, credential_id)
-                .unwrap_or_default();
+            let policies =
+                rotation_repo::get_policies_by_credential(pool, credential_id).unwrap_or_default();
             for policy in &policies {
                 if policy.enabled {
                     let _ = rotation_repo::mark_rotated(pool, &policy.id);
@@ -991,10 +1009,7 @@ pub async fn rotate_now(
 }
 
 /// Get a summary of rotation status for a credential, including windowed anomaly score.
-pub fn get_rotation_status(
-    pool: &DbPool,
-    credential_id: &str,
-) -> Result<RotationStatus, AppError> {
+pub fn get_rotation_status(pool: &DbPool, credential_id: &str) -> Result<RotationStatus, AppError> {
     let policies = rotation_repo::get_policies_by_credential(pool, credential_id)?;
     let history = rotation_repo::get_history(pool, credential_id, Some(10))?;
     let credential = cred_repo::get_by_id(pool, credential_id)?;
@@ -1002,7 +1017,9 @@ pub fn get_rotation_status(
     // Single-active-policy invariant: at most one policy is enabled per credential.
     // The query orders by created_at DESC, so .find() picks the newest enabled policy
     // as a deterministic fallback if the invariant is transiently violated.
-    let active_policy = policies.iter().find(|p| p.enabled && (p.policy_type == "scheduled" || p.policy_type == "oauth_keepalive"));
+    let active_policy = policies.iter().find(|p| {
+        p.enabled && (p.policy_type == "scheduled" || p.policy_type == "oauth_keepalive")
+    });
 
     let next_rotation_at = active_policy.and_then(|p| p.next_rotation_at.clone());
     let last_rotated_at = active_policy.and_then(|p| p.last_rotated_at.clone());
@@ -1105,7 +1122,9 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
 
         let should_fire = match event.event_template_id.as_str() {
             "cron_schedule" => evaluate_cron_event(&config, &now, event.last_polled_at.as_deref()),
-            "expiration_threshold" => evaluate_expiration_event(pool, &event.credential_id, &config, &now),
+            "expiration_threshold" => {
+                evaluate_expiration_event(pool, &event.credential_id, &config, &now)
+            }
             "healthcheck_failure" => evaluate_healthcheck_event(pool, &event.credential_id).await,
             other => {
                 tracing::debug!(
@@ -1125,7 +1144,13 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
                 "Credential events: event triggered, initiating rotation"
             );
 
-            match rotate_now(pool, &event.credential_id, &format!("event:{}", event.event_template_id)).await {
+            match rotate_now(
+                pool,
+                &event.credential_id,
+                &format!("event:{}", event.event_template_id),
+            )
+            .await
+            {
                 Ok(detail) => {
                     tracing::info!(
                         credential_id = %event.credential_id,
@@ -1222,7 +1247,9 @@ fn evaluate_expiration_event(
         .oauth_expires_at()
         .or_else(|| {
             // Legacy: check custom hints for expires_at / expiresAt
-            ledger.custom.get("expires_at")
+            ledger
+                .custom
+                .get("expires_at")
                 .or_else(|| ledger.custom.get("expiresAt"))
                 .and_then(|v| v.as_str())
                 .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
@@ -1240,10 +1267,7 @@ fn evaluate_expiration_event(
 
 /// Check if a credential's healthcheck is currently failing, using windowed
 /// anomaly scoring when ring buffer data is available.
-async fn evaluate_healthcheck_event(
-    pool: &DbPool,
-    credential_id: &str,
-) -> bool {
+async fn evaluate_healthcheck_event(pool: &DbPool, credential_id: &str) -> bool {
     let credential = match cred_repo::get_by_id(pool, credential_id) {
         Ok(c) => c,
         Err(_) => return false,
@@ -1330,8 +1354,8 @@ pub fn auto_provision_oauth_rotation_policies(pool: &DbPool) {
         }
 
         // Check if a rotation policy already exists
-        let policies = rotation_repo::get_policies_by_credential(pool, &cred.id)
-            .unwrap_or_default();
+        let policies =
+            rotation_repo::get_policies_by_credential(pool, &cred.id).unwrap_or_default();
         if !policies.is_empty() {
             continue;
         }
@@ -1366,10 +1390,7 @@ pub fn auto_provision_oauth_rotation_policies(pool: &DbPool) {
     }
 
     if provisioned > 0 {
-        tracing::info!(
-            provisioned,
-            "OAuth auto-provision: complete"
-        );
+        tracing::info!(provisioned, "OAuth auto-provision: complete");
     }
 }
 
@@ -1388,9 +1409,12 @@ pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
     }
 
     // Check if an oauth_keepalive policy already exists and is enabled -- skip if so.
-    let policies = rotation_repo::get_policies_by_credential(pool, credential_id)
-        .unwrap_or_default();
-    if policies.iter().any(|p| p.enabled && p.policy_type == "oauth_keepalive") {
+    let policies =
+        rotation_repo::get_policies_by_credential(pool, credential_id).unwrap_or_default();
+    if policies
+        .iter()
+        .any(|p| p.enabled && p.policy_type == "oauth_keepalive")
+    {
         return;
     }
 
@@ -1403,7 +1427,6 @@ pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
             "OAuth auto-provision: failed to disable existing policies"
         );
     }
-
 
     let input = crate::db::models::CreateRotationPolicyInput {
         credential_id: credential_id.to_string(),
@@ -1449,9 +1472,9 @@ fn is_oauth_credential(pool: &DbPool, cred: &crate::db::models::PersonaCredentia
 
     // Fall back to checking credential fields for refresh_token
     match cred_repo::get_fields(pool, &cred.id) {
-        Ok(fields) => fields.iter().any(|f| {
-            f.field_key == "refresh_token" || f.field_key == "refreshToken"
-        }),
+        Ok(fields) => fields
+            .iter()
+            .any(|f| f.field_key == "refresh_token" || f.field_key == "refreshToken"),
         Err(_) => false,
     }
 }

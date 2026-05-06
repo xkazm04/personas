@@ -14,8 +14,8 @@ use serde::Serialize;
 use tauri::{AppHandle, Emitter};
 use ts_rs::TS;
 
-use super::safe_json;
 use super::event_registry::{emit_event_bus, event_name};
+use super::safe_json;
 use super::ssrf_safe_dns;
 use crate::db::models::CreatePersonaEventInput;
 use crate::db::repos::communication::events as event_repo;
@@ -130,15 +130,16 @@ fn emit_status(app: &AppHandle, state: &mut SmeeRelayState) {
     let aggregate_error = if any_connected {
         None
     } else {
-        state
-            .relays
-            .values()
-            .filter_map(|r| r.error.clone())
-            .last()
+        state.relays.values().filter_map(|r| r.error.clone()).last()
     };
 
     // Change detection: skip emit when nothing changed.
-    let snapshot = (any_connected, total_events, latest_event.clone(), aggregate_error.clone());
+    let snapshot = (
+        any_connected,
+        total_events,
+        latest_event.clone(),
+        aggregate_error.clone(),
+    );
     if state.last_emitted.as_ref() == Some(&snapshot) {
         return;
     }
@@ -198,14 +199,23 @@ async fn relay_sse_core(
     // Mark connected (preserve previous event counts across reconnects)
     {
         let mut s = state.lock().await;
-        let prev_events = s.relays.get(&params.relay_key).map_or(0, |r| r.events_relayed);
-        let prev_last_event = s.relays.get(&params.relay_key).and_then(|r| r.last_event_at.clone());
-        s.relays.insert(params.relay_key.clone(), RelayInstanceStatus {
-            connected: true,
-            error: None,
-            events_relayed: prev_events,
-            last_event_at: prev_last_event,
-        });
+        let prev_events = s
+            .relays
+            .get(&params.relay_key)
+            .map_or(0, |r| r.events_relayed);
+        let prev_last_event = s
+            .relays
+            .get(&params.relay_key)
+            .and_then(|r| r.last_event_at.clone());
+        s.relays.insert(
+            params.relay_key.clone(),
+            RelayInstanceStatus {
+                connected: true,
+                error: None,
+                events_relayed: prev_events,
+                last_event_at: prev_last_event,
+            },
+        );
         emit_status(app, &mut s);
     }
 
@@ -224,7 +234,9 @@ async fn relay_sse_core(
 
         // Guard against unbounded buffer growth from a misbehaving endpoint
         if buffer.len() > MAX_SSE_BUFFER_BYTES {
-            return Err("SSE buffer exceeded 1 MB without a complete message — disconnecting".into());
+            return Err(
+                "SSE buffer exceeded 1 MB without a complete message — disconnecting".into(),
+            );
         }
 
         // Process complete SSE messages (separated by \n\n)
@@ -236,7 +248,11 @@ async fn relay_sse_core(
             let data_lines: Vec<&str> = message
                 .lines()
                 .filter(|l| l.starts_with("data: ") || l.starts_with("data:"))
-                .map(|l| l.strip_prefix("data: ").or_else(|| l.strip_prefix("data:")).unwrap_or(""))
+                .map(|l| {
+                    l.strip_prefix("data: ")
+                        .or_else(|| l.strip_prefix("data:"))
+                        .unwrap_or("")
+                })
                 .collect();
 
             if data_lines.is_empty() {
@@ -273,7 +289,10 @@ async fn relay_sse_core(
                 }
             }
 
-            let body = payload_json.get("body").cloned().unwrap_or(payload_json.clone());
+            let body = payload_json
+                .get("body")
+                .cloned()
+                .unwrap_or(payload_json.clone());
 
             let input = CreatePersonaEventInput {
                 event_type,
@@ -333,7 +352,8 @@ pub async fn run_smee_relay(
         // ---- Sync relay tasks with database state ----
         let active_relays = smee_relay_repo::list_active_urls(&pool).unwrap_or_default();
 
-        let desired_ids: std::collections::HashSet<String> = active_relays.iter().map(|(id, _)| id.clone()).collect();
+        let desired_ids: std::collections::HashSet<String> =
+            active_relays.iter().map(|(id, _)| id.clone()).collect();
 
         let mut tasks = active_tasks.lock().await;
 
@@ -379,8 +399,10 @@ pub async fn run_smee_relay(
                                     "SELECT target_persona_id FROM smee_relays WHERE id = ?1",
                                     rusqlite::params![relay_id2],
                                     |row| row.get::<_, Option<String>>(0),
-                                ).ok()
-                            }).flatten()
+                                )
+                                .ok()
+                            })
+                            .flatten()
                         });
                         cached_filter = Some({
                             let conn = pool2.get().ok();
@@ -389,8 +411,11 @@ pub async fn run_smee_relay(
                                     "SELECT event_filter FROM smee_relays WHERE id = ?1",
                                     rusqlite::params![relay_id2],
                                     |row| row.get::<_, Option<String>>(0),
-                                ).ok()
-                            }).flatten().and_then(|f| serde_json::from_str(&f).ok())
+                                )
+                                .ok()
+                            })
+                            .flatten()
+                            .and_then(|f| serde_json::from_str(&f).ok())
                         });
                     }
                     let params = RelayParams {
@@ -415,12 +440,15 @@ pub async fn run_smee_relay(
                                 r.connected = false;
                                 r.error = Some(e);
                             } else {
-                                s.relays.insert(relay_id2.clone(), RelayInstanceStatus {
-                                    connected: false,
-                                    error: Some(e),
-                                    events_relayed: 0,
-                                    last_event_at: None,
-                                });
+                                s.relays.insert(
+                                    relay_id2.clone(),
+                                    RelayInstanceStatus {
+                                        connected: false,
+                                        error: Some(e),
+                                        events_relayed: 0,
+                                        last_event_at: None,
+                                    },
+                                );
                             }
                             emit_status(&app2, &mut s);
                         }

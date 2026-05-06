@@ -69,10 +69,7 @@ pub fn update_test_suite(
 }
 
 #[tauri::command]
-pub fn delete_test_suite(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-) -> Result<bool, AppError> {
+pub fn delete_test_suite(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     repo::delete(&state.db, &id)
 }

@@ -39,7 +39,9 @@ pub fn require_valid_id(field: &str, value: &str) -> Result<(), AppError> {
         return Err(AppError::Validation(format!("{field} must be a valid ID")));
     }
     if trimmed.len() > 200 {
-        return Err(AppError::Validation(format!("{field} is too long (max 200 chars)")));
+        return Err(AppError::Validation(format!(
+            "{field} is too long (max 200 chars)"
+        )));
     }
     // Whitelist: only allow alphanumeric, dash, underscore, and dot.
     // This eliminates entire classes of injection (null bytes, control chars,
@@ -141,14 +143,14 @@ pub fn safe_resolve_log_path(
     }
 
     // 3. Canonicalize the allowed root.
-    let canonical_root = log_root.canonicalize().map_err(|_| {
-        AppError::Internal("Log directory is not accessible".into())
-    })?;
+    let canonical_root = log_root
+        .canonicalize()
+        .map_err(|_| AppError::Internal("Log directory is not accessible".into()))?;
 
     // 4. Canonicalize the requested path (resolves symlinks/junctions).
-    let canonical_requested = path.canonicalize().map_err(|_| {
-        AppError::NotFound("Log file not found".into())
-    })?;
+    let canonical_requested = path
+        .canonicalize()
+        .map_err(|_| AppError::NotFound("Log file not found".into()))?;
 
     // 5. Containment check on fully resolved paths.
     if !canonical_requested.starts_with(&canonical_root) {

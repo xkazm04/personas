@@ -103,10 +103,10 @@ pub struct ExposedResource {
     pub resource_id: String,
     pub display_name: String,
     pub description: Option<String>,
-    pub fields_exposed: String,     // JSON array of field names
+    pub fields_exposed: String, // JSON array of field names
     pub access_level: AccessLevel,
     pub requires_auth: bool,
-    pub tags: String,               // JSON array of capability tags
+    pub tags: String, // JSON array of capability tags
     pub created_at: String,
     pub expires_at: Option<String>,
 }

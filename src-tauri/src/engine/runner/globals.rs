@@ -32,7 +32,11 @@ pub(super) fn resolve_global_provider_settings(pool: &DbPool, profile: &mut Mode
         }
         Some(providers::LITELLM) => {
             apply_global_setting(pool, &mut profile.base_url, settings_keys::LITELLM_BASE_URL);
-            apply_global_setting(pool, &mut profile.auth_token, settings_keys::LITELLM_MASTER_KEY);
+            apply_global_setting(
+                pool,
+                &mut profile.auth_token,
+                settings_keys::LITELLM_MASTER_KEY,
+            );
         }
         _ => {}
     }

@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, Check, ArrowRight } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, ArrowRight, Eye } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
-import type { TourId, TourStepId } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, isExplorationTourEvent } from '@/stores/slices/system/tourSlice';
+import type { TourId, TourStepId, TourStepDef } from '@/stores/slices/system/tourSlice';
 import { getStepColors } from './tourConstants';
 import { StepProgress } from './StepProgress';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -46,6 +46,8 @@ export function TourPanelBody({
   // Determine if this step has a specialized content component (Tour 1 only)
   const isGettingStarted = tourId === 'getting-started';
   const hasSpecialContent = isGettingStarted && ['appearance-setup', 'credentials-intro', 'persona-creation'].includes(currentStep.id);
+  const requiresAcknowledge = isExplorationTourEvent(currentStep.completeOn);
+  const handleAcknowledge = () => useSystemStore.getState().emitTourEvent(currentStep.completeOn);
 
   return (
     <>
@@ -100,7 +102,14 @@ export function TourPanelBody({
 
           {/* Tours 2 & 3: Generic informational content */}
           {!hasSpecialContent && (
-            <GenericStepContent step={currentStep} subStepIndex={subStepIndex} colors={colors} />
+            <GenericStepContent
+              step={currentStep}
+              subStepIndex={subStepIndex}
+              colors={colors}
+              requiresAcknowledge={requiresAcknowledge}
+              isStepCompleted={isStepCompleted}
+              onAcknowledge={handleAcknowledge}
+            />
           )}
         </Suspense>
       </div>
@@ -143,13 +152,17 @@ export function TourPanelBody({
 }
 
 /** Generic step content for tours that don't have specialized interactive components */
-function GenericStepContent({ step, subStepIndex, colors }: {
-  step: { hint: string; subSteps: { id: string; hint: string }[] };
+function GenericStepContent({ step, subStepIndex, colors, requiresAcknowledge, isStepCompleted, onAcknowledge }: {
+  step: Pick<TourStepDef, 'hint' | 'subSteps'>;
   subStepIndex: number;
   colors: { subtle: string; accent: string; text: string };
+  requiresAcknowledge: boolean;
+  isStepCompleted: boolean;
+  onAcknowledge: () => void;
 }) {
   const { t } = useTranslation();
   const activeHint = step.subSteps[subStepIndex]?.hint ?? step.hint;
+  const showAcknowledgeButton = requiresAcknowledge && !isStepCompleted;
 
   return (
     <div className="space-y-4 mt-2" data-testid="tour-generic-content">
@@ -189,10 +202,25 @@ function GenericStepContent({ step, subStepIndex, colors }: {
         </div>
       )}
 
-      {/* Step auto-completion notice */}
-      <p className="typo-caption text-foreground italic text-center">
-        {t.onboarding.auto_complete_hint}
-      </p>
+      {showAcknowledgeButton ? (
+        <div className="flex flex-col items-center gap-2 pt-1">
+          <p className="typo-caption text-foreground italic text-center">
+            {t.onboarding.tour_explore_to_continue}
+          </p>
+          <button
+            onClick={onAcknowledge}
+            data-testid="tour-btn-acknowledge"
+            className={`flex items-center gap-2 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}
+          >
+            <Eye className="w-3.5 h-3.5" />
+            {t.onboarding.tour_acknowledge}
+          </button>
+        </div>
+      ) : (
+        <p className="typo-caption text-foreground italic text-center">
+          {t.onboarding.auto_complete_hint}
+        </p>
+      )}
     </div>
   );
 }

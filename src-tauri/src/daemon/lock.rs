@@ -163,10 +163,7 @@ impl DaemonLock {
     /// for another process. If the existing file is stale (heartbeat
     /// older than [`STALE_THRESHOLD`]), it is deleted and the acquire
     /// is retried once.
-    pub fn acquire(
-        app_data_dir: &Path,
-        owns: Vec<TriggerKind>,
-    ) -> Result<Self, LockError> {
+    pub fn acquire(app_data_dir: &Path, owns: Vec<TriggerKind>) -> Result<Self, LockError> {
         fs::create_dir_all(app_data_dir)?;
         let path = app_data_dir.join(LOCK_FILENAME);
 
@@ -205,8 +202,7 @@ impl DaemonLock {
             .create_new(true)
             .open(&path)?;
 
-        let json = serde_json::to_vec_pretty(&contents)
-            .map_err(std::io::Error::other)?;
+        let json = serde_json::to_vec_pretty(&contents).map_err(std::io::Error::other)?;
         file.write_all(&json)?;
         file.sync_all()?;
 
@@ -220,8 +216,7 @@ impl DaemonLock {
     /// daemon should log it and decide whether to keep running.
     pub fn heartbeat(&mut self) -> Result<(), LockError> {
         self.contents.heartbeat_at = Utc::now();
-        let json = serde_json::to_vec_pretty(&self.contents)
-            .map_err(std::io::Error::other)?;
+        let json = serde_json::to_vec_pretty(&self.contents).map_err(std::io::Error::other)?;
 
         // Write to a temp file and rename for atomicity — prevents a
         // reader from ever seeing a truncated file mid-write.
@@ -423,11 +418,8 @@ mod tests {
     #[test]
     fn check_active_returns_contents_when_fresh() {
         let tmp = TempDir::new().unwrap();
-        let _lock = DaemonLock::acquire(
-            tmp.path(),
-            vec![TriggerKind::Cron, TriggerKind::Polling],
-        )
-        .unwrap();
+        let _lock =
+            DaemonLock::acquire(tmp.path(), vec![TriggerKind::Cron, TriggerKind::Polling]).unwrap();
         let seen = DaemonLock::check_active(tmp.path()).unwrap().unwrap();
         assert_eq!(seen.pid, std::process::id());
         assert!(seen.owns_kind(TriggerKind::Polling));

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 
 interface SpotlightRect {
   x: number;
@@ -33,7 +34,35 @@ export default function TourSpotlight() {
       setRect(null);
       return null;
     }
-    const el = document.querySelector(`[data-testid="${highlightTestId}"]`);
+    // Defense in depth: the slice setter already validates, but a future
+    // direct setState (tests, devtools, persisted state from an older
+    // build) could still feed an unsafe value. Skip rather than crash
+    // querySelector with SyntaxError, which would kill the spotlight for
+    // the rest of the session.
+    if (!isSafeTourTestId(highlightTestId)) {
+      if (typeof console !== 'undefined') {
+        console.warn(
+          '[TourSpotlight] ignoring unsafe highlightTestId',
+          { received: highlightTestId },
+        );
+      }
+      setRect(null);
+      return null;
+    }
+    const matches = document.querySelectorAll(`[data-testid="${highlightTestId}"]`);
+    if (matches.length === 0) {
+      setRect(null);
+      return null;
+    }
+    if (matches.length > 1 && typeof console !== 'undefined') {
+      // Catch ambiguous testIds at dev time — the spotlight haloes the
+      // first match, which is sometimes the wrong button in views that
+      // render the same testid twice (e.g. a sticky header + body copy).
+      console.warn(
+        `[TourSpotlight] data-testid="${highlightTestId}" matched ${matches.length} elements; spotlighting the first one`,
+      );
+    }
+    const el = matches[0];
     if (!el || !el.isConnected) {
       setRect(null);
       return null;

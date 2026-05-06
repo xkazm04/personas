@@ -93,8 +93,9 @@ pub fn build_simulation_design_context(ir: &AgentIr) -> Result<String, AppError>
         "_simulation_snapshot": true,
     });
 
-    serde_json::to_string(&snapshot)
-        .map_err(|e| AppError::Validation(format!("failed to serialize design_context snapshot: {e}")))
+    serde_json::to_string(&snapshot).map_err(|e| {
+        AppError::Validation(format!("failed to serialize design_context snapshot: {e}"))
+    })
 }
 
 fn ensure_id(value: &mut serde_json::Value, idx: usize, title: Option<&str>) {
@@ -203,18 +204,16 @@ pub async fn simulate_build_draft(
 
     // Parse agent_ir (session first, fall back to persona.last_design_result)
     let mut agent_ir: AgentIr = if let Some(ref raw) = session.agent_ir {
-        serde_json::from_str(raw).map_err(|e| {
-            AppError::Validation(format!("Build session agent_ir parse error: {e}"))
-        })?
+        serde_json::from_str(raw)
+            .map_err(|e| AppError::Validation(format!("Build session agent_ir parse error: {e}")))?
     } else {
         let design_result = persona.last_design_result.clone().ok_or_else(|| {
             AppError::Validation(
                 "Build session has no agent_ir and persona has no design result".to_string(),
             )
         })?;
-        serde_json::from_str(&design_result).map_err(|e| {
-            AppError::Validation(format!("Persona design result parse error: {e}"))
-        })?
+        serde_json::from_str(&design_result)
+            .map_err(|e| AppError::Validation(format!("Persona design result parse error: {e}")))?
     };
 
     // Apply adoption answers if present so simulate sees the user's actual
@@ -252,9 +251,8 @@ pub async fn simulate_build_draft(
     );
 
     // Resolve the use_case from the snapshot to construct the simulation input.
-    let snap_value: serde_json::Value = serde_json::from_str(&snapshot).map_err(|e| {
-        AppError::Validation(format!("simulation snapshot is not valid JSON: {e}"))
-    })?;
+    let snap_value: serde_json::Value = serde_json::from_str(&snapshot)
+        .map_err(|e| AppError::Validation(format!("simulation snapshot is not valid JSON: {e}")))?;
 
     // Caller may pass either:
     //   (a) the LLM-emitted snake_case id (matches the snapshot directly), OR
@@ -262,11 +260,8 @@ pub async fn simulate_build_draft(
     //       design_context's `useCases[].id` — UI fetches via
     //       `getPersonaDetail` use these).
     // Normalize (b) → (a) by position before the snapshot lookup.
-    let resolved_use_case_id = resolve_simulation_use_case_id(
-        &use_case_id,
-        &snap_value,
-        prior_design_context.as_deref(),
-    );
+    let resolved_use_case_id =
+        resolve_simulation_use_case_id(&use_case_id, &snap_value, prior_design_context.as_deref());
 
     let use_case = snap_value
         .get("use_cases")
@@ -294,10 +289,12 @@ pub async fn simulate_build_draft(
             ))
         })?;
 
-    let input_data = Some(crate::commands::core::use_cases::testable::build_simulation_input(
-        use_case,
-        input_override.as_deref(),
-    )?);
+    let input_data = Some(
+        crate::commands::core::use_cases::testable::build_simulation_input(
+            use_case,
+            input_override.as_deref(),
+        )?,
+    );
 
     crate::commands::execution::executions::execute_persona_inner(
         &state,
@@ -438,48 +435,66 @@ mod tests {
         let snap = build_simulation_design_context(&ir).unwrap();
         let v: serde_json::Value = serde_json::from_str(&snap).unwrap();
         assert!(v.get("use_cases").unwrap().as_array().unwrap().is_empty());
-        assert_eq!(v.get("_simulation_snapshot").unwrap(), &serde_json::json!(true));
+        assert_eq!(
+            v.get("_simulation_snapshot").unwrap(),
+            &serde_json::json!(true)
+        );
     }
 
     #[test]
     fn build_simulation_design_context_preserves_structured_id_and_sample_input() {
         let mut ir = AgentIr::default();
-        ir.use_cases.push(AgentIrUseCase::Structured(AgentIrUseCaseData {
-            id: Some("uc_morning_digest".to_string()),
-            title: Some("Morning Digest".to_string()),
-            sample_input: Some(serde_json::json!({"max": 5})),
-            ..Default::default()
-        }));
+        ir.use_cases
+            .push(AgentIrUseCase::Structured(AgentIrUseCaseData {
+                id: Some("uc_morning_digest".to_string()),
+                title: Some("Morning Digest".to_string()),
+                sample_input: Some(serde_json::json!({"max": 5})),
+                ..Default::default()
+            }));
 
         let snap = build_simulation_design_context(&ir).unwrap();
         let v: serde_json::Value = serde_json::from_str(&snap).unwrap();
         let ucs = v.get("use_cases").unwrap().as_array().unwrap();
         assert_eq!(ucs.len(), 1);
-        assert_eq!(ucs[0].get("id").unwrap().as_str().unwrap(), "uc_morning_digest");
-        assert_eq!(ucs[0].get("sample_input").unwrap(), &serde_json::json!({"max": 5}));
+        assert_eq!(
+            ucs[0].get("id").unwrap().as_str().unwrap(),
+            "uc_morning_digest"
+        );
+        assert_eq!(
+            ucs[0].get("sample_input").unwrap(),
+            &serde_json::json!({"max": 5})
+        );
     }
 
     #[test]
     fn build_simulation_design_context_fabricates_id_when_missing() {
         let mut ir = AgentIr::default();
-        ir.use_cases.push(AgentIrUseCase::Structured(AgentIrUseCaseData {
-            id: None,
-            title: Some("Weekly Recap".to_string()),
-            ..Default::default()
-        }));
+        ir.use_cases
+            .push(AgentIrUseCase::Structured(AgentIrUseCaseData {
+                id: None,
+                title: Some("Weekly Recap".to_string()),
+                ..Default::default()
+            }));
 
         let snap = build_simulation_design_context(&ir).unwrap();
         let v: serde_json::Value = serde_json::from_str(&snap).unwrap();
         let ucs = v.get("use_cases").unwrap().as_array().unwrap();
         let id = ucs[0].get("id").unwrap().as_str().unwrap();
-        assert!(id.starts_with("uc_0_"), "fabricated id should start with uc_0_, got {id}");
-        assert!(id.contains("weekly"), "fabricated id should contain title slug, got {id}");
+        assert!(
+            id.starts_with("uc_0_"),
+            "fabricated id should start with uc_0_, got {id}"
+        );
+        assert!(
+            id.contains("weekly"),
+            "fabricated id should contain title slug, got {id}"
+        );
     }
 
     #[test]
     fn build_simulation_design_context_fabricates_id_for_simple_variant() {
         let mut ir = AgentIr::default();
-        ir.use_cases.push(AgentIrUseCase::Simple("Send daily digest".to_string()));
+        ir.use_cases
+            .push(AgentIrUseCase::Simple("Send daily digest".to_string()));
         let snap = build_simulation_design_context(&ir).unwrap();
         let v: serde_json::Value = serde_json::from_str(&snap).unwrap();
         let ucs = v.get("use_cases").unwrap().as_array().unwrap();
@@ -490,17 +505,20 @@ mod tests {
     #[test]
     fn build_simulation_design_context_handles_multiple_use_cases() {
         let mut ir = AgentIr::default();
-        ir.use_cases.push(AgentIrUseCase::Structured(AgentIrUseCaseData {
-            id: Some("uc_a".to_string()),
-            title: Some("First".to_string()),
-            ..Default::default()
-        }));
-        ir.use_cases.push(AgentIrUseCase::Structured(AgentIrUseCaseData {
-            id: Some("uc_b".to_string()),
-            title: Some("Second".to_string()),
-            ..Default::default()
-        }));
-        ir.use_cases.push(AgentIrUseCase::Simple("Third bare".to_string()));
+        ir.use_cases
+            .push(AgentIrUseCase::Structured(AgentIrUseCaseData {
+                id: Some("uc_a".to_string()),
+                title: Some("First".to_string()),
+                ..Default::default()
+            }));
+        ir.use_cases
+            .push(AgentIrUseCase::Structured(AgentIrUseCaseData {
+                id: Some("uc_b".to_string()),
+                title: Some("Second".to_string()),
+                ..Default::default()
+            }));
+        ir.use_cases
+            .push(AgentIrUseCase::Simple("Third bare".to_string()));
 
         let snap = build_simulation_design_context(&ir).unwrap();
         let v: serde_json::Value = serde_json::from_str(&snap).unwrap();
@@ -518,13 +536,20 @@ mod tests {
         // execute_persona_inner reads dc.get("use_cases") (snake_case);
         // make sure the snapshot uses that exact key, not "useCases".
         let mut ir = AgentIr::default();
-        ir.use_cases.push(AgentIrUseCase::Structured(AgentIrUseCaseData {
-            id: Some("uc_x".to_string()),
-            ..Default::default()
-        }));
+        ir.use_cases
+            .push(AgentIrUseCase::Structured(AgentIrUseCaseData {
+                id: Some("uc_x".to_string()),
+                ..Default::default()
+            }));
         let snap = build_simulation_design_context(&ir).unwrap();
-        assert!(snap.contains("\"use_cases\""), "snapshot must use snake_case key");
-        assert!(!snap.contains("\"useCases\""), "snapshot must not use camelCase key");
+        assert!(
+            snap.contains("\"use_cases\""),
+            "snapshot must use snake_case key"
+        );
+        assert!(
+            !snap.contains("\"useCases\""),
+            "snapshot must not use camelCase key"
+        );
     }
 
     #[test]
@@ -631,4 +656,3 @@ mod tests {
         assert_eq!(out, "uc-z");
     }
 }
-

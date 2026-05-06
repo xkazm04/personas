@@ -1,6 +1,6 @@
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use serde::Serialize;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use tauri::State;
 use tracing::instrument;
 use ts_rs::TS;
@@ -36,16 +36,20 @@ pub fn tag_prompt_version(
     let valid_tags = ["production", "experimental", "archived"];
     if !valid_tags.contains(&tag.as_str()) {
         return Err(AppError::Validation(format!(
-            "Invalid tag '{}'. Must be one of: {}", tag, valid_tags.join(", ")
+            "Invalid tag '{}'. Must be one of: {}",
+            tag,
+            valid_tags.join(", ")
         )));
     }
 
     // If promoting to production, demote existing production version
     if tag == "production" {
         let version = repo::get_prompt_version_by_id(&state.db, &id)?;
-        if let Ok(Some(current_prod)) = repo::get_production_version(&state.db, &version.persona_id) {
+        if let Ok(Some(current_prod)) = repo::get_production_version(&state.db, &version.persona_id)
+        {
             if current_prod.id != id {
-                let _ = repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
+                let _ =
+                    repo::update_prompt_version_tag(&state.db, &current_prod.id, "experimental");
             }
         }
     }
@@ -171,8 +175,13 @@ pub async fn run_prompt_ab_test(
     require_auth(&state).await?;
 
     // Debounce guard: prevent concurrent A/B tests
-    if AB_TEST_RUNNING.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_err() {
-        return Err(AppError::Validation("An A/B test is already running. Please wait for it to finish.".into()));
+    if AB_TEST_RUNNING
+        .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+        .is_err()
+    {
+        return Err(AppError::Validation(
+            "An A/B test is already running. Please wait for it to finish.".into(),
+        ));
     }
     // Ensure the guard is always released, even on early returns / errors
     let _guard = AbTestGuard;
@@ -181,7 +190,9 @@ pub async fn run_prompt_ab_test(
     let version_b = repo::get_prompt_version_by_id(&state.db, &version_b_id)?;
 
     if version_a.persona_id != persona_id || version_b.persona_id != persona_id {
-        return Err(AppError::Validation("Both versions must belong to the specified persona".into()));
+        return Err(AppError::Validation(
+            "Both versions must belong to the specified persona".into(),
+        ));
     }
 
     let persona = crate::db::repos::core::personas::get_by_id(&state.db, &persona_id)?;
@@ -204,11 +215,20 @@ pub async fn run_prompt_ab_test(
     }
 
     let exec_a = crate::db::repos::execution::executions::create(
-        &state.db, &persona_id, None, test_input.clone(), model_used.clone(), None,
+        &state.db,
+        &persona_id,
+        None,
+        test_input.clone(),
+        model_used.clone(),
+        None,
     )?;
     crate::db::repos::execution::executions::update_status(
-        &state.db, &exec_a.id,
-        crate::db::models::UpdateExecutionStatus { status: crate::engine::types::ExecutionState::Running, ..Default::default() },
+        &state.db,
+        &exec_a.id,
+        crate::db::models::UpdateExecutionStatus {
+            status: crate::engine::types::ExecutionState::Running,
+            ..Default::default()
+        },
     )?;
 
     // Create execution B with version B's prompt
@@ -221,11 +241,20 @@ pub async fn run_prompt_ab_test(
     }
 
     let exec_b = crate::db::repos::execution::executions::create(
-        &state.db, &persona_id, None, test_input, model_used, None,
+        &state.db,
+        &persona_id,
+        None,
+        test_input,
+        model_used,
+        None,
     )?;
     crate::db::repos::execution::executions::update_status(
-        &state.db, &exec_b.id,
-        crate::db::models::UpdateExecutionStatus { status: crate::engine::types::ExecutionState::Running, ..Default::default() },
+        &state.db,
+        &exec_b.id,
+        crate::db::models::UpdateExecutionStatus {
+            status: crate::engine::types::ExecutionState::Running,
+            ..Default::default()
+        },
     )?;
 
     let db_a = state.db.clone();
@@ -241,16 +270,36 @@ pub async fn run_prompt_ab_test(
 
     // Start both executions concurrently (fire-and-forget, returns immediately)
     let (res_a, res_b) = tokio::join!(
-        engine.start_execution(app_a, db_a, exec_a_id.clone(), persona_a, tools.clone(), input_json.clone(), None),
-        engine.start_execution(app, db_b, exec_b_id.clone(), persona_b, tools, input_json, None),
+        engine.start_execution(
+            app_a,
+            db_a,
+            exec_a_id.clone(),
+            persona_a,
+            tools.clone(),
+            input_json.clone(),
+            None
+        ),
+        engine.start_execution(
+            app,
+            db_b,
+            exec_b_id.clone(),
+            persona_b,
+            tools,
+            input_json,
+            None
+        ),
     );
 
     // Check for execution start failures immediately instead of waiting for timeout
     if let Err(e) = res_a {
-        return Err(AppError::Validation(format!("Execution A failed to start: {e}")));
+        return Err(AppError::Validation(format!(
+            "Execution A failed to start: {e}"
+        )));
     }
     if let Err(e) = res_b {
-        return Err(AppError::Validation(format!("Execution B failed to start: {e}")));
+        return Err(AppError::Validation(format!(
+            "Execution B failed to start: {e}"
+        )));
     }
 
     // Await both completion signals with a 120-second timeout
@@ -263,7 +312,9 @@ pub async fn run_prompt_ab_test(
     .await;
 
     if wait_result.is_err() {
-        return Err(AppError::Validation("A/B test timed out after 120 seconds".into()));
+        return Err(AppError::Validation(
+            "A/B test timed out after 120 seconds".into(),
+        ));
     }
 
     // Both executions are done — read final results

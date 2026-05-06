@@ -259,6 +259,7 @@ export function useByomSettings() {
 
   const routingWarnings = useMemo(() => groupByRuleIndex(policyWarnings, 'routing'), [policyWarnings]);
   const complianceWarnings = useMemo(() => groupByRuleIndex(policyWarnings, 'compliance'), [policyWarnings]);
+  const topLevelWarnings = useMemo(() => policyWarnings.filter((w) => w.ruleType === 'top_level'), [policyWarnings]);
 
   return {
     policy,
@@ -286,5 +287,6 @@ export function useByomSettings() {
     hasBlockingErrors,
     routingWarnings,
     complianceWarnings,
+    topLevelWarnings,
   };
 }

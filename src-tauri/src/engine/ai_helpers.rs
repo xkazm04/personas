@@ -25,8 +25,25 @@ impl<'a> LangMatcher<'a> {
     fn for_language(language: &str) -> LangMatcher<'static> {
         match language {
             "sql" => LangMatcher {
-                accept: &["sql", "postgresql", "postgres", "mysql", "pgsql", "sqlite", "sqlite3"],
-                reject: &["javascript", "typescript", "js", "ts", "python", "py", "rust", "go"],
+                accept: &[
+                    "sql",
+                    "postgresql",
+                    "postgres",
+                    "mysql",
+                    "pgsql",
+                    "sqlite",
+                    "sqlite3",
+                ],
+                reject: &[
+                    "javascript",
+                    "typescript",
+                    "js",
+                    "ts",
+                    "python",
+                    "py",
+                    "rust",
+                    "go",
+                ],
             },
             "redis" => LangMatcher {
                 accept: &["redis"],
@@ -132,11 +149,7 @@ pub async fn build_schema_context(
         Err(_) => return String::new(),
     };
 
-    let name_idx = match tables_result
-        .columns
-        .iter()
-        .position(|c| c == "table_name")
-    {
+    let name_idx = match tables_result.columns.iter().position(|c| c == "table_name") {
         Some(i) => i,
         None => return String::new(),
     };

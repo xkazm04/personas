@@ -1,6 +1,6 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
 use super::types::{ExecutionMetrics, ProtocolMessage, StreamLineType, TodoItem};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 const MAX_TOOL_INPUT_DISPLAY: usize = 500;
 const MAX_TOOL_RESULT_DISPLAY: usize = 200;
@@ -100,9 +100,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             }
         }
         "assistant" => {
-            let content = value
-                .pointer("/message/content")
-                .and_then(|c| c.as_array());
+            let content = value.pointer("/message/content").and_then(|c| c.as_array());
 
             match content {
                 Some(blocks) => {
@@ -134,7 +132,10 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     .and_then(|n| n.as_str())
                                     .unwrap_or("unknown")
                                     .to_string();
-                                let input_json = block.get("input").cloned().unwrap_or(serde_json::Value::Null);
+                                let input_json = block
+                                    .get("input")
+                                    .cloned()
+                                    .unwrap_or(serde_json::Value::Null);
 
                                 // Special-case TodoWrite: parse the structured `todos` array
                                 // so the chat can render a checklist instead of a truncated
@@ -142,9 +143,11 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                 // if the input shape is unrecognized.
                                 if name == "TodoWrite" {
                                     if let Some(items) = extract_todo_items(&input_json) {
-                                        let display = format!("> Plan updated: {} item(s)", items.len());
+                                        let display =
+                                            format!("> Plan updated: {} item(s)", items.len());
                                         if first_type.is_none() {
-                                            first_type = Some(StreamLineType::AssistantTodoWrite { items });
+                                            first_type =
+                                                Some(StreamLineType::AssistantTodoWrite { items });
                                             tool_display = Some(display);
                                         } else if tool_display.is_none() {
                                             tool_display = Some(display);
@@ -153,8 +156,10 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                                     }
                                 }
 
-                                let input_preview = serde_json::to_string(&input_json).unwrap_or_default();
-                                let input_preview_truncated = truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
+                                let input_preview =
+                                    serde_json::to_string(&input_json).unwrap_or_default();
+                                let input_preview_truncated =
+                                    truncate_field(&input_preview, MAX_TOOL_INPUT_DISPLAY);
                                 let display = format!("> Using tool: {name}");
                                 if first_type.is_none() {
                                     first_type = Some(StreamLineType::AssistantToolUse {
@@ -196,9 +201,7 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
         }
         "user" => {
             // Check for tool_result content
-            let content = value
-                .pointer("/message/content")
-                .and_then(|c| c.as_array());
+            let content = value.pointer("/message/content").and_then(|c| c.as_array());
 
             if let Some(blocks) = content {
                 for block in blocks {
@@ -220,18 +223,10 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             (StreamLineType::Unknown, None)
         }
         "result" => {
-            let duration_ms = value
-                .get("duration_ms")
-                .and_then(|d| d.as_u64());
-            let total_cost_usd = value
-                .get("total_cost_usd")
-                .and_then(|c| c.as_f64());
-            let total_input_tokens = value
-                .get("total_input_tokens")
-                .and_then(|t| t.as_u64());
-            let total_output_tokens = value
-                .get("total_output_tokens")
-                .and_then(|t| t.as_u64());
+            let duration_ms = value.get("duration_ms").and_then(|d| d.as_u64());
+            let total_cost_usd = value.get("total_cost_usd").and_then(|c| c.as_f64());
+            let total_input_tokens = value.get("total_input_tokens").and_then(|t| t.as_u64());
+            let total_output_tokens = value.get("total_output_tokens").and_then(|t| t.as_u64());
             let model = value
                 .get("model")
                 .and_then(|m| m.as_str())
@@ -405,15 +400,16 @@ fn parse_agent_memory(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         title: str_field_or(msg, "title", ""),
         content: str_field_or(msg, "content", ""),
         category: str_field(msg, "category"),
-        importance: msg.get("importance").and_then(|v| v.as_i64()).map(|n| n as i32),
+        importance: msg
+            .get("importance")
+            .and_then(|v| v.as_i64())
+            .map(|n| n as i32),
         tags: str_array_field(msg, "tags"),
     })
 }
 
 fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
-    let decisions = msg.get("decisions")
-        .and_then(|v| v.as_array())
-        .cloned();
+    let decisions = msg.get("decisions").and_then(|v| v.as_array()).cloned();
     Some(ProtocolMessage::ManualReview {
         title: str_field_or(msg, "title", ""),
         description: str_field(msg, "description"),
@@ -443,7 +439,10 @@ fn parse_propose_improvement(msg: &serde_json::Value) -> Option<ProtocolMessage>
         rationale: str_field_or(msg, "rationale", ""),
         current_excerpt: str_field(msg, "current_excerpt"),
         proposed_replacement: str_field_or(msg, "proposed_replacement", ""),
-        confidence: msg.get("confidence").and_then(|v| v.as_f64()).unwrap_or(0.5),
+        confidence: msg
+            .get("confidence")
+            .and_then(|v| v.as_f64())
+            .unwrap_or(0.5),
         evidence: str_field(msg, "evidence"),
     })
 }
@@ -491,7 +490,9 @@ pub fn extract_protocol_message_from_value(value: &serde_json::Value) -> Option<
 pub fn extract_execution_flows(text: &str) -> Option<String> {
     for line in text.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("{\"execution_flow\":") || trimmed.starts_with("{\"execution_flow\" :") {
+        if trimmed.starts_with("{\"execution_flow\":")
+            || trimmed.starts_with("{\"execution_flow\" :")
+        {
             // Validate it's parseable JSON before returning
             if serde_json::from_str::<serde_json::Value>(trimmed).is_ok() {
                 return Some(trimmed.to_string());
@@ -643,7 +644,10 @@ mod file_change_tests {
 
     #[test]
     fn test_extract_edit() {
-        let result = extract_file_change("Edit", r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#);
+        let result = extract_file_change(
+            "Edit",
+            r#"{"file_path":"/src/main.rs","old_string":"foo","new_string":"bar"}"#,
+        );
         assert!(result.is_some());
         let fc = result.unwrap();
         assert_eq!(fc.path, "/src/main.rs");
@@ -692,7 +696,11 @@ mod tests {
         let (st, display) = parse_stream_line(line);
 
         match st {
-            StreamLineType::SystemInit { model, session_id, plugin_errors } => {
+            StreamLineType::SystemInit {
+                model,
+                session_id,
+                plugin_errors,
+            } => {
                 assert_eq!(model, "claude-sonnet-4-20250514");
                 assert_eq!(session_id, Some("sess-123".to_string()));
                 assert!(
@@ -702,7 +710,10 @@ mod tests {
             }
             _ => panic!("Expected SystemInit, got {st:?}"),
         }
-        assert_eq!(display, Some("Session started (claude-sonnet-4-20250514)".to_string()));
+        assert_eq!(
+            display,
+            Some("Session started (claude-sonnet-4-20250514)".to_string())
+        );
     }
 
     #[test]
@@ -742,7 +753,8 @@ mod tests {
 
     #[test]
     fn test_parse_assistant_text() {
-        let line = r#"{"type":"assistant","message":{"content":[{"type":"text","text":"Hello world"}]}}"#;
+        let line =
+            r#"{"type":"assistant","message":{"content":[{"type":"text","text":"Hello world"}]}}"#;
         let (st, display) = parse_stream_line(line);
 
         match st {
@@ -760,7 +772,10 @@ mod tests {
         let (st, display) = parse_stream_line(line);
 
         match st {
-            StreamLineType::AssistantToolUse { tool_name, input_preview } => {
+            StreamLineType::AssistantToolUse {
+                tool_name,
+                input_preview,
+            } => {
                 assert_eq!(tool_name, "read_file");
                 assert_eq!(input_preview, "{}");
             }
@@ -967,10 +982,7 @@ mod tests {
                 assert_eq!(content, "Use REST conventions");
                 assert_eq!(category, Some("learning".to_string()));
                 assert_eq!(importance, Some(8));
-                assert_eq!(
-                    tags,
-                    Some(vec!["api".to_string(), "patterns".to_string()])
-                );
+                assert_eq!(tags, Some(vec!["api".to_string(), "patterns".to_string()]));
             }
             _ => panic!("Expected AgentMemory, got {msg:?}"),
         }
@@ -1018,9 +1030,15 @@ Finished."#;
         // Should match
         assert!(is_session_limit_error("Error: session limit reached"));
         assert!(is_session_limit_error("rate limit exceeded"));
-        assert!(is_session_limit_error("Usage Limit: you have exceeded your quota"));
-        assert!(is_session_limit_error("Quota exceeded for this billing period"));
-        assert!(is_session_limit_error("Too many requests, please slow down"));
+        assert!(is_session_limit_error(
+            "Usage Limit: you have exceeded your quota"
+        ));
+        assert!(is_session_limit_error(
+            "Quota exceeded for this billing period"
+        ));
+        assert!(is_session_limit_error(
+            "Too many requests, please slow down"
+        ));
 
         // Case insensitive
         assert!(is_session_limit_error("SESSION LIMIT HIT"));
@@ -1053,7 +1071,10 @@ Finished."#;
         assert_eq!(metrics.cost_usd, 0.05);
         assert_eq!(metrics.input_tokens, 2000);
         assert_eq!(metrics.output_tokens, 500);
-        assert_eq!(metrics.model_used, Some("claude-sonnet-4-20250514".to_string()));
+        assert_eq!(
+            metrics.model_used,
+            Some("claude-sonnet-4-20250514".to_string())
+        );
         assert_eq!(metrics.session_id, Some("sess-789".to_string()));
 
         // Non-Result type should not change metrics

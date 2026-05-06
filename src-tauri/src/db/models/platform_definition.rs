@@ -81,4 +81,3 @@ pub struct ProtocolMapRule {
     /// When to apply this mapping
     pub condition: String,
 }
-

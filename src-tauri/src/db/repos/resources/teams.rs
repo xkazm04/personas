@@ -79,9 +79,10 @@ pub fn get_all_team_counts(pool: &DbPool) -> Result<Vec<TeamCounts>, AppError> {
                 connection_count: row.get("connection_count")?,
             })
         })?;
-        let counts = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let counts = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(counts)
-
     })
 }
 
@@ -113,7 +114,6 @@ pub fn create(pool: &DbPool, input: CreateTeamInput) -> Result<PersonaTeam, AppE
         )?;
 
         get_by_id(pool, &id)
-
     })
 }
 
@@ -253,7 +253,6 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
         tx.commit().map_err(AppError::Database)?;
 
         get_by_id(pool, &new_team_id)
-
     })
 }
 
@@ -267,13 +266,18 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         // persona_team_members, team_memories) and still need manual
         // cleanup. PRAGMA foreign_keys = ON is the global default per
         // db/mod.rs:83-86, so the CASCADE actually fires.
-        tx.execute("DELETE FROM persona_team_connections WHERE team_id = ?1", params![id])?;
-        tx.execute("DELETE FROM persona_team_members WHERE team_id = ?1", params![id])?;
+        tx.execute(
+            "DELETE FROM persona_team_connections WHERE team_id = ?1",
+            params![id],
+        )?;
+        tx.execute(
+            "DELETE FROM persona_team_members WHERE team_id = ?1",
+            params![id],
+        )?;
         tx.execute("DELETE FROM team_memories WHERE team_id = ?1", params![id])?;
         let rows = tx.execute("DELETE FROM persona_teams WHERE id = ?1", params![id])?;
         tx.commit().map_err(AppError::Database)?;
         Ok(rows > 0)
-
     })
 }
 
@@ -288,9 +292,10 @@ pub fn get_members(pool: &DbPool, team_id: &str) -> Result<Vec<PersonaTeamMember
             "SELECT * FROM persona_team_members WHERE team_id = ?1 ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![team_id], row_to_member)?;
-        let members = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let members = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(members)
-
     })
 }
 
@@ -341,7 +346,6 @@ pub fn add_member(
             config,
             created_at: now,
         })
-
     })
 }
 
@@ -394,7 +398,6 @@ pub fn update_member(
         conn.execute(&sql, params_ref.as_slice())?;
 
         Ok(())
-
     })
 }
 
@@ -412,7 +415,6 @@ pub fn remove_member(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         )?;
         tx.commit().map_err(AppError::Database)?;
         Ok(rows > 0)
-
     })
 }
 
@@ -430,9 +432,10 @@ pub fn get_connections(
             "SELECT * FROM persona_team_connections WHERE team_id = ?1 ORDER BY created_at ASC",
         )?;
         let rows = stmt.query_map(params![team_id], row_to_connection)?;
-        let connections = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let connections = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(connections)
-
     })
 }
 
@@ -551,7 +554,6 @@ pub fn create_connection(
             label,
             created_at: now,
         })
-
     })
 }
 
@@ -570,9 +572,7 @@ pub fn update_connection_type(
                 params![id],
                 row_to_connection,
             )
-            .map_err(|_| {
-                AppError::Validation(format!("Connection '{}' not found", id))
-            })?;
+            .map_err(|_| AppError::Validation(format!("Connection '{}' not found", id)))?;
 
         // If changing to a non-feedback type, run cycle detection to prevent
         // silently introducing a cycle (e.g. feedback → sequential).
@@ -600,8 +600,7 @@ pub fn update_connection_type(
                 .map(|e| (e.source_member_id.as_str(), e.target_member_id.as_str()))
                 .collect();
 
-            let graph =
-                crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
+            let graph = crate::engine::topology_graph::NamedTopologyGraph::new(&member_ids, &edges);
             if graph.has_cycle() {
                 return Err(AppError::Validation(
                     "Changing this connection type would create a cycle. Keep it as \"feedback\" for intentional back-edges.".into(),
@@ -614,7 +613,6 @@ pub fn update_connection_type(
             params![connection_type, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -626,7 +624,6 @@ pub fn delete_connection(pool: &DbPool, id: &str) -> Result<bool, AppError> {
             params![id],
         )?;
         Ok(rows > 0)
-
     })
 }
 
@@ -644,7 +641,6 @@ pub fn has_running_pipeline(pool: &DbPool, team_id: &str) -> Result<bool, AppErr
             |row| row.get(0),
         )?;
         Ok(count > 0)
-
     })
 }
 
@@ -663,7 +659,6 @@ pub fn create_pipeline_run(
             params![id, team_id, input_data, now],
         )?;
         Ok(id)
-
     })
 }
 
@@ -686,7 +681,6 @@ pub fn update_pipeline_run(
             params![status, node_statuses, error_message, completed_at, id],
         )?;
         Ok(())
-
     })
 }
 
@@ -702,7 +696,6 @@ pub fn get_pipeline_run(pool: &DbPool, id: &str) -> Result<PipelineRun, AppError
             rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("PipelineRun {id}")),
             other => AppError::Database(other),
         })
-
     })
 }
 
@@ -713,9 +706,10 @@ pub fn list_pipeline_runs(pool: &DbPool, team_id: &str) -> Result<Vec<PipelineRu
             "SELECT * FROM pipeline_runs WHERE team_id = ?1 ORDER BY started_at DESC LIMIT 50",
         )?;
         let rows = stmt.query_map(params![team_id], row_to_pipeline_run)?;
-        let runs = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        let runs = rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
         Ok(runs)
-
     })
 }
 
@@ -784,7 +778,16 @@ mod tests {
         let p1 = create_test_persona(&pool, "Agent A");
         let p2 = create_test_persona(&pool, "Agent B");
 
-        let m1 = add_member(&pool, &team.id, &p1.id, Some("orchestrator".into()), Some(100.0), Some(200.0), None).unwrap();
+        let m1 = add_member(
+            &pool,
+            &team.id,
+            &p1.id,
+            Some("orchestrator".into()),
+            Some(100.0),
+            Some(200.0),
+            None,
+        )
+        .unwrap();
         assert_eq!(m1.role, "orchestrator");
         assert!((m1.position_x - 100.0).abs() < f64::EPSILON);
 
@@ -795,7 +798,15 @@ mod tests {
         assert_eq!(members.len(), 2);
 
         // Update member
-        update_member(&pool, &m1.id, Some("reviewer".into()), Some(50.0), None, None).unwrap();
+        update_member(
+            &pool,
+            &m1.id,
+            Some("reviewer".into()),
+            Some(50.0),
+            None,
+            None,
+        )
+        .unwrap();
 
         // Add connection
         let conn = create_connection(
@@ -826,7 +837,8 @@ mod tests {
         // Re-add a member + connection so we can verify delete cleans them up
         let m3 = add_member(&pool, &team.id, &p1.id, None, None, None, None).unwrap();
         let m2_ref = &members_after[0];
-        let _conn2 = create_connection(&pool, &team.id, &m3.id, &m2_ref.id, None, None, None).unwrap();
+        let _conn2 =
+            create_connection(&pool, &team.id, &m3.id, &m2_ref.id, None, None, None).unwrap();
         assert_eq!(get_members(&pool, &team.id).unwrap().len(), 2);
         assert_eq!(get_connections(&pool, &team.id).unwrap().len(), 1);
 

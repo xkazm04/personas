@@ -114,6 +114,9 @@ export function buildEvalGridData(results: LabEvalResult[]): EvalGridData {
       avgToolAccuracy: Math.round(avgTA),
       avgOutputQuality: Math.round(avgOQ),
       avgProtocolCompliance: Math.round(avgPC),
+      // composite = round(avgTA * 0.4 + avgOQ * 0.4 + avgPC * 0.2). Sorts the
+      // version leaderboard below — see `compositeScore` JSDoc for the canonical
+      // formula and the golden test that pins it.
       compositeScore: compositeScore(avgTA, avgOQ, avgPC),
       totalCost: a.totalCost,
       avgDuration: Math.round(a.totalDuration / n),

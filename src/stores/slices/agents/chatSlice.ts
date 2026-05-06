@@ -440,6 +440,7 @@ function setupChatExecListeners(
   };
 
   (async () => {
+   try {
     // Dynamic imports to avoid breaking store initialization
     const { listen } = await import("@tauri-apps/api/event");
     const { EventName } = await import("@/lib/eventRegistry");
@@ -474,6 +475,17 @@ function setupChatExecListeners(
     );
     if (aborted) { status(); return; }
     unlistenStatus = status;
+   } catch (err) {
+    // listener-setup failed (Tauri plugin missing, dynamic import error). Without
+    // this, chatStreaming/isExecuting stay true and the chat looks stuck.
+    if (!finalized) {
+      finalized = true;
+      cleanup();
+      chatExecCleanup = null;
+      set({ chatStreaming: false, isExecuting: false, activeExecutionId: null, executionPersonaId: null });
+    }
+    throw err;
+   }
   })();
 
   chatExecCleanup = cleanup;
