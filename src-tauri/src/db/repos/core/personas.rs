@@ -517,7 +517,7 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
 }
 
 #[instrument(skip(pool, input), fields(persona_name = %input.name))]
-pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppError> {
+pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, AppError> {
     timed_query!("personas", "personas::create", {
         validate_name(&input.name)?;
         validate_system_prompt(&input.system_prompt)?;
@@ -539,7 +539,41 @@ pub fn create(pool: &DbPool, input: CreatePersonaInput) -> Result<Persona, AppEr
 
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
-        let project_id = input.project_id.unwrap_or_else(|| "default".into());
+        let project_id = input.project_id.clone().unwrap_or_else(|| "default".into());
+
+        // 2026-05-05 — name uniqueness within project. The build LLM
+        // picks generic titles (e.g. "Email Triage Manager", "Documentation
+        // Archiver") and the same intent shape often produces the same
+        // name across runs. SQL audit on the rapid-validation cohort
+        // showed five identically-named personas in the DB. Suffix on
+        // collision so the user can tell them apart in lists/sidebar
+        // without changing intent semantics. Only mutates `input.name`
+        // when needed; original name is preserved when unique.
+        {
+            let conn = pool.get()?;
+            let mut suffix = 2u32;
+            loop {
+                let exists: bool = conn
+                    .query_row(
+                        "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 LIMIT 1",
+                        params![project_id, input.name],
+                        |_| Ok(()),
+                    )
+                    .is_ok();
+                if !exists {
+                    break;
+                }
+                let base = input.name.trim_end_matches(|c: char| c.is_ascii_digit() || c == ' ' || c == '(' || c == ')').to_string();
+                input.name = format!("{} ({})", base.trim_end(), suffix);
+                suffix += 1;
+                if suffix > 99 {
+                    // Defensive ceiling — a project with 99 collisions on
+                    // the same name is a bug; insert anyway and let the
+                    // user clean up rather than loop forever.
+                    break;
+                }
+            }
+        }
         let enabled = input.enabled.unwrap_or(true) as i32;
         let sensitive = 0i32;
         let max_concurrent = input.max_concurrent.unwrap_or(4);

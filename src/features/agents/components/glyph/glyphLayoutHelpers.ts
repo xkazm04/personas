@@ -3,6 +3,12 @@ import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { PetalState } from "./glyphLayoutTypes";
 
 export const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {
+  // 2026-05-05 — sample-output (5th capability gate) shares the "task"
+  // petal with use-cases. Listed FIRST so Object.fromEntries-based
+  // DIM_TO_CELL_KEY below still resolves "task" back to "use-cases"
+  // (last-key-wins semantics); only the forward lookup picks up the
+  // sample-output entry.
+  "sample-output": "task",
   "use-cases": "task",
   connectors: "connector",
   triggers: "trigger",

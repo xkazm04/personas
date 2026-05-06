@@ -28,8 +28,11 @@ interface AuraFrameProps {
   icon: ReactNode;
   /** Skip the default circular base (used by error, which draws its own octagon). */
   hideBase?: boolean;
+  /** 0..1 opacity for the inner lucide. The surrounding decoration always
+   *  renders at full opacity (it's the structural marker). */
+  iconOpacity?: number;
 }
-function AuraFrame({ size, decoration, icon, hideBase }: AuraFrameProps) {
+function AuraFrame({ size, decoration, icon, hideBase, iconOpacity = 1 }: AuraFrameProps) {
   const iconSize = Math.round(size * 0.46);
   return (
     <div
@@ -53,8 +56,8 @@ function AuraFrame({ size, decoration, icon, hideBase }: AuraFrameProps) {
         {decoration}
       </svg>
       <div
-        className="relative flex items-center justify-center"
-        style={{ width: iconSize, height: iconSize }}
+        className="relative flex items-center justify-center transition-opacity duration-200"
+        style={{ width: iconSize, height: iconSize, opacity: iconOpacity }}
       >
         {icon}
       </div>
@@ -64,7 +67,7 @@ function AuraFrame({ size, decoration, icon, hideBase }: AuraFrameProps) {
 
 // ---------------------------------------------------------------------------
 
-export function TriggerAura({ size }: { size: number }) {
+export function TriggerAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const ticks: ReactNode[] = [];
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2 - Math.PI / 2;
@@ -89,13 +92,13 @@ export function TriggerAura({ size }: { size: number }) {
         strokeWidth="1.1" strokeLinecap="round" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<Calendar style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function TaskAura({ size }: { size: number }) {
+export function TaskAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* ascending step-chevrons flanking the icon */}
@@ -116,13 +119,13 @@ export function TaskAura({ size }: { size: number }) {
         stroke="currentColor" strokeOpacity="0.5" strokeWidth="1.2" strokeLinecap="round" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<ListTodo style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function ConnectorAura({ size }: { size: number }) {
+export function ConnectorAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const corners: Array<{ cx: number; cy: number }> = [
     { cx: 13, cy: 13 }, { cx: 59, cy: 13 },
     { cx: 13, cy: 59 }, { cx: 59, cy: 59 },
@@ -146,13 +149,13 @@ export function ConnectorAura({ size }: { size: number }) {
       ))}
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<Plug style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function MessageAura({ size }: { size: number }) {
+export function MessageAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* left wave arcs */}
@@ -177,13 +180,13 @@ export function MessageAura({ size }: { size: number }) {
         strokeLinecap="round" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<MessageSquare style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function ReviewAura({ size }: { size: number }) {
+export function ReviewAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* inspection arc brackets, top & bottom */}
@@ -203,13 +206,13 @@ export function ReviewAura({ size }: { size: number }) {
         strokeWidth="0.8" strokeLinecap="round" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<UserCheck style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function MemoryAura({ size }: { size: number }) {
+export function MemoryAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* paired dendrite filaments from 4 cardinal entry points */}
@@ -236,13 +239,13 @@ export function MemoryAura({ size }: { size: number }) {
       <circle cx="2" cy="36" r="1.5" fill="currentColor" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<Brain style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function EventAura({ size }: { size: number }) {
+export function EventAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* EKG waveform across the frame */}
@@ -256,13 +259,13 @@ export function EventAura({ size }: { size: number }) {
       <circle cx="36" cy="67" r="1.6" fill="currentColor" />
     </>
   );
-  return <AuraFrame size={size} decoration={deco}
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco}
     icon={<Activity style={{ width: '100%', height: '100%' }} />} />;
 }
 
 // ---------------------------------------------------------------------------
 
-export function ErrorAura({ size }: { size: number }) {
+export function ErrorAura({ size, iconOpacity }: { size: number; iconOpacity?: number }) {
   const deco = (
     <>
       {/* octagonal ward outline */}
@@ -284,6 +287,6 @@ export function ErrorAura({ size }: { size: number }) {
       />
     </>
   );
-  return <AuraFrame size={size} decoration={deco} hideBase
+  return <AuraFrame size={size} iconOpacity={iconOpacity} decoration={deco} hideBase
     icon={<AlertTriangle style={{ width: '100%', height: '100%' }} />} />;
 }

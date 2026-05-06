@@ -712,7 +712,7 @@ const bridge: TestBridge = {
   },
 
   /** Execute a persona by ID or name. Returns the execution result. */
-  async executePersona(nameOrId: string) {
+  async executePersona(nameOrId: string, useCaseId?: string | null) {
     const store = useAgentStore.getState();
     const match = store.personas.find(
       p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
@@ -723,13 +723,41 @@ const bridge: TestBridge = {
         personaId: match.id,
         triggerId: null,
         inputData: null,
-        useCaseId: null,
+        useCaseId: useCaseId ?? null,
         continuation: null,
       });
-      return { success: true, execution: result, personaName: match.name };
+      return { success: true, execution: result, personaName: match.name, useCaseId: useCaseId ?? null };
     } catch (e: unknown) {
       return { success: false, error: unpackError(e) };
     }
+  },
+
+  /** 2026-05-05 — list use cases for a promoted persona. Used by the e2e
+   *  rapid-validation suite to drive per-UC executions through the
+   *  sub_use_cases module's manual-run path (executePersona with a
+   *  useCaseId). Returns the parsed `useCases` array from
+   *  design_context if present, otherwise an empty list. */
+  listPersonaUseCases(nameOrId: string) {
+    const store = useAgentStore.getState();
+    const match = store.personas.find(
+      p => p.id === nameOrId || p.name.toLowerCase().includes(nameOrId.toLowerCase()),
+    );
+    if (!match) return { success: false, error: `No agent matching: ${nameOrId}` };
+    let designCtx: Record<string, unknown> | null = null;
+    const raw = (match as unknown as { design_context?: unknown }).design_context;
+    if (typeof raw === 'string') {
+      try { designCtx = JSON.parse(raw) as Record<string, unknown>; } catch { designCtx = null; }
+    } else if (raw && typeof raw === 'object') {
+      designCtx = raw as Record<string, unknown>;
+    }
+    const ucs = (designCtx?.useCases ?? designCtx?.use_cases ?? []) as Array<{
+      id?: string; useCaseId?: string; use_case_id?: string; title?: string;
+    }>;
+    const list = ucs.map((uc) => ({
+      id: uc.id ?? uc.useCaseId ?? uc.use_case_id ?? null,
+      title: uc.title ?? null,
+    })).filter((u) => !!u.id);
+    return { success: true, personaId: match.id, personaName: match.name, useCases: list };
   },
 
   /** C7 reference-input: answer a clarifying_question that carried

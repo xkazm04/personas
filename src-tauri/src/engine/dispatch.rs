@@ -912,6 +912,32 @@ pub(crate) mod testable {
                 };
             }
         }
+
+        // 2026-05-05 — same fallback, this time for memory. Previously the
+        // runtime only honoured `generation_settings.memories: "off"`; the
+        // build-time IR field `memory_policy.enabled = false` was silently
+        // ignored because parse_generation_settings starts from the
+        // permissive default. SQL audit on the rapid-validation cohort
+        // showed every persona had memory_policy.enabled=false yet still
+        // accumulated memory rows on every execution. Mirror the review
+        // fallback pattern: when generation_settings.memories is absent,
+        // read memory_policy.enabled and flip the policy off if it's
+        // explicitly false.
+        let memories_explicit = uc
+            .get("generation_settings")
+            .and_then(|s| s.get("memories"))
+            .is_some();
+        if !memories_explicit {
+            if let Some(enabled) = uc
+                .get("memory_policy")
+                .and_then(|v| v.get("enabled"))
+                .and_then(|v| v.as_bool())
+            {
+                if !enabled {
+                    policy.memories = BoolPolicy::Off;
+                }
+            }
+        }
         policy
     }
 
@@ -1237,6 +1263,55 @@ mod tests {
         .to_string();
         let p = testable::pick_generation_policy(&dc, "uc-always");
         assert!(matches!(p.reviews, testable::ReviewPolicy::On));
+    }
+
+    // 2026-05-05 — memory_policy.enabled fallback regression tests. Mirrors
+    // the review_policy.mode fallback. SQL audit on the rapid-validation
+    // cohort showed every persona had memory_policy.enabled=false yet still
+    // accumulated memory rows on every execution because pick_generation_policy
+    // only honoured generation_settings.memories — the build-time IR field
+    // was silently ignored. These tests pin the corrected behaviour.
+
+    #[test]
+    fn pick_generation_policy_falls_back_to_memory_policy_disabled() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "uc-no-mem", "memory_policy": { "enabled": false } }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-no-mem");
+        assert!(matches!(p.memories, testable::BoolPolicy::Off));
+    }
+
+    #[test]
+    fn pick_generation_policy_memory_enabled_true_stays_on() {
+        let dc = serde_json::json!({
+            "use_cases": [
+                { "id": "uc-mem-on", "memory_policy": { "enabled": true } }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-mem-on");
+        assert!(matches!(p.memories, testable::BoolPolicy::On));
+    }
+
+    #[test]
+    fn pick_generation_policy_memory_explicit_settings_wins_over_memory_policy() {
+        // generation_settings.memories="off" should win even though
+        // memory_policy.enabled=true.
+        let dc = serde_json::json!({
+            "use_cases": [
+                {
+                    "id": "uc-mem-mixed",
+                    "generation_settings": { "memories": "off" },
+                    "memory_policy": { "enabled": true }
+                }
+            ]
+        })
+        .to_string();
+        let p = testable::pick_generation_policy(&dc, "uc-mem-mixed");
+        assert!(matches!(p.memories, testable::BoolPolicy::Off));
     }
 
     #[test]

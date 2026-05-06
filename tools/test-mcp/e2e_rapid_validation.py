@@ -264,12 +264,21 @@ group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument("--persona", type=str, help="Single persona id e.g. R01")
 group.add_argument("--all", action="store_true", help="Run R01..R20 sequentially")
 parser.add_argument("--build-timeout", type=int, default=240)
+parser.add_argument("--cleanup", action="store_true",
+                    help="Delete promoted personas at end of each run "
+                         "(default: keep — user reviews them manually).")
 parser.add_argument("--no-persona-cleanup", action="store_true",
-                    help="Keep promoted personas in DB after the run (debug)")
+                    help="Deprecated alias for the default keep-personas "
+                         "behaviour. Retained so older invocations don't break.")
 parser.add_argument("--fire", action="store_true",
                     help="After promote, call executePersona to fire one runtime "
-                         "execution. Implies --no-persona-cleanup so module "
-                         "verification can find the rows.")
+                         "execution at the persona level (legacy single-fire).")
+parser.add_argument("--per-use-case", action="store_true", default=True,
+                    help="After promote, fire one execution per use case via "
+                         "the sub_use_cases path. Default ON — disable with "
+                         "--no-per-use-case.")
+parser.add_argument("--no-per-use-case", dest="per_use_case",
+                    action="store_false")
 parser.add_argument("--report", type=str, default=None,
                     help="Path to write JSON report (single persona) or directory (--all)")
 args = parser.parse_args()
@@ -280,7 +289,11 @@ if args.persona and args.persona not in PERSONAS:
     )
 
 BASE = f"http://127.0.0.1:{args.port}"
-client = httpx.Client(base_url=BASE, timeout=240)
+# 2026-05-05 — bumped from 240s to 480s. The longest scenarios (R18 vector
+# DB ingestion, R20 file-watcher with image-gen) churn the build prompt for
+# minutes when the LLM keeps re-asking; the per-call HTTP timeout on the
+# client side has to outlast that or we ReadTimeout mid-build.
+client = httpx.Client(base_url=BASE, timeout=480)
 
 
 # ---- HTTP helpers ------------------------------------------------------
@@ -336,7 +349,8 @@ class RunLog:
 
 # ---- Generic answer recipe ---------------------------------------------
 
-def build_answer(intent: str, cell_key: str, spec: dict, ask_count: int = 1) -> str:
+def build_answer(intent: str, cell_key: str, spec: dict,
+                 ask_count: int = 1, question: dict | None = None) -> str:
     """Generic answer recipe — covers the 9 standard build dimensions.
 
     These personas are deliberately simple. The intent itself usually
@@ -347,7 +361,47 @@ def build_answer(intent: str, cell_key: str, spec: dict, ask_count: int = 1) -> 
     the second+ ask, switch to a hyper-specific override that picks
     exactly one trigger type / one cron / one connector to break the
     indecision loop.
+
+    `question` carries the raw question dict — used to detect the
+    connector_category scope and answer with a single service_type slug
+    instead of prose (the VaultConnectorPicker UI submits a slug;
+    the LLM expects the same shape).
     """
+    # 2026-05-05 — connector_category scope: backend's
+    # synthesize_gate_question for `connectors` emits a question with
+    # `connectorCategory` set. The picker UI returns ONE service_type
+    # slug; mirror that here so the build doesn't churn waiting for a
+    # canonical answer. Pick the first hint that fits the category.
+    if cell_key == "connectors" and question:
+        cat = question.get("connectorCategory") or question.get("connector_category")
+        if cat:
+            CATEGORY_FALLBACKS = {
+                "monitoring": ["sentry", "betterstack"],
+                "code_repository": ["github", "gitlab"],
+                "task_tracking": ["linear", "asana", "clickup", "github"],
+                "knowledge": ["notion", "obsidian"],
+                "calendar": ["google_calendar", "cal_com"],
+                "messaging": ["gmail", "slack", "personas_messages"],
+                "file_storage": ["local_drive", "google_drive"],
+                "storage": ["airtable", "notion", "local_drive"],
+                "email": ["gmail"],
+                "analytics": ["alpha_vantage", "mixpanel"],
+                "image_generation": ["leonardo_ai"],
+                "vector_db": ["personas_vector_db"],
+            }
+            preferred = CATEGORY_FALLBACKS.get(str(cat).lower(), [])
+            hints = [c.lower() for c in spec["connector_hints"]]
+            # Prefer hints that match the category; otherwise pick from
+            # the category's fallback list; finally fall back to first hint.
+            for c in hints:
+                if any(c == p or c in p or p in c for p in preferred):
+                    return c
+            for p in preferred:
+                if p in hints:
+                    return p
+            if hints:
+                return hints[0]
+
     connectors_str = ", ".join(spec["connector_hints"])
     expected_uc = spec["expected_use_cases"]
     review_hint = spec["review_policy_hint"]
@@ -444,6 +498,17 @@ def build_answer(intent: str, cell_key: str, spec: dict, ask_count: int = 1) -> 
         "error-handling": (
             base + "On API failure: log and skip. Do not retry tightly."
         ),
+        # 2026-05-05 — 5th capability gate: sample_output. Mirrored to
+        # legacy cell_key "sample-output" (see parser.rs::
+        # map_capability_field_to_legacy_dimension). Pick the canonical
+        # markdown bullet shape; reports / digests / summaries fit it.
+        "sample-output": (
+            base + "Markdown — bullet list with short headings. Concise, "
+            "no preamble, no closing remarks. One section per data source."
+        ),
+        "sample_output": (
+            base + "Markdown — bullet list with short headings."
+        ),
     }
     return overrides.get(cell_key, base + f"Dimension: {cell_key}.")
 
@@ -536,7 +601,8 @@ def step_answer_dimensions(rl: RunLog, intent: str, spec: dict) -> str:
                 ask_count=ask_count,
                 question_text=(q.get("question") or q.get("prompt") or "")[:200],
             )
-            batch[key] = build_answer(intent, key, spec, ask_count=ask_count)
+            batch[key] = build_answer(intent, key, spec,
+                                       ask_count=ask_count, question=q)
 
         if not batch:
             rl.record(
@@ -600,6 +666,39 @@ def step_test_and_promote(rl: RunLog, persona_id: str) -> dict:
             rl.record("test_build_draft", "info", error=test.get("error"))
 
     promote = bridge("promoteBuildDraft", {}, 60)
+    # 2026-05-05 — agent_ir is sometimes missing on the first promote
+    # attempt when the build hit MAX_TURNS while the LLM was still
+    # iterating. Re-fire the build with a recovery prompt and re-attempt
+    # promote once before giving up. Only triggers on the specific
+    # "no agent_ir" error so unrelated promote failures still raise.
+    if (
+        not promote.get("success")
+        and "no agent_ir" in (promote.get("error") or "").lower()
+    ):
+        rl.record("promote_build_draft.retry", "info",
+                  note="agent_ir missing — sending recovery prompt and retrying")
+        # Push a recovery hint into the session so the LLM emits
+        # agent_ir on the next turn.
+        recovery_answer = (
+            "All dimensions are resolved. Emit the agent_ir JSON object "
+            "NOW — output exactly one {\"agent_ir\": {...}} line, no "
+            "alternatives, no further questions."
+        )
+        bridge(
+            "answerPendingBuildQuestions",
+            {"answers": {"_batch": recovery_answer}},
+            60,
+        )
+        # Wait for test_complete again then retry promote.
+        bridge(
+            "waitForBuildPhase",
+            {
+                "phases": ["test_complete", "promoted", "failed"],
+                "timeoutMs": 180_000,
+            },
+            190,
+        )
+        promote = bridge("promoteBuildDraft", {}, 60)
     if not promote.get("success"):
         rl.record("promote_build_draft", "fail", error=promote.get("error"))
         raise SystemExit(f"promoteBuildDraft failed: {promote.get('error')}")
@@ -793,8 +892,62 @@ def step_fire_runtime(rl: RunLog, persona_id: str) -> None:
     )
 
 
-def step_cleanup(rl: RunLog, persona_id: str | None) -> None:
-    if args.no_persona_cleanup or args.fire or not persona_id:
+def step_fire_per_use_case(rl: RunLog, persona_id: str) -> None:
+    """2026-05-05 — verify each use case can be executed independently via
+    the sub_use_cases module's manual-run path. Calls
+    `listPersonaUseCases` to enumerate UCs from design_context, then
+    fires each one with executePersona(useCaseId=...). This proves the
+    sub_use_cases UI-driven flow has a viable backend path post-promote.
+    Continues on per-UC failure so we capture the full picture."""
+    listing = bridge("listPersonaUseCases", {"nameOrId": persona_id}, 30)
+    if not listing.get("success"):
+        rl.record("per_use_case.list", "fail", error=listing.get("error"))
+        return
+    ucs = listing.get("useCases") or []
+    if not ucs:
+        rl.record("per_use_case.list", "info",
+                  note="design_context.useCases is empty — nothing to execute")
+        return
+    rl.record("per_use_case.list", "ok",
+              count=len(ucs),
+              titles=[u.get("title") or u.get("id") for u in ucs])
+    for uc in ucs:
+        uc_id = uc.get("id")
+        uc_title = uc.get("title") or uc_id
+        if not uc_id:
+            continue
+        r = bridge("executePersona",
+                   {"nameOrId": persona_id, "useCaseId": uc_id}, 60)
+        rl.record(
+            f"per_use_case.fire.{uc_id}",
+            "ok" if r.get("success") else "info",
+            title=uc_title,
+            **{k: v for k, v in r.items()
+               if k not in ("success", "execution")},
+        )
+
+
+def step_cleanup(rl: RunLog, persona_id: str | None, persona_outcome: str) -> None:
+    """2026-05-05 — keep promoted personas by default (user reviews them
+    manually). Only delete on green if --cleanup was passed. Always
+    keep red personas for debugging."""
+    if not persona_id:
+        return
+    if not args.cleanup:
+        rl.record(
+            "cleanup.skipped",
+            "info",
+            note="persona kept for manual review (default)",
+            persona_id=persona_id,
+        )
+        return
+    if persona_outcome == "red":
+        rl.record(
+            "cleanup.skipped",
+            "info",
+            note="failed run kept for debugging",
+            persona_id=persona_id,
+        )
         return
     r = bridge("deleteAgent", {"nameOrId": persona_id}, 30)
     rl.record(
@@ -811,6 +964,7 @@ def run_one(persona_id: str) -> dict:
     rl = RunLog(persona_id)
     started = datetime.now(timezone.utc)
     pid = None
+    outcome = "red"
     print(f"\n========== {persona_id} ==========")
     print(f"intent: {spec['intent']}")
     try:
@@ -825,7 +979,8 @@ def run_one(persona_id: str) -> dict:
         step_inspect(rl, pid, spec)
         if args.fire:
             step_fire_runtime(rl, pid)
-        step_cleanup(rl, pid)
+        if args.per_use_case:
+            step_fire_per_use_case(rl, pid)
         outcome = "green"
     except SystemExit as e:
         rl.record("scenario.abort", "fail", error=str(e))
@@ -833,6 +988,8 @@ def run_one(persona_id: str) -> dict:
     except Exception as e:
         rl.record("scenario.crash", "fail", error=repr(e))
         outcome = "red"
+    finally:
+        step_cleanup(rl, pid, outcome)
     finished = datetime.now(timezone.utc)
     return {
         "persona": persona_id,

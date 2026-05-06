@@ -11,7 +11,7 @@ mod variables;
 
 pub use capabilities::{
     active_capabilities_fingerprint, build_tool_documentation, parse_model_profile,
-    render_active_capabilities, render_generation_policy_lines,
+    render_active_capabilities, render_capability_policy_lines, render_generation_policy_lines,
 };
 pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args};
 pub use resume_prompt::assemble_resume_prompt;
@@ -626,7 +626,14 @@ pub fn assemble_prompt(
             // knows what artefact protocol messages to suppress for this run.
             // This is the SOFT layer; `engine::dispatch` enforces the same
             // rules silently as a HARD safety net for ignored instructions.
-            let policy_lines = render_generation_policy_lines(use_case.get("generation_settings"));
+            // 2026-05-06 — switched to the richer renderer that also derives
+            // policy lines from review_policy.mode / memory_policy.enabled
+            // when generation_settings is absent. The build LLM writes the
+            // IR fields directly; without this fallback the runtime prompt
+            // never told the agent "review_policy=always means emit
+            // manual_review for every output", so approvals were silently
+            // skipped on personas built via the rapid-validation flow.
+            let policy_lines = render_capability_policy_lines(use_case);
             if !policy_lines.is_empty() {
                 prompt.push_str("Generation policy for this capability:\n");
                 for line in policy_lines {

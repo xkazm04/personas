@@ -482,6 +482,12 @@ pub(super) fn map_capability_field_to_legacy_dimension(field: &str) -> Option<&'
         "memory_policy" => Some("memory"),
         "event_subscriptions" => Some("events"),
         "error_handling" => Some("error-handling"),
+        // 2026-05-05 — without this entry, the legacy `Question` mirror for the
+        // 5th gate fell back to cell_key="use-cases", and the answer handler's
+        // `legacy_cell_to_v3_field("use-cases")` returned None, so the gate
+        // never flipped Open and the same question fired in round 2. Mirror
+        // matches the cell_key inverse in gates::legacy_cell_to_v3_field.
+        "sample_output" => Some("sample-output"),
         _ => None,
     }
 }

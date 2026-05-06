@@ -164,6 +164,44 @@ pub fn get_distinct_service_types(
     )
 }
 
+/// Return the set of service_types that have **2 or more** credentials in
+/// the vault — the "ambiguous" set. Used by the build-session gate
+/// machinery (2026-05-05): when an intent names a service that has only
+/// one credential we can auto-resolve, but with multiple of the same
+/// service_type the user has to pick which credential the persona
+/// should use. The connectors gate stays Closed in that case so the
+/// existing connector_category picker fires.
+///
+/// Cheaper than `get_all` + manual grouping — pushes the GROUP BY into
+/// SQLite. Returns an empty set on error so callers can treat it as
+/// "nothing ambiguous" without unwrap noise.
+pub fn get_ambiguous_service_types(
+    pool: &DbPool,
+) -> std::collections::HashSet<String> {
+    timed_query!("persona_credentials", "persona_credentials::get_ambiguous_service_types", {
+        let conn = match pool.get() {
+            Ok(c) => c,
+            Err(_) => return std::collections::HashSet::new(),
+        };
+        let mut stmt = match conn.prepare(
+            "SELECT service_type FROM persona_credentials \
+             GROUP BY service_type HAVING COUNT(*) >= 2",
+        ) {
+            Ok(s) => s,
+            Err(_) => return std::collections::HashSet::new(),
+        };
+        let rows = match stmt.query_map([], |row| row.get::<_, String>(0)) {
+            Ok(r) => r,
+            Err(_) => return std::collections::HashSet::new(),
+        };
+        let mut set = std::collections::HashSet::new();
+        for row in rows.flatten() {
+            set.insert(row);
+        }
+        set
+    })
+}
+
 pub fn get_by_service_type(
     pool: &DbPool,
     service_type: &str,

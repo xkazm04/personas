@@ -209,12 +209,33 @@ pub async fn run_execution(
     // commands/execution/executions.rs §1b). Recover the bare id here so
     // every dispatch context (and the memory injection below) can scope
     // by capability.
-    let execution_use_case_id: Option<String> = input_data
+    let mut execution_use_case_id: Option<String> = input_data
         .as_ref()
         .and_then(|d| d.get("_use_case"))
         .and_then(|uc| uc.get("id"))
         .and_then(|id| id.as_str())
         .map(|s| s.to_string());
+
+    // 2026-05-05 — fallback to the execution row's `use_case_id` column.
+    // Trigger-fired executions (event_listener cascade, schedule wakeup,
+    // webhook, polling, etc.) populate `persona_executions.use_case_id`
+    // from `trigger.use_case_id` but DON'T expand `_use_case` into
+    // input_data — input_data carries the event payload instead. Without
+    // this fallback every cascade execution loses capability attribution
+    // and lands on the permissive default policy, so memory_policy /
+    // review_policy gates that should drop output get bypassed. SQL audit
+    // on the rapid-validation cohort showed Service Health Monitor's
+    // self-emitted `service_monitor.incident.reported` event re-fired its
+    // own listener trigger six times; only the first execution (test fire
+    // with explicit useCaseId) had use_case_id propagated to dispatch.
+    if execution_use_case_id.is_none() {
+        if let Ok(row) = crate::db::repos::execution::executions::get_by_id(
+            &pool,
+            &execution_id,
+        ) {
+            execution_use_case_id = row.use_case_id;
+        }
+    }
 
     // Phase 9 of EXEC-VERIF-PLAN — per-UC model override. When the triggering
     // capability declares `model_override`, seed the primary model before the

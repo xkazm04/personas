@@ -549,6 +549,27 @@ pub(crate) async fn inject_credential(
                 "oauth_token_lifetime_secs".into(),
                 serde_json::Value::Number(lifetime_secs.into()),
             );
+            // 2026-05-06 — clear stale healthcheck_last_success after a
+            // successful runtime refresh. A prior healthcheck may have
+            // recorded a 401 (because the LOCAL access_token expired
+            // between healthcheck and now), and the UI uses
+            // healthcheck_last_success to decide whether to flag the
+            // credential as broken. The refresh proves the persisted
+            // refresh_token is still valid AND we just got a fresh
+            // access_token from the provider — that's a successful
+            // round-trip with the OAuth backend, so the credential is
+            // demonstrably healthy. Without this patch the UI shows GCal
+            // / Gmail as red even right after a runtime auto-refresh,
+            // which the user reads as "OAuth rotation is broken" even
+            // though the build is using a fresh token under the hood.
+            patch.insert(
+                "healthcheck_last_success".into(),
+                serde_json::Value::Bool(true),
+            );
+            patch.insert(
+                "healthcheck_last_success_at".into(),
+                serde_json::Value::String(chrono::Utc::now().to_rfc3339()),
+            );
             if let Err(e) = cred_repo::patch_metadata_atomic(pool, &cred.id, patch) {
                 tracing::warn!(
                     credential_id = %cred.id,

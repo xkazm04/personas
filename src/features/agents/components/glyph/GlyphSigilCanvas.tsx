@@ -1,11 +1,8 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { DIM_META } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./glyphLayoutTypes";
 import { GlyphHeroSigil } from "./GlyphHeroSigil";
 import { GlyphPetalIcons } from "./GlyphPetalIcons";
 import { GlyphOrbitProgress } from "./GlyphOrbitProgress";
-import { DIM_LABEL } from "./glyphLayoutHelpers";
 import { useBuildingPetalSweep } from "./useBuildingPetalSweep";
 
 interface GlyphSigilCanvasProps {
@@ -63,31 +60,22 @@ export function GlyphSigilCanvas({
           fade is done — no explicit unmount needed from the parent. */}
       <GlyphOrbitProgress size={size} active={showOrbit} />
 
+      {/* Center children container. `pointer-events-none` lets clicks
+          fall through to the petal SVG below — the inner half of every
+          petal sits inside this 0.56 × size box and was previously
+          unclickable. Interactive children (the "Click to Begin"
+          button, building / promoted / draft-ready cores) opt back in
+          via their own `pointer-events-auto`. */}
       <div
-        className="absolute flex flex-col items-center justify-center text-center"
+        className="absolute flex flex-col items-center justify-center text-center pointer-events-none"
         style={{ left: size * 0.22, top: size * 0.22, width: size * 0.56, height: size * 0.56 }}
       >
         {children}
       </div>
 
-      <AnimatePresence>
-        {hoveredDim && !activeDim && (
-          <motion.span
-            key={hoveredDim}
-            initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            className="absolute left-1/2 -translate-x-1/2 px-3 py-1 rounded-full typo-label font-bold uppercase tracking-[0.18em] pointer-events-none"
-            style={{
-              top: -14,
-              background: `${DIM_META[hoveredDim].color}1f`,
-              border: `1px solid ${DIM_META[hoveredDim].color}55`,
-              color: DIM_META[hoveredDim].color,
-              boxShadow: `0 0 12px ${DIM_META[hoveredDim].color}44`,
-            }}
-          >
-            {DIM_LABEL[hoveredDim]}
-          </motion.span>
-        )}
-      </AnimatePresence>
+      {/* 2026-05-05 — center-top dynamic dim label removed. Per-petal
+          orbit labels (rendered always-visible inside GlyphPetalIcons)
+          replace it. */}
 
       {/* Overlay slot — answer card sits over the sigil with no scrim.
           Empty regions stay click-through so the petals beneath remain

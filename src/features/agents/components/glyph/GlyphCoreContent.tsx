@@ -52,12 +52,20 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
   } = props;
 
   if (isPreBuild) {
+    // 2026-05-05 — when the parent doesn't supply onComposeStart, render
+    // nothing instead of a faded disabled button. The composer-prototype
+    // layout uses this to suppress the CTA whenever the user already has
+    // a sigil active (their input affordance is the textarea, not the
+    // button), and only re-shows it as a backup when no sigil carries
+    // user state. Glyph Full passes onComposeStart unconditionally during
+    // compose so its behaviour is unchanged.
+    if (!onComposeStart) return null;
     return (
       <motion.button
         key="pre"
         type="button"
         onClick={onComposeStart}
-        disabled={!onComposeStart}
+        disabled={false}
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
         whileHover={{ scale: 1.04 }}
@@ -89,7 +97,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
       <motion.div
         key="refine"
         initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-        className="flex flex-col items-center gap-2 w-full px-6"
+        className="flex flex-col items-center gap-2 w-full px-6 pointer-events-auto"
       >
         <GlyphRefineComposer
           initialText={refinePrefill ?? undefined}
@@ -113,12 +121,13 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
       <motion.div
         key="building"
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-        className="flex flex-col items-center gap-1 pointer-events-auto"
+        className="flex flex-col items-center gap-2 pointer-events-auto"
       >
-        <div className="typo-hero font-bold text-foreground tabular-nums tracking-tight">
-          {completenessPct}
-          <span className="typo-heading-sm text-foreground/40 ml-0.5">%</span>
-        </div>
+        {/* 2026-05-06 — completeness percentage removed. The build can
+            propose new rounds at any phase (gate-driven re-asks, agent_ir
+            recovery loops), so a "70% done" number was misleading. The
+            spinner + status label carries the right signal: "we're
+            working" without a false ETA. */}
         <div className="flex items-center gap-1.5 typo-caption text-foreground/60 uppercase tracking-[0.18em]">
           <Loader2 className="w-3 h-3 animate-spin" />
           {hasPending ? "Awaiting your answer" : "Weaving intent"}
@@ -141,7 +150,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
       <motion.div
         key="testing"
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="flex flex-col items-center gap-2 w-full px-6"
+        className="flex flex-col items-center gap-2 w-full px-6 pointer-events-auto"
       >
         <Loader2 className="w-6 h-6 text-primary/70 animate-spin" />
         <span className="typo-label uppercase tracking-[0.2em] text-foreground/60">Running Tests</span>

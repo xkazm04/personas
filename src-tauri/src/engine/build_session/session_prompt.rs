@@ -560,6 +560,20 @@ The agent runs on a platform with built-in communication protocols. When composi
     - Multiple capabilities chained where one capability's output feeds another's gating decision (e.g. classifier emits to draft-and-publish): the chain itself encodes the review semantics — apply rule 21 (auto_triage) instead.
     - User intent explicitly mentions review/approval/memory keywords ("learn over time", "remember my preferences", "wait for my approval"): take the user's explicit signal over the fast-path default.
 
+27. **Mixed-review intents — SPLIT into two capabilities.** When a single intent describes one general action AND a sub-action that operates on a *subset* of the inputs, AND the sub-action implies external publish / approval ("draft a reply", "send", "post", "open a ticket", "create an issue"), you MUST split into two capabilities — one with `review_policy.mode = "never"` for the routine action, one with `review_policy.mode = "always"` for the publishing sub-action. Do NOT collapse into a single capability with a single review mode — the user has expressed two distinct policies and consolidation silently drops one.
+
+    Trigger phrases that signal this pattern: "and additionally [verb] [target] for [subset]", "and also [verb] for [condition]", "for [subset condition], also [external-publish-verb]", "and on [condition] [verb]".
+
+    **Worked example.** R11 — "Watch my Gmail inbox and on every new message classify it as urgent / followup / fyi, and additionally draft a short reply for urgent messages for me to approve before sending."
+
+    Two capabilities, NOT one:
+    - `uc_classify` — runs on every new message. `review_policy.mode = "never"` (classification is informational, no external impact). Emits `email.message.classified` with the verdict.
+    - `uc_draft_reply` — listens for `email.message.classified` with verdict=urgent. `review_policy.mode = "always"` (drafts a reply targeting an external recipient — the user explicitly said "for me to approve before sending"). Output is a draft + a `manual_review` event.
+
+    Anti-pattern (do NOT do): one capability "Email Triage & Auto-Reply" with `review_policy.mode = "never"` that classifies AND drafts. The "always" half is silently dropped.
+
+    Same pattern applies to: R20 ("watched folder + Leonardo image generation" — image-gen is the publishing half, file-watch is the trigger half), "monitor + escalate to Slack", "scan + open GitHub issue", etc. The triggers are the listener event subscriptions; rule 21 (auto_triage) does NOT apply because the user named "approve before X" explicitly — that's `mode: "always"`, not `auto_triage`.
+
 {template_context}
 
 Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###

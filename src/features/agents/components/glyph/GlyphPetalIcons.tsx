@@ -1,7 +1,9 @@
+import { Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./glyphLayoutTypes";
+import { DIM_LABEL } from "./glyphLayoutHelpers";
 
 interface GlyphPetalIconsProps {
   size: number;
@@ -22,9 +24,19 @@ export function GlyphPetalIcons({
 }: GlyphPetalIconsProps) {
   const center = size / 2;
   const iconR = size * 0.34;
+  // Labels sit just outside the petal ring so they don't overlap the
+  // pictogram. petalOuter (in GlyphHeroSigil) = size * 0.44; we place
+  // labels at 0.51 to clear the petal edge with a few px breathing room.
+  const labelR = size * 0.51;
   return (
+    // `[&_*]:pointer-events-none` forces every descendant (icon wrappers,
+    // CustomArt's AuraFrame divs, inner SVGs, lucide icon container) to
+    // also be non-interactive. CSS pointer-events does NOT inherit; without
+    // this, the AuraFrame's 78×78 outer div sits on top of the petal SVG
+    // and captures clicks at default `auto`, blocking the underlying
+    // motion.g handlers in GlyphHeroSigil.
     <div
-      className="absolute inset-0 pointer-events-none transition-opacity duration-500"
+      className="absolute inset-0 pointer-events-none [&_*]:pointer-events-none transition-opacity duration-500"
       style={{ width: size, height: size, opacity: dimmed ? 0.45 : 1 }}
     >
       {GLYPH_DIMENSIONS.map((dim) => {
@@ -39,36 +51,65 @@ export function GlyphPetalIcons({
         const isActive = activeDim === dim;
         const isSwept = sweepDim === dim;
         const dimOther = activeDim !== null && !isActive;
-        const boxSize = state === "resolved" || state === "pending" ? 108 : 84;
+        // 2026-05-05 — sigil size held constant. Earlier resolved/pending
+        // states ramped to 108px (vs 84 idle) to signal activation; the
+        // user prefers a uniform layout where activation is shown by the
+        // glow halo + label brightness alone, not by size.
+        const boxSize = 84;
         const CustomArt = meta.customArt;
 
-        // Glow tiers — escalating with interest. Base = idle ambient halo so
-        // the petal still reads as "lit"; mid = filling/resolved/hover/error;
-        // strong = pending/active/resolved-on-hover/error-on-hover.
+        // 2026-05-05 — glow tiers retuned. Resolved/populated sigils stay
+        // at base (no glow halo) so the orbit reads calmly during build.
+        // Glow only escalates when there's actual activity to signal:
+        //   • strong = pending (build asks a question for this dim) /
+        //              active (user opened the summary popup) / error +
+        //              hover.
+        //   • mid    = filling (LLM currently writing this dim) / hover
+        //              over a resolved petal.
+        //   • base   = everything else, including resolved-no-hover.
         const tier: "base" | "mid" | "strong" =
-          state === "pending" || isActive
+          state === "pending" || isActive || (state === "error" && isHovered)
             ? "strong"
-            : (state === "resolved" && isHovered) || (state === "error" && isHovered)
-              ? "strong"
-              : state === "resolved" || state === "error" || state === "filling" || isHovered
-                ? "mid"
-                : "base";
+            : state === "filling" || (state === "resolved" && isHovered)
+              ? "mid"
+              : "base";
         const glowCfg = tier === "strong"
           ? { bg: "55", shadow: "cc", blur: 32 }
           : tier === "mid"
             ? { bg: "33", shadow: "88", blur: 20 }
             : { bg: "14", shadow: "44", blur: 10 };
 
-        const iconOpacity = state === "idle"
-          ? isHovered ? 0.95 : 0.7
+        // 2026-05-05 — phase 2 glyph reactivity. Two opacity tracks:
+        //   • lucideOpacity — applies ONLY to the lucide Icon path (the
+        //     literal pictogram). Hidden when the dim is empty so the
+        //     petal reads as "waiting to be filled"; hover surfaces a
+        //     faint preview.
+        //   • auraOpacity — applies to CustomArt (the per-dim aura SVG
+        //     decoration, e.g. TriggerAura, ConnectorAura). Always full
+        //     because it's the "SVG around" structural marker the user
+        //     wants kept regardless of whether the dim has data.
+        // The glow halo span above sits below both and is always visible.
+        const lucideOpacity = state === "idle"
+          ? isHovered ? 0.55 : 0
           : state === "filling"
             ? 0.9
             : 1;
+        const auraOpacity = 1;
+
+        // 2026-05-05 — per-petal label sits radially outside the petal
+        // at labelR. Always visible at base brightness; hover/active
+        // bumps both opacity and shadow so the active orbit ring lights
+        // up. This replaces both the bottom GlyphLegend bar and the
+        // dynamic center-top dim label.
+        const labelX = center + labelR * Math.cos(rad);
+        const labelY = center + labelR * Math.sin(rad);
+        const labelEmphasised = isHovered || isActive;
 
         return (
+          <Fragment key={`petal-${dim}`}>
           <div
             key={`icon-${dim}`}
-            className="absolute flex items-center justify-center transition-all duration-300"
+            className="absolute flex items-center justify-center transition-all duration-300 pointer-events-none"
             style={{
               left: x - boxSize / 2, top: y - boxSize / 2,
               width: boxSize, height: boxSize,
@@ -119,9 +160,9 @@ export function GlyphPetalIcons({
             </AnimatePresence>
             {CustomArt ? (
               <div
-                className="relative"
+                className="relative pointer-events-none"
                 style={{
-                  opacity: iconOpacity,
+                  opacity: auraOpacity,
                   filter: tier === "strong"
                     ? `drop-shadow(0 0 8px ${meta.color})`
                     : tier === "mid"
@@ -129,19 +170,39 @@ export function GlyphPetalIcons({
                       : undefined,
                 }}
               >
-                <CustomArt size={boxSize - 6} />
+                <CustomArt size={boxSize - 6} iconOpacity={lucideOpacity} />
               </div>
             ) : (
               <Icon
-                className="relative"
+                className="relative transition-opacity duration-200"
                 style={{
                   width: boxSize - 30, height: boxSize - 30,
-                  opacity: iconOpacity,
+                  opacity: lucideOpacity,
                   filter: tier !== "base" ? `drop-shadow(0 0 6px ${meta.color})` : undefined,
                 }}
               />
             )}
           </div>
+          {/* Always-visible orbit label, colored by dim. Hover/active
+              ramps opacity from 0.65 → 1 and adds a stronger shadow
+              halo so the lit orbit point reads at a glance. */}
+          <div
+            className="absolute flex items-center justify-center pointer-events-none transition-all duration-200"
+            style={{
+              left: labelX - 44, top: labelY - 9,
+              width: 88, height: 18,
+              opacity: labelEmphasised ? 1 : 0.65,
+              color: meta.color,
+              textShadow: labelEmphasised
+                ? `0 0 12px ${meta.color}cc, 0 0 4px ${meta.color}88`
+                : `0 0 6px ${meta.color}55`,
+            }}
+          >
+            <span className="typo-caption font-semibold uppercase tracking-[0.14em] whitespace-nowrap">
+              {DIM_LABEL[dim]}
+            </span>
+          </div>
+          </Fragment>
         );
       })}
     </div>

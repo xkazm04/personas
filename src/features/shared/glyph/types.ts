@@ -67,10 +67,12 @@ export interface DimMeta {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   color: string;
   colorClass: string;
-  /** Optional bespoke SVG art component — takes precedence over lucide icon.
-   *  Receives box size; should use `currentColor` so the parent's `color`
-   *  style drives the hue. */
-  customArt?: React.ComponentType<{ size: number }>;
+  /** Optional bespoke SVG art component — wraps the lucide icon inside a
+   *  decoration frame. Both layers use `currentColor` so the parent's
+   *  `color` style drives the hue. The inner lucide is shown/hidden by
+   *  `iconOpacity` (0..1) so the decoration stays as a structural marker
+   *  even when the dim has no data yet (phase 2 reactivity). */
+  customArt?: React.ComponentType<{ size: number; iconOpacity?: number }>;
 }
 
 export type DimMetaMap = Record<GlyphDimension, DimMeta>;

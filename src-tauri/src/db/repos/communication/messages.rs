@@ -168,6 +168,37 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
             .unwrap_or_else(|| id.clone());
 
         let conn = pool.get()?;
+
+        // 2026-05-05 — same-day title dedup. SQL audit on the
+        // rapid-validation cohort showed Service Health Monitor produced
+        // seven messages all titled "Service Health - 2026-05-05" within
+        // five minutes (cascade-fired self-listener trigger). In
+        // production this is seven OS notifications about the same
+        // already-known status. Skip insert when an existing row has the
+        // same persona_id + title and was created today; return that row
+        // instead so callers (dispatch.rs) get a normal Ok and continue.
+        if let Some(ref title) = input.title {
+            if !title.trim().is_empty() {
+                let dup: Result<String, _> = conn.query_row(
+                    "SELECT id FROM persona_messages
+                     WHERE persona_id = ?1 AND title = ?2
+                       AND date(created_at) = date(?3)
+                     ORDER BY created_at DESC LIMIT 1",
+                    params![input.persona_id, title, now],
+                    |row| row.get(0),
+                );
+                if let Ok(existing_id) = dup {
+                    tracing::info!(
+                        persona_id = %input.persona_id,
+                        title = %title,
+                        existing_id = %existing_id,
+                        "Skipping message insert — same-day duplicate title (dedup)"
+                    );
+                    return get_by_id(pool, &existing_id);
+                }
+            }
+        }
+
         conn.execute(
             "INSERT INTO persona_messages
              (id, persona_id, execution_id, title, content, content_type, priority, is_read, metadata, created_at, thread_id, use_case_id)

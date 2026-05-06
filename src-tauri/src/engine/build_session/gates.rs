@@ -41,6 +41,13 @@ pub(super) struct CapabilityGates {
     pub(super) connectors: Gate,
     pub(super) review_policy: Gate,
     pub(super) memory_policy: Gate,
+    /// 2026-05-05 — output shape gate. Closed when the capability produces
+    /// content (digest / summary / report / brief / list / etc.) and the
+    /// user hasn't specified a format. The user picks markdown / table /
+    /// prose / JSON, or attaches a reference example via the typed
+    /// payload (`accepts_reference: true`). Pre-fix the LLM invented a
+    /// format and the user discovered the mismatch only after promote.
+    pub(super) sample_output: Gate,
 }
 
 impl CapabilityGates {
@@ -50,6 +57,7 @@ impl CapabilityGates {
             "connectors" => Some(self.connectors),
             "review_policy" => Some(self.review_policy),
             "memory_policy" => Some(self.memory_policy),
+            "sample_output" => Some(self.sample_output),
             _ => None,
         }
     }
@@ -66,6 +74,7 @@ impl CapabilityGates {
             "connectors" => &mut self.connectors,
             "review_policy" => &mut self.review_policy,
             "memory_policy" => &mut self.memory_policy,
+            "sample_output" => &mut self.sample_output,
             _ => return,
         };
         if *slot == Gate::Closed {
@@ -79,6 +88,7 @@ impl CapabilityGates {
             "connectors" => self.connectors = Gate::Open,
             "review_policy" => self.review_policy = Gate::Open,
             "memory_policy" => self.memory_policy = Gate::Open,
+            "sample_output" => self.sample_output = Gate::Open,
             _ => {}
         }
     }
@@ -99,6 +109,9 @@ impl CapabilityGates {
         if self.memory_policy != Gate::Open {
             return Some("memory_policy");
         }
+        if self.sample_output != Gate::Open {
+            return Some("sample_output");
+        }
         None
     }
 }
@@ -117,6 +130,7 @@ pub(super) const GATED_CAPABILITY_FIELDS: &[&str] = &[
     "connectors",
     "review_policy",
     "memory_policy",
+    "sample_output",
 ];
 
 pub(super) fn is_gated_field(field: &str) -> bool {
@@ -131,6 +145,10 @@ pub(super) fn legacy_cell_to_v3_field(cell_key: &str) -> Option<&'static str> {
         "connectors" => Some("connectors"),
         "human-review" => Some("review_policy"),
         "memory" => Some("memory_policy"),
+        // 2026-05-05 — output-shape question (5th gate). Frontend submits
+        // answers under "sample-output" since that mirrors the dimension
+        // naming in the legacy 3×3 matrix UI.
+        "sample-output" | "sample_output" => Some("sample_output"),
         _ => None,
     }
 }
@@ -278,6 +296,58 @@ fn intent_implies_memory(intent_lower: &str) -> Gate {
     // questionnaire skipped straight to test on Project-Coordinator-style
     // intents. Memory now ALWAYS gates closed unless the intent explicitly
     // names cross-run state.
+    Gate::Closed
+}
+
+/// 2026-05-05 — output-shape gate heuristic.
+///
+/// Returns `Closed` when the intent describes a content-producing
+/// capability (digest / summary / report / brief / list / overview /
+/// snapshot / etc.) AND the intent does NOT already specify a format.
+/// `Open` when the intent either:
+///   • Doesn't produce content (event-driven side-effects, automation
+///     without an emitted artefact) — nothing to ask about.
+///   • Already specifies a format ("post a markdown table", "write JSON",
+///     "send a one-line note") — the LLM has enough to design from.
+///
+/// Pre-fix the LLM invented a format silently. R12-class intents
+/// ("build one weekly digest combining X+Y+Z") landed with whatever
+/// shape the LLM defaulted to, and the user discovered the mismatch
+/// post-promote.
+fn intent_implies_sample_output(intent_lower: &str) -> Gate {
+    // Content-output verbs / nouns. Intent contains one of these →
+    // capability produces content the user might want shaped a specific
+    // way. Keep this list narrow — generic verbs like "send" / "save" /
+    // "write" don't imply content shape on their own; they're carriers.
+    const CONTENT_KW: &[&str] = &[
+        "digest", "summary", "summarize", "summarise", "summari",
+        "report on", " report ", "brief", "briefing",
+        "list ", "list my", "list of", "overview", "snapshot",
+        "weekly review", "daily review", "monthly review",
+        "rundown", "round-up", "roundup", "recap",
+        "compile", "aggregate", "consolidate",
+    ];
+    let has_content = CONTENT_KW.iter().any(|k| intent_lower.contains(k));
+    if !has_content {
+        return Gate::Open;
+    }
+
+    // Explicit format mentions — user already told us how it should look.
+    // Skip the question.
+    const FORMAT_KW: &[&str] = &[
+        "markdown", "as markdown", "in markdown",
+        "table", "as a table", "in a table", "grid",
+        "json", "as json", "structured json",
+        "csv", "tsv", "spreadsheet",
+        "one-line", "one line note", "single line",
+        "bullet list", "bullet points", "bulleted",
+        "prose", "paragraph",
+    ];
+    let has_format = FORMAT_KW.iter().any(|k| intent_lower.contains(k));
+    if has_format {
+        return Gate::Open;
+    }
+
     Gate::Closed
 }
 
@@ -468,6 +538,75 @@ fn intent_implies_connectors_with_registry(
     Gate::Closed
 }
 
+/// 2026-05-05 — connectors gate with vault-ambiguity guard.
+///
+/// Returns `Closed` when the intent names a service that has 2+
+/// credentials in the vault, even if `intent_implies_connectors_with_registry`
+/// would otherwise auto-open it. This forces the existing
+/// connector_category picker to fire so the user can choose between
+/// (e.g.) their 4 GitHub PATs.
+///
+/// Pre-fix: intent says "GitHub", vault has 4 GitHub creds, the gate
+/// auto-opened on keyword match, and the runtime picked
+/// `get_by_service_type(pool, "github").first()` deterministically but
+/// arbitrarily. The user never knew which credential their persona was
+/// using until they checked the audit log.
+///
+/// `ambiguous_services` is the set returned by
+/// `cred_repo::get_ambiguous_service_types`. Empty set → behaviour
+/// unchanged from the registry-only version.
+fn intent_implies_connectors_with_ambiguity(
+    intent_lower: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) -> Gate {
+    // 2026-05-06 — scan ALL connector keywords for ambiguity hits before
+    // deciding the gate state. Pre-fix the function returned Open on the
+    // first non-ambiguous match and never checked the rest, so an intent
+    // like "Linear + GitHub + Google Calendar" against a vault with 5
+    // GitHub PATs would auto-open the gate (via "google calendar"
+    // matching first) and skip the credential picker entirely. Now: any
+    // matched service that's ambiguous forces Closed; only when every
+    // matched service is unambiguous does the gate auto-open.
+    let mut any_match = false;
+    for kw in FUZZY_CONNECTOR_ALIASES {
+        if intent_lower.contains(kw) {
+            any_match = true;
+            if let Some(svc) = canonical_service_type_for_alias(kw) {
+                if ambiguous_services.contains(svc) {
+                    return Gate::Closed;
+                }
+            }
+        }
+    }
+    for kw in registry_keywords {
+        if kw.is_empty() { continue; }
+        if intent_lower.contains(kw.as_str()) {
+            any_match = true;
+            // The registry keyword IS the service_type (or close to it).
+            // Match against ambiguous set directly.
+            if ambiguous_services.contains(kw) {
+                return Gate::Closed;
+            }
+        }
+    }
+    if any_match { Gate::Open } else { Gate::Closed }
+}
+
+/// Map a fuzzy alias (the human-text form) to its canonical
+/// `service_type` so we can probe `ambiguous_services` against the
+/// alias-form match. Best-effort — unknown aliases return `None` and
+/// fall through to the existing auto-open path.
+fn canonical_service_type_for_alias(alias: &str) -> Option<&'static str> {
+    match alias {
+        "google drive" => Some("google_drive"),
+        "google sheets" => Some("google_sheets"),
+        "google calendar" => Some("google_calendar"),
+        "local drive" | "local-drive" | "local_drive" | "built-in drive" | "built in drive" => Some("local_drive"),
+        _ => None,
+    }
+}
+
 /// Production entry — combines the fuzzy aliases (which the connector
 /// registry doesn't carry as exact names) with the live connector registry
 /// snapshot from `engine::api_proxy::connector_keyword_snapshot`. Falls
@@ -572,6 +711,7 @@ pub(super) fn gate_seed_for_intent(intent: &str) -> CapabilityGates {
         connectors: intent_implies_connectors(&intent_lower),
         review_policy: intent_implies_review(&intent_lower),
         memory_policy: intent_implies_memory(&intent_lower),
+        sample_output: intent_implies_sample_output(&intent_lower),
     }
 }
 
@@ -590,6 +730,61 @@ pub(super) fn gate_seed_for_intent_with_registry(
         connectors: intent_implies_connectors_with_registry(&intent_lower, registry_keywords),
         review_policy: intent_implies_review(&intent_lower),
         memory_policy: intent_implies_memory(&intent_lower),
+        sample_output: intent_implies_sample_output(&intent_lower),
+    }
+}
+
+/// 2026-05-05 — gate seed with vault-ambiguity awareness.
+///
+/// Same as `gate_seed_for_intent_with_registry` but additionally takes
+/// `ambiguous_services` (service_types with 2+ credentials in the vault).
+/// When the intent names an ambiguous service, the connectors gate
+/// stays Closed so the existing connector_category picker fires and
+/// the user chooses between the multiple credentials.
+///
+/// Falls back to the keyword-only fallback list when the registry
+/// snapshot is empty (mirrors `intent_implies_connectors`'s behaviour).
+pub(super) fn gate_seed_for_intent_with_context(
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) -> CapabilityGates {
+    let intent_lower = intent.to_lowercase();
+    // Mirror `intent_implies_connectors`'s fallback when the registry is
+    // empty so stand-alone callers (tests, future cold-start paths) behave
+    // sanely without a populated connector_definitions table.
+    const KNOWN_FALLBACK: &[&str] = &[
+        "gmail", "outlook", "slack", "discord", "teams", "telegram",
+        "whatsapp", "twilio",
+        "github", "gitlab", "bitbucket",
+        "linear", "jira", "notion", "trello", "asana", "clickup", "attio",
+        "monday", "basecamp",
+        "airtable", "supabase", "postgres", "google sheets", "google drive",
+        "dropbox",
+        "cal.com", "calcom", "google calendar", "calendly",
+        "hubspot", "salesforce", "pipedrive",
+        "stripe", "alpha vantage", "alpha_vantage", "alphavantage",
+        "sentry", "betterstack", "better stack", "datadog", "pagerduty",
+        "leonardo", "leonardo ai", "leonardo_ai", "openai", "anthropic",
+        "midjourney", "elevenlabs", "gemini",
+    ];
+    let combined: Vec<String> = if registry_keywords.is_empty() {
+        KNOWN_FALLBACK.iter().map(|s| s.to_string()).collect()
+    } else {
+        let mut v: Vec<String> = registry_keywords.to_vec();
+        v.extend(KNOWN_FALLBACK.iter().map(|s| s.to_string()));
+        v
+    };
+    CapabilityGates {
+        trigger: intent_implies_trigger(&intent_lower),
+        connectors: intent_implies_connectors_with_ambiguity(
+            &intent_lower,
+            &combined,
+            ambiguous_services,
+        ),
+        review_policy: intent_implies_review(&intent_lower),
+        memory_policy: intent_implies_memory(&intent_lower),
+        sample_output: intent_implies_sample_output(&intent_lower),
     }
 }
 
@@ -634,6 +829,48 @@ pub(super) fn ensure_capability_in_coverage(
 ) {
     if !coverage.contains_key(cap_id) {
         coverage.insert(cap_id.to_string(), gate_seed_for_intent(intent));
+    }
+}
+
+/// 2026-05-05 — context-aware variants used by the runner.
+///
+/// Pre-fix the gate-seed walked the intent heuristics in isolation. The
+/// new variants thread `ambiguous_services` (service_types with 2+
+/// credentials in the vault) so a build whose intent says "GitHub"
+/// against a vault with 4 GitHub PATs keeps the connectors gate Closed
+/// — the user picks the right credential before promote.
+pub(super) fn init_gates_from_enumeration_with_context(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    titles: &mut HashMap<String, String>,
+    data: &serde_json::Value,
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) {
+    let Some(caps) = data.get("capabilities").and_then(|v| v.as_array()) else { return };
+    let seed = gate_seed_for_intent_with_context(intent, registry_keywords, ambiguous_services);
+
+    for cap in caps {
+        let Some(id) = cap.get("id").and_then(|v| v.as_str()) else { continue };
+        if let Some(title) = cap.get("title").and_then(|v| v.as_str()) {
+            titles.entry(id.to_string()).or_insert_with(|| title.to_string());
+        }
+        coverage.entry(id.to_string()).or_insert_with(|| seed.clone());
+    }
+}
+
+pub(super) fn ensure_capability_in_coverage_with_context(
+    coverage: &mut HashMap<String, CapabilityGates>,
+    cap_id: &str,
+    intent: &str,
+    registry_keywords: &[String],
+    ambiguous_services: &std::collections::HashSet<String>,
+) {
+    if !coverage.contains_key(cap_id) {
+        coverage.insert(
+            cap_id.to_string(),
+            gate_seed_for_intent_with_context(intent, registry_keywords, ambiguous_services),
+        );
     }
 }
 
@@ -900,6 +1137,30 @@ pub(super) fn synthesize_gate_question(
                 )),
             );
             obj.insert("options".into(), serde_json::json!([]));
+        }
+        "sample_output" => {
+            // 2026-05-05 — output-shape question. `accepts_reference: true`
+            // flips the answering UI into reference-attach mode so users
+            // can paste / drop a real example (an existing report, an
+            // email body, a JSON fixture). The free-text fallback
+            // captures format preferences when the user doesn't have a
+            // sample handy.
+            obj.insert("scope".into(), serde_json::Value::String("field".into()));
+            obj.insert("field".into(), serde_json::Value::String("sample_output".into()));
+            obj.insert("question".into(), serde_json::Value::String(
+                format!(
+                    "How should \"{title}\" format its output? Paste / attach an example, \
+                     or pick a shape:"
+                )
+            ));
+            obj.insert("options".into(), serde_json::json!([
+                "Markdown — bullet list with short headings",
+                "Markdown — table or grid layout",
+                "Prose summary — short paragraphs, no bullets",
+                "JSON — structured payload",
+                "I'll attach an example",
+            ]));
+            obj.insert("accepts_reference".into(), serde_json::Value::Bool(true));
         }
         _ => return Vec::new(),
     }
@@ -1191,6 +1452,44 @@ mod tests {
         }
     }
 
+    // 2026-05-06 — multi-service ambiguity regression. Pre-fix
+    // intent_implies_connectors_with_ambiguity returned Open on the first
+    // non-ambiguous match and never checked the rest — so an intent
+    // mentioning Google Calendar + GitHub against a vault with 5 GitHub PATs
+    // skipped the connector picker entirely. The fix scans ALL matched
+    // services; ANY ambiguous hit forces Closed.
+    #[test]
+    fn connectors_closed_when_any_intent_service_is_ambiguous() {
+        let registry: Vec<String> = vec![
+            "github".into(), "linear".into(), "google_calendar".into(),
+        ];
+        let mut ambiguous = std::collections::HashSet::new();
+        ambiguous.insert("github".to_string());
+
+        // Intent mentions multiple services; one is ambiguous → Closed
+        let intent = "build a weekly digest covering my linear issues, my github prs, and today's google calendar events".to_lowercase();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent, &registry, &ambiguous),
+            Gate::Closed,
+            "ambiguous github should force Closed even when google_calendar is unambiguous"
+        );
+
+        // Same intent, no ambiguity → Open
+        let no_ambig = std::collections::HashSet::new();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent, &registry, &no_ambig),
+            Gate::Open,
+            "all clean: at least one match → Open"
+        );
+
+        // Ambiguous service mentioned alone → Closed
+        let intent_solo = "summarise my github prs".to_lowercase();
+        assert_eq!(
+            intent_implies_connectors_with_ambiguity(&intent_solo, &registry, &ambiguous),
+            Gate::Closed,
+        );
+    }
+
     // ── gate_seed_for_intent — composite of the four heuristics ─────────────
 
     #[test]
@@ -1260,7 +1559,7 @@ mod tests {
 
     #[test]
     fn first_unopen_field_returns_in_priority_order() {
-        // Trigger first, then connectors, then review_policy, then memory_policy.
+        // Trigger → connectors → review_policy → memory_policy → sample_output.
         let mut gates = CapabilityGates::default();
         assert_eq!(gates.first_unopen_field(), Some("suggested_trigger"));
 
@@ -1274,6 +1573,9 @@ mod tests {
         assert_eq!(gates.first_unopen_field(), Some("memory_policy"));
 
         gates.mark_open("memory_policy");
+        assert_eq!(gates.first_unopen_field(), Some("sample_output"));
+
+        gates.mark_open("sample_output");
         assert_eq!(gates.first_unopen_field(), None);
     }
 
@@ -1291,7 +1593,7 @@ mod tests {
     // ── is_gated_field / legacy_cell_to_v3_field ────────────────────────────
 
     #[test]
-    fn is_gated_field_recognises_only_the_four_v3_fields() {
+    fn is_gated_field_recognises_only_the_v3_fields() {
         for field in GATED_CAPABILITY_FIELDS {
             assert!(is_gated_field(field), "{field} should be gated");
         }
@@ -1653,8 +1955,8 @@ mod tests {
 
     #[test]
     fn batched_synthesis_emits_question_per_unopen_gate_in_canonical_order() {
-        // Capability with all four gates Closed → expect 4 V3 events
-        // (trigger → connectors → review_policy → memory_policy).
+        // Capability with all five gates Closed → expect 5 V3 events
+        // (trigger → connectors → review_policy → memory_policy → sample_output).
         let mut coverage = HashMap::new();
         coverage.insert("uc_test".to_string(), CapabilityGates::default());
         let mut titles = HashMap::new();
@@ -1681,8 +1983,9 @@ mod tests {
                 "connectors".to_string(),
                 "review_policy".to_string(),
                 "memory_policy".to_string(),
+                "sample_output".to_string(),
             ],
-            "all four gates must fire in canonical order"
+            "all five gates must fire in canonical order"
         );
 
         // Every gate should now be Pending (mark_pending called)
@@ -1697,11 +2000,12 @@ mod tests {
 
     #[test]
     fn batched_synthesis_skips_already_open_gates() {
-        // Two gates Open (trigger + connectors), two Closed → expect 2 emissions.
+        // Three gates Open (trigger + connectors + sample_output), two Closed → expect 2 emissions.
         let mut coverage = HashMap::new();
         let mut gates = CapabilityGates::default();
         gates.mark_open("suggested_trigger");
         gates.mark_open("connectors");
+        gates.mark_open("sample_output");
         coverage.insert("uc_partial".to_string(), gates);
         let titles = HashMap::new();
 

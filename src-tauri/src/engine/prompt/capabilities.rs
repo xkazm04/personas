@@ -207,6 +207,82 @@ pub fn render_generation_policy_lines(settings: Option<&serde_json::Value>) -> V
     lines
 }
 
+/// 2026-05-06 — extended renderer that walks the whole use_case to derive
+/// policy lines from BOTH `generation_settings` (explicit runtime override)
+/// AND the build-time IR fields `review_policy.mode` / `memory_policy.enabled`.
+/// Mirrors the precedence in `dispatch::pick_generation_policy`: explicit
+/// settings win, but when absent we fall back to the IR fields the build
+/// LLM actually writes.
+///
+/// Why two functions instead of replacing the original: the original
+/// signature is on the public surface (used by tests and other callers).
+/// This adds a richer entry point without breaking those.
+pub fn render_capability_policy_lines(use_case: &serde_json::Value) -> Vec<String> {
+    let mut lines = render_generation_policy_lines(use_case.get("generation_settings"));
+
+    // Track which keys were already covered by generation_settings so the
+    // fallback doesn't double-emit.
+    let settings = use_case.get("generation_settings");
+    let memories_explicit = settings
+        .and_then(|s| s.get("memories"))
+        .is_some();
+    let reviews_explicit = settings
+        .and_then(|s| s.get("reviews"))
+        .is_some();
+
+    // memory_policy.enabled fallback
+    if !memories_explicit {
+        if let Some(enabled) = use_case
+            .get("memory_policy")
+            .and_then(|v| v.get("enabled"))
+            .and_then(|v| v.as_bool())
+        {
+            if !enabled {
+                lines.push(
+                    "Do not write to agent memory for this capability. \
+                     The persona has memories from other capabilities; do not extend them from this run.".to_string(),
+                );
+            }
+        }
+    }
+
+    // review_policy.mode fallback. The "always" mode is the meaningful
+    // one to surface — without an explicit instruction the LLM treats
+    // routine completions as not requiring review (per templates.rs:180).
+    // For mode=always we want every output to be flagged.
+    if !reviews_explicit {
+        if let Some(mode) = use_case
+            .get("review_policy")
+            .and_then(|v| v.get("mode"))
+            .and_then(|v| v.as_str())
+        {
+            match mode.to_ascii_lowercase().as_str() {
+                "never" => lines.push(
+                    "Do not request manual review for this capability. \
+                     Resolve uncertainty with your own best judgment and proceed.".to_string(),
+                ),
+                "always" => lines.push(
+                    "Always emit a `manual_review` protocol message for every output of \
+                     this capability before delivering it. The user has explicitly required \
+                     human approval — never skip this step, even for routine completions. \
+                     Use severity \"medium\" unless the output is high-impact (severity \"high\"). \
+                     Include the proposed output in the description so the reviewer can decide \
+                     without re-running the capability.".to_string(),
+                ),
+                "auto_triage" | "autotriage" | "auto-triage" => lines.push(
+                    "Emit a `manual_review` for outputs you would normally flag. The runtime \
+                     spawns an automated triage evaluator that judges each review against the \
+                     persona's decision_principles and resolves it without blocking on a human. \
+                     Use this freely — it is not a queue, it is a transparency record.".to_string(),
+                ),
+                _ => {}
+            }
+        }
+    }
+
+    lines
+}
+
 /// Build documentation string for a single tool definition.
 pub fn build_tool_documentation(tool: &PersonaToolDefinition) -> String {
     let mut doc = format!("### {}\n{}\n", tool.name, tool.description);

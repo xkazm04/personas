@@ -119,6 +119,25 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
     if (activeRowIndex >= glyphRows.length) setActiveRowIndex(0);
   }, [glyphRows.length, activeRowIndex]);
 
+  // 2026-05-05 — reset all per-draft local UI state when the active build
+  // session changes. Without this, switching drafts (or creating a new one)
+  // left the previous draft's `activeDim` set, so the overlay rendered
+  // GlyphDimensionSummaryCard with no question — appearing as a "blank
+  // questionnaire window". The store-mirrored scalars (pendingQuestions,
+  // clarifyingQuestionV3, etc.) are correctly empty for the new session;
+  // it's only the component-local pickers that needed scoping to sessionId.
+  useEffect(() => {
+    setActiveDim(null);
+    setHoveredDim(null);
+    setActiveRowIndex(0);
+    setHoveredRowIndex(null);
+    setFace("glyph");
+    setRefining(false);
+    setRefinePrefill(null);
+    setShowSimulate(false);
+    setShowReport(false);
+  }, [buildSessionId]);
+
   const activeRow = glyphRows[activeRowIndex] ?? null;
 
   const { petalStates, activeQuestion, activeDimSummary } = useGlyphLayoutState({
@@ -138,26 +157,47 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
   const closeActiveDim = () => setActiveDim(null);
   const onClickDim = (d: GlyphDimension) => setActiveDim((prev) => (prev === d ? null : d));
 
-  // Both card variants render as a centered overlay INSIDE the sigil
-  // canvas. The overlay's inner max-width is narrowed (~22rem = 352px)
-  // so the card stays in the central area between the petal ring (side
-  // petals are at iconR=217 from a 320 center → x ≈ 103 / 537; a 352px-
-  // wide card centered spans ±176, fully clear of petals on either
-  // side). User can tap any lit petal to switch active question without
-  // the card eating the click.
-  const overlay = activeDim
-    ? activeQuestion
-      ? <GlyphAnswerCard question={activeQuestion} onAnswer={onAnswer} onClose={closeActiveDim} />
-      : <GlyphDimensionSummaryCard
-          activeDim={activeDim}
-          summary={activeDimSummary}
-          isPreBuild={isCompose}
-          onClose={closeActiveDim}
-        />
+  // 2026-05-05 — phase 2 reactivity. The two card variants now render at
+  // different positions:
+  //   • GlyphAnswerCard (active question) stays as a centered overlay
+  //     INSIDE the sigil canvas — answering still happens at the petal.
+  //   • GlyphDimensionSummaryCard (populated dim, no pending question)
+  //     pops out as a top-center page-level affordance so the glyph
+  //     stays fully visible while the user reads the summary, and the
+  //     summary is reachable from anywhere on the canvas.
+  const overlay = activeDim && activeQuestion
+    ? <GlyphAnswerCard question={activeQuestion} onAnswer={onAnswer} onClose={closeActiveDim} />
     : null;
+  const topCenterSummary = activeDim && !activeQuestion ? activeDim : null;
 
   return (
-    <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1" data-testid="build-layout-glyph-full">
+    <div className="flex-1 min-h-0 w-full overflow-y-auto pr-1 relative" data-testid="build-layout-glyph-full">
+      {/* Top-center dimension summary popup. Triggered by clicking a
+          populated petal — surfaces the dimension's resolved data
+          (Memory contents, Trigger schedule, etc.) above the sigil so
+          the glyph stays fully visible while the user reads. The
+          GlyphAnswerCard for active questions still renders inside the
+          sigil canvas via the `overlay` prop below. */}
+      <AnimatePresence>
+        {topCenterSummary && (
+          <motion.div
+            key={`top-summary-${topCenterSummary}`}
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18 }}
+            className="absolute left-1/2 -translate-x-1/2 top-3 z-30 w-[min(440px,90vw)]"
+            data-testid="glyph-dim-summary-popup"
+          >
+            <GlyphDimensionSummaryCard
+              activeDim={topCenterSummary}
+              summary={activeDimSummary}
+              isPreBuild={isCompose}
+              onClose={closeActiveDim}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Wizard surface — fixed 900px min-width so the layout stays
           breathable on narrower viewports + a subtle grid background
           gives the canvas its own identity (was blending into the page

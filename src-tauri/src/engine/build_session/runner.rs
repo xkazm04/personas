@@ -29,9 +29,9 @@ use super::events::{
     update_phase_with_error,
 };
 use super::gates::{
-    ensure_capability_in_coverage, find_first_unopen_gate, gate_seed_for_intent,
-    init_gates_from_enumeration, is_gated_field, legacy_cell_to_v3_field, synthesize_gate_question,
-    CapabilityGates, PendingGate,
+    ensure_capability_in_coverage_with_context, find_first_unopen_gate,
+    gate_seed_for_intent_with_context, init_gates_from_enumeration_with_context, is_gated_field,
+    legacy_cell_to_v3_field, synthesize_gate_question, CapabilityGates, PendingGate,
 };
 use super::parser::{
     map_capability_field_to_legacy_dimension, map_persona_field_to_legacy_dimension,
@@ -113,6 +113,27 @@ pub(super) async fn run_session(
     let mut coverage: HashMap<String, CapabilityGates> = HashMap::new();
     let mut capability_titles: HashMap<String, String> = HashMap::new();
     let mut pending_gate: Option<PendingGate> = None;
+
+    // 2026-05-05 — context for the gate-seed heuristics. Captured once per
+    // session because vault state doesn't change mid-build:
+    //   • registry_keywords: connector_definitions snapshot (services the
+    //     persona can name in the intent and have them auto-resolve).
+    //   • ambiguous_services: service_types where the vault has 2+
+    //     credentials. Forces the connectors gate Closed for these so the
+    //     credential picker fires — without this an intent like "GitHub"
+    //     against a vault with 4 GitHub PATs would silently pick the
+    //     newest one with no user input.
+    let registry_keywords: Vec<String> =
+        crate::engine::api_proxy::connector_keyword_snapshot();
+    let ambiguous_services =
+        crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool);
+    if !ambiguous_services.is_empty() {
+        tracing::info!(
+            session_id = %session_id,
+            ambiguous = ?ambiguous_services,
+            "Vault has multiple credentials per service_type; forcing connectors gate Closed for these"
+        );
+    }
 
     const MAX_TURNS: usize = 12;
 
@@ -369,11 +390,13 @@ pub(super) async fn run_session(
             for event in turn_events {
                 let keep = match &event {
                     BuildEvent::CapabilityEnumerationUpdate { data, .. } => {
-                        init_gates_from_enumeration(
+                        init_gates_from_enumeration_with_context(
                             &mut coverage,
                             &mut capability_titles,
                             data,
                             &raw_user_intent,
+                            &registry_keywords,
+                            &ambiguous_services,
                         );
                         let gate_summary: Vec<String> = coverage
                             .iter()
@@ -405,10 +428,12 @@ pub(super) async fn run_session(
                             (capability_id.as_deref(), field.as_deref())
                         {
                             if is_gated_field(field_name) {
-                                ensure_capability_in_coverage(
+                                ensure_capability_in_coverage_with_context(
                                     &mut coverage,
                                     cap_id,
                                     &raw_user_intent,
+                                    &registry_keywords,
+                                    &ambiguous_services,
                                 );
                                 if let Some(cg) = coverage.get_mut(cap_id) {
                                     cg.mark_pending(field_name);
@@ -427,7 +452,10 @@ pub(super) async fn run_session(
                         value,
                         ..
                     } => {
-                        ensure_capability_in_coverage(&mut coverage, capability_id, &raw_user_intent);
+                        ensure_capability_in_coverage_with_context(
+                            &mut coverage, capability_id, &raw_user_intent,
+                            &registry_keywords, &ambiguous_services,
+                        );
                         // Opportunistically harvest a title from the
                         // resolution payload. Some LLMs include `title`
                         // alongside the resolved field even though only the
@@ -546,7 +574,9 @@ pub(super) async fn run_session(
                                 .or_else(|| data.get("capabilities").and_then(|v| v.as_array()))
                                 .or_else(|| data.get("use_cases").and_then(|v| v.as_array()))
                             {
-                                let seed = gate_seed_for_intent(&raw_user_intent);
+                                let seed = gate_seed_for_intent_with_context(
+                                    &raw_user_intent, &registry_keywords, &ambiguous_services,
+                                );
                                 for cap in caps {
                                     let id = cap.get("id").and_then(|v| v.as_str()).or_else(|| {
                                         cap.get("use_case_id").and_then(|v| v.as_str())
@@ -570,7 +600,9 @@ pub(super) async fn run_session(
                             if coverage.is_empty() {
                                 coverage.insert(
                                     "uc_default".to_string(),
-                                    gate_seed_for_intent(&raw_user_intent),
+                                    gate_seed_for_intent_with_context(
+                                        &raw_user_intent, &registry_keywords, &ambiguous_services,
+                                    ),
                                 );
                                 capability_titles
                                     .entry("uc_default".to_string())

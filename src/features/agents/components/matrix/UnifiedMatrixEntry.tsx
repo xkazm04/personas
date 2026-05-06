@@ -10,16 +10,15 @@
  * via agentStore before starting the build session.
  */
 import { useState, useCallback, useEffect, useRef } from "react";
-import { PersonaMatrix } from "@/features/templates/sub_generated/gallery/matrix/PersonaMatrix";
 import { useMatrixBuild } from "@/features/agents/components/matrix/useMatrixBuild";
 import { useMatrixLifecycle } from "@/features/agents/components/matrix/useMatrixLifecycle";
-import { GlyphQuestionPanel } from "@/features/shared/glyph";
 import { GlyphFullLayout } from "@/features/agents/components/glyph/GlyphFullLayout";
+import { GlyphPrototypeLayout } from "@/features/agents/components/glyph/GlyphPrototypeLayout";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
   serializeQuickConfig,
   type QuickConfigState,
-} from "@/features/agents/components/matrix/DimensionQuickConfig";
+} from "@/features/agents/components/matrix/quickConfigTypes";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
@@ -27,17 +26,18 @@ import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Layout preference — persists across sessions via localStorage.
-// Only two modes remain: the new flagship "glyph-full" and the legacy
-// 8-dimension matrix. Earlier "v3-capabilities" and "glyph" values are
-// migrated to "glyph-full" on read.
-type BuildLayout = "legacy-dimensions" | "glyph-full";
+// Two modes after 2026-05-05: the flagship "glyph-full" and the new
+// "composer-prototype" (center-prompt surface with sigil quick-setup).
+// The legacy 8-dimension matrix ("legacy-dimensions") was retired —
+// stored values for it migrate to "glyph-full" on read.
+type BuildLayout = "glyph-full" | "composer-prototype";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw === "legacy-dimensions" || raw === "glyph-full") return raw;
+    if (raw === "glyph-full" || raw === "composer-prototype") return raw;
     // Migrate retired values so users don't land on a stale preference.
-    if (raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
+    if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
   } catch { /* SSR or disabled localStorage */ }
   return "glyph-full";
 }
@@ -433,49 +433,12 @@ export function UnifiedMatrixEntry() {
     }
   }, [intentText, isLaunching, handleLaunch]);
 
-  // -- Inline edit handlers (use --continue session for CLI refine) --------
+  // 2026-05-05 — handleApplyEdits / handleDiscardEdits removed alongside
+  // the legacy 8-dimension matrix view. Both were only consumed by
+  // PersonaMatrix's inline cell editor; the Glyph-based layouts edit
+  // capabilities through the Refine composer instead.
 
-  const handleApplyEdits = useCallback(async () => {
-    const store = useAgentStore.getState();
-    if (!store.buildEditDirty) return;
-
-    // Build a summary of what the user changed in buildCellData
-    const parts: string[] = [];
-    const cellData = store.buildCellData;
-
-    for (const [key, data] of Object.entries(cellData)) {
-      if (data?.items && data.items.length > 0) {
-        parts.push(`[${key}]: ${data.items.join('; ')}`);
-      }
-      // Include structured connector data
-      if (key === 'connectors' && data?.raw?.connectors) {
-        const names = (data.raw.connectors as Array<{ name: string }>).map((c) => c.name);
-        parts.push(`[connectors-structured]: ${names.join(', ')}`);
-      }
-      // Include structured trigger data
-      if (key === 'triggers' && data?.raw?.triggers) {
-        const descs = (data.raw.triggers as Array<{ description?: string }>).map((t) => t.description ?? 'trigger');
-        parts.push(`[triggers-structured]: ${descs.join(', ')}`);
-      }
-    }
-
-    if (parts.length === 0) {
-      store.clearEditDirty();
-      return;
-    }
-
-    const summary = `User edited the agent dimensions. Here is the current state of all dimensions after their edits:\n${parts.join('\n')}\n\nPlease update the agent_ir to reflect these changes. Re-emit any dimensions that need updating.`;
-    await lifecycle.handleRefine(summary);
-    store.clearEditDirty();
-  }, [lifecycle]);
-
-  const handleDiscardEdits = useCallback(() => {
-    const store = useAgentStore.getState();
-    store.initEditStateFromDraft();
-    store.clearEditDirty();
-  }, []);
-
-  // -- Derived props for PersonaMatrix ------------------------------------
+  // -- Derived props -------------------------------------------------------
 
   const isActivelyBuilding = build.isBuilding || build.buildPhase === "awaiting_input";
   const hasWorkflowImport = !!useAgentStore((s) => s.buildWorkflowJson);
@@ -521,25 +484,13 @@ export function UnifiedMatrixEntry() {
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden px-4 md:px-6 xl:px-8 pt-4 transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >
-      {/* Inline pending-question panel — renders across ALL layouts, so the
-          8-dim Matrix and the v3-capabilities view answer questions the same
-          way the Glyph prototype does. Prior iteration auto-opened a modal
-          for every pending question in non-Glyph layouts; this inlines the
-          Q&A as a first-class surface of the flow rather than a takeover. */}
-      {/* Inline Q&A is rendered here only for the legacy 8-dimension layout —
-          Glyph Full hosts Q&A inside the CommandPanel's Refine step so the
-          composer + Q&A read as one continuous surface. */}
-      {layout !== "glyph-full" && build.pendingQuestions && build.pendingQuestions.length > 0 && (
-        <div className="flex-shrink-0 mb-3" data-testid="build-inline-questions">
-          <GlyphQuestionPanel
-            questions={build.pendingQuestions}
-            onAnswer={build.handleAnswer}
-          />
-        </div>
-      )}
+      {/* 2026-05-06 — inline GlyphQuestionPanel removed. Both remaining
+          layouts (glyph-full and composer-prototype) host Q&A through the
+          GlyphAnswerCard overlay on the sigil; the inline panel was a
+          legacy surface for the now-deleted 8-dimension matrix and ran
+          duplicated against the overlay in the prototype. */}
 
-      {/* Layout toggle — two modes only: the flagship Glyph Full and the
-          legacy 8-dimension matrix. */}
+      {/* Layout toggle — two modes: glyph-full and composer-prototype. */}
       <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
         <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
           <button
@@ -557,22 +508,22 @@ export function UnifiedMatrixEntry() {
           </button>
           <button
             type="button"
-            onClick={() => handleLayoutChange("legacy-dimensions")}
+            onClick={() => handleLayoutChange("composer-prototype")}
             className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "legacy-dimensions"
+              layout === "composer-prototype"
                 ? "bg-primary/20 text-primary"
                 : "text-foreground/60 hover:text-foreground"
             }`}
-            title="8-dimension view — original matrix layout"
-            data-testid="build-layout-toggle-legacy"
+            title="Composer Prototype — periphery connectors + center prompt + glyph quick-setup"
+            data-testid="build-layout-toggle-prototype"
           >
-            8-dimension View
+            Composer Prototype
           </button>
         </div>
       </div>
 
-      {layout === "glyph-full" ? (
-        <GlyphFullLayout
+      {layout === "composer-prototype" ? (
+        <GlyphPrototypeLayout
           intentText={intentText}
           onIntentChange={setIntentText}
           onLaunch={handleLaunchGlyph}
@@ -603,43 +554,36 @@ export function UnifiedMatrixEntry() {
           buildError={build.buildError}
         />
       ) : (
-        <div className="flex-1 min-h-0 w-full" data-testid="build-layout-legacy">
-          <PersonaMatrix
-            designResult={null}
-            variant="creation"
-            hideHeader
-            intentText={intentText}
-            onIntentChange={setIntentText}
-            onLaunch={handleLaunch}
-            launchDisabled={launchDisabled}
-            isRunning={build.isBuilding}
-            completeness={build.completeness}
-            cliOutputLines={build.outputLines}
-            buildLocked={isActivelyBuilding}
-            cellBuildStates={build.cellStates}
-            pendingQuestions={build.pendingQuestions}
-            onAnswerBuildQuestion={build.handleAnswer}
-            agentName={agentName}
-            onAgentNameChange={setAgentName}
-            hasDesignResult={hasDesignResult}
-            buildPhase={build.buildPhase}
-            onStartTest={lifecycle.handleStartTest}
-            onApproveTest={() => { void lifecycle.handlePromote(); }}
-            onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-            onRejectTest={lifecycle.handleRejectTest}
-            onRefine={lifecycle.handleRefine}
-            testOutputLines={build.buildTestOutputLines}
-            testPassed={build.buildTestPassed}
-            testError={build.buildTestError}
-            toolTestResults={lifecycle.buildToolTestResults}
-            testSummary={lifecycle.buildTestSummary}
-            buildActivity={build.buildActivity}
-            onApplyEdits={handleApplyEdits}
-            onDiscardEdits={handleDiscardEdits}
-            onSubmitAllAnswers={build.handleSubmitAnswers}
-            onViewAgent={handleViewPromotedAgent}
-          />
-        </div>
+        <GlyphFullLayout
+          intentText={intentText}
+          onIntentChange={setIntentText}
+          onLaunch={handleLaunchGlyph}
+          launchDisabled={launchDisabled}
+          isBuilding={build.isBuilding}
+          buildPhase={build.buildPhase}
+          completeness={build.completeness}
+          cellStates={build.cellStates}
+          pendingQuestions={build.pendingQuestions}
+          onAnswer={build.handleAnswer}
+          agentName={agentName}
+          onAgentNameChange={setAgentName}
+          hasDesignResult={hasDesignResult}
+          glyphRows={glyphRows}
+          onStartTest={lifecycle.handleStartTest}
+          onPromote={() => { void lifecycle.handlePromote(); }}
+          onPromoteForce={() => { void lifecycle.handlePromote({ force: true }); }}
+          onRejectTest={lifecycle.handleRejectTest}
+          onRefine={lifecycle.handleRefine}
+          testOutputLines={build.buildTestOutputLines}
+          testPassed={build.buildTestPassed}
+          testError={build.buildTestError}
+          toolTestResults={lifecycle.buildToolTestResults}
+          testSummary={lifecycle.buildTestSummary}
+          cliOutputLines={build.outputLines}
+          onQuickConfigChange={handleQuickConfigChange}
+          onViewAgent={handleViewPromotedAgent}
+          buildError={build.buildError}
+        />
       )}
 
       {/* Error banner */}

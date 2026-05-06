@@ -1,6 +1,8 @@
-import { Layers, Clock, Webhook, MousePointer, Radio, Shield, Brain, Database, X, Split, Undo2 } from "lucide-react";
+import { Layers, Clock, Webhook, MousePointer, Radio, Shield, Brain, X, Split, Undo2 } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { useShallow } from "zustand/react/shallow";
+import { humanizeCron } from "@/features/shared/glyph/cron";
+import { getConnectorMeta, ConnectorIcon } from "@/features/shared/components/display/ConnectorMeta";
 
 interface GlyphCapabilityPreviewProps {
   /** A-grade Phase 5b: invoked when the user clicks "Split" on a capability.
@@ -63,7 +65,7 @@ function formatTriggerSummary(trig: { trigger_type?: string; config?: Record<str
   if (!triggerType) return "Manual";
   const cron = (trig?.config?.cron as string | undefined) || undefined;
   const interval = (trig?.config?.interval_seconds as number | undefined) || undefined;
-  if (triggerType === "schedule" && cron) return `Schedule (${cron})`;
+  if (triggerType === "schedule" && cron) return humanizeCron(cron);
   if (triggerType === "polling" && interval) return `Polling every ${interval}s`;
   const capitalised = `${triggerType.charAt(0).toUpperCase()}${triggerType.slice(1)}`;
   if (trig?.description && trig.description.length < 60) return `${capitalised} — ${trig.description}`;
@@ -110,7 +112,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
           )}
         </span>
       </div>
-      <div className="flex flex-col gap-1 max-h-[200px] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-1">
         {capabilityOrder.map((id) => {
           const cap = capabilities[id];
           if (!cap) return null;
@@ -145,10 +147,13 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         {formatTriggerSummary(cap.suggested_trigger)}
                       </span>
                       {connectorList.length > 0 && (
-                        <span className="inline-flex items-center gap-1">
-                          <Database className="w-3 h-3" />
-                          {connectorList.slice(0, 3).join(", ")}
-                          {connectorList.length > 3 ? ` +${connectorList.length - 3}` : ""}
+                        <span className="inline-flex items-center gap-1" title={connectorList.join(", ")}>
+                          {connectorList.slice(0, 4).map((slug) => (
+                            <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
+                          ))}
+                          {connectorList.length > 4 ? (
+                            <span className="text-foreground/55">+{connectorList.length - 4}</span>
+                          ) : null}
                         </span>
                       )}
                       <span

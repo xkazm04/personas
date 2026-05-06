@@ -2,7 +2,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { BuildPhase, BuildQuestion, CellBuildStatus } from "@/lib/types/buildTypes";
 import { GlyphSigilCanvas } from "./GlyphSigilCanvas";
-import { GlyphLegend } from "./GlyphLegend";
 import { GlyphActivityStrip } from "./GlyphActivityStrip";
 import { GlyphCoreContent } from "./GlyphCoreContent";
 import type { PetalState } from "./glyphLayoutTypes";
@@ -133,13 +132,8 @@ export function GlyphSigilFace(props: GlyphSigilFaceProps) {
         </motion.span>
       )}
 
-      {!activeDim && !isBuildingOnly && (
-        <GlyphLegend
-          petalStates={petalStates}
-          onSelectDim={(d) => onClickDim(d)}
-          onHoverDim={onHoverDim}
-        />
-      )}
+      {/* Legend removed 2026-05-05 — per-petal hover labels in
+          GlyphPetalIcons replace the bottom legend bar. */}
 
       {isBuilding && cliOutputLines && cliOutputLines.length > 0 && (
         <GlyphActivityStrip lines={cliOutputLines} />

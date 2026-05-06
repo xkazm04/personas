@@ -258,6 +258,34 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
         };
 
         let conn = pool.get()?;
+
+        // 2026-05-05 — content dedup within 24h. SQL audit on the
+        // rapid-validation cohort showed Stock Price Logger landing two
+        // byte-identical memory rows from separate runs of the same day
+        // (same AAPL close, same OHLCV string). Memories are an
+        // accumulating ledger — duplicates pollute search and inflate
+        // recall context. Skip insert when the same persona already has
+        // a memory with identical content within the last 24h; return
+        // that existing row so dispatch.rs sees a normal Ok and logs
+        // a stable id.
+        let dup: Result<String, _> = conn.query_row(
+            "SELECT id FROM persona_memories
+             WHERE persona_id = ?1 AND content = ?2
+               AND created_at >= datetime(?3, '-24 hours')
+             ORDER BY created_at DESC LIMIT 1",
+            params![input.persona_id, content, now],
+            |row| row.get(0),
+        );
+        if let Ok(existing_id) = dup {
+            tracing::info!(
+                persona_id = %input.persona_id,
+                title = %title,
+                existing_id = %existing_id,
+                "Skipping memory insert — identical content within 24h (dedup)"
+            );
+            return get_by_id(pool, &existing_id);
+        }
+
         conn.execute(
             "INSERT INTO persona_memories
              (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
