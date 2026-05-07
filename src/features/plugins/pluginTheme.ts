@@ -46,6 +46,11 @@ const PLUGIN_ACCENTS: Record<Exclude<PluginTab, 'browse'>, PluginAccent> = {
     gradientTo: 'rgb(34 211 238 / 0.2)',
     glow: '34 211 238',
   },
+  langfuse: {
+    gradientFrom: 'rgb(129 140 248)',
+    gradientTo: 'rgb(129 140 248 / 0.2)',
+    glow: '129 140 248',
+  },
 };
 
 export function getPluginTheme(id: PluginTab): CSSProperties {

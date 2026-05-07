@@ -24,11 +24,11 @@ import { useCallback, useEffect, useRef, useState } from 'react';
  *    incoming clip is always pre-rolled to a clean starting frame.
  *
  * Source files (`/public/athena/`):
- *   - `athena_idle_loop.mp4`    — 5s, audio stripped, clean loop
- *     (first frame ≈ last frame; ffmpeg re-encode of the original).
- *   - `athena_thinking_loop.mp4` — 10s ping-pong (forward + reverse
- *     concat), so the dramatic ending blends back into the calm
- *     starting pose without a hard cut.
+ *   - `athena_idle_loop.mp4` — 10s ping-pong (forward+reverse), 320×320,
+ *     12fps, CRF 30, audio stripped. Re-encoded from a 960×960 master.
+ *   - `athena_thinking_loop.mp4` — same encode pipeline; ping-pong so
+ *     the dramatic ending blends back into the calm starting pose
+ *     without a hard cut.
  *
  * Performance:
  *   - Lazy mount: this component only renders while the panel is

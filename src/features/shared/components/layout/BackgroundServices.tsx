@@ -11,6 +11,7 @@
 import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
+import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
 
 
 export default function BackgroundServices() {
@@ -23,5 +24,9 @@ export default function BackgroundServices() {
   // (lastEvaluation, evaluating, forceEvaluate, eventLog) isn't needed
   // at the app level; mount-side-effect is what matters here.
   useRemediationEvaluator();
+  // Subscribes to Langfuse stack lifecycle events globally so background
+  // start/stop/installer-download progress flows into the global store
+  // regardless of which page is currently mounted.
+  useLangfuseStackEvents();
   return null;
 }

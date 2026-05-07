@@ -1,4 +1,4 @@
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import type { ArtistTab, DevToolsTab, TwinTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
@@ -285,6 +285,22 @@ export function PluginsSidebarNav() {
               </div>
             )}
           </div>
+        )}
+
+        {/* Langfuse (observability export) */}
+        {enabledPlugins.has('langfuse') && (
+          <button
+            onClick={() => setPluginTab('langfuse')}
+            aria-current={pluginTab === 'langfuse' ? 'page' : undefined}
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+              pluginTab === 'langfuse'
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80'
+            }`}
+          >
+            <LineChart className="w-4 h-4 flex-shrink-0" />
+            Langfuse
+          </button>
         )}
       </div>
     </div>

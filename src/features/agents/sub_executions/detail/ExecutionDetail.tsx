@@ -4,6 +4,7 @@ import { ExecutionInspector } from '@/features/agents/sub_executions/detail/insp
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
+import { OpenInLangfuseButton } from '@/features/plugins/langfuse/OpenInLangfuseButton';
 import { hasNonEmptyJson } from './executionDetailTypes';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
@@ -22,12 +23,15 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   return (
     <div className="space-y-4">
       {/* Tab Switcher */}
-      <ExecutionDetailTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        hasToolSteps={hasToolSteps}
-        executionStatus={execution.status}
-      />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <ExecutionDetailTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          hasToolSteps={hasToolSteps}
+          executionStatus={execution.status}
+        />
+        <OpenInLangfuseButton executionId={execution.id} personaId={execution.persona_id} />
+      </div>
 
       {/* Tab Content */}
       {activeTab === 'replay' ? (

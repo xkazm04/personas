@@ -41,6 +41,9 @@ pub enum AppError {
     #[error("GitLab error: {0}")]
     GitLab(String),
 
+    #[error("Langfuse error: {0}")]
+    Langfuse(String),
+
     #[error("Rate limited: {0}")]
     RateLimited(String),
 
@@ -132,6 +135,7 @@ impl Serialize for AppError {
                 AppError::NetworkOffline(_) => "network_offline",
                 AppError::Cloud(_) => "cloud",
                 AppError::GitLab(_) => "gitlab",
+                AppError::Langfuse(_) => "langfuse",
                 AppError::RateLimited(_) => "rate_limited",
                 AppError::Forbidden(_) => "forbidden",
                 AppError::OAuthRevoked(_) => "oauth_revoked",

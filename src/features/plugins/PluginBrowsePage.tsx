@@ -1,4 +1,4 @@
-import { Palette, Wrench, Brain, FlaskConical, HardDrive, Sparkles, Bot, type LucideIcon } from 'lucide-react';
+import { Palette, Wrench, Brain, FlaskConical, HardDrive, Sparkles, Bot, LineChart, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -26,6 +26,7 @@ export default function PluginBrowsePage() {
     { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive, color: 'text-sky-400', activeBg: 'bg-sky-500/10', activeBorder: 'border-sky-500/20' },
     { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
     { id: 'companion', label: t.plugins.companion_label, description: t.plugins.companion_desc, icon: Bot, color: 'text-cyan-400', activeBg: 'bg-cyan-500/10', activeBorder: 'border-cyan-500/20' },
+    { id: 'langfuse', label: t.plugins.langfuse_label, description: t.plugins.langfuse_desc, icon: LineChart, color: 'text-indigo-400', activeBg: 'bg-indigo-500/10', activeBorder: 'border-indigo-500/20' },
   ];
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);

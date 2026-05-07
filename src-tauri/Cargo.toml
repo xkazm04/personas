@@ -163,7 +163,12 @@ libc = "0.2"
 # Desktop-only crates (gated behind "desktop" feature)
 notify = { version = "7", default-features = false, features = ["macos_kqueue"], optional = true }
 arboard = { version = "3", optional = true }
-keyring = { version = "3", optional = true }
+# Backend features are required in keyring 3.x — without one of `apple-native`,
+# `windows-native`, or `sync-secret-service`, the crate ships its mock backend
+# which silently no-ops every write and reads back nothing. Pre-3.x defaulted
+# to platform-native; 3.x made backends explicit. We enable all three so a
+# single Cargo.toml works for every desktop target.
+keyring = { version = "3", optional = true, features = ["apple-native", "windows-native", "sync-secret-service"] }
 which = { version = "8.0.1", optional = true }
 # Screen capture for validation loops (see engine/ambient_context.rs::capture_validation_screenshot)
 xcap = { version = "0.7", optional = true }

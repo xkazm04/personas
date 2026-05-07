@@ -12,6 +12,8 @@ pub use engine::render_plan;
 mod error;
 pub mod freeze_monitor;
 mod gitlab;
+mod langfuse;
+mod local_http;
 pub mod ipc_auth;
 pub mod keyed_pool;
 mod logging;
@@ -679,6 +681,24 @@ pub fn run() {
                 tracing::info!("GitLab config restored from keyring");
             }
             st.checkpoint("gitlab_restore");
+
+            // Restore Langfuse exporter from keyring if previously enabled.
+            // No-op when not configured. Never blocks startup; export failures
+            // are logged at runtime, not at init.
+            langfuse::exporter::init_from_config();
+            st.checkpoint("langfuse_restore");
+
+            // Start the in-app HTTP server (binds 127.0.0.1, free port at-or
+            // above 17400). Hosts authenticated-redirect routes for the
+            // user's default browser — currently the Langfuse auto-login
+            // shim. Register routers BEFORE starting; later registrations
+            // are dropped with a warn.
+            local_http::register_router("langfuse", local_http::langfuse_routes::router());
+            match local_http::start() {
+                Ok(port) => tracing::info!(port, "local_http server started"),
+                Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
+            }
+            st.checkpoint("local_http");
 
             // Initialize P2P NetworkService (Phase 2: Invisible Apps)
             #[cfg(feature = "p2p")]
@@ -1959,6 +1979,24 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_setup_persona_branches,
             commands::infrastructure::gitlab::gitlab_list_deployment_history,
             commands::infrastructure::gitlab::gitlab_rollback_from_history,
+            // Infrastructure -- Langfuse (Phase 1a-1c — managed self-host)
+            commands::infrastructure::langfuse::langfuse_test_connection,
+            commands::infrastructure::langfuse::langfuse_save_config,
+            commands::infrastructure::langfuse::langfuse_get_config,
+            commands::infrastructure::langfuse::langfuse_clear_config,
+            commands::infrastructure::langfuse::langfuse_save_preferred_port,
+            commands::infrastructure::langfuse::langfuse_stack_get_info,
+            commands::infrastructure::langfuse::langfuse_stack_start,
+            commands::infrastructure::langfuse::langfuse_stack_stop,
+            commands::infrastructure::langfuse::langfuse_stack_get_admin_credentials,
+            commands::infrastructure::langfuse::langfuse_stack_open_ui,
+            commands::infrastructure::langfuse::langfuse_open_authenticated_ui,
+            #[cfg(feature = "test-automation")]
+            commands::infrastructure::langfuse::langfuse_make_authenticated_url,
+            commands::infrastructure::langfuse::langfuse_docker_download_installer,
+            commands::infrastructure::langfuse::langfuse_docker_run_installer,
+            commands::infrastructure::langfuse::langfuse_stack_reset,
+            commands::infrastructure::langfuse::langfuse_stack_refresh_images,
             // Workflows
             commands::infrastructure::workflows::get_workflows_overview,
             commands::infrastructure::workflows::get_workflow_job_output,

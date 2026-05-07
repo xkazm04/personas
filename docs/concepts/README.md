@@ -11,7 +11,10 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Proposal / desktop-gated exploration |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal |
+| [in-app-http-service.md](in-app-http-service.md) | Implemented (Langfuse auto-login) — pattern doc for re-use |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | Proposal |
+| [langfuse-observability.md](langfuse-observability.md) | Path A shipped; Path A+ exploration next |
+| [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize) recommended |
 | [mobile.md](mobile.md) | Proposal |
 | [real-api-testing.md](real-api-testing.md) | Proposal |
 
