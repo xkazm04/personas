@@ -1,7 +1,9 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{ExecutionCounts, ExecutionListItem, GlobalExecutionRow, PersonaExecution};
+use crate::db::models::{
+    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionRow, PersonaExecution,
+};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as repo;
 use crate::db::repos::resources::automations as automation_repo;
@@ -71,6 +73,17 @@ pub fn count_executions(
 ) -> Result<ExecutionCounts, AppError> {
     require_auth_sync(&state)?;
     repo::count_all_global(&state.db, persona_id.as_deref())
+}
+
+#[tauri::command]
+pub fn search_executions(
+    state: State<'_, Arc<AppState>>,
+    query: String,
+    limit: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<Vec<ExecutionSearchResult>, AppError> {
+    require_auth_sync(&state)?;
+    repo::search(&state.db, &query, limit, persona_id.as_deref())
 }
 
 #[tauri::command]

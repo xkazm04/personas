@@ -4,6 +4,7 @@ import type { PersonaExecution } from "@/lib/bindings/PersonaExecution";
 import type { ExecutionListItem } from "@/lib/bindings/ExecutionListItem";
 import type { GlobalExecutionRow } from "@/lib/bindings/GlobalExecutionRow";
 import type { ExecutionCounts } from "@/lib/bindings/ExecutionCounts";
+import type { ExecutionSearchResult } from "@/lib/bindings/ExecutionSearchResult";
 import type { Continuation } from "@/lib/bindings/Continuation";
 import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
@@ -34,6 +35,9 @@ export const listAllExecutions = (limit?: number, status?: string, personaId?: s
 
 export const countExecutions = (personaId?: string) =>
   invoke<ExecutionCounts>("count_executions", { personaId });
+
+export const searchExecutions = (query: string, limit?: number, personaId?: string) =>
+  invoke<ExecutionSearchResult[]>("search_executions", { query, limit, personaId });
 
 export const getExecution = (id: string, callerPersonaId: string) =>
   invoke<PersonaExecution>("get_execution", { id, callerPersonaId });

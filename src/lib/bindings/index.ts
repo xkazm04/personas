@@ -74,6 +74,7 @@ export type { EvalMethod } from "./EvalMethod";
 export type { EvalStrategyKind } from "./EvalStrategyKind";
 export type { ExecutionDashboardData } from "./ExecutionDashboardData";
 export type { ExecutionKnowledge } from "./ExecutionKnowledge";
+export type { ExecutionSearchResult } from "./ExecutionSearchResult";
 export type { ExecutionTrace } from "./ExecutionTrace";
 export type { FitnessObjective } from "./FitnessObjective";
 export type { FitnessScore } from "./FitnessScore";

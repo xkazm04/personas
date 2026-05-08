@@ -1125,6 +1125,7 @@ pub fn run() {
             commands::execution::executions::list_executions_summary,
             commands::execution::executions::list_all_executions,
             commands::execution::executions::count_executions,
+            commands::execution::executions::search_executions,
             commands::execution::executions::get_execution,
             commands::execution::executions::create_execution,
             commands::execution::executions::execute_persona,

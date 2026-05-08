@@ -133,6 +133,11 @@ pub fn init_db(
         migrations::run_incremental(&conn)?;
     }
 
+    {
+        let conn = pool.get()?;
+        ensure_executions_fts(&conn)?;
+    }
+
     // Seed builtin data
     {
         let conn = pool.get()?;
@@ -159,6 +164,24 @@ pub fn init_db(
 
     tracing::info!("Database initialized successfully");
     Ok(pool)
+}
+
+fn ensure_executions_fts(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    let execution_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM persona_executions", [], |r| r.get(0))
+        .unwrap_or(0);
+    let fts_count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM executions_fts", [], |r| r.get(0))
+        .unwrap_or(0);
+    if execution_count > 0 && fts_count < execution_count {
+        tracing::info!(
+            executions = execution_count,
+            fts_rows = fts_count,
+            "Backfilling executions_fts"
+        );
+        conn.execute_batch("INSERT INTO executions_fts(executions_fts) VALUES('rebuild');")?;
+    }
+    Ok(())
 }
 
 /// Scrub rows whose parent persona no longer exists. Runs once on init

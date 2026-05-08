@@ -131,6 +131,28 @@ CREATE INDEX IF NOT EXISTS idx_pe_persona ON persona_executions(persona_id);
 CREATE INDEX IF NOT EXISTS idx_pe_status  ON persona_executions(status);
 CREATE INDEX IF NOT EXISTS idx_pe_created ON persona_executions(created_at DESC);
 
+CREATE VIRTUAL TABLE IF NOT EXISTS executions_fts USING fts5(
+    input_data,
+    output_data,
+    error_message,
+    content='persona_executions',
+    content_rowid='rowid'
+);
+CREATE TRIGGER IF NOT EXISTS executions_fts_ai AFTER INSERT ON persona_executions BEGIN
+    INSERT INTO executions_fts(rowid, input_data, output_data, error_message)
+    VALUES (new.rowid, new.input_data, new.output_data, new.error_message);
+END;
+CREATE TRIGGER IF NOT EXISTS executions_fts_ad AFTER DELETE ON persona_executions BEGIN
+    INSERT INTO executions_fts(executions_fts, rowid, input_data, output_data, error_message)
+    VALUES ('delete', old.rowid, old.input_data, old.output_data, old.error_message);
+END;
+CREATE TRIGGER IF NOT EXISTS executions_fts_au AFTER UPDATE OF input_data, output_data, error_message ON persona_executions BEGIN
+    INSERT INTO executions_fts(executions_fts, rowid, input_data, output_data, error_message)
+    VALUES ('delete', old.rowid, old.input_data, old.output_data, old.error_message);
+    INSERT INTO executions_fts(rowid, input_data, output_data, error_message)
+    VALUES (new.rowid, new.input_data, new.output_data, new.error_message);
+END;
+
 -- ============================================================================
 -- Credentials
 -- ============================================================================

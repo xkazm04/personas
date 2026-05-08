@@ -1,7 +1,8 @@
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    ExecutionCounts, ExecutionListItem, GlobalExecutionRow, PersonaExecution, UpdateExecutionStatus,
+    ExecutionCounts, ExecutionListItem, ExecutionSearchResult, GlobalExecutionRow,
+    PersonaExecution, UpdateExecutionStatus,
 };
 use crate::db::DbPool;
 use crate::engine::types::ExecutionState;
@@ -61,6 +62,16 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
             .get::<_, Option<bool>>("is_simulation")?
             .unwrap_or(false),
     })
+}
+
+fn build_fts5_query(query: &str) -> String {
+    query
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|token| token.len() >= 2)
+        .take(12)
+        .map(|token| format!("\"{}\"", token.replace('"', "\"\"")))
+        .collect::<Vec<_>>()
+        .join(" OR ")
 }
 
 pub fn get_by_persona_id(
@@ -262,6 +273,70 @@ pub fn count_all_global(
             Ok(counts)
         }
     )
+}
+
+pub fn search(
+    pool: &DbPool,
+    query: &str,
+    limit: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<Vec<ExecutionSearchResult>, AppError> {
+    timed_query!("persona_executions", "persona_executions::search", {
+        let fts_query = build_fts5_query(query);
+        if fts_query.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let limit = limit.unwrap_or(50).clamp(1, 200);
+        let conn = pool.get()?;
+        let mut sql = String::from(
+            "SELECT e.id,
+                    e.persona_id,
+                    p.name AS persona_name,
+                    p.icon AS persona_icon,
+                    p.color AS persona_color,
+                    e.use_case_id,
+                    e.status,
+                    snippet(executions_fts, -1, '<mark>', '</mark>', '...', 18) AS excerpt,
+                    e.created_at,
+                    e.completed_at
+             FROM executions_fts
+             JOIN persona_executions e ON e.rowid = executions_fts.rowid
+             LEFT JOIN personas p ON p.id = e.persona_id
+             WHERE executions_fts MATCH ?1
+               AND (e.input_data IS NULL OR e.input_data NOT LIKE '%\"_ops\"%')",
+        );
+        if persona_id.is_some() {
+            sql.push_str(" AND e.persona_id = ?2");
+            sql.push_str(" ORDER BY bm25(executions_fts) ASC, e.created_at DESC LIMIT ?3");
+        } else {
+            sql.push_str(" ORDER BY bm25(executions_fts) ASC, e.created_at DESC LIMIT ?2");
+        }
+
+        let mut stmt = conn.prepare(&sql)?;
+        let mut rows = if let Some(persona_id) = persona_id {
+            stmt.query(params![fts_query, persona_id, limit])?
+        } else {
+            stmt.query(params![fts_query, limit])?
+        };
+
+        let mut results = Vec::new();
+        while let Some(row) = rows.next()? {
+            results.push(ExecutionSearchResult {
+                id: row.get("id")?,
+                persona_id: row.get("persona_id")?,
+                persona_name: row.get("persona_name")?,
+                persona_icon: row.get("persona_icon")?,
+                persona_color: row.get("persona_color")?,
+                use_case_id: row.get("use_case_id")?,
+                status: row.get("status")?,
+                excerpt: row.get("excerpt")?,
+                created_at: row.get("created_at")?,
+                completed_at: row.get("completed_at")?,
+            });
+        }
+        Ok(results)
+    })
 }
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<PersonaExecution, AppError> {

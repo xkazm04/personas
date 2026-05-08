@@ -923,6 +923,7 @@ export type CommandName =
   | "scan_credential_sources"
   | "seal_enclave"
   | "search_events"
+  | "search_executions"
   | "search_kb_for_clipboard_error"
   | "seed_mock_cron_agent"
   | "seed_mock_event"

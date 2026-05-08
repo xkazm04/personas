@@ -32,9 +32,53 @@ fn has_column(conn: &Connection, table: &str, column: &str) -> Result<bool, AppE
     Ok(count > 0)
 }
 
+fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
+    let count = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type IN ('table', 'view') AND name = ?1",
+        [table],
+        |row| row.get::<_, i64>(0),
+    )?;
+    Ok(count > 0)
+}
+
 /// Incremental migrations for columns added after the initial schema.
 /// Uses "ADD COLUMN ... IF NOT EXISTS" equivalent via PRAGMA table_info check.
 pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "executions_fts",
+            description: "Add FTS5 index for execution search",
+            already_applied: |conn| has_table(conn, "executions_fts"),
+            apply: |conn| {
+                conn.execute_batch(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS executions_fts USING fts5(
+                        input_data,
+                        output_data,
+                        error_message,
+                        content='persona_executions',
+                        content_rowid='rowid'
+                    );
+                    CREATE TRIGGER IF NOT EXISTS executions_fts_ai AFTER INSERT ON persona_executions BEGIN
+                        INSERT INTO executions_fts(rowid, input_data, output_data, error_message)
+                        VALUES (new.rowid, new.input_data, new.output_data, new.error_message);
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS executions_fts_ad AFTER DELETE ON persona_executions BEGIN
+                        INSERT INTO executions_fts(executions_fts, rowid, input_data, output_data, error_message)
+                        VALUES ('delete', old.rowid, old.input_data, old.output_data, old.error_message);
+                    END;
+                    CREATE TRIGGER IF NOT EXISTS executions_fts_au AFTER UPDATE OF input_data, output_data, error_message ON persona_executions BEGIN
+                        INSERT INTO executions_fts(executions_fts, rowid, input_data, output_data, error_message)
+                        VALUES ('delete', old.rowid, old.input_data, old.output_data, old.error_message);
+                        INSERT INTO executions_fts(rowid, input_data, output_data, error_message)
+                        VALUES (new.rowid, new.input_data, new.output_data, new.error_message);
+                    END;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Add tool_steps column to persona_executions (Feature 3: Execution Inspector)
     run_step(
         conn,

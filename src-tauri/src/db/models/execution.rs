@@ -76,6 +76,21 @@ pub struct ExecutionListItem {
     pub is_simulation: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ExecutionSearchResult {
+    pub id: String,
+    pub persona_id: String,
+    pub persona_name: Option<String>,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+    pub use_case_id: Option<String>,
+    pub status: String,
+    pub excerpt: String,
+    pub created_at: String,
+    pub completed_at: Option<String>,
+}
+
 /// Execution row with persona metadata included via SQL JOIN.
 /// Eliminates N+1 queries when listing executions across all personas.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
