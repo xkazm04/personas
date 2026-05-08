@@ -4,6 +4,17 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import type { AgentListViewConfig } from './ViewPresetBar';
 
+const connectorNamesCache = new WeakMap<Persona, string[]>();
+
+function getCachedConnectorNames(persona: Persona): string[] {
+  let names = connectorNamesCache.get(persona);
+  if (!names) {
+    names = extractConnectorNames(persona, 10);
+    connectorNamesCache.set(persona, names);
+  }
+  return names;
+}
+
 interface UsePersonaListFiltersArgs {
   personas: Persona[];
   view: AgentListViewConfig;
@@ -42,10 +53,14 @@ export function usePersonaListFilters({
   isDraft,
   isFavorite,
 }: UsePersonaListFiltersArgs): UsePersonaListFiltersResult {
-  // Pre-compute connector names per persona once to avoid redundant JSON.parse calls
+  const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection } = view;
+
+  // Pre-compute connector names per persona once to avoid redundant JSON.parse calls.
+  // The WeakMap keeps connector extraction scoped to the persona object that changed
+  // instead of re-parsing every persona when the array identity shifts.
   const connectorNamesMap = useMemo(() => {
     const map = new Map<string, string[]>();
-    for (const p of personas) map.set(p.id, extractConnectorNames(p, 10));
+    for (const p of personas) map.set(p.id, getCachedConnectorNames(p));
     return map;
   }, [personas]);
 
@@ -55,9 +70,44 @@ export function usePersonaListFilters({
     return [...names].sort();
   }, [connectorNamesMap]);
 
+  const sortedPersonas = useMemo(() => {
+    const result = [...personas];
+
+    if (!sortKey) return result;
+
+    result.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case 'name':
+          cmp = a.name.localeCompare(b.name);
+          break;
+        case 'status':
+          cmp = (a.enabled ? 1 : 0) - (b.enabled ? 1 : 0);
+          break;
+        case 'trust':
+          cmp = (a.trust_score ?? 0) - (b.trust_score ?? 0);
+          break;
+        case 'triggers':
+          cmp = (triggerCounts[a.id] ?? 0) - (triggerCounts[b.id] ?? 0);
+          break;
+        case 'lastRun': {
+          const ta = lastRunMap[a.id] ?? '';
+          const tb = lastRunMap[b.id] ?? '';
+          cmp = ta.localeCompare(tb);
+          break;
+        }
+        case 'created':
+          cmp = (a.created_at ?? '').localeCompare(b.created_at ?? '');
+          break;
+      }
+      return sortDirection === 'desc' ? -cmp : cmp;
+    });
+
+    return result;
+  }, [personas, sortKey, sortDirection, triggerCounts, lastRunMap]);
+
   const data = useMemo(() => {
-    const { statusFilter, healthFilter, connectorFilter, favoriteOnly, sortKey, sortDirection } = view;
-    let result = [...personas];
+    let result = sortedPersonas;
 
     // Quick name/description search
     const q = search.trim().toLowerCase();
@@ -87,46 +137,17 @@ export function usePersonaListFilters({
     // Favorites
     if (favoriteOnly) result = result.filter((p) => isFavorite(p.id));
 
-    // Sort
-    if (sortKey) {
-      result.sort((a, b) => {
-        let cmp = 0;
-        switch (sortKey) {
-          case 'name':
-            cmp = a.name.localeCompare(b.name);
-            break;
-          case 'status':
-            cmp = (a.enabled ? 1 : 0) - (b.enabled ? 1 : 0);
-            break;
-          case 'trust':
-            cmp = (a.trust_score ?? 0) - (b.trust_score ?? 0);
-            break;
-          case 'triggers':
-            cmp = (triggerCounts[a.id] ?? 0) - (triggerCounts[b.id] ?? 0);
-            break;
-          case 'lastRun': {
-            const ta = lastRunMap[a.id] ?? '';
-            const tb = lastRunMap[b.id] ?? '';
-            cmp = ta.localeCompare(tb);
-            break;
-          }
-          case 'created':
-            cmp = (a.created_at ?? '').localeCompare(b.created_at ?? '');
-            break;
-        }
-        return sortDirection === 'desc' ? -cmp : cmp;
-      });
-    }
     return result;
   }, [
-    personas,
+    sortedPersonas,
     search,
-    view,
+    statusFilter,
+    healthFilter,
+    connectorFilter,
+    favoriteOnly,
     isBuilding,
     isDraft,
     isFavorite,
-    triggerCounts,
-    lastRunMap,
     healthMap,
     connectorNamesMap,
   ]);
