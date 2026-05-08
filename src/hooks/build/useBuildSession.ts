@@ -92,6 +92,27 @@ function markSessionInactive(sessionId: string | null): void {
     set.size > 0;
 }
 
+function buildStartCancelledError(): Error {
+  return new Error("[useBuildSession] Start cancelled mid-flight");
+}
+
+function abortableStart(
+  startPromise: Promise<string>,
+  signal: AbortSignal,
+): Promise<string> {
+  if (signal.aborted) {
+    return Promise.reject(buildStartCancelledError());
+  }
+
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(buildStartCancelledError());
+    signal.addEventListener("abort", onAbort, { once: true });
+    startPromise.then(resolve, reject).finally(() => {
+      signal.removeEventListener("abort", onAbort);
+    });
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -158,6 +179,7 @@ export function useBuildSession(
    * shares the same result instead of spawning two CLI processes.
    */
   const startPromiseRef = useRef<Promise<string> | null>(null);
+  const startAbortRef = useRef<AbortController | null>(null);
 
   // -- Event dispatch --------------------------------------------------------
 
@@ -300,50 +322,72 @@ export function useBuildSession(
         // Bump generation for this subscription so late events from a prior
         // session (still buffered in the Tauri Channel pipe) are filtered out.
         const generation = ++generationRef.current;
-        const channel = new Channel<BuildEvent>();
-        channel.onmessage = (event) => handleChannelMessage(event, generation);
+        const abortController = new AbortController();
+        startAbortRef.current = abortController;
+        try {
+          const channel = new Channel<BuildEvent>();
+          channel.onmessage = (event) => handleChannelMessage(event, generation);
 
-        // Invoke the Tauri command -- backend starts the CLI process
-        const language = useI18nStore.getState().language;
-        const sessionId = await startBuildSession(
-          channel,
-          effectivePersonaId,
-          intent,
-          workflowJson,
-          parserResultJson,
-          language,
-          mode ?? null,
-          companionSessionId ?? null,
-        );
+          // Invoke the Tauri command -- backend starts the CLI process
+          const language = useI18nStore.getState().language;
+          const startInvoke = startBuildSession(
+            channel,
+            effectivePersonaId,
+            intent,
+            workflowJson,
+            parserResultJson,
+            language,
+            mode ?? null,
+            companionSessionId ?? null,
+          );
+          startInvoke
+            .then((sessionId) => {
+              if (
+                abortController.signal.aborted ||
+                generation !== generationRef.current
+              ) {
+                void cancelBuildSession(sessionId).catch(() => undefined);
+              }
+            })
+            .catch(() => undefined);
+          const sessionId = await abortableStart(
+            startInvoke,
+            abortController.signal,
+          );
 
-        // Cancel-during-start guard. If cancelSession (or unmount cleanup) ran
-        // while we were awaiting startBuildSession, generationRef was bumped
-        // out from under us. Without this check, the backend session that
-        // just succeeded would still call markSessionActive / commit refs /
-        // createBuildSession into the store — producing a zombie session
-        // that the user already explicitly cancelled. Best-effort cancel the
-        // backend process and throw so callers see the cancellation as a
-        // failed start instead of a silent zombie.
-        if (generation !== generationRef.current) {
-          void cancelBuildSession(sessionId).catch(() => {/* backend gone or cancelled twice — fine */});
-          throw new Error("[useBuildSession] Start cancelled mid-flight");
+          // Cancel-during-start guard. If cancelSession (or unmount cleanup)
+          // ran while we were awaiting startBuildSession, generationRef was
+          // bumped out from under us. Without this check, the backend session
+          // that just succeeded would still call markSessionActive / commit
+          // refs / createBuildSession into the store.
+          if (
+            abortController.signal.aborted ||
+            generation !== generationRef.current
+          ) {
+            void cancelBuildSession(sessionId).catch(() => undefined);
+            throw buildStartCancelledError();
+          }
+
+          // Register this session as having a live Channel so EventBridge skips
+          // its events. Per-session registration avoids the multi-instance bug
+          // where unmounting one surface unregistered another's live Channel.
+          markSessionActive(sessionId);
+
+          // Store refs
+          channelRef.current = channel;
+          sessionIdRef.current = sessionId;
+
+          // Create a session slot in the buildSessions map and activate it.
+          // Scalar fields (buildSessionId, buildPersonaId, etc.) are mirrored
+          // automatically from the active session.
+          useAgentStore.getState().createBuildSession(effectivePersonaId, sessionId);
+
+          return sessionId;
+        } finally {
+          if (startAbortRef.current === abortController) {
+            startAbortRef.current = null;
+          }
         }
-
-        // Register this session as having a live Channel so EventBridge skips
-        // its events. Per-session registration avoids the multi-instance bug
-        // where unmounting one surface unregistered another's live Channel.
-        markSessionActive(sessionId);
-
-        // Store refs
-        channelRef.current = channel;
-        sessionIdRef.current = sessionId;
-
-        // Create a session slot in the buildSessions map and activate it.
-        // Scalar fields (buildSessionId, buildPersonaId, etc.) are mirrored
-        // automatically from the active session.
-        useAgentStore.getState().createBuildSession(effectivePersonaId, sessionId);
-
-        return sessionId;
       };
 
       const promise = runStart();
@@ -436,13 +480,13 @@ export function useBuildSession(
   );
 
   const cancelSession = useCallback(async (): Promise<void> => {
-    if (sessionIdRef.current) {
-      await cancelBuildSession(sessionIdRef.current);
-    }
+    const activeSessionId = sessionIdRef.current;
+    startAbortRef.current?.abort();
+    startAbortRef.current = null;
 
     // Deregister this session so EventBridge can take over for any late
     // background events.
-    markSessionInactive(sessionIdRef.current);
+    markSessionInactive(activeSessionId);
 
     // Invalidate any in-flight Channel messages and queued RAF flushes.
     generationRef.current += 1;
@@ -461,6 +505,10 @@ export function useBuildSession(
 
     // Reset the store slice
     useAgentStore.getState().resetBuildSession();
+
+    if (activeSessionId) {
+      await cancelBuildSession(activeSessionId);
+    }
   }, []);
 
   // -- Hydration on mount ----------------------------------------------------
@@ -473,6 +521,7 @@ export function useBuildSession(
     if (!effectivePersonaId) return;
 
     let cancelled = false;
+    const hydrationGeneration = generationRef.current;
 
     (async () => {
       // Always hydrate from SQLite to pick up events that arrived while unmounted.
@@ -480,7 +529,7 @@ export function useBuildSession(
       // is not active, so we do NOT set __BUILD_CHANNEL_ACTIVE__ here — only
       // startSession sets it when a real Channel is created.
       const session = await getActiveBuildSession(effectivePersonaId);
-      if (cancelled) return;
+      if (cancelled || hydrationGeneration !== generationRef.current) return;
 
       if (session) {
         sessionIdRef.current = session.id;
