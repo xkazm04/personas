@@ -392,11 +392,17 @@ export function useBuildSession(
 
       const promise = runStart();
       startPromiseRef.current = promise;
-      promise.finally(() => {
-        if (startPromiseRef.current === promise) {
-          startPromiseRef.current = null;
-        }
-      });
+      // The cleanup chain is intentionally separate from the returned promise.
+      // We attach .catch on it so a rejection in `runStart` does not surface
+      // as an unhandled rejection on the discarded chained promise — the
+      // returned `promise` is the one callers await and handle.
+      promise
+        .finally(() => {
+          if (startPromiseRef.current === promise) {
+            startPromiseRef.current = null;
+          }
+        })
+        .catch(() => undefined);
       return promise;
     },
     [personaId, handleChannelMessage],
