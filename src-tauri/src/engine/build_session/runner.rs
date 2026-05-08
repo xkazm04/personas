@@ -42,6 +42,8 @@ use super::SessionHandle;
 
 const CANCEL_POLL_INTERVAL: Duration = Duration::from_millis(100);
 
+type ConversationHistory = Vec<(&'static str, Arc<str>)>;
+
 // =============================================================================
 // SessionExecDir -- RAII guard for the per-session temp workspace
 // =============================================================================
@@ -183,7 +185,7 @@ pub(super) async fn run_session(
     );
 
     // Build initial prompt with optional workflow context
-    let initial_prompt =
+    let initial_prompt: Arc<str> =
         if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
             let wf_preview = if wf_json.len() > 8000 {
                 &wf_json[..8000]
@@ -196,13 +198,14 @@ pub(super) async fn run_session(
              ### Parsed Workflow Analysis\n{parser_json}\n\n\
              ### Original Workflow JSON (preview)\n{wf_preview}\n"
             )
+            .into()
         } else {
-            intent.clone()
+            intent.into()
         };
 
     // Multi-turn conversation history: (role, content) pairs
-    let mut conversation: Vec<(String, String)> = Vec::new();
-    conversation.push(("user".to_string(), initial_prompt.clone()));
+    let mut conversation: ConversationHistory = Vec::new();
+    conversation.push(("user", Arc::clone(&initial_prompt)));
 
     let mut resolved_cells = serde_json::Map::new();
     let mut resolved_count: usize = 0;
@@ -282,8 +285,8 @@ pub(super) async fn run_session(
         // Build the prompt for this turn.
         // Turn 0: send the full system prompt.
         // Turn 1+: send only a concise follow-up — session context is preserved via --continue.
-        let turn_prompt = if turn == 0 {
-            initial_prompt.clone()
+        let turn_prompt: Arc<str> = if turn == 0 {
+            Arc::clone(&initial_prompt)
         } else {
             // v3 capability-framework follow-up: --continue preserves the full
             // prior conversation, so the LLM already knows its progress. We
@@ -308,7 +311,7 @@ pub(super) async fn run_session(
                     resolved_dims.join(", ")
                 },
             ));
-            follow_up
+            follow_up.into()
         };
 
         // Emit progress
@@ -881,7 +884,7 @@ pub(super) async fn run_session(
             .collect::<Vec<_>>()
             .join("\n");
         if !assistant_text.is_empty() {
-            conversation.push(("assistant".to_string(), assistant_text));
+            conversation.push(("assistant", assistant_text.into()));
         }
 
         // Process events from this turn
@@ -1083,17 +1086,18 @@ pub(super) async fn run_session(
                             }
                         }
                         conversation.push((
-                            "user".to_string(),
+                            "user",
                             format!(
                                 "User confirmed/answered multiple dimensions:\n{}",
                                 answer.answer
-                            ),
+                            )
+                            .into(),
                         ));
                         last_answered_cells = keys;
                     } else {
                         conversation.push((
-                            "user".to_string(),
-                            format!("My answer for {}: {}", answer.cell_key, answer.answer),
+                            "user",
+                            format!("My answer for {}: {}", answer.cell_key, answer.answer).into(),
                         ));
                         last_answered_cells = vec![answer.cell_key.clone()];
                     }
@@ -1139,7 +1143,7 @@ pub(super) async fn run_session(
             tracing::warn!(session_id = %session_id, turn = turn + 1, "All 8 resolved but no agent_ir — sending recovery prompt");
 
             let ir_recovery = "All 8 dimensions are now resolved. Emit the agent_ir JSON object NOW. Output ONLY the {\"agent_ir\": {...}} line — no dimensions, no questions, no commentary.";
-            conversation.push(("user".to_string(), ir_recovery.to_string()));
+            conversation.push(("user", ir_recovery.into()));
             // The next iteration of the turn loop will spawn a CLI with this prompt
             // and hopefully get agent_ir back. If it still fails after MAX_TURNS,
             // the final checkpoint will persist whatever we have.
@@ -1173,11 +1177,12 @@ pub(super) async fn run_session(
                     // the next turn gets a clear correction (alongside our own
                     // synthesized question which the user answered).
                     conversation.push((
-                    "user".to_string(),
-                    format!(
-                        "You emitted agent_ir / enough resolutions but capability {gap_cap} still has an unanswered {gap_field}. Emit a clarifying_question for that field now (do not re-emit agent_ir until it is answered)."
-                    ),
-                ));
+                        "user",
+                        format!(
+                            "You emitted agent_ir / enough resolutions but capability {gap_cap} still has an unanswered {gap_field}. Emit a clarifying_question for that field now (do not re-emit agent_ir until it is answered)."
+                        )
+                        .into(),
+                    ));
                     last_answered_cells.clear();
                     false
                 } else {
@@ -1280,8 +1285,8 @@ pub(super) async fn run_session(
                             9,
                         );
                         conversation.push((
-                            "user".to_string(),
-                            "Test this agent. Report any issues via test_report JSON.".to_string(),
+                            "user",
+                            "Test this agent. Report any issues via test_report JSON.".into(),
                         ));
                     } else if answer.cell_key == "_refine" {
                         let _ = build_session_repo::update(
@@ -1301,13 +1306,14 @@ pub(super) async fn run_session(
                             9,
                         );
                         conversation.push((
-                            "user".to_string(),
-                            format!("Refinement: {}. Update affected dimensions.", answer.answer),
+                            "user",
+                            format!("Refinement: {}. Update affected dimensions.", answer.answer)
+                                .into(),
                         ));
                     } else {
                         conversation.push((
-                            "user".to_string(),
-                            format!("Answer for {}: {}", answer.cell_key, answer.answer),
+                            "user",
+                            format!("Answer for {}: {}", answer.cell_key, answer.answer).into(),
                         ));
                     }
                     // Continue to next turn
