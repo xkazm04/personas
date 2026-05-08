@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import {
   companionApproveAction,
   companionRejectAction,
+  type ApprovalOutcome,
   type ClientAction,
   type PendingApproval,
 } from '@/api/companion';
@@ -75,18 +76,25 @@ export function ApprovalCard({
   onResolved,
 }: {
   approval: PendingApproval;
-  onResolved: (id: string, status: 'approved' | 'rejected') => void;
+  onResolved: (id: string, status: ApprovalOutcome['status']) => void;
 }) {
   const { t } = useTranslation();
   const [busy, setBusy] = useState<'approve' | 'reject' | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [failedOutcome, setFailedOutcome] = useState<string | null>(null);
 
   const handle = async (kind: 'approve' | 'reject') => {
     setBusy(kind);
     setError(null);
+    setFailedOutcome(null);
     try {
       if (kind === 'approve') {
         const result = await companionApproveAction(approval.id);
+        if (result.status === 'approved_failed') {
+          setFailedOutcome(result.message);
+          setBusy(null);
+          return;
+        }
         // UI-only ops (open_route) carry their follow-up here; we
         // dispatch BEFORE marking resolved so the panel collapses
         // smoothly rather than re-rendering with the card disappearing.
@@ -141,10 +149,19 @@ export function ApprovalCard({
         </div>
       )}
 
+      {failedOutcome && (
+        <div className="rounded-card border border-amber-500/30 bg-amber-500/10 px-2.5 py-1.5 typo-caption text-amber-300">
+          {t.plugins.companion.approved_failed.replace(
+            '{message}',
+            failedOutcome.replace(/^Execution failed:\s*/i, ''),
+          )}
+        </div>
+      )}
+
       <div className="flex items-center gap-2">
         <button
           onClick={() => handle('approve')}
-          disabled={busy !== null}
+          disabled={busy !== null || failedOutcome !== null}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring"
         >
           {busy === 'approve' ? (
@@ -156,7 +173,7 @@ export function ApprovalCard({
         </button>
         <button
           onClick={() => handle('reject')}
-          disabled={busy !== null}
+          disabled={busy !== null || failedOutcome !== null}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground/80 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-foreground/10 transition-colors focus-ring"
         >
           {busy === 'reject' ? (

@@ -10262,6 +10262,7 @@ export type Translations = {
       proposed_action: string;
       action_params: string;
       approve: string;
+      approved_failed: string;
       reject: string;
       toolbar_label: string;
       help_capabilities: string;

@@ -9,7 +9,8 @@
 //!      row with status='pending'.
 //!   3. UI renders an approval card with the rationale + params.
 //!   4. User clicks Approve → `companion_approve_action` here →
-//!      action executor → outcome appended as an episode → status='approved'.
+//!      action executor → outcome appended as an episode → status='approved'
+//!      or status='approved_failed' when the executor fails after approval.
 //!   5. User clicks Reject → `companion_reject_action` → status='rejected'
 //!      and an episode is logged with the rejection reason.
 
@@ -26,6 +27,10 @@ use crate::db::repos::communication::manual_reviews as manual_repo;
 use crate::error::AppError;
 use crate::ipc_auth;
 use crate::AppState;
+
+const APPROVAL_STATUS_APPROVED: &str = "approved";
+const APPROVAL_STATUS_APPROVED_FAILED: &str = "approved_failed";
+const APPROVAL_STATUS_REJECTED: &str = "rejected";
 
 // ── Tauri-facing types ──────────────────────────────────────────────────
 
@@ -211,7 +216,7 @@ pub async fn companion_approve_action(
 
     let (status_text, message, client_action, embedder_log) = match exec_result {
         Ok(r) => (
-            "approved",
+            APPROVAL_STATUS_APPROVED,
             r.message.clone(),
             r.client_action,
             format!(
@@ -222,7 +227,7 @@ pub async fn companion_approve_action(
         Err(e) => {
             let m = format!("Execution failed: {e}");
             (
-                "approved",
+                APPROVAL_STATUS_APPROVED_FAILED,
                 m.clone(),
                 None,
                 format!("[Athena action approved but failed] {action}\n\n{m}"),
@@ -249,13 +254,13 @@ pub async fn companion_reject_action(
 ) -> Result<ApprovalOutcome, AppError> {
     ipc_auth::require_auth(&state).await?;
     let (action, _params) = load_pending(&state, &approval_id)?;
-    finalize_approval(&state, &approval_id, "rejected")?;
+    finalize_approval(&state, &approval_id, APPROVAL_STATUS_REJECTED)?;
     let reason = reason.unwrap_or_else(|| "no reason given".into());
     let log = format!("[Athena action rejected] {action}\n\nReason: {reason}");
     log_action_episode(&state, &log).await;
     Ok(ApprovalOutcome {
         id: approval_id,
-        status: "rejected".into(),
+        status: APPROVAL_STATUS_REJECTED.into(),
         message: reason,
         client_action: None,
     })

@@ -166,7 +166,7 @@ export interface PendingApproval {
 
 export interface ApprovalOutcome {
   id: string;
-  status: 'approved' | 'rejected';
+  status: 'approved' | 'approved_failed' | 'rejected';
   message: string;
   /**
    * UI-only follow-up the frontend should run after a successful

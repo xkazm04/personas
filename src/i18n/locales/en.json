@@ -10256,6 +10256,7 @@
       "proposed_action": "Athena proposes",
       "action_params": "Parameters",
       "approve": "Approve",
+      "approved_failed": "Approved, but execution failed: {message}",
       "reject": "Reject",
       "toolbar_label": "Quick actions",
       "help_capabilities": "What can Athena do?",
