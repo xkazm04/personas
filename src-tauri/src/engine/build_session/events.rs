@@ -149,12 +149,21 @@ fn warn_emit_failure_once(
     error: std::fmt::Arguments<'_>,
     message: &'static str,
 ) {
+    // Bound the dedupe set so a long-running app instance with thousands of
+    // build sessions cannot slowly leak memory through this static. When the
+    // bound is reached we drop the set and start over — the worst case is a
+    // duplicated warning for an old session, which is preferable to a leak.
+    const WARNED_MAX_ENTRIES: usize = 512;
+
     static WARNED: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
     let key = format!("{session_id}:{channel}");
     let mut warned = WARNED
         .get_or_init(|| Mutex::new(HashSet::new()))
         .lock()
         .unwrap_or_else(|e| e.into_inner());
+    if warned.len() >= WARNED_MAX_ENTRIES {
+        warned.clear();
+    }
     if !warned.insert(key) {
         return;
     }
