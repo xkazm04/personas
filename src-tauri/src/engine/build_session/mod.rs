@@ -34,7 +34,7 @@ use session_prompt::build_session_prompt;
 use templates::build_template_context;
 
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use tauri::ipc::Channel;
@@ -57,6 +57,7 @@ use super::prompt;
 pub(super) struct SessionHandle {
     input_tx: mpsc::Sender<UserAnswer>,
     cancel_flag: Arc<AtomicBool>,
+    generation: u64,
     #[allow(dead_code)]
     session_id: String,
 }
@@ -68,13 +69,22 @@ pub(super) struct SessionHandle {
 struct HandleDropGuard {
     sessions: Arc<Mutex<HashMap<String, SessionHandle>>>,
     session_id: String,
+    generation: u64,
 }
 
 impl Drop for HandleDropGuard {
     fn drop(&mut self) {
         let mut sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        if sessions.remove(&self.session_id).is_some() {
-            tracing::info!(session_id = %self.session_id, "HandleDropGuard: removed stale session handle");
+        let should_remove = sessions
+            .get(&self.session_id)
+            .is_some_and(|handle| handle.generation == self.generation);
+        if should_remove {
+            sessions.remove(&self.session_id);
+            tracing::info!(
+                session_id = %self.session_id,
+                generation = self.generation,
+                "HandleDropGuard: removed stale session handle"
+            );
         }
     }
 }
@@ -83,12 +93,14 @@ impl Drop for HandleDropGuard {
 
 pub struct BuildSessionManager {
     sessions: Arc<Mutex<HashMap<String, SessionHandle>>>,
+    next_generation: AtomicU64,
 }
 
 impl BuildSessionManager {
     pub fn new() -> Self {
         Self {
             sessions: Arc::new(Mutex::new(HashMap::new())),
+            next_generation: AtomicU64::new(1),
         }
     }
 
@@ -119,6 +131,7 @@ impl BuildSessionManager {
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
+        let generation = self.next_generation.fetch_add(1, Ordering::AcqRel);
 
         // Multi-draft builds: a persona can have multiple concurrent active
         // sessions (e.g. user iterates on the same draft in parallel tabs).
@@ -168,6 +181,7 @@ impl BuildSessionManager {
         let handle = SessionHandle {
             input_tx,
             cancel_flag: cancel_flag.clone(),
+            generation,
             session_id: session_id.clone(),
         };
         {
@@ -258,6 +272,7 @@ impl BuildSessionManager {
             let _handle_guard = HandleDropGuard {
                 sessions: guard_map,
                 session_id: guard_sid,
+                generation,
             };
             runner::run_session(
                 sid,
@@ -275,6 +290,7 @@ impl BuildSessionManager {
                 parser_result_json,
                 app_handle,
                 is_one_shot,
+                generation,
             )
             .await;
         });

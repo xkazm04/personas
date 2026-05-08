@@ -166,6 +166,7 @@ pub(super) async fn run_session(
     // and promote happen automatically; user is notified on terminal phase
     // via the BuildWatcher job + tauri-plugin-notification.
     one_shot: bool,
+    handle_generation: u64,
 ) {
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
@@ -270,7 +271,7 @@ pub(super) async fn run_session(
         );
         let _ = update_phase_with_error(&pool, &session_id, &user_msg);
         emit_error(&pool, &channel, &app_handle, &session_id, &user_msg, false);
-        cleanup_session(&sessions_map, &registry, &session_id);
+        cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
         return;
     }
     let session_exec_dir = SessionExecDir::new(session_exec_path);
@@ -279,7 +280,7 @@ pub(super) async fn run_session(
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
             tracing::info!(session_id = %session_id, "Build session cancelled");
-            cleanup_session(&sessions_map, &registry, &session_id);
+            cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
             return;
         }
 
@@ -364,7 +365,7 @@ pub(super) async fn run_session(
                     &format!("Failed to start build: {e}"),
                     false,
                 );
-                cleanup_session(&sessions_map, &registry, &session_id);
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                 return;
             }
         };
@@ -403,7 +404,7 @@ pub(super) async fn run_session(
                 tokio::select! {
                     _ = &mut cancel_wait => {
                         kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
-                        cleanup_session(&sessions_map, &registry, &session_id);
+                        cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                         return;
                     }
                     line_result = read_line_limited(&mut reader) => {
@@ -427,7 +428,7 @@ pub(super) async fn run_session(
             Ok(true) => registry.clear_run_pid("build_session", &session_id),
             Ok(false) => {
                 kill_cancelled_turn(&mut driver, &registry, &session_id, turn).await;
-                cleanup_session(&sessions_map, &registry, &session_id);
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                 return;
             }
             Err(e) => {
@@ -1139,7 +1140,7 @@ pub(super) async fn run_session(
                 }
                 None => {
                     tracing::info!(session_id = %session_id, "Input channel closed");
-                    cleanup_session(&sessions_map, &registry, &session_id);
+                    cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                     return;
                 }
             }
@@ -1265,7 +1266,7 @@ pub(super) async fn run_session(
                     super::oneshot::run_post_draft(oneshot_app, oneshot_sid, oneshot_persona_id)
                         .await;
                 });
-                cleanup_session(&sessions_map, &registry, &session_id);
+                cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                 return;
             }
 
@@ -1327,7 +1328,7 @@ pub(super) async fn run_session(
                     // Continue to next turn
                 }
                 None => {
-                    cleanup_session(&sessions_map, &registry, &session_id);
+                    cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
                     return;
                 }
             }
@@ -1379,5 +1380,5 @@ pub(super) async fn run_session(
         resolved_count,
         9,
     );
-    cleanup_session(&sessions_map, &registry, &session_id);
+    cleanup_session(&sessions_map, &registry, &session_id, handle_generation);
 }

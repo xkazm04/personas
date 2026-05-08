@@ -268,10 +268,16 @@ pub(super) fn cleanup_session(
     sessions_map: &Arc<Mutex<HashMap<String, SessionHandle>>>,
     registry: &ActiveProcessRegistry,
     session_id: &str,
+    generation: u64,
 ) {
     {
         let mut sessions = sessions_map.lock().unwrap_or_else(|e| e.into_inner());
-        sessions.remove(session_id);
+        let should_remove = sessions
+            .get(session_id)
+            .is_some_and(|handle| handle.generation == generation);
+        if should_remove {
+            sessions.remove(session_id);
+        }
     }
     registry.unregister_run("build_session", session_id);
 }
