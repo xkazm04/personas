@@ -90,7 +90,20 @@ function getWorker(): Worker | null {
         json.reject(error);
       }
     };
-    worker.onerror = () => {
+    worker.onerror = (event) => {
+      const reason =
+        event instanceof ErrorEvent && event.message
+          ? event.message
+          : 'comparison diff worker crashed';
+      const error = new Error(reason);
+      for (const [id, pending] of pendingLine) {
+        pendingLine.delete(id);
+        pending.reject(error);
+      }
+      for (const [id, pending] of pendingJson) {
+        pendingJson.delete(id);
+        pending.reject(error);
+      }
       worker?.terminate();
       worker = null;
     };
