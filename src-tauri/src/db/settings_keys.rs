@@ -48,6 +48,12 @@ pub const EXECUTION_RETENTION_DAYS: &str = "execution_retention_days";
 /// Default retention in days for [`EXECUTION_RETENTION_DAYS`] (two months).
 pub const EXECUTION_RETENTION_DAYS_DEFAULT: i64 = 60;
 
+/// Per-persona ceiling for scheduled executions in a rolling hour.
+pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR: &str = "schedule_executions_per_persona_hour";
+/// Default per-persona hourly ceiling for scheduled executions.
+pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT: i64 =
+    crate::engine::limits::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT;
+
 /// Per-persona execution retention override (in months).
 /// Key format: `execution_retention_months:<persona_id>`, value: number string.
 /// When set, overrides the global retention for that persona.
@@ -158,6 +164,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_ENGINE,
     EVENT_RETENTION_DAYS,
     EXECUTION_RETENTION_DAYS,
+    SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
     GLOBAL_MODEL_PROFILE,
     FILE_WATCHER_DEBOUNCE_MS,
     PERFORMANCE_DIGEST,
@@ -235,6 +242,7 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 ///
 /// Currently validates:
 /// - `EVENT_RETENTION_DAYS`, `EXECUTION_RETENTION_DAYS` → non-negative integer (u32 range)
+/// - `SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR` → positive integer (u32 range)
 /// - `FILE_WATCHER_DEBOUNCE_MS` → non-negative integer (u32 range, milliseconds)
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
     match key {
@@ -243,6 +251,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
             })
         }
+        SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR => match value.parse::<u32>() {
+            Ok(n) if n > 0 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be a positive integer (executions per hour), got {value:?}"
+            )),
+        },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"

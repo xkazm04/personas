@@ -84,6 +84,23 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                 }
             }
 
+            if trigger_type == "schedule" {
+                for key in ["cron", "cron_expression"] {
+                    if let Some(expr) = parsed.get(key).and_then(|v| v.as_str()) {
+                        let trimmed = expr.trim();
+                        if !trimmed.is_empty() {
+                            if let Err(reason) = crate::engine::cron::parse_cron(trimmed) {
+                                errors.push(ValidationError::new(
+                                    format!("config.{key}"),
+                                    "cron",
+                                    format!("Invalid cron expression: {reason}"),
+                                ));
+                            }
+                        }
+                    }
+                }
+            }
+
             if trigger_type == "webhook" {
                 let secret = parsed
                     .get("webhook_secret")
@@ -269,6 +286,18 @@ mod tests {
             Some(r#"{"cron_expression": "0 * * * *"}"#)
         )
         .is_empty());
+    }
+
+    #[test]
+    fn schedule_config_rejects_invalid_cron() {
+        let errs = validate_config("schedule", Some(r#"{"cron": "* * *"}"#));
+        assert_eq!(errs.len(), 1);
+        assert_eq!(errs[0].field, "config.cron");
+    }
+
+    #[test]
+    fn schedule_config_accepts_every_minute_cron_floor() {
+        assert!(validate_config("schedule", Some(r#"{"cron": "* * * * *"}"#)).is_empty());
     }
 
     #[test]

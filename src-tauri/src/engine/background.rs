@@ -16,6 +16,7 @@ use crate::db::models::{
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
 use crate::db::repos::execution::executions as exec_repo;
+use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::resources::audit_log;
 use crate::db::repos::resources::{tools as tool_repo, triggers as trigger_repo};
 use crate::db::settings_keys;
@@ -1148,6 +1149,123 @@ pub(crate) fn synthesize_trigger_fired_payload(
 /// re-exported here so the existing local references compile unchanged.
 const BACKFILL_HARD_CAP: usize = crate::engine::limits::BACKFILL_HARD_CAP;
 
+fn schedule_executions_per_persona_hour(pool: &DbPool) -> i64 {
+    match settings::get(pool, settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR)
+        .ok()
+        .flatten()
+    {
+        Some(raw) => match raw.parse::<i64>() {
+            Ok(n) if n > 0 => n,
+            Ok(n) => {
+                tracing::warn!(
+                    value = n,
+                    "invalid scheduled execution hourly cap; using default"
+                );
+                settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT
+            }
+            Err(err) => {
+                tracing::warn!(
+                    value = %raw,
+                    error = %err,
+                    "failed to parse scheduled execution hourly cap; using default"
+                );
+                settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT
+            }
+        },
+        None => settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT,
+    }
+}
+
+fn schedule_hourly_cap_exceeded(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    now: chrono::DateTime<chrono::Utc>,
+    ceiling: i64,
+    pending_by_persona: &HashMap<String, i64>,
+) -> bool {
+    let since = (now - chrono::Duration::hours(1)).to_rfc3339();
+    let recent = match exec_repo::count_for_persona_since(pool, &trigger.persona_id, &since) {
+        Ok(count) => count,
+        Err(err) => {
+            tracing::warn!(
+                persona_id = %trigger.persona_id,
+                error = %err,
+                "failed to read scheduled execution hourly count; allowing trigger"
+            );
+            return false;
+        }
+    };
+    let pending = pending_by_persona
+        .get(&trigger.persona_id)
+        .copied()
+        .unwrap_or(0);
+    recent + pending >= ceiling
+}
+
+fn log_schedule_rate_limit_issue(
+    pool: &DbPool,
+    trigger: &crate::db::models::PersonaTrigger,
+    ceiling: i64,
+) {
+    let title = "Scheduled execution hourly cap exceeded";
+    let category = "schedule_rate_limit";
+    let already_open = match pool.get() {
+        Ok(conn) => conn
+            .query_row(
+                "SELECT EXISTS(
+                    SELECT 1 FROM persona_healing_issues
+                    WHERE persona_id = ?1
+                      AND status = 'open'
+                      AND category = ?2
+                      AND title = ?3
+                )",
+                rusqlite::params![trigger.persona_id, category, title],
+                |row| row.get::<_, bool>(0),
+            )
+            .unwrap_or(false),
+        Err(err) => {
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                persona_id = %trigger.persona_id,
+                error = %err,
+                "failed to check existing schedule rate-limit healing issue"
+            );
+            false
+        }
+    };
+    if already_open {
+        return;
+    }
+
+    let description = format!(
+        "Schedule trigger {} was skipped because persona {} reached the configured ceiling of {} scheduled executions per rolling hour.",
+        trigger.id, trigger.persona_id, ceiling
+    );
+    let suggested_fix = format!(
+        "Increase '{}' or reduce cron frequency/backfill for trigger {}.",
+        settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,
+        trigger.id
+    );
+    if let Err(err) = healing_repo::create(
+        pool,
+        &trigger.persona_id,
+        title,
+        &description,
+        false,
+        Some("medium"),
+        Some(category),
+        None,
+        Some(&suggested_fix),
+    ) {
+        tracing::warn!(
+            trigger_id = %trigger.id,
+            persona_id = %trigger.persona_id,
+            error = %err,
+            "failed to create schedule rate-limit healing issue"
+        );
+    }
+}
+
 /// Enumerate cron/interval slots that should have fired strictly between
 /// `last_fire` (exclusive) and `now` (inclusive), excluding the most-recent
 /// one (which the existing scheduler tick path will fire as the "current"
@@ -1269,6 +1387,8 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
     let now = chrono::Utc::now();
     let now_str = now.to_rfc3339();
     let mut fired: u32 = 0;
+    let hourly_ceiling = schedule_executions_per_persona_hour(pool);
+    let mut scheduled_publishes_by_persona: HashMap<String, i64> = HashMap::new();
 
     // 1. Get due triggers
     let triggers = match trigger_repo::get_due(pool, &now_str) {
@@ -1410,6 +1530,23 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                             continue;
                         }
 
+                        if schedule_hourly_cap_exceeded(
+                            pool,
+                            &trigger,
+                            now,
+                            hourly_ceiling,
+                            &scheduled_publishes_by_persona,
+                        ) {
+                            log_schedule_rate_limit_issue(pool, &trigger, hourly_ceiling);
+                            tracing::warn!(
+                                trigger_id = %trigger.id,
+                                persona_id = %trigger.persona_id,
+                                hourly_ceiling,
+                                "Backfill slot skipped: scheduled execution hourly cap exceeded"
+                            );
+                            break;
+                        }
+
                         let slot_iso = slot.to_rfc3339();
                         let payload = cfg.payload().or_else(|| {
                             Some(synthesize_backfill_payload(&trigger, &cfg, &slot_iso))
@@ -1434,6 +1571,9 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                     "Backfill event published"
                                 );
                                 scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
+                                *scheduled_publishes_by_persona
+                                    .entry(trigger.persona_id.clone())
+                                    .or_default() += 1;
                                 fired += 1;
                             }
                             Err(e) => {
@@ -1450,6 +1590,36 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
 
         // 3. Compute next trigger time first
         let next = sched_logic::compute_next_from_config(&cfg, now);
+
+        if trigger.trigger_type == "schedule"
+            && schedule_hourly_cap_exceeded(
+                pool,
+                &trigger,
+                now,
+                hourly_ceiling,
+                &scheduled_publishes_by_persona,
+            )
+        {
+            match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version) {
+                Ok(true) => {}
+                Ok(false) => {
+                    tracing::debug!(trigger_id = %trigger.id, "Trigger already claimed by another tick, skipping rate-limit advance");
+                    continue;
+                }
+                Err(e) => {
+                    tracing::error!(trigger_id = %trigger.id, "Failed to mark rate-limited trigger: {}", e);
+                    continue;
+                }
+            }
+            log_schedule_rate_limit_issue(pool, &trigger, hourly_ceiling);
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                persona_id = %trigger.persona_id,
+                hourly_ceiling,
+                "Scheduled trigger skipped: execution hourly cap exceeded"
+            );
+            continue;
+        }
 
         // 4. Atomically claim the trigger using compare-and-swap on trigger_version.
         // If an overlapping tick already advanced the schedule (incrementing the version),
@@ -1495,6 +1665,11 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             Ok(_) => {
                 tracing::debug!(trigger_id = %trigger.id, "Trigger fired, event published");
                 scheduler.triggers_fired.fetch_add(1, Ordering::Relaxed);
+                if trigger.trigger_type == "schedule" {
+                    *scheduled_publishes_by_persona
+                        .entry(trigger.persona_id.clone())
+                        .or_default() += 1;
+                }
                 fired += 1;
             }
             Err(e) => {

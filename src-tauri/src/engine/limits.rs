@@ -45,6 +45,12 @@ pub const KB_CONTENT_HASH_ALGORITHM: &str = "sha256";
 /// otherwise emit 720 events at the next tick and drown the queue.
 pub const BACKFILL_HARD_CAP: usize = 100;
 
+/// Default maximum scheduled executions a single persona may enqueue per
+/// rolling hour. One per minute is the highest cadence currently supported by
+/// the 5-field cron parser, so 60 preserves that intent while preventing
+/// multi-trigger/backfill bursts from growing without bound.
+pub const SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR_DEFAULT: i64 = 60;
+
 // =============================================================================
 // Helpers
 // =============================================================================

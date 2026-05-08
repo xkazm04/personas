@@ -719,6 +719,26 @@ pub fn get_running_count_for_persona(pool: &DbPool, persona_id: &str) -> Result<
     )
 }
 
+pub fn count_for_persona_since(
+    pool: &DbPool,
+    persona_id: &str,
+    since_rfc3339: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_for_persona_since",
+        {
+            let conn = pool.get()?;
+            let count: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_executions WHERE persona_id = ?1 AND created_at >= ?2",
+                params![persona_id, since_rfc3339],
+                |row| row.get(0),
+            )?;
+            Ok(count)
+        }
+    )
+}
+
 /// Capability-scoped running-count: how many executions are queued/running for
 /// this exact (persona_id, use_case_id) pair. Used by the event-bus cascade
 /// guard so that a UC1→UC2 chain within the same persona isn't blocked by

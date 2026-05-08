@@ -1,6 +1,11 @@
 use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
 
+/// Minimum allowed interval between two fires for a cron expression.
+/// The current parser only accepts 5-field cron, so minute-level cadence is
+/// the lower bound.
+pub const MIN_CRON_INTERVAL_SECONDS: i64 = 60;
+
 /// Parsed cron schedule (5-field standard cron) using bitfield matching.
 ///
 /// Each field stores a bitmask where bit N indicates value N is active.
@@ -52,13 +57,47 @@ pub fn parse_cron(expr: &str) -> Result<CronSchedule, String> {
     if fields.len() != 5 {
         return Err(format!("Expected 5 fields, got {}", fields.len()));
     }
-    Ok(CronSchedule {
+    let schedule = CronSchedule {
         minutes: parse_field(fields[0], 0, 59)?,
         hours: parse_field(fields[1], 0, 23)? as u32,
         days_of_month: parse_field(fields[2], 1, 31)? as u32,
         months: parse_field(fields[3], 1, 12)? as u16,
         days_of_week: parse_field(fields[4], 0, 6)? as u8,
-    })
+    };
+    validate_min_interval(&schedule, MIN_CRON_INTERVAL_SECONDS)?;
+    Ok(schedule)
+}
+
+fn validate_min_interval(schedule: &CronSchedule, min_seconds: i64) -> Result<(), String> {
+    let minute_count = schedule.minutes.count_ones();
+    if min_seconds <= 60 || minute_count <= 1 {
+        return Ok(());
+    }
+
+    let mut previous: Option<u32> = None;
+    let mut first: Option<u32> = None;
+    let mut min_gap = 60;
+    for minute in 0..60 {
+        if schedule.has_minute(minute) {
+            if first.is_none() {
+                first = Some(minute);
+            }
+            if let Some(prev) = previous {
+                min_gap = min_gap.min(minute - prev);
+            }
+            previous = Some(minute);
+        }
+    }
+    if let (Some(first), Some(last)) = (first, previous) {
+        min_gap = min_gap.min(60 - last + first);
+    }
+    let min_gap_seconds = i64::from(min_gap) * 60;
+    if min_gap_seconds < min_seconds {
+        return Err(format!(
+            "Cron expression fires every {min_gap_seconds}s; minimum is {min_seconds}s"
+        ));
+    }
+    Ok(())
 }
 
 /// Parse a single cron field into a bitmask. Supports *, */N, N, N-M, N,M,P and combinations.
@@ -366,6 +405,12 @@ mod tests {
         assert_eq!(s.days_of_month.count_ones(), 31);
         assert_eq!(s.months.count_ones(), 12);
         assert_eq!(s.days_of_week.count_ones(), 7);
+    }
+
+    #[test]
+    fn test_every_minute_matches_minimum_interval() {
+        let s = parse_cron("* * * * *").unwrap();
+        assert!(validate_min_interval(&s, MIN_CRON_INTERVAL_SECONDS).is_ok());
     }
 
     #[test]
