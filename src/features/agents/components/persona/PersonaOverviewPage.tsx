@@ -167,11 +167,7 @@ export default function PersonaOverviewPage() {
             isFavorite={isFavorite}
             toggleFavorite={toggleFavorite}
             onRowClick={handleRowClick}
-            isBuilding={isBuilding}
             isDraft={isDraft}
-            healthMap={healthMap}
-            triggerCounts={triggerCounts}
-            lastRunMap={lastRunMap}
             connectorNamesMap={connectorNamesMap}
             densityTokens={densityTokens}
           />
