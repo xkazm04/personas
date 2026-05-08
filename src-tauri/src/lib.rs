@@ -835,17 +835,44 @@ pub fn run() {
                 });
             }
 
-            // Test automation HTTP server
+            // Test automation HTTP server.
+            //
+            // Bind happens synchronously here so an EADDRINUSE failure is logged
+            // with the actual port immediately — instead of letting the test
+            // harness time out polling a server that never started. Setup is
+            // not aborted on bind failure: the server is non-critical and the
+            // rest of the app should still come up.
             {
                 let pending = app.state::<test_automation::PendingResponses>().inner().clone();
+                let handle = app.handle().clone();
+
                 #[cfg(feature = "test-automation")]
-                {
-                    test_automation::start_server(app.handle().clone(), pending, test_automation::DEFAULT_PORT);
-                }
+                let requested_port = Some(test_automation::DEFAULT_PORT);
+
                 #[cfg(not(feature = "test-automation"))]
-                if let Some(port) = test_automation::env_test_port() {
+                let requested_port = test_automation::env_test_port().inspect(|port| {
                     tracing::info!("Production test mode enabled via PERSONAS_TEST_PORT={}", port);
-                    test_automation::start_server(app.handle().clone(), pending, port);
+                });
+
+                if let Some(port) = requested_port {
+                    match tauri::async_runtime::block_on(test_automation::start_server(
+                        handle, pending, port,
+                    )) {
+                        Ok(bound_port) if bound_port != port => {
+                            tracing::warn!(
+                                "Test automation server bound to fallback port {} (requested {})",
+                                bound_port,
+                                port
+                            );
+                        }
+                        Ok(_) => {}
+                        Err(e) => {
+                            tracing::error!(
+                                "Test automation server did not start: {}. Test harness will be unable to connect.",
+                                e
+                            );
+                        }
+                    }
                 }
             }
 
@@ -1058,6 +1085,7 @@ pub fn run() {
             commands::core::memories::list_memories_by_execution,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
+            commands::core::memories::merge_memories,
             commands::core::memories::update_memory_importance,
             commands::core::memories::batch_delete_memories,
             commands::core::memories::review_memories_with_cli,
@@ -1225,12 +1253,15 @@ pub fn run() {
             commands::design::analysis::preview_prompt,
             // Design -- Build Sessions
             commands::design::build_sessions::start_build_session,
+            commands::design::build_sessions::start_build_session_headless,
             commands::design::build_sessions::answer_build_question,
             commands::design::build_sessions::cancel_build_session,
             commands::design::build_sessions::reset_build_session_phase,
             commands::design::build_sessions::get_active_build_session,
             commands::design::build_sessions::get_latest_build_session,
             commands::design::build_sessions::list_build_sessions,
+            commands::design::build_sessions::list_pending_build_questions,
+            commands::design::build_sessions::get_build_status,
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
             commands::design::build_sessions::create_adoption_session,
@@ -1596,6 +1627,7 @@ pub fn run() {
             commands::communication::observability::metrics::get_all_monthly_spend,
             commands::communication::observability::metrics::get_prompt_performance,
             commands::communication::observability::metrics::get_execution_dashboard,
+            commands::communication::observability::metrics::get_execution_heatmap,
             commands::communication::observability::metrics::get_anomaly_drilldown,
             // Communication -- Observability: Prompt Lab
             commands::communication::observability::prompt_lab::get_prompt_versions,
@@ -1899,6 +1931,7 @@ pub fn run() {
             commands::infrastructure::system::check_claude_desktop_mcp,
             commands::infrastructure::system::get_crash_logs,
             commands::infrastructure::system::clear_crash_logs,
+            commands::infrastructure::system::get_log_directory_stats,
             commands::infrastructure::system::report_frontend_crash,
             commands::infrastructure::system::get_frontend_crashes,
             commands::infrastructure::system::clear_frontend_crashes,

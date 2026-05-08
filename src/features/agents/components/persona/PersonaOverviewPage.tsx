@@ -7,6 +7,8 @@ import Button from '@/features/shared/components/buttons/Button';
 import { DataGrid } from '@/features/shared/components/display/DataGrid';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { useFavoriteAgents } from '@/hooks/agents/useFavoriteAgents';
+import { useDensity } from '@/hooks/utility/data/useDensity';
+import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 import { ViewPresetBar, DEFAULT_VIEW_CONFIG, type AgentListViewConfig } from './ViewPresetBar';
 import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
@@ -38,6 +40,7 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isMobile = useIsMobile();
+  const { density, setDensity, tokens: densityTokens } = useDensity('persona-overview');
 
   // A persona is "draft" only if it never finished a build (no design result
   // was ever saved) AND still carries the placeholder / empty system prompt.
@@ -145,6 +148,7 @@ export default function PersonaOverviewPage() {
               </Button>
             )}
             <ViewPresetBar currentConfig={view} onApplyConfig={setView} />
+            <DensityToggle density={density} onChange={setDensity} scopeId="persona-overview" />
           </div>
         }
       />
@@ -169,6 +173,7 @@ export default function PersonaOverviewPage() {
             triggerCounts={triggerCounts}
             lastRunMap={lastRunMap}
             connectorNamesMap={connectorNamesMap}
+            densityTokens={densityTokens}
           />
         ) : (
           <DataGrid
@@ -176,9 +181,9 @@ export default function PersonaOverviewPage() {
             data={filteredData}
             getRowKey={(p) => p.id}
             onRowClick={handleRowClick}
+            isRowSelected={(p) => selectedIds.has(p.id)}
             getRowAccent={(p) =>
-              selectedIds.has(p.id) ? 'border-l-primary/60 bg-primary/[0.03]'
-                : isBuilding(p.id) ? 'border-l-violet-400/60'
+              isBuilding(p.id) ? 'border-l-violet-400/60'
                 : isDraft(p) ? 'border-l-zinc-400/40'
                 : healthMap[p.id]?.status === 'failing' ? 'border-l-red-400/60'
                 : healthMap[p.id]?.status === 'degraded' ? 'border-l-amber-400/60'
@@ -190,6 +195,7 @@ export default function PersonaOverviewPage() {
             pageSize={25}
             selectAll={allSelected}
             onSelectAll={handleSelectAll}
+            density={density}
           />
         )}
       </ContentBody>

@@ -39,6 +39,8 @@ function applyClientAction(action: ClientAction) {
       intent: action.intent,
       name: action.name,
       autoLaunch: action.autoLaunch,
+      mode: action.mode === 'one_shot' ? 'one_shot' : 'interactive',
+      companionSessionId: action.companionSessionId ?? null,
     });
     useSystemStore.getState().setSidebarSection('personas');
     return;

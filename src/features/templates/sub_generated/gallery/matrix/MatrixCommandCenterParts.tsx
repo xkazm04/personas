@@ -32,7 +32,7 @@ export function PromptModal({ section, onClose }: { section: PromptSection; onCl
   useClickOutside(ref, true, onClose);
   const Icon = section.icon;
   return createPortal(
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 surface-blur-modal">
       <div ref={ref} className="w-full max-w-2xl max-h-[80vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-primary/10">
           <div className="flex items-center gap-2.5"><Icon className={`w-4.5 h-4.5 ${section.color}`} /><h3 className="typo-body-lg font-semibold text-foreground/90">{section.label}</h3></div>

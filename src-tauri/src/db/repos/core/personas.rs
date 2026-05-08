@@ -758,13 +758,62 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 }
 
 /// Lightweight name-only update used by build sessions to rename a persona from the agent_ir.
+///
+/// 2026-05-07 — applies the same uniqueness suffix logic as `create()`. The
+/// build LLM picks generic names ("Email Triage Manager", "Weekly Work
+/// Digest") that collide across runs of similar intents; SQL audit on the
+/// today's cohort showed five identically-named "Email Digest Manager"
+/// rows. Without the suffix here, every duplicate name lands at update
+/// time even though `create()` had already routed the temporary name
+/// through Fix 6. The suffix is computed within the SAME project as the
+/// target persona (read project_id first), and we only suffix when the
+/// requested name actually collides with a *different* persona — calling
+/// `update_name(id, current_name)` is a no-op.
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;
         let conn = pool.get()?;
+
+        // Look up project_id of the target persona so the uniqueness
+        // check is project-scoped (mirrors create()).
+        let project_id: String = conn
+            .query_row(
+                "SELECT project_id FROM personas WHERE id = ?1",
+                params![id],
+                |row| row.get(0),
+            )
+            .unwrap_or_else(|_| "default".to_string());
+
+        // Compute a non-colliding name. If `name` is already this row's
+        // name OR doesn't collide with any OTHER row in the same project,
+        // it stays unchanged. Otherwise append " (2)" / " (3)" / ...
+        let mut final_name = name.to_string();
+        let mut suffix = 2u32;
+        loop {
+            let collides: bool = conn
+                .query_row(
+                    "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 AND id <> ?3 LIMIT 1",
+                    params![project_id, final_name, id],
+                    |_| Ok(()),
+                )
+                .is_ok();
+            if !collides {
+                break;
+            }
+            let base = final_name
+                .trim_end_matches(|c: char| c.is_ascii_digit() || c == ' ' || c == '(' || c == ')')
+                .trim_end()
+                .to_string();
+            final_name = format!("{} ({})", base, suffix);
+            suffix += 1;
+            if suffix > 99 {
+                break;
+            }
+        }
+
         conn.execute(
             "UPDATE personas SET name = ?1, updated_at = datetime('now') WHERE id = ?2",
-            params![name, id],
+            params![final_name, id],
         )?;
         Ok(())
     })

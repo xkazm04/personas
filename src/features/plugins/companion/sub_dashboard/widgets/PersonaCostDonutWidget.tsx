@@ -1,20 +1,15 @@
-import { useEffect, useMemo } from 'react';
-import {
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import { memo, useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
 
 const PALETTE = [
   '#06b6d4', '#22c55e', '#f59e0b', '#a855f7', '#ec4899',
   '#10b981', '#3b82f6', '#ef4444',
 ];
+
+const LEGEND_STYLE = { fontSize: 11 };
 
 /**
  * Persona cost donut — proportional split of cost across personas.
@@ -26,7 +21,7 @@ const PALETTE = [
  * Athena-facing config:
  *   { "days": 30, "limit": 6 }   limit caps slices; rest go to "Other"
  */
-export function PersonaCostDonutWidget({ config, title }: WidgetProps) {
+export const PersonaCostDonutWidget = memo(function PersonaCostDonutWidget({ config, title }: WidgetProps) {
   const days = (config?.days as number) ?? 30;
   const limit = (config?.limit as number) ?? 6;
   const { data, fetchExecutionDashboard } = useOverviewStore(
@@ -56,6 +51,15 @@ export function PersonaCostDonutWidget({ config, title }: WidgetProps) {
   }, [data, limit]);
 
   const total = slices.reduce((s, sl) => s + sl.value, 0);
+  const tooltipFormatter = useMemo(
+    () => (v: unknown, name: unknown): [string, string] => [
+      typeof v === 'number'
+        ? `$${v.toFixed(2)} (${total > 0 ? Math.round((v / total) * 100) : 0}%)`
+        : String(v),
+      String(name ?? ''),
+    ],
+    [total],
+  );
 
   return (
     <div className="rounded-card border border-foreground/10 bg-foreground/[0.02] p-4 h-full flex flex-col">
@@ -68,34 +72,29 @@ export function PersonaCostDonutWidget({ config, title }: WidgetProps) {
             No data
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={slices}
-                dataKey="value"
-                nameKey="name"
-                innerRadius="55%"
-                outerRadius="85%"
-                paddingAngle={2}
-                strokeWidth={0}
-              >
-                {slices.map((_, i) => (
-                  <Cell key={i} fill={PALETTE[i % PALETTE.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                formatter={(v, name) => [
-                  typeof v === 'number'
-                    ? `$${v.toFixed(2)} (${total > 0 ? Math.round((v / total) * 100) : 0}%)`
-                    : String(v),
-                  name,
-                ]}
-              />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-            </PieChart>
-          </ResponsiveContainer>
+          <LazyChart render={(R) => (
+            <R.ResponsiveContainer width="100%" height="100%">
+              <R.PieChart>
+                <R.Pie
+                  data={slices}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius="55%"
+                  outerRadius="85%"
+                  paddingAngle={2}
+                  strokeWidth={0}
+                >
+                  {slices.map((_, i) => (
+                    <R.Cell key={i} fill={PALETTE[i % PALETTE.length]} />
+                  ))}
+                </R.Pie>
+                <R.Tooltip formatter={tooltipFormatter} />
+                <R.Legend wrapperStyle={LEGEND_STYLE} />
+              </R.PieChart>
+            </R.ResponsiveContainer>
+          )} />
         )}
       </div>
     </div>
   );
-}
+});

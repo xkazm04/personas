@@ -1,16 +1,14 @@
-import { useEffect, useMemo } from 'react';
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-} from 'recharts';
+import { memo, useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
+
+const Y_AXIS_FORMATTER = (v: number) => `$${v.toFixed(2)}`;
+const TOOLTIP_FORMATTER = (v: unknown): [string, string] => [
+  typeof v === 'number' ? `$${v.toFixed(4)}` : String(v),
+  'Cost',
+];
 
 /**
  * Cost-per-day area chart.
@@ -18,7 +16,7 @@ import type { WidgetProps } from '../widgetRegistry';
  * Athena-facing config:
  *   { "days": 7 | 30 | 90 }   default 30
  */
-export function CostPerDayChartWidget({ config, title }: WidgetProps) {
+export const CostPerDayChartWidget = memo(function CostPerDayChartWidget({ config, title }: WidgetProps) {
   const days = (config?.days as number) ?? 30;
   const { data, fetchExecutionDashboard } = useOverviewStore(
     useShallow((s) => ({
@@ -44,27 +42,24 @@ export function CostPerDayChartWidget({ config, title }: WidgetProps) {
         {title ?? `Cost per day (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="cost-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.6} />
-                <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.05} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="date" stroke="currentColor" fontSize={11} />
-            <YAxis stroke="currentColor" fontSize={11} tickFormatter={(v) => `$${v.toFixed(2)}`} />
-            <Tooltip
-              formatter={(v) => [
-                typeof v === 'number' ? `$${v.toFixed(4)}` : String(v),
-                'Cost',
-              ]}
-            />
-            <Area type="monotone" dataKey="cost" stroke="#06b6d4" fill="url(#cost-grad)" strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <LazyChart render={(R) => (
+          <R.ResponsiveContainer width="100%" height="100%">
+            <R.AreaChart data={chartData}>
+              <defs>
+                <linearGradient id="cost-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity={0.6} />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <R.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <R.XAxis dataKey="date" stroke="currentColor" fontSize={11} />
+              <R.YAxis stroke="currentColor" fontSize={11} tickFormatter={Y_AXIS_FORMATTER} />
+              <R.Tooltip formatter={TOOLTIP_FORMATTER} />
+              <R.Area type="monotone" dataKey="cost" stroke="#06b6d4" fill="url(#cost-grad)" strokeWidth={2} />
+            </R.AreaChart>
+          </R.ResponsiveContainer>
+        )} />
       </div>
     </div>
   );
-}
+});

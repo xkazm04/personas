@@ -101,6 +101,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
             <RecipeHistoryTab
               history={testRunner.history}
               onClear={testRunner.clearHistory}
+              onTryIt={() => setActiveTab('test-runner')}
             />
           )}
         </TabTransition>

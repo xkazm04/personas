@@ -1,13 +1,11 @@
-import { useEffect } from 'react';
-import {
-  ResponsiveContainer,
-  RadialBarChart,
-  RadialBar,
-  PolarAngleAxis,
-} from 'recharts';
+import { memo, useEffect } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
+
+const RADIAL_BG = { fill: 'rgba(255,255,255,0.05)' };
+const POLAR_DOMAIN: [number, number] = [0, 100];
 
 /**
  * Success-rate gauge — a single radial bar from 0-100%, with the
@@ -21,7 +19,7 @@ import type { WidgetProps } from '../widgetRegistry';
  * Athena-facing config:
  *   { "days": 7 | 30 | 90 }   default 7
  */
-export function SuccessRateGaugeWidget({ config, title }: WidgetProps) {
+export const SuccessRateGaugeWidget = memo(function SuccessRateGaugeWidget({ config, title }: WidgetProps) {
   const days = (config?.days as number) ?? 7;
   const { data, fetchExecutionDashboard } = useOverviewStore(
     useShallow((s) => ({
@@ -44,18 +42,20 @@ export function SuccessRateGaugeWidget({ config, title }: WidgetProps) {
         {title ?? `Success rate (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0 relative">
-        <ResponsiveContainer width="100%" height="100%">
-          <RadialBarChart
-            innerRadius="65%"
-            outerRadius="95%"
-            data={chartData}
-            startAngle={210}
-            endAngle={-30}
-          >
-            <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-            <RadialBar background={{ fill: 'rgba(255,255,255,0.05)' }} dataKey="value" cornerRadius={6} />
-          </RadialBarChart>
-        </ResponsiveContainer>
+        <LazyChart render={(R) => (
+          <R.ResponsiveContainer width="100%" height="100%">
+            <R.RadialBarChart
+              innerRadius="65%"
+              outerRadius="95%"
+              data={chartData}
+              startAngle={210}
+              endAngle={-30}
+            >
+              <R.PolarAngleAxis type="number" domain={POLAR_DOMAIN} tick={false} />
+              <R.RadialBar background={RADIAL_BG} dataKey="value" cornerRadius={6} />
+            </R.RadialBarChart>
+          </R.ResponsiveContainer>
+        )} />
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="typo-h2 font-semibold tabular-nums" style={{ color }}>
             {pct}%
@@ -67,4 +67,4 @@ export function SuccessRateGaugeWidget({ config, title }: WidgetProps) {
       </div>
     </div>
   );
-}
+});

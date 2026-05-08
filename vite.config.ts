@@ -83,8 +83,11 @@ export default defineConfig(async () => ({
     target: "es2022",
     sourcemap: "hidden",
     chunkSizeWarningLimit: 500,
-    // Inline SVGs and small images <8KB to reduce HTTP requests in WebView
-    assetsInlineLimit: 8192,
+    // Inline SVGs and small images <16KB to reduce HTTP requests in WebView.
+    // 16384 (vs 8192) keeps borderline CSS+icon assets stable across builds —
+    // at 8KB they were flipping between inlined and external on small changes,
+    // causing inconsistent first-paint.
+    assetsInlineLimit: 16384,
     // Disable module preload polyfill -- injects crossorigin links at runtime
     // which breaks Tauri Android WebView's custom protocol
     modulePreload: false,
@@ -109,10 +112,14 @@ export default defineConfig(async () => ({
           }
         : {
             manualChunks(id: string) {
+              // Heavy vendor libs get their own named chunks so a one-line
+              // src/ change doesn't bust the cache for the entire ~3-4MB
+              // vendor blob. Users updating Personas re-download only what
+              // actually changed (see vendor-chart/flow/motion/markdown).
               const chunks: Record<string, string[]> = {
                 "react-vendor": ["react", "react-dom", "zustand"],
                 "ui-vendor": ["lucide-react"],
-                "framer-motion-vendor": ["framer-motion"],
+                "vendor-motion": ["framer-motion"],
                 "tauri-vendor": [
                   "@tauri-apps/api/core",
                   "@tauri-apps/api/event",
@@ -135,12 +142,15 @@ export default defineConfig(async () => ({
                   "d3-dispatch",
                   "d3-transition",
                 ],
-                "chart-vendor": ["recharts"],
-                "flow-vendor": ["@xyflow/react", "@xyflow/system"],
-                "hljs-vendor": [
-                  "highlight.js",
+                "vendor-chart": ["recharts"],
+                "vendor-flow": ["@xyflow/react", "@xyflow/system"],
+                "vendor-markdown": [
+                  "react-markdown",
+                  "remark-gfm",
                   "rehype-highlight",
+                  "highlight.js",
                   "lowlight",
+                  "dompurify",
                 ],
               };
               for (const [name, deps] of Object.entries(chunks)) {

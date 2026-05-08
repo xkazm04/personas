@@ -1,9 +1,6 @@
+import { memo, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import {
-  AreaChart, Area, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  ResponsiveContainer, ReferenceLine, ComposedChart,
-} from 'recharts';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { ArrowUpRight } from 'lucide-react';
 import { CHART_COLORS, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
@@ -11,6 +8,13 @@ import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/Cha
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
 import { ChartTooltipContent } from './MetricsCards';
 import type { ExecutionDashboardData as ExecutionDashboard } from '@/lib/bindings/ExecutionDashboardData';
+
+// Stable tooltip element — Recharts compares by reference identity, so
+// hoisting avoids invalidating its internal shouldComponentUpdate.
+const TOOLTIP_CONTENT = <ChartTooltipContent />;
+const PERCENT_TICK_FORMATTER = (v: number) => `$${v.toFixed(2)}`;
+const PCT_AXIS_FORMATTER = (v: number) => `${v}%`;
+const MS_AXIS_FORMATTER = (v: number) => fmtMs(v);
 
 interface MetricsChartsProps {
   data: ExecutionDashboard;
@@ -22,12 +26,24 @@ interface MetricsChartsProps {
   compareEnabled: boolean;
 }
 
-export function MetricsCharts({
+export const MetricsCharts = memo(function MetricsCharts({
   data, comparedChartData, personaCostData, personaNames,
   chartData, anomalyDates, compareEnabled,
 }: MetricsChartsProps) {
   const { t, tx } = useTranslation();
   const sf = useScaledFontSize();
+
+  const axisTick = useMemo(
+    () => ({ fill: getAxisTickFill(), fontSize: sf(10) }),
+    [sf],
+  );
+  const legendStyle = useMemo(() => ({ fontSize: sf(10) }), [sf]);
+  const refLineLabel = useMemo(
+    () => ({ value: '90%', fill: getAxisTickFill(), fontSize: sf(9) }),
+    [sf],
+  );
+  const gridStroke = getGridStroke();
+
   return (
     <>
       {/* Cost per Day */}
@@ -35,21 +51,23 @@ export function MetricsCharts({
         <h4 className="typo-heading text-foreground">{t.overview.activity.cost_per_day}</h4>
         <div className="h-48 2xl:h-56 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={personaCostData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
-                <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} tickFormatter={(v: number) => `$${v.toFixed(2)}`} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: sf(10) }} />
-                {personaNames.map((name, i) => (
-                  <Area key={name} type="monotone" dataKey={name} stackId="1" stroke={CHART_COLORS[i % CHART_COLORS.length]} fill={CHART_COLORS[i % CHART_COLORS.length]} fillOpacity={0.3} />
-                ))}
-                {chartData.filter((pt) => anomalyDates.has(String(pt.date))).map((pt) => (
-                  <ReferenceLine key={pt.date} x={pt.date} stroke="#f59e0b" strokeDasharray="3 3" strokeOpacity={0.6} />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.AreaChart data={personaCostData}>
+                  <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <R.XAxis dataKey="date" tick={axisTick} />
+                  <R.YAxis tick={axisTick} tickFormatter={PERCENT_TICK_FORMATTER} />
+                  <R.Tooltip content={TOOLTIP_CONTENT} />
+                  <R.Legend iconType="circle" iconSize={6} wrapperStyle={legendStyle} />
+                  {personaNames.map((name, i) => (
+                    <R.Area key={name} type="monotone" dataKey={name} stackId="1" stroke={CHART_COLORS[i % CHART_COLORS.length]} fill={CHART_COLORS[i % CHART_COLORS.length]} fillOpacity={0.3} />
+                  ))}
+                  {chartData.filter((pt) => anomalyDates.has(String(pt.date))).map((pt) => (
+                    <R.ReferenceLine key={pt.date} x={pt.date} stroke="#f59e0b" strokeDasharray="3 3" strokeOpacity={0.6} />
+                  ))}
+                </R.AreaChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         </div>
       </div>
@@ -59,19 +77,21 @@ export function MetricsCharts({
         <h4 className="typo-heading text-foreground">{t.overview.activity.executions_by_status}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
-                <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: sf(10) }} />
-                <Bar dataKey="completed" name={t.overview.activity.completed} stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="failed" name={t.overview.activity.failed} stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
-                {compareEnabled && <Line type="monotone" dataKey="prev_completed" name={t.overview.activity.prev_completed} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
-                {compareEnabled && <Line type="monotone" dataKey="prev_failed" name={t.overview.activity.prev_failed} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
-              </ComposedChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.ComposedChart data={comparedChartData}>
+                  <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <R.XAxis dataKey="date" tick={axisTick} />
+                  <R.YAxis tick={axisTick} />
+                  <R.Tooltip content={TOOLTIP_CONTENT} />
+                  <R.Legend iconType="circle" iconSize={6} wrapperStyle={legendStyle} />
+                  <R.Bar dataKey="completed" name={t.overview.activity.completed} stackId="status" fill="#10b981" radius={[0, 0, 0, 0]} />
+                  <R.Bar dataKey="failed" name={t.overview.activity.failed} stackId="status" fill="#ef4444" radius={[2, 2, 0, 0]} />
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_completed" name={t.overview.activity.prev_completed} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_failed" name={t.overview.activity.prev_failed} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.4} dot={false} />}
+                </R.ComposedChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         </div>
       </div>
@@ -81,17 +101,19 @@ export function MetricsCharts({
         <h4 className="typo-heading text-foreground">{t.overview.activity.success_rate_trend}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
-                <YAxis domain={[0, 100]} tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} tickFormatter={(v: number) => `${v}%`} />
-                <Tooltip content={<ChartTooltipContent />} />
-                {compareEnabled && <Line type="monotone" dataKey="prev_successRate" name={t.overview.activity.prev_success_pct} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
-                <Line type="monotone" dataKey="successRate" name={t.overview.activity.success_pct} stroke="#10b981" strokeWidth={2} dot={false} />
-                <ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={{ value: '90%', fill: getAxisTickFill(), fontSize: sf(9) }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.LineChart data={comparedChartData}>
+                  <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <R.XAxis dataKey="date" tick={axisTick} />
+                  <R.YAxis domain={[0, 100]} tick={axisTick} tickFormatter={PCT_AXIS_FORMATTER} />
+                  <R.Tooltip content={TOOLTIP_CONTENT} />
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_successRate" name={t.overview.activity.prev_success_pct} stroke="#10b981" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                  <R.Line type="monotone" dataKey="successRate" name={t.overview.activity.success_pct} stroke="#10b981" strokeWidth={2} dot={false} />
+                  <R.ReferenceLine y={90} stroke="#10b981" strokeDasharray="3 3" strokeOpacity={0.3} label={refLineLabel} />
+                </R.LineChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         </div>
       </div>
@@ -101,20 +123,22 @@ export function MetricsCharts({
         <h4 className="typo-heading text-foreground">{t.overview.activity.latency_distribution}</h4>
         <div className="h-40 2xl:h-52 bg-secondary/20 rounded-modal border border-primary/10 p-3">
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={comparedChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} />
-                <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(10) }} tickFormatter={(v: number) => fmtMs(v)} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend iconType="circle" iconSize={6} wrapperStyle={{ fontSize: sf(10) }} />
-                {compareEnabled && <Line type="monotone" dataKey="prev_p50" name="Prev p50" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
-                {compareEnabled && <Line type="monotone" dataKey="prev_p95" name="Prev p95" stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
-                <Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-                <Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
-              </LineChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.LineChart data={comparedChartData}>
+                  <R.CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
+                  <R.XAxis dataKey="date" tick={axisTick} />
+                  <R.YAxis tick={axisTick} tickFormatter={MS_AXIS_FORMATTER} />
+                  <R.Tooltip content={TOOLTIP_CONTENT} />
+                  <R.Legend iconType="circle" iconSize={6} wrapperStyle={legendStyle} />
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p50" name="Prev p50" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                  {compareEnabled && <R.Line type="monotone" dataKey="prev_p95" name="Prev p95" stroke="#f59e0b" strokeWidth={1} strokeDasharray="6 3" strokeOpacity={0.35} dot={false} />}
+                  <R.Line type="monotone" dataKey="p50" name="p50" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <R.Line type="monotone" dataKey="p95" name="p95" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+                  <R.Line type="monotone" dataKey="p99" name="p99" stroke="#ef4444" strokeWidth={1} dot={false} strokeDasharray="2 2" />
+                </R.LineChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         </div>
       </div>
@@ -152,4 +176,4 @@ export function MetricsCharts({
       )}
     </>
   );
-}
+});

@@ -1,6 +1,6 @@
 # Settings
 
-Settings is a lazy-mounted control surface for account, appearance, notifications, engine diagnostics, custom model routing, data portability, network exposure, quality gates, config resolution, and admin diagnostics.
+Settings is a lazy-mounted control surface for account, appearance, notifications, engine diagnostics, custom model routing, data portability, external API keys (inbound MCP/HTTP auth), network exposure, quality gates, config resolution, and admin diagnostics.
 
 ## Page mechanics
 
@@ -18,6 +18,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 | Engine | Dev-only | Runtime capability badges and operation rows | `sub_engine/components/*`, `libs/engineCapabilities.ts` |
 | Custom Models | Dev-only | BYOM providers, API keys, routing rules, compliance rules, audit log | `sub_byom/components/*`, `libs/useByomSettings.ts` |
 | Data | Team+ | Export/import and credential portability | `sub_portability/components/*`, `libs/useDataPortability.ts` |
+| API Keys | Team+ | Issue, revoke, and delete tokens that 3rd-party MCP/HTTP clients use to authenticate against the local management API (`engine/management_api.rs`, port 9420). Plaintext leaves the backend exactly once on creation; storage is SHA-256 with a `key_prefix` for display. The internal `system` key is hidden from the list. | `sub_api_keys/components/{ApiKeysSettings,CreateApiKeyDialog,CreatedKeyDialog,McpServerInfoPanel}.tsx`, `src/api/auth/externalApiKeys.ts`, `src-tauri/src/commands/credentials/external_api_keys.rs` |
 | Network | Dev-only | Exposure manager and sharing/network controls | `src/features/sharing/components/ExposureManager.tsx` |
 | Quality Gates | Dev-only | Validation/test gate settings | `sub_quality_gates/components/QualityGateSettings.tsx` |
 | Config Resolution | Dev-only | Effective config inspection | `sub_config/components/ConfigResolutionPanel.tsx` |
@@ -29,4 +30,6 @@ Settings also contains `AmbientContextPanel.tsx`, backed by `src/api/system/ambi
 
 ## State and commands
 
-Most Settings state is stored in `uiSlice.ts`, `setupSlice.ts`, `ambientContextSlice.ts`, `cloudSlice.ts`, and plugin-specific system slices. Backend commands are spread across `commands/infrastructure/settings.rs`, `byom.rs`, `tier_usage.rs`, `network`, `core/import_export.rs`, and notification helpers.
+Most Settings state is stored in `uiSlice.ts`, `setupSlice.ts`, `ambientContextSlice.ts`, `cloudSlice.ts`, and plugin-specific system slices. Backend commands are spread across `commands/infrastructure/settings.rs`, `byom.rs`, `tier_usage.rs`, `network`, `core/import_export.rs`, `commands/credentials/external_api_keys.rs`, and notification helpers.
+
+> **API Keys vs Custom Models** — these tabs solve opposite problems. *Custom Models* (BYOM) configures **outbound** keys Personas uses to call third-party model providers. *API Keys* configures **inbound** tokens external MCP clients (and other HTTP callers) use to authenticate against Personas' own management API on `127.0.0.1:9420`.

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { GripVertical } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
@@ -11,6 +11,7 @@ export default function TeamDragPanel() {
   const canvasDragRef = useCanvasDragRef();
   const personas = useAgentStore((s) => s.personas);
   const teamMembers = usePipelineStore((s) => s.teamMembers) as PersonaTeamMember[];
+  const isDraggingRef = useRef(false);
 
   const memberPersonaIds = new Set(teamMembers.map((m) => m.persona_id));
 
@@ -18,10 +19,18 @@ export default function TeamDragPanel() {
     canvasDragRef.current = personaId;
     e.dataTransfer.setData('application/persona-id', personaId);
     e.dataTransfer.effectAllowed = 'copy';
-  }, []);
+    isDraggingRef.current = true;
+    document.body.dataset.dragActive = 'true';
+  }, [canvasDragRef]);
 
   const handleDragEnd = useCallback(() => {
     canvasDragRef.current = null;
+    isDraggingRef.current = false;
+    delete document.body.dataset.dragActive;
+  }, [canvasDragRef]);
+
+  useEffect(() => () => {
+    if (isDraggingRef.current) delete document.body.dataset.dragActive;
   }, []);
 
   return (

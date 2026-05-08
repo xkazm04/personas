@@ -7,7 +7,7 @@ import { statusIcon, SortHeader, ActionButton } from './DeploymentSubComponents'
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { DeploymentHealthSparkline } from './DeploymentHealthSparkline';
 import type { HealthDataPoint } from './DeploymentHealthSparkline';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { AsyncButton } from '@/features/shared/components/buttons';
 import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -136,16 +136,16 @@ export function DeploymentTable({
               <td className="px-4 py-3">
                 <div className="flex items-center gap-0.5">
                   {row.personaId && row.status === 'active' && onTest && (
-                    <button
-                      type="button"
+                    <AsyncButton
+                      variant="ghost"
+                      size="icon-sm"
                       title={dt.test_deployment}
                       onClick={() => onTest(row.id, row.personaId!)}
-                      disabled={isBusy || testState?.running}
-                      className="p-1.5 rounded-card text-foreground hover:text-blue-400
-                                 hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
-                    >
-                      {testState?.running ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
-                    </button>
+                      disabled={isBusy}
+                      isLoading={testState?.running ?? false}
+                      icon={<FlaskConical className="w-3.5 h-3.5" />}
+                      className="hover:!text-blue-400 hover:!bg-blue-500/10"
+                    />
                   )}
                   {testResult && (
                     <span

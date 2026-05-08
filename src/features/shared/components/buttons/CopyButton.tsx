@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { Tooltip } from '../display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -46,10 +47,13 @@ export function CopyButton({
   disabled,
 }: CopyButtonProps) {
   const { t } = useTranslation();
+  const { shouldAnimate } = useMotion();
   const internal = useCopyToClipboard(2000);
   const isManaged = externalCopied !== undefined;
   const copied = isManaged ? externalCopied : internal.copied;
   const copiedLabel = copiedLabelProp ?? t.shared.copy_copied;
+  const flashTransition = shouldAnimate ? { duration: 0.3 } : { duration: 0 };
+  const morphTransition = shouldAnimate ? springTransition : { duration: 0 };
 
   const handleClick = () => {
     if (disabled) return;
@@ -89,7 +93,7 @@ export function CopyButton({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={flashTransition}
           />
         )}
       </AnimatePresence>
@@ -103,7 +107,7 @@ export function CopyButton({
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            transition={springTransition}
+            transition={morphTransition}
           >
             {copiedIcon ?? <Check className={`${iconSize} text-emerald-400`} />}
           </motion.span>
@@ -114,7 +118,7 @@ export function CopyButton({
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            transition={springTransition}
+            transition={morphTransition}
           >
             {icon ?? <Copy className={iconSize} />}
           </motion.span>

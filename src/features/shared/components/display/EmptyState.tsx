@@ -36,17 +36,21 @@ function ActivityPulseSvg() {
   );
 }
 
-function BellSilentSvg() {
+// Celebratory "all clear" graphic for the alerts empty state — emerald palette
+// + check-circle reads as "healthy", not "silenced". Replaced the prior
+// strikethrough-bell because the only consumer (AlertHistoryPanel) renders
+// this when zero alerts have ever fired, which is a good thing.
+function AllClearSvg() {
   return (
     <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-      <rect x="4" y="4" width="40" height="40" rx="8" fill="url(#bs-bg)" />
-      <path d="M24 12 C19 12, 15 16, 15 21 V27 L12 31 H36 L33 27 V21 C33 16, 29 12, 24 12 Z" stroke="#818cf8" strokeWidth="1.8" strokeLinejoin="round" fill="none" opacity="0.6" />
-      <path d="M21 31 C21 33.2 22.3 35 24 35 S27 33.2 27 31" stroke="#a78bfa" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5" />
-      <line x1="14" y1="14" x2="34" y2="34" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" opacity="0.35" />
+      <rect x="4" y="4" width="40" height="40" rx="8" fill="url(#ac-bg)" />
+      <circle cx="24" cy="24" r="11" stroke="#34d399" strokeWidth="2" fill="none" opacity="0.65" />
+      <circle cx="24" cy="24" r="13.5" stroke="#34d399" strokeWidth="1" fill="none" opacity="0.25" />
+      <path d="M19 24.5 L22.5 28 L29.5 20.5" stroke="#10b981" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
       <defs>
-        <linearGradient id="bs-bg" x1="4" y1="4" x2="44" y2="44">
-          <stop stopColor="#6366f1" stopOpacity="0.08" />
-          <stop offset="1" stopColor="#8b5cf6" stopOpacity="0.04" />
+        <linearGradient id="ac-bg" x1="4" y1="4" x2="44" y2="44">
+          <stop stopColor="#10b981" stopOpacity="0.10" />
+          <stop offset="1" stopColor="#34d399" stopOpacity="0.04" />
         </linearGradient>
       </defs>
     </svg>
@@ -76,7 +80,7 @@ export type EmptyStateVariant = 'chart' | 'activity' | 'alerts' | 'metrics';
 const VARIANT_SVG: Record<EmptyStateVariant, () => ReactNode> = {
   chart: ChartWaveSvg,
   activity: ActivityPulseSvg,
-  alerts: BellSilentSvg,
+  alerts: AllClearSvg,
   metrics: BarChartEmptySvg,
 };
 

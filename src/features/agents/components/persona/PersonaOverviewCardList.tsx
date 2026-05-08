@@ -7,6 +7,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
 async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
@@ -31,6 +32,8 @@ interface PersonaOverviewCardListProps {
   triggerCounts: Record<string, number>;
   lastRunMap: Record<string, string | null>;
   connectorNamesMap: Map<string, string[]>;
+  /** Optional density tokens. Defaults to 'comfortable'. */
+  densityTokens?: DensityTokens;
 }
 
 /**
@@ -46,6 +49,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   const {
     data, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
     isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap,
+    densityTokens = DENSITY_TOKENS.comfortable,
   } = props;
 
   if (data.length === 0) {
@@ -60,7 +64,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
+    <div className={`flex-1 overflow-y-auto px-3 py-2 ${densityTokens.cardGap}`}>
       {data.map((p) => {
         const selected = selectedIds.has(p.id);
         const connectors = connectorNamesMap.get(p.id) ?? [];
@@ -78,7 +82,7 @@ export function PersonaOverviewCardList(props: PersonaOverviewCardListProps) {
             }`}
           >
             {/* Header row: select / icon / name / favorite / menu */}
-            <div className="flex items-start gap-3 p-3">
+            <div className={`flex items-start gap-3 ${densityTokens.cardPadding}`}>
               <button
                 type="button"
                 onClick={() => onToggleSelect(p.id)}

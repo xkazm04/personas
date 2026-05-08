@@ -480,7 +480,7 @@ export default function IdeaTriagePage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 surface-blur-modal"
             onClick={() => setShowShortcuts(false)}
           >
             <motion.div
@@ -488,7 +488,7 @@ export default function IdeaTriagePage() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-80 rounded-2xl border border-primary/15 bg-background/95 backdrop-blur-xl shadow-elevation-4 p-6"
+              className="w-80 rounded-2xl border border-primary/15 bg-background/95 surface-blur-modal shadow-elevation-4 p-6"
             >
               <h3 className="text-md font-semibold text-primary mb-4">{dt.shortcuts_title}</h3>
               <div className="space-y-2.5">

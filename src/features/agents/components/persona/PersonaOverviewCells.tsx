@@ -1,4 +1,5 @@
 import { Plug, Star } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -35,18 +36,29 @@ export function SelectCell({
         e.stopPropagation();
         onToggle(persona.id);
       }}
-      className="flex items-center justify-center"
+      className="w-full h-full flex items-center justify-center transition-colors rounded-card hover:bg-primary/[0.04] cursor-pointer"
     >
       <div
-        className={`w-4 h-4 rounded border transition-all flex items-center justify-center cursor-pointer ${
+        className={`w-4 h-4 rounded border transition-all flex items-center justify-center ${
           selected ? 'bg-primary/80 border-primary/60' : 'border-primary/25 hover:border-primary/50'
         }`}
       >
-        {selected && (
-          <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        )}
+        <AnimatePresence initial={false}>
+          {selected && (
+            <motion.svg
+              key="check"
+              className="w-3 h-3 text-white"
+              viewBox="0 0 12 12"
+              fill="none"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <path d="M2.5 6L5 8.5L9.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </motion.svg>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

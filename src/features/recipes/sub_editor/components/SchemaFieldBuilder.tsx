@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Trash2, GripVertical } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 
@@ -20,6 +20,8 @@ interface SchemaFieldBuilderProps {
 export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps) {
   const { t } = useTranslation();
   const rt = t.recipes;
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+
   const addField = useCallback(() => {
     onChange([...fields, { key: '', type: 'text', label: '', default: '' }]);
   }, [fields, onChange]);
@@ -32,8 +34,21 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
     onChange(fields.filter((_, i) => i !== index));
   }, [fields, onChange]);
 
+  const isReordering = draggingIndex !== null;
+
+  useEffect(() => {
+    if (isReordering) {
+      document.body.dataset.dragActive = 'true';
+      return () => { delete document.body.dataset.dragActive; };
+    }
+    return undefined;
+  }, [isReordering]);
+
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2 drop-zone-illuminated rounded-card p-1 -m-1"
+      data-dragging={isReordering ? 'true' : undefined}
+    >
       <Reorder.Group
         axis="y"
         values={fields}
@@ -49,8 +64,21 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="flex items-center gap-2"
+              onDragStart={() => setDraggingIndex(index)}
+              onDragEnd={() => setDraggingIndex(null)}
+              className="relative flex items-center gap-2"
             >
+              {isReordering && index !== draggingIndex && (
+                <motion.div
+                  aria-hidden
+                  initial={{ opacity: 0, scaleX: 0.6 }}
+                  animate={{ opacity: 1, scaleX: 1 }}
+                  exit={{ opacity: 0, scaleX: 0.6, transition: { duration: 0.12 } }}
+                  transition={{ duration: 0.18 }}
+                  className="pointer-events-none absolute -top-[5px] left-6 right-6 h-[2px] rounded-full bg-primary/40"
+                  style={{ transformOrigin: 'center' }}
+                />
+              )}
               <div className="cursor-grab active:cursor-grabbing text-foreground hover:text-muted-foreground transition-colors">
                 <GripVertical className="w-4 h-4" />
               </div>

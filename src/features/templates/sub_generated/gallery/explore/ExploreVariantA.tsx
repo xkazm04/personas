@@ -97,6 +97,10 @@ export function ExploreVariantA({
                   <img
                     src={imgSrc}
                     alt=""
+                    width={600}
+                    height={400}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover opacity-45 group-hover:opacity-65 transition-opacity duration-300"
                   />
                 )}

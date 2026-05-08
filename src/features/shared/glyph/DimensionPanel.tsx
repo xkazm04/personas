@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { GlyphRow, GlyphDimension } from './types';
 import { DIM_META } from './dimMeta';
 import { DimContent } from './dimContent';
@@ -18,15 +19,16 @@ interface DimensionPanelProps {
 export function DimensionPanel({ dim, row, onClose }: DimensionPanelProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
+  const motion_ = useMotion();
   const meta = DIM_META[dim];
   const Icon = meta.icon;
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.92, y: 8 }}
+      initial={motion_.shouldAnimate ? { opacity: 0, scale: 0.92, y: 8 } : { opacity: 1, scale: 1, y: 0 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.94, y: 6 }}
-      transition={{ duration: 0.22, ease: 'easeOut' }}
+      exit={motion_.shouldAnimate ? { opacity: 0, scale: 0.94, y: 6 } : { opacity: 0 }}
+      transition={motion_.shouldAnimate ? { duration: 0.22, ease: 'easeOut' } : { duration: 0 }}
       className="absolute inset-x-6 top-16 bottom-24 z-20 rounded-modal bg-card-bg/95 backdrop-blur-md border border-card-border shadow-elevation-3 flex flex-col overflow-hidden"
       style={{ boxShadow: `0 0 24px ${meta.color}22, 0 4px 16px rgba(0,0,0,0.25)` }}
     >

@@ -10,6 +10,7 @@ import { ConfigurationPopup } from '@/features/agents/components/onboarding/Conf
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
 import { OLLAMA_FIELDS, OllamaFooter, LITELLM_FIELDS } from './popupFieldConfigs';
 import { CrashLogsSection } from './CrashLogsSection';
+import { LogDiskUsageSection } from './LogDiskUsageSection';
 import { SectionCard } from './SectionCard';
 import { FooterActions } from './FooterActions';
 import { useHealthChecks } from './useHealthChecks';
@@ -114,6 +115,8 @@ export function SystemHealthPanel({ onNext }: { onNext?: () => void }) {
               <CrashLogsSection />
             </div>
           )}
+
+          <LogDiskUsageSection />
 
           {hasIssues && !loading && (
             <p className="typo-body text-amber-400/80">

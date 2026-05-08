@@ -99,6 +99,13 @@ fn persona_uses_drive(ir: &crate::db::models::AgentIr) -> bool {
 /// Start a new build session for a persona. Returns the session ID.
 /// Events are streamed back via the Channel parameter.
 /// Optional workflow_json + parser_result_json enable workflow import mode.
+///
+/// `mode` selects gate-resolution strategy: `"interactive"` (default —
+/// ask the user) or `"one_shot"` (LLM resolves every gate, retries test
+/// failures up to 3×, auto-promotes on success). When the build was
+/// initiated from the in-app Companion chat, `companion_session_id`
+/// links the session back so the BuildWatcher job can post a result
+/// message into that chat's episode log on terminal phase.
 #[tauri::command]
 #[allow(clippy::too_many_arguments)]
 pub async fn start_build_session(
@@ -110,6 +117,8 @@ pub async fn start_build_session(
     workflow_json: Option<String>,
     parser_result_json: Option<String>,
     language: Option<String>,
+    mode: Option<String>,
+    companion_session_id: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -126,6 +135,61 @@ pub async fn start_build_session(
         parser_result_json,
         app,
         language,
+        mode,
+        companion_session_id,
+    )?;
+
+    Ok(session_id)
+}
+
+/// Headless variant of `start_build_session` for callers that have no
+/// frontend Channel (build-mcp HTTP endpoints, e2e drivers, future
+/// external MCP clients). Behavior is identical except the per-call
+/// streaming Channel is replaced with a no-op that drops events —
+/// callers must rely on the GLOBAL `build-session-event` Tauri emit
+/// stream (or poll `get_build_status`) for progress.
+///
+/// Why a dedicated command rather than making the Channel optional on
+/// `start_build_session`: Tauri 2's command-arg deserialization treats
+/// `Channel<T>` as required, and adding `Option<Channel<T>>` would
+/// break every existing UI caller. A second command keeps the UI path
+/// unchanged while exposing a headless surface.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn start_build_session_headless(
+    app: tauri::AppHandle,
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+    intent: String,
+    workflow_json: Option<String>,
+    parser_result_json: Option<String>,
+    language: Option<String>,
+    mode: Option<String>,
+    companion_session_id: Option<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let session_id = uuid::Uuid::new_v4().to_string();
+
+    // No-op Channel: events fire-and-forget. The global Tauri emit
+    // (event_name::BUILD_SESSION_EVENT) still carries every event, so a
+    // polling caller can track progress via `get_build_status` and any
+    // open Glyph view in the UI keeps updating.
+    let dummy_channel: Channel<BuildEvent> = Channel::new(|_response| Ok(()));
+
+    state.build_session_manager.start_session(
+        session_id.clone(),
+        persona_id,
+        intent,
+        dummy_channel,
+        state.db.clone(),
+        state.process_registry.clone(),
+        workflow_json,
+        parser_result_json,
+        app,
+        language,
+        mode,
+        companion_session_id,
     )?;
 
     Ok(session_id)
@@ -333,6 +397,67 @@ pub async fn cancel_build_session(
         .cancel_session(&session_id, &state.db, &state.process_registry)
 }
 
+/// Read the currently pending clarifying question on a build session, if any.
+///
+/// Returns the parsed JSON question payload (a `clarifying_question` shape —
+/// scope, question text, options, optional connector_category, etc.) or
+/// `None` when the session has no question pending. Used by the in-app
+/// Companion chat (and the future external MCP wrapper) to inspect the
+/// session state without subscribing to the event stream.
+#[tauri::command]
+pub async fn list_pending_build_questions(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+) -> Result<Option<serde_json::Value>, AppError> {
+    require_auth(&state).await?;
+
+    let session = build_session_repo::get_by_id(&state.db, &session_id)?
+        .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
+
+    Ok(session
+        .pending_question
+        .as_deref()
+        .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok()))
+}
+
+/// Aggregated read-only snapshot of a build session for headless / Companion
+/// callers that want to poll progress without subscribing to the event
+/// stream. Combines phase, mode, pending question, resolved cells, and a
+/// derived `is_terminal` flag in one call.
+#[tauri::command]
+pub async fn get_build_status(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+
+    let session = build_session_repo::get_by_id(&state.db, &session_id)?
+        .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
+
+    let pending_question = session
+        .pending_question
+        .as_deref()
+        .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
+    let resolved_cells: serde_json::Value =
+        serde_json::from_str(&session.resolved_cells).unwrap_or_default();
+
+    Ok(serde_json::json!({
+        "sessionId": session.id,
+        "personaId": session.persona_id,
+        "phase": session.phase.as_str(),
+        "isTerminal": session.phase.is_terminal(),
+        "mode": session.mode.unwrap_or_else(|| "interactive".to_string()),
+        "companionSessionId": session.companion_session_id,
+        "intent": session.intent,
+        "pendingQuestion": pending_question,
+        "resolvedCells": resolved_cells,
+        "agentIrPresent": session.agent_ir.is_some(),
+        "errorMessage": session.error_message,
+        "createdAt": session.created_at,
+        "updatedAt": session.updated_at,
+    }))
+}
+
 /// Get the active (non-terminal) build session for a persona, if any.
 /// Returns a frontend-friendly representation with parsed JSON fields.
 #[tauri::command]
@@ -453,9 +578,6 @@ pub async fn test_build_draft(
         })?
     } else if let Some(design_result) = design_result_str {
         tracing::warn!(session_id = %session_id, persona_id = %persona_id, "Session agent_ir is null, using persona last_design_result");
-        let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result).map_err(|e| {
-            AppError::Validation(format!("Persona design result parse error: {e}"))
-        })?;
         let ir: crate::db::models::AgentIr = serde_json::from_str(&design_result)
             .map_err(|e| AppError::Validation(format!("Persona design result parse error: {e}")))?;
         // Backfill the session so future calls work
@@ -481,17 +603,32 @@ pub async fn test_build_draft(
 
     // Apply adoption questionnaire answers: variable substitution + configuration section.
     // This ensures the test runs with the user's actual configured values, not template placeholders.
+    // Fail loudly on parse error — silently skipping leaves the test running on raw `{{placeholder}}`
+    // values and dangling credential refs, which produces a cascade of API failures the LLM cannot
+    // diagnose because the IR is structurally fine — only the inputs were garbage.
     if let Some(ref raw_answers) = session.adoption_answers {
-        if let Ok(answers) =
-            serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers)
-        {
-            crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
-            crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
-            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
-                &mut agent_ir,
-                &answers,
-            );
-            tracing::info!(session_id = %session_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for testing");
+        match serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw_answers) {
+            Ok(answers) => {
+                crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
+                crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+                crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
+                    &mut agent_ir,
+                    &answers,
+                );
+                tracing::info!(session_id = %session_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for testing");
+            }
+            Err(e) => {
+                tracing::error!(
+                    session_id = %session_id,
+                    error = %e,
+                    "Failed to parse build_sessions.adoption_answers as AdoptionAnswers — refusing to run test against template placeholders"
+                );
+                return Err(AppError::Validation(format!(
+                    "build_sessions.adoption_answers is corrupt and could not be parsed ({e}). \
+                     Re-run the adoption questionnaire to regenerate the answers, or clear the \
+                     field if you intend to test without user values."
+                )));
+            }
         }
     }
 
@@ -704,14 +841,20 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         // (auto_triage.rs). Without these fields the runtime falls back
         // to permissive defaults regardless of what the build LLM
         // declared per build prompt rules 16d / 21.
-        let (model_override, review_policy, generation_settings, memory_policy) = match uc {
+        let (model_override, model_rationale, review_policy, generation_settings, memory_policy) = match uc {
             crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
                 d.model_override.clone(),
+                // Normalize empty rationale strings to None so the UI never
+                // renders an empty tooltip just because the LLM emitted "".
+                d.model_rationale
+                    .as_ref()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
                 d.review_policy.clone(),
                 d.generation_settings.clone(),
                 d.memory_policy.clone(),
             ),
-            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None, None),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None, None, None),
         };
 
         structured.push(serde_json::json!({
@@ -724,6 +867,7 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             "event_subscriptions": event_subs,
             "error_handling": error_handling,
             "model_override": model_override,
+            "model_rationale": model_rationale,
             "review_policy": review_policy,
             "generation_settings": generation_settings,
             "memory_policy": memory_policy,
@@ -1824,6 +1968,14 @@ fn update_persona_in_tx(
         .as_ref()
         .map(|v| serde_json::to_string(v).unwrap_or_default());
 
+    // Rule 28 mirror: when the persona has exactly one use_case with a
+    // recommended model, promote that model up to the persona-level
+    // `model_profile` so the runtime defaults match the build's
+    // recommendation even on simple personas. Multi-use-case personas
+    // keep their existing persona default — per-UC `model_override` in
+    // `design_context.useCases[]` already drives runtime selection there.
+    let solo_model_profile_json: Option<String> = solo_use_case_model_profile(ir);
+
     tx.execute(
         "UPDATE personas SET
             name = COALESCE(?1, name),
@@ -1836,8 +1988,9 @@ fn update_persona_in_tx(
             notification_channels = COALESCE(?7, notification_channels),
             design_context = ?8,
             last_design_result = ?9,
-            updated_at = ?10
-         WHERE id = ?11",
+            model_profile = COALESCE(?10, model_profile),
+            updated_at = ?11
+         WHERE id = ?12",
         rusqlite::params![
             ir.name.as_deref(),
             ir.description.as_deref(),
@@ -1848,6 +2001,7 @@ fn update_persona_in_tx(
             notification_channels,
             design_context_str,
             design_result_str,
+            solo_model_profile_json,
             now,
             persona_id,
         ],
@@ -1858,10 +2012,41 @@ fn update_persona_in_tx(
         persona_id = %persona_id,
         has_name = ir.name.is_some(),
         has_structured_prompt = ir.structured_prompt.is_some(),
+        seeded_solo_model = solo_model_profile_json.is_some(),
         "promote_build_draft: persona update succeeded (in transaction)"
     );
 
     Ok(())
+}
+
+/// When the IR has exactly ONE structured use_case with a non-null
+/// `model_override`, normalize that override into the persona-level
+/// `model_profile` JSON shape (`{"model": "..."}` or full ModelProfile).
+/// Returns `None` for multi-use-case personas, simple-string use cases,
+/// or use cases without an override — in those cases the existing
+/// persona model_profile stays untouched (per `COALESCE(?, model_profile)`).
+fn solo_use_case_model_profile(ir: &crate::db::models::AgentIr) -> Option<String> {
+    if ir.use_cases.len() != 1 {
+        return None;
+    }
+    let only = ir.use_cases.first()?;
+    let data = match only {
+        crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => d,
+        crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => return None,
+    };
+    let override_val = data.model_override.clone()?;
+    if override_val.is_null() {
+        return None;
+    }
+    // Two accepted shapes:
+    //   "claude-sonnet-4-6"          → wrap into {"model": "..."}
+    //   {"model": "...", "effort":…}  → forward verbatim
+    let normalized = match override_val {
+        serde_json::Value::String(s) => serde_json::json!({"model": s}),
+        v @ serde_json::Value::Object(_) => v,
+        _ => return None,
+    };
+    serde_json::to_string(&normalized).ok()
 }
 
 // ============================================================================

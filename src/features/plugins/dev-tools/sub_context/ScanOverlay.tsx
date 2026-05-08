@@ -25,7 +25,7 @@ export default function ScanOverlay({
   if (!scanning) return null;
   return (
     <div
-      className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="animate-fade-slide-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal"
     >
       <div className="bg-background border border-primary/10 rounded-2xl p-6 w-full max-w-lg shadow-elevation-4">
         <div className="flex items-center justify-between mb-4">

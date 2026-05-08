@@ -146,7 +146,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[9998] flex items-start justify-end bg-background/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[9998] flex items-start justify-end bg-background/50 surface-blur-modal"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) handleClose();
       }}

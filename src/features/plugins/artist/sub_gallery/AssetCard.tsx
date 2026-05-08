@@ -46,6 +46,10 @@ export default function AssetCard({ asset, onDelete, onUpdateTags, onClick }: As
           <img
             src={dataUrl}
             alt={asset.fileName}
+            width={400}
+            height={400}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover"
           />
         ) : isImage && !dataUrl ? (

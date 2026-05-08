@@ -109,8 +109,8 @@ export function N8nTransformChat({
                     onClick={() => setViewMode('list')}
                     className={`px-2 py-1 typo-body rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'list'
-                        ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-foreground hover:text-foreground/70'
+                        ? 'bg-primary/15 text-foreground font-semibold shadow-elevation-1'
+                        : 'text-foreground/55 hover:text-foreground/80'
                     }`}
                   >
                     <LayoutList className="w-3 h-3" />
@@ -123,8 +123,8 @@ export function N8nTransformChat({
                     onClick={() => setViewMode('stepper')}
                     className={`px-2 py-1 typo-body rounded-card flex items-center gap-1.5 transition-all ${
                       viewMode === 'stepper'
-                        ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                        : 'text-foreground hover:text-foreground/70'
+                        ? 'bg-primary/15 text-foreground font-semibold shadow-elevation-1'
+                        : 'text-foreground/55 hover:text-foreground/80'
                     }`}
                   >
                     <Layers className="w-3 h-3" />

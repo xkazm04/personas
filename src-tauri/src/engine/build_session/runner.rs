@@ -40,13 +40,69 @@ use super::parser::{
 use super::SessionHandle;
 
 // =============================================================================
+// SessionExecDir -- RAII guard for the per-session temp workspace
+// =============================================================================
+//
+// The runner creates `build-session-<uuid>` under `std::env::temp_dir()` so
+// the Claude CLI's `--continue` cache survives across turns. Without a
+// guard, any panic between creation and the explicit `remove_dir_all` calls
+// (malformed LLM event, JSON deserialization mid-turn, cancelled task,
+// future dropped before completion) would leave the directory behind.
+// Power users running 30-50 builds a day can silently fill %TEMP%/tmp and
+// take down unrelated tools with "no space left on device".
+//
+// `SessionExecDir` removes the directory on Drop, which fires on every exit
+// path — including stack unwinding — so leaks are no longer possible. Call
+// `disarm()` on the rare path that wants to preserve the workspace (e.g.
+// post-mortem debugging); current code never needs to.
+
+struct SessionExecDir {
+    path: std::path::PathBuf,
+    armed: bool,
+}
+
+impl SessionExecDir {
+    fn new(path: std::path::PathBuf) -> Self {
+        Self { path, armed: true }
+    }
+
+    fn path(&self) -> &std::path::Path {
+        &self.path
+    }
+
+    #[allow(dead_code)]
+    fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+impl Drop for SessionExecDir {
+    fn drop(&mut self) {
+        if !self.armed {
+            return;
+        }
+        match std::fs::remove_dir_all(&self.path) {
+            Ok(()) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => {
+                tracing::warn!(
+                    path = %self.path.display(),
+                    error = %e,
+                    "SessionExecDir: failed to remove temp dir on drop"
+                );
+            }
+        }
+    }
+}
+
+// =============================================================================
 // run_session -- the long-lived tokio task body
 // =============================================================================
 
 #[allow(clippy::too_many_arguments)]
 pub(super) async fn run_session(
     session_id: String,
-    _persona_id: String,
+    persona_id: String,
     intent: String,
     // The raw, user-typed intent (not the full system prompt). We need this
     // separately so gate heuristics scan the user's words, not the prompt
@@ -63,6 +119,12 @@ pub(super) async fn run_session(
     workflow_json: Option<String>,
     parser_result_json: Option<String>,
     app_handle: tauri::AppHandle,
+    // OneShot autonomous build: skips Rust-side gate suppression so the
+    // LLM's autonomous-mode rules (see session_prompt.rs) drive every
+    // resolution without an `awaiting_input` round-trip. Test failures
+    // and promote happen automatically; user is notified on terminal phase
+    // via the BuildWatcher job + tauri-plugin-notification.
+    one_shot: bool,
 ) {
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
@@ -139,31 +201,42 @@ pub(super) async fn run_session(
 
     // Create a persistent temp dir shared across all turns so `--continue`
     // can find the previous session's conversation state.
-    let session_exec_dir =
+    //
+    // If this fails we MUST abort — passing a non-existent --cwd to the
+    // Claude CLI later turns into an opaque CreateProcessW failure on
+    // Windows (see runner.rs:148 history). Surface a concrete, actionable
+    // message naming the path so users with disk-full, antivirus locks, or
+    // OneDrive-synced %TEMP% can fix it instead of filing a support ticket.
+    //
+    // The path is wrapped in SessionExecDir AFTER successful create so its
+    // Drop guarantees cleanup on every exit path — normal return, early
+    // return on error, cancellation, or panic. See SessionExecDir docs.
+    let session_exec_path =
         std::env::temp_dir().join(format!("build-session-{}", uuid::Uuid::new_v4()));
-    if let Err(e) = std::fs::create_dir_all(&session_exec_dir) {
-        tracing::error!(session_id = %session_id, error = %e, "Failed to create session temp dir");
-        let _ = update_phase_with_error(
-            &pool,
-            &session_id,
-            &format!("Temp dir creation failed: {e}"),
+    if let Err(e) = std::fs::create_dir_all(&session_exec_path) {
+        let path_display = session_exec_path.display().to_string();
+        tracing::error!(
+            session_id = %session_id,
+            path = %path_display,
+            error = %e,
+            "Failed to create session workspace dir"
         );
-        emit_error(
-            &channel,
-            &app_handle,
-            &session_id,
-            &format!("Failed to start build: {e}"),
-            false,
+        let user_msg = format!(
+            "Workspace unavailable: could not create build directory at {path_display} ({e}). \
+             Likely causes: disk full, antivirus or OneDrive sync lock on %TEMP%, \
+             or insufficient permissions. Free up space, exclude the folder from sync, or retry."
         );
+        let _ = update_phase_with_error(&pool, &session_id, &user_msg);
+        emit_error(&channel, &app_handle, &session_id, &user_msg, false);
         cleanup_session(&sessions_map, &registry, &session_id);
         return;
     }
+    let session_exec_dir = SessionExecDir::new(session_exec_path);
 
     for turn in 0..MAX_TURNS {
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
             tracing::info!(session_id = %session_id, "Build session cancelled");
-            let _ = std::fs::remove_dir_all(&session_exec_dir);
             cleanup_session(&sessions_map, &registry, &session_id);
             return;
         }
@@ -232,24 +305,27 @@ pub(super) async fn run_session(
 
         // Spawn CLI in the shared session dir so --continue can find the
         // previous conversation state.
-        let mut driver = match CliProcessDriver::spawn(&turn_args, session_exec_dir.clone()) {
-            Ok(d) => d,
-            Err(e) => {
-                tracing::error!(session_id = %session_id, error = %e, "CLI spawn failed on turn {}", turn);
-                let _ =
-                    update_phase_with_error(&pool, &session_id, &format!("CLI spawn failed: {e}"));
-                emit_error(
-                    &channel,
-                    &app_handle,
-                    &session_id,
-                    &format!("Failed to start build: {e}"),
-                    false,
-                );
-                let _ = std::fs::remove_dir_all(&session_exec_dir);
-                cleanup_session(&sessions_map, &registry, &session_id);
-                return;
-            }
-        };
+        let mut driver =
+            match CliProcessDriver::spawn(&turn_args, session_exec_dir.path().to_path_buf()) {
+                Ok(d) => d,
+                Err(e) => {
+                    tracing::error!(session_id = %session_id, error = %e, "CLI spawn failed on turn {}", turn);
+                    let _ = update_phase_with_error(
+                        &pool,
+                        &session_id,
+                        &format!("CLI spawn failed: {e}"),
+                    );
+                    emit_error(
+                        &channel,
+                        &app_handle,
+                        &session_id,
+                        &format!("Failed to start build: {e}"),
+                        false,
+                    );
+                    cleanup_session(&sessions_map, &registry, &session_id);
+                    return;
+                }
+            };
 
         if let Some(pid) = driver.pid() {
             registry.set_run_pid("build_session", &session_id, pid);
@@ -610,7 +686,23 @@ pub(super) async fn run_session(
                             }
                         }
                         if let Some((cap_id, field_name)) = find_first_unopen_gate(&coverage) {
-                            if batched_caps_this_turn.insert(cap_id.clone()) {
+                            if one_shot {
+                                // Autonomous build — the prompt's autonomous-mode
+                                // override told the LLM to never ask. If a gate is
+                                // still closed when agent_ir lands, the LLM either
+                                // already filled it via a default or genuinely
+                                // missed something. Either way, do NOT synthesize a
+                                // clarifying_question (the user can't answer it) —
+                                // let the agent_ir through and let test_build_draft
+                                // surface any actual breakage.
+                                tracing::warn!(
+                                    session_id = %session_id,
+                                    missing_cap = %cap_id,
+                                    missing_field = %field_name,
+                                    "OneShot: gate still closed at agent_ir but bypassing suppression (test phase will surface real failures)"
+                                );
+                                true
+                            } else if batched_caps_this_turn.insert(cap_id.clone()) {
                                 let synth = super::gates::synthesize_all_unopen_gates(
                                     &cap_id,
                                     &mut coverage,
@@ -633,6 +725,7 @@ pub(super) async fn run_session(
                                     );
                                     synthesized.extend(synth);
                                 }
+                                false
                             } else {
                                 tracing::info!(
                                     session_id = %session_id,
@@ -640,8 +733,8 @@ pub(super) async fn run_session(
                                     missing_field = %field_name,
                                     "Gate closed — suppressing agent_ir (batch for this cap already fired this turn)"
                                 );
+                                false
                             }
-                            false
                         } else {
                             true
                         }
@@ -744,7 +837,7 @@ pub(super) async fn run_session(
                             if !name.is_empty() {
                                 let _ = crate::db::repos::core::personas::update_name(
                                     &pool,
-                                    &_persona_id,
+                                    &persona_id,
                                     name,
                                 );
                             }
@@ -908,9 +1001,10 @@ pub(super) async fn run_session(
                         for line in answer.answer.lines() {
                             if let Some(start) = line.find('[') {
                                 if let Some(end) = line.find("]:") {
-                                    let key = line[start + 1..end].trim().to_string();
-                                    if !key.is_empty() {
-                                        keys.push(key);
+                                    if let Some(key) = line.get(start + 1..end).map(|s| s.trim().to_string()) {
+                                        if !key.is_empty() {
+                                            keys.push(key);
+                                        }
                                     }
                                 }
                             }
@@ -962,7 +1056,6 @@ pub(super) async fn run_session(
                 }
                 None => {
                     tracing::info!(session_id = %session_id, "Input channel closed");
-                    let _ = std::fs::remove_dir_all(&session_exec_dir);
                     cleanup_session(&sessions_map, &registry, &session_id);
                     return;
                 }
@@ -984,8 +1077,13 @@ pub(super) async fn run_session(
                 // resolutions through to trip resolved_count>=8 but our filter
                 // suppressed its agent_ir. Without this guard the outer auto-test
                 // path (UI useEffect on draft_ready) fires and masks the gap.
+                //
+                // OneShot bypass: in autonomous mode the user is not present
+                // to answer, and the LLM was instructed never to ask. Allow
+                // DraftReady through and let test_build_draft surface real
+                // failures. The retry loop will re-prompt the LLM if needed.
                 let any_closed = coverage.values().any(|g| g.first_unopen_field().is_some());
-                if any_closed {
+                if any_closed && !one_shot {
                     let (gap_cap, gap_field) =
                         find_first_unopen_gate(&coverage).unwrap_or_else(|| ("?".to_string(), "?"));
                     tracing::warn!(
@@ -1009,6 +1107,17 @@ pub(super) async fn run_session(
                     last_answered_cells.clear();
                     false
                 } else {
+                    if any_closed && one_shot {
+                        let (gap_cap, gap_field) = find_first_unopen_gate(&coverage)
+                            .unwrap_or_else(|| ("?".to_string(), "?"));
+                        tracing::warn!(
+                            session_id = %session_id,
+                            turn = turn + 1,
+                            gap_cap = %gap_cap,
+                            gap_field = %gap_field,
+                            "OneShot: gate still closed at DraftReady but allowing through (autonomous mode)"
+                        );
+                    }
                     true
                 }
             }
@@ -1039,11 +1148,41 @@ pub(super) async fn run_session(
                 resolved_count,
                 9,
             );
-            notifications::send(
-                &app_handle,
-                "Agent Draft Ready",
-                "Your agent configuration is complete. Review and test it.",
-            );
+            // OS notification + Glyph banner only for interactive mode —
+            // OneShot fires its own terminal notification post-promote so we
+            // don't double-ping the user mid-flight.
+            if !one_shot {
+                notifications::send(
+                    &app_handle,
+                    "Agent Draft Ready",
+                    "Your agent configuration is complete. Review and test it.",
+                );
+            }
+
+            // OneShot: spawn the post-draft orchestrator and exit the runner.
+            // The orchestrator owns Testing → TestComplete → Promoted (or
+            // Failed) and fires the terminal notification when done.
+            if one_shot {
+                tracing::info!(
+                    session_id = %session_id,
+                    "OneShot DraftReady — handing off to post-draft orchestrator"
+                );
+                let oneshot_app = app_handle.clone();
+                let oneshot_sid = session_id.clone();
+                // Use the persona_id already passed into run_session — never
+                // re-fetch from the DB here. A row lookup at this seam used
+                // to silently abort the post-draft orchestrator if the row
+                // was missing for any reason (DB busy, transient I/O, late
+                // cancel), leaving the session stuck in DraftReady forever
+                // with no terminal notification.
+                let oneshot_persona_id = persona_id.clone();
+                tokio::spawn(async move {
+                    super::oneshot::run_post_draft(oneshot_app, oneshot_sid, oneshot_persona_id)
+                        .await;
+                });
+                cleanup_session(&sessions_map, &registry, &session_id);
+                return;
+            }
 
             // Wait for _test or _refine input
             tracing::info!(session_id = %session_id, "Draft ready, waiting for test/refine");
@@ -1100,7 +1239,6 @@ pub(super) async fn run_session(
                     // Continue to next turn
                 }
                 None => {
-                    let _ = std::fs::remove_dir_all(&session_exec_dir);
                     cleanup_session(&sessions_map, &registry, &session_id);
                     return;
                 }
@@ -1111,8 +1249,9 @@ pub(super) async fn run_session(
         }
     }
 
-    // Clean up the shared session temp directory now that all turns are done.
-    let _ = std::fs::remove_dir_all(&session_exec_dir);
+    // session_exec_dir's Drop removes the shared temp directory when this
+    // function returns (or panics) — see SessionExecDir at the top of the
+    // file. No explicit cleanup needed here.
 
     // Final checkpoint
     let agent_ir_str = resolved_cells

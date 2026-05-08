@@ -193,6 +193,10 @@ export type ClientAction =
       intent: string;
       name: string | null;
       autoLaunch: boolean;
+      /** Optional build strategy when autoLaunch is true. */
+      mode?: 'interactive' | 'one_shot';
+      /** Companion session that originated the build (threaded for BuildWatcher). */
+      companionSessionId?: string | null;
     }
   | {
       type: 'open_companion_tab';

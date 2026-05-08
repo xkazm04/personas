@@ -6,7 +6,8 @@ use tracing::{info, instrument};
 use ts_rs::TS;
 
 use crate::db::models::{
-    AnomalyDrilldownData, ExecutionDashboardData, MetricsChartData, MetricsSummary,
+    AnomalyDrilldownData, ExecutionDashboardData, ExecutionHeatmapData, MetricsChartData,
+    MetricsSummary,
 };
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
@@ -163,6 +164,21 @@ pub fn get_execution_dashboard(
 ) -> Result<ExecutionDashboardData, AppError> {
     require_auth_sync(&state)?;
     repo::get_execution_dashboard(&state.db, days.unwrap_or(30).clamp(1, 365))
+}
+
+/// Returns daily execution counts + cost for the last `days` days (default 365),
+/// plus derived insights (longest streak, dormant-since, peak day, week-over-week).
+/// Result is cached server-side per (days, persona_id) for 1 hour.
+#[tauri::command]
+#[instrument(skip(state), fields(days, persona_id))]
+pub fn get_execution_heatmap(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<ExecutionHeatmapData, AppError> {
+    require_auth_sync(&state)?;
+    let days = days.map(|d| d.clamp(1, 365));
+    repo::get_execution_heatmap(&state.db, days, persona_id.as_deref())
 }
 
 /// Returns correlated events and root-cause suggestions for a specific anomaly.

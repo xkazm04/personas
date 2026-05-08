@@ -106,6 +106,8 @@ interface UseBuildSessionReturn {
     overridePersonaId?: string,
     workflowJson?: string,
     parserResultJson?: string,
+    mode?: 'interactive' | 'one_shot' | null,
+    companionSessionId?: string | null,
   ) => Promise<string>;
   answerQuestion: (
     cellKey: string,
@@ -262,6 +264,8 @@ export function useBuildSession(
       overridePersonaId?: string,
       workflowJson?: string,
       parserResultJson?: string,
+      mode?: 'interactive' | 'one_shot' | null,
+      companionSessionId?: string | null,
     ): Promise<string> => {
       // De-duplicate concurrent starts BEFORE any await. Without this, a
       // rapid double-click or a hydration/user-click race can both pass the
@@ -308,6 +312,8 @@ export function useBuildSession(
           workflowJson,
           parserResultJson,
           language,
+          mode ?? null,
+          companionSessionId ?? null,
         );
 
         // Cancel-during-start guard. If cancelSession (or unmount cleanup) ran

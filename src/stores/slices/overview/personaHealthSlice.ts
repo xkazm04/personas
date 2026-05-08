@@ -4,6 +4,7 @@ import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { DashboardDailyPoint } from "@/lib/bindings/DashboardDailyPoint";
+import type { PersonaCostEntry } from "@/lib/bindings/PersonaCostEntry";
 import type { ByomPolicy, ProviderUsageStats } from "@/api/system/byom";
 import { getByomPolicy, getProviderUsageStats } from "@/api/system/byom";
 import { getAllMonthlySpend } from "@/api/overview/observability";
@@ -136,6 +137,7 @@ function computeHeartbeatScore(
 function detectFailureTrend(
   dailyPoints: DashboardDailyPoint[],
   personaId: string,
+  costByDate: Map<string, Map<string, PersonaCostEntry>>,
 ): { trend: 'improving' | 'stable' | 'degrading'; predictedFailureDays: number | null } {
   // Get per-persona daily success rates from the last 14 days
   const recentPoints = dailyPoints.slice(-14);
@@ -144,7 +146,7 @@ function detectFailureTrend(
   // Build daily success rates for this persona from persona_costs presence
   const dailyRates: number[] = [];
   for (const pt of recentPoints) {
-    const hasActivity = pt.persona_costs.some(c => c.persona_id === personaId);
+    const hasActivity = costByDate.get(pt.date)?.has(personaId) ?? false;
     if (hasActivity) {
       // Use global success rate as proxy since we don't have per-persona failure data per day
       dailyRates.push(pt.success_rate);
@@ -285,10 +287,6 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           providerStats: settled[3].status === 'fulfilled' ? 'ok' : 'failed',
         };
 
-        // Yield to the browser between API fetch and heavy computation to
-        // avoid a 400ms+ synchronous block that causes freeze-detector warnings.
-        await new Promise(r => setTimeout(r, 0));
-
         const spendMap = new Map(monthlySpend.map(s => [s.id, s]));
         const issuesByPersona = new Map<string, PersonaHealingIssue[]>();
         for (const issue of healingIssues) {
@@ -297,15 +295,21 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           issuesByPersona.set(issue.persona_id, list);
         }
 
-        // Build per-persona stats from daily points
+        // Build per-persona stats from daily points + a date-keyed index so
+        // per-persona lookups inside the persona loop are O(1) instead of
+        // scanning each day's persona_costs array.
         const personaCostMap = new Map<string, { totalCost: number; execCount: number; days: Set<string> }>();
+        const costByDate = new Map<string, Map<string, PersonaCostEntry>>();
         for (const pt of dailyPoints) {
+          const perDay = new Map<string, PersonaCostEntry>();
           for (const pc of pt.persona_costs) {
             const entry = personaCostMap.get(pc.persona_id) ?? { totalCost: 0, execCount: 0, days: new Set() };
             entry.totalCost += pc.cost;
             entry.days.add(pt.date);
             personaCostMap.set(pc.persona_id, entry);
+            perDay.set(pc.persona_id, pc);
           }
+          costByDate.set(pt.date, perDay);
         }
 
         // Count executions from top_personas
@@ -323,16 +327,13 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           const totalCost = costEntry?.totalCost ?? 0;
           const activeDays = costEntry?.days.size ?? 1;
 
-          // Recent (last 7 days)
+          // Recent (last 7 days) — O(1) per-day lookup via the date index
           const recent7 = dailyPoints.slice(-7);
           let recentExecs = 0;
           for (const pt of recent7) {
-            if (pt.persona_costs.some(c => c.persona_id === persona.id)) {
-              // Approximate from global proportions
-              const personaCostShare = pt.persona_costs.find(c => c.persona_id === persona.id);
-              if (personaCostShare && pt.total_cost > 0) {
-                recentExecs += Math.round(pt.total_executions * (personaCostShare.cost / pt.total_cost));
-              }
+            const personaCostShare = costByDate.get(pt.date)?.get(persona.id);
+            if (personaCostShare && pt.total_cost > 0) {
+              recentExecs += Math.round(pt.total_executions * (personaCostShare.cost / pt.total_cost));
             }
           }
 
@@ -384,7 +385,7 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
           }
 
           // Failure trend
-          const { trend: failureTrend, predictedFailureDays } = detectFailureTrend(dailyPoints, persona.id);
+          const { trend: failureTrend, predictedFailureDays } = detectFailureTrend(dailyPoints, persona.id, costByDate);
 
           // Avg latency
           const avgLatencyMs = dashboard?.avg_latency_ms ?? 0;

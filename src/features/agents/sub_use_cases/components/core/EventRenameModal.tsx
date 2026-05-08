@@ -154,7 +154,7 @@ export function EventRenameModal({ personaId, useCase, settings, onClose, onSave
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 surface-blur-modal"
       onClick={onClose}
     >
       <div

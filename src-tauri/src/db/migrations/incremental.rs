@@ -106,8 +106,18 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !has_transform_id {
         // Recreate table to add new columns AND update CHECK constraint for 'awaiting_answers'.
         // SQLite doesn't support ALTER CHECK, so we recreate.
-        conn.execute_batch(
-            "CREATE TABLE IF NOT EXISTS n8n_transform_sessions_new (
+        //
+        // Wrap in an explicit transaction: rusqlite's execute_batch commits each
+        // statement individually, so a mid-batch failure (disk full, FK violation,
+        // lock contention) would leave the staging _new table populated while the
+        // original table still exists — a state that bricks the next launch when
+        // the migration retries and hits UNIQUE PK conflicts on the leftover rows.
+        // The DROP IF EXISTS at the top is a belt-and-braces guard against any
+        // staging table that survived a prior crash before this fix landed.
+        let tx = conn.unchecked_transaction()?;
+        tx.execute_batch(
+            "DROP TABLE IF EXISTS n8n_transform_sessions_new;
+            CREATE TABLE n8n_transform_sessions_new (
                 id                TEXT PRIMARY KEY,
                 workflow_name     TEXT NOT NULL,
                 status            TEXT NOT NULL DEFAULT 'draft'
@@ -136,6 +146,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_nts_created ON n8n_transform_sessions(created_at DESC);
             CREATE INDEX IF NOT EXISTS idx_nts_status_updated ON n8n_transform_sessions(status, updated_at DESC);"
         )?;
+        tx.commit()?;
         tracing::info!("Migrated n8n_transform_sessions: added transform_id, questions_json, awaiting_answers status");
     }
 
@@ -1978,6 +1989,27 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             CREATE INDEX IF NOT EXISTS idx_ai_source   ON audit_incidents(source_table, source_id);"
         )?;
         tracing::info!("Created audit_incidents table (cross-source incidents inbox)");
+    }
+
+    // -- mode + companion_session_id columns on build_sessions ---------------
+    // `mode` selects between 'interactive' (the legacy ask-the-user gate flow)
+    // and 'one_shot' (autonomous build: LLM resolves every gate, retries up to
+    // 3× on test failure, auto-promotes on success). Default NULL is treated
+    // as 'interactive' at read time so existing rows stay on the proven path.
+    //
+    // `companion_session_id` links a build_session back to the Companion chat
+    // session that originated it (when applicable) so the BuildWatcher job
+    // can post a result message into that session's episode log on terminal
+    // phase. NULL when the session was started from the regular UI.
+    if !has_column(conn, "build_sessions", "mode")? {
+        conn.execute_batch("ALTER TABLE build_sessions ADD COLUMN mode TEXT;")?;
+        tracing::info!("Added mode column to build_sessions");
+    }
+    if !has_column(conn, "build_sessions", "companion_session_id")? {
+        conn.execute_batch(
+            "ALTER TABLE build_sessions ADD COLUMN companion_session_id TEXT;",
+        )?;
+        tracing::info!("Added companion_session_id column to build_sessions");
     }
 
     Ok(())

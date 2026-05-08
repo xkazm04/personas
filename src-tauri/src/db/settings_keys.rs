@@ -142,6 +142,14 @@ pub const DEV_TOOLS_CROSS_PROJECT_METADATA: &str = "dev_tools_cross_project_meta
 /// `companion::templates`.
 pub const COMPANION_CONSTITUTION_VERSION: &str = "companion_constitution_version";
 
+/// Onboarding-quest activation checklist state (JSON-encoded).
+/// Tracks which first-run milestones the user has completed (create persona,
+/// connect credential, run persona, save memory, schedule trigger, try recipe,
+/// share deployment), plus pill UI state (dismissed, completed_at). Read at
+/// app start to render the persistent quest pill bottom-right; written when
+/// the user dismisses the pill or completes a milestone.
+pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -166,6 +174,7 @@ const ALLOWED_KEYS: &[&str] = &[
     OBSIDIAN_BRAIN_CONFIG,
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
+    ONBOARDING_QUEST_STATE,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).

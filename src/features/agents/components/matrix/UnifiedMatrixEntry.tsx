@@ -149,10 +149,24 @@ export function UnifiedMatrixEntry() {
   // the user). When true, an effect fires `handleLaunch` once the
   // intent is in state. Cleared after the first fire.
   const pendingAutoLaunchRef = useRef(false);
+  // 2026-05-06 — additional prefill metadata threaded through to
+  // `handleLaunch`. We snapshot at mount because the prefill slot is
+  // cleared synchronously below; without these refs, the async build
+  // launch would lose the mode + chat-session linkage.
+  const pendingBuildModeRef = useRef<'interactive' | 'one_shot' | null>(null);
+  const pendingCompanionSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
     const s = useSystemStore.getState();
     if (s.companionPrefill?.autoLaunch && s.companionPrefill.intent.trim()) {
       pendingAutoLaunchRef.current = true;
+    }
+    if (s.companionPrefill?.mode === 'one_shot') {
+      pendingBuildModeRef.current = 'one_shot';
+    } else if (s.companionPrefill?.mode === 'interactive') {
+      pendingBuildModeRef.current = 'interactive';
+    }
+    if (s.companionPrefill?.companionSessionId) {
+      pendingCompanionSessionIdRef.current = s.companionPrefill.companionSessionId;
     }
     // Consume the prefill regardless — it's a one-shot bridge. If
     // autoLaunch was false, the user just sees a prefilled wizard
@@ -383,11 +397,20 @@ export function UnifiedMatrixEntry() {
     } catch { /* best-effort */ }
 
     try {
+      // Mode resolution priority: Companion prefill mode (most deliberate
+      // signal — the chat just selected it) > local toggle > default
+      // interactive. The toggle is only consulted when no prefill set the
+      // mode, so Companion-driven launches keep their intent regardless
+      // of any stale local toggle state.
+      const resolvedMode: 'interactive' | 'one_shot' | null =
+        pendingBuildModeRef.current ?? (oneShotEnabledRef.current ? 'one_shot' : null);
       await build.handleGenerate(
         trimmed,
         personaId,
         workflowJson ?? undefined,
         parserResultJson ?? undefined,
+        resolvedMode,
+        pendingCompanionSessionIdRef.current,
       );
     } catch (err) {
       logger.error("Build session failed to start", { error: err });
@@ -452,6 +475,17 @@ export function UnifiedMatrixEntry() {
     writeLayoutPreference(next);
   }, []);
 
+  // -- Build mode toggle (interactive vs autonomous one-shot) -------------
+  // 2026-05-06 — explicit user opt-in for autonomous builds. Defaults off
+  // so the questionnaire flow stays the discoverable default. When on, the
+  // launch wires `mode: "one_shot"` into start_build_session: gates skip
+  // clarifying questions, the runner hands off to the post-draft
+  // orchestrator on DraftReady, and the user gets an OS notification +
+  // bell entry on the terminal phase rather than a questionnaire.
+  const [oneShotEnabled, setOneShotEnabled] = useState(false);
+  const oneShotEnabledRef = useRef(false);
+  oneShotEnabledRef.current = oneShotEnabled;
+
   // Glyph Full reads the same buildDraft as the adoption flow, so the shared
   // chronology builder produces the rows without any edit-mode-specific shim.
   const glyphRows = useUseCaseChronology();
@@ -491,7 +525,34 @@ export function UnifiedMatrixEntry() {
           duplicated against the overlay in the prototype. */}
 
       {/* Layout toggle — two modes: glyph-full and composer-prototype. */}
-      <div className="flex-shrink-0 mb-2 flex justify-end" data-testid="build-layout-toggle">
+      <div
+        className="flex-shrink-0 mb-2 flex justify-end items-center gap-2"
+        data-testid="build-layout-toggle"
+      >
+        <button
+          type="button"
+          onClick={() => setOneShotEnabled((v) => !v)}
+          disabled={isActivelyBuilding}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 typo-caption transition disabled:opacity-50 disabled:cursor-not-allowed ${
+            oneShotEnabled
+              ? "border-primary/40 bg-primary/15 text-primary"
+              : "border-border/30 bg-secondary/20 text-foreground/60 hover:text-foreground"
+          }`}
+          title={
+            oneShotEnabled
+              ? "One-shot is on. Launching will let the AI decide every gate; you'll get a notification when it's ready."
+              : "Turn on one-shot to skip the questionnaire — the AI will pick safe defaults and notify you when the build lands."
+          }
+          data-testid="build-oneshot-toggle"
+        >
+          <span
+            className={`inline-block h-1.5 w-1.5 rounded-full ${
+              oneShotEnabled ? "bg-primary" : "bg-foreground/30"
+            }`}
+            aria-hidden
+          />
+          {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
+        </button>
         <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
           <button
             type="button"

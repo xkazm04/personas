@@ -4,8 +4,11 @@ import { Button } from '@/features/shared/components/buttons';
 import type { DesignFileType, DesignFile, DesignContext } from '@/lib/types/frontendTypes';
 import { ACCEPTED_EXTENSIONS, detectFileType } from './designInputHelpers';
 import { TypeSelectorModal, AttachedFilesRow, ReferencesTextarea } from './DesignInputAttachments';
+import { CharBudget } from './CharBudget';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from "@/lib/log";
+
+const DESIGN_INPUT_MAX_CHARS = 8000;
 
 const logger = createLogger("design-input");
 
@@ -31,6 +34,7 @@ export function DesignInput({
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [pendingFile, setPendingFile] = useState<{ name: string; content: string } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [textareaFocused, setTextareaFocused] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const dragCounterRef = useRef(0);
@@ -175,7 +179,10 @@ export function DesignInput({
           value={instruction}
           onChange={handleTextareaInput}
           onKeyDown={handleKeyDown}
+          onFocus={() => setTextareaFocused(true)}
+          onBlur={() => setTextareaFocused(false)}
           disabled={disabled}
+          maxLength={DESIGN_INPUT_MAX_CHARS}
           placeholder={`Describe what this persona should do...\n\nExamples:\n  - Monitor my Gmail for invoices and extract amounts into a spreadsheet\n  - Watch GitHub webhooks and post summaries to Slack\n  - Analyze our API logs daily and flag anomalies`}
           className="w-full min-h-[200px] bg-background/50 border border-primary/15 rounded-xl p-4 pb-12 typo-body text-foreground resize-none focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30"
           spellCheck
@@ -224,9 +231,11 @@ export function DesignInput({
                 {(designContext.files.length === 1 ? t.common.files_attached_one : t.common.files_attached_other).replace('{count}', String(designContext.files.length))}
               </span>
             )}
-            <span className={`typo-body tabular-nums ${instruction.length > 5000 ? 'text-amber-400/80' : 'text-foreground'}`}>
-              {instruction.length.toLocaleString()}
-            </span>
+            <CharBudget
+              value={instruction.length}
+              max={DESIGN_INPUT_MAX_CHARS}
+              focused={textareaFocused}
+            />
           </span>
         </div>
       </div>

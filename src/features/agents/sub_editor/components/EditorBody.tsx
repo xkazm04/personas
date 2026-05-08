@@ -16,6 +16,7 @@ import {
   LabTab, ChatTab, DesignTab,
 } from './EditorLazyTabs';
 import { EditorTabContent } from './EditorTabContent';
+import { SubTabSurface } from './SubTabSurface';
 import { useUnsavedGuard } from '@/hooks/utility/interaction/useUnsavedGuard';
 import { UnsavedChangesModal } from '@/features/shared/components/overlays/UnsavedChangesModal';
 import { useEditorDraft } from '../hooks/useEditorDraft';
@@ -182,31 +183,29 @@ export function EditorBody() {
       )}
 
       <div className="flex-1 overflow-y-auto p-4">
-        <div className="animate-fade-slide-in"
-            key={editorTab}
-          >
-            <Suspense fallback={<SuspenseFallback />}>
-              {editorTab === 'activity' && <ActivityTab />}
-              {editorTab === 'use-cases' && (
-                <EditorTabContent>
-                  <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
-                </EditorTabContent>
-              )}
-              {editorTab === 'lab' && <LabTab />}
-              {editorTab === 'chat' && <ChatTab />}
-              {editorTab === 'design' && <DesignTab onConnectorsMissingChange={setConnectorsMissing} />}
-              {editorTab === 'settings' && (
-                <EditorTabContent>
-                  <PersonaSettingsTab
-                    draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
-                    connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
-                    setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
-                    onDelete={handleDelete}
-                  />
-                </EditorTabContent>
-              )}
-            </Suspense>
-          </div>
+        <SubTabSurface tabId={editorTab}>
+          <Suspense fallback={<SuspenseFallback />}>
+            {editorTab === 'activity' && <ActivityTab />}
+            {editorTab === 'use-cases' && (
+              <EditorTabContent>
+                <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
+              </EditorTabContent>
+            )}
+            {editorTab === 'lab' && <LabTab />}
+            {editorTab === 'chat' && <ChatTab />}
+            {editorTab === 'design' && <DesignTab onConnectorsMissingChange={setConnectorsMissing} />}
+            {editorTab === 'settings' && (
+              <EditorTabContent>
+                <PersonaSettingsTab
+                  draft={draft} patch={patch} isDirty={isDirty} changedSections={changedSections}
+                  connectorDefinitions={connectorDefinitions} showDeleteConfirm={showDeleteConfirm}
+                  setShowDeleteConfirm={setShowDeleteConfirm} isSaving={isSaving}
+                  onDelete={handleDelete}
+                />
+              </EditorTabContent>
+            )}
+          </Suspense>
+        </SubTabSurface>
       </div>
 
       <UnsavedChangesModal

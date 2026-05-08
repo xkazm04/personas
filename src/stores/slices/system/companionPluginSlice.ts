@@ -33,6 +33,18 @@ export interface CompanionPrefill {
   intent: string;
   name: string | null;
   autoLaunch: boolean;
+  /**
+   * Build mode when `autoLaunch` is true: `"interactive"` (default — the
+   * questionnaire surface) or `"one_shot"` (autonomous build, read-only
+   * Glyph view, terminal notification when done).
+   */
+  mode?: 'interactive' | 'one_shot';
+  /**
+   * Companion chat session that initiated this build. Threaded into
+   * `start_build_session` so the BuildWatcher job can post the result
+   * message into that chat's episode log on terminal phase.
+   */
+  companionSessionId?: string | null;
 }
 
 /**

@@ -2,7 +2,7 @@ import { memo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TrendingUp } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
-import { AreaChart, Area, ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
@@ -55,16 +55,18 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
       <div className="h-32 w-full relative z-10">
         {chartData.length > 0 ? (
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
-                <XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.traffic})`} />
-                <Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.error})`} />
-              </AreaChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.AreaChart data={chartData}>
+                  <R.CartesianGrid strokeDasharray="3 3" stroke={getGridStroke()} />
+                  <R.XAxis dataKey="date" tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} tickFormatter={(v: string) => v.slice(5)} axisLine={false} tickLine={false} />
+                  <R.YAxis tick={{ fill: getAxisTickFill(), fontSize: sf(9) }} width={24} axisLine={false} tickLine={false} allowDecimals={false} />
+                  <R.Tooltip content={<ChartTooltip />} />
+                  <R.Area type="monotone" dataKey="traffic" name="Traffic" stroke="#06b6d4" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.traffic})`} />
+                  <R.Area type="monotone" dataKey="errors" name="Errors" stroke="#f43f5e" strokeWidth={2} fillOpacity={1} fill={`url(#${CHART_GRAD.error})`} />
+                </R.AreaChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         ) : (
           <EmptyState variant="chart" className="py-6" />

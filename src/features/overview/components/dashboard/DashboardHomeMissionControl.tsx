@@ -33,6 +33,7 @@ import { HealthDigestPanel } from '@/features/agents/health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
+import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { DashboardEmptyState } from './DashboardEmptyState';
 
@@ -209,6 +210,13 @@ export default function DashboardHomeMissionControl() {
             totalExecutions={globalExecutionCounts.total}
             lastSyncedLabel={lastSyncedLabel}
           />
+
+          {!isEmpty && (
+            <ExecutionHeatmap
+              personaId={selectedPersonaId ?? undefined}
+              onDayClick={() => setOverviewTab('executions')}
+            />
+          )}
 
           {!isEmpty && (
             <InstrumentsBay

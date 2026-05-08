@@ -216,6 +216,65 @@ pub struct MetricsChartData {
 }
 
 // ============================================================================
+// Observability: Execution Heatmap (GitHub-style contribution graph)
+// ============================================================================
+
+/// One day in the 365-day execution heatmap. `date` is YYYY-MM-DD (UTC).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct HeatmapDay {
+    pub date: String,
+    #[ts(type = "number")]
+    pub count: i64,
+    pub cost: f64,
+}
+
+/// Derived insights summarising the heatmap window.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct HeatmapInsights {
+    /// Longest consecutive run of days with at least one execution.
+    #[ts(type = "number")]
+    pub longest_streak_days: i64,
+    /// Days since the most recent execution. None if there have been no executions in the window.
+    #[ts(type = "number | null")]
+    pub dormant_days: Option<i64>,
+    /// ISO date (YYYY-MM-DD) of the day with the highest execution count. None if window is empty.
+    pub peak_day_date: Option<String>,
+    #[ts(type = "number")]
+    pub peak_day_count: i64,
+    /// Executions in the most recent 7 days.
+    #[ts(type = "number")]
+    pub current_week_executions: i64,
+    /// Executions in the previous 7 days (days 8..=14 ago).
+    #[ts(type = "number")]
+    pub previous_week_executions: i64,
+    /// (current - previous) / previous as a percentage. None when previous_week is 0.
+    pub week_over_week_pct: Option<f64>,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    pub total_cost: f64,
+    /// Quartile thresholds [q1, q2, q3, q4] for non-zero days. Used to colour cells.
+    #[ts(type = "[number, number, number, number]")]
+    pub intensity_thresholds: [i64; 4],
+}
+
+/// Result returned by `get_execution_heatmap`. Cached per (persona_id, days) for 1h.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ExecutionHeatmapData {
+    /// Daily buckets, sorted by date ascending. May contain fewer than `days` entries
+    /// (zero-count days are filled in by the frontend).
+    pub days: Vec<HeatmapDay>,
+    pub insights: HeatmapInsights,
+    /// Window length in days that the response covers. Echoed for the frontend.
+    #[ts(type = "number")]
+    pub window_days: i64,
+    /// ISO-8601 timestamp the response was generated. Used for cache freshness.
+    pub generated_at: String,
+}
+
+// ============================================================================
 // Observability: Prompt Performance Dashboard
 // ============================================================================
 

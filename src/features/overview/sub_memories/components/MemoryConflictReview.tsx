@@ -14,11 +14,11 @@ interface MemoryConflictReviewProps {
 
 export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictReviewProps) {
   const {
-    memories, deleteMemory, createMemory, fetchMemories,
+    memories, deleteMemory, mergeMemories: mergeMemoriesAction, fetchMemories,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     deleteMemory: s.deleteMemory,
-    createMemory: s.createMemory,
+    mergeMemories: s.mergeMemories,
     fetchMemories: s.fetchMemories,
   })));
   const personas = useAgentStore((s) => s.personas);
@@ -52,11 +52,8 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           break;
         case 'merge': {
           const merged = mergeMemories(conflict.memoryA, conflict.memoryB);
-          const created = await createMemory(merged);
-          if (created) {
-            await deleteMemory(conflict.memoryA.id);
-            await deleteMemory(conflict.memoryB.id);
-          }
+          const ok = await mergeMemoriesAction(merged, conflict.memoryA.id, conflict.memoryB.id);
+          if (!ok) throw new Error('merge failed');
           break;
         }
         case 'dismiss':
@@ -75,7 +72,7 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     } finally {
       setProcessing(null);
     }
-  }, [deleteMemory, createMemory, fetchMemories, activeConflictId, onConflictsResolved]);
+  }, [deleteMemory, mergeMemoriesAction, fetchMemories, activeConflictId, onConflictsResolved]);
 
   if (conflicts.length === 0) return null;
 

@@ -1,8 +1,5 @@
 import { useMemo } from 'react';
-import {
-  PolarAngleAxis, PolarGrid, PolarRadiusAxis,
-  Radar, RadarChart, ResponsiveContainer, Tooltip,
-} from 'recharts';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { useScaledFontSize } from '@/stores/themeStore';
 import type { VersionAggregate } from '../../libs/evalAggregation';
@@ -45,29 +42,31 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
       <div className="border border-primary/10 rounded-modal bg-background/20 p-3">
         <div className="h-[260px]" data-testid="eval-radar-chart">
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} outerRadius="72%">
-                <PolarGrid stroke={chart.gridStroke} />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: chart.axisLabelFill, fontSize: sf(12) }} />
-                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: chart.axisFill, fontSize: sf(10) }} />
-                <Tooltip
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={((value: number | string | undefined) => [value ?? 0, 'Score']) as any}
-                  contentStyle={{
-                    background: chart.tooltipBg,
-                    border: `1px solid ${chart.tooltipBorder}`,
-                    borderRadius: 10,
-                    color: chart.tooltipText,
-                  }}
-                />
-                {radarVersions.map((agg, idx) => (
-                  <Radar key={agg.versionId} name={`v${agg.versionNumber}`} dataKey={agg.versionId}
-                    stroke={seriesColor(idx, chart)}
-                    fill={seriesColor(idx, chart)}
-                    fillOpacity={0.16} strokeWidth={2} />
-                ))}
-              </RadarChart>
-            </ResponsiveContainer>
+            <LazyChart render={(R) => (
+              <R.ResponsiveContainer width="100%" height="100%">
+                <R.RadarChart data={radarData} outerRadius="72%">
+                  <R.PolarGrid stroke={chart.gridStroke} />
+                  <R.PolarAngleAxis dataKey="metric" tick={{ fill: chart.axisLabelFill, fontSize: sf(12) }} />
+                  <R.PolarRadiusAxis domain={[0, 100]} tick={{ fill: chart.axisFill, fontSize: sf(10) }} />
+                  <R.Tooltip
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    formatter={((value: number | string | undefined) => [value ?? 0, 'Score']) as any}
+                    contentStyle={{
+                      background: chart.tooltipBg,
+                      border: `1px solid ${chart.tooltipBorder}`,
+                      borderRadius: 10,
+                      color: chart.tooltipText,
+                    }}
+                  />
+                  {radarVersions.map((agg, idx) => (
+                    <R.Radar key={agg.versionId} name={`v${agg.versionNumber}`} dataKey={agg.versionId}
+                      stroke={seriesColor(idx, chart)}
+                      fill={seriesColor(idx, chart)}
+                      fillOpacity={0.16} strokeWidth={2} />
+                  ))}
+                </R.RadarChart>
+              </R.ResponsiveContainer>
+            )} />
           </ChartErrorBoundary>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">

@@ -31,6 +31,24 @@ pub(super) fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> 
         return vec![];
     }
 
+    // Fast-path: the Claude CLI streams a lot of non-JSON status text
+    // (banners, thinking summaries, tool prelude lines) interleaved with the
+    // stream-json envelopes we care about. Running serde_json::from_str on
+    // every line tokenizes hundreds of discarded lines per build turn. Short-
+    // circuit anything that can't be an envelope — must start with `{` and be
+    // at least as long as the smallest meaningful envelope `{"type":"..."}`
+    // (12 bytes). The slow JSON path below is still authoritative for any
+    // candidate line that passes this check.
+    if trimmed.len() < 12 || !trimmed.as_bytes().starts_with(b"{") {
+        return vec![BuildEvent::Progress {
+            session_id: session_id.to_string(),
+            dimension: None,
+            message: trimmed.to_string(),
+            percent: None,
+            activity: None,
+        }];
+    }
+
     // Try parsing as JSON
     let json: serde_json::Value = match serde_json::from_str(trimmed) {
         Ok(v) => v,

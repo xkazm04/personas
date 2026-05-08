@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Check, Radio } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -52,6 +52,26 @@ export function EventsPanel({
   }, [selectedPersonaId]);
 
   const selectedPersona = selectedPersonaId ? personas.find((p) => p.id === selectedPersonaId) : null;
+
+  const triggerLabels = useMemo(() => {
+    const map = new Map<string, string>();
+    const fallback = `${selectedPersona?.name ?? 'Agent'} event`;
+    for (const trig of triggers) {
+      let label = fallback;
+      if (trig.config) {
+        try {
+          const cfg = JSON.parse(trig.config) as Record<string, unknown>;
+          if (cfg.event_type) {
+            label = String(cfg.event_type);
+          } else if (cfg.description && String(cfg.description).length > 3) {
+            label = String(cfg.description);
+          }
+        } catch { /* fallback */ }
+      }
+      map.set(trig.id, label);
+    }
+    return map;
+  }, [triggers, selectedPersona?.name]);
 
   return (
     <div className="flex gap-6 px-1">
@@ -131,14 +151,7 @@ export function EventsPanel({
               );
             })}
             {designEvents.length === 0 && triggers.map((t) => {
-              const eventLabel = (() => {
-                try {
-                  const cfg = t.config ? JSON.parse(t.config) as Record<string, unknown> : {};
-                  if (cfg.event_type) return String(cfg.event_type);
-                  if (cfg.description && String(cfg.description).length > 3) return String(cfg.description);
-                } catch { /* fallback */ }
-                return `${selectedPersona?.name ?? 'Agent'} event`;
-              })();
+              const eventLabel = triggerLabels.get(t.id) ?? `${selectedPersona?.name ?? 'Agent'} event`;
               const isSelected = selectedEvents.some((e) => e.triggerId === t.id);
               const event: EventSubscription = {
                 personaId: t.persona_id,

@@ -88,7 +88,7 @@ function ProcessRow({
   };
 
   return (
-    <div className="border-b border-primary/5 last:border-b-0">
+    <div className="border-b border-primary/5 last:border-b-0" style={{ contain: 'layout paint style' }}>
       <button
         className={`w-full flex items-center gap-2 px-3 py-2 hover:bg-primary/5 transition-colors text-left ${
           hasNav ? "cursor-pointer" : ""
@@ -199,7 +199,7 @@ function DrawerContent({ onClose }: DrawerProps) {
       <div className="fixed inset-0 z-40" onClick={onClose} />
 
       {/* Drawer panel */}
-      <div className="fixed top-[var(--titlebar-height,40px)] right-0 bottom-0 w-[380px] z-50 bg-background border-l border-primary/10 flex flex-col shadow-elevation-3 overflow-hidden">
+      <div className="fixed top-[var(--titlebar-height,40px)] right-0 bottom-0 w-[380px] z-50 bg-background border-l border-primary/10 flex flex-col shadow-elevation-3 overflow-hidden" style={{ contain: 'layout paint style' }}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
           <h3 className="typo-body font-semibold">{t.shared.process_activity}</h3>

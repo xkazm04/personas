@@ -81,6 +81,7 @@ export function TraceInspector({ execution }: TraceInspectorProps) {
           {visibleNodes.map((node) => (
               <div className="animate-fade-slide-in"
                 key={node.span.span_id}
+                style={{ contentVisibility: 'auto', containIntrinsicSize: '0 32px' }}
               >
                 <SpanRow
                   node={node}

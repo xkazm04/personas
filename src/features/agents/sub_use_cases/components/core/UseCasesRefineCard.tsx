@@ -3,6 +3,7 @@ import { Wand2, Send } from 'lucide-react';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { createLogger } from '@/lib/log';
+import { AsyncButton } from '@/features/shared/components/buttons';
 
 const logger = createLogger('use-cases-refine');
 
@@ -70,15 +71,18 @@ export function UseCasesRefineCard({ personaId }: Props) {
           disabled={submitting}
           className="flex-1 rounded-card border border-primary/10 bg-secondary/30 px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/30 disabled:opacity-60 resize-none"
         />
-        <button
-          type="button"
+        <AsyncButton
+          variant="ghost"
+          size="sm"
+          icon={<Send className="w-3.5 h-3.5" />}
           onClick={() => { void handleSubmit(); }}
-          disabled={!feedback.trim() || submitting}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-card border border-primary/20 bg-primary/10 text-primary typo-body hover:bg-primary/15 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          disabled={!feedback.trim()}
+          isLoading={submitting}
+          loadingText="Sending…"
+          className="rounded-card border border-primary/20 bg-primary/10 !text-primary hover:!bg-primary/15"
         >
-          <Send className="w-3.5 h-3.5" />
-          {submitting ? 'Sending…' : 'Apply'}
-        </button>
+          Apply
+        </AsyncButton>
       </div>
       {lastSent && (
         <p className="typo-caption text-emerald-400/80 truncate">Sent: {lastSent}</p>

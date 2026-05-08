@@ -62,10 +62,23 @@ pub enum ClientAction {
     /// optionally a name), then optionally auto-click launch. The
     /// frontend writes a slot in the system store and navigates to
     /// `personas`; UnifiedMatrixEntry consumes the slot on mount.
+    ///
+    /// `mode` selects the build strategy when `auto_launch` is true:
+    ///   - `Some("interactive")` or `None` → ask-the-user gate flow.
+    ///   - `Some("one_shot")` → autonomous build; the frontend opens
+    ///     a read-only Glyph view and waits for the terminal
+    ///     notification rather than driving the questionnaire.
+    /// `companion_session_id` links the build back to the chat that
+    /// originated it so the BuildWatcher job can post the result message
+    /// into that chat's episode log on terminal phase.
     PrefillPersonaCreate {
         intent: String,
         name: Option<String>,
         auto_launch: bool,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        mode: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        companion_session_id: Option<String>,
     },
     /// Phase F: open a specific tab inside the Companion plugin. Used
     /// by `compose_dashboard` (tab="dashboard") so the user lands on
@@ -171,6 +184,13 @@ pub async fn companion_approve_action(
         "resolve_backlog_item" => execute_resolve_backlog_item(&state, &params),
         // Phase F — advanced UI control.
         "prefill_persona_create" => execute_prefill_persona_create(&params),
+        // 2026-05-06 — autonomous build shortcut. Same ClientAction shape as
+        // prefill_persona_create but defaults `auto_launch=true` and
+        // `mode="one_shot"` so the prompt vocabulary cleanly separates the
+        // "let me edit it first" path from the "decide everything for me"
+        // path. Behavior is otherwise identical — the frontend's
+        // UnifiedMatrixEntry consumes both via the same prefill slot.
+        "build_oneshot" => execute_build_oneshot(&params),
         "run_arena" => execute_run_arena(&state, &app, &params).await,
         // `compose_dashboard` is now auto-fire (no approval card) —
         // handled by the dispatcher + session.rs. The executor below
@@ -859,20 +879,64 @@ fn execute_prefill_persona_create(
         .get("auto_launch")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    let mode = params
+        .get("mode")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    let companion_session_id = params
+        .get("companion_session_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
     Ok(ExecuteResult {
         message: if auto_launch {
-            format!(
-                "Opening persona creation with your intent and starting the build."
-            )
+            "Opening persona creation with your intent and starting the build.".to_string()
         } else {
-            format!(
-                "Opening persona creation with your intent prefilled — review and launch when ready."
-            )
+            "Opening persona creation with your intent prefilled — review and launch when ready."
+                .to_string()
         },
         client_action: Some(ClientAction::PrefillPersonaCreate {
             intent: intent.to_string(),
             name,
             auto_launch,
+            mode,
+            companion_session_id,
+        }),
+    })
+}
+
+/// Autonomous-build shortcut: resolve to the same prefill action with
+/// `auto_launch=true` and `mode="one_shot"`. Surfaces a chat message
+/// telling the user the build will run unattended so they know to expect
+/// the terminal notification rather than a questionnaire.
+fn execute_build_oneshot(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+    let intent = params
+        .get("intent")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("build_oneshot: missing `intent`".into()))?
+        .trim();
+    if intent.is_empty() {
+        return Err(AppError::Internal(
+            "build_oneshot: `intent` must not be empty".into(),
+        ));
+    }
+    let name = params
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string());
+    let companion_session_id = params
+        .get("companion_session_id")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+    Ok(ExecuteResult {
+        message:
+            "Building autonomously — I'll let you know when it's ready (or surface what blocked it)."
+                .to_string(),
+        client_action: Some(ClientAction::PrefillPersonaCreate {
+            intent: intent.to_string(),
+            name,
+            auto_launch: true,
+            mode: Some("one_shot".to_string()),
+            companion_session_id,
         }),
     })
 }

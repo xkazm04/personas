@@ -36,7 +36,7 @@ export function RecipePicker({ linkedRecipeIds, onSelect, onClose }: RecipePicke
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 surface-blur-modal">
       <div
         className="animate-fade-slide-in relative flex flex-col w-[500px] max-h-[70vh] rounded-modal border border-border/60 bg-background shadow-elevation-4 overflow-hidden"
       >

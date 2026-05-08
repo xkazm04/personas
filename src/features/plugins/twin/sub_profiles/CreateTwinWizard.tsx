@@ -164,7 +164,7 @@ export function CreateTwinWizard({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 surface-blur-modal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="twin-wizard-title"

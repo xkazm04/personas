@@ -4,6 +4,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, Inbox } fro
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DEFAULT_DENSITY, DENSITY_TOKENS, type Density } from '@/lib/density';
 
 /* -- Types ----------------------------------------------------------- */
 
@@ -62,6 +63,10 @@ export interface DataGridProps<T> {
   selectAll?: boolean;
   /** Toggle select-all callback */
   onSelectAll?: () => void;
+  /** Whether a given row is selected — drives data-selected attribute, row tint, and accent border. */
+  isRowSelected?: (row: T) => boolean;
+  /** Row density. Defaults to 'comfortable'. */
+  density?: Density;
 }
 
 /* -- Stagger animation variants --------------------------------------- */
@@ -108,7 +113,12 @@ export function DataGrid<T>({
   simplified = false,
   selectAll,
   onSelectAll,
+  isRowSelected,
+  density = DEFAULT_DENSITY,
 }: DataGridProps<T>) {
+  const densityTokens = DENSITY_TOKENS[density];
+  const headerPadCls = `px-4 ${densityTokens.headerPaddingY}`;
+  const rowPadCls = `${densityTokens.rowPaddingX} ${densityTokens.rowPaddingY}`;
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
   const [internalPageSize, setInternalPageSize] = useState(
@@ -166,7 +176,7 @@ export function DataGrid<T>({
           /* Select-all checkbox header */
           if (col.key === 'select' && onSelectAll) {
             return (
-              <div key={col.key} className="px-4 py-2.5 flex items-center justify-center">
+              <div key={col.key} className={`${headerPadCls} flex items-center justify-center`}>
                 <div
                   onClick={onSelectAll}
                   className={`w-4 h-4 rounded-sm border-2 transition-all flex items-center justify-center cursor-pointer ${
@@ -188,7 +198,7 @@ export function DataGrid<T>({
           /* Custom filter component takes precedence */
           if (!simplified && col.filterComponent) {
             return (
-              <div key={col.key} className="px-2 py-2.5 flex items-center">
+              <div key={col.key} className={`px-2 ${densityTokens.headerPaddingY} flex items-center`}>
                 {col.filterComponent}
               </div>
             );
@@ -197,7 +207,7 @@ export function DataGrid<T>({
           /* Filterable header (hidden in simplified mode) */
           if (!simplified && col.filterOptions && col.onFilterChange) {
             return (
-              <div key={col.key} className="px-2 py-2.5 flex items-center">
+              <div key={col.key} className={`px-2 ${densityTokens.headerPaddingY} flex items-center`}>
                 <ThemedSelect
                   filterable
                   options={col.filterOptions}
@@ -217,7 +227,7 @@ export function DataGrid<T>({
                 key={col.key}
                 type="button"
                 onClick={() => onSort(col.key)}
-                className={`px-4 py-2.5 typo-label text-foreground flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
+                className={`${headerPadCls} typo-label text-foreground flex items-center gap-1 hover:text-foreground transition-colors focus-ring ${
                   col.align === 'right' ? 'justify-end' : ''
                 }`}
                 aria-sort={isSorted ? (sortDirection === 'asc' ? 'ascending' : 'descending') : undefined}
@@ -232,7 +242,7 @@ export function DataGrid<T>({
           return (
             <div
               key={col.key}
-              className={`px-4 py-2.5 flex items-center typo-label text-foreground ${
+              className={`${headerPadCls} flex items-center typo-label text-foreground ${
                 col.align === 'right' ? 'justify-end' : ''
               }`}
             >
@@ -262,7 +272,13 @@ export function DataGrid<T>({
         key={`page-${page}`}
       >
         {pageData.map((row, idx) => {
-          const accent = getRowAccent?.(row) ?? '';
+          const selected = isRowSelected?.(row) ?? false;
+          // When a row is selected the bulk-list affordance (left accent + tint)
+          // takes precedence over status accents from getRowAccent — the user's
+          // current selection should be the dominant visual signal.
+          const accent = selected
+            ? 'border-l-primary bg-primary/[0.06]'
+            : (getRowAccent?.(row) ?? '');
           const rowCls = getRowClassName?.(row) ?? '';
           return (
             <motion.div
@@ -270,15 +286,16 @@ export function DataGrid<T>({
               variants={rowVariants}
               {...(idx >= STAGGER_CAP ? { transition: { duration: 0.01 } } : {})}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={`grid gap-0 transition-colors border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.08] ${accent} ${rowCls} ${
+              data-selected={selected || undefined}
+              className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] ${accent} ${rowCls} ${
                 onRowClick ? 'cursor-pointer' : ''
-              } ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
-              style={{ gridTemplateColumns: gridTemplate }}
+              } ${idx % 2 === 0 && !selected ? 'bg-primary/[0.03]' : ''}`}
+              style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
             >
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className={`px-4 py-2 flex items-center min-w-0 ${
+                  className={`${rowPadCls} flex items-center min-w-0 ${
                     col.align === 'right' ? 'justify-end' : ''
                   }`}
                 >

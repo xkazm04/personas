@@ -1,18 +1,11 @@
-import { useEffect, useMemo } from 'react';
-import {
-  ResponsiveContainer,
-  ComposedChart,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import { memo, useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
+
+const LEGEND_STYLE = { fontSize: 11 };
+const Y_AXIS_DOMAIN: [number, number] = [0, 100];
 
 /**
  * Stacked bar (completed/failed) + success-rate line.
@@ -20,7 +13,7 @@ import type { WidgetProps } from '../widgetRegistry';
  * Athena-facing config:
  *   { "days": 7 | 30 | 90 }   default 7
  */
-export function ExecutionsStatusChartWidget({ config, title }: WidgetProps) {
+export const ExecutionsStatusChartWidget = memo(function ExecutionsStatusChartWidget({ config, title }: WidgetProps) {
   const days = (config?.days as number) ?? 7;
   const { data, fetchExecutionDashboard } = useOverviewStore(
     useShallow((s) => ({
@@ -48,20 +41,22 @@ export function ExecutionsStatusChartWidget({ config, title }: WidgetProps) {
         {title ?? `Executions by status (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="date" stroke="currentColor" fontSize={11} />
-            <YAxis yAxisId="left" stroke="currentColor" fontSize={11} />
-            <YAxis yAxisId="right" orientation="right" stroke="currentColor" fontSize={11} domain={[0, 100]} />
-            <Tooltip />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar yAxisId="left" dataKey="completed" stackId="a" fill="#10b981" name="Completed" />
-            <Bar yAxisId="left" dataKey="failed" stackId="a" fill="#ef4444" name="Failed" />
-            <Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#06b6d4" name="Success %" dot={false} strokeWidth={2} />
-          </ComposedChart>
-        </ResponsiveContainer>
+        <LazyChart render={(R) => (
+          <R.ResponsiveContainer width="100%" height="100%">
+            <R.ComposedChart data={chartData}>
+              <R.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <R.XAxis dataKey="date" stroke="currentColor" fontSize={11} />
+              <R.YAxis yAxisId="left" stroke="currentColor" fontSize={11} />
+              <R.YAxis yAxisId="right" orientation="right" stroke="currentColor" fontSize={11} domain={Y_AXIS_DOMAIN} />
+              <R.Tooltip />
+              <R.Legend wrapperStyle={LEGEND_STYLE} />
+              <R.Bar yAxisId="left" dataKey="completed" stackId="a" fill="#10b981" name="Completed" />
+              <R.Bar yAxisId="left" dataKey="failed" stackId="a" fill="#ef4444" name="Failed" />
+              <R.Line yAxisId="right" type="monotone" dataKey="successRate" stroke="#06b6d4" name="Success %" dot={false} strokeWidth={2} />
+            </R.ComposedChart>
+          </R.ResponsiveContainer>
+        )} />
       </div>
     </div>
   );
-}
+});

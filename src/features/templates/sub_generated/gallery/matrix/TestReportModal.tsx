@@ -41,7 +41,7 @@ export function TestReportModal({ results, summary, onClose, onCredentialAdded }
     // z-[10001] so the report overlays BaseModal portals (which use z-[10000])
     // when opened from inside the Adoption Wizard — without this bump the
     // report renders DOM-later but visually-below the wizard frame.
-    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/50 surface-blur-modal">
       <div
         ref={modalRef}
         className="flex flex-col rounded-2xl border border-primary/15 bg-background shadow-elevation-4 shadow-black/30 overflow-hidden"
@@ -289,7 +289,7 @@ function ConnectorHandshakeCard({
 
       {addingConnector &&
         createPortal(
-          <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/40 surface-blur-modal">
             <CatalogCredentialModal
               connectorDefinition={addingConnector}
               onSave={handleSave}

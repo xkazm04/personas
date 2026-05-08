@@ -22,8 +22,8 @@ export const en = {
       realtime_subtitle: "Animated particles trace each event as it travels from sources to your agents. Every dot is a live event moving through your system.",
       realtime_action: "Send a test event",
       // Observability display variants
-      alerts_title: "All quiet — no alerts triggered",
-      alerts_subtitle: "When monitoring rules detect something worth your attention, alerts will appear here automatically.",
+      alerts_title: "All clear — no alerts fired",
+      alerts_subtitle: "Your monitoring rules are watching. If anything needs attention, alerts will surface here automatically.",
       obs_metrics_title: "No execution data yet",
       obs_metrics_subtitle: "Distribution charts will populate once your agents have completed some executions.",
       // Chart empty states

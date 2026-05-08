@@ -5,7 +5,7 @@ import type { PersonaMemory } from "@/lib/types/types";
 import type { MemoryStats, MemoryReviewResult, MemoryTier } from "@/api/overview/memories";
 import type { MemoryAction } from "@/features/overview/sub_memories/libs/memoryActions";
 import { extractActionsFromReview, loadActions, saveActions } from "@/features/overview/sub_memories/libs/memoryActions";
-import { createMemory, deleteMemory, listMemoriesWithStats, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
+import { createMemory, deleteMemory, listMemoriesWithStats, mergeMemoriesAtomic, reviewMemoriesWithCli, updateMemoryTier } from "@/api/overview/memories";
 
 
 export interface MemorySlice {
@@ -19,6 +19,11 @@ export interface MemorySlice {
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; sort_column?: string; sort_direction?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
+  mergeMemories: (
+    input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] },
+    deleteIdA: string,
+    deleteIdB: string,
+  ) => Promise<boolean>;
   reviewMemories: (personaId?: string) => Promise<MemoryReviewResult>;
   setMemoryTier: (id: string, tier: MemoryTier) => Promise<void>;
   dismissMemoryAction: (actionId: string) => void;
@@ -129,6 +134,44 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       });
     } catch (err) {
       reportError(err, "Failed to delete memory", set);
+    }
+  },
+
+  mergeMemories: async (input, deleteIdA, deleteIdB) => {
+    try {
+      const merged = await mergeMemoriesAtomic(
+        {
+          persona_id: input.persona_id,
+          title: input.title,
+          content: input.content,
+          category: input.category,
+          importance: input.importance,
+          tags: input.tags,
+          source_execution_id: null,
+          use_case_id: null,
+        },
+        deleteIdA,
+        deleteIdB,
+      );
+      set((state) => {
+        const removedA = state.memories.find((m) => m.id === deleteIdA);
+        const removedB = state.memories.find((m) => m.id === deleteIdB);
+        const remaining = state.memories.filter((m) => m.id !== deleteIdA && m.id !== deleteIdB);
+        let stats = state.memoryStats;
+        if (removedA) stats = statsAfterDelete(stats, removedA);
+        if (removedB) stats = statsAfterDelete(stats, removedB);
+        stats = statsAfterCreate(stats, merged);
+        const removedCount = (removedA ? 1 : 0) + (removedB ? 1 : 0);
+        return {
+          memories: [merged, ...remaining],
+          memoriesTotal: Math.max(0, state.memoriesTotal - removedCount + 1),
+          memoryStats: stats,
+        };
+      });
+      return true;
+    } catch (err) {
+      reportError(err, "Failed to merge memories", set);
+      return false;
     }
   },
 

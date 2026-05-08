@@ -93,7 +93,8 @@ export default function MemoryRowDetail({
             max={IMPORTANCE_MAX}
             value={editImportance}
             onChange={(e) => setEditImportance(Number(e.target.value))}
-            className="w-14 h-1 accent-amber-500"
+            className="w-14"
+            style={{ ['--slider-progress' as string]: (editImportance - IMPORTANCE_MIN) / (IMPORTANCE_MAX - IMPORTANCE_MIN) }}
           />
           <span className="typo-body text-foreground w-3 text-right">{editImportance}</span>
         </div>

@@ -19,6 +19,16 @@ import type {
 /**
  * Start a new build session for a persona. Returns the session ID.
  * Build events are streamed via the provided Channel.
+ *
+ * `mode` selects the gate-resolution strategy:
+ *   - `"interactive"` (default) — ask-the-user clarifying flow.
+ *   - `"one_shot"` — autonomous: LLM resolves every gate, retries test
+ *     failures up to 3×, auto-promotes on success. Read-only Glyph view
+ *     while running; OS notification + bell entry on terminal phase.
+ *
+ * `companionSessionId` links the build back to the Companion chat that
+ * originated it so the BuildWatcher job can post a result message into
+ * that chat's episode log on terminal phase.
  */
 export async function startBuildSession(
   channel: Channel<BuildEvent>,
@@ -27,6 +37,8 @@ export async function startBuildSession(
   workflowJson?: string | null,
   parserResultJson?: string | null,
   language?: string | null,
+  mode?: 'interactive' | 'one_shot' | null,
+  companionSessionId?: string | null,
 ): Promise<string> {
   return invokeWithTimeout<string>("start_build_session", {
     channel,
@@ -35,6 +47,8 @@ export async function startBuildSession(
     workflowJson: workflowJson ?? null,
     parserResultJson: parserResultJson ?? null,
     language: language ?? null,
+    mode: mode ?? null,
+    companionSessionId: companionSessionId ?? null,
   });
 }
 

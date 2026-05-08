@@ -104,6 +104,16 @@ pub fn management_router(state: ManagementState) -> Router {
         // A2A Gateway -- agent card discovery + JSON-RPC entry point
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
+        // Build sessions -- third-party MCP clients drive a persona build
+        // end-to-end through these endpoints. Auth-gated (any valid key);
+        // V2 may add a `personas:build` scope check.
+        .route("/api/build", post(start_build))
+        .route("/api/build/{session_id}", get(build_status))
+        .route("/api/build/{session_id}/pending", get(build_pending))
+        .route("/api/build/{session_id}/answer", post(build_answer))
+        .route("/api/build/{session_id}/test", post(build_test))
+        .route("/api/build/{session_id}/promote", post(build_promote))
+        .route("/api/build/{session_id}/cancel", post(build_cancel))
         .with_state(state_arc.clone())
         // Auth middleware runs INSIDE the CORS layer so OPTIONS preflight
         // requests do not require an API key.
@@ -1561,6 +1571,270 @@ async fn run_persona_synchronous(
                 tokio::time::sleep(POLL_INTERVAL).await;
             }
         }
+    }
+}
+
+// =============================================================================
+// Build session endpoints — third-party MCP clients drive a persona build
+// through these. All routes are auth-gated by `require_api_key` (mounted at
+// the router level above). Mirrors the test-automation HTTP surface
+// (`test_automation.rs::handle_build_*`) but with the production auth
+// middleware in front, so external clients can run a build end-to-end
+// without the test-automation feature flag.
+// =============================================================================
+
+#[derive(Deserialize)]
+struct BuildStartBody {
+    persona_id: String,
+    intent: String,
+    #[serde(default)]
+    workflow_json: Option<String>,
+    #[serde(default)]
+    parser_result_json: Option<String>,
+    #[serde(default)]
+    language: Option<String>,
+    /// `"interactive"` (ask clarifying questions) or `"one_shot"` (autonomous).
+    /// Default `interactive` if omitted.
+    #[serde(default)]
+    mode: Option<String>,
+    /// Optional Companion chat session that originated this build.
+    #[serde(default)]
+    companion_session_id: Option<String>,
+}
+
+async fn start_build(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Json(body): Json<BuildStartBody>,
+) -> impl IntoResponse {
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    let session_id = uuid::Uuid::new_v4().to_string();
+    // No-op channel — global emits drive the UI / watcher pipelines, the
+    // headless caller polls /api/build/{id} for state.
+    let dummy_channel: tauri::ipc::Channel<crate::db::models::BuildEvent> =
+        tauri::ipc::Channel::new(|_| Ok(()));
+    match app_state.build_session_manager.start_session(
+        session_id.clone(),
+        body.persona_id,
+        body.intent,
+        dummy_channel,
+        state.pool.clone(),
+        state.process_registry.clone(),
+        body.workflow_json,
+        body.parser_result_json,
+        state.app.clone(),
+        body.language,
+        body.mode,
+        body.companion_session_id,
+    ) {
+        Ok(sid) => ok_json(serde_json::json!({"session_id": sid})).into_response(),
+        Err(e) => err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response(),
+    }
+}
+
+async fn build_status(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    match crate::db::repos::core::build_sessions::get_by_id(&state.pool, &session_id) {
+        Ok(Some(session)) => {
+            let pending_question = session
+                .pending_question
+                .as_deref()
+                .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
+            let resolved_cells: serde_json::Value =
+                serde_json::from_str(&session.resolved_cells).unwrap_or_default();
+            ok_json(serde_json::json!({
+                "session_id": session.id,
+                "persona_id": session.persona_id,
+                "phase": session.phase.as_str(),
+                "is_terminal": session.phase.is_terminal(),
+                "mode": session.mode.unwrap_or_else(|| "interactive".to_string()),
+                "companion_session_id": session.companion_session_id,
+                "intent": session.intent,
+                "pending_question": pending_question,
+                "resolved_cells": resolved_cells,
+                "agent_ir_present": session.agent_ir.is_some(),
+                "error_message": session.error_message,
+                "created_at": session.created_at,
+                "updated_at": session.updated_at,
+            }))
+            .into_response()
+        }
+        Ok(None) => err_json(StatusCode::NOT_FOUND, "build session not found").into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+async fn build_pending(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    match crate::db::repos::core::build_sessions::get_by_id(&state.pool, &session_id) {
+        Ok(Some(session)) => {
+            let pending = session
+                .pending_question
+                .as_deref()
+                .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
+            ok_json(serde_json::json!({"pending_question": pending})).into_response()
+        }
+        Ok(None) => err_json(StatusCode::NOT_FOUND, "build session not found").into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildAnswerBody {
+    cell_key: String,
+    answer: String,
+}
+
+async fn build_answer(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+    Json(body): Json<BuildAnswerBody>,
+) -> impl IntoResponse {
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    let user_answer = crate::db::models::UserAnswer {
+        cell_key: body.cell_key,
+        answer: body.answer,
+        reference: None,
+        webhook_source: None,
+    };
+    match app_state
+        .build_session_manager
+        .send_answer(&session_id, user_answer)
+    {
+        Ok(_) => ok_json(serde_json::json!({"status": "queued"})).into_response(),
+        Err(e) => err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildTestBody {
+    persona_id: String,
+}
+
+async fn build_test(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+    Json(body): Json<BuildTestBody>,
+) -> impl IntoResponse {
+    let session = match crate::db::repos::core::build_sessions::get_by_id(&state.pool, &session_id)
+    {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            return err_json(StatusCode::NOT_FOUND, "build session not found").into_response();
+        }
+        Err(e) => return err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    };
+    let agent_ir_str = match session.agent_ir.clone() {
+        Some(s) => s,
+        None => {
+            return err_json(
+                StatusCode::BAD_REQUEST,
+                "agent_ir not yet emitted — wait for draft_ready before testing",
+            )
+            .into_response();
+        }
+    };
+    let mut agent_ir: crate::db::models::AgentIr = match serde_json::from_str(&agent_ir_str) {
+        Ok(v) => v,
+        Err(e) => {
+            return err_json(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                &format!("agent_ir parse error: {e}"),
+            )
+            .into_response();
+        }
+    };
+    if let Some(ref raw_answers) = session.adoption_answers {
+        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(
+            raw_answers,
+        ) {
+            crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
+                &mut agent_ir,
+                &answers,
+            );
+        }
+    }
+    match crate::engine::build_session::run_tool_tests(
+        &state.pool,
+        &state.app,
+        &session_id,
+        &body.persona_id,
+        &agent_ir,
+    )
+    .await
+    {
+        Ok(report) => ok_json(serde_json::json!({"report": report})).into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildPromoteBody {
+    persona_id: String,
+    #[serde(default)]
+    excluded_use_case_ids: Option<Vec<String>>,
+}
+
+async fn build_promote(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+    Json(body): Json<BuildPromoteBody>,
+) -> impl IntoResponse {
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    match crate::commands::design::build_sessions::promote_build_draft_inner(
+        &app_state,
+        session_id,
+        body.persona_id,
+        body.excluded_use_case_ids.unwrap_or_default(),
+    )
+    .await
+    {
+        Ok(value) => ok_json(value).into_response(),
+        Err(e) => err_json(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()).into_response(),
+    }
+}
+
+async fn build_cancel(
+    AxumState(state): AxumState<Arc<ManagementState>>,
+    Path(session_id): Path<String>,
+) -> impl IntoResponse {
+    let app_state: tauri::State<'_, Arc<crate::AppState>> = match state.app.try_state() {
+        Some(s) => s,
+        None => {
+            return err_json(StatusCode::INTERNAL_SERVER_ERROR, "App state not available")
+                .into_response();
+        }
+    };
+    match app_state.build_session_manager.cancel_session(
+        &session_id,
+        &state.pool,
+        &state.process_registry,
+    ) {
+        Ok(_) => ok_json(serde_json::json!({"status": "cancelled"})).into_response(),
+        Err(e) => err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response(),
     }
 }
 

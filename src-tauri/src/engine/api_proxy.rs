@@ -42,10 +42,29 @@ static CONNECTOR_CACHE: LazyLock<std::sync::Mutex<Option<ConnectorCache>>> =
     LazyLock::new(|| std::sync::Mutex::new(None));
 
 /// Return the full connector list, reusing a cached copy when fresh.
+///
+/// On mutex poison: clears the cached entry, unpoisons the lock so subsequent
+/// calls can proceed, and surfaces an `AppError::Internal` so the caller (and
+/// Sentry) sees the regression rather than silently consuming stale data.
 pub(crate) fn get_all_connectors_cached(
     pool: &DbPool,
 ) -> Result<Vec<ConnectorDefinition>, AppError> {
-    let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    let mut cache = match CONNECTOR_CACHE.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => {
+            tracing::error!(
+                "CONNECTOR_CACHE mutex poisoned — a prior panic left the cache in an \
+                 unknown state. Clearing cached entry and recovering the lock so subsequent \
+                 reads repopulate from the database."
+            );
+            let mut guard = poisoned.into_inner();
+            *guard = None;
+            CONNECTOR_CACHE.clear_poison();
+            return Err(AppError::Internal(
+                "Connector cache state was lost after a prior panic; please retry.".into(),
+            ));
+        }
+    };
     if let Some(ref entry) = *cache {
         if entry.fetched_at.elapsed().as_secs_f64() < CONNECTOR_CACHE_TTL_SECS {
             return Ok(entry.connectors.clone());
@@ -107,11 +126,36 @@ pub fn connector_keyword_snapshot() -> Vec<String> {
 /// Also clears the keyword snapshot so the next read repopulates from a
 /// fresh DB query via `refresh_connector_keyword_snapshot`. Call sites
 /// that have a `DbPool` should follow this with an explicit refresh.
+///
+/// On mutex poison: still clears the cached entry, unpoisons the lock, and
+/// logs loudly so the regression surfaces in Sentry. The keyword RwLock is
+/// handled the same way to prevent cluster-wide stale reads.
 pub fn invalidate_connector_cache() {
-    let mut cache = CONNECTOR_CACHE.lock().unwrap_or_else(|e| e.into_inner());
-    *cache = None;
-    if let Ok(mut snap) = CONNECTOR_KEYWORD_SNAPSHOT.write() {
-        snap.clear();
+    match CONNECTOR_CACHE.lock() {
+        Ok(mut cache) => {
+            *cache = None;
+        }
+        Err(poisoned) => {
+            tracing::error!(
+                "CONNECTOR_CACHE mutex poisoned during invalidation — clearing cache and \
+                 recovering the lock to prevent stale reads."
+            );
+            let mut guard = poisoned.into_inner();
+            *guard = None;
+            CONNECTOR_CACHE.clear_poison();
+        }
+    }
+    match CONNECTOR_KEYWORD_SNAPSHOT.write() {
+        Ok(mut snap) => snap.clear(),
+        Err(poisoned) => {
+            tracing::error!(
+                "CONNECTOR_KEYWORD_SNAPSHOT rwlock poisoned during invalidation — clearing \
+                 snapshot and recovering the lock to prevent stale intent-analysis routing."
+            );
+            let mut snap = poisoned.into_inner();
+            snap.clear();
+            CONNECTOR_KEYWORD_SNAPSHOT.clear_poison();
+        }
     }
 }
 

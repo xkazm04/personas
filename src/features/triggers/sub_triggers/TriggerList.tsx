@@ -17,6 +17,8 @@ import type { TriggerHealth } from './triggerListTypes';
 import { HealthDot } from './HealthDot';
 import { TriggerCountdown } from './TriggerCountdown';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useDensity } from '@/hooks/utility/data/useDensity';
+import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 
 interface TriggerListProps {
   onNavigateToPersona?: (personaId: string) => void;
@@ -28,6 +30,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
   const triggerRateLimits = usePipelineStore((s) => s.triggerRateLimits);
   const [allTriggers, setAllTriggers] = useState<Record<string, PersonaTrigger[]>>({});
   const [triggerHealthMap, setTriggerHealthMap] = useState<Record<string, TriggerHealth>>({});
+  const { density, setDensity, tokens: densityTokens } = useDensity('trigger-list');
 
   useEffect(() => {
     let stale = false;
@@ -103,7 +106,10 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           </div>
         ) : (
           <div className="p-6 space-y-6">
-            <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
+              <DensityToggle density={density} onChange={setDensity} scopeId="trigger-list" />
+            </div>
 
             {Object.values(groupedTriggers).map(({ persona, triggers }) => (
               <div key={persona.id} className="space-y-2">
@@ -140,7 +146,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                             onNavigateToPersona?.(persona.id);
                           }
                         }}
-                        className="p-3 bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-modal cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className={`${densityTokens.cardPadding} bg-secondary/40 backdrop-blur-sm border border-border/30 rounded-modal cursor-pointer hover:border-primary/20 transition-all focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
                       >
                         <div className="flex items-start gap-2.5">
                           <Icon className={`w-4 h-4 mt-0.5 ${colorClass}`} />

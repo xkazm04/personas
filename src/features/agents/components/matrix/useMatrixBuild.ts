@@ -77,8 +77,17 @@ export function useMatrixBuild({ personaId }: UseMatrixBuildOptions) {
       overridePersonaId?: string,
       workflowJson?: string,
       parserResultJson?: string,
+      mode?: 'interactive' | 'one_shot' | null,
+      companionSessionId?: string | null,
     ) => {
-      await session.startSession(intent, overridePersonaId, workflowJson, parserResultJson);
+      await session.startSession(
+        intent,
+        overridePersonaId,
+        workflowJson,
+        parserResultJson,
+        mode,
+        companionSessionId,
+      );
     },
     [session],
   );

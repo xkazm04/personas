@@ -1,21 +1,30 @@
-import { Clock, Trash2 } from 'lucide-react';
+import { Clock, Play, Trash2 } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface RecipeHistoryTabProps {
   history: RecipeExecutionResult[];
   onClear: () => void;
+  /** Switch the playground modal to the test-runner tab — wires the empty-state CTA. */
+  onTryIt?: () => void;
 }
 
-export function RecipeHistoryTab({ history, onClear }: RecipeHistoryTabProps) {
+export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTabProps) {
   const { t } = useTranslation();
   if (history.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full typo-body text-foreground gap-2">
-        <Clock className="w-5 h-5" />
-        {t.recipes.no_executions}
+      <div className="flex flex-col items-center justify-center h-full">
+        <EmptyState
+          icon={Clock}
+          iconColor="text-violet-400/80"
+          iconContainerClassName="bg-violet-500/10 border-violet-500/20"
+          title={t.recipes.history_empty_title}
+          description={t.recipes.history_empty_description}
+          action={onTryIt ? { label: t.recipes.history_empty_action, onClick: onTryIt, icon: Play } : undefined}
+        />
       </div>
     );
   }

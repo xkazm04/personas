@@ -170,7 +170,7 @@ export default function MosaicVariant() {
     <div className="h-full flex flex-col overflow-hidden">
       <MosaicHeader t={t.simple_mode} tx={tx} summary={summary} />
 
-      <div className="flex-1 min-h-0 px-8 pb-4 grid grid-cols-6 grid-rows-3 gap-3 overflow-hidden">
+      <div className="flex-1 min-h-0 px-8 pb-4 grid grid-cols-6 grid-rows-3 gap-3 overflow-hidden" style={{ contain: 'layout paint style' }}>
         <HeroTile
           t={t.simple_mode}
           tFull={t}

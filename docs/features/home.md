@@ -12,7 +12,7 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 | Cockpit | Operational home/cockpit view | `HomePage.tsx` |
 | Learning | Learning resources and guided education | `HomeLearning.tsx` |
 | What's New | Release notes and roadmap | `components/releases/*` |
-| System Check | Dev-only diagnostics entry | added to `homeItems` only in `import.meta.env.DEV` |
+| System Check | Dev-only diagnostics entry. `SystemHealthPanel` ships environment checks, a dev-only `CrashLogsSection`, and an always-visible `LogDiskUsageSection` (powered by `get_log_directory_stats`) that reports tracing-log + crash-log directory bytes/file counts and the configured retention caps. | added to `homeItems` only in `import.meta.env.DEV` |
 
 ## Resume and prefetch
 

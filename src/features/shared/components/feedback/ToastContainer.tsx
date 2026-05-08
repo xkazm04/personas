@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, type CSSProperties } from 'react';
 import { CheckCircle2, AlertTriangle, ShieldAlert, X } from 'lucide-react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useToastStore, MAX_VISIBLE_TOASTS } from '@/stores/toastStore';
 import type { StandardToast, HealingToast } from '@/stores/toastStore';
 import { classifyErrorFull } from '@/lib/errors/errorPipeline';
@@ -55,7 +56,9 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
   const friendly = classified?.friendly ?? null;
   const displayMessage = friendly?.message ?? toast.message;
 
-  // Single RAF loop handles both dismiss countdown and elapsed label
+  // Single RAF loop handles both dismiss countdown and elapsed label.
+  // The progress bar is driven by CSS animation (smooth pause/resume); this
+  // loop only fires the dismiss callback once duration is exhausted.
   useEffect(() => {
     let rafId: number;
     let lastLabelSec = -1;
@@ -86,9 +89,6 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
     return () => cancelAnimationFrame(rafId);
   }, [toast.duration, toast.id, toast.timestamp, onDismiss]);
 
-  const remaining = Math.max(0, toast.duration - elapsedRef.current);
-  const progressFraction = remaining / toast.duration;
-
   return (
     <div
       onMouseEnter={() => setPaused(true)}
@@ -96,7 +96,7 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         lastTickRef.current = Date.now();
         setPaused(false);
       }}
-      className={`animate-fade-slide-in pointer-events-auto rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
+      className={`rounded-xl border shadow-elevation-3 backdrop-blur-md overflow-hidden ${
         toast.type === 'success'
           ? 'bg-emerald-950/90 border-emerald-500/25 text-emerald-300'
           : 'bg-red-950/90 border-red-500/25 text-red-300'
@@ -124,12 +124,14 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
         </button>
       </div>
 
-      {/* Auto-dismiss progress bar */}
+      {/* Auto-dismiss progress bar — CSS animation so pause/resume is smooth */}
       <div className="h-0.5 bg-black/20">
         <div
-          className={`animate-fade-in h-full ${
+          data-paused={paused ? 'true' : 'false'}
+          className={`animate-toast-progress h-full ${
             toast.type === 'success' ? 'bg-emerald-400/50' : 'bg-red-400/50'
-          }`} style={{ width: paused ? `${progressFraction * 100}%` : '0%' }}
+          }`}
+          style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
         />
       </div>
     </div>
@@ -150,7 +152,6 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
   const pausedRef = useRef(false);
   pausedRef.current = paused;
 
-  // Single RAF loop handles both dismiss countdown and elapsed label
   useEffect(() => {
     let rafId: number;
     let lastLabelSec = -1;
@@ -187,9 +188,6 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
     onDismiss(toast.id);
   }, [toast.issueId, toast.id, onDismiss]);
 
-  const remaining = Math.max(0, toast.duration - elapsedRef.current);
-  const progressFraction = remaining / toast.duration;
-
   return (
     <div
       onMouseEnter={() => setPaused(true)}
@@ -197,7 +195,7 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
         lastTickRef.current = Date.now();
         setPaused(false);
       }}
-      className={`animate-fade-slide-in pointer-events-auto rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
+      className={`rounded-xl border ${styles.border} bg-background/95 backdrop-blur-md shadow-elevation-3 overflow-hidden`}
     >
       <div className="px-3.5 py-3 space-y-2">
         {/* Header */}
@@ -245,11 +243,12 @@ function HealingToastItem({ toast, onDismiss }: { toast: HealingToast; onDismiss
         </div>
       </div>
 
-      {/* Auto-dismiss progress bar */}
+      {/* Auto-dismiss progress bar — CSS animation so pause/resume is smooth */}
       <div className="h-0.5 bg-secondary/30">
         <div
-          className={`animate-fade-in h-full ${styles.progress}`}
-          style={{ width: paused ? `${progressFraction * 100}%` : '0%' }}
+          data-paused={paused ? 'true' : 'false'}
+          className={`animate-toast-progress h-full ${styles.progress}`}
+          style={{ '--toast-duration': `${toast.duration}ms` } as CSSProperties}
         />
       </div>
     </div>
@@ -264,6 +263,7 @@ export function ToastContainer() {
   const { t, tx } = useTranslation();
   const toasts = useToastStore((s) => s.toasts);
   const dismiss = useToastStore((s) => s.dismiss);
+  const reduceMotion = useReducedMotion();
 
   const handleDismiss = useCallback(
     (id: string) => dismiss(id),
@@ -279,6 +279,11 @@ export function ToastContainer() {
   const visible = sorted.slice(0, MAX_VISIBLE_TOASTS);
   const overflowCount = sorted.length - visible.length;
 
+  const initial = reduceMotion ? { opacity: 0 } : { opacity: 0, x: 32, scale: 0.96 };
+  const animate = { opacity: 1, x: 0, scale: 1 };
+  const exit = reduceMotion ? { opacity: 0 } : { opacity: 0, x: '100%' };
+  const transition = { duration: 0.2, ease: 'easeIn' as const };
+
   return (
     <div
       className="fixed bottom-4 right-4 z-50 flex flex-col-reverse gap-2 pointer-events-none max-w-sm"
@@ -286,22 +291,39 @@ export function ToastContainer() {
       aria-live="polite"
       aria-relevant="additions removals"
     >
-      {/* Overflow counter */}
-      {overflowCount > 0 && (
-        <div
-          className="animate-fade-slide-in pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-foreground"
-        >
-          {tx(t.common.toast_overflow, { count: overflowCount })}
-        </div>
-      )}
-
-      {visible.map((toast) =>
-          toast.kind === 'healing' ? (
-            <HealingToastItem key={toast.id} toast={toast} onDismiss={handleDismiss} />
-          ) : (
-            <StandardToastItem key={toast.id} toast={toast} onDismiss={handleDismiss} />
-          ),
+      <AnimatePresence initial={false}>
+        {/* Overflow counter — sits below the stack via flex-col-reverse ordering */}
+        {overflowCount > 0 && (
+          <motion.div
+            key="toast-overflow-chip"
+            initial={initial}
+            animate={animate}
+            exit={exit}
+            transition={transition}
+            className="pointer-events-auto self-end rounded-lg bg-secondary/80 backdrop-blur-sm border border-primary/10 px-2.5 py-1 typo-caption text-foreground"
+          >
+            {tx(t.common.toast_overflow, { count: overflowCount })}
+          </motion.div>
         )}
+
+        {visible.map((toast) => (
+          <motion.div
+            key={toast.id}
+            layout={!reduceMotion}
+            initial={initial}
+            animate={animate}
+            exit={exit}
+            transition={transition}
+            className="pointer-events-auto"
+          >
+            {toast.kind === 'healing' ? (
+              <HealingToastItem toast={toast} onDismiss={handleDismiss} />
+            ) : (
+              <StandardToastItem toast={toast} onDismiss={handleDismiss} />
+            )}
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

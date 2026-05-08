@@ -126,6 +126,17 @@ pub fn delete_memory(state: State<'_, Arc<AppState>>, id: String) -> Result<bool
 }
 
 #[tauri::command]
+pub fn merge_memories(
+    state: State<'_, Arc<AppState>>,
+    input: CreatePersonaMemoryInput,
+    delete_id_a: String,
+    delete_id_b: String,
+) -> Result<PersonaMemory, AppError> {
+    require_auth_sync(&state)?;
+    repo::merge(&state.db, input, &delete_id_a, &delete_id_b)
+}
+
+#[tauri::command]
 pub fn update_memory_importance(
     state: State<'_, Arc<AppState>>,
     id: String,

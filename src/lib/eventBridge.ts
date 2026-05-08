@@ -69,19 +69,35 @@ const EVENT_BRIDGE_TIMING = {
    */
   AUTH_LOGIN_TIMEOUT_MS: 120_000,
   /**
-   * Concurrent IPC calls during cold-start listener registration.
-   * Tauri's IPC bridge can serialize but not parallelize beyond its thread
-   * pool, and starting >5 listeners in parallel on a cold app produced
-   * noticeable jank in profiling. Halving under-uses the pool; doubling
-   * regresses startup latency on slow machines.
+   * Bulk batch size for non-critical listener registration. After the three
+   * critical listeners (auth, persona, execution) are attached and a single
+   * frame has been yielded for input responsiveness, the remaining listeners
+   * register in batches this size. The original value of 5 was chosen
+   * conservatively for early Tauri 1; modern Tauri 2 IPC handles wider batches
+   * comfortably, so registering ~14 remaining listeners in a single bulk batch
+   * trims 4 sequential round-trips down to 2. Halving regresses cold-start
+   * latency; doubling produced no further measurable win in profiling.
    */
-  INIT_BATCH_SIZE: 5,
+  INIT_BATCH_SIZE_BULK: 16,
   /**
    * Debounce for `TITLEBAR_NOTIFICATION`. Each persona dispatch is an independent
    * notification — no coalescing in v1.2 so the bell updates immediately on every message.
    * A future "grouping" feature would increase this. (DELIV-04)
    */
   TITLEBAR_NOTIFICATION_DEBOUNCE_MS: 0,
+  /**
+   * Exponential backoff schedule for retrying listener registrations that
+   * rejected during the initial cold-start waves. Cold-start IPC hiccups
+   * (Tauri main thread saturation, race with Rust state init) cause
+   * intermittent `listen()` rejections; the original `Promise.allSettled`
+   * loop logged and forgot them, leaving the UI partially wired with no
+   * recovery path other than an app restart. Three retries spaced 0.5s →
+   * 1.5s → 4.5s gives the backend ~6.5s of total recovery window without
+   * gating cold-start latency (retries run async after both init waves).
+   * Halving regresses recovery success rate; doubling delays the
+   * "updates may be delayed" banner past the point users start noticing.
+   */
+  LISTENER_RETRY_DELAYS_MS: [500, 1500, 4500] as const,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -93,6 +109,12 @@ interface EventRegistration {
   event: string;
   /** Setup function that calls `listen()` and returns unlisten handles. */
   setup: () => Promise<UnlistenFn[]>;
+  /**
+   * "critical" listeners (auth, persona, execution) attach in the first wave
+   * before yielding a frame; everything else attaches in the bulk wave.
+   * Defaults to "normal" when omitted.
+   */
+  priority?: "critical" | "normal";
 }
 
 // ---------------------------------------------------------------------------
@@ -101,6 +123,32 @@ interface EventRegistration {
 
 let attached = false;
 const unlisteners: UnlistenFn[] = [];
+
+/**
+ * Generation token for in-flight retry loops. `teardownAllListeners()` flips
+ * `aborted` so any retry that was sleeping between attempts bails out cleanly
+ * instead of pushing late unlisteners into a freshly cleared array (which
+ * would survive teardown and leak across test isolations / HMR cycles).
+ */
+let retryGeneration: { aborted: boolean } = { aborted: false };
+
+type AttachOutcome =
+  | { ok: true; reg: EventRegistration; unlisteners: UnlistenFn[] }
+  | { ok: false; reg: EventRegistration; reason: unknown };
+
+/**
+ * Run a single registration's `setup()` and pair the result with its
+ * `EventRegistration` so callers can iterate without index-shuffle fragility.
+ * Avoids the `noUncheckedIndexedAccess` traps that come with running
+ * `Promise.allSettled` over a parallel registrations array.
+ */
+async function tryAttach(reg: EventRegistration): Promise<AttachOutcome> {
+  try {
+    return { ok: true, reg, unlisteners: await reg.setup() };
+  } catch (reason) {
+    return { ok: false, reg, reason };
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Registry
@@ -115,6 +163,7 @@ const registry: EventRegistration[] = [
   // -- Auth state changed --------------------------------------------------
   {
     event: EventName.AUTH_STATE_CHANGED,
+    priority: "critical",
     setup: async () => {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -380,6 +429,7 @@ const registry: EventRegistration[] = [
   // populated by PROCESS_ACTIVITY is re-used to recover the persona name.
   {
     event: EventName.EXECUTION_STATUS,
+    priority: "critical",
     setup: async () => {
       const unlisten = await typedListen(
         EventName.EXECUTION_STATUS,
@@ -501,6 +551,7 @@ const registry: EventRegistration[] = [
   // -- Persona health changed (push-based from backend) ---------------------
   {
     event: EventName.PERSONA_HEALTH_CHANGED,
+    priority: "critical",
     setup: async () => {
       let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -564,6 +615,45 @@ const registry: EventRegistration[] = [
       return [unlisten];
     },
   },
+
+  // -- One-shot build terminal phase (Promoted | Failed) --------------------
+  // Fires when an autonomous build ends — adds an entry to the bell with a
+  // deep-link to the persona so the user can review what landed (or why it
+  // failed). The matching OS notification is fired by the Rust side via
+  // `tauri-plugin-notification`; this listener only handles the in-app bell.
+  {
+    event: EventName.BUILD_ONESHOT_TERMINAL,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.BUILD_ONESHOT_TERMINAL,
+        (payload) => {
+          const personaName = payload.personaName ?? 'Your draft';
+          const title = payload.success
+            ? `'${personaName}' is ready`
+            : `'${personaName}' didn't land`;
+          const message = payload.success
+            ? 'One-shot build promoted. Open the persona to test or run it.'
+            : payload.errorMessage
+              ? `One-shot build failed: ${payload.errorMessage}`
+              : 'One-shot build failed. Open the persona to inspect the draft.';
+
+          useNotificationCenterStore.getState().addProcessNotification({
+            processType: 'execution',
+            personaId: payload.personaId,
+            personaName,
+            status: payload.success ? 'success' : 'failed',
+            summary: message,
+            redirectSection: 'agents',
+            redirectTab: null,
+          });
+          // Also surface as a toast so the user sees feedback even if the
+          // bell panel is collapsed.
+          useToastStore.getState().addToast(title, payload.success ? 'success' : 'error');
+        },
+      );
+      return [unlisten];
+    },
+  },
 ];
 
 function tracing(...args: unknown[]) {
@@ -577,27 +667,79 @@ function tracing(...args: unknown[]) {
 /**
  * Attach all registered Tauri event listeners.  Safe to call multiple times —
  * subsequent calls are no-ops until `teardownAllListeners()` is called.
+ *
+ * Cold-start strategy: critical listeners (auth, persona, execution) attach
+ * first, then a single requestAnimationFrame yields back to the renderer so
+ * input/first paint stays responsive, then the bulk wave runs in batches of
+ * `INIT_BATCH_SIZE_BULK`. Performance marks bracket each wave so the timing
+ * is visible in DevTools' Performance tab.
  */
 export async function initAllListeners(): Promise<void> {
   if (attached) return;
   attached = true;
+  retryGeneration = { aborted: false };
+  const generation = retryGeneration;
 
-  // Register listeners in small batches to avoid flooding the IPC bridge.
-  // See EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE for the rationale.
-  const BATCH_SIZE = EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE;
-  for (let i = 0; i < registry.length; i += BATCH_SIZE) {
-    const batch = registry.slice(i, i + BATCH_SIZE);
-    const results = await Promise.allSettled(
-      batch.map((reg) => reg.setup()),
-    );
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        unlisteners.push(...result.value);
+  performance.mark("event-bridge:init:start");
+
+  const failedRegistrations: EventRegistration[] = [];
+
+  const attachBatch = async (batch: EventRegistration[]) => {
+    const outcomes = await Promise.all(batch.map(tryAttach));
+    for (const outcome of outcomes) {
+      if (outcome.ok) {
+        unlisteners.push(...outcome.unlisteners);
       } else {
-        logger.error("Failed to attach listener", { reason: String(result.reason) });
+        logger.error("Failed to attach listener", {
+          event: outcome.reg.event,
+          reason: String(outcome.reason),
+        });
+        failedRegistrations.push(outcome.reg);
       }
     }
+  };
+
+  // Wave 1: critical listeners (auth/persona/execution) — small set, attached
+  // in parallel so first-paint state isn't gated on the bulk IPC traffic.
+  const critical = registry.filter((r) => r.priority === "critical");
+  const normal = registry.filter((r) => r.priority !== "critical");
+
+  performance.mark("event-bridge:init:critical:start");
+  await attachBatch(critical);
+  performance.mark("event-bridge:init:critical:end");
+  performance.measure(
+    "event-bridge:init:critical",
+    "event-bridge:init:critical:start",
+    "event-bridge:init:critical:end",
+  );
+
+  // Yield one frame so the renderer can paint and accept input before we
+  // submit the bulk IPC traffic.
+  if (typeof requestAnimationFrame === "function") {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
   }
+
+  // Wave 2: bulk register the remaining listeners. Modern Tauri 2 IPC handles
+  // batches in the 15-20 range without the jank that motivated the original
+  // size-5 cap on Tauri 1.
+  performance.mark("event-bridge:init:bulk:start");
+  const bulkSize = EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE_BULK;
+  for (let i = 0; i < normal.length; i += bulkSize) {
+    await attachBatch(normal.slice(i, i + bulkSize));
+  }
+  performance.mark("event-bridge:init:bulk:end");
+  performance.measure(
+    "event-bridge:init:bulk",
+    "event-bridge:init:bulk:start",
+    "event-bridge:init:bulk:end",
+  );
+
+  performance.mark("event-bridge:init:end");
+  performance.measure(
+    "event-bridge:init",
+    "event-bridge:init:start",
+    "event-bridge:init:end",
+  );
 
   // Kick off backend template integrity verification (defense-in-depth).
   // Deferred to idle time to avoid competing with startup IPC calls.
@@ -614,6 +756,78 @@ export async function initAllListeners(): Promise<void> {
       );
     }, EVENT_BRIDGE_TIMING.TEMPLATE_VERIFICATION_FALLBACK_MS);
   }
+
+  // Async recovery for any registrations that rejected during the cold-start
+  // waves. Runs detached so the caller's await of `initAllListeners()` resolves
+  // as soon as the first-pass attachment is done — partial wiring is preferable
+  // to making startup wait on flaky IPC retries.
+  if (failedRegistrations.length > 0) {
+    void retryFailedRegistrations(failedRegistrations, generation);
+  }
+}
+
+/**
+ * Retry registrations that rejected during the initial waves. Surfaces a
+ * single user-facing toast if any listener is still unattached after the
+ * retry budget is exhausted — the alternative (silent partial wiring) leaves
+ * users staring at stale spinners with no recoverable hint other than a
+ * full app restart.
+ */
+async function retryFailedRegistrations(
+  failed: EventRegistration[],
+  generation: { aborted: boolean },
+): Promise<void> {
+  const delays = EVENT_BRIDGE_TIMING.LISTENER_RETRY_DELAYS_MS;
+  let pending = failed;
+  for (let attempt = 0; attempt < delays.length; attempt++) {
+    if (generation.aborted || pending.length === 0) return;
+
+    const delay = delays[attempt] ?? 0;
+    await new Promise<void>((resolve) => setTimeout(resolve, delay));
+    if (generation.aborted) return;
+
+    const outcomes = await Promise.all(pending.map(tryAttach));
+    const stillFailed: EventRegistration[] = [];
+    for (const outcome of outcomes) {
+      if (outcome.ok) {
+        if (generation.aborted) {
+          // Teardown happened mid-flight; immediately detach the unlisteners
+          // we just produced rather than leaking them past the next init.
+          for (const fn of outcome.unlisteners) {
+            try { fn(); } catch { /* best-effort cleanup */ }
+          }
+        } else {
+          unlisteners.push(...outcome.unlisteners);
+          logger.info("Listener attached on retry", {
+            event: outcome.reg.event,
+            attempt: attempt + 1,
+          });
+        }
+      } else {
+        logger.warn("Listener retry failed", {
+          event: outcome.reg.event,
+          attempt: attempt + 1,
+          reason: String(outcome.reason),
+        });
+        stillFailed.push(outcome.reg);
+      }
+    }
+    pending = stillFailed;
+  }
+
+  if (generation.aborted || pending.length === 0) return;
+
+  const eventNames = pending.map((r) => r.event).join(", ");
+  logger.error("Listeners permanently failed to attach after retries", { events: eventNames });
+  // Non-blocking error toast: the app remains usable, but real-time updates
+  // tied to the failed channels (build progress, notifications, etc.) won't
+  // arrive without a restart. Telling the user is strictly better than the
+  // pre-fix behavior of permanently-stuck UI with no diagnostic.
+  useToastStore.getState().addToast(
+    "Some real-time updates may be delayed. Restart the app if data appears stale.",
+    "error",
+    8000,
+  );
 }
 
 /**
@@ -621,6 +835,10 @@ export async function initAllListeners(): Promise<void> {
  * Useful for tests, hot-reload, and app shutdown.
  */
 export async function teardownAllListeners(): Promise<void> {
+  // Abort any in-flight retry loops before clearing state — otherwise a
+  // sleeping retry could push fresh unlisteners into the array we're about
+  // to drop, leaking them past the teardown boundary.
+  retryGeneration.aborted = true;
   for (const unlisten of unlisteners) {
     try {
       unlisten();

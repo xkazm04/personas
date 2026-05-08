@@ -21,7 +21,7 @@ use axum::http::StatusCode;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::Deserialize;
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{oneshot, Mutex};
 
 /// Map of request ID → oneshot sender, used to route JS bridge responses
@@ -168,6 +168,28 @@ async fn try_eval_bridge(
         map.insert(id.clone(), tx);
     }
 
+    let result = eval_and_await_response(state, &id, method, params, timeout_secs, rx).await;
+
+    // Always remove the pending entry. On the happy path __test_respond has
+    // already removed it (no-op here); on missing-webview, eval-failure, or
+    // timeout this prevents a stranded oneshot::Sender from leaking into the
+    // HashMap and avoids id-collision risk on long automation sessions.
+    {
+        let mut map = state.pending.lock().await;
+        map.remove(&id);
+    }
+
+    result
+}
+
+async fn eval_and_await_response(
+    state: &ServerState,
+    id: &str,
+    method: &str,
+    params: &serde_json::Value,
+    timeout_secs: u64,
+    rx: oneshot::Receiver<String>,
+) -> Result<String, (StatusCode, String)> {
     // Build JS to call the bridge's __exec__ dispatcher
     let params_json = serde_json::to_string(params).unwrap_or_else(|_| "{}".to_string());
     let js = format!(r#"window.__TEST__.__exec__("{id}", "{method}", {params_json});"#,);
@@ -194,15 +216,10 @@ async fn try_eval_bridge(
             StatusCode::INTERNAL_SERVER_ERROR,
             "Response channel dropped".to_string(),
         )),
-        Err(_) => {
-            // Clean up the pending entry on timeout
-            let mut map = state.pending.lock().await;
-            map.remove(&id);
-            Err((
-                StatusCode::GATEWAY_TIMEOUT,
-                format!("Bridge response timeout ({timeout_secs}s)"),
-            ))
-        }
+        Err(_) => Err((
+            StatusCode::GATEWAY_TIMEOUT,
+            format!("Bridge response timeout ({timeout_secs}s)"),
+        )),
     }
 }
 
@@ -820,6 +837,266 @@ async fn handle_health() -> &'static str {
     r#"{"status":"ok","server":"personas-test-automation","version":"0.2.0"}"#
 }
 
+// ── Build session MCP endpoints ─────────────────────────────────────────────
+//
+// Direct HTTP wrappers around the build-session Tauri commands. These let
+// the build-mcp Python server (`tools/build-mcp/server.py`) drive a build
+// end-to-end without going through the frontend bridge — the frontend may
+// not even be mounted (e2e harness, headless CI, future external MCP
+// clients). Each endpoint mirrors a Tauri command 1:1 except for the
+// streaming Channel — `start_build_session_headless` substitutes a no-op
+// channel so global emits stay live but no-one is listening on the IPC
+// side.
+//
+// All endpoints require the `test-automation` feature, so they're not
+// shipped in production builds. External exposure (auth-gated production
+// MCP) is a separate deliverable.
+
+#[derive(Deserialize)]
+struct BuildStartRequest {
+    persona_id: String,
+    intent: String,
+    #[serde(default)]
+    workflow_json: Option<String>,
+    #[serde(default)]
+    parser_result_json: Option<String>,
+    #[serde(default)]
+    language: Option<String>,
+    #[serde(default)]
+    mode: Option<String>,
+    #[serde(default)]
+    companion_session_id: Option<String>,
+}
+
+async fn handle_build_start(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildStartRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let dummy_channel: tauri::ipc::Channel<crate::db::models::BuildEvent> =
+        tauri::ipc::Channel::new(|_| Ok(()));
+    match app_state.build_session_manager.start_session(
+        session_id.clone(),
+        req.persona_id,
+        req.intent,
+        dummy_channel,
+        app_state.db.clone(),
+        app_state.process_registry.clone(),
+        req.workflow_json,
+        req.parser_result_json,
+        state.app_handle.clone(),
+        req.language,
+        req.mode,
+        req.companion_session_id,
+    ) {
+        Ok(sid) => Ok(serde_json::json!({"success": true, "sessionId": sid}).to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildSessionRequest {
+    session_id: String,
+}
+
+async fn handle_build_status(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildSessionRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    match crate::db::repos::core::build_sessions::get_by_id(&app_state.db, &req.session_id) {
+        Ok(Some(session)) => {
+            let pending_question = session
+                .pending_question
+                .as_deref()
+                .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
+            let resolved_cells: serde_json::Value =
+                serde_json::from_str(&session.resolved_cells).unwrap_or_default();
+            let body = serde_json::json!({
+                "success": true,
+                "sessionId": session.id,
+                "personaId": session.persona_id,
+                "phase": session.phase.as_str(),
+                "isTerminal": session.phase.is_terminal(),
+                "mode": session.mode.unwrap_or_else(|| "interactive".to_string()),
+                "companionSessionId": session.companion_session_id,
+                "intent": session.intent,
+                "pendingQuestion": pending_question,
+                "resolvedCells": resolved_cells,
+                "agentIrPresent": session.agent_ir.is_some(),
+                "errorMessage": session.error_message,
+                "createdAt": session.created_at,
+                "updatedAt": session.updated_at,
+            });
+            Ok(body.to_string())
+        }
+        Ok(None) => Ok(serde_json::json!({
+            "success": false,
+            "error": format!("Build session {} not found", req.session_id)
+        })
+        .to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
+async fn handle_build_list_questions(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildSessionRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    match crate::db::repos::core::build_sessions::get_by_id(&app_state.db, &req.session_id) {
+        Ok(Some(session)) => {
+            let pending = session
+                .pending_question
+                .as_deref()
+                .and_then(|q| serde_json::from_str::<serde_json::Value>(q).ok());
+            Ok(serde_json::json!({"success": true, "pendingQuestion": pending}).to_string())
+        }
+        Ok(None) => Ok(serde_json::json!({
+            "success": false,
+            "error": format!("Build session {} not found", req.session_id)
+        })
+        .to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildAnswerRequest {
+    session_id: String,
+    cell_key: String,
+    answer: String,
+}
+
+async fn handle_build_answer(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildAnswerRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    let user_answer = crate::db::models::UserAnswer {
+        cell_key: req.cell_key,
+        answer: req.answer,
+        reference: None,
+        webhook_source: None,
+    };
+    match app_state
+        .build_session_manager
+        .send_answer(&req.session_id, user_answer)
+    {
+        Ok(_) => Ok(serde_json::json!({"success": true}).to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+struct BuildTestRequest {
+    session_id: String,
+    persona_id: String,
+}
+
+async fn handle_build_test(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildTestRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    // Re-load + apply adoption answers, then run real tool tests. Mirrors
+    // `test_build_draft` (commands/design/build_sessions.rs:455+) without
+    // the agent_ir-landing race window — by the time a build-mcp client
+    // calls /build/test the session has been observable via /build/status.
+    let session = match crate::db::repos::core::build_sessions::get_by_id(
+        &app_state.db,
+        &req.session_id,
+    ) {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            return Ok(serde_json::json!({
+                "success": false,
+                "error": format!("Build session {} not found", req.session_id)
+            })
+            .to_string());
+        }
+        Err(e) => {
+            return Ok(
+                serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+            );
+        }
+    };
+
+    let agent_ir_str = match session.agent_ir.clone() {
+        Some(s) => s,
+        None => {
+            return Ok(serde_json::json!({
+                "success": false,
+                "error": "agent_ir not yet emitted — wait for DraftReady before testing"
+            })
+            .to_string());
+        }
+    };
+    let mut agent_ir: crate::db::models::AgentIr = match serde_json::from_str(&agent_ir_str) {
+        Ok(v) => v,
+        Err(e) => {
+            return Ok(serde_json::json!({
+                "success": false,
+                "error": format!("agent_ir parse error: {e}")
+            })
+            .to_string());
+        }
+    };
+    if let Some(ref raw_answers) = session.adoption_answers {
+        if let Ok(answers) = serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(
+            raw_answers,
+        ) {
+            crate::engine::adoption_answers::substitute_variables(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::inject_configuration_section(&mut agent_ir, &answers);
+            crate::engine::adoption_answers::apply_credential_bindings_to_connectors(
+                &mut agent_ir,
+                &answers,
+            );
+        }
+    }
+
+    match crate::engine::build_session::run_tool_tests(
+        &app_state.db,
+        &state.app_handle,
+        &req.session_id,
+        &req.persona_id,
+        &agent_ir,
+    )
+    .await
+    {
+        Ok(report) => Ok(serde_json::json!({"success": true, "report": report}).to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
+async fn handle_build_cancel(
+    AxumState(state): AxumState<ServerState>,
+    Json(req): Json<BuildSessionRequest>,
+) -> Result<String, (StatusCode, String)> {
+    let app_state = state.app_handle.state::<std::sync::Arc<crate::AppState>>();
+    match app_state.build_session_manager.cancel_session(
+        &req.session_id,
+        &app_state.db,
+        &app_state.process_registry,
+    ) {
+        Ok(_) => Ok(serde_json::json!({"success": true}).to_string()),
+        Err(e) => Ok(
+            serde_json::json!({"success": false, "error": e.to_string()}).to_string(),
+        ),
+    }
+}
+
 // ── Generic bridge dispatcher ───────────────────────────────────────────────
 //
 // Allows new scenario helpers to be added on the JS bridge side without
@@ -875,6 +1152,16 @@ async fn handle_bridge_exec(
 /// Default port for dev mode (`--features test-automation`).
 pub const DEFAULT_PORT: u16 = 17320;
 
+/// Number of consecutive ports tried after the requested one if EADDRINUSE.
+/// Covers the common case of a stale dev session or parallel CI worker holding
+/// the canonical port.
+const FALLBACK_PORT_ATTEMPTS: u16 = 5;
+
+/// Tauri event emitted once the server is bound. Payload is the actual port
+/// (u16) so test harnesses can discover a fallback port if the canonical one
+/// was occupied.
+pub const SERVER_LISTENING_EVENT: &str = "test-automation:listening";
+
 /// Check if production test mode is enabled via env var.
 /// Returns the port if `PERSONAS_TEST_PORT` is set to a valid number.
 pub fn env_test_port() -> Option<u16> {
@@ -883,13 +1170,8 @@ pub fn env_test_port() -> Option<u16> {
         .and_then(|v| v.parse::<u16>().ok())
 }
 
-pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16) {
-    let state = ServerState {
-        app_handle,
-        pending,
-    };
-
-    let app = Router::new()
+fn build_router(state: ServerState) -> Router {
+    Router::new()
         // Health
         .route("/health", get(handle_health))
         // Primitives
@@ -927,27 +1209,100 @@ pub fn start_server(app_handle: AppHandle, pending: PendingResponses, port: u16)
         .route("/list-credentials", get(handle_list_credentials))
         .route("/list-cli-capturable", get(handle_list_cli_capturable))
         .route("/cli-capture-run", post(handle_cli_capture_run))
+        // Build session — direct Tauri-command wrappers for headless drivers
+        // (build-mcp, e2e harness). See `handle_build_*` for the contract.
+        .route("/build/start", post(handle_build_start))
+        .route("/build/status", post(handle_build_status))
+        .route("/build/list-questions", post(handle_build_list_questions))
+        .route("/build/answer", post(handle_build_answer))
+        .route("/build/test", post(handle_build_test))
+        .route("/build/cancel", post(handle_build_cancel))
         // Generic dispatcher — forwards to any bridge method on window.__TEST__.
         .route("/bridge-exec", post(handle_bridge_exec))
-        .with_state(state);
+        .with_state(state)
+}
 
-    let addr = format!("127.0.0.1:{}", port);
-    let addr_clone = addr.clone();
-    tauri::async_runtime::spawn(async move {
+/// Try to bind the requested port, falling back to the next
+/// [`FALLBACK_PORT_ATTEMPTS`] consecutive ports on `AddrInUse`. Returns the
+/// bound listener and the actual port chosen, or the last bind error.
+async fn bind_with_fallback(
+    requested_port: u16,
+) -> Result<(tokio::net::TcpListener, u16), std::io::Error> {
+    let mut last_err: Option<std::io::Error> = None;
+    for attempt in 0..FALLBACK_PORT_ATTEMPTS {
+        let try_port = match requested_port.checked_add(attempt) {
+            Some(p) => p,
+            None => break,
+        };
+        let addr = format!("127.0.0.1:{}", try_port);
         match tokio::net::TcpListener::bind(&addr).await {
-            Ok(listener) => {
-                tracing::info!("Test automation server listening on http://{}", addr);
-                if let Err(e) = axum::serve(listener, app).await {
-                    tracing::error!("Test automation server error: {}", e);
-                }
-            }
-            Err(e) => {
-                tracing::error!(
-                    "Failed to bind test automation server on {}: {}",
-                    addr_clone,
-                    e
+            Ok(listener) => return Ok((listener, try_port)),
+            Err(e) if e.kind() == std::io::ErrorKind::AddrInUse => {
+                tracing::warn!(
+                    "Test automation server: port {} already in use (attempt {}/{}); trying next port",
+                    try_port,
+                    attempt + 1,
+                    FALLBACK_PORT_ATTEMPTS
                 );
+                last_err = Some(e);
             }
+            Err(e) => return Err(e),
+        }
+    }
+    Err(last_err.unwrap_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::AddrInUse,
+            "exhausted fallback ports without a successful bind",
+        )
+    }))
+}
+
+/// Bind the test automation HTTP server on `requested_port` (or the next free
+/// port within the fallback window) and spawn `axum::serve` on the bound
+/// listener. Returns the actual port on success so the caller — or test
+/// harness, via the [`SERVER_LISTENING_EVENT`] Tauri event — knows where to
+/// connect.
+///
+/// Bind happens inline so callers see `EADDRINUSE` synchronously (with the
+/// real port number in the error) rather than waiting for the test harness
+/// to time out polling a server that never started.
+pub async fn start_server(
+    app_handle: AppHandle,
+    pending: PendingResponses,
+    requested_port: u16,
+) -> Result<u16, std::io::Error> {
+    let state = ServerState {
+        app_handle: app_handle.clone(),
+        pending,
+    };
+    let app = build_router(state);
+
+    let (listener, bound_port) = match bind_with_fallback(requested_port).await {
+        Ok(pair) => pair,
+        Err(e) => {
+            tracing::error!(
+                "Failed to bind test automation server: tried ports {}-{} ({}). \
+                 Likely a stale process is holding the port — kill it (or set \
+                 PERSONAS_TEST_PORT to a free port) and retry.",
+                requested_port,
+                requested_port.saturating_add(FALLBACK_PORT_ATTEMPTS - 1),
+                e,
+            );
+            return Err(e);
+        }
+    };
+
+    tracing::info!(
+        "Test automation server listening on http://127.0.0.1:{}",
+        bound_port
+    );
+    let _ = app_handle.emit(SERVER_LISTENING_EVENT, bound_port);
+
+    tauri::async_runtime::spawn(async move {
+        if let Err(e) = axum::serve(listener, app).await {
+            tracing::error!("Test automation server error: {}", e);
         }
     });
+
+    Ok(bound_port)
 }

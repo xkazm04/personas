@@ -27,6 +27,8 @@ fn row_to_build_session(row: &Row) -> rusqlite::Result<BuildSession> {
         cli_pid: cli_pid.map(|p| p as u32),
         workflow_json: row.get("workflow_json").unwrap_or(None),
         parser_result_json: row.get("parser_result_json").unwrap_or(None),
+        mode: row.get("mode").unwrap_or(None),
+        companion_session_id: row.get("companion_session_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -40,8 +42,8 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
             "INSERT INTO build_sessions
              (id, persona_id, phase, resolved_cells, pending_question, agent_ir,
               adoption_answers, intent, error_message, cli_pid, workflow_json,
-              parser_result_json, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+              parser_result_json, mode, companion_session_id, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
             params![
                 session.id,
                 session.persona_id,
@@ -55,6 +57,8 @@ pub fn create(pool: &DbPool, session: &BuildSession) -> Result<(), AppError> {
                 session.cli_pid.map(|p| p as i64),
                 session.workflow_json,
                 session.parser_result_json,
+                session.mode,
+                session.companion_session_id,
                 session.created_at,
                 session.updated_at,
             ],
@@ -170,6 +174,14 @@ pub fn update(pool: &DbPool, id: &str, updates: &UpdateBuildSession) -> Result<(
         if let Some(ref cli_pid) = updates.cli_pid {
             set_clauses.push(format!("cli_pid = ?{}", set_clauses.len() + 1));
             param_values.push(Box::new(cli_pid.map(|p| p as i64)));
+        }
+        if let Some(ref mode) = updates.mode {
+            set_clauses.push(format!("mode = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(mode.clone()));
+        }
+        if let Some(ref companion_session_id) = updates.companion_session_id {
+            set_clauses.push(format!("companion_session_id = ?{}", set_clauses.len() + 1));
+            param_values.push(Box::new(companion_session_id.clone()));
         }
 
         // Always update updated_at

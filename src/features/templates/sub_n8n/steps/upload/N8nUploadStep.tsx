@@ -13,6 +13,7 @@ import { useFileUpload } from './useFileUpload';
 import { usePasteImport } from './usePasteImport';
 import { useUrlImport } from './useUrlImport';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
 
 interface N8nUploadStepProps {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -140,12 +141,13 @@ function FileUploadTab({
         tabIndex={0}
         aria-label={t.templates.n8n.dropzone_aria}
         data-testid="n8n-upload-dropzone"
-        className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-modal border-2 border-dashed cursor-pointer transition-all duration-200 ${
+        className={`animate-fade-in relative flex flex-col items-center justify-center gap-4 p-12 rounded-modal border-2 border-dashed cursor-pointer transition-colors duration-200 ${
           isDragging
-            ? 'border-violet-400/60 bg-violet-500/10 scale-[1.01]'
+            ? 'border-violet-400/60 bg-violet-500/10'
             : 'border-primary/15 bg-secondary/20 hover:border-primary/30 hover:bg-secondary/30'
         } focus-visible:ring-2 focus-visible:ring-violet-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background`}
       >
+        <DropZoneGlow active={isDragging} radius={12} label={t.templates.n8n.drop_file_here} />
         <div
           className={`animate-fade-in w-16 h-16 rounded-modal border flex items-center justify-center transition-colors duration-200 ${
             isDragging ? 'bg-violet-500/25 border-violet-400/40' : 'bg-violet-500/15 border-violet-500/25'

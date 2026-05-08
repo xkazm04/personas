@@ -53,18 +53,26 @@ export async function bootstrapActiveBuildSessions(): Promise<void> {
 
   if (sessions.length === 0) return;
 
-  for (const session of sessions) {
-    try {
-      await cancelBuildSession(session.id);
-    } catch (err) {
+  // Cancel concurrently — the Rust side serializes via the sessions Mutex
+  // and the process registry, so parallel calls are safe and additive
+  // round-trips collapse from O(n) to O(1) wall time.
+  const results = await Promise.allSettled(
+    sessions.map((session) => cancelBuildSession(session.id)),
+  );
+
+  let failures = 0;
+  results.forEach((r, i) => {
+    if (r.status === "rejected") {
+      failures += 1;
       log.warn("bootstrapActiveBuildSessions: cancel failed", {
-        sessionId: session.id,
-        error: err instanceof Error ? err.message : String(err),
+        sessionId: sessions[i]?.id,
+        error: r.reason instanceof Error ? r.reason.message : String(r.reason),
       });
     }
-  }
+  });
 
   log.info("bootstrapActiveBuildSessions: cancelled orphan drafts", {
     count: sessions.length,
+    failures,
   });
 }

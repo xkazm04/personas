@@ -97,7 +97,8 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
             max={IMPORTANCE_MAX}
             value={importance}
             onChange={(e) => setImportance(Number(e.target.value))}
-            className="w-14 h-1 accent-amber-500"
+            className="w-14"
+            style={{ ['--slider-progress' as string]: (importance - IMPORTANCE_MIN) / (IMPORTANCE_MAX - IMPORTANCE_MIN) }}
           />
           <span className="typo-body text-foreground w-3 text-right">{importance}</span>
         </div>

@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
+import { useId } from 'react';
+import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { SettingsIconAccent } from '@/lib/design/statusTokens';
 
 export interface SubNavItem {
@@ -46,6 +49,8 @@ export default function SidebarSubNav({
 }) {
   const isOverview = variant === 'overview';
   const isDark = useIsDarkTheme();
+  const motionConfig = useMotion();
+  const layoutGroupId = useId();
   const boxSize = isOverview ? 'w-8 h-8' : 'w-7 h-7';
   const iconSize = isOverview ? 'w-4 h-4' : 'w-3.5 h-3.5';
   const labelOf = useSidebarLabels();
@@ -85,9 +90,9 @@ export default function SidebarSubNav({
             onClick={() => onSelect(item.id)}
             onPointerEnter={onHoverItem ? () => onHoverItem(item.id) : undefined}
             aria-current={isActive ? 'page' : undefined}
-            className={`w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
+            className={`relative w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
               isActive
-                ? activeButtonClass
+                ? `${activeButtonClass} translate-x-[1px] scale-[1.01]`
                 : isDevItem
                   ? 'bg-amber-500/5 border-amber-500/25 hover:bg-amber-500/10'
                   : isOverview
@@ -95,6 +100,14 @@ export default function SidebarSubNav({
                     : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
             }`}
           >
+            {isActive && (
+              <motion.span
+                layoutId={`subnav-active-${layoutGroupId}`}
+                aria-hidden="true"
+                className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-primary shadow-[0_0_8px_hsl(var(--primary)/0.4)]"
+                transition={motionConfig.spring}
+              />
+            )}
             <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
               isActive
                 ? activeIconBoxClass
@@ -102,7 +115,7 @@ export default function SidebarSubNav({
             }`}>
               <Icon className={`${iconSize} ${isActive ? activeIconColor : 'text-foreground'}`} />
             </div>
-            <span className={`typo-heading ${isActive ? 'text-foreground' : isOverview ? 'text-foreground' : 'text-foreground'}`}>
+            <span className={`typo-heading ${isActive ? 'text-foreground font-medium' : isOverview ? 'text-foreground' : 'text-foreground'}`}>
               {labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (

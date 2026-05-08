@@ -1,12 +1,15 @@
 use rusqlite::{params, Row};
 use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
+use std::time::{Duration, Instant};
 use tracing::{info, instrument, warn};
 
 use crate::db::models::{
     AnomalyDrilldownData, CorrelatedEvent, DashboardCostAnomaly, DashboardDailyPoint,
-    DashboardTopPersona, ExecutionDashboardData, MetricAnomaly, MetricsChartData,
-    MetricsChartPoint, MetricsPersonaBreakdown, PersonaCostEntry, PersonaPromptVersion,
-    PromptPerformanceData, PromptPerformancePoint, RootCauseSuggestion, VersionMarker,
+    DashboardTopPersona, ExecutionDashboardData, ExecutionHeatmapData, HeatmapDay,
+    HeatmapInsights, MetricAnomaly, MetricsChartData, MetricsChartPoint,
+    MetricsPersonaBreakdown, PersonaCostEntry, PersonaPromptVersion, PromptPerformanceData,
+    PromptPerformancePoint, RootCauseSuggestion, VersionMarker,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -1735,6 +1738,233 @@ fn generate_root_cause_suggestions(
     }
 
     suggestions
+}
+
+// ============================================================================
+// Execution Heatmap (GitHub-style contribution graph)
+// ============================================================================
+
+const HEATMAP_CACHE_TTL: Duration = Duration::from_secs(3600);
+
+struct HeatmapCacheEntry {
+    cached_at: Instant,
+    data: ExecutionHeatmapData,
+}
+
+fn heatmap_cache() -> &'static Mutex<HashMap<String, HeatmapCacheEntry>> {
+    static CACHE: OnceLock<Mutex<HashMap<String, HeatmapCacheEntry>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn heatmap_cache_key(days: i64, persona_id: Option<&str>) -> String {
+    match persona_id {
+        Some(id) => format!("{days}|{id}"),
+        None => format!("{days}|"),
+    }
+}
+
+/// Public API to invalidate the heatmap cache (e.g. after a new execution lands).
+/// Optional currently — the 1h TTL is the safety net.
+#[allow(dead_code)]
+pub fn invalidate_heatmap_cache() {
+    if let Ok(mut map) = heatmap_cache().lock() {
+        map.clear();
+    }
+}
+
+/// Returns daily execution counts + cost for the last `days` days, plus derived
+/// insights (longest streak, dormant-since, peak day, week-over-week trend).
+/// Cached per (days, persona_id) for 1 hour.
+#[instrument(skip(pool), fields(days, persona_id))]
+pub fn get_execution_heatmap(
+    pool: &DbPool,
+    days: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<ExecutionHeatmapData, AppError> {
+    let window_days = days.unwrap_or(365).clamp(1, 365);
+    let key = heatmap_cache_key(window_days, persona_id);
+
+    // Cache hit fast path
+    if let Ok(map) = heatmap_cache().lock() {
+        if let Some(entry) = map.get(&key) {
+            if entry.cached_at.elapsed() < HEATMAP_CACHE_TTL {
+                return Ok(entry.data.clone());
+            }
+        }
+    }
+
+    let data = compute_execution_heatmap(pool, window_days, persona_id)?;
+
+    if let Ok(mut map) = heatmap_cache().lock() {
+        // Bound the cache so a buggy frontend can't grow it without bound.
+        if map.len() > 64 {
+            map.clear();
+        }
+        map.insert(
+            key,
+            HeatmapCacheEntry {
+                cached_at: Instant::now(),
+                data: data.clone(),
+            },
+        );
+    }
+
+    Ok(data)
+}
+
+fn compute_execution_heatmap(
+    pool: &DbPool,
+    window_days: i64,
+    persona_id: Option<&str>,
+) -> Result<ExecutionHeatmapData, AppError> {
+    timed_query!("execution_metrics", "execution_metrics::get_heatmap", {
+        let conn = pool.get()?;
+        let qb = persona_filter_qb(format!("-{window_days} days"), persona_id);
+        let pid_clause = if qb.has_conditions() {
+            format!(" AND {}", qb.where_clause().trim_start_matches("WHERE "))
+        } else {
+            String::new()
+        };
+
+        let sql = format!(
+            "SELECT
+                DATE(created_at) as date,
+                COUNT(*) as count,
+                COALESCE(SUM(cost_usd), 0.0) as cost
+             FROM persona_executions
+             WHERE created_at >= datetime('now', ?1){pid_clause}
+             GROUP BY DATE(created_at)
+             ORDER BY date ASC"
+        );
+
+        let params_ref = qb.params_ref();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params_ref.as_slice(), |row| {
+            Ok(HeatmapDay {
+                date: row.get("date")?,
+                count: row.get("count")?,
+                cost: row.get("cost")?,
+            })
+        })?;
+        let days_vec: Vec<HeatmapDay> = rows
+            .filter_map(|r| match r {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    warn!("get_execution_heatmap: row deserialization failed: {e}");
+                    None
+                }
+            })
+            .collect();
+
+        let insights = derive_heatmap_insights(&days_vec, window_days);
+
+        Ok(ExecutionHeatmapData {
+            days: days_vec,
+            insights,
+            window_days,
+            generated_at: chrono::Utc::now().to_rfc3339(),
+        })
+    })
+}
+
+fn derive_heatmap_insights(days: &[HeatmapDay], window_days: i64) -> HeatmapInsights {
+    let total_executions: i64 = days.iter().map(|d| d.count).sum();
+    let total_cost: f64 = days.iter().map(|d| d.cost).sum();
+
+    // Peak day
+    let peak = days.iter().max_by_key(|d| d.count);
+    let (peak_day_date, peak_day_count) = match peak {
+        Some(p) => (Some(p.date.clone()), p.count),
+        None => (None, 0),
+    };
+
+    // Build a date->count map for quick lookups
+    let by_date: HashMap<String, i64> = days.iter().map(|d| (d.date.clone(), d.count)).collect();
+
+    // Walk the entire window day-by-day to compute streaks & week sums.
+    let today = chrono::Utc::now().date_naive();
+    let start = today - chrono::Duration::days(window_days - 1);
+
+    let mut longest_streak: i64 = 0;
+    let mut current_streak: i64 = 0;
+    let mut dormant_days: Option<i64> = None;
+    let mut current_week: i64 = 0;
+    let mut previous_week: i64 = 0;
+
+    for i in 0..window_days {
+        let cursor = start + chrono::Duration::days(i);
+        let key = cursor.format("%Y-%m-%d").to_string();
+        let count = by_date.get(&key).copied().unwrap_or(0);
+
+        if count > 0 {
+            current_streak += 1;
+            if current_streak > longest_streak {
+                longest_streak = current_streak;
+            }
+        } else {
+            current_streak = 0;
+        }
+
+        let days_ago = (today - cursor).num_days();
+        if days_ago < 7 {
+            current_week += count;
+        } else if days_ago < 14 {
+            previous_week += count;
+        }
+
+        if count > 0 {
+            dormant_days = match dormant_days {
+                None => Some(days_ago),
+                Some(existing) => Some(existing.min(days_ago)),
+            };
+        }
+    }
+
+    let week_over_week_pct = if previous_week > 0 {
+        Some(((current_week as f64 - previous_week as f64) / previous_week as f64) * 100.0)
+    } else {
+        None
+    };
+
+    // Quartile thresholds — split non-zero days into 4 buckets by count.
+    let mut nonzero_counts: Vec<i64> = days.iter().map(|d| d.count).filter(|c| *c > 0).collect();
+    nonzero_counts.sort_unstable();
+    let intensity_thresholds = quartile_thresholds(&nonzero_counts);
+
+    HeatmapInsights {
+        longest_streak_days: longest_streak,
+        dormant_days,
+        peak_day_date,
+        peak_day_count,
+        current_week_executions: current_week,
+        previous_week_executions: previous_week,
+        week_over_week_pct,
+        total_executions,
+        total_cost,
+        intensity_thresholds,
+    }
+}
+
+/// Returns inclusive upper bounds for 4 intensity quartiles, computed from sorted
+/// non-zero day counts. A day with count <= q1 gets the lowest non-zero shade,
+/// <= q2 the next, etc. When the sample is small the buckets collapse gracefully.
+fn quartile_thresholds(sorted_counts: &[i64]) -> [i64; 4] {
+    if sorted_counts.is_empty() {
+        return [1, 1, 1, 1];
+    }
+    let n = sorted_counts.len();
+    let pick = |q: f64| -> i64 {
+        // Index for the q-th quantile (0..1). Clamp to last element.
+        let idx = ((n as f64 * q).ceil() as usize)
+            .saturating_sub(1)
+            .min(n - 1);
+        sorted_counts[idx].max(1)
+    };
+    let q1 = pick(0.25);
+    let q2 = pick(0.50).max(q1);
+    let q3 = pick(0.75).max(q2);
+    let q4 = pick(1.00).max(q3);
+    [q1, q2, q3, q4]
 }
 
 #[cfg(test)]

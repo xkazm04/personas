@@ -61,7 +61,7 @@ const HEALING_DURATION_MS = 8000;
 const MAX_TOASTS = 10;
 
 /** Maximum visible toasts rendered on screen. */
-export const MAX_VISIBLE_TOASTS = 4;
+export const MAX_VISIBLE_TOASTS = 3;
 
 // ---------------------------------------------------------------------------
 // Store

@@ -1434,6 +1434,10 @@ CREATE TABLE IF NOT EXISTS build_sessions (
     intent          TEXT NOT NULL,
     error_message   TEXT,
     cli_pid         INTEGER,
+    workflow_json   TEXT,
+    parser_result_json TEXT,
+    mode            TEXT,
+    companion_session_id TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );

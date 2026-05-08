@@ -32,6 +32,22 @@ pub fn clear_crash_logs(app: tauri::AppHandle) -> Result<(), AppError> {
     Ok(())
 }
 
+/// Diagnostics surface: report total bytes and file counts for the rolling
+/// tracing log directory and the crash log directory. Lets users see whether
+/// a long-lived install is accumulating disk usage that the bounded retention
+/// caps are supposed to prevent.
+#[tauri::command]
+pub fn get_log_directory_stats(
+    app: tauri::AppHandle,
+) -> Result<crate::logging::LogDirectoryStats, AppError> {
+    let app_data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| AppError::Internal(format!("Failed to resolve app data dir: {e}")))?;
+
+    Ok(crate::logging::log_directory_stats(&app_data_dir))
+}
+
 // =============================================================================
 // Frontend Crash Telemetry
 // =============================================================================

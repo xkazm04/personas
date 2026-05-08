@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Workflow } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
 import type { GlyphRow, GlyphDimension } from './types';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
@@ -12,6 +13,7 @@ import { InteractiveSigil } from './InteractiveSigil';
 import { ChannelTotem } from './ChannelTotem';
 import { ConnectorTotem } from './ConnectorTotem';
 import { DimensionPanel } from './DimensionPanel';
+import { ModelBadge } from './ModelBadge';
 
 interface GlyphCardProps {
   row: GlyphRow;
@@ -34,6 +36,7 @@ interface GlyphCardProps {
 export function GlyphCard({ row, index, flow, templateName, statusDot, headerBadge, footerSlot }: GlyphCardProps) {
   const { t } = useTranslation();
   const c = t.templates.chronology;
+  const motion_ = useMotion();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
   const [flowOpen, setFlowOpen] = useState(false);
@@ -50,9 +53,9 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, scale: 0.97 }}
+        initial={motion_.shouldAnimate ? { opacity: 0, scale: 0.97 } : false}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: index * 0.06 }}
+        transition={motion_.shouldAnimate ? { duration: 0.4, delay: index * 0.06 } : { duration: 0 }}
         className="relative rounded-modal bg-card-bg border border-card-border shadow-elevation-2 overflow-hidden group transition-[border-color,box-shadow] duration-300 hover:border-primary/30 hover:shadow-elevation-3"
       >
         <div
@@ -70,7 +73,7 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
           <motion.div
             className="absolute inset-0 flex items-center justify-center"
             animate={{ opacity: activeDim ? 0.18 : 1, scale: activeDim ? 0.94 : 1 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            transition={motion_.shouldAnimate ? { duration: 0.3, ease: 'easeOut' } : { duration: 0 }}
           >
             <InteractiveSigil
               row={row} rowIndex={index} size={440}
@@ -80,7 +83,8 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
           </motion.div>
 
           <motion.div className="absolute inset-0 pointer-events-none"
-            animate={{ opacity: activeDim ? 0 : 1 }} transition={{ duration: 0.2 }}>
+            animate={{ opacity: activeDim ? 0 : 1 }}
+            transition={motion_.shouldAnimate ? { duration: 0.2 } : { duration: 0 }}>
             {channels.length > 0 && <ChannelTotem channels={channels} tileSize={48} spacing={60} max={5} />}
             {row.connectors.length > 0 && <ConnectorTotem connectors={row.connectors} tileSize={52} spacing={64} max={6} />}
           </motion.div>
@@ -96,10 +100,10 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
               {hoveredLabel && hoveredColor && !activeDim && (
                 <motion.span
                   key={hoveredDim}
-                  initial={{ opacity: 0, y: -6, scale: 0.94 }}
+                  initial={motion_.shouldAnimate ? { opacity: 0, y: -6, scale: 0.94 } : { opacity: 1, y: 0, scale: 1 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.94 }}
-                  transition={{ duration: 0.18 }}
+                  exit={motion_.shouldAnimate ? { opacity: 0, y: -4, scale: 0.94 } : { opacity: 0 }}
+                  transition={motion_.shouldAnimate ? { duration: 0.18 } : { duration: 0 }}
                   className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 rounded-full typo-label font-bold uppercase tracking-[0.18em] pointer-events-none"
                   style={{
                     background: `${hoveredColor}1f`,
@@ -116,6 +120,10 @@ export function GlyphCard({ row, index, flow, templateName, statusDot, headerBad
             {!row.enabled && (
               <span className="typo-label px-1.5 py-0.5 rounded bg-foreground/10 text-foreground/70 shrink-0">{c.off_badge}</span>
             )}
+            <ModelBadge
+              model={row.recommendedModel ?? null}
+              rationale={row.modelRationale ?? null}
+            />
             {headerBadge}
             <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 typo-body text-foreground shrink-0">
               {TrigIcon && <TrigIcon className="w-4 h-4 text-amber-400" />}

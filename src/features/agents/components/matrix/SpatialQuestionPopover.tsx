@@ -129,7 +129,7 @@ function QuestionModal({
     <div
       ref={backdropRef}
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 surface-blur-modal"
     >
       {/* Modal — wider (max-w-xl → ~36rem ≈ 20% more than max-w-lg ~32rem) */}
       <div className="w-full max-w-xl max-h-[80vh] bg-background border border-primary/20 rounded-2xl shadow-elevation-4 shadow-primary/10 flex flex-col overflow-hidden">

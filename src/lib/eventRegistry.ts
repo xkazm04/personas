@@ -210,6 +210,11 @@ export const EventName = {
 
   // Titlebar notification (persona message delivery — v3.2 DELIV-02)
   TITLEBAR_NOTIFICATION: 'titlebar-notification',
+
+  // One-shot build terminal phase reached (Promoted | Failed). Frontend
+  // listener adds an entry to the notification bell with a deep-link to
+  // the persona's draft so the user can review what landed.
+  BUILD_ONESHOT_TERMINAL: 'build-oneshot-terminal',
 } as const;
 
 export type EventNameValue = (typeof EventName)[keyof typeof EventName];
@@ -555,6 +560,17 @@ export interface TitlebarNotificationPayload {
   priority: string;
 }
 
+/** Terminal-phase signal for one-shot autonomous builds (engine/build_session/events.rs BuildOneShotTerminalPayload). */
+export interface BuildOneShotTerminalPayload {
+  sessionId: string;
+  personaId: string;
+  personaName: string | null;
+  /** Either `"promoted"` or `"failed"` (matches BuildPhase::as_str). */
+  phase: string;
+  success: boolean;
+  errorMessage: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Payload type map
 // ---------------------------------------------------------------------------
@@ -849,6 +865,9 @@ export interface EventPayloadMap {
 
   // Titlebar notification
   [EventName.TITLEBAR_NOTIFICATION]: TitlebarNotificationPayload;
+
+  // One-shot build terminal phase reached
+  [EventName.BUILD_ONESHOT_TERMINAL]: BuildOneShotTerminalPayload;
 }
 
 // ---------------------------------------------------------------------------

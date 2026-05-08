@@ -38,6 +38,10 @@ export function RoleGroupCard({ group, categoryCounts, topTemplates, onSelectCat
           <img
             src={imgSrc}
             alt=""
+            width={600}
+            height={150}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover opacity-50"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />

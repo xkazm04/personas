@@ -1,4 +1,13 @@
-import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type MutableRefObject,
+  type ReactNode,
+} from 'react';
 import { Tooltip } from '../display/Tooltip';
 
 // -- Variant + Size types --------------------------------------
@@ -75,6 +84,12 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   block?: boolean;
   /** Show loading spinner */
   loading?: boolean;
+  /**
+   * Optional in-flight label rendered in place of children while `loading` is true.
+   * Pass an i18n-resolved string like `t.common.saving` to give users an honest
+   * progress signal. When omitted, children stay rendered (dimmed) during loading.
+   */
+  loadingLabel?: ReactNode;
   /** Tooltip shown when the button is disabled, explaining why */
   disabledReason?: string;
 }
@@ -91,17 +106,47 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       iconRight,
       block,
       loading,
+      loadingLabel,
       disabled,
       disabledReason,
       className = '',
       children,
       type = 'button',
+      style,
       ...rest
     },
     ref,
   ) => {
     const isDisabled = disabled || loading;
     const showReason = isDisabled && !!disabledReason;
+    const isIconOnly = size === 'icon-sm' || size === 'icon-md' || size === 'icon-lg';
+
+    // Width-preserving loading: capture the resting rect when loading starts so the
+    // button doesn't collapse while content swaps to a loading label or stays dimmed.
+    // Skipped for icon-only sizes (already fixed-dimension via w-*).
+    const innerRef = useRef<HTMLButtonElement | null>(null);
+    const [lockedMinWidth, setLockedMinWidth] = useState<number | null>(null);
+    const wasLoadingRef = useRef(!!loading);
+
+    useLayoutEffect(() => {
+      const wasLoading = wasLoadingRef.current;
+      wasLoadingRef.current = !!loading;
+      if (isIconOnly) return;
+      if (loading && !wasLoading && innerRef.current) {
+        setLockedMinWidth(innerRef.current.getBoundingClientRect().width);
+      } else if (!loading && wasLoading) {
+        setLockedMinWidth(null);
+      }
+    }, [loading, isIconOnly]);
+
+    const setRefs = useCallback(
+      (node: HTMLButtonElement | null) => {
+        innerRef.current = node;
+        if (typeof ref === 'function') ref(node);
+        else if (ref) (ref as MutableRefObject<HTMLButtonElement | null>).current = node;
+      },
+      [ref],
+    );
 
     // Look up accent classes from static map (ensures Tailwind can detect them during purging)
     // Note: text-*-400 colors are corrected to 600/700 on light themes via CSS overrides in globals.css
@@ -127,18 +172,46 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       .filter(Boolean)
       .join(' ');
 
+    const lockedStyle =
+      lockedMinWidth != null && !isIconOnly ? { minWidth: `${lockedMinWidth}px` } : undefined;
+    const mergedStyle = lockedStyle || style ? { ...lockedStyle, ...style } : undefined;
+    const labelContent = loading && loadingLabel !== undefined ? loadingLabel : children;
+    const dimClass = loading ? 'opacity-60' : '';
+
     const btn = (
-      <button ref={ref} type={type} disabled={isDisabled} className={classes} {...rest}>
-        {loading ? (
-          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none">
+      <button
+        {...rest}
+        ref={setRefs}
+        type={type}
+        disabled={isDisabled}
+        className={classes}
+        style={mergedStyle}
+        aria-busy={loading || undefined}
+      >
+        {loading && isIconOnly ? (
+          <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-25" />
             <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
           </svg>
-        ) : icon ? (
-          <span className="flex-shrink-0">{icon}</span>
-        ) : null}
-        {children}
-        {iconRight && <span className="flex-shrink-0">{iconRight}</span>}
+        ) : (
+          <>
+            {loading && (
+              <svg className="w-3 h-3 animate-spin flex-shrink-0" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-25" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
+              </svg>
+            )}
+            {icon ? (
+              <span className={`flex-shrink-0 ${dimClass}`.trim()}>{icon}</span>
+            ) : null}
+            {labelContent != null && labelContent !== false ? (
+              <span className={dimClass || undefined}>{labelContent}</span>
+            ) : null}
+            {iconRight ? (
+              <span className={`flex-shrink-0 ${dimClass}`.trim()}>{iconRight}</span>
+            ) : null}
+          </>
+        )}
       </button>
     );
 

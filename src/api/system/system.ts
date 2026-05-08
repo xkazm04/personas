@@ -8,7 +8,8 @@ import type { CrashLogEntry } from "@/lib/bindings/CrashLogEntry";
 import type { FrontendCrashRow } from "@/lib/bindings/FrontendCrashRow";
 import type { SetupStartResult } from "@/lib/bindings/SetupStartResult";
 import type { DbPerfSnapshot } from "@/lib/bindings/DbPerfSnapshot";
-export type { HealthCheckItem, HealthCheckStatus, HealthCheckSection, SystemHealthReport, CrashLogEntry, FrontendCrashRow, SetupStartResult, DbPerfSnapshot };
+import type { LogDirectoryStats } from "@/lib/bindings/LogDirectoryStats";
+export type { HealthCheckItem, HealthCheckStatus, HealthCheckSection, SystemHealthReport, CrashLogEntry, FrontendCrashRow, SetupStartResult, DbPerfSnapshot, LogDirectoryStats };
 
 export const systemHealthCheck = () =>
   invoke<SystemHealthReport>("system_health_check");
@@ -47,6 +48,9 @@ export const getCrashLogs = () =>
 
 export const clearCrashLogs = () =>
   invoke<void>("clear_crash_logs");
+
+export const getLogDirectoryStats = () =>
+  invoke<LogDirectoryStats>("get_log_directory_stats");
 
 // ============================================================================
 // Frontend Crash Telemetry (SQLite-persisted)

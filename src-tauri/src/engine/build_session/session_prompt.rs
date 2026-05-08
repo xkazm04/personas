@@ -35,6 +35,7 @@ pub(super) fn build_session_prompt(
     connectors: &[String],
     template_context: &str,
     language: Option<&str>,
+    one_shot: bool,
 ) -> String {
     let cred_section = if credentials.is_empty() {
         "No credentials configured. The user MUST add credentials in the Vault (Keys module) before the agent can connect to external services. Warn them clearly.".to_string()
@@ -574,10 +575,112 @@ The agent runs on a platform with built-in communication protocols. When composi
 
     Same pattern applies to: R20 ("watched folder + Leonardo image generation" — image-gen is the publishing half, file-watch is the trigger half), "monitor + escalate to Slack", "scan + open GitHub issue", etc. The triggers are the listener event subscriptions; rule 21 (auto_triage) does NOT apply because the user named "approve before X" explicitly — that's `mode: "always"`, not `auto_triage`.
 
+28. **Recommend a runtime model PER capability.** Each capability resolution MUST emit `model_override` and `model_rationale`. The runtime uses `model_override` to seed which Claude model executes that capability; `model_rationale` is a one-sentence explanation surfaced in the UI so the user understands the choice.
+
+    **Default: Sonnet** (`claude-sonnet-4-6`). Pick a different model only when there is a clear reason. Defaulting to Sonnet across a multi-capability persona is the right answer most of the time; tier the picks deliberately, not aspirationally.
+
+    **Tier guide:**
+    - **Haiku** (`claude-haiku-4-5-20251001`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
+    - **Sonnet** (`claude-sonnet-4-6`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
+    - **Opus** (`claude-opus-4-7`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
+
+    **Per-capability, not per-persona.** A persona with two capabilities — `uc_classify_email` (label as urgent/followup/fyi) and `uc_draft_reply` (compose a personalized response) — should pick **Haiku** for `uc_classify_email` and **Sonnet** for `uc_draft_reply`. Mixed-tier personas are normal and good.
+
+    **Format on `model_override`:** emit a bare model-name string OR a partial `ModelProfile` object. Bare string is simpler and preferred. Examples:
+    ```
+    "model_override": "claude-sonnet-4-6"
+    "model_override": "claude-haiku-4-5-20251001"
+    "model_override": "claude-opus-4-7"
+    "model_override": {{"model": "claude-haiku-4-5-20251001", "effort": "low"}}
+    ```
+
+    **Format on `model_rationale`:** a single sentence (≤ 160 chars) explaining the pick in user terms — what the capability does and why the chosen tier fits. Examples:
+    - `"Haiku — single-tool inbox fetch + templated digest, no creative writing."`
+    - `"Sonnet — drafts a personalized reply that reads naturally to the recipient; templated outputs would feel robotic."`
+    - `"Opus — multi-step competitive research with cross-source synthesis; missing a connection between sources is the failure mode."`
+    - `"Sonnet (default) — typical monitor-and-summarize capability with no atypical requirements."`
+
+    **Anti-patterns to avoid:**
+    - Picking Opus because the user said "important" — importance ≠ reasoning depth.
+    - Picking Haiku because the user said "fast" — Sonnet is already fast for most workloads.
+    - Picking the same model for every capability when capabilities have visibly different complexity profiles.
+    - Emitting an empty rationale or restating the model name without explaining why.
+
 {template_context}
 
 Analyze the intent now. Begin with Phase A (behavior_core or a mission clarifying_question)."###
     );
+
+    // Autonomous-mode override: when the user picked "Let AI decide everything"
+    // (one-shot build), append a RULE block that promotes every "MUST ASK"
+    // clarifying_question rule into a "MUST DECIDE" instruction. This must come
+    // AFTER the main prompt body so it visibly overrides the earlier rules.
+    let result = if one_shot {
+        format!(
+            "{result}\n\n\
+            ## AUTONOMOUS BUILD MODE — OVERRIDES ABOVE\n\n\
+            The user has selected ONE-SHOT BUILD. They will NOT answer questions. \
+            You MUST resolve the entire build yourself in a single LLM session, \
+            from `behavior_core` through `agent_ir`, without emitting a single \
+            `clarifying_question` event for ANY scope (mission, capability, \
+            field, connector_category).\n\n\
+            **Override of all earlier ASK rules:**\n\n\
+            1. Wherever an earlier rule says \"MUST emit clarifying_question\" or \
+            \"ASK\", treat it as **\"MUST DECIDE using the safest reasonable \
+            default\"** instead. Pick the option you would recommend to a \
+            non-technical user and proceed.\n\
+            2. For ambiguous mission framing — pick the most conservative \
+            interpretation (informational over action-taking; daily over \
+            real-time; user-only over external-broadcast). State your \
+            interpretation in `behavior_core.mission` so the user can read \
+            what you decided.\n\
+            3. For ambiguous trigger cadence — default to `schedule` with a \
+            reasonable cron (daily 9am for digests, hourly for monitors). \
+            Never default to `webhook` or `manual` in one-shot mode.\n\
+            4. For ambiguous connector category — pick the FIRST matching \
+            credential from `## Available credentials` whose service_type \
+            aligns with the capability's purpose. If multiple credentials of \
+            the same service_type exist, pick the alphabetically first by \
+            name. Do not pick a category for which no credential exists; \
+            instead, pick a different fulfilment strategy (e.g. local file \
+            output instead of cloud upload).\n\
+            5. For ambiguous review_policy — default to `\"never\"` for \
+            informational capabilities and `\"always\"` for capabilities \
+            that publish externally (Rule 26 / Rule 27 still apply for the \
+            split decision). Never default to `auto_triage` without an \
+            explicit signal.\n\
+            6. For ambiguous memory_policy — default to `enabled: false`. \
+            Memory is opt-in; the user can flip it on later from the editor.\n\
+            7. For ambiguous sample_output / input_schema — synthesize a \
+            plausible example from the intent and the connector's typical \
+            event shape. The user can edit it post-promote.\n\
+            8. For `model_override` (Rule 28) — apply the same tier guide \
+            as the interactive flow. Sonnet is the default; Haiku for \
+            narrow lookups + templated outputs; Opus only for genuinely \
+            agentic / multi-source-synthesis / code-generation work. \
+            Always emit a `model_rationale` so the user can audit the \
+            choice — picking a non-Sonnet model without a rationale is a \
+            bug.\n\n\
+            **What you MUST still do, even in one-shot mode:**\n\n\
+            - Emit `behavior_core`, `capability_enumeration`, every \
+            `capability_resolution`, `persona_resolution`, and the final \
+            `agent_ir`. The event stream shape is unchanged.\n\
+            - Apply Rule 26 (periodic-informational fast path), Rule 27 \
+            (mixed-review split), and Rule 28 (per-capability model \
+            recommendation). These were already auto-decide rules; they \
+            stay active.\n\
+            - Emit `progress` events with descriptive `activity` text so the \
+            UI can render a meaningful read-only progress view.\n\n\
+            **Forbidden in one-shot mode:**\n\n\
+            - Any `clarifying_question` event of any scope. If you find \
+            yourself wanting to emit one, STOP and pick the safe default \
+            instead, then write a one-line note in the relevant capability's \
+            `summary` field describing what you assumed (e.g. \"Assumed \
+            English-only; user can change language post-promote\").\n"
+        )
+    } else {
+        result
+    };
 
     result
 }

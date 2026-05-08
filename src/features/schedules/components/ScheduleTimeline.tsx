@@ -348,8 +348,8 @@ function ScheduleViewTabs({ value, onChange }: { value: ViewMode; onChange: (v: 
             onClick={() => onChange(opt.value)}
             className={`px-3 py-1.5 typo-caption flex items-center gap-1.5 transition-all ${
               selected
-                ? 'bg-primary/15 text-foreground/90 shadow-elevation-1'
-                : 'text-foreground hover:text-foreground/70 hover:bg-primary/5'
+                ? 'bg-primary/15 text-foreground font-semibold shadow-elevation-1'
+                : 'text-foreground/55 hover:text-foreground/80 hover:bg-primary/5'
             }`}
           >
             {opt.icon && <Calendar className="w-3.5 h-3.5" />}

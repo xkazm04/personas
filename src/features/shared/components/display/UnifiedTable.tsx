@@ -267,8 +267,8 @@ export function UnifiedTable<T>({
                 <div
                   key={getRowKey(row)}
                   onClick={() => onRowClick?.(row)}
-                  style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate }}
-                  className={`grid items-center border-l-2 border-transparent transition-colors hover:bg-primary/[0.08] hover:border-l-primary/40 ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                  style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
+                  className={`row-hover-lift grid items-center border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                 >
                   {columns.map((col) => (
                     <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -286,8 +286,8 @@ export function UnifiedTable<T>({
             <div
               key={getRowKey(row)}
               onClick={() => onRowClick?.(row)}
-              style={{ gridTemplateColumns: gridTemplate }}
-              className={`grid items-center px-0 py-2 border-l-2 border-transparent transition-colors hover:bg-primary/[0.08] hover:border-l-primary/40 ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+              style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
+              className={`row-hover-lift grid items-center px-0 py-2 border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
             >
               {columns.map((col) => (
                 <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>

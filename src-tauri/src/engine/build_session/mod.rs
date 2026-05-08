@@ -18,7 +18,9 @@
 //!   - `events`         — Tauri-channel + DB-update glue.
 
 mod events;
+mod fix_pass;
 mod gates;
+mod oneshot;
 mod parser;
 pub mod reference;
 mod runner;
@@ -92,6 +94,13 @@ impl BuildSessionManager {
 
     /// Start a new build session. Creates the DB row, spawns a tokio task,
     /// and returns the session ID immediately.
+    ///
+    /// `mode` selects the gate-resolution strategy:
+    ///   - `None` or `Some("interactive")` — legacy ask-the-user flow.
+    ///   - `Some("one_shot")` — autonomous: LLM resolves every gate, retries
+    ///     test failures up to 3×, auto-promotes on success. The
+    ///     BuildWatcher job (companion/jobs) posts the terminal result to
+    ///     `companion_session_id` if set.
     #[allow(clippy::too_many_arguments)]
     pub fn start_session(
         &self,
@@ -105,6 +114,8 @@ impl BuildSessionManager {
         parser_result_json: Option<String>,
         app_handle: tauri::AppHandle,
         language: Option<String>,
+        mode: Option<String>,
+        companion_session_id: Option<String>,
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -115,6 +126,21 @@ impl BuildSessionManager {
         // map and in the buildSessions DB table, so there's no collision risk.
         // The frontend matrixBuildSlice routes events to the correct session
         // via event.session_id.
+
+        // Normalize mode: None / unknown → "interactive". Reject anything
+        // other than the two known values so callers can't smuggle bogus
+        // strings into the DB.
+        let normalized_mode = match mode.as_deref() {
+            Some("one_shot") => Some("one_shot".to_string()),
+            Some("interactive") | None => Some("interactive".to_string()),
+            Some(other) => {
+                return Err(AppError::Validation(format!(
+                    "Unknown build mode: '{}' (expected 'interactive' or 'one_shot')",
+                    other
+                )));
+            }
+        };
+        let is_one_shot = normalized_mode.as_deref() == Some("one_shot");
 
         // Create the DB row
         let now = chrono::Utc::now().to_rfc3339();
@@ -131,6 +157,8 @@ impl BuildSessionManager {
             cli_pid: None,
             workflow_json: workflow_json.clone(),
             parser_result_json: parser_result_json.clone(),
+            mode: normalized_mode,
+            companion_session_id: companion_session_id.clone(),
             created_at: now.clone(),
             updated_at: now,
         };
@@ -217,6 +245,7 @@ impl BuildSessionManager {
             &connector_summary,
             &template_context,
             language.as_deref(),
+            is_one_shot,
         );
 
         // Spawn the session task
@@ -245,6 +274,7 @@ impl BuildSessionManager {
                 workflow_json,
                 parser_result_json,
                 app_handle,
+                is_one_shot,
             )
             .await;
         });
@@ -268,12 +298,20 @@ impl BuildSessionManager {
 
     /// Cancel an active session: set the cancel flag, kill the CLI process,
     /// remove the handle, and update DB phase to Cancelled.
+    ///
+    /// Safe to call concurrently for distinct session IDs — the sessions
+    /// map and process registry are mutex-protected, and the DB update is
+    /// pool-backed. Frontend boot fans out cancels in parallel via
+    /// `Promise.allSettled`; the tracing span lets us audit that fan-out.
     pub fn cancel_session(
         &self,
         session_id: &str,
         pool: &DbPool,
         registry: &ActiveProcessRegistry,
     ) -> Result<(), AppError> {
+        let span = tracing::info_span!("build_session.cancel", session_id = %session_id);
+        let _enter = span.enter();
+
         // Set cancel flag and remove handle
         {
             let mut sessions = self.sessions.lock().unwrap_or_else(|e| e.into_inner());

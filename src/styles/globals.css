@@ -175,6 +175,12 @@
   --glass-bg: rgba(255, 255, 255, 0.03);
   --glass-blur: 12px;
   --glass-border: rgba(255, 255, 255, 0.06);
+
+  /* Semantic backdrop-blur tiers — tied to z-index hierarchy so blur
+     intensity reads as visual depth (modal > popover > tooltip). */
+  --blur-modal: 12px;
+  --blur-popover: 8px;
+  --blur-tooltip: 4px;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --spacing-1: 0.25rem;
@@ -334,6 +340,28 @@
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.06) transparent;
+}
+
+/* WebKit (macOS) and Chromium (Windows WebView2) need ::-webkit-scrollbar
+   pseudo-elements; `scrollbar-color`/`scrollbar-width` above only cover Firefox. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
 }
 
 body {
@@ -824,6 +852,110 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
+/* -- Themed range slider --
+   Replaces native OS chrome with a track + thumb that respect the design tokens.
+   Optional progress fill: set inline `style={{ '--slider-progress': value }}`
+   where value is a 0..1 fraction; the WebKit track shows a primary-colored
+   gradient up to that point. Firefox uses native ::-moz-range-progress instead. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  min-height: 1rem;
+  padding: 0;
+  --slider-progress: 0;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 9999px;
+  background:
+    linear-gradient(
+      to right,
+      var(--primary) 0,
+      var(--primary) calc(var(--slider-progress) * 100%),
+      transparent calc(var(--slider-progress) * 100%),
+      transparent 100%
+    ),
+    color-mix(in srgb, var(--secondary) 40%, transparent);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: var(--shadow-elevation-2);
+  border: none;
+  margin-top: -5px;
+  transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--secondary) 40%, transparent);
+  border: none;
+}
+
+input[type="range"]::-moz-range-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: var(--primary);
+}
+
+input[type="range"]::-moz-range-thumb {
+  height: 14px;
+  width: 14px;
+  border-radius: 9999px;
+  background: var(--primary);
+  box-shadow: var(--shadow-elevation-2);
+  border: none;
+  transition: transform var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+  transform: scale(1.08);
+}
+
+input[type="range"]:hover::-moz-range-thumb {
+  transform: scale(1.08);
+}
+
+input[type="range"]:focus-visible {
+  outline: none;
+}
+
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow: var(--shadow-elevation-2),
+    0 0 0 var(--focus-ring-offset) var(--background),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--focus-ring-color);
+}
+
+input[type="range"]:focus-visible::-moz-range-thumb {
+  box-shadow: var(--shadow-elevation-2),
+    0 0 0 var(--focus-ring-offset) var(--background),
+    0 0 0 calc(var(--focus-ring-offset) + var(--focus-ring-width)) var(--focus-ring-color);
+}
+
+input[type="range"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+  background: color-mix(in srgb, var(--primary) 50%, var(--secondary));
+  box-shadow: none;
+}
+
+input[type="range"]:disabled::-moz-range-thumb {
+  background: color-mix(in srgb, var(--primary) 50%, var(--secondary));
+  box-shadow: none;
+}
+
 /* -- Glass Morphism -- */
 .glass {
   background: var(--glass-bg);
@@ -853,6 +985,37 @@ input[type="number"] {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* -- Semantic backdrop-blur tiers --
+   Hierarchy mirrors z-index: modal > popover > tooltip, so blur intensity
+   reads as visual depth. The motion-reduce fallback below disables blur
+   for users with prefers-reduced-motion (and helps WebView2 freeze paths
+   where backdrop-filter on large committed DOM is expensive). */
+.surface-blur-modal {
+  backdrop-filter: blur(var(--blur-modal));
+  -webkit-backdrop-filter: blur(var(--blur-modal));
+}
+.surface-blur-popover {
+  backdrop-filter: blur(var(--blur-popover));
+  -webkit-backdrop-filter: blur(var(--blur-popover));
+}
+.surface-blur-tooltip {
+  backdrop-filter: blur(var(--blur-tooltip));
+  -webkit-backdrop-filter: blur(var(--blur-tooltip));
+}
+
+/* Skip backdrop-filter under prefers-reduced-motion. Covers both the
+   semantic tiers above and any unmigrated `backdrop-blur-*` utilities
+   (Tailwind classes start with the literal substring "backdrop-blur-"). */
+@media (prefers-reduced-motion: reduce) {
+  .surface-blur-modal,
+  .surface-blur-popover,
+  .surface-blur-tooltip,
+  [class*="backdrop-blur-"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
 }
 
 /* -- Button Size Presets --
@@ -975,6 +1138,25 @@ input[type="number"] {
   }
 }
 
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.animate-toast-progress {
+  animation: toast-progress linear forwards;
+  transform-origin: left center;
+  animation-duration: var(--toast-duration, 5000ms);
+}
+
+.animate-toast-progress[data-paused='true'] {
+  animation-play-state: paused;
+}
+
 @keyframes shake-error {
   0% {
     transform: translateX(0);
@@ -1008,6 +1190,66 @@ input[type="number"] {
 
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sort-pulse {
+  0% {
+    background-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+
+  30% {
+    background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  }
+
+  100% {
+    background-color: color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+}
+
+.animate-sort-pulse {
+  animation: sort-pulse 360ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sort-pulse {
+    animation: none;
+  }
+}
+
+@keyframes drop-zone-pulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 35%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--color-primary) 25%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 70%, transparent),
+      0 0 18px 4px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  }
+}
+
+.drop-zone-illuminated {
+  position: relative;
+  transition: outline-color 180ms ease-out;
+}
+
+.drop-zone-illuminated[data-dragging="true"] {
+  outline: 2px dashed color-mix(in srgb, var(--color-primary) 65%, transparent);
+  outline-offset: -3px;
+  border-radius: inherit;
+  animation: drop-zone-pulse 1.5s ease-in-out infinite;
+}
+
+body[data-drag-active="true"],
+body[data-drag-active="true"] * {
+  cursor: grabbing !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-zone-illuminated[data-dragging="true"] {
+    animation: none;
   }
 }
 
@@ -1138,6 +1380,16 @@ input[type="number"] {
   animation: shake-error 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+@keyframes char-budget-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.animate-char-budget-shake {
+  animation: char-budget-shake 100ms ease-out;
+}
+
 /* Answer confirmation pulse — a green radial wave that expands from the
    center of a question card to its edges on answer commit. Used in the
    adoption questionnaire QuestionCard. */
@@ -1162,6 +1414,25 @@ input[type="number"] {
 
 .animate-draw-check {
   animation: draw-check 0.3s ease forwards;
+}
+
+/* Pops the success checkmark in when a previously-errored field becomes
+   valid. Back-ease with a small overshoot rewards the correction without
+   feeling bouncy. Pairs with .animate-draw-check on the SVG path inside. */
+@keyframes success-pop {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-success-pop {
+  animation: success-pop 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center;
 }
 
 @keyframes badge-pulse {
@@ -1444,6 +1715,13 @@ input[type="number"] {
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }
 
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+
 [data-theme="light"] .dot-grid {
   background-image: radial-gradient(circle, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
 }
@@ -1455,6 +1733,13 @@ input[type="number"] {
 
 [data-theme="light-ice"] * {
   scrollbar-color: rgba(37, 99, 235, 0.15) transparent;
+}
+
+[data-theme="light-ice"] ::-webkit-scrollbar-thumb {
+  background: rgba(37, 99, 235, 0.18);
+}
+[data-theme="light-ice"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 99, 235, 0.35);
 }
 
 [data-theme="light-ice"] .dot-grid {
@@ -1546,6 +1831,13 @@ input[type="number"] {
 
 [data-theme="light-news"] * {
   scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+}
+
+[data-theme="light-news"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+}
+[data-theme="light-news"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
 }
 
 [data-theme="light-news"] .dot-grid {
@@ -1847,6 +2139,13 @@ input[type="number"] {
   scrollbar-color: rgba(204, 0, 0, 0.25) transparent;
 }
 
+[data-theme="dark-red"] ::-webkit-scrollbar-thumb {
+  background: rgba(204, 0, 0, 0.28);
+}
+[data-theme="dark-red"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(204, 0, 0, 0.45);
+}
+
 [data-theme="dark-red"] ::selection {
   background-color: rgba(204, 0, 0, 0.3);
   color: #ffffff;
@@ -1859,6 +2158,13 @@ input[type="number"] {
 /* -- Matrix theme specials -- */
 [data-theme="dark-matrix"] * {
   scrollbar-color: rgba(0, 255, 65, 0.10) transparent;
+}
+
+[data-theme="dark-matrix"] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 65, 0.14);
+}
+[data-theme="dark-matrix"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 65, 0.28);
 }
 
 [data-theme="dark-matrix"] ::selection {
@@ -2106,6 +2412,27 @@ input[type="number"] {
 
   to {
     stroke-dashoffset: -28;
+  }
+}
+
+/* Drop-zone dashed-border march (DropZoneGlow primitive) */
+@keyframes dropzone-dash-march {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+
+.dropzone-dash-march {
+  animation: dropzone-dash-march 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dropzone-dash-march {
+    animation: none !important;
   }
 }
 
@@ -3229,6 +3556,13 @@ input[type="number"] {
   scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }
 
+[data-theme^="light"] .scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.22);
+}
+[data-theme^="light"] .scrollbar-dark::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.38);
+}
+
 /* Light: JSON syntax highlighting */
 [data-theme="light"] .json-highlight .hljs-attr {
   color: #5b21b6;
@@ -3322,6 +3656,35 @@ input[type="number"] {
   transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease !important;
 }
 
+/* -- Row hover lift -- shared list-row affordance.
+   Used by UnifiedTable, DataGrid, and any custom list that opts in.
+   Per-row accent color may override via inline style: --row-accent. */
+.row-hover-lift {
+  position: relative;
+  transition: background-color 150ms ease-out, box-shadow 150ms ease-out;
+}
+.row-hover-lift::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--row-accent, var(--primary));
+  opacity: 0;
+  transform: translateX(-2px);
+  transition: transform 150ms ease-out, opacity 150ms ease-out;
+  pointer-events: none;
+}
+@media (hover: hover) {
+  .row-hover-lift:hover {
+    box-shadow: var(--shadow-elevation-2);
+    z-index: 10;
+  }
+  .row-hover-lift:hover::before {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   /* Disable all CSS animations and transitions globally */
@@ -3345,6 +3708,7 @@ input[type="number"] {
   .animate-fade-scale-in,
   .animate-expand-in,
   .animate-shake-error,
+  .animate-char-budget-shake,
   .animate-draw-check {
     animation: none !important;
   }

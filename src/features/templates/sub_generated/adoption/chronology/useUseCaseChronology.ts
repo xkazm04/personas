@@ -72,6 +72,30 @@ export interface ChronologyRow {
   presence: Record<DimensionKey, DimensionPresence>;
   /** True when connectors are shared across all use cases (v1 pool). */
   shared: boolean;
+  /** Build-prompt Rule 28 — recommended Claude model for this capability.
+   *  Bare model id; null when the capability inherits the persona default. */
+  recommendedModel?: string | null;
+  /** One-sentence build-time explanation of the model pick. */
+  modelRationale?: string | null;
+}
+
+/** Normalize the IR's `model_override` value (which can be either a bare
+ *  string or a partial ModelProfile object) into a single bare model id
+ *  for display. Returns null when no override is present or the shape
+ *  is unrecognized. */
+function extractRecommendedModel(modelOverride: unknown): string | null {
+  if (typeof modelOverride === 'string' && modelOverride.trim().length > 0) {
+    return modelOverride.trim();
+  }
+  if (
+    modelOverride &&
+    typeof modelOverride === 'object' &&
+    !Array.isArray(modelOverride)
+  ) {
+    const m = (modelOverride as Record<string, unknown>).model;
+    if (typeof m === 'string' && m.trim().length > 0) return m.trim();
+  }
+  return null;
 }
 
 const TRIGGER_TYPE_ALIASES: Record<string, string> = {
@@ -276,6 +300,10 @@ function buildChronologyV3(d: Record<string, unknown>): ChronologyRow[] {
       };
     });
 
+    const recommendedModel = extractRecommendedModel(uc.model_override);
+    const modelRationaleRaw = asStr(uc.model_rationale);
+    const modelRationale = modelRationaleRaw.trim().length > 0 ? modelRationaleRaw.trim() : null;
+
     return {
       id,
       title,
@@ -301,6 +329,8 @@ function buildChronologyV3(d: Record<string, unknown>): ChronologyRow[] {
         error: errorPresence,
       },
       shared: false,
+      recommendedModel,
+      modelRationale,
     };
   });
 }
@@ -483,6 +513,10 @@ export function buildChronology(designResult: Record<string, unknown> | null | u
         ? (connectorShared ? 'shared' : 'linked')
         : 'none';
 
+    const recommendedModel = extractRecommendedModel(o.model_override);
+    const modelRationaleRaw = asStr(o.model_rationale);
+    const modelRationale = modelRationaleRaw.trim().length > 0 ? modelRationaleRaw.trim() : null;
+
     return {
       id,
       title,
@@ -508,6 +542,8 @@ export function buildChronology(designResult: Record<string, unknown> | null | u
         error: shared.errorPresent ? 'shared' : 'none',
       },
       shared: connectorShared,
+      recommendedModel,
+      modelRationale,
     };
   });
 }

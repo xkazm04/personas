@@ -198,7 +198,8 @@ export default function VoicePage() {
                   min={0} max={1} step={0.05}
                   value={stability}
                   onChange={(e) => { setStability(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full accent-violet-400"
+                  className="w-full"
+                  style={{ ['--slider-progress' as string]: stability }}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreExpressive}</span>
@@ -216,7 +217,8 @@ export default function VoicePage() {
                   min={0} max={1} step={0.05}
                   value={similarityBoost}
                   onChange={(e) => { setSimilarityBoost(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full accent-violet-400"
+                  className="w-full"
+                  style={{ ['--slider-progress' as string]: similarityBoost }}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreNatural}</span>
@@ -234,7 +236,8 @@ export default function VoicePage() {
                   min={0} max={1} step={0.05}
                   value={style}
                   onChange={(e) => { setStyle(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full accent-violet-400"
+                  className="w-full"
+                  style={{ ['--slider-progress' as string]: style }}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.neutral}</span>

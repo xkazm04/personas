@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { GlyphDimension, GlyphPresence } from './types';
 import { DIM_META, PETAL_ANGLES } from './dimMeta';
 
@@ -21,8 +22,11 @@ interface SigilPetalProps {
 /** Renders a single petal group — body varies by presence state.
  *  The parent <svg> provides the `glowId` filter plus the shared petal paths.
  *  Hit-testing uses the visible path directly because all three shapes share
- *  the same clickable silhouette. */
-export function SigilPetal({
+ *  the same clickable silhouette.
+ *
+ *  Memoized: hovering one petal in a card with 8 petals would otherwise
+ *  re-render the other 7 needlessly (all their hover/active props are stable). */
+function SigilPetalImpl({
   dim, presence, index, size, rowId, rowIndex, glowId,
   petalPath, petalPathDashed, isHovered, isActive, dimOther,
   onHover, onClick,
@@ -102,3 +106,5 @@ export function SigilPetal({
     </g>
   );
 }
+
+export const SigilPetal = memo(SigilPetalImpl);

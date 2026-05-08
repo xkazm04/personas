@@ -330,8 +330,18 @@ pub struct AgentIrUseCaseData {
 
     /// Per-capability model profile override. When set, the runtime uses
     /// this profile instead of the persona default for this capability.
+    /// Accepted shapes: bare model name string (`"claude-haiku-4-5"`) or a
+    /// partial `ModelProfile` object (`{"model": "...", "effort": "low"}`).
     #[serde(default)]
     pub model_override: Option<serde_json::Value>,
+
+    /// Build-time, one-sentence explanation for *why* this capability was
+    /// matched to the recommended model. Surfaced to the user on the Glyph
+    /// badge tooltip so the choice is auditable. Doc-only at runtime —
+    /// never read by the dispatch path. Empty string is normalized to
+    /// `None` at parse time so the UI can branch on `Option`.
+    #[serde(default)]
+    pub model_rationale: Option<String>,
 
     /// Named test fixtures for simulation (canned inputs).
     #[serde(default)]

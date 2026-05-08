@@ -60,6 +60,14 @@ export interface GlyphRow {
   errorSummary?: string;
   presence: Record<GlyphDimension, GlyphPresence>;
   shared: boolean;
+  /** Build-prompt Rule 28 — recommended runtime model for this capability.
+   *  Surface as a small badge with `modelRationale` as the tooltip. Bare
+   *  Claude model id (`"claude-sonnet-4-6"`, etc.) or null when the
+   *  capability inherits the persona default. */
+  recommendedModel?: string | null;
+  /** One-sentence build-time explanation of the model pick. Empty / absent
+   *  means "no rationale was emitted" — render the badge without a tooltip. */
+  modelRationale?: string | null;
 }
 
 export interface DimMeta {

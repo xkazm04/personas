@@ -32,6 +32,7 @@ pub fn create_external_api_key(
 pub fn list_external_api_keys(
     state: State<'_, Arc<AppState>>,
 ) -> Result<Vec<ExternalApiKey>, AppError> {
+    require_privileged_sync(&state, "list_external_api_keys")?;
     repo::list(&state.db)
 }
 
@@ -62,7 +63,16 @@ pub fn delete_external_api_key(
 /// management API. The plaintext is regenerated and persisted only on first
 /// creation; subsequent calls return the in-memory cached plaintext for the
 /// current process.
+///
+/// Gated through `require_privileged_sync` because this key is the master
+/// credential for the management HTTP API — leaking it bypasses the entire
+/// `require_api_key` middleware. Each issuance is audit-logged so any
+/// unexpected callers (compromised renderer, malicious plugin webview,
+/// test-automation HTTP bridge) leave a trail.
 #[tauri::command]
 pub fn get_system_api_key(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
-    crate::engine::management_api::get_or_create_system_api_key(&state.db)
+    require_privileged_sync(&state, "get_system_api_key")?;
+    let key = crate::engine::management_api::get_or_create_system_api_key(&state.db)?;
+    tracing::info!("system_api_key issued to privileged caller");
+    Ok(key)
 }

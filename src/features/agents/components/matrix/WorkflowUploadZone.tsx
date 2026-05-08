@@ -10,6 +10,7 @@ import { Upload, FileJson, X, Workflow } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { useMatrixWorkflowImport } from "./useMatrixWorkflowImport";
 import { useTranslation } from '@/i18n/useTranslation';
+import { DropZoneGlow } from '@/features/shared/components/feedback/DropZoneGlow';
 
 interface WorkflowUploadZoneProps {
   onWorkflowReady?: () => void;
@@ -158,12 +159,18 @@ export function WorkflowUploadZone({ onWorkflowReady }: WorkflowUploadZoneProps)
         onDragLeave={() => setIsDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-card border border-dashed cursor-pointer transition-colors ${
+        className={`relative flex flex-col items-center justify-center gap-2 px-4 py-5 rounded-card border border-dashed cursor-pointer transition-colors ${
           isDragging
             ? "border-primary/40 bg-primary/5"
             : "border-primary/15 bg-background/20 hover:border-primary/25 hover:bg-background/30"
         }`}
       >
+        <DropZoneGlow
+          active={isDragging}
+          radius={8}
+          label={t.agents.workflow_upload.drop_file}
+          labelClassName="px-2.5 py-1 rounded-card bg-primary/15 text-primary border border-primary/30 text-[11px] font-medium shadow-elevation-1"
+        />
         <Upload className="w-5 h-5 text-foreground" />
         <div className="text-center">
           <p className="text-[12px] text-foreground">

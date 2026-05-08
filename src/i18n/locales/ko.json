@@ -8052,7 +8052,14 @@
     "official_page": "공식 페이지",
     "edit_key": "키 편집",
     "edit_config": "설정 편집",
-    "signing_in": "로그인 중..."
+    "signing_in": "로그인 중...",
+    "log_disk_usage": "Log Disk Usage",
+    "log_disk_tracing": "Tracing logs",
+    "log_disk_crashes": "Crash reports",
+    "log_disk_files_count": "{count} files",
+    "log_disk_retention_hint": "Daily rotation, capped at {limit} files",
+    "log_disk_crash_retention_hint": "Capped at {limit} most recent reports",
+    "log_disk_unavailable": "Log directory stats unavailable."
   },
   "command_palette": {
     "placeholder": "에이전트 검색, 탐색... (\\\">\\\"를 입력하면 명령어)",

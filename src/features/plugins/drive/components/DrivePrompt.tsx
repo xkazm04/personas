@@ -36,7 +36,7 @@ export function DriveTextPrompt({
 
   return (
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}
@@ -102,7 +102,7 @@ export function DriveConfirm({
 
   return (
     <div
-      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9998] flex items-center justify-center bg-background/60 surface-blur-modal"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCancel();
       }}

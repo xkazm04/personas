@@ -7,6 +7,7 @@ import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorFor
 import { formatTokens } from '../../libs/useExecutionList';
 import { CostSparkline } from './CostSparkline';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 
 interface ExecutionListRowProps {
   execution: PersonaExecution;
@@ -24,12 +25,14 @@ interface ExecutionListRowProps {
   onCopyId: (id: string) => void;
   onRerun: (inputData: string | null) => void;
   onAutoCompareRetry: (id: string) => void;
+  densityTokens?: DensityTokens;
 }
 
 export function ExecutionListRow({
   execution, execIdx, executions, compareMode, compareLeft, compareRight,
   isExpanded, showRaw, hasCopied, copiedId, capabilityTitle,
   onRowClick, onCopyId, onRerun, onAutoCompareRetry,
+  densityTokens = DENSITY_TOKENS.comfortable,
 }: ExecutionListRowProps) {
   const { t, tx, language } = useTranslation();
   const e = t.agents.executions;
@@ -62,11 +65,11 @@ export function ExecutionListRow({
   const duration = <span className="typo-code text-foreground/90">{formatDuration(execution.duration_ms)}</span>;
 
   return (
-    <div>
+    <div style={{ contain: 'layout paint style' }}>
       {/* Desktop table row (md+) */}
       <div
         onClick={() => onRowClick(execution.id)}
-        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+        className={`animate-fade-in hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 cursor-pointer transition-colors ${
           isCompareSelected ? 'bg-primary/10 border-l-2 border-l-primary/40' : 'bg-background/30 hover:bg-secondary/20'
         }`}
       >
@@ -96,7 +99,7 @@ export function ExecutionListRow({
       {/* Mobile card (<md) */}
       <div
         onClick={() => onRowClick(execution.id)}
-        className={`flex md:hidden flex-col gap-1.5 px-4 py-3 border-b border-primary/10 cursor-pointer transition-colors ${
+        className={`flex md:hidden flex-col gap-1.5 px-4 ${densityTokens.rowPaddingY} border-b border-primary/10 cursor-pointer transition-colors ${
           isCompareSelected ? 'bg-primary/10' : 'bg-background/30 hover:bg-secondary/20'
         }`}
       >

@@ -4,6 +4,7 @@ import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRangePicker';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -80,10 +81,13 @@ export default function ObservabilityDashboard() {
   const d = useObservabilityData();
   const [showAlerts, setShowAlerts] = useState(false);
   const activeAlertCount = useAttention("observability").counts.active_alerts;
-  const { pipelineErrors, pipelineFetchedAt } = useOverviewStore((s) => ({
+  // 2026-05-07 — wrap in useShallow. Inline-object selector returned a new
+  // ref on every snapshot, triggering "getSnapshot should be cached" →
+  // re-render loop on any overviewStore update.
+  const { pipelineErrors, pipelineFetchedAt } = useOverviewStore(useShallow((s) => ({
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
-  }));
+  })));
 
   const drilldown = useAnomalyDrilldown();
 

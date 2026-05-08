@@ -255,6 +255,16 @@ pub struct BuildSession {
     pub workflow_json: Option<String>,
     /// Pre-parsed AgentIR from frontend parser for import mode.
     pub parser_result_json: Option<String>,
+    /// Build mode — `Some("interactive")` (default ask-the-user gate flow) or
+    /// `Some("one_shot")` (autonomous: LLM resolves every gate, retries up to
+    /// 3× on test failure, auto-promotes on success). NULL on legacy rows is
+    /// treated as `interactive` at read time.
+    pub mode: Option<String>,
+    /// Companion chat session that originated this build, when applicable.
+    /// Used by the BuildWatcher job to post a result message back into the
+    /// chat's episode log on terminal phase. NULL when the session was
+    /// started from the regular UI (not via Companion).
+    pub companion_session_id: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -360,7 +370,14 @@ pub struct PersistedBuildSession {
     pub adoption_answers: Option<serde_json::Value>,
     pub intent: String,
     pub error_message: Option<String>,
+    /// Build mode — `"interactive"` or `"one_shot"`. NULL legacy rows are
+    /// surfaced as `Some("interactive")` so the frontend can switch on a
+    /// string without dealing with three-state logic.
+    pub mode: Option<String>,
+    /// Companion chat session that originated this build, when applicable.
+    pub companion_session_id: Option<String>,
     pub created_at: String,
+    pub updated_at: String,
 }
 
 impl PersistedBuildSession {
@@ -386,7 +403,14 @@ impl PersistedBuildSession {
                 .and_then(|a| serde_json::from_str(a).ok()),
             intent: s.intent.clone(),
             error_message: s.error_message.clone(),
+            mode: Some(
+                s.mode
+                    .clone()
+                    .unwrap_or_else(|| "interactive".to_string()),
+            ),
+            companion_session_id: s.companion_session_id.clone(),
             created_at: s.created_at.clone(),
+            updated_at: s.updated_at.clone(),
         }
     }
 }
@@ -404,4 +428,6 @@ pub struct UpdateBuildSession {
     pub adoption_answers: Option<Option<String>>,
     pub error_message: Option<Option<String>>,
     pub cli_pid: Option<Option<u32>>,
+    pub mode: Option<Option<String>>,
+    pub companion_session_id: Option<Option<String>>,
 }

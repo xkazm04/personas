@@ -1,6 +1,6 @@
-import { ResponsiveContainer } from 'recharts';
 import type { ComponentType, ReactElement, ReactNode, SVGProps } from 'react';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LazyChart, type RechartsModule } from '@/features/shared/charts/RechartsWrapper';
 
 export type MetricIconColor =
   | 'cyan' | 'violet' | 'indigo' | 'amber' | 'emerald' | 'blue'
@@ -23,30 +23,20 @@ const ICON_COLOR_CLASSES: Record<MetricIconColor, string> = {
 
 interface MetricChartProps {
   title: string;
-  /** Optional insight annotation shown below the title. */
   insight?: string | null;
-  /** Height passed to ResponsiveContainer. */
   height: number;
-  /** The Recharts chart element (BarChart, AreaChart, PieChart, ...). */
-  children: ReactElement;
-  /** Additional className merged into the card wrapper (e.g. grid column span). */
+  /** Render the chart subtree. Receives the lazily-loaded recharts module. */
+  chart: (R: RechartsModule) => ReactElement;
   className?: string;
-  /** Shown instead of the chart when provided and children is absent (empty state). */
+  /** Shown instead of the chart when provided. */
   emptySlot?: ReactNode;
-  /** Optional Lucide icon rendered as a 24x24 rounded badge left of the title. */
   icon?: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
-  /** Colour token applied to the icon badge background/text (e.g. "cyan", "violet"). */
   iconColor?: MetricIconColor;
-  /** When true, renders an empty placeholder in place of the chart. */
   loading?: boolean;
 }
 
-/**
- * Shared chart card: card shell + title/insight header + ResponsiveContainer.
- * Pass the Recharts chart element as children; axes and series remain caller-owned.
- */
 export function MetricChart({
-  title, insight, height, children, className, emptySlot, icon: Icon, iconColor = 'cyan', loading = false,
+  title, insight, height, chart, className, emptySlot, icon: Icon, iconColor = 'cyan', loading = false,
 }: MetricChartProps) {
   return (
     <div className={`bg-secondary/20 border border-primary/10 rounded-modal p-4 ${className ?? ''}`}>
@@ -68,9 +58,14 @@ export function MetricChart({
       ) : (
         emptySlot ?? (
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height={height}>
-              {children}
-            </ResponsiveContainer>
+            <LazyChart
+              fallback={<div className="w-full" style={{ height }} />}
+              render={(R) => (
+                <R.ResponsiveContainer width="100%" height={height}>
+                  {chart(R)}
+                </R.ResponsiveContainer>
+              )}
+            />
           </ChartErrorBoundary>
         )
       )}

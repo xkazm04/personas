@@ -97,7 +97,7 @@ export default function FrequencyEditor({
     : !!intervalInput && !isNaN(parseInt(intervalInput, 10));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 surface-blur-modal">
       <div className="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 w-[520px] max-w-[calc(100%-2rem)] mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-primary/10 bg-primary/5">

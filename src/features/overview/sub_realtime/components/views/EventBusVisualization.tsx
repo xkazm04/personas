@@ -144,7 +144,7 @@ export default function EventBusVisualization({ events, personas, animationMapRe
   const hasTraffic = animatedEvents.length > 0 || returnFlows.length > 0 || processingSet.size > 0;
 
   return (
-    <div className="w-full h-full flex min-h-[280px]">
+    <div className="w-full h-full flex min-h-[280px]" style={{ contain: 'layout paint style' }}>
       <div className="flex-1 relative">
         <svg viewBox="0 0 100 100" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
           <EventBusSvgDefs uid={uid} hasTraffic={hasTraffic} />

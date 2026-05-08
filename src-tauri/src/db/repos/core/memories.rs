@@ -638,6 +638,85 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 
 crud_delete!("persona_memories");
 
+/// Atomically merge two memories into one.
+///
+/// Inserts the merged row and deletes the two originals inside a single SQL
+/// transaction. If any step fails, the transaction is rolled back and the
+/// original two rows remain untouched — preventing the orphaned half-state
+/// the previous frontend-orchestrated three-call flow could leave behind
+/// when the second delete failed mid-way.
+///
+/// Skips the 24h dedup short-circuit used by [`create`]: a merge result whose
+/// content happens to match `delete_id_a` or `delete_id_b` would otherwise be
+/// returned via the existing row, then deleted by the same transaction —
+/// leaving the caller with a valid id that points at nothing.
+pub fn merge(
+    pool: &DbPool,
+    input: CreatePersonaMemoryInput,
+    delete_id_a: &str,
+    delete_id_b: &str,
+) -> Result<PersonaMemory, AppError> {
+    timed_query!("persona_memories", "persona_memories::merge", {
+        let title = strip_html_tags(&input.title);
+        let content = strip_html_tags(&input.content);
+
+        if title.trim().is_empty() {
+            return Err(AppError::Validation("Title cannot be empty".into()));
+        }
+        if content.trim().is_empty() {
+            return Err(AppError::Validation("Content cannot be empty".into()));
+        }
+
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let category = input.category.as_deref().unwrap_or(DEFAULT_MEMORY_CATEGORY);
+        validate_category(category)?;
+        let category = category.to_string();
+        let importance = match input.importance {
+            Some(v) => validate_importance(v)?,
+            None => 3,
+        };
+        let tags = normalize_tags(
+            input
+                .tags
+                .map(|j| serde_json::to_string(&j.0).unwrap_or_default()),
+        );
+
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+
+        tx.execute(
+            "INSERT INTO persona_memories
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
+            params![
+                id,
+                input.persona_id,
+                title,
+                content,
+                category,
+                input.source_execution_id,
+                importance,
+                tags,
+                now,
+                input.use_case_id,
+            ],
+        )?;
+
+        tx.execute(
+            "DELETE FROM persona_memories WHERE id = ?1",
+            params![delete_id_a],
+        )?;
+        tx.execute(
+            "DELETE FROM persona_memories WHERE id = ?1",
+            params![delete_id_b],
+        )?;
+
+        tx.commit()?;
+        get_by_id(pool, &id)
+    })
+}
+
 // -- Tier management ----------------------------------------------------------
 
 /// Update the tier of a single memory.

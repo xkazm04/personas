@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useCanvasDragRef } from '@/features/pipeline/sub_canvas';
@@ -15,6 +15,7 @@ interface UseCanvasDragDropArgs {
 export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
   const canvasDragRef = useCanvasDragRef();
   const lastGhostPos = useRef({ x: 0, y: 0 });
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const personas = useAgentStore((s) => s.personas);
   const addTeamMember = usePipelineStore((s) => s.addTeamMember);
@@ -23,6 +24,7 @@ export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
     if (!e.dataTransfer.types.includes('application/persona-id')) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
     if (!cs.reactFlowInstance) return;
     const position = cs.reactFlowInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     const x = snapToGrid(position.x), y = snapToGrid(position.y);
@@ -45,6 +47,7 @@ export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
     const related = e.relatedTarget as HTMLElement | null;
     if (!related || !e.currentTarget.contains(related)) {
       setGhostNode(null);
+      setIsDragOver(false);
       lastGhostPos.current = { x: 0, y: 0 };
     }
   }, [setGhostNode]);
@@ -52,6 +55,7 @@ export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
   const onCanvasDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setGhostNode(null);
+    setIsDragOver(false);
     lastGhostPos.current = { x: 0, y: 0 };
     const personaId = e.dataTransfer.getData('application/persona-id');
     if (!personaId || !cs.reactFlowInstance) return;
@@ -59,5 +63,5 @@ export function useCanvasDragDrop({ cs, setGhostNode }: UseCanvasDragDropArgs) {
     addTeamMember(personaId, 'worker', snapToGrid(position.x), snapToGrid(position.y));
   }, [cs.reactFlowInstance, addTeamMember, setGhostNode]);
 
-  return { onCanvasDragOver, onCanvasDragLeave, onCanvasDrop };
+  return { onCanvasDragOver, onCanvasDragLeave, onCanvasDrop, isDragOver };
 }

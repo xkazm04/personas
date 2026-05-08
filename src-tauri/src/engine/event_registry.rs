@@ -216,6 +216,11 @@ event_names! {
 
     // Titlebar notification (persona message delivery — v3.2 DELIV-02)
     TITLEBAR_NOTIFICATION      => "titlebar-notification",
+
+    // One-shot build terminal phase reached (Promoted | Failed). Frontend
+    // listener adds an entry to the notification bell with a deep-link to
+    // the persona's draft so the user can review what landed.
+    BUILD_ONESHOT_TERMINAL     => "build-oneshot-terminal",
 }
 
 // ---------------------------------------------------------------------------

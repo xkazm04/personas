@@ -1132,6 +1132,97 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Read a single execution row by id. Used by the model-calibration
+   * harness to poll for terminal exec status before capturing
+   * artifacts (so we never see `status=running` in the per-scenario
+   * JSON reports).
+   */
+  async getExecution(id: string) {
+    try {
+      const execution = await invoke<unknown>('get_execution', { id });
+      return { success: true, execution };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /**
+   * Return content-rich artifacts for a persona — the messages, memories,
+   * manual-review entries, and execution rows that landed since promote.
+   * Used by the model-calibration harness so an external judge can read
+   * what each model actually produced (vs. just counts).
+   *
+   * Limits are conservative — the harness fires a single execution per
+   * persona, so there's rarely more than a handful of rows. The cap
+   * (50 each) keeps the JSON response under typical pipe-through limits.
+   */
+  async getPersonaArtifacts(personaId: string) {
+    try {
+      const [executions, messagesAll, memories, reviews] = await Promise.all([
+        invoke<unknown[]>('list_executions', { personaId, limit: 50 }),
+        invoke<unknown[]>('list_messages', { limit: 200, offset: 0 }),
+        invoke<unknown[]>('list_memories', { personaId }),
+        invoke<unknown[]>('list_manual_reviews', { personaId }),
+      ]);
+      const messages = (messagesAll as Array<{ persona_id?: string; personaId?: string }>)
+        .filter((m) => (m.persona_id ?? m.personaId) === personaId)
+        .slice(0, 50);
+      return {
+        success: true,
+        executions,
+        messages,
+        memories,
+        reviews,
+      };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /**
+   * Force the model on a persona for testing — overrides the persona-level
+   * `model_profile` AND every use-case-level `model_override` in the
+   * persona's `design_context`. Intended for the model-calibration harness
+   * to run the same IR against Haiku/Sonnet/Opus.
+   *
+   * Returns the merged design_context that was written so the caller can
+   * verify the override landed.
+   */
+  async forcePersonaModel(personaId: string, model: string) {
+    try {
+      const detail = await invoke<{ design_context: string | null }>('get_persona', { id: personaId });
+      let dc: { useCases?: Array<Record<string, unknown>>; use_cases?: Array<Record<string, unknown>> } = {};
+      if (detail.design_context) {
+        try {
+          dc = JSON.parse(detail.design_context);
+        } catch {
+          dc = {};
+        }
+      }
+      const ucs = (dc.useCases ?? dc.use_cases ?? []) as Array<Record<string, unknown>>;
+      for (const uc of ucs) {
+        uc.model_override = model;
+      }
+      // Mirror through under both keys so consumers reading either spelling see the override.
+      if (dc.useCases) dc.useCases = ucs;
+      if (dc.use_cases) dc.use_cases = ucs;
+      if (!dc.useCases && !dc.use_cases && ucs.length > 0) dc.useCases = ucs;
+      const newDesignContext = JSON.stringify(dc);
+      const newModelProfile = JSON.stringify({ model });
+      await invoke('update_persona', {
+        id: personaId,
+        input: {
+          model_profile: newModelProfile,
+          design_context: newDesignContext,
+        },
+      });
+      return { success: true, useCases: ucs.length, model };
+    } catch (e: unknown) {
+      return { success: false, error: unpackError(e) };
+    }
+  },
+
+  /**
    * List service_types for which a local CLI capture spec exists AND the
    * binary is installed and allowlisted on this machine.
    */

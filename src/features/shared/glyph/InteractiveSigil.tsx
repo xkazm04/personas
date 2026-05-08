@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -14,25 +15,50 @@ interface InteractiveSigilProps {
   size: number;
 }
 
-/** The card's hero illustration — eight petal slots rendered to a single SVG.
- *  Guide rings and the core stay static; only petal state + icon overlay
- *  react to hover/active. HTML icons ride on top so tooltips + theme-aware
- *  colouring don't have to reimplement SVG text handling. */
-export function InteractiveSigil({
-  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size,
-}: InteractiveSigilProps) {
-  const { t } = useTranslation();
-  const c = t.templates.chronology;
-  const linkedCount = Object.values(row.presence).filter((p) => p === 'linked').length;
+const PETAL_OUTER_RATIO = 0.44;
+const PETAL_INNER_RATIO = 0.14;
+const CORE_RATIO = 0.12;
+const ICON_R_LINKED_RATIO = 0.28;
+const ICON_R_SHARED_RATIO = 0.24;
+const ICON_R_EMPTY_RATIO = 0.28;
+const GUIDE_INNER_RATIO = 0.305;
+
+interface PetalIconLayout {
+  dim: GlyphDimension;
+  xLinked: number; yLinked: number;
+  xShared: number; yShared: number;
+  xEmpty: number; yEmpty: number;
+  iconBoxLinked: number;
+  iconBoxOther: number;
+}
+
+interface SigilGeometry {
+  center: number;
+  petalOuter: number;
+  petalInner: number;
+  coreR: number;
+  guideInner: number;
+  petalPath: string;
+  petalPathDashed: string;
+  iconLayouts: PetalIconLayout[];
+}
+
+const geometryCache = new Map<number, SigilGeometry>();
+
+function getGeometry(size: number): SigilGeometry {
+  const cached = geometryCache.get(size);
+  if (cached) return cached;
 
   const center = size / 2;
-  const petalOuter = size * 0.44;
-  const petalInner = size * 0.14;
-  const coreR = size * 0.12;
-  const iconRLinked = size * 0.28;
-  const iconRShared = size * 0.24;
-  const iconREmpty = size * 0.28;
-  const guideInner = size * 0.305;
+  const petalOuter = size * PETAL_OUTER_RATIO;
+  const petalInner = size * PETAL_INNER_RATIO;
+  const coreR = size * CORE_RATIO;
+  const guideInner = size * GUIDE_INNER_RATIO;
+  const iconRLinked = size * ICON_R_LINKED_RATIO;
+  const iconRShared = size * ICON_R_SHARED_RATIO;
+  const iconREmpty = size * ICON_R_EMPTY_RATIO;
+  const iconBoxLinked = size * 0.094;
+  const iconBoxOther = size * 0.065;
 
   const petalPath =
     `M 0 -${petalInner} C ${size * 0.06} -${petalOuter * 0.49}, ${size * 0.06} -${petalOuter * 0.77}, 0 -${petalOuter} ` +
@@ -40,6 +66,53 @@ export function InteractiveSigil({
   const petalPathDashed =
     `M 0 -${petalInner} C ${size * 0.05} -${petalOuter * 0.46}, ${size * 0.05} -${petalOuter * 0.71}, 0 -${petalOuter - 10} ` +
     `C -${size * 0.05} -${petalOuter * 0.71}, -${size * 0.05} -${petalOuter * 0.46}, 0 -${petalInner} Z`;
+
+  const iconLayouts: PetalIconLayout[] = GLYPH_DIMENSIONS.map((dim) => {
+    const angle = PETAL_ANGLES[dim];
+    const rad = (angle - 90) * Math.PI / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return {
+      dim,
+      xLinked: center + iconRLinked * cos,
+      yLinked: center + iconRLinked * sin,
+      xShared: center + iconRShared * cos,
+      yShared: center + iconRShared * sin,
+      xEmpty: center + iconREmpty * cos,
+      yEmpty: center + iconREmpty * sin,
+      iconBoxLinked,
+      iconBoxOther,
+    };
+  });
+
+  const geometry: SigilGeometry = {
+    center, petalOuter, petalInner, coreR, guideInner,
+    petalPath, petalPathDashed, iconLayouts,
+  };
+  geometryCache.set(size, geometry);
+  return geometry;
+}
+
+/** The card's hero illustration — eight petal slots rendered to a single SVG.
+ *  Guide rings and the core stay static; only petal state + icon overlay
+ *  react to hover/active. HTML icons ride on top so tooltips + theme-aware
+ *  colouring don't have to reimplement SVG text handling.
+ *
+ *  Geometry (paths, ring radii, icon positions) is keyed only on `size` and
+ *  cached at module scope, so hover-driven re-renders don't rebuild path
+ *  strings or recompute petal trig — see idea-5d95dae2 for the perf rationale. */
+export function InteractiveSigil({
+  row, rowIndex, hoveredDim, activeDim, onHover, onClick, size,
+}: InteractiveSigilProps) {
+  const { t } = useTranslation();
+  const c = t.templates.chronology;
+  const linkedCount = useMemo(
+    () => Object.values(row.presence).filter((p) => p === 'linked').length,
+    [row.presence],
+  );
+
+  const geom = getGeometry(size);
+  const { center, petalOuter, coreR, guideInner, petalPath, petalPathDashed, iconLayouts } = geom;
 
   const coreId = `sigil-core-${row.id}-${rowIndex}`;
   const glowId = `sigil-glow-${row.id}-${rowIndex}`;
@@ -105,20 +178,17 @@ export function InteractiveSigil({
       </svg>
 
       {/* HTML icon overlay */}
-      {GLYPH_DIMENSIONS.map((dim) => {
+      {iconLayouts.map(({ dim, xLinked, yLinked, xShared, yShared, xEmpty, yEmpty, iconBoxLinked, iconBoxOther }) => {
         const presence = row.presence[dim];
         const meta = DIM_META[dim];
         const Icon = meta.icon;
-        const angle = PETAL_ANGLES[dim];
         const isHovered = hoveredDim === dim;
         const isActive = activeDim === dim;
         const dimOther = activeDim !== null && !isActive;
 
-        const iconR = presence === 'linked' ? iconRLinked : presence === 'shared' ? iconRShared : iconREmpty;
-        const iconBox = presence === 'linked' ? size * 0.094 : size * 0.065;
-        const rad = (angle - 90) * Math.PI / 180;
-        const x = center + iconR * Math.cos(rad);
-        const y = center + iconR * Math.sin(rad);
+        const iconBox = presence === 'linked' ? iconBoxLinked : iconBoxOther;
+        const x = presence === 'linked' ? xLinked : presence === 'shared' ? xShared : xEmpty;
+        const y = presence === 'linked' ? yLinked : presence === 'shared' ? yShared : yEmpty;
         const label = c[meta.labelKey];
 
         return (

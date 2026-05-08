@@ -190,8 +190,8 @@ export function HealingIssuesPanel({
               onClick={() => setIssueFilter(chip.key)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-modal typo-heading transition-all focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background ${
                 issueFilter === chip.key
-                  ? 'bg-background text-foreground shadow-elevation-1 border border-primary/20'
-                  : 'text-foreground hover:text-muted-foreground'
+                  ? 'bg-background text-foreground font-semibold shadow-elevation-1 border border-primary/20'
+                  : 'text-foreground/55 hover:text-foreground/80'
               }`}
             >
               {chip.label}

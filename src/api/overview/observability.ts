@@ -11,6 +11,7 @@ import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
 import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData";
 import type { ExecutionDashboardData } from "@/lib/bindings/ExecutionDashboardData";
+import type { ExecutionHeatmapData } from "@/lib/bindings/ExecutionHeatmapData";
 import type { AnomalyDrilldownData } from "@/lib/bindings/AnomalyDrilldownData";
 
 // ============================================================================
@@ -60,6 +61,16 @@ export const getPromptPerformance = (personaId: string, days?: number) =>
 export const getExecutionDashboard = (days?: number) =>
   invoke<ExecutionDashboardData>("get_execution_dashboard", {
     days: days,
+  });
+
+// ============================================================================
+// Execution Heatmap (GitHub-style contribution graph)
+// ============================================================================
+
+export const getExecutionHeatmap = (days?: number, personaId?: string) =>
+  invoke<ExecutionHeatmapData>("get_execution_heatmap", {
+    days: days,
+    personaId: personaId,
   });
 
 // ============================================================================

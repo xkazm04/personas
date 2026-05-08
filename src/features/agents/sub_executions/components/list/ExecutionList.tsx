@@ -13,6 +13,8 @@ import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { createLogger } from '@/lib/log';
+import { useDensity } from '@/hooks/utility/data/useDensity';
+import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 
 const logger = createLogger('execution-list');
 
@@ -40,6 +42,7 @@ export function ExecutionList() {
   const [compareLeft, setCompareLeft] = useState<string | null>(null);
   const [compareRight, setCompareRight] = useState<string | null>(null);
   const [showComparison, setShowComparison] = useState(false);
+  const { density, setDensity, tokens: densityTokens } = useDensity('execution-list');
 
   const hasSimulations = useMemo(
     () => rawExecutions.some((e) => e.is_simulation),
@@ -123,6 +126,9 @@ export function ExecutionList() {
           compareLeft={compareLeft} compareRight={compareRight}
           canCompare={!!canCompare} onShowComparison={() => setShowComparison(true)}
         />
+        <div className="ml-auto">
+          <DensityToggle density={density} onChange={setDensity} scopeId="execution-list" />
+        </div>
       </div>
 
       {executions.length === 0 ? (
@@ -139,7 +145,7 @@ export function ExecutionList() {
         </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
-          <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2.5 bg-primary/8 border-b border-primary/10 typo-code text-foreground uppercase tracking-wider">
+          <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 border-b border-primary/10 typo-code text-foreground uppercase tracking-wider`}>
             {compareMode && <div className="col-span-1" />}
             <div className="col-span-2">{e.col_status}</div>
             <div className="col-span-2">{e.col_capability}</div>
@@ -167,6 +173,7 @@ export function ExecutionList() {
               onCopyId={(id) => { copyToClipboard(id); setCopiedId(id); }}
               onRerun={(inputData) => setRerunInputData(inputData || '{}')}
               onAutoCompareRetry={handleAutoCompareRetry}
+              densityTokens={densityTokens}
             />
           ))}
         </div>

@@ -93,6 +93,8 @@ This doc set covers pillar 2. For pillar 1 see
 The per-persona editor surfaces are tabbed in `EditorTabBar`:
 `Activity · Matrix · Design · Use Cases · Lab · Chat · Settings`.
 
+The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
+
 **Design is a hub, not a single view.** It absorbs three former tabs
 via horizontal sub-tabs + an inline health badge:
 

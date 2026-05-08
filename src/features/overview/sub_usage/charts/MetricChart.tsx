@@ -1,6 +1,6 @@
-import { ResponsiveContainer } from 'recharts';
 import type { ComponentType, ReactElement, ReactNode, SVGProps } from 'react';
 import { ChartErrorBoundary } from './ChartErrorBoundary';
+import { LazyChart, type RechartsModule } from '@/features/shared/charts/RechartsWrapper';
 
 export type MetricIconColor =
   | 'cyan' | 'violet' | 'indigo' | 'amber' | 'emerald' | 'blue'
@@ -23,47 +23,25 @@ const ICON_COLOR_CLASSES: Record<MetricIconColor, string> = {
 
 interface MetricChartProps {
   title: string;
-  /** Optional insight annotation shown below the title. */
   insight?: string | null;
-  /** Height passed to ResponsiveContainer. */
   height: number;
-  /** The Recharts chart element (BarChart, AreaChart, PieChart, ...). */
-  children: ReactElement;
-  /** Additional className merged into the card wrapper (e.g. grid column span). */
+  chart: (R: RechartsModule) => ReactElement;
   className?: string;
-  /** Shown instead of the chart when provided and children is absent (empty state). */
   emptySlot?: ReactNode;
-  /** Optional Lucide icon rendered as a 24×24 rounded badge left of the title. */
   icon?: ComponentType<SVGProps<SVGSVGElement> & { className?: string }>;
-  /** Colour token applied to the icon badge background/text (e.g. "cyan", "violet"). */
   iconColor?: MetricIconColor;
-  /** When true, renders an empty placeholder in place of the chart. */
   loading?: boolean;
 }
 
-/**
- * Shared chart card: card shell + title/insight header + ResponsiveContainer.
- * Pass the Recharts chart element as children; axes and series remain caller-owned.
- */
 export function MetricChart({
-  title,
-  insight,
-  height,
-  children,
-  className,
-  emptySlot,
-  icon: Icon,
-  iconColor = 'cyan',
-  loading = false,
+  title, insight, height, chart, className, emptySlot, icon: Icon, iconColor = 'cyan', loading = false,
 }: MetricChartProps) {
   return (
     <div className={`bg-secondary/20 border border-primary/10 rounded-modal p-4 ${className ?? ''}`}>
       <div className="mb-3">
         <h3 className="typo-heading uppercase tracking-widest text-foreground flex items-center gap-2">
           {Icon && (
-            <div
-              className={`p-1.5 rounded-card ${ICON_COLOR_CLASSES[iconColor]}`}
-            >
+            <div className={`p-1.5 rounded-card ${ICON_COLOR_CLASSES[iconColor]}`}>
               <Icon className="w-3.5 h-3.5" />
             </div>
           )}
@@ -72,18 +50,20 @@ export function MetricChart({
         {insight && <p className="typo-body text-foreground mt-1">{insight}</p>}
       </div>
       {loading ? (
-        <div
-          className="w-full rounded-card bg-secondary/60 overflow-hidden"
-          style={{ height }}
-        >
+        <div className="w-full rounded-card bg-secondary/60 overflow-hidden" style={{ height }}>
           <div className="h-full w-full" />
         </div>
       ) : (
         emptySlot ?? (
           <ChartErrorBoundary>
-            <ResponsiveContainer width="100%" height={height}>
-              {children}
-            </ResponsiveContainer>
+            <LazyChart
+              fallback={<div className="w-full" style={{ height }} />}
+              render={(R) => (
+                <R.ResponsiveContainer width="100%" height={height}>
+                  {chart(R)}
+                </R.ResponsiveContainer>
+              )}
+            />
           </ChartErrorBoundary>
         )
       )}

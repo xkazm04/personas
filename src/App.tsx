@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
@@ -18,6 +18,7 @@ import { useI18nStore } from '@/stores/i18nStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { createLogger } from "@/lib/log";
+import { idlePrefetch } from "@/lib/idlePrefetch";
 
 initPseudoLocale();
 
@@ -70,6 +71,26 @@ const AlertToastContainer = lazy(() => import("@/features/overview/sub_observabi
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
+const OnboardingQuestPill = lazy(() => import("@/features/onboarding/components/OnboardingQuestPill"));
+
+// Idle-prefetch list: same modules as the lazy() declarations above. Hits the
+// V8 module cache so the corresponding lazy() resolves synchronously when the
+// overlays mount (or when the user triggers them via Cmd+K, the floating
+// monitor, etc.). The transform `.then(m => ({ default: m.X }))` used by some
+// lazy() calls is unnecessary here — module identity matches by URL.
+const LAZY_OVERLAY_IMPORTS = [
+  () => import("@/features/shared/components/layout/BackgroundServices"),
+  () => import("@/features/shared/components/overlays/CommandPalette"),
+  () => import("@/features/onboarding/components/GuidedTour"),
+  () => import("@/features/onboarding/components/TourSpotlight"),
+  () => import("@/features/execution/components/ExecutionMiniPlayer"),
+  () => import("@/features/shared/components/feedback/HealingToast"),
+  () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
+  () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
+  () => import("@/features/sharing/components/ShareLinkHandler"),
+  () => import("@/features/plugins/companion/CompanionPanel"),
+  () => import("@/features/onboarding/components/OnboardingQuestPill"),
+] as const;
 
 export default function App() {
   const [consented, setConsented] = useState(hasUserConsented);
@@ -89,16 +110,29 @@ export default function App() {
       import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
       import("@/lib/eventBridge").then(m => m.initAllListeners()),
       import("@/lib/execution/middleware").then(m => m.registerAllMiddleware()),
-      // A-grade Phase 3 (2026-05-03): hydrate every non-terminal build
-      // session into the store on launch so the sidebar's "active drafts"
-      // list and chrome indicators reflect server-side reality without
-      // requiring the user to click into each persona's wizard.
-      // Sequenced AFTER eventBridge.initAllListeners so any events that
-      // arrive during the brief hydration window route through the
-      // store's session-keyed handlers (eventBridge filters on
+    ]).then(() => {
+      // Orphan-draft cleanup: cancels every non-terminal session left over
+      // from the previous app run. Deferred behind requestIdleCallback so
+      // it never gates first paint — power users with several stale drafts
+      // were paying ~500-800ms of additive cancel round-trips on cold start.
+      // Sequenced AFTER eventBridge.initAllListeners (the .then chain above)
+      // so any events that arrive during the cleanup window route through
+      // the store's session-keyed handlers (eventBridge filters on
       // buildSessions presence — see eventBridge.ts:307).
-      import("@/lib/buildSessionBootstrap").then(m => m.bootstrapActiveBuildSessions()),
-    ]).catch((err) => {
+      const runBootstrap = () => {
+        import("@/lib/buildSessionBootstrap")
+          .then(m => m.bootstrapActiveBuildSessions())
+          .catch((err) => {
+            appLogger.error("buildSessionBootstrap failed", { error: err instanceof Error ? err.message : String(err) });
+          });
+      };
+      const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+      if (typeof ric === "function") {
+        ric(runBootstrap, { timeout: 2000 });
+      } else {
+        setTimeout(runBootstrap, 0);
+      }
+    }).catch((err) => {
       appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });
     void useAuthStore.getState().initialize();
@@ -121,6 +155,13 @@ export default function App() {
     // Defer BackgroundServices: health digest, credential remediation, lab events
     // These trigger heavy IPC cascades that compete with UI rendering.
     const bgTimer = setTimeout(() => setBgReady(true), 4000);
+
+    // Warm the V8 module cache for deferred overlay chunks during the bgReady
+    // window. By the time bgReady fires (or the user presses Cmd+K), the
+    // lazy() boundary resolves synchronously instead of paying ~80–200 ms of
+    // chunk fetch + parse + evaluate on first open.
+    idlePrefetch(LAZY_OVERLAY_IMPORTS);
+
     return () => clearTimeout(bgTimer);
   }, []);
 
@@ -154,6 +195,7 @@ export default function App() {
 
   return (
     <VibeThemeProvider>
+      <MotionConfig reducedMotion="user">
         <AriaLiveProvider>
         <div
           className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
@@ -196,6 +238,7 @@ export default function App() {
                 <NotificationCenter />
                 <ShareLinkHandler />
                 <CompanionPanel />
+                <OnboardingQuestPill />
               </Suspense>
             </>
           )}
@@ -213,6 +256,7 @@ export default function App() {
           )}
         </div>
         </AriaLiveProvider>
-      </VibeThemeProvider>
+      </MotionConfig>
+    </VibeThemeProvider>
   );
 }

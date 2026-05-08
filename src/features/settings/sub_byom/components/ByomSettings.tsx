@@ -185,6 +185,7 @@ export default function ByomSettings() {
               usageStats={bm.usageStats}
               usageTimeseries={bm.usageTimeseries}
               toggleProvider={bm.toggleProvider}
+              onAddKey={() => bm.setActiveSection('keys')}
             />
           )}
 

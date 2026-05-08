@@ -95,7 +95,8 @@ export default function TeamCanvas() {
       </div>
 
       <div
-        className="flex-1 relative"
+        className="flex-1 relative drop-zone-illuminated rounded-card"
+        data-dragging={dragDrop.isDragOver ? 'true' : undefined}
         onDrop={dragDrop.onCanvasDrop}
         onDragOver={dragDrop.onCanvasDragOver}
         onDragLeave={dragDrop.onCanvasDragLeave}

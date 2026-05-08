@@ -88,4 +88,6 @@ tmp/
 docs/tests/results/
 
 # Per-run JSON reports written by tools/test-mcp/e2e_*.py drivers
+# (often capture env vars in output_preview — secret-scanning hazard)
 logs/
+tools/test-mcp/reports/

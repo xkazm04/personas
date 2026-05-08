@@ -1,17 +1,13 @@
-import { useEffect, useMemo } from 'react';
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from 'recharts';
+import { memo, useEffect, useMemo } from 'react';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useShallow } from 'zustand/react/shallow';
+import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import type { WidgetProps } from '../widgetRegistry';
+
+const Y_AXIS_FORMATTER = (v: number) => `${(v / 1000).toFixed(1)}s`;
+const TOOLTIP_FORMATTER = (v: unknown): string =>
+  typeof v === 'number' ? `${(v / 1000).toFixed(2)}s` : String(v);
+const LEGEND_STYLE = { fontSize: 11 };
 
 /**
  * Latency distribution — p50/p95/p99 lines over time.
@@ -23,7 +19,7 @@ import type { WidgetProps } from '../widgetRegistry';
  * Athena-facing config:
  *   { "days": 7 | 30 | 90 }   default 7
  */
-export function LatencyDistributionChartWidget({ config, title }: WidgetProps) {
+export const LatencyDistributionChartWidget = memo(function LatencyDistributionChartWidget({ config, title }: WidgetProps) {
   const days = (config?.days as number) ?? 7;
   const { data, fetchExecutionDashboard } = useOverviewStore(
     useShallow((s) => ({
@@ -51,27 +47,25 @@ export function LatencyDistributionChartWidget({ config, title }: WidgetProps) {
         {title ?? `Latency p50 / p95 / p99 (last ${days}d)`}
       </div>
       <div className="flex-1 min-h-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-            <XAxis dataKey="date" stroke="currentColor" fontSize={11} />
-            <YAxis
-              stroke="currentColor"
-              fontSize={11}
-              tickFormatter={(v) => `${(v / 1000).toFixed(1)}s`}
-            />
-            <Tooltip
-              formatter={(v) =>
-                typeof v === 'number' ? `${(v / 1000).toFixed(2)}s` : String(v)
-              }
-            />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Line type="monotone" dataKey="p50" stroke="#22c55e" name="p50" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="p95" stroke="#f59e0b" name="p95" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="p99" stroke="#ef4444" name="p99" dot={false} strokeWidth={1.5} />
-          </LineChart>
-        </ResponsiveContainer>
+        <LazyChart render={(R) => (
+          <R.ResponsiveContainer width="100%" height="100%">
+            <R.LineChart data={chartData}>
+              <R.CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+              <R.XAxis dataKey="date" stroke="currentColor" fontSize={11} />
+              <R.YAxis
+                stroke="currentColor"
+                fontSize={11}
+                tickFormatter={Y_AXIS_FORMATTER}
+              />
+              <R.Tooltip formatter={TOOLTIP_FORMATTER} />
+              <R.Legend wrapperStyle={LEGEND_STYLE} />
+              <R.Line type="monotone" dataKey="p50" stroke="#22c55e" name="p50" dot={false} strokeWidth={1.5} />
+              <R.Line type="monotone" dataKey="p95" stroke="#f59e0b" name="p95" dot={false} strokeWidth={1.5} />
+              <R.Line type="monotone" dataKey="p99" stroke="#ef4444" name="p99" dot={false} strokeWidth={1.5} />
+            </R.LineChart>
+          </R.ResponsiveContainer>
+        )} />
       </div>
     </div>
   );
-}
+});

@@ -1,9 +1,12 @@
 import { memo, useMemo, useState, useCallback } from 'react';
+import { CloudCog, KeyRound } from 'lucide-react';
 import type { ByomPolicy, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult } from '@/api/system/byom';
 import { testProviderConnection } from '@/api/system/byom';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ProviderSparkline } from './ProviderSparkline';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { AsyncButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Centralized sparkline colors so a future palette migration touches one site.
@@ -21,6 +24,8 @@ interface ByomProviderListProps {
   usageStats: ProviderUsageStats[];
   usageTimeseries: ProviderUsageTimeseries[];
   toggleProvider: (providerId: string, list: 'allowed' | 'blocked') => void;
+  /** Switch the parent settings tab to API key management — wires the empty-state CTA. */
+  onAddKey?: () => void;
 }
 
 interface TrendBucket {
@@ -123,7 +128,7 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
   );
 });
 
-export function ByomProviderList({ policy, usageStats, usageTimeseries, toggleProvider }: ByomProviderListProps) {
+export function ByomProviderList({ policy, usageStats, usageTimeseries, toggleProvider, onAddKey }: ByomProviderListProps) {
   const trendsByEngine = useTimeseriesByEngine(usageTimeseries);
   const [testResults, setTestResults] = useState<Record<string, ConnectionTestResult>>({});
   const { t } = useTranslation();
@@ -215,12 +220,12 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
       </div>
 
       {/* Usage stats with sparkline trends */}
-      {usageStats.length > 0 && (
-        <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
-          <div className="flex items-baseline gap-2">
-            <SectionHeading title={s.provider_usage} />
-            <span className="typo-caption text-foreground">{s.usage_trends}</span>
-          </div>
+      <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
+        <div className="flex items-baseline gap-2">
+          <SectionHeading title={s.provider_usage} />
+          <span className="typo-caption text-foreground">{s.usage_trends}</span>
+        </div>
+        {usageStats.length > 0 ? (
           <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
             {usageStats.map((stat) => (
               <ProviderUsageCard
@@ -233,8 +238,17 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               />
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <EmptyState
+            icon={CloudCog}
+            iconColor="text-cyan-400/80"
+            iconContainerClassName="bg-cyan-500/10 border-cyan-500/20"
+            title={s.usage_empty_title}
+            description={s.usage_empty_description}
+            action={onAddKey ? { label: s.usage_empty_action, onClick: onAddKey, icon: KeyRound } : undefined}
+          />
+        )}
+      </div>
     </div>
   );
 }
@@ -259,24 +273,18 @@ function TestConnectionButton({
 
   return (
     <div className="flex items-center gap-2">
-      <button
-        disabled={state === 'testing'}
+      <AsyncButton
+        variant="secondary"
+        size="xs"
+        isLoading={state === 'testing'}
         onClick={(e) => {
           e.stopPropagation();
           onTest(providerId);
         }}
-        className="typo-caption px-2.5 py-1 rounded-input border border-primary/15 text-foreground
-          hover:border-primary/30 hover:text-foreground transition-all disabled:opacity-50 disabled:cursor-wait"
+        loadingText={s.testing}
       >
-        {state === 'testing' ? (
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
-            {s.testing}
-          </span>
-        ) : (
-          s.test_connection
-        )}
-      </button>
+        {s.test_connection}
+      </AsyncButton>
 
       {state === 'pass' && (
         <span className="typo-caption text-emerald-400 flex items-center gap-1">

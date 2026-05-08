@@ -219,6 +219,49 @@ After significant feature work, run `/guide-sync` to keep the marketing site gui
 
 ---
 
+## Documentation Sync (`docs/features/`)
+
+`docs/features/` is the implemented-product reference for users, developers, and CLI agents. It must track the codebase. This project's development happens through Claude — there is no other reviewer who will catch doc drift, so the responsibility lives in this section and in a Stop hook.
+
+### The rule
+
+When a turn edits **feature/command source** with **user-visible** effect (new tab/page/command, changed flow, removed feature, new event, schema migration that surfaces in UI, renamed table, new tier gate), update the matching feature doc in the **same turn**. If the change is internal-only (refactor, bugfix without behavior shift, generated code, test-only) no doc update is needed.
+
+### Source → doc map
+
+The authoritative source→doc mapping is in [`scripts/docs/feature-doc-map.json`](../scripts/docs/feature-doc-map.json). Quick reference:
+
+| Source area | Feature doc |
+| --- | --- |
+| `src/features/personas/**`, `src/features/agents/**`, `src-tauri/src/commands/core/personas.rs` | [`docs/features/personas/README.md`](../docs/features/README.md) |
+| `src/features/templates/**`, `src-tauri/src/commands/design/**`, `src-tauri/src/engine/build_session/**` | `docs/features/templates/README.md` |
+| `src-tauri/src/commands/execution/**`, `src-tauri/src/engine/{runner,scheduler,bus,chain,...}.rs` | `docs/features/execution/README.md` |
+| `src/features/vault/**`, `src-tauri/src/commands/credentials/**` | `docs/features/connections/README.md` |
+| `src/features/triggers/**`, `src-tauri/src/commands/communication/**`, `engine/event_registry.rs` | `docs/features/events/README.md` |
+| `src/features/recipes/**`, `src-tauri/src/commands/recipes/**` | `docs/features/recipes/README.md` |
+| `src/features/settings/**`, `commands/credentials/external_api_keys.rs`, `engine/management_api.rs` | `docs/features/settings/README.md` |
+| `src/features/home/**`, `src/features/simple-mode/**` | `docs/features/home.md` |
+| `src/features/onboarding/**` | `docs/features/onboarding.md` |
+| `src/features/overview/**` | `docs/features/overview/README.md` |
+| `src/features/plugins/<plugin>/**`, `src-tauri/src/commands/<plugin>/**` (or `infrastructure/<plugin>.rs`) | `docs/features/<plugin>.md` (artist, companion, dev-tools, drive, obsidian-brain, research-lab, twin) |
+
+When you add a new feature area, add an entry to `feature-doc-map.json` in the same change.
+
+### The Stop hook
+
+`.claude/settings.json` registers a Stop hook that runs `node scripts/docs/check-doc-sync.mjs` before every turn ends. The script:
+
+1. Walks the current turn's transcript for `Edit` / `Write` / `MultiEdit` calls.
+2. Filters out skip patterns (tests, generated bindings, i18n, docs themselves, migrations, template/connector seeds).
+3. Matches the remaining edits against the feature-doc map.
+4. If feature source was edited but no `docs/features/*` was touched in the same turn, exits 2 with a structured reminder naming the affected docs.
+
+When you see that reminder, **either** update the named doc(s) in this turn, **or** reply with one short sentence — `"internal-only, no doc update needed"` (or similar) — explaining why no doc work is required (refactor, bugfix without behavior shift, etc.). Do not ignore the reminder silently.
+
+The hook honors `stop_hook_active`, so it can't infinite-loop. Bypass for an entire turn by either dismissing as above, or by including a doc edit alongside the source change.
+
+---
+
 ## Pre-existing Issues (Do Not Fix Unless Asked)
 
 - Git post-commit hook warning about `git_hook.py` is harmless.
