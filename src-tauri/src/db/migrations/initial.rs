@@ -29,8 +29,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         conn.execute_batch("ALTER TABLE dev_competition_slots ADD COLUMN diff_analyzed_at TEXT;");
     let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN winner_insight TEXT;");
     let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN baseline_json TEXT;");
-    let _ =
-        conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN worktree_base_ref TEXT;");
+    let _ = conn.execute_batch("ALTER TABLE dev_competitions ADD COLUMN worktree_base_ref TEXT;");
 
     conn.execute_batch(SCHEMA)?;
 
