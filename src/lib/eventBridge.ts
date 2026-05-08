@@ -756,9 +756,11 @@ export async function initAllListeners(): Promise<void> {
   // size-5 cap on Tauri 1.
   performance.mark("event-bridge:init:bulk:start");
   const bulkSize = EVENT_BRIDGE_TIMING.INIT_BATCH_SIZE_BULK;
+  const bulkBatches: EventRegistration[][] = [];
   for (let i = 0; i < normal.length; i += bulkSize) {
-    await attachBatch(normal.slice(i, i + bulkSize));
+    bulkBatches.push(normal.slice(i, i + bulkSize));
   }
+  await Promise.all(bulkBatches.map(attachBatch));
   performance.mark("event-bridge:init:bulk:end");
   performance.measure(
     "event-bridge:init:bulk",
